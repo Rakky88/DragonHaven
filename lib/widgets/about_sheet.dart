@@ -8,6 +8,7 @@ import '../providers/household_provider.dart';
 import '../services/platform_actions.dart';
 import '../services/release_service.dart';
 import '../theme/app_theme.dart';
+import 'pull_to_dismiss_sheet.dart';
 
 Future<void> showDragonHavenAboutSheet(BuildContext context) =>
     showModalBottomSheet<void>(
@@ -34,37 +35,9 @@ enum _AboutReleaseStatus {
 }
 
 class _AboutSheetState extends State<_AboutSheet> {
-  static const _dismissPullThreshold = 72.0;
-
   bool _releaseBusy = false;
   bool _supportBusy = false;
-  bool _isDismissing = false;
-  double _dismissPullDistance = 0;
   _AboutReleaseStatus? _releaseStatus;
-
-  void _addDismissPull(double distance) {
-    if (_isDismissing || distance <= 0) return;
-    _dismissPullDistance += distance;
-    if (_dismissPullDistance < _dismissPullThreshold) return;
-    _isDismissing = true;
-    Navigator.of(context).pop();
-  }
-
-  void _resetDismissPull() => _dismissPullDistance = 0;
-
-  bool _handleScrollNotification(ScrollNotification notification) {
-    if (notification is OverscrollNotification &&
-        notification.metrics.pixels <= notification.metrics.minScrollExtent &&
-        notification.overscroll < 0) {
-      _addDismissPull(-notification.overscroll);
-    } else if (notification is ScrollEndNotification ||
-        (notification is ScrollUpdateNotification &&
-            notification.metrics.pixels >
-                notification.metrics.minScrollExtent)) {
-      _resetDismissPull();
-    }
-    return false;
-  }
 
   void _setReleaseStatus(_AboutReleaseStatus status) {
     if (!mounted) return;
@@ -166,313 +139,265 @@ class _AboutSheetState extends State<_AboutSheet> {
       _ => false,
     };
 
-    return SafeArea(
-      top: false,
-      child: Container(
-        height: MediaQuery.sizeOf(context).height * 0.9,
-        decoration: const BoxDecoration(
-          color: AppColors.cream,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
+    return PullToDismissSheet(
+      dragHandleKey: const Key('about-drag-handle'),
+      child: SingleChildScrollView(
+        key: const Key('about-scroll'),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(22, 0, 22, 28),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            GestureDetector(
-              key: const Key('about-drag-handle'),
-              behavior: HitTestBehavior.opaque,
-              onVerticalDragStart: (_) => _resetDismissPull(),
-              onVerticalDragUpdate: (details) =>
-                  _addDismissPull(details.delta.dy),
-              onVerticalDragEnd: (_) => _resetDismissPull(),
-              onVerticalDragCancel: _resetDismissPull,
-              child: SizedBox(
-                height: 34,
-                width: double.infinity,
-                child: Center(
-                  child: Container(
-                    width: 44,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: AppColors.mist,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
+            _AboutHero(strings: strings),
+            const SizedBox(height: 22),
+            _AboutPanel(
+              child: Column(
+                children: [
+                  _InfoRow(
+                    icon: Icons.person_rounded,
+                    label: strings.pick('Created by', 'Gemaakt door'),
+                    value: AppInfo.creator,
                   ),
-                ),
+                  const _PanelDivider(),
+                  _InfoRow(
+                    icon: Icons.calendar_month_rounded,
+                    label: strings.pick('Built in', 'Gebouwd in'),
+                    value: AppInfo.builtYear,
+                  ),
+                  const _PanelDivider(),
+                  _InfoRow(
+                    icon: Icons.new_releases_rounded,
+                    label: strings.pick('Version', 'Versie'),
+                    value: AppInfo.displayVersion,
+                  ),
+                ],
               ),
             ),
-            Expanded(
-              child: NotificationListener<ScrollNotification>(
-                onNotification: _handleScrollNotification,
-                child: SingleChildScrollView(
-                  key: const Key('about-scroll'),
-                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 28),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+            const SizedBox(height: 16),
+            _AboutPanel(
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading:
+                    const Icon(Icons.redeem_rounded, color: AppColors.twilight),
+                title: Text(
+                  strings.pick('Redeem code', 'Code inwisselen'),
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: _showRedeemCode,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _AboutPanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _AboutHero(strings: strings),
-                      const SizedBox(height: 22),
-                      _AboutPanel(
-                        child: Column(
-                          children: [
-                            _InfoRow(
-                              icon: Icons.person_rounded,
-                              label: strings.pick('Created by', 'Gemaakt door'),
-                              value: AppInfo.creator,
-                            ),
-                            const _PanelDivider(),
-                            _InfoRow(
-                              icon: Icons.calendar_month_rounded,
-                              label: strings.pick('Built in', 'Gebouwd in'),
-                              value: AppInfo.builtYear,
-                            ),
-                            const _PanelDivider(),
-                            _InfoRow(
-                              icon: Icons.new_releases_rounded,
-                              label: strings.pick('Version', 'Versie'),
-                              value: AppInfo.displayVersion,
-                            ),
-                          ],
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.mist,
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        child: const Icon(Icons.system_update_alt_rounded,
+                            color: AppColors.twilight),
                       ),
-                      const SizedBox(height: 16),
-                      _AboutPanel(
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.redeem_rounded,
-                              color: AppColors.twilight),
-                          title: Text(
-                            strings.pick('Redeem code', 'Code inwisselen'),
-                            style: const TextStyle(fontWeight: FontWeight.w900),
-                          ),
-                          trailing: const Icon(Icons.chevron_right_rounded),
-                          onTap: _showRedeemCode,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _AboutPanel(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.mist,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                      Icons.system_update_alt_rounded,
-                                      color: AppColors.twilight),
-                                ),
-                                const SizedBox(width: 11),
-                                Expanded(
-                                  child: Text(
-                                    strings.pick('Share or update DragonHaven',
-                                        'DragonHaven delen of updaten'),
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 15),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              strings.pick(
-                                'Copy one permanent Android download link for someone else, or open it to install the latest release over this app. Your progress stays safe.',
-                                'Kopieer één vaste Android-downloadlink voor iemand anders, of open hem om de nieuwste release over deze app te installeren. Je voortgang blijft veilig.',
-                              ),
-                              style: const TextStyle(
-                                color: AppColors.muted,
-                                height: 1.35,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            OutlinedButton.icon(
-                              key: const Key('about-copy-download-link'),
-                              onPressed:
-                                  _releaseBusy ? null : _copyDownloadLink,
-                              icon: const Icon(Icons.content_copy_rounded,
-                                  size: 19),
-                              label: Text(strings.pick('Copy download link',
-                                  'Downloadlink kopiëren')),
-                            ),
-                            const SizedBox(height: 8),
-                            FilledButton.icon(
-                              key: const Key('about-download-update'),
-                              onPressed:
-                                  _releaseBusy ? null : _downloadOrUpdate,
-                              icon: _releaseBusy
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2.2,
-                                          color: Colors.white),
-                                    )
-                                  : const Icon(Icons.system_update_alt_rounded,
-                                      size: 19),
-                              label: Text(strings.pick('Download or update',
-                                  'Downloaden of updaten')),
-                            ),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 180),
-                              child: releaseStatusMessage == null
-                                  ? const SizedBox.shrink()
-                                  : Container(
-                                      key: const Key('about-release-status'),
-                                      margin: const EdgeInsets.only(top: 12),
-                                      padding: const EdgeInsets.all(11),
-                                      decoration: BoxDecoration(
-                                        color: releaseStatusIsError
-                                            ? AppColors.coral
-                                                .withValues(alpha: 0.18)
-                                            : AppColors.mintLight,
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Icon(
-                                            releaseStatusIsError
-                                                ? Icons.info_outline_rounded
-                                                : Icons.check_circle_rounded,
-                                            size: 19,
-                                            color: releaseStatusIsError
-                                                ? AppColors.coral
-                                                : AppColors.twilight,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              releaseStatusMessage,
-                                              style: const TextStyle(
-                                                color: AppColors.ink,
-                                                height: 1.3,
-                                                fontWeight: FontWeight.w700,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _AboutPanel(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.goldLight,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.coffee_outlined,
-                                    color: AppColors.twilightDark,
-                                  ),
-                                ),
-                                const SizedBox(width: 11),
-                                Expanded(
-                                  child: Text(
-                                    strings.pick(
-                                      'Buy me a coffee',
-                                      'Trakteer me op koffie',
-                                    ),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              strings.pick(
-                                'Enjoying DragonHaven? You can support its further development through Ko-fi.',
-                                'Blij met DragonHaven? Via Ko-fi kun je de verdere ontwikkeling steunen.',
-                              ),
-                              style: const TextStyle(
-                                color: AppColors.muted,
-                                height: 1.35,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.mist,
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.paypal_rounded,
-                                    key: Key('about-paypal-icon'),
-                                    color: AppColors.twilight,
-                                    size: 28,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      strings.pick(
-                                        'Payment via PayPal',
-                                        'Betaling via PayPal',
-                                      ),
-                                      style: const TextStyle(
-                                        color: AppColors.ink,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            FilledButton.icon(
-                              key: const Key('about-buy-me-coffee'),
-                              onPressed: _supportBusy ? null : _openKofi,
-                              icon: _supportBusy
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Icon(Icons.open_in_new_rounded,
-                                      size: 19),
-                              label: Text(
-                                strings.pick(
-                                  'Open tip form',
-                                  'Fooiformulier openen',
-                                ),
-                              ),
-                            ),
-                          ],
+                      const SizedBox(width: 11),
+                      Expanded(
+                        child: Text(
+                          strings.pick('Share or update DragonHaven',
+                              'DragonHaven delen of updaten'),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w900, fontSize: 15),
                         ),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 5),
+                  Text(
+                    strings.pick(
+                      'Copy one permanent Android download link for someone else, or open it to install the latest release over this app. Your progress stays safe.',
+                      'Kopieer één vaste Android-downloadlink voor iemand anders, of open hem om de nieuwste release over deze app te installeren. Je voortgang blijft veilig.',
+                    ),
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      height: 1.35,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  OutlinedButton.icon(
+                    key: const Key('about-copy-download-link'),
+                    onPressed: _releaseBusy ? null : _copyDownloadLink,
+                    icon: const Icon(Icons.content_copy_rounded, size: 19),
+                    label: Text(strings.pick(
+                        'Copy download link', 'Downloadlink kopiëren')),
+                  ),
+                  const SizedBox(height: 8),
+                  FilledButton.icon(
+                    key: const Key('about-download-update'),
+                    onPressed: _releaseBusy ? null : _downloadOrUpdate,
+                    icon: _releaseBusy
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2.2, color: Colors.white),
+                          )
+                        : const Icon(Icons.system_update_alt_rounded, size: 19),
+                    label: Text(strings.pick(
+                        'Download or update', 'Downloaden of updaten')),
+                  ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    child: releaseStatusMessage == null
+                        ? const SizedBox.shrink()
+                        : Container(
+                            key: const Key('about-release-status'),
+                            margin: const EdgeInsets.only(top: 12),
+                            padding: const EdgeInsets.all(11),
+                            decoration: BoxDecoration(
+                              color: releaseStatusIsError
+                                  ? AppColors.coral.withValues(alpha: 0.18)
+                                  : AppColors.mintLight,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  releaseStatusIsError
+                                      ? Icons.info_outline_rounded
+                                      : Icons.check_circle_rounded,
+                                  size: 19,
+                                  color: releaseStatusIsError
+                                      ? AppColors.coral
+                                      : AppColors.twilight,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    releaseStatusMessage,
+                                    style: const TextStyle(
+                                      color: AppColors.ink,
+                                      height: 1.3,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _AboutPanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.goldLight,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.coffee_outlined,
+                          color: AppColors.twilightDark,
+                        ),
+                      ),
+                      const SizedBox(width: 11),
+                      Expanded(
+                        child: Text(
+                          strings.pick(
+                            'Buy me a coffee',
+                            'Trakteer me op koffie',
+                          ),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    strings.pick(
+                      'Enjoying DragonHaven? You can support its further development through Ko-fi.',
+                      'Blij met DragonHaven? Via Ko-fi kun je de verdere ontwikkeling steunen.',
+                    ),
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      height: 1.35,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.mist,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.paypal_rounded,
+                          key: Key('about-paypal-icon'),
+                          color: AppColors.twilight,
+                          size: 28,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            strings.pick(
+                              'Payment via PayPal',
+                              'Betaling via PayPal',
+                            ),
+                            style: const TextStyle(
+                              color: AppColors.ink,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  FilledButton.icon(
+                    key: const Key('about-buy-me-coffee'),
+                    onPressed: _supportBusy ? null : _openKofi,
+                    icon: _supportBusy
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.open_in_new_rounded, size: 19),
+                    label: Text(
+                      strings.pick(
+                        'Open tip form',
+                        'Fooiformulier openen',
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

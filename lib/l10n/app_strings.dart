@@ -14,13 +14,13 @@ class AppStrings {
   bool get isDutch => languageCode == 'nl';
 
   static const supportedLanguages = <String, String>{
-    'en': 'English',
-    'nl': 'Nederlands',
     'de': 'Deutsch',
-    'fr': 'Français',
+    'en': 'English',
     'es': 'Español',
-    'pt': 'Português',
+    'fr': 'Français',
     'it': 'Italiano',
+    'nl': 'Nederlands',
+    'pt': 'Português',
     'zh': '中文',
     'ja': '日本語',
   };

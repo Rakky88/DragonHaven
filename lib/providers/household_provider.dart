@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -58,6 +59,7 @@ class HouseholdProvider extends ChangeNotifier {
   bool onboardingComplete = false;
   bool musicEnabled = true;
   bool soundEffectsEnabled = true;
+  bool achievementsCompact = false;
   late Pet pet;
   List<DragonEgg> eggStash = [];
   List<Pet> sanctuaryDragons = [];
@@ -105,7 +107,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 22;
+  static const _schemaVersion = 23;
 
   static Future<HouseholdProvider> loadFromStorage() async {
     final provider = HouseholdProvider(initialize: false);
@@ -199,6 +201,8 @@ class HouseholdProvider extends ChangeNotifier {
         data['musicEnabled'] is! bool || data['musicEnabled'] as bool;
     soundEffectsEnabled = data['soundEffectsEnabled'] is! bool ||
         data['soundEffectsEnabled'] as bool;
+    achievementsCompact = data['achievementsCompact'] is bool &&
+        data['achievementsCompact'] as bool;
     pet = Pet.fromJson(mapFromJson(data['pet']));
     eggStash = mapsFromJson(data['eggStash']).map(DragonEgg.fromJson).toList();
     sanctuaryDragons = mapsFromJson(data['sanctuaryDragons'])
@@ -398,6 +402,12 @@ class HouseholdProvider extends ChangeNotifier {
     await _notifyAndSave();
   }
 
+  Future<void> setAchievementsCompact(bool value) async {
+    if (achievementsCompact == value) return;
+    achievementsCompact = value;
+    await _notifyAndSave();
+  }
+
   Future<ChestReward?> openChest(ChestTier tier) async {
     if (chestCount(tier) <= 0) return null;
     chestInventory[tier] = chestCount(tier) - 1;
@@ -499,6 +509,14 @@ class HouseholdProvider extends ChangeNotifier {
         type: ActivityType.milestone,
         code: ActivityCode.evolved,
         subject: pet.lineageId);
+    final form = pet.stage == DragonStage.wyrmling ? 'Wyrmling' : 'Ascended';
+    unawaited(HavenNotifications.evolutionUnlocked(
+      id: 'evolution-${pet.id}-${pet.stage.name}',
+      title: languageCode == 'nl' ? 'Nieuwe evolutie!' : 'New evolution!',
+      body: languageCode == 'nl'
+          ? '${pet.displayName} is geëvolueerd naar $form.'
+          : '${pet.displayName} evolved into $form.',
+    ));
     _evaluateAchievements();
     await _notifyAndSave();
     return true;
@@ -785,6 +803,15 @@ class HouseholdProvider extends ChangeNotifier {
       }
       unlockedAchievementIds.add(achievement.id);
       changed = true;
+      final title =
+          languageCode == 'nl' ? achievement.titleNl : achievement.titleEn;
+      unawaited(HavenNotifications.achievementUnlocked(
+        id: achievement.id,
+        title: languageCode == 'nl'
+            ? 'Achievement behaald!'
+            : 'Achievement unlocked!',
+        body: title,
+      ));
       if (addActivities) {
         _addActivity(
             message: 'Achievement unlocked: ${achievement.titleEn}',
@@ -856,6 +883,7 @@ class HouseholdProvider extends ChangeNotifier {
       'onboardingComplete': onboardingComplete,
       'musicEnabled': musicEnabled,
       'soundEffectsEnabled': soundEffectsEnabled,
+      'achievementsCompact': achievementsCompact,
       'pet': pet.toJson(),
       'eggStash': eggStash.map((egg) => egg.toJson()).toList(),
       'sanctuaryDragons':

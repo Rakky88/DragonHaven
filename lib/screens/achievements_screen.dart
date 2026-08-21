@@ -5,6 +5,7 @@ import '../l10n/app_strings.dart';
 import '../models/achievement.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/achievement_badge_sprite.dart';
 
 class AchievementsScreen extends StatelessWidget {
   const AchievementsScreen({super.key, this.readOnly = false});
@@ -16,7 +17,24 @@ class AchievementsScreen extends StatelessWidget {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
     return Scaffold(
-      appBar: AppBar(title: Text(strings.tr('achievements'))),
+      appBar: AppBar(
+        title: Text(strings.tr('achievements')),
+        actions: [
+          IconButton(
+            key: const Key('achievements-view-toggle'),
+            tooltip: game.achievementsCompact
+                ? strings.pick('List view', 'Lijstweergave')
+                : strings.pick('Compact view', 'Compacte weergave'),
+            onPressed: readOnly
+                ? null
+                : () => game.setAchievementsCompact(!game.achievementsCompact),
+            icon: Icon(game.achievementsCompact
+                ? Icons.view_list_rounded
+                : Icons.grid_view_rounded),
+          ),
+          const SizedBox(width: 6),
+        ],
+      ),
       body: ListView(
         key: const PageStorageKey('achievements-scroll'),
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
@@ -44,17 +62,75 @@ class AchievementsScreen extends StatelessWidget {
               ]),
             ),
           ),
-          for (final category in AchievementCategory.values) ...[
-            const SizedBox(height: 22),
-            Text(_categoryName(category, strings),
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            for (final achievement in achievementCatalog
-                .where((item) => item.category == category))
+          const SizedBox(height: 16),
+          if (game.achievementsCompact)
+            _CompactAchievementGrid(strings: strings)
+          else
+            for (final achievement in achievementCatalog)
               _AchievementTile(achievement: achievement),
-          ],
         ],
       ),
+    );
+  }
+}
+
+class _CompactAchievementGrid extends StatelessWidget {
+  const _CompactAchievementGrid({required this.strings});
+
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) {
+    final game = context.watch<HouseholdProvider>();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 360 ? 4 : 3;
+        return GridView.builder(
+          key: const Key('achievements-compact-grid'),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: achievementCatalog.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+          ),
+          itemBuilder: (context, index) {
+            final achievement = achievementCatalog[index];
+            final unlocked =
+                game.unlockedAchievementIds.contains(achievement.id);
+            final name = achievement.secret && !unlocked
+                ? strings.pick('Secret achievement', 'Geheime achievement')
+                : strings.isDutch
+                    ? achievement.titleNl
+                    : achievement.titleEn;
+            return Semantics(
+              label:
+                  '$name, ${unlocked ? strings.pick('unlocked', 'behaald') : strings.pick('locked', 'vergrendeld')}',
+              child: Tooltip(
+                message: name,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: unlocked ? Colors.white : const Color(0xFFE4E1E8),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: unlocked ? AppColors.gold : AppColors.mist,
+                      width: unlocked ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(7),
+                    child: AchievementBadgeSprite(
+                      achievement: achievement,
+                      unlocked: unlocked,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -78,12 +154,22 @@ class _AchievementTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       color: unlocked ? Colors.white : const Color(0xFFF1EFF4),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor:
-              unlocked ? const Color(0xFFFFE5A6) : const Color(0xFFCCC8D2),
-          child: Icon(
-            hidden ? Icons.question_mark_rounded : _badgeIcon(achievement.id),
-            color: unlocked ? const Color(0xFF9A6A00) : AppColors.muted,
+        contentPadding: const EdgeInsets.fromLTRB(10, 8, 14, 8),
+        leading: Container(
+          width: 68,
+          height: 68,
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: unlocked ? Colors.white : const Color(0xFFE1DEE5),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: unlocked ? AppColors.gold : const Color(0xFFBBB7C1),
+              width: unlocked ? 1.6 : 1,
+            ),
+          ),
+          child: AchievementBadgeSprite(
+            achievement: achievement,
+            unlocked: unlocked,
           ),
         ),
         title: Text(
@@ -119,36 +205,3 @@ class _AchievementTile extends StatelessWidget {
     );
   }
 }
-
-IconData _badgeIcon(String id) => switch (id) {
-      'hello_little_one' => Icons.egg_alt_rounded,
-      'first_flight' => Icons.flight_takeoff_rounded,
-      'chest_expectations' => Icons.inventory_2_rounded,
-      'room_to_roost' => Icons.add_home_work_rounded,
-      'feed_furniture' => Icons.chair_alt_rounded,
-      'book_wyrm' => Icons.menu_book_rounded,
-      'growing_pains' => Icons.trending_up_rounded,
-      'not_picking_favorites' => Icons.favorite_rounded,
-      'halfway_clouds' => Icons.cloud_rounded,
-      'ascension_day' => Icons.auto_awesome_rounded,
-      'something_spectral' => Icons.blur_on_rounded,
-      'well_read_scaled' => Icons.auto_stories_rounded,
-      'frequent_flyer' => Icons.airplanemode_active_rounded,
-      'full_party' => Icons.groups_rounded,
-      'came_crawling_back' => Icons.u_turn_left_rounded,
-      'sky_ceiling' => Icons.vertical_align_top_rounded,
-      'scale_every_tale' => Icons.library_books_rounded,
-      'ghost_writer' => Icons.history_edu_rounded,
-      'myth_made_real' => Icons.workspace_premium_rounded,
-      'probably_fine' => Icons.local_fire_department_rounded,
-      _ => Icons.emoji_events_rounded,
-    };
-
-String _categoryName(AchievementCategory category, AppStrings strings) =>
-    switch (category) {
-      AchievementCategory.starter => 'Starter',
-      AchievementCategory.easy => strings.pick('Easy', 'Makkelijk'),
-      AchievementCategory.challenging =>
-        strings.pick('Challenging', 'Uitdagend'),
-      AchievementCategory.master => 'Master',
-    };

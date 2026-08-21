@@ -1,8 +1,8 @@
-# DragonHaven v0.00.06 — final specification audit
+# DragonHaven v0.00.07 — final specification audit
 
 Audited against
 `DragonHaven_Codex_Spec_With_Achievements_Rooms_Personalities_DayNight_Audio_Two_Sliders.md`
-on 21 August 2026.
+on 22 August 2026.
 
 ## Completed local scope
 
@@ -26,6 +26,9 @@ on 21 August 2026.
   selectable language entries;
 - About/redeem/Ko-fi, permanent share/update link, white launcher/splash,
   improved topbar branding and robust scrolling/dismissal behaviour.
+- a centered animated egg countdown, one uncategorized achievement list with
+  persistent list/compact modes, 20 unique color badges with black locked
+  silhouettes, and background-only achievement/evolution notifications.
 
 ## Intentionally requires external infrastructure
 
@@ -44,4 +47,6 @@ backend phase.
 - automated bounds checks cover every dragon, furniture and chest sprite;
 - compact 360×640 and 135% text-scale scroll/overflow regression is green;
 - About pinned-handle scrolling and pull-to-dismiss regression is green;
+- the Language sheet uses the same pinned-handle/pull-to-dismiss behavior and
+  presents all visible language names alphabetically;
 - release uses the permanent `nl.dragonhaven.app` ID and signing key.

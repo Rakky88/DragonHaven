@@ -17,6 +17,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private var activityInForeground = false
     private var musicEnabled = true
     private var effectsEnabled = true
     private var musicPlayer: MediaPlayer? = null
@@ -139,6 +140,28 @@ class MainActivity : FlutterActivity() {
                     alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending)
                     result.success(true)
                 }
+                "showWhenBackground" -> {
+                    val id = call.argument<String>("id")
+                    val title = call.argument<String>("title")
+                    val body = call.argument<String>("body")
+                    val kind = call.argument<String>("kind") ?: "milestone"
+                    if (id == null || title == null || body == null) {
+                        result.error("invalid_notification", "Missing notification data.", null)
+                        return@setMethodCallHandler
+                    }
+                    if (activityInForeground || !hasNotificationPermission()) {
+                        result.success(false)
+                        return@setMethodCallHandler
+                    }
+                    DragonHavenNotificationReceiver.showNow(
+                        context = this,
+                        notificationId = id.hashCode(),
+                        title = title,
+                        body = body,
+                        kind = kind,
+                    )
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
         }
@@ -146,6 +169,11 @@ class MainActivity : FlutterActivity() {
 
     private fun rawResourceId(id: String): Int =
         resources.getIdentifier(id, "raw", packageName)
+
+    private fun hasNotificationPermission(): Boolean =
+        Build.VERSION.SDK_INT < 33 ||
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
 
     private fun playOneShot(id: String): Boolean {
         if (!effectsEnabled) return false
@@ -247,12 +275,14 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onPause() {
+        activityInForeground = false
         musicPlayer?.pause()
         super.onPause()
     }
 
     override fun onResume() {
         super.onResume()
+        activityInForeground = true
         if (musicEnabled && musicPlayer?.isPlaying == false) musicPlayer?.start()
     }
 

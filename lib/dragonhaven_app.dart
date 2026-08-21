@@ -14,6 +14,7 @@ import 'screens/onboarding_screen.dart';
 import 'screens/stash_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/about_sheet.dart';
+import 'widgets/pull_to_dismiss_sheet.dart';
 
 class DragonHavenApp extends StatelessWidget {
   const DragonHavenApp({super.key});
@@ -253,58 +254,57 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
 
   Future<void> _showLanguagePicker() => showModalBottomSheet<void>(
         context: context,
-        showDragHandle: true,
         isScrollControlled: true,
+        enableDrag: false,
+        backgroundColor: Colors.transparent,
         builder: (sheetContext) {
           final strings = AppStrings.of(sheetContext);
           final selected = sheetContext.watch<HouseholdProvider>().languageCode;
-          return SafeArea(
-            child: SizedBox(
-              height: MediaQuery.sizeOf(sheetContext).height * .72,
-              child: ListView(
-                key: const Key('language-picker-scroll'),
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
-                children: [
-                  Text(strings.tr('language'),
-                      style: Theme.of(sheetContext).textTheme.headlineSmall),
-                  const SizedBox(height: 8),
-                  for (final entry in AppStrings.supportedLanguages.entries)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: ListTile(
-                        key: Key('language-option-${entry.key}'),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(
-                              color: selected == entry.key
-                                  ? AppColors.twilight
-                                  : AppColors.mist),
-                        ),
-                        tileColor: selected == entry.key
-                            ? AppColors.mist
-                            : Colors.white,
-                        leading: Icon(
-                            selected == entry.key
-                                ? Icons.check_circle_rounded
-                                : Icons.circle_outlined,
-                            color: AppColors.twilight),
-                        title: Text(entry.value,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w800)),
-                        trailing: Text(entry.key.toUpperCase(),
-                            style: const TextStyle(
-                                color: AppColors.muted,
-                                fontWeight: FontWeight.w800)),
-                        onTap: () async {
-                          await sheetContext
-                              .read<HouseholdProvider>()
-                              .setLanguage(entry.key);
-                          if (sheetContext.mounted) Navigator.pop(sheetContext);
-                        },
+          return PullToDismissSheet(
+            heightFactor: .78,
+            dragHandleKey: const Key('language-drag-handle'),
+            child: ListView(
+              key: const Key('language-picker-scroll'),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
+              children: [
+                Text(strings.tr('language'),
+                    style: Theme.of(sheetContext).textTheme.headlineSmall),
+                const SizedBox(height: 8),
+                for (final entry in AppStrings.supportedLanguages.entries)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: ListTile(
+                      key: Key('language-option-${entry.key}'),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                            color: selected == entry.key
+                                ? AppColors.twilight
+                                : AppColors.mist),
                       ),
+                      tileColor:
+                          selected == entry.key ? AppColors.mist : Colors.white,
+                      leading: Icon(
+                          selected == entry.key
+                              ? Icons.check_circle_rounded
+                              : Icons.circle_outlined,
+                          color: AppColors.twilight),
+                      title: Text(entry.value,
+                          style: const TextStyle(fontWeight: FontWeight.w800)),
+                      trailing: Text(entry.key.toUpperCase(),
+                          style: const TextStyle(
+                              color: AppColors.muted,
+                              fontWeight: FontWeight.w800)),
+                      onTap: () async {
+                        await sheetContext
+                            .read<HouseholdProvider>()
+                            .setLanguage(entry.key);
+                        if (sheetContext.mounted) Navigator.pop(sheetContext);
+                      },
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           );
         },

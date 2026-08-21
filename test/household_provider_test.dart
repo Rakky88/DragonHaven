@@ -62,6 +62,15 @@ void main() {
     expect(restored.soundEffectsEnabled, isFalse);
   });
 
+  test('the preferred achievement view persists', () async {
+    final game = HouseholdProvider(random: Random(29));
+    expect(game.achievementsCompact, isFalse);
+    await game.setAchievementsCompact(true);
+
+    final restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.achievementsCompact, isTrue);
+  });
+
   test('dismissed Short Adventures refill one slot after a full hour',
       () async {
     var now = DateTime(2026, 8, 21, 10, 15);

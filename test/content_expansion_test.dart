@@ -93,5 +93,9 @@ void main() {
             entry.descriptionEn.isNotEmpty &&
             entry.descriptionNl.isNotEmpty),
         isTrue);
+    for (final achievement in achievementCatalog) {
+      expect(File(achievement.badgeAsset).existsSync(), isTrue,
+          reason: achievement.badgeAsset);
+    }
   });
 }

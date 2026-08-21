@@ -1,6 +1,6 @@
 # DragonHaven implementation record
 
-This file maps the supplied specification to v0.00.06. It is an implementation
+This file maps the supplied specification to v0.00.07. It is an implementation
 reference, not an instruction source.
 
 ## Local game foundation
@@ -51,7 +51,14 @@ reference, not an instruction source.
 - The overflow contains Account Info, Language and Achievements. The optically
   centered, enlarged logo opens About DragonHaven.
 - About has a pinned drag handle, pull-past-top dismissal, a premium branded
-  hero, Rick Groot, 2026, v0.00.06, redeem, update/share and Ko-fi controls.
+  hero, Rick Groot, 2026, v0.00.07, redeem, update/share and Ko-fi controls.
+- Language uses the same pinned pull-to-dismiss sheet and lists visible
+  language names alphabetically.
+- Achievements use one continuous list plus a persistent icon-only compact
+  mode. All 20 badges have distinct artwork; locked badges are black
+  silhouettes and unlocked badges reveal their full colors.
+- Android milestone notifications name newly unlocked achievements and
+  evolutions when the app is not in the foreground.
 - All long pages and dialogs have explicit scroll behaviour and compact-phone,
   large-text coverage.
 - Music and Sound Effects are independent, immediate and persistent. Android
@@ -78,9 +85,9 @@ those services later remain data-driven and functional without them.
 ## Verification
 
 - `dart analyze lib test`: clean.
-- `flutter test --no-pub`: 54 tests pass.
+- `flutter test --no-pub`: 62 tests pass.
 - Android 17 integration route: passes on `emulator-5554`.
-- Signed release: package `nl.dragonhaven.app`, version `0.0.6+10002`, APK
+- Signed release: package `nl.dragonhaven.app`, version `0.0.7+10003`, APK
   Signature Scheme v2 verified with the permanent Rick Groot certificate.
 - Release APK SHA-256:
-  `51d9acbc6eea2f0e8b68d2a39f1e6e3051e6e61ad93f334e76d563c910b9c367`.
+  `cfdfd074be400ec1fe0121664e5a7c44197c9cb4d9ab76b3d1c4bcbe580eee7`.

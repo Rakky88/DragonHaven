@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:dragon_haven/models/dragon_lineage.dart';
+import 'package:dragon_haven/models/achievement.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/day_phase.dart';
 import 'package:dragon_haven/models/house.dart';
@@ -55,6 +56,17 @@ void _expectContained(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('all achievement badges are square, non-empty and safely contained',
+      () async {
+    for (final achievement in achievementCatalog) {
+      final image = await _decode(achievement.badgeAsset);
+      expect(image.width, 256, reason: achievement.badgeAsset);
+      expect(image.height, 256, reason: achievement.badgeAsset);
+      _expectContained(image.rgba, image.width, 0, 0, image.width, image.height,
+          achievement.badgeAsset);
+    }
+  });
 
   test('egg and every Hatchling sprite fit fully inside their image box',
       () async {

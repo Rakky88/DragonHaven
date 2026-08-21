@@ -20,6 +20,8 @@ class AchievementDefinition {
   final AchievementCategory category;
   final bool secret;
   final String badge;
+
+  String get badgeAsset => 'assets/images/achievements/$badge.png';
 }
 
 const achievementCatalog = <AchievementDefinition>[

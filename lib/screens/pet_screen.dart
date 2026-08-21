@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -95,15 +96,31 @@ class _EggCountdown extends StatefulWidget {
 }
 
 class _EggCountdownState extends State<_EggCountdown>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   Timer? _timer;
+  late final AnimationController _glowController;
   DateTime _now = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 6),
+    )..repeat();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _refresh());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _glowController.stop();
+      _glowController.value = 0;
+    } else if (!_glowController.isAnimating) {
+      _glowController.repeat();
+    }
   }
 
   @override
@@ -118,6 +135,7 @@ class _EggCountdownState extends State<_EggCountdown>
   @override
   void dispose() {
     _timer?.cancel();
+    _glowController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -130,75 +148,210 @@ class _EggCountdownState extends State<_EggCountdown>
     final remaining =
         hatchAt.isAfter(_now) ? hatchAt.difference(_now) : Duration.zero;
     final ready = remaining == Duration.zero;
+    final countdown = _countdownParts(remaining);
     return Semantics(
       liveRegion: true,
       label: ready
           ? strings.pick('Ready to hatch', 'Klaar om uit te komen')
           : strings.pick('Hatches in ${_countdown(remaining)}',
               'Komt uit over ${_countdown(remaining)}'),
-      child: Container(
-        key: const Key('egg-hatch-countdown'),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: ready ? AppColors.goldLight : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: ready ? AppColors.gold : AppColors.mist,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              ready
-                  ? Icons.auto_awesome_rounded
-                  : Icons.hourglass_bottom_rounded,
-              color: AppColors.twilight,
-            ),
-            const SizedBox(width: 11),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    ready
-                        ? strings.pick(
-                            'Ready to hatch', 'Klaar om uit te komen')
-                        : strings.pick('Hatches in', 'Komt uit over'),
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
+      child: Center(
+        child: AnimatedBuilder(
+          animation: _glowController,
+          builder: (context, child) {
+            final wave =
+                (math.sin(_glowController.value * math.pi * 2) + 1) / 2;
+            return Container(
+              key: const Key('egg-hatch-countdown'),
+              width: 330,
+              height: 94,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: ready
+                      ? const [Color(0xFF4A276A), Color(0xFF8E5E28)]
+                      : const [Color(0xFF251A4D), Color(0xFF5B3E91)],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (ready ? AppColors.gold : AppColors.twilight)
+                        .withValues(alpha: .22 + wave * .14),
+                    blurRadius: 18 + wave * 8,
+                    spreadRadius: wave * 1.5,
+                    offset: const Offset(0, 7),
                   ),
-                  if (!ready)
-                    Text(
-                      _countdown(remaining),
-                      key: const Key('egg-hatch-countdown-value'),
-                      style: const TextStyle(
-                        color: AppColors.twilightDark,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: .7,
-                        fontFeatures: [FontFeature.tabularFigures()],
-                      ),
-                    ),
                 ],
               ),
-            ),
-          ],
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: CustomPaint(
+                  painter: _CountdownFramePainter(
+                    progress: _glowController.value,
+                    ready: ready,
+                  ),
+                  child: Center(child: child),
+                ),
+              ),
+            );
+          },
+          child: Row(
+            key: const Key('egg-hatch-countdown-value'),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _CountdownUnit(value: countdown.$1),
+              const _CountdownColon(),
+              _CountdownUnit(value: countdown.$2),
+              const _CountdownColon(),
+              _CountdownUnit(value: countdown.$3),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-String _countdown(Duration duration) {
+class _CountdownUnit extends StatelessWidget {
+  const _CountdownUnit({required this.value});
+
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return Container(
+      width: 67,
+      height: 57,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(17),
+        color: Colors.white.withValues(alpha: .09),
+        border: Border.all(color: Colors.white.withValues(alpha: .16)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .14),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: AnimatedSwitcher(
+        duration:
+            reduceMotion ? Duration.zero : const Duration(milliseconds: 360),
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, .22),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          ),
+        ),
+        child: ShaderMask(
+          key: ValueKey(value),
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (bounds) => const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.white, Color(0xFFFFE39A)],
+          ).createShader(bounds),
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 29,
+              height: 1,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CountdownColon extends StatelessWidget {
+  const _CountdownColon();
+
+  @override
+  Widget build(BuildContext context) => const SizedBox(
+        width: 22,
+        child: Text(
+          ':',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppColors.goldLight,
+            fontSize: 26,
+            height: 1,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      );
+}
+
+class _CountdownFramePainter extends CustomPainter {
+  const _CountdownFramePainter({required this.progress, required this.ready});
+
+  final double progress;
+  final bool ready;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final frame = RRect.fromRectAndRadius(
+      rect.deflate(1.5),
+      const Radius.circular(27),
+    );
+    final borderPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..shader = SweepGradient(
+        transform: GradientRotation(progress * math.pi * 2),
+        colors: ready
+            ? const [Color(0x55F4C95D), Color(0xFFFFE39A), Color(0x55F4C95D)]
+            : const [Color(0x337B61C9), Color(0xFFFFE39A), Color(0x337B61C9)],
+      ).createShader(rect, textDirection: TextDirection.ltr);
+    canvas.drawRRect(frame, borderPaint);
+
+    final glowCenter = Offset(
+      size.width * (.18 + .64 * ((math.sin(progress * math.pi * 2) + 1) / 2)),
+      size.height * .12,
+    );
+    final glowPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          (ready ? AppColors.gold : const Color(0xFFBCA8FF))
+              .withValues(alpha: .22),
+          Colors.transparent,
+        ],
+      ).createShader(Rect.fromCircle(center: glowCenter, radius: 86));
+    canvas.drawRect(rect, glowPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CountdownFramePainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.ready != ready;
+}
+
+(String, String, String) _countdownParts(Duration duration) {
   final totalSeconds = duration.inSeconds.clamp(0, 14 * 24 * 60 * 60).toInt();
   final hours = totalSeconds ~/ 3600;
   final minutes = (totalSeconds % 3600) ~/ 60;
   final seconds = totalSeconds % 60;
   String two(int value) => value.toString().padLeft(2, '0');
-  return '${two(hours)}:${two(minutes)}:${two(seconds)}';
+  return (two(hours), two(minutes), two(seconds));
+}
+
+String _countdown(Duration duration) {
+  final parts = _countdownParts(duration);
+  return '${parts.$1}:${parts.$2}:${parts.$3}';
 }
 
 Future<void> _talk(BuildContext context, Pet pet) async {

@@ -1,10 +1,13 @@
 import 'dart:math';
 
 import 'package:dragon_haven/dragonhaven_app.dart';
+import 'package:dragon_haven/l10n/app_strings.dart';
+import 'package:dragon_haven/models/achievement.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/screens/achievements_screen.dart';
+import 'package:dragon_haven/widgets/achievement_badge_sprite.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +16,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  test('language names are presented alphabetically', () {
+    expect(
+      AppStrings.supportedLanguages.values,
+      const [
+        'Deutsch',
+        'English',
+        'Español',
+        'Français',
+        'Italiano',
+        'Nederlands',
+        'Português',
+        '中文',
+        '日本語',
+      ],
+    );
+  });
 
   Future<HouseholdProvider> pumpGame(
     WidgetTester tester, {
@@ -80,6 +100,32 @@ void main() {
     await tester.tap(find.byKey(const Key('mysterious-egg-hint')));
     await tester.pump();
     expect(find.text(game.eggHint(isDutch: false)), findsOneWidget);
+  });
+
+  testWidgets('the animated egg timer stays centered on a compact screen',
+      (tester) async {
+    tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    tester.platformDispatcher.textScaleFactorTestValue = 1.35;
+    addTearDown(() {
+      tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue();
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+    });
+
+    await pumpGame(
+      tester,
+      onboarded: true,
+      surfaceSize: const Size(320, 900),
+    );
+
+    final timer = find.byKey(const Key('egg-hatch-countdown'));
+    final timerRect = tester.getRect(timer);
+    expect(timerRect.center.dx, closeTo(160, .5));
+    expect(timerRect.left, greaterThanOrEqualTo(0));
+    expect(timerRect.right, lessThanOrEqualTo(320));
+    expect(find.byIcon(Icons.hourglass_bottom_rounded), findsNothing);
+    expect(find.text('Hatches in'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('audio controls remain independent on a compact screen',
@@ -268,6 +314,70 @@ void main() {
         reason: error is FlutterError ? error.toStringDeep() : '$error');
   });
 
+  testWidgets('the language sheet pins its handle and pulls closed',
+      (tester) async {
+    await pumpGame(tester, onboarded: true, hatched: true);
+    await tester.tap(find.byKey(const Key('app-overflow-menu')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('app-menu-language')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final handle = find.byKey(const Key('language-drag-handle'));
+    final scroll = find.byKey(const Key('language-picker-scroll'));
+    final handleTop = tester.getTopLeft(handle).dy;
+    await tester.drag(scroll, const Offset(0, -500));
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(tester.getTopLeft(handle).dy, closeTo(handleTop, .5));
+
+    await tester.fling(scroll, const Offset(0, 1800), 2400);
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(find.byKey(const Key('language-picker-scroll')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('achievements switch between one list and an icon-only grid',
+      (tester) async {
+    final game = await pumpGame(tester, onboarded: true, hatched: true);
+    game.unlockedAchievementIds.add(achievementCatalog.first.id);
+    game.notifyListeners();
+    final shellContext = tester.element(find.byType(Scaffold).first);
+    Navigator.of(shellContext).push(MaterialPageRoute<void>(
+      builder: (_) => const AchievementsScreen(),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump();
+
+    expect(find.text('Starter'), findsNothing);
+    expect(find.text('Easy'), findsNothing);
+    expect(find.text('Challenging'), findsNothing);
+    expect(find.text('Master'), findsNothing);
+    expect(find.byType(AchievementBadgeSprite), findsWidgets);
+    final lockedSprite =
+        find.byKey(Key('achievement-sprite-${achievementCatalog[1].id}'));
+    expect(
+      find.ancestor(of: lockedSprite, matching: find.byType(ColorFiltered)),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('achievements-view-toggle')));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(game.achievementsCompact, isTrue);
+    expect(find.byKey(const Key('achievements-compact-grid')), findsOneWidget);
+    expect(find.byType(AchievementBadgeSprite),
+        findsNWidgets(achievementCatalog.length));
+    expect(find.text('Hello, Little One!'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('achievements-view-toggle')));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(game.achievementsCompact, isFalse);
+    expect(find.text('Hello, Little One!'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('tapping the logo opens the complete About panel',
       (tester) async {
     await pumpGame(tester, onboarded: true);
@@ -278,7 +388,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.00.06'), findsOneWidget);
+    expect(find.text('v0.00.07'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);
