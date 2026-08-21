@@ -58,9 +58,9 @@ void main() {
     expect(find.byKey(const PageStorageKey('dragon-scroll')), findsOneWidget);
     expect(find.text('The tower nest'), findsOneWidget);
     expect(find.text('Rooftop Nest'), findsOneWidget);
-    expect(find.text('Play'), findsOneWidget);
-    expect(find.text('Rest'), findsOneWidget);
-    expect(find.text('Care'), findsOneWidget);
+    expect(find.text('Play'), findsNothing);
+    expect(find.text('Rest'), findsNothing);
+    expect(find.text('Care'), findsNothing);
     expect(find.text('The surprise is already decided'), findsNothing);
     expect(find.text('Clues from the shell'), findsNothing);
     expect(find.text('Care for the egg'), findsNothing);
@@ -155,16 +155,50 @@ void main() {
       (tester) async {
     await pumpGame(tester, onboarded: true);
     await tester.tap(find.byKey(const Key('app-logo-about-button')));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.00.04'), findsOneWidget);
+    expect(find.text('v0.00.05'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);
     expect(find.textContaining('currently stay on this device'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the About handle stays pinned while its content scrolls',
+      (tester) async {
+    await pumpGame(tester, onboarded: true);
+    await tester.tap(find.byKey(const Key('app-logo-about-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final handle = find.byKey(const Key('about-drag-handle'));
+    final initialTop = tester.getTopLeft(handle).dy;
+    await tester.drag(
+        find.byKey(const Key('about-scroll')), const Offset(0, -600));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(tester.getTopLeft(handle).dy, closeTo(initialTop, 0.1));
+    expect(find.byKey(const Key('about-scroll')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('pulling past the top dismisses the About sheet', (tester) async {
+    await pumpGame(tester, onboarded: true);
+    await tester.tap(find.byKey(const Key('app-logo-about-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    await tester.drag(
+        find.byKey(const Key('about-scroll')), const Offset(0, 180));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byKey(const Key('about-drag-handle')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

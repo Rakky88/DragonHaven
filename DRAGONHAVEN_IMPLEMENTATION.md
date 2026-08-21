@@ -35,7 +35,7 @@ This file records how the supplied DragonHaven specification maps to the current
 
 - Egg phase has no bottom navigation. After hatch the five destinations are Adventure, Dragon Tower, Friends, Stash and Shop.
 - Overflow contains Account Info, Language and Achievements. The logo opens About DragonHaven.
-- About contains logo, Rick Groot, 2026, v0.00.04, redeem code, update/share and Ko-fi controls.
+- About contains logo, Rick Groot, 2026, v0.00.05, redeem code, update/share and Ko-fi controls.
 - Music and Sound Effects are independent, immediate and persistent.
 - English is the first-install default. English and Dutch cover detailed gameplay content; the seven other selectable languages cover the core navigation/UI and fall back to English where detailed copy has not been translated yet.
 

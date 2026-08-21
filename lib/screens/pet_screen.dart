@@ -46,10 +46,6 @@ class PetScreen extends StatelessWidget {
         if (!pet.isEgg) ...[
           const SizedBox(height: 18),
           _DragonNeedsPanel(pet: pet),
-        ],
-        const SizedBox(height: 18),
-        _CarePanel(pet: pet),
-        if (!pet.isEgg) ...[
           const SizedBox(height: 10),
           OutlinedButton.icon(
             key: const Key('talk-to-dragon'),
@@ -229,87 +225,6 @@ class _DragonNeedsPanel extends StatelessWidget {
           AppStrings.of(context).pick('A soft glow fills every wellbeing bar.',
               'Een zachte gloed vult elke welzijnsbalk.'));
     }
-  }
-}
-
-class _CarePanel extends StatelessWidget {
-  const _CarePanel({required this.pet});
-  final Pet pet;
-  @override
-  Widget build(BuildContext context) {
-    final strings = AppStrings.of(context);
-    final now = DateTime.now();
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(17),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          if (!pet.isEgg) ...[
-            Text(strings.pick('Spend time together', 'Breng tijd samen door'),
-                style:
-                    const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
-            const SizedBox(height: 5),
-            Text(
-                strings.pick('Each action rests for four hours after use.',
-                    'Elke actie rust vier uur na gebruik.'),
-                style: const TextStyle(color: AppColors.muted, fontSize: 12)),
-            const SizedBox(height: 12),
-          ],
-          Row(children: [
-            for (final action in DragonCareAction.values) ...[
-              Expanded(
-                  child: _CareButton(
-                      action: action,
-                      enabled: pet.canCare(action, now),
-                      remaining: pet.careRemaining(action, now))),
-              if (action != DragonCareAction.values.last)
-                const SizedBox(width: 8),
-            ],
-          ]),
-        ]),
-      ),
-    );
-  }
-}
-
-class _CareButton extends StatelessWidget {
-  const _CareButton(
-      {required this.action, required this.enabled, required this.remaining});
-  final DragonCareAction action;
-  final bool enabled;
-  final Duration remaining;
-  @override
-  Widget build(BuildContext context) {
-    final strings = AppStrings.of(context);
-    final (icon, en, nl) = switch (action) {
-      DragonCareAction.play => (Icons.toys_rounded, 'Play', 'Spelen'),
-      DragonCareAction.rest => (Icons.bedtime_rounded, 'Rest', 'Rusten'),
-      DragonCareAction.care => (Icons.favorite_rounded, 'Care', 'Zorgen'),
-    };
-    return OutlinedButton(
-      onPressed: enabled ? () => _care(context) : null,
-      style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 11)),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 20),
-        const SizedBox(height: 4),
-        Text(strings.pick(en, nl), maxLines: 1),
-        if (!enabled)
-          Text('${remaining.inHours + 1}h', style: const TextStyle(fontSize: 9))
-      ]),
-    );
-  }
-
-  Future<void> _care(BuildContext context) async {
-    final ok = await context.read<HouseholdProvider>().careForPet(action);
-    if (!context.mounted) return;
-    showAppSnackBar(
-        context,
-        ok
-            ? AppStrings.of(context).pick('A gentle moment, safely saved.',
-                'Een zacht moment, veilig opgeslagen.')
-            : AppStrings.of(context).pick(
-                'This care action needs a little more rest.',
-                'Deze verzorgingsactie moet nog even rusten.'));
   }
 }
 

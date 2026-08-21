@@ -22,12 +22,8 @@ void main() {
     expect(restored.stage, DragonStage.egg);
   });
 
-  test('the first egg needs care, experience and a complete day', () {
+  test('the first egg hatches after a complete day without care buttons', () {
     final egg = Pet(acquiredAt: start, stageStartedAt: start, hatchSeed: 1);
-    for (final action in DragonCareAction.values) {
-      expect(egg.careFor(action, start), isTrue);
-    }
-    egg.xp = Pet.hatchXpFirst;
 
     expect(egg.canHatch(start.add(const Duration(hours: 23))), isFalse);
     expect(egg.canHatch(start.add(const Duration(days: 1))), isTrue);
