@@ -32,8 +32,6 @@ void main() {
   test('later eggs use their fixed two-to-fourteen-day incubation roll', () {
     final egg = Pet(
       firstEgg: false,
-      careScore: 999,
-      careActions: 99,
       xp: Pet.hatchXpLater,
       acquiredAt: start,
       stageStartedAt: start,
@@ -73,22 +71,6 @@ void main() {
 
     dragon.addTraining(TrainingFocus.might, 500);
     expect(dragon.activeEvolutionPath, 'arcana');
-  });
-
-  test('care actions have independent four-hour cooldowns', () {
-    final dragon = Pet(
-      stage: DragonStage.hatchling,
-      acquiredAt: start,
-      stageStartedAt: start,
-      hatchSeed: 4,
-    );
-    expect(dragon.careFor(DragonCareAction.play, start), isTrue);
-    expect(dragon.careFor(DragonCareAction.play, start), isFalse);
-    expect(dragon.careFor(DragonCareAction.rest, start), isTrue);
-    expect(
-        dragon.careFor(
-            DragonCareAction.play, start.add(const Duration(hours: 4))),
-        isTrue);
   });
 
   test('legacy evolution values migrate to the new training paths', () {

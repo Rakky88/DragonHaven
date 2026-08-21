@@ -299,6 +299,7 @@ class _HouseScreenState extends State<HouseScreen> {
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
+            scrollable: true,
             icon: Icon(_roomIcon(room.id), color: AppColors.twilight),
             title: Text(strings.roomName(room)),
             content: Text(strings.pick(
@@ -352,6 +353,7 @@ class _HouseScreenState extends State<HouseScreen> {
                 maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.85,
               ),
               child: SingleChildScrollView(
+                key: const Key('room-overview-scroll'),
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -548,6 +550,9 @@ class _HouseRoomScene extends StatelessWidget {
                         fit: BoxFit.cover,
                       ),
                     ),
+                    const Positioned.fill(
+                      child: IgnorePointer(child: _RoomPhaseAtmosphere()),
+                    ),
                     if (room.tintValue != 0)
                       Positioned.fill(
                         child: ColoredBox(color: Color(room.tintValue)),
@@ -641,6 +646,147 @@ class _HouseRoomScene extends StatelessWidget {
           },
         ),
       );
+}
+
+class _RoomPhaseAtmosphere extends StatelessWidget {
+  const _RoomPhaseAtmosphere();
+
+  @override
+  Widget build(BuildContext context) => HavenClockBuilder(
+        builder: (context, now, _) {
+          final lighting = havenLightingAt(now);
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              _RoomAtmosphereLayer(phase: lighting.from),
+              if (lighting.from != lighting.to)
+                Opacity(
+                  opacity: lighting.progress,
+                  child: _RoomAtmosphereLayer(phase: lighting.to),
+                ),
+            ],
+          );
+        },
+      );
+}
+
+class _RoomAtmosphereLayer extends StatelessWidget {
+  const _RoomAtmosphereLayer({required this.phase});
+
+  final HavenDayPhase phase;
+
+  @override
+  Widget build(BuildContext context) {
+    final gradient = switch (phase) {
+      HavenDayPhase.deepNight => const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0x55211D54), Color(0x1A11122D), Color(0x33211B42)],
+          stops: [0, .55, 1],
+        ),
+      HavenDayPhase.dawn => const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0x55426A9E), Color(0x18B8D9E8), Color(0x33FFBD8A)],
+        ),
+      HavenDayPhase.morning => const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0x2BCEF2FF), Color(0x08FFFFFF), Colors.transparent],
+        ),
+      HavenDayPhase.day => const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0x12FFFFFF), Colors.transparent],
+        ),
+      HavenDayPhase.goldenHour => const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0x4CFFD36A), Color(0x18FF995F), Colors.transparent],
+          stops: [0, .52, 1],
+        ),
+      HavenDayPhase.dusk => const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0x55452E79), Color(0x263E3B78), Color(0x26FF9B69)],
+        ),
+      HavenDayPhase.night => const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0x66302B70), Color(0x24201F4D), Color(0x3D15182F)],
+        ),
+    };
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        DecoratedBox(decoration: BoxDecoration(gradient: gradient)),
+        CustomPaint(painter: _RoomAtmospherePainter(phase)),
+      ],
+    );
+  }
+}
+
+class _RoomAtmospherePainter extends CustomPainter {
+  const _RoomAtmospherePainter(this.phase);
+
+  final HavenDayPhase phase;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (phase == HavenDayPhase.goldenHour || phase == HavenDayPhase.dawn) {
+      final beam = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: phase == HavenDayPhase.dawn
+              ? const [Color(0x44D9F2FF), Color(0x00D9F2FF)]
+              : const [Color(0x55FFE49B), Color(0x00FFE49B)],
+        ).createShader(Offset.zero & size);
+      final path = Path()
+        ..moveTo(0, 0)
+        ..lineTo(size.width * .48, 0)
+        ..lineTo(size.width * .72, size.height)
+        ..lineTo(size.width * .28, size.height)
+        ..close();
+      canvas.drawPath(path, beam);
+    }
+    if (phase == HavenDayPhase.dusk ||
+        phase == HavenDayPhase.night ||
+        phase == HavenDayPhase.deepNight) {
+      final strength = phase == HavenDayPhase.dusk ? .35 : .72;
+      final starPaint = Paint()
+        ..color = Colors.white.withValues(alpha: strength);
+      const points = [
+        Offset(.08, .12),
+        Offset(.20, .08),
+        Offset(.44, .15),
+        Offset(.69, .09),
+        Offset(.88, .18),
+        Offset(.78, .30),
+      ];
+      for (var index = 0; index < points.length; index++) {
+        canvas.drawCircle(
+          Offset(points[index].dx * size.width, points[index].dy * size.height),
+          index.isEven ? 1.2 : .8,
+          starPaint,
+        );
+      }
+    }
+    if (phase == HavenDayPhase.dusk || phase == HavenDayPhase.night) {
+      for (final point in const [Offset(.18, .42), Offset(.82, .37)]) {
+        final center = Offset(point.dx * size.width, point.dy * size.height);
+        final glow = Paint()
+          ..shader = RadialGradient(
+            colors: const [Color(0x55FFD078), Color(0x00FFD078)],
+          ).createShader(Rect.fromCircle(center: center, radius: 34));
+        canvas.drawCircle(center, 34, glow);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _RoomAtmospherePainter oldDelegate) =>
+      oldDelegate.phase != phase;
 }
 
 Offset _idlePosition(Pet dragon, int index) {
@@ -1064,6 +1210,7 @@ class _InventoryPanel extends StatelessWidget {
             SizedBox(
               height: largeText ? 110 : 88,
               child: ListView.separated(
+                key: const PageStorageKey('room-inventory-scroll'),
                 scrollDirection: Axis.horizontal,
                 itemCount: items.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 8),

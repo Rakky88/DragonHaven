@@ -1,7 +1,7 @@
 name: dragon_haven
 description: Collect dragons, grow the Dragon Tower and fill the Draconomicon.
 publish_to: 'none'
-version: 0.0.5+10001
+version: 0.0.6+10002
 environment:
   sdk: '>=3.3.0 <4.0.0'
 
@@ -28,7 +28,6 @@ flutter:
     - assets/images/dragonhaven_logo.png
     - assets/images/hatch_reveal_background.webp
     - assets/images/evolution_reveal_background.webp
-    - assets/images/tower_nest.webp
     - assets/images/tower_nest_deep_night.webp
     - assets/images/tower_nest_dawn.webp
     - assets/images/tower_nest_morning.webp

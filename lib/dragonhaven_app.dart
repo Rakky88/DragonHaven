@@ -93,33 +93,62 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     ];
     return Scaffold(
       appBar: AppBar(
-        leadingWidth: 56,
+        toolbarHeight: 68,
+        leadingWidth: 66,
+        titleSpacing: 2,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  Color(0x55F4C95D),
+                  Color(0x335B4B8A),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+        ),
         leading: IconButton(
           key: const Key('app-logo-about-button'),
           tooltip: strings.pick('About DragonHaven', 'Over DragonHaven'),
           onPressed: () => showDragonHavenAboutSheet(context),
-          padding: const EdgeInsets.fromLTRB(10, 5, 4, 5),
-          icon: Image.asset('assets/images/dragonhaven_logo.png',
-              width: 42, height: 42, fit: BoxFit.contain),
-        ),
-        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('DragonHaven',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -.3)),
-          Text(
-            eggOnly
-                ? strings.pick('Rooftop Nest', 'Daknest')
-                : _screenTitle(_index, strings),
-            style: const TextStyle(
-                fontSize: 10,
-                color: AppColors.muted,
-                fontWeight: FontWeight.w700),
+          padding: const EdgeInsets.fromLTRB(9, 7, 5, 7),
+          icon: Container(
+            width: 48,
+            height: 48,
+            padding: const EdgeInsets.all(2),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(color: const Color(0xFFFFD76A), width: 1.5),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x225B4B8A),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Transform.translate(
+              offset: const Offset(.7, 0),
+              child: Image.asset(
+                'assets/images/dragonhaven_logo.png',
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+              ),
+            ),
           ),
-        ]),
+        ),
+        title: _DragonHavenBrandTitle(
+          subtitle: eggOnly
+              ? strings.pick('Rooftop Nest', 'Daknest')
+              : _screenTitle(_index, strings),
+        ),
         actions: [
           if (!eggOnly) ...[
             _TopCurrency(
@@ -133,6 +162,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
             onSelected: _handleMenuAction,
             itemBuilder: (_) => [
               PopupMenuItem(
+                key: const Key('app-menu-account'),
                 value: _HavenMenuAction.account,
                 child: _MenuRow(
                     icon: Icons.person_rounded, label: strings.tr('account')),
@@ -146,6 +176,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                     trailing: game.languageCode.toUpperCase()),
               ),
               PopupMenuItem(
+                key: const Key('app-menu-achievements'),
                 value: _HavenMenuAction.achievements,
                 child: _MenuRow(
                     icon: Icons.emoji_events_rounded,
@@ -231,6 +262,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
             child: SizedBox(
               height: MediaQuery.sizeOf(sheetContext).height * .72,
               child: ListView(
+                key: const Key('language-picker-scroll'),
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
                 children: [
                   Text(strings.tr('language'),
@@ -279,6 +311,69 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       );
 }
 
+class _DragonHavenBrandTitle extends StatelessWidget {
+  const _DragonHavenBrandTitle({required this.subtitle});
+
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text.rich(
+            const TextSpan(
+              children: [
+                TextSpan(text: 'Dragon'),
+                TextSpan(
+                  text: 'Haven',
+                  style: TextStyle(color: AppColors.twilight),
+                ),
+              ],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.ink,
+              fontSize: 19,
+              height: 1,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -.65,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 5,
+                height: 5,
+                decoration: const BoxDecoration(
+                  color: AppColors.gold,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  subtitle.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 9,
+                    height: 1,
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: .75,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+}
+
 class _MenuRow extends StatelessWidget {
   const _MenuRow({required this.icon, required this.label, this.trailing});
   final IconData icon;
@@ -303,14 +398,20 @@ class _TopCurrency extends StatelessWidget {
   final IconData icon;
   final int value;
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(right: 4),
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(right: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(99),
+          border: Border.all(color: AppColors.mist),
+        ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 16, color: AppColors.twilight),
-          const SizedBox(width: 2),
+          Icon(icon, size: 15, color: AppColors.twilight),
+          const SizedBox(width: 3),
           Text('$value',
               style:
-                  const TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
+                  const TextStyle(fontSize: 10, fontWeight: FontWeight.w900)),
         ]),
       );
 }

@@ -318,7 +318,7 @@ DragonDialogueLine dialogueFor(Pet pet, DateTime now) {
                   ? DragonDialogueTone.proud
                   : DragonDialogueTone.adventurous;
   final candidates = stageLines.where((line) => line.tone == tone).toList();
-  final index = (pet.hatchSeed + pet.careActions * 7 + now.minute)
+  final index = (pet.hatchSeed + pet.xp * 7 + now.minute)
       .abs()
       .remainder(candidates.length);
   return candidates[index];

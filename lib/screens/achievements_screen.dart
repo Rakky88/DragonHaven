@@ -18,6 +18,7 @@ class AchievementsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(strings.tr('achievements'))),
       body: ListView(
+        key: const PageStorageKey('achievements-scroll'),
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
         children: [
           Card(
@@ -28,11 +29,18 @@ class AchievementsScreen extends StatelessWidget {
                 const Icon(Icons.emoji_events_rounded,
                     color: Color(0xFFFFD568), size: 36),
                 const SizedBox(width: 14),
-                Text('${game.unlockedAchievementIds.length} / 20 unlocked',
+                Expanded(
+                  child: Text(
+                    '${game.unlockedAchievementIds.length} / 20 unlocked',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900)),
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
               ]),
             ),
           ),
@@ -74,7 +82,7 @@ class _AchievementTile extends StatelessWidget {
           backgroundColor:
               unlocked ? const Color(0xFFFFE5A6) : const Color(0xFFCCC8D2),
           child: Icon(
-            unlocked ? Icons.emoji_events_rounded : Icons.lock_rounded,
+            hidden ? Icons.question_mark_rounded : _badgeIcon(achievement.id),
             color: unlocked ? const Color(0xFF9A6A00) : AppColors.muted,
           ),
         ),
@@ -111,6 +119,30 @@ class _AchievementTile extends StatelessWidget {
     );
   }
 }
+
+IconData _badgeIcon(String id) => switch (id) {
+      'hello_little_one' => Icons.egg_alt_rounded,
+      'first_flight' => Icons.flight_takeoff_rounded,
+      'chest_expectations' => Icons.inventory_2_rounded,
+      'room_to_roost' => Icons.add_home_work_rounded,
+      'feed_furniture' => Icons.chair_alt_rounded,
+      'book_wyrm' => Icons.menu_book_rounded,
+      'growing_pains' => Icons.trending_up_rounded,
+      'not_picking_favorites' => Icons.favorite_rounded,
+      'halfway_clouds' => Icons.cloud_rounded,
+      'ascension_day' => Icons.auto_awesome_rounded,
+      'something_spectral' => Icons.blur_on_rounded,
+      'well_read_scaled' => Icons.auto_stories_rounded,
+      'frequent_flyer' => Icons.airplanemode_active_rounded,
+      'full_party' => Icons.groups_rounded,
+      'came_crawling_back' => Icons.u_turn_left_rounded,
+      'sky_ceiling' => Icons.vertical_align_top_rounded,
+      'scale_every_tale' => Icons.library_books_rounded,
+      'ghost_writer' => Icons.history_edu_rounded,
+      'myth_made_real' => Icons.workspace_premium_rounded,
+      'probably_fine' => Icons.local_fire_department_rounded,
+      _ => Icons.emoji_events_rounded,
+    };
 
 String _categoryName(AchievementCategory category, AppStrings strings) =>
     switch (category) {

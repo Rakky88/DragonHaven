@@ -40,7 +40,7 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Voltooi je eerste Short Adventure.',
       target: 1,
       category: AchievementCategory.easy,
-      badge: 'flight'),
+      badge: 'first_flight'),
   AchievementDefinition(
       id: 'chest_expectations',
       titleEn: 'Chest Expectations',
@@ -49,7 +49,7 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Open je eerste kist.',
       target: 1,
       category: AchievementCategory.easy,
-      badge: 'chest'),
+      badge: 'first_chest'),
   AchievementDefinition(
       id: 'room_to_roost',
       titleEn: 'Room to Roost',
@@ -58,7 +58,7 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Koop je eerste extra verdieping in de Dragon Tower.',
       target: 2,
       category: AchievementCategory.easy,
-      badge: 'tower'),
+      badge: 'first_floor'),
   AchievementDefinition(
       id: 'feed_furniture',
       titleEn: 'Do Not Feed the Furniture',
@@ -67,16 +67,16 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Plaats je eerste meubelstuk.',
       target: 1,
       category: AchievementCategory.easy,
-      badge: 'chair'),
+      badge: 'first_furniture'),
   AchievementDefinition(
       id: 'book_wyrm',
       titleEn: 'Book Wyrm',
       titleNl: 'Boekenwyrm',
-      descriptionEn: 'Discover 5 normal dragon families.',
-      descriptionNl: 'Ontdek 5 normale drakenfamilies.',
+      descriptionEn: 'Discover 5 Common dragon families.',
+      descriptionNl: 'Ontdek 5 Common-drakenfamilies.',
       target: 5,
       category: AchievementCategory.easy,
-      badge: 'book'),
+      badge: 'common_five'),
   AchievementDefinition(
       id: 'growing_pains',
       titleEn: 'Growing Pains',
@@ -85,7 +85,7 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Laat een Hatchling evolueren naar een Wyrmling.',
       target: 1,
       category: AchievementCategory.easy,
-      badge: 'spark'),
+      badge: 'first_evolution'),
   AchievementDefinition(
       id: 'not_picking_favorites',
       titleEn: 'Definitely Not Picking Favorites',
@@ -94,7 +94,7 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Markeer een draak als favoriet.',
       target: 1,
       category: AchievementCategory.easy,
-      badge: 'heart'),
+      badge: 'favorite'),
   AchievementDefinition(
       id: 'halfway_clouds',
       titleEn: 'Halfway to the Clouds',
@@ -103,7 +103,7 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Bouw 10 verdiepingen in de Dragon Tower.',
       target: 10,
       category: AchievementCategory.challenging,
-      badge: 'tower'),
+      badge: 'tower_ten'),
   AchievementDefinition(
       id: 'ascension_day',
       titleEn: 'Ascension Day',
@@ -112,7 +112,7 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Laat je eerste draak Ascended worden.',
       target: 1,
       category: AchievementCategory.challenging,
-      badge: 'ascend'),
+      badge: 'first_ascension'),
   AchievementDefinition(
       id: 'something_spectral',
       titleEn: 'Something Spectral This Way Comes',
@@ -121,16 +121,16 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Ontdek je eerste Spectral-draak.',
       target: 1,
       category: AchievementCategory.challenging,
-      badge: 'spectral'),
+      badge: 'first_spectral'),
   AchievementDefinition(
       id: 'well_read_scaled',
       titleEn: 'Well Read, Well Scaled',
       titleNl: 'Goed Gelezen, Goed Geschubd',
-      descriptionEn: 'Discover 20 normal dragon families.',
-      descriptionNl: 'Ontdek 20 normale drakenfamilies.',
+      descriptionEn: 'Discover all 20 Common dragon families.',
+      descriptionNl: 'Ontdek alle 20 Common-drakenfamilies.',
       target: 20,
       category: AchievementCategory.challenging,
-      badge: 'book'),
+      badge: 'common_all'),
   AchievementDefinition(
       id: 'frequent_flyer',
       titleEn: 'Frequent Flyer',
@@ -139,7 +139,7 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Voltooi 50 Adventures.',
       target: 50,
       category: AchievementCategory.challenging,
-      badge: 'flight'),
+      badge: 'fifty_flights'),
   AchievementDefinition(
       id: 'full_party',
       titleEn: 'Full Party, Full Send',
@@ -148,7 +148,7 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Voltooi een Group Adventure met 4 deelnemers.',
       target: 1,
       category: AchievementCategory.challenging,
-      badge: 'group'),
+      badge: 'full_group'),
   AchievementDefinition(
       id: 'came_crawling_back',
       titleEn: 'Look Who Came Crawling Back',
@@ -157,7 +157,7 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Krijg wekelijks bezoek van een vrijgelaten draak.',
       target: 1,
       category: AchievementCategory.challenging,
-      badge: 'return'),
+      badge: 'first_return'),
   AchievementDefinition(
       id: 'sky_ceiling',
       titleEn: 'The Sky Has a Ceiling After All',
@@ -166,16 +166,16 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Bereik 20 verdiepingen in de Dragon Tower.',
       target: 20,
       category: AchievementCategory.master,
-      badge: 'tower'),
+      badge: 'tower_twenty'),
   AchievementDefinition(
       id: 'scale_every_tale',
       titleEn: 'A Scale for Every Tale',
       titleNl: 'Een Schub voor Elk Verhaal',
-      descriptionEn: 'Discover all 42 normal dragon families.',
-      descriptionNl: 'Ontdek alle 42 normale drakenfamilies.',
+      descriptionEn: 'Discover all 42 dragon families.',
+      descriptionNl: 'Ontdek alle 42 drakenfamilies.',
       target: 42,
       category: AchievementCategory.master,
-      badge: 'book'),
+      badge: 'all_families'),
   AchievementDefinition(
       id: 'ghost_writer',
       titleEn: 'Ghost Writer',
@@ -184,7 +184,7 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Ontdek Spectral-vormen van 10 families.',
       target: 10,
       category: AchievementCategory.master,
-      badge: 'spectral'),
+      badge: 'spectral_ten'),
   AchievementDefinition(
       id: 'myth_made_real',
       titleEn: 'Myth Made Real',
@@ -193,7 +193,7 @@ const achievementCatalog = <AchievementDefinition>[
       descriptionNl: 'Verkrijg een draak uit de Mythical-familie.',
       target: 1,
       category: AchievementCategory.master,
-      badge: 'myth'),
+      badge: 'mythical_family'),
   AchievementDefinition(
       id: 'probably_fine',
       titleEn: 'This Is Probably Fine',
@@ -203,5 +203,5 @@ const achievementCatalog = <AchievementDefinition>[
       target: 1,
       category: AchievementCategory.master,
       secret: true,
-      badge: 'sinister'),
+      badge: 'sinister_secret'),
 ];

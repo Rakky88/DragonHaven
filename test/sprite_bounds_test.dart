@@ -3,7 +3,12 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:dragon_haven/models/dragon_lineage.dart';
+import 'package:dragon_haven/models/chest.dart';
+import 'package:dragon_haven/models/day_phase.dart';
+import 'package:dragon_haven/models/house.dart';
+import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
+import 'package:dragon_haven/widgets/furniture_art.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Future<({int width, int height, Uint8List rgba})> _decode(String path) async {
@@ -53,10 +58,11 @@ void main() {
 
   test('egg and every Hatchling sprite fit fully inside their image box',
       () async {
-    for (final path in [
+    for (final path in <String>[
       DragonArtwork.eggAsset,
       for (final lineage in dragonLineages)
         DragonArtwork.hatchlingAsset(lineage.id),
+      DragonArtwork.sinisterHatchlingAsset(),
     ]) {
       final image = await _decode(path);
       _expectContained(
@@ -76,6 +82,25 @@ void main() {
           _expectContained(image.rgba, image.width, x0, y0, x1, y1,
               '${lineage.id} frame ${row * 2 + column}');
         }
+      }
+    }
+
+    final sinister = await _decode(DragonArtwork.sinisterFormsAsset());
+    for (var row = 0; row < 2; row++) {
+      for (var column = 0; column < 2; column++) {
+        final x0 = (column * sinister.width / 2).round();
+        final x1 = ((column + 1) * sinister.width / 2).round();
+        final y0 = (row * sinister.height / 2).round();
+        final y1 = ((row + 1) * sinister.height / 2).round();
+        _expectContained(
+          sinister.rgba,
+          sinister.width,
+          x0,
+          y0,
+          x1,
+          y1,
+          'sinister frame ${row * 2 + column}',
+        );
       }
     }
   });
@@ -102,5 +127,52 @@ void main() {
         }
       }
     }
+  });
+
+  test(
+      'all standalone furniture and chest sprites have safe transparent bounds',
+      () async {
+    final paths = <String>{
+      for (final item in shopCatalog)
+        if (FurnitureArt.assetForItem(item.id) case final path?) path,
+      for (final tier in ChestTier.values) tier.assetPath,
+    };
+    expect(paths, hasLength(14));
+    for (final path in paths) {
+      final image = await _decode(path);
+      _expectContained(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        path,
+      );
+    }
+  });
+
+  test('every room and rooftop lighting render is present and visually unique',
+      () async {
+    final paths = <String>{
+      for (final room in houseRoomCatalog) ...{
+        room.backgroundAsset,
+        room.backgroundForPhase(HavenDayPhase.day),
+        room.backgroundForPhase(HavenDayPhase.night),
+      },
+      for (final phase in HavenDayPhase.values)
+        'assets/images/tower_nest_${phase.assetKey}.webp',
+    };
+    expect(paths, hasLength(31));
+    final fingerprints = <int>{};
+    for (final path in paths) {
+      final bytes = await File(path).readAsBytes();
+      final image = await _decode(path);
+      expect(image.width, greaterThanOrEqualTo(960), reason: path);
+      expect(image.height, greaterThanOrEqualTo(540), reason: path);
+      expect(image.width / image.height, greaterThan(1.15), reason: path);
+      fingerprints.add(Object.hash(bytes.length, Object.hashAll(bytes)));
+    }
+    expect(fingerprints, hasLength(paths.length));
   });
 }

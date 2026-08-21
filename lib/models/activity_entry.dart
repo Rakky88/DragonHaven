@@ -41,7 +41,7 @@ class ActivityEntry {
     final message =
         stringFromJson(json['message']) ?? 'Something happened in the nest.';
     final storedCode = enumByName(ActivityCode.values, json['code']);
-    final migration = _legacyTranslation(message);
+    final code = storedCode ?? ActivityCode.legacy;
     return ActivityEntry(
       id: nonEmptyStringFromJson(json['id']) ??
           DateTime.now().microsecondsSinceEpoch.toString(),
@@ -49,9 +49,9 @@ class ActivityEntry {
       createdAt: DateTime.tryParse(stringFromJson(json['createdAt']) ?? '') ??
           DateTime.now(),
       type: enumByName(ActivityType.values, json['type']) ??
-          _activityTypeFor(storedCode ?? migration.code),
-      code: storedCode ?? migration.code,
-      subject: stringFromJson(json['subject']) ?? migration.subject,
+          _activityTypeFor(code),
+      code: code,
+      subject: stringFromJson(json['subject']),
       xp: intFromJson(json['xp'], fallback: 0),
       coins: intFromJson(json['coins'], fallback: 0),
       gems: intFromJson(json['gems'], fallback: 0),
@@ -69,54 +69,6 @@ class ActivityEntry {
         'coins': coins,
         'gems': gems,
       };
-
-  static ({ActivityCode code, String? subject}) _legacyTranslation(
-      String message) {
-    if (message.startsWith('Nova is in het lege nest') ||
-        message.startsWith('Nova arrived in the empty nest')) {
-      return (code: ActivityCode.welcome, subject: null);
-    }
-    if (message.startsWith('Nova vond 5 sterrenmunten') ||
-        message.startsWith('Nova found 5 star coins')) {
-      return (code: ActivityCode.bonusFound, subject: null);
-    }
-    if (message.startsWith('Weekdoel gehaald') ||
-        message.startsWith('Weekly goal reached')) {
-      return (code: ActivityCode.legacy, subject: null);
-    }
-    for (final suffix in [' is verslagen.', ' was defeated.']) {
-      if (message.endsWith(suffix)) {
-        return (
-          code: ActivityCode.legacy,
-          subject: message.substring(0, message.length - suffix.length),
-        );
-      }
-    }
-    const itemNames = {
-      'Moskussen': 'moss_cushion',
-      'Moss cushion': 'moss_cushion',
-      'Wolkenmand': 'cloud_basket',
-      'Cloud basket': 'cloud_basket',
-      'Maanvaren': 'moon_fern',
-      'Moon fern': 'moon_fern',
-      'Sterrenbonsai': 'star_bonsai',
-      'Star bonsai': 'star_bonsai',
-      'Questkaart': 'spire_map',
-      'Quest map': 'spire_map',
-      'Maanvaandel': 'moon_banner',
-      'Moon banner': 'moon_banner',
-      'Vuurvlieglamp': 'firefly_lamp',
-      'Firefly lamp': 'firefly_lamp',
-      'Kristallantaarn': 'crystal_lantern',
-      'Crystal lantern': 'crystal_lantern',
-    };
-    for (final item in itemNames.entries) {
-      if (message.startsWith(item.key)) {
-        return (code: ActivityCode.itemPlaced, subject: item.value);
-      }
-    }
-    return (code: ActivityCode.legacy, subject: null);
-  }
 
   static ActivityType _activityTypeFor(ActivityCode code) => switch (code) {
         ActivityCode.activityCompleted => ActivityType.explore,

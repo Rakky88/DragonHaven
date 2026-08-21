@@ -42,7 +42,7 @@ class _ShopScreenState extends State<ShopScreen> {
           strings.itemDescription(item).toLowerCase().contains(normalizedQuery);
     }).toList();
     return CustomScrollView(
-      key: const PageStorageKey('shop-scroll'),
+      key: PageStorageKey('shop-${widget.currency.name}-scroll'),
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),

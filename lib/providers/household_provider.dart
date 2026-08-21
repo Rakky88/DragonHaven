@@ -11,7 +11,6 @@ import '../models/dragon_egg.dart';
 import '../models/dragon_lineage.dart';
 import '../models/house.dart';
 import '../models/pet.dart';
-import '../models/sanctuary_activity.dart';
 import '../models/shop_item.dart';
 import '../models/tower_interaction.dart';
 import '../services/storage_service.dart';
@@ -29,9 +28,6 @@ enum PurchaseResult {
   alreadyEquipped,
 }
 
-String _currentItemId(String storedId) =>
-    storedId == 'quest_map' ? 'spire_map' : storedId;
-
 double _dragonSizeFromRoll(double roll) =>
     1 + .5 * (roll >= .5 ? 1 : -1) * pow((2 * roll - 1).abs(), 2);
 
@@ -40,22 +36,6 @@ enum RoomUnlockResult {
   insufficientCoins,
   levelLocked,
   alreadyUnlocked
-}
-
-class ActivityReward {
-  const ActivityReward({
-    required this.activity,
-    required this.xp,
-    required this.coins,
-    required this.gems,
-    required this.chestFound,
-  });
-
-  final SanctuaryActivity activity;
-  final int xp;
-  final int coins;
-  final int gems;
-  final ChestTier? chestFound;
 }
 
 class HouseholdProvider extends ChangeNotifier {
@@ -84,12 +64,9 @@ class HouseholdProvider extends ChangeNotifier {
   Map<ChestTier, int> chestInventory = {
     for (final tier in ChestTier.values) tier: 0,
   };
-  Map<String, int> dailyActivityUses = {};
-  String activityDayKey = '';
   Set<String> discoveredForms = {};
   Set<String> prismaticForms = {};
   Set<String> unlockedAchievementIds = {};
-  int totalEggCare = 0;
   int totalHatched = 0;
   int totalNamed = 0;
   int totalWyrmling = 0;
@@ -128,7 +105,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 21;
+  static const _schemaVersion = 22;
 
   static Future<HouseholdProvider> loadFromStorage() async {
     final provider = HouseholdProvider(initialize: false);
@@ -141,8 +118,7 @@ class HouseholdProvider extends ChangeNotifier {
     try {
       provider._restore(data);
       final schemaChanged = data['schemaVersion'] != _schemaVersion;
-      final changed = provider._refreshDailyState() |
-          provider.pet.applyTimeDecay(provider._clock()) |
+      final changed = provider.pet.applyTimeDecay(provider._clock()) |
           provider._registerCurrentStage();
       provider._evaluateAchievements(addActivities: false);
       if (schemaChanged || changed) await provider._save();
@@ -187,7 +163,6 @@ class HouseholdProvider extends ChangeNotifier {
       acquiredAt: now,
       stageStartedAt: now,
     );
-    activityDayKey = _dayKey(now);
     unlockedRoomIds = {'nest', 'hearth'};
     towerFloorRoomIds = ['hearth'];
     activities = [
@@ -244,15 +219,9 @@ class HouseholdProvider extends ChangeNotifier {
           fallback: 0,
         ),
     };
-    dailyActivityUses = {
-      for (final entry in mapFromJson(data['dailyActivityUses']).entries)
-        entry.key: nonNegativeIntFromJson(entry.value, fallback: 0),
-    };
-    activityDayKey = stringFromJson(data['activityDayKey']) ?? '';
     discoveredForms = stringSetFromJson(data['discoveredForms']);
     prismaticForms = stringSetFromJson(data['prismaticForms']);
     unlockedAchievementIds = stringSetFromJson(data['achievements']);
-    totalEggCare = nonNegativeIntFromJson(data['totalEggCare'], fallback: 0);
     totalHatched = nonNegativeIntFromJson(data['totalHatched'],
         fallback: pet.isEgg ? 0 : 1);
     totalNamed = nonNegativeIntFromJson(data['totalNamed'],
@@ -347,14 +316,13 @@ class HouseholdProvider extends ChangeNotifier {
         stringFromJson(data['returningSpecialAvailableUntil']) ?? '');
 
     ownedItemIds = stringSetFromJson(data['ownedItemIds'])
-        .map(_currentItemId)
         .where((id) => shopItemById(id) != null)
         .toSet();
     final storedEquipped = mapFromJson(data['equippedItemIds']);
     equippedItemIds = {};
     for (final slot in ItemSlot.values) {
       final storedItemId = stringFromJson(storedEquipped[slot.name]);
-      final itemId = storedItemId == null ? null : _currentItemId(storedItemId);
+      final itemId = storedItemId;
       final item = itemId == null ? null : shopItemById(itemId);
       if (item != null && item.slot == slot) {
         ownedItemIds.add(item.id);
@@ -369,9 +337,7 @@ class HouseholdProvider extends ChangeNotifier {
     final placementsByItem = <String, HousePlacement>{};
     for (final entry in mapsFromJson(data['housePlacements'])) {
       final storedPlacement = HousePlacement.fromJson(entry);
-      final placement = storedPlacement.copyWith(
-        itemId: _currentItemId(storedPlacement.itemId),
-      );
+      final placement = storedPlacement;
       if (shopItemById(placement.itemId) == null ||
           !unlockedRoomIds.contains(placement.roomId)) {
         continue;
@@ -396,15 +362,19 @@ class HouseholdProvider extends ChangeNotifier {
     _trimActivities();
   }
 
-  int activityUsesRemaining(SanctuaryActivity activity) {
-    _refreshDailyState();
-    return max(0, activity.dailyUses - (dailyActivityUses[activity.id] ?? 0));
-  }
-
   int chestCount(ChestTier tier) => chestInventory[tier] ?? 0;
   int get totalChestCount => chestInventory.values.fold(0, (a, b) => a + b);
   int get discoveredLineageCount =>
       discoveredForms.map((key) => key.split(':').first).toSet().length;
+  int get discoveredCommonLineageCount {
+    final discoveredIds =
+        discoveredForms.map((key) => key.split(':').first).toSet();
+    return dragonLineages
+        .where((lineage) =>
+            lineage.rarity == DragonRarity.common &&
+            discoveredIds.contains(lineage.id))
+        .length;
+  }
 
   List<ShopItem> get equippedItems =>
       equippedItemIds.values.map(shopItemById).whereType<ShopItem>().toList();
@@ -426,64 +396,6 @@ class HouseholdProvider extends ChangeNotifier {
     if (normalized == languageCode) return;
     languageCode = normalized;
     await _notifyAndSave();
-  }
-
-  Future<bool> careForPet(DragonCareAction action) async {
-    final wasEgg = pet.isEgg;
-    if (!pet.careFor(action, _clock())) return false;
-    if (wasEgg) totalEggCare++;
-    _addActivity(
-      message: wasEgg
-          ? 'The Mysterious Egg responded to your care.'
-          : '${pet.displayName} enjoyed a quiet care moment.',
-      type: ActivityType.discovery,
-      code: ActivityCode.activityCompleted,
-      xp: wasEgg ? 12 : 10,
-    );
-    _evaluateAchievements();
-    await _notifyAndSave();
-    return true;
-  }
-
-  Future<ActivityReward?> performActivity(SanctuaryActivity activity) async {
-    _refreshDailyState();
-    if (activityUsesRemaining(activity) <= 0) return null;
-    dailyActivityUses.update(activity.id, (value) => value + 1,
-        ifAbsent: () => 1);
-    pet.xp += activity.xp;
-    pet.coins += activity.coins;
-    if (!pet.isEgg && activity.trainingFocus != null) {
-      pet.addTraining(activity.trainingFocus!, activity.trainingPoints);
-    }
-    if (pet.isEgg && activity.id == 'nest_tending') {
-      pet.careScore += 10;
-      pet.careActions++;
-      totalEggCare++;
-    }
-    final gems = _random.nextDouble() < activity.gemChance ? 1 : 0;
-    pet.gems += gems;
-    ChestTier? chest;
-    if (_random.nextDouble() < activity.chestChance) {
-      chest = _rollChestTier();
-      chestInventory.update(chest, (value) => value + 1, ifAbsent: () => 1);
-    }
-    _addActivity(
-      message: '${activity.nameEn} completed.',
-      type: ActivityType.explore,
-      code: ActivityCode.activityCompleted,
-      subject: activity.id,
-      xp: activity.xp,
-      coins: activity.coins,
-      gems: gems,
-    );
-    _evaluateAchievements();
-    await _notifyAndSave();
-    return ActivityReward(
-        activity: activity,
-        xp: activity.xp,
-        coins: activity.coins,
-        gems: gems,
-        chestFound: chest);
   }
 
   Future<ChestReward?> openChest(ChestTier tier) async {
@@ -632,10 +544,8 @@ class HouseholdProvider extends ChangeNotifier {
         'sky_ceiling' =>
           towerFloorRoomIds.length,
         'feed_furniture' => housePlacements.length,
-        'book_wyrm' ||
-        'well_read_scaled' ||
-        'scale_every_tale' =>
-          discoveredLineageCount,
+        'book_wyrm' || 'well_read_scaled' => discoveredCommonLineageCount,
+        'scale_every_tale' => discoveredLineageCount,
         'growing_pains' => totalWyrmling,
         'not_picking_favorites' =>
           [pet, ...sanctuaryDragons].any((dragon) => dragon.favorite) ? 1 : 0,
@@ -785,7 +695,6 @@ class HouseholdProvider extends ChangeNotifier {
       longAdventureRefillDay,
     ].join('|');
     final changed = (adventureOptionsBefore != adventureOptionsAfter) |
-        _refreshDailyState() |
         pet.applyTimeDecay(_clock()) |
         _registerCurrentStage() |
         _refreshAdventureRuns() |
@@ -794,15 +703,6 @@ class HouseholdProvider extends ChangeNotifier {
         roamIdleDragons();
     final achievementsChanged = _evaluateAchievements();
     if (changed || achievementsChanged) await _notifyAndSave();
-  }
-
-  ChestTier _rollChestTier() {
-    final roll = _random.nextDouble();
-    if (roll < 0.0005) return ChestTier.mythical;
-    if (roll < 0.005) return ChestTier.dragon;
-    if (roll < 0.20) return ChestTier.gold;
-    if (roll < 0.50) return ChestTier.silver;
-    return ChestTier.wooden;
   }
 
   DragonEgg _createEgg({required ChestTier sourceTier}) {
@@ -896,14 +796,6 @@ class HouseholdProvider extends ChangeNotifier {
     return changed;
   }
 
-  bool _refreshDailyState() {
-    final current = _dayKey(_clock());
-    if (activityDayKey == current) return false;
-    activityDayKey = current;
-    dailyActivityUses.clear();
-    return true;
-  }
-
   void _addActivity(
       {required String message,
       required ActivityType type,
@@ -971,12 +863,9 @@ class HouseholdProvider extends ChangeNotifier {
       'chestInventory': {
         for (final entry in chestInventory.entries) entry.key.name: entry.value
       },
-      'dailyActivityUses': dailyActivityUses,
-      'activityDayKey': activityDayKey,
       'discoveredForms': discoveredForms.toList(),
       'prismaticForms': prismaticForms.toList(),
       'achievements': unlockedAchievementIds.toList(),
-      'totalEggCare': totalEggCare,
       'totalHatched': totalHatched,
       'totalNamed': totalNamed,
       'totalWyrmling': totalWyrmling,

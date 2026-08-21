@@ -29,6 +29,43 @@ enum AdventureStartResult {
 
 enum TowerBuildResult { built, maximumReached, insufficientCoins, invalidRoom }
 
+DateTime _lastSundayOfUtcMonth(int year, int month) {
+  final lastDay = DateTime.utc(year, month + 1, 0);
+  return lastDay.subtract(Duration(days: lastDay.weekday % 7));
+}
+
+Duration _amsterdamOffsetAtUtc(DateTime instant) {
+  final utc = instant.toUtc();
+  final daylightStart = _lastSundayOfUtcMonth(utc.year, DateTime.march)
+      .add(const Duration(hours: 1));
+  final daylightEnd = _lastSundayOfUtcMonth(utc.year, DateTime.october)
+      .add(const Duration(hours: 1));
+  return !utc.isBefore(daylightStart) && utc.isBefore(daylightEnd)
+      ? const Duration(hours: 2)
+      : const Duration(hours: 1);
+}
+
+/// Stable weekly slot anchored to Sunday 12:00 in Europe/Amsterdam, including
+/// the European daylight-saving transition rules used by the Netherlands.
+int _amsterdamGroupAdventureSlot(DateTime instant) {
+  final utc = instant.toUtc();
+  final wallTime = utc.add(_amsterdamOffsetAtUtc(utc));
+  var latestSundayNoon = DateTime.utc(
+    wallTime.year,
+    wallTime.month,
+    wallTime.day,
+    12,
+  ).subtract(Duration(days: wallTime.weekday % 7));
+  if (wallTime.isBefore(latestSundayNoon)) {
+    latestSundayNoon = latestSundayNoon.subtract(const Duration(days: 7));
+  }
+  const anchor = Duration(days: 7);
+  return latestSundayNoon
+          .difference(DateTime.utc(2020, DateTime.january, 5, 12))
+          .inDays ~/
+      anchor.inDays;
+}
+
 extension DragonHavenSystems on HouseholdProvider {
   List<Pet> get ownedDragons => [
         if (!pet.isEgg) pet,
@@ -185,9 +222,8 @@ extension DragonHavenSystems on HouseholdProvider {
       return definition == null ? const [] : [definition];
     }
     if (kind == AdventureKind.group) {
-      final week =
-          now.millisecondsSinceEpoch ~/ const Duration(days: 7).inMilliseconds;
-      return [AdventureCatalog.group[(week * 17).abs() % 200]];
+      final slot = _amsterdamGroupAdventureSlot(now);
+      return [AdventureCatalog.group[(slot * 17).abs() % 200]];
     }
 
     final source = kind == AdventureKind.short
@@ -551,21 +587,18 @@ extension DragonHavenSystems on HouseholdProvider {
           ? 'Er klinkt een vreemd muzikaal tikje van binnen.'
           : 'A strange musical tap answers from within.',
     };
-    if (pet.careActions % 3 == 1) return affinity;
-    if (pet.careActions % 3 == 2) {
-      return switch (pet.lawAxis) {
-        LawAxis.lawful => isDutch
-            ? 'De bewegingen binnenin volgen een precies ritme.'
-            : 'The movements inside follow a precise rhythm.',
-        LawAxis.neutral => isDutch
-            ? 'Het wordt stil zodra je probeert een patroon te vinden.'
-            : 'It goes quiet whenever you try to find a pattern.',
-        LawAxis.chaotic => isDutch
-            ? 'Het ei rolt een stukje. Tegen de helling op.'
-            : 'The egg rolls a little. Uphill.',
-      };
-    }
-    return switch (pet.moralAxis) {
+    final rhythm = switch (pet.lawAxis) {
+      LawAxis.lawful => isDutch
+          ? 'De bewegingen binnenin volgen een precies ritme.'
+          : 'The movements inside follow a precise rhythm.',
+      LawAxis.neutral => isDutch
+          ? 'Het wordt stil zodra je probeert een patroon te vinden.'
+          : 'It goes quiet whenever you try to find a pattern.',
+      LawAxis.chaotic => isDutch
+          ? 'Het ei rolt een stukje. Tegen de helling op.'
+          : 'The egg rolls a little. Uphill.',
+    };
+    final aura = switch (pet.moralAxis) {
       MoralAxis.good => isDutch
           ? 'Een zachte gloed blijft even onder je hand hangen.'
           : 'A gentle glow lingers beneath your hand.',
@@ -576,6 +609,7 @@ extension DragonHavenSystems on HouseholdProvider {
           ? 'Je weet vrij zeker dat het ei net terug tikte.'
           : 'You are fairly sure the egg just tapped back.',
     };
+    return '$affinity $rhythm $aura';
   }
 
   String dragonSizeLabel(Pet dragon) {

@@ -128,6 +128,7 @@ class DragonTowerScreen extends StatelessWidget {
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
         child: ListView(
+          key: const Key('tower-room-picker-scroll'),
           shrinkWrap: true,
           padding: const EdgeInsets.fromLTRB(14, 0, 14, 18),
           children: [
@@ -367,6 +368,7 @@ class _OwnedDragonsSheet extends StatelessWidget {
         initialChildSize: .7,
         maxChildSize: .92,
         builder: (_, controller) => ListView(
+          key: const Key('owned-dragons-scroll'),
           controller: controller,
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           children: [
@@ -443,6 +445,7 @@ class _OwnedDragonsSheet extends StatelessWidget {
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (dialogContext) => AlertDialog(
+                  scrollable: true,
                   title: Text(strings.pick('Release ${dragon.displayName}?',
                       '${dragon.displayName} vrijlaten?')),
                   content: Text(strings.pick(

@@ -8,7 +8,6 @@ import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/house.dart';
 import 'package:dragon_haven/models/pet.dart';
-import 'package:dragon_haven/models/sanctuary_activity.dart';
 import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/services/storage_service.dart';
@@ -48,20 +47,19 @@ void main() {
     expect(restored.pet.hatchSeed, seed);
   });
 
-  test('daily activity limits reset on a new calendar day', () async {
-    var now = DateTime.utc(2026, 8, 1, 10);
-    final game = HouseholdProvider(
-      random: Random(2),
-      clock: () => now,
-    );
-    final activity = sanctuaryActivities.first;
-    expect(game.activityUsesRemaining(activity), 1);
-    expect(await game.performActivity(activity), isNotNull);
-    expect(await game.performActivity(activity), isNull);
+  test('music and sound effects persist independently', () async {
+    final game = HouseholdProvider(random: Random(19));
+    await game.setMusicEnabled(false);
 
-    now = now.add(const Duration(days: 1));
-    await game.refreshForCurrentDate();
-    expect(game.activityUsesRemaining(activity), 1);
+    var restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.musicEnabled, isFalse);
+    expect(restored.soundEffectsEnabled, isTrue);
+
+    await restored.setMusicEnabled(true);
+    await restored.setSoundEffectsEnabled(false);
+    restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.musicEnabled, isTrue);
+    expect(restored.soundEffectsEnabled, isFalse);
   });
 
   test('dismissed Short Adventures refill one slot after a full hour',
@@ -83,6 +81,25 @@ void main() {
     final game = HouseholdProvider(random: Random(13));
     expect(game.adventuresFor(AdventureKind.special), isEmpty);
     expect(game.adventuresFor(AdventureKind.group), hasLength(1));
+  });
+
+  test('Group Adventure refreshes at Sunday noon Europe/Amsterdam', () {
+    var now = DateTime.utc(2026, 8, 23, 9, 59);
+    final game = HouseholdProvider(random: Random(23), clock: () => now);
+    final beforeSummerRefresh =
+        game.adventuresFor(AdventureKind.group).single.id;
+    now = DateTime.utc(2026, 8, 23, 10);
+    final afterSummerRefresh =
+        game.adventuresFor(AdventureKind.group).single.id;
+    expect(afterSummerRefresh, isNot(beforeSummerRefresh));
+
+    now = DateTime.utc(2026, 1, 4, 10, 59);
+    final beforeWinterRefresh =
+        game.adventuresFor(AdventureKind.group).single.id;
+    now = DateTime.utc(2026, 1, 4, 11);
+    final afterWinterRefresh =
+        game.adventuresFor(AdventureKind.group).single.id;
+    expect(afterWinterRefresh, isNot(beforeWinterRefresh));
   });
 
   test('a chest can only be opened when it exists', () async {
@@ -138,6 +155,23 @@ void main() {
         isTrue);
   });
 
+  test('Common-family achievements do not count rarer discoveries', () {
+    final game = HouseholdProvider(random: Random(41));
+    final common = dragonLineages
+        .firstWhere((lineage) => lineage.rarity == DragonRarity.common);
+    final rare = dragonLineages
+        .firstWhere((lineage) => lineage.rarity == DragonRarity.rare);
+    game.discoveredForms = {
+      '${common.id}:hatchling',
+      '${rare.id}:hatchling',
+    };
+
+    expect(game.discoveredLineageCount, 2);
+    expect(game.achievementProgress('book_wyrm'), 1);
+    expect(game.achievementProgress('well_read_scaled'), 1);
+    expect(game.achievementProgress('scale_every_tale'), 2);
+  });
+
   test('rooms and furniture use coins and persist valid placement', () async {
     final game = HouseholdProvider(random: Random(5));
     game.pet
@@ -153,33 +187,6 @@ void main() {
     expect(game.owns(item), isTrue);
     expect(game.placementsForRoom(room.id).any((p) => p.itemId == item.id),
         isTrue);
-  });
-
-  test('the retired map id migrates without losing owned furniture', () async {
-    final pet = Pet(hatchSeed: 9, lineageId: 'quietstar');
-    SharedPreferences.setMockInitialValues({
-      'chore_quest_state_v2': jsonEncode({
-        'pet': pet.toJson(),
-        'ownedItemIds': ['quest_map'],
-        'equippedItemIds': {'wall': 'quest_map'},
-        'unlockedRoomIds': ['nest'],
-        'activeRoomId': 'nest',
-        'housePlacements': [
-          {
-            'itemId': 'quest_map',
-            'roomId': 'nest',
-            'x': .4,
-            'y': .3,
-            'scale': 1,
-          }
-        ],
-      }),
-    });
-
-    final restored = await HouseholdProvider.loadFromStorage();
-    expect(restored.ownedItemIds, contains('spire_map'));
-    expect(restored.equippedItemIds[ItemSlot.wall], 'spire_map');
-    expect(restored.housePlacements.single.itemId, 'spire_map');
   });
 
   test('new saves contain no task or chore game data', () async {

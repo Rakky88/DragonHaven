@@ -16,13 +16,13 @@
 - Seven local-time visual phases with separately painted Tower lighting and day/night room variants; changes crossfade instead of applying a flat color filter.
 - Exactly 300 English/Dutch dragon sayings and 20 humorous achievements.
 - English first-install default, complete English/Dutch gameplay text and nine selectable core UI languages.
-- Separate persistent Music and Sound Effects switches, native Android audio hooks, local notifications, About/Ko-fi/redeem UI and GitHub update/share controls.
+- Separate persistent Music and Sound Effects switches, four calm CC0 ambient tracks, 19 event-specific effects, local notifications, About/Ko-fi/redeem UI and GitHub update/share controls.
 
 ## Honest online boundary
 
 Friends, cross-device account sync, trades, friend Tower visits, shared Group Adventure instances and real-money gem packs require authenticated server state and Google Play product/receipt validation. The screens and service boundaries are present, but this repository deliberately does not simulate online people, purchases or synchronization locally.
 
-The native audio layer has stable IDs and all important gameplay cues are wired. Final mastered music and sound files are not bundled yet; missing raw resources fail silently without affecting gameplay.
+The Android audio layer bundles the music and effects, fades scene changes, rotates ambient variants and respects audio focus. Sources and licences are documented in [AUDIO_LICENSES.md](AUDIO_LICENSES.md).
 
 The detailed implementation map and remaining service boundaries are documented in [DRAGONHAVEN_IMPLEMENTATION.md](DRAGONHAVEN_IMPLEMENTATION.md).
 

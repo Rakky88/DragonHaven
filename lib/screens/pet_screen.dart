@@ -43,6 +43,10 @@ class PetScreen extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         _DragonStageCard(pet: pet),
+        if (pet.isEgg) ...[
+          const SizedBox(height: 10),
+          _EggCountdown(pet: pet),
+        ],
         if (!pet.isEgg) ...[
           const SizedBox(height: 18),
           _DragonNeedsPanel(pet: pet),
@@ -81,12 +85,129 @@ class PetScreen extends StatelessWidget {
   }
 }
 
+class _EggCountdown extends StatefulWidget {
+  const _EggCountdown({required this.pet});
+
+  final Pet pet;
+
+  @override
+  State<_EggCountdown> createState() => _EggCountdownState();
+}
+
+class _EggCountdownState extends State<_EggCountdown>
+    with WidgetsBindingObserver {
+  Timer? _timer;
+  DateTime _now = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _refresh());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  void _refresh() {
+    if (mounted) setState(() => _now = DateTime.now());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final hatchAt = widget.pet.stageStartedAt
+        .add(Duration(hours: widget.pet.incubationHours));
+    final remaining =
+        hatchAt.isAfter(_now) ? hatchAt.difference(_now) : Duration.zero;
+    final ready = remaining == Duration.zero;
+    return Semantics(
+      liveRegion: true,
+      label: ready
+          ? strings.pick('Ready to hatch', 'Klaar om uit te komen')
+          : strings.pick('Hatches in ${_countdown(remaining)}',
+              'Komt uit over ${_countdown(remaining)}'),
+      child: Container(
+        key: const Key('egg-hatch-countdown'),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: ready ? AppColors.goldLight : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: ready ? AppColors.gold : AppColors.mist,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              ready
+                  ? Icons.auto_awesome_rounded
+                  : Icons.hourglass_bottom_rounded,
+              color: AppColors.twilight,
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ready
+                        ? strings.pick(
+                            'Ready to hatch', 'Klaar om uit te komen')
+                        : strings.pick('Hatches in', 'Komt uit over'),
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (!ready)
+                    Text(
+                      _countdown(remaining),
+                      key: const Key('egg-hatch-countdown-value'),
+                      style: const TextStyle(
+                        color: AppColors.twilightDark,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: .7,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _countdown(Duration duration) {
+  final totalSeconds = duration.inSeconds.clamp(0, 14 * 24 * 60 * 60).toInt();
+  final hours = totalSeconds ~/ 3600;
+  final minutes = (totalSeconds % 3600) ~/ 60;
+  final seconds = totalSeconds % 60;
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${two(hours)}:${two(minutes)}:${two(seconds)}';
+}
+
 Future<void> _talk(BuildContext context, Pet pet) async {
   final strings = AppStrings.of(context);
   final line = dialogueFor(pet, DateTime.now());
   await showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
+      scrollable: true,
       icon: const Icon(Icons.chat_bubble_rounded, color: AppColors.twilight),
       title: Text(pet.displayName, textAlign: TextAlign.center),
       content: Text(line.text(strings.isDutch),
@@ -108,68 +229,91 @@ class _DragonStageCard extends StatelessWidget {
   final Pet pet;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 300,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: pet.isEgg
-            ? null
-            : const RadialGradient(
-                center: Alignment(.1, -.2),
-                radius: 1.2,
-                colors: [Color(0xFF75629E), Color(0xFF352B63)]),
-      ),
-      child: Stack(
-        children: [
-          if (pet.isEgg)
-            Positioned.fill(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
-                child: HavenPhaseImage(
-                  assetFor: (phase) =>
-                      'assets/images/tower_nest_${phase.assetKey}.webp',
+    final strings = AppStrings.of(context);
+    return Semantics(
+      button: pet.isEgg,
+      label: pet.isEgg
+          ? strings.pick(
+              'Listen to the mysterious egg', 'Luister naar het mysterieuze ei')
+          : pet.displayName,
+      child: GestureDetector(
+        key: pet.isEgg ? const Key('mysterious-egg-hint') : null,
+        behavior: HitTestBehavior.opaque,
+        onTap: pet.isEgg
+            ? () {
+                HavenAudio.play(HavenSound.uiConfirm);
+                final game = context.read<HouseholdProvider>();
+                showAppSnackBar(
+                  context,
+                  game.eggHint(isDutch: strings.isDutch),
+                );
+              }
+            : null,
+        child: Container(
+          height: 300,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            gradient: pet.isEgg
+                ? null
+                : const RadialGradient(
+                    center: Alignment(.1, -.2),
+                    radius: 1.2,
+                    colors: [Color(0xFF75629E), Color(0xFF352B63)]),
+          ),
+          child: Stack(
+            children: [
+              if (pet.isEgg)
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: HavenPhaseImage(
+                      assetFor: (phase) =>
+                          'assets/images/tower_nest_${phase.assetKey}.webp',
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          const Positioned(
-              left: 25,
-              top: 25,
-              child: Icon(Icons.star_rounded, color: AppColors.gold, size: 18)),
-          const Positioned(
-              right: 42,
-              top: 50,
-              child: Icon(Icons.auto_awesome_rounded,
-                  color: Colors.white54, size: 14)),
-          Align(
-              alignment:
-                  pet.isEgg ? const Alignment(.02, .43) : Alignment.center,
-              child: Transform.scale(
-                  scale: pet.isEgg ? 1 : pet.sizeFactor,
-                  child: DragonArt(
-                      height: 248,
-                      stageKey: pet.stageKey,
-                      lineageId: pet.lineageId,
-                      evolutionPath: pet.activeEvolutionPath,
-                      prismatic: pet.spectral,
-                      sinister: pet.sinister))),
-          Positioned(
-              left: 16,
-              bottom: 15,
-              child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-                  decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: .9),
-                      borderRadius: BorderRadius.circular(99)),
-                  child: Text(
-                      pet.isEgg
-                          ? '🥚 Mysterious Egg'
-                          : pet.stage.name[0].toUpperCase() +
-                              pet.stage.name.substring(1),
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.twilightDark)))),
-        ],
+              const Positioned(
+                  left: 25,
+                  top: 25,
+                  child: Icon(Icons.star_rounded,
+                      color: AppColors.gold, size: 18)),
+              const Positioned(
+                  right: 42,
+                  top: 50,
+                  child: Icon(Icons.auto_awesome_rounded,
+                      color: Colors.white54, size: 14)),
+              Align(
+                  alignment:
+                      pet.isEgg ? const Alignment(.02, .43) : Alignment.center,
+                  child: Transform.scale(
+                      scale: pet.isEgg ? 1 : pet.sizeFactor,
+                      child: DragonArt(
+                          height: 248,
+                          stageKey: pet.stageKey,
+                          lineageId: pet.lineageId,
+                          evolutionPath: pet.activeEvolutionPath,
+                          prismatic: pet.spectral,
+                          sinister: pet.sinister))),
+              Positioned(
+                  left: 16,
+                  bottom: 15,
+                  child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 11, vertical: 7),
+                      decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: .9),
+                          borderRadius: BorderRadius.circular(99)),
+                      child: Text(
+                          pet.isEgg
+                              ? '🥚 Mysterious Egg'
+                              : pet.stage.name[0].toUpperCase() +
+                                  pet.stage.name.substring(1),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.twilightDark)))),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -768,6 +912,7 @@ class _EggStash extends StatelessWidget {
     final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
+                scrollable: true,
                 title: Text(
                     strings.pick('Raise this egg?', 'Dit ei grootbrengen?')),
                 content: Text(strings.pick(
@@ -827,6 +972,7 @@ Future<void> _askForName(BuildContext context,
       context: context,
       barrierDismissible: !closeAfter,
       builder: (dialogContext) => AlertDialog(
+              scrollable: true,
               title: Text(
                   strings.pick('Name your dragon', 'Geef je draak een naam')),
               content: TextField(

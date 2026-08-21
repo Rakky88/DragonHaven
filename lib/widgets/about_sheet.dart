@@ -208,50 +208,7 @@ class _AboutSheetState extends State<_AboutSheet> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        width: 128,
-                        height: 128,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(34),
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFF514280), AppColors.twilightDark],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.twilight.withValues(alpha: 0.3),
-                              blurRadius: 28,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
-                        ),
-                        child: Image.asset(
-                          'assets/images/dragonhaven_logo.png',
-                          filterQuality: FilterQuality.high,
-                          semanticLabel: strings.pick(
-                              'DragonHaven logo', 'DragonHaven-logo'),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        strings.pick('About DragonHaven', 'Over DragonHaven'),
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 7),
-                      Text(
-                        strings.pick(
-                          'Raise wonder. Build a home. Fill the Draconomicon.',
-                          'Kweek verwondering. Bouw een thuis. Vul het Draconomicon.',
-                        ),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 15,
-                          height: 1.35,
-                        ),
-                      ),
+                      _AboutHero(strings: strings),
                       const SizedBox(height: 22),
                       _AboutPanel(
                         child: Column(
@@ -286,9 +243,6 @@ class _AboutSheetState extends State<_AboutSheet> {
                             strings.pick('Redeem code', 'Code inwisselen'),
                             style: const TextStyle(fontWeight: FontWeight.w900),
                           ),
-                          subtitle: Text(strings.pick(
-                              'Event codes use capital letters without spaces.',
-                              'Eventcodes bestaan uit hoofdletters zonder spaties.')),
                           trailing: const Icon(Icons.chevron_right_rounded),
                           onTap: _showRedeemCode,
                         ),
@@ -533,6 +487,7 @@ class _AboutSheetState extends State<_AboutSheet> {
     final code = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         title: Text(strings.pick('Redeem code', 'Code inwisselen')),
         content: TextField(
           key: const Key('redeem-code-field'),
@@ -565,6 +520,173 @@ class _AboutSheetState extends State<_AboutSheet> {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
   }
+}
+
+class _AboutHero extends StatelessWidget {
+  const _AboutHero({required this.strings});
+
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(minHeight: 284),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF251C52),
+              Color(0xFF4A347E),
+              Color(0xFF71549D),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.twilight.withValues(alpha: .28),
+              blurRadius: 30,
+              offset: const Offset(0, 14),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            const Positioned(
+              right: -44,
+              top: -48,
+              child: _HeroGlow(size: 172, color: Color(0x55F4C95D)),
+            ),
+            const Positioned(
+              left: -58,
+              bottom: -70,
+              child: _HeroGlow(size: 184, color: Color(0x3855C6A9)),
+            ),
+            const Positioned(
+              left: 24,
+              top: 27,
+              child: Icon(Icons.auto_awesome_rounded,
+                  size: 18, color: Color(0xFFFFD86D)),
+            ),
+            const Positioned(
+              right: 31,
+              top: 76,
+              child:
+                  Icon(Icons.star_rounded, size: 12, color: Color(0xB8FFFFFF)),
+            ),
+            const Positioned(
+              left: 43,
+              bottom: 61,
+              child:
+                  Icon(Icons.star_rounded, size: 9, color: Color(0x99FFFFFF)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 19, 22, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .11),
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: .18)),
+                    ),
+                    child: Text(
+                      strings.pick('ABOUT THE GAME', 'OVER HET SPEL'),
+                      style: const TextStyle(
+                        color: Color(0xFFFFE49A),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 104,
+                    height: 104,
+                    padding: const EdgeInsets.all(5),
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const RadialGradient(
+                        colors: [Colors.white, Color(0xFFFFF4D2)],
+                      ),
+                      border:
+                          Border.all(color: const Color(0xFFFFD76A), width: 2),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x66F4C95D),
+                          blurRadius: 30,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Transform.translate(
+                      offset: const Offset(1.3, 0),
+                      child: Image.asset(
+                        'assets/images/dragonhaven_logo.png',
+                        filterQuality: FilterQuality.high,
+                        semanticLabel: strings.pick(
+                            'DragonHaven logo', 'DragonHaven-logo'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    strings.pick('About DragonHaven', 'Over DragonHaven'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      height: 1.05,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -.7,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    strings.pick(
+                      'Raise wonder. Build a home. Fill the Draconomicon.',
+                      'Kweek verwondering. Bouw een thuis. Vul het Draconomicon.',
+                    ),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFFE9E1FF),
+                      fontSize: 14,
+                      height: 1.35,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _HeroGlow extends StatelessWidget {
+  const _HeroGlow({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [color, color.withValues(alpha: 0)],
+          ),
+        ),
+      );
 }
 
 class _AboutPanel extends StatelessWidget {

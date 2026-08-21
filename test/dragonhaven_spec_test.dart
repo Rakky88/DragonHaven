@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:dragon_haven/models/adventure.dart';
+import 'package:dragon_haven/models/achievement.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/day_phase.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
@@ -49,12 +52,60 @@ void main() {
     expect(count(DragonRarity.mythical), 1);
   });
 
+  test('achievements have unique badges and use Common terminology', () {
+    expect(achievementCatalog, hasLength(20));
+    expect(
+      achievementCatalog.map((achievement) => achievement.badge).toSet(),
+      hasLength(achievementCatalog.length),
+    );
+    expect(
+      achievementCatalog
+          .where((achievement) => achievement.descriptionEn.contains('normal')),
+      isEmpty,
+    );
+  });
+
   test('all six chest tiers and all 24 personality traits exist', () {
     expect(ChestTier.values, hasLength(6));
     expect(dragonPersonalityTraits, hasLength(24));
     expect(dragonPersonalityTraits.toSet(), hasLength(24));
     for (final entry in dragonPersonalityIncompatibilities.entries) {
       expect(dragonPersonalityIncompatibilities[entry.value], entry.key);
+    }
+  });
+
+  test('every native audio event has a non-empty bundled resource', () {
+    const resources = [
+      'ui_confirm.ogg',
+      'chest_wooden.ogg',
+      'chest_silver.ogg',
+      'chest_gold.ogg',
+      'chest_dragon.ogg',
+      'chest_mythical.ogg',
+      'chest_sinister.ogg',
+      'hatch_build.ogg',
+      'hatch_crack_1.ogg',
+      'hatch_crack_2.ogg',
+      'hatch_crack_3.ogg',
+      'hatch_reveal.ogg',
+      'spectral_reveal.ogg',
+      'evolution_young.ogg',
+      'evolution_ascended.ogg',
+      'achievement.ogg',
+      'adventure_start.ogg',
+      'adventure_return.ogg',
+      'floor_built.ogg',
+      'tower_day.ogg',
+      'tower_night.ogg',
+      'room.ogg',
+      'reveal.mp3',
+    ];
+    final directory = Directory('android/app/src/main/res/raw');
+    expect(directory.existsSync(), isTrue);
+    for (final resource in resources) {
+      final file = File('${directory.path}/$resource');
+      expect(file.existsSync(), isTrue, reason: resource);
+      expect(file.lengthSync(), greaterThan(4000), reason: resource);
     }
   });
 

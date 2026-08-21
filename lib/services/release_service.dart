@@ -9,14 +9,14 @@ abstract final class ReleaseConfig {
       defaultValue: 'DragonHaven');
   static const installedVersion = String.fromEnvironment(
       'DRAGONHAVEN_APP_VERSION',
-      defaultValue: '0.00.05');
+      defaultValue: '0.00.06');
 
   static bool get isConfigured =>
       owner.trim().isNotEmpty && repository.trim().isNotEmpty;
   static String get repositoryUrl => 'https://github.com/$owner/$repository';
   static String get releasesUrl => '$repositoryUrl/releases/latest';
   static String get downloadUrl => '$releasesUrl/download/DragonHaven.apk';
-  // Same focused Ko-fi tip panel used by the Medication Reminder app.
+  // Opens Rick Groot's focused Ko-fi tip panel.
   static const kofiUrl =
       'https://ko-fi.com/rgroot88/?hidefeed=true&widget=true&embed=true';
 }

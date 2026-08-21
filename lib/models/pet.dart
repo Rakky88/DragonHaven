@@ -5,8 +5,6 @@ import 'dragon_lineage.dart';
 
 enum DragonStage { egg, hatchling, wyrmling, ascended }
 
-enum DragonCareAction { play, rest, care }
-
 enum TrainingFocus { might, arcana, spirit }
 
 enum LawAxis { lawful, neutral, chaotic }
@@ -70,15 +68,12 @@ class Pet {
     this.favorite = false,
     this.currentRoomId = 'hearth',
     this.activeAdventureId,
-    this.careScore = 0,
-    this.careActions = 0,
     this.joy = 78,
     this.energy = 78,
     this.comfort = 78,
     DateTime? acquiredAt,
     DateTime? stageStartedAt,
     DateTime? needsUpdatedAt,
-    Map<String, DateTime>? lastCareAt,
     Map<String, int>? training,
     int? hatchSeed,
     String? lineageId,
@@ -87,7 +82,6 @@ class Pet {
         acquiredAt = acquiredAt ?? DateTime.now(),
         stageStartedAt = stageStartedAt ?? acquiredAt ?? DateTime.now(),
         needsUpdatedAt = needsUpdatedAt ?? DateTime.now(),
-        lastCareAt = lastCareAt ?? {},
         training = training ?? {'might': 0, 'arcana': 0, 'spirit': 0},
         personalityTraitIds = personalityTraitIds ?? <String>[],
         hatchSeed = hatchSeed ??
@@ -118,15 +112,12 @@ class Pet {
   bool favorite;
   String currentRoomId;
   String? activeAdventureId;
-  int careScore;
-  int careActions;
   int joy;
   int energy;
   int comfort;
   final DateTime acquiredAt;
   DateTime stageStartedAt;
   DateTime needsUpdatedAt;
-  final Map<String, DateTime> lastCareAt;
   final Map<String, int> training;
   final int hatchSeed;
   final String lineageId;
@@ -136,7 +127,6 @@ class Pet {
   static const hatchXpLater = 200;
   static const wyrmlingXp = 600;
   static const ascendedXp = 2200;
-  static const careCooldown = Duration(hours: 4);
 
   DragonLineage get lineage => dragonLineageById(lineageId);
   bool get spectral => prismatic;
@@ -228,18 +218,6 @@ class Pet {
     return elapsed >= minimum ? Duration.zero : minimum - elapsed;
   }
 
-  bool canCare(DragonCareAction action, DateTime now) {
-    final previous = lastCareAt[action.name];
-    return previous == null || now.difference(previous) >= careCooldown;
-  }
-
-  Duration careRemaining(DragonCareAction action, DateTime now) {
-    final previous = lastCareAt[action.name];
-    if (previous == null) return Duration.zero;
-    final elapsed = now.difference(previous);
-    return elapsed >= careCooldown ? Duration.zero : careCooldown - elapsed;
-  }
-
   bool applyTimeDecay(DateTime now) {
     if (isEgg || !now.isAfter(needsUpdatedAt)) return false;
     final periods = now.difference(needsUpdatedAt).inHours ~/ 8;
@@ -248,28 +226,6 @@ class Pet {
     energy = max(20, energy - periods * 2);
     comfort = max(30, comfort - periods);
     needsUpdatedAt = needsUpdatedAt.add(Duration(hours: periods * 8));
-    return true;
-  }
-
-  bool careFor(DragonCareAction action, DateTime now) {
-    if (!canCare(action, now)) return false;
-    applyTimeDecay(now);
-    switch (action) {
-      case DragonCareAction.play:
-        joy = min(100, joy + 16);
-        energy = max(20, energy - 3);
-      case DragonCareAction.rest:
-        energy = min(100, energy + 22);
-        comfort = min(100, comfort + 5);
-      case DragonCareAction.care:
-        comfort = min(100, comfort + 17);
-        joy = min(100, joy + 4);
-    }
-    careScore += isEgg ? 12 : 8;
-    careActions++;
-    xp += isEgg ? 12 : 10;
-    lastCareAt[action.name] = now;
-    needsUpdatedAt = now;
     return true;
   }
 
@@ -339,18 +295,12 @@ class Pet {
         'favorite': favorite,
         'currentRoomId': currentRoomId,
         'activeAdventureId': activeAdventureId,
-        'careScore': careScore,
-        'careActions': careActions,
         'joy': joy,
         'energy': energy,
         'comfort': comfort,
         'acquiredAt': acquiredAt.toIso8601String(),
         'stageStartedAt': stageStartedAt.toIso8601String(),
         'needsUpdatedAt': needsUpdatedAt.toIso8601String(),
-        'lastCareAt': {
-          for (final entry in lastCareAt.entries)
-            entry.key: entry.value.toIso8601String(),
-        },
         'training': training,
         'hatchSeed': hatchSeed,
         'lineageId': lineageId,
@@ -372,7 +322,6 @@ class Pet {
                 : DragonStage.ascended;
     final rawTraining = mapFromJson(json['training']);
     final oldTraining = mapFromJson(json['pathEnergy']);
-    final rawCareTimes = mapFromJson(json['lastCareAt']);
     final acquired = DateTime.tryParse(
           stringFromJson(json['acquiredAt']) ??
               stringFromJson(json['needsUpdatedAt']) ??
@@ -423,8 +372,6 @@ class Pet {
       favorite: json['favorite'] is bool && json['favorite'] as bool,
       currentRoomId: nonEmptyStringFromJson(json['currentRoomId']) ?? 'hearth',
       activeAdventureId: nonEmptyStringFromJson(json['activeAdventureId']),
-      careScore: nonNegativeIntFromJson(json['careScore'], fallback: 0),
-      careActions: nonNegativeIntFromJson(json['careActions'], fallback: 0),
       joy: percentageFromJson(json['joy'], fallback: 78),
       energy: percentageFromJson(json['energy'], fallback: 78),
       comfort: percentageFromJson(json['comfort'], fallback: 78),
@@ -433,12 +380,6 @@ class Pet {
       needsUpdatedAt:
           DateTime.tryParse(stringFromJson(json['needsUpdatedAt']) ?? '') ??
               DateTime.now(),
-      lastCareAt: {
-        for (final action in DragonCareAction.values)
-          if (DateTime.tryParse(stringFromJson(rawCareTimes[action.name]) ?? '')
-              case final parsed?)
-            action.name: parsed,
-      },
       hatchSeed: seed,
       lineageId: dragonLineages.any((candidate) => candidate.id == lineage)
           ? lineage

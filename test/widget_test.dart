@@ -4,6 +4,7 @@ import 'package:dragon_haven/dragonhaven_app.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
+import 'package:dragon_haven/screens/achievements_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -17,8 +18,9 @@ void main() {
     WidgetTester tester, {
     bool onboarded = false,
     bool hatched = false,
+    Size surfaceSize = const Size(430, 900),
   }) async {
-    await tester.binding.setSurfaceSize(const Size(430, 900));
+    await tester.binding.setSurfaceSize(surfaceSize);
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final game = HouseholdProvider(random: Random(19));
     if (onboarded) {
@@ -53,11 +55,11 @@ void main() {
   });
 
   testWidgets('the egg phase shows only the rooftop nest', (tester) async {
-    await pumpGame(tester, onboarded: true);
+    final game = await pumpGame(tester, onboarded: true);
 
     expect(find.byKey(const PageStorageKey('dragon-scroll')), findsOneWidget);
     expect(find.text('The tower nest'), findsOneWidget);
-    expect(find.text('Rooftop Nest'), findsOneWidget);
+    expect(find.text('ROOFTOP NEST'), findsOneWidget);
     expect(find.text('Play'), findsNothing);
     expect(find.text('Rest'), findsNothing);
     expect(find.text('Care'), findsNothing);
@@ -67,7 +69,122 @@ void main() {
     expect(find.text('Next form: Hatchling'), findsNothing);
     expect(find.text('Egg stash'), findsNothing);
     expect(find.text('Not ready yet'), findsNothing);
+    expect(find.byKey(const Key('egg-hatch-countdown')), findsOneWidget);
+    expect(
+      find.byKey(const Key('egg-hatch-countdown-value')),
+      findsOneWidget,
+    );
     expect(find.byType(NavigationBar), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byKey(const Key('mysterious-egg-hint')));
+    await tester.pump();
+    expect(find.text(game.eggHint(isDutch: false)), findsOneWidget);
+  });
+
+  testWidgets('audio controls remain independent on a compact screen',
+      (tester) async {
+    final game = await pumpGame(
+      tester,
+      onboarded: true,
+      hatched: true,
+      surfaceSize: const Size(360, 640),
+    );
+    await tester.tap(find.byKey(const Key('app-overflow-menu')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.tap(find.byKey(const Key('app-menu-account')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+
+    expect(find.byKey(const Key('music-switch')), findsOneWidget);
+    expect(find.byKey(const Key('sound-effects-switch')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('music-switch')));
+    await tester.pump();
+    expect(game.musicEnabled, isFalse);
+    expect(game.soundEffectsEnabled, isTrue);
+    await tester.tap(find.byKey(const Key('sound-effects-switch')));
+    await tester.pump();
+    expect(game.musicEnabled, isFalse);
+    expect(game.soundEffectsEnabled, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('long screens scroll cleanly with large text on a small phone',
+      (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.35;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final game = await pumpGame(
+      tester,
+      onboarded: true,
+      hatched: true,
+      surfaceSize: const Size(360, 640),
+    );
+    game.towerFloorRoomIds = List.generate(
+      20,
+      (index) => const [
+        'hearth',
+        'crystal',
+        'garden',
+        'tidal_library',
+        'loft',
+        'cloud',
+        'sunforge',
+      ][index % 7],
+    );
+    game.notifyListeners();
+    await tester.pump();
+    expect(tester.takeException(), isNull, reason: 'initial Tower layout');
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('add-tower-floor')),
+      500,
+      scrollable: find.descendant(
+        of: find.byKey(const PageStorageKey('dragon-tower-scroll')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(find.byKey(const Key('add-tower-floor')), findsOneWidget);
+    expect(tester.takeException(), isNull, reason: 'scrolled Tower layout');
+
+    final shellContext = tester.element(find.byType(Scaffold).first);
+    Navigator.of(shellContext).push(MaterialPageRoute<void>(
+      builder: (_) => const AchievementsScreen(),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    final achievementsError = tester.takeException();
+    expect(
+      achievementsError,
+      isNull,
+      reason: achievementsError is FlutterError
+          ? achievementsError.toStringDeep()
+          : 'Achievements layout: $achievementsError',
+    );
+    expect(
+      find.byKey(const PageStorageKey('achievements-scroll')),
+      findsOneWidget,
+    );
+    await tester.scrollUntilVisible(
+      find.text('A Scale for Every Tale'),
+      450,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('A Scale for Every Tale'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(tester.takeException(), isNull, reason: 'Achievements scrolling');
+
+    await tester.tap(find.text('Shop').last);
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(tester.takeException(), isNull, reason: 'Shop initial layout');
+    await tester.fling(
+      find.byKey(const PageStorageKey('shop-coins-scroll')),
+      const Offset(0, -900),
+      2200,
+    );
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(find.byKey(const Key('shop-search')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -161,10 +278,12 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.00.05'), findsOneWidget);
+    expect(find.text('v0.00.06'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);
+    expect(find.text('Event codes use capital letters without spaces.'),
+        findsNothing);
     expect(find.textContaining('currently stay on this device'), findsNothing);
     expect(tester.takeException(), isNull);
   });

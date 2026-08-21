@@ -14,8 +14,6 @@ class DragonEgg {
     this.sizeFactor = 1,
     this.incubationHours = 168,
     this.sinister = false,
-    this.careScore = 0,
-    this.careActions = 0,
     this.xp = 0,
   });
 
@@ -29,8 +27,6 @@ class DragonEgg {
   final double sizeFactor;
   final int incubationHours;
   final bool sinister;
-  final int careScore;
-  final int careActions;
   final int xp;
 
   Pet activate(
@@ -48,8 +44,6 @@ class DragonEgg {
         sizeFactor: sizeFactor,
         incubationHours: incubationHours,
         firstEgg: false,
-        careScore: careScore,
-        careActions: careActions,
         xp: xp,
         coins: coins,
         gems: gems,
@@ -67,8 +61,6 @@ class DragonEgg {
         'sizeFactor': sizeFactor,
         'incubationHours': incubationHours,
         'sinister': sinister,
-        'careScore': careScore,
-        'careActions': careActions,
         'xp': xp,
       };
 
@@ -97,8 +89,6 @@ class DragonEgg {
               .clamp(48, 336)
               .toInt(),
       sinister: json['sinister'] is bool && json['sinister'] as bool,
-      careScore: nonNegativeIntFromJson(json['careScore'], fallback: 0),
-      careActions: nonNegativeIntFromJson(json['careActions'], fallback: 0),
       xp: nonNegativeIntFromJson(json['xp'], fallback: 0),
     );
   }

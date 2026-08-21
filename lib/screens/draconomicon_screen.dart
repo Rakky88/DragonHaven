@@ -70,7 +70,8 @@ class _DragonCollection extends StatelessWidget {
   Widget build(BuildContext context) {
     final game = context.watch<HouseholdProvider>();
     return ListView.builder(
-      key: const PageStorageKey('draconomicon-dragons'),
+      key: PageStorageKey(
+          spectral ? 'draconomicon-spectral' : 'draconomicon-dragons'),
       padding: const EdgeInsets.fromLTRB(18, 2, 18, 30),
       itemCount: dragonLineages.length,
       itemBuilder: (context, index) => Padding(

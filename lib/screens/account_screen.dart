@@ -15,6 +15,7 @@ class AccountScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(strings.tr('account'))),
       body: ListView(
+        key: const PageStorageKey('account-scroll'),
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
         children: [
           Card(
@@ -83,6 +84,7 @@ class AccountScreen extends StatelessWidget {
     final result = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         title:
             Text(strings.pick('Edit keeper name', 'Naam van hoeder wijzigen')),
         content: TextField(

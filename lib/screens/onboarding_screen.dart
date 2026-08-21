@@ -32,6 +32,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       body: SafeArea(
         child: ListView(
+          key: const PageStorageKey('onboarding-scroll'),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
           children: [
             Center(

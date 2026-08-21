@@ -35,11 +35,11 @@ enum HavenMusicScene {
   final String assetId;
 }
 
-/// Small, dependency-free bridge around DragonHaven's audio layer.
+/// Small, dependency-free bridge around DragonHaven's Android audio layer.
 ///
-/// Android resolves these stable IDs from `res/raw`. Missing optional assets
-/// fail silently, which lets final mastered audio be added without touching
-/// gameplay or animation code. Music and effects remain independently gated.
+/// Android resolves these stable IDs from the bundled `res/raw` CC0 library.
+/// Music and effects remain independently gated. Failures stay non-fatal so a
+/// device audio problem can never block gameplay or saving preferences.
 abstract final class HavenAudio {
   static const _channel = MethodChannel('nl.dragonhaven.app/audio');
   static bool _musicEnabled = true;
@@ -56,6 +56,7 @@ abstract final class HavenAudio {
       await _channel.invokeMethod<void>('setPreferences', {
         'music': musicEnabled,
         'effects': soundEffectsEnabled,
+        'scene': _musicScene?.assetId,
       });
     } on MissingPluginException {
       // Widget tests and unsupported platforms intentionally have no bridge.
@@ -71,7 +72,7 @@ abstract final class HavenAudio {
     } on MissingPluginException {
       // See applyPreferences.
     } on PlatformException {
-      // Missing optional mastered assets are a supported state.
+      // A device audio failure must not interrupt gameplay.
     }
   }
 
@@ -84,7 +85,7 @@ abstract final class HavenAudio {
     } on MissingPluginException {
       // See applyPreferences.
     } on PlatformException {
-      // Missing optional mastered assets are a supported state.
+      // A device audio failure must not interrupt gameplay.
     }
   }
 }

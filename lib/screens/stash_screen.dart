@@ -48,6 +48,7 @@ class _EggStashTab extends StatelessWidget {
       );
     }
     return ListView.builder(
+      key: const PageStorageKey('stash-eggs-scroll'),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
       itemCount: game.eggStash.length,
       itemBuilder: (context, index) {
@@ -98,6 +99,7 @@ class _EggStashTab extends StatelessWidget {
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
+            scrollable: true,
             title: Text(strings.pick(
                 'Discard this Mysterious Egg?', 'Dit Mysterious Egg wegdoen?')),
             content: Text(strings.pick(
@@ -136,6 +138,7 @@ class _ChestStashTab extends StatelessWidget {
               'Avontuurbeloningen verschijnen hier en bij Avontuur.'));
     }
     return ListView(
+      key: const PageStorageKey('stash-chests-scroll'),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
       children: [
         for (final tier in tiers)
@@ -165,6 +168,7 @@ class _ChestStashTab extends StatelessWidget {
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
+            scrollable: true,
             title: Text(strings.pick('Discard one ${tier.label(false)}?',
                 'Eén ${tier.label(true)} wegdoen?')),
             content: Text(strings.pick('Its unopened contents will be lost.',
@@ -204,6 +208,7 @@ class _FurnitureStashTab extends StatelessWidget {
               'Je gekochte meubels worden hier bewaard.'));
     }
     return GridView.builder(
+      key: const PageStorageKey('stash-furniture-scroll'),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
@@ -247,6 +252,7 @@ class _FurnitureStashTab extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         title: Text(strings.pick('Remove ${strings.itemName(item)}?',
             '${strings.itemName(item)} verwijderen?')),
         content: Text(strings.pick(

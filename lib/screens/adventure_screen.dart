@@ -92,6 +92,7 @@ class _RunningAdventures extends StatelessWidget {
           SizedBox(
             height: 52,
             child: ListView.separated(
+              key: const PageStorageKey('active-adventures-scroll'),
               scrollDirection: Axis.horizontal,
               itemCount: runs.length,
               separatorBuilder: (_, __) => const SizedBox(width: 8),
@@ -142,6 +143,7 @@ class _UnopenedChests extends StatelessWidget {
     return SizedBox(
       height: 66,
       child: ListView(
+        key: const PageStorageKey('unopened-chests-scroll'),
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
         children: [
@@ -299,6 +301,7 @@ class _AdventureCard extends StatelessWidget {
         showDragHandle: true,
         builder: (sheetContext) => SafeArea(
           child: ListView(
+            key: const Key('adventure-dragon-picker-scroll'),
             shrinkWrap: true,
             children: [
               for (final dragon in available)
