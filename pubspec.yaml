@@ -1,0 +1,81 @@
+name: dragon_haven
+description: Collect dragons, grow the Dragon Tower and fill the Draconomicon.
+publish_to: 'none'
+version: 0.0.4+4
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  provider: ^6.0.5
+  shared_preferences: ^2.1.1
+  uuid: ^3.0.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/dragonhaven_logo.png
+    - assets/images/hatch_reveal_background.webp
+    - assets/images/evolution_reveal_background.webp
+    - assets/images/tower_nest.webp
+    - assets/images/tower_nest_deep_night.webp
+    - assets/images/tower_nest_dawn.webp
+    - assets/images/tower_nest_morning.webp
+    - assets/images/tower_nest_day.webp
+    - assets/images/tower_nest_golden_hour.webp
+    - assets/images/tower_nest_dusk.webp
+    - assets/images/tower_nest_night.webp
+    - assets/images/house_room_nest.webp
+    - assets/images/house_room_hearth.webp
+    - assets/images/house_room_crystal.webp
+    - assets/images/house_room_garden.webp
+    - assets/images/house_room_tidal_library.webp
+    - assets/images/house_room_loft.webp
+    - assets/images/house_room_cloud.webp
+    - assets/images/house_room_sunforge.webp
+    - assets/images/house_room_nest_day.webp
+    - assets/images/house_room_nest_night.webp
+    - assets/images/house_room_hearth_day.webp
+    - assets/images/house_room_hearth_night.webp
+    - assets/images/house_room_crystal_day.webp
+    - assets/images/house_room_crystal_night.webp
+    - assets/images/house_room_garden_day.webp
+    - assets/images/house_room_garden_night.webp
+    - assets/images/house_room_tidal_library_day.webp
+    - assets/images/house_room_tidal_library_night.webp
+    - assets/images/house_room_loft_day.webp
+    - assets/images/house_room_loft_night.webp
+    - assets/images/house_room_cloud_day.webp
+    - assets/images/house_room_cloud_night.webp
+    - assets/images/house_room_sunforge_day.webp
+    - assets/images/house_room_sunforge_night.webp
+    - assets/images/dragons/
+    - assets/images/chests/
+    - assets/images/furniture_moss_cushion.webp
+    - assets/images/furniture_cloud_basket.webp
+    - assets/images/furniture_moon_fern.webp
+    - assets/images/furniture_star_bonsai.webp
+    - assets/images/furniture_spire_map.webp
+    - assets/images/furniture_moon_banner.webp
+    - assets/images/furniture_firefly_lamp.webp
+    - assets/images/furniture_crystal_lantern.webp
+    - assets/images/furniture_atlases/
+
+flutter_launcher_icons:
+  android: true
+  min_sdk_android: 21
+  image_path: assets/images/dragonhaven_app_icon.png
+  adaptive_icon_background: '#FFFFFF'
+  adaptive_icon_foreground: assets/images/dragonhaven_logo.png
+  adaptive_icon_foreground_inset: 22

@@ -1,0 +1,6 @@
+# Kopieer dit bestand lokaal naar android/key.properties.
+# Commit key.properties en het .jks-bestand nooit.
+storePassword=CHANGE_ME
+keyPassword=CHANGE_ME
+keyAlias=dragonhaven
+storeFile=release-keystore.jks
