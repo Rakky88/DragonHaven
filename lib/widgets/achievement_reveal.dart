@@ -207,11 +207,14 @@ class _AchievementRevealState extends State<_AchievementReveal>
                                 const Icon(Icons.touch_app_rounded,
                                     color: AppColors.twilight, size: 18),
                                 const SizedBox(width: 7),
-                                Text(
-                                  strings.tr('tap_to_continue'),
-                                  style: const TextStyle(
-                                    color: AppColors.twilight,
-                                    fontWeight: FontWeight.w800,
+                                Flexible(
+                                  child: Text(
+                                    strings.tr('tap_to_continue'),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: AppColors.twilight,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
                                 ),
                               ],

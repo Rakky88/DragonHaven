@@ -13,6 +13,8 @@ Future<void> main() async {
     statusBarIconBrightness: Brightness.dark,
   ));
   const showcase = bool.fromEnvironment('DRAGONHAVEN_SHOWCASE');
+  const lockedCodexAudit =
+      bool.fromEnvironment('DRAGONHAVEN_CODEX_AUDIT_LOCKED');
   const hatchDemo = bool.fromEnvironment('DRAGONHAVEN_HATCH_DEMO');
   const hatchDemoSeconds = int.fromEnvironment(
     'DRAGONHAVEN_HATCH_DEMO_SECONDS',
@@ -25,6 +27,10 @@ Future<void> main() async {
       : showcase
           ? HouseholdProvider.createShowcase()
           : await HouseholdProvider.loadFromStorage();
+  if (showcase && lockedCodexAudit) {
+    game.discoveredForms.clear();
+    game.prismaticForms.clear();
+  }
   await HavenAudio.applyPreferences(
     musicEnabled: game.musicEnabled,
     soundEffectsEnabled: game.soundEffectsEnabled,

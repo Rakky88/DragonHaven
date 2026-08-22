@@ -14,8 +14,8 @@ import '../widgets/furniture_art.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
 
-class StashScreen extends StatelessWidget {
-  const StashScreen({super.key});
+class InventoryScreen extends StatelessWidget {
+  const InventoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -26,49 +26,50 @@ class StashScreen extends StatelessWidget {
         TabBar(tabs: [
           Tab(
             height: 70,
-            icon: const GameIconSprite(GameIconKind.stashEggs, size: 35),
+            icon: const GameIconSprite(GameIconKind.inventoryEggs, size: 35),
             iconMargin: const EdgeInsets.only(bottom: 1),
             text: strings.pick('Eggs', 'Eieren'),
           ),
           Tab(
             height: 70,
-            icon: const GameIconSprite(GameIconKind.stashChests, size: 35),
+            icon: const GameIconSprite(GameIconKind.inventoryChests, size: 35),
             iconMargin: const EdgeInsets.only(bottom: 1),
             text: strings.pick('Chests', 'Kisten'),
           ),
           Tab(
             height: 70,
-            icon: const GameIconSprite(GameIconKind.stashFurniture, size: 35),
+            icon:
+                const GameIconSprite(GameIconKind.inventoryFurniture, size: 35),
             iconMargin: const EdgeInsets.only(bottom: 1),
             text: strings.pick('Furniture', 'Meubels'),
           ),
         ]),
         const Expanded(
             child: TabBarView(children: [
-          _EggStashTab(),
-          _ChestStashTab(),
-          _FurnitureStashTab(),
+          _EggInventoryTab(),
+          _ChestInventoryTab(),
+          _FurnitureInventoryTab(),
         ])),
       ]),
     );
   }
 }
 
-class _EggStashTab extends StatelessWidget {
-  const _EggStashTab();
+class _EggInventoryTab extends StatelessWidget {
+  const _EggInventoryTab();
   @override
   Widget build(BuildContext context) {
     final game = context.watch<HouseholdProvider>();
     final strings = AppStrings.of(context);
     if (game.eggStash.isEmpty) {
       return _EmptyState(
-        kind: GameIconKind.stashEggs,
-        text: strings.pick('No Mysterious Eggs in your stash yet.',
-            'Nog geen Mysterious Eggs in je voorraad.'),
+        kind: GameIconKind.inventoryEggs,
+        text: strings.pick('No Mysterious Eggs in your inventory yet.',
+            'Nog geen Mysterious Eggs in je inventaris.'),
       );
     }
     return ListView.builder(
-      key: const PageStorageKey('stash-eggs-scroll'),
+      key: const PageStorageKey('inventory-eggs-scroll'),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
       itemCount: game.eggStash.length,
       itemBuilder: (context, index) {
@@ -142,8 +143,8 @@ class _EggStashTab extends StatelessWidget {
   }
 }
 
-class _ChestStashTab extends StatelessWidget {
-  const _ChestStashTab();
+class _ChestInventoryTab extends StatelessWidget {
+  const _ChestInventoryTab();
   @override
   Widget build(BuildContext context) {
     final game = context.watch<HouseholdProvider>();
@@ -152,12 +153,12 @@ class _ChestStashTab extends StatelessWidget {
         ChestTier.values.where((tier) => game.chestCount(tier) > 0).toList();
     if (tiers.isEmpty) {
       return _EmptyState(
-          kind: GameIconKind.stashChests,
+          kind: GameIconKind.inventoryChests,
           text: strings.pick('Adventure rewards are stored here.',
               'Avontuurbeloningen worden hier bewaard.'));
     }
     return ListView(
-      key: const PageStorageKey('stash-chests-scroll'),
+      key: const PageStorageKey('inventory-chests-scroll'),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
       children: [
         for (final tier in tiers)
@@ -197,7 +198,7 @@ class _ChestStashTab extends StatelessWidget {
                   ),
                 ),
                 FilledButton(
-                  key: Key('stash-open-chest-${tier.name}'),
+                  key: Key('inventory-open-chest-${tier.name}'),
                   onPressed: () => _openChest(context, tier),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
@@ -232,8 +233,8 @@ HavenSound _soundForChest(ChestTier tier) => switch (tier) {
       ChestTier.sinister => HavenSound.chestSinister,
     };
 
-class _FurnitureStashTab extends StatelessWidget {
-  const _FurnitureStashTab();
+class _FurnitureInventoryTab extends StatelessWidget {
+  const _FurnitureInventoryTab();
   @override
   Widget build(BuildContext context) {
     final game = context.watch<HouseholdProvider>();
@@ -245,12 +246,12 @@ class _FurnitureStashTab extends StatelessWidget {
       ..sort((a, b) => a.name.compareTo(b.name));
     if (items.isEmpty) {
       return _EmptyState(
-          kind: GameIconKind.stashFurniture,
+          kind: GameIconKind.inventoryFurniture,
           text: strings.pick('Your purchased furniture is stored here.',
               'Je gekochte meubels worden hier bewaard.'));
     }
     return GridView.builder(
-      key: const PageStorageKey('stash-furniture-scroll'),
+      key: const PageStorageKey('inventory-furniture-scroll'),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,

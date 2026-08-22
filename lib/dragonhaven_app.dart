@@ -16,7 +16,7 @@ import 'screens/friends_screen.dart';
 import 'screens/haven_shop_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/pet_screen.dart';
-import 'screens/stash_screen.dart';
+import 'screens/inventory_screen.dart';
 import 'services/audio_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/about_sheet.dart';
@@ -183,7 +183,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     final eggOnly = game.pet.isEgg;
     final screens = <Widget>[
       const AdventureHubScreen(),
-      const StashScreen(),
+      const InventoryScreen(),
       const DragonTowerScreen(),
       const FriendsScreen(),
       const HavenShopScreen(),
@@ -318,14 +318,14 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                 ),
                 NavigationDestination(
                   icon: const GameIconSprite(
-                    GameIconKind.navStash,
+                    GameIconKind.navInventory,
                     size: 34,
                   ),
                   selectedIcon: const GameIconSprite(
-                    GameIconKind.navStash,
+                    GameIconKind.navInventory,
                     size: 42,
                   ),
-                  label: strings.tr('stash'),
+                  label: strings.tr('inventory'),
                 ),
                 NavigationDestination(
                   icon: const GameIconSprite(
@@ -544,7 +544,7 @@ class _TopCurrency extends StatelessWidget {
 
 String _screenTitle(int index, AppStrings strings) => switch (index) {
       0 => strings.tr('adventure'),
-      1 => strings.tr('stash'),
+      1 => strings.tr('inventory'),
       2 => strings.tr('tower'),
       3 => strings.tr('friends'),
       4 => strings.tr('shop'),

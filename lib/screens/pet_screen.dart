@@ -82,9 +82,10 @@ class PetScreen extends StatelessWidget {
         ],
         if (game.eggStash.isNotEmpty) ...[
           const SizedBox(height: 26),
-          SectionHeading(title: strings.pick('Egg stash', 'Eiervoorraad')),
+          SectionHeading(
+              title: strings.pick('Egg inventory', 'Eierinventaris')),
           const SizedBox(height: 11),
-          _EggStash(eggs: game.eggStash, nestOccupied: game.hasEggInNest),
+          _EggInventory(eggs: game.eggStash, nestOccupied: game.hasEggInNest),
         ],
       ],
     );
@@ -466,15 +467,23 @@ class _DragonStageCard extends StatelessWidget {
               Align(
                   alignment:
                       pet.isEgg ? const Alignment(.02, .43) : Alignment.center,
-                  child: Transform.scale(
-                      scale: pet.isEgg ? 1 : pet.sizeFactor,
-                      child: DragonArt(
-                          height: 248,
+                  child: SizedBox.square(
+                    dimension: 280,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: SizedBox.square(
+                        dimension: 248 * (pet.isEgg ? 1 : pet.sizeFactor),
+                        child: DragonArt(
+                          height: 248 * (pet.isEgg ? 1 : pet.sizeFactor),
                           stageKey: pet.stageKey,
                           lineageId: pet.lineageId,
                           evolutionPath: pet.activeEvolutionPath,
                           prismatic: pet.spectral,
-                          sinister: pet.sinister))),
+                          sinister: pet.sinister,
+                        ),
+                      ),
+                    ),
+                  )),
               Positioned(
                   left: 16,
                   bottom: 15,
@@ -1167,8 +1176,8 @@ class _CrackPainter extends CustomPainter {
       oldDelegate.intensity != intensity;
 }
 
-class _EggStash extends StatelessWidget {
-  const _EggStash({required this.eggs, required this.nestOccupied});
+class _EggInventory extends StatelessWidget {
+  const _EggInventory({required this.eggs, required this.nestOccupied});
   final List<DragonEgg> eggs;
   final bool nestOccupied;
   @override

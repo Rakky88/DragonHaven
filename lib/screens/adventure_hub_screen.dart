@@ -145,11 +145,11 @@ class _AdventureSection extends StatelessWidget {
     final strings = AppStrings.of(context);
     final colors = _kindColors(kind);
     return Container(
-      margin: const EdgeInsets.only(bottom: 18),
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(10, 9, 10, 2),
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: colors),
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: colors.last.withValues(alpha: .55)),
       ),
       child: Column(
@@ -157,8 +157,8 @@ class _AdventureSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              GameIconSprite(_kindIcon(kind), size: 72),
-              const SizedBox(width: 9),
+              GameIconSprite(_kindIcon(kind), size: 46),
+              const SizedBox(width: 7),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,18 +166,19 @@ class _AdventureSection extends StatelessWidget {
                     Text(_kindTitle(strings, kind),
                         style: const TextStyle(
                             color: AppColors.ink,
-                            fontSize: 19,
+                            fontSize: 16,
                             fontWeight: FontWeight.w900)),
-                    const SizedBox(height: 2),
                     Text(_kindDescription(strings, kind),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            color: AppColors.muted, fontSize: 11)),
+                            color: AppColors.muted, fontSize: 10)),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 5),
           if (adventures.isEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 8, 10, 18),
@@ -206,75 +207,101 @@ class _AdventureCard extends StatelessWidget {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
     final group = adventure.kind == AdventureKind.group;
-    return Card(
-      color: Colors.white.withValues(alpha: .94),
-      margin: const EdgeInsets.only(bottom: 9),
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 14, 12, 11),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(strings.adventureTitle(adventure),
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w900, fontSize: 16)),
+    return SizedBox(
+      key: Key('adventure-card-${adventure.id}'),
+      height: 116,
+      child: Card(
+        color: Colors.white.withValues(alpha: .96),
+        margin: const EdgeInsets.only(bottom: 7),
+        elevation: 0,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(11, 8, 8, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(children: [
+                      Expanded(
+                        child: Text(
+                          strings.adventureTitle(adventure),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w900, fontSize: 14),
+                        ),
+                      ),
+                      if (adventure.sinister)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 4),
+                          child: Icon(Icons.visibility_rounded,
+                              size: 17, color: Color(0xFF8A285E)),
+                        ),
+                    ]),
+                    Text(
+                      strings.adventureDescription(adventure),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          const TextStyle(color: AppColors.muted, fontSize: 10),
+                    ),
+                    const SizedBox(height: 5),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 3,
+                      children: [
+                        _Meta(
+                          icon: const GameIconSprite(GameIconKind.clock,
+                              size: 17),
+                          text: strings.adventureDuration(adventure.duration),
+                        ),
+                        _Meta(
+                          icon: const GameIconSprite(GameIconKind.experience,
+                              size: 17),
+                          text: '${adventure.xp} XP',
+                        ),
+                        _Meta(
+                          icon: GameIconSprite(
+                            GameIconSprite.forTrainingFocus(adventure.focus),
+                            size: 17,
+                          ),
+                          text: '+${adventure.statPoints}',
+                        ),
+                        _Meta(
+                          icon: const GameIconSprite(GameIconKind.chest,
+                              size: 17),
+                          text: adventure.knownChest == null
+                              ? '?'
+                              : strings.chestLabel(adventure.knownChest!),
+                        ),
+                        if (group)
+                          _Meta(
+                            icon: const Icon(Icons.group_rounded,
+                                size: 14, color: AppColors.twilight),
+                            text: '${adventure.requirements.players}',
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
-                if (adventure.sinister)
-                  const Icon(Icons.visibility_rounded,
-                      color: Color(0xFF8A285E)),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(strings.adventureDescription(adventure),
-                style: const TextStyle(color: AppColors.muted, fontSize: 12)),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                _Meta(
-                    icon: const GameIconSprite(GameIconKind.clock, size: 21),
-                    text: strings.adventureDuration(adventure.duration)),
-                _Meta(
-                    icon:
-                        const GameIconSprite(GameIconKind.experience, size: 21),
-                    text: '${adventure.xp} XP'),
-                _Meta(
-                    icon: GameIconSprite(
-                        GameIconSprite.forTrainingFocus(adventure.focus),
-                        size: 21),
-                    text:
-                        '+${adventure.statPoints} ${_focusName(strings, adventure.focus)}'),
-                _Meta(
-                    icon: const GameIconSprite(GameIconKind.chest, size: 21),
-                    text: adventure.knownChest == null
-                        ? strings.pick('Mystery chest', 'Mysterie-kist')
-                        : strings.chestLabel(adventure.knownChest!)),
-                if (group)
-                  _Meta(
-                      icon: const Icon(Icons.group_rounded,
-                          size: 17, color: AppColors.twilight),
-                      text: strings.pick(
-                          '${adventure.requirements.players} players',
-                          '${adventure.requirements.players} spelers')),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                if (adventure.kind == AdventureKind.short)
-                  TextButton(
-                    onPressed: () => game.dismissAdventure(adventure),
-                    child: Text(strings.pick('Dismiss', 'Wegsturen')),
-                  ),
-                const Spacer(),
-                _AdventureStartButton(onPressed: () => _start(context)),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(width: 5),
+              if (adventure.kind == AdventureKind.short)
+                IconButton(
+                  tooltip: strings.pick('Dismiss', 'Wegsturen'),
+                  visualDensity: VisualDensity.compact,
+                  constraints:
+                      const BoxConstraints.tightFor(width: 28, height: 36),
+                  padding: EdgeInsets.zero,
+                  onPressed: () => game.dismissAdventure(adventure),
+                  icon: const Icon(Icons.close_rounded,
+                      size: 18, color: AppColors.muted),
+                ),
+              _AdventureStartButton(onPressed: () => _start(context)),
+            ],
+          ),
         ),
       ),
     );
@@ -327,7 +354,9 @@ class _AdventureStartButton extends StatelessWidget {
             onTap: onPressed,
             borderRadius: BorderRadius.circular(18),
             child: Ink(
-              padding: const EdgeInsets.fromLTRB(8, 3, 14, 3),
+              width: 58,
+              height: 68,
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                     colors: [Color(0xFF7256B5), Color(0xFF4C358D)]),
@@ -339,14 +368,16 @@ class _AdventureStartButton extends StatelessWidget {
                       offset: Offset(0, 4)),
                 ],
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const GameIconSprite(GameIconKind.adventureStart, size: 42),
-                  const SizedBox(width: 3),
+                  const GameIconSprite(GameIconKind.adventureStart, size: 39),
                   Text(AppStrings.of(context).pick('Start', 'Start'),
                       style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w900)),
+                          color: Colors.white,
+                          fontSize: 10,
+                          height: 1,
+                          fontWeight: FontWeight.w900)),
                 ],
               ),
             ),
@@ -785,17 +816,17 @@ class _Meta extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
         decoration: BoxDecoration(
           color: const Color(0xFFF3F1F7),
           borderRadius: BorderRadius.circular(99),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           icon,
-          const SizedBox(width: 4),
+          const SizedBox(width: 2),
           Text(text,
               style:
-                  const TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
+                  const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800)),
         ]),
       );
 }
@@ -820,13 +851,10 @@ List<Color> _kindColors(AdventureKind kind) => switch (kind) {
     };
 
 String _kindTitle(AppStrings strings, AdventureKind kind) => switch (kind) {
-      AdventureKind.short =>
-        strings.pick('Short Adventures', 'Korte avonturen'),
-      AdventureKind.long => strings.pick('Long Adventures', 'Lange avonturen'),
-      AdventureKind.group =>
-        strings.pick('Group Adventures', 'Groepsavonturen'),
-      AdventureKind.special =>
-        strings.pick('Special Adventures', 'Bijzondere avonturen'),
+      AdventureKind.short => strings.pick('Short', 'Kort'),
+      AdventureKind.long => strings.pick('Long', 'Lang'),
+      AdventureKind.group => strings.pick('Group', 'Groep'),
+      AdventureKind.special => strings.pick('Special', 'Speciaal'),
     };
 
 String _kindDescription(AppStrings strings, AdventureKind kind) =>

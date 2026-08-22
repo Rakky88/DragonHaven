@@ -276,12 +276,87 @@ void main() {
     await restored.setDragonRoaming(older.id, true);
     expect(restoredOlder.currentFloorIndex, 1);
     expect(await restored.clearDragonsFromRoom(0), isTrue);
-    expect(restored.pet.currentFloorIndex, 1);
+    expect(restored.pet.currentFloorIndex, 2,
+        reason: 'Clearing prefers the least occupied available floor.');
     expect(restoredOlder.currentFloorIndex, 1,
         reason: 'The same room type on another floor must not be cleared.');
-    expect(await restored.callControllableDragonToRoom('crystal', 2), isTrue);
-    expect(restored.pet.currentFloorIndex, 2);
-    expect(restored.pet.currentRoomId, 'crystal');
+    expect(await restored.callControllableDragonToRoom('hearth', 0), isTrue);
+    expect(restored.pet.currentFloorIndex, 0);
+    expect(restored.pet.currentRoomId, 'hearth');
+  });
+
+  test('the first dragon is favorite and exactly one favorite always remains',
+      () async {
+    final now = DateTime.utc(2026, 8, 22, 12);
+    final game = HouseholdProvider(random: Random(61), clock: () => now);
+    game.pet.stageStartedAt = now.subtract(const Duration(hours: 24));
+
+    expect(await game.hatchActiveDragon(), isTrue);
+    expect(game.pet.favorite, isTrue);
+    await game.toggleFavorite(game.pet.id);
+    expect(game.pet.favorite, isTrue,
+        reason: 'The current favorite cannot be switched off directly.');
+
+    final other = Pet(
+      id: 'favorite-successor',
+      name: 'Cinder',
+      stage: DragonStage.hatchling,
+      firstEgg: false,
+      acquiredAt: now.add(const Duration(minutes: 1)),
+    );
+    game.sanctuaryDragons.add(other);
+    await game.toggleFavorite(other.id);
+    expect(game.ownedDragons.where((dragon) => dragon.favorite), [other]);
+    expect(await game.releaseDragon(other.id), isFalse,
+        reason: 'A favorite dragon can never be released.');
+    expect(await game.releaseDragon(game.pet.id), isTrue);
+    expect(game.ownedDragons, [other]);
+    expect(other.favorite, isTrue);
+  });
+
+  test('Tower selection and room occupancy are capped at three per floor',
+      () async {
+    final game = HouseholdProvider(random: Random(62));
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Nova'
+      ..favorite = true;
+    game.towerFloorRoomIds = ['hearth', 'crystal'];
+    game.unlockedRoomIds.addAll(game.towerFloorRoomIds);
+    for (var index = 0; index < 6; index++) {
+      game.sanctuaryDragons.add(Pet(
+        id: 'roamer-$index',
+        name: 'Roamer $index',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        acquiredAt: DateTime.utc(2026, 1, index + 1),
+      ));
+    }
+    for (final dragon in game.ownedDragons) {
+      dragon.roamsTower = false;
+    }
+
+    for (final dragon in game.ownedDragons.take(6)) {
+      expect(
+        await game.setDragonRoaming(dragon.id, true),
+        DragonRoamingResult.updated,
+      );
+    }
+    expect(game.selectedRoamingDragonCount, 6);
+    expect(game.towerRoamingCapacity, 6);
+    expect(
+      await game.setDragonRoaming(game.ownedDragons.last.id, true),
+      DragonRoamingResult.towerFull,
+    );
+    expect(game.ownedDragons.last.roamsTower, isFalse);
+    for (var floor = 0; floor < game.towerFloorCount; floor++) {
+      expect(
+        game.towerDragons
+            .where((dragon) => dragon.currentFloorIndex == floor)
+            .length,
+        lessThanOrEqualTo(3),
+      );
+    }
   });
 
   test('new saves contain no task or chore game data', () async {

@@ -101,8 +101,8 @@ class _RooftopNestScreenState extends State<RooftopNestScreen> {
     if (game.eggStash.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(strings.pick(
-          'No Mysterious Eggs are waiting in your stash.',
-          'Er wachten geen Mysterious Eggs in je voorraad.',
+          'No Mysterious Eggs are waiting in your inventory.',
+          'Er wachten geen Mysterious Eggs in je inventaris.',
         )),
       ));
       return;
@@ -296,12 +296,12 @@ class _EmptyNestCard extends StatelessWidget {
               Text(
                 hasEggs
                     ? strings.pick(
-                        'Choose one egg from your stash.',
-                        'Kies één ei uit je voorraad.',
+                        'Choose one egg from your inventory.',
+                        'Kies één ei uit je inventaris.',
                       )
                     : strings.pick(
-                        'Rare chest drops will appear in your stash.',
-                        'Zeldzame vondsten uit kisten verschijnen in je voorraad.',
+                        'Rare eggs can be found in chests earned on Adventures.',
+                        'Zeldzame eieren kun je vinden in kisten die je met Adventures verdient.',
                       ),
                 style: const TextStyle(color: AppColors.muted),
               ),

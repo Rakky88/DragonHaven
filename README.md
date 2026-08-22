@@ -10,7 +10,7 @@
 - 42 families: 20 Common, 10 Uncommon, 6 Rare, 3 Very Rare, 2 Legendary and 1 Mythical. Every family has five distinct logical forms; the secret Sinister Everwyrm has dedicated artwork.
 - A 5% Spectral variant roll, separate Draconomicon collection, undiscovered silhouettes and one active egg or dragon at a time.
 - 300 Short, 200 Long, 200 Group and 100 Special Adventure definitions. Short slots refill one at a time after a full hour; Long slots refill at local midnight. Group play remains locked until authenticated online friends exist.
-- Six chest tiers, fixed reward rolls, an egg stash, chest reveal scenes, release/favorite controls, all 27 weekly returning-dragon outcome tables, Tower visits, 25/40/60% damage and three Dragon Ward levels.
+- Six chest tiers, fixed reward rolls, an egg inventory, chest reveal scenes, release/favorite controls, all 27 weekly returning-dragon outcome tables, Tower visits, 25/40/60% damage and three Dragon Ward levels.
 - A Tower roof plus up to 20 room floors, eight independently rendered room types, 200 raster furniture sprites, coin/gem shop tabs and room-only decoration controls.
 - Idle dragons use stored 65/35 room preferences, can share a room, roam on refresh and may trigger cosmetic 5% preferred-room interactions with a persisted 12-hour cooldown.
 - Seven local-time visual phases with separately painted Tower lighting and day/night room variants; changes crossfade instead of applying a flat color filter.

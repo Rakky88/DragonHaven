@@ -108,28 +108,41 @@ class _CompactAchievementGrid extends StatelessWidget {
             final name = achievement.secret && !unlocked
                 ? strings.pick('Secret achievement', 'Geheime achievement')
                 : strings.achievementTitle(achievement);
+            final badge = DecoratedBox(
+              decoration: BoxDecoration(
+                color: unlocked ? Colors.white : const Color(0xFFE4E1E8),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: unlocked ? AppColors.gold : AppColors.mist,
+                  width: unlocked ? 1.5 : 1,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(7),
+                child: AchievementBadgeSprite(
+                  achievement: achievement,
+                  unlocked: unlocked,
+                ),
+              ),
+            );
             return Semantics(
+              button: unlocked,
               label:
                   '$name, ${unlocked ? strings.pick('unlocked', 'behaald') : strings.pick('locked', 'vergrendeld')}',
               child: Tooltip(
                 message: name,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: unlocked ? Colors.white : const Color(0xFFE4E1E8),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: unlocked ? AppColors.gold : AppColors.mist,
-                      width: unlocked ? 1.5 : 1,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(7),
-                    child: AchievementBadgeSprite(
-                      achievement: achievement,
-                      unlocked: unlocked,
-                    ),
-                  ),
-                ),
+                child: unlocked
+                    ? Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          key: Key('achievement-zoom-${achievement.id}'),
+                          borderRadius: BorderRadius.circular(22),
+                          onTap: () =>
+                              _showAchievementZoom(context, achievement),
+                          child: badge,
+                        ),
+                      )
+                    : badge,
               ),
             );
           },
@@ -159,21 +172,32 @@ class _AchievementTile extends StatelessWidget {
       color: unlocked ? Colors.white : const Color(0xFFF1EFF4),
       child: ListTile(
         contentPadding: const EdgeInsets.fromLTRB(10, 8, 14, 8),
-        leading: Container(
-          width: 68,
-          height: 68,
-          padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            color: unlocked ? Colors.white : const Color(0xFFE1DEE5),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: unlocked ? AppColors.gold : const Color(0xFFBBB7C1),
-              width: unlocked ? 1.6 : 1,
+        leading: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkWell(
+            key: unlocked ? Key('achievement-zoom-${achievement.id}') : null,
+            customBorder: const CircleBorder(),
+            onTap: unlocked
+                ? () => _showAchievementZoom(context, achievement)
+                : null,
+            child: Container(
+              width: 68,
+              height: 68,
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: unlocked ? Colors.white : const Color(0xFFE1DEE5),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: unlocked ? AppColors.gold : const Color(0xFFBBB7C1),
+                  width: unlocked ? 1.6 : 1,
+                ),
+              ),
+              child: AchievementBadgeSprite(
+                achievement: achievement,
+                unlocked: unlocked,
+              ),
             ),
-          ),
-          child: AchievementBadgeSprite(
-            achievement: achievement,
-            unlocked: unlocked,
           ),
         ),
         title: Text(hidden ? '???' : strings.achievementTitle(achievement),
@@ -199,4 +223,88 @@ class _AchievementTile extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _showAchievementZoom(
+  BuildContext context,
+  AchievementDefinition achievement,
+) {
+  final strings = AppStrings.of(context);
+  return showDialog<void>(
+    context: context,
+    barrierColor: const Color(0xCC17112A),
+    builder: (dialogContext) => Dialog(
+      key: const Key('achievement-zoom-dialog'),
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Navigator.pop(dialogContext),
+          borderRadius: BorderRadius.circular(34),
+          child: Ink(
+            padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
+            decoration: BoxDecoration(
+              gradient: const RadialGradient(
+                center: Alignment.topCenter,
+                radius: 1.25,
+                colors: [Color(0xFFFFF8DC), Color(0xFFF1E9FF)],
+              ),
+              borderRadius: BorderRadius.circular(34),
+              border: Border.all(color: AppColors.gold, width: 2),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x805D45A0),
+                  blurRadius: 34,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ),
+                SizedBox.square(
+                  key: const Key('achievement-zoom-image'),
+                  dimension: 230,
+                  child: AchievementBadgeSprite(
+                    achievement: achievement,
+                    unlocked: true,
+                    size: 230,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  strings.achievementTitle(achievement),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.ink,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  strings.achievementDescription(achievement),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 14,
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }

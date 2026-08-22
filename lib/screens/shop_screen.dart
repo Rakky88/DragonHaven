@@ -76,7 +76,7 @@ class _ShopScreenState extends State<ShopScreen> {
                         child: const Padding(
                           padding: EdgeInsets.all(3),
                           child: GameIconSprite(
-                            GameIconKind.stashFurniture,
+                            GameIconKind.inventoryFurniture,
                             size: 44,
                           ),
                         )),

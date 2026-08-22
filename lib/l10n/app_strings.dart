@@ -335,16 +335,16 @@ const _coreTranslations = <String, Map<String, String>>{
     'zh': '好友',
     'ja': 'フレンド'
   },
-  'stash': {
-    'en': 'Stash',
-    'nl': 'Voorraad',
-    'de': 'Vorrat',
-    'fr': 'Réserve',
-    'es': 'Almacén',
-    'pt': 'Reserva',
-    'it': 'Scorta',
-    'zh': '仓库',
-    'ja': '保管庫'
+  'inventory': {
+    'en': 'Inventory',
+    'nl': 'Inventaris',
+    'de': 'Inventar',
+    'fr': 'Inventaire',
+    'es': 'Inventario',
+    'pt': 'Inventário',
+    'it': 'Inventario',
+    'zh': '库存',
+    'ja': '所持品'
   },
   'shop': {
     'en': 'Shop',

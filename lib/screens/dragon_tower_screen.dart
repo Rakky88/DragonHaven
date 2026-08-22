@@ -478,151 +478,328 @@ class _OwnedDragonsSheet extends StatelessWidget {
         expand: false,
         initialChildSize: .7,
         maxChildSize: .92,
-        builder: (_, controller) => ListView(
+        builder: (_, controller) => Column(
           key: const Key('owned-dragons-scroll'),
-          controller: controller,
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(strings.pick('My dragons', 'Mijn draken'),
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 9),
-            for (final dragon in game.ownedDragons)
-              _OwnedDragonCard(
-                dragon: dragon,
-                onActions: () => _dragonActions(context, dragon),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 9),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(strings.pick('My dragons', 'Mijn draken'),
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 7),
+                  Container(
+                    key: const Key('tower-roaming-capacity'),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1ECFB),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(children: [
+                      const GameIconSprite(GameIconKind.roomClear, size: 34),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          strings.pick(
+                            '${game.selectedRoamingDragonCount} / ${game.towerRoamingCapacity} roaming · maximum 3 per room',
+                            '${game.selectedRoamingDragonCount} / ${game.towerRoamingCapacity} actief · maximaal 3 per kamer',
+                          ),
+                          style: const TextStyle(
+                            color: AppColors.twilight,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ],
               ),
+            ),
+            Expanded(
+              child: GridView.builder(
+                key: const Key('owned-dragons-grid'),
+                controller: controller,
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
+                itemCount: game.ownedDragons.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount:
+                      MediaQuery.sizeOf(context).width >= 600 ? 3 : 2,
+                  childAspectRatio: .88,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                ),
+                itemBuilder: (context, index) {
+                  final dragon = game.ownedDragons[index];
+                  return _OwnedDragonGridCard(
+                    dragon: dragon,
+                    onTap: () => _showDragonDetails(context, dragon),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Future<void> _dragonActions(BuildContext context, Pet dragon) async {
+  Future<void> _showDragonDetails(BuildContext context, Pet dragon) async {
     final strings = AppStrings.of(context);
     final game = context.read<HouseholdProvider>();
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (sheetContext) => SafeArea(
-        child: Wrap(children: [
-          ListTile(
-            leading: Icon(dragon.favorite
-                ? Icons.heart_broken_rounded
-                : Icons.favorite_rounded),
-            title: Text(dragon.favorite
-                ? strings.pick('Remove favorite', 'Favoriet verwijderen')
-                : strings.pick('Set as favorite', 'Instellen als favoriet')),
-            onTap: () async {
-              Navigator.pop(sheetContext);
-              await game.toggleFavorite(dragon.id);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.flight_takeoff_rounded),
-            title: Text(strings.pick('Release dragon…', 'Draak vrijlaten…')),
-            subtitle: Text(strings.pick(
-                'Archived permanently; it may return for weekly visits.',
-                'Blijvend gearchiveerd; kan wekelijks op bezoek komen.')),
-            onTap: () async {
-              Navigator.pop(sheetContext);
-              final confirmed = await showDialog<bool>(
-                context: context,
-                builder: (dialogContext) => AlertDialog(
-                  scrollable: true,
-                  title: Text(strings.pick('Release ${dragon.displayName}?',
-                      '${dragon.displayName} vrijlaten?')),
-                  content: Text(strings.pick(
-                      'This dragon leaves your collection and cannot be trained. Its identity, form, alignment and hidden personality are preserved.',
-                      'Deze draak verlaat je collectie en kan niet meer worden getraind. Identiteit, vorm, alignment en verborgen persoonlijkheid blijven bewaard.')),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(dialogContext, false),
-                        child: Text(strings.tr('cancel'))),
-                    FilledButton(
-                        onPressed: () => Navigator.pop(dialogContext, true),
-                        child: Text(strings.pick('Release', 'Vrijlaten'))),
-                  ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            SizedBox.square(
+              dimension: 190,
+              child: DragonArt(
+                height: 190,
+                animate: true,
+                stageKey: dragon.stageKey,
+                lineageId: dragon.lineageId,
+                evolutionPath: dragon.activeEvolutionPath,
+                prismatic: dragon.spectral,
+                sinister: dragon.sinister,
+              ),
+            ),
+            Text(dragon.displayName,
+                textAlign: TextAlign.center,
+                style: Theme.of(sheetContext).textTheme.headlineSmall),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF4F0FB),
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: Column(children: [
+                _DragonDetailRow(
+                    label: strings.pick('Dragon type', 'Draaktype'),
+                    value: strings.lineageName(dragon.lineage)),
+                _DragonDetailRow(
+                    label: strings.pick('Maturity', 'Volwassenheid'),
+                    value: strings.petStage(dragon)),
+                _DragonDetailRow(
+                    label: strings.pick('Experience', 'Ervaring'),
+                    value: '${dragon.xp} XP'),
+                _DragonDetailRow(
+                    label: strings.pick('Level', 'Niveau'),
+                    value: '${dragon.level}'),
+                const Divider(height: 13),
+                _DragonDetailRow(
+                    icon: const GameIconSprite(GameIconKind.might, size: 27),
+                    label: strings.pick('Might', 'Kracht'),
+                    value: '${dragon.trainingFor(TrainingFocus.might)}'),
+                _DragonDetailRow(
+                    icon: const GameIconSprite(GameIconKind.arcana, size: 27),
+                    label: strings.pick('Arcana', 'Arcana'),
+                    value: '${dragon.trainingFor(TrainingFocus.arcana)}'),
+                _DragonDetailRow(
+                    icon: const GameIconSprite(GameIconKind.spirit, size: 27),
+                    label: strings.pick('Spirit', 'Geest'),
+                    value: '${dragon.trainingFor(TrainingFocus.spirit)}'),
+              ]),
+            ),
+            const SizedBox(height: 10),
+            Card(
+              margin: EdgeInsets.zero,
+              child: Column(children: [
+                ListTile(
+                  key: Key('dragon-roaming-${dragon.id}'),
+                  leading:
+                      const GameIconSprite(GameIconKind.roomClear, size: 38),
+                  title: Text(strings.pick(
+                      'Invite to Tower', 'Uitnodigen in de Toren')),
+                  trailing: dragon.roamsTower
+                      ? const Icon(Icons.check_circle_rounded,
+                          color: AppColors.twilight)
+                      : null,
+                  onTap: () async {
+                    final result = await game.setDragonRoaming(
+                        dragon.id, !dragon.roamsTower);
+                    if (!sheetContext.mounted) return;
+                    if (result == DragonRoamingResult.towerFull) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(strings.pick(
+                          'The Tower is full. Build another floor or disable another roaming dragon.',
+                          'De Toren is vol. Bouw een verdieping of zet een andere rondlopende draak uit.',
+                        )),
+                      ));
+                      return;
+                    }
+                    Navigator.pop(sheetContext);
+                  },
                 ),
-              );
-              if (confirmed == true) await game.releaseDragon(dragon.id);
-            },
-          ),
-        ]),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.favorite_rounded),
+                  title: Text(strings.pick(
+                      'Set as favorite', 'Instellen als favoriet')),
+                  enabled: !dragon.favorite,
+                  trailing: dragon.favorite
+                      ? const Icon(Icons.check_circle_rounded,
+                          color: Color(0xFFE05A78))
+                      : null,
+                  onTap: dragon.favorite
+                      ? null
+                      : () async {
+                          Navigator.pop(sheetContext);
+                          await game.toggleFavorite(dragon.id);
+                        },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.flight_takeoff_rounded),
+                  title:
+                      Text(strings.pick('Release dragon…', 'Draak vrijlaten…')),
+                  enabled: !dragon.favorite,
+                  onTap: dragon.favorite
+                      ? null
+                      : () async {
+                          Navigator.pop(sheetContext);
+                          final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (dialogContext) => AlertDialog(
+                                  scrollable: true,
+                                  title: Text(strings.pick(
+                                      'Release ${dragon.displayName}?',
+                                      '${dragon.displayName} vrijlaten?')),
+                                  content: Text(strings.pick(
+                                      'This dragon leaves your collection and cannot be trained. Its identity, form, alignment and hidden personality are preserved.',
+                                      'Deze draak verlaat je collectie en kan niet meer worden getraind. Identiteit, vorm, alignment en verborgen persoonlijkheid blijven bewaard.')),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(dialogContext, false),
+                                        child: Text(strings.tr('cancel'))),
+                                    FilledButton(
+                                        onPressed: () =>
+                                            Navigator.pop(dialogContext, true),
+                                        child: Text(strings.pick(
+                                            'Release', 'Vrijlaten'))),
+                                  ],
+                                ),
+                              ) ??
+                              false;
+                          if (confirmed) {
+                            await game.releaseDragon(dragon.id);
+                          }
+                        },
+                ),
+              ]),
+            ),
+          ]),
+        ),
       ),
     );
   }
 }
 
-class _OwnedDragonCard extends StatelessWidget {
-  const _OwnedDragonCard({required this.dragon, required this.onActions});
+class _OwnedDragonGridCard extends StatelessWidget {
+  const _OwnedDragonGridCard({required this.dragon, required this.onTap});
 
   final Pet dragon;
-  final VoidCallback onActions;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final game = context.watch<HouseholdProvider>();
-    final strings = AppStrings.of(context);
-    final status = dragon.activeAdventureId != null
-        ? strings.pick('Adventuring', 'Op avontuur')
-        : dragon.roamsTower
-            ? strings.pick('Roaming in the Tower', 'Loopt rond in de Toren')
-            : strings.pick('Resting off-stage', 'Rust buiten beeld');
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          ListTile(
-            leading: SizedBox.square(
-              dimension: 62,
-              child: Transform.scale(
-                scale: dragon.sizeFactor,
-                child: DragonArt(
-                  height: 62,
-                  animate: false,
-                  stageKey: dragon.stageKey,
-                  lineageId: dragon.lineageId,
-                  evolutionPath: dragon.activeEvolutionPath,
-                  prismatic: dragon.spectral,
-                  sinister: dragon.sinister,
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        key: Key('owned-dragon-${dragon.id}'),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
+          child: Stack(children: [
+            Column(children: [
+              Expanded(
+                child: Center(
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: DragonArt(
+                      height: 150,
+                      animate: false,
+                      stageKey: dragon.stageKey,
+                      lineageId: dragon.lineageId,
+                      evolutionPath: dragon.activeEvolutionPath,
+                      prismatic: dragon.spectral,
+                      sinister: dragon.sinister,
+                    ),
+                  ),
                 ),
               ),
-            ),
-            title: Row(children: [
-              Expanded(
-                child: Text(dragon.displayName,
-                    style: const TextStyle(fontWeight: FontWeight.w900)),
+              const SizedBox(height: 4),
+              Text(
+                dragon.displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w900),
               ),
-              if (dragon.favorite)
-                const Icon(Icons.favorite_rounded,
-                    color: Color(0xFFE05A78), size: 18),
             ]),
-            subtitle: Text(
-              '${strings.lineageName(dragon.lineage)} · ${strings.petStage(dragon)} · ${strings.levelShort(dragon.level)}\n${dragon.xp} XP · $status',
-            ),
-            isThreeLine: true,
-            trailing: const Icon(Icons.more_horiz_rounded),
-            onTap: onActions,
-          ),
-          const Divider(height: 1, indent: 14, endIndent: 14),
-          SwitchListTile.adaptive(
-            key: Key('dragon-roaming-${dragon.id}'),
-            dense: true,
-            contentPadding: const EdgeInsets.fromLTRB(14, 0, 10, 0),
-            secondary: const GameIconSprite(GameIconKind.roomClear, size: 38),
-            title: Text(strings.pick(
-                'Free roaming in the Tower', 'Vrij rondlopen in de Toren')),
-            subtitle: Text(strings.pick(
-              'This dragon may appear and wander through rooms.',
-              'Deze draak kan in kamers verschijnen en rondlopen.',
-            )),
-            value: dragon.roamsTower,
-            onChanged: (enabled) => game.setDragonRoaming(dragon.id, enabled),
-          ),
-        ],
+            if (dragon.favorite)
+              const Positioned(
+                top: 3,
+                right: 3,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: Color(0x22000000), blurRadius: 5),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(5),
+                    child: Icon(Icons.favorite_rounded,
+                        color: Color(0xFFE05A78), size: 20),
+                  ),
+                ),
+              ),
+          ]),
+        ),
       ),
     );
   }
+}
+
+class _DragonDetailRow extends StatelessWidget {
+  const _DragonDetailRow({
+    required this.label,
+    required this.value,
+    this.icon,
+  });
+
+  final Widget? icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        child: Row(children: [
+          if (icon != null) ...[
+            SizedBox.square(dimension: 30, child: Center(child: icon)),
+            const SizedBox(width: 7),
+          ],
+          Expanded(
+            child: Text(label,
+                style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+          ),
+          Text(value,
+              style: const TextStyle(
+                  color: AppColors.ink, fontWeight: FontWeight.w900)),
+        ]),
+      );
 }
 
 class _CodexBar extends StatelessWidget implements PreferredSizeWidget {

@@ -61,8 +61,8 @@ class DraconomiconScreen extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           strings.pick(
-                            'Every form you raise leaves its magic on these pages.',
-                            'Elke vorm die je grootbrengt laat zijn magie op deze pagina’s achter.',
+                            'Every form you raise leaves its magic on the page.',
+                            'Elke vorm die je grootbrengt laat zijn magie achter op de bladzij.',
                           ),
                           style: const TextStyle(
                             color: Color(0xFFE4DCF5),
@@ -131,7 +131,7 @@ class _DragonCollection extends StatelessWidget {
       itemCount: dragonLineages.length,
       itemBuilder: (context, index) => Padding(
         padding: const EdgeInsets.only(bottom: 10),
-        child: _LineageEntry(
+        child: DragonLineageEntry(
             lineage: dragonLineages[index],
             number: index + 1,
             game: game,
@@ -141,12 +141,13 @@ class _DragonCollection extends StatelessWidget {
   }
 }
 
-class _LineageEntry extends StatelessWidget {
-  const _LineageEntry(
+class DragonLineageEntry extends StatelessWidget {
+  const DragonLineageEntry(
       {required this.lineage,
       required this.number,
       required this.game,
-      required this.spectral});
+      required this.spectral,
+      super.key});
   final DragonLineage lineage;
   final int number;
   final HouseholdProvider game;
@@ -173,6 +174,8 @@ class _LineageEntry extends StatelessWidget {
         leading: SizedBox.square(
             dimension: 58,
             child: DragonArt(
+                key: Key(
+                    'draconomicon-preview-${spectral ? 'spectral' : 'normal'}-${lineage.id}'),
                 height: 58,
                 animate: false,
                 stageKey: 'spark',
@@ -214,21 +217,21 @@ class _LineageEntry extends StatelessWidget {
               _FormTile(
                   lineage: lineage,
                   formKey: 'ascended:might',
-                  label: 'Might',
+                  label: strings.pick('Might', 'Kracht'),
                   stageKey: 'homeGuardian',
                   path: 'might',
                   spectral: spectral),
               _FormTile(
                   lineage: lineage,
                   formKey: 'ascended:arcana',
-                  label: 'Arcana',
+                  label: strings.pick('Arcana', 'Arcana'),
                   stageKey: 'homeGuardian',
                   path: 'arcana',
                   spectral: spectral),
               _FormTile(
                   lineage: lineage,
                   formKey: 'ascended:spirit',
-                  label: 'Spirit',
+                  label: strings.pick('Spirit', 'Geest'),
                   stageKey: 'homeGuardian',
                   path: 'spirit',
                   spectral: spectral),
@@ -270,6 +273,8 @@ class _FormTile extends StatelessWidget {
       _ => GameIconKind.might,
     };
     return Container(
+      key: Key(
+          'draconomicon-form-${spectral ? 'spectral' : 'normal'}-${lineage.id}-$formKey'),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
           gradient: known
@@ -291,14 +296,22 @@ class _FormTile extends StatelessWidget {
             child: GameIconSprite(focusKind, size: 27),
           ),
         Expanded(
-            child: DragonArt(
-                height: 112,
-                animate: false,
-                stageKey: stageKey,
-                lineageId: lineage.id,
-                evolutionPath: path,
-                silhouette: !known,
-                prismatic: spectral)),
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: DragonArt(
+                  key: Key(
+                      'draconomicon-art-${spectral ? 'spectral' : 'normal'}-${lineage.id}-$formKey'),
+                  height: 112,
+                  animate: false,
+                  stageKey: stageKey,
+                  lineageId: lineage.id,
+                  evolutionPath: path,
+                  silhouette: !known,
+                  prismatic: spectral),
+            ),
+          ),
+        ),
         const SizedBox(height: 5),
         Text(title,
             maxLines: 2,

@@ -31,6 +31,13 @@ enum PurchaseResult {
   alreadyEquipped,
 }
 
+enum DragonRoamingResult {
+  updated,
+  unchanged,
+  dragonNotFound,
+  towerFull,
+}
+
 double _dragonSizeFromRoll(double roll) =>
     1 + .5 * (roll >= .5 ? 1 : -1) * pow((2 * roll - 1).abs(), 2);
 
@@ -227,6 +234,8 @@ class HouseholdProvider extends ChangeNotifier {
         code: ActivityCode.welcome,
       ),
     ];
+    _ensureFavoriteDragon();
+    _normalizeRoamingState();
   }
 
   void _initializeShowcase() {
@@ -411,6 +420,8 @@ class HouseholdProvider extends ChangeNotifier {
         code: ActivityCode.welcome,
       ),
     ];
+    _ensureFavoriteDragon();
+    _normalizeRoamingState();
   }
 
   void _restore(Map<String, dynamic> data) {
@@ -622,6 +633,8 @@ class HouseholdProvider extends ChangeNotifier {
         activity.id: activity,
     }.values.where((entry) => entry.code != ActivityCode.legacy).toList();
     _trimActivities();
+    _ensureFavoriteDragon();
+    _normalizeRoamingState();
   }
 
   int chestCount(ChestTier tier) => chestInventory[tier] ?? 0;
@@ -776,6 +789,8 @@ class HouseholdProvider extends ChangeNotifier {
       pet = egg;
       incubatingEgg = null;
     }
+    _ensureFavoriteDragon();
+    _normalizeRoamingState();
     totalHatched++;
     _registerCurrentStage();
     _addActivity(

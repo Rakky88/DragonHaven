@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dragon_haven/l10n/app_strings.dart';
 import 'package:dragon_haven/l10n/catalog_translations.dart';
 import 'package:dragon_haven/l10n/ui_phrase_translations.dart';
@@ -19,6 +21,32 @@ void main() {
       for (final language in translatedLanguages) {
         expect(translatedUiPhrase(entry.key, language), isNotNull,
             reason: '${entry.key} ($language)');
+      }
+    }
+  });
+
+  test('every fixed authored pick phrase is translated in all languages', () {
+    final fixedPhrases = <String>{};
+    final pickPattern = RegExp(
+      r"\.pick\(\s*'((?:\\.|[^'])*)'\s*,",
+      multiLine: true,
+    );
+    for (final file in Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'))) {
+      final source = file.readAsStringSync();
+      for (final match in pickPattern.allMatches(source)) {
+        final phrase =
+            match.group(1)!.replaceAll(r"\'", "'").replaceAll(r'\\', r'\');
+        if (!phrase.contains(r'$')) fixedPhrases.add(phrase);
+      }
+    }
+    expect(fixedPhrases, isNotEmpty);
+    for (final phrase in fixedPhrases) {
+      for (final language in translatedLanguages) {
+        expect(translatedUiPhrase(phrase, language), isNotNull,
+            reason: '$phrase ($language)');
       }
     }
   });
@@ -61,6 +89,7 @@ void main() {
       '13 / 20 unlocked',
       'You need 25 more coins.',
       'Your sanctuary reaches level 12 before this room can be built.',
+      '7 / 12 roaming · maximum 3 per room',
     ];
     for (final language in translatedLanguages) {
       for (final sample in samples) {

@@ -3,14 +3,17 @@ import 'dart:math';
 import 'package:dragon_haven/dragonhaven_app.dart';
 import 'package:dragon_haven/l10n/app_strings.dart';
 import 'package:dragon_haven/models/achievement.dart';
+import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/screens/achievements_screen.dart';
+import 'package:dragon_haven/screens/adventure_hub_screen.dart';
 import 'package:dragon_haven/screens/draconomicon_screen.dart';
 import 'package:dragon_haven/widgets/achievement_badge_sprite.dart';
+import 'package:dragon_haven/widgets/achievement_reveal.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -55,7 +58,9 @@ void main() {
     if (hatched) {
       game.pet
         ..stage = DragonStage.hatchling
-        ..name = 'Ember';
+        ..name = 'Ember'
+        ..favorite = true;
+      game.unlockedAchievementIds.add('not_picking_favorites');
     }
     await tester.pumpWidget(ChangeNotifierProvider.value(
       value: game,
@@ -129,6 +134,35 @@ void main() {
     expect(timerRect.right, lessThanOrEqualTo(320));
     expect(find.byIcon(Icons.hourglass_bottom_rounded), findsNothing);
     expect(find.text('Hatches in'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('compact Adventure cards stay uniform on a small German phone',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 640));
+    tester.platformDispatcher.textScaleFactorTestValue = 1.2;
+    addTearDown(() {
+      tester.binding.setSurfaceSize(null);
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+    });
+    final game = HouseholdProvider(random: Random(73))..languageCode = 'de';
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Ember';
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: const MaterialApp(home: Scaffold(body: AdventureHubScreen())),
+    ));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final cards = game
+        .adventuresFor(AdventureKind.short)
+        .map((adventure) => find.byKey(Key('adventure-card-${adventure.id}')))
+        .toList();
+    expect(cards, hasLength(3));
+    for (final card in cards) {
+      expect(tester.getSize(card).height, 116);
+    }
     expect(tester.takeException(), isNull);
   });
 
@@ -248,7 +282,7 @@ void main() {
     expect(
       navigation.destinations
           .map((destination) => (destination as NavigationDestination).label),
-      ['Adventure', 'Stash', 'Tower', 'Friends', 'Shop'],
+      ['Adventure', 'Inventory', 'Tower', 'Friends', 'Shop'],
     );
     final towerRoof = find.byKey(const Key('tower-roof'));
     final openCodex = find.byKey(const Key('open-draconomicon'));
@@ -263,15 +297,23 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
     expect(find.text('Available'), findsOneWidget);
     expect(find.text('Active'), findsOneWidget);
-    expect(find.text('Short Adventures'), findsOneWidget);
+    expect(find.text('Short'), findsOneWidget);
+    final shortCards = game
+        .adventuresFor(AdventureKind.short)
+        .map((adventure) => find.byKey(Key('adventure-card-${adventure.id}')))
+        .toList();
+    expect(shortCards, isNotEmpty);
+    for (final card in shortCards) {
+      expect(tester.getSize(card).height, 116);
+    }
     final adventureList = find.descendant(
       of: find.byKey(const PageStorageKey('available-adventures-scroll')),
       matching: find.byType(Scrollable),
     );
     for (final heading in const [
-      'Long Adventures',
-      'Group Adventures',
-      'Special Adventures',
+      'Long',
+      'Group',
+      'Special',
     ]) {
       await tester.scrollUntilVisible(
         find.text(heading),
@@ -284,8 +326,31 @@ void main() {
     await tester.tap(find.text('Tower').last);
     await tester.pump(const Duration(milliseconds: 350));
     await tester.tap(find.text('My dragons'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(find.byKey(const Key('owned-dragons-grid')), findsOneWidget);
+    expect(find.text('Dragon type'), findsNothing);
+    final ownedDragon = find.byKey(Key('owned-dragon-${game.pet.id}'));
+    await tester.ensureVisible(ownedDragon);
+    await tester.pump();
+    await tester.tap(ownedDragon);
     await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Dragon type'), findsOneWidget);
+    expect(find.text('Maturity'), findsOneWidget);
+    expect(find.text('Experience'), findsOneWidget);
+    expect(find.text('Level'), findsOneWidget);
+    expect(find.text('Might'), findsOneWidget);
+    expect(find.text('Arcana'), findsOneWidget);
+    expect(find.text('Spirit'), findsOneWidget);
+    expect(find.text('Invite to Tower'), findsOneWidget);
+    final releaseTile = tester.widget<ListTile>(find.ancestor(
+      of: find.text('Release dragon…'),
+      matching: find.byType(ListTile),
+    ));
+    expect(releaseTile.enabled, isFalse);
     expect(find.byKey(Key('dragon-roaming-${game.pet.id}')), findsOneWidget);
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.tapAt(const Offset(8, 8));
     await tester.pump(const Duration(milliseconds: 500));
 
@@ -293,7 +358,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
     expect(find.byKey(const PageStorageKey('friends-scroll')), findsOneWidget);
 
-    await tester.tap(find.text('Stash').last);
+    await tester.tap(find.text('Inventory').last);
     await tester.pump(const Duration(milliseconds: 350));
     expect(find.text('Eggs'), findsOneWidget);
     expect(find.text('Chests'), findsOneWidget);
@@ -307,7 +372,8 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('earned chests appear and open only from Stash', (tester) async {
+  testWidgets('earned chests appear and open only from Inventory',
+      (tester) async {
     final game = await pumpGame(tester, onboarded: true, hatched: true);
     game.chestInventory[ChestTier.wooden] = 1;
     game.notifyListeners();
@@ -318,13 +384,13 @@ void main() {
     expect(find.byKey(const PageStorageKey('unopened-chests-scroll')),
         findsNothing);
 
-    await tester.tap(find.text('Stash').last);
+    await tester.tap(find.text('Inventory').last);
     await tester.pumpAndSettle();
     expect(game.chestCount(ChestTier.wooden), 1);
     await tester.tap(find.text('Chests'));
     await tester.pumpAndSettle();
 
-    final openChest = find.byKey(const Key('stash-open-chest-wooden'));
+    final openChest = find.byKey(const Key('inventory-open-chest-wooden'));
     expect(openChest, findsOneWidget);
     await tester.tap(openChest);
     for (var frame = 0; frame < 12; frame++) {
@@ -362,6 +428,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('rooftop-nest-scene')), findsOneWidget);
     expect(find.text('The nest is empty'), findsOneWidget);
+    expect(find.text('Choose one egg from your inventory.'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('rooftop-nest-scene')));
     await tester.pump();
@@ -387,6 +454,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.byKey(const Key('rooftop-nest-scene')), findsOneWidget);
+    expect(find.text('The nest is empty'), findsNothing);
+    expect(
+      find.text('Rare eggs can be found in chests earned on Adventures.'),
+      findsNothing,
+    );
     expect(find.text('One hidden dragon is growing beneath the shell.'),
         findsOneWidget);
     expect(find.byKey(const Key('nest-egg-hatch-countdown')), findsOneWidget);
@@ -394,6 +466,22 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Adventure'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('an empty nest explains where rare eggs can be found',
+      (tester) async {
+    await pumpGame(tester, onboarded: true, hatched: true);
+    final towerRoof = find.byKey(const Key('tower-roof'));
+    await tester.ensureVisible(towerRoof);
+    await tester.tap(towerRoof);
+    await tester.pumpAndSettle();
+
+    expect(find.text('The nest is empty'), findsOneWidget);
+    expect(
+      find.text('Rare eggs can be found in chests earned on Adventures.'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -543,6 +631,20 @@ void main() {
       find.ancestor(of: lockedSprite, matching: find.byType(ColorFiltered)),
       findsOneWidget,
     );
+    expect(
+      find.byKey(Key('achievement-zoom-${achievementCatalog[1].id}')),
+      findsNothing,
+    );
+
+    await tester.tap(
+      find.byKey(Key('achievement-zoom-${achievementCatalog.first.id}')),
+    );
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.byKey(const Key('achievement-zoom-dialog')), findsOneWidget);
+    expect(find.byKey(const Key('achievement-zoom-image')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('achievement-zoom-image')));
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.byKey(const Key('achievement-zoom-dialog')), findsNothing);
 
     await tester.tap(find.byKey(const Key('achievements-view-toggle')));
     await tester.pump(const Duration(milliseconds: 500));
@@ -559,6 +661,40 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('achievement reveal fits a compact large-text phone',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 640));
+    tester.platformDispatcher.textScaleFactorTestValue = 1.35;
+    addTearDown(() {
+      tester.binding.setSurfaceSize(null);
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+    });
+    late BuildContext revealContext;
+    await tester.pumpWidget(MaterialApp(
+      home: Builder(builder: (context) {
+        revealContext = context;
+        return const Scaffold();
+      }),
+    ));
+
+    final reveal = showAchievementReveal(revealContext, achievementCatalog[4]);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1200));
+    expect(
+        find.byKey(
+          Key('achievement-reveal-${achievementCatalog[4].id}'),
+        ),
+        findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byKey(
+      Key('achievement-reveal-${achievementCatalog[4].id}'),
+    ));
+    await tester.pump(const Duration(milliseconds: 1000));
+    await reveal;
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('tapping the logo opens the complete About panel',
       (tester) async {
     await pumpGame(tester, onboarded: true);
@@ -569,7 +705,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.00.14'), findsOneWidget);
+    expect(find.text('v0.01.00'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

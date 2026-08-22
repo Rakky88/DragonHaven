@@ -495,6 +495,21 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
       '聖域がレベル$valueになると、この部屋を建てられます。'
     ]);
   }
+  final roaming =
+      RegExp(r'^(\d+) / (\d+) roaming · maximum 3 per room$').firstMatch(text);
+  if (roaming != null) {
+    final selected = roaming.group(1)!;
+    final capacity = roaming.group(2)!;
+    return _localized(languageCode, [
+      '$selected / $capacity unterwegs · maximal 3 pro Raum',
+      '$selected / $capacity deambulando · máximo 3 por habitación',
+      '$selected / $capacity en liberté · maximum 3 par pièce',
+      '$selected / $capacity in giro · massimo 3 per stanza',
+      '$selected / $capacity circulando · máximo de 3 por cômodo',
+      '$selected / $capacity 只正在漫游 ·每个房间最多 3 只',
+      '$selected / $capacity 体が巡回中・1部屋につき最大3体',
+    ]);
+  }
   return null;
 }
 
@@ -1192,14 +1207,14 @@ const uiPhraseTranslations = <String, List<String>>{
     '龙蛋已移至屋顶巢穴。',
     '卵を屋上の巣へ移しました。'
   ],
-  'Egg stash': [
-    'Eivorrat',
-    'Reserva de huevos',
-    'Réserve d’œufs',
-    'Scorta di uova',
-    'Reserva de ovos',
-    '龙蛋储藏',
-    '卵の保管庫'
+  'Egg inventory': [
+    'Eierinventar',
+    'Inventario de huevos',
+    'Inventaire des œufs',
+    'Inventario delle uova',
+    'Inventário de ovos',
+    '龙蛋库存',
+    '卵の所持品'
   ],
   'Eggs': ['Eier', 'Huevos', 'Œufs', 'Uova', 'Ovos', '龙蛋', '卵'],
   'Energy': ['Energie', 'Energía', 'Énergie', 'Energia', 'Energia', '精力', '元気'],
@@ -1544,14 +1559,14 @@ const uiPhraseTranslations = <String, List<String>>{
     '巢穴房',
     '巣の間'
   ],
-  'No Mysterious Eggs in your stash yet.': [
-    'Du hast noch keine geheimnisvollen Eier im Vorrat.',
-    'Aún no hay Huevos Misteriosos en tu almacén.',
-    'Aucun Œuf mystérieux dans ta réserve pour le moment.',
-    'Non ci sono ancora Uova misteriose nella scorta.',
-    'Ainda não há Ovos Misteriosos na sua reserva.',
-    '你的储藏中还没有神秘龙蛋。',
-    '保管庫にはまだ不思議な卵がありません。'
+  'No Mysterious Eggs in your inventory yet.': [
+    'Du hast noch keine geheimnisvollen Eier im Inventar.',
+    'Aún no hay Huevos Misteriosos en tu inventario.',
+    'Aucun Œuf mystérieux dans votre inventaire pour le moment.',
+    'Non ci sono ancora Uova misteriose nel tuo inventario.',
+    'Ainda não há Ovos Misteriosos no seu inventário.',
+    '你的库存中还没有神秘龙蛋。',
+    '所持品にはまだ不思議な卵がありません。'
   ],
   'No internet connection. Please try again later.': [
     'Keine Internetverbindung. Bitte versuche es später erneut.',
@@ -2828,14 +2843,14 @@ const uiPhraseTranslations = <String, List<String>>{
     '揭晓这条龙',
     'ドラゴンを明らかにする'
   ],
-  'No Mysterious Eggs are waiting in your stash.': [
-    'In deinem Vorrat warten keine geheimnisvollen Eier.',
-    'No hay Huevos Misteriosos esperando en tu alijo.',
-    'Aucun Œuf mystérieux n’attend dans votre réserve.',
-    'Non ci sono Uova misteriose nella tua scorta.',
-    'Não há Ovos Misteriosos esperando no seu estoque.',
-    '你的储藏中没有等待孵化的神秘龙蛋。',
-    '保管庫に待機中の不思議な卵はありません。'
+  'No Mysterious Eggs are waiting in your inventory.': [
+    'In deinem Inventar warten keine geheimnisvollen Eier.',
+    'No hay Huevos Misteriosos esperando en tu inventario.',
+    'Aucun Œuf mystérieux n’attend dans votre inventaire.',
+    'Non ci sono Uova misteriose nel tuo inventario.',
+    'Não há Ovos Misteriosos esperando no seu inventário.',
+    '你的库存中没有等待孵化的神秘龙蛋。',
+    '所持品に待機中の不思議な卵はありません。'
   ],
   'Choose a Mysterious Egg': [
     'Wähle ein geheimnisvolles Ei',
@@ -2900,23 +2915,23 @@ const uiPhraseTranslations = <String, List<String>>{
     '巢穴是空的',
     '巣は空です'
   ],
-  'Choose one egg from your stash.': [
-    'Wähle ein Ei aus deinem Vorrat.',
-    'Elige un huevo de tu alijo.',
-    'Choisissez un œuf dans votre réserve.',
-    'Scegli un uovo dalla tua scorta.',
-    'Escolha um ovo do seu estoque.',
-    '从储藏中选择一枚蛋。',
-    '保管庫から卵を一つ選んでください。'
+  'Choose one egg from your inventory.': [
+    'Wähle ein Ei aus deinem Inventar.',
+    'Elige un huevo de tu inventario.',
+    'Choisissez un œuf dans votre inventaire.',
+    'Scegli un uovo dal tuo inventario.',
+    'Escolha um ovo do seu inventário.',
+    '从库存中选择一枚蛋。',
+    '所持品から卵を一つ選んでください。'
   ],
-  'Rare chest drops will appear in your stash.': [
-    'Seltene Truhenfunde erscheinen in deinem Vorrat.',
-    'Los hallazgos raros de cofres aparecerán en tu alijo.',
-    'Les trouvailles rares des coffres apparaîtront dans votre réserve.',
-    'I rari ritrovamenti dai forzieri appariranno nella tua scorta.',
-    'Itens raros de baús aparecerão no seu estoque.',
-    '宝箱中的稀有掉落会出现在你的储藏中。',
-    '宝箱からの珍しい獲得物は保管庫に入ります。'
+  'Rare eggs can be found in chests earned on Adventures.': [
+    'Seltene Eier können in Truhen aus Abenteuern gefunden werden.',
+    'Puedes encontrar huevos raros en cofres ganados en Aventuras.',
+    'Des œufs rares peuvent être trouvés dans les coffres gagnés en Aventure.',
+    'Puoi trovare uova rare nei forzieri ottenuti nelle Avventure.',
+    'Ovos raros podem ser encontrados em baús ganhos nas Aventuras.',
+    '稀有龙蛋可能藏在冒险获得的宝箱中。',
+    '冒険で獲得した宝箱から珍しい卵が見つかることがあります。'
   ],
   'Choose an egg': [
     'Ei auswählen',
@@ -2937,13 +2952,13 @@ const uiPhraseTranslations = <String, List<String>>{
     '龙蛋会移到屋顶巢穴。你的活跃龙和应用的其他功能仍可正常使用。',
     '卵は屋上の巣へ移動します。アクティブなドラゴンとアプリの他の機能は引き続き利用できます。'
   ],
-  'Every form you raise leaves its magic on these pages.': [
-    'Jede Form, die du großziehst, hinterlässt ihre Magie auf diesen Seiten.',
-    'Cada forma que crías deja su magia en estas páginas.',
-    'Chaque forme que vous élevez laisse sa magie sur ces pages.',
-    'Ogni forma che allevi lascia la sua magia su queste pagine.',
-    'Cada forma que você cria deixa sua magia nestas páginas.',
-    '你培养的每种形态都会在这些书页上留下魔法。',
+  'Every form you raise leaves its magic on the page.': [
+    'Jede Form, die du großziehst, hinterlässt ihre Magie auf der Seite.',
+    'Cada forma que crías deja su magia en la página.',
+    'Chaque forme que vous élevez laisse sa magie sur la page.',
+    'Ogni forma che allevi lascia la sua magia sulla pagina.',
+    'Cada forma que você cria deixa sua magia na página.',
+    '你培养的每种形态都会在这一页留下魔法。',
     '育てたすべての姿が、このページに魔法を残します。'
   ],
   'Available': [
@@ -3294,5 +3309,51 @@ const uiPhraseTranslations = <String, List<String>>{
     'TOQUE PARA CHAMAR SEU FAVORITO',
     '点击召唤你的最爱',
     'タップしてお気に入りを呼ぶ'
+  ],
+  'Dragon type': [
+    'Drachentyp',
+    'Tipo de dragón',
+    'Type de dragon',
+    'Tipo di drago',
+    'Tipo de dragão',
+    '龙的种类',
+    'ドラゴンの種類'
+  ],
+  'Maturity': [
+    'Reifestufe',
+    'Madurez',
+    'Maturité',
+    'Maturità',
+    'Maturidade',
+    '成长阶段',
+    '成長段階'
+  ],
+  'Experience': [
+    'Erfahrung',
+    'Experiencia',
+    'Expérience',
+    'Esperienza',
+    'Experiência',
+    '经验',
+    '経験値'
+  ],
+  'Level': ['Level', 'Nivel', 'Niveau', 'Livello', 'Nível', '等级', 'レベル'],
+  'Invite to Tower': [
+    'In den Turm einladen',
+    'Invitar a la Torre',
+    'Inviter dans la Tour',
+    'Invita nella Torre',
+    'Convidar para a Torre',
+    '邀请进入龙塔',
+    '塔に招待する'
+  ],
+  'The Tower is full. Build another floor or disable another roaming dragon.': [
+    'Der Turm ist voll. Baue eine weitere Etage oder deaktiviere einen anderen umherziehenden Drachen.',
+    'La Torre está llena. Construye otro piso o desactiva otro dragón que deambula.',
+    'La Tour est pleine. Construisez un autre étage ou désactivez un autre dragon en liberté.',
+    'La Torre è piena. Costruisci un altro piano o disattiva un altro drago in giro.',
+    'A Torre está cheia. Construa outro andar ou desative outro dragão que circula.',
+    '龙塔已满。请再建一层或停止另一只龙的漫游。',
+    '塔が満員です。階を増やすか、別のドラゴンの巡回を解除してください。'
   ],
 };
