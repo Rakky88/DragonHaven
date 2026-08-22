@@ -4,12 +4,14 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
+import '../l10n/app_strings.dart';
 import '../models/achievement.dart';
 import '../models/adventure.dart';
 import '../models/activity_entry.dart';
 import '../models/chest.dart';
 import '../models/dragon_egg.dart';
 import '../models/dragon_lineage.dart';
+import '../models/game_presentation.dart';
 import '../models/house.dart';
 import '../models/pet.dart';
 import '../models/shop_item.dart';
@@ -44,13 +46,16 @@ class HouseholdProvider extends ChangeNotifier {
     Random? random,
     DateTime Function()? clock,
     bool initialize = true,
+    bool persistenceEnabled = true,
   })  : _random = random ?? Random.secure(),
-        _clock = clock ?? DateTime.now {
+        _clock = clock ?? DateTime.now,
+        _persistenceEnabled = persistenceEnabled {
     if (initialize) _initializeFresh();
   }
 
   final Random _random;
   final DateTime Function() _clock;
+  final bool _persistenceEnabled;
   final _uuid = const Uuid();
   Future<void> _saveQueue = Future<void>.value();
 
@@ -60,6 +65,7 @@ class HouseholdProvider extends ChangeNotifier {
   bool musicEnabled = true;
   bool soundEffectsEnabled = true;
   bool achievementsCompact = false;
+  bool showcaseMode = false;
   late Pet pet;
   List<DragonEgg> eggStash = [];
   List<Pet> sanctuaryDragons = [];
@@ -69,6 +75,7 @@ class HouseholdProvider extends ChangeNotifier {
   Set<String> discoveredForms = {};
   Set<String> prismaticForms = {};
   Set<String> unlockedAchievementIds = {};
+  List<GamePresentation> pendingPresentations = [];
   int totalHatched = 0;
   int totalNamed = 0;
   int totalWyrmling = 0;
@@ -107,7 +114,18 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 23;
+  static const _schemaVersion = 24;
+
+  static HouseholdProvider createShowcase() {
+    final provider = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: Random(20260822),
+      clock: DateTime.now,
+    );
+    provider._initializeShowcase();
+    return provider;
+  }
 
   static Future<HouseholdProvider> loadFromStorage() async {
     final provider = HouseholdProvider(initialize: false);
@@ -122,8 +140,11 @@ class HouseholdProvider extends ChangeNotifier {
       final schemaChanged = data['schemaVersion'] != _schemaVersion;
       final changed = provider.pet.applyTimeDecay(provider._clock()) |
           provider._registerCurrentStage();
-      provider._evaluateAchievements(addActivities: false);
-      if (schemaChanged || changed) await provider._save();
+      final achievementsChanged =
+          provider._evaluateAchievements(addActivities: false);
+      if (schemaChanged || changed || achievementsChanged) {
+        await provider._save();
+      }
     } on Object {
       const supportedLanguages = {
         'en',
@@ -171,6 +192,183 @@ class HouseholdProvider extends ChangeNotifier {
       ActivityEntry(
         id: _uuid.v4(),
         message: 'A Mysterious Egg appeared in the tower nest.',
+        createdAt: now,
+        type: ActivityType.milestone,
+        code: ActivityCode.welcome,
+      ),
+    ];
+  }
+
+  void _initializeShowcase() {
+    final now = _clock();
+    showcaseMode = true;
+    languageCode = 'en';
+    accountName = 'Dragonkeeper Showcase';
+    onboardingComplete = true;
+    musicEnabled = true;
+    soundEffectsEnabled = true;
+    achievementsCompact = false;
+
+    final dragons = <Pet>[];
+    var serial = 0;
+    for (final lineage in dragonLineages) {
+      final acquired = now.subtract(Duration(days: 1000 - serial));
+      dragons.add(Pet(
+        id: 'showcase-${lineage.id}-hatchling',
+        name: '${lineage.nameEn} Hatchling',
+        xp: Pet.wyrmlingXp - 1,
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        acquiredAt: acquired,
+        stageStartedAt: now.subtract(const Duration(days: 30)),
+        needsUpdatedAt: now,
+        hatchSeed: 10000 + serial++,
+        lineageId: lineage.id,
+      ));
+      dragons.add(Pet(
+        id: 'showcase-${lineage.id}-hatchling-spectral',
+        name: 'Spectral ${lineage.nameEn} Hatchling',
+        xp: Pet.wyrmlingXp - 1,
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        prismatic: true,
+        acquiredAt: acquired.add(const Duration(minutes: 20)),
+        stageStartedAt: now.subtract(const Duration(days: 30)),
+        needsUpdatedAt: now,
+        hatchSeed: 10000 + serial++,
+        lineageId: lineage.id,
+      ));
+      dragons.add(Pet(
+        id: 'showcase-${lineage.id}-wyrmling',
+        name: '${lineage.nameEn} Wyrmling',
+        xp: Pet.ascendedXp - 1,
+        stage: DragonStage.wyrmling,
+        firstEgg: false,
+        acquiredAt: acquired.add(const Duration(hours: 1)),
+        stageStartedAt: now.subtract(const Duration(days: 30)),
+        needsUpdatedAt: now,
+        training: const {'might': 99, 'arcana': 99, 'spirit': 99},
+        hatchSeed: 10000 + serial++,
+        lineageId: lineage.id,
+      ));
+      dragons.add(Pet(
+        id: 'showcase-${lineage.id}-wyrmling-spectral',
+        name: 'Spectral ${lineage.nameEn} Wyrmling',
+        xp: Pet.ascendedXp - 1,
+        stage: DragonStage.wyrmling,
+        firstEgg: false,
+        prismatic: true,
+        acquiredAt: acquired.add(const Duration(hours: 1, minutes: 20)),
+        stageStartedAt: now.subtract(const Duration(days: 30)),
+        needsUpdatedAt: now,
+        training: const {'might': 99, 'arcana': 99, 'spirit': 99},
+        hatchSeed: 10000 + serial++,
+        lineageId: lineage.id,
+      ));
+      for (final focus in TrainingFocus.values) {
+        dragons.add(Pet(
+          id: 'showcase-${lineage.id}-ascended-${focus.name}',
+          name: '${lineage.nameEn} ${focus.name}',
+          xp: 5000,
+          stage: DragonStage.ascended,
+          firstEgg: false,
+          favorite:
+              lineage == dragonLineages.first && focus == TrainingFocus.spirit,
+          acquiredAt: acquired.add(Duration(hours: 2 + focus.index)),
+          stageStartedAt: now.subtract(const Duration(days: 30)),
+          needsUpdatedAt: now,
+          training: {
+            'might': focus == TrainingFocus.might ? 400 : 25,
+            'arcana': focus == TrainingFocus.arcana ? 400 : 25,
+            'spirit': focus == TrainingFocus.spirit ? 400 : 25,
+          },
+          hatchSeed: 10000 + serial++,
+          lineageId: lineage.id,
+          evolutionPath: focus.name,
+        ));
+        dragons.add(Pet(
+          id: 'showcase-${lineage.id}-ascended-${focus.name}-spectral',
+          name: 'Spectral ${lineage.nameEn} ${focus.name}',
+          xp: 5000,
+          stage: DragonStage.ascended,
+          firstEgg: false,
+          prismatic: true,
+          acquiredAt:
+              acquired.add(Duration(hours: 2 + focus.index, minutes: 20)),
+          stageStartedAt: now.subtract(const Duration(days: 30)),
+          needsUpdatedAt: now,
+          training: {
+            'might': focus == TrainingFocus.might ? 400 : 25,
+            'arcana': focus == TrainingFocus.arcana ? 400 : 25,
+            'spirit': focus == TrainingFocus.spirit ? 400 : 25,
+          },
+          hatchSeed: 10000 + serial++,
+          lineageId: lineage.id,
+          evolutionPath: focus.name,
+        ));
+      }
+    }
+    pet = dragons.firstWhere((dragon) => dragon.stage == DragonStage.ascended)
+      ..coins = 999999
+      ..gems = 99999;
+    sanctuaryDragons = dragons.where((dragon) => dragon.id != pet.id).toList();
+
+    discoveredForms = {
+      for (final lineage in dragonLineages) '${lineage.id}:hatchling',
+      for (final lineage in dragonLineages) '${lineage.id}:wyrmling',
+      for (final lineage in dragonLineages)
+        for (final focus in TrainingFocus.values)
+          '${lineage.id}:ascended:${focus.name}',
+    };
+    prismaticForms = {...discoveredForms};
+    unlockedAchievementIds =
+        achievementCatalog.map((achievement) => achievement.id).toSet();
+    pendingPresentations = [];
+    totalHatched = dragons.length;
+    totalNamed = dragons.length;
+    totalWyrmling = dragonLineages.length;
+    totalAscended = dragonLineages.length * TrainingFocus.values.length;
+    totalChestsOpened = 250;
+    totalAdventuresCompleted = 250;
+    totalShortAdventuresCompleted = 100;
+    totalGroupFourCompleted = 10;
+    totalReleasedReturns = 20;
+    totalSinisterAdventuresCompleted = 5;
+    chestInventory = {for (final tier in ChestTier.values) tier: 25};
+
+    final buildableRooms =
+        houseRoomCatalog.where((room) => room.id != 'nest').toList();
+    towerFloorRoomIds = List.generate(
+      20,
+      (index) => buildableRooms[index % buildableRooms.length].id,
+    );
+    unlockedRoomIds = houseRoomCatalog.map((room) => room.id).toSet();
+    activeRoomId = 'hearth';
+    ownedItemIds = shopCatalog.map((item) => item.id).toSet();
+    housePlacements = [
+      for (var index = 0; index < min(28, shopCatalog.length); index++)
+        defaultPlacementFor(
+          shopCatalog[index],
+          buildableRooms[index % buildableRooms.length].id,
+          index ~/ buildableRooms.length,
+        ),
+    ];
+    _rebuildEquippedItems();
+    dragonWardLevel = 3;
+    damagedTowerFloors = {};
+    damagedTowerRepairFactors = {};
+    eggStash = [];
+    releasedDragons = [];
+    adventureRuns = [];
+    dismissedAdventureIds = {};
+    adventureOptionIds = {
+      AdventureKind.short: <String>[],
+      AdventureKind.long: <String>[],
+    };
+    activities = [
+      ActivityEntry(
+        id: 'showcase-ready',
+        message: 'The complete DragonHaven showcase is ready.',
         createdAt: now,
         type: ActivityType.milestone,
         code: ActivityCode.welcome,
@@ -226,6 +424,11 @@ class HouseholdProvider extends ChangeNotifier {
     discoveredForms = stringSetFromJson(data['discoveredForms']);
     prismaticForms = stringSetFromJson(data['prismaticForms']);
     unlockedAchievementIds = stringSetFromJson(data['achievements']);
+    pendingPresentations = <String, GamePresentation>{
+      for (final presentation in mapsFromJson(data['pendingPresentations'])
+          .map(GamePresentation.fromJson))
+        presentation.id: presentation,
+    }.values.take(100).toList();
     totalHatched = nonNegativeIntFromJson(data['totalHatched'],
         fallback: pet.isEgg ? 0 : 1);
     totalNamed = nonNegativeIntFromJson(data['totalNamed'],
@@ -368,6 +571,45 @@ class HouseholdProvider extends ChangeNotifier {
 
   int chestCount(ChestTier tier) => chestInventory[tier] ?? 0;
   int get totalChestCount => chestInventory.values.fold(0, (a, b) => a + b);
+
+  Pet? dragonById(String? id) {
+    if (id == null) return null;
+    if (pet.id == id) return pet;
+    for (final dragon in sanctuaryDragons) {
+      if (dragon.id == id) return dragon;
+    }
+    return null;
+  }
+
+  List<GamePresentation> get orderedPendingPresentations {
+    final ordered = [...pendingPresentations];
+    ordered.sort((a, b) {
+      final priority = a.priority.compareTo(b.priority);
+      if (priority != 0) return priority;
+      final age = a.sortAt.compareTo(b.sortAt);
+      if (age != 0) return age;
+      final queued = a.createdAt.compareTo(b.createdAt);
+      return queued != 0 ? queued : a.id.compareTo(b.id);
+    });
+    return ordered;
+  }
+
+  GamePresentation? get nextPresentation =>
+      orderedPendingPresentations.firstOrNull;
+
+  Future<void> completePresentation(String id) async {
+    final before = pendingPresentations.length;
+    pendingPresentations.removeWhere((presentation) => presentation.id == id);
+    if (pendingPresentations.length != before) await _notifyAndSave();
+  }
+
+  void _queuePresentation(GamePresentation presentation) {
+    if (pendingPresentations.any((queued) => queued.id == presentation.id)) {
+      return;
+    }
+    pendingPresentations.add(presentation);
+  }
+
   int get discoveredLineageCount =>
       discoveredForms.map((key) => key.split(':').first).toSet().length;
   int get discoveredCommonLineageCount {
@@ -473,6 +715,8 @@ class HouseholdProvider extends ChangeNotifier {
   Future<bool> hatchActiveDragon() async {
     final now = _clock();
     if (!pet.canHatch(now)) return false;
+    final dragonId = pet.id;
+    final acquiredAt = pet.acquiredAt;
     pet.hatch(now);
     totalHatched++;
     _registerCurrentStage();
@@ -481,41 +725,67 @@ class HouseholdProvider extends ChangeNotifier {
         type: ActivityType.milestone,
         code: ActivityCode.hatched,
         subject: pet.lineageId);
+    _queuePresentation(GamePresentation(
+      id: 'hatch-$dragonId',
+      type: GamePresentationType.hatch,
+      dragonId: dragonId,
+      createdAt: now,
+      sortAt: acquiredAt,
+    ));
     _evaluateAchievements();
     await _notifyAndSave();
     return true;
   }
 
-  Future<bool> nameActiveDragon(String value) async {
+  Future<bool> nameActiveDragon(String value) => nameDragon(pet.id, value);
+
+  Future<bool> nameDragon(String dragonId, String value) async {
     final name = value.trim();
-    if (pet.isEgg || name.isEmpty || name.length > 24) return false;
-    final firstName = pet.name.trim().isEmpty;
-    pet.name = name;
+    final dragon = dragonById(dragonId);
+    if (dragon == null || dragon.isEgg || name.isEmpty || name.length > 24) {
+      return false;
+    }
+    final firstName = dragon.name.trim().isEmpty;
+    dragon.name = name;
     if (firstName) totalNamed++;
     _evaluateAchievements();
     await _notifyAndSave();
     return true;
   }
 
-  Future<bool> evolveActiveDragon() async {
+  Future<bool> evolveActiveDragon() => evolveDragon(pet.id);
+
+  Future<bool> evolveDragon(String dragonId) async {
     final now = _clock();
-    if (!pet.canEvolve(now)) return false;
-    pet.evolve(now);
-    if (pet.stage == DragonStage.wyrmling) totalWyrmling++;
-    if (pet.stage == DragonStage.ascended) totalAscended++;
-    _registerCurrentStage();
+    final dragon = dragonById(dragonId);
+    if (dragon == null || !dragon.canEvolve(now)) return false;
+    final previousStageKey = dragon.stageKey;
+    dragon.evolve(now);
+    if (dragon.stage == DragonStage.wyrmling) totalWyrmling++;
+    if (dragon.stage == DragonStage.ascended) totalAscended++;
+    _registerDragonStage(dragon);
     _addActivity(
-        message: '${pet.displayName} reached the ${pet.stage.name} form.',
+        message: '${dragon.displayName} reached the ${dragon.stage.name} form.',
         type: ActivityType.milestone,
         code: ActivityCode.evolved,
-        subject: pet.lineageId);
-    final form = pet.stage == DragonStage.wyrmling ? 'Wyrmling' : 'Ascended';
+        subject: dragon.lineageId);
+    _queuePresentation(GamePresentation(
+      id: 'evolution-${dragon.id}-${dragon.stage.name}',
+      type: GamePresentationType.evolution,
+      dragonId: dragon.id,
+      previousStageKey: previousStageKey,
+      createdAt: now,
+      sortAt: dragon.acquiredAt,
+    ));
+    final strings = AppStrings(languageCode);
+    final form = strings.petStage(dragon);
     unawaited(HavenNotifications.evolutionUnlocked(
-      id: 'evolution-${pet.id}-${pet.stage.name}',
-      title: languageCode == 'nl' ? 'Nieuwe evolutie!' : 'New evolution!',
-      body: languageCode == 'nl'
-          ? '${pet.displayName} is geëvolueerd naar $form.'
-          : '${pet.displayName} evolved into $form.',
+      id: 'evolution-${dragon.id}-${dragon.stage.name}',
+      title: strings.pick('New evolution!', 'Nieuwe evolutie!'),
+      body: strings.pick(
+        '${dragon.displayName} evolved into $form.',
+        '${dragon.displayName} is geëvolueerd naar $form.',
+      ),
     ));
     _evaluateAchievements();
     await _notifyAndSave();
@@ -542,11 +812,16 @@ class HouseholdProvider extends ChangeNotifier {
     final coins = pet.coins;
     final gems = pet.gems;
     pet = egg.activate(coins: coins, gems: gems, activatedAt: _clock());
+    final strings = AppStrings(languageCode);
     await HavenNotifications.schedule(
       id: 'egg-${pet.id}',
       at: pet.stageStartedAt.add(Duration(hours: pet.incubationHours)),
-      title: 'Your Mysterious Egg is ready',
-      body: 'Something inside wants to hatch in the Rooftop Nest.',
+      title: strings.pick(
+          'Your Mysterious Egg is ready', 'Je Mysterieus Ei is klaar'),
+      body: strings.pick(
+        'Something inside wants to hatch in the Rooftop Nest.',
+        'Iets binnenin wil uitkomen in het Daknest.',
+      ),
     );
     _evaluateAchievements();
     await _notifyAndSave();
@@ -779,17 +1054,21 @@ class HouseholdProvider extends ChangeNotifier {
     return candidates[_random.nextInt(candidates.length)];
   }
 
-  bool _registerCurrentStage() {
-    if (pet.isEgg) return false;
-    final collection = pet.prismatic ? prismaticForms : discoveredForms;
+  bool _registerCurrentStage() => _registerDragonStage(pet);
+
+  bool _registerDragonStage(Pet dragon) {
+    if (dragon.isEgg) return false;
+    final collection = dragon.prismatic ? prismaticForms : discoveredForms;
     final forms = <String>['hatchling'];
-    if (pet.stage.index >= DragonStage.wyrmling.index) forms.add('wyrmling');
-    if (pet.stage == DragonStage.ascended) {
-      forms.add('ascended:${pet.activeEvolutionPath}');
+    if (dragon.stage.index >= DragonStage.wyrmling.index) {
+      forms.add('wyrmling');
+    }
+    if (dragon.stage == DragonStage.ascended) {
+      forms.add('ascended:${dragon.activeEvolutionPath}');
     }
     var changed = false;
     for (final form in forms) {
-      changed = collection.add('${pet.lineageId}:$form') || changed;
+      changed = collection.add('${dragon.lineageId}:$form') || changed;
     }
     return changed;
   }
@@ -803,13 +1082,19 @@ class HouseholdProvider extends ChangeNotifier {
       }
       unlockedAchievementIds.add(achievement.id);
       changed = true;
-      final title =
-          languageCode == 'nl' ? achievement.titleNl : achievement.titleEn;
+      final unlockedAt = _clock();
+      _queuePresentation(GamePresentation(
+        id: 'achievement-${achievement.id}',
+        type: GamePresentationType.achievement,
+        achievementId: achievement.id,
+        createdAt: unlockedAt,
+        sortAt: unlockedAt,
+      ));
+      final strings = AppStrings(languageCode);
+      final title = strings.achievementTitle(achievement);
       unawaited(HavenNotifications.achievementUnlocked(
         id: achievement.id,
-        title: languageCode == 'nl'
-            ? 'Achievement behaald!'
-            : 'Achievement unlocked!',
+        title: strings.tr('achievement_unlocked'),
         body: title,
       ));
       if (addActivities) {
@@ -876,6 +1161,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<void> _save() {
+    if (!_persistenceEnabled) return Future<void>.value();
     final state = <String, dynamic>{
       'schemaVersion': _schemaVersion,
       'languageCode': languageCode,
@@ -894,6 +1180,8 @@ class HouseholdProvider extends ChangeNotifier {
       'discoveredForms': discoveredForms.toList(),
       'prismaticForms': prismaticForms.toList(),
       'achievements': unlockedAchievementIds.toList(),
+      'pendingPresentations':
+          pendingPresentations.map((event) => event.toJson()).toList(),
       'totalHatched': totalHatched,
       'totalNamed': totalNamed,
       'totalWyrmling': totalWyrmling,

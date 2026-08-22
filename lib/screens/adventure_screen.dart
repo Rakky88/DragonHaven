@@ -52,7 +52,7 @@ class _AdventureScreenState extends State<AdventureScreen>
               Tab(text: strings.pick('Short', 'Kort')),
               Tab(text: strings.pick('Long', 'Lang')),
               Tab(text: strings.pick('Group', 'Groep')),
-              const Tab(text: 'Special'),
+              Tab(text: strings.pick('Special', 'Bijzonder')),
             ],
           ),
         ),
@@ -106,8 +106,9 @@ class _RunningAdventures extends StatelessWidget {
                     size: 18,
                   ),
                   label: Text(ready
-                      ? strings.pick('Claim ${definition.titleEn}',
-                          'Claim ${definition.titleNl}')
+                      ? strings.pick(
+                          'Claim ${strings.adventureTitle(definition)}',
+                          'Claim ${strings.adventureTitle(definition)}')
                       : _remaining(run.endsAt, strings)),
                   onPressed: ready
                       ? () async {
@@ -116,8 +117,8 @@ class _RunningAdventures extends StatelessWidget {
                             HavenAudio.play(HavenSound.adventureReturn);
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                 content: Text(strings.pick(
-                                    '${tier.label(false)} added to your rewards.',
-                                    '${tier.label(true)} toegevoegd aan je beloningen.'))));
+                                    '${strings.chestLabel(tier)} added to your rewards.',
+                                    '${strings.chestLabel(tier)} toegevoegd aan je beloningen.'))));
                           }
                         }
                       : null,
@@ -154,7 +155,7 @@ class _UnopenedChests extends StatelessWidget {
                 avatar: Icon(Icons.inventory_2_rounded,
                     color: Color(tier.colorValue), size: 18),
                 label: Text(
-                    '${tier.label(strings.isDutch)} ×${game.chestCount(tier)}'),
+                    '${strings.chestLabel(tier)} ×${game.chestCount(tier)}'),
                 onPressed: () => _openChest(context, tier),
               ),
             ),
@@ -233,7 +234,7 @@ class _AdventureCard extends StatelessWidget {
             Row(children: [
               Expanded(
                 child: Text(
-                  strings.isDutch ? adventure.titleNl : adventure.titleEn,
+                  strings.adventureTitle(adventure),
                   style: const TextStyle(
                       fontWeight: FontWeight.w900, fontSize: 16),
                 ),
@@ -242,16 +243,13 @@ class _AdventureCard extends StatelessWidget {
                 const Icon(Icons.visibility_rounded, color: Color(0xFF8A285E)),
             ]),
             const SizedBox(height: 5),
-            Text(
-                strings.isDutch
-                    ? adventure.descriptionNl
-                    : adventure.descriptionEn,
+            Text(strings.adventureDescription(adventure),
                 style: const TextStyle(color: AppColors.muted)),
             const SizedBox(height: 12),
             Wrap(spacing: 7, runSpacing: 7, children: [
               _Meta(
                   icon: Icons.schedule_rounded,
-                  text: _duration(adventure.duration)),
+                  text: strings.adventureDuration(adventure.duration)),
               _Meta(
                   icon: Icons.auto_awesome_rounded, text: '${adventure.xp} XP'),
               _Meta(
@@ -260,12 +258,16 @@ class _AdventureCard extends StatelessWidget {
                       '+${adventure.statPoints} ${_focusName(adventure.focus)}'),
               _Meta(
                   icon: Icons.inventory_2_rounded,
-                  text: adventure.knownChest?.label(strings.isDutch) ??
-                      strings.pick('Hidden chest', 'Verborgen kist')),
+                  text: adventure.knownChest == null
+                      ? strings.pick('Hidden chest', 'Verborgen kist')
+                      : strings.chestLabel(adventure.knownChest!)),
               if (group)
                 _Meta(
                     icon: Icons.group_rounded,
-                    text: '${adventure.requirements.players} players'),
+                    text: strings.pick(
+                      '${adventure.requirements.players} players',
+                      '${adventure.requirements.players} spelers',
+                    )),
             ]),
             const SizedBox(height: 12),
             Row(children: [
@@ -309,7 +311,7 @@ class _AdventureCard extends StatelessWidget {
                   leading: const Icon(Icons.pets_rounded),
                   title: Text(dragon.displayName),
                   subtitle: Text(
-                      '${dragon.lineage.name(strings.isDutch)} · Lv. ${dragon.level}'),
+                      '${strings.lineageName(dragon.lineage)} · ${strings.levelShort(dragon.level)}'),
                   onTap: () => Navigator.pop(sheetContext, dragon),
                 ),
             ],
@@ -412,19 +414,10 @@ IconData _focusIcon(TrainingFocus focus) => switch (focus) {
       TrainingFocus.spirit => Icons.favorite_rounded,
     };
 
-String _duration(Duration duration) =>
-    duration.inDays >= 1 ? '${duration.inDays}d' : '${duration.inHours}h';
-
 String _remaining(DateTime end, AppStrings strings) {
   final remaining = end.difference(DateTime.now());
   if (remaining.isNegative) return strings.pick('Ready', 'Klaar');
-  if (remaining.inDays > 0) {
-    return '${remaining.inDays}d ${remaining.inHours % 24}h';
-  }
-  if (remaining.inHours > 0) {
-    return '${remaining.inHours}h ${remaining.inMinutes % 60}m';
-  }
-  return '${remaining.inMinutes.clamp(1, 59)}m';
+  return strings.remainingDuration(remaining);
 }
 
 HavenSound _soundForChest(ChestTier tier) => switch (tier) {

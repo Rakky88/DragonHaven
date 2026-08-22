@@ -8,6 +8,7 @@ import '../l10n/app_strings.dart';
 import '../models/day_phase.dart';
 import '../models/dragon_egg.dart';
 import '../models/dragon_dialogue.dart';
+import '../models/game_presentation.dart';
 import '../models/pet.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
@@ -39,7 +40,7 @@ class PetScreen extends StatelessWidget {
               ? strings.pick(
                   'A secret life is waiting inside one familiar shell.',
                   'In deze vertrouwde schaal wacht een geheim leven.')
-              : '${strings.petStage(pet)} · ${pet.lineage.name(strings.isDutch)}${pet.spectral ? ' · Spectral' : ''}',
+              : '${strings.petStage(pet)} · ${strings.lineageName(pet.lineage)}${pet.spectral ? ' · ${strings.pick('Spectral', 'Spectral')}' : ''}',
           style: const TextStyle(color: AppColors.muted, fontSize: 15),
         ),
         const SizedBox(height: 18),
@@ -363,7 +364,7 @@ Future<void> _talk(BuildContext context, Pet pet) async {
       scrollable: true,
       icon: const Icon(Icons.chat_bubble_rounded, color: AppColors.twilight),
       title: Text(pet.displayName, textAlign: TextAlign.center),
-      content: Text(line.text(strings.isDutch),
+      content: Text(line.text(strings.languageCode),
           textAlign: TextAlign.center,
           style: const TextStyle(
               fontSize: 17, height: 1.45, fontWeight: FontWeight.w700)),
@@ -398,7 +399,7 @@ class _DragonStageCard extends StatelessWidget {
                 final game = context.read<HouseholdProvider>();
                 showAppSnackBar(
                   context,
-                  game.eggHint(isDutch: strings.isDutch),
+                  game.eggHint(locale: strings.languageCode),
                 );
               }
             : null,
@@ -458,9 +459,8 @@ class _DragonStageCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(99)),
                       child: Text(
                           pet.isEgg
-                              ? '🥚 Mysterious Egg'
-                              : pet.stage.name[0].toUpperCase() +
-                                  pet.stage.name.substring(1),
+                              ? '🥚 ${strings.pick('Mysterious Egg', 'Mysterieus Ei')}'
+                              : strings.petStage(pet),
                           style: const TextStyle(
                               fontWeight: FontWeight.w900,
                               color: AppColors.twilightDark)))),
@@ -631,10 +631,10 @@ class _EvolutionPanel extends StatelessWidget {
       DragonStage.ascended => Pet.ascendedXp
     };
     final next = switch (pet.stage) {
-      DragonStage.egg => 'Hatchling',
-      DragonStage.hatchling => 'Wyrmling',
-      DragonStage.wyrmling => 'Ascended',
-      DragonStage.ascended => 'Ascended'
+      DragonStage.egg => strings.petStageNameByKey('spark'),
+      DragonStage.hatchling => strings.petStageNameByKey('nestDragon'),
+      DragonStage.wyrmling => strings.petStageNameByKey('homeGuardian'),
+      DragonStage.ascended => strings.petStageNameByKey('homeGuardian')
     };
     return Card(
       child: Padding(
@@ -661,7 +661,7 @@ class _EvolutionPanel extends StatelessWidget {
               backgroundColor: AppColors.mist),
           const SizedBox(height: 8),
           Text(
-              '${pet.xp}/$target XP · ${remaining == Duration.zero ? strings.pick('minimum time complete', 'minimumtijd voltooid') : strings.pick('${_time(remaining)} remaining', 'nog ${_time(remaining)}')}',
+              '${pet.xp}/$target XP · ${remaining == Duration.zero ? strings.pick('minimum time complete', 'minimumtijd voltooid') : strings.pick('${strings.evolutionRemaining(remaining)} remaining', 'nog ${strings.evolutionRemaining(remaining)}')}',
               style: const TextStyle(
                   color: AppColors.muted,
                   fontWeight: FontWeight.w700,
@@ -670,7 +670,7 @@ class _EvolutionPanel extends StatelessWidget {
             Padding(
                 padding: const EdgeInsets.only(top: 5),
                 child: Text(
-                    '${pet.totalTraining}/300 training · ${pet.leadingPath == 'unknown' ? strings.pick('path undecided', 'pad onbeslist') : pet.leadingPath}',
+                    '${pet.totalTraining}/300 ${strings.pick('training', 'training')} · ${pet.leadingPath == 'unknown' ? strings.pick('path undecided', 'pad onbeslist') : pet.leadingPath}',
                     style:
                         const TextStyle(color: AppColors.muted, fontSize: 12))),
           if (pet.stage != DragonStage.ascended) ...[
@@ -691,32 +691,53 @@ class _EvolutionPanel extends StatelessWidget {
 
   Future<void> _hatch(BuildContext context) async {
     final game = context.read<HouseholdProvider>();
-    if (!await game.hatchActiveDragon() || !context.mounted) return;
-    await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => ChangeNotifierProvider.value(
-            value: game, child: const _HatchDialog()));
+    await game.hatchActiveDragon();
   }
 
   Future<void> _evolve(BuildContext context) async {
     final game = context.read<HouseholdProvider>();
-    final wasHatchling = game.pet.stage == DragonStage.hatchling;
-    if (!await game.evolveActiveDragon() || !context.mounted) return;
-    await HavenAudio.setMusicScene(HavenMusicScene.reveal);
-    await HavenAudio.play(wasHatchling
-        ? HavenSound.evolutionYoung
-        : HavenSound.evolutionAscended);
-    if (!context.mounted) return;
-    final pet = game.pet;
-    await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => _EvolutionDialog(
-              pet: pet,
-              previousStageKey: wasHatchling ? 'spark' : 'nestDragon',
-            ));
+    await game.evolveActiveDragon();
   }
+}
+
+Future<void> showHatchMilestonePresentation(
+  BuildContext context,
+  HouseholdProvider game,
+  GamePresentation presentation,
+) async {
+  final dragon = game.dragonById(presentation.dragonId);
+  if (dragon == null || dragon.isEgg) return;
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => ChangeNotifierProvider.value(
+      value: game,
+      child: _HatchDialog(dragonId: dragon.id),
+    ),
+  );
+}
+
+Future<void> showEvolutionMilestonePresentation(
+  BuildContext context,
+  HouseholdProvider game,
+  GamePresentation presentation,
+) async {
+  final dragon = game.dragonById(presentation.dragonId);
+  if (dragon == null || dragon.isEgg) return;
+  final wasHatchling = presentation.previousStageKey == 'spark';
+  await HavenAudio.setMusicScene(HavenMusicScene.reveal);
+  await HavenAudio.play(
+      wasHatchling ? HavenSound.evolutionYoung : HavenSound.evolutionAscended);
+  if (!context.mounted) return;
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => _EvolutionDialog(
+      pet: dragon,
+      previousStageKey: presentation.previousStageKey ??
+          (wasHatchling ? 'spark' : 'nestDragon'),
+    ),
+  );
 }
 
 class _EvolutionDialog extends StatefulWidget {
@@ -809,9 +830,9 @@ class _EvolutionDialogState extends State<_EvolutionDialog> {
               const SizedBox(height: 6),
               Text(
                 pet.stage == DragonStage.ascended
-                    ? pet.lineage
-                        .formName(pet.activeEvolutionPath, strings.isDutch)
-                    : 'Wyrmling',
+                    ? strings.lineageFormName(
+                        pet.lineage, pet.activeEvolutionPath)
+                    : strings.petStageNameByKey('nestDragon'),
                 style: const TextStyle(
                     color: Color(0xFFFFD878),
                     fontSize: 19,
@@ -834,7 +855,9 @@ class _EvolutionDialogState extends State<_EvolutionDialog> {
 }
 
 class _HatchDialog extends StatefulWidget {
-  const _HatchDialog();
+  const _HatchDialog({required this.dragonId});
+
+  final String dragonId;
   @override
   State<_HatchDialog> createState() => _HatchDialogState();
 }
@@ -863,7 +886,8 @@ class _HatchDialogState extends State<_HatchDialog> {
           HavenAudio.play(HavenSound.hatchCrackThree);
         case 5:
           HavenAudio.play(HavenSound.hatchReveal);
-          final pet = context.read<HouseholdProvider>().pet;
+          final game = context.read<HouseholdProvider>();
+          final pet = game.dragonById(widget.dragonId) ?? game.pet;
           if (pet.spectral) HavenAudio.play(HavenSound.spectralReveal);
         default:
           break;
@@ -883,7 +907,8 @@ class _HatchDialogState extends State<_HatchDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final pet = context.watch<HouseholdProvider>().pet;
+    final game = context.watch<HouseholdProvider>();
+    final pet = game.dragonById(widget.dragonId) ?? game.pet;
     final strings = AppStrings.of(context);
     final reveal = phase >= 5;
     return Dialog.fullscreen(
@@ -972,7 +997,11 @@ class _HatchDialogState extends State<_HatchDialog> {
                           padding: const EdgeInsets.only(top: 22),
                           child: FilledButton.icon(
                               onPressed: () async {
-                                await _askForName(context, closeAfter: true);
+                                await _askForName(
+                                  context,
+                                  dragonId: widget.dragonId,
+                                  closeAfter: true,
+                                );
                               },
                               icon: const Icon(Icons.edit_rounded),
                               label: Text(strings.pick(
@@ -1117,8 +1146,11 @@ class _NeedBar extends StatelessWidget {
       ]));
 }
 
-Future<void> _askForName(BuildContext context,
-    {bool closeAfter = false}) async {
+Future<void> _askForName(
+  BuildContext context, {
+  String? dragonId,
+  bool closeAfter = false,
+}) async {
   final controller = TextEditingController();
   final strings = AppStrings.of(context);
   final name = await showDialog<String>(
@@ -1153,21 +1185,11 @@ Future<void> _askForName(BuildContext context,
               ]));
   controller.dispose();
   if (name == null || !context.mounted) return;
-  await context.read<HouseholdProvider>().nameActiveDragon(name);
+  final game = context.read<HouseholdProvider>();
+  await game.nameDragon(dragonId ?? game.pet.id, name);
   if (closeAfter && context.mounted) {
     Navigator.pop(context);
   }
-}
-
-String _time(Duration duration) {
-  if (duration >= const Duration(hours: 1)) {
-    final totalHours = (duration.inSeconds + 3599) ~/ 3600;
-    final days = totalHours ~/ 24;
-    final hours = totalHours.remainder(24);
-    if (days > 0) return hours == 0 ? '${days}d' : '${days}d ${hours}h';
-    return '${totalHours}h';
-  }
-  return '${((duration.inSeconds + 59) ~/ 60).clamp(1, 59)}m';
 }
 
 String _date(DateTime date) =>

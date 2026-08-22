@@ -149,7 +149,7 @@ class _ChestStashTab extends StatelessWidget {
                       Color(tier.colorValue).withValues(alpha: .15),
                   child: Icon(Icons.inventory_2_rounded,
                       color: Color(tier.colorValue))),
-              title: Text(tier.label(strings.isDutch),
+              title: Text(strings.chestLabel(tier),
                   style: const TextStyle(fontWeight: FontWeight.w900)),
               subtitle: Text('×${game.chestCount(tier)}'),
               trailing: IconButton(
@@ -169,8 +169,10 @@ class _ChestStashTab extends StatelessWidget {
           context: context,
           builder: (dialogContext) => AlertDialog(
             scrollable: true,
-            title: Text(strings.pick('Discard one ${tier.label(false)}?',
-                'Eén ${tier.label(true)} wegdoen?')),
+            title: Text(strings.pick(
+              'Discard one ${strings.chestLabel(tier)}?',
+              'Eén ${strings.chestLabel(tier)} wegdoen?',
+            )),
             content: Text(strings.pick('Its unopened contents will be lost.',
                 'De ongeopende inhoud gaat verloren.')),
             actions: [

@@ -12,7 +12,10 @@ Future<void> main() async {
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
   ));
-  final game = await HouseholdProvider.loadFromStorage();
+  const showcase = bool.fromEnvironment('DRAGONHAVEN_SHOWCASE');
+  final game = showcase
+      ? HouseholdProvider.createShowcase()
+      : await HouseholdProvider.loadFromStorage();
   await HavenAudio.applyPreferences(
     musicEnabled: game.musicEnabled,
     soundEffectsEnabled: game.soundEffectsEnabled,

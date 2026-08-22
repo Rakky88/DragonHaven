@@ -51,7 +51,7 @@ class DragonTowerScreen extends StatelessWidget {
           Expanded(
             child: HavenClockBuilder(
               builder: (_, __, livePhase) => Text(
-                livePhase.label(strings.isDutch),
+                strings.dayPhase(livePhase),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -403,7 +403,7 @@ class _OwnedDragonsSheet extends StatelessWidget {
                           color: Color(0xFFE05A78), size: 18),
                   ]),
                   subtitle: Text(
-                      '${dragon.lineage.name(strings.isDutch)} · ${strings.petStage(dragon)} · Lv. ${dragon.level}${game.dragonSizeLabel(dragon).isEmpty ? '' : ' · ${game.dragonSizeLabel(dragon)}'}\n${dragon.xp} XP · ${dragon.activeAdventureId == null ? strings.pick('In Tower', 'In Toren') : strings.pick('Adventuring', 'Op avontuur')}'),
+                      '${strings.lineageName(dragon.lineage)} · ${strings.petStage(dragon)} · ${strings.levelShort(dragon.level)}${game.dragonSizeLabel(dragon).isEmpty ? '' : ' · ${game.dragonSizeLabel(dragon)}'}\n${dragon.xp} XP · ${dragon.activeAdventureId == null ? strings.pick('In Tower', 'In Toren') : strings.pick('Adventuring', 'Op avontuur')}'),
                   isThreeLine: true,
                   onTap: () => _dragonActions(context, dragon),
                 ),
@@ -475,8 +475,9 @@ class _CodexBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
   @override
-  Widget build(BuildContext context) =>
-      AppBar(title: const Text('The Draconomicon'));
+  Widget build(BuildContext context) => AppBar(
+      title: Text(
+          AppStrings.of(context).pick('The Draconomicon', 'Het Draconomicon')));
 }
 
 class _DragonBar extends StatelessWidget implements PreferredSizeWidget {

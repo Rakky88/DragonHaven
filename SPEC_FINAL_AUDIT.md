@@ -1,4 +1,4 @@
-# DragonHaven v0.00.07 — final specification audit
+# DragonHaven v0.00.08 — final specification audit
 
 Audited against
 `DragonHaven_Codex_Spec_With_Achievements_Rooms_Personalities_DayNight_Audio_Two_Sliders.md`
@@ -20,10 +20,11 @@ on 22 August 2026.
   counters that exclude rarer families;
 - Rooftop Nest, 20 buildable floors, eight distinct rooms, 200 purchasable
   sprites, data-driven movement/preferences/interactions and seven time phases;
-- cinematic hatch/evolution/chest presentations and Android music/SFX with two
-  independent persistent switches;
-- English default, full English/Dutch detailed text and all nine requested
-  selectable language entries;
+- cinematic hatch/evolution/chest presentations, a persisted priority queue,
+  oldest-first evolution reveals, spinning achievement reveals and Android
+  music/SFX with two independent persistent switches;
+- English default and complete authored text for all nine requested languages,
+  including generated content, notifications and 300 dragon sayings;
 - About/redeem/Ko-fi, permanent share/update link, white launcher/splash,
   improved topbar branding and robust scrolling/dismissal behaviour.
 - a centered animated egg countdown, one uncategorized achievement list with

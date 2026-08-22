@@ -138,7 +138,7 @@ class _DragonArtState extends State<DragonArt>
     final stage = strings.petStageNameByKey(widget.stageKey);
     final lineage = dragonLineageById(widget.lineageId);
     final egg = widget.stageKey == 'moonEgg';
-    final lineageName = lineage.name(strings.isDutch);
+    final lineageName = strings.lineageName(lineage);
     final artwork = DragonArtwork.forStage(
       stageKey: widget.stageKey,
       lineageId: lineage.id,

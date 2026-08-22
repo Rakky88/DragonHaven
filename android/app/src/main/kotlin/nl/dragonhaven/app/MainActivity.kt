@@ -22,7 +22,6 @@ class MainActivity : FlutterActivity() {
     private var effectsEnabled = true
     private var musicPlayer: MediaPlayer? = null
     private var musicScene: String? = null
-    private var musicTrackIndex = 0
     private var fadeGeneration = 0
     private val mainHandler = Handler(Looper.getMainLooper())
     private val audioManager by lazy { getSystemService(AUDIO_SERVICE) as AudioManager }
@@ -103,8 +102,17 @@ class MainActivity : FlutterActivity() {
                 }
                 "setMusicScene" -> {
                     val id = call.argument<String>("id")
+                    val unchanged = id != null && id == musicScene
                     musicScene = id
-                    result.success(id != null && startMusic(id))
+                    if (unchanged && musicPlayer != null) {
+                        musicPlayer?.let { player ->
+                            if (!player.isPlaying) player.start()
+                            fadeMusic(player, MUSIC_VOLUME)
+                        }
+                        result.success(true)
+                    } else {
+                        result.success(id != null && startMusic(id))
+                    }
                 }
                 else -> result.notImplemented()
             }
@@ -192,29 +200,16 @@ class MainActivity : FlutterActivity() {
 
     private fun startMusic(id: String): Boolean {
         if (!musicEnabled) return false
-        val choices = when (id) {
-            "tower_day" -> listOf("tower_day", "room")
-            "tower_night" -> listOf("tower_night", "room")
-            "room" -> listOf("room", "tower_day")
-            else -> listOf(id)
-        }
-        val resource = rawResourceId(choices[musicTrackIndex++ % choices.size])
+        val resource = rawResourceId(id)
         if (resource == 0) return false
         if (!requestMusicFocus()) return false
         releaseMusicPlayer()
         musicPlayer = MediaPlayer.create(this, resource)?.apply {
-            isLooping = false
+            // The bundled tracks are authored as calm ambient loops. Android's
+            // native looping avoids the audible pause that completion/restart
+            // callbacks introduce between tracks.
+            isLooping = true
             setVolume(0f, 0f)
-            setOnCompletionListener { completed ->
-                if (musicPlayer === completed) {
-                    releaseMusicPlayer()
-                    if (musicEnabled && musicScene == id) {
-                        mainHandler.postDelayed({ startMusic(id) }, 900)
-                    }
-                } else {
-                    completed.release()
-                }
-            }
             start()
             fadeMusic(this, MUSIC_VOLUME)
         }

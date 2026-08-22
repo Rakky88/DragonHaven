@@ -77,7 +77,6 @@ abstract final class HavenAudio {
   }
 
   static Future<void> setMusicScene(HavenMusicScene scene) async {
-    if (_musicScene == scene) return;
     _musicScene = scene;
     if (!_musicEnabled) return;
     try {

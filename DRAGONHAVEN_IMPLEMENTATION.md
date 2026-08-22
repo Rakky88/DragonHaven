@@ -1,6 +1,6 @@
 # DragonHaven implementation record
 
-This file maps the supplied specification to v0.00.07. It is an implementation
+This file maps the supplied specification to v0.00.08. It is an implementation
 reference, not an instruction source.
 
 ## Local game foundation
@@ -51,7 +51,7 @@ reference, not an instruction source.
 - The overflow contains Account Info, Language and Achievements. The optically
   centered, enlarged logo opens About DragonHaven.
 - About has a pinned drag handle, pull-past-top dismissal, a premium branded
-  hero, Rick Groot, 2026, v0.00.07, redeem, update/share and Ko-fi controls.
+  hero, Rick Groot, 2026, v0.00.08, redeem, update/share and Ko-fi controls.
 - Language uses the same pinned pull-to-dismiss sheet and lists visible
   language names alphabetically.
 - Achievements use one continuous list plus a persistent icon-only compact
@@ -61,12 +61,15 @@ reference, not an instruction source.
   evolutions when the app is not in the foreground.
 - All long pages and dialogs have explicit scroll behaviour and compact-phone,
   large-text coverage.
+- Hatch, evolution and achievement presentations use one persisted queue:
+  hatches (including mandatory naming) are first, evolutions follow oldest
+  dragon first, and spinning achievement reveals are always last.
 - Music and Sound Effects are independent, immediate and persistent. Android
-  bundles four CC0 ambient tracks and 19 distinct event sounds, uses gentle
-  fades, rotates ambient variants and respects platform audio focus.
-- English is the first-install default. English and Dutch cover detailed
-  gameplay content; seven additional language choices cover core navigation
-  and use the English fallback for detailed generated content.
+  bundles four calm CC0 ambient loops and 19 distinct event sounds, uses gentle
+  fades, restarts safely after audio-focus loss and respects app backgrounding.
+- English is the first-install default. All nine selectable languages cover
+  fixed UI, notifications, achievements, 800 generated Adventures, 200 shop
+  items, egg clues, room interactions and all 300 dragon sayings.
 - The permanent update asset is
   `https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk`.
 
@@ -85,9 +88,9 @@ those services later remain data-driven and functional without them.
 ## Verification
 
 - `dart analyze lib test`: clean.
-- `flutter test --no-pub`: 62 tests pass.
+- `flutter test --no-pub`: 76 tests pass.
 - Android 17 integration route: passes on `emulator-5554`.
-- Signed release: package `nl.dragonhaven.app`, version `0.0.7+10003`, APK
+- Signed release: package `nl.dragonhaven.app`, version `0.0.8+10004`, APK
   Signature Scheme v2 verified with the permanent Rick Groot certificate.
 - Release APK SHA-256:
-  `cfdfd074be400ec1fe0121664e5a7c44197c9cb4d9ab76b3d1c4bcbe580eee7`.
+  `59c9370452e34ea8c400e1fb1e8db854da65b34351fd2c0f5d82cc64e92c3743`.

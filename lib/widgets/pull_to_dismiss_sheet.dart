@@ -63,8 +63,7 @@ class _PullToDismissSheetState extends State<PullToDismissSheet> {
               widget.heightFactor.clamp(.25, 1),
           child: Material(
             color: widget.backgroundColor,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(32)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
             clipBehavior: Clip.antiAlias,
             child: Column(
               children: [

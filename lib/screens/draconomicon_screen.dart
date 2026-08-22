@@ -22,7 +22,7 @@ class DraconomiconScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('The Draconomicon',
+              Text(strings.pick('The Draconomicon', 'Het Draconomicon'),
                   style: Theme.of(context).textTheme.displaySmall),
               const SizedBox(height: 5),
               Text(
@@ -123,11 +123,11 @@ class _LineageEntry extends StatelessWidget {
                 prismatic: spectral && firstKnown)),
         title: Text(
             discovered
-                ? lineage.name(strings.isDutch)
+                ? strings.lineageName(lineage)
                 : strings.pick('Unknown lineage', 'Onbekende drakenlijn'),
             style: const TextStyle(fontWeight: FontWeight.w900)),
         subtitle: Text(
-            '#${number.toString().padLeft(3, '0')} · ${lineage.rarityName(strings.isDutch)} · $count/5 ${strings.pick('forms', 'vormen')}'),
+            '#${number.toString().padLeft(3, '0')} · ${strings.lineageRarity(lineage)} · $count/5 ${strings.pick('forms', 'vormen')}'),
         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
           if (spectral && discovered)
             const Padding(padding: EdgeInsets.only(right: 7), child: Text('✦')),
@@ -145,13 +145,13 @@ class _LineageEntry extends StatelessWidget {
               _FormTile(
                   lineage: lineage,
                   formKey: 'hatchling',
-                  label: 'Hatchling',
+                  label: strings.petStageNameByKey('spark'),
                   stageKey: 'spark',
                   spectral: spectral),
               _FormTile(
                   lineage: lineage,
                   formKey: 'wyrmling',
-                  label: 'Wyrmling',
+                  label: strings.petStageNameByKey('nestDragon'),
                   stageKey: 'nestDragon',
                   spectral: spectral),
               _FormTile(
@@ -205,7 +205,7 @@ class _FormTile extends StatelessWidget {
     final title = !known
         ? '???'
         : stageKey == 'homeGuardian'
-            ? lineage.formName(path, strings.isDutch)
+            ? strings.lineageFormName(lineage, path)
             : label;
     return Container(
       padding: const EdgeInsets.all(8),
@@ -231,7 +231,10 @@ class _FormTile extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
-        Text(spectral ? '✦ Spectral $label' : label,
+        Text(
+            spectral
+                ? '✦ ${strings.pick('Spectral', 'Spectral')} $label'
+                : label,
             style: const TextStyle(
                 color: AppColors.muted,
                 fontWeight: FontWeight.w700,

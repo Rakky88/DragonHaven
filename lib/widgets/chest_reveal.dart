@@ -58,7 +58,7 @@ class _ChestRevealState extends State<_ChestReveal>
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 22),
             child: Column(children: [
-              Text(tier.label(strings.isDutch),
+              Text(strings.chestLabel(tier),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       color: Colors.white,
@@ -107,7 +107,7 @@ class _ChestRevealState extends State<_ChestReveal>
                         runSpacing: 9,
                         children: [
                           _Reward(Icons.monetization_on_rounded,
-                              '+${widget.reward.coins}', 'Coins'),
+                              '+${widget.reward.coins}', strings.tr('coins')),
                           if (widget.reward.gems > 0)
                             _Reward(Icons.diamond_rounded,
                                 '+${widget.reward.gems}', strings.tr('gems')),

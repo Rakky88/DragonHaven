@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'l10n/app_strings.dart';
+import 'models/achievement.dart';
+import 'models/game_presentation.dart';
 import 'providers/household_provider.dart';
 import 'screens/account_screen.dart';
 import 'screens/achievements_screen.dart';
@@ -11,9 +15,12 @@ import 'screens/dragon_tower_screen.dart';
 import 'screens/friends_screen.dart';
 import 'screens/haven_shop_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/pet_screen.dart';
 import 'screens/stash_screen.dart';
+import 'services/audio_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/about_sheet.dart';
+import 'widgets/achievement_reveal.dart';
 import 'widgets/pull_to_dismiss_sheet.dart';
 
 class DragonHavenApp extends StatelessWidget {
@@ -62,22 +69,110 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   int _index = 1;
   final _visited = <int>{1};
   late final AppLifecycleListener _lifecycle;
+  late final HouseholdProvider _game;
+  Timer? _presentationRetry;
+  bool _presentationBusy = false;
 
   @override
   void initState() {
     super.initState();
+    _game = context.read<HouseholdProvider>();
+    _game.addListener(_schedulePresentations);
     _lifecycle = AppLifecycleListener(
-      onResume: () => context.read<HouseholdProvider>().refreshForCurrentDate(),
+      onResume: () async {
+        _setTowerAmbientMusic();
+        await _game.refreshForCurrentDate();
+        _schedulePresentations();
+      },
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<HouseholdProvider>().refreshForCurrentDate();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      _setTowerAmbientMusic();
+      await _game.refreshForCurrentDate();
+      _schedulePresentations();
     });
+  }
+
+  void _setTowerAmbientMusic() {
+    final hour = DateTime.now().hour;
+    HavenAudio.setMusicScene(hour >= 21 || hour < 7
+        ? HavenMusicScene.towerNight
+        : HavenMusicScene.towerDay);
   }
 
   @override
   void dispose() {
+    _presentationRetry?.cancel();
+    _game.removeListener(_schedulePresentations);
     _lifecycle.dispose();
     super.dispose();
+  }
+
+  void _schedulePresentations() {
+    if (!mounted || _presentationBusy || _game.nextPresentation == null) {
+      return;
+    }
+    _presentationRetry?.cancel();
+    _presentationRetry = Timer(
+      const Duration(milliseconds: 280),
+      _drainPresentations,
+    );
+  }
+
+  Future<void> _drainPresentations() async {
+    if (!mounted || _presentationBusy) return;
+    if (ModalRoute.of(context)?.isCurrent != true) {
+      _presentationRetry = Timer(
+        const Duration(milliseconds: 450),
+        _drainPresentations,
+      );
+      return;
+    }
+    _presentationBusy = true;
+    try {
+      while (mounted) {
+        final presentation = _game.nextPresentation;
+        if (presentation == null) break;
+        if (!mounted) break;
+        switch (presentation.type) {
+          case GamePresentationType.hatch:
+            if (!mounted) return;
+            await showHatchMilestonePresentation(
+              context,
+              _game,
+              presentation,
+            );
+            break;
+          case GamePresentationType.evolution:
+            if (!mounted) return;
+            await showEvolutionMilestonePresentation(
+              context,
+              _game,
+              presentation,
+            );
+            break;
+          case GamePresentationType.achievement:
+            final achievement = _achievementById(presentation.achievementId);
+            if (achievement != null && mounted) {
+              await showAchievementReveal(context, achievement);
+            }
+            break;
+        }
+        await _game.completePresentation(presentation.id);
+        if (!mounted) break;
+        await Future<void>.delayed(const Duration(milliseconds: 180));
+      }
+    } finally {
+      _presentationBusy = false;
+      _schedulePresentations();
+    }
+  }
+
+  AchievementDefinition? _achievementById(String? id) {
+    for (final achievement in achievementCatalog) {
+      if (achievement.id == id) return achievement;
+    }
+    return null;
   }
 
   @override
@@ -207,6 +302,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
               onDestinationSelected: (index) => setState(() {
                 _index = index;
                 _visited.add(index);
+                _setTowerAmbientMusic();
               }),
               destinations: [
                 NavigationDestination(

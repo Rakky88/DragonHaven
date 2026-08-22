@@ -147,9 +147,10 @@ extension DragonHavenSystems on HouseholdProvider {
     rareInteractionAt[dragon.id] = now;
     await _notifyAndSave();
     final name = dragon.displayName;
-    return languageCode == 'nl'
-        ? interaction.messageNl.replaceAll('{dragon}', name)
-        : interaction.messageEn.replaceAll('{dragon}', name);
+    final strings = AppStrings(languageCode);
+    return strings
+        .pick(interaction.messageEn, interaction.messageNl)
+        .replaceAll('{dragon}', name);
   }
 
   Future<bool> callActiveDragonToRoom(String roomId) async {
@@ -169,11 +170,16 @@ extension DragonHavenSystems on HouseholdProvider {
     if (normalized.isEmpty || normalized.length > 24) return;
     accountName = normalized;
     onboardingComplete = true;
+    final strings = AppStrings(languageCode);
     await HavenNotifications.schedule(
       id: 'egg-${pet.id}',
       at: pet.stageStartedAt.add(Duration(hours: pet.incubationHours)),
-      title: 'Your Mysterious Egg is ready',
-      body: 'Something inside wants to hatch in the Rooftop Nest.',
+      title: strings.pick(
+          'Your Mysterious Egg is ready', 'Je Mysterieus Ei is klaar'),
+      body: strings.pick(
+        'Something inside wants to hatch in the Rooftop Nest.',
+        'Iets binnenin wil uitkomen in het Daknest.',
+      ),
     );
     await _notifyAndSave();
   }
@@ -330,11 +336,16 @@ extension DragonHavenSystems on HouseholdProvider {
     );
     dragon.activeAdventureId = run.id;
     adventureRuns.add(run);
+    final strings = AppStrings(languageCode);
     await HavenNotifications.schedule(
       id: 'adventure-${run.id}',
       at: run.endsAt,
-      title: '${dragon.displayName} has returned',
-      body: 'An Adventure reward is ready in DragonHaven.',
+      title: strings.pick('${dragon.displayName} has returned',
+          '${dragon.displayName} is teruggekeerd'),
+      body: strings.pick(
+        'An Adventure reward is ready in DragonHaven.',
+        'Er staat een Adventure-beloning klaar in DragonHaven.',
+      ),
     );
     adventureOptionIds[adventure.kind]?.remove(adventure.id);
     if (adventure.kind == AdventureKind.short) {
@@ -565,49 +576,45 @@ extension DragonHavenSystems on HouseholdProvider {
     return 'inactive';
   }
 
-  String eggHint({required bool isDutch}) {
+  String eggHint({bool? isDutch, String? locale}) {
+    final strings = AppStrings(locale ?? (isDutch == true ? 'nl' : 'en'));
     final lineage = pet.lineage;
     final affinity = switch (lineage.affinityCategory) {
-      'ember' || 'solar' => isDutch
-          ? 'De schaal voelt ongewoon warm.'
-          : 'The shell feels unusually warm.',
-      'tide' || 'abyssal' => isDutch
-          ? 'Je hoort iets dat bijna op golven lijkt.'
-          : 'You hear something almost like distant waves.',
-      'tempest' => isDutch
-          ? 'Een piepklein vonkje danst over de schaal.'
-          : 'A tiny spark skips across the shell.',
-      'moon' || 'eclipse' || 'cosmic' => isDutch
-          ? 'Het ei wordt onrustig zodra de sterren verschijnen.'
-          : 'The egg grows restless when the stars appear.',
-      'wildwood' || 'bloom' || 'earthlight' || 'primordial' => isDutch
-          ? 'Het nest ruikt plotseling naar regen en mos.'
-          : 'The nest suddenly smells of rain and moss.',
-      _ => isDutch
-          ? 'Er klinkt een vreemd muzikaal tikje van binnen.'
-          : 'A strange musical tap answers from within.',
+      'ember' || 'solar' => strings.pick(
+          'The shell feels unusually warm.', 'De schaal voelt ongewoon warm.'),
+      'tide' || 'abyssal' => strings.pick(
+          'You hear something almost like distant waves.',
+          'Je hoort iets dat bijna op golven lijkt.'),
+      'tempest' => strings.pick('A tiny spark skips across the shell.',
+          'Een piepklein vonkje danst over de schaal.'),
+      'moon' || 'eclipse' || 'cosmic' => strings.pick(
+          'The egg grows restless when the stars appear.',
+          'Het ei wordt onrustig zodra de sterren verschijnen.'),
+      'wildwood' || 'bloom' || 'earthlight' || 'primordial' => strings.pick(
+          'The nest suddenly smells of rain and moss.',
+          'Het nest ruikt plotseling naar regen en mos.'),
+      _ => strings.pick('A strange musical tap answers from within.',
+          'Er klinkt een vreemd muzikaal tikje van binnen.'),
     };
     final rhythm = switch (pet.lawAxis) {
-      LawAxis.lawful => isDutch
-          ? 'De bewegingen binnenin volgen een precies ritme.'
-          : 'The movements inside follow a precise rhythm.',
-      LawAxis.neutral => isDutch
-          ? 'Het wordt stil zodra je probeert een patroon te vinden.'
-          : 'It goes quiet whenever you try to find a pattern.',
-      LawAxis.chaotic => isDutch
-          ? 'Het ei rolt een stukje. Tegen de helling op.'
-          : 'The egg rolls a little. Uphill.',
+      LawAxis.lawful => strings.pick(
+          'The movements inside follow a precise rhythm.',
+          'De bewegingen binnenin volgen een precies ritme.'),
+      LawAxis.neutral => strings.pick(
+          'It goes quiet whenever you try to find a pattern.',
+          'Het wordt stil zodra je probeert een patroon te vinden.'),
+      LawAxis.chaotic => strings.pick('The egg rolls a little. Uphill.',
+          'Het ei rolt een stukje. Tegen de helling op.'),
     };
     final aura = switch (pet.moralAxis) {
-      MoralAxis.good => isDutch
-          ? 'Een zachte gloed blijft even onder je hand hangen.'
-          : 'A gentle glow lingers beneath your hand.',
-      MoralAxis.neutral => isDutch
-          ? 'Iets binnenin luistert aandachtig terug.'
-          : 'Something inside seems to listen back.',
-      MoralAxis.evil => isDutch
-          ? 'Je weet vrij zeker dat het ei net terug tikte.'
-          : 'You are fairly sure the egg just tapped back.',
+      MoralAxis.good => strings.pick('A gentle glow lingers beneath your hand.',
+          'Een zachte gloed blijft even onder je hand hangen.'),
+      MoralAxis.neutral => strings.pick(
+          'Something inside seems to listen back.',
+          'Iets binnenin luistert aandachtig terug.'),
+      MoralAxis.evil => strings.pick(
+          'You are fairly sure the egg just tapped back.',
+          'Je weet vrij zeker dat het ei net terug tikte.'),
     };
     return '$affinity $rhythm $aura';
   }

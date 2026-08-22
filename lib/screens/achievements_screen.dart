@@ -49,7 +49,10 @@ class AchievementsScreen extends StatelessWidget {
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
-                    '${game.unlockedAchievementIds.length} / 20 unlocked',
+                    strings.pick(
+                      '${game.unlockedAchievementIds.length} / 20 unlocked',
+                      '${game.unlockedAchievementIds.length} / 20 behaald',
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -101,9 +104,7 @@ class _CompactAchievementGrid extends StatelessWidget {
                 game.unlockedAchievementIds.contains(achievement.id);
             final name = achievement.secret && !unlocked
                 ? strings.pick('Secret achievement', 'Geheime achievement')
-                : strings.isDutch
-                    ? achievement.titleNl
-                    : achievement.titleEn;
+                : strings.achievementTitle(achievement);
             return Semantics(
               label:
                   '$name, ${unlocked ? strings.pick('unlocked', 'behaald') : strings.pick('locked', 'vergrendeld')}',
@@ -172,22 +173,13 @@ class _AchievementTile extends StatelessWidget {
             unlocked: unlocked,
           ),
         ),
-        title: Text(
-            hidden
-                ? '???'
-                : strings.isDutch
-                    ? achievement.titleNl
-                    : achievement.titleEn,
+        title: Text(hidden ? '???' : strings.achievementTitle(achievement),
             style: const TextStyle(fontWeight: FontWeight.w900)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 3),
-            Text(hidden
-                ? '???'
-                : strings.isDutch
-                    ? achievement.descriptionNl
-                    : achievement.descriptionEn),
+            Text(hidden ? '???' : strings.achievementDescription(achievement)),
             if (!unlocked) ...[
               const SizedBox(height: 8),
               LinearProgressIndicator(
