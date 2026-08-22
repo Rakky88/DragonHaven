@@ -130,7 +130,16 @@ class HouseholdProvider extends ChangeNotifier {
 
   /// Creates a non-persistent emulator account whose Starter Egg hatches
   /// three minutes after the app starts.
-  static HouseholdProvider createHatchDemo() {
+  static HouseholdProvider createHatchDemo({
+    Duration countdown = const Duration(minutes: 3),
+  }) {
+    if (countdown <= Duration.zero || countdown > const Duration(hours: 24)) {
+      throw ArgumentError.value(
+        countdown,
+        'countdown',
+        'Must be greater than zero and at most 24 hours.',
+      );
+    }
     final provider = HouseholdProvider(
       persistenceEnabled: false,
       random: Random(20260822),
@@ -141,8 +150,9 @@ class HouseholdProvider extends ChangeNotifier {
       ..onboardingComplete = true
       ..musicEnabled = true
       ..soundEffectsEnabled = true;
-    provider.pet.stageStartedAt =
-        provider._clock().subtract(const Duration(hours: 23, minutes: 57));
+    provider.pet.stageStartedAt = provider._clock().subtract(
+          Duration(hours: provider.pet.incubationHours) - countdown,
+        );
     return provider;
   }
 

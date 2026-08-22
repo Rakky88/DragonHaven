@@ -58,6 +58,7 @@ class _RooftopNestScreenState extends State<RooftopNestScreen> {
           EggHatchCountdown(
             key: const Key('nest-egg-hatch-countdown'),
             pet: egg,
+            onElapsed: () => _hatch(context, game),
           ),
           const SizedBox(height: 14),
           _EggClueCard(egg: egg),

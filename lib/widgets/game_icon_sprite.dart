@@ -39,6 +39,7 @@ enum GameIconKind {
   friendsAdd,
   friendsTrade,
   friendsVisit,
+  nameDragon,
 }
 
 extension GameIconKindAsset on GameIconKind {
@@ -70,6 +71,7 @@ extension GameIconKindAsset on GameIconKind {
         GameIconKind.friendsAdd => 'friends_add',
         GameIconKind.friendsTrade => 'friends_trade',
         GameIconKind.friendsVisit => 'friends_visit',
+        GameIconKind.nameDragon => 'name_dragon',
         _ => name,
       }}.webp'
           .replaceFirst('ui_adventure_', 'adventure_')
@@ -79,7 +81,8 @@ extension GameIconKindAsset on GameIconKind {
           .replaceFirst('ui_stash_', 'stash_')
           .replaceFirst('ui_screen_', 'screen_')
           .replaceFirst('ui_audio_', 'audio_')
-          .replaceFirst('ui_friends_', 'friends_');
+          .replaceFirst('ui_friends_', 'friends_')
+          .replaceFirst('ui_name_dragon', 'name_dragon');
 }
 
 class GameIconSprite extends StatelessWidget {

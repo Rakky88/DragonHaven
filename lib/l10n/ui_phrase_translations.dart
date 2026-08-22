@@ -2873,6 +2873,15 @@ const uiPhraseTranslations = <String, List<String>>{
     '点击巢穴选择一枚蛋',
     '巣をタップして卵を選ぶ'
   ],
+  'Tap the egg once to begin hatching': [
+    'Tippe einmal auf das Ei, um das Schlüpfen zu beginnen',
+    'Toca el huevo una vez para comenzar la eclosión',
+    'Touchez l’œuf une fois pour lancer l’éclosion',
+    'Tocca una volta l’uovo per iniziare la schiusa',
+    'Toque no ovo uma vez para iniciar a eclosão',
+    '点击龙蛋一次开始孵化',
+    '卵を一度タップして孵化を始める'
+  ],
   'Something is moving inside...': [
     'Etwas bewegt sich darin...',
     'Algo se mueve dentro...',

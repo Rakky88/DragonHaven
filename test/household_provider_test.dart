@@ -47,6 +47,16 @@ void main() {
     expect(remaining, lessThanOrEqualTo(const Duration(minutes: 3)));
   });
 
+  test('the emulator hatch demo accepts a short countdown for UI checks', () {
+    final game = HouseholdProvider.createHatchDemo(
+      countdown: const Duration(seconds: 8),
+    );
+    final remaining = game.pet.remainingForNextStage(DateTime.now());
+
+    expect(remaining, greaterThan(const Duration(seconds: 7)));
+    expect(remaining, lessThanOrEqualTo(const Duration(seconds: 8)));
+  });
+
   test('language and hidden egg identity persist after restart', () async {
     final game = HouseholdProvider(random: Random(11));
     final lineage = game.pet.lineageId;

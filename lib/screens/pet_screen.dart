@@ -48,7 +48,10 @@ class PetScreen extends StatelessWidget {
         _DragonStageCard(pet: pet),
         if (pet.isEgg) ...[
           const SizedBox(height: 10),
-          EggHatchCountdown(pet: pet),
+          EggHatchCountdown(
+            pet: pet,
+            onElapsed: game.hatchActiveDragon,
+          ),
         ],
         if (!pet.isEgg) ...[
           const SizedBox(height: 18),
@@ -89,9 +92,14 @@ class PetScreen extends StatelessWidget {
 }
 
 class EggHatchCountdown extends StatefulWidget {
-  const EggHatchCountdown({super.key, required this.pet});
+  const EggHatchCountdown({
+    super.key,
+    required this.pet,
+    this.onElapsed,
+  });
 
   final Pet pet;
+  final FutureOr<void> Function()? onElapsed;
 
   @override
   State<EggHatchCountdown> createState() => _EggCountdownState();
@@ -102,6 +110,7 @@ class _EggCountdownState extends State<EggHatchCountdown>
   Timer? _timer;
   late final AnimationController _glowController;
   DateTime _now = DateTime.now();
+  bool _elapsedNotified = false;
 
   @override
   void initState() {
@@ -130,8 +139,25 @@ class _EggCountdownState extends State<EggHatchCountdown>
     if (state == AppLifecycleState.resumed) _refresh();
   }
 
+  @override
+  void didUpdateWidget(covariant EggHatchCountdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.pet.id != widget.pet.id) _elapsedNotified = false;
+  }
+
   void _refresh() {
-    if (mounted) setState(() => _now = DateTime.now());
+    if (!mounted) return;
+    final now = DateTime.now();
+    setState(() => _now = now);
+    if (_elapsedNotified ||
+        widget.onElapsed == null ||
+        !widget.pet.canHatch(now)) {
+      return;
+    }
+    _elapsedNotified = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onElapsed?.call();
+    });
   }
 
   @override
@@ -868,22 +894,39 @@ class _HatchDialog extends StatefulWidget {
 
 class _HatchDialogState extends State<_HatchDialog> {
   var phase = 0;
+  var _crackingStarted = false;
   Timer? timer;
+
   @override
   void initState() {
     super.initState();
     HavenAudio.setMusicScene(HavenMusicScene.reveal);
     HavenAudio.play(HavenSound.hatchBuild);
-    timer = Timer.periodic(const Duration(milliseconds: 620), (timer) {
+  }
+
+  void _beginCracking() {
+    if (_crackingStarted || !mounted) return;
+    _crackingStarted = true;
+    setState(() => phase = 1);
+    HavenAudio.play(HavenSound.hatchCrackOne);
+    _scheduleNextPhase();
+  }
+
+  Duration get _delayUntilNextPhase => switch (phase) {
+        1 => const Duration(milliseconds: 900),
+        2 => const Duration(milliseconds: 1050),
+        3 => const Duration(milliseconds: 1150),
+        4 => const Duration(milliseconds: 440),
+        5 => const Duration(milliseconds: 1500),
+        _ => Duration.zero,
+      };
+
+  void _scheduleNextPhase() {
+    if (!mounted || phase >= 6) return;
+    timer = Timer(_delayUntilNextPhase, () {
       if (!mounted) return;
-      if (phase >= 6) {
-        timer.cancel();
-        return;
-      }
       setState(() => phase++);
       switch (phase) {
-        case 1:
-          HavenAudio.play(HavenSound.hatchCrackOne);
         case 2:
           HavenAudio.play(HavenSound.hatchCrackTwo);
         case 3:
@@ -896,6 +939,7 @@ class _HatchDialogState extends State<_HatchDialog> {
         default:
           break;
       }
+      _scheduleNextPhase();
     });
   }
 
@@ -911,7 +955,7 @@ class _HatchDialogState extends State<_HatchDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final game = context.watch<HouseholdProvider>();
+    final game = context.read<HouseholdProvider>();
     final pet = game.dragonById(widget.dragonId) ?? game.pet;
     final strings = AppStrings.of(context);
     final reveal = phase >= 5;
@@ -944,40 +988,41 @@ class _HatchDialogState extends State<_HatchDialog> {
                             : phase == 4
                                 ? const SizedBox.square(
                                     key: Key('hatch-flash'), dimension: 270)
-                                : AnimatedScale(
-                                    duration: const Duration(milliseconds: 220),
-                                    scale: 1 + phase * .025,
-                                    child: Stack(
-                                        key: const Key('cracking-egg'),
-                                        alignment: Alignment.center,
-                                        children: [
-                                          DragonArt(
-                                              height: 260,
-                                              stageKey: 'moonEgg',
-                                              animate: phase == 0),
-                                          if (phase >= 1)
-                                            SizedBox(
-                                                width: 170,
-                                                height: 190,
-                                                child: CustomPaint(
-                                                    painter:
-                                                        _CrackPainter(phase)))
-                                        ]))),
+                                : Semantics(
+                                    button: phase == 0,
+                                    label: phase == 0
+                                        ? strings.pick(
+                                            'Tap the egg once to begin hatching',
+                                            'Tik één keer op het ei om het uitkomen te starten')
+                                        : null,
+                                    child: GestureDetector(
+                                      key: const Key('hatch-egg-tap'),
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: phase == 0 ? _beginCracking : null,
+                                      child: AnimatedScale(
+                                          duration:
+                                              const Duration(milliseconds: 220),
+                                          scale: 1 + phase * .025,
+                                          child: Stack(
+                                              key: const Key('cracking-egg'),
+                                              alignment: Alignment.center,
+                                              children: [
+                                                DragonArt(
+                                                    height: 260,
+                                                    stageKey: 'moonEgg',
+                                                    animate: phase == 0),
+                                                if (phase >= 1)
+                                                  SizedBox(
+                                                      width: 170,
+                                                      height: 190,
+                                                      child: CustomPaint(
+                                                          painter:
+                                                              _CrackPainter(
+                                                                  phase)))
+                                              ])),
+                                    ),
+                                  )),
                     const SizedBox(height: 20),
-                    if (phase == 0)
-                      Text(
-                          strings.pick('The shell is trembling...',
-                              'De schaal trilt...'),
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 22)),
-                    if (phase >= 1 && phase <= 3)
-                      Text(strings.pick('CRACK $phase/3', 'KRAK $phase/3'),
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 30)),
                     if (phase == 5 && pet.spectral)
                       Text(
                           strings.pick('✦ SOMETHING IS DIFFERENT...',
@@ -999,7 +1044,7 @@ class _HatchDialogState extends State<_HatchDialog> {
                     if (phase >= 6)
                       Padding(
                           padding: const EdgeInsets.only(top: 22),
-                          child: FilledButton.icon(
+                          child: _HatchNameButton(
                               onPressed: () async {
                                 await _askForName(
                                   context,
@@ -1007,12 +1052,80 @@ class _HatchDialogState extends State<_HatchDialog> {
                                   closeAfter: true,
                                 );
                               },
-                              icon: const Icon(Icons.edit_rounded),
-                              label: Text(strings.pick(
-                                  'Choose a name', 'Kies een naam')))),
+                              label: strings.pick(
+                                  'Choose a name', 'Kies een naam'))),
                   ]))),
     );
   }
+}
+
+class _HatchNameButton extends StatelessWidget {
+  const _HatchNameButton({required this.onPressed, required this.label});
+
+  final VoidCallback onPressed;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 340),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF7557B8), Color(0xFF49307F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(color: const Color(0xFFFFD66B), width: 2),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x66402775),
+                  blurRadius: 24,
+                  offset: Offset(0, 10),
+                ),
+                BoxShadow(
+                  color: Color(0x55FFE08A),
+                  blurRadius: 14,
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                key: const Key('choose-dragon-name'),
+                onTap: onPressed,
+                borderRadius: BorderRadius.circular(22),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 18, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const GameIconSprite(GameIconKind.nameDragon, size: 54),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          label,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: .2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 class _CrackPainter extends CustomPainter {
@@ -1187,11 +1300,14 @@ Future<void> _askForName(
                     },
                     child: Text(strings.pick('Keep this name', 'Naam bewaren')))
               ]));
+  await WidgetsBinding.instance.endOfFrame;
   controller.dispose();
   if (name == null || !context.mounted) return;
   final game = context.read<HouseholdProvider>();
   await game.nameDragon(dragonId ?? game.pet.id, name);
   if (closeAfter && context.mounted) {
+    await WidgetsBinding.instance.endOfFrame;
+    if (!context.mounted) return;
     Navigator.pop(context);
   }
 }

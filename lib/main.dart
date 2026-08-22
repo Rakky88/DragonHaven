@@ -14,8 +14,14 @@ Future<void> main() async {
   ));
   const showcase = bool.fromEnvironment('DRAGONHAVEN_SHOWCASE');
   const hatchDemo = bool.fromEnvironment('DRAGONHAVEN_HATCH_DEMO');
+  const hatchDemoSeconds = int.fromEnvironment(
+    'DRAGONHAVEN_HATCH_DEMO_SECONDS',
+    defaultValue: 180,
+  );
   final game = hatchDemo
-      ? HouseholdProvider.createHatchDemo()
+      ? HouseholdProvider.createHatchDemo(
+          countdown: Duration(seconds: hatchDemoSeconds),
+        )
       : showcase
           ? HouseholdProvider.createShowcase()
           : await HouseholdProvider.loadFromStorage();
