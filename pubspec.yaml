@@ -71,6 +71,7 @@ flutter:
     - assets/images/furniture_firefly_lamp.webp
     - assets/images/furniture_crystal_lantern.webp
     - assets/images/furniture_atlases/
+    - assets/images/furniture/
 
 flutter_launcher_icons:
   android: true

@@ -36,6 +36,14 @@ void main() {
     expect(shopCatalog.every((item) => item.price > 0), isTrue);
     expect(shopCatalog.where((item) => item.id.startsWith('decor_')),
         hasLength(192));
+    final runtimeAssets = shopCatalog
+        .map((item) => FurnitureArt.assetForItem(item.id))
+        .whereType<String>()
+        .toSet();
+    expect(runtimeAssets, hasLength(200));
+    for (final path in runtimeAssets) {
+      expect(File(path).existsSync(), isTrue, reason: path);
+    }
   });
 
   test('all twenty-four generated furniture atlases exist', () {
@@ -51,7 +59,7 @@ void main() {
     }
   });
 
-  testWidgets('generated furniture renders from real sprite atlases',
+  testWidgets('generated furniture renders from proportional runtime sprites',
       (tester) async {
     final samples = <ShopItem>[];
     final seenThemes = <String>{};
