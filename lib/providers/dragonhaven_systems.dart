@@ -533,27 +533,10 @@ extension DragonHavenSystems on HouseholdProvider {
     return returningVisitors.length != before;
   }
 
-  Future<bool> discardOwnedItem(String itemId) async {
-    if (!ownedItemIds.contains(itemId)) return false;
-    housePlacements.removeWhere((placement) => placement.itemId == itemId);
-    ownedItemIds.remove(itemId);
-    _rebuildEquippedItems();
-    await _notifyAndSave();
-    return true;
-  }
-
   Future<bool> discardEgg(String eggId) async {
     final before = eggStash.length;
     eggStash.removeWhere((egg) => egg.id == eggId);
     if (eggStash.length == before) return false;
-    await _notifyAndSave();
-    return true;
-  }
-
-  Future<bool> discardChest(ChestTier tier) async {
-    final count = chestCount(tier);
-    if (count <= 0) return false;
-    chestInventory[tier] = count - 1;
     await _notifyAndSave();
     return true;
   }
@@ -578,7 +561,7 @@ extension DragonHavenSystems on HouseholdProvider {
 
   String eggHint({bool? isDutch, String? locale}) {
     final strings = AppStrings(locale ?? (isDutch == true ? 'nl' : 'en'));
-    final lineage = pet.lineage;
+    final lineage = (nestEgg ?? pet).lineage;
     final affinity = switch (lineage.affinityCategory) {
       'ember' || 'solar' => strings.pick(
           'The shell feels unusually warm.', 'De schaal voelt ongewoon warm.'),

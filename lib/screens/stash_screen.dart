@@ -12,6 +12,7 @@ import '../theme/app_theme.dart';
 import '../widgets/chest_reveal.dart';
 import '../widgets/furniture_art.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/game_icon_sprite.dart';
 
 class StashScreen extends StatelessWidget {
   const StashScreen({super.key});
@@ -46,7 +47,7 @@ class _EggStashTab extends StatelessWidget {
     final strings = AppStrings.of(context);
     if (game.eggStash.isEmpty) {
       return _EmptyState(
-        icon: Icons.egg_alt_outlined,
+        kind: GameIconKind.mysteriousEgg,
         text: strings.pick('No Mysterious Eggs in your stash yet.',
             'Nog geen Mysterious Eggs in je voorraad.'),
       );
@@ -77,7 +78,7 @@ class _EggStashTab extends StatelessWidget {
                   icon: const Icon(Icons.delete_outline_rounded),
                 ),
                 FilledButton(
-                  onPressed: game.pet.isEgg
+                  onPressed: game.hasEggInNest
                       ? null
                       : () async {
                           final ok = await game.activateEgg(egg.id);
@@ -136,7 +137,7 @@ class _ChestStashTab extends StatelessWidget {
         ChestTier.values.where((tier) => game.chestCount(tier) > 0).toList();
     if (tiers.isEmpty) {
       return _EmptyState(
-          icon: Icons.inventory_2_outlined,
+          kind: GameIconKind.chest,
           text: strings.pick('Adventure rewards are stored here.',
               'Avontuurbeloningen worden hier bewaard.'));
     }
@@ -180,12 +181,6 @@ class _ChestStashTab extends StatelessWidget {
                     ],
                   ),
                 ),
-                IconButton(
-                  tooltip:
-                      strings.pick('Discard one chest', 'Eén kist wegdoen'),
-                  onPressed: () => _discardChest(context, tier),
-                  icon: const Icon(Icons.delete_outline_rounded),
-                ),
                 FilledButton(
                   key: Key('stash-open-chest-${tier.name}'),
                   onPressed: () => _openChest(context, tier),
@@ -210,34 +205,6 @@ class _ChestStashTab extends StatelessWidget {
     if (reward == null || !navigator.mounted) return;
     unawaited(HavenAudio.play(_soundForChest(tier)));
     await showChestReveal(navigator.context, reward);
-  }
-
-  Future<void> _discardChest(BuildContext context, ChestTier tier) async {
-    final strings = AppStrings.of(context);
-    final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            scrollable: true,
-            title: Text(strings.pick(
-              'Discard one ${strings.chestLabel(tier)}?',
-              'Eén ${strings.chestLabel(tier)} wegdoen?',
-            )),
-            content: Text(strings.pick('Its unopened contents will be lost.',
-                'De ongeopende inhoud gaat verloren.')),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(dialogContext, false),
-                  child: Text(strings.tr('cancel'))),
-              FilledButton(
-                  onPressed: () => Navigator.pop(dialogContext, true),
-                  child: Text(strings.pick('Discard', 'Wegdoen'))),
-            ],
-          ),
-        ) ??
-        false;
-    if (confirmed && context.mounted) {
-      await context.read<HouseholdProvider>().discardChest(tier);
-    }
   }
 }
 
@@ -287,63 +254,33 @@ class _FurnitureStashTab extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.w900)),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                if (game.isEquipped(item))
-                  Text(strings.pick('Placed', 'Geplaatst'),
-                      style: const TextStyle(
-                          color: AppColors.muted, fontSize: 11)),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  tooltip: strings.pick(
-                      'Remove permanently', 'Definitief verwijderen'),
-                  onPressed: () => _discard(context, item),
-                  icon: const Icon(Icons.delete_outline_rounded, size: 20),
-                ),
-              ]),
+              if (game.isEquipped(item))
+                Text(strings.pick('Placed', 'Geplaatst'),
+                    style:
+                        const TextStyle(color: AppColors.muted, fontSize: 11)),
             ]),
           ),
         );
       },
     );
   }
-
-  Future<void> _discard(BuildContext context, ShopItem item) async {
-    final strings = AppStrings.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        scrollable: true,
-        title: Text(strings.pick('Remove ${strings.itemName(item)}?',
-            '${strings.itemName(item)} verwijderen?')),
-        content: Text(strings.pick(
-            'This cannot be undone and gives no coins back.',
-            'Dit kan niet ongedaan worden gemaakt en geeft geen munten terug.')),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(strings.tr('cancel'))),
-          FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(strings.pick('Remove', 'Verwijderen'))),
-        ],
-      ),
-    );
-    if (confirmed == true && context.mounted) {
-      await context.read<HouseholdProvider>().discardOwnedItem(item.id);
-    }
-  }
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.icon, required this.text});
-  final IconData icon;
+  const _EmptyState({this.icon, this.kind, required this.text})
+      : assert(icon != null || kind != null);
+  final IconData? icon;
+  final GameIconKind? kind;
   final String text;
   @override
   Widget build(BuildContext context) => Center(
         child: Padding(
           padding: const EdgeInsets.all(30),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, size: 56, color: AppColors.muted),
+            if (kind case final value?)
+              GameIconSprite(value, size: 68)
+            else
+              Icon(icon, size: 56, color: AppColors.muted),
             const SizedBox(height: 12),
             Text(text,
                 textAlign: TextAlign.center,

@@ -101,11 +101,17 @@ void main() {
       'reveal.mp3',
     ];
     final directory = Directory('android/app/src/main/res/raw');
+    final nativeBridge = File(
+      'android/app/src/main/kotlin/nl/dragonhaven/app/MainActivity.kt',
+    ).readAsStringSync();
     expect(directory.existsSync(), isTrue);
     for (final resource in resources) {
       final file = File('${directory.path}/$resource');
       expect(file.existsSync(), isTrue, reason: resource);
       expect(file.lengthSync(), greaterThan(4000), reason: resource);
+      final resourceId = resource.substring(0, resource.lastIndexOf('.'));
+      expect(nativeBridge, contains('R.raw.$resourceId'),
+          reason: '$resource must be statically retained in release builds');
     }
   });
 

@@ -67,6 +67,7 @@ class HouseholdProvider extends ChangeNotifier {
   bool achievementsCompact = false;
   bool showcaseMode = false;
   late Pet pet;
+  Pet? incubatingEgg;
   List<DragonEgg> eggStash = [];
   List<Pet> sanctuaryDragons = [];
   Map<ChestTier, int> chestInventory = {
@@ -114,7 +115,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 24;
+  static const _schemaVersion = 25;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(
@@ -186,6 +187,7 @@ class HouseholdProvider extends ChangeNotifier {
       acquiredAt: now,
       stageStartedAt: now,
     );
+    incubatingEgg = null;
     unlockedRoomIds = {'nest', 'hearth'};
     towerFloorRoomIds = ['hearth'];
     activities = [
@@ -312,6 +314,7 @@ class HouseholdProvider extends ChangeNotifier {
       ..coins = 999999
       ..gems = 99999;
     sanctuaryDragons = dragons.where((dragon) => dragon.id != pet.id).toList();
+    incubatingEgg = null;
 
     discoveredForms = {
       for (final lineage in dragonLineages) '${lineage.id}:hatchling',
@@ -402,11 +405,29 @@ class HouseholdProvider extends ChangeNotifier {
     achievementsCompact = data['achievementsCompact'] is bool &&
         data['achievementsCompact'] as bool;
     pet = Pet.fromJson(mapFromJson(data['pet']));
+    final storedIncubatingEgg = mapFromJson(data['incubatingEgg']);
+    incubatingEgg =
+        storedIncubatingEgg.isEmpty ? null : Pet.fromJson(storedIncubatingEgg);
+    if (incubatingEgg?.isEgg != true) incubatingEgg = null;
     eggStash = mapsFromJson(data['eggStash']).map(DragonEgg.fromJson).toList();
     sanctuaryDragons = mapsFromJson(data['sanctuaryDragons'])
         .map(Pet.fromJson)
         .where((dragon) => !dragon.isEgg)
         .toList();
+    // v0.00.10 and older temporarily replaced the active dragon with every
+    // later egg. Preserve that egg's fixed identity and incubation progress,
+    // but restore the previous dragon so the complete app remains available.
+    if (pet.isEgg && !pet.firstEgg && sanctuaryDragons.isNotEmpty) {
+      incubatingEgg = pet;
+      final restoredActiveDragon = sanctuaryDragons.removeAt(0);
+      restoredActiveDragon.coins = pet.coins;
+      restoredActiveDragon.gems = pet.gems;
+      incubatingEgg!
+        ..coins = 0
+        ..gems = 0;
+      pet = restoredActiveDragon;
+    }
+    if (pet.isEgg && pet.firstEgg) incubatingEgg = null;
     final rawChests = mapFromJson(data['chestInventory']);
     chestInventory = {
       for (final tier in ChestTier.values)
@@ -571,10 +592,13 @@ class HouseholdProvider extends ChangeNotifier {
 
   int chestCount(ChestTier tier) => chestInventory[tier] ?? 0;
   int get totalChestCount => chestInventory.values.fold(0, (a, b) => a + b);
+  Pet? get nestEgg => pet.isEgg ? pet : incubatingEgg;
+  bool get hasEggInNest => nestEgg != null;
 
   Pet? dragonById(String? id) {
     if (id == null) return null;
     if (pet.id == id) return pet;
+    if (incubatingEgg?.id == id) return incubatingEgg;
     for (final dragon in sanctuaryDragons) {
       if (dragon.id == id) return dragon;
     }
@@ -669,13 +693,6 @@ class HouseholdProvider extends ChangeNotifier {
         _random.nextDouble() < .9 ? 4 + _random.nextInt(4) : 0,
       ChestTier.mythical || ChestTier.sinister => 8 + _random.nextInt(6),
     };
-    final xp = switch (tier) {
-      ChestTier.wooden => 15,
-      ChestTier.silver => 35,
-      ChestTier.gold => 80,
-      ChestTier.dragon => 150,
-      ChestTier.mythical || ChestTier.sinister => 300,
-    };
     final eggChance = switch (tier) {
       ChestTier.wooden => 0.01,
       ChestTier.silver => 0.04,
@@ -686,7 +703,6 @@ class HouseholdProvider extends ChangeNotifier {
     DragonEgg? foundEgg;
     pet.coins += coins;
     pet.gems += gems;
-    pet.xp += xp;
     totalChestsOpened++;
     if (eggFound) {
       foundEgg = _createEgg(sourceTier: tier);
@@ -697,7 +713,6 @@ class HouseholdProvider extends ChangeNotifier {
       type: ActivityType.discovery,
       code: ActivityCode.chestOpened,
       subject: tier.name,
-      xp: xp,
       coins: coins,
       gems: gems,
     );
@@ -707,17 +722,26 @@ class HouseholdProvider extends ChangeNotifier {
         tier: tier,
         coins: coins,
         gems: gems,
-        xp: xp,
         eggFound: eggFound,
         sinisterEgg: foundEgg?.sinister ?? false);
   }
 
   Future<bool> hatchActiveDragon() async {
     final now = _clock();
-    if (!pet.canHatch(now)) return false;
-    final dragonId = pet.id;
-    final acquiredAt = pet.acquiredAt;
-    pet.hatch(now);
+    final egg = nestEgg;
+    if (egg == null || !egg.canHatch(now)) return false;
+    final dragonId = egg.id;
+    final acquiredAt = egg.acquiredAt;
+    egg.hatch(now);
+    if (!identical(egg, pet)) {
+      final previousActiveDragon = pet;
+      egg
+        ..coins = previousActiveDragon.coins
+        ..gems = previousActiveDragon.gems;
+      sanctuaryDragons.insert(0, previousActiveDragon);
+      pet = egg;
+      incubatingEgg = null;
+    }
     totalHatched++;
     _registerCurrentStage();
     _addActivity(
@@ -806,25 +830,24 @@ class HouseholdProvider extends ChangeNotifier {
 
   Future<bool> activateEgg(String eggId) async {
     final index = eggStash.indexWhere((egg) => egg.id == eggId);
-    if (index < 0 || pet.isEgg) return false;
+    if (index < 0 || pet.isEgg || incubatingEgg != null) return false;
     final egg = eggStash.removeAt(index);
-    sanctuaryDragons.insert(0, pet);
-    final coins = pet.coins;
-    final gems = pet.gems;
-    pet = egg.activate(coins: coins, gems: gems, activatedAt: _clock());
+    incubatingEgg = egg.activate(coins: 0, gems: 0, activatedAt: _clock());
+    final activeEgg = incubatingEgg!;
     final strings = AppStrings(languageCode);
-    await HavenNotifications.schedule(
-      id: 'egg-${pet.id}',
-      at: pet.stageStartedAt.add(Duration(hours: pet.incubationHours)),
+    _evaluateAchievements();
+    await _notifyAndSave();
+    unawaited(HavenNotifications.schedule(
+      id: 'egg-${activeEgg.id}',
+      at: activeEgg.stageStartedAt
+          .add(Duration(hours: activeEgg.incubationHours)),
       title: strings.pick(
           'Your Mysterious Egg is ready', 'Je Mysterieus Ei is klaar'),
       body: strings.pick(
         'Something inside wants to hatch in the Rooftop Nest.',
         'Iets binnenin wil uitkomen in het Daknest.',
       ),
-    );
-    _evaluateAchievements();
-    await _notifyAndSave();
+    ));
     return true;
   }
 
@@ -1171,6 +1194,7 @@ class HouseholdProvider extends ChangeNotifier {
       'soundEffectsEnabled': soundEffectsEnabled,
       'achievementsCompact': achievementsCompact,
       'pet': pet.toJson(),
+      'incubatingEgg': incubatingEgg?.toJson(),
       'eggStash': eggStash.map((egg) => egg.toJson()).toList(),
       'sanctuaryDragons':
           sanctuaryDragons.map((dragon) => dragon.toJson()).toList(),

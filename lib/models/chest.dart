@@ -12,14 +12,12 @@ class ChestReward {
     required this.tier,
     required this.coins,
     required this.gems,
-    required this.xp,
     required this.eggFound,
     this.sinisterEgg = false,
   });
   final ChestTier tier;
   final int coins;
   final int gems;
-  final int xp;
   final bool eggFound;
   final bool sinisterEgg;
 }

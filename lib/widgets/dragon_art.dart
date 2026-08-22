@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/dragon_lineage.dart';
+import 'game_icon_sprite.dart';
 
 enum DragonArtworkFrame { fullImage, juvenile, earth, storm, bond }
 
@@ -201,50 +202,22 @@ class _DragonArtState extends State<DragonArt>
                 ),
               ),
               if (widget.prismatic && !widget.silhouette && !egg)
-                const IgnorePointer(
-                    child: CustomPaint(painter: _PrismaticParticlePainter())),
+                IgnorePointer(
+                  child: Padding(
+                    padding: EdgeInsets.all(widget.height * .015),
+                    child: Image.asset(
+                      GameVfxAssets.spectralAura,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
       ),
     );
   }
-}
-
-class _PrismaticParticlePainter extends CustomPainter {
-  const _PrismaticParticlePainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const colors = [
-      Color(0xFFFF73B9),
-      Color(0xFF7DE5FF),
-      Color(0xFFFFDE59),
-      Color(0xFFB593FF)
-    ];
-    const points = [
-      Offset(0.16, 0.24),
-      Offset(0.82, 0.2),
-      Offset(0.75, 0.66),
-      Offset(0.24, 0.72),
-      Offset(0.58, 0.1),
-      Offset(0.9, 0.48)
-    ];
-    for (var index = 0; index < points.length; index++) {
-      final center =
-          Offset(points[index].dx * size.width, points[index].dy * size.height);
-      final radius = size.shortestSide * (index.isEven ? 0.025 : 0.018);
-      final paint = Paint()..color = colors[index % colors.length];
-      canvas.drawCircle(center, radius, paint);
-      canvas.drawLine(center - Offset(radius * 2.2, 0),
-          center + Offset(radius * 2.2, 0), paint..strokeWidth = 1.5);
-      canvas.drawLine(center - Offset(0, radius * 2.2),
-          center + Offset(0, radius * 2.2), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _DragonImage extends StatelessWidget {

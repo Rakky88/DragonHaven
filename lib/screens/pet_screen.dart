@@ -14,6 +14,7 @@ import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/game_icon_sprite.dart';
 import '../widgets/haven_lighting.dart';
 import '../widgets/ui_bits.dart';
 
@@ -47,7 +48,7 @@ class PetScreen extends StatelessWidget {
         _DragonStageCard(pet: pet),
         if (pet.isEgg) ...[
           const SizedBox(height: 10),
-          _EggCountdown(pet: pet),
+          EggHatchCountdown(pet: pet),
         ],
         if (!pet.isEgg) ...[
           const SizedBox(height: 18),
@@ -80,23 +81,23 @@ class PetScreen extends StatelessWidget {
           const SizedBox(height: 26),
           SectionHeading(title: strings.pick('Egg stash', 'Eiervoorraad')),
           const SizedBox(height: 11),
-          _EggStash(eggs: game.eggStash, activeIsEgg: pet.isEgg),
+          _EggStash(eggs: game.eggStash, nestOccupied: game.hasEggInNest),
         ],
       ],
     );
   }
 }
 
-class _EggCountdown extends StatefulWidget {
-  const _EggCountdown({required this.pet});
+class EggHatchCountdown extends StatefulWidget {
+  const EggHatchCountdown({super.key, required this.pet});
 
   final Pet pet;
 
   @override
-  State<_EggCountdown> createState() => _EggCountdownState();
+  State<EggHatchCountdown> createState() => _EggCountdownState();
 }
 
-class _EggCountdownState extends State<_EggCountdown>
+class _EggCountdownState extends State<EggHatchCountdown>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   Timer? _timer;
   late final AnimationController _glowController;
@@ -457,13 +458,21 @@ class _DragonStageCard extends StatelessWidget {
                       decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: .9),
                           borderRadius: BorderRadius.circular(99)),
-                      child: Text(
-                          pet.isEgg
-                              ? '🥚 ${strings.pick('Mysterious Egg', 'Mysterieus Ei')}'
-                              : strings.petStage(pet),
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.twilightDark)))),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        if (pet.isEgg) ...[
+                          const GameIconSprite(GameIconKind.mysteriousEgg,
+                              size: 25),
+                          const SizedBox(width: 5),
+                        ],
+                        Text(
+                            pet.isEgg
+                                ? strings.pick(
+                                    'Mysterious Egg', 'Mysterieus Ei')
+                                : strings.petStage(pet),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.twilightDark)),
+                      ]))),
             ],
           ),
         ),
@@ -506,7 +515,7 @@ class _DragonNeedsPanel extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton.icon(
                   onPressed: pet.gems < 3 ? null : () => _buyTreat(context),
-                  icon: const Icon(Icons.diamond_rounded),
+                  icon: const GameIconSprite(GameIconKind.gem, size: 25),
                   label: Text(strings.pick(
                       'Starlight Treat · 3 gems', 'Sterlichtsnack · 3 gems')))),
         ]),
@@ -569,17 +578,12 @@ class _TrainingBar extends StatelessWidget {
       TrainingFocus.arcana => const Color(0xFF7A63D1),
       TrainingFocus.spirit => const Color(0xFF3FA37C)
     };
-    final icon = switch (focus) {
-      TrainingFocus.might => Icons.fitness_center_rounded,
-      TrainingFocus.arcana => Icons.auto_awesome_rounded,
-      TrainingFocus.spirit => Icons.favorite_rounded
-    };
     final name = focus.name[0].toUpperCase() + focus.name.substring(1);
     return Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: Column(children: [
           Row(children: [
-            Icon(icon, size: 18, color: color),
+            GameIconSprite(GameIconSprite.forTrainingFocus(focus), size: 28),
             const SizedBox(width: 7),
             Text(name, style: const TextStyle(fontWeight: FontWeight.w900)),
             if (leading) ...[
@@ -1051,9 +1055,9 @@ class _CrackPainter extends CustomPainter {
 }
 
 class _EggStash extends StatelessWidget {
-  const _EggStash({required this.eggs, required this.activeIsEgg});
+  const _EggStash({required this.eggs, required this.nestOccupied});
   final List<DragonEgg> eggs;
-  final bool activeIsEgg;
+  final bool nestOccupied;
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
@@ -1084,7 +1088,7 @@ class _EggStash extends StatelessWidget {
                     'Verkregen ${_date(egg.acquiredAt)} · identiteit ligt vast')),
                 trailing: FilledButton.tonal(
                     onPressed:
-                        activeIsEgg ? null : () => _activate(context, egg),
+                        nestOccupied ? null : () => _activate(context, egg),
                     child: Text(strings.pick('Raise', 'Activeren')))))
     ]);
   }
@@ -1098,8 +1102,8 @@ class _EggStash extends StatelessWidget {
                 title: Text(
                     strings.pick('Raise this egg?', 'Dit ei grootbrengen?')),
                 content: Text(strings.pick(
-                    'Your current dragon moves safely into the sanctuary collection. Coins, gems and discoveries stay yours.',
-                    'Je huidige draak verhuist veilig naar de reservaatcollectie. Munten, gems en ontdekkingen blijven van jou.')),
+                    'The egg moves to the Rooftop Nest. Your active dragon and the rest of the app stay available.',
+                    'Het ei verhuist naar het Daknest. Je actieve draak en de rest van de app blijven beschikbaar.')),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(context, false),

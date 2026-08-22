@@ -20,6 +20,7 @@ import 'screens/stash_screen.dart';
 import 'services/audio_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/about_sheet.dart';
+import 'widgets/game_icon_sprite.dart';
 import 'widgets/achievement_reveal.dart';
 import 'widgets/pull_to_dismiss_sheet.dart';
 
@@ -247,9 +248,8 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
         ),
         actions: [
           if (!eggOnly) ...[
-            _TopCurrency(
-                icon: Icons.monetization_on_rounded, value: game.coins),
-            _TopCurrency(icon: Icons.diamond_rounded, value: game.gems),
+            _TopCurrency(kind: GameIconKind.coin, value: game.coins),
+            _TopCurrency(kind: GameIconKind.gem, value: game.gems),
           ],
           PopupMenuButton<_HavenMenuAction>(
             key: const Key('app-overflow-menu'),
@@ -490,8 +490,8 @@ class _MenuRow extends StatelessWidget {
 }
 
 class _TopCurrency extends StatelessWidget {
-  const _TopCurrency({required this.icon, required this.value});
-  final IconData icon;
+  const _TopCurrency({required this.kind, required this.value});
+  final GameIconKind kind;
   final int value;
   @override
   Widget build(BuildContext context) => Container(
@@ -503,7 +503,7 @@ class _TopCurrency extends StatelessWidget {
           border: Border.all(color: AppColors.mist),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 15, color: AppColors.twilight),
+          GameIconSprite(kind, size: 20),
           const SizedBox(width: 3),
           Text('$value',
               style:

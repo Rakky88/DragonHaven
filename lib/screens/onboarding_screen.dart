@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_strings.dart';
 import '../models/day_phase.dart';
 import '../providers/household_provider.dart';
+import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/haven_lighting.dart';
 import '../widgets/dragon_art.dart';
@@ -19,6 +20,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final hour = DateTime.now().hour;
+      HavenAudio.setMusicScene(hour >= 21 || hour < 7
+          ? HavenMusicScene.towerNight
+          : HavenMusicScene.towerDay);
+    });
+  }
 
   @override
   void dispose() {

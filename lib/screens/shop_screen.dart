@@ -6,6 +6,7 @@ import '../models/shop_item.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/furniture_art.dart';
+import '../widgets/game_icon_sprite.dart';
 import '../widgets/ui_bits.dart';
 
 class ShopScreen extends StatefulWidget {
@@ -214,9 +215,10 @@ class _ShopHeader extends StatelessWidget {
       ],
     );
     final coinPill = MetricPill(
-      icon: currency == ItemCurrency.coins
-          ? Icons.stars_rounded
-          : Icons.diamond_rounded,
+      leading: GameIconSprite(
+        currency == ItemCurrency.coins ? GameIconKind.coin : GameIconKind.gem,
+        size: 26,
+      ),
       value: '$balance',
       label: currency == ItemCurrency.coins
           ? strings.pick('coins', 'munten')
@@ -346,15 +348,19 @@ class _ShopItemCard extends StatelessWidget {
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              affordable
-                                  ? item.currency == ItemCurrency.coins
-                                      ? Icons.stars_rounded
-                                      : Icons.diamond_rounded
-                                  : Icons.lock_rounded,
-                              size: 17,
-                              color: affordable ? AppColors.gold : Colors.white,
-                            ),
+                            if (affordable)
+                              GameIconSprite(
+                                item.currency == ItemCurrency.coins
+                                    ? GameIconKind.coin
+                                    : GameIconKind.gem,
+                                size: 23,
+                              )
+                            else
+                              const Icon(
+                                Icons.lock_rounded,
+                                size: 17,
+                                color: Colors.white,
+                              ),
                             const SizedBox(width: 5),
                             Text('${item.price}'),
                           ],

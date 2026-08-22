@@ -10,6 +10,7 @@ import 'package:dragon_haven/models/house.dart';
 import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
 import 'package:dragon_haven/widgets/furniture_art.dart';
+import 'package:dragon_haven/widgets/game_icon_sprite.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Future<({int width, int height, Uint8List rgba})> _decode(String path) async {
@@ -231,6 +232,30 @@ void main() {
     expect(paths, hasLength(206));
     for (final path in paths) {
       final image = await _decode(path);
+      _expectContained(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        path,
+      );
+    }
+  });
+
+  test('all game UI sprites and visual effects have safe transparent bounds',
+      () async {
+    final paths = <String>{
+      for (final kind in GameIconKind.values) kind.assetPath,
+      GameVfxAssets.chestBurst,
+      GameVfxAssets.spectralAura,
+    };
+    expect(paths, hasLength(13));
+    for (final path in paths) {
+      final image = await _decode(path);
+      expect(image.width / image.height, inInclusiveRange(.5, 2.0),
+          reason: '$path must keep a usable natural aspect ratio');
       _expectContained(
         image.rgba,
         image.width,

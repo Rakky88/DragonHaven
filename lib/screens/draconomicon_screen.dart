@@ -6,6 +6,7 @@ import '../models/dragon_lineage.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/game_icon_sprite.dart';
 
 class DraconomiconScreen extends StatelessWidget {
   const DraconomiconScreen({super.key});
@@ -22,14 +23,68 @@ class DraconomiconScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(strings.pick('The Draconomicon', 'Het Draconomicon'),
-                  style: Theme.of(context).textTheme.displaySmall),
-              const SizedBox(height: 5),
-              Text(
-                  strings.pick(
-                      'Your living record of every dragon form you have raised.',
-                      'Je levende register van elke drakenvorm die je hebt grootgebracht.'),
-                  style: const TextStyle(color: AppColors.muted, fontSize: 15)),
+              Container(
+                padding: const EdgeInsets.fromLTRB(15, 13, 16, 13),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF241747), Color(0xFF5D3D8D)],
+                  ),
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x332B174D),
+                      blurRadius: 20,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Row(children: [
+                  const GameIconSprite(
+                    GameIconKind.draconomicon,
+                    size: 92,
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings.pick('The Draconomicon', 'Het Draconomicon'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 22,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          strings.pick(
+                            'Every form you raise leaves its magic on these pages.',
+                            'Elke vorm die je grootbrengt laat zijn magie op deze pagina’s achter.',
+                          ),
+                          style: const TextStyle(
+                            color: Color(0xFFE4DCF5),
+                            fontWeight: FontWeight.w600,
+                            height: 1.25,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(99),
+                          child: LinearProgressIndicator(
+                            value: game.discoveredLineageCount / 42,
+                            minHeight: 7,
+                            color: const Color(0xFFFFD66E),
+                            backgroundColor: Colors.white24,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ]),
+              ),
               const SizedBox(height: 15),
               Container(
                   decoration: BoxDecoration(
@@ -108,6 +163,7 @@ class _LineageEntry extends StatelessWidget {
         game.hasDiscovered(lineage.id, 'hatchling', prismatic: spectral);
     return Card(
       clipBehavior: Clip.antiAlias,
+      color: discovered ? Colors.white : const Color(0xFFF0EDF5),
       child: ExpansionTile(
         key: PageStorageKey(
           'draconomicon-lineage-${spectral ? 'spectral' : 'normal'}-${lineage.id}',
@@ -130,11 +186,7 @@ class _LineageEntry extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.w900)),
         subtitle: Text(
             '#${number.toString().padLeft(3, '0')} · ${strings.lineageRarity(lineage)} · $count/5 ${strings.pick('forms', 'vormen')}'),
-        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-          if (spectral && discovered)
-            const Padding(padding: EdgeInsets.only(right: 7), child: Text('✦')),
-          const Icon(Icons.expand_more_rounded)
-        ]),
+        trailing: const Icon(Icons.expand_more_rounded),
         children: [
           GridView.count(
             key: PageStorageKey(
@@ -212,15 +264,32 @@ class _FormTile extends StatelessWidget {
         : stageKey == 'homeGuardian'
             ? strings.lineageFormName(lineage, path)
             : label;
+    final focusKind = switch (path) {
+      'arcana' => GameIconKind.arcana,
+      'spirit' => GameIconKind.spirit,
+      _ => GameIconKind.might,
+    };
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-          color: known ? Colors.white : const Color(0xFFE1DDE9),
+          gradient: known
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.white, Color(0xFFFFF7E7)],
+                )
+              : null,
+          color: known ? null : const Color(0xFFD8D3E0),
           borderRadius: BorderRadius.circular(17),
           border: Border.all(
               color: spectral ? const Color(0xFF78BCD2) : AppColors.mist,
               width: spectral ? 2 : 1)),
       child: Column(children: [
+        if (stageKey == 'homeGuardian')
+          Align(
+            alignment: Alignment.topRight,
+            child: GameIconSprite(focusKind, size: 27),
+          ),
         Expanded(
             child: DragonArt(
                 height: 112,

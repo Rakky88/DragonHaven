@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 import '../models/shop_item.dart';
 import '../theme/app_theme.dart';
+import '../widgets/game_icon_sprite.dart';
 import 'shop_screen.dart';
 
 class HavenShopScreen extends StatelessWidget {
@@ -56,8 +57,7 @@ class _GemPacks extends StatelessWidget {
         for (var index = 0; index < packs.length; index++)
           Card(
             child: ListTile(
-              leading:
-                  const Icon(Icons.diamond_rounded, color: Color(0xFF258BB0)),
+              leading: const GameIconSprite(GameIconKind.gem, size: 42),
               title: Text('${packs[index]} ${strings.tr('gems')}',
                   style: const TextStyle(fontWeight: FontWeight.w900)),
               subtitle: Text(strings.pick(

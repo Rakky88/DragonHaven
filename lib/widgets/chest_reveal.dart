@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/chest.dart';
+import 'game_icon_sprite.dart';
 
 Future<void> showChestReveal(BuildContext context, ChestReward reward) =>
     showDialog<void>(
@@ -19,29 +22,46 @@ class _ChestReveal extends StatefulWidget {
 }
 
 class _ChestRevealState extends State<_ChestReveal>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   bool _opened = false;
   bool _flash = false;
   late final AnimationController _float = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1450),
   )..repeat(reverse: true);
+  late final AnimationController _burst = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_open()));
+  }
 
   @override
   void dispose() {
     _float.dispose();
+    _burst.dispose();
     super.dispose();
   }
 
   Future<void> _open() async {
-    if (_opened) return;
+    await Future<void>.delayed(const Duration(milliseconds: 360));
+    if (!mounted || _opened) return;
     setState(() => _flash = true);
-    await Future<void>.delayed(const Duration(milliseconds: 180));
+    await Future<void>.delayed(const Duration(milliseconds: 150));
     if (!mounted) return;
     setState(() {
       _flash = false;
       _opened = true;
     });
+    unawaited(_burst.forward());
+  }
+
+  void _close() {
+    if (_opened) Navigator.pop(context);
   }
 
   @override
@@ -51,80 +71,77 @@ class _ChestRevealState extends State<_ChestReveal>
     final accent = Color(tier.colorValue);
     return Dialog.fullscreen(
       backgroundColor: Colors.transparent,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: _flash
-                ? const [Colors.white, Colors.white]
-                : const [
-                    Color(0xFF16112F),
-                    Color(0xFF292052),
-                    Color(0xFF17122F),
-                  ],
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _close,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: _flash
+                  ? const [Colors.white, Colors.white]
+                  : const [
+                      Color(0xFF100A2A),
+                      Color(0xFF30215D),
+                      Color(0xFF17102F),
+                    ],
+            ),
           ),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: 76,
-              left: -110,
-              child: _GlowOrb(color: accent, size: 260),
-            ),
-            Positioned(
-              right: -90,
-              bottom: 38,
-              child: _GlowOrb(color: accent, size: 230),
-            ),
-            SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 440),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _opened
-                              ? Icons.auto_awesome_rounded
-                              : Icons.lock_open_rounded,
-                          color: const Color(0xFFFFD76A),
-                          size: 30,
-                        ),
-                        const SizedBox(height: 9),
-                        Text(
-                          strings.chestLabel(tier),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 28,
-                            letterSpacing: -.4,
+          child: Stack(
+            children: [
+              Positioned(
+                top: 76,
+                left: -110,
+                child: _GlowOrb(color: accent, size: 260),
+              ),
+              Positioned(
+                right: -90,
+                bottom: 38,
+                child: _GlowOrb(color: accent, size: 230),
+              ),
+              SafeArea(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 440),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GameIconSprite(
+                            GameIconKind.chest,
+                            size: 42,
+                            semanticLabel: strings.chestLabel(tier),
                           ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          _opened
-                              ? strings.pick(
-                                  'Treasure claimed', 'Schat gevonden')
-                              : strings.pick('A tower treasure awaits',
-                                  'Een torenschat wacht op je'),
-                          style: const TextStyle(
-                            color: Color(0xFFC9C2E5),
-                            fontWeight: FontWeight.w700,
+                          const SizedBox(height: 9),
+                          Text(
+                            strings.chestLabel(tier),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 28,
+                              letterSpacing: -.4,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        GestureDetector(
-                          key: const Key('chest-reveal-tap'),
-                          onTap: _open,
-                          child: Semantics(
-                            button: true,
-                            label:
-                                strings.pick('Tap the chest', 'Tik op de kist'),
+                          const SizedBox(height: 5),
+                          Text(
+                            _opened
+                                ? strings.pick(
+                                    'Treasure revealed', 'Schat onthuld')
+                                : strings.pick('The lock is opening...',
+                                    'Het slot gaat open...'),
+                            style: const TextStyle(
+                              color: Color(0xFFC9C2E5),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Semantics(
+                            image: true,
+                            label: strings.chestLabel(tier),
                             child: SizedBox(
                               width: double.infinity,
                               height: 300,
@@ -153,6 +170,24 @@ class _ChestRevealState extends State<_ChestReveal>
                                       ],
                                     ),
                                   ),
+                                  if (_opened)
+                                    AnimatedBuilder(
+                                      animation: _burst,
+                                      builder: (_, child) => Transform.scale(
+                                        scale: .5 + _burst.value * .7,
+                                        child: Opacity(
+                                          opacity: (1 - _burst.value * .18)
+                                              .clamp(0, 1),
+                                          child: child,
+                                        ),
+                                      ),
+                                      child: Image.asset(
+                                        GameVfxAssets.chestBurst,
+                                        width: 305,
+                                        height: 305,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
                                   AnimatedBuilder(
                                     animation: _float,
                                     builder: (_, child) => Transform.translate(
@@ -176,104 +211,76 @@ class _ChestRevealState extends State<_ChestReveal>
                                       ),
                                     ),
                                   ),
-                                  if (_opened) ...const [
-                                    _TreasureSpark(
-                                        alignment: Alignment(-.82, -.62),
-                                        size: 29),
-                                    _TreasureSpark(
-                                        alignment: Alignment(.78, -.35),
-                                        size: 22),
-                                    _TreasureSpark(
-                                        alignment: Alignment(-.66, .48),
-                                        size: 19),
-                                    _TreasureSpark(
-                                        alignment: Alignment(.72, .62),
-                                        size: 27),
-                                  ],
                                 ],
                               ),
                             ),
                           ),
-                        ),
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 420),
-                          child: !_opened
-                              ? Container(
-                                  key: const Key('chest-closed-label'),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 18,
-                                    vertical: 10,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: .09),
-                                    borderRadius: BorderRadius.circular(99),
-                                    border: Border.all(
-                                      color:
-                                          Colors.white.withValues(alpha: .14),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    strings.pick(
-                                        'Tap the chest', 'Tik op de kist'),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                )
-                              : Wrap(
-                                  key: const Key('chest-rewards'),
-                                  alignment: WrapAlignment.center,
-                                  spacing: 9,
-                                  runSpacing: 9,
-                                  children: [
-                                    _Reward(
-                                      Icons.monetization_on_rounded,
-                                      '+${widget.reward.coins}',
-                                      strings.tr('coins'),
-                                    ),
-                                    if (widget.reward.gems > 0)
-                                      _Reward(
-                                        Icons.diamond_rounded,
-                                        '+${widget.reward.gems}',
-                                        strings.tr('gems'),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 480),
+                            transitionBuilder: (child, animation) =>
+                                FadeTransition(
+                              opacity: animation,
+                              child: ScaleTransition(
+                                scale: Tween(begin: .86, end: 1.0)
+                                    .animate(animation),
+                                child: child,
+                              ),
+                            ),
+                            child: !_opened
+                                ? const SizedBox(
+                                    key: Key('chest-opening'), height: 72)
+                                : Column(
+                                    key: const Key('chest-rewards'),
+                                    children: [
+                                      Wrap(
+                                        alignment: WrapAlignment.center,
+                                        spacing: 9,
+                                        runSpacing: 9,
+                                        children: [
+                                          _Reward(
+                                            kind: GameIconKind.coin,
+                                            value: '+${widget.reward.coins}',
+                                            label: strings.tr('coins'),
+                                          ),
+                                          if (widget.reward.gems > 0)
+                                            _Reward(
+                                              kind: GameIconKind.gem,
+                                              value: '+${widget.reward.gems}',
+                                              label: strings.tr('gems'),
+                                            ),
+                                          if (widget.reward.eggFound)
+                                            _Reward(
+                                              kind: GameIconKind.mysteriousEgg,
+                                              value: '1',
+                                              label: strings.pick(
+                                                'Mysterious Egg',
+                                                'Mysterieus Ei',
+                                              ),
+                                            ),
+                                        ],
                                       ),
-                                    _Reward(
-                                      Icons.auto_awesome_rounded,
-                                      '+${widget.reward.xp}',
-                                      'XP',
-                                    ),
-                                    if (widget.reward.eggFound)
-                                      _Reward(
-                                        Icons.egg_alt_rounded,
-                                        '1',
+                                      const SizedBox(height: 18),
+                                      Text(
                                         strings.pick(
-                                          'Mysterious Egg',
-                                          'Mysterieus Ei',
+                                          'Tap anywhere to return',
+                                          'Tik ergens om terug te gaan',
+                                        ),
+                                        style: const TextStyle(
+                                          color: Color(0xFFC9C2E5),
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
-                                  ],
-                                ),
-                        ),
-                        if (_opened) ...[
-                          const SizedBox(height: 22),
-                          SizedBox(
-                            width: double.infinity,
-                            child: FilledButton.icon(
-                              onPressed: () => Navigator.pop(context),
-                              icon: const Icon(Icons.check_rounded),
-                              label:
-                                  Text(strings.pick('Collect', 'Verzamelen')),
-                            ),
+                                    ],
+                                  ),
                           ),
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -302,26 +309,14 @@ class _GlowOrb extends StatelessWidget {
       );
 }
 
-class _TreasureSpark extends StatelessWidget {
-  const _TreasureSpark({required this.alignment, required this.size});
-
-  final Alignment alignment;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) => Align(
-        alignment: alignment,
-        child: Icon(
-          Icons.auto_awesome_rounded,
-          size: size,
-          color: const Color(0xFFFFE895),
-        ),
-      );
-}
-
 class _Reward extends StatelessWidget {
-  const _Reward(this.icon, this.value, this.label);
-  final IconData icon;
+  const _Reward({
+    required this.kind,
+    required this.value,
+    required this.label,
+  });
+
+  final GameIconKind kind;
   final String value;
   final String label;
 
@@ -333,8 +328,8 @@ class _Reward extends StatelessWidget {
           borderRadius: BorderRadius.circular(15),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 20, color: const Color(0xFF5F4A8E)),
-          const SizedBox(width: 6),
+          GameIconSprite(kind, size: 30),
+          const SizedBox(width: 7),
           Text('$value $label',
               style: const TextStyle(fontWeight: FontWeight.w900)),
         ]),

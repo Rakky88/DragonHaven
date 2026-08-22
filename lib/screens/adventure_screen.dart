@@ -7,6 +7,7 @@ import '../models/pet.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/game_icon_sprite.dart';
 
 class AdventureScreen extends StatefulWidget {
   const AdventureScreen({super.key});
@@ -204,22 +205,33 @@ class _AdventureCard extends StatelessWidget {
             const SizedBox(height: 12),
             Wrap(spacing: 7, runSpacing: 7, children: [
               _Meta(
-                  icon: Icons.schedule_rounded,
+                  icon: const GameIconSprite(GameIconKind.clock, size: 22),
                   text: strings.adventureDuration(adventure.duration)),
               _Meta(
-                  icon: Icons.auto_awesome_rounded, text: '${adventure.xp} XP'),
+                  icon: const GameIconSprite(
+                    GameIconKind.experience,
+                    size: 22,
+                  ),
+                  text: '${adventure.xp} XP'),
               _Meta(
-                  icon: _focusIcon(adventure.focus),
+                  icon: GameIconSprite(
+                    GameIconSprite.forTrainingFocus(adventure.focus),
+                    size: 22,
+                  ),
                   text:
                       '+${adventure.statPoints} ${_focusName(adventure.focus)}'),
               _Meta(
-                  icon: Icons.inventory_2_rounded,
+                  icon: const GameIconSprite(GameIconKind.chest, size: 22),
                   text: adventure.knownChest == null
                       ? strings.pick('Hidden chest', 'Verborgen kist')
                       : strings.chestLabel(adventure.knownChest!)),
               if (group)
                 _Meta(
-                    icon: Icons.group_rounded,
+                    icon: const Icon(
+                      Icons.group_rounded,
+                      size: 17,
+                      color: AppColors.twilight,
+                    ),
                     text: strings.pick(
                       '${adventure.requirements.players} players',
                       '${adventure.requirements.players} spelers',
@@ -339,7 +351,7 @@ class _InfoBanner extends StatelessWidget {
 
 class _Meta extends StatelessWidget {
   const _Meta({required this.icon, required this.text});
-  final IconData icon;
+  final Widget icon;
   final String text;
   @override
   Widget build(BuildContext context) => Container(
@@ -349,7 +361,7 @@ class _Meta extends StatelessWidget {
           borderRadius: BorderRadius.circular(99),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 15, color: AppColors.twilight),
+          icon,
           const SizedBox(width: 5),
           Text(text,
               style:
@@ -362,12 +374,6 @@ String _focusName(TrainingFocus focus) => switch (focus) {
       TrainingFocus.might => 'Might',
       TrainingFocus.arcana => 'Arcana',
       TrainingFocus.spirit => 'Spirit',
-    };
-
-IconData _focusIcon(TrainingFocus focus) => switch (focus) {
-      TrainingFocus.might => Icons.fitness_center_rounded,
-      TrainingFocus.arcana => Icons.auto_fix_high_rounded,
-      TrainingFocus.spirit => Icons.favorite_rounded,
     };
 
 String _remaining(DateTime end, AppStrings strings) {

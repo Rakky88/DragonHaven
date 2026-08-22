@@ -20,6 +20,10 @@ Future<void> main() async {
     musicEnabled: game.musicEnabled,
     soundEffectsEnabled: game.soundEffectsEnabled,
   );
+  final hour = DateTime.now().hour;
+  await HavenAudio.setMusicScene(hour >= 21 || hour < 7
+      ? HavenMusicScene.towerNight
+      : HavenMusicScene.towerDay);
   runApp(ChangeNotifierProvider.value(
     value: game,
     child: const DragonHavenApp(),

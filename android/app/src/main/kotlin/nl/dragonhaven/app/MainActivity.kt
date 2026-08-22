@@ -11,6 +11,7 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
+import android.media.audiofx.LoudnessEnhancer
 import android.net.Uri
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -21,6 +22,7 @@ class MainActivity : FlutterActivity() {
     private var musicEnabled = true
     private var effectsEnabled = true
     private var musicPlayer: MediaPlayer? = null
+    private var musicEnhancer: LoudnessEnhancer? = null
     private var musicScene: String? = null
     private var fadeGeneration = 0
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -179,8 +181,35 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun rawResourceId(id: String): Int =
-        resources.getIdentifier(id, "raw", packageName)
+    // Keep these references explicit. Android's release resource shrinker
+    // cannot see resources reached only through getIdentifier(), which used
+    // to remove every music track and sound effect from public APKs.
+    private fun rawResourceId(id: String): Int = when (id) {
+        "achievement" -> R.raw.achievement
+        "adventure_return" -> R.raw.adventure_return
+        "adventure_start" -> R.raw.adventure_start
+        "chest_dragon" -> R.raw.chest_dragon
+        "chest_gold" -> R.raw.chest_gold
+        "chest_mythical" -> R.raw.chest_mythical
+        "chest_silver" -> R.raw.chest_silver
+        "chest_sinister" -> R.raw.chest_sinister
+        "chest_wooden" -> R.raw.chest_wooden
+        "evolution_ascended" -> R.raw.evolution_ascended
+        "evolution_young" -> R.raw.evolution_young
+        "floor_built" -> R.raw.floor_built
+        "hatch_build" -> R.raw.hatch_build
+        "hatch_crack_1" -> R.raw.hatch_crack_1
+        "hatch_crack_2" -> R.raw.hatch_crack_2
+        "hatch_crack_3" -> R.raw.hatch_crack_3
+        "hatch_reveal" -> R.raw.hatch_reveal
+        "reveal" -> R.raw.reveal
+        "room" -> R.raw.room
+        "spectral_reveal" -> R.raw.spectral_reveal
+        "tower_day" -> R.raw.tower_day
+        "tower_night" -> R.raw.tower_night
+        "ui_confirm" -> R.raw.ui_confirm
+        else -> 0
+    }
 
     private fun hasNotificationPermission(): Boolean =
         Build.VERSION.SDK_INT < 33 ||
@@ -214,6 +243,7 @@ class MainActivity : FlutterActivity() {
             // callbacks introduce between tracks.
             isLooping = true
             setVolume(0f, 0f)
+            attachMusicEnhancer(this)
             start()
             fadeMusic(this, MUSIC_VOLUME)
         }
@@ -259,8 +289,20 @@ class MainActivity : FlutterActivity() {
 
     private fun releaseMusicPlayer() {
         fadeGeneration++
+        musicEnhancer?.runCatching { release() }
+        musicEnhancer = null
         musicPlayer?.release()
         musicPlayer = null
+    }
+
+    private fun attachMusicEnhancer(player: MediaPlayer) {
+        musicEnhancer?.runCatching { release() }
+        musicEnhancer = runCatching {
+            LoudnessEnhancer(player.audioSessionId).apply {
+                setTargetGain(MUSIC_GAIN_MILLIBELS)
+                enabled = true
+            }
+        }.getOrNull()
     }
 
     private fun stopMusic() {
@@ -299,8 +341,9 @@ class MainActivity : FlutterActivity() {
         private const val CHANNEL = "nl.dragonhaven.app/platform"
         private const val AUDIO_CHANNEL = "nl.dragonhaven.app/audio"
         private const val NOTIFICATION_CHANNEL = "nl.dragonhaven.app/notifications"
-        private const val MUSIC_VOLUME = 0.68f
-        private const val DUCKED_VOLUME = 0.22f
+        private const val MUSIC_VOLUME = 1.0f
+        private const val DUCKED_VOLUME = 0.30f
+        private const val MUSIC_GAIN_MILLIBELS = 1200
         private const val EFFECTS_VOLUME = 0.72f
         private const val FADE_STEPS = 10
         private const val FADE_DURATION_MS = 320L

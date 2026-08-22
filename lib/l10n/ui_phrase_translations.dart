@@ -2774,4 +2774,167 @@ const uiPhraseTranslations = <String, List<String>>{
     '你的神秘龙蛋已准备好',
     '不思議な卵の準備ができました'
   ],
+  'Treasure revealed': [
+    'Schatz enthüllt',
+    'Tesoro revelado',
+    'Trésor révélé',
+    'Tesoro svelato',
+    'Tesouro revelado',
+    '宝藏已揭晓',
+    '宝物が現れました'
+  ],
+  'The lock is opening...': [
+    'Das Schloss öffnet sich...',
+    'La cerradura se está abriendo...',
+    'La serrure s’ouvre...',
+    'La serratura si sta aprendo...',
+    'A fechadura está abrindo...',
+    '锁正在打开……',
+    '鍵が開いています…'
+  ],
+  'Tap anywhere to return': [
+    'Tippe irgendwo, um zurückzukehren',
+    'Toca en cualquier lugar para volver',
+    'Touchez n’importe où pour revenir',
+    'Tocca ovunque per tornare',
+    'Toque em qualquer lugar para voltar',
+    '点击任意位置返回',
+    'どこかをタップして戻る'
+  ],
+  'A quiet cradle for the next life in your collection.': [
+    'Eine stille Wiege für das nächste Leben in deiner Sammlung.',
+    'Una cuna tranquila para la próxima vida de tu colección.',
+    'Un berceau paisible pour la prochaine vie de votre collection.',
+    'Una culla tranquilla per la prossima vita della tua collezione.',
+    'Um berço tranquilo para a próxima vida da sua coleção.',
+    '为收藏中的下一个生命准备的安静摇篮。',
+    'コレクションに加わる次の命のための静かな揺りかご。'
+  ],
+  'One hidden dragon is growing beneath the shell.': [
+    'Unter der Schale wächst ein verborgener Drache.',
+    'Un dragón oculto crece bajo el cascarón.',
+    'Un dragon caché grandit sous la coquille.',
+    'Un drago nascosto cresce sotto il guscio.',
+    'Um dragão oculto cresce sob a casca.',
+    '蛋壳下正孕育着一条神秘的龙。',
+    '殻の下で一体の秘密のドラゴンが育っています。'
+  ],
+  'Reveal the dragon': [
+    'Enthülle den Drachen',
+    'Revela el dragón',
+    'Révéler le dragon',
+    'Rivela il drago',
+    'Revelar o dragão',
+    '揭晓这条龙',
+    'ドラゴンを明らかにする'
+  ],
+  'No Mysterious Eggs are waiting in your stash.': [
+    'In deinem Vorrat warten keine geheimnisvollen Eier.',
+    'No hay Huevos Misteriosos esperando en tu alijo.',
+    'Aucun Œuf mystérieux n’attend dans votre réserve.',
+    'Non ci sono Uova misteriose nella tua scorta.',
+    'Não há Ovos Misteriosos esperando no seu estoque.',
+    '你的储藏中没有等待孵化的神秘龙蛋。',
+    '保管庫に待機中の不思議な卵はありません。'
+  ],
+  'Choose a Mysterious Egg': [
+    'Wähle ein geheimnisvolles Ei',
+    'Elige un Huevo Misterioso',
+    'Choisissez un Œuf mystérieux',
+    'Scegli un Uovo misterioso',
+    'Escolha um Ovo Misterioso',
+    '选择一枚神秘龙蛋',
+    '不思議な卵を選ぶ'
+  ],
+  'Its identity is already safely hidden inside.': [
+    'Seine Identität ist bereits sicher darin verborgen.',
+    'Su identidad ya está oculta de forma segura en su interior.',
+    'Son identité est déjà bien cachée à l’intérieur.',
+    'La sua identità è già nascosta al sicuro al suo interno.',
+    'A identidade já está escondida com segurança lá dentro.',
+    '它的身份早已安全地隐藏在里面。',
+    'その正体はすでに中に大切に隠されています。'
+  ],
+  'The nest is already occupied.': [
+    'Das Nest ist bereits belegt.',
+    'El nido ya está ocupado.',
+    'Le nid est déjà occupé.',
+    'Il nido è già occupato.',
+    'O ninho já está ocupado.',
+    '巢穴已经被占用了。',
+    '巣にはすでに卵があります。'
+  ],
+  'Tap the nest to choose an egg': [
+    'Tippe auf das Nest, um ein Ei auszuwählen',
+    'Toca el nido para elegir un huevo',
+    'Touchez le nid pour choisir un œuf',
+    'Tocca il nido per scegliere un uovo',
+    'Toque no ninho para escolher um ovo',
+    '点击巢穴选择一枚蛋',
+    '巣をタップして卵を選ぶ'
+  ],
+  'Something is moving inside...': [
+    'Etwas bewegt sich darin...',
+    'Algo se mueve dentro...',
+    'Quelque chose bouge à l’intérieur...',
+    'Qualcosa si muove dentro...',
+    'Algo está se mexendo lá dentro...',
+    '里面有什么在动……',
+    '中で何かが動いています…'
+  ],
+  'The nest is empty': [
+    'Das Nest ist leer',
+    'El nido está vacío',
+    'Le nid est vide',
+    'Il nido è vuoto',
+    'O ninho está vazio',
+    '巢穴是空的',
+    '巣は空です'
+  ],
+  'Choose one egg from your stash.': [
+    'Wähle ein Ei aus deinem Vorrat.',
+    'Elige un huevo de tu alijo.',
+    'Choisissez un œuf dans votre réserve.',
+    'Scegli un uovo dalla tua scorta.',
+    'Escolha um ovo do seu estoque.',
+    '从储藏中选择一枚蛋。',
+    '保管庫から卵を一つ選んでください。'
+  ],
+  'Rare chest drops will appear in your stash.': [
+    'Seltene Truhenfunde erscheinen in deinem Vorrat.',
+    'Los hallazgos raros de cofres aparecerán en tu alijo.',
+    'Les trouvailles rares des coffres apparaîtront dans votre réserve.',
+    'I rari ritrovamenti dai forzieri appariranno nella tua scorta.',
+    'Itens raros de baús aparecerão no seu estoque.',
+    '宝箱中的稀有掉落会出现在你的储藏中。',
+    '宝箱からの珍しい獲得物は保管庫に入ります。'
+  ],
+  'Choose an egg': [
+    'Ei auswählen',
+    'Elegir un huevo',
+    'Choisir un œuf',
+    'Scegli un uovo',
+    'Escolher um ovo',
+    '选择一枚蛋',
+    '卵を選ぶ'
+  ],
+  'The egg moves to the Rooftop Nest. Your active dragon and the rest of the app stay available.':
+      [
+    'Das Ei zieht ins Dachnest. Dein aktiver Drache und der Rest der App bleiben verfügbar.',
+    'El huevo se traslada al Nido de la Azotea. Tu dragón activo y el resto de la aplicación siguen disponibles.',
+    'L’œuf rejoint le Nid du Toit. Votre dragon actif et le reste de l’application restent disponibles.',
+    'L’uovo si sposta nel Nido sul Tetto. Il tuo drago attivo e il resto dell’app restano disponibili.',
+    'O ovo vai para o Ninho do Telhado. Seu dragão ativo e o restante do aplicativo continuam disponíveis.',
+    '龙蛋会移到屋顶巢穴。你的活跃龙和应用的其他功能仍可正常使用。',
+    '卵は屋上の巣へ移動します。アクティブなドラゴンとアプリの他の機能は引き続き利用できます。'
+  ],
+  'Every form you raise leaves its magic on these pages.': [
+    'Jede Form, die du großziehst, hinterlässt ihre Magie auf diesen Seiten.',
+    'Cada forma que crías deja su magia en estas páginas.',
+    'Chaque forme que vous élevez laisse sa magie sur ces pages.',
+    'Ogni forma che allevi lascia la sua magia su queste pagine.',
+    'Cada forma que você cria deixa sua magia nestas páginas.',
+    '你培养的每种形态都会在这些书页上留下魔法。',
+    '育てたすべての姿が、このページに魔法を残します。'
+  ],
 };

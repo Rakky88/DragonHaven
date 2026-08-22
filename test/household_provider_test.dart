@@ -115,18 +115,22 @@ void main() {
     final game = HouseholdProvider(random: Random(3));
     game.chestInventory[ChestTier.wooden] = 1;
     final beforeCoins = game.pet.coins;
+    final beforeXp = game.pet.xp;
     final reward = await game.openChest(ChestTier.wooden);
 
     expect(reward, isNotNull);
     expect(game.pet.coins, beforeCoins + reward!.coins);
+    expect(game.pet.xp, beforeXp,
+        reason: 'Adventure XP must never be part of a chest.');
     expect(game.totalChestsOpened, 1);
     expect(game.chestCount(ChestTier.wooden), 0);
     expect(await game.openChest(ChestTier.wooden), isNull);
   });
 
-  test('activating a stash egg archives the dragon and keeps currencies',
+  test('a later egg incubates beside the active dragon until it hatches',
       () async {
-    final game = HouseholdProvider(random: Random(4));
+    var now = DateTime.utc(2026, 7, 2);
+    final game = HouseholdProvider(random: Random(4), clock: () => now);
     game.pet
       ..stage = DragonStage.hatchling
       ..name = 'Nimbus'
@@ -142,13 +146,31 @@ void main() {
     game.eggStash.add(egg);
 
     expect(await game.activateEgg(egg.id), isTrue);
-    expect(game.sanctuaryDragons.single.name, 'Nimbus');
-    expect(game.pet.id, 'later-egg');
-    expect(game.pet.lineageId, 'quietstar');
-    expect(game.pet.prismatic, isTrue);
-    expect(game.pet.firstEgg, isFalse);
+    expect(game.sanctuaryDragons, isEmpty);
+    expect(game.pet.name, 'Nimbus');
     expect(game.pet.coins, 444);
     expect(game.pet.gems, 19);
+    expect(game.incubatingEgg?.id, 'later-egg');
+    expect(game.incubatingEgg?.lineageId, 'quietstar');
+    expect(game.incubatingEgg?.prismatic, isTrue);
+    expect(game.incubatingEgg?.firstEgg, isFalse);
+    expect(game.incubatingEgg?.coins, 0);
+    expect(game.incubatingEgg?.gems, 0);
+    expect(await game.activateEgg(egg.id), isFalse);
+
+    final restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.pet.name, 'Nimbus');
+    expect(restored.incubatingEgg?.id, 'later-egg');
+    expect(restored.eggStash, isEmpty);
+
+    now = now.add(const Duration(days: 7));
+    expect(await game.hatchActiveDragon(), isTrue);
+    expect(game.incubatingEgg, isNull);
+    expect(game.pet.id, 'later-egg');
+    expect(game.pet.stage, DragonStage.hatchling);
+    expect(game.pet.coins, 444);
+    expect(game.pet.gems, 19);
+    expect(game.sanctuaryDragons.single.name, 'Nimbus');
   });
 
   test('the achievement catalog has twenty unique humorous milestones', () {

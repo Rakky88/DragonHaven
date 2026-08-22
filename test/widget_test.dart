@@ -4,6 +4,7 @@ import 'package:dragon_haven/dragonhaven_app.dart';
 import 'package:dragon_haven/l10n/app_strings.dart';
 import 'package:dragon_haven/models/achievement.dart';
 import 'package:dragon_haven/models/chest.dart';
+import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
@@ -307,11 +308,69 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(game.chestCount(ChestTier.wooden), 0);
-    expect(find.byKey(const Key('chest-reveal-tap')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('chest-reveal-tap')));
-    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byKey(const Key('chest-rewards')), findsOneWidget);
+    expect(find.text('Collect'), findsNothing);
+    expect(find.text('Tap the chest'), findsNothing);
     expect(game.chestCount(ChestTier.wooden), 0);
+    await tester.tap(find.byKey(const Key('chest-rewards')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a later egg incubates in the nest while the app stays usable',
+      (tester) async {
+    final game = await pumpGame(tester, onboarded: true, hatched: true);
+    final activeDragonId = game.pet.id;
+    game.eggStash.add(DragonEgg(
+      id: 'widget-later-egg',
+      lineageId: dragonLineages.last.id,
+      acquiredAt: DateTime(2026, 8, 22),
+      hatchSeed: 991,
+      prismatic: false,
+    ));
+    game.notifyListeners();
+    await tester.pump();
+
+    final towerRoof = find.byKey(const Key('tower-roof'));
+    expect(towerRoof, findsOneWidget);
+    await tester.ensureVisible(towerRoof);
+    await tester.pump();
+    await tester.tap(towerRoof);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('rooftop-nest-scene')), findsOneWidget);
+    expect(find.text('The nest is empty'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('rooftop-nest-scene')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(const Key('nest-egg-picker')), findsOneWidget);
+    final eggChoice = find.text('Mysterious Egg').last;
+    await tester.ensureVisible(eggChoice);
+    await tester.pump();
+    await tester.tap(eggChoice);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(game.pet.id, activeDragonId);
+    expect(game.incubatingEgg?.id, 'widget-later-egg');
+    for (var frame = 0;
+        frame < 10 &&
+            find
+                .byKey(const Key('nest-egg-hatch-countdown'))
+                .evaluate()
+                .isEmpty;
+        frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byKey(const Key('rooftop-nest-scene')), findsOneWidget);
+    expect(find.text('One hidden dragon is growing beneath the shell.'),
+        findsOneWidget);
+    expect(find.byKey(const Key('nest-egg-hatch-countdown')), findsOneWidget);
+    await tester.pageBack();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.text('Adventure'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 
@@ -487,7 +546,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.00.10'), findsOneWidget);
+    expect(find.text('v0.00.11'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

@@ -13,6 +13,7 @@ import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/furniture_art.dart';
+import '../widgets/game_icon_sprite.dart';
 import '../widgets/haven_lighting.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/ui_bits.dart';
@@ -422,7 +423,7 @@ class _HouseHeader extends StatelessWidget {
       ],
     );
     final coinPill = MetricPill(
-      icon: Icons.stars_rounded,
+      leading: const GameIconSprite(GameIconKind.coin, size: 26),
       value: '$coins',
       label: strings.pick('coins', 'munten'),
       color: const Color(0xFF9A6A00),

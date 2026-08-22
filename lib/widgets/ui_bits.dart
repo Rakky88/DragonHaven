@@ -184,11 +184,11 @@ class _RailEdgeIndicator extends StatelessWidget {
 class MetricPill extends StatelessWidget {
   const MetricPill(
       {super.key,
-      required this.icon,
+      required this.leading,
       required this.value,
       required this.label,
       required this.color});
-  final IconData icon;
+  final Widget leading;
   final String value;
   final String label;
   final Color color;
@@ -202,7 +202,7 @@ class MetricPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: color),
+            leading,
             const SizedBox(width: 7),
             Text(value,
                 style: TextStyle(fontWeight: FontWeight.w900, color: color)),

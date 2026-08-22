@@ -9,10 +9,12 @@ import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/game_icon_sprite.dart';
 import '../widgets/haven_lighting.dart';
 import 'draconomicon_screen.dart';
 import 'house_screen.dart';
 import 'pet_screen.dart';
+import 'rooftop_nest_screen.dart';
 import 'shop_screen.dart';
 
 class DragonTowerScreen extends StatelessWidget {
@@ -40,13 +42,13 @@ class DragonTowerScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.displaySmall,
             ),
           ),
-          _Currency(icon: Icons.monetization_on_rounded, value: game.coins),
+          _Currency(kind: GameIconKind.coin, value: game.coins),
           const SizedBox(width: 7),
-          _Currency(icon: Icons.diamond_rounded, value: game.gems),
+          _Currency(kind: GameIconKind.gem, value: game.gems),
         ]),
         const SizedBox(height: 4),
         Row(children: [
-          const Icon(Icons.schedule_rounded, size: 15, color: AppColors.muted),
+          const GameIconSprite(GameIconKind.clock, size: 21),
           const SizedBox(width: 5),
           Expanded(
             child: HavenClockBuilder(
@@ -68,15 +70,15 @@ class DragonTowerScreen extends StatelessWidget {
         const SizedBox(height: 12),
         Row(children: [
           Expanded(
-            child: FilledButton.tonalIcon(
+            child: _TowerShortcut(
               onPressed: () => _showOwnedDragons(context),
-              icon: const Icon(Icons.pets_rounded),
-              label: Text(strings.pick('My dragons', 'Mijn draken')),
+              kind: GameIconKind.myDragons,
+              label: strings.pick('My dragons', 'Mijn draken'),
             ),
           ),
           const SizedBox(width: 9),
           Expanded(
-            child: FilledButton.tonalIcon(
+            child: _TowerShortcut(
               key: const Key('open-draconomicon'),
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -86,8 +88,8 @@ class DragonTowerScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              icon: const Icon(Icons.menu_book_rounded),
-              label: const Text('Draconomicon'),
+              kind: GameIconKind.draconomicon,
+              label: 'Draconomicon',
             ),
           ),
         ]),
@@ -194,13 +196,14 @@ class _TowerRoof extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final game = context.watch<HouseholdProvider>();
     final strings = AppStrings.of(context);
     return InkWell(
       key: const Key('tower-roof'),
       onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
           builder: (_) => const Scaffold(
-                appBar: _DragonBar(),
-                body: PetScreen(),
+                appBar: _NestBar(),
+                body: RooftopNestScreen(),
               ))),
       borderRadius: BorderRadius.circular(24),
       child: Ink(
@@ -234,6 +237,25 @@ class _TowerRoof extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (game.nestEgg != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xD91B1436),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GameIconSprite(GameIconKind.mysteriousEgg, size: 25),
+                        SizedBox(width: 4),
+                        GameIconSprite(GameIconKind.clock, size: 20),
+                      ],
+                    ),
+                  ),
                 const Icon(Icons.chevron_right_rounded, color: Colors.white),
               ]),
             ),
@@ -325,8 +347,8 @@ class _TowerFloor extends StatelessWidget {
 }
 
 class _Currency extends StatelessWidget {
-  const _Currency({required this.icon, required this.value});
-  final IconData icon;
+  const _Currency({required this.kind, required this.value});
+  final GameIconKind kind;
   final int value;
   @override
   Widget build(BuildContext context) => Container(
@@ -334,10 +356,57 @@ class _Currency extends StatelessWidget {
         decoration: BoxDecoration(
             color: Colors.white, borderRadius: BorderRadius.circular(99)),
         child: Row(children: [
-          Icon(icon, size: 17, color: AppColors.twilight),
+          GameIconSprite(kind, size: 22),
           const SizedBox(width: 4),
           Text('$value', style: const TextStyle(fontWeight: FontWeight.w900))
         ]),
+      );
+}
+
+class _TowerShortcut extends StatelessWidget {
+  const _TowerShortcut({
+    super.key,
+    required this.onPressed,
+    required this.kind,
+    required this.label,
+  });
+
+  final VoidCallback onPressed;
+  final GameIconKind kind;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(20),
+          child: Ink(
+            height: 86,
+            padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFF1EBFF), Color(0xFFFFF5DF)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE1D7F2)),
+            ),
+            child: Row(children: [
+              GameIconSprite(kind, size: 58),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ),
+            ]),
+          ),
+        ),
       );
 }
 
@@ -465,14 +534,13 @@ class _CodexBar extends StatelessWidget implements PreferredSizeWidget {
           AppStrings.of(context).pick('The Draconomicon', 'Het Draconomicon')));
 }
 
-class _DragonBar extends StatelessWidget implements PreferredSizeWidget {
-  const _DragonBar();
+class _NestBar extends StatelessWidget implements PreferredSizeWidget {
+  const _NestBar();
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
   @override
   Widget build(BuildContext context) => AppBar(
-      title:
-          Text(AppStrings.of(context).pick('Dragon care', 'Drakenverzorging')));
+      title: Text(AppStrings.of(context).pick('Rooftop Nest', 'Daknest')));
 }
 
 class _ShopBar extends StatelessWidget implements PreferredSizeWidget {
