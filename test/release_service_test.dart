@@ -17,7 +17,8 @@ void main() {
     expect(release('v0.00.07').isNewerThanInstalled, isFalse);
     expect(release('v0.00.08').isNewerThanInstalled, isFalse);
     expect(release('v0.00.09').isNewerThanInstalled, isFalse);
-    expect(release('v0.00.10').isNewerThanInstalled, isTrue);
+    expect(release('v0.00.10').isNewerThanInstalled, isFalse);
+    expect(release('v0.00.11').isNewerThanInstalled, isTrue);
     expect(release('v0.01.00').isNewerThanInstalled, isTrue);
     expect(release('v0.00.00').isNewerThanInstalled, isFalse);
   });
