@@ -35,6 +35,18 @@ void main() {
     expect(game.totalChestCount, 0);
   });
 
+  test('the emulator hatch demo starts with about three minutes remaining', () {
+    final game = HouseholdProvider.createHatchDemo();
+    final remaining = game.pet.remainingForNextStage(DateTime.now());
+
+    expect(game.accountName, 'Three-Minute Keeper');
+    expect(game.onboardingComplete, isTrue);
+    expect(game.pet.firstEgg, isTrue);
+    expect(game.pet.isEgg, isTrue);
+    expect(remaining, greaterThan(const Duration(minutes: 2, seconds: 55)));
+    expect(remaining, lessThanOrEqualTo(const Duration(minutes: 3)));
+  });
+
   test('language and hidden egg identity persist after restart', () async {
     final game = HouseholdProvider(random: Random(11));
     final lineage = game.pet.lineageId;

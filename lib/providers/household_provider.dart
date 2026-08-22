@@ -128,6 +128,24 @@ class HouseholdProvider extends ChangeNotifier {
     return provider;
   }
 
+  /// Creates a non-persistent emulator account whose Starter Egg hatches
+  /// three minutes after the app starts.
+  static HouseholdProvider createHatchDemo() {
+    final provider = HouseholdProvider(
+      persistenceEnabled: false,
+      random: Random(20260822),
+      clock: DateTime.now,
+    );
+    provider
+      ..accountName = 'Three-Minute Keeper'
+      ..onboardingComplete = true
+      ..musicEnabled = true
+      ..soundEffectsEnabled = true;
+    provider.pet.stageStartedAt =
+        provider._clock().subtract(const Duration(hours: 23, minutes: 57));
+    return provider;
+  }
+
   static Future<HouseholdProvider> loadFromStorage() async {
     final provider = HouseholdProvider(initialize: false);
     final data = await StorageService.load();

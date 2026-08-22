@@ -13,9 +13,12 @@ Future<void> main() async {
     statusBarIconBrightness: Brightness.dark,
   ));
   const showcase = bool.fromEnvironment('DRAGONHAVEN_SHOWCASE');
-  final game = showcase
-      ? HouseholdProvider.createShowcase()
-      : await HouseholdProvider.loadFromStorage();
+  const hatchDemo = bool.fromEnvironment('DRAGONHAVEN_HATCH_DEMO');
+  final game = hatchDemo
+      ? HouseholdProvider.createHatchDemo()
+      : showcase
+          ? HouseholdProvider.createShowcase()
+          : await HouseholdProvider.loadFromStorage();
   await HavenAudio.applyPreferences(
     musicEnabled: game.musicEnabled,
     soundEffectsEnabled: game.soundEffectsEnabled,
