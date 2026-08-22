@@ -66,7 +66,9 @@ class Pet {
     this.incubationHours = 24,
     List<String>? personalityTraitIds,
     this.favorite = false,
+    this.roamsTower = true,
     this.currentRoomId = 'hearth',
+    this.currentFloorIndex = 0,
     this.activeAdventureId,
     this.joy = 78,
     this.energy = 78,
@@ -110,7 +112,9 @@ class Pet {
   final int incubationHours;
   final List<String> personalityTraitIds;
   bool favorite;
+  bool roamsTower;
   String currentRoomId;
+  int currentFloorIndex;
   String? activeAdventureId;
   int joy;
   int energy;
@@ -293,7 +297,9 @@ class Pet {
         'incubationHours': incubationHours,
         'personalityTraitIds': personalityTraitIds,
         'favorite': favorite,
+        'roamsTower': roamsTower,
         'currentRoomId': currentRoomId,
+        'currentFloorIndex': currentFloorIndex,
         'activeAdventureId': activeAdventureId,
         'joy': joy,
         'energy': energy,
@@ -370,7 +376,10 @@ class Pet {
               .toList() ??
           <String>[],
       favorite: json['favorite'] is bool && json['favorite'] as bool,
+      roamsTower: json['roamsTower'] is! bool || json['roamsTower'] as bool,
       currentRoomId: nonEmptyStringFromJson(json['currentRoomId']) ?? 'hearth',
+      currentFloorIndex:
+          nonNegativeIntFromJson(json['currentFloorIndex'], fallback: 0),
       activeAdventureId: nonEmptyStringFromJson(json['activeAdventureId']),
       joy: percentageFromJson(json['joy'], fallback: 78),
       energy: percentageFromJson(json['energy'], fallback: 78),

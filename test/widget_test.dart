@@ -240,7 +240,7 @@ void main() {
 
   testWidgets('all five primary destinations are reachable after hatching',
       (tester) async {
-    await pumpGame(tester, onboarded: true, hatched: true);
+    final game = await pumpGame(tester, onboarded: true, hatched: true);
 
     expect(find.byKey(const PageStorageKey('dragon-tower-scroll')),
         findsOneWidget);
@@ -261,10 +261,33 @@ void main() {
 
     await tester.tap(find.text('Adventure').last);
     await tester.pump(const Duration(milliseconds: 350));
-    expect(find.text('Short'), findsOneWidget);
-    expect(find.text('Long'), findsOneWidget);
-    expect(find.text('Group'), findsOneWidget);
-    expect(find.text('Special'), findsOneWidget);
+    expect(find.text('Available'), findsOneWidget);
+    expect(find.text('Active'), findsOneWidget);
+    expect(find.text('Short Adventures'), findsOneWidget);
+    final adventureList = find.descendant(
+      of: find.byKey(const PageStorageKey('available-adventures-scroll')),
+      matching: find.byType(Scrollable),
+    );
+    for (final heading in const [
+      'Long Adventures',
+      'Group Adventures',
+      'Special Adventures',
+    ]) {
+      await tester.scrollUntilVisible(
+        find.text(heading),
+        480,
+        scrollable: adventureList,
+      );
+      expect(find.text(heading), findsOneWidget);
+    }
+
+    await tester.tap(find.text('Tower').last);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.text('My dragons'));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byKey(Key('dragon-roaming-${game.pet.id}')), findsOneWidget);
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pump(const Duration(milliseconds: 500));
 
     await tester.tap(find.text('Friends').last);
     await tester.pump(const Duration(milliseconds: 350));
@@ -546,7 +569,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.00.11'), findsOneWidget);
+    expect(find.text('v0.00.12'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

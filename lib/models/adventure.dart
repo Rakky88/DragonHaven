@@ -208,10 +208,8 @@ abstract final class AdventureCatalog {
             '${_missionsEn[index % _missionsEn.length]} the ${_placesEn[index % _placesEn.length]}',
         titleNl:
             '${_missionsNl[index % _missionsNl.length]} ${_placesNl[index % _placesNl.length]}',
-        descriptionEn:
-            'A focused expedition with one curious detour (${index + 1}/300).',
-        descriptionNl:
-            'Een gerichte expeditie met één nieuwsgierige omweg (${index + 1}/300).',
+        descriptionEn: 'A focused expedition with one curious detour.',
+        descriptionNl: 'Een gerichte expeditie met één nieuwsgierige omweg.',
         duration: Duration(hours: hours),
         xp: 35 + hours * 18 + index % 13,
         focus: TrainingFocus.values[index % 3],
@@ -226,10 +224,8 @@ abstract final class AdventureCatalog {
       return AdventureDefinition(
         id: 'long_${index + 1}',
         kind: AdventureKind.long,
-        titleEn:
-            '${_placesEn[(index * 7) % _placesEn.length]} Expedition ${index + 1}',
-        titleNl:
-            '${_placesNl[(index * 7) % _placesNl.length]}-expeditie ${index + 1}',
+        titleEn: '${_placesEn[(index * 7) % _placesEn.length]} Expedition',
+        titleNl: '${_placesNl[(index * 7) % _placesNl.length]}-expeditie',
         descriptionEn: 'A careful multi-day journey through changing skies.',
         descriptionNl:
             'Een zorgvuldige meerdaagse reis door veranderende hemels.',
@@ -275,12 +271,8 @@ abstract final class AdventureCatalog {
       return AdventureDefinition(
         id: 'special_${index + 1}',
         kind: AdventureKind.special,
-        titleEn: sinister
-            ? 'The Crooked Shadow ${index - 89}'
-            : 'A Strange Invitation ${index + 1}',
-        titleNl: sinister
-            ? 'De Kromme Schaduw ${index - 89}'
-            : 'Een Vreemde Uitnodiging ${index + 1}',
+        titleEn: sinister ? 'The Crooked Shadow' : 'A Strange Invitation',
+        titleNl: sinister ? 'De Kromme Schaduw' : 'Een Vreemde Uitnodiging',
         descriptionEn: sinister
             ? 'A released dragon left a dangerous-looking map. Following it is optional.'
             : 'A one-off trail with a fully known reward.',

@@ -10,7 +10,7 @@ import 'models/game_presentation.dart';
 import 'providers/household_provider.dart';
 import 'screens/account_screen.dart';
 import 'screens/achievements_screen.dart';
-import 'screens/adventure_screen.dart';
+import 'screens/adventure_hub_screen.dart';
 import 'screens/dragon_tower_screen.dart';
 import 'screens/friends_screen.dart';
 import 'screens/haven_shop_screen.dart';
@@ -182,7 +182,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     final game = context.watch<HouseholdProvider>();
     final eggOnly = game.pet.isEgg;
     final screens = <Widget>[
-      const AdventureScreen(),
+      const AdventureHubScreen(),
       const StashScreen(),
       const DragonTowerScreen(),
       const FriendsScreen(),

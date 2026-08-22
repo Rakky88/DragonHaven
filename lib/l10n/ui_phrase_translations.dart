@@ -2937,4 +2937,353 @@ const uiPhraseTranslations = <String, List<String>>{
     '你培养的每种形态都会在这些书页上留下魔法。',
     '育てたすべての姿が、このページに魔法を残します。'
   ],
+  'Available': [
+    'Verfügbar',
+    'Disponibles',
+    'Disponibles',
+    'Disponibili',
+    'Disponíveis',
+    '可用',
+    '利用可能'
+  ],
+  'Active': ['Aktiv', 'Activas', 'Actives', 'Attive', 'Ativas', '进行中', '進行中'],
+  'Choose a path. Bring back stories, training and treasure.': [
+    'Wähle einen Pfad. Bring Geschichten, Training und Schätze zurück.',
+    'Elige una ruta. Regresa con historias, entrenamiento y tesoros.',
+    'Choisissez une voie. Rapportez des histoires, de l’entraînement et des trésors.',
+    'Scegli un percorso. Torna con storie, allenamento e tesori.',
+    'Escolha um caminho. Traga histórias, treino e tesouros.',
+    '选择一条路线，带回故事、训练成果和宝藏。',
+    '道を選び、物語と訓練の成果と宝物を持ち帰りましょう。'
+  ],
+  'No trail is available here right now.': [
+    'Hier ist gerade kein Pfad verfügbar.',
+    'Ahora mismo no hay ninguna ruta disponible aquí.',
+    'Aucune piste n’est disponible ici pour le moment.',
+    'Al momento non è disponibile alcun percorso qui.',
+    'Nenhuma trilha está disponível aqui agora.',
+    '这里目前没有可用路线。',
+    'ここには現在利用できる道がありません。'
+  ],
+  'Mystery chest': [
+    'Mysteriöse Truhe',
+    'Cofre misterioso',
+    'Coffre mystère',
+    'Forziere misterioso',
+    'Baú misterioso',
+    '神秘宝箱',
+    '謎の宝箱'
+  ],
+  'Start adventure': [
+    'Abenteuer starten',
+    'Iniciar aventura',
+    'Commencer l’aventure',
+    'Avvia avventura',
+    'Iniciar aventura',
+    '开始冒险',
+    '冒険を始める'
+  ],
+  'Choose a dragon': [
+    'Drachen wählen',
+    'Elige un dragón',
+    'Choisir un dragon',
+    'Scegli un drago',
+    'Escolha um dragão',
+    '选择一只龙',
+    'ドラゴンを選ぶ'
+  ],
+  'Recommended for this path': [
+    'Für diesen Pfad empfohlen',
+    'Recomendados para esta ruta',
+    'Recommandés pour cette voie',
+    'Consigliati per questo percorso',
+    'Recomendados para este caminho',
+    '推荐用于此路线',
+    'この道におすすめ'
+  ],
+  'Other available dragons': [
+    'Andere verfügbare Drachen',
+    'Otros dragones disponibles',
+    'Autres dragons disponibles',
+    'Altri draghi disponibili',
+    'Outros dragões disponíveis',
+    '其他可用的龙',
+    'ほかの利用可能なドラゴン'
+  ],
+  'Recommended': [
+    'Empfohlen',
+    'Recomendado',
+    'Recommandé',
+    'Consigliato',
+    'Recomendado',
+    '推荐',
+    'おすすめ'
+  ],
+  'No adventures are active': [
+    'Keine Abenteuer sind aktiv',
+    'No hay aventuras activas',
+    'Aucune aventure n’est active',
+    'Nessuna avventura è attiva',
+    'Nenhuma aventura está ativa',
+    '没有进行中的冒险',
+    '進行中の冒険はありません'
+  ],
+  'Send a dragon out and its journey will appear here.': [
+    'Schicke einen Drachen los und seine Reise erscheint hier.',
+    'Envía un dragón y su viaje aparecerá aquí.',
+    'Envoyez un dragon et son voyage apparaîtra ici.',
+    'Invia un drago e il suo viaggio apparirà qui.',
+    'Envie um dragão e a jornada dele aparecerá aqui.',
+    '派出一只龙后，它的旅程会显示在这里。',
+    'ドラゴンを送り出すと、その旅がここに表示されます。'
+  ],
+  'Unknown dragon': [
+    'Unbekannter Drache',
+    'Dragón desconocido',
+    'Dragon inconnu',
+    'Drago sconosciuto',
+    'Dragão desconhecido',
+    '未知的龙',
+    '不明なドラゴン'
+  ],
+  'Ready to return': [
+    'Bereit zur Rückkehr',
+    'Listo para volver',
+    'Prêt à revenir',
+    'Pronto a tornare',
+    'Pronto para voltar',
+    '可以返回',
+    '帰還可能'
+  ],
+  'Dragon': ['Drache', 'Dragón', 'Dragon', 'Drago', 'Dragão', '龙', 'ドラゴン'],
+  'Status': ['Status', 'Estado', 'Statut', 'Stato', 'Status', '状态', '状態'],
+  'Return in': [
+    'Rückkehr in',
+    'Regresa en',
+    'Retour dans',
+    'Ritorno tra',
+    'Retorno em',
+    '返回倒计时',
+    '帰還まで'
+  ],
+  'Dragon experience': [
+    'Drachenerfahrung',
+    'Experiencia del dragón',
+    'Expérience du dragon',
+    'Esperienza del drago',
+    'Experiência do dragão',
+    '龙的经验',
+    'ドラゴン経験値'
+  ],
+  'Training reward': [
+    'Trainingsbelohnung',
+    'Recompensa de entrenamiento',
+    'Récompense d’entraînement',
+    'Ricompensa di allenamento',
+    'Recompensa de treino',
+    '训练奖励',
+    '訓練報酬'
+  ],
+  'Treasure': ['Schatz', 'Tesoro', 'Trésor', 'Tesoro', 'Tesouro', '宝藏', '宝物'],
+  'One sealed chest': [
+    'Eine versiegelte Truhe',
+    'Un cofre sellado',
+    'Un coffre scellé',
+    'Un forziere sigillato',
+    'Um baú selado',
+    '一个封印宝箱',
+    '封印された宝箱1個'
+  ],
+  'Claim rewards': [
+    'Belohnungen abholen',
+    'Recoger recompensas',
+    'Récupérer les récompenses',
+    'Ritira ricompense',
+    'Coletar recompensas',
+    '领取奖励',
+    '報酬を受け取る'
+  ],
+  'Short Adventures': [
+    'Kurze Abenteuer',
+    'Aventuras cortas',
+    'Aventures courtes',
+    'Avventure brevi',
+    'Aventuras curtas',
+    '短途冒险',
+    '短い冒険'
+  ],
+  'Long Adventures': [
+    'Lange Abenteuer',
+    'Aventuras largas',
+    'Aventures longues',
+    'Avventure lunghe',
+    'Aventuras longas',
+    '长途冒险',
+    '長い冒険'
+  ],
+  'Group Adventures': [
+    'Gruppenabenteuer',
+    'Aventuras de grupo',
+    'Aventures de groupe',
+    'Avventure di gruppo',
+    'Aventuras em grupo',
+    '团队冒险',
+    'グループ冒険'
+  ],
+  'Special Adventures': [
+    'Besondere Abenteuer',
+    'Aventuras especiales',
+    'Aventures spéciales',
+    'Avventure speciali',
+    'Aventuras especiais',
+    '特殊冒险',
+    '特別な冒険'
+  ],
+  'Quick routes that refresh throughout the day.': [
+    'Schnelle Routen, die sich im Laufe des Tages erneuern.',
+    'Rutas rápidas que se renuevan durante el día.',
+    'Des itinéraires rapides renouvelés au fil de la journée.',
+    'Percorsi rapidi che si aggiornano durante il giorno.',
+    'Rotas rápidas que se renovam ao longo do dia.',
+    '全天都会刷新的快速路线。',
+    '一日を通して更新される短いルートです。'
+  ],
+  'Patient journeys with richer returns.': [
+    'Geduldige Reisen mit reicheren Erträgen.',
+    'Viajes pacientes con mejores recompensas.',
+    'Des voyages patients aux gains plus riches.',
+    'Viaggi pazienti con ricompense più ricche.',
+    'Jornadas pacientes com retornos melhores.',
+    '需要耐心、回报更丰厚的旅程。',
+    '時間をかけるぶん、実り豊かな旅です。'
+  ],
+  'Shared discoveries for connected keepers.': [
+    'Gemeinsame Entdeckungen für verbundene Hüter.',
+    'Descubrimientos compartidos para cuidadores conectados.',
+    'Des découvertes partagées pour les gardiens connectés.',
+    'Scoperte condivise per custodi collegati.',
+    'Descobertas compartilhadas para guardiões conectados.',
+    '供已连接守护者共同探索。',
+    'つながったキーパーたちで挑む共同発見です。'
+  ],
+  'Rare trails that only appear at special moments.': [
+    'Seltene Pfade, die nur zu besonderen Momenten erscheinen.',
+    'Rutas raras que solo aparecen en momentos especiales.',
+    'Des pistes rares qui n’apparaissent qu’à des moments particuliers.',
+    'Percorsi rari che appaiono solo in momenti speciali.',
+    'Trilhas raras que só aparecem em momentos especiais.',
+    '只在特殊时刻出现的稀有路线。',
+    '特別な瞬間にだけ現れる珍しい道です。'
+  ],
+  'Might': ['Stärke', 'Fuerza', 'Puissance', 'Potenza', 'Força', '力量', '力'],
+  'Arcana': ['Arkana', 'Arcanos', 'Arcanes', 'Arcano', 'Arcana', '奥秘', '秘術'],
+  'Spirit': ['Geist', 'Espíritu', 'Esprit', 'Spirito', 'Espírito', '心灵', '精神'],
+  'No dragon is available for this adventure.': [
+    'Für dieses Abenteuer ist kein Drache verfügbar.',
+    'No hay ningún dragón disponible para esta aventura.',
+    'Aucun dragon n’est disponible pour cette aventure.',
+    'Nessun drago è disponibile per questa avventura.',
+    'Nenhum dragão está disponível para esta aventura.',
+    '没有龙可参加这次冒险。',
+    'この冒険に参加できるドラゴンがいません。'
+  ],
+  'Roaming in the Tower': [
+    'Unterwegs im Turm',
+    'Paseando por la Torre',
+    'Se promène dans la Tour',
+    'Gira per la Torre',
+    'Passeando pela Torre',
+    '正在塔中漫步',
+    '塔を散歩中'
+  ],
+  'Resting off-stage': [
+    'Ruht außerhalb der Räume',
+    'Descansa fuera de escena',
+    'Se repose hors scène',
+    'Riposa fuori scena',
+    'Descansando fora de cena',
+    '正在场外休息',
+    '画面外で休憩中'
+  ],
+  'Free roaming in the Tower': [
+    'Freies Herumlaufen im Turm',
+    'Paseo libre por la Torre',
+    'Déplacement libre dans la Tour',
+    'Libero movimento nella Torre',
+    'Livre circulação na Torre',
+    '在塔中自由漫步',
+    '塔内を自由に歩く'
+  ],
+  'This dragon may appear and wander through rooms.': [
+    'Dieser Drache kann in Räumen erscheinen und umherlaufen.',
+    'Este dragón puede aparecer y pasear por las habitaciones.',
+    'Ce dragon peut apparaître et se promener dans les pièces.',
+    'Questo drago può apparire e girare per le stanze.',
+    'Este dragão pode aparecer e passear pelos cômodos.',
+    '这只龙可以出现在房间里并四处走动。',
+    'このドラゴンは部屋に現れて歩き回れます。'
+  ],
+  'Zoom out': [
+    'Herauszoomen',
+    'Alejar',
+    'Dézoomer',
+    'Riduci zoom',
+    'Diminuir zoom',
+    '缩小',
+    'ズームアウト'
+  ],
+  'The dragons found cozy places on other floors.': [
+    'Die Drachen haben gemütliche Plätze auf anderen Etagen gefunden.',
+    'Los dragones encontraron lugares acogedores en otros pisos.',
+    'Les dragons ont trouvé des endroits confortables aux autres étages.',
+    'I draghi hanno trovato posti accoglienti sugli altri piani.',
+    'Os dragões encontraram lugares aconchegantes em outros andares.',
+    '龙群在其他楼层找到了舒适的位置。',
+    'ドラゴンたちは別の階で居心地のよい場所を見つけました。'
+  ],
+  'Build another floor before clearing this room.': [
+    'Baue eine weitere Etage, bevor du diesen Raum leerst.',
+    'Construye otro piso antes de despejar esta habitación.',
+    'Construisez un autre étage avant de vider cette pièce.',
+    'Costruisci un altro piano prima di liberare questa stanza.',
+    'Construa outro andar antes de esvaziar este cômodo.',
+    '请先建造另一层，再清空这个房间。',
+    'この部屋からドラゴンを移す前に、別の階を建ててください。'
+  ],
+  'Finish decorating': [
+    'Dekorieren beenden',
+    'Terminar de decorar',
+    'Terminer la décoration',
+    'Termina decorazione',
+    'Terminar decoração',
+    '完成装饰',
+    '模様替えを終える'
+  ],
+  'Clear dragons': [
+    'Drachen umquartieren',
+    'Mover dragones',
+    'Déplacer les dragons',
+    'Sposta draghi',
+    'Mover dragões',
+    '移走龙群',
+    'ドラゴンを移動'
+  ],
+  'TAP TO GUIDE YOUR FAVORITE': [
+    'TIPPE, UM DEINEN FAVORITEN ZU LENKEN',
+    'TOCA PARA GUIAR A TU FAVORITO',
+    'TOUCHEZ POUR GUIDER VOTRE FAVORI',
+    'TOCCA PER GUIDARE IL TUO PREFERITO',
+    'TOQUE PARA GUIAR SEU FAVORITO',
+    '点击引导你的最爱',
+    'タップしてお気に入りを導く'
+  ],
+  'TAP TO CALL YOUR FAVORITE': [
+    'TIPPE, UM DEINEN FAVORITEN ZU RUFEN',
+    'TOCA PARA LLAMAR A TU FAVORITO',
+    'TOUCHEZ POUR APPELER VOTRE FAVORI',
+    'TOCCA PER CHIAMARE IL TUO PREFERITO',
+    'TOQUE PARA CHAMAR SEU FAVORITO',
+    '点击召唤你的最爱',
+    'タップしてお気に入りを呼ぶ'
+  ],
 };

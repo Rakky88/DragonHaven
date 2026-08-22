@@ -115,7 +115,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 25;
+  static const _schemaVersion = 27;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(
@@ -345,6 +345,12 @@ class HouseholdProvider extends ChangeNotifier {
       20,
       (index) => buildableRooms[index % buildableRooms.length].id,
     );
+    for (var index = 0; index < dragons.length; index++) {
+      final floorIndex = index % towerFloorRoomIds.length;
+      dragons[index]
+        ..currentFloorIndex = floorIndex
+        ..currentRoomId = towerFloorRoomIds[floorIndex];
+    }
     unlockedRoomIds = houseRoomCatalog.map((room) => room.id).toSet();
     activeRoomId = 'hearth';
     ownedItemIds = shopCatalog.map((item) => item.id).toSet();

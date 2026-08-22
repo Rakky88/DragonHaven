@@ -14,14 +14,37 @@ enum GameIconKind {
   chest,
   myDragons,
   draconomicon,
+  adventureShort,
+  adventureLong,
+  adventureGroup,
+  adventureSpecial,
+  adventureActive,
+  adventureStart,
+  roomDecorate,
+  roomClear,
+  towerBuild,
+  roomZoomOut,
 }
 
 extension GameIconKindAsset on GameIconKind {
   String get assetPath => 'assets/images/ui/ui_${switch (this) {
         GameIconKind.mysteriousEgg => 'mysterious_egg',
         GameIconKind.myDragons => 'my_dragons',
+        GameIconKind.adventureShort => 'adventure_short',
+        GameIconKind.adventureLong => 'adventure_long',
+        GameIconKind.adventureGroup => 'adventure_group',
+        GameIconKind.adventureSpecial => 'adventure_special',
+        GameIconKind.adventureActive => 'adventure_active',
+        GameIconKind.adventureStart => 'adventure_start',
+        GameIconKind.roomDecorate => 'room_decorate',
+        GameIconKind.roomClear => 'room_clear',
+        GameIconKind.towerBuild => 'tower_build',
+        GameIconKind.roomZoomOut => 'room_zoom_out',
         _ => name,
-      }}.webp';
+      }}.webp'
+          .replaceFirst('ui_adventure_', 'adventure_')
+          .replaceFirst('ui_room_', 'room_')
+          .replaceFirst('ui_tower_', 'tower_');
 }
 
 class GameIconSprite extends StatelessWidget {

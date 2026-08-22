@@ -220,6 +220,48 @@ void main() {
         isTrue);
   });
 
+  test('Tower roaming is per dragon, persistent and uses one room at a time',
+      () async {
+    final game = HouseholdProvider(random: Random(51));
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Nova'
+      ..currentRoomId = 'hearth'
+      ..currentFloorIndex = 0;
+    final older = Pet(
+      id: 'older-dragon',
+      name: 'Cinder',
+      stage: DragonStage.wyrmling,
+      firstEgg: false,
+      currentRoomId: 'hearth',
+      currentFloorIndex: 1,
+      acquiredAt: DateTime.utc(2025),
+    );
+    game.sanctuaryDragons.add(older);
+    game.towerFloorRoomIds = ['hearth', 'hearth', 'crystal'];
+    game.unlockedRoomIds.addAll(game.towerFloorRoomIds);
+
+    await game.setDragonRoaming(older.id, false);
+    expect(older.roamsTower, isFalse);
+    expect(game.towerDragons.map((dragon) => dragon.id),
+        isNot(contains(older.id)));
+
+    var restored = await HouseholdProvider.loadFromStorage();
+    final restoredOlder =
+        restored.sanctuaryDragons.firstWhere((dragon) => dragon.id == older.id);
+    expect(restoredOlder.roamsTower, isFalse);
+
+    await restored.setDragonRoaming(older.id, true);
+    expect(restoredOlder.currentFloorIndex, 1);
+    expect(await restored.clearDragonsFromRoom(0), isTrue);
+    expect(restored.pet.currentFloorIndex, 1);
+    expect(restoredOlder.currentFloorIndex, 1,
+        reason: 'The same room type on another floor must not be cleared.');
+    expect(await restored.callControllableDragonToRoom('crystal', 2), isTrue);
+    expect(restored.pet.currentFloorIndex, 2);
+    expect(restored.pet.currentRoomId, 'crystal');
+  });
+
   test('new saves contain no task or chore game data', () async {
     final game = HouseholdProvider(random: Random(6));
     await game.setLanguage('nl');

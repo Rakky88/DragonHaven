@@ -75,7 +75,14 @@ extension DragonHavenSystems on HouseholdProvider {
       .where(
           (dragon) => returningVisitors[dragon.id]?.isAfter(_clock()) == true)
       .toList(growable: false);
-  List<Pet> get towerDragons => [...ownedDragons, ...visitingDragons];
+  List<Pet> get towerDragons => [
+        ...ownedDragons.where((dragon) => dragon.roamsTower),
+        ...visitingDragons,
+      ];
+  Pet get towerControllableDragon => ownedDragons.firstWhere(
+        (dragon) => dragon.favorite,
+        orElse: () => pet,
+      );
 
   int get coins => pet.coins;
   int get gems => pet.gems;
@@ -83,43 +90,52 @@ extension DragonHavenSystems on HouseholdProvider {
   bool get hasSpectralCollection => prismaticForms.isNotEmpty;
 
   bool roamIdleDragons() {
-    final accessible = <String>{
+    final accessible = <int>[
       for (var index = 0; index < towerFloorRoomIds.length; index++)
-        if (!damagedTowerFloors.contains(index)) towerFloorRoomIds[index],
-    }.toList(growable: false);
+        if (!damagedTowerFloors.contains(index)) index,
+    ];
     if (accessible.isEmpty) return false;
 
     var changed = false;
     for (final dragon in towerDragons) {
-      if (dragon.activeAdventureId != null) continue;
-      final needsRoom = !accessible.contains(dragon.currentRoomId);
+      if (!dragon.roamsTower || dragon.activeAdventureId != null) continue;
+      final needsRoom = !accessible.contains(dragon.currentFloorIndex) ||
+          towerFloorRoomIds[dragon.currentFloorIndex] != dragon.currentRoomId;
       if (!needsRoom && _random.nextDouble() >= .20) continue;
 
       final lineage = dragon.lineage;
-      final preferred = <String>[
-        if (accessible.contains(lineage.primaryRoomId)) lineage.primaryRoomId,
-        if (accessible.contains(lineage.primaryRoomId)) lineage.primaryRoomId,
-        ...lineage.secondaryRoomIds.where(accessible.contains),
+      final preferred = <int>[
+        ...accessible.where(
+            (index) => towerFloorRoomIds[index] == lineage.primaryRoomId),
+        ...accessible.where(
+            (index) => towerFloorRoomIds[index] == lineage.primaryRoomId),
+        ...accessible.where((index) =>
+            lineage.secondaryRoomIds.contains(towerFloorRoomIds[index])),
       ];
       final alternatives = accessible
-          .where((roomId) => !preferred.contains(roomId))
+          .where((index) => !preferred.contains(index))
           .toList(growable: false);
       final usePreferred = preferred.isNotEmpty &&
           (alternatives.isEmpty || _random.nextDouble() < .65);
       final choices = usePreferred ? preferred : alternatives;
-      final nextRoom = choices[_random.nextInt(choices.length)];
-      if (nextRoom != dragon.currentRoomId) {
-        dragon.currentRoomId = nextRoom;
+      final nextFloor = choices[_random.nextInt(choices.length)];
+      if (nextFloor != dragon.currentFloorIndex || needsRoom) {
+        dragon
+          ..currentFloorIndex = nextFloor
+          ..currentRoomId = towerFloorRoomIds[nextFloor];
         changed = true;
       }
     }
     return changed;
   }
 
-  Future<String?> maybeTriggerRoomInteraction(String roomId) async {
+  Future<String?> maybeTriggerRoomInteraction(
+      String roomId, int floorIndex) async {
     final now = _clock();
     final candidates = ownedDragons.where((dragon) {
-      if (dragon.activeAdventureId != null || dragon.currentRoomId != roomId) {
+      if (dragon.activeAdventureId != null ||
+          dragon.currentRoomId != roomId ||
+          dragon.currentFloorIndex != floorIndex) {
         return false;
       }
       final lineage = dragon.lineage;
@@ -153,14 +169,62 @@ extension DragonHavenSystems on HouseholdProvider {
         .replaceAll('{dragon}', name);
   }
 
-  Future<bool> callActiveDragonToRoom(String roomId) async {
-    if (pet.isEgg ||
-        pet.activeAdventureId != null ||
-        !towerFloorRoomIds.contains(roomId) ||
-        pet.currentRoomId == roomId) {
+  Future<bool> callControllableDragonToRoom(
+      String roomId, int floorIndex) async {
+    final dragon = towerControllableDragon;
+    if (dragon.isEgg ||
+        !dragon.roamsTower ||
+        dragon.activeAdventureId != null ||
+        floorIndex < 0 ||
+        floorIndex >= towerFloorRoomIds.length ||
+        towerFloorRoomIds[floorIndex] != roomId ||
+        dragon.currentFloorIndex == floorIndex) {
       return false;
     }
-    pet.currentRoomId = roomId;
+    dragon
+      ..currentFloorIndex = floorIndex
+      ..currentRoomId = roomId;
+    await _notifyAndSave();
+    return true;
+  }
+
+  Future<void> setDragonRoaming(String dragonId, bool enabled) async {
+    final dragon = ownedDragons.cast<Pet?>().firstWhere(
+          (candidate) => candidate?.id == dragonId,
+          orElse: () => null,
+        );
+    if (dragon == null || dragon.roamsTower == enabled) return;
+    dragon.roamsTower = enabled;
+    if (enabled &&
+        (dragon.currentFloorIndex >= towerFloorRoomIds.length ||
+            towerFloorRoomIds[dragon.currentFloorIndex] !=
+                dragon.currentRoomId)) {
+      dragon
+        ..currentFloorIndex = 0
+        ..currentRoomId = towerFloorRoomIds.first;
+    }
+    await _notifyAndSave();
+  }
+
+  Future<bool> clearDragonsFromRoom(int floorIndex) async {
+    final alternatives = <int>[
+      for (var index = 0; index < towerFloorRoomIds.length; index++)
+        if (index != floorIndex && !damagedTowerFloors.contains(index)) index,
+    ].toList(growable: false);
+    if (alternatives.isEmpty) return false;
+    final dragons = towerDragons
+        .where((dragon) =>
+            dragon.activeAdventureId == null &&
+            dragon.currentFloorIndex == floorIndex)
+        .toList()
+      ..sort((a, b) => a.acquiredAt.compareTo(b.acquiredAt));
+    if (dragons.isEmpty) return true;
+    for (var index = 0; index < dragons.length; index++) {
+      final targetFloor = alternatives[index % alternatives.length];
+      dragons[index]
+        ..currentFloorIndex = targetFloor
+        ..currentRoomId = towerFloorRoomIds[targetFloor];
+    }
     await _notifyAndSave();
     return true;
   }
@@ -701,8 +765,11 @@ extension DragonHavenSystems on HouseholdProvider {
       DragonStage.egg => 24,
     };
     returningVisitors[dragon.id] = now.add(Duration(hours: hours));
-    if (!towerFloorRoomIds.contains(dragon.currentRoomId)) {
-      dragon.currentRoomId = towerFloorRoomIds.first;
+    if (dragon.currentFloorIndex >= towerFloorRoomIds.length ||
+        towerFloorRoomIds[dragon.currentFloorIndex] != dragon.currentRoomId) {
+      dragon
+        ..currentFloorIndex = 0
+        ..currentRoomId = towerFloorRoomIds.first;
     }
     latestReturningEvent =
         '${dragon.displayName} is visiting the Dragon Tower for $hours hours.';

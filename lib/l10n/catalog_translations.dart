@@ -450,7 +450,7 @@ String? translatedAdventureTitle(
       return '$mission: $place';
     case AdventureKind.long:
       final place = _adventurePlaces[languageCode]![(zeroBased * 7) % 20];
-      return _longAdventureTitle(languageCode, place, index);
+      return _longAdventureTitle(languageCode, place);
     case AdventureKind.group:
       final place = _adventurePlaces[languageCode]![(zeroBased * 3) % 20];
       return _groupAdventureTitle(languageCode, place);
@@ -458,7 +458,6 @@ String? translatedAdventureTitle(
       return _specialAdventureTitle(
         languageCode,
         sinister: adventure.sinister,
-        number: adventure.sinister ? index - 90 : index,
       );
   }
 }
@@ -468,16 +467,15 @@ String? translatedAdventureDescription(
   String languageCode,
 ) {
   if (!catalogLanguageIndex.containsKey(languageCode)) return null;
-  final index = int.tryParse(adventure.id.split('_').last) ?? 1;
   return switch (adventure.kind) {
     AdventureKind.short => _localizedAdventure(languageCode, [
-        'Eine gezielte Expedition mit einem neugierigen Umweg ($index/300).',
-        'Una expedición centrada con un curioso desvío ($index/300).',
-        'Une expédition ciblée avec un curieux détour ($index/300).',
-        'Una spedizione mirata con una curiosa deviazione ($index/300).',
-        'Uma expedição focada com um desvio curioso ($index/300).',
-        '一次目标明确、略带好奇心的远征（$index/300）。',
-        '好奇心に導かれた小さな寄り道つきの探索（$index/300）。'
+        'Eine gezielte Expedition mit einem neugierigen Umweg.',
+        'Una expedición centrada con un curioso desvío.',
+        'Une expédition ciblée avec un curieux détour.',
+        'Una spedizione mirata con una curiosa deviazione.',
+        'Uma expedição focada com um desvio curioso.',
+        '一次目标明确、略带好奇心的远征。',
+        '好奇心に導かれた小さな寄り道つきの探索。'
       ]),
     AdventureKind.long => _localizedAdventure(languageCode, const [
         'Eine sorgfältige mehrtägige Reise unter wechselndem Himmel.',
@@ -520,15 +518,14 @@ String? translatedAdventureDescription(
 String _localizedAdventure(String languageCode, List<String> values) =>
     values[catalogLanguageIndex[languageCode]!];
 
-String _longAdventureTitle(String language, String place, int number) =>
-    switch (language) {
-      'de' => 'Expedition nach $place $number',
-      'es' => 'Expedición a $place $number',
-      'fr' => 'Expédition vers $place $number',
-      'it' => 'Spedizione a $place $number',
-      'pt' => 'Expedição a $place $number',
-      'zh' => '$place远征 $number',
-      _ => '$place遠征 $number',
+String _longAdventureTitle(String language, String place) => switch (language) {
+      'de' => 'Expedition nach $place',
+      'es' => 'Expedición a $place',
+      'fr' => 'Expédition vers $place',
+      'it' => 'Spedizione a $place',
+      'pt' => 'Expedição a $place',
+      'zh' => '$place远征',
+      _ => '$place遠征',
     };
 
 String _groupAdventureTitle(String language, String place) =>
@@ -545,26 +542,25 @@ String _groupAdventureTitle(String language, String place) =>
 String _specialAdventureTitle(
   String language, {
   required bool sinister,
-  required int number,
 }) {
   final values = sinister
       ? [
-          'Der Krumme Schatten $number',
-          'La Sombra Torcida $number',
-          'L’Ombre Courbe $number',
-          'L’Ombra Storta $number',
-          'A Sombra Torta $number',
-          '扭曲之影 $number',
-          '歪んだ影 $number',
+          'Der Krumme Schatten',
+          'La Sombra Torcida',
+          'L’Ombre Courbe',
+          'L’Ombra Storta',
+          'A Sombra Torta',
+          '扭曲之影',
+          '歪んだ影',
         ]
       : [
-          'Eine seltsame Einladung $number',
-          'Una invitación extraña $number',
-          'Une étrange invitation $number',
-          'Uno strano invito $number',
-          'Um convite estranho $number',
-          '奇怪的邀请 $number',
-          '不思議な招待状 $number',
+          'Eine seltsame Einladung',
+          'Una invitación extraña',
+          'Une étrange invitation',
+          'Uno strano invito',
+          'Um convite estranho',
+          '奇怪的邀请',
+          '不思議な招待状',
         ];
   return _localizedAdventure(language, values);
 }

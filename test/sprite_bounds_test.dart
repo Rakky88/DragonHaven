@@ -251,7 +251,7 @@ void main() {
       GameVfxAssets.chestBurst,
       GameVfxAssets.spectralAura,
     };
-    expect(paths, hasLength(13));
+    expect(paths, hasLength(23));
     for (final path in paths) {
       final image = await _decode(path);
       expect(image.width / image.height, inInclusiveRange(.5, 2.0),

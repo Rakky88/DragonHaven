@@ -99,11 +99,10 @@ class DragonTowerScreen extends StatelessWidget {
         for (var index = game.towerFloorRoomIds.length - 1; index >= 0; index--)
           _TowerFloor(index: index, roomId: game.towerFloorRoomIds[index]),
         const SizedBox(height: 12),
-        OutlinedButton.icon(
+        _BuildFloorButton(
           key: const Key('add-tower-floor'),
           onPressed:
               game.towerFloorCount >= 20 ? null : () => _addFloor(context),
-          icon: const Icon(Icons.add_home_work_rounded),
           label: Text(game.towerFloorCount >= 20
               ? strings.pick(
                   'Maximum height reached', 'Maximale hoogte bereikt')
@@ -286,9 +285,10 @@ class _TowerFloor extends StatelessWidget {
           if (context.mounted) {
             await Navigator.of(context).push(MaterialPageRoute<void>(
               builder: (_) => Scaffold(
-                appBar: AppBar(title: Text(strings.roomName(room))),
+                appBar: _RoomBar(room: room),
                 body: HouseScreen(
                   active: true,
+                  floorIndex: index,
                   onOpenShop: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                         builder: (_) => const Scaffold(
@@ -363,6 +363,63 @@ class _Currency extends StatelessWidget {
       );
 }
 
+class _BuildFloorButton extends StatelessWidget {
+  const _BuildFloorButton({
+    super.key,
+    required this.onPressed,
+    required this.label,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget label;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(24),
+          child: Ink(
+            height: 92,
+            padding: const EdgeInsets.fromLTRB(10, 7, 16, 7),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: onPressed == null
+                    ? const [Color(0xFFE9E7ED), Color(0xFFF4F2F6)]
+                    : const [Color(0xFFECE5FF), Color(0xFFFFF3D4)],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFDED4ED)),
+              boxShadow: const [
+                BoxShadow(
+                    color: Color(0x185B4B8A),
+                    blurRadius: 12,
+                    offset: Offset(0, 5)),
+              ],
+            ),
+            child: Row(children: [
+              Opacity(
+                opacity: onPressed == null ? .45 : 1,
+                child: const GameIconSprite(GameIconKind.towerBuild, size: 76),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DefaultTextStyle(
+                  style: const TextStyle(
+                      color: AppColors.ink,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900),
+                  child: label,
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded,
+                  color: AppColors.twilight),
+            ]),
+          ),
+        ),
+      );
+}
+
 class _TowerShortcut extends StatelessWidget {
   const _TowerShortcut({
     super.key,
@@ -430,37 +487,9 @@ class _OwnedDragonsSheet extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 9),
             for (final dragon in game.ownedDragons)
-              Card(
-                child: ListTile(
-                  leading: SizedBox.square(
-                    dimension: 58,
-                    child: Transform.scale(
-                      scale: dragon.sizeFactor,
-                      child: DragonArt(
-                        height: 58,
-                        animate: false,
-                        stageKey: dragon.stageKey,
-                        lineageId: dragon.lineageId,
-                        evolutionPath: dragon.activeEvolutionPath,
-                        prismatic: dragon.spectral,
-                        sinister: dragon.sinister,
-                      ),
-                    ),
-                  ),
-                  title: Row(children: [
-                    Expanded(
-                        child: Text(dragon.displayName,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w900))),
-                    if (dragon.favorite)
-                      const Icon(Icons.favorite_rounded,
-                          color: Color(0xFFE05A78), size: 18),
-                  ]),
-                  subtitle: Text(
-                      '${strings.lineageName(dragon.lineage)} · ${strings.petStage(dragon)} · ${strings.levelShort(dragon.level)}${game.dragonSizeLabel(dragon).isEmpty ? '' : ' · ${game.dragonSizeLabel(dragon)}'}\n${dragon.xp} XP · ${dragon.activeAdventureId == null ? strings.pick('In Tower', 'In Toren') : strings.pick('Adventuring', 'Op avontuur')}'),
-                  isThreeLine: true,
-                  onTap: () => _dragonActions(context, dragon),
-                ),
+              _OwnedDragonCard(
+                dragon: dragon,
+                onActions: () => _dragonActions(context, dragon),
               ),
           ],
         ),
@@ -524,6 +553,78 @@ class _OwnedDragonsSheet extends StatelessWidget {
   }
 }
 
+class _OwnedDragonCard extends StatelessWidget {
+  const _OwnedDragonCard({required this.dragon, required this.onActions});
+
+  final Pet dragon;
+  final VoidCallback onActions;
+
+  @override
+  Widget build(BuildContext context) {
+    final game = context.watch<HouseholdProvider>();
+    final strings = AppStrings.of(context);
+    final status = dragon.activeAdventureId != null
+        ? strings.pick('Adventuring', 'Op avontuur')
+        : dragon.roamsTower
+            ? strings.pick('Roaming in the Tower', 'Loopt rond in de Toren')
+            : strings.pick('Resting off-stage', 'Rust buiten beeld');
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          ListTile(
+            leading: SizedBox.square(
+              dimension: 62,
+              child: Transform.scale(
+                scale: dragon.sizeFactor,
+                child: DragonArt(
+                  height: 62,
+                  animate: false,
+                  stageKey: dragon.stageKey,
+                  lineageId: dragon.lineageId,
+                  evolutionPath: dragon.activeEvolutionPath,
+                  prismatic: dragon.spectral,
+                  sinister: dragon.sinister,
+                ),
+              ),
+            ),
+            title: Row(children: [
+              Expanded(
+                child: Text(dragon.displayName,
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+              ),
+              if (dragon.favorite)
+                const Icon(Icons.favorite_rounded,
+                    color: Color(0xFFE05A78), size: 18),
+            ]),
+            subtitle: Text(
+              '${strings.lineageName(dragon.lineage)} · ${strings.petStage(dragon)} · ${strings.levelShort(dragon.level)}\n${dragon.xp} XP · $status',
+            ),
+            isThreeLine: true,
+            trailing: const Icon(Icons.more_horiz_rounded),
+            onTap: onActions,
+          ),
+          const Divider(height: 1, indent: 14, endIndent: 14),
+          SwitchListTile.adaptive(
+            key: Key('dragon-roaming-${dragon.id}'),
+            dense: true,
+            contentPadding: const EdgeInsets.fromLTRB(14, 0, 10, 0),
+            secondary: const GameIconSprite(GameIconKind.roomClear, size: 38),
+            title: Text(strings.pick(
+                'Free roaming in the Tower', 'Vrij rondlopen in de Toren')),
+            subtitle: Text(strings.pick(
+              'This dragon may appear and wander through rooms.',
+              'Deze draak kan in kamers verschijnen en rondlopen.',
+            )),
+            value: dragon.roamsTower,
+            onChanged: (enabled) => game.setDragonRoaming(dragon.id, enabled),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CodexBar extends StatelessWidget implements PreferredSizeWidget {
   const _CodexBar();
   @override
@@ -541,6 +642,27 @@ class _NestBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) => AppBar(
       title: Text(AppStrings.of(context).pick('Rooftop Nest', 'Daknest')));
+}
+
+class _RoomBar extends StatelessWidget implements PreferredSizeWidget {
+  const _RoomBar({required this.room});
+
+  final HouseRoomDefinition room;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) => AppBar(
+        leadingWidth: 66,
+        leading: IconButton(
+          key: const Key('zoom-out-room'),
+          tooltip: AppStrings.of(context).pick('Zoom out', 'Uitzoomen'),
+          onPressed: () => Navigator.maybePop(context),
+          icon: const GameIconSprite(GameIconKind.roomZoomOut, size: 48),
+        ),
+        title: Text(AppStrings.of(context).roomName(room)),
+      );
 }
 
 class _ShopBar extends StatelessWidget implements PreferredSizeWidget {

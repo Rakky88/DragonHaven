@@ -22,10 +22,12 @@ class HouseScreen extends StatefulWidget {
   const HouseScreen({
     super.key,
     required this.active,
+    required this.floorIndex,
     required this.onOpenShop,
   });
 
   final bool active;
+  final int floorIndex;
   final VoidCallback onOpenShop;
 
   @override
@@ -33,14 +35,15 @@ class HouseScreen extends StatefulWidget {
 }
 
 class _HouseScreenState extends State<HouseScreen> {
-  static const _wanderMoveDuration = Duration(milliseconds: 1900);
-  static const _calledMoveDuration = Duration(milliseconds: 3200);
+  static const _wanderMoveDuration = Duration(milliseconds: 3600);
+  static const _calledMoveDuration = Duration(milliseconds: 5200);
 
   final _random = Random();
   Timer? _wanderTimer;
   Offset _dragonPosition = const Offset(0.52, 0.72);
   Duration _dragonMoveDuration = _wanderMoveDuration;
   bool _facingRight = true;
+  int _wanderStep = 0;
   bool _editMode = false;
   String? _selectedItemId;
   String? _interactionRoomId;
@@ -68,7 +71,7 @@ class _HouseScreenState extends State<HouseScreen> {
 
   void _startWandering() {
     _wanderTimer?.cancel();
-    _wanderTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+    _wanderTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted || !widget.active || _editMode) return;
       if (_interactionMessage != null) return;
       final phase = havenDayPhaseAt(DateTime.now());
@@ -81,12 +84,21 @@ class _HouseScreenState extends State<HouseScreen> {
         HavenDayPhase.day || HavenDayPhase.goldenHour => .95,
       };
       if (_random.nextDouble() > moveChance) return;
-      final stage = context.read<HouseholdProvider>().pet.stageKey;
-      if (stage == 'moonEgg') return;
-      _moveDragonTo(Offset(
-        0.20 + _random.nextDouble() * 0.60,
-        0.62 + _random.nextDouble() * 0.18,
-      ));
+      final household = context.read<HouseholdProvider>();
+      final controllable = household.towerControllableDragon;
+      setState(() => _wanderStep++);
+      if (controllable.isEgg ||
+          controllable.activeAdventureId != null ||
+          controllable.currentFloorIndex != widget.floorIndex) {
+        return;
+      }
+      _moveDragonTo(
+        Offset(
+          0.20 + _random.nextDouble() * 0.60,
+          0.62 + _random.nextDouble() * 0.18,
+        ),
+        duration: _wanderMoveDuration,
+      );
     });
   }
 
@@ -118,13 +130,15 @@ class _HouseScreenState extends State<HouseScreen> {
     final placements = household.placementsForRoom(room.id);
     final roomDragons = household.towerDragons
         .where((dragon) =>
-            dragon.activeAdventureId == null && dragon.currentRoomId == room.id)
+            dragon.activeAdventureId == null &&
+            dragon.currentFloorIndex == widget.floorIndex)
         .toList(growable: false);
+    final controllableDragon = household.towerControllableDragon;
     if (_interactionRoomId != room.id) {
       _interactionRoomId = room.id;
       _interactionMessage = null;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _checkRareInteraction(room.id);
+        if (mounted) _checkRareInteraction(room.id, widget.floorIndex);
       });
     }
     final ownedItems = shopCatalog
@@ -139,30 +153,6 @@ class _HouseScreenState extends State<HouseScreen> {
           coins: household.pet.coins,
           largeText: largeText,
         ),
-        const SizedBox(height: 17),
-        HorizontalChoiceRail(
-          height: 42,
-          children: [
-            for (var index = 0; index < houseRoomCatalog.length; index++) ...[
-              if (index > 0) const SizedBox(width: 8),
-              Builder(builder: (context) {
-                final candidate = houseRoomCatalog[index];
-                final unlocked = household.isRoomUnlocked(candidate.id);
-                return ChoiceChip(
-                  avatar: Icon(
-                    unlocked ? _roomIcon(candidate.id) : Icons.lock_rounded,
-                    size: 17,
-                  ),
-                  label: Text(strings.roomName(candidate)),
-                  selected: room.id == candidate.id,
-                  onSelected: (_) => unlocked
-                      ? household.selectRoom(candidate.id)
-                      : _confirmRoomUnlock(candidate),
-                );
-              }),
-            ],
-          ],
-        ),
         const SizedBox(height: 13),
         _HouseRoomScene(
           room: room,
@@ -170,13 +160,14 @@ class _HouseScreenState extends State<HouseScreen> {
           visitorIds:
               household.visitingDragons.map((dragon) => dragon.id).toSet(),
           suppressTimeMood: _interactionMessage != null,
-          activeDragonId: household.pet.id,
+          activeDragonId: controllableDragon.id,
           placements: placements,
           editMode: _editMode,
           selectedItemId: _selectedItemId,
           dragonPosition: _dragonPosition,
           dragonMoveDuration: _dragonMoveDuration,
           facingRight: _facingRight,
+          wanderStep: _wanderStep,
           onSelectItem: (itemId) => setState(() => _selectedItemId = itemId),
           onRoomTap: (position) => _handleRoomTap(room, position),
         ),
@@ -204,7 +195,16 @@ class _HouseScreenState extends State<HouseScreen> {
             });
             _editMode ? _stopWandering() : _startWandering();
           },
-          onExpand: () => _showRoomOverview(context),
+          onClear: () async {
+            final cleared =
+                await household.clearDragonsFromRoom(widget.floorIndex);
+            if (!mounted) return;
+            _message(cleared
+                ? strings.pick('The dragons found cozy places on other floors.',
+                    'De draken hebben knusse plekken op andere verdiepingen gevonden.')
+                : strings.pick('Build another floor before clearing this room.',
+                    'Bouw nog een verdieping voordat je deze kamer leegmaakt.'));
+          },
         ),
         if (_editMode) ...[
           const SizedBox(height: 18),
@@ -245,7 +245,8 @@ class _HouseScreenState extends State<HouseScreen> {
           duration: _calledMoveDuration,
         );
       } else {
-        await household.callActiveDragonToRoom(room.id);
+        await household.callControllableDragonToRoom(
+            room.id, widget.floorIndex);
         if (!mounted) return;
         _moveDragonTo(position, duration: _calledMoveDuration);
       }
@@ -279,123 +280,13 @@ class _HouseScreenState extends State<HouseScreen> {
     );
   }
 
-  Future<void> _checkRareInteraction(String roomId) async {
+  Future<void> _checkRareInteraction(String roomId, int floorIndex) async {
     final message = await context
         .read<HouseholdProvider>()
-        .maybeTriggerRoomInteraction(roomId);
+        .maybeTriggerRoomInteraction(roomId, floorIndex);
     if (!mounted || _interactionRoomId != roomId || message == null) return;
     setState(() => _interactionMessage = message);
   }
-
-  Future<void> _confirmRoomUnlock(HouseRoomDefinition room) async {
-    final household = context.read<HouseholdProvider>();
-    final strings = AppStrings.of(context);
-    if (household.pet.level < room.unlockLevel) {
-      _message(strings.pick(
-        'Your sanctuary reaches level ${room.unlockLevel} before this room can be built.',
-        'Je reservaat moet level ${room.unlockLevel} bereiken voordat deze kamer gebouwd kan worden.',
-      ));
-      return;
-    }
-    final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            scrollable: true,
-            icon: Icon(_roomIcon(room.id), color: AppColors.twilight),
-            title: Text(strings.roomName(room)),
-            content: Text(strings.pick(
-              'Build this room for ${room.price} star coins? Furniture and progress stay exactly where they are.',
-              'Deze kamer bouwen voor ${room.price} sterrenmunten? Meubels en voortgang blijven precies bewaard.',
-            )),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(strings.pick('Not yet', 'Nog niet')),
-              ),
-              FilledButton.icon(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                icon: const Icon(Icons.construction_rounded),
-                label: Text(strings.pick('Build room', 'Kamer bouwen')),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-    if (!confirmed || !mounted) return;
-    final result = await household.unlockRoom(room);
-    if (!mounted) return;
-    _message(switch (result) {
-      RoomUnlockResult.unlocked => strings.pick(
-          '${strings.roomName(room)} is ready for decorating!',
-          '${strings.roomName(room)} is klaar om in te richten!'),
-      RoomUnlockResult.insufficientCoins => strings.pick(
-          'You need ${room.price - household.pet.coins} more coins.',
-          'Je hebt nog ${room.price - household.pet.coins} munten nodig.'),
-      RoomUnlockResult.levelLocked => strings.pick(
-          'Your sanctuary is not ready for this room yet.',
-          'Je reservaat is nog niet klaar voor deze kamer.'),
-      RoomUnlockResult.alreadyUnlocked => strings.pick(
-          'This room is already part of the house.',
-          'Deze kamer hoort al bij het huis.'),
-    });
-  }
-
-  Future<void> _showRoomOverview(BuildContext context) =>
-      showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        showDragHandle: true,
-        builder: (sheetContext) {
-          final strings = AppStrings.of(sheetContext);
-          final household = sheetContext.watch<HouseholdProvider>();
-          return SafeArea(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.85,
-              ),
-              child: SingleChildScrollView(
-                key: const Key('room-overview-scroll'),
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                        strings.pick(
-                            'Expand the sanctuary', 'Breid het reservaat uit'),
-                        style: Theme.of(sheetContext).textTheme.headlineMedium),
-                    const SizedBox(height: 5),
-                    Text(
-                      strings.pick(
-                          'Each room is permanent and can be decorated independently.',
-                          'Elke kamer blijft permanent en kan apart worden ingericht.'),
-                      style: const TextStyle(color: AppColors.muted),
-                    ),
-                    const SizedBox(height: 16),
-                    for (final room in houseRoomCatalog)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 9),
-                        child: _RoomOverviewTile(
-                          room: room,
-                          unlocked: household.isRoomUnlocked(room.id),
-                          selected: household.activeRoomId == room.id,
-                          onTap: () async {
-                            Navigator.pop(sheetContext);
-                            if (household.isRoomUnlocked(room.id)) {
-                              await household.selectRoom(room.id);
-                            } else {
-                              await _confirmRoomUnlock(room);
-                            }
-                          },
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      );
 
   void _message(String message) => showAppSnackBar(context, message);
 }
@@ -454,28 +345,29 @@ class _HouseActions extends StatelessWidget {
     required this.editing,
     required this.largeText,
     required this.onToggleEdit,
-    required this.onExpand,
+    required this.onClear,
   });
 
   final bool editing;
   final bool largeText;
   final VoidCallback onToggleEdit;
-  final VoidCallback onExpand;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final editButton = FilledButton.tonalIcon(
+    final editButton = _RoomActionButton(
       onPressed: onToggleEdit,
-      icon: Icon(editing ? Icons.check_rounded : Icons.edit_rounded),
-      label: Text(editing
-          ? strings.pick('Finish', 'Klaar')
-          : strings.pick('Decorate', 'Inrichten')),
+      kind: GameIconKind.roomDecorate,
+      filled: true,
+      label: editing
+          ? strings.pick('Finish decorating', 'Inrichten afronden')
+          : strings.pick('Decorate', 'Inrichten'),
     );
-    final expandButton = OutlinedButton.icon(
-      onPressed: onExpand,
-      icon: const Icon(Icons.add_home_work_rounded),
-      label: Text(strings.pick('Rooms', 'Kamers')),
+    final clearButton = _RoomActionButton(
+      onPressed: onClear,
+      kind: GameIconKind.roomClear,
+      label: strings.pick('Clear dragons', 'Draken verplaatsen'),
     );
     if (largeText) {
       return Column(
@@ -483,7 +375,7 @@ class _HouseActions extends StatelessWidget {
         children: [
           editButton,
           const SizedBox(height: 9),
-          expandButton,
+          clearButton,
         ],
       );
     }
@@ -491,10 +383,58 @@ class _HouseActions extends StatelessWidget {
       children: [
         Expanded(child: editButton),
         const SizedBox(width: 9),
-        Expanded(child: expandButton),
+        Expanded(child: clearButton),
       ],
     );
   }
+}
+
+class _RoomActionButton extends StatelessWidget {
+  const _RoomActionButton({
+    required this.onPressed,
+    required this.kind,
+    required this.label,
+    this.filled = false,
+  });
+
+  final VoidCallback onPressed;
+  final GameIconKind kind;
+  final String label;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(19),
+          child: Ink(
+            height: 62,
+            padding: const EdgeInsets.fromLTRB(7, 5, 10, 5),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: filled
+                    ? const [Color(0xFFE8DEFF), Color(0xFFD8C9F4)]
+                    : const [Colors.white, Color(0xFFFFF8E8)],
+              ),
+              borderRadius: BorderRadius.circular(19),
+              border: Border.all(color: const Color(0xFFDCD2EC)),
+            ),
+            child: Row(children: [
+              GameIconSprite(kind, size: 48),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(label,
+                    maxLines: 2,
+                    style: const TextStyle(
+                        color: AppColors.ink,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900)),
+              ),
+            ]),
+          ),
+        ),
+      );
 }
 
 class _HouseRoomScene extends StatelessWidget {
@@ -510,6 +450,7 @@ class _HouseRoomScene extends StatelessWidget {
     required this.dragonPosition,
     required this.dragonMoveDuration,
     required this.facingRight,
+    required this.wanderStep,
     required this.onSelectItem,
     required this.onRoomTap,
   });
@@ -525,6 +466,7 @@ class _HouseRoomScene extends StatelessWidget {
   final Offset dragonPosition;
   final Duration dragonMoveDuration;
   final bool facingRight;
+  final int wanderStep;
   final ValueChanged<String> onSelectItem;
   final ValueChanged<Offset> onRoomTap;
 
@@ -586,13 +528,15 @@ class _HouseRoomScene extends StatelessWidget {
                         sceneSize: size,
                         position: dragons[index].id == activeDragonId
                             ? dragonPosition
-                            : _idlePosition(dragons[index], index),
+                            : _idlePosition(dragons[index], index, wanderStep,
+                                dragons.length),
+                        roomDragonCount: dragons.length,
                         moveDuration: dragons[index].id == activeDragonId
                             ? dragonMoveDuration
                             : _HouseScreenState._wanderMoveDuration,
                         facingRight: dragons[index].id == activeDragonId
                             ? facingRight
-                            : dragons[index].hatchSeed.isEven,
+                            : (dragons[index].hatchSeed + wanderStep).isEven,
                         animate: !editMode &&
                             !MediaQuery.disableAnimationsOf(context),
                         suppressTimeMood: suppressTimeMood ||
@@ -623,12 +567,14 @@ class _HouseRoomScene extends StatelessWidget {
                                   ? AppStrings.of(context)
                                       .pick('EDIT MODE', 'INRICHTMODUS')
                                   : AppStrings.of(context).pick(
-                                      dragons.isEmpty
-                                          ? 'TAP TO CALL YOUR DRAGON'
-                                          : 'TAP TO MOVE YOUR DRAGON',
-                                      dragons.isEmpty
-                                          ? 'TIK OM JE DRAAK TE ROEPEN'
-                                          : 'TIK OM JE DRAAK TE VERPLAATSEN'),
+                                      dragons.any((dragon) =>
+                                              dragon.id == activeDragonId)
+                                          ? 'TAP TO GUIDE YOUR FAVORITE'
+                                          : 'TAP TO CALL YOUR FAVORITE',
+                                      dragons.any((dragon) =>
+                                              dragon.id == activeDragonId)
+                                          ? 'TIK OM JE FAVORIET TE STUREN'
+                                          : 'TIK OM JE FAVORIET TE ROEPEN'),
                               style: const TextStyle(
                                 color: AppColors.ink,
                                 fontSize: 9,
@@ -790,11 +736,15 @@ class _RoomAtmospherePainter extends CustomPainter {
       oldDelegate.phase != phase;
 }
 
-Offset _idlePosition(Pet dragon, int index) {
-  final seed = dragon.hatchSeed.abs() + index * 97;
+Offset _idlePosition(Pet dragon, int index, int step, int dragonCount) {
+  final columns = min(4, max(1, dragonCount));
+  final movingIndex = index + step;
+  final column = movingIndex % columns;
+  final row = (movingIndex ~/ columns) % 3;
+  final seed = dragon.hatchSeed.abs() + step * 173;
   return Offset(
-    .24 + (seed.remainder(53) / 52) * .52,
-    .65 + ((seed ~/ 53).remainder(17) / 16) * .16,
+    columns == 1 ? .5 : .20 + column / (columns - 1) * .60,
+    .65 + row * .075 + (seed.remainder(5) - 2) * .004,
   );
 }
 
@@ -803,6 +753,7 @@ class _RoomDragon extends StatelessWidget {
     required this.dragon,
     required this.sceneSize,
     required this.position,
+    required this.roomDragonCount,
     required this.moveDuration,
     required this.facingRight,
     required this.animate,
@@ -812,6 +763,7 @@ class _RoomDragon extends StatelessWidget {
   final Pet dragon;
   final Size sceneSize;
   final Offset position;
+  final int roomDragonCount;
   final Duration moveDuration;
   final bool facingRight;
   final bool animate;
@@ -824,9 +776,13 @@ class _RoomDragon extends StatelessWidget {
       'nestDragon' => .27,
       _ => .30,
     };
+    final crowdScale = roomDragonCount <= 3
+        ? 1.0
+        : (3.2 / roomDragonCount).clamp(.58, .9).toDouble();
     final dragonSize = sceneSize.width *
         stageScale *
-        dragon.sizeFactor.clamp(.65, 1.30).toDouble();
+        dragon.sizeFactor.clamp(.65, 1.30).toDouble() *
+        crowdScale;
     return AnimatedPositioned(
       duration: moveDuration,
       curve: Curves.easeInOutSine,
@@ -1341,53 +1297,6 @@ class _HouseSummary extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _RoomOverviewTile extends StatelessWidget {
-  const _RoomOverviewTile({
-    required this.room,
-    required this.unlocked,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final HouseRoomDefinition room;
-  final bool unlocked;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final strings = AppStrings.of(context);
-    return ListTile(
-      onTap: onTap,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(17),
-        side: BorderSide(
-            color: selected ? AppColors.mint : AppColors.mist,
-            width: selected ? 2 : 1),
-      ),
-      tileColor: Colors.white,
-      leading: CircleAvatar(
-        backgroundColor: AppColors.mist,
-        child: Icon(_roomIcon(room.id), color: AppColors.twilight),
-      ),
-      title: Text(strings.roomName(room),
-          style: const TextStyle(fontWeight: FontWeight.w900)),
-      subtitle: Text(unlocked
-          ? strings.pick('Built and ready', 'Gebouwd en klaar')
-          : strings.pick('Level ${room.unlockLevel} · ${room.price} coins',
-              'Level ${room.unlockLevel} · ${room.price} munten')),
-      trailing: Icon(
-        selected
-            ? Icons.check_circle_rounded
-            : unlocked
-                ? Icons.chevron_right_rounded
-                : Icons.lock_rounded,
-        color: selected ? AppColors.mint : AppColors.twilight,
       ),
     );
   }
