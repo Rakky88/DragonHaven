@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_strings.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/game_icon_sprite.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -19,15 +20,50 @@ class AccountScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
         children: [
           Card(
-            child: ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.person_rounded)),
-              title: Text(game.accountName,
-                  style: const TextStyle(fontWeight: FontWeight.w900)),
-              subtitle: Text(strings.pick('Dragon keeper', 'Drakenhoeder')),
-              trailing: IconButton(
-                tooltip: strings.pick('Edit name', 'Naam wijzigen'),
-                onPressed: () => _editName(context, game.accountName),
-                icon: const Icon(Icons.edit_rounded),
+            clipBehavior: Clip.antiAlias,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.white, Color(0xFFF0EAFF)],
+                ),
+              ),
+              child: Row(
+                children: [
+                  const GameIconSprite(GameIconKind.screenAccount, size: 88),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          game.accountName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          strings.pick('Dragon keeper', 'Drakenhoeder'),
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton.filledTonal(
+                    tooltip: strings.pick('Edit name', 'Naam wijzigen'),
+                    onPressed: () => _editName(context, game.accountName),
+                    icon: const Icon(Icons.edit_rounded),
+                  ),
+                ],
               ),
             ),
           ),
@@ -36,33 +72,48 @@ class AccountScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           Card(
-            child: Column(
-              children: [
-                SwitchListTile(
-                  key: const Key('music-switch'),
-                  secondary: const Icon(Icons.music_note_rounded,
-                      color: AppColors.twilight),
-                  title: Text(strings.tr('music'),
-                      style: const TextStyle(fontWeight: FontWeight.w800)),
-                  subtitle: Text(
-                      game.musicEnabled ? strings.tr('on') : strings.tr('off')),
-                  value: game.musicEnabled,
-                  onChanged: game.setMusicEnabled,
+            clipBehavior: Clip.antiAlias,
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.white, Color(0xFFFFF5DE)],
                 ),
-                const Divider(height: 1),
-                SwitchListTile(
-                  key: const Key('sound-effects-switch'),
-                  secondary: const Icon(Icons.volume_up_rounded,
-                      color: AppColors.twilight),
-                  title: Text(strings.tr('sound_effects'),
-                      style: const TextStyle(fontWeight: FontWeight.w800)),
-                  subtitle: Text(game.soundEffectsEnabled
-                      ? strings.tr('on')
-                      : strings.tr('off')),
-                  value: game.soundEffectsEnabled,
-                  onChanged: game.setSoundEffectsEnabled,
-                ),
-              ],
+              ),
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    key: const Key('music-switch'),
+                    secondary: const GameIconSprite(
+                      GameIconKind.audioMusic,
+                      size: 58,
+                    ),
+                    title: Text(strings.tr('music'),
+                        style: const TextStyle(fontWeight: FontWeight.w800)),
+                    subtitle: Text(game.musicEnabled
+                        ? strings.tr('on')
+                        : strings.tr('off')),
+                    value: game.musicEnabled,
+                    onChanged: game.setMusicEnabled,
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    key: const Key('sound-effects-switch'),
+                    secondary: const GameIconSprite(
+                      GameIconKind.audioSfx,
+                      size: 58,
+                    ),
+                    title: Text(strings.tr('sound_effects'),
+                        style: const TextStyle(fontWeight: FontWeight.w800)),
+                    subtitle: Text(game.soundEffectsEnabled
+                        ? strings.tr('on')
+                        : strings.tr('off')),
+                    value: game.soundEffectsEnabled,
+                    onChanged: game.setSoundEffectsEnabled,
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 10),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
+import '../widgets/game_icon_sprite.dart';
 
 class FriendsScreen extends StatelessWidget {
   const FriendsScreen({super.key});
@@ -13,15 +14,33 @@ class FriendsScreen extends StatelessWidget {
       key: const PageStorageKey('friends-scroll'),
       padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
       children: [
-        Text(strings.tr('friends'),
-            style: Theme.of(context).textTheme.displaySmall),
-        const SizedBox(height: 7),
-        Text(
-          strings.pick(
-            'Visit towers, lend a friendly dragon and trade eggs, chests or furniture.',
-            'Bezoek torens, leen een bevriende draak en ruil eieren, kisten of meubels.',
-          ),
-          style: const TextStyle(color: AppColors.muted, fontSize: 15),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const GameIconSprite(GameIconKind.navFriends, size: 94),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(strings.tr('friends'),
+                      style: Theme.of(context).textTheme.displaySmall),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.pick(
+                      'Visit towers, lend a friendly dragon and trade eggs, chests or furniture.',
+                      'Bezoek torens, leen een bevriende draak en ruil eieren, kisten of meubels.',
+                    ),
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 14,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 18),
         Card(
@@ -29,9 +48,8 @@ class FriendsScreen extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(18),
             child: Column(children: [
-              const Icon(Icons.public_off_rounded,
-                  color: AppColors.twilight, size: 44),
-              const SizedBox(height: 10),
+              const GameIconSprite(GameIconKind.navFriends, size: 94),
+              const SizedBox(height: 5),
               Text(strings.tr('coming_online'),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
@@ -50,21 +68,21 @@ class FriendsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         _PlannedFeature(
-          icon: Icons.person_add_alt_1_rounded,
+          kind: GameIconKind.friendsAdd,
           title: strings.pick('Add a keeper', 'Hoeder toevoegen'),
           description: strings.pick(
               'Search by a stable player code; names are never treated as unique IDs.',
               'Zoek met een vaste spelerscode; namen worden nooit als unieke ID gebruikt.'),
         ),
         _PlannedFeature(
-          icon: Icons.swap_horiz_rounded,
+          kind: GameIconKind.friendsTrade,
           title: strings.pick('Two-sided trade', 'Tweezijdige ruil'),
           description: strings.pick(
               'Both keepers must offer at least one egg, chest or item and confirm the final trade.',
               'Beide hoeders bieden minimaal één ei, kist of item aan en bevestigen de definitieve ruil.'),
         ),
         _PlannedFeature(
-          icon: Icons.cottage_rounded,
+          kind: GameIconKind.friendsVisit,
           title: strings.pick('Tower visits', 'Torenbezoeken'),
           description: strings.pick(
               'Read-only visits can show the favorite dragon, rooms and achievements—including locked ??? secrets.',
@@ -77,15 +95,20 @@ class FriendsScreen extends StatelessWidget {
 
 class _PlannedFeature extends StatelessWidget {
   const _PlannedFeature(
-      {required this.icon, required this.title, required this.description});
-  final IconData icon;
+      {required this.kind, required this.title, required this.description});
+  final GameIconKind kind;
   final String title;
   final String description;
   @override
   Widget build(BuildContext context) => Card(
         margin: const EdgeInsets.only(bottom: 9),
         child: ListTile(
-          leading: Icon(icon, color: AppColors.twilight),
+          minVerticalPadding: 12,
+          contentPadding: const EdgeInsets.fromLTRB(12, 8, 14, 8),
+          leading: SizedBox.square(
+            dimension: 64,
+            child: GameIconSprite(kind, size: 64),
+          ),
           title:
               Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
           subtitle: Text(description),

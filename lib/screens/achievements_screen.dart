@@ -6,6 +6,7 @@ import '../models/achievement.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/achievement_badge_sprite.dart';
+import '../widgets/game_icon_sprite.dart';
 
 class AchievementsScreen extends StatelessWidget {
   const AchievementsScreen({super.key, this.readOnly = false});
@@ -44,9 +45,11 @@ class AchievementsScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(18),
               child: Row(children: [
-                const Icon(Icons.emoji_events_rounded,
-                    color: Color(0xFFFFD568), size: 36),
-                const SizedBox(width: 14),
+                const GameIconSprite(
+                  GameIconKind.screenAchievements,
+                  size: 68,
+                ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     strings.pick(

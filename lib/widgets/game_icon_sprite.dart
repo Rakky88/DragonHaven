@@ -24,6 +24,21 @@ enum GameIconKind {
   roomClear,
   towerBuild,
   roomZoomOut,
+  navAdventure,
+  navStash,
+  navTower,
+  navFriends,
+  navShop,
+  stashEggs,
+  stashChests,
+  stashFurniture,
+  screenAchievements,
+  screenAccount,
+  audioMusic,
+  audioSfx,
+  friendsAdd,
+  friendsTrade,
+  friendsVisit,
 }
 
 extension GameIconKindAsset on GameIconKind {
@@ -40,11 +55,31 @@ extension GameIconKindAsset on GameIconKind {
         GameIconKind.roomClear => 'room_clear',
         GameIconKind.towerBuild => 'tower_build',
         GameIconKind.roomZoomOut => 'room_zoom_out',
+        GameIconKind.navAdventure => 'nav_adventure',
+        GameIconKind.navStash => 'nav_stash',
+        GameIconKind.navTower => 'nav_tower',
+        GameIconKind.navFriends => 'nav_friends',
+        GameIconKind.navShop => 'nav_shop',
+        GameIconKind.stashEggs => 'stash_eggs',
+        GameIconKind.stashChests => 'stash_chests',
+        GameIconKind.stashFurniture => 'stash_furniture',
+        GameIconKind.screenAchievements => 'screen_achievements',
+        GameIconKind.screenAccount => 'screen_account',
+        GameIconKind.audioMusic => 'audio_music',
+        GameIconKind.audioSfx => 'audio_sfx',
+        GameIconKind.friendsAdd => 'friends_add',
+        GameIconKind.friendsTrade => 'friends_trade',
+        GameIconKind.friendsVisit => 'friends_visit',
         _ => name,
       }}.webp'
           .replaceFirst('ui_adventure_', 'adventure_')
           .replaceFirst('ui_room_', 'room_')
-          .replaceFirst('ui_tower_', 'tower_');
+          .replaceFirst('ui_tower_', 'tower_')
+          .replaceFirst('ui_nav_', 'nav_')
+          .replaceFirst('ui_stash_', 'stash_')
+          .replaceFirst('ui_screen_', 'screen_')
+          .replaceFirst('ui_audio_', 'audio_')
+          .replaceFirst('ui_friends_', 'friends_');
 }
 
 class GameIconSprite extends StatelessWidget {

@@ -159,7 +159,7 @@ class _RailEdgeIndicator extends StatelessWidget {
           duration: const Duration(milliseconds: 160),
           child: ExcludeSemantics(
             child: Container(
-              width: 38,
+              width: 72,
               alignment: alignment,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -168,11 +168,32 @@ class _RailEdgeIndicator extends StatelessWidget {
                   end: fromLeft ? Alignment.centerRight : Alignment.centerLeft,
                   colors: [
                     AppColors.cream,
-                    AppColors.cream.withValues(alpha: 0)
+                    AppColors.cream.withValues(alpha: .92),
+                    AppColors.cream.withValues(alpha: 0),
                   ],
                 ),
               ),
-              child: Icon(icon, size: 20, color: AppColors.twilight),
+              child: Container(
+                width: 30,
+                height: 30,
+                margin: EdgeInsets.only(
+                  left: fromLeft ? 3 : 0,
+                  right: fromLeft ? 0 : 3,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.mist),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x165B4B8A),
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Icon(icon, size: 20, color: AppColors.twilight),
+              ),
             ),
           ),
         ),

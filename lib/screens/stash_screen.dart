@@ -24,9 +24,24 @@ class StashScreen extends StatelessWidget {
       length: 3,
       child: Column(children: [
         TabBar(tabs: [
-          Tab(text: strings.pick('Eggs', 'Eieren')),
-          Tab(text: strings.pick('Chests', 'Kisten')),
-          Tab(text: strings.pick('Furniture', 'Meubels')),
+          Tab(
+            height: 70,
+            icon: const GameIconSprite(GameIconKind.stashEggs, size: 35),
+            iconMargin: const EdgeInsets.only(bottom: 1),
+            text: strings.pick('Eggs', 'Eieren'),
+          ),
+          Tab(
+            height: 70,
+            icon: const GameIconSprite(GameIconKind.stashChests, size: 35),
+            iconMargin: const EdgeInsets.only(bottom: 1),
+            text: strings.pick('Chests', 'Kisten'),
+          ),
+          Tab(
+            height: 70,
+            icon: const GameIconSprite(GameIconKind.stashFurniture, size: 35),
+            iconMargin: const EdgeInsets.only(bottom: 1),
+            text: strings.pick('Furniture', 'Meubels'),
+          ),
         ]),
         const Expanded(
             child: TabBarView(children: [
@@ -47,7 +62,7 @@ class _EggStashTab extends StatelessWidget {
     final strings = AppStrings.of(context);
     if (game.eggStash.isEmpty) {
       return _EmptyState(
-        kind: GameIconKind.mysteriousEgg,
+        kind: GameIconKind.stashEggs,
         text: strings.pick('No Mysterious Eggs in your stash yet.',
             'Nog geen Mysterious Eggs in je voorraad.'),
       );
@@ -137,7 +152,7 @@ class _ChestStashTab extends StatelessWidget {
         ChestTier.values.where((tier) => game.chestCount(tier) > 0).toList();
     if (tiers.isEmpty) {
       return _EmptyState(
-          kind: GameIconKind.chest,
+          kind: GameIconKind.stashChests,
           text: strings.pick('Adventure rewards are stored here.',
               'Avontuurbeloningen worden hier bewaard.'));
     }
@@ -230,7 +245,7 @@ class _FurnitureStashTab extends StatelessWidget {
       ..sort((a, b) => a.name.compareTo(b.name));
     if (items.isEmpty) {
       return _EmptyState(
-          icon: Icons.chair_outlined,
+          kind: GameIconKind.stashFurniture,
           text: strings.pick('Your purchased furniture is stored here.',
               'Je gekochte meubels worden hier bewaard.'));
     }
@@ -267,25 +282,48 @@ class _FurnitureStashTab extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({this.icon, this.kind, required this.text})
-      : assert(icon != null || kind != null);
-  final IconData? icon;
-  final GameIconKind? kind;
+  const _EmptyState({required this.kind, required this.text});
+  final GameIconKind kind;
   final String text;
   @override
   Widget build(BuildContext context) => Center(
         child: Padding(
-          padding: const EdgeInsets.all(30),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            if (kind case final value?)
-              GameIconSprite(value, size: 68)
-            else
-              Icon(icon, size: 56, color: AppColors.muted),
-            const SizedBox(height: 12),
-            Text(text,
+          padding: const EdgeInsets.all(24),
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 390),
+            padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, Color(0xFFF0EAFF)],
+              ),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: AppColors.mist),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x145B4B8A),
+                  blurRadius: 24,
+                  offset: Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              GameIconSprite(kind, size: 116),
+              const SizedBox(height: 12),
+              Text(
+                text,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.muted)),
-          ]),
+                style: const TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 15,
+                  height: 1.35,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ]),
+          ),
         ),
       );
 }

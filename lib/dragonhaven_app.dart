@@ -306,28 +306,58 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
               }),
               destinations: [
                 NavigationDestination(
-                  icon: const Icon(Icons.explore_outlined),
-                  selectedIcon: const Icon(Icons.explore_rounded),
+                  icon: const GameIconSprite(
+                    GameIconKind.navAdventure,
+                    size: 34,
+                  ),
+                  selectedIcon: const GameIconSprite(
+                    GameIconKind.navAdventure,
+                    size: 42,
+                  ),
                   label: strings.tr('adventure'),
                 ),
                 NavigationDestination(
-                  icon: const Icon(Icons.inventory_2_outlined),
-                  selectedIcon: const Icon(Icons.inventory_2_rounded),
+                  icon: const GameIconSprite(
+                    GameIconKind.navStash,
+                    size: 34,
+                  ),
+                  selectedIcon: const GameIconSprite(
+                    GameIconKind.navStash,
+                    size: 42,
+                  ),
                   label: strings.tr('stash'),
                 ),
                 NavigationDestination(
-                  icon: const Icon(Icons.castle_outlined),
-                  selectedIcon: const Icon(Icons.castle_rounded),
+                  icon: const GameIconSprite(
+                    GameIconKind.navTower,
+                    size: 34,
+                  ),
+                  selectedIcon: const GameIconSprite(
+                    GameIconKind.navTower,
+                    size: 42,
+                  ),
                   label: strings.pick('Tower', 'Toren'),
                 ),
                 NavigationDestination(
-                  icon: const Icon(Icons.people_outline_rounded),
-                  selectedIcon: const Icon(Icons.people_rounded),
+                  icon: const GameIconSprite(
+                    GameIconKind.navFriends,
+                    size: 34,
+                  ),
+                  selectedIcon: const GameIconSprite(
+                    GameIconKind.navFriends,
+                    size: 42,
+                  ),
                   label: strings.tr('friends'),
                 ),
                 NavigationDestination(
-                  icon: const Icon(Icons.storefront_outlined),
-                  selectedIcon: const Icon(Icons.storefront_rounded),
+                  icon: const GameIconSprite(
+                    GameIconKind.navShop,
+                    size: 34,
+                  ),
+                  selectedIcon: const GameIconSprite(
+                    GameIconKind.navShop,
+                    size: 42,
+                  ),
                   label: strings.tr('shop'),
                 ),
               ],

@@ -73,8 +73,13 @@ class _ShopScreenState extends State<ShopScreen> {
                         decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.7),
                             shape: BoxShape.circle),
-                        child: const Icon(Icons.inventory_2_rounded,
-                            color: AppColors.twilightDark)),
+                        child: const Padding(
+                          padding: EdgeInsets.all(3),
+                          child: GameIconSprite(
+                            GameIconKind.stashFurniture,
+                            size: 44,
+                          ),
+                        )),
                     const SizedBox(width: 12),
                     Expanded(
                         child: Column(
