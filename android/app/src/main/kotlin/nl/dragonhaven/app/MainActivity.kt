@@ -29,6 +29,10 @@ class MainActivity : FlutterActivity() {
         .setUsage(AudioAttributes.USAGE_GAME)
         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
         .build()
+    private val effectsAttributes = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_GAME)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .build()
     private val audioFocusListener = AudioManager.OnAudioFocusChangeListener { change ->
         when (change) {
             AudioManager.AUDIOFOCUS_GAIN -> {
@@ -107,7 +111,7 @@ class MainActivity : FlutterActivity() {
                     if (unchanged && musicPlayer != null) {
                         musicPlayer?.let { player ->
                             if (!player.isPlaying) player.start()
-                            fadeMusic(player, MUSIC_VOLUME)
+                            player.setVolume(MUSIC_VOLUME, MUSIC_VOLUME)
                         }
                         result.success(true)
                     } else {
@@ -187,7 +191,7 @@ class MainActivity : FlutterActivity() {
         if (!effectsEnabled) return false
         val resource = rawResourceId(id)
         if (resource == 0) return false
-        val player = MediaPlayer.create(this, resource) ?: return false
+        val player = MediaPlayer.create(this, resource, effectsAttributes, 0) ?: return false
         player.setVolume(EFFECTS_VOLUME, EFFECTS_VOLUME)
         player.setOnCompletionListener { completed -> completed.release() }
         player.setOnErrorListener { failed, _, _ ->
@@ -204,7 +208,7 @@ class MainActivity : FlutterActivity() {
         if (resource == 0) return false
         if (!requestMusicFocus()) return false
         releaseMusicPlayer()
-        musicPlayer = MediaPlayer.create(this, resource)?.apply {
+        musicPlayer = MediaPlayer.create(this, resource, musicAttributes, 0)?.apply {
             // The bundled tracks are authored as calm ambient loops. Android's
             // native looping avoids the audible pause that completion/restart
             // callbacks introduce between tracks.
@@ -278,7 +282,12 @@ class MainActivity : FlutterActivity() {
     override fun onResume() {
         super.onResume()
         activityInForeground = true
-        if (musicEnabled && musicPlayer?.isPlaying == false) musicPlayer?.start()
+        if (musicEnabled) {
+            musicPlayer?.let { player ->
+                if (!player.isPlaying) player.start()
+                player.setVolume(MUSIC_VOLUME, MUSIC_VOLUME)
+            } ?: musicScene?.let(::startMusic)
+        }
     }
 
     override fun onDestroy() {
@@ -290,8 +299,8 @@ class MainActivity : FlutterActivity() {
         private const val CHANNEL = "nl.dragonhaven.app/platform"
         private const val AUDIO_CHANNEL = "nl.dragonhaven.app/audio"
         private const val NOTIFICATION_CHANNEL = "nl.dragonhaven.app/notifications"
-        private const val MUSIC_VOLUME = 0.34f
-        private const val DUCKED_VOLUME = 0.10f
+        private const val MUSIC_VOLUME = 0.68f
+        private const val DUCKED_VOLUME = 0.22f
         private const val EFFECTS_VOLUME = 0.72f
         private const val FADE_STEPS = 10
         private const val FADE_DURATION_MS = 320L

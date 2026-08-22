@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -5,7 +7,9 @@ import '../l10n/app_strings.dart';
 import '../models/chest.dart';
 import '../models/shop_item.dart';
 import '../providers/household_provider.dart';
+import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/chest_reveal.dart';
 import '../widgets/furniture_art.dart';
 import '../widgets/dragon_art.dart';
 
@@ -133,9 +137,8 @@ class _ChestStashTab extends StatelessWidget {
     if (tiers.isEmpty) {
       return _EmptyState(
           icon: Icons.inventory_2_outlined,
-          text: strings.pick(
-              'Adventure rewards will appear here and on Adventure.',
-              'Avontuurbeloningen verschijnen hier en bij Avontuur.'));
+          text: strings.pick('Adventure rewards are stored here.',
+              'Avontuurbeloningen worden hier bewaard.'));
     }
     return ListView(
       key: const PageStorageKey('stash-chests-scroll'),
@@ -143,24 +146,70 @@ class _ChestStashTab extends StatelessWidget {
       children: [
         for (final tier in tiers)
           Card(
-            child: ListTile(
-              leading: CircleAvatar(
-                  backgroundColor:
-                      Color(tier.colorValue).withValues(alpha: .15),
-                  child: Icon(Icons.inventory_2_rounded,
-                      color: Color(tier.colorValue))),
-              title: Text(strings.chestLabel(tier),
-                  style: const TextStyle(fontWeight: FontWeight.w900)),
-              subtitle: Text('×${game.chestCount(tier)}'),
-              trailing: IconButton(
-                tooltip: strings.pick('Discard one chest', 'Eén kist wegdoen'),
-                onPressed: () => _discardChest(context, tier),
-                icon: const Icon(Icons.delete_outline_rounded),
-              ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 9, 8),
+              child: Row(children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Color(tier.colorValue).withValues(alpha: .10),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Image.asset(tier.assetPath, fit: BoxFit.contain),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        strings.chestLabel(tier),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      Text(
+                        '×${game.chestCount(tier)}',
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip:
+                      strings.pick('Discard one chest', 'Eén kist wegdoen'),
+                  onPressed: () => _discardChest(context, tier),
+                  icon: const Icon(Icons.delete_outline_rounded),
+                ),
+                FilledButton(
+                  key: Key('stash-open-chest-${tier.name}'),
+                  onPressed: () => _openChest(context, tier),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 13,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: Text(strings.pick('Open', 'Openen')),
+                ),
+              ]),
             ),
           ),
       ],
     );
+  }
+
+  Future<void> _openChest(BuildContext context, ChestTier tier) async {
+    final navigator = Navigator.of(context);
+    final reward = await context.read<HouseholdProvider>().openChest(tier);
+    if (reward == null || !navigator.mounted) return;
+    unawaited(HavenAudio.play(_soundForChest(tier)));
+    await showChestReveal(navigator.context, reward);
   }
 
   Future<void> _discardChest(BuildContext context, ChestTier tier) async {
@@ -191,6 +240,15 @@ class _ChestStashTab extends StatelessWidget {
     }
   }
 }
+
+HavenSound _soundForChest(ChestTier tier) => switch (tier) {
+      ChestTier.wooden => HavenSound.chestWooden,
+      ChestTier.silver => HavenSound.chestSilver,
+      ChestTier.gold => HavenSound.chestGold,
+      ChestTier.dragon => HavenSound.chestDragon,
+      ChestTier.mythical => HavenSound.chestMythical,
+      ChestTier.sinister => HavenSound.chestSinister,
+    };
 
 class _FurnitureStashTab extends StatelessWidget {
   const _FurnitureStashTab();

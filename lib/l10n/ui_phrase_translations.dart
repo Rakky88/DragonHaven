@@ -680,6 +680,15 @@ const uiPhraseTranslations = <String, List<String>>{
     '冒险奖励会显示在这里和“冒险”页面中。',
     '冒険の報酬は、ここ及び「冒険」に表示されます。'
   ],
+  'Adventure rewards are stored here.': [
+    'Abenteuerbelohnungen werden hier aufbewahrt.',
+    'Las recompensas de aventura se guardan aquí.',
+    'Les récompenses d’aventure sont conservées ici.',
+    'Le ricompense delle avventure vengono conservate qui.',
+    'As recompensas de aventura ficam guardadas aqui.',
+    '冒险奖励会存放在这里。',
+    '冒険の報酬はここに保管されます。'
+  ],
   'Adventure started.': [
     'Abenteuer gestartet.',
     'Aventura iniciada.',
@@ -1625,6 +1634,7 @@ const uiPhraseTranslations = <String, List<String>>{
     '正在打开最新的 DragonHaven 下载……',
     '最新のDragonHavenダウンロードを開いています…'
   ],
+  'Open': ['Öffnen', 'Abrir', 'Ouvrir', 'Apri', 'Abrir', '打开', '開く'],
   'Payment via PayPal': [
     'Zahlung über PayPal',
     'Pago mediante PayPal',
@@ -1975,6 +1985,24 @@ const uiPhraseTranslations = <String, List<String>>{
     'Toque no baú',
     '点击宝箱',
     '宝箱をタップ'
+  ],
+  'A tower treasure awaits': [
+    'Ein Turmschatz wartet',
+    'Te espera un tesoro de la torre',
+    'Un trésor de la tour vous attend',
+    'Ti aspetta un tesoro della torre',
+    'Um tesouro da torre espera por você',
+    '一份高塔宝藏正等着你',
+    '塔の宝物が待っています'
+  ],
+  'Treasure claimed': [
+    'Schatz geborgen',
+    'Tesoro conseguido',
+    'Trésor récupéré',
+    'Tesoro ottenuto',
+    'Tesouro resgatado',
+    '宝藏已领取',
+    '宝物を受け取りました'
   ],
   'TAP TO CALL YOUR DRAGON': [
     'TIPPEN, UM DEINEN DRACHEN ZU RUFEN',

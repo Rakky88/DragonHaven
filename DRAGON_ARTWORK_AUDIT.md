@@ -1,7 +1,7 @@
 # DragonHaven — artwork audit
 
 Date: 21 August 2026
-App version: v0.00.08
+App version: v0.00.09
 
 ## Dragon assets
 

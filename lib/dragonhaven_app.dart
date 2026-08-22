@@ -66,8 +66,8 @@ class DragonHavenShell extends StatefulWidget {
 }
 
 class _DragonHavenShellState extends State<DragonHavenShell> {
-  int _index = 1;
-  final _visited = <int>{1};
+  int _index = 2;
+  final _visited = <int>{2};
   late final AppLifecycleListener _lifecycle;
   late final HouseholdProvider _game;
   Timer? _presentationRetry;
@@ -182,9 +182,9 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     final eggOnly = game.pet.isEgg;
     final screens = <Widget>[
       const AdventureScreen(),
+      const StashScreen(),
       const DragonTowerScreen(),
       const FriendsScreen(),
-      const StashScreen(),
       const HavenShopScreen(),
     ];
     return Scaffold(
@@ -311,6 +311,11 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                   label: strings.tr('adventure'),
                 ),
                 NavigationDestination(
+                  icon: const Icon(Icons.inventory_2_outlined),
+                  selectedIcon: const Icon(Icons.inventory_2_rounded),
+                  label: strings.tr('stash'),
+                ),
+                NavigationDestination(
                   icon: const Icon(Icons.castle_outlined),
                   selectedIcon: const Icon(Icons.castle_rounded),
                   label: strings.pick('Tower', 'Toren'),
@@ -319,11 +324,6 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                   icon: const Icon(Icons.people_outline_rounded),
                   selectedIcon: const Icon(Icons.people_rounded),
                   label: strings.tr('friends'),
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.inventory_2_outlined),
-                  selectedIcon: const Icon(Icons.inventory_2_rounded),
-                  label: strings.tr('stash'),
                 ),
                 NavigationDestination(
                   icon: const Icon(Icons.storefront_outlined),
@@ -514,9 +514,9 @@ class _TopCurrency extends StatelessWidget {
 
 String _screenTitle(int index, AppStrings strings) => switch (index) {
       0 => strings.tr('adventure'),
-      1 => strings.tr('tower'),
-      2 => strings.tr('friends'),
-      3 => strings.tr('stash'),
+      1 => strings.tr('stash'),
+      2 => strings.tr('tower'),
+      3 => strings.tr('friends'),
       4 => strings.tr('shop'),
       _ => 'DragonHaven',
     };

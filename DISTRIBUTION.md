@@ -33,6 +33,6 @@ Permanente directe Android-download:
 https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk
 ```
 
-Een release-tag gebruikt dezelfde weergaveversie als About, bijvoorbeeld `v0.00.08`, en bevat een asset met exact de naam `DragonHaven.apk`.
+Een release-tag gebruikt dezelfde weergaveversie als About, bijvoorbeeld `v0.00.09`, en bevat een asset met exact de naam `DragonHaven.apk`.
 
 Lokale forks kunnen `DRAGONHAVEN_GITHUB_OWNER`, `DRAGONHAVEN_GITHUB_REPO` en `DRAGONHAVEN_APP_VERSION` via `--dart-define` overschrijven.

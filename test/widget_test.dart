@@ -3,11 +3,14 @@ import 'dart:math';
 import 'package:dragon_haven/dragonhaven_app.dart';
 import 'package:dragon_haven/l10n/app_strings.dart';
 import 'package:dragon_haven/models/achievement.dart';
+import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/screens/achievements_screen.dart';
+import 'package:dragon_haven/screens/draconomicon_screen.dart';
 import 'package:dragon_haven/widgets/achievement_badge_sprite.dart';
+import 'package:dragon_haven/widgets/dragon_art.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -240,6 +243,20 @@ void main() {
 
     expect(find.byKey(const PageStorageKey('dragon-tower-scroll')),
         findsOneWidget);
+    final navigation = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(
+      navigation.destinations
+          .map((destination) => (destination as NavigationDestination).label),
+      ['Adventure', 'Stash', 'Tower', 'Friends', 'Shop'],
+    );
+    final towerRoof = find.byKey(const Key('tower-roof'));
+    final openCodex = find.byKey(const Key('open-draconomicon'));
+    expect(tester.getTopLeft(openCodex).dy,
+        lessThan(tester.getTopLeft(towerRoof).dy));
+    expect(
+      find.descendant(of: towerRoof, matching: find.byType(DragonArt)),
+      findsNothing,
+    );
 
     await tester.tap(find.text('Adventure').last);
     await tester.pump(const Duration(milliseconds: 350));
@@ -266,6 +283,38 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('earned chests appear and open only from Stash', (tester) async {
+    final game = await pumpGame(tester, onboarded: true, hatched: true);
+    game.chestInventory[ChestTier.wooden] = 1;
+    game.notifyListeners();
+    await tester.pump();
+
+    await tester.tap(find.text('Adventure').last);
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.byKey(const PageStorageKey('unopened-chests-scroll')),
+        findsNothing);
+
+    await tester.tap(find.text('Stash').last);
+    await tester.pumpAndSettle();
+    expect(game.chestCount(ChestTier.wooden), 1);
+    await tester.tap(find.text('Chests'));
+    await tester.pumpAndSettle();
+
+    final openChest = find.byKey(const Key('stash-open-chest-wooden'));
+    expect(openChest, findsOneWidget);
+    await tester.tap(openChest);
+    for (var frame = 0; frame < 12; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(game.chestCount(ChestTier.wooden), 0);
+    expect(find.byKey(const Key('chest-reveal-tap')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('chest-reveal-tap')));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byKey(const Key('chest-rewards')), findsOneWidget);
+    expect(game.chestCount(ChestTier.wooden), 0);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('the complete Draconomicon scrolls without state collisions',
       (tester) async {
     await pumpGame(tester, onboarded: true, hatched: true);
@@ -278,8 +327,9 @@ void main() {
     await tester.pump();
 
     expect(find.text('The Draconomicon'), findsWidgets);
-    final finalLineage = find.byKey(
-        PageStorageKey('draconomicon-lineage-${dragonLineages.last.id}'));
+    final finalLineage = find.byKey(PageStorageKey(
+      'draconomicon-lineage-normal-${dragonLineages.last.id}',
+    ));
     await tester.scrollUntilVisible(
       finalLineage,
       400,
@@ -290,6 +340,55 @@ void main() {
     final error = tester.takeException();
     expect(error, isNull,
         reason: error is FlutterError ? error.toStringDeep() : '$error');
+  });
+
+  testWidgets('a discovered Draconomicon family expands all five forms',
+      (tester) async {
+    final game = HouseholdProvider.createShowcase();
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: const MaterialApp(
+        home: Scaffold(body: DraconomiconScreen()),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final firstLineage = find.byKey(
+      PageStorageKey(
+        'draconomicon-lineage-normal-${dragonLineages.first.id}',
+      ),
+    );
+    await tester.tap(firstLineage);
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final error = tester.takeException();
+    expect(error, isNull,
+        reason: error is FlutterError ? error.toStringDeep() : '$error');
+    expect(
+      find.descendant(of: firstLineage, matching: find.byType(DragonArt)),
+      findsNWidgets(6),
+    );
+  });
+
+  testWidgets('every dragon artwork stage renders as a widget', (tester) async {
+    final game = HouseholdProvider.createShowcase();
+    for (final stage in const ['spark', 'nestDragon', 'homeGuardian']) {
+      await tester.pumpWidget(ChangeNotifierProvider.value(
+        value: game,
+        child: MaterialApp(
+          home: Scaffold(
+            body: DragonArt(
+              animate: false,
+              stageKey: stage,
+              lineageId: dragonLineages.first.id,
+            ),
+          ),
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 300));
+      final error = tester.takeException();
+      expect(error, isNull, reason: '$stage: $error');
+    }
   });
 
   testWidgets('the overflow menu changes the complete app to Dutch',
@@ -388,7 +487,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.00.08'), findsOneWidget);
+    expect(find.text('v0.00.09'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

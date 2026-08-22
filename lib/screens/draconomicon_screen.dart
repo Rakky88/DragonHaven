@@ -109,7 +109,9 @@ class _LineageEntry extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
-        key: PageStorageKey('draconomicon-lineage-${lineage.id}'),
+        key: PageStorageKey(
+          'draconomicon-lineage-${spectral ? 'spectral' : 'normal'}-${lineage.id}',
+        ),
         tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
         childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
         leading: SizedBox.square(
@@ -135,6 +137,9 @@ class _LineageEntry extends StatelessWidget {
         ]),
         children: [
           GridView.count(
+            key: PageStorageKey(
+              'draconomicon-forms-${spectral ? 'spectral' : 'normal'}-${lineage.id}',
+            ),
             crossAxisCount: MediaQuery.sizeOf(context).width > 520 ? 3 : 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),

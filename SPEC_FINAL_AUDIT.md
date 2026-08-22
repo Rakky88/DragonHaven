@@ -1,4 +1,4 @@
-# DragonHaven v0.00.08 — final specification audit
+# DragonHaven v0.00.09 — final specification audit
 
 Audited against
 `DragonHaven_Codex_Spec_With_Achievements_Rooms_Personalities_DayNight_Audio_Two_Sliders.md`

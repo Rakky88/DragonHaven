@@ -43,5 +43,5 @@ extension ChestTierPresentation on ChestTier {
         ChestTier.sinister => 0xFF6D204E,
       };
 
-  String get assetPath => 'assets/images/chests/chest_$name.webp';
+  String get assetPath => 'assets/images/chests/chest_$name.png';
 }

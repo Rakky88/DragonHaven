@@ -65,6 +65,32 @@ class DragonTowerScreen extends StatelessWidget {
               style: const TextStyle(
                   color: AppColors.muted, fontWeight: FontWeight.w700)),
         ]),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(
+            child: FilledButton.tonalIcon(
+              onPressed: () => _showOwnedDragons(context),
+              icon: const Icon(Icons.pets_rounded),
+              label: Text(strings.pick('My dragons', 'Mijn draken')),
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: FilledButton.tonalIcon(
+              key: const Key('open-draconomicon'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const Scaffold(
+                    appBar: _CodexBar(),
+                    body: DraconomiconScreen(),
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.menu_book_rounded),
+              label: const Text('Draconomicon'),
+            ),
+          ),
+        ]),
         const SizedBox(height: 14),
         const _TowerRoof(),
         const SizedBox(height: 9),
@@ -95,28 +121,6 @@ class DragonTowerScreen extends StatelessWidget {
             ),
           ),
         ],
-        const SizedBox(height: 18),
-        Row(children: [
-          Expanded(
-            child: FilledButton.tonalIcon(
-              onPressed: () => _showOwnedDragons(context),
-              icon: const Icon(Icons.pets_rounded),
-              label: Text(strings.pick('My dragons', 'Mijn draken')),
-            ),
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: FilledButton.tonalIcon(
-              key: const Key('open-draconomicon'),
-              onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                      builder: (_) => const Scaffold(
-                          appBar: _CodexBar(), body: DraconomiconScreen()))),
-              icon: const Icon(Icons.menu_book_rounded),
-              label: const Text('Draconomicon'),
-            ),
-          ),
-        ]),
       ],
     );
   }
@@ -190,7 +194,6 @@ class _TowerRoof extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final game = context.watch<HouseholdProvider>();
     final strings = AppStrings.of(context);
     return InkWell(
       key: const Key('tower-roof'),
@@ -214,20 +217,6 @@ class _TowerRoof extends StatelessWidget {
                     'assets/images/tower_nest_${value.assetKey}.webp',
               ),
             ),
-            Align(
-              alignment: const Alignment(.1, .58),
-              child: Transform.scale(
-                scale: game.pet.sizeFactor,
-                child: DragonArt(
-                  height: 135,
-                  stageKey: game.pet.stageKey,
-                  lineageId: game.pet.lineageId,
-                  evolutionPath: game.pet.activeEvolutionPath,
-                  prismatic: game.pet.spectral,
-                  sinister: game.pet.sinister,
-                ),
-              ),
-            ),
             Positioned(
               left: 14,
               right: 14,
@@ -242,10 +231,6 @@ class _TowerRoof extends StatelessWidget {
                               color: Colors.white,
                               fontWeight: FontWeight.w900,
                               fontSize: 18)),
-                      Text(game.pet.displayName,
-                          style: const TextStyle(
-                              color: Color(0xFFF1EDFF),
-                              fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ),

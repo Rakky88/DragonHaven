@@ -3,11 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/adventure.dart';
-import '../models/chest.dart';
 import '../models/pet.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
-import '../widgets/chest_reveal.dart';
 import '../theme/app_theme.dart';
 
 class AdventureScreen extends StatefulWidget {
@@ -41,7 +39,6 @@ class _AdventureScreenState extends State<AdventureScreen>
     return Column(
       children: [
         if (runs.isNotEmpty) _RunningAdventures(runs: runs),
-        if (game.totalChestCount > 0) _UnopenedChests(game: game),
         Material(
           color: Theme.of(context).scaffoldBackgroundColor,
           child: TabBar(
@@ -129,47 +126,6 @@ class _RunningAdventures extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class _UnopenedChests extends StatelessWidget {
-  const _UnopenedChests({required this.game});
-
-  final HouseholdProvider game;
-
-  @override
-  Widget build(BuildContext context) {
-    final strings = AppStrings.of(context);
-    final tiers = ChestTier.values.where((tier) => game.chestCount(tier) > 0);
-    return SizedBox(
-      height: 66,
-      child: ListView(
-        key: const PageStorageKey('unopened-chests-scroll'),
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
-        children: [
-          for (final tier in tiers)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ActionChip(
-                avatar: Icon(Icons.inventory_2_rounded,
-                    color: Color(tier.colorValue), size: 18),
-                label: Text(
-                    '${strings.chestLabel(tier)} ×${game.chestCount(tier)}'),
-                onPressed: () => _openChest(context, tier),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _openChest(BuildContext context, ChestTier tier) async {
-    final reward = await game.openChest(tier);
-    if (reward == null || !context.mounted) return;
-    await HavenAudio.play(_soundForChest(tier));
-    if (!context.mounted) return;
-    await showChestReveal(context, reward);
   }
 }
 
@@ -419,12 +375,3 @@ String _remaining(DateTime end, AppStrings strings) {
   if (remaining.isNegative) return strings.pick('Ready', 'Klaar');
   return strings.remainingDuration(remaining);
 }
-
-HavenSound _soundForChest(ChestTier tier) => switch (tier) {
-      ChestTier.wooden => HavenSound.chestWooden,
-      ChestTier.silver => HavenSound.chestSilver,
-      ChestTier.gold => HavenSound.chestGold,
-      ChestTier.dragon => HavenSound.chestDragon,
-      ChestTier.mythical => HavenSound.chestMythical,
-      ChestTier.sinister => HavenSound.chestSinister,
-    };
