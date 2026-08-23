@@ -103,4 +103,87 @@ void main() {
       }
     }
   }, timeout: const Timeout(Duration(minutes: 12)));
+
+  testWidgets('discovered forms open a contained artwork modal',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final game = HouseholdProvider.createShowcase();
+    final lineage = dragonLineages.first;
+
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: DragonLineageEntry(
+              lineage: lineage,
+              number: 1,
+              game: game,
+              spectral: false,
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester
+        .tap(find.byKey(Key('draconomicon-preview-normal-${lineage.id}')));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    final zoom = find
+        .byKey(Key('draconomicon-zoom-normal-${lineage.id}-ascended:arcana'));
+    expect(zoom, findsOneWidget);
+    await tester.ensureVisible(zoom);
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(zoom);
+    await tester.pump(const Duration(milliseconds: 350));
+
+    final modal = find
+        .byKey(Key('draconomicon-modal-normal-${lineage.id}-ascended:arcana'));
+    final modalArt = find.byKey(
+        Key('draconomicon-modal-art-normal-${lineage.id}-ascended:arcana'));
+    expect(modal, findsOneWidget);
+    expect(modalArt, findsOneWidget);
+    expect(tester.widget<DragonArt>(modalArt).fit, BoxFit.contain);
+    final modalRect = tester.getRect(modal);
+    final artRect = tester.getRect(modalArt);
+    expect(modalRect.contains(artRect.topLeft), isTrue);
+    expect(modalRect.contains(artRect.bottomRight), isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('undiscovered silhouettes cannot open the artwork modal',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final game = HouseholdProvider(initialize: true)
+      ..discoveredForms.clear()
+      ..prismaticForms.clear();
+    final lineage = dragonLineages.first;
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: DragonLineageEntry(
+              lineage: lineage,
+              number: 1,
+              game: game,
+              spectral: false,
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester
+        .tap(find.byKey(Key('draconomicon-preview-normal-${lineage.id}')));
+    await tester.pump(const Duration(milliseconds: 350));
+    final zoom =
+        find.byKey(Key('draconomicon-zoom-normal-${lineage.id}-hatchling'));
+    await tester.ensureVisible(zoom);
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(zoom);
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.byType(Dialog), findsNothing);
+  });
 }

@@ -290,18 +290,8 @@ extension DragonHavenSystems on HouseholdProvider {
     if (normalized.isEmpty || normalized.length > 24) return;
     accountName = normalized;
     onboardingComplete = true;
-    final strings = AppStrings(languageCode);
-    await HavenNotifications.schedule(
-      id: 'egg-${pet.id}',
-      at: pet.stageStartedAt.add(Duration(hours: pet.incubationHours)),
-      title: strings.pick(
-          'Your Mysterious Egg is ready', 'Je Mysterieus Ei is klaar'),
-      body: strings.pick(
-        'Something inside wants to hatch in the Rooftop Nest.',
-        'Iets binnenin wil uitkomen in het Daknest.',
-      ),
-    );
     await _notifyAndSave();
+    await _scheduleEggReadyNotification(pet);
   }
 
   Future<void> updateAccountName(String value) async {
@@ -352,20 +342,41 @@ extension DragonHavenSystems on HouseholdProvider {
       return [AdventureCatalog.group[(slot * 17).abs() % 200]];
     }
 
-    final source = kind == AdventureKind.short
-        ? AdventureCatalog.short
-        : AdventureCatalog.long;
+    final source = switch (kind) {
+      AdventureKind.mini => AdventureCatalog.mini,
+      AdventureKind.short => AdventureCatalog.short,
+      AdventureKind.long => AdventureCatalog.long,
+      AdventureKind.group ||
+      AdventureKind.special =>
+        const <AdventureDefinition>[],
+    };
     final ids = adventureOptionIds.putIfAbsent(kind, () => <String>[]);
     ids.removeWhere((id) =>
         AdventureCatalog.byId[id]?.kind != kind ||
         adventureRuns.any((run) => run.adventureId == id));
 
     final seed = now.millisecondsSinceEpoch ~/
-        (kind == AdventureKind.short
-            ? Duration.millisecondsPerHour
-            : Duration.millisecondsPerDay);
+        switch (kind) {
+          AdventureKind.mini => const Duration(minutes: 5).inMilliseconds,
+          AdventureKind.short => Duration.millisecondsPerHour,
+          _ => Duration.millisecondsPerDay,
+        };
     int refillCount;
-    if (kind == AdventureKind.short) {
+    if (kind == AdventureKind.mini) {
+      final previous = miniAdventureRefilledAt;
+      if (previous == null) {
+        refillCount = 3;
+        miniAdventureRefilledAt = now;
+      } else {
+        final elapsedSlots =
+            (now.difference(previous).inMinutes ~/ 5).clamp(0, 3);
+        refillCount = elapsedSlots;
+        if (elapsedSlots > 0) {
+          miniAdventureRefilledAt =
+              previous.add(Duration(minutes: elapsedSlots * 5));
+        }
+      }
+    } else if (kind == AdventureKind.short) {
       final previous = shortAdventureRefilledAt;
       if (previous == null) {
         refillCount = 3;
@@ -468,7 +479,9 @@ extension DragonHavenSystems on HouseholdProvider {
       ),
     );
     adventureOptionIds[adventure.kind]?.remove(adventure.id);
-    if (adventure.kind == AdventureKind.short) {
+    if (adventure.kind == AdventureKind.mini) {
+      miniAdventureRefilledAt = now;
+    } else if (adventure.kind == AdventureKind.short) {
       shortAdventureRefilledAt = now;
     }
     await _notifyAndSave();
@@ -548,6 +561,7 @@ extension DragonHavenSystems on HouseholdProvider {
   ChestTier _rollAdventureChest(AdventureKind kind) {
     final roll = _random.nextDouble();
     return switch (kind) {
+      AdventureKind.mini => ChestTier.wooden,
       AdventureKind.short => roll < .50
           ? ChestTier.wooden
           : roll < .80

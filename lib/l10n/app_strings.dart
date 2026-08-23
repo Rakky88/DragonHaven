@@ -140,7 +140,9 @@ class AppStrings {
 
   String adventureDuration(Duration duration) => duration.inDays >= 1
       ? _durationPart(duration.inDays, 'day')
-      : _durationPart(duration.inHours, 'hour');
+      : duration.inHours >= 1
+          ? _durationPart(duration.inHours, 'hour')
+          : _durationPart(duration.inMinutes.clamp(1, 59), 'minute');
 
   String remainingDuration(Duration duration) {
     if (duration.inDays > 0) {

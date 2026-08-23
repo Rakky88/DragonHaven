@@ -299,16 +299,57 @@ class _FormTile extends StatelessWidget {
           child: Center(
             child: AspectRatio(
               aspectRatio: 1,
-              child: DragonArt(
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(13),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
                   key: Key(
-                      'draconomicon-art-${spectral ? 'spectral' : 'normal'}-${lineage.id}-$formKey'),
-                  height: 112,
-                  animate: false,
-                  stageKey: stageKey,
-                  lineageId: lineage.id,
-                  evolutionPath: path,
-                  silhouette: !known,
-                  prismatic: spectral),
+                      'draconomicon-zoom-${spectral ? 'spectral' : 'normal'}-${lineage.id}-$formKey'),
+                  onTap: known
+                      ? () => _showDragonPreview(
+                            context,
+                            lineage: lineage,
+                            title: title,
+                            stageKey: stageKey,
+                            path: path,
+                            formKey: formKey,
+                            spectral: spectral,
+                          )
+                      : null,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      DragonArt(
+                          key: Key(
+                              'draconomicon-art-${spectral ? 'spectral' : 'normal'}-${lineage.id}-$formKey'),
+                          height: 112,
+                          animate: false,
+                          stageKey: stageKey,
+                          lineageId: lineage.id,
+                          evolutionPath: path,
+                          silhouette: !known,
+                          prismatic: spectral),
+                      if (known)
+                        const Positioned(
+                          right: 2,
+                          bottom: 2,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Color(0xD9FFFFFF),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(Icons.zoom_in_rounded,
+                                  size: 16, color: AppColors.twilight),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -329,4 +370,74 @@ class _FormTile extends StatelessWidget {
       ]),
     );
   }
+}
+
+Future<void> _showDragonPreview(
+  BuildContext context, {
+  required DragonLineage lineage,
+  required String title,
+  required String stageKey,
+  required String path,
+  required String formKey,
+  required bool spectral,
+}) {
+  final strings = AppStrings.of(context);
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) => Dialog(
+      key: Key(
+          'draconomicon-modal-${spectral ? 'spectral' : 'normal'}-${lineage.id}-$formKey'),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 34),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 430),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(18, 10, 18, 22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  tooltip: MaterialLocalizations.of(dialogContext)
+                      .closeButtonTooltip,
+                  onPressed: () => Navigator.pop(dialogContext),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ),
+              AspectRatio(
+                aspectRatio: 1,
+                child: DragonArt(
+                  key: Key(
+                      'draconomicon-modal-art-${spectral ? 'spectral' : 'normal'}-${lineage.id}-$formKey'),
+                  height: 360,
+                  animate: true,
+                  stageKey: stageKey,
+                  lineageId: lineage.id,
+                  evolutionPath: path,
+                  prismatic: spectral,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: Theme.of(dialogContext).textTheme.headlineSmall,
+              ),
+              if (spectral) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '✦ ${strings.pick('Spectral', 'Spectral')}',
+                  style: const TextStyle(
+                    color: AppColors.twilight,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }

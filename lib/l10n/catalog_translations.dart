@@ -444,6 +444,10 @@ String? translatedAdventureTitle(
   if (index == null || index < 1) return null;
   final zeroBased = index - 1;
   switch (adventure.kind) {
+    case AdventureKind.mini:
+      final mission = _adventureMissions[languageCode]![zeroBased % 15];
+      final place = _adventurePlaces[languageCode]![(zeroBased * 11) % 20];
+      return '$mission: $place';
     case AdventureKind.short:
       final mission = _adventureMissions[languageCode]![zeroBased % 15];
       final place = _adventurePlaces[languageCode]![zeroBased % 20];
@@ -468,6 +472,15 @@ String? translatedAdventureDescription(
 ) {
   if (!catalogLanguageIndex.containsKey(languageCode)) return null;
   return switch (adventure.kind) {
+    AdventureKind.mini => _localizedAdventure(languageCode, const [
+        'Ein winziger Turmausflug mit einer bescheidenen Holzbelohnung.',
+        'Una breve salida desde la torre con una modesta recompensa de madera.',
+        'Une toute petite sortie depuis la tour avec une modeste récompense en bois.',
+        'Una piccola uscita dalla torre con una modesta ricompensa di legno.',
+        'Um pequeno passeio pela torre com uma modesta recompensa de madeira.',
+        '一次短暂的高塔外出，奖励是一只朴素的木箱。',
+        '塔からの小さなお出かけ。ささやかな木の報酬が待っています。'
+      ]),
     AdventureKind.short => _localizedAdventure(languageCode, [
         'Eine gezielte Expedition mit einem neugierigen Umweg.',
         'Una expedición centrada con un curioso desvío.',

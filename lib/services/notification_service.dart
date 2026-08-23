@@ -8,6 +8,7 @@ abstract final class HavenNotifications {
     required DateTime at,
     required String title,
     required String body,
+    String kind = 'event',
   }) async {
     if (!at.isAfter(DateTime.now())) return;
     try {
@@ -16,6 +17,40 @@ abstract final class HavenNotifications {
         'at': at.millisecondsSinceEpoch,
         'title': title,
         'body': body,
+        'kind': kind,
+      });
+    } on MissingPluginException {
+      // Tests and unsupported platforms intentionally have no native bridge.
+    } on PlatformException {
+      // Denied permission never changes gameplay state.
+    }
+  }
+
+  static Future<void> eggReady({
+    required String id,
+    required DateTime at,
+    required String title,
+    required String body,
+  }) =>
+      schedule(
+        id: id,
+        at: at,
+        title: title,
+        body: body,
+        kind: 'egg',
+      );
+
+  static Future<void> showEggReadyNow({
+    required String id,
+    required String title,
+    required String body,
+  }) async {
+    try {
+      await _channel.invokeMethod<bool>('showNow', {
+        'id': id,
+        'title': title,
+        'body': body,
+        'kind': 'egg',
       });
     } on MissingPluginException {
       // Tests and unsupported platforms intentionally have no native bridge.

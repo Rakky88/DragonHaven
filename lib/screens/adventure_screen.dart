@@ -23,7 +23,7 @@ class _AdventureScreenState extends State<AdventureScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 4, vsync: this);
+    _tabs = TabController(length: AdventureKind.values.length, vsync: this);
   }
 
   @override
@@ -47,6 +47,7 @@ class _AdventureScreenState extends State<AdventureScreen>
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             tabs: [
+              Tab(text: strings.pick('Mini', 'Mini')),
               Tab(text: strings.pick('Short', 'Kort')),
               Tab(text: strings.pick('Long', 'Lang')),
               Tab(text: strings.pick('Group', 'Groep')),

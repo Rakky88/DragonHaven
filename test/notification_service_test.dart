@@ -55,4 +55,43 @@ void main() {
       'kind': 'evolution',
     });
   });
+
+  test('egg-ready notifications retain their hatch time and event kind',
+      () async {
+    final at = DateTime(2036, 8, 23, 12, 34, 56);
+    await HavenNotifications.eggReady(
+      id: 'egg-fixed-037',
+      at: at,
+      title: 'Your Mysterious Egg is ready',
+      body: 'Something inside wants to hatch in the Rooftop Nest.',
+    );
+
+    expect(calls, hasLength(1));
+    expect(calls.single.method, 'schedule');
+    expect(calls.single.arguments, {
+      'id': 'egg-fixed-037',
+      'at': at.millisecondsSinceEpoch,
+      'title': 'Your Mysterious Egg is ready',
+      'body': 'Something inside wants to hatch in the Rooftop Nest.',
+      'kind': 'egg',
+    });
+  });
+
+  test('an elapsed in-app egg timer shows the same notification immediately',
+      () async {
+    await HavenNotifications.showEggReadyNow(
+      id: 'egg-fixed-037',
+      title: 'Your Mysterious Egg is ready',
+      body: 'Something inside wants to hatch in the Rooftop Nest.',
+    );
+
+    expect(calls, hasLength(1));
+    expect(calls.single.method, 'showNow');
+    expect(calls.single.arguments, {
+      'id': 'egg-fixed-037',
+      'title': 'Your Mysterious Egg is ready',
+      'body': 'Something inside wants to hatch in the Rooftop Nest.',
+      'kind': 'egg',
+    });
+  });
 }

@@ -315,19 +315,28 @@ class _ShopItemCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 3),
-          Text(strings.itemDescription(item),
-              maxLines: largeText ? 2 : 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  color: AppColors.muted, fontSize: 12, height: 1.3)),
+          SizedBox(
+            height: largeText ? 48 : 47,
+            child: Text(strings.itemDescription(item),
+                maxLines: largeText ? 2 : 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    color: AppColors.muted, fontSize: 12, height: 1.3)),
+          ),
           const Spacer(),
-          Wrap(
-            spacing: 5,
-            runSpacing: 5,
-            children: [
-              _Tag(strings.rarityLabel(item.rarity), color),
-              _Tag(strings.slotLabel(item.slot), AppColors.muted),
-            ],
+          SizedBox(
+            height: 39,
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Wrap(
+                spacing: 5,
+                runSpacing: 5,
+                children: [
+                  _Tag(strings.rarityLabel(item.rarity), color),
+                  _Tag(strings.slotLabel(item.slot), AppColors.muted),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 10),
           SizedBox(

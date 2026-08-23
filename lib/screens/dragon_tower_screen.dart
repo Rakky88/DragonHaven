@@ -35,17 +35,10 @@ class DragonTowerScreen extends StatelessWidget {
       key: const PageStorageKey('dragon-tower-scroll'),
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 34),
       children: [
-        Row(children: [
-          Expanded(
-            child: Text(
-              strings.tr('tower'),
-              style: Theme.of(context).textTheme.displaySmall,
-            ),
-          ),
-          _Currency(kind: GameIconKind.coin, value: game.coins),
-          const SizedBox(width: 7),
-          _Currency(kind: GameIconKind.gem, value: game.gems),
-        ]),
+        Text(
+          strings.tr('tower'),
+          style: Theme.of(context).textTheme.displaySmall,
+        ),
         const SizedBox(height: 4),
         Row(children: [
           const GameIconSprite(GameIconKind.clock, size: 21),
@@ -344,23 +337,6 @@ class _TowerFloor extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Currency extends StatelessWidget {
-  const _Currency({required this.kind, required this.value});
-  final GameIconKind kind;
-  final int value;
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-        decoration: BoxDecoration(
-            color: Colors.white, borderRadius: BorderRadius.circular(99)),
-        child: Row(children: [
-          GameIconSprite(kind, size: 22),
-          const SizedBox(width: 4),
-          Text('$value', style: const TextStyle(fontWeight: FontWeight.w900))
-        ]),
-      );
 }
 
 class _BuildFloorButton extends StatelessWidget {

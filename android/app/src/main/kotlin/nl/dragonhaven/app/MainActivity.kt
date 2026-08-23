@@ -18,6 +18,14 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private data class ScheduledNotification(
+        val id: String,
+        val at: Long,
+        val title: String,
+        val body: String,
+        val kind: String,
+    )
+
     private var activityInForeground = false
     private var musicEnabled = true
     private var effectsEnabled = true
@@ -25,6 +33,8 @@ class MainActivity : FlutterActivity() {
     private var musicEnhancer: LoudnessEnhancer? = null
     private var musicScene: String? = null
     private var fadeGeneration = 0
+    private var notificationPermissionRequestPending = false
+    private val notificationsWaitingForPermission = linkedMapOf<String, ScheduledNotification>()
     private val mainHandler = Handler(Looper.getMainLooper())
     private val audioManager by lazy { getSystemService(AUDIO_SERVICE) as AudioManager }
     private val musicAttributes = AudioAttributes.Builder()
@@ -131,27 +141,21 @@ class MainActivity : FlutterActivity() {
                     val at = call.argument<Long>("at")
                     val title = call.argument<String>("title")
                     val body = call.argument<String>("body")
+                    val kind = call.argument<String>("kind") ?: "event"
                     if (id == null || at == null || title == null || body == null) {
                         result.error("invalid_notification", "Missing notification data.", null)
                         return@setMethodCallHandler
                     }
-                    if (Build.VERSION.SDK_INT >= 33 &&
-                        checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                        requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 781)
+                    val notification = ScheduledNotification(id, at, title, body, kind)
+                    // Always install a fallback alarm. If the runtime notification
+                    // permission is granted from the prompt below, the same
+                    // PendingIntent is immediately upgraded to the most precise
+                    // alarm Android allows for this device.
+                    scheduleNotification(notification)
+                    if (!hasNotificationPermission()) {
+                        notificationsWaitingForPermission[id] = notification
+                        requestNotificationPermissionIfNeeded()
                     }
-                    val intent = Intent(this, DragonHavenNotificationReceiver::class.java).apply {
-                        putExtra("title", title)
-                        putExtra("body", body)
-                        putExtra("notificationId", id.hashCode())
-                    }
-                    val pending = PendingIntent.getBroadcast(
-                        this,
-                        id.hashCode(),
-                        intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                    )
-                    val alarm = getSystemService(ALARM_SERVICE) as AlarmManager
-                    alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending)
                     result.success(true)
                 }
                 "showWhenBackground" -> {
@@ -164,6 +168,28 @@ class MainActivity : FlutterActivity() {
                         return@setMethodCallHandler
                     }
                     if (activityInForeground || !hasNotificationPermission()) {
+                        result.success(false)
+                        return@setMethodCallHandler
+                    }
+                    DragonHavenNotificationReceiver.showNow(
+                        context = this,
+                        notificationId = id.hashCode(),
+                        title = title,
+                        body = body,
+                        kind = kind,
+                    )
+                    result.success(true)
+                }
+                "showNow" -> {
+                    val id = call.argument<String>("id")
+                    val title = call.argument<String>("title")
+                    val body = call.argument<String>("body")
+                    val kind = call.argument<String>("kind") ?: "event"
+                    if (id == null || title == null || body == null) {
+                        result.error("invalid_notification", "Missing notification data.", null)
+                        return@setMethodCallHandler
+                    }
+                    if (!hasNotificationPermission()) {
                         result.success(false)
                         return@setMethodCallHandler
                     }
@@ -215,6 +241,61 @@ class MainActivity : FlutterActivity() {
         Build.VERSION.SDK_INT < 33 ||
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
             android.content.pm.PackageManager.PERMISSION_GRANTED
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < 33 || notificationPermissionRequestPending) return
+        notificationPermissionRequestPending = true
+        requestPermissions(
+            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+            NOTIFICATION_PERMISSION_REQUEST,
+        )
+    }
+
+    private fun scheduleNotification(notification: ScheduledNotification) {
+        val intent = Intent(this, DragonHavenNotificationReceiver::class.java).apply {
+            putExtra("title", notification.title)
+            putExtra("body", notification.body)
+            putExtra("kind", notification.kind)
+            putExtra("notificationId", notification.id.hashCode())
+        }
+        val pending = PendingIntent.getBroadcast(
+            this,
+            notification.id.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val alarm = getSystemService(ALARM_SERVICE) as AlarmManager
+        val exactAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+            alarm.canScheduleExactAlarms()
+        if (exactAllowed) {
+            try {
+                alarm.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    notification.at,
+                    pending,
+                )
+                return
+            } catch (_: SecurityException) {
+                // Device policy can still reject exact alarms; retain a safe
+                // inexact fallback instead of losing the hatch reminder.
+            }
+        }
+        alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, notification.at, pending)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != NOTIFICATION_PERMISSION_REQUEST) return
+        notificationPermissionRequestPending = false
+        if (hasNotificationPermission()) {
+            notificationsWaitingForPermission.values.forEach(::scheduleNotification)
+        }
+        notificationsWaitingForPermission.clear()
+    }
 
     private fun playOneShot(id: String): Boolean {
         if (!effectsEnabled) return false
@@ -341,6 +422,7 @@ class MainActivity : FlutterActivity() {
         private const val CHANNEL = "nl.dragonhaven.app/platform"
         private const val AUDIO_CHANNEL = "nl.dragonhaven.app/audio"
         private const val NOTIFICATION_CHANNEL = "nl.dragonhaven.app/notifications"
+        private const val NOTIFICATION_PERMISSION_REQUEST = 781
         private const val MUSIC_VOLUME = 1.0f
         private const val DUCKED_VOLUME = 0.30f
         private const val MUSIC_GAIN_MILLIBELS = 1200

@@ -98,9 +98,11 @@ class HouseholdProvider extends ChangeNotifier {
   List<AdventureRun> adventureRuns = [];
   Set<String> dismissedAdventureIds = {};
   Map<AdventureKind, List<String>> adventureOptionIds = {
+    AdventureKind.mini: <String>[],
     AdventureKind.short: <String>[],
     AdventureKind.long: <String>[],
   };
+  DateTime? miniAdventureRefilledAt;
   DateTime? shortAdventureRefilledAt;
   String longAdventureRefillDay = '';
   List<String> towerFloorRoomIds = ['hearth'];
@@ -122,7 +124,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 27;
+  static const _schemaVersion = 28;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(
@@ -200,6 +202,7 @@ class HouseholdProvider extends ChangeNotifier {
       provider.languageCode = savedLanguage;
       await provider._save();
     }
+    await provider._rescheduleNestEggNotification();
     return provider;
   }
 
@@ -408,6 +411,7 @@ class HouseholdProvider extends ChangeNotifier {
     adventureRuns = [];
     dismissedAdventureIds = {};
     adventureOptionIds = {
+      AdventureKind.mini: <String>[],
       AdventureKind.short: <String>[],
       AdventureKind.long: <String>[],
     };
@@ -524,6 +528,12 @@ class HouseholdProvider extends ChangeNotifier {
     dismissedAdventureIds = stringSetFromJson(data['dismissedAdventureIds']);
     final rawAdventureOptions = mapFromJson(data['adventureOptionIds']);
     adventureOptionIds = {
+      AdventureKind.mini: (rawAdventureOptions['mini'] as List?)
+              ?.whereType<String>()
+              .where(AdventureCatalog.byId.containsKey)
+              .take(3)
+              .toList() ??
+          <String>[],
       AdventureKind.short: (rawAdventureOptions['short'] as List?)
               ?.whereType<String>()
               .where(AdventureCatalog.byId.containsKey)
@@ -537,6 +547,8 @@ class HouseholdProvider extends ChangeNotifier {
               .toList() ??
           <String>[],
     };
+    miniAdventureRefilledAt = DateTime.tryParse(
+        stringFromJson(data['miniAdventureRefilledAt']) ?? '');
     shortAdventureRefilledAt = DateTime.tryParse(
         stringFromJson(data['shortAdventureRefilledAt']) ?? '');
     longAdventureRefillDay =
@@ -883,21 +895,31 @@ class HouseholdProvider extends ChangeNotifier {
     final egg = eggStash.removeAt(index);
     incubatingEgg = egg.activate(coins: 0, gems: 0, activatedAt: _clock());
     final activeEgg = incubatingEgg!;
-    final strings = AppStrings(languageCode);
     _evaluateAchievements();
     await _notifyAndSave();
-    unawaited(HavenNotifications.schedule(
-      id: 'egg-${activeEgg.id}',
-      at: activeEgg.stageStartedAt
-          .add(Duration(hours: activeEgg.incubationHours)),
+    await _scheduleEggReadyNotification(activeEgg);
+    return true;
+  }
+
+  Future<void> _rescheduleNestEggNotification() async {
+    if (!onboardingComplete) return;
+    final egg = nestEgg;
+    if (egg == null) return;
+    await _scheduleEggReadyNotification(egg);
+  }
+
+  Future<void> _scheduleEggReadyNotification(Pet egg) async {
+    final strings = AppStrings(languageCode);
+    await HavenNotifications.eggReady(
+      id: 'egg-${egg.id}',
+      at: egg.stageStartedAt.add(Duration(hours: egg.incubationHours)),
       title: strings.pick(
           'Your Mysterious Egg is ready', 'Je Mysterieus Ei is klaar'),
       body: strings.pick(
         'Something inside wants to hatch in the Rooftop Nest.',
         'Iets binnenin wil uitkomen in het Daknest.',
       ),
-    ));
-    return true;
+    );
   }
 
   int achievementProgress(String id) => switch (id) {
@@ -1044,18 +1066,25 @@ class HouseholdProvider extends ChangeNotifier {
 
   Future<void> refreshForCurrentDate() async {
     final adventureOptionsBefore = [
+      ...?adventureOptionIds[AdventureKind.mini],
+      '#',
       ...?adventureOptionIds[AdventureKind.short],
       '#',
       ...?adventureOptionIds[AdventureKind.long],
+      miniAdventureRefilledAt?.toIso8601String() ?? '',
       shortAdventureRefilledAt?.toIso8601String() ?? '',
       longAdventureRefillDay,
     ].join('|');
+    adventuresFor(AdventureKind.mini);
     adventuresFor(AdventureKind.short);
     adventuresFor(AdventureKind.long);
     final adventureOptionsAfter = [
+      ...?adventureOptionIds[AdventureKind.mini],
+      '#',
       ...?adventureOptionIds[AdventureKind.short],
       '#',
       ...?adventureOptionIds[AdventureKind.long],
+      miniAdventureRefilledAt?.toIso8601String() ?? '',
       shortAdventureRefilledAt?.toIso8601String() ?? '',
       longAdventureRefillDay,
     ].join('|');
@@ -1271,6 +1300,7 @@ class HouseholdProvider extends ChangeNotifier {
         for (final entry in adventureOptionIds.entries)
           entry.key.name: entry.value,
       },
+      'miniAdventureRefilledAt': miniAdventureRefilledAt?.toIso8601String(),
       'shortAdventureRefilledAt': shortAdventureRefilledAt?.toIso8601String(),
       'longAdventureRefillDay': longAdventureRefillDay,
       'towerFloorRoomIds': towerFloorRoomIds,

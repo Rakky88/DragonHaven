@@ -12,6 +12,7 @@ import '../models/game_presentation.dart';
 import '../models/pet.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
+import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
@@ -156,6 +157,16 @@ class _EggCountdownState extends State<EggHatchCountdown>
       return;
     }
     _elapsedNotified = true;
+    final strings = AppStrings.of(context);
+    unawaited(HavenNotifications.showEggReadyNow(
+      id: 'egg-${widget.pet.id}',
+      title: strings.pick(
+          'Your Mysterious Egg is ready', 'Je Mysterieus Ei is klaar'),
+      body: strings.pick(
+        'Something inside wants to hatch in the Rooftop Nest.',
+        'Iets binnenin wil uitkomen in het Daknest.',
+      ),
+    ));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) widget.onElapsed?.call();
     });

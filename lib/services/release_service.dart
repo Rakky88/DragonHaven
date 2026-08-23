@@ -9,7 +9,7 @@ abstract final class ReleaseConfig {
       defaultValue: 'DragonHaven');
   static const installedVersion = String.fromEnvironment(
       'DRAGONHAVEN_APP_VERSION',
-      defaultValue: '0.01.00');
+      defaultValue: '0.01.01');
 
   static bool get isConfigured =>
       owner.trim().isNotEmpty && repository.trim().isNotEmpty;

@@ -1909,6 +1909,8 @@ const uiPhraseTranslations = <String, List<String>>{
     'DragonHavenを共有／更新'
   ],
   'Shop': ['Laden', 'Tienda', 'Boutique', 'Negozio', 'Loja', '商店', 'ショップ'],
+  'Mini': ['Mini', 'Mini', 'Mini', 'Mini', 'Mini', '迷你', 'ミニ'],
+  'Wood': ['Holz', 'Madera', 'Bois', 'Legno', 'Madeira', '木质', '木製'],
   'Short': ['Kurz', 'Corta', 'Courte', 'Breve', 'Curta', '短途', 'ショート'],
   'Something is moving inside… · Incubates 2–14 days once placed.': [
     'Etwas bewegt sich darin … · Nach dem Platzieren dauert das Brüten 2–14 Tage.',
@@ -3162,6 +3164,15 @@ const uiPhraseTranslations = <String, List<String>>{
     'Aventuras especiais',
     '特殊冒险',
     '特別な冒険'
+  ],
+  'Tiny outings, quick training and wooden chests.': [
+    'Winzige Ausflüge, schnelles Training und Holzkisten.',
+    'Pequeñas salidas, entrenamiento rápido y cofres de madera.',
+    'Petites sorties, entraînement rapide et coffres en bois.',
+    'Piccole uscite, allenamento rapido e forzieri di legno.',
+    'Pequenos passeios, treino rápido e baús de madeira.',
+    '短途外出、快速训练和木箱奖励。',
+    '小さなお出かけ、手軽な訓練、そして木の宝箱。'
   ],
   'Quick routes that refresh throughout the day.': [
     'Schnelle Routen, die sich im Laufe des Tages erneuern.',

@@ -1,7 +1,7 @@
 import 'chest.dart';
 import 'pet.dart';
 
-enum AdventureKind { short, long, group, special }
+enum AdventureKind { mini, short, long, group, special }
 
 enum AdventureRunStatus { running, rewardReady }
 
@@ -198,6 +198,28 @@ abstract final class AdventureCatalog {
     'Bestudeer'
   ];
 
+  static final List<AdventureDefinition> mini = List.unmodifiable(
+    List.generate(200, (index) {
+      final minutes = 2 + index % 14;
+      return AdventureDefinition(
+        id: 'mini_${index + 1}',
+        kind: AdventureKind.mini,
+        titleEn:
+            '${_missionsEn[index % _missionsEn.length]} near the ${_placesEn[(index * 11) % _placesEn.length]}',
+        titleNl:
+            '${_missionsNl[index % _missionsNl.length]} bij ${_placesNl[(index * 11) % _placesNl.length]}',
+        descriptionEn: 'A tiny tower outing with a modest wooden reward.',
+        descriptionNl:
+            'Een klein torenuitstapje met een bescheiden houten beloning.',
+        duration: Duration(minutes: minutes),
+        xp: 4 + index % 8,
+        focus: TrainingFocus.values[index % 3],
+        statPoints: 1 + index % 2,
+        knownChest: ChestTier.wooden,
+      );
+    }),
+  );
+
   static final List<AdventureDefinition> short = List.unmodifiable(
     List.generate(300, (index) {
       final hours = 2 + index % 5;
@@ -290,7 +312,7 @@ abstract final class AdventureCatalog {
   );
 
   static final Map<String, AdventureDefinition> byId = Map.unmodifiable({
-    for (final adventure in [...short, ...long, ...group, ...special])
+    for (final adventure in [...mini, ...short, ...long, ...group, ...special])
       adventure.id: adventure,
   });
 }

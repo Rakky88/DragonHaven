@@ -11,18 +11,30 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('the full adventure catalog has unique requested content counts', () {
+    expect(AdventureCatalog.mini, hasLength(200));
     expect(AdventureCatalog.short, hasLength(300));
     expect(AdventureCatalog.long, hasLength(200));
     expect(AdventureCatalog.group, hasLength(200));
     expect(AdventureCatalog.special, hasLength(100));
 
     final all = [
+      ...AdventureCatalog.mini,
       ...AdventureCatalog.short,
       ...AdventureCatalog.long,
       ...AdventureCatalog.group,
       ...AdventureCatalog.special,
     ];
-    expect(all.map((entry) => entry.id).toSet(), hasLength(800));
+    expect(all.map((entry) => entry.id).toSet(), hasLength(1000));
+    expect(
+        AdventureCatalog.mini.every((entry) =>
+            entry.duration >= const Duration(minutes: 2) &&
+            entry.duration <= const Duration(minutes: 15) &&
+            entry.xp >= 4 &&
+            entry.xp <= 11 &&
+            entry.statPoints >= 1 &&
+            entry.statPoints <= 2 &&
+            entry.knownChest == ChestTier.wooden),
+        isTrue);
     expect(
         AdventureCatalog.short.every((entry) =>
             entry.duration >= const Duration(hours: 2) &&
@@ -113,6 +125,21 @@ void main() {
       expect(nativeBridge, contains('R.raw.$resourceId'),
           reason: '$resource must be statically retained in release builds');
     }
+  });
+
+  test('Android keeps hatch reminders through permission and exact-alarm paths',
+      () {
+    final manifest =
+        File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+    final nativeBridge = File(
+      'android/app/src/main/kotlin/nl/dragonhaven/app/MainActivity.kt',
+    ).readAsStringSync();
+    expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
+    expect(manifest, contains('android.permission.SCHEDULE_EXACT_ALARM'));
+    expect(nativeBridge, contains('setExactAndAllowWhileIdle'));
+    expect(nativeBridge, contains('setAndAllowWhileIdle'));
+    expect(nativeBridge, contains('onRequestPermissionsResult'));
+    expect(nativeBridge, contains('notificationsWaitingForPermission'));
   });
 
   test('local time maps to the seven requested day phases', () {

@@ -156,7 +156,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     final cards = game
-        .adventuresFor(AdventureKind.short)
+        .adventuresFor(AdventureKind.mini)
         .map((adventure) => find.byKey(Key('adventure-card-${adventure.id}')))
         .toList();
     expect(cards, hasLength(3));
@@ -705,7 +705,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.01.00'), findsOneWidget);
+    expect(find.text('v0.01.01'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

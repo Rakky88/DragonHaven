@@ -108,6 +108,22 @@ void main() {
     expect(game.adventuresFor(AdventureKind.short), hasLength(3));
   });
 
+  test('Mini Adventure slots refill every five minutes', () {
+    var now = DateTime(2026, 8, 21, 10, 15);
+    final game = HouseholdProvider(random: Random(120), clock: () => now);
+    final initial = game.adventuresFor(AdventureKind.mini);
+    expect(initial, hasLength(3));
+    expect(
+        initial.every((item) => item.knownChest == ChestTier.wooden), isTrue);
+
+    game.adventureOptionIds[AdventureKind.mini]!.remove(initial.first.id);
+    game.miniAdventureRefilledAt = now;
+    now = now.add(const Duration(minutes: 4));
+    expect(game.adventuresFor(AdventureKind.mini), hasLength(2));
+    now = now.add(const Duration(minutes: 1));
+    expect(game.adventuresFor(AdventureKind.mini), hasLength(3));
+  });
+
   test('Special Adventures only appear from an active special source', () {
     final game = HouseholdProvider(random: Random(13));
     expect(game.adventuresFor(AdventureKind.special), isEmpty);

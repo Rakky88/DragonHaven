@@ -274,7 +274,9 @@ class _AdventureCard extends StatelessWidget {
                               size: 17),
                           text: adventure.knownChest == null
                               ? '?'
-                              : strings.chestLabel(adventure.knownChest!),
+                              : adventure.kind == AdventureKind.mini
+                                  ? strings.pick('Wood', 'Hout')
+                                  : strings.chestLabel(adventure.knownChest!),
                         ),
                         if (group)
                           _Meta(
@@ -837,6 +839,7 @@ int _recommendationScore(Pet dragon, AdventureDefinition adventure) =>
     (dragon.lineage.primaryRoomId == dragon.currentRoomId ? 3 : 0);
 
 GameIconKind _kindIcon(AdventureKind kind) => switch (kind) {
+      AdventureKind.mini => GameIconKind.adventureMini,
       AdventureKind.short => GameIconKind.adventureShort,
       AdventureKind.long => GameIconKind.adventureLong,
       AdventureKind.group => GameIconKind.adventureGroup,
@@ -844,6 +847,7 @@ GameIconKind _kindIcon(AdventureKind kind) => switch (kind) {
     };
 
 List<Color> _kindColors(AdventureKind kind) => switch (kind) {
+      AdventureKind.mini => const [Color(0xFFFFF4E8), Color(0xFFFFDFC4)],
       AdventureKind.short => const [Color(0xFFFFF8DC), Color(0xFFFFEDB7)],
       AdventureKind.long => const [Color(0xFFE9F2FF), Color(0xFFD9E6FF)],
       AdventureKind.group => const [Color(0xFFE9FBF4), Color(0xFFD6F1E8)],
@@ -851,6 +855,7 @@ List<Color> _kindColors(AdventureKind kind) => switch (kind) {
     };
 
 String _kindTitle(AppStrings strings, AdventureKind kind) => switch (kind) {
+      AdventureKind.mini => strings.pick('Mini', 'Mini'),
       AdventureKind.short => strings.pick('Short', 'Kort'),
       AdventureKind.long => strings.pick('Long', 'Lang'),
       AdventureKind.group => strings.pick('Group', 'Groep'),
@@ -859,6 +864,9 @@ String _kindTitle(AppStrings strings, AdventureKind kind) => switch (kind) {
 
 String _kindDescription(AppStrings strings, AdventureKind kind) =>
     switch (kind) {
+      AdventureKind.mini => strings.pick(
+          'Tiny outings, quick training and wooden chests.',
+          'Kleine uitstapjes, snelle training en houten kisten.'),
       AdventureKind.short => strings.pick(
           'Quick routes that refresh throughout the day.',
           'Snelle routes die door de dag heen verversen.'),

@@ -14,6 +14,7 @@ enum GameIconKind {
   chest,
   myDragons,
   draconomicon,
+  adventureMini,
   adventureShort,
   adventureLong,
   adventureGroup,
@@ -46,6 +47,7 @@ extension GameIconKindAsset on GameIconKind {
   String get assetPath => 'assets/images/ui/ui_${switch (this) {
         GameIconKind.mysteriousEgg => 'mysterious_egg',
         GameIconKind.myDragons => 'my_dragons',
+        GameIconKind.adventureMini => 'adventure_short',
         GameIconKind.adventureShort => 'adventure_short',
         GameIconKind.adventureLong => 'adventure_long',
         GameIconKind.adventureGroup => 'adventure_group',

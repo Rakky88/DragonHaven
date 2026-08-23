@@ -1271,14 +1271,6 @@ class _HouseSummary extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-                color: Colors.white, shape: BoxShape.circle),
-            child: Icon(_roomIcon(room.id), color: AppColors.twilight),
-          ),
-          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1301,15 +1293,3 @@ class _HouseSummary extends StatelessWidget {
     );
   }
 }
-
-IconData _roomIcon(String roomId) => switch (roomId) {
-      'nest' => Icons.night_shelter_rounded,
-      'hearth' => Icons.fireplace_rounded,
-      'crystal' => Icons.diamond_rounded,
-      'garden' => Icons.local_florist_rounded,
-      'tidal_library' => Icons.menu_book_rounded,
-      'loft' => Icons.auto_awesome_rounded,
-      'cloud' => Icons.cloud_rounded,
-      'sunforge' => Icons.wb_sunny_rounded,
-      _ => Icons.home_rounded,
-    };
