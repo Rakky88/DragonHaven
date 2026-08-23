@@ -148,6 +148,28 @@ class HouseholdProvider extends ChangeNotifier {
     return provider;
   }
 
+  /// Creates a non-persistent account that immediately presents the automatic
+  /// Hatchling-to-Wyrmling evolution on an emulator or test device.
+  static HouseholdProvider createEvolutionDemo() {
+    final now = DateTime.now();
+    final provider = HouseholdProvider(
+      persistenceEnabled: false,
+      random: Random(20260823),
+      clock: DateTime.now,
+    );
+    provider
+      ..accountName = 'Evolution Keeper'
+      ..onboardingComplete = true
+      ..tutorialCompleted = true;
+    provider.pet
+      ..name = 'Nova'
+      ..stage = DragonStage.hatchling
+      ..xp = Pet.wyrmlingXp
+      ..stageStartedAt = now.subtract(const Duration(days: 3))
+      ..favorite = true;
+    return provider;
+  }
+
   /// Creates a non-persistent emulator account whose Starter Egg hatches
   /// three minutes after the app starts.
   static HouseholdProvider createHatchDemo({
@@ -187,11 +209,12 @@ class HouseholdProvider extends ChangeNotifier {
     try {
       provider._restore(data);
       final schemaChanged = data['schemaVersion'] != _schemaVersion;
+      final evolutionChanged = provider._evolveReadyDragons(provider._clock());
       final changed = provider.pet.applyTimeDecay(provider._clock()) |
           provider._registerCurrentStage();
       final achievementsChanged =
           provider._evaluateAchievements(addActivities: false);
-      if (schemaChanged || changed || achievementsChanged) {
+      if (schemaChanged || evolutionChanged || changed || achievementsChanged) {
         await provider._save();
       }
     } on Object {
@@ -724,6 +747,20 @@ class HouseholdProvider extends ChangeNotifier {
 
   Pet? get nestEgg => pet.isEgg ? pet : incubatingEgg;
   bool get hasEggInNest => nestEgg != null;
+  bool get eggPityActive => eggStash.isEmpty && !hasEggInNest;
+
+  double eggDropChance(ChestTier tier) {
+    final baseChance = switch (tier) {
+      ChestTier.wooden => 0.01,
+      ChestTier.silver => 0.04,
+      ChestTier.gold => 0.12,
+      ChestTier.dragon || ChestTier.mythical || ChestTier.sinister => 1.0,
+    };
+    final pityEligible = tier == ChestTier.wooden ||
+        tier == ChestTier.silver ||
+        tier == ChestTier.gold;
+    return eggPityActive && pityEligible ? baseChance * 2 : baseChance;
+  }
 
   Pet? dragonById(String? id) {
     if (id == null) return null;
@@ -836,12 +873,7 @@ class HouseholdProvider extends ChangeNotifier {
         _random.nextDouble() < .9 ? 4 + _random.nextInt(4) : 0,
       ChestTier.mythical || ChestTier.sinister => 8 + _random.nextInt(6),
     };
-    final eggChance = switch (tier) {
-      ChestTier.wooden => 0.01,
-      ChestTier.silver => 0.04,
-      ChestTier.gold => 0.12,
-      ChestTier.dragon || ChestTier.mythical || ChestTier.sinister => 1.0,
-    };
+    final eggChance = eggDropChance(tier);
     final eggFound = _random.nextDouble() < eggChance;
     final relicFound = _rollRelicDrop(tier);
     DragonEgg? foundEgg;
@@ -949,6 +981,34 @@ class HouseholdProvider extends ChangeNotifier {
     final now = _clock();
     final dragon = dragonById(dragonId);
     if (dragon == null || !dragon.canEvolve(now)) return false;
+    _performEvolution(dragon, now);
+    _evaluateAchievements();
+    await _notifyAndSave();
+    return true;
+  }
+
+  bool _evolveReadyDragons(DateTime now) {
+    final dragons = ownedDragons.toList()
+      ..sort((a, b) {
+        final acquired = a.acquiredAt.compareTo(b.acquiredAt);
+        return acquired != 0 ? acquired : a.id.compareTo(b.id);
+      });
+    var changed = false;
+    var queueOrder = 0;
+    for (final dragon in dragons) {
+      while (dragon.canEvolve(now)) {
+        _performEvolution(dragon, now, queueOrder: queueOrder++);
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
+  void _performEvolution(
+    Pet dragon,
+    DateTime now, {
+    int queueOrder = 0,
+  }) {
     final previousStageKey = dragon.stageKey;
     dragon.evolve(now);
     if (dragon.stage == DragonStage.wyrmling) totalWyrmling++;
@@ -964,7 +1024,7 @@ class HouseholdProvider extends ChangeNotifier {
       type: GamePresentationType.evolution,
       dragonId: dragon.id,
       previousStageKey: previousStageKey,
-      createdAt: now,
+      createdAt: now.add(Duration(microseconds: queueOrder)),
       sortAt: dragon.acquiredAt,
     ));
     final strings = AppStrings(languageCode);
@@ -977,9 +1037,6 @@ class HouseholdProvider extends ChangeNotifier {
         '${dragon.displayName} is geëvolueerd naar $form.',
       ),
     ));
-    _evaluateAchievements();
-    await _notifyAndSave();
-    return true;
   }
 
   Future<bool> buyStarlightTreat() async {
@@ -989,6 +1046,7 @@ class HouseholdProvider extends ChangeNotifier {
     pet.joy = min(100, pet.joy + 12);
     pet.energy = min(100, pet.energy + 12);
     pet.comfort = min(100, pet.comfort + 12);
+    _evolveReadyDragons(_clock());
     _evaluateAchievements();
     await _notifyAndSave();
     return true;
@@ -1196,6 +1254,7 @@ class HouseholdProvider extends ChangeNotifier {
     final changed = (adventureOptionsBefore != adventureOptionsAfter) |
         pet.applyTimeDecay(_clock()) |
         _registerCurrentStage() |
+        _evolveReadyDragons(_clock()) |
         _refreshAdventureRuns() |
         _expireReturningVisitors() |
         _processWeeklyReturningDragon() |

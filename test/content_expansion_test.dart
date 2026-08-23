@@ -21,7 +21,7 @@ void main() {
     }
     expect(adultNames, hasLength(126));
     expect(DragonArtwork.logicalFormCount, 211);
-    expect(DragonArtwork.allAssetPaths, hasLength(87));
+    expect(DragonArtwork.allAssetPaths, hasLength(170));
   });
 
   test('all dragon artwork files exist', () {

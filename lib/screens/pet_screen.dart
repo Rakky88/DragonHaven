@@ -658,7 +658,7 @@ class _EvolutionPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final now = DateTime.now();
-    final ready = pet.isEgg ? pet.canHatch(now) : pet.canEvolve(now);
+    final ready = pet.isEgg && pet.canHatch(now);
     if (pet.isEgg) {
       if (!ready) return const SizedBox.shrink();
       return Padding(
@@ -721,17 +721,6 @@ class _EvolutionPanel extends StatelessWidget {
                     '${strings.pick('Expertises', 'Expertises')}: ${pet.totalTraining}/300 · ${pet.leadingPath == 'unknown' ? strings.pick('path undecided', 'pad onbeslist') : pet.leadingPath}',
                     style:
                         const TextStyle(color: AppColors.muted, fontSize: 12))),
-          if (pet.stage != DragonStage.ascended) ...[
-            const SizedBox(height: 13),
-            SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                    onPressed: ready ? () => _evolve(context) : null,
-                    icon: const Icon(Icons.auto_awesome_rounded),
-                    label: Text(ready
-                        ? strings.pick('Evolve now', 'Evolueer nu')
-                        : strings.pick('Not ready yet', 'Nog niet klaar'))))
-          ],
         ]),
       ),
     );
@@ -740,11 +729,6 @@ class _EvolutionPanel extends StatelessWidget {
   Future<void> _hatch(BuildContext context) async {
     final game = context.read<HouseholdProvider>();
     await game.hatchActiveDragon();
-  }
-
-  Future<void> _evolve(BuildContext context) async {
-    final game = context.read<HouseholdProvider>();
-    await game.evolveActiveDragon();
   }
 }
 
@@ -870,6 +854,7 @@ class _EvolutionDialogState extends State<_EvolutionDialog>
         ),
         child: SafeArea(
           child: Stack(
+            fit: StackFit.expand,
             children: [
               Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                 const Spacer(),
@@ -897,6 +882,7 @@ class _EvolutionDialogState extends State<_EvolutionDialog>
                       ),
                     ),
                     child: DragonArt(
+                      key: const Key('centered-evolution-dragon'),
                       height: 285,
                       stageKey:
                           _phase >= 2 ? pet.stageKey : widget.previousStageKey,
@@ -942,10 +928,13 @@ class _EvolutionDialogState extends State<_EvolutionDialog>
                 ],
                 const Spacer(),
                 if (_phase >= 2)
-                  FilledButton.icon(
+                  IconButton.filled(
+                    key: const Key('close-evolution-presentation'),
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.auto_awesome_rounded),
-                    label: Text(strings.pick('Welcome', 'Welkom')),
+                    tooltip: strings.pick('Continue', 'Doorgaan'),
+                    icon: const Icon(Icons.arrow_forward_rounded),
+                    iconSize: 30,
+                    padding: const EdgeInsets.all(17),
                   ),
                 const SizedBox(height: 22),
               ]),

@@ -30,7 +30,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
     super.initState();
     _tabs = TabController(length: 2, vsync: this);
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && _tabs.index == 1) {
+      if (mounted) {
         setState(() {});
       }
     });
@@ -113,7 +113,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
           child: TabBarView(
             controller: _tabs,
             children: [
-              const _AvailableAdventures(),
+              _AvailableAdventures(now: game.currentTime),
               _ActiveAdventures(now: game.currentTime),
             ],
           ),
@@ -124,7 +124,9 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
 }
 
 class _AvailableAdventures extends StatelessWidget {
-  const _AvailableAdventures();
+  const _AvailableAdventures({required this.now});
+
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
@@ -134,21 +136,31 @@ class _AvailableAdventures extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
       children: [
         for (final kind in AdventureKind.values)
-          _AdventureSection(kind: kind, adventures: game.adventuresFor(kind)),
+          _AdventureSection(
+            kind: kind,
+            adventures: game.adventuresFor(kind),
+            now: now,
+          ),
       ],
     );
   }
 }
 
 class _AdventureSection extends StatelessWidget {
-  const _AdventureSection({required this.kind, required this.adventures});
+  const _AdventureSection({
+    required this.kind,
+    required this.adventures,
+    required this.now,
+  });
 
   final AdventureKind kind;
   final List<AdventureDefinition> adventures;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
+    final game = context.read<HouseholdProvider>();
     final colors = _kindColors(kind);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -182,6 +194,13 @@ class _AdventureSection extends StatelessWidget {
                   ],
                 ),
               ),
+              if (kind != AdventureKind.special) ...[
+                const SizedBox(width: 7),
+                _AdventureRefreshCountdown(
+                  kind: kind,
+                  remaining: game.adventureRefreshRemaining(kind, from: now)!,
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 5),
@@ -201,6 +220,72 @@ class _AdventureSection extends StatelessWidget {
       ),
     );
   }
+}
+
+class _AdventureRefreshCountdown extends StatelessWidget {
+  const _AdventureRefreshCountdown({
+    required this.kind,
+    required this.remaining,
+  });
+
+  final AdventureKind kind;
+  final Duration remaining;
+
+  @override
+  Widget build(BuildContext context) {
+    final includeDays =
+        kind == AdventureKind.long || kind == AdventureKind.group;
+    return Container(
+      key: Key('adventure-refresh-${kind.name}'),
+      padding: const EdgeInsets.fromLTRB(7, 5, 9, 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2A1E50).withValues(alpha: .94),
+        borderRadius: BorderRadius.circular(99),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x282A1E50),
+            blurRadius: 8,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const GameIconSprite(GameIconKind.clock, size: 20),
+          const SizedBox(width: 4),
+          Text(
+            _formatRefreshCountdown(remaining, includeDays: includeDays),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w900,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _formatRefreshCountdown(
+  Duration remaining, {
+  required bool includeDays,
+}) {
+  final totalSeconds = remaining.inSeconds.clamp(0, 999999999);
+  final seconds = totalSeconds % 60;
+  final totalMinutes = totalSeconds ~/ 60;
+  final minutes = totalMinutes % 60;
+  if (!includeDays) {
+    return '${totalMinutes.toString().padLeft(2, '0')}:'
+        '${seconds.toString().padLeft(2, '0')}';
+  }
+  final hours = (totalSeconds ~/ Duration.secondsPerHour) % 24;
+  final days = totalSeconds ~/ Duration.secondsPerDay;
+  return '${days}d ${hours.toString().padLeft(2, '0')}:'
+      '${minutes.toString().padLeft(2, '0')}:'
+      '${seconds.toString().padLeft(2, '0')}';
 }
 
 class _AdventureCard extends StatelessWidget {

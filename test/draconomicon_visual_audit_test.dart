@@ -77,16 +77,29 @@ void main() {
                 reason: 'pass $pass ${lineage.id} ${form.formKey} state');
             expect(artWidget.fit, BoxFit.contain,
                 reason: 'pass $pass ${lineage.id} ${form.formKey} fit');
-            final filter = tester.widget<ColorFiltered>(find
-                .descendant(of: art, matching: find.byType(ColorFiltered))
-                .first);
-            expect(
-              filter.colorFilter,
-              discovered
-                  ? const ColorFilter.mode(Colors.transparent, BlendMode.dst)
-                  : const ColorFilter.mode(Color(0xFF2D2941), BlendMode.srcIn),
-              reason: 'pass $pass ${lineage.id} ${form.formKey} color filter',
+            final filters = find.descendant(
+              of: art,
+              matching: find.byType(ColorFiltered),
             );
+            final usesPreRenderedSilhouette = !discovered &&
+                lineage.id == 'seraphscale' &&
+                form.formKey == 'hatchling';
+            if (!discovered && !usesPreRenderedSilhouette) {
+              expect(filters, findsOneWidget,
+                  reason:
+                      'pass $pass ${lineage.id} ${form.formKey} silhouette filter');
+              final filter = tester.widget<ColorFiltered>(filters);
+              expect(
+                filter.colorFilter,
+                const ColorFilter.mode(Color(0xFF2D2941), BlendMode.srcIn),
+                reason:
+                    'pass $pass ${lineage.id} ${form.formKey} silhouette color',
+              );
+            } else {
+              expect(filters, findsNothing,
+                  reason:
+                      'pass $pass ${lineage.id} ${form.formKey} direct rendering');
+            }
             final tileRect = tester.getRect(tile);
             final artRect = tester.getRect(art);
             expect(artRect.width, closeTo(artRect.height, .01),

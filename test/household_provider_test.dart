@@ -6,6 +6,7 @@ import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
+import 'package:dragon_haven/models/game_presentation.dart';
 import 'package:dragon_haven/models/house.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
@@ -94,18 +95,17 @@ void main() {
     expect(restored.achievementsCompact, isTrue);
   });
 
-  test('dismissed Short Adventures refill one slot after a full hour',
-      () async {
-    var now = DateTime(2026, 8, 21, 10, 15);
+  test('dismissed Short Adventures refill on the next whole hour', () async {
+    var now = DateTime(2026, 8, 21, 10, 7);
     final game = HouseholdProvider(random: Random(12), clock: () => now);
     final initial = game.adventuresFor(AdventureKind.short);
     expect(initial, hasLength(3));
 
     await game.dismissAdventure(initial.first);
     expect(game.adventuresFor(AdventureKind.short), hasLength(2));
-    now = now.add(const Duration(minutes: 59));
+    now = DateTime(2026, 8, 21, 10, 59, 59);
     expect(game.adventuresFor(AdventureKind.short), hasLength(2));
-    now = now.add(const Duration(minutes: 1));
+    now = DateTime(2026, 8, 21, 11);
     expect(game.adventuresFor(AdventureKind.short), hasLength(3));
   });
 
@@ -125,7 +125,7 @@ void main() {
   });
 
   test('dismissed Mini Adventure slots refill every fifteen minutes', () async {
-    var now = DateTime(2026, 8, 21, 10, 15);
+    var now = DateTime(2026, 8, 21, 10, 7);
     final game = HouseholdProvider(random: Random(120), clock: () => now);
     final initial = game.adventuresFor(AdventureKind.mini);
     expect(initial, hasLength(3));
@@ -133,10 +133,40 @@ void main() {
         initial.every((item) => item.knownChest == ChestTier.wooden), isTrue);
 
     await game.dismissAdventure(initial.first);
-    now = now.add(const Duration(minutes: 14));
+    now = DateTime(2026, 8, 21, 10, 14, 59);
     expect(game.adventuresFor(AdventureKind.mini), hasLength(2));
-    now = now.add(const Duration(minutes: 1));
+    now = DateTime(2026, 8, 21, 10, 15);
     expect(game.adventuresFor(AdventureKind.mini), hasLength(3));
+  });
+
+  test('Adventure countdowns follow fixed calendar boundaries', () {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    );
+    final now = DateTime.utc(2026, 8, 23, 9, 7, 8);
+
+    expect(
+      game.adventureRefreshRemaining(AdventureKind.mini, from: now),
+      const Duration(minutes: 7, seconds: 52),
+    );
+    expect(
+      game.adventureRefreshRemaining(AdventureKind.short, from: now),
+      const Duration(minutes: 52, seconds: 52),
+    );
+    expect(
+      game.adventureRefreshRemaining(AdventureKind.long, from: now),
+      const Duration(hours: 14, minutes: 52, seconds: 52),
+    );
+    expect(
+      game.adventureRefreshRemaining(AdventureKind.group, from: now),
+      const Duration(minutes: 52, seconds: 52),
+      reason: 'Sunday noon in Amsterdam is 10:00 UTC during summer time.',
+    );
+    expect(
+      game.adventureRefreshRemaining(AdventureKind.special, from: now),
+      isNull,
+    );
   });
 
   test('legacy egg incubation hours migrate to one tenth immediately', () {
@@ -206,6 +236,47 @@ void main() {
     expect(await game.openChest(ChestTier.wooden), isNull);
   });
 
+  test('egg pity doubles common chest odds only while no egg is owned', () {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: Random(303),
+    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false);
+
+    expect(game.eggPityActive, isTrue);
+    expect(game.eggDropChance(ChestTier.wooden), .02);
+    expect(game.eggDropChance(ChestTier.silver), .08);
+    expect(game.eggDropChance(ChestTier.gold), .24);
+    expect(game.eggDropChance(ChestTier.dragon), 1);
+    expect(game.eggDropChance(ChestTier.mythical), 1);
+    expect(game.eggDropChance(ChestTier.sinister), 1);
+
+    game.eggStash.add(DragonEgg(
+      id: 'pity-stash-egg',
+      lineageId: 'quietstar',
+      acquiredAt: DateTime.utc(2026, 8, 23),
+      hatchSeed: 17,
+      prismatic: false,
+    ));
+    expect(game.eggPityActive, isFalse);
+    expect(game.eggDropChance(ChestTier.wooden), .01);
+    expect(game.eggDropChance(ChestTier.silver), .04);
+    expect(game.eggDropChance(ChestTier.gold), .12);
+
+    game.eggStash.clear();
+    game.incubatingEgg = Pet(
+      id: 'pity-nest-egg',
+      lineageId: 'quietstar',
+      stage: DragonStage.egg,
+      firstEgg: false,
+      acquiredAt: DateTime.utc(2026, 8, 23),
+      hatchSeed: 18,
+      prismatic: false,
+    );
+    expect(game.eggPityActive, isFalse);
+    expect(game.eggDropChance(ChestTier.gold), .12);
+  });
+
   test('mystic relics only drop from Gold Chests and rarer tiers', () async {
     final game = HouseholdProvider(
       initialize: false,
@@ -270,9 +341,9 @@ void main() {
     final hatchling = Pet(
       stage: DragonStage.hatchling,
       firstEgg: false,
-      xp: 599,
+      xp: Pet.wyrmlingXp - 1,
     );
-    expect(hatchling.level, 3);
+    expect(hatchling.level, 2);
     expect(hatchling.nextEvolutionXp, Pet.wyrmlingXp);
     expect(hatchling.nextEvolutionLevel, 3);
     expect(hatchling.nextEvolutionStage, DragonStage.wyrmling);
@@ -280,12 +351,54 @@ void main() {
     final wyrmling = Pet(
       stage: DragonStage.wyrmling,
       firstEgg: false,
-      xp: 2199,
+      xp: Pet.ascendedXp - 1,
     );
-    expect(wyrmling.level, 7);
+    expect(wyrmling.level, 6);
     expect(wyrmling.nextEvolutionXp, Pet.ascendedXp);
     expect(wyrmling.nextEvolutionLevel, 7);
     expect(wyrmling.nextEvolutionStage, DragonStage.ascended);
+  });
+
+  test('reaching level three starts evolution automatically', () async {
+    final now = DateTime.utc(2026, 8, 23, 12);
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      clock: () => now,
+    )..pet = Pet(
+        id: 'automatic-level-three',
+        name: 'Nova',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        xp: Pet.wyrmlingXp - 25,
+        gems: 3,
+        acquiredAt: now.subtract(const Duration(days: 3)),
+      );
+
+    expect(await game.buyStarlightTreat(), isTrue);
+    expect(game.pet.level, 3);
+    expect(game.pet.stage, DragonStage.wyrmling);
+    expect(game.nextPresentation?.type, GamePresentationType.evolution);
+    expect(game.nextPresentation?.previousStageKey, 'spark');
+  });
+
+  test('an existing level-three dragon is repaired on refresh', () async {
+    final now = DateTime.utc(2026, 8, 23, 12);
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      clock: () => now,
+    )..pet = Pet(
+        id: 'existing-level-three',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        xp: Pet.wyrmlingXp,
+        acquiredAt: now.subtract(const Duration(days: 5)),
+      );
+
+    await game.refreshForCurrentDate();
+    expect(game.pet.stage, DragonStage.wyrmling);
+    expect(game.nextPresentation?.type, GamePresentationType.evolution);
   });
 
   test('a later egg incubates beside the active dragon until it hatches',

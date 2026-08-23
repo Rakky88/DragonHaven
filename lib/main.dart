@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'dragonhaven_app.dart';
 import 'providers/household_provider.dart';
+import 'screens/sprite_audit_screen.dart';
 import 'services/audio_service.dart';
 
 Future<void> main() async {
@@ -12,6 +13,11 @@ Future<void> main() async {
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
   ));
+  const spriteAudit = bool.fromEnvironment('DRAGONHAVEN_SPRITE_AUDIT');
+  if (spriteAudit) {
+    runApp(const SpriteAuditApp());
+    return;
+  }
   const showcase = bool.fromEnvironment('DRAGONHAVEN_SHOWCASE');
   const lockedCodexAudit =
       bool.fromEnvironment('DRAGONHAVEN_CODEX_AUDIT_LOCKED');
@@ -20,13 +26,17 @@ Future<void> main() async {
     'DRAGONHAVEN_HATCH_DEMO_SECONDS',
     defaultValue: 180,
   );
-  final game = hatchDemo
-      ? HouseholdProvider.createHatchDemo(
-          countdown: Duration(seconds: hatchDemoSeconds),
-        )
-      : showcase
-          ? HouseholdProvider.createShowcase()
-          : await HouseholdProvider.loadFromStorage();
+  const evolutionDemo = bool.fromEnvironment('DRAGONHAVEN_EVOLUTION_DEMO');
+  final game = evolutionDemo
+      ? HouseholdProvider.createEvolutionDemo()
+      : hatchDemo
+          ? HouseholdProvider.createHatchDemo(
+              countdown: Duration(seconds: hatchDemoSeconds),
+            )
+          : showcase
+              ? HouseholdProvider.createShowcase()
+              : await HouseholdProvider.loadFromStorage();
+  if (evolutionDemo) await game.refreshForCurrentDate();
   if (showcase && lockedCodexAudit) {
     game.discoveredForms.clear();
     game.prismaticForms.clear();

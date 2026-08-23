@@ -135,8 +135,9 @@ class Pet {
 
   static const hatchXpFirst = 100;
   static const hatchXpLater = 200;
-  static const wyrmlingXp = 600;
-  static const ascendedXp = 2200;
+  // Evolution milestones line up with the first XP of their advertised level.
+  static const wyrmlingXp = 350; // Level 3.
+  static const ascendedXp = 1950; // Level 7.
 
   DragonLineage get lineage => dragonLineageById(lineageId);
   bool get spectral => prismatic;

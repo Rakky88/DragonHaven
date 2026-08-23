@@ -58,7 +58,7 @@ void main() {
     expect(find.text('Wyrmling'), findsOneWidget);
     expect(find.byKey(const Key('skip-evolution-animation')), findsNothing);
 
-    await tester.tap(find.text('Welcome'));
+    await tester.tap(find.byKey(const Key('close-evolution-presentation')));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });

@@ -16,12 +16,63 @@ class DragonArtworkSelection {
 
 abstract final class DragonArtwork {
   static const eggAsset = 'assets/images/dragons/mysterious_egg.webp';
+  static const seraphscaleHatchlingAsset =
+      'assets/images/dragons/seraphscale_hatchling_v2.webp';
+  static const seraphscaleHatchlingSilhouetteAsset =
+      'assets/images/dragons/seraphscale_hatchling_silhouette_v2.webp';
+  static const seraphscaleHatchlingSpectralAsset =
+      'assets/images/dragons/seraphscale_hatchling_spectral_v2.webp';
+  static const seraphscaleWyrmlingAsset =
+      'assets/images/dragons/seraphscale_wyrmling_v2.png';
+  static const seraphscaleMightAsset =
+      'assets/images/dragons/seraphscale_ascended_might_v2.png';
+  static const seraphscaleArcanaAsset =
+      'assets/images/dragons/seraphscale_ascended_arcana_v2.png';
+
+  // These are the exact source forms selected during the on-device audit.
+  // They are shipped as standalone images so Flutter never has to crop them
+  // from a scaled 2x2 atlas at runtime.
+  static const safeStandaloneForms = <String, Set<String>>{
+    'auroracrown': {'wyrmling', 'might', 'arcana', 'spirit'},
+    'bramblequill': {'wyrmling', 'might', 'arcana', 'spirit'},
+    'cinderlynx': {'wyrmling', 'might', 'arcana', 'spirit'},
+    'clockskip': {'might', 'spirit'},
+    'coraloracle': {'wyrmling', 'might'},
+    'crystalwhisk': {'might'},
+    'dreammoth': {'arcana'},
+    'dustglimmer': {'arcana', 'spirit'},
+    'echofern': {'wyrmling', 'might', 'arcana'},
+    'eclipseantler': {'wyrmling', 'might'},
+    'everwyrm': {'wyrmling', 'might', 'spirit'},
+    'frostfable': {'wyrmling', 'might', 'arcana'},
+    'harmonytail': {'spirit'},
+    'ironwhistle': {'wyrmling', 'might', 'arcana'},
+    'leviathanecho': {'wyrmling', 'might', 'spirit'},
+    'meteorhide': {'wyrmling', 'might'},
+    'mistmantle': {'wyrmling', 'might', 'arcana', 'spirit'},
+    'opalchimera': {'wyrmling', 'might', 'spirit'},
+    'petaldrift': {'wyrmling', 'might', 'arcana', 'spirit'},
+    'quietstar': {'might', 'spirit'},
+    'rainbowruff': {'spirit'},
+    'runehopper': {'might', 'arcana', 'spirit'},
+    'starforged': {'wyrmling', 'might'},
+    'sunmuzzle': {'wyrmling', 'might', 'arcana', 'spirit'},
+    'temporalark': {'might'},
+    'tidescale': {'might', 'spirit'},
+    'twinflare': {'spirit'},
+    'velvetvolt': {'wyrmling', 'might', 'arcana', 'spirit'},
+    'voidbloom': {'wyrmling', 'might', 'arcana', 'spirit'},
+    'worldroot': {'wyrmling', 'might'},
+  };
 
   static String hatchlingAsset(String? lineageId) =>
       'assets/images/dragons/${_spriteLineageId(lineageId)}_hatchling.webp';
 
   static String formsAsset(String? lineageId) =>
       'assets/images/dragons/${_spriteLineageId(lineageId)}_forms.webp';
+
+  static String safeStandaloneFormAsset(String lineageId, String form) =>
+      'assets/images/dragons/${_spriteLineageId(lineageId)}_${form}_safe.webp';
 
   static String sinisterHatchlingAsset() =>
       'assets/images/dragons/everwyrm_sinister_hatchling.webp';
@@ -34,32 +85,77 @@ abstract final class DragonArtwork {
     required String? lineageId,
     required String evolutionPath,
     bool sinister = false,
-  }) =>
-      switch (stageKey) {
-        'moonEgg' => const DragonArtworkSelection(
-            eggAsset,
-            DragonArtworkFrame.fullImage,
-          ),
-        'spark' => DragonArtworkSelection(
-            sinister ? sinisterHatchlingAsset() : hatchlingAsset(lineageId),
-            DragonArtworkFrame.fullImage,
-          ),
-        'nestDragon' => DragonArtworkSelection(
-            sinister ? sinisterFormsAsset() : formsAsset(lineageId),
-            DragonArtworkFrame.juvenile,
-          ),
-        _ => DragonArtworkSelection(
-            sinister ? sinisterFormsAsset() : formsAsset(lineageId),
-            switch (evolutionPath) {
-              'storm' || 'arcana' => DragonArtworkFrame.storm,
-              'bond' || 'spirit' => DragonArtworkFrame.bond,
-              _ => DragonArtworkFrame.earth,
-            },
-          ),
+  }) {
+    if (lineageId == 'seraphscale') {
+      final individualAsset = switch (stageKey) {
+        'spark' => seraphscaleHatchlingAsset,
+        'nestDragon' => seraphscaleWyrmlingAsset,
+        'homeGuardian'
+            when evolutionPath == 'might' || evolutionPath == 'earth' =>
+          seraphscaleMightAsset,
+        'homeGuardian'
+            when evolutionPath == 'arcana' || evolutionPath == 'storm' =>
+          seraphscaleArcanaAsset,
+        _ => null,
       };
+      if (individualAsset != null) {
+        return DragonArtworkSelection(
+          individualAsset,
+          DragonArtworkFrame.fullImage,
+        );
+      }
+    }
+    final safeForm = switch (stageKey) {
+      'nestDragon' => 'wyrmling',
+      'homeGuardian' => switch (evolutionPath) {
+          'storm' || 'arcana' => 'arcana',
+          'bond' || 'spirit' => 'spirit',
+          _ => 'might',
+        },
+      _ => null,
+    };
+    if (safeForm != null &&
+        safeStandaloneForms[lineageId]?.contains(safeForm) == true) {
+      return DragonArtworkSelection(
+        safeStandaloneFormAsset(lineageId!, safeForm),
+        DragonArtworkFrame.fullImage,
+      );
+    }
+    return switch (stageKey) {
+      'moonEgg' => const DragonArtworkSelection(
+          eggAsset,
+          DragonArtworkFrame.fullImage,
+        ),
+      'spark' => DragonArtworkSelection(
+          sinister ? sinisterHatchlingAsset() : hatchlingAsset(lineageId),
+          DragonArtworkFrame.fullImage,
+        ),
+      'nestDragon' => DragonArtworkSelection(
+          sinister ? sinisterFormsAsset() : formsAsset(lineageId),
+          DragonArtworkFrame.juvenile,
+        ),
+      _ => DragonArtworkSelection(
+          sinister ? sinisterFormsAsset() : formsAsset(lineageId),
+          switch (evolutionPath) {
+            'storm' || 'arcana' => DragonArtworkFrame.storm,
+            'bond' || 'spirit' => DragonArtworkFrame.bond,
+            _ => DragonArtworkFrame.earth,
+          },
+        ),
+    };
+  }
 
   static Set<String> get allAssetPaths => {
         eggAsset,
+        seraphscaleHatchlingAsset,
+        seraphscaleHatchlingSilhouetteAsset,
+        seraphscaleHatchlingSpectralAsset,
+        seraphscaleWyrmlingAsset,
+        seraphscaleMightAsset,
+        seraphscaleArcanaAsset,
+        for (final family in safeStandaloneForms.entries)
+          for (final form in family.value)
+            safeStandaloneFormAsset(family.key, form),
         for (final lineage in dragonLineages) ...{
           hatchlingAsset(lineage.id),
           formsAsset(lineage.id),
@@ -146,6 +242,25 @@ class _DragonArtState extends State<DragonArt>
       evolutionPath: widget.evolutionPath,
       sinister: widget.sinister && lineage.id == 'everwyrm',
     );
+    final preRenderedHatchling =
+        artwork.asset == DragonArtwork.seraphscaleHatchlingAsset;
+    final displayArtwork = preRenderedHatchling
+        ? DragonArtworkSelection(
+            widget.silhouette
+                ? DragonArtwork.seraphscaleHatchlingSilhouetteAsset
+                : widget.prismatic
+                    ? DragonArtwork.seraphscaleHatchlingSpectralAsset
+                    : DragonArtwork.seraphscaleHatchlingAsset,
+            DragonArtworkFrame.fullImage,
+          )
+        : artwork;
+    final needsColorFilter = !preRenderedHatchling &&
+        (widget.silhouette || (widget.prismatic && !egg));
+    final dragonImage = _DragonImage(
+      artwork: displayArtwork,
+      fit: widget.fit,
+      displaySize: widget.height,
+    );
     return Semantics(
       image: true,
       label: widget.silhouette
@@ -167,51 +282,52 @@ class _DragonArtState extends State<DragonArt>
           child: Stack(
             fit: StackFit.expand,
             children: [
-              ColorFiltered(
-                colorFilter: widget.silhouette
-                    ? const ColorFilter.mode(Color(0xFF2D2941), BlendMode.srcIn)
-                    : widget.prismatic && !egg
-                        ? const ColorFilter.matrix(<double>[
-                            0.25,
-                            0.75,
-                            0.25,
-                            0,
-                            18,
-                            0.65,
-                            0.15,
-                            0.55,
-                            0,
-                            4,
-                            0.35,
-                            0.55,
-                            0.15,
-                            0,
-                            26,
-                            0,
-                            0,
-                            0,
-                            1,
-                            0,
-                          ])
-                        : const ColorFilter.mode(
-                            Colors.transparent, BlendMode.dst),
-                child: _DragonImage(
-                  artwork: artwork,
-                  fit: widget.fit,
-                  displaySize: widget.height,
-                ),
-              ),
               if (widget.prismatic && !widget.silhouette && !egg)
                 IgnorePointer(
-                  child: Padding(
-                    padding: EdgeInsets.all(widget.height * .015),
-                    child: Image.asset(
-                      GameVfxAssets.spectralAura,
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
+                  child: Opacity(
+                    opacity: .72,
+                    child: Padding(
+                      padding: EdgeInsets.all(widget.height * .025),
+                      child: Image.asset(
+                        GameVfxAssets.spectralAura,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
+                      ),
                     ),
                   ),
                 ),
+              if (needsColorFilter)
+                ColorFiltered(
+                  colorFilter: widget.silhouette
+                      ? const ColorFilter.mode(
+                          Color(0xFF2D2941),
+                          BlendMode.srcIn,
+                        )
+                      : const ColorFilter.matrix(<double>[
+                          0.25,
+                          0.75,
+                          0.25,
+                          0,
+                          18,
+                          0.65,
+                          0.15,
+                          0.55,
+                          0,
+                          4,
+                          0.35,
+                          0.55,
+                          0.15,
+                          0,
+                          26,
+                          0,
+                          0,
+                          0,
+                          1,
+                          0,
+                        ]),
+                  child: dragonImage,
+                ),
+              if (!needsColorFilter) dragonImage,
             ],
           ),
         ),
@@ -268,8 +384,14 @@ class _DragonImage extends StatelessWidget {
           ),
         );
 
+    Widget withSafetyMargin(Widget child) => Padding(
+          key: const ValueKey('dragon-art-safety-margin'),
+          padding: EdgeInsets.all(displaySize * .055),
+          child: child,
+        );
+
     if (artwork.frame == DragonArtworkFrame.fullImage) {
-      return image(imageFit: fit);
+      return withSafetyMargin(image(imageFit: fit));
     }
 
     final alignment = switch (artwork.frame) {
@@ -279,14 +401,16 @@ class _DragonImage extends StatelessWidget {
       DragonArtworkFrame.bond => Alignment.bottomRight,
       DragonArtworkFrame.fullImage => Alignment.center,
     };
-    return ClipRect(
-      child: Transform.scale(
-        scale: 2,
-        alignment: alignment,
-        child: image(
-          imageFit: BoxFit.fill,
-          loadingAlignment: alignment,
-          compensateAtlasScale: true,
+    return withSafetyMargin(
+      ClipRect(
+        child: Transform.scale(
+          scale: 2,
+          alignment: alignment,
+          child: image(
+            imageFit: BoxFit.fill,
+            loadingAlignment: alignment,
+            compensateAtlasScale: true,
+          ),
         ),
       ),
     );

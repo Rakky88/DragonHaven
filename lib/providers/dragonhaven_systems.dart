@@ -29,6 +29,13 @@ enum AdventureStartResult {
 
 enum TowerBuildResult { built, maximumReached, insufficientCoins, invalidRoom }
 
+DateTime _adventureRefillBoundary(DateTime value, int intervalMinutes) {
+  final minute = value.minute - value.minute.remainder(intervalMinutes);
+  return value.isUtc
+      ? DateTime.utc(value.year, value.month, value.day, value.hour, minute)
+      : DateTime(value.year, value.month, value.day, value.hour, minute);
+}
+
 DateTime _lastSundayOfUtcMonth(int year, int month) {
   final lastDay = DateTime.utc(year, month + 1, 0);
   return lastDay.subtract(Duration(days: lastDay.weekday % 7));
@@ -66,10 +73,62 @@ int _amsterdamGroupAdventureSlot(DateTime instant) {
       anchor.inDays;
 }
 
+DateTime _nextAmsterdamGroupAdventureAt(DateTime instant) {
+  final utc = instant.toUtc();
+  final wallTime = utc.add(_amsterdamOffsetAtUtc(utc));
+  var daysUntilSunday = (DateTime.sunday - wallTime.weekday) % 7;
+  var candidateWall = DateTime.utc(
+    wallTime.year,
+    wallTime.month,
+    wallTime.day + daysUntilSunday,
+    12,
+  );
+  if (!candidateWall.isAfter(wallTime)) {
+    candidateWall = candidateWall.add(const Duration(days: 7));
+  }
+  for (final offset in const [Duration(hours: 2), Duration(hours: 1)]) {
+    final candidateUtc = candidateWall.subtract(offset);
+    if (_amsterdamOffsetAtUtc(candidateUtc) == offset) {
+      return instant.isUtc ? candidateUtc : candidateUtc.toLocal();
+    }
+  }
+  final fallback = candidateWall.subtract(const Duration(hours: 1));
+  return instant.isUtc ? fallback : fallback.toLocal();
+}
+
 extension DragonHavenSystems on HouseholdProvider {
   static const int maxDragonsPerTowerFloor = 3;
 
   DateTime get currentTime => _clock();
+
+  DateTime? nextAdventureRefreshAt(
+    AdventureKind kind, {
+    DateTime? from,
+  }) {
+    final now = from ?? _clock();
+    return switch (kind) {
+      AdventureKind.mini =>
+        _adventureRefillBoundary(now, 15).add(const Duration(minutes: 15)),
+      AdventureKind.short =>
+        _adventureRefillBoundary(now, 60).add(const Duration(hours: 1)),
+      AdventureKind.long => now.isUtc
+          ? DateTime.utc(now.year, now.month, now.day + 1)
+          : DateTime(now.year, now.month, now.day + 1),
+      AdventureKind.group => _nextAmsterdamGroupAdventureAt(now),
+      AdventureKind.special => null,
+    };
+  }
+
+  Duration? adventureRefreshRemaining(
+    AdventureKind kind, {
+    DateTime? from,
+  }) {
+    final now = from ?? _clock();
+    final refreshAt = nextAdventureRefreshAt(kind, from: now);
+    if (refreshAt == null) return null;
+    final remaining = refreshAt.difference(now);
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
 
   List<Pet> get ownedDragons => [
         if (!pet.isEgg) pet,
@@ -376,30 +435,33 @@ extension DragonHavenSystems on HouseholdProvider {
         };
     int refillCount;
     if (kind == AdventureKind.mini) {
+      final currentBoundary = _adventureRefillBoundary(now, 15);
       final previous = miniAdventureRefilledAt;
       if (previous == null) {
         refillCount = 3;
-        miniAdventureRefilledAt = now;
+        miniAdventureRefilledAt = currentBoundary;
       } else {
+        final previousBoundary = _adventureRefillBoundary(previous, 15);
         final elapsedSlots =
-            (now.difference(previous).inMinutes ~/ 15).clamp(0, 3);
-        refillCount = elapsedSlots;
-        if (elapsedSlots > 0) {
-          miniAdventureRefilledAt =
-              previous.add(Duration(minutes: elapsedSlots * 15));
+            currentBoundary.difference(previousBoundary).inMinutes ~/ 15;
+        refillCount = elapsedSlots.clamp(0, 3);
+        if (currentBoundary.isAfter(previousBoundary)) {
+          miniAdventureRefilledAt = currentBoundary;
         }
       }
     } else if (kind == AdventureKind.short) {
+      final currentBoundary = _adventureRefillBoundary(now, 60);
       final previous = shortAdventureRefilledAt;
       if (previous == null) {
         refillCount = 3;
-        shortAdventureRefilledAt = now;
+        shortAdventureRefilledAt = currentBoundary;
       } else {
-        final elapsedHours = now.difference(previous).inHours.clamp(0, 3);
-        refillCount = elapsedHours;
-        if (elapsedHours > 0) {
-          shortAdventureRefilledAt =
-              previous.add(Duration(hours: elapsedHours));
+        final previousBoundary = _adventureRefillBoundary(previous, 60);
+        final elapsedHours =
+            currentBoundary.difference(previousBoundary).inHours;
+        refillCount = elapsedHours.clamp(0, 3);
+        if (currentBoundary.isAfter(previousBoundary)) {
+          shortAdventureRefilledAt = currentBoundary;
         }
       }
     } else {
@@ -538,6 +600,7 @@ extension DragonHavenSystems on HouseholdProvider {
     final tier = run.rewardTier ?? _rollAdventureChest(definition.kind);
     dragon.xp += definition.xp;
     dragon.addTraining(definition.focus, definition.statPoints);
+    _evolveReadyDragons(_clock());
     dragon.activeAdventureId = null;
     chestInventory.update(tier, (value) => value + 1, ifAbsent: () => 1);
     adventureRuns.removeAt(index);

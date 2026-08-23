@@ -149,7 +149,9 @@ void main() {
       tester.binding.setSurfaceSize(null);
       tester.platformDispatcher.clearTextScaleFactorTestValue();
     });
-    final game = HouseholdProvider(random: Random(73))..languageCode = 'de';
+    var now = DateTime.utc(2026, 8, 23, 12, 12);
+    final game = HouseholdProvider(random: Random(73), clock: () => now)
+      ..languageCode = 'de';
     game.pet
       ..stage = DragonStage.hatchling
       ..name = 'Ember';
@@ -176,9 +178,19 @@ void main() {
     for (final card in cards) {
       expect(tester.getSize(card).height, 82);
     }
+    final refillTimer = find.byKey(const Key('adventure-refresh-mini'));
+    final timerText = find.descendant(
+      of: refillTimer,
+      matching: find.byType(Text),
+    );
+    final beforeTick = tester.widget<Text>(timerText).data;
+    now = now.add(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    final afterTick = tester.widget<Text>(timerText).data;
+    expect(afterTick, isNot(beforeTick));
     final first = game.adventuresFor(AdventureKind.mini).first;
     await tester.tap(find.byKey(Key('adventure-details-${first.id}')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Mögliche Truhen'), findsOneWidget);
     expect(find.text(AppStrings('de').adventureDescription(first)),
         findsOneWidget);
@@ -700,6 +712,7 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Adventure'), findsWidgets);
     expect(find.byKey(const Key('tower-roof-egg')), findsOneWidget);
+    expect(find.byKey(const Key('tower-roof-nest-rim')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

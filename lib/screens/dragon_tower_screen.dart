@@ -216,34 +216,46 @@ class _TowerRoof extends StatelessWidget {
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: 1,
+                bottom: 39,
                 child: IgnorePointer(
                   child: Center(
                     child: Container(
                       key: const Key('tower-roof-egg'),
-                      width: 112,
-                      height: 112,
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            Colors.white.withValues(alpha: .76),
-                            const Color(0x66FFE39A),
-                            Colors.transparent,
-                          ],
-                        ),
-                        boxShadow: const [
+                      width: 76,
+                      height: 88,
+                      decoration: const BoxDecoration(
+                        boxShadow: [
                           BoxShadow(
-                            color: Color(0xAAFFE39A),
-                            blurRadius: 24,
-                            spreadRadius: 3,
+                            color: Color(0x88FFE39A),
+                            blurRadius: 18,
+                            spreadRadius: 1,
+                            offset: Offset(0, 4),
                           ),
                         ],
                       ),
                       child: const GameIconSprite(
                         GameIconKind.mysteriousEgg,
-                        size: 106,
+                        size: 82,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (game.nestEgg != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 18,
+                child: IgnorePointer(
+                  child: Center(
+                    child: SizedBox(
+                      key: const Key('tower-roof-nest-rim'),
+                      width: 196,
+                      height: 110,
+                      child: Image.asset(
+                        'assets/images/ui/ui_rooftop_nest_foreground.png',
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
                       ),
                     ),
                   ),
