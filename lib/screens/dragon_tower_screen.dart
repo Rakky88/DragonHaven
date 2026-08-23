@@ -221,8 +221,8 @@ class _TowerRoof extends StatelessWidget {
                   child: Center(
                     child: Container(
                       key: const Key('tower-roof-egg'),
-                      width: 76,
-                      height: 88,
+                      width: 62,
+                      height: 72,
                       decoration: const BoxDecoration(
                         boxShadow: [
                           BoxShadow(
@@ -235,7 +235,7 @@ class _TowerRoof extends StatelessWidget {
                       ),
                       child: const GameIconSprite(
                         GameIconKind.mysteriousEgg,
-                        size: 82,
+                        size: 66,
                       ),
                     ),
                   ),
@@ -245,13 +245,13 @@ class _TowerRoof extends StatelessWidget {
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: 18,
+                bottom: 25,
                 child: IgnorePointer(
                   child: Center(
                     child: SizedBox(
                       key: const Key('tower-roof-nest-rim'),
-                      width: 196,
-                      height: 110,
+                      width: 128,
+                      height: 68,
                       child: Image.asset(
                         'assets/images/ui/ui_rooftop_nest_foreground.png',
                         fit: BoxFit.contain,
@@ -690,7 +690,11 @@ class _OwnedDragonsSheet extends StatelessWidget {
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.favorite_rounded),
+                  leading: const GameIconSprite(
+                    GameIconKind.dragonFavorite,
+                    key: Key('dragon-favorite-action-sprite'),
+                    size: 40,
+                  ),
                   title: Text(strings.pick(
                       'Set as favorite', 'Instellen als favoriet')),
                   enabled: !dragon.favorite,
@@ -707,7 +711,14 @@ class _OwnedDragonsSheet extends StatelessWidget {
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.flight_takeoff_rounded),
+                  leading: Opacity(
+                    opacity: dragon.favorite ? .38 : 1,
+                    child: const GameIconSprite(
+                      GameIconKind.dragonRelease,
+                      key: Key('dragon-release-action-sprite'),
+                      size: 40,
+                    ),
+                  ),
                   title:
                       Text(strings.pick('Release dragon…', 'Draak vrijlaten…')),
                   enabled: !dragon.favorite,

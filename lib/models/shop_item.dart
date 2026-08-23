@@ -8,6 +8,8 @@ enum FurnitureLightType { none, warm, cool, fire, arcane }
 
 enum FurnitureNightActivation { none, always, duskAndNight, manualVisualOnly }
 
+const int shopPriceMultiplier = 10;
+
 class ShopItem {
   const ShopItem({
     required this.id,
@@ -16,7 +18,7 @@ class ShopItem {
     required this.description,
     required this.descriptionNl,
     required this.slot,
-    required this.price,
+    required int price,
     required this.rarity,
     required this.visualSeed,
     this.interactionTags = const <String>[],
@@ -28,7 +30,7 @@ class ShopItem {
     this.daySpriteAsset,
     this.nightSpriteAsset,
     this.currency = ItemCurrency.coins,
-  });
+  }) : price = price * shopPriceMultiplier;
 
   final String id;
   final String name;

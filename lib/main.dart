@@ -27,15 +27,18 @@ Future<void> main() async {
     defaultValue: 180,
   );
   const evolutionDemo = bool.fromEnvironment('DRAGONHAVEN_EVOLUTION_DEMO');
+  const nestDemo = bool.fromEnvironment('DRAGONHAVEN_NEST_DEMO');
   final game = evolutionDemo
       ? HouseholdProvider.createEvolutionDemo()
-      : hatchDemo
-          ? HouseholdProvider.createHatchDemo(
-              countdown: Duration(seconds: hatchDemoSeconds),
-            )
-          : showcase
-              ? HouseholdProvider.createShowcase()
-              : await HouseholdProvider.loadFromStorage();
+      : nestDemo
+          ? HouseholdProvider.createNestDemo()
+          : hatchDemo
+              ? HouseholdProvider.createHatchDemo(
+                  countdown: Duration(seconds: hatchDemoSeconds),
+                )
+              : showcase
+                  ? HouseholdProvider.createShowcase()
+                  : await HouseholdProvider.loadFromStorage();
   if (evolutionDemo) await game.refreshForCurrentDate();
   if (showcase && lockedCodexAudit) {
     game.discoveredForms.clear();

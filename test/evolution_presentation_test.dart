@@ -41,16 +41,27 @@ void main() {
       ),
     ));
     await tester.tap(find.byKey(const Key('open-evolution-presentation')));
-    await tester.pump(const Duration(milliseconds: 250));
+    for (var attempt = 0;
+        attempt < 20 &&
+            find
+                .byKey(const Key('skip-evolution-animation'))
+                .evaluate()
+                .isEmpty;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
 
-    expect(find.text('A new form is awakening…'), findsOneWidget);
+    expect(find.text('A new form is awakening…'), findsNothing);
     expect(find.byKey(const Key('skip-evolution-animation')), findsOneWidget);
+    expect(find.byKey(const Key('evolution-frame-sequence')), findsOneWidget);
+    expect(find.byKey(const Key('evolution-frame-atlas')), findsOneWidget);
     expect(find.text('A new form awakens!'), findsNothing);
 
-    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(seconds: 6));
     expect(find.text('A new form awakens!'), findsNothing,
         reason:
-            'The natural reveal should retain several seconds of suspense.');
+            'The natural reveal should retain more than six seconds of suspense.');
+    expect(find.byKey(const Key('evolution-reveal-burst')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('skip-evolution-animation')));
     await tester.pump(const Duration(milliseconds: 700));
@@ -58,8 +69,10 @@ void main() {
     expect(find.text('Wyrmling'), findsOneWidget);
     expect(find.byKey(const Key('skip-evolution-animation')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('close-evolution-presentation')));
+    expect(find.byIcon(Icons.arrow_forward_rounded), findsNothing);
+    await tester.tapAt(const Offset(24, 110));
     await tester.pumpAndSettle();
+    expect(find.text('A new form awakens!'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

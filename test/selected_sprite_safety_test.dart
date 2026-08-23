@@ -138,7 +138,7 @@ void main() {
         );
         expect(artwork.frame, DragonArtworkFrame.fullImage,
             reason: '${selection.key} $form');
-        expect(artwork.asset, endsWith('_${form}_safe.webp'),
+        expect(artwork.asset, matches(RegExp('_${form}_safe(?:_v2)?\\.webp\$')),
             reason: '${selection.key} $form');
         count++;
       }
@@ -173,13 +173,19 @@ void main() {
           }
           expect(maxX, greaterThanOrEqualTo(0),
               reason: 'pass $pass: $path contains visible artwork');
-          expect(minX, greaterThanOrEqualTo(64),
+          final requiredMargin = DragonArtwork
+                      .secondPassStandaloneForms[selection.key]
+                      ?.contains(form) ==
+                  true
+              ? 144
+              : 64;
+          expect(minX, greaterThanOrEqualTo(requiredMargin),
               reason: 'pass $pass: $path left edge');
-          expect(minY, greaterThanOrEqualTo(64),
+          expect(minY, greaterThanOrEqualTo(requiredMargin),
               reason: 'pass $pass: $path top edge');
-          expect(sprite.width - 1 - maxX, greaterThanOrEqualTo(64),
+          expect(sprite.width - 1 - maxX, greaterThanOrEqualTo(requiredMargin),
               reason: 'pass $pass: $path right edge');
-          expect(sprite.height - 1 - maxY, greaterThanOrEqualTo(64),
+          expect(sprite.height - 1 - maxY, greaterThanOrEqualTo(requiredMargin),
               reason: 'pass $pass: $path bottom edge');
         }
       }

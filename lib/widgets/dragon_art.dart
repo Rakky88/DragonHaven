@@ -72,7 +72,26 @@ abstract final class DragonArtwork {
       'assets/images/dragons/${_spriteLineageId(lineageId)}_forms.webp';
 
   static String safeStandaloneFormAsset(String lineageId, String form) =>
-      'assets/images/dragons/${_spriteLineageId(lineageId)}_${form}_safe.webp';
+      secondPassStandaloneForms[lineageId]?.contains(form) == true
+          ? 'assets/images/dragons/${_spriteLineageId(lineageId)}_${form}_safe_v2.webp'
+          : 'assets/images/dragons/${_spriteLineageId(lineageId)}_${form}_safe.webp';
+
+  // These source forms were still marked after the first full on-device audit.
+  // Their second pass is true outpainting: missing anatomy was reconstructed
+  // before each full body was placed on a generous transparent canvas.
+  static const secondPassStandaloneForms = <String, Set<String>>{
+    'clockskip': {'might'},
+    'dreammoth': {'arcana'},
+    'echofern': {'might'},
+    'harmonytail': {'spirit'},
+    'ironwhistle': {'might'},
+    'meteorhide': {'might'},
+    'petaldrift': {'might'},
+    'runehopper': {'arcana'},
+    'starforged': {'might'},
+    'tidescale': {'might', 'spirit'},
+    'worldroot': {'might'},
+  };
 
   static String sinisterHatchlingAsset() =>
       'assets/images/dragons/everwyrm_sinister_hatchling.webp';

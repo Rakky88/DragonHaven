@@ -494,6 +494,31 @@ void main() {
         isTrue);
   });
 
+  test('Tower floor construction and repair prices are ten times higher',
+      () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    )
+      ..pet = Pet(
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        coins: 10000,
+      )
+      ..towerFloorRoomIds = [];
+
+    expect(game.nextTowerFloorPrice, 1200);
+    expect(await game.buildTowerFloor('hearth'), TowerBuildResult.built);
+    expect(game.pet.coins, 8800);
+    expect(game.nextTowerFloorPrice, 2050);
+
+    game.damagedTowerFloors.add(0);
+    game.damagedTowerRepairFactors[0] = .40;
+    expect(game.repairTowerFloorPrice(0), 180);
+    expect(await game.repairTowerFloor(0), isTrue);
+    expect(game.pet.coins, 8620);
+  });
+
   test('Tower roaming is per dragon, persistent and uses one room at a time',
       () async {
     final game = HouseholdProvider(random: Random(51));

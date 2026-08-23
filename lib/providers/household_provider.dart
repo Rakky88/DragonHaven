@@ -170,6 +170,28 @@ class HouseholdProvider extends ChangeNotifier {
     return provider;
   }
 
+  /// Creates a non-persistent full Tower account with a normal egg visibly
+  /// incubating in the Rooftop Nest for emulator layout reviews.
+  static HouseholdProvider createNestDemo() {
+    final provider = createShowcase();
+    final now = DateTime.now();
+    provider
+      ..accountName = 'Rooftop Nest Keeper'
+      ..incubatingEgg = Pet(
+        id: 'nest-layout-demo-egg',
+        stage: DragonStage.egg,
+        firstEgg: false,
+        incubationMinutes: 144,
+        acquiredAt: now,
+        stageStartedAt: now,
+        needsUpdatedAt: now,
+        hatchSeed: 20260824,
+        lineageId: dragonLineages[3].id,
+      )
+      ..pendingPresentations = [];
+    return provider;
+  }
+
   /// Creates a non-persistent emulator account whose Starter Egg hatches
   /// three minutes after the app starts.
   static HouseholdProvider createHatchDemo({

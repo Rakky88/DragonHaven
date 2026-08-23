@@ -757,6 +757,42 @@ Future<void> showEvolutionMilestonePresentation(
   final dragon = game.dragonById(presentation.dragonId);
   if (dragon == null || dragon.isEgg) return;
   final wasHatchling = presentation.previousStageKey == 'spark';
+  final previousStageKey =
+      presentation.previousStageKey ?? (wasHatchling ? 'spark' : 'nestDragon');
+  final previousArtwork = DragonArtwork.forStage(
+    stageKey: previousStageKey,
+    lineageId: dragon.lineageId,
+    evolutionPath: dragon.activeEvolutionPath,
+  );
+  final evolvedArtwork = DragonArtwork.forStage(
+    stageKey: dragon.stageKey,
+    lineageId: dragon.lineageId,
+    evolutionPath: dragon.activeEvolutionPath,
+  );
+  unawaited(Future.wait([
+    precacheImage(
+      const AssetImage('assets/images/evolution_reveal_background.webp'),
+      context,
+    ),
+    precacheImage(
+      const AssetImage(GameVfxAssets.evolutionRuneRing),
+      context,
+    ),
+    precacheImage(
+      const AssetImage(GameVfxAssets.evolutionEnergySpiral),
+      context,
+    ),
+    precacheImage(
+      const AssetImage(GameVfxAssets.evolutionRevealBurst),
+      context,
+    ),
+    precacheImage(
+      const AssetImage(GameVfxAssets.evolutionFrameAtlas),
+      context,
+    ),
+    precacheImage(AssetImage(previousArtwork.asset), context),
+    precacheImage(AssetImage(evolvedArtwork.asset), context),
+  ]));
   unawaited(HavenAudio.setMusicScene(HavenMusicScene.reveal));
   unawaited(HavenAudio.play(
       wasHatchling ? HavenSound.evolutionYoung : HavenSound.evolutionAscended));
@@ -766,8 +802,7 @@ Future<void> showEvolutionMilestonePresentation(
     barrierDismissible: false,
     builder: (_) => _EvolutionDialog(
       pet: dragon,
-      previousStageKey: presentation.previousStageKey ??
-          (wasHatchling ? 'spark' : 'nestDragon'),
+      previousStageKey: previousStageKey,
     ),
   );
 }
@@ -782,24 +817,32 @@ class _EvolutionDialog extends StatefulWidget {
 }
 
 class _EvolutionDialogState extends State<_EvolutionDialog>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   int _phase = 0;
+  Timer? _convergenceTimer;
   Timer? _flashTimer;
   Timer? _revealTimer;
-  late final AnimationController _suspense = AnimationController(
+  late final AnimationController _magic = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1700),
-  )..repeat(reverse: true);
+    duration: const Duration(milliseconds: 10400),
+  )..repeat();
+  late final AnimationController _frames = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..repeat();
 
   @override
   void initState() {
     super.initState();
-    _flashTimer = Timer(const Duration(milliseconds: 4200), () {
+    _convergenceTimer = Timer(const Duration(milliseconds: 2600), () {
       if (!mounted) return;
       setState(() => _phase = 1);
-      _revealTimer = Timer(const Duration(milliseconds: 850), () {
-        if (mounted) setState(() => _phase = 2);
-      });
+    });
+    _flashTimer = Timer(const Duration(milliseconds: 6500), () {
+      if (mounted) setState(() => _phase = 2);
+    });
+    _revealTimer = Timer(const Duration(milliseconds: 7800), () {
+      if (mounted) setState(() => _phase = 3);
     });
   }
 
@@ -807,26 +850,33 @@ class _EvolutionDialogState extends State<_EvolutionDialog>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (MediaQuery.disableAnimationsOf(context)) {
-      _suspense
+      _magic
         ..stop()
         ..value = 1;
-    } else if (!_suspense.isAnimating) {
-      _suspense.repeat(reverse: true);
+      _frames
+        ..stop()
+        ..value = 0;
+    } else {
+      if (!_magic.isAnimating) _magic.repeat();
+      if (!_frames.isAnimating) _frames.repeat();
     }
   }
 
   void _skipToReveal() {
-    if (_phase >= 2) return;
+    if (_phase >= 3) return;
+    _convergenceTimer?.cancel();
     _flashTimer?.cancel();
     _revealTimer?.cancel();
-    setState(() => _phase = 2);
+    setState(() => _phase = 3);
   }
 
   @override
   void dispose() {
+    _convergenceTimer?.cancel();
     _flashTimer?.cancel();
     _revealTimer?.cancel();
-    _suspense.dispose();
+    _magic.dispose();
+    _frames.dispose();
     HavenAudio.setMusicScene(
       DateTime.now().hour >= 21 || DateTime.now().hour < 7
           ? HavenMusicScene.towerNight
@@ -840,122 +890,239 @@ class _EvolutionDialogState extends State<_EvolutionDialog>
     final strings = AppStrings.of(context);
     final pet = widget.pet;
     return Dialog.fullscreen(
-      backgroundColor: _phase == 1 ? Colors.white : const Color(0xFF1D183B),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 520),
-        decoration: BoxDecoration(
-          image: _phase == 1
-              ? null
-              : const DecorationImage(
-                  image: AssetImage(
-                      'assets/images/evolution_reveal_background.webp'),
-                  fit: BoxFit.cover,
-                ),
-        ),
-        child: SafeArea(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Spacer(),
-                if (_phase != 1)
-                  AnimatedBuilder(
-                    animation: _suspense,
-                    builder: (_, child) => Transform.scale(
-                      scale: _phase >= 2 ? 1.08 : .91 + _suspense.value * .06,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFB992FF).withValues(
-                                alpha: _phase >= 2
-                                    ? .42
-                                    : .18 + _suspense.value * .27,
+      backgroundColor: const Color(0xFF1D183B),
+      child: GestureDetector(
+        key: const Key('close-evolution-presentation'),
+        behavior: HitTestBehavior.opaque,
+        onTap: _phase >= 3 ? () => Navigator.pop(context) : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 900),
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage(
+                'assets/images/evolution_reveal_background.webp',
+              ),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: SafeArea(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                IgnorePointer(
+                  child: Align(
+                    alignment: const Alignment(0, -.08),
+                    child: AnimatedBuilder(
+                      animation: Listenable.merge([_magic, _frames]),
+                      builder: (_, __) {
+                        final pulse =
+                            (1 - math.cos(_magic.value * math.pi * 4)) / 2;
+                        final frameIndex =
+                            math.min(19, (_frames.value * 20).floor());
+                        return Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            RepaintBoundary(
+                              key: const Key('evolution-frame-sequence'),
+                              child: Opacity(
+                                opacity: _phase >= 3
+                                    ? .58
+                                    : _phase == 1
+                                        ? 1
+                                        : .90,
+                                child: Transform.scale(
+                                  scale: _phase == 1
+                                      ? .96 + pulse * .055
+                                      : .94 + pulse * .025,
+                                  child: _EvolutionFrameAtlas(
+                                    frameIndex: frameIndex,
+                                    size: 430,
+                                  ),
+                                ),
                               ),
-                              blurRadius: 38 + _suspense.value * 28,
-                              spreadRadius: 6 + _suspense.value * 8,
                             ),
+                            if (_phase == 1)
+                              Transform.scale(
+                                scale: .58 + pulse * .34,
+                                child: Opacity(
+                                  opacity: .20 + pulse * .52,
+                                  child: const Image(
+                                    key: Key('evolution-reveal-burst'),
+                                    image: AssetImage(
+                                      GameVfxAssets.evolutionRevealBurst,
+                                    ),
+                                    width: 390,
+                                    height: 390,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
                           ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Spacer(),
+                  AnimatedBuilder(
+                    animation: _magic,
+                    builder: (_, child) {
+                      final pulse =
+                          (1 - math.cos(_magic.value * math.pi * 4)) / 2;
+                      return Transform.translate(
+                        offset: Offset(
+                          0,
+                          math.sin(_magic.value * math.pi * 4) * 4,
                         ),
-                        child: child,
+                        child: Transform.scale(
+                          scale: _phase >= 3
+                              ? 1.08
+                              : _phase == 1
+                                  ? .96 + pulse * .09
+                                  : .91 + pulse * .045,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFB992FF).withValues(
+                                    alpha:
+                                        _phase >= 3 ? .42 : .18 + pulse * .31,
+                                  ),
+                                  blurRadius: 42 + pulse * 34,
+                                  spreadRadius: 8 + pulse * 13,
+                                ),
+                              ],
+                            ),
+                            child: child,
+                          ),
+                        ),
+                      );
+                    },
+                    child: SizedBox(
+                      key: const Key('centered-evolution-dragon'),
+                      height: 300,
+                      child: TweenAnimationBuilder<double>(
+                        key: ValueKey(_phase >= 3
+                            ? 'evolved-dragon-entrance'
+                            : 'previous-dragon-entrance'),
+                        tween: Tween(begin: .72, end: 1),
+                        duration: const Duration(milliseconds: 1450),
+                        curve: Curves.easeOutBack,
+                        builder: (_, entrance, child) => Opacity(
+                          opacity: entrance.clamp(0, 1),
+                          child: Transform.scale(scale: entrance, child: child),
+                        ),
+                        child: DragonArt(
+                          height: 300,
+                          stageKey: _phase >= 3
+                              ? pet.stageKey
+                              : widget.previousStageKey,
+                          lineageId: pet.lineageId,
+                          evolutionPath: pet.activeEvolutionPath,
+                          prismatic: pet.spectral,
+                          sinister: pet.sinister,
+                        ),
                       ),
                     ),
-                    child: DragonArt(
-                      key: const Key('centered-evolution-dragon'),
-                      height: 285,
-                      stageKey:
-                          _phase >= 2 ? pet.stageKey : widget.previousStageKey,
-                      lineageId: pet.lineageId,
-                      evolutionPath: pet.activeEvolutionPath,
-                      prismatic: pet.spectral,
-                      sinister: pet.sinister,
-                    ),
                   ),
-                const SizedBox(height: 22),
-                if (_phase == 0)
-                  Text(
-                    strings.pick('A new form is awakening…',
-                        'Een nieuwe vorm ontwaakt…'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
+                  const SizedBox(height: 22),
+                  if (_phase >= 3) ...[
+                    Text(
+                      strings.pick('A new form awakens!',
+                          'Een nieuwe vorm is ontwaakt!'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                  ),
-                if (_phase >= 2) ...[
-                  Text(
-                    strings.pick(
-                        'A new form awakens!', 'Een nieuwe vorm is ontwaakt!'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 23,
-                      fontWeight: FontWeight.w900,
+                    const SizedBox(height: 6),
+                    Text(
+                      pet.stage == DragonStage.ascended
+                          ? strings.lineageFormName(
+                              pet.lineage, pet.activeEvolutionPath)
+                          : strings.petStageNameByKey('nestDragon'),
+                      style: const TextStyle(
+                        color: Color(0xFFFFD878),
+                        fontSize: 19,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    pet.stage == DragonStage.ascended
-                        ? strings.lineageFormName(
-                            pet.lineage, pet.activeEvolutionPath)
-                        : strings.petStageNameByKey('nestDragon'),
-                    style: const TextStyle(
-                      color: Color(0xFFFFD878),
-                      fontSize: 19,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-                const Spacer(),
-                if (_phase >= 2)
-                  IconButton.filled(
-                    key: const Key('close-evolution-presentation'),
-                    onPressed: () => Navigator.pop(context),
-                    tooltip: strings.pick('Continue', 'Doorgaan'),
-                    icon: const Icon(Icons.arrow_forward_rounded),
-                    iconSize: 30,
-                    padding: const EdgeInsets.all(17),
-                  ),
-                const SizedBox(height: 22),
-              ]),
-              if (_phase < 2)
-                Align(
-                  alignment: const Alignment(0, .4),
-                  child: Semantics(
-                    button: true,
-                    label: strings.pick(
-                      'Skip evolution animation',
-                      'Evolutieanimatie overslaan',
-                    ),
-                    child: GestureDetector(
-                      key: const Key('skip-evolution-animation'),
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _skipToReveal,
-                      child: const SizedBox(width: 180, height: 110),
-                    ),
+                  ],
+                  const Spacer(),
+                  const SizedBox(height: 22),
+                ]),
+                IgnorePointer(
+                  child: AnimatedOpacity(
+                    key: const Key('evolution-white-flash'),
+                    opacity: _phase == 2 ? 1 : 0,
+                    duration: const Duration(milliseconds: 900),
+                    curve:
+                        _phase == 2 ? Curves.easeInExpo : Curves.easeOutCubic,
+                    child: const ColoredBox(color: Colors.white),
                   ),
                 ),
-            ],
+                if (_phase < 3)
+                  Align(
+                    alignment: const Alignment(0, .4),
+                    child: Semantics(
+                      button: true,
+                      label: strings.pick(
+                        'Skip evolution animation',
+                        'Evolutieanimatie overslaan',
+                      ),
+                      child: GestureDetector(
+                        key: const Key('skip-evolution-animation'),
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _skipToReveal,
+                        child: const SizedBox(width: 180, height: 110),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EvolutionFrameAtlas extends StatelessWidget {
+  const _EvolutionFrameAtlas({
+    required this.frameIndex,
+    required this.size,
+  });
+
+  final int frameIndex;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final column = frameIndex % 5;
+    final row = frameIndex ~/ 5;
+    return SizedBox.square(
+      key: const Key('evolution-frame-atlas'),
+      dimension: size,
+      child: ClipRect(
+        child: OverflowBox(
+          alignment: Alignment.topLeft,
+          minWidth: size * 5,
+          maxWidth: size * 5,
+          minHeight: size * 4,
+          maxHeight: size * 4,
+          child: Transform.translate(
+            offset: Offset(-column * size, -row * size),
+            child: Image.asset(
+              GameVfxAssets.evolutionFrameAtlas,
+              width: size * 5,
+              height: size * 4,
+              fit: BoxFit.fill,
+              filterQuality: FilterQuality.medium,
+              gaplessPlayback: true,
+            ),
           ),
         ),
       ),

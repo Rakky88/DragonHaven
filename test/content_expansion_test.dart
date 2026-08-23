@@ -34,6 +34,16 @@ void main() {
     expect(shopCatalog, hasLength(200));
     expect(shopCatalog.map((item) => item.id).toSet(), hasLength(200));
     expect(shopCatalog.every((item) => item.price > 0), isTrue);
+    expect(shopCatalog.every((item) => item.price % shopPriceMultiplier == 0),
+        isTrue);
+    expect(
+      shopCatalog.firstWhere((item) => item.id == 'moss_cushion').price,
+      120,
+    );
+    expect(
+      shopCatalog.firstWhere((item) => item.id == 'decor_aurora_daybed').price,
+      110,
+    );
     expect(shopCatalog.where((item) => item.id.startsWith('decor_')),
         hasLength(192));
     final runtimeAssets = shopCatalog

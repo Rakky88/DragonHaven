@@ -254,10 +254,16 @@ void main() {
       for (final kind in GameIconKind.values) kind.assetPath,
       GameVfxAssets.chestBurst,
       GameVfxAssets.spectralAura,
+      GameVfxAssets.evolutionRuneRing,
+      GameVfxAssets.evolutionEnergySpiral,
+      GameVfxAssets.evolutionRevealBurst,
+      GameVfxAssets.evolutionFrameAtlas,
+      for (var index = 0; index < 20; index++)
+        GameVfxAssets.evolutionFrame(index),
       for (final relic in MysticRelic.values) relic.assetPath,
       'assets/images/relics/egg_crack_magic.png',
     };
-    expect(paths, hasLength(43));
+    expect(paths, hasLength(69));
     for (final path in paths) {
       final image = await _decode(path);
       expect(image.width / image.height, inInclusiveRange(.5, 2.0),

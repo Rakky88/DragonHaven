@@ -41,6 +41,8 @@ enum GameIconKind {
   friendsTrade,
   friendsVisit,
   nameDragon,
+  dragonFavorite,
+  dragonRelease,
 }
 
 extension GameIconKindAsset on GameIconKind {
@@ -74,6 +76,8 @@ extension GameIconKindAsset on GameIconKind {
         GameIconKind.friendsTrade => 'friends_trade',
         GameIconKind.friendsVisit => 'friends_visit',
         GameIconKind.nameDragon => 'name_dragon',
+        GameIconKind.dragonFavorite => 'dragon_favorite',
+        GameIconKind.dragonRelease => 'dragon_release',
         _ => name,
       }}.webp'
           .replaceFirst('ui_adventure_', 'adventure_')
@@ -84,6 +88,7 @@ extension GameIconKindAsset on GameIconKind {
           .replaceFirst('ui_screen_', 'screen_')
           .replaceFirst('ui_audio_', 'audio_')
           .replaceFirst('ui_friends_', 'friends_')
+          .replaceFirst('ui_dragon_', 'dragon_')
           .replaceFirst('ui_name_dragon', 'name_dragon');
 }
 
@@ -123,4 +128,19 @@ class GameIconSprite extends StatelessWidget {
 abstract final class GameVfxAssets {
   static const chestBurst = 'assets/images/ui/vfx_chest_burst.webp';
   static const spectralAura = 'assets/images/ui/vfx_spectral_aura.webp';
+  static const evolutionRuneRing = 'assets/images/ui/evolution_rune_ring.webp';
+  static const evolutionEnergySpiral =
+      'assets/images/ui/evolution_energy_spiral.webp';
+  static const evolutionRevealBurst =
+      'assets/images/ui/evolution_reveal_burst.webp';
+  static const evolutionFrameAtlas =
+      'assets/images/ui/evolution_frame_atlas.webp';
+
+  static String evolutionFrame(int index) {
+    if (index < 0 || index >= 20) {
+      throw RangeError.range(index, 0, 19, 'index');
+    }
+    final suffix = index.toString().padLeft(2, '0');
+    return 'assets/images/ui/evolution_frames/evolution_frame_$suffix.webp';
+  }
 }

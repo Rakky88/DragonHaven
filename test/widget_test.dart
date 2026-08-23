@@ -18,6 +18,7 @@ import 'package:dragon_haven/screens/house_screen.dart';
 import 'package:dragon_haven/widgets/achievement_badge_sprite.dart';
 import 'package:dragon_haven/widgets/achievement_reveal.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
+import 'package:dragon_haven/widgets/game_icon_sprite.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -477,6 +478,22 @@ void main() {
     expect(find.text('Order nature'), findsOneWidget);
     expect(find.text('Personality'), findsOneWidget);
     expect(find.text('Remove from Tower'), findsOneWidget);
+    expect(
+        find.byKey(const Key('dragon-favorite-action-sprite')), findsOneWidget);
+    expect(
+        tester
+            .widget<GameIconSprite>(
+                find.byKey(const Key('dragon-favorite-action-sprite')))
+            .kind,
+        GameIconKind.dragonFavorite);
+    expect(
+        find.byKey(const Key('dragon-release-action-sprite')), findsOneWidget);
+    expect(
+        tester
+            .widget<GameIconSprite>(
+                find.byKey(const Key('dragon-release-action-sprite')))
+            .kind,
+        GameIconKind.dragonRelease);
     final releaseTile = tester.widget<ListTile>(find.ancestor(
       of: find.text('Release dragon…'),
       matching: find.byType(ListTile),
@@ -713,6 +730,11 @@ void main() {
     expect(find.text('Adventure'), findsWidgets);
     expect(find.byKey(const Key('tower-roof-egg')), findsOneWidget);
     expect(find.byKey(const Key('tower-roof-nest-rim')), findsOneWidget);
+    final roofEggSize = tester.getSize(find.byKey(const Key('tower-roof-egg')));
+    final roofNestSize =
+        tester.getSize(find.byKey(const Key('tower-roof-nest-rim')));
+    expect(roofNestSize.width / roofEggSize.width, lessThan(2.2));
+    expect(roofNestSize.height, lessThan(roofEggSize.height));
     expect(tester.takeException(), isNull);
   });
 
