@@ -1,3 +1,5 @@
+import 'mystic_relic.dart';
+
 enum ChestTier {
   wooden,
   silver,
@@ -14,12 +16,14 @@ class ChestReward {
     required this.gems,
     required this.eggFound,
     this.sinisterEgg = false,
+    this.relicFound,
   });
   final ChestTier tier;
   final int coins;
   final int gems;
   final bool eggFound;
   final bool sinisterEgg;
+  final MysticRelic? relicFound;
 }
 
 extension ChestTierPresentation on ChestTier {

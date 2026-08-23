@@ -7,6 +7,7 @@ import 'package:dragon_haven/models/achievement.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/day_phase.dart';
 import 'package:dragon_haven/models/house.dart';
+import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
 import 'package:dragon_haven/widgets/furniture_art.dart';
@@ -250,8 +251,10 @@ void main() {
       for (final kind in GameIconKind.values) kind.assetPath,
       GameVfxAssets.chestBurst,
       GameVfxAssets.spectralAura,
+      for (final relic in MysticRelic.values) relic.assetPath,
+      'assets/images/relics/egg_crack_magic.png',
     };
-    expect(paths, hasLength(39));
+    expect(paths, hasLength(43));
     for (final path in paths) {
       final image = await _decode(path);
       expect(image.width / image.height, inInclusiveRange(.5, 2.0),

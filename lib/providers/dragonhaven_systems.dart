@@ -489,13 +489,18 @@ extension DragonHavenSystems on HouseholdProvider {
   }
 
   Future<void> dismissAdventure(AdventureDefinition adventure) async {
-    if (adventure.kind != AdventureKind.short ||
+    if ((adventure.kind != AdventureKind.short &&
+            adventure.kind != AdventureKind.long) ||
         adventureRuns.any((run) => run.adventureId == adventure.id)) {
       return;
     }
-    adventureOptionIds[AdventureKind.short]?.remove(adventure.id);
+    adventureOptionIds[adventure.kind]?.remove(adventure.id);
     final now = _clock();
-    shortAdventureRefilledAt = now;
+    if (adventure.kind == AdventureKind.short) {
+      shortAdventureRefilledAt = now;
+    } else {
+      longAdventureRefillDay = HouseholdProvider._dayKey(now);
+    }
     await _notifyAndSave();
   }
 

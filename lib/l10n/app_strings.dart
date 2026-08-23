@@ -7,6 +7,7 @@ import '../models/chest.dart';
 import '../models/day_phase.dart';
 import '../models/dragon_lineage.dart';
 import '../models/house.dart';
+import '../models/mystic_relic.dart';
 import '../models/pet.dart';
 import '../models/shop_item.dart';
 import '../services/release_service.dart';
@@ -90,10 +91,64 @@ class AppStrings {
         _ => pick('Ascended', 'Ascended'),
       };
 
-  String personality(String personality) => switch (personality) {
-        'curious' => pick('Curious', 'Nieuwsgierig'),
-        _ => personality,
+  String personality(String trait) {
+    if (languageCode == 'en') return trait;
+    if (languageCode == 'nl') {
+      return switch (trait) {
+        'Sleepy' => 'Slaperig',
+        'Nosy' => 'Nieuwsgierig aagje',
+        'Hoarder' => 'Hamsteraar',
+        'Drama Queen' => 'Dramakoning(in)',
+        'Bookworm' => 'Boekenwurm',
+        'Food Thief' => 'Voedseldief',
+        'Afraid of Heights' => 'Hoogtevrees',
+        'Restless' => 'Rusteloos',
+        'Shy' => 'Verlegen',
+        'Show-Off' => 'Uitslover',
+        'Clumsy' => 'Onhandig',
+        'Neat Freak' => 'Netheidsfanaat',
+        'Messy' => 'Slordig',
+        'Curious' => 'Nieuwsgierig',
+        'Stubborn' => 'Koppig',
+        'Cuddly' => 'Knuffelig',
+        'Grumpy' => 'Chagrijnig',
+        'Easily Distracted' => 'Snel afgeleid',
+        'Night Owl' => 'Nachtbraker',
+        'Early Bird' => 'Vroege vogel',
+        'Splash Lover' => 'Spetterliefhebber',
+        'Firebug' => 'Vuurtjesstoker',
+        'Attention Seeker' => 'Aandachtszoeker',
+        'Startles Easily' => 'Snel geschrokken',
+        _ => trait,
       };
+    }
+    return translatedUiPhrase(trait, languageCode) ?? trait;
+  }
+
+  String lawAxisName(LawAxis value) => switch (value) {
+        LawAxis.lawful => pick('Lawful', 'Ordelijk'),
+        LawAxis.neutral => pick('Neutral', 'Neutraal'),
+        LawAxis.chaotic => pick('Chaotic', 'Chaotisch'),
+      };
+
+  String moralAxisName(MoralAxis value) => switch (value) {
+        MoralAxis.good => pick('Good', 'Goed'),
+        MoralAxis.neutral => pick('Neutral', 'Neutraal'),
+        MoralAxis.evil => pick('Evil', 'Kwaad'),
+      };
+
+  String relicName(MysticRelic relic) {
+    if (languageCode == 'en') return relic.nameEn;
+    if (languageCode == 'nl') return relic.nameNl;
+    return translatedUiPhrase(relic.nameEn, languageCode) ?? relic.nameEn;
+  }
+
+  String relicDescription(MysticRelic relic) {
+    if (languageCode == 'en') return relic.descriptionEn;
+    if (languageCode == 'nl') return relic.descriptionNl;
+    return translatedUiPhrase(relic.descriptionEn, languageCode) ??
+        relic.descriptionEn;
+  }
 
   String dragonLineageName(Pet pet) => lineageName(pet.lineage);
 

@@ -13,6 +13,7 @@ import '../models/dragon_egg.dart';
 import '../models/dragon_lineage.dart';
 import '../models/game_presentation.dart';
 import '../models/house.dart';
+import '../models/mystic_relic.dart';
 import '../models/pet.dart';
 import '../models/shop_item.dart';
 import '../models/tower_interaction.dart';
@@ -36,6 +37,13 @@ enum DragonRoamingResult {
   unchanged,
   dragonNotFound,
   towerFull,
+}
+
+enum MysticRelicUseResult {
+  revealed,
+  notOwned,
+  dragonNotFound,
+  alreadyKnown,
 }
 
 double _dragonSizeFromRoll(double roll) =>
@@ -80,6 +88,9 @@ class HouseholdProvider extends ChangeNotifier {
   Map<ChestTier, int> chestInventory = {
     for (final tier in ChestTier.values) tier: 0,
   };
+  Map<MysticRelic, int> relicInventory = {
+    for (final relic in MysticRelic.values) relic: 0,
+  };
   Set<String> discoveredForms = {};
   Set<String> prismaticForms = {};
   Set<String> unlockedAchievementIds = {};
@@ -96,7 +107,6 @@ class HouseholdProvider extends ChangeNotifier {
   int totalSinisterAdventuresCompleted = 0;
 
   List<AdventureRun> adventureRuns = [];
-  Set<String> dismissedAdventureIds = {};
   Map<AdventureKind, List<String>> adventureOptionIds = {
     AdventureKind.mini: <String>[],
     AdventureKind.short: <String>[],
@@ -124,7 +134,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 28;
+  static const _schemaVersion = 29;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(
@@ -378,6 +388,13 @@ class HouseholdProvider extends ChangeNotifier {
     totalReleasedReturns = 20;
     totalSinisterAdventuresCompleted = 5;
     chestInventory = {for (final tier in ChestTier.values) tier: 25};
+    relicInventory = {for (final relic in MysticRelic.values) relic: 3};
+    for (final dragon in dragons) {
+      dragon
+        ..lawAxisKnown = true
+        ..moralAxisKnown = true
+        ..revealPersonality();
+    }
 
     final buildableRooms =
         houseRoomCatalog.where((room) => room.id != 'nest').toList();
@@ -409,7 +426,6 @@ class HouseholdProvider extends ChangeNotifier {
     eggStash = [];
     releasedDragons = [];
     adventureRuns = [];
-    dismissedAdventureIds = {};
     adventureOptionIds = {
       AdventureKind.mini: <String>[],
       AdventureKind.short: <String>[],
@@ -491,6 +507,11 @@ class HouseholdProvider extends ChangeNotifier {
           fallback: 0,
         ),
     };
+    final rawRelics = mapFromJson(data['relicInventory']);
+    relicInventory = {
+      for (final relic in MysticRelic.values)
+        relic: nonNegativeIntFromJson(rawRelics[relic.name], fallback: 0),
+    };
     discoveredForms = stringSetFromJson(data['discoveredForms']);
     prismaticForms = stringSetFromJson(data['prismaticForms']);
     unlockedAchievementIds = stringSetFromJson(data['achievements']);
@@ -525,7 +546,6 @@ class HouseholdProvider extends ChangeNotifier {
         .map(AdventureRun.fromJson)
         .where((run) => AdventureCatalog.byId.containsKey(run.adventureId))
         .toList();
-    dismissedAdventureIds = stringSetFromJson(data['dismissedAdventureIds']);
     final rawAdventureOptions = mapFromJson(data['adventureOptionIds']);
     adventureOptionIds = {
       AdventureKind.mini: (rawAdventureOptions['mini'] as List?)
@@ -651,6 +671,51 @@ class HouseholdProvider extends ChangeNotifier {
 
   int chestCount(ChestTier tier) => chestInventory[tier] ?? 0;
   int get totalChestCount => chestInventory.values.fold(0, (a, b) => a + b);
+  int relicCount(MysticRelic relic) => relicInventory[relic] ?? 0;
+  int get totalRelicCount => relicInventory.values.fold(0, (a, b) => a + b);
+
+  bool isRelicKnownFor(MysticRelic relic, Pet dragon) => switch (relic) {
+        MysticRelic.moralPrism => dragon.moralAxisKnown,
+        MysticRelic.orderCompass => dragon.lawAxisKnown,
+        MysticRelic.soulMirror => dragon.personalityKnown,
+      };
+
+  Future<MysticRelicUseResult> useRelic(
+    MysticRelic relic,
+    String dragonId,
+  ) async {
+    if (relicCount(relic) <= 0) return MysticRelicUseResult.notOwned;
+    final dragon = ownedDragons.cast<Pet?>().firstWhere(
+          (candidate) => candidate?.id == dragonId,
+          orElse: () => null,
+        );
+    if (dragon == null) return MysticRelicUseResult.dragonNotFound;
+    if (isRelicKnownFor(relic, dragon)) {
+      return MysticRelicUseResult.alreadyKnown;
+    }
+    relicInventory[relic] = relicCount(relic) - 1;
+    switch (relic) {
+      case MysticRelic.moralPrism:
+        dragon.moralAxisKnown = true;
+        break;
+      case MysticRelic.orderCompass:
+        dragon.lawAxisKnown = true;
+        break;
+      case MysticRelic.soulMirror:
+        dragon.revealPersonality();
+        break;
+    }
+    _addActivity(
+      message:
+          '${relic.nameEn} revealed something about ${dragon.displayName}.',
+      type: ActivityType.discovery,
+      code: ActivityCode.bonusFound,
+      subject: '${relic.name}:${dragon.id}',
+    );
+    await _notifyAndSave();
+    return MysticRelicUseResult.revealed;
+  }
+
   Pet? get nestEgg => pet.isEgg ? pet : incubatingEgg;
   bool get hasEggInNest => nestEgg != null;
 
@@ -759,6 +824,7 @@ class HouseholdProvider extends ChangeNotifier {
       ChestTier.dragon || ChestTier.mythical || ChestTier.sinister => 1.0,
     };
     final eggFound = _random.nextDouble() < eggChance;
+    final relicFound = _rollRelicDrop(tier);
     DragonEgg? foundEgg;
     pet.coins += coins;
     pet.gems += gems;
@@ -766,6 +832,13 @@ class HouseholdProvider extends ChangeNotifier {
     if (eggFound) {
       foundEgg = _createEgg(sourceTier: tier);
       eggStash.add(foundEgg);
+    }
+    if (relicFound != null) {
+      relicInventory.update(
+        relicFound,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
     }
     _addActivity(
       message: '${tier.name} chest opened.',
@@ -782,7 +855,20 @@ class HouseholdProvider extends ChangeNotifier {
         coins: coins,
         gems: gems,
         eggFound: eggFound,
-        sinisterEgg: foundEgg?.sinister ?? false);
+        sinisterEgg: foundEgg?.sinister ?? false,
+        relicFound: relicFound);
+  }
+
+  MysticRelic? _rollRelicDrop(ChestTier tier) {
+    final chance = switch (tier) {
+      ChestTier.wooden || ChestTier.silver => 0.0,
+      ChestTier.gold => .015,
+      ChestTier.dragon => .04,
+      ChestTier.mythical => .09,
+      ChestTier.sinister => .06,
+    };
+    if (_random.nextDouble() >= chance) return null;
+    return MysticRelic.values[_random.nextInt(MysticRelic.values.length)];
   }
 
   Future<bool> hatchActiveDragon() async {
@@ -1279,6 +1365,9 @@ class HouseholdProvider extends ChangeNotifier {
       'chestInventory': {
         for (final entry in chestInventory.entries) entry.key.name: entry.value
       },
+      'relicInventory': {
+        for (final entry in relicInventory.entries) entry.key.name: entry.value
+      },
       'discoveredForms': discoveredForms.toList(),
       'prismaticForms': prismaticForms.toList(),
       'achievements': unlockedAchievementIds.toList(),
@@ -1295,7 +1384,6 @@ class HouseholdProvider extends ChangeNotifier {
       'totalReleasedReturns': totalReleasedReturns,
       'totalSinisterAdventuresCompleted': totalSinisterAdventuresCompleted,
       'adventureRuns': adventureRuns.map((run) => run.toJson()).toList(),
-      'dismissedAdventureIds': dismissedAdventureIds.toList(),
       'adventureOptionIds': {
         for (final entry in adventureOptionIds.entries)
           entry.key.name: entry.value,

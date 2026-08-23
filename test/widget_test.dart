@@ -7,6 +7,7 @@ import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
+import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/screens/achievements_screen.dart';
@@ -16,6 +17,7 @@ import 'package:dragon_haven/widgets/achievement_badge_sprite.dart';
 import 'package:dragon_haven/widgets/achievement_reveal.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -151,7 +153,16 @@ void main() {
       ..name = 'Ember';
     await tester.pumpWidget(ChangeNotifierProvider.value(
       value: game,
-      child: const MaterialApp(home: Scaffold(body: AdventureHubScreen())),
+      child: MaterialApp(
+        locale: const Locale('de'),
+        supportedLocales: AppStrings.supportedLanguages.keys.map(Locale.new),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: const Scaffold(body: AdventureHubScreen()),
+      ),
     ));
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -161,8 +172,14 @@ void main() {
         .toList();
     expect(cards, hasLength(3));
     for (final card in cards) {
-      expect(tester.getSize(card).height, 116);
+      expect(tester.getSize(card).height, 82);
     }
+    final first = game.adventuresFor(AdventureKind.mini).first;
+    await tester.tap(find.byKey(Key('adventure-details-${first.id}')));
+    await tester.pumpAndSettle();
+    expect(find.text('Mögliche Truhen'), findsOneWidget);
+    expect(find.text(AppStrings('de').adventureDescription(first)),
+        findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -304,7 +321,7 @@ void main() {
         .toList();
     expect(shortCards, isNotEmpty);
     for (final card in shortCards) {
-      expect(tester.getSize(card).height, 116);
+      expect(tester.getSize(card).height, 82);
     }
     final adventureList = find.descendant(
       of: find.byKey(const PageStorageKey('available-adventures-scroll')),
@@ -337,11 +354,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Dragon type'), findsOneWidget);
     expect(find.text('Maturity'), findsOneWidget);
-    expect(find.text('Experience'), findsOneWidget);
-    expect(find.text('Level'), findsOneWidget);
+    expect(find.byKey(const Key('dragon-level-progress')), findsOneWidget);
+    expect(find.textContaining('Level'), findsWidgets);
+    expect(find.text('Next evolution'), findsNothing);
+    expect(find.textContaining('Next evolution:'), findsOneWidget);
     expect(find.text('Might'), findsOneWidget);
     expect(find.text('Arcana'), findsOneWidget);
     expect(find.text('Spirit'), findsOneWidget);
+    expect(find.text('Moral nature'), findsOneWidget);
+    expect(find.text('Order nature'), findsOneWidget);
+    expect(find.text('Personality'), findsOneWidget);
     expect(find.text('Invite to Tower'), findsOneWidget);
     final releaseTile = tester.widget<ListTile>(find.ancestor(
       of: find.text('Release dragon…'),
@@ -363,6 +385,7 @@ void main() {
     expect(find.text('Eggs'), findsOneWidget);
     expect(find.text('Chests'), findsOneWidget);
     expect(find.text('Furniture'), findsOneWidget);
+    expect(find.text('Relics'), findsOneWidget);
 
     await tester.tap(find.text('Shop').last);
     await tester.pump(const Duration(milliseconds: 350));
@@ -403,6 +426,41 @@ void main() {
     expect(game.chestCount(ChestTier.wooden), 0);
     await tester.tap(find.byKey(const Key('chest-rewards')));
     await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a relic reveals one chosen dragon and updates My Dragons',
+      (tester) async {
+    final game = await pumpGame(tester, onboarded: true, hatched: true);
+    game.relicInventory[MysticRelic.moralPrism] = 1;
+    game.notifyListeners();
+    await tester.pump();
+
+    await tester.tap(find.text('Inventory').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Relics'));
+    await tester.pumpAndSettle();
+    expect(find.text('Divination Relics'), findsOneWidget);
+    expect(find.text('Moral Prism'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('use-relic-moralPrism')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byKey(const Key('relic-dragon-picker-scroll')), findsOneWidget);
+    final dragonChoice = find.byKey(Key('relic-dragon-choice-${game.pet.id}'));
+    await tester.ensureVisible(dragonChoice);
+    await tester.pump();
+    await tester.tap(dragonChoice);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(game.pet.moralAxisKnown, isTrue);
+    expect(game.relicCount(MysticRelic.moralPrism), 0);
+    expect(find.text('Moral Prism'), findsOneWidget);
+    expect(find.text(AppStrings('en').moralAxisName(game.pet.moralAxis)),
+        findsOneWidget);
+    await tester.tap(find.text('Remember this'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(tester.takeException(), isNull);
   });
 
@@ -705,7 +763,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.01.01'), findsOneWidget);
+    expect(find.text('v0.01.02'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

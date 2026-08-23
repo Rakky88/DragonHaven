@@ -3367,4 +3367,499 @@ const uiPhraseTranslations = <String, List<String>>{
     '龙塔已满。请再建一层或停止另一只龙的漫游。',
     '塔が満員です。階を増やすか、別のドラゴンの巡回を解除してください。'
   ],
+  'Duration': ['Dauer', 'Duración', 'Durée', 'Durata', 'Duração', '时长', '所要時間'],
+  'connected keepers': [
+    'verbundene Hüter',
+    'cuidadores conectados',
+    'gardiens connectés',
+    'custodi collegati',
+    'guardiões conectados',
+    '已连接的守护者',
+    'つながっているキーパー'
+  ],
+  'Skill training': [
+    'Fertigkeitstraining',
+    'Entrenamiento de habilidad',
+    'Entraînement de compétence',
+    'Allenamento abilità',
+    'Treino de habilidade',
+    '技能训练',
+    'スキルトレーニング'
+  ],
+  'Possible chests': [
+    'Mögliche Truhen',
+    'Cofres posibles',
+    'Coffres possibles',
+    'Forzieri possibili',
+    'Baús possíveis',
+    '可能的宝箱',
+    '入手可能な宝箱'
+  ],
+  'Keeper requirement': [
+    'Hüter-Anforderung',
+    'Requisito de cuidadores',
+    'Condition de gardiens',
+    'Requisito dei custodi',
+    'Requisito de guardiões',
+    '守护者要求',
+    'キーパー条件'
+  ],
+  'shapes a Might Ascension': [
+    'prägt eine Stärke-Aszension',
+    'moldea una Ascensión de Fuerza',
+    'façonne une Ascension de Puissance',
+    'plasma un’Ascensione di Potenza',
+    'molda uma Ascensão de Força',
+    '塑造力量飞升形态',
+    '力のアセンションを形作る'
+  ],
+  'shapes an Arcana Ascension': [
+    'prägt eine Arkana-Aszension',
+    'moldea una Ascensión Arcana',
+    'façonne une Ascension des Arcanes',
+    'plasma un’Ascensione Arcana',
+    'molda uma Ascensão Arcana',
+    '塑造奥秘飞升形态',
+    '秘術のアセンションを形作る'
+  ],
+  'shapes a Spirit Ascension': [
+    'prägt eine Geist-Aszension',
+    'moldea una Ascensión de Espíritu',
+    'façonne une Ascension d’Esprit',
+    'plasma un’Ascensione di Spirito',
+    'molda uma Ascensão de Espírito',
+    '塑造心灵飞升形态',
+    '精神のアセンションを形作る'
+  ],
+  'Lawful': ['Rechtschaffen', 'Legal', 'Loyal', 'Legale', 'Leal', '守序', '秩序'],
+  'Neutral': ['Neutral', 'Neutral', 'Neutre', 'Neutrale', 'Neutro', '中立', '中立'],
+  'Chaotic': [
+    'Chaotisch',
+    'Caótico',
+    'Chaotique',
+    'Caotico',
+    'Caótico',
+    '混乱',
+    '混沌'
+  ],
+  'Good': ['Gut', 'Bueno', 'Bon', 'Buono', 'Bom', '善良', '善'],
+  'Evil': ['Böse', 'Malvado', 'Mauvais', 'Malvagio', 'Mau', '邪恶', '悪'],
+  'Moral nature': [
+    'Moralische Natur',
+    'Naturaleza moral',
+    'Nature morale',
+    'Natura morale',
+    'Natureza moral',
+    '道德倾向',
+    '道徳的性質'
+  ],
+  'Order nature': [
+    'Ordnungsnatur',
+    'Naturaleza de orden',
+    'Nature d’ordre',
+    'Natura dell’ordine',
+    'Natureza de ordem',
+    '秩序倾向',
+    '秩序的性質'
+  ],
+  'Personality': [
+    'Persönlichkeit',
+    'Personalidad',
+    'Personnalité',
+    'Personalità',
+    'Personalidade',
+    '性格',
+    '性格'
+  ],
+  'Undiscovered': [
+    'Unentdeckt',
+    'Sin descubrir',
+    'Non découvert',
+    'Non scoperto',
+    'Não descoberto',
+    '尚未发现',
+    '未発見'
+  ],
+  'Highest level reached': [
+    'Höchste Stufe erreicht',
+    'Nivel máximo alcanzado',
+    'Niveau maximal atteint',
+    'Livello massimo raggiunto',
+    'Nível máximo alcançado',
+    '已达到最高等级',
+    '最高レベルに到達'
+  ],
+  'to next level': [
+    'bis zur nächsten Stufe',
+    'para el siguiente nivel',
+    'avant le niveau suivant',
+    'al livello successivo',
+    'para o próximo nível',
+    '距下一级',
+    '次のレベルまで'
+  ],
+  'Final evolution reached': [
+    'Letzte Evolution erreicht',
+    'Evolución final alcanzada',
+    'Évolution finale atteinte',
+    'Evoluzione finale raggiunta',
+    'Evolução final alcançada',
+    '已达到最终进化',
+    '最終進化に到達'
+  ],
+  'Next evolution': [
+    'Nächste Evolution',
+    'Próxima evolución',
+    'Prochaine évolution',
+    'Prossima evoluzione',
+    'Próxima evolução',
+    '下一次进化',
+    '次の進化'
+  ],
+  'Minimum age reached': [
+    'Mindestalter erreicht',
+    'Edad mínima alcanzada',
+    'Âge minimum atteint',
+    'Età minima raggiunta',
+    'Idade mínima alcançada',
+    '已达到最低年龄',
+    '最低年齢に到達'
+  ],
+  'Minimum age remaining': [
+    'Verbleibendes Mindestalter',
+    'Edad mínima restante',
+    'Âge minimum restant',
+    'Età minima rimanente',
+    'Idade mínima restante',
+    '距离最低年龄',
+    '最低年齢まで'
+  ],
+  'Training required': [
+    'Training erforderlich',
+    'Entrenamiento requerido',
+    'Entraînement requis',
+    'Allenamento richiesto',
+    'Treino necessário',
+    '所需训练',
+    '必要なトレーニング'
+  ],
+  'Relics': [
+    'Relikte',
+    'Reliquias',
+    'Reliques',
+    'Reliquie',
+    'Relíquias',
+    '圣物',
+    '秘宝'
+  ],
+  'No divination relics yet': [
+    'Noch keine Erkenntnisrelikte',
+    'Aún no hay reliquias de adivinación',
+    'Aucune relique de divination',
+    'Nessuna reliquia divinatoria',
+    'Ainda não há relíquias de adivinhação',
+    '尚无占卜圣物',
+    '占いの秘宝はまだありません'
+  ],
+  'These exceptionally rare treasures can appear in Gold Chests and rarer chests.':
+      [
+    'Diese außergewöhnlich seltenen Schätze können in Goldtruhen und selteneren Truhen erscheinen.',
+    'Estos tesoros excepcionalmente raros pueden aparecer en Cofres Dorados y cofres más raros.',
+    'Ces trésors exceptionnellement rares peuvent apparaître dans les Coffres d’or et les coffres plus rares.',
+    'Questi tesori eccezionalmente rari possono apparire nei Forzieri d’Oro e in quelli più rari.',
+    'Esses tesouros excepcionalmente raros podem aparecer em Baús de Ouro e baús mais raros.',
+    '这些极其稀有的宝物可能出现在黄金宝箱及更稀有的宝箱中。',
+    'この極めて希少な宝物は、ゴールド宝箱以上の宝箱から出現します。'
+  ],
+  'Divination Relics': [
+    'Erkenntnisrelikte',
+    'Reliquias de adivinación',
+    'Reliques de divination',
+    'Reliquie divinatorie',
+    'Relíquias de adivinhação',
+    '占卜圣物',
+    '占いの秘宝'
+  ],
+  'Choose carefully: each relic reveals one dragon and is consumed.': [
+    'Wähle mit Bedacht: Jedes Relikt enthüllt einen Drachen und wird verbraucht.',
+    'Elige con cuidado: cada reliquia revela un dragón y se consume.',
+    'Choisissez avec soin : chaque relique révèle un dragon et est consommée.',
+    'Scegli con cura: ogni reliquia rivela un drago e viene consumata.',
+    'Escolha com cuidado: cada relíquia revela um dragão e é consumida.',
+    '请谨慎选择：每件圣物只能揭示一条龙，使用后即会消耗。',
+    '慎重に選んでください。秘宝は1体のドラゴンを明かし、使用すると消費されます。'
+  ],
+  'Use': ['Benutzen', 'Usar', 'Utiliser', 'Usa', 'Usar', '使用', '使う'],
+  'Already revealed': [
+    'Bereits enthüllt',
+    'Ya revelado',
+    'Déjà révélé',
+    'Già rivelato',
+    'Já revelado',
+    '已经揭示',
+    '確認済み'
+  ],
+  'Secret still hidden': [
+    'Geheimnis noch verborgen',
+    'Secreto aún oculto',
+    'Secret encore caché',
+    'Segreto ancora nascosto',
+    'Segredo ainda oculto',
+    '秘密仍然隐藏',
+    '秘密はまだ隠されています'
+  ],
+  'Remember this': [
+    'Merken',
+    'Recordar esto',
+    'S’en souvenir',
+    'Ricordalo',
+    'Lembrar disso',
+    '记住它',
+    '覚えておく'
+  ],
+  'Moral Prism': [
+    'Moralprisma',
+    'Prisma Moral',
+    'Prisme Moral',
+    'Prisma Morale',
+    'Prisma Moral',
+    '道德棱镜',
+    '道徳のプリズム'
+  ],
+  'Order Compass': [
+    'Ordnungskompass',
+    'Brújula del Orden',
+    'Boussole de l’Ordre',
+    'Bussola dell’Ordine',
+    'Bússola da Ordem',
+    '秩序罗盘',
+    '秩序の羅針盤'
+  ],
+  'Soul Mirror': [
+    'Seelenspiegel',
+    'Espejo del Alma',
+    'Miroir de l’Âme',
+    'Specchio dell’Anima',
+    'Espelho da Alma',
+    '灵魂之镜',
+    '魂の鏡'
+  ],
+  'Reveals whether one dragon leans toward Good, Neutral or Evil.': [
+    'Enthüllt, ob ein Drache zu Gut, Neutral oder Böse neigt.',
+    'Revela si un dragón se inclina hacia el Bien, la Neutralidad o el Mal.',
+    'Révèle si un dragon penche vers le Bien, la Neutralité ou le Mal.',
+    'Rivela se un drago tende al Bene, alla Neutralità o al Male.',
+    'Revela se um dragão tende ao Bem, à Neutralidade ou ao Mal.',
+    '揭示一条龙倾向于善良、中立还是邪恶。',
+    '1体のドラゴンが善・中立・悪のどれに傾くかを明かします。'
+  ],
+  'Reveals whether one dragon is Lawful, Neutral or Chaotic.': [
+    'Enthüllt, ob ein Drache rechtschaffen, neutral oder chaotisch ist.',
+    'Revela si un dragón es Legal, Neutral o Caótico.',
+    'Révèle si un dragon est Loyal, Neutre ou Chaotique.',
+    'Rivela se un drago è Legale, Neutrale o Caotico.',
+    'Revela se um dragão é Leal, Neutro ou Caótico.',
+    '揭示一条龙是守序、中立还是混乱。',
+    '1体のドラゴンが秩序・中立・混沌のどれかを明かします。'
+  ],
+  'Reveals the hidden personality traits of one dragon.': [
+    'Enthüllt die verborgenen Persönlichkeitsmerkmale eines Drachen.',
+    'Revela los rasgos de personalidad ocultos de un dragón.',
+    'Révèle les traits de personnalité cachés d’un dragon.',
+    'Rivela i tratti nascosti della personalità di un drago.',
+    'Revela os traços de personalidade ocultos de um dragão.',
+    '揭示一条龙隐藏的性格特征。',
+    '1体のドラゴンに隠された性格特性を明かします。'
+  ],
+  'Sleepy': [
+    'Schläfrig',
+    'Dormilón',
+    'Somnolent',
+    'Sonnolento',
+    'Sonolento',
+    '爱困',
+    '眠たがり'
+  ],
+  'Nosy': [
+    'Neugierig',
+    'Entrometido',
+    'Fouineur',
+    'Ficcanaso',
+    'Intrometido',
+    '爱打听',
+    '詮索好き'
+  ],
+  'Hoarder': [
+    'Sammler',
+    'Acaparador',
+    'Collectionneur',
+    'Accumulatore',
+    'Acumulador',
+    '囤积狂',
+    'ため込み屋'
+  ],
+  'Drama Queen': [
+    'Dramakönig',
+    'Reina del drama',
+    'Roi du drame',
+    'Re del dramma',
+    'Rei do drama',
+    '戏精',
+    'ドラマ王'
+  ],
+  'Bookworm': [
+    'Bücherwurm',
+    'Ratón de biblioteca',
+    'Rat de bibliothèque',
+    'Topo di biblioteca',
+    'Rato de biblioteca',
+    '书虫',
+    '本の虫'
+  ],
+  'Food Thief': [
+    'Futterdieb',
+    'Ladrón de comida',
+    'Voleur de nourriture',
+    'Ladro di cibo',
+    'Ladrão de comida',
+    '偷吃鬼',
+    '食いしん坊泥棒'
+  ],
+  'Afraid of Heights': [
+    'Höhenangst',
+    'Miedo a las alturas',
+    'Peur du vide',
+    'Paura dell’altezza',
+    'Medo de altura',
+    '恐高',
+    '高所恐怖症'
+  ],
+  'Restless': [
+    'Rastlos',
+    'Inquieto',
+    'Agité',
+    'Irrequieto',
+    'Inquieto',
+    '坐立不安',
+    '落ち着きがない'
+  ],
+  'Shy': ['Schüchtern', 'Tímido', 'Timide', 'Timido', 'Tímido', '害羞', '恥ずかしがり'],
+  'Show-Off': [
+    'Angeber',
+    'Presumido',
+    'Frimeur',
+    'Esibizionista',
+    'Exibido',
+    '爱炫耀',
+    '目立ちたがり'
+  ],
+  'Clumsy': [
+    'Tollpatschig',
+    'Torpe',
+    'Maladroit',
+    'Goffo',
+    'Desajeitado',
+    '笨手笨脚',
+    '不器用'
+  ],
+  'Neat Freak': [
+    'Ordnungsfanatiker',
+    'Fanático del orden',
+    'Maniaque du rangement',
+    'Maniaco dell’ordine',
+    'Fanático por organização',
+    '洁癖',
+    'きれい好き'
+  ],
+  'Messy': [
+    'Unordentlich',
+    'Desordenado',
+    'Désordonné',
+    'Disordinato',
+    'Bagunceiro',
+    '邋遢',
+    '散らかし屋'
+  ],
+  'Stubborn': ['Stur', 'Terco', 'Têtu', 'Testardo', 'Teimoso', '固执', '頑固'],
+  'Cuddly': [
+    'Kuschelig',
+    'Cariñoso',
+    'Câlin',
+    'Coccolone',
+    'Carinhoso',
+    '爱撒娇',
+    '甘えん坊'
+  ],
+  'Grumpy': [
+    'Mürrisch',
+    'Gruñón',
+    'Grognon',
+    'Brontolone',
+    'Rabugento',
+    '脾气坏',
+    '不機嫌'
+  ],
+  'Easily Distracted': [
+    'Leicht ablenkbar',
+    'Se distrae fácilmente',
+    'Facilement distrait',
+    'Si distrae facilmente',
+    'Distrai-se facilmente',
+    '容易分心',
+    '気が散りやすい'
+  ],
+  'Night Owl': [
+    'Nachteule',
+    'Noctámbulo',
+    'Oiseau de nuit',
+    'Nottambulo',
+    'Notívago',
+    '夜猫子',
+    '夜更かし'
+  ],
+  'Early Bird': [
+    'Frühaufsteher',
+    'Madrugador',
+    'Lève-tôt',
+    'Mattiniero',
+    'Madrugador',
+    '早起鸟',
+    '早起き'
+  ],
+  'Splash Lover': [
+    'Planschfreund',
+    'Amante de las salpicaduras',
+    'Fan d’éclaboussures',
+    'Amante degli spruzzi',
+    'Amante de respingos',
+    '爱玩水',
+    '水遊び好き'
+  ],
+  'Firebug': [
+    'Feuerteufel',
+    'Pirómano',
+    'Pyromane',
+    'Piromane',
+    'Incendiário',
+    '玩火迷',
+    '火遊び好き'
+  ],
+  'Attention Seeker': [
+    'Aufmerksamkeitssucher',
+    'Busca atención',
+    'En quête d’attention',
+    'In cerca di attenzioni',
+    'Busca atenção',
+    '渴望关注',
+    'かまってちゃん'
+  ],
+  'Startles Easily': [
+    'Schreckhaft',
+    'Se asusta fácilmente',
+    'Facile à effrayer',
+    'Si spaventa facilmente',
+    'Assusta-se facilmente',
+    '容易受惊',
+    '驚きやすい'
+  ],
 };

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/chest.dart';
+import '../models/mystic_relic.dart';
 import 'game_icon_sprite.dart';
 
 Future<void> showChestReveal(BuildContext context, ChestReward reward) =>
@@ -257,6 +258,12 @@ class _ChestRevealState extends State<_ChestReveal>
                                                 'Mysterieus Ei',
                                               ),
                                             ),
+                                          if (widget.reward.relicFound
+                                              case final relic?)
+                                            _RelicReward(
+                                              relic: relic,
+                                              label: strings.relicName(relic),
+                                            ),
                                         ],
                                       ),
                                       const SizedBox(height: 18),
@@ -332,6 +339,38 @@ class _Reward extends StatelessWidget {
           const SizedBox(width: 7),
           Text('$value $label',
               style: const TextStyle(fontWeight: FontWeight.w900)),
+        ]),
+      );
+}
+
+class _RelicReward extends StatelessWidget {
+  const _RelicReward({required this.relic, required this.label});
+
+  final MysticRelic relic;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFF6D7), Color(0xFFE9DEFF)],
+          ),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: const Color(0x66FFE08A)),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Image.asset(relic.assetPath, width: 38, height: 38),
+          const SizedBox(width: 7),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 180),
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+          ),
         ]),
       );
 }

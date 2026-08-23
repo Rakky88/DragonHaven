@@ -78,6 +78,7 @@ void main() {
     await tester.tap(find.byKey(const Key('hatch-egg-tap')));
     await tester.pump();
     expect(find.textContaining('CRACK'), findsNothing);
+    expect(find.byKey(const Key('egg-crack-sprite')), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 5200));
     expect(find.byKey(const Key('hatchling-reveal')), findsOneWidget);

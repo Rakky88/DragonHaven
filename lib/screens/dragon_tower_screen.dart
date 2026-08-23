@@ -563,12 +563,6 @@ class _OwnedDragonsSheet extends StatelessWidget {
                 _DragonDetailRow(
                     label: strings.pick('Maturity', 'Volwassenheid'),
                     value: strings.petStage(dragon)),
-                _DragonDetailRow(
-                    label: strings.pick('Experience', 'Ervaring'),
-                    value: '${dragon.xp} XP'),
-                _DragonDetailRow(
-                    label: strings.pick('Level', 'Niveau'),
-                    value: '${dragon.level}'),
                 const Divider(height: 13),
                 _DragonDetailRow(
                     icon: const GameIconSprite(GameIconKind.might, size: 27),
@@ -582,8 +576,31 @@ class _OwnedDragonsSheet extends StatelessWidget {
                     icon: const GameIconSprite(GameIconKind.spirit, size: 27),
                     label: strings.pick('Spirit', 'Geest'),
                     value: '${dragon.trainingFor(TrainingFocus.spirit)}'),
+                const Divider(height: 13),
+                _DragonDetailRow(
+                  label: strings.pick('Moral nature', 'Morele aard'),
+                  value: dragon.moralAxisKnown
+                      ? strings.moralAxisName(dragon.moralAxis)
+                      : strings.pick('Undiscovered', 'Onontdekt'),
+                ),
+                _DragonDetailRow(
+                  label: strings.pick('Order nature', 'Orde-aard'),
+                  value: dragon.lawAxisKnown
+                      ? strings.lawAxisName(dragon.lawAxis)
+                      : strings.pick('Undiscovered', 'Onontdekt'),
+                ),
+                _DragonDetailRow(
+                  label: strings.pick('Personality', 'Karakter'),
+                  value: dragon.personalityKnown
+                      ? dragon.personalityTraitIds
+                          .map(strings.personality)
+                          .join(' · ')
+                      : strings.pick('Undiscovered', 'Onontdekt'),
+                ),
               ]),
             ),
+            const SizedBox(height: 10),
+            _DragonProgressCard(dragon: dragon),
             const SizedBox(height: 10),
             Card(
               margin: EdgeInsets.zero,
@@ -675,6 +692,135 @@ class _OwnedDragonsSheet extends StatelessWidget {
           ]),
         ),
       ),
+    );
+  }
+}
+
+class _DragonProgressCard extends StatelessWidget {
+  const _DragonProgressCard({required this.dragon});
+
+  final Pet dragon;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final atMaximumLevel = dragon.level >= Pet.levelThresholds.length;
+    final nextStage = dragon.nextEvolutionStage;
+    final nextStageName = switch (nextStage) {
+      DragonStage.wyrmling => strings.petStageNameByKey('nestDragon'),
+      DragonStage.ascended => strings.petStageNameByKey('homeGuardian'),
+      _ => '',
+    };
+    final remainingAge = dragon.remainingForNextStage(DateTime.now());
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(15, 13, 15, 14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2B1D55), Color(0xFF654A9B)],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x332B1D55),
+            blurRadius: 16,
+            offset: Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const GameIconSprite(GameIconKind.experience, size: 38),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '${strings.pick('Level', 'Niveau')} ${dragon.level}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Text(
+            '${dragon.xp} XP',
+            style: const TextStyle(
+              color: Color(0xFFFFE39A),
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ]),
+        const SizedBox(height: 9),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(99),
+          child: LinearProgressIndicator(
+            key: const Key('dragon-level-progress'),
+            value: dragon.levelProgress,
+            minHeight: 12,
+            color: const Color(0xFFFFD86E),
+            backgroundColor: Colors.white.withValues(alpha: .16),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          atMaximumLevel
+              ? strings.pick('Highest level reached', 'Hoogste niveau bereikt')
+              : '${dragon.xp - dragon.currentLevelFloor} / '
+                  '${dragon.nextLevelTarget - dragon.currentLevelFloor} XP '
+                  '${strings.pick('to next level', 'tot het volgende niveau')}',
+          style: const TextStyle(
+            color: Color(0xFFD8CFF1),
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const Divider(height: 22, color: Color(0x33FFFFFF)),
+        if (nextStage == null)
+          Text(
+            strings.pick('Final evolution reached', 'Laatste evolutie bereikt'),
+            style: const TextStyle(
+              color: Color(0xFFFFE39A),
+              fontWeight: FontWeight.w900,
+            ),
+          )
+        else ...[
+          Text(
+            '${strings.pick('Next evolution', 'Volgende evolutie')}: '
+            '$nextStageName · ${strings.pick('Level', 'Niveau')} '
+            '${dragon.nextEvolutionLevel} · ${dragon.nextEvolutionXp} XP',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            remainingAge == Duration.zero
+                ? strings.pick('Minimum age reached', 'Minimumleeftijd bereikt')
+                : '${strings.pick('Minimum age remaining', 'Resterende minimumleeftijd')}: '
+                    '${strings.evolutionRemaining(remainingAge)}',
+            style: const TextStyle(
+              color: Color(0xFFD8CFF1),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (dragon.stage == DragonStage.wyrmling) ...[
+            const SizedBox(height: 3),
+            Text(
+              '${strings.pick('Training required', 'Training vereist')}: '
+              '${dragon.totalTraining}/300',
+              style: const TextStyle(
+                color: Color(0xFFD8CFF1),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ],
+      ]),
     );
   }
 }

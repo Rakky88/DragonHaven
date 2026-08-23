@@ -6,6 +6,8 @@ import 'package:dragon_haven/l10n/ui_phrase_translations.dart';
 import 'package:dragon_haven/models/achievement.dart';
 import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/dragon_dialogue.dart';
+import 'package:dragon_haven/models/mystic_relic.dart';
+import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/shop_item.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -182,6 +184,28 @@ void main() {
         'homeGuardian'
       ]) {
         expect(strings.petStageNameByKey(stage), isNotEmpty);
+      }
+    }
+  });
+
+  test('all relics, alignments and personality traits are localized', () {
+    for (final language in translatedLanguages) {
+      final strings = AppStrings(language);
+      for (final relic in MysticRelic.values) {
+        expect(strings.relicName(relic), isNot(relic.nameEn),
+            reason: '${relic.name} name ($language)');
+        expect(strings.relicDescription(relic), isNot(relic.descriptionEn),
+            reason: '${relic.name} description ($language)');
+      }
+      for (final trait in dragonPersonalityTraits) {
+        expect(strings.personality(trait), isNot(trait),
+            reason: '$trait ($language)');
+      }
+      for (final value in LawAxis.values) {
+        expect(strings.lawAxisName(value), isNotEmpty);
+      }
+      for (final value in MoralAxis.values) {
+        expect(strings.moralAxisName(value), isNotEmpty);
       }
     }
   });

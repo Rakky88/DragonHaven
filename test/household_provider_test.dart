@@ -7,6 +7,7 @@ import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/house.dart';
+import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
@@ -108,6 +109,21 @@ void main() {
     expect(game.adventuresFor(AdventureKind.short), hasLength(3));
   });
 
+  test('dismissed Long Adventures stay gone until the next local day',
+      () async {
+    var now = DateTime(2026, 8, 21, 10, 15);
+    final game = HouseholdProvider(random: Random(112), clock: () => now);
+    final initial = game.adventuresFor(AdventureKind.long);
+    expect(initial, hasLength(3));
+
+    await game.dismissAdventure(initial.first);
+    expect(game.adventuresFor(AdventureKind.long), hasLength(2));
+    now = DateTime(2026, 8, 21, 23, 59);
+    expect(game.adventuresFor(AdventureKind.long), hasLength(2));
+    now = DateTime(2026, 8, 22);
+    expect(game.adventuresFor(AdventureKind.long), hasLength(3));
+  });
+
   test('Mini Adventure slots refill every five minutes', () {
     var now = DateTime(2026, 8, 21, 10, 15);
     final game = HouseholdProvider(random: Random(120), clock: () => now);
@@ -163,6 +179,88 @@ void main() {
     expect(game.totalChestsOpened, 1);
     expect(game.chestCount(ChestTier.wooden), 0);
     expect(await game.openChest(ChestTier.wooden), isNull);
+  });
+
+  test('mystic relics only drop from Gold Chests and rarer tiers', () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: _ZeroRandom(),
+    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false);
+
+    for (final tier in const [ChestTier.wooden, ChestTier.silver]) {
+      game.chestInventory[tier] = 1;
+      final reward = await game.openChest(tier);
+      expect(reward?.relicFound, isNull, reason: tier.name);
+    }
+    for (final tier in const [
+      ChestTier.gold,
+      ChestTier.dragon,
+      ChestTier.mythical,
+      ChestTier.sinister,
+    ]) {
+      game.chestInventory[tier] = 1;
+      final reward = await game.openChest(tier);
+      expect(reward?.relicFound, MysticRelic.moralPrism, reason: tier.name);
+    }
+    expect(game.relicCount(MysticRelic.moralPrism), 4);
+  });
+
+  test('using each relic reveals only its secret and persists it', () async {
+    final game = HouseholdProvider(random: Random(203));
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Nova';
+    game.relicInventory = {
+      for (final relic in MysticRelic.values) relic: 1,
+    };
+
+    expect(
+      await game.useRelic(MysticRelic.moralPrism, game.pet.id),
+      MysticRelicUseResult.revealed,
+    );
+    expect(game.pet.moralAxisKnown, isTrue);
+    expect(game.pet.lawAxisKnown, isFalse);
+    expect(game.pet.personalityKnown, isFalse);
+    expect(game.relicCount(MysticRelic.moralPrism), 0);
+    expect(
+      await game.useRelic(MysticRelic.orderCompass, game.pet.id),
+      MysticRelicUseResult.revealed,
+    );
+    expect(
+      await game.useRelic(MysticRelic.soulMirror, game.pet.id),
+      MysticRelicUseResult.revealed,
+    );
+    expect(game.pet.personalityTraitIds, isNotEmpty);
+
+    final restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.pet.moralAxisKnown, isTrue);
+    expect(restored.pet.lawAxisKnown, isTrue);
+    expect(restored.pet.personalityKnown, isTrue);
+    expect(restored.pet.personalityTraitIds, game.pet.personalityTraitIds);
+    expect(restored.totalRelicCount, 0);
+  });
+
+  test('dragon levels expose the exact next evolution milestone', () {
+    final hatchling = Pet(
+      stage: DragonStage.hatchling,
+      firstEgg: false,
+      xp: 599,
+    );
+    expect(hatchling.level, 3);
+    expect(hatchling.nextEvolutionXp, Pet.wyrmlingXp);
+    expect(hatchling.nextEvolutionLevel, 3);
+    expect(hatchling.nextEvolutionStage, DragonStage.wyrmling);
+
+    final wyrmling = Pet(
+      stage: DragonStage.wyrmling,
+      firstEgg: false,
+      xp: 2199,
+    );
+    expect(wyrmling.level, 7);
+    expect(wyrmling.nextEvolutionXp, Pet.ascendedXp);
+    expect(wyrmling.nextEvolutionLevel, 7);
+    expect(wyrmling.nextEvolutionStage, DragonStage.ascended);
   });
 
   test('a later egg incubates beside the active dragon until it hatches',
@@ -386,4 +484,15 @@ void main() {
     expect(data.containsKey('completedQuestTotal'), isFalse);
     expect(raw.toLowerCase().contains('complete quest'), isFalse);
   });
+}
+
+class _ZeroRandom implements Random {
+  @override
+  bool nextBool() => false;
+
+  @override
+  double nextDouble() => 0;
+
+  @override
+  int nextInt(int max) => 0;
 }

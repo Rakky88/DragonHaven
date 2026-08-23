@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/chest.dart';
+import '../models/mystic_relic.dart';
+import '../models/pet.dart';
 import '../models/shop_item.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
@@ -21,34 +23,51 @@ class InventoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Column(children: [
-        TabBar(tabs: [
-          Tab(
-            height: 70,
-            icon: const GameIconSprite(GameIconKind.inventoryEggs, size: 35),
-            iconMargin: const EdgeInsets.only(bottom: 1),
-            text: strings.pick('Eggs', 'Eieren'),
-          ),
-          Tab(
-            height: 70,
-            icon: const GameIconSprite(GameIconKind.inventoryChests, size: 35),
-            iconMargin: const EdgeInsets.only(bottom: 1),
-            text: strings.pick('Chests', 'Kisten'),
-          ),
-          Tab(
-            height: 70,
-            icon:
-                const GameIconSprite(GameIconKind.inventoryFurniture, size: 35),
-            iconMargin: const EdgeInsets.only(bottom: 1),
-            text: strings.pick('Furniture', 'Meubels'),
-          ),
-        ]),
+        TabBar(
+          isScrollable: true,
+          tabAlignment: TabAlignment.center,
+          tabs: [
+            Tab(
+              height: 70,
+              icon: const GameIconSprite(GameIconKind.inventoryEggs, size: 35),
+              iconMargin: const EdgeInsets.only(bottom: 1),
+              text: strings.pick('Eggs', 'Eieren'),
+            ),
+            Tab(
+              height: 70,
+              icon:
+                  const GameIconSprite(GameIconKind.inventoryChests, size: 35),
+              iconMargin: const EdgeInsets.only(bottom: 1),
+              text: strings.pick('Chests', 'Kisten'),
+            ),
+            Tab(
+              height: 70,
+              icon: const GameIconSprite(GameIconKind.inventoryFurniture,
+                  size: 35),
+              iconMargin: const EdgeInsets.only(bottom: 1),
+              text: strings.pick('Furniture', 'Meubels'),
+            ),
+            Tab(
+              height: 70,
+              icon: Image.asset(
+                MysticRelic.soulMirror.assetPath,
+                width: 35,
+                height: 35,
+                fit: BoxFit.contain,
+              ),
+              iconMargin: const EdgeInsets.only(bottom: 1),
+              text: strings.pick('Relics', 'Relieken'),
+            ),
+          ],
+        ),
         const Expanded(
             child: TabBarView(children: [
           _EggInventoryTab(),
           _ChestInventoryTab(),
           _FurnitureInventoryTab(),
+          _RelicInventoryTab(),
         ])),
       ]),
     );
@@ -278,6 +297,411 @@ class _FurnitureInventoryTab extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _RelicInventoryTab extends StatelessWidget {
+  const _RelicInventoryTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final game = context.watch<HouseholdProvider>();
+    final strings = AppStrings.of(context);
+    final owned = MysticRelic.values
+        .where((relic) => game.relicCount(relic) > 0)
+        .toList(growable: false);
+    if (owned.isEmpty) {
+      return _RelicEmptyState(strings: strings);
+    }
+    return ListView(
+      key: const PageStorageKey('inventory-relics-scroll'),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
+      children: [
+        _RelicIntro(strings: strings),
+        const SizedBox(height: 10),
+        for (final relic in owned)
+          _RelicCard(
+            relic: relic,
+            count: game.relicCount(relic),
+            canUse: game.ownedDragons
+                .any((dragon) => !game.isRelicKnownFor(relic, dragon)),
+          ),
+      ],
+    );
+  }
+}
+
+class _RelicEmptyState extends StatelessWidget {
+  const _RelicEmptyState({required this.strings});
+
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 390),
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 24),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF25194C), Color(0xFF624899)],
+              ),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x44342469),
+                  blurRadius: 28,
+                  offset: Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Image.asset(
+                MysticRelic.soulMirror.assetPath,
+                width: 148,
+                height: 148,
+                fit: BoxFit.contain,
+              ),
+              Text(
+                strings.pick('No divination relics yet',
+                    'Nog geen waarzeggende relieken'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 7),
+              Text(
+                strings.pick(
+                  'These exceptionally rare treasures can appear in Gold Chests and rarer chests.',
+                  'Deze uitzonderlijk zeldzame schatten kunnen verschijnen in Gouden Kisten en zeldzamere kisten.',
+                ),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFD8CFF1),
+                  height: 1.35,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ]),
+          ),
+        ),
+      );
+}
+
+class _RelicIntro extends StatelessWidget {
+  const _RelicIntro({required this.strings});
+
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF2A1B50), Color(0xFF5B3D8D)],
+          ),
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Row(children: [
+          Image.asset(
+            MysticRelic.moralPrism.assetPath,
+            width: 62,
+            height: 62,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.pick('Divination Relics', 'Waarzeggende Relieken'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 17,
+                  ),
+                ),
+                Text(
+                  strings.pick(
+                    'Choose carefully: each relic reveals one dragon and is consumed.',
+                    'Kies zorgvuldig: elk reliek onthult één draak en wordt verbruikt.',
+                  ),
+                  style: const TextStyle(
+                    color: Color(0xFFD8CFF1),
+                    fontSize: 11,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ]),
+      );
+}
+
+class _RelicCard extends StatelessWidget {
+  const _RelicCard({
+    required this.relic,
+    required this.count,
+    required this.canUse,
+  });
+
+  final MysticRelic relic;
+  final int count;
+  final bool canUse;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 9),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(9, 9, 11, 9),
+        child: Row(children: [
+          Container(
+            width: 84,
+            height: 84,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              gradient: const RadialGradient(
+                colors: [Color(0xFFFFF3BF), Color(0xFFE9DEFF)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Image.asset(relic.assetPath, fit: BoxFit.contain),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Expanded(
+                    child: Text(
+                      strings.relicName(relic),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                  Text(
+                    '×$count',
+                    style: const TextStyle(
+                      color: AppColors.twilight,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 3),
+                Text(
+                  strings.relicDescription(relic),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppColors.muted, fontSize: 11),
+                ),
+                const SizedBox(height: 7),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton.tonal(
+                    key: Key('use-relic-${relic.name}'),
+                    onPressed: canUse ? () => _useRelic(context, relic) : null,
+                    child: Text(strings.pick('Use', 'Gebruiken')),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+Future<void> _useRelic(BuildContext context, MysticRelic relic) async {
+  final game = context.read<HouseholdProvider>();
+  final strings = AppStrings.of(context);
+  final selected = await showModalBottomSheet<Pet>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (sheetContext) => FractionallySizedBox(
+      heightFactor: .78,
+      child: SafeArea(
+        child: ListView(
+          key: const Key('relic-dragon-picker-scroll'),
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 24),
+          children: [
+            Row(children: [
+              Image.asset(relic.assetPath, width: 72, height: 72),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.pick('Choose a dragon', 'Kies een draak'),
+                      style: Theme.of(sheetContext).textTheme.titleLarge,
+                    ),
+                    Text(
+                      strings.relicName(relic),
+                      style: const TextStyle(color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ]),
+            const SizedBox(height: 8),
+            for (final dragon in game.ownedDragons)
+              Card(
+                child: ListTile(
+                  key: Key('relic-dragon-choice-${dragon.id}'),
+                  enabled: !game.isRelicKnownFor(relic, dragon),
+                  leading: SizedBox.square(
+                    dimension: 58,
+                    child: DragonArt(
+                      height: 58,
+                      animate: false,
+                      stageKey: dragon.stageKey,
+                      lineageId: dragon.lineageId,
+                      evolutionPath: dragon.activeEvolutionPath,
+                      prismatic: dragon.prismatic,
+                      sinister: dragon.sinister,
+                    ),
+                  ),
+                  title: Text(
+                    dragon.displayName,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  subtitle: Text(
+                    game.isRelicKnownFor(relic, dragon)
+                        ? strings.pick('Already revealed', 'Al onthuld')
+                        : strings.pick(
+                            'Secret still hidden', 'Geheim nog verborgen'),
+                  ),
+                  trailing: game.isRelicKnownFor(relic, dragon)
+                      ? const Icon(Icons.check_circle_rounded,
+                          color: AppColors.twilight)
+                      : const Icon(Icons.chevron_right_rounded),
+                  onTap: game.isRelicKnownFor(relic, dragon)
+                      ? null
+                      : () => Navigator.pop(sheetContext, dragon),
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+  if (selected == null || !context.mounted) return;
+  final result = await game.useRelic(relic, selected.id);
+  if (!context.mounted || result != MysticRelicUseResult.revealed) return;
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => _RelicRevealDialog(relic: relic, dragon: selected),
+  );
+}
+
+class _RelicRevealDialog extends StatelessWidget {
+  const _RelicRevealDialog({required this.relic, required this.dragon});
+
+  final MysticRelic relic;
+  final Pet dragon;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final value = switch (relic) {
+      MysticRelic.moralPrism => strings.moralAxisName(dragon.moralAxis),
+      MysticRelic.orderCompass => strings.lawAxisName(dragon.lawAxis),
+      MysticRelic.soulMirror =>
+        dragon.personalityTraitIds.map(strings.personality).join(' · '),
+    };
+    return Dialog.fullscreen(
+      backgroundColor: const Color(0xFF170E32),
+      child: SafeArea(
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment(0, -.25),
+              radius: 1.2,
+              colors: [Color(0xFF6343A0), Color(0xFF170E32)],
+            ),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 30, 24, 24),
+            child: Column(children: [
+              Image.asset(relic.assetPath, width: 230, height: 230),
+              Text(
+                strings.relicName(relic),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFFFE39A),
+                  fontSize: 25,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox.square(
+                dimension: 118,
+                child: DragonArt(
+                  height: 118,
+                  animate: true,
+                  stageKey: dragon.stageKey,
+                  lineageId: dragon.lineageId,
+                  evolutionPath: dragon.activeEvolutionPath,
+                  prismatic: dragon.prismatic,
+                  sinister: dragon.sinister,
+                ),
+              ),
+              Text(
+                dragon.displayName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .1),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0x66FFE39A)),
+                ),
+                child: Text(
+                  value,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(strings.pick('Remember this', 'Onthoud dit')),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ),
     );
   }
 }

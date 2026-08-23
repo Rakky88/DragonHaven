@@ -1035,10 +1035,28 @@ class _HatchDialogState extends State<_HatchDialog> {
                                                   SizedBox(
                                                       width: 170,
                                                       height: 190,
-                                                      child: CustomPaint(
-                                                          painter:
-                                                              _CrackPainter(
-                                                                  phase)))
+                                                      child: ClipPath(
+                                                        clipper:
+                                                            _CrackStageClipper(
+                                                                phase),
+                                                        child: Opacity(
+                                                          opacity: switch (
+                                                              phase) {
+                                                            1 => .68,
+                                                            2 => .84,
+                                                            _ => 1,
+                                                          },
+                                                          child: Image.asset(
+                                                            'assets/images/relics/egg_crack_magic.png',
+                                                            key: const Key(
+                                                                'egg-crack-sprite'),
+                                                            fit: BoxFit.contain,
+                                                            filterQuality:
+                                                                FilterQuality
+                                                                    .high,
+                                                          ),
+                                                        ),
+                                                      ))
                                               ])),
                                     ),
                                   )),
@@ -1148,43 +1166,28 @@ class _HatchNameButton extends StatelessWidget {
       );
 }
 
-class _CrackPainter extends CustomPainter {
-  const _CrackPainter(this.intensity);
-  final int intensity;
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF352B63)
-      ..strokeWidth = 5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    final path = Path()
-      ..moveTo(size.width * .52, size.height * .2)
-      ..lineTo(size.width * .43, size.height * .4)
-      ..lineTo(size.width * .55, size.height * .52)
-      ..lineTo(size.width * .41, size.height * .73);
-    canvas.drawPath(path, paint);
-    canvas.drawLine(Offset(size.width * .44, size.height * .39),
-        Offset(size.width * .3, size.height * .44), paint);
-    canvas.drawLine(Offset(size.width * .55, size.height * .52),
-        Offset(size.width * .7, size.height * .46), paint);
-    if (intensity >= 2) {
-      canvas.drawLine(Offset(size.width * .43, size.height * .40),
-          Offset(size.width * .29, size.height * .30), paint);
-      canvas.drawLine(Offset(size.width * .41, size.height * .73),
-          Offset(size.width * .57, size.height * .84), paint);
-    }
-    if (intensity >= 3) {
-      canvas.drawLine(Offset(size.width * .55, size.height * .52),
-          Offset(size.width * .76, size.height * .64), paint);
-      canvas.drawLine(Offset(size.width * .52, size.height * .20),
-          Offset(size.width * .65, size.height * .10), paint);
-    }
-  }
+class _CrackStageClipper extends CustomClipper<Path> {
+  const _CrackStageClipper(this.stage);
+
+  final int stage;
 
   @override
-  bool shouldRepaint(covariant _CrackPainter oldDelegate) =>
-      oldDelegate.intensity != intensity;
+  Path getClip(Size size) => Path()
+    ..addRect(Rect.fromLTWH(
+      0,
+      0,
+      size.width,
+      size.height *
+          switch (stage) {
+            1 => .42,
+            2 => .72,
+            _ => 1,
+          },
+    ));
+
+  @override
+  bool shouldReclip(covariant _CrackStageClipper oldClipper) =>
+      oldClipper.stage != stage;
 }
 
 class _EggInventory extends StatelessWidget {

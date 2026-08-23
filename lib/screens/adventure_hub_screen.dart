@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/adventure.dart';
+import '../models/chest.dart';
 import '../models/pet.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
@@ -206,18 +207,20 @@ class _AdventureCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
-    final group = adventure.kind == AdventureKind.group;
     return SizedBox(
       key: Key('adventure-card-${adventure.id}'),
-      height: 116,
+      height: 82,
       child: Card(
         color: Colors.white.withValues(alpha: .96),
         margin: const EdgeInsets.only(bottom: 7),
         elevation: 0,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(11, 8, 8, 8),
-          child: Row(
-            children: [
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: Key('adventure-details-${adventure.id}'),
+          onTap: () => _showAdventureDetails(context, adventure),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(11, 7, 7, 7),
+            child: Row(children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,79 +233,65 @@ class _AdventureCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                              fontWeight: FontWeight.w900, fontSize: 14),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13.5,
+                          ),
                         ),
                       ),
                       if (adventure.sinister)
-                        const Padding(
-                          padding: EdgeInsets.only(left: 4),
-                          child: Icon(Icons.visibility_rounded,
-                              size: 17, color: Color(0xFF8A285E)),
-                        ),
+                        const Icon(Icons.visibility_rounded,
+                            size: 16, color: Color(0xFF8A285E)),
                     ]),
-                    Text(
-                      strings.adventureDescription(adventure),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style:
-                          const TextStyle(color: AppColors.muted, fontSize: 10),
-                    ),
-                    const SizedBox(height: 5),
-                    Wrap(
-                      spacing: 4,
-                      runSpacing: 3,
-                      children: [
-                        _Meta(
-                          icon: const GameIconSprite(GameIconKind.clock,
-                              size: 17),
-                          text: strings.adventureDuration(adventure.duration),
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      const GameIconSprite(GameIconKind.clock, size: 19),
+                      const SizedBox(width: 3),
+                      Text(
+                        strings.adventureDuration(adventure.duration),
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
                         ),
-                        _Meta(
-                          icon: const GameIconSprite(GameIconKind.experience,
-                              size: 17),
-                          text: '${adventure.xp} XP',
-                        ),
-                        _Meta(
-                          icon: GameIconSprite(
-                            GameIconSprite.forTrainingFocus(adventure.focus),
-                            size: 17,
+                      ),
+                      const SizedBox(width: 9),
+                      GameIconSprite(
+                        GameIconSprite.forTrainingFocus(adventure.focus),
+                        size: 19,
+                      ),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          _focusName(strings, adventure.focus),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
                           ),
-                          text: '+${adventure.statPoints}',
                         ),
-                        _Meta(
-                          icon: const GameIconSprite(GameIconKind.chest,
-                              size: 17),
-                          text: adventure.knownChest == null
-                              ? '?'
-                              : adventure.kind == AdventureKind.mini
-                                  ? strings.pick('Wood', 'Hout')
-                                  : strings.chestLabel(adventure.knownChest!),
-                        ),
-                        if (group)
-                          _Meta(
-                            icon: const Icon(Icons.group_rounded,
-                                size: 14, color: AppColors.twilight),
-                            text: '${adventure.requirements.players}',
-                          ),
-                      ],
-                    ),
+                      ),
+                    ]),
                   ],
                 ),
               ),
-              const SizedBox(width: 5),
-              if (adventure.kind == AdventureKind.short)
+              if (adventure.kind == AdventureKind.short ||
+                  adventure.kind == AdventureKind.long)
                 IconButton(
+                  key: Key('dismiss-adventure-${adventure.id}'),
                   tooltip: strings.pick('Dismiss', 'Wegsturen'),
                   visualDensity: VisualDensity.compact,
                   constraints:
-                      const BoxConstraints.tightFor(width: 28, height: 36),
+                      const BoxConstraints.tightFor(width: 30, height: 42),
                   padding: EdgeInsets.zero,
                   onPressed: () => game.dismissAdventure(adventure),
                   icon: const Icon(Icons.close_rounded,
-                      size: 18, color: AppColors.muted),
+                      size: 19, color: AppColors.muted),
                 ),
+              const SizedBox(width: 2),
               _AdventureStartButton(onPressed: () => _start(context)),
-            ],
+            ]),
           ),
         ),
       ),
@@ -338,6 +327,89 @@ class _AdventureCard extends StatelessWidget {
       HavenAudio.play(HavenSound.adventureStart);
     }
   }
+
+  void _showAdventureDetails(
+    BuildContext context,
+    AdventureDefinition definition,
+  ) {
+    final strings = AppStrings.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: SingleChildScrollView(
+          key: const Key('available-adventure-details-scroll'),
+          padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            GameIconSprite(_kindIcon(definition.kind), size: 122),
+            Text(
+              strings.adventureTitle(definition),
+              textAlign: TextAlign.center,
+              style: Theme.of(sheetContext).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              strings.adventureDescription(definition),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.muted, height: 1.35),
+            ),
+            const SizedBox(height: 15),
+            _DetailRow(
+              icon: const GameIconSprite(GameIconKind.clock, size: 34),
+              title: strings.pick('Duration', 'Duur'),
+              value: strings.adventureDuration(definition.duration),
+            ),
+            _DetailRow(
+              icon: const GameIconSprite(GameIconKind.experience, size: 34),
+              title: strings.pick('Dragon experience', 'Drakenervaring'),
+              value: '${definition.xp} XP',
+            ),
+            _DetailRow(
+              icon: GameIconSprite(
+                GameIconSprite.forTrainingFocus(definition.focus),
+                size: 34,
+              ),
+              title: strings.pick('Skill training', 'Vaardigheidstraining'),
+              value:
+                  '+${definition.statPoints} ${_focusName(strings, definition.focus)} · '
+                  '${_focusExplanation(strings, definition.focus)}',
+            ),
+            _DetailRow(
+              icon: const GameIconSprite(GameIconKind.chest, size: 34),
+              title: strings.pick('Possible chests', 'Mogelijke kisten'),
+              value: _chestPossibilities(strings, definition),
+            ),
+            if (definition.kind == AdventureKind.group)
+              _DetailRow(
+                icon: const Icon(Icons.group_rounded,
+                    color: AppColors.twilight, size: 30),
+                title: strings.pick('Keeper requirement', 'Hoedervereiste'),
+                value:
+                    '${definition.requirements.players} ${strings.pick('connected keepers', 'gekoppelde hoeders')}',
+              ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (context.mounted) _start(context);
+                  });
+                },
+                icon: const GameIconSprite(
+                  GameIconKind.adventureStart,
+                  size: 38,
+                ),
+                label: Text(strings.pick('Choose a dragon', 'Kies een draak')),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
 }
 
 class _AdventureStartButton extends StatelessWidget {
@@ -356,8 +428,8 @@ class _AdventureStartButton extends StatelessWidget {
             onTap: onPressed,
             borderRadius: BorderRadius.circular(18),
             child: Ink(
-              width: 58,
-              height: 68,
+              width: 52,
+              height: 54,
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
@@ -370,17 +442,21 @@ class _AdventureStartButton extends StatelessWidget {
                       offset: Offset(0, 4)),
                 ],
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const GameIconSprite(GameIconKind.adventureStart, size: 39),
-                  Text(AppStrings.of(context).pick('Start', 'Start'),
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          height: 1,
-                          fontWeight: FontWeight.w900)),
-                ],
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const GameIconSprite(GameIconKind.adventureStart, size: 31),
+                    Text(AppStrings.of(context).pick('Start', 'Start'),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            height: 1,
+                            fontWeight: FontWeight.w900)),
+                  ],
+                ),
               ),
             ),
           ),
@@ -812,27 +888,6 @@ class _DetailRow extends StatelessWidget {
       );
 }
 
-class _Meta extends StatelessWidget {
-  const _Meta({required this.icon, required this.text});
-  final Widget icon;
-  final String text;
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF3F1F7),
-          borderRadius: BorderRadius.circular(99),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          icon,
-          const SizedBox(width: 2),
-          Text(text,
-              style:
-                  const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800)),
-        ]),
-      );
-}
-
 int _recommendationScore(Pet dragon, AdventureDefinition adventure) =>
     dragon.trainingFor(adventure.focus) * 100 +
     dragon.level * 10 +
@@ -886,6 +941,40 @@ String _focusName(AppStrings strings, TrainingFocus focus) => switch (focus) {
       TrainingFocus.arcana => strings.pick('Arcana', 'Arcana'),
       TrainingFocus.spirit => strings.pick('Spirit', 'Geest'),
     };
+
+String _focusExplanation(AppStrings strings, TrainingFocus focus) =>
+    switch (focus) {
+      TrainingFocus.might =>
+        strings.pick('shapes a Might Ascension', 'vormt een Might-Ascension'),
+      TrainingFocus.arcana => strings.pick(
+          'shapes an Arcana Ascension', 'vormt een Arcana-Ascension'),
+      TrainingFocus.spirit =>
+        strings.pick('shapes a Spirit Ascension', 'vormt een Spirit-Ascension'),
+    };
+
+String _chestPossibilities(
+  AppStrings strings,
+  AdventureDefinition adventure,
+) {
+  final known = adventure.knownChest;
+  if (known != null) return '${strings.chestLabel(known)} · 100%';
+  return switch (adventure.kind) {
+    AdventureKind.short => '${strings.chestLabel(ChestTier.wooden)} 50% · '
+        '${strings.chestLabel(ChestTier.silver)} 30% · '
+        '${strings.chestLabel(ChestTier.gold)} 19.5% · '
+        '${strings.chestLabel(ChestTier.dragon)} 0.45% · '
+        '${strings.chestLabel(ChestTier.mythical)} 0.05%',
+    AdventureKind.long => '${strings.chestLabel(ChestTier.silver)} 55% · '
+        '${strings.chestLabel(ChestTier.gold)} 35% · '
+        '${strings.chestLabel(ChestTier.dragon)} 9.5% · '
+        '${strings.chestLabel(ChestTier.mythical)} 0.5%',
+    AdventureKind.group => '${strings.chestLabel(ChestTier.gold)} 70% · '
+        '${strings.chestLabel(ChestTier.dragon)} 28% · '
+        '${strings.chestLabel(ChestTier.mythical)} 2%',
+    AdventureKind.mini => '${strings.chestLabel(ChestTier.wooden)} · 100%',
+    AdventureKind.special => '${strings.chestLabel(ChestTier.gold)} · 100%',
+  };
+}
 
 String _remaining(DateTime end, AppStrings strings) {
   final remaining = end.difference(DateTime.now());

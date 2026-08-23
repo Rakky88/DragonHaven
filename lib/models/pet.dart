@@ -62,6 +62,9 @@ class Pet {
     this.sinister = false,
     this.lawAxis = LawAxis.neutral,
     this.moralAxis = MoralAxis.neutral,
+    this.lawAxisKnown = false,
+    this.moralAxisKnown = false,
+    this.personalityKnown = false,
     this.sizeFactor = 1,
     this.incubationHours = 24,
     List<String>? personalityTraitIds,
@@ -108,6 +111,9 @@ class Pet {
   final bool sinister;
   final LawAxis lawAxis;
   final MoralAxis moralAxis;
+  bool lawAxisKnown;
+  bool moralAxisKnown;
+  bool personalityKnown;
   final double sizeFactor;
   final int incubationHours;
   final List<String> personalityTraitIds;
@@ -160,6 +166,10 @@ class Pet {
     3400
   ];
   int get level {
+    return levelAtXp(xp);
+  }
+
+  static int levelAtXp(int xp) {
     for (var index = levelThresholds.length - 1; index >= 0; index--) {
       if (xp >= levelThresholds[index]) return index + 1;
     }
@@ -175,6 +185,23 @@ class Pet {
     final span = max(1, nextLevelTarget - currentLevelFloor);
     return ((xp - currentLevelFloor) / span).clamp(0, 1);
   }
+
+  int? get nextEvolutionXp => switch (stage) {
+        DragonStage.hatchling => wyrmlingXp,
+        DragonStage.wyrmling => ascendedXp,
+        DragonStage.egg || DragonStage.ascended => null,
+      };
+
+  int? get nextEvolutionLevel {
+    final target = nextEvolutionXp;
+    return target == null ? null : levelAtXp(target);
+  }
+
+  DragonStage? get nextEvolutionStage => switch (stage) {
+        DragonStage.hatchling => DragonStage.wyrmling,
+        DragonStage.wyrmling => DragonStage.ascended,
+        DragonStage.egg || DragonStage.ascended => null,
+      };
 
   double get wellbeing => (joy + energy + comfort) / 300;
   int trainingFor(TrainingFocus focus) => training[focus.name] ?? 0;
@@ -267,6 +294,11 @@ class Pet {
     }
   }
 
+  void revealPersonality() {
+    _rollPersonalityIfNeeded();
+    personalityKnown = true;
+  }
+
   void evolve(DateTime now) {
     if (!canEvolve(now)) {
       throw StateError('This dragon is not ready to evolve.');
@@ -293,6 +325,9 @@ class Pet {
         'sinister': sinister,
         'lawAxis': lawAxis.name,
         'moralAxis': moralAxis.name,
+        'lawAxisKnown': lawAxisKnown,
+        'moralAxisKnown': moralAxisKnown,
+        'personalityKnown': personalityKnown,
         'sizeFactor': sizeFactor,
         'incubationHours': incubationHours,
         'personalityTraitIds': personalityTraitIds,
@@ -361,6 +396,12 @@ class Pet {
           LawAxis.values[seed.remainder(LawAxis.values.length)],
       moralAxis: enumByName(MoralAxis.values, json['moralAxis']) ??
           MoralAxis.values[(seed ~/ 3).remainder(MoralAxis.values.length)],
+      lawAxisKnown:
+          json['lawAxisKnown'] is bool && json['lawAxisKnown'] as bool,
+      moralAxisKnown:
+          json['moralAxisKnown'] is bool && json['moralAxisKnown'] as bool,
+      personalityKnown:
+          json['personalityKnown'] is bool && json['personalityKnown'] as bool,
       sizeFactor: ((json['sizeFactor'] as num?)?.toDouble() ?? 1)
           .clamp(.5, 1.5)
           .toDouble(),

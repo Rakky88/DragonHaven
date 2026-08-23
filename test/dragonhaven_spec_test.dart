@@ -99,7 +99,7 @@ void main() {
       'hatch_crack_1.ogg',
       'hatch_crack_2.ogg',
       'hatch_crack_3.ogg',
-      'hatch_reveal.ogg',
+      'hatch_reveal.wav',
       'spectral_reveal.ogg',
       'evolution_young.ogg',
       'evolution_ascended.ogg',
@@ -125,6 +125,9 @@ void main() {
       expect(nativeBridge, contains('R.raw.$resourceId'),
           reason: '$resource must be statically retained in release builds');
     }
+    expect(File('${directory.path}/hatch_reveal.wav').lengthSync(),
+        greaterThan(1000000),
+        reason: 'The hatch reveal uses the full original cinematic fanfare.');
   });
 
   test('Android keeps hatch reminders through permission and exact-alarm paths',
