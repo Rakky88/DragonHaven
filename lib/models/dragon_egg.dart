@@ -12,7 +12,7 @@ class DragonEgg {
     this.lawAxis = LawAxis.neutral,
     this.moralAxis = MoralAxis.neutral,
     this.sizeFactor = 1,
-    this.incubationHours = 168,
+    this.incubationMinutes = 1008,
     this.sinister = false,
     this.xp = 0,
   });
@@ -25,9 +25,12 @@ class DragonEgg {
   final LawAxis lawAxis;
   final MoralAxis moralAxis;
   final double sizeFactor;
-  final int incubationHours;
+  final int incubationMinutes;
+  Duration get incubationDuration => Duration(minutes: incubationMinutes);
   final bool sinister;
   final int xp;
+
+  DragonLineage get lineage => dragonLineageById(lineageId);
 
   Pet activate(
           {required int coins, required int gems, DateTime? activatedAt}) =>
@@ -42,7 +45,7 @@ class DragonEgg {
         lawAxis: lawAxis,
         moralAxis: moralAxis,
         sizeFactor: sizeFactor,
-        incubationHours: incubationHours,
+        incubationMinutes: incubationMinutes,
         firstEgg: false,
         xp: xp,
         coins: coins,
@@ -59,7 +62,7 @@ class DragonEgg {
         'lawAxis': lawAxis.name,
         'moralAxis': moralAxis.name,
         'sizeFactor': sizeFactor,
-        'incubationHours': incubationHours,
+        'incubationMinutes': incubationMinutes,
         'sinister': sinister,
         'xp': xp,
       };
@@ -84,12 +87,19 @@ class DragonEgg {
       sizeFactor: ((json['sizeFactor'] as num?)?.toDouble() ?? 1)
           .clamp(.5, 1.5)
           .toDouble(),
-      incubationHours:
-          nonNegativeIntFromJson(json['incubationHours'], fallback: 168)
-              .clamp(48, 336)
-              .toInt(),
+      incubationMinutes: _incubationMinutesFromJson(json),
       sinister: json['sinister'] is bool && json['sinister'] as bool,
       xp: nonNegativeIntFromJson(json['xp'], fallback: 0),
     );
+  }
+
+  static int _incubationMinutesFromJson(Map<String, dynamic> json) {
+    final savedMinutes = json['incubationMinutes'];
+    if (savedMinutes is num) {
+      return savedMinutes.toInt().clamp(1, 14 * 24 * 60);
+    }
+    final legacyHours =
+        nonNegativeIntFromJson(json['incubationHours'], fallback: 168);
+    return (legacyHours * 6).clamp(1, 14 * 24 * 60);
   }
 }

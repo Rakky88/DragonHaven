@@ -228,9 +228,12 @@ void main() {
     final paths = <String>{
       for (final item in shopCatalog)
         if (FurnitureArt.assetForItem(item.id) case final path?) path,
-      for (final tier in ChestTier.values) tier.assetPath,
+      for (final tier in ChestTier.values) ...[
+        tier.assetPath,
+        tier.openedAssetPath,
+      ],
     };
-    expect(paths, hasLength(206));
+    expect(paths, hasLength(212));
     for (final path in paths) {
       final image = await _decode(path);
       _expectContained(

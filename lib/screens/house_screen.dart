@@ -784,6 +784,7 @@ class _RoomDragon extends StatelessWidget {
         dragon.sizeFactor.clamp(.65, 1.30).toDouble() *
         crowdScale;
     return AnimatedPositioned(
+      key: Key('room-dragon-${dragon.id}'),
       duration: moveDuration,
       curve: Curves.easeInOutSine,
       left: position.dx * sceneSize.width - dragonSize / 2,

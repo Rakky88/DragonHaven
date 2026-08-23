@@ -183,8 +183,8 @@ class _EggCountdownState extends State<EggHatchCountdown>
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final hatchAt = widget.pet.stageStartedAt
-        .add(Duration(hours: widget.pet.incubationHours));
+    final hatchAt =
+        widget.pet.stageStartedAt.add(widget.pet.incubationDuration);
     final remaining =
         hatchAt.isAfter(_now) ? hatchAt.difference(_now) : Duration.zero;
     final ready = remaining == Duration.zero;

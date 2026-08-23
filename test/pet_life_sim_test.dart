@@ -22,27 +22,26 @@ void main() {
     expect(restored.stage, DragonStage.egg);
   });
 
-  test('the first egg hatches after a complete day without care buttons', () {
+  test('the first egg hatches after one complete hour', () {
     final egg = Pet(acquiredAt: start, stageStartedAt: start, hatchSeed: 1);
 
-    expect(egg.canHatch(start.add(const Duration(hours: 23))), isFalse);
-    expect(egg.canHatch(start.add(const Duration(days: 1))), isTrue);
+    expect(egg.canHatch(start.add(const Duration(minutes: 59))), isFalse);
+    expect(egg.canHatch(start.add(const Duration(hours: 1))), isTrue);
   });
 
-  test('later eggs use their fixed two-to-fourteen-day incubation roll', () {
+  test('later eggs use their fixed accelerated incubation roll', () {
     final egg = Pet(
       firstEgg: false,
       xp: Pet.hatchXpLater,
       acquiredAt: start,
       stageStartedAt: start,
       hatchSeed: 2,
-      incubationHours: 9 * 24,
+      incubationMinutes: 15 * 60,
     );
 
-    expect(egg.requiredIncubationDays(), 9);
-    expect(
-        egg.canHatch(start.add(const Duration(days: 8, hours: 23))), isFalse);
-    expect(egg.canHatch(start.add(const Duration(days: 9))), isTrue);
+    expect(egg.canHatch(start.add(const Duration(hours: 14, minutes: 59))),
+        isFalse);
+    expect(egg.canHatch(start.add(const Duration(hours: 15))), isTrue);
   });
 
   test('evolution respects minimum ages and locks the leading path', () {

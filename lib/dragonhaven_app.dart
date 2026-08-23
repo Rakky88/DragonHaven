@@ -72,6 +72,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   late final AppLifecycleListener _lifecycle;
   late final HouseholdProvider _game;
   Timer? _presentationRetry;
+  Timer? _gameClock;
   bool _presentationBusy = false;
 
   @override
@@ -79,6 +80,10 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     super.initState();
     _game = context.read<HouseholdProvider>();
     _game.addListener(_schedulePresentations);
+    _gameClock = Timer.periodic(const Duration(minutes: 1), (_) async {
+      await _game.refreshForCurrentDate();
+      _schedulePresentations();
+    });
     _lifecycle = AppLifecycleListener(
       onResume: () async {
         _setTowerAmbientMusic();
@@ -104,6 +109,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   @override
   void dispose() {
     _presentationRetry?.cancel();
+    _gameClock?.cancel();
     _game.removeListener(_schedulePresentations);
     _lifecycle.dispose();
     super.dispose();

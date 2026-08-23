@@ -66,7 +66,7 @@ class Pet {
     this.moralAxisKnown = false,
     this.personalityKnown = false,
     this.sizeFactor = 1,
-    this.incubationHours = 24,
+    this.incubationMinutes = 60,
     List<String>? personalityTraitIds,
     this.favorite = false,
     this.roamsTower = true,
@@ -115,7 +115,7 @@ class Pet {
   bool moralAxisKnown;
   bool personalityKnown;
   final double sizeFactor;
-  final int incubationHours;
+  final int incubationMinutes;
   final List<String> personalityTraitIds;
   bool favorite;
   bool roamsTower;
@@ -225,10 +225,9 @@ class Pet {
   Duration ageAt(DateTime now) => now.isAfter(stageStartedAt)
       ? now.difference(stageStartedAt)
       : Duration.zero;
-  int requiredIncubationDays() => (incubationHours / 24).ceil();
+  Duration get incubationDuration => Duration(minutes: incubationMinutes);
 
-  bool canHatch(DateTime now) =>
-      isEgg && ageAt(now) >= Duration(hours: incubationHours);
+  bool canHatch(DateTime now) => isEgg && ageAt(now) >= incubationDuration;
   bool canEvolve(DateTime now) => switch (stage) {
         DragonStage.hatchling =>
           xp >= wyrmlingXp && ageAt(now) >= const Duration(days: 3),
@@ -240,7 +239,7 @@ class Pet {
 
   Duration remainingForNextStage(DateTime now) {
     final minimum = switch (stage) {
-      DragonStage.egg => Duration(hours: incubationHours),
+      DragonStage.egg => incubationDuration,
       DragonStage.hatchling => const Duration(days: 3),
       DragonStage.wyrmling => const Duration(days: 7),
       DragonStage.ascended => Duration.zero,
@@ -329,7 +328,7 @@ class Pet {
         'moralAxisKnown': moralAxisKnown,
         'personalityKnown': personalityKnown,
         'sizeFactor': sizeFactor,
-        'incubationHours': incubationHours,
+        'incubationMinutes': incubationMinutes,
         'personalityTraitIds': personalityTraitIds,
         'favorite': favorite,
         'roamsTower': roamsTower,
@@ -405,10 +404,7 @@ class Pet {
       sizeFactor: ((json['sizeFactor'] as num?)?.toDouble() ?? 1)
           .clamp(.5, 1.5)
           .toDouble(),
-      incubationHours: nonNegativeIntFromJson(
-        json['incubationHours'],
-        fallback: json['firstEgg'] == false ? 24 * 7 : 24,
-      ).clamp(24, 24 * 14),
+      incubationMinutes: _incubationMinutesFromJson(json),
       personalityTraitIds: (json['personalityTraitIds'] as List?)
               ?.whereType<String>()
               .where(dragonPersonalityTraits.contains)
@@ -450,5 +446,22 @@ class Pet {
         ),
       },
     );
+  }
+
+  static int _incubationMinutesFromJson(Map<String, dynamic> json) {
+    final savedMinutes = json['incubationMinutes'];
+    if (savedMinutes is num) {
+      return savedMinutes.toInt().clamp(1, 14 * 24 * 60);
+    }
+
+    // Versions through v0.01.02 stored whole hours. Starter Eggs now take one
+    // hour, while every already-incubating later egg immediately adopts one
+    // tenth of its original duration without resetting its start time.
+    if (json['firstEgg'] != false) return 60;
+    final legacyHours = nonNegativeIntFromJson(
+      json['incubationHours'],
+      fallback: 24 * 7,
+    );
+    return (legacyHours * 6).clamp(1, 14 * 24 * 60);
   }
 }

@@ -564,6 +564,19 @@ class _OwnedDragonsSheet extends StatelessWidget {
                     label: strings.pick('Maturity', 'Volwassenheid'),
                     value: strings.petStage(dragon)),
                 const Divider(height: 13),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    strings.pick('Expertises', 'Expertises'),
+                    style: const TextStyle(
+                      color: AppColors.twilight,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: .35,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 3),
                 _DragonDetailRow(
                     icon: const GameIconSprite(GameIconKind.might, size: 27),
                     label: strings.pick('Might', 'Kracht'),
@@ -609,8 +622,10 @@ class _OwnedDragonsSheet extends StatelessWidget {
                   key: Key('dragon-roaming-${dragon.id}'),
                   leading:
                       const GameIconSprite(GameIconKind.roomClear, size: 38),
-                  title: Text(strings.pick(
-                      'Invite to Tower', 'Uitnodigen in de Toren')),
+                  title: Text(dragon.roamsTower
+                      ? strings.pick('Remove from Tower', 'Uit de Toren halen')
+                      : strings.pick(
+                          'Invite to Tower', 'Uitnodigen in de Toren')),
                   trailing: dragon.roamsTower
                       ? const Icon(Icons.check_circle_rounded,
                           color: AppColors.twilight)

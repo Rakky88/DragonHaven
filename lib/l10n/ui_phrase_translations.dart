@@ -1912,15 +1912,6 @@ const uiPhraseTranslations = <String, List<String>>{
   'Mini': ['Mini', 'Mini', 'Mini', 'Mini', 'Mini', '迷你', 'ミニ'],
   'Wood': ['Holz', 'Madera', 'Bois', 'Legno', 'Madeira', '木质', '木製'],
   'Short': ['Kurz', 'Corta', 'Courte', 'Breve', 'Curta', '短途', 'ショート'],
-  'Something is moving inside… · Incubates 2–14 days once placed.': [
-    'Etwas bewegt sich darin … · Nach dem Platzieren dauert das Brüten 2–14 Tage.',
-    'Algo se mueve dentro… · Tarda entre 2 y 14 días en eclosionar tras colocarlo.',
-    'Quelque chose bouge à l’intérieur… · L’incubation dure de 2 à 14 jours après placement.',
-    'Qualcosa si muove all’interno… · Dopo il posizionamento si schiude in 2–14 giorni.',
-    'Algo está se movendo lá dentro… · Leva de 2 a 14 dias para chocar após ser colocado.',
-    '里面有东西在动……放入巢穴后需孵化 2–14 天。',
-    '中で何かが動いています…・巣に置いてから2～14日で孵化します。'
-  ],
   'Something useful was discovered in the Spire.': [
     'In der Spitze wurde etwas Nützliches entdeckt.',
     'Se descubrió algo útil en la Aguja.',
@@ -3377,14 +3368,23 @@ const uiPhraseTranslations = <String, List<String>>{
     '已连接的守护者',
     'つながっているキーパー'
   ],
-  'Skill training': [
-    'Fertigkeitstraining',
-    'Entrenamiento de habilidad',
-    'Entraînement de compétence',
-    'Allenamento abilità',
-    'Treino de habilidade',
-    '技能训练',
-    'スキルトレーニング'
+  'Expertise training': [
+    'Expertisentraining',
+    'Entrenamiento de pericia',
+    'Entraînement d’expertise',
+    'Allenamento competenza',
+    'Treino de especialidade',
+    '专长训练',
+    '専門技能トレーニング'
+  ],
+  'Expertises': [
+    'Expertisen',
+    'Pericias',
+    'Expertises',
+    'Competenze',
+    'Especialidades',
+    '专长',
+    '専門技能'
   ],
   'Possible chests': [
     'Mögliche Truhen',
@@ -3552,14 +3552,96 @@ const uiPhraseTranslations = <String, List<String>>{
     '圣物',
     '秘宝'
   ],
-  'No divination relics yet': [
-    'Noch keine Erkenntnisrelikte',
-    'Aún no hay reliquias de adivinación',
-    'Aucune relique de divination',
-    'Nessuna reliquia divinatoria',
-    'Ainda não há relíquias de adivinhação',
-    '尚无占卜圣物',
-    '占いの秘宝はまだありません'
+  'No Relics yet': [
+    'Noch keine Relikte',
+    'Aún no hay Reliquias',
+    'Pas encore de Reliques',
+    'Ancora nessuna Reliquia',
+    'Ainda não há Relíquias',
+    '尚无圣物',
+    '秘宝はまだありません'
+  ],
+  'Incubation after nesting': [
+    'Brutzeit nach dem Einsetzen',
+    'Incubación tras colocarlo',
+    'Incubation après installation',
+    'Incubazione dopo il posizionamento',
+    'Incubação após colocar no ninho',
+    '入巢后的孵化时间',
+    '巣に置いた後の孵化時間'
+  ],
+  'Use this Relic?': [
+    'Dieses Relikt benutzen?',
+    '¿Usar esta Reliquia?',
+    'Utiliser cette Relique ?',
+    'Usare questa Reliquia?',
+    'Usar esta Relíquia?',
+    '使用这件圣物吗？',
+    'この秘宝を使いますか？'
+  ],
+  'This is a consumable item. It disappears after revealing one dragon. Continue?':
+      [
+    'Dies ist ein Verbrauchsgegenstand. Er verschwindet, nachdem er einen Drachen enthüllt hat. Fortfahren?',
+    'Este objeto es consumible. Desaparece tras revelar un dragón. ¿Continuar?',
+    'Cet objet est consommable. Il disparaît après avoir révélé un dragon. Continuer ?',
+    'Questo oggetto è consumabile. Scompare dopo aver rivelato un drago. Continuare?',
+    'Este item é consumível. Ele desaparece após revelar um dragão. Continuar?',
+    '这是一次性消耗品。揭示一条龙后便会消失。继续吗？',
+    'これは消耗アイテムです。ドラゴンを1体明かすと消えます。続けますか？'
+  ],
+  'Continue': [
+    'Weiter',
+    'Continuar',
+    'Continuer',
+    'Continua',
+    'Continuar',
+    '继续',
+    '続ける'
+  ],
+  'Claim': [
+    'Abholen',
+    'Recoger',
+    'Récupérer',
+    'Riscatta',
+    'Coletar',
+    '领取',
+    '受け取る'
+  ],
+  'Remove from Tower': [
+    'Aus dem Turm entfernen',
+    'Retirar de la Torre',
+    'Retirer de la Tour',
+    'Rimuovi dalla Torre',
+    'Remover da Torre',
+    '移出龙塔',
+    '塔から外す'
+  ],
+  'Ancient magic awakens': [
+    'Uralte Magie erwacht',
+    'La magia antigua despierta',
+    'Une magie ancienne s’éveille',
+    'La magia antica si risveglia',
+    'A magia antiga desperta',
+    '远古魔法正在苏醒',
+    '古の魔法が目覚める'
+  ],
+  'Sealed treasure': [
+    'Versiegelter Schatz',
+    'Tesoro sellado',
+    'Trésor scellé',
+    'Tesoro sigillato',
+    'Tesouro selado',
+    '封印的宝藏',
+    '封印された宝物'
+  ],
+  'Chest opening': [
+    'Truhe öffnet sich',
+    'El cofre se abre',
+    'Ouverture du coffre',
+    'Apertura del forziere',
+    'Baú abrindo',
+    '宝箱正在开启',
+    '宝箱を開封中'
   ],
   'These exceptionally rare treasures can appear in Gold Chests and rarer chests.':
       [
@@ -3570,15 +3652,6 @@ const uiPhraseTranslations = <String, List<String>>{
     'Esses tesouros excepcionalmente raros podem aparecer em Baús de Ouro e baús mais raros.',
     '这些极其稀有的宝物可能出现在黄金宝箱及更稀有的宝箱中。',
     'この極めて希少な宝物は、ゴールド宝箱以上の宝箱から出現します。'
-  ],
-  'Divination Relics': [
-    'Erkenntnisrelikte',
-    'Reliquias de adivinación',
-    'Reliques de divination',
-    'Reliquie divinatorie',
-    'Relíquias de adivinhação',
-    '占卜圣物',
-    '占いの秘宝'
   ],
   'Choose carefully: each relic reveals one dragon and is consumed.': [
     'Wähle mit Bedacht: Jedes Relikt enthüllt einen Drachen und wird verbraucht.',

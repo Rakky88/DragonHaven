@@ -134,7 +134,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 29;
+  static const _schemaVersion = 30;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(
@@ -152,11 +152,11 @@ class HouseholdProvider extends ChangeNotifier {
   static HouseholdProvider createHatchDemo({
     Duration countdown = const Duration(minutes: 3),
   }) {
-    if (countdown <= Duration.zero || countdown > const Duration(hours: 24)) {
+    if (countdown <= Duration.zero || countdown > const Duration(hours: 1)) {
       throw ArgumentError.value(
         countdown,
         'countdown',
-        'Must be greater than zero and at most 24 hours.',
+        'Must be greater than zero and at most one hour.',
       );
     }
     final provider = HouseholdProvider(
@@ -170,7 +170,7 @@ class HouseholdProvider extends ChangeNotifier {
       ..musicEnabled = true
       ..soundEffectsEnabled = true;
     provider.pet.stageStartedAt = provider._clock().subtract(
-          Duration(hours: provider.pet.incubationHours) - countdown,
+          provider.pet.incubationDuration - countdown,
         );
     return provider;
   }
@@ -231,7 +231,7 @@ class HouseholdProvider extends ChangeNotifier {
       lawAxis: LawAxis.values[_random.nextInt(LawAxis.values.length)],
       moralAxis: MoralAxis.values[_random.nextInt(MoralAxis.values.length)],
       sizeFactor: _dragonSizeFromRoll(sizeRoll),
-      incubationHours: 24,
+      incubationMinutes: 60,
       acquiredAt: now,
       stageStartedAt: now,
     );
@@ -998,7 +998,7 @@ class HouseholdProvider extends ChangeNotifier {
     final strings = AppStrings(languageCode);
     await HavenNotifications.eggReady(
       id: 'egg-${egg.id}',
-      at: egg.stageStartedAt.add(Duration(hours: egg.incubationHours)),
+      at: egg.stageStartedAt.add(egg.incubationDuration),
       title: strings.pick(
           'Your Mysterious Egg is ready', 'Je Mysterieus Ei is klaar'),
       body: strings.pick(
@@ -1203,7 +1203,7 @@ class HouseholdProvider extends ChangeNotifier {
           ? MoralAxis.evil
           : MoralAxis.values[_random.nextInt(MoralAxis.values.length)],
       sizeFactor: _dragonSizeFromRoll(sizeRoll),
-      incubationHours: 48 + _random.nextInt(289),
+      incubationMinutes: (48 + _random.nextInt(289)) * 6,
       sinister: sinister,
     );
   }

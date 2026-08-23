@@ -9,10 +9,12 @@ import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
+import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/screens/achievements_screen.dart';
 import 'package:dragon_haven/screens/adventure_hub_screen.dart';
 import 'package:dragon_haven/screens/draconomicon_screen.dart';
+import 'package:dragon_haven/screens/house_screen.dart';
 import 'package:dragon_haven/widgets/achievement_badge_sprite.dart';
 import 'package:dragon_haven/widgets/achievement_reveal.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
@@ -183,6 +185,56 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('active Adventure countdown becomes claimable without reopening',
+      (tester) async {
+    var now = DateTime.utc(2026, 8, 23, 12);
+    final game = HouseholdProvider(random: Random(74), clock: () => now);
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Ember'
+      ..favorite = true;
+    final adventure = game.adventuresFor(AdventureKind.mini).first;
+    game.adventureRuns = [
+      AdventureRun(
+        id: 'live-countdown',
+        adventureId: adventure.id,
+        dragonId: game.pet.id,
+        startedAt: now,
+        endsAt: now.add(const Duration(minutes: 2)),
+        status: AdventureRunStatus.running,
+      ),
+    ];
+    game.pet.activeAdventureId = 'live-countdown';
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: const MaterialApp(home: Scaffold(body: AdventureHubScreen())),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.drag(find.byType(TabBarView), const Offset(-420, 0));
+    await tester.pumpAndSettle();
+    final activeList = find.byKey(
+      const PageStorageKey('active-adventures-scroll'),
+    );
+    expect(
+      find.descendant(
+        of: activeList,
+        matching: find.textContaining(RegExp(r'^\d+m$')),
+      ),
+      findsOneWidget,
+    );
+
+    now = now.add(const Duration(minutes: 2));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Ready to return'), findsOneWidget);
+    final claim = find.byKey(const Key('claim-adventure-live-countdown'));
+    expect(claim, findsOneWidget);
+    await tester.tap(claim);
+    await tester.pump();
+    expect(game.chestCount(ChestTier.wooden), 1);
+    expect(game.activeAdventureRuns, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('audio controls remain independent on a compact screen',
       (tester) async {
     final game = await pumpGame(
@@ -208,6 +260,35 @@ void main() {
     await tester.pump();
     expect(game.musicEnabled, isFalse);
     expect(game.soundEffectsEnabled, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a dragon invited to the Tower renders inside its assigned room',
+      (tester) async {
+    final game = HouseholdProvider(random: Random(75));
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Ember'
+      ..favorite = true
+      ..roamsTower = true
+      ..currentFloorIndex = 0
+      ..currentRoomId = 'hearth';
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: MaterialApp(
+        home: Scaffold(
+          body: HouseScreen(
+            active: true,
+            floorIndex: 0,
+            onOpenShop: () {},
+          ),
+        ),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(game.towerDragons, contains(game.pet));
+    expect(find.byKey(Key('room-dragon-${game.pet.id}')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -279,6 +360,24 @@ void main() {
     await tester.tap(find.text('Shop').last);
     await tester.pump(const Duration(milliseconds: 700));
     expect(tester.takeException(), isNull, reason: 'Shop initial layout');
+    final firstCoinItem =
+        shopCatalog.firstWhere((item) => item.currency == ItemCurrency.coins);
+    final itemCard = find.byKey(Key('shop-item-${firstCoinItem.id}'));
+    final itemAction = find.byKey(Key('shop-action-${firstCoinItem.id}'));
+    await tester.scrollUntilVisible(
+      itemCard,
+      300,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const PageStorageKey('shop-coins-scroll')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.pump();
+    expect(tester.getRect(itemCard).contains(tester.getRect(itemAction).center),
+        isTrue,
+        reason: 'The shop action must stay inside its item card.');
     await tester.fling(
       find.byKey(const PageStorageKey('shop-coins-scroll')),
       const Offset(0, -900),
@@ -358,13 +457,14 @@ void main() {
     expect(find.textContaining('Level'), findsWidgets);
     expect(find.text('Next evolution'), findsNothing);
     expect(find.textContaining('Next evolution:'), findsOneWidget);
+    expect(find.text('Expertises'), findsOneWidget);
     expect(find.text('Might'), findsOneWidget);
     expect(find.text('Arcana'), findsOneWidget);
     expect(find.text('Spirit'), findsOneWidget);
     expect(find.text('Moral nature'), findsOneWidget);
     expect(find.text('Order nature'), findsOneWidget);
     expect(find.text('Personality'), findsOneWidget);
-    expect(find.text('Invite to Tower'), findsOneWidget);
+    expect(find.text('Remove from Tower'), findsOneWidget);
     final releaseTile = tester.widget<ListTile>(find.ancestor(
       of: find.text('Release dragon…'),
       matching: find.byType(ListTile),
@@ -416,7 +516,15 @@ void main() {
     final openChest = find.byKey(const Key('inventory-open-chest-wooden'));
     expect(openChest, findsOneWidget);
     await tester.tap(openChest);
-    for (var frame = 0; frame < 12; frame++) {
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const Key('chest-reveal-tap-target')), findsOneWidget);
+    expect(find.byKey(const Key('chest-rewards')), findsNothing);
+    expect(game.chestCount(ChestTier.wooden), 1,
+        reason: 'Opening the preview must not consume the chest yet.');
+    await tester.tap(find.byKey(const Key('chest-reveal-tap-target')));
+    await tester.pump();
+    expect(game.chestCount(ChestTier.wooden), 0);
+    for (var frame = 0; frame < 28; frame++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(game.chestCount(ChestTier.wooden), 0);
@@ -440,10 +548,14 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Relics'));
     await tester.pumpAndSettle();
-    expect(find.text('Divination Relics'), findsOneWidget);
+    expect(find.text('Relics'), findsWidgets);
     expect(find.text('Moral Prism'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('use-relic-moralPrism')));
+    await tester.pump();
+    expect(find.text('Use this Relic?'), findsOneWidget);
+    expect(game.relicCount(MysticRelic.moralPrism), 1);
+    await tester.tap(find.byKey(const Key('confirm-relic-use')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byKey(const Key('relic-dragon-picker-scroll')), findsOneWidget);
@@ -763,7 +875,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.01.02'), findsOneWidget);
+    expect(find.text('v0.01.03'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

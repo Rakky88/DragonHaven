@@ -46,4 +46,6 @@ extension ChestTierPresentation on ChestTier {
       };
 
   String get assetPath => 'assets/images/chests/chest_$name.png';
+  String get openedAssetPath =>
+      'assets/images/chests/open/chest_${name}_open.png';
 }

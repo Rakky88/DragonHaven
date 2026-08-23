@@ -94,38 +94,92 @@ class _EggInventoryTab extends StatelessWidget {
       itemBuilder: (context, index) {
         final egg = game.eggStash[index];
         return Card(
-          child: ListTile(
-            leading: const SizedBox.square(
-                dimension: 62,
-                child:
-                    DragonArt(height: 62, animate: false, stageKey: 'moonEgg')),
-            title: Text(strings.pick('Mysterious Egg', 'Mysterieus Ei'),
-                style: const TextStyle(fontWeight: FontWeight.w900)),
-            subtitle: Text(strings.pick(
-                'Something is moving inside… · Incubates 2–14 days once placed.',
-                'Er beweegt iets binnenin… · Broedt 2–14 dagen nadat het geplaatst is.')),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+          margin: const EdgeInsets.only(bottom: 10),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 11),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IconButton(
-                  tooltip: strings.pick('Discard egg', 'Ei wegdoen'),
-                  onPressed: () => _discardEgg(context, egg.id),
-                  icon: const Icon(Icons.delete_outline_rounded),
+                Row(children: [
+                  const SizedBox.square(
+                    dimension: 68,
+                    child: DragonArt(
+                      height: 68,
+                      animate: false,
+                      stageKey: 'moonEgg',
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings.pick('Mysterious Egg', 'Mysterieus Ei'),
+                          style: const TextStyle(fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '${strings.pick('Incubation after nesting', 'Broedtijd na plaatsing')}: '
+                          '${strings.remainingDuration(egg.incubationDuration)}',
+                          style: const TextStyle(
+                            color: AppColors.twilight,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F0FC),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Text(
+                    game.eggHintForEgg(egg, locale: strings.languageCode),
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 12,
+                      height: 1.35,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                 ),
-                FilledButton(
-                  onPressed: game.hasEggInNest
-                      ? null
-                      : () async {
-                          final ok = await game.activateEgg(egg.id);
-                          if (context.mounted && ok) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Text(strings.pick(
-                                    'Egg moved to the rooftop nest.',
-                                    'Ei naar het daknest verplaatst.'))));
-                          }
-                        },
-                  child: Text(strings.pick('Incubate', 'Broed uit')),
-                ),
+                const SizedBox(height: 9),
+                Row(children: [
+                  IconButton.outlined(
+                    tooltip: strings.pick('Discard egg', 'Ei wegdoen'),
+                    onPressed: () => _discardEgg(context, egg.id),
+                    icon: const Icon(Icons.delete_outline_rounded),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: game.hasEggInNest
+                          ? null
+                          : () async {
+                              final ok = await game.activateEgg(egg.id);
+                              if (context.mounted && ok) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(strings.pick(
+                                      'Egg moved to the rooftop nest.',
+                                      'Ei naar het daknest verplaatst.',
+                                    )),
+                                  ),
+                                );
+                              }
+                            },
+                      child: Text(strings.pick('Incubate', 'Broed uit')),
+                    ),
+                  ),
+                ]),
               ],
             ),
           ),
@@ -236,10 +290,14 @@ class _ChestInventoryTab extends StatelessWidget {
 
   Future<void> _openChest(BuildContext context, ChestTier tier) async {
     final navigator = Navigator.of(context);
-    final reward = await context.read<HouseholdProvider>().openChest(tier);
-    if (reward == null || !navigator.mounted) return;
-    unawaited(HavenAudio.play(_soundForChest(tier)));
-    await showChestReveal(navigator.context, reward);
+    final game = context.read<HouseholdProvider>();
+    if (!navigator.mounted) return;
+    await showChestReveal(
+      navigator.context,
+      tier,
+      openChest: () => game.openChest(tier),
+      onOpen: () => HavenAudio.play(_soundForChest(tier)),
+    );
   }
 }
 
@@ -367,8 +425,7 @@ class _RelicEmptyState extends StatelessWidget {
                 fit: BoxFit.contain,
               ),
               Text(
-                strings.pick('No divination relics yet',
-                    'Nog geen waarzeggende relieken'),
+                strings.pick('No Relics yet', 'Nog geen Relieken'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
@@ -422,7 +479,7 @@ class _RelicIntro extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  strings.pick('Divination Relics', 'Waarzeggende Relieken'),
+                  strings.pick('Relics', 'Relieken'),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
@@ -529,6 +586,35 @@ class _RelicCard extends StatelessWidget {
 Future<void> _useRelic(BuildContext context, MysticRelic relic) async {
   final game = context.read<HouseholdProvider>();
   final strings = AppStrings.of(context);
+  final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          scrollable: true,
+          icon: Image.asset(relic.assetPath, width: 82, height: 82),
+          title: Text(strings.pick(
+            'Use this Relic?',
+            'Dit Reliek gebruiken?',
+          )),
+          content: Text(strings.pick(
+            'This is a consumable item. It disappears after revealing one dragon. Continue?',
+            'Dit is een verbruiksitem. Het verdwijnt nadat het één draak heeft onthuld. Doorgaan?',
+          )),
+          actions: [
+            TextButton(
+              key: const Key('cancel-relic-use'),
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(strings.tr('cancel')),
+            ),
+            FilledButton(
+              key: const Key('confirm-relic-use'),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(strings.pick('Continue', 'Doorgaan')),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+  if (!confirmed || !context.mounted) return;
   final selected = await showModalBottomSheet<Pet>(
     context: context,
     showDragHandle: true,

@@ -176,8 +176,11 @@ class _ShopScreenState extends State<ShopScreen> {
                   crossAxisCount: columns,
                   crossAxisSpacing: 11,
                   mainAxisSpacing: 11,
-                  childAspectRatio: columns == 2 ? 0.67 : 0.76,
-                  mainAxisExtent: largeText ? 340 : null,
+                  mainAxisExtent: largeText
+                      ? 360
+                      : columns == 2
+                          ? 318
+                          : 300,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => _ShopItemCard(item: items[index]),

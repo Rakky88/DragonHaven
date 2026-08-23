@@ -5,7 +5,7 @@
 ## Implemented game
 
 - A first-launch keeper name and one Common Starter Egg. Its family, alignment, size and independent 5% Spectral roll are fixed before the player sees it.
-- One shared Mysterious Egg sprite and an exact 24-hour first incubation gate. Later eggs keep a fixed 2–14-day incubation roll.
+- One shared Mysterious Egg sprite and an exact one-hour first incubation gate. Later eggs keep a fixed accelerated 4h48m–33h36m incubation roll.
 - Cinematic hatch and evolution reveals using separately rendered art for Egg, Hatchling, Wyrmling and all Might, Arcana and Spirit Ascended forms.
 - 42 families: 20 Common, 10 Uncommon, 6 Rare, 3 Very Rare, 2 Legendary and 1 Mythical. Every family has five distinct logical forms; the secret Sinister Everwyrm has dedicated artwork.
 - A 5% Spectral variant roll, separate Draconomicon collection, undiscovered silhouettes and one active egg or dragon at a time.

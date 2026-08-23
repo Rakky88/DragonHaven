@@ -29,7 +29,7 @@ void main() {
     expect(game.pet.displayName, 'Mysterious Egg');
     expect(game.pet.lineageId, identity);
     expect(game.pet.lineage.rarity, DragonRarity.common);
-    expect(game.pet.incubationHours, 24);
+    expect(game.pet.incubationMinutes, 60);
     expect(game.onboardingComplete, isFalse);
     expect(game.musicEnabled, isTrue);
     expect(game.soundEffectsEnabled, isTrue);
@@ -124,7 +124,7 @@ void main() {
     expect(game.adventuresFor(AdventureKind.long), hasLength(3));
   });
 
-  test('Mini Adventure slots refill every five minutes', () {
+  test('dismissed Mini Adventure slots refill every fifteen minutes', () async {
     var now = DateTime(2026, 8, 21, 10, 15);
     final game = HouseholdProvider(random: Random(120), clock: () => now);
     final initial = game.adventuresFor(AdventureKind.mini);
@@ -132,12 +132,37 @@ void main() {
     expect(
         initial.every((item) => item.knownChest == ChestTier.wooden), isTrue);
 
-    game.adventureOptionIds[AdventureKind.mini]!.remove(initial.first.id);
-    game.miniAdventureRefilledAt = now;
-    now = now.add(const Duration(minutes: 4));
+    await game.dismissAdventure(initial.first);
+    now = now.add(const Duration(minutes: 14));
     expect(game.adventuresFor(AdventureKind.mini), hasLength(2));
     now = now.add(const Duration(minutes: 1));
     expect(game.adventuresFor(AdventureKind.mini), hasLength(3));
+  });
+
+  test('legacy egg incubation hours migrate to one tenth immediately', () {
+    final stageStart = DateTime.utc(2026, 8, 20, 10);
+    final laterEgg = Pet.fromJson({
+      'id': 'legacy-active-egg',
+      'stage': 'egg',
+      'firstEgg': false,
+      'stageStartedAt': stageStart.toIso8601String(),
+      'incubationHours': 168,
+      'hatchSeed': 71,
+    });
+    final stashedEgg = DragonEgg.fromJson({
+      'id': 'legacy-stashed-egg',
+      'lineageId': dragonLineages.first.id,
+      'acquiredAt': stageStart.toIso8601String(),
+      'hatchSeed': 72,
+      'incubationHours': 48,
+    });
+
+    expect(laterEgg.incubationDuration, const Duration(hours: 16, minutes: 48));
+    expect(
+        stashedEgg.incubationDuration, const Duration(hours: 4, minutes: 48));
+    expect(Pet.fromJson(laterEgg.toJson()).incubationMinutes,
+        laterEgg.incubationMinutes,
+        reason: 'new saves must not be divided a second time');
   });
 
   test('Special Adventures only appear from an active special source', () {

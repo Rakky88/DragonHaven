@@ -69,6 +69,8 @@ int _amsterdamGroupAdventureSlot(DateTime instant) {
 extension DragonHavenSystems on HouseholdProvider {
   static const int maxDragonsPerTowerFloor = 3;
 
+  DateTime get currentTime => _clock();
+
   List<Pet> get ownedDragons => [
         if (!pet.isEgg) pet,
         ...sanctuaryDragons.where((dragon) => !dragon.isEgg),
@@ -224,7 +226,18 @@ extension DragonHavenSystems on HouseholdProvider {
           orElse: () => null,
         );
     if (dragon == null) return DragonRoamingResult.dragonNotFound;
-    if (dragon.roamsTower == enabled) return DragonRoamingResult.unchanged;
+    if (dragon.roamsTower == enabled) {
+      if (!enabled) return DragonRoamingResult.unchanged;
+      final previousFloor = dragon.currentFloorIndex;
+      final previousRoom = dragon.currentRoomId;
+      _normalizeRoamingState();
+      if (dragon.currentFloorIndex != previousFloor ||
+          dragon.currentRoomId != previousRoom) {
+        await _notifyAndSave();
+        return DragonRoamingResult.updated;
+      }
+      return DragonRoamingResult.unchanged;
+    }
     if (enabled && selectedRoamingDragonCount >= towerRoamingCapacity) {
       return DragonRoamingResult.towerFull;
     }
@@ -357,7 +370,7 @@ extension DragonHavenSystems on HouseholdProvider {
 
     final seed = now.millisecondsSinceEpoch ~/
         switch (kind) {
-          AdventureKind.mini => const Duration(minutes: 5).inMilliseconds,
+          AdventureKind.mini => const Duration(minutes: 15).inMilliseconds,
           AdventureKind.short => Duration.millisecondsPerHour,
           _ => Duration.millisecondsPerDay,
         };
@@ -369,11 +382,11 @@ extension DragonHavenSystems on HouseholdProvider {
         miniAdventureRefilledAt = now;
       } else {
         final elapsedSlots =
-            (now.difference(previous).inMinutes ~/ 5).clamp(0, 3);
+            (now.difference(previous).inMinutes ~/ 15).clamp(0, 3);
         refillCount = elapsedSlots;
         if (elapsedSlots > 0) {
           miniAdventureRefilledAt =
-              previous.add(Duration(minutes: elapsedSlots * 5));
+              previous.add(Duration(minutes: elapsedSlots * 15));
         }
       }
     } else if (kind == AdventureKind.short) {
@@ -489,14 +502,17 @@ extension DragonHavenSystems on HouseholdProvider {
   }
 
   Future<void> dismissAdventure(AdventureDefinition adventure) async {
-    if ((adventure.kind != AdventureKind.short &&
+    if ((adventure.kind != AdventureKind.mini &&
+            adventure.kind != AdventureKind.short &&
             adventure.kind != AdventureKind.long) ||
         adventureRuns.any((run) => run.adventureId == adventure.id)) {
       return;
     }
     adventureOptionIds[adventure.kind]?.remove(adventure.id);
     final now = _clock();
-    if (adventure.kind == AdventureKind.short) {
+    if (adventure.kind == AdventureKind.mini) {
+      miniAdventureRefilledAt = now;
+    } else if (adventure.kind == AdventureKind.short) {
       shortAdventureRefilledAt = now;
     } else {
       longAdventureRefillDay = HouseholdProvider._dayKey(now);
@@ -710,7 +726,28 @@ extension DragonHavenSystems on HouseholdProvider {
 
   String eggHint({bool? isDutch, String? locale}) {
     final strings = AppStrings(locale ?? (isDutch == true ? 'nl' : 'en'));
-    final lineage = (nestEgg ?? pet).lineage;
+    final egg = nestEgg ?? pet;
+    return _eggHintFor(
+      strings,
+      lineage: egg.lineage,
+      lawAxis: egg.lawAxis,
+      moralAxis: egg.moralAxis,
+    );
+  }
+
+  String eggHintForEgg(DragonEgg egg, {String? locale}) => _eggHintFor(
+        AppStrings(locale ?? languageCode),
+        lineage: egg.lineage,
+        lawAxis: egg.lawAxis,
+        moralAxis: egg.moralAxis,
+      );
+
+  String _eggHintFor(
+    AppStrings strings, {
+    required DragonLineage lineage,
+    required LawAxis lawAxis,
+    required MoralAxis moralAxis,
+  }) {
     final affinity = switch (lineage.affinityCategory) {
       'ember' || 'solar' => strings.pick(
           'The shell feels unusually warm.', 'De schaal voelt ongewoon warm.'),
@@ -728,7 +765,7 @@ extension DragonHavenSystems on HouseholdProvider {
       _ => strings.pick('A strange musical tap answers from within.',
           'Er klinkt een vreemd muzikaal tikje van binnen.'),
     };
-    final rhythm = switch (pet.lawAxis) {
+    final rhythm = switch (lawAxis) {
       LawAxis.lawful => strings.pick(
           'The movements inside follow a precise rhythm.',
           'De bewegingen binnenin volgen een precies ritme.'),
@@ -738,7 +775,7 @@ extension DragonHavenSystems on HouseholdProvider {
       LawAxis.chaotic => strings.pick('The egg rolls a little. Uphill.',
           'Het ei rolt een stukje. Tegen de helling op.'),
     };
-    final aura = switch (pet.moralAxis) {
+    final aura = switch (moralAxis) {
       MoralAxis.good => strings.pick('A gentle glow lingers beneath your hand.',
           'Een zachte gloed blijft even onder je hand hangen.'),
       MoralAxis.neutral => strings.pick(

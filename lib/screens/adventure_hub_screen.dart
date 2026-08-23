@@ -30,7 +30,9 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
     super.initState();
     _tabs = TabController(length: 2, vsync: this);
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && _tabs.index == 1) setState(() {});
+      if (mounted && _tabs.index == 1) {
+        setState(() {});
+      }
     });
   }
 
@@ -44,8 +46,8 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final activeCount =
-        context.watch<HouseholdProvider>().activeAdventureRuns.length;
+    final game = context.watch<HouseholdProvider>();
+    final activeCount = game.activeAdventureRuns.length;
     return Column(
       children: [
         Padding(
@@ -110,7 +112,10 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
         Expanded(
           child: TabBarView(
             controller: _tabs,
-            children: const [_AvailableAdventures(), _ActiveAdventures()],
+            children: [
+              const _AvailableAdventures(),
+              _ActiveAdventures(now: game.currentTime),
+            ],
           ),
         ),
       ],
@@ -276,7 +281,8 @@ class _AdventureCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (adventure.kind == AdventureKind.short ||
+              if (adventure.kind == AdventureKind.mini ||
+                  adventure.kind == AdventureKind.short ||
                   adventure.kind == AdventureKind.long)
                 IconButton(
                   key: Key('dismiss-adventure-${adventure.id}'),
@@ -370,7 +376,7 @@ class _AdventureCard extends StatelessWidget {
                 GameIconSprite.forTrainingFocus(definition.focus),
                 size: 34,
               ),
-              title: strings.pick('Skill training', 'Vaardigheidstraining'),
+              title: strings.pick('Expertise training', 'Expertisetraining'),
               value:
                   '+${definition.statPoints} ${_focusName(strings, definition.focus)} · '
                   '${_focusExplanation(strings, definition.focus)}',
@@ -635,7 +641,9 @@ class _DragonPickerTile extends StatelessWidget {
 }
 
 class _ActiveAdventures extends StatelessWidget {
-  const _ActiveAdventures();
+  const _ActiveAdventures({required this.now});
+
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
@@ -674,15 +682,17 @@ class _ActiveAdventures extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
       itemCount: runs.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (context, index) => _ActiveAdventureCard(run: runs[index]),
+      itemBuilder: (context, index) =>
+          _ActiveAdventureCard(run: runs[index], now: now),
     );
   }
 }
 
 class _ActiveAdventureCard extends StatelessWidget {
-  const _ActiveAdventureCard({required this.run});
+  const _ActiveAdventureCard({required this.run, required this.now});
 
   final AdventureRun run;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
@@ -736,7 +746,7 @@ class _ActiveAdventureCard extends StatelessWidget {
                           ready
                               ? strings.pick(
                                   'Ready to return', 'Klaar om terug te keren')
-                              : _remaining(run.endsAt, strings),
+                              : _remaining(run.endsAt, strings, now),
                           style: TextStyle(
                             color: ready
                                 ? const Color(0xFF24735B)
@@ -749,8 +759,15 @@ class _ActiveAdventureCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.twilight),
+              if (ready)
+                FilledButton.tonal(
+                  key: Key('claim-adventure-${run.id}'),
+                  onPressed: () => _claimAdventure(context, run.id),
+                  child: Text(strings.pick('Claim', 'Ophalen')),
+                )
+              else
+                const Icon(Icons.chevron_right_rounded,
+                    color: AppColors.twilight),
             ],
           ),
         ),
@@ -813,7 +830,7 @@ Future<void> _showRunDetails(
                     : strings.pick('Return in', 'Terug over'),
                 value: ready
                     ? strings.pick('Ready to return', 'Klaar om terug te keren')
-                    : _remaining(run.endsAt, strings)),
+                    : _remaining(run.endsAt, strings, game.currentTime)),
             _DetailRow(
                 icon: const GameIconSprite(GameIconKind.experience, size: 34),
                 title: strings.pick('Dragon experience', 'Drakenervaring'),
@@ -976,10 +993,24 @@ String _chestPossibilities(
   };
 }
 
-String _remaining(DateTime end, AppStrings strings) {
-  final remaining = end.difference(DateTime.now());
-  if (remaining.isNegative) return strings.pick('Ready', 'Klaar');
+String _remaining(DateTime end, AppStrings strings, DateTime now) {
+  final remaining = end.difference(now);
+  if (remaining <= Duration.zero) return strings.pick('Ready', 'Klaar');
   return strings.remainingDuration(remaining);
+}
+
+Future<void> _claimAdventure(BuildContext context, String runId) async {
+  final game = context.read<HouseholdProvider>();
+  final strings = AppStrings.of(context);
+  final tier = await game.claimAdventure(runId);
+  if (!context.mounted || tier == null) return;
+  unawaited(HavenAudio.play(HavenSound.adventureReturn));
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Text(strings.pick(
+      '${strings.chestLabel(tier)} added to your Inventory.',
+      '${strings.chestLabel(tier)} toegevoegd aan je Inventory.',
+    )),
+  ));
 }
 
 Future<void> _showStartResult(
