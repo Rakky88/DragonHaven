@@ -382,8 +382,7 @@ class _RelicInventoryTab extends StatelessWidget {
           _RelicCard(
             relic: relic,
             count: game.relicCount(relic),
-            canUse: game.ownedDragons
-                .any((dragon) => !game.isRelicKnownFor(relic, dragon)),
+            canUse: true,
           ),
       ],
     );
@@ -586,6 +585,31 @@ class _RelicCard extends StatelessWidget {
 Future<void> _useRelic(BuildContext context, MysticRelic relic) async {
   final game = context.read<HouseholdProvider>();
   final strings = AppStrings.of(context);
+  final eligibleDragons = game.ownedDragons
+      .where((dragon) => !game.isRelicKnownFor(relic, dragon))
+      .toList(growable: false);
+  if (eligibleDragons.isEmpty) {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        scrollable: true,
+        icon: Image.asset(relic.assetPath, width: 82, height: 82),
+        title: Text(
+            strings.pick('Nothing left to reveal', 'Niets meer te onthullen')),
+        content: Text(strings.pick(
+          'This Relic has already revealed its secret for every dragon you own. Hatch or collect another dragon to use it.',
+          'Dit Reliek heeft zijn geheim al onthuld voor elke draak die je bezit. Laat een ander ei uitkomen of verzamel een nieuwe draak om het te gebruiken.',
+        )),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(strings.pick('Understood', 'Begrepen')),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
   final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(

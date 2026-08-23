@@ -80,6 +80,7 @@ class HouseholdProvider extends ChangeNotifier {
   bool musicEnabled = true;
   bool soundEffectsEnabled = true;
   bool achievementsCompact = false;
+  bool tutorialCompleted = false;
   bool showcaseMode = false;
   late Pet pet;
   Pet? incubatingEgg;
@@ -134,7 +135,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 30;
+  static const _schemaVersion = 31;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(
@@ -236,6 +237,7 @@ class HouseholdProvider extends ChangeNotifier {
       stageStartedAt: now,
     );
     incubatingEgg = null;
+    tutorialCompleted = false;
     unlockedRoomIds = {'nest', 'hearth'};
     towerFloorRoomIds = ['hearth'];
     activities = [
@@ -260,6 +262,7 @@ class HouseholdProvider extends ChangeNotifier {
     musicEnabled = true;
     soundEffectsEnabled = true;
     achievementsCompact = false;
+    tutorialCompleted = true;
 
     final dragons = <Pet>[];
     var serial = 0;
@@ -470,6 +473,9 @@ class HouseholdProvider extends ChangeNotifier {
     achievementsCompact = data['achievementsCompact'] is bool &&
         data['achievementsCompact'] as bool;
     pet = Pet.fromJson(mapFromJson(data['pet']));
+    tutorialCompleted = data['tutorialCompleted'] is bool
+        ? data['tutorialCompleted'] as bool
+        : !pet.isEgg;
     final storedIncubatingEgg = mapFromJson(data['incubatingEgg']);
     incubatingEgg =
         storedIncubatingEgg.isEmpty ? null : Pet.fromJson(storedIncubatingEgg);
@@ -795,6 +801,19 @@ class HouseholdProvider extends ChangeNotifier {
   Future<void> setAchievementsCompact(bool value) async {
     if (achievementsCompact == value) return;
     achievementsCompact = value;
+    await _notifyAndSave();
+  }
+
+  bool get canStartTutorial =>
+      !pet.isEgg &&
+      pet.name.trim().isNotEmpty &&
+      unlockedAchievementIds.contains('hello_little_one');
+
+  bool get shouldStartTutorial => !tutorialCompleted && canStartTutorial;
+
+  Future<void> completeTutorial() async {
+    if (tutorialCompleted) return;
+    tutorialCompleted = true;
     await _notifyAndSave();
   }
 
@@ -1357,6 +1376,7 @@ class HouseholdProvider extends ChangeNotifier {
       'musicEnabled': musicEnabled,
       'soundEffectsEnabled': soundEffectsEnabled,
       'achievementsCompact': achievementsCompact,
+      'tutorialCompleted': tutorialCompleted,
       'pet': pet.toJson(),
       'incubatingEgg': incubatingEgg?.toJson(),
       'eggStash': eggStash.map((egg) => egg.toJson()).toList(),

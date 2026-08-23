@@ -212,6 +212,43 @@ class _TowerRoof extends StatelessWidget {
                     'assets/images/tower_nest_${value.assetKey}.webp',
               ),
             ),
+            if (game.nestEgg != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 1,
+                child: IgnorePointer(
+                  child: Center(
+                    child: Container(
+                      key: const Key('tower-roof-egg'),
+                      width: 112,
+                      height: 112,
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            Colors.white.withValues(alpha: .76),
+                            const Color(0x66FFE39A),
+                            Colors.transparent,
+                          ],
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0xAAFFE39A),
+                            blurRadius: 24,
+                            spreadRadius: 3,
+                          ),
+                        ],
+                      ),
+                      child: const GameIconSprite(
+                        GameIconKind.mysteriousEgg,
+                        size: 106,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             Positioned(
               left: 14,
               right: 14,
@@ -239,14 +276,7 @@ class _TowerRoof extends StatelessWidget {
                       color: const Color(0xD91B1436),
                       borderRadius: BorderRadius.circular(99),
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        GameIconSprite(GameIconKind.mysteriousEgg, size: 25),
-                        SizedBox(width: 4),
-                        GameIconSprite(GameIconKind.clock, size: 20),
-                      ],
-                    ),
+                    child: const GameIconSprite(GameIconKind.clock, size: 22),
                   ),
                 const Icon(Icons.chevron_right_rounded, color: Colors.white),
               ]),
@@ -726,7 +756,6 @@ class _DragonProgressCard extends StatelessWidget {
       DragonStage.ascended => strings.petStageNameByKey('homeGuardian'),
       _ => '',
     };
-    final remainingAge = dragon.remainingForNextStage(DateTime.now());
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(15, 13, 15, 14),
@@ -810,22 +839,10 @@ class _DragonProgressCard extends StatelessWidget {
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 5),
-          Text(
-            remainingAge == Duration.zero
-                ? strings.pick('Minimum age reached', 'Minimumleeftijd bereikt')
-                : '${strings.pick('Minimum age remaining', 'Resterende minimumleeftijd')}: '
-                    '${strings.evolutionRemaining(remainingAge)}',
-            style: const TextStyle(
-              color: Color(0xFFD8CFF1),
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
           if (dragon.stage == DragonStage.wyrmling) ...[
-            const SizedBox(height: 3),
+            const SizedBox(height: 5),
             Text(
-              '${strings.pick('Training required', 'Training vereist')}: '
+              '${strings.pick('Expertises required', 'Expertises vereist')}: '
               '${dragon.totalTraining}/300',
               style: const TextStyle(
                 color: Color(0xFFD8CFF1),

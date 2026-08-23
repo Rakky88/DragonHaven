@@ -398,7 +398,7 @@ void main() {
     expect(
       navigation.destinations
           .map((destination) => (destination as NavigationDestination).label),
-      ['Adventure', 'Inventory', 'Tower', 'Friends', 'Shop'],
+      ['Friends', 'Adventure', 'Tower', 'Inventory', 'Shop'],
     );
     final towerRoof = find.byKey(const Key('tower-roof'));
     final openCodex = find.byKey(const Key('open-draconomicon'));
@@ -495,6 +495,48 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('starter tutorial auto-starts, can be skipped and replayed',
+      (tester) async {
+    final game = await pumpGame(tester, onboarded: true, hatched: true);
+    game
+      ..tutorialCompleted = false
+      ..unlockedAchievementIds.add('hello_little_one');
+    game.notifyListeners();
+
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(const Key('tutorial-step-0')), findsOneWidget);
+    expect(find.byKey(const Key('tutorial-dragon-guide')), findsOneWidget);
+    expect(find.text('Welcome to DragonHaven'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('next-tutorial-step')));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.byKey(const PageStorageKey('friends-scroll')), findsOneWidget);
+    expect(find.text('Friends'), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('skip-tutorial')));
+    for (var frame = 0; frame < 10; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(game.tutorialCompleted, isTrue);
+    expect(
+        find.byKey(const Key('tutorial-step-1')).hitTestable(), findsNothing);
+
+    await tester.tap(find.byKey(const Key('app-overflow-menu')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('app-menu-tutorial')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(find.byKey(const Key('tutorial-step-0')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('skip-tutorial')));
+    for (var frame = 0; frame < 10; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('earned chests appear and open only from Inventory',
       (tester) async {
     final game = await pumpGame(tester, onboarded: true, hatched: true);
@@ -576,6 +618,27 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('a Relic explains why it has no eligible dragon', (tester) async {
+    final game = await pumpGame(tester, onboarded: true, hatched: true);
+    game.pet.moralAxisKnown = true;
+    game.relicInventory[MysticRelic.moralPrism] = 1;
+    game.notifyListeners();
+    await tester.pump();
+
+    await tester.tap(find.text('Inventory').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Relics'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('use-relic-moralPrism')));
+    await tester.pump();
+
+    expect(find.text('Nothing left to reveal'), findsOneWidget);
+    expect(game.relicCount(MysticRelic.moralPrism), 1);
+    await tester.tap(find.text('Understood'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('a later egg incubates in the nest while the app stays usable',
       (tester) async {
     final game = await pumpGame(tester, onboarded: true, hatched: true);
@@ -636,6 +699,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Adventure'), findsWidgets);
+    expect(find.byKey(const Key('tower-roof-egg')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -875,7 +939,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.01.03'), findsOneWidget);
+    expect(find.text('v0.01.04'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

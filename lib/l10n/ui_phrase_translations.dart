@@ -2463,15 +2463,6 @@ const uiPhraseTranslations = <String, List<String>>{
     '未解锁',
     '未解除'
   ],
-  'minimum time complete': [
-    'Mindestzeit erfüllt',
-    'tiempo mínimo completado',
-    'durée minimale atteinte',
-    'tempo minimo completato',
-    'tempo mínimo concluído',
-    '已满足最短时间',
-    '最低時間を達成'
-  ],
   'path undecided': [
     'Pfad unentschieden',
     'senda sin decidir',
@@ -3516,33 +3507,6 @@ const uiPhraseTranslations = <String, List<String>>{
     '下一次进化',
     '次の進化'
   ],
-  'Minimum age reached': [
-    'Mindestalter erreicht',
-    'Edad mínima alcanzada',
-    'Âge minimum atteint',
-    'Età minima raggiunta',
-    'Idade mínima alcançada',
-    '已达到最低年龄',
-    '最低年齢に到達'
-  ],
-  'Minimum age remaining': [
-    'Verbleibendes Mindestalter',
-    'Edad mínima restante',
-    'Âge minimum restant',
-    'Età minima rimanente',
-    'Idade mínima restante',
-    '距离最低年龄',
-    '最低年齢まで'
-  ],
-  'Training required': [
-    'Training erforderlich',
-    'Entrenamiento requerido',
-    'Entraînement requis',
-    'Allenamento richiesto',
-    'Treino necessário',
-    '所需训练',
-    '必要なトレーニング'
-  ],
   'Relics': [
     'Relikte',
     'Reliquias',
@@ -3934,5 +3898,139 @@ const uiPhraseTranslations = <String, List<String>>{
     'Assusta-se facilmente',
     '容易受惊',
     '驚きやすい'
+  ],
+  'Tutorial': [
+    'Tutorial',
+    'Tutorial',
+    'Tutoriel',
+    'Tutorial',
+    'Tutorial',
+    '教程',
+    'チュートリアル'
+  ],
+  'Welcome to DragonHaven': [
+    'Willkommen in DragonHaven',
+    'Te damos la bienvenida a DragonHaven',
+    'Bienvenue dans DragonHaven',
+    'Benvenuto a DragonHaven',
+    'Boas-vindas a DragonHaven',
+    '欢迎来到 DragonHaven',
+    'DragonHavenへようこそ'
+  ],
+  'will show you around. You can skip now and replay this tour later from the three-dot menu.':
+      [
+    'zeigt dir alles. Du kannst jetzt überspringen und diese Führung später über das Dreipunkt-Menü wiederholen.',
+    'te enseñará todo. Puedes omitirlo ahora y repetir este recorrido más tarde desde el menú de tres puntos.',
+    'va te guider. Tu peux passer maintenant et relancer cette visite plus tard depuis le menu à trois points.',
+    'ti farà da guida. Puoi saltare ora e ripetere il tour più tardi dal menu con i tre puntini.',
+    'vai guiar você. Você pode pular agora e repetir este passeio depois pelo menu de três pontos.',
+    '会带你参观。你现在可以跳过，之后可从三点菜单重新开始导览。',
+    'が案内します。今はスキップしても、後で三点メニューからもう一度始められます。'
+  ],
+  'This is the future meeting place for linked Dragonkeepers, visits and fair trades.':
+      [
+    'Dies wird der Treffpunkt für verbundene Drachenhüter, Besuche und faire Tauschgeschäfte.',
+    'Este será el punto de encuentro para Guardianes de Dragones conectados, visitas e intercambios justos.',
+    'Ce sera le lieu de rencontre des Gardiens de dragons liés, des visites et des échanges équitables.',
+    'Questo sarà il punto d’incontro per Custodi di draghi collegati, visite e scambi equi.',
+    'Este será o ponto de encontro para Guardiões de Dragões conectados, visitas e trocas justas.',
+    '这里将成为已连接的驯龙师互访和公平交易的聚会处。',
+    'ここは連携したドラゴンキーパーとの訪問や公正な交換の場になります。'
+  ],
+  'Send an available dragon on an Adventure to earn XP, Expertises and treasure chests.':
+      [
+    'Schicke einen verfügbaren Drachen auf ein Abenteuer, um XP, Expertisen und Schatztruhen zu verdienen.',
+    'Envía un dragón disponible a una Aventura para ganar XP, Pericias y cofres del tesoro.',
+    'Envoie un dragon disponible en Aventure pour gagner de l’XP, des Expertises et des coffres au trésor.',
+    'Invia un drago disponibile in un’Avventura per ottenere XP, Competenze e scrigni.',
+    'Envie um dragão disponível em uma Aventura para ganhar XP, Especialidades e baús do tesouro.',
+    '派一条空闲的龙去冒险，以获得经验、专长和宝箱。',
+    '空いているドラゴンを冒険に送り、XP、専門技能、宝箱を獲得しましょう。'
+  ],
+  'Build unique rooms, decorate them and choose which dragons may roam through their home.':
+      [
+    'Baue einzigartige Räume, dekoriere sie und wähle, welche Drachen durch ihr Zuhause streifen dürfen.',
+    'Construye habitaciones únicas, decóralas y elige qué dragones pueden recorrer su hogar.',
+    'Construis des pièces uniques, décore-les et choisis quels dragons peuvent parcourir leur foyer.',
+    'Costruisci stanze uniche, decorale e scegli quali draghi possono girare nella loro casa.',
+    'Construa cômodos únicos, decore-os e escolha quais dragões podem passear pelo lar.',
+    '建造并装饰独特房间，再选择哪些龙可以在家中漫游。',
+    '個性的な部屋を建てて飾り、家の中を歩き回れるドラゴンを選びましょう。'
+  ],
+  'Your eggs, unopened chests, furniture and consumable Relics are safely stored here.':
+      [
+    'Deine Eier, ungeöffneten Truhen, Möbel und verbrauchbaren Relikte werden hier sicher aufbewahrt.',
+    'Aquí se guardan de forma segura tus huevos, cofres sin abrir, muebles y Reliquias consumibles.',
+    'Tes œufs, coffres non ouverts, meubles et Reliques consommables sont conservés ici.',
+    'Qui sono custoditi uova, scrigni non aperti, mobili e Reliquie consumabili.',
+    'Seus ovos, baús fechados, móveis e Relíquias consumíveis ficam guardados aqui.',
+    '你的蛋、未开启宝箱、家具和消耗型遗物都安全存放在这里。',
+    '卵、未開封の宝箱、家具、消費型のレリックはここに安全に保管されます。'
+  ],
+  'Spend coins or gems on furniture that makes every Tower room feel like home.':
+      [
+    'Gib Münzen oder Edelsteine für Möbel aus, die jeden Turmraum wohnlich machen.',
+    'Gasta monedas o gemas en muebles que hagan acogedora cada sala de la Torre.',
+    'Dépense des pièces ou des gemmes en meubles pour rendre chaque pièce de la Tour accueillante.',
+    'Spendi monete o gemme in mobili che rendano accogliente ogni stanza della Torre.',
+    'Gaste moedas ou gemas em móveis que deixem cada cômodo da Torre aconchegante.',
+    '用金币或宝石购买家具，让塔里的每个房间都有家的感觉。',
+    'コインやジェムで家具を買い、塔のどの部屋も居心地のよい家にしましょう。'
+  ],
+  'Skip tutorial': [
+    'Tutorial überspringen',
+    'Omitir tutorial',
+    'Passer le tutoriel',
+    'Salta tutorial',
+    'Pular tutorial',
+    '跳过教程',
+    'チュートリアルをスキップ'
+  ],
+  'Next': ['Weiter', 'Siguiente', 'Suivant', 'Avanti', 'Próximo', '下一步', '次へ'],
+  'Nothing left to reveal': [
+    'Nichts mehr zu enthüllen',
+    'No queda nada por revelar',
+    'Plus rien à révéler',
+    'Non resta nulla da rivelare',
+    'Não há mais nada para revelar',
+    '没有秘密可揭示',
+    '明かせる秘密はありません'
+  ],
+  'This Relic has already revealed its secret for every dragon you own. Hatch or collect another dragon to use it.':
+      [
+    'Dieses Relikt hat sein Geheimnis bereits für jeden deiner Drachen enthüllt. Brüte einen weiteren Drachen aus oder sammle ihn, um es zu verwenden.',
+    'Esta Reliquia ya reveló su secreto para todos tus dragones. Incuba o consigue otro dragón para usarla.',
+    'Cette Relique a déjà révélé son secret pour chacun de tes dragons. Fais éclore ou collectionne un autre dragon pour l’utiliser.',
+    'Questa Reliquia ha già rivelato il suo segreto per ogni drago che possiedi. Fai schiudere o raccogli un altro drago per usarla.',
+    'Esta Relíquia já revelou seu segredo para todos os seus dragões. Choque ou consiga outro dragão para usá-la.',
+    '这件遗物已揭示你所有龙的对应秘密。孵化或收集另一条龙后即可使用。',
+    'このレリックは所有する全ドラゴンの秘密をすでに明かしています。別のドラゴンを孵化または収集すると使えます。'
+  ],
+  'Understood': [
+    'Verstanden',
+    'Entendido',
+    'Compris',
+    'Capito',
+    'Entendido',
+    '明白了',
+    '了解'
+  ],
+  'Expertises required': [
+    'Benötigte Expertisen',
+    'Pericias necesarias',
+    'Expertises requises',
+    'Competenze richieste',
+    'Especialidades necessárias',
+    '所需专长',
+    '必要な専門技能'
+  ],
+  'Skip evolution animation': [
+    'Evolutionsanimation überspringen',
+    'Omitir animación de evolución',
+    'Passer l’animation d’évolution',
+    'Salta animazione evoluzione',
+    'Pular animação de evolução',
+    '跳过进化动画',
+    '進化アニメーションをスキップ'
   ],
 };

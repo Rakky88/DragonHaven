@@ -21,6 +21,7 @@ import 'services/audio_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/about_sheet.dart';
 import 'widgets/game_icon_sprite.dart';
+import 'widgets/game_tutorial.dart';
 import 'widgets/achievement_reveal.dart';
 import 'widgets/pull_to_dismiss_sheet.dart';
 
@@ -57,7 +58,7 @@ class DragonHavenGate extends StatelessWidget {
   }
 }
 
-enum _HavenMenuAction { account, language, achievements }
+enum _HavenMenuAction { account, language, achievements, tutorial }
 
 class DragonHavenShell extends StatefulWidget {
   const DragonHavenShell({super.key});
@@ -74,6 +75,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   Timer? _presentationRetry;
   Timer? _gameClock;
   bool _presentationBusy = false;
+  bool _tutorialBusy = false;
 
   @override
   void initState() {
@@ -116,19 +118,24 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   }
 
   void _schedulePresentations() {
-    if (!mounted || _presentationBusy || _game.nextPresentation == null) {
+    if (!mounted || _presentationBusy || _tutorialBusy) {
       return;
     }
+    final next = _game.nextPresentation;
+    if (next == null && !_game.shouldStartTutorial) return;
     _presentationRetry?.cancel();
     _presentationRetry = Timer(
-      const Duration(milliseconds: 280),
-      _drainPresentations,
+      next?.type == GamePresentationType.evolution
+          ? const Duration(milliseconds: 70)
+          : const Duration(milliseconds: 280),
+      () => unawaited(next == null ? _runTutorial() : _drainPresentations()),
     );
   }
 
   Future<void> _drainPresentations() async {
     if (!mounted || _presentationBusy) return;
-    if (ModalRoute.of(context)?.isCurrent != true) {
+    if (ModalRoute.of(context)?.isCurrent != true &&
+        _game.nextPresentation?.type != GamePresentationType.evolution) {
       _presentationRetry = Timer(
         const Duration(milliseconds: 450),
         _drainPresentations,
@@ -169,6 +176,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
         if (!mounted) break;
         await Future<void>.delayed(const Duration(milliseconds: 180));
       }
+      if (mounted && _game.shouldStartTutorial) await _runTutorial();
     } finally {
       _presentationBusy = false;
       _schedulePresentations();
@@ -182,16 +190,59 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     return null;
   }
 
+  Future<void> _runTutorial({bool force = false}) async {
+    if (!mounted || _game.pet.isEgg) return;
+    if (_tutorialBusy) {
+      if (force) {
+        _presentationRetry?.cancel();
+        _presentationRetry = Timer(
+          const Duration(milliseconds: 250),
+          () => unawaited(_runTutorial(force: true)),
+        );
+      }
+      return;
+    }
+    if (!force && !_game.shouldStartTutorial) return;
+    if (ModalRoute.of(context)?.isCurrent != true && !force) {
+      _presentationRetry = Timer(
+        const Duration(milliseconds: 450),
+        () => unawaited(_runTutorial()),
+      );
+      return;
+    }
+    _tutorialBusy = true;
+    try {
+      await showDragonHavenTutorial(
+        context,
+        dragon: _game.towerControllableDragon,
+        onNavigate: _selectIndex,
+      );
+      await _game.completeTutorial();
+    } finally {
+      _tutorialBusy = false;
+      _schedulePresentations();
+    }
+  }
+
+  void _selectIndex(int index) {
+    if (!mounted || index < 0 || index > 4) return;
+    setState(() {
+      _index = index;
+      _visited.add(index);
+    });
+    _setTowerAmbientMusic();
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
     final eggOnly = game.pet.isEgg;
     final screens = <Widget>[
-      const AdventureHubScreen(),
-      const InventoryScreen(),
-      const DragonTowerScreen(),
       const FriendsScreen(),
+      const AdventureHubScreen(),
+      const DragonTowerScreen(),
+      const InventoryScreen(),
       const HavenShopScreen(),
     ];
     return Scaffold(
@@ -285,6 +336,15 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                     label: strings.tr('achievements'),
                     trailing: '${game.unlockedAchievementIds.length}/20'),
               ),
+              PopupMenuItem(
+                key: const Key('app-menu-tutorial'),
+                value: _HavenMenuAction.tutorial,
+                enabled: !eggOnly,
+                child: _MenuRow(
+                  icon: Icons.school_rounded,
+                  label: strings.pick('Tutorial', 'Tutorial'),
+                ),
+              ),
             ],
           ),
           const SizedBox(width: 3),
@@ -305,12 +365,19 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
           ? null
           : NavigationBar(
               selectedIndex: _index,
-              onDestinationSelected: (index) => setState(() {
-                _index = index;
-                _visited.add(index);
-                _setTowerAmbientMusic();
-              }),
+              onDestinationSelected: _selectIndex,
               destinations: [
+                NavigationDestination(
+                  icon: const GameIconSprite(
+                    GameIconKind.navFriends,
+                    size: 34,
+                  ),
+                  selectedIcon: const GameIconSprite(
+                    GameIconKind.navFriends,
+                    size: 42,
+                  ),
+                  label: strings.tr('friends'),
+                ),
                 NavigationDestination(
                   icon: const GameIconSprite(
                     GameIconKind.navAdventure,
@@ -321,17 +388,6 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                     size: 42,
                   ),
                   label: strings.tr('adventure'),
-                ),
-                NavigationDestination(
-                  icon: const GameIconSprite(
-                    GameIconKind.navInventory,
-                    size: 34,
-                  ),
-                  selectedIcon: const GameIconSprite(
-                    GameIconKind.navInventory,
-                    size: 42,
-                  ),
-                  label: strings.tr('inventory'),
                 ),
                 NavigationDestination(
                   icon: const GameIconSprite(
@@ -346,14 +402,14 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                 ),
                 NavigationDestination(
                   icon: const GameIconSprite(
-                    GameIconKind.navFriends,
+                    GameIconKind.navInventory,
                     size: 34,
                   ),
                   selectedIcon: const GameIconSprite(
-                    GameIconKind.navFriends,
+                    GameIconKind.navInventory,
                     size: 42,
                   ),
-                  label: strings.tr('friends'),
+                  label: strings.tr('inventory'),
                 ),
                 NavigationDestination(
                   icon: const GameIconSprite(
@@ -381,6 +437,10 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       case _HavenMenuAction.achievements:
         Navigator.of(context).push(MaterialPageRoute<void>(
             builder: (_) => const AchievementsScreen()));
+      case _HavenMenuAction.tutorial:
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) unawaited(_runTutorial(force: true));
+        });
     }
   }
 
@@ -549,10 +609,10 @@ class _TopCurrency extends StatelessWidget {
 }
 
 String _screenTitle(int index, AppStrings strings) => switch (index) {
-      0 => strings.tr('adventure'),
-      1 => strings.tr('inventory'),
+      0 => strings.tr('friends'),
+      1 => strings.tr('adventure'),
       2 => strings.tr('tower'),
-      3 => strings.tr('friends'),
+      3 => strings.tr('inventory'),
       4 => strings.tr('shop'),
       _ => 'DragonHaven',
     };

@@ -44,7 +44,7 @@ void main() {
     expect(egg.canHatch(start.add(const Duration(hours: 15))), isTrue);
   });
 
-  test('evolution respects minimum ages and locks the leading path', () {
+  test('evolution is level-driven and locks the leading Expertise', () {
     final dragon = Pet(
       stage: DragonStage.hatchling,
       xp: Pet.wyrmlingXp,
@@ -52,8 +52,8 @@ void main() {
       stageStartedAt: start,
       hatchSeed: 3,
     );
-    expect(dragon.canEvolve(start.add(const Duration(days: 2))), isFalse);
-    dragon.evolve(start.add(const Duration(days: 3)));
+    expect(dragon.canEvolve(start), isTrue);
+    dragon.evolve(start);
     expect(dragon.stage, DragonStage.wyrmling);
 
     dragon
@@ -62,9 +62,8 @@ void main() {
       ..addTraining(TrainingFocus.might, 80)
       ..addTraining(TrainingFocus.arcana, 180)
       ..addTraining(TrainingFocus.spirit, 40);
-    final ascensionDay = start.add(const Duration(days: 7));
-    expect(dragon.canEvolve(ascensionDay), isTrue);
-    dragon.evolve(ascensionDay);
+    expect(dragon.canEvolve(start), isTrue);
+    dragon.evolve(start);
     expect(dragon.stage, DragonStage.ascended);
     expect(dragon.evolutionPath, 'arcana');
 

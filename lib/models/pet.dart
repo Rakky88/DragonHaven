@@ -229,19 +229,15 @@ class Pet {
 
   bool canHatch(DateTime now) => isEgg && ageAt(now) >= incubationDuration;
   bool canEvolve(DateTime now) => switch (stage) {
-        DragonStage.hatchling =>
-          xp >= wyrmlingXp && ageAt(now) >= const Duration(days: 3),
-        DragonStage.wyrmling => xp >= ascendedXp &&
-            totalTraining >= 300 &&
-            ageAt(now) >= const Duration(days: 7),
+        DragonStage.hatchling => xp >= wyrmlingXp,
+        DragonStage.wyrmling => xp >= ascendedXp && totalTraining >= 300,
         _ => false,
       };
 
   Duration remainingForNextStage(DateTime now) {
     final minimum = switch (stage) {
       DragonStage.egg => incubationDuration,
-      DragonStage.hatchling => const Duration(days: 3),
-      DragonStage.wyrmling => const Duration(days: 7),
+      DragonStage.hatchling || DragonStage.wyrmling => Duration.zero,
       DragonStage.ascended => Duration.zero,
     };
     final elapsed = ageAt(now);

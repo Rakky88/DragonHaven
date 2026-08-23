@@ -673,7 +673,6 @@ class _EvolutionPanel extends StatelessWidget {
         ),
       );
     }
-    final remaining = pet.remainingForNextStage(now);
     final target = switch (pet.stage) {
       DragonStage.egg => 1,
       DragonStage.hatchling => Pet.wyrmlingXp,
@@ -710,8 +709,7 @@ class _EvolutionPanel extends StatelessWidget {
               borderRadius: BorderRadius.circular(99),
               backgroundColor: AppColors.mist),
           const SizedBox(height: 8),
-          Text(
-              '${pet.xp}/$target XP · ${remaining == Duration.zero ? strings.pick('minimum time complete', 'minimumtijd voltooid') : strings.pick('${strings.evolutionRemaining(remaining)} remaining', 'nog ${strings.evolutionRemaining(remaining)}')}',
+          Text('${pet.xp}/$target XP',
               style: const TextStyle(
                   color: AppColors.muted,
                   fontWeight: FontWeight.w700,
@@ -720,7 +718,7 @@ class _EvolutionPanel extends StatelessWidget {
             Padding(
                 padding: const EdgeInsets.only(top: 5),
                 child: Text(
-                    '${pet.totalTraining}/300 ${strings.pick('training', 'training')} · ${pet.leadingPath == 'unknown' ? strings.pick('path undecided', 'pad onbeslist') : pet.leadingPath}',
+                    '${strings.pick('Expertises', 'Expertises')}: ${pet.totalTraining}/300 · ${pet.leadingPath == 'unknown' ? strings.pick('path undecided', 'pad onbeslist') : pet.leadingPath}',
                     style:
                         const TextStyle(color: AppColors.muted, fontSize: 12))),
           if (pet.stage != DragonStage.ascended) ...[
@@ -775,9 +773,9 @@ Future<void> showEvolutionMilestonePresentation(
   final dragon = game.dragonById(presentation.dragonId);
   if (dragon == null || dragon.isEgg) return;
   final wasHatchling = presentation.previousStageKey == 'spark';
-  await HavenAudio.setMusicScene(HavenMusicScene.reveal);
-  await HavenAudio.play(
-      wasHatchling ? HavenSound.evolutionYoung : HavenSound.evolutionAscended);
+  unawaited(HavenAudio.setMusicScene(HavenMusicScene.reveal));
+  unawaited(HavenAudio.play(
+      wasHatchling ? HavenSound.evolutionYoung : HavenSound.evolutionAscended));
   if (!context.mounted) return;
   await showDialog<void>(
     context: context,
@@ -799,24 +797,52 @@ class _EvolutionDialog extends StatefulWidget {
   State<_EvolutionDialog> createState() => _EvolutionDialogState();
 }
 
-class _EvolutionDialogState extends State<_EvolutionDialog> {
+class _EvolutionDialogState extends State<_EvolutionDialog>
+    with SingleTickerProviderStateMixin {
   int _phase = 0;
-  Timer? _timer;
+  Timer? _flashTimer;
+  Timer? _revealTimer;
+  late final AnimationController _suspense = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1700),
+  )..repeat(reverse: true);
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(milliseconds: 1050), () async {
+    _flashTimer = Timer(const Duration(milliseconds: 4200), () {
       if (!mounted) return;
       setState(() => _phase = 1);
-      await Future<void>.delayed(const Duration(milliseconds: 260));
-      if (mounted) setState(() => _phase = 2);
+      _revealTimer = Timer(const Duration(milliseconds: 850), () {
+        if (mounted) setState(() => _phase = 2);
+      });
     });
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _suspense
+        ..stop()
+        ..value = 1;
+    } else if (!_suspense.isAnimating) {
+      _suspense.repeat(reverse: true);
+    }
+  }
+
+  void _skipToReveal() {
+    if (_phase >= 2) return;
+    _flashTimer?.cancel();
+    _revealTimer?.cancel();
+    setState(() => _phase = 2);
+  }
+
+  @override
   void dispose() {
-    _timer?.cancel();
+    _flashTimer?.cancel();
+    _revealTimer?.cancel();
+    _suspense.dispose();
     HavenAudio.setMusicScene(
       DateTime.now().hour >= 21 || DateTime.now().hour < 7
           ? HavenMusicScene.towerNight
@@ -832,7 +858,7 @@ class _EvolutionDialogState extends State<_EvolutionDialog> {
     return Dialog.fullscreen(
       backgroundColor: _phase == 1 ? Colors.white : const Color(0xFF1D183B),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
+        duration: const Duration(milliseconds: 520),
         decoration: BoxDecoration(
           image: _phase == 1
               ? null
@@ -843,61 +869,105 @@ class _EvolutionDialogState extends State<_EvolutionDialog> {
                 ),
         ),
         child: SafeArea(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Spacer(),
-            if (_phase != 1)
-              AnimatedScale(
-                duration: const Duration(milliseconds: 650),
-                curve: Curves.easeOutBack,
-                scale: _phase >= 2 ? 1.08 : .92,
-                child: DragonArt(
-                  height: 285,
-                  stageKey:
-                      _phase >= 2 ? pet.stageKey : widget.previousStageKey,
-                  lineageId: pet.lineageId,
-                  evolutionPath: pet.activeEvolutionPath,
-                  prismatic: pet.spectral,
-                  sinister: pet.sinister,
-                ),
-              ),
-            const SizedBox(height: 22),
-            if (_phase == 0)
-              Text(
-                  strings.pick(
-                      'A new form is awakening…', 'Een nieuwe vorm ontwaakt…'),
-                  style: const TextStyle(
+          child: Stack(
+            children: [
+              Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                const Spacer(),
+                if (_phase != 1)
+                  AnimatedBuilder(
+                    animation: _suspense,
+                    builder: (_, child) => Transform.scale(
+                      scale: _phase >= 2 ? 1.08 : .91 + _suspense.value * .06,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFB992FF).withValues(
+                                alpha: _phase >= 2
+                                    ? .42
+                                    : .18 + _suspense.value * .27,
+                              ),
+                              blurRadius: 38 + _suspense.value * 28,
+                              spreadRadius: 6 + _suspense.value * 8,
+                            ),
+                          ],
+                        ),
+                        child: child,
+                      ),
+                    ),
+                    child: DragonArt(
+                      height: 285,
+                      stageKey:
+                          _phase >= 2 ? pet.stageKey : widget.previousStageKey,
+                      lineageId: pet.lineageId,
+                      evolutionPath: pet.activeEvolutionPath,
+                      prismatic: pet.spectral,
+                      sinister: pet.sinister,
+                    ),
+                  ),
+                const SizedBox(height: 22),
+                if (_phase == 0)
+                  Text(
+                    strings.pick('A new form is awakening…',
+                        'Een nieuwe vorm ontwaakt…'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 21,
-                      fontWeight: FontWeight.w900)),
-            if (_phase >= 2) ...[
-              Text(
-                  strings.pick(
-                      'A new form awakens!', 'Een nieuwe vorm is ontwaakt!'),
-                  style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                if (_phase >= 2) ...[
+                  Text(
+                    strings.pick(
+                        'A new form awakens!', 'Een nieuwe vorm is ontwaakt!'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 23,
-                      fontWeight: FontWeight.w900)),
-              const SizedBox(height: 6),
-              Text(
-                pet.stage == DragonStage.ascended
-                    ? strings.lineageFormName(
-                        pet.lineage, pet.activeEvolutionPath)
-                    : strings.petStageNameByKey('nestDragon'),
-                style: const TextStyle(
-                    color: Color(0xFFFFD878),
-                    fontSize: 19,
-                    fontWeight: FontWeight.w900),
-              ),
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    pet.stage == DragonStage.ascended
+                        ? strings.lineageFormName(
+                            pet.lineage, pet.activeEvolutionPath)
+                        : strings.petStageNameByKey('nestDragon'),
+                    style: const TextStyle(
+                      color: Color(0xFFFFD878),
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+                const Spacer(),
+                if (_phase >= 2)
+                  FilledButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.auto_awesome_rounded),
+                    label: Text(strings.pick('Welcome', 'Welkom')),
+                  ),
+                const SizedBox(height: 22),
+              ]),
+              if (_phase < 2)
+                Align(
+                  alignment: const Alignment(0, .4),
+                  child: Semantics(
+                    button: true,
+                    label: strings.pick(
+                      'Skip evolution animation',
+                      'Evolutieanimatie overslaan',
+                    ),
+                    child: GestureDetector(
+                      key: const Key('skip-evolution-animation'),
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _skipToReveal,
+                      child: const SizedBox(width: 180, height: 110),
+                    ),
+                  ),
+                ),
             ],
-            const Spacer(),
-            if (_phase >= 2)
-              FilledButton.icon(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.auto_awesome_rounded),
-                label: Text(strings.pick('Welcome', 'Welkom')),
-              ),
-            const SizedBox(height: 22),
-          ]),
+          ),
         ),
       ),
     );
