@@ -1273,6 +1273,7 @@ class HouseholdProvider extends ChangeNotifier {
       shortAdventureRefilledAt?.toIso8601String() ?? '',
       longAdventureRefillDay,
     ].join('|');
+    final roamingAssignmentsChanged = _normalizeRoamingState();
     final changed = (adventureOptionsBefore != adventureOptionsAfter) |
         pet.applyTimeDecay(_clock()) |
         _registerCurrentStage() |
@@ -1280,6 +1281,7 @@ class HouseholdProvider extends ChangeNotifier {
         _refreshAdventureRuns() |
         _expireReturningVisitors() |
         _processWeeklyReturningDragon() |
+        roamingAssignmentsChanged |
         roamIdleDragons();
     final achievementsChanged = _evaluateAchievements();
     if (changed || achievementsChanged) await _notifyAndSave();

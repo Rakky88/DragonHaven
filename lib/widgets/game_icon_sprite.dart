@@ -125,6 +125,11 @@ class GameIconSprite extends StatelessWidget {
   }
 }
 
+abstract final class GameBannerAssets {
+  static const draconomicon = 'assets/images/ui/draconomicon_banner.webp';
+  static const myDragons = 'assets/images/ui/my_dragons_banner.webp';
+}
+
 abstract final class GameVfxAssets {
   static const chestBurst = 'assets/images/ui/vfx_chest_burst.webp';
   static const spectralAura = 'assets/images/ui/vfx_spectral_aura.webp';

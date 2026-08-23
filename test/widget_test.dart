@@ -414,13 +414,24 @@ void main() {
       ['Friends', 'Adventure', 'Tower', 'Inventory', 'Shop'],
     );
     final towerRoof = find.byKey(const Key('tower-roof'));
+    final openMyDragons = find.byKey(const Key('open-my-dragons'));
     final openCodex = find.byKey(const Key('open-draconomicon'));
+    expect(openMyDragons, findsOneWidget);
+    expect(find.byKey(const Key('my-dragons-banner-label')), findsOneWidget);
+    expect(
+      tester
+          .widget<Text>(find.byKey(const Key('my-dragons-banner-label')))
+          .maxLines,
+      1,
+    );
     expect(tester.getTopLeft(openCodex).dy,
         lessThan(tester.getTopLeft(towerRoof).dy));
     expect(
       find.descendant(of: towerRoof, matching: find.byType(DragonArt)),
       findsNothing,
     );
+    expect(
+        find.byKey(Key('tower-floor-dragon-${game.pet.id}')), findsOneWidget);
 
     await tester.tap(find.text('Adventure').last);
     await tester.pump(const Duration(milliseconds: 350));
@@ -521,6 +532,20 @@ void main() {
     expect(find.text('Coin furniture'), findsOneWidget);
     expect(find.text('Gem furniture'), findsOneWidget);
     expect(find.text('Buy gems'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the My Dragons banner localizes without wrapping',
+      (tester) async {
+    final game = await pumpGame(tester, onboarded: true, hatched: true);
+    await game.setLanguage('de');
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final label =
+        tester.widget<Text>(find.byKey(const Key('my-dragons-banner-label')));
+    expect(label.data, 'Meine Drachen');
+    expect(label.maxLines, 1);
+    expect(label.softWrap, isFalse);
     expect(tester.takeException(), isNull);
   });
 
@@ -974,7 +999,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.01.04'), findsOneWidget);
+    expect(find.text('v0.01.07'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

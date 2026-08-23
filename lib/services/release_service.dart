@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import '../app_info.dart';
+
 abstract final class ReleaseConfig {
   static const owner = String.fromEnvironment('DRAGONHAVEN_GITHUB_OWNER',
       defaultValue: 'Rakky88');
@@ -9,7 +11,7 @@ abstract final class ReleaseConfig {
       defaultValue: 'DragonHaven');
   static const installedVersion = String.fromEnvironment(
       'DRAGONHAVEN_APP_VERSION',
-      defaultValue: '0.01.04');
+      defaultValue: AppInfo.version);
 
   static bool get isConfigured =>
       owner.trim().isNotEmpty && repository.trim().isNotEmpty;

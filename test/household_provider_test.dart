@@ -562,6 +562,25 @@ void main() {
     expect(restored.pet.currentRoomId, 'hearth');
   });
 
+  test('refresh repairs an invited favorite with a stale Tower assignment',
+      () async {
+    final game = HouseholdProvider(random: Random(76));
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Ember'
+      ..favorite = true
+      ..roamsTower = true
+      ..currentFloorIndex = 308
+      ..currentRoomId = 'nest';
+
+    expect(game.towerDragons, isNot(contains(game.pet)));
+    await game.refreshForCurrentDate();
+
+    expect(game.pet.currentFloorIndex, 0);
+    expect(game.pet.currentRoomId, game.towerFloorRoomIds.first);
+    expect(game.towerDragons, contains(game.pet));
+  });
+
   test('the first dragon is favorite and exactly one favorite always remains',
       () async {
     final now = DateTime.utc(2026, 8, 22, 12);

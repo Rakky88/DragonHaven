@@ -1017,8 +1017,9 @@ extension DragonHavenSystems on HouseholdProvider {
     return choices.first;
   }
 
-  void _normalizeRoamingState() {
-    if (towerFloorRoomIds.isEmpty) return;
+  bool _normalizeRoamingState() {
+    if (towerFloorRoomIds.isEmpty) return false;
+    var changed = false;
     final dragons = ownedDragons.toList()
       ..sort((a, b) {
         if (a.favorite != b.favorite) return a.favorite ? -1 : 1;
@@ -1030,6 +1031,7 @@ extension DragonHavenSystems on HouseholdProvider {
       if (!dragon.roamsTower) continue;
       if (selected >= towerRoamingCapacity) {
         dragon.roamsTower = false;
+        changed = true;
         continue;
       }
       final current = dragon.currentFloorIndex;
@@ -1047,7 +1049,12 @@ extension DragonHavenSystems on HouseholdProvider {
               .firstOrNull;
       if (floor == null) {
         dragon.roamsTower = false;
+        changed = true;
         continue;
+      }
+      if (dragon.currentFloorIndex != floor ||
+          dragon.currentRoomId != towerFloorRoomIds[floor]) {
+        changed = true;
       }
       dragon
         ..currentFloorIndex = floor
@@ -1055,6 +1062,7 @@ extension DragonHavenSystems on HouseholdProvider {
       occupancy[floor] = (occupancy[floor] ?? 0) + 1;
       selected++;
     }
+    return changed;
   }
 
   void _beginReturningSpecial(

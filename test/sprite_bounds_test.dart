@@ -280,6 +280,30 @@ void main() {
     }
   });
 
+  test('Tower banner sprites stay wide and inside their safe canvas', () async {
+    for (final path in const [
+      GameBannerAssets.draconomicon,
+      GameBannerAssets.myDragons,
+    ]) {
+      final image = await _decode(path);
+      expect(image.width / image.height, inInclusiveRange(2.9, 3.1),
+          reason: '$path must remain a single wide button');
+      for (final x in [60, image.width - 61]) {
+        expect(image.rgba[(30 * image.width + x) * 4 + 3], 0,
+            reason: '$path must not contain a rectangular background');
+      }
+      _expectContained(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        path,
+      );
+    }
+  });
+
   test('every room and rooftop lighting render is present and visually unique',
       () async {
     final paths = <String>{

@@ -61,31 +61,27 @@ class DragonTowerScreen extends StatelessWidget {
                   color: AppColors.muted, fontWeight: FontWeight.w700)),
         ]),
         const SizedBox(height: 12),
-        Row(children: [
-          Expanded(
-            child: _TowerShortcut(
-              onPressed: () => _showOwnedDragons(context),
-              kind: GameIconKind.myDragons,
-              label: strings.pick('My dragons', 'Mijn draken'),
-            ),
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: _TowerShortcut(
-              key: const Key('open-draconomicon'),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const Scaffold(
-                    appBar: _CodexBar(),
-                    body: DraconomiconScreen(),
-                  ),
-                ),
+        _TowerBannerShortcut(
+          key: const Key('open-my-dragons'),
+          onPressed: () => _showOwnedDragons(context),
+          assetPath: GameBannerAssets.myDragons,
+          semanticLabel: strings.pick('My dragons', 'Mijn draken'),
+          localizedLabel: strings.pick('My dragons', 'Mijn draken'),
+        ),
+        const SizedBox(height: 8),
+        _TowerBannerShortcut(
+          key: const Key('open-draconomicon'),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const Scaffold(
+                appBar: _CodexBar(),
+                body: DraconomiconScreen(),
               ),
-              kind: GameIconKind.draconomicon,
-              label: 'Draconomicon',
             ),
           ),
-        ]),
+          assetPath: GameBannerAssets.draconomicon,
+          semanticLabel: 'Draconomicon',
+        ),
         const SizedBox(height: 14),
         const _TowerRoof(),
         const SizedBox(height: 9),
@@ -311,6 +307,12 @@ class _TowerFloor extends StatelessWidget {
     final strings = AppStrings.of(context);
     final room = houseRoomById(roomId) ?? houseRoomCatalog[1];
     final damaged = game.damagedTowerFloors.contains(index);
+    final floorDragons = game.towerDragons
+        .where((dragon) =>
+            dragon.activeAdventureId == null &&
+            dragon.currentFloorIndex == index)
+        .take(3)
+        .toList(growable: false);
     return Padding(
       padding: const EdgeInsets.only(bottom: 7),
       child: InkWell(
@@ -364,6 +366,10 @@ class _TowerFloor extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                         fontSize: 16)),
               ),
+              if (!damaged && floorDragons.isNotEmpty) ...[
+                _TowerFloorDragons(dragons: floorDragons),
+                const SizedBox(width: 6),
+              ],
               if (damaged)
                 FilledButton.tonalIcon(
                   onPressed: () => game.repairTowerFloor(index),
@@ -379,6 +385,55 @@ class _TowerFloor extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TowerFloorDragons extends StatelessWidget {
+  const _TowerFloorDragons({required this.dragons});
+
+  final List<Pet> dragons;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 36 + (dragons.length - 1) * 18,
+        height: 56,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            for (var index = 0; index < dragons.length; index++)
+              Positioned(
+                key: Key('tower-floor-dragon-${dragons[index].id}'),
+                left: index * 18,
+                top: index.isOdd ? 3 : 0,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: const Color(0xD9FFF9ED),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFFFD86B)),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x660D0820),
+                        blurRadius: 5,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: DragonArt(
+                      height: 34,
+                      animate: false,
+                      stageKey: dragons[index].stageKey,
+                      lineageId: dragons[index].lineageId,
+                      evolutionPath: dragons[index].activeEvolutionPath,
+                      prismatic: dragons[index].prismatic,
+                      sinister: dragons[index].sinister,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
 }
 
 class _BuildFloorButton extends StatelessWidget {
@@ -438,48 +493,81 @@ class _BuildFloorButton extends StatelessWidget {
       );
 }
 
-class _TowerShortcut extends StatelessWidget {
-  const _TowerShortcut({
+class _TowerBannerShortcut extends StatelessWidget {
+  const _TowerBannerShortcut({
     super.key,
     required this.onPressed,
-    required this.kind,
-    required this.label,
+    required this.assetPath,
+    required this.semanticLabel,
+    this.localizedLabel,
   });
 
   final VoidCallback onPressed;
-  final GameIconKind kind;
-  final String label;
+  final String assetPath;
+  final String semanticLabel;
+  final String? localizedLabel;
 
   @override
-  Widget build(BuildContext context) => Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(20),
-          child: Ink(
-            height: 86,
-            padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFF1EBFF), Color(0xFFFFF5DF)],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE1D7F2)),
-            ),
-            child: Row(children: [
-              GameIconSprite(kind, size: 58),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 2,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.ink,
-                  ),
+  Widget build(BuildContext context) => Semantics(
+        label: semanticLabel,
+        button: true,
+        child: ExcludeSemantics(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onPressed,
+              borderRadius: BorderRadius.circular(28),
+              splashColor: Colors.white.withValues(alpha: .18),
+              highlightColor: Colors.white.withValues(alpha: .08),
+              child: AspectRatio(
+                aspectRatio: 3,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(
+                      assetPath,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      gaplessPlayback: true,
+                    ),
+                    if (localizedLabel case final label?)
+                      Align(
+                        alignment: const Alignment(.7, .04),
+                        child: FractionallySizedBox(
+                          widthFactor: .55,
+                          heightFactor: .34,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              label,
+                              key: const Key('my-dragons-banner-label'),
+                              maxLines: 1,
+                              softWrap: false,
+                              style: const TextStyle(
+                                color: Color(0xFFFFF5D7),
+                                fontSize: 27,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: .2,
+                                shadows: [
+                                  Shadow(
+                                    color: Color(0xFF2C0D4D),
+                                    blurRadius: 5,
+                                    offset: Offset(0, 2),
+                                  ),
+                                  Shadow(
+                                    color: Color(0xFFB97A1B),
+                                    blurRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-            ]),
+            ),
           ),
         ),
       );
