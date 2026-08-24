@@ -30,18 +30,16 @@ void main() {
     expect(all.map((entry) => entry.id).toSet(), hasLength(1000));
     expect(
         AdventureCatalog.mini.every((entry) =>
-            entry.duration >= const Duration(minutes: 2) &&
+            entry.duration >= const Duration(minutes: 6) &&
             entry.duration <= const Duration(minutes: 15) &&
             entry.xp >= 4 &&
-            entry.xp <= 11 &&
             entry.statPoints >= 1 &&
-            entry.statPoints <= 2 &&
             entry.knownChest == ChestTier.wooden),
         isTrue);
     expect(
         AdventureCatalog.short.every((entry) =>
-            entry.duration >= const Duration(hours: 2) &&
-            entry.duration <= const Duration(hours: 6)),
+            entry.duration >= const Duration(hours: 6) &&
+            entry.duration <= const Duration(hours: 8)),
         isTrue);
     expect(
         AdventureCatalog.long.every((entry) =>
@@ -53,6 +51,12 @@ void main() {
             entry.duration >= const Duration(days: 2) &&
             entry.duration <= const Duration(days: 5)),
         isTrue);
+    expect(AdventureCatalog.mini.first.duration, const Duration(minutes: 6));
+    expect(AdventureCatalog.mini.first.xp, 12);
+    expect(AdventureCatalog.mini.first.statPoints, 3);
+    expect(AdventureCatalog.short.first.duration, const Duration(hours: 6));
+    expect(AdventureCatalog.short.first.xp, 213);
+    expect(AdventureCatalog.short.first.statPoints, 18);
   });
 
   test('lineage rarities match the 42-family distribution', () {
@@ -68,7 +72,7 @@ void main() {
   });
 
   test('achievements have unique badges and use Common terminology', () {
-    expect(achievementCatalog, hasLength(23));
+    expect(achievementCatalog, hasLength(24));
     expect(
       achievementCatalog.map((achievement) => achievement.badge).toSet(),
       hasLength(achievementCatalog.length),
@@ -78,6 +82,16 @@ void main() {
           .where((achievement) => achievement.descriptionEn.contains('normal')),
       isEmpty,
     );
+  });
+
+  test('maxing all three expertises on one dragon completes its achievement',
+      () {
+    final provider = HouseholdProvider();
+    expect(provider.achievementProgress('triple_expertise'), 0);
+    for (final focus in TrainingFocus.values) {
+      provider.pet.addTraining(focus, maxDragonExpertise);
+    }
+    expect(provider.achievementProgress('triple_expertise'), 1);
   });
 
   test('all eight chest tiers and all 24 personality traits exist', () {

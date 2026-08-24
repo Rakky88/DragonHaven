@@ -83,7 +83,31 @@ void main() {
     expect(dragon.evolutionPath, 'arcana');
 
     dragon.addTraining(TrainingFocus.might, 500);
+    expect(dragon.trainingFor(TrainingFocus.might), maxDragonExpertise);
     expect(dragon.activeEvolutionPath, 'arcana');
+  });
+
+  test('every expertise is capped at 300 including migrated saves', () {
+    final dragon = Pet(
+      training: const {'might': 999, 'arcana': 300, 'spirit': -5},
+    );
+    expect(dragon.trainingFor(TrainingFocus.might), maxDragonExpertise);
+    expect(dragon.trainingFor(TrainingFocus.arcana), maxDragonExpertise);
+    expect(dragon.trainingFor(TrainingFocus.spirit), 0);
+
+    dragon
+      ..addTraining(TrainingFocus.might, 100)
+      ..addTraining(TrainingFocus.spirit, 500);
+    expect(dragon.trainingFor(TrainingFocus.might), maxDragonExpertise);
+    expect(dragon.trainingFor(TrainingFocus.spirit), maxDragonExpertise);
+
+    final restored = Pet.fromJson({
+      'training': {'might': 301, 'arcana': 900, 'spirit': 450},
+    });
+    expect(
+      TrainingFocus.values.map(restored.trainingFor),
+      everyElement(maxDragonExpertise),
+    );
   });
 
   test('legacy evolution values migrate to the new training paths', () {

@@ -94,6 +94,35 @@ class AdventureDefinition {
   final bool sinister;
 }
 
+Duration expertiseAdjustedAdventureDuration(
+  AdventureDefinition adventure,
+  Iterable<Pet> dragons,
+) {
+  final combinedExpertise = dragons.fold<int>(
+    0,
+    (total, dragon) => total + dragon.trainingFor(adventure.focus),
+  );
+  final reduction = switch (adventure.kind) {
+    AdventureKind.mini => Duration(seconds: combinedExpertise),
+    AdventureKind.short ||
+    AdventureKind.long ||
+    AdventureKind.group =>
+      Duration(minutes: combinedExpertise),
+    AdventureKind.special => Duration.zero,
+  };
+  final adjusted = adventure.duration - reduction;
+  return adjusted.isNegative ? Duration.zero : adjusted;
+}
+
+int _scaledAdventureReward({
+  required int reward,
+  required int originalSeconds,
+  required int adjustedSeconds,
+}) {
+  if (adjustedSeconds <= originalSeconds) return reward;
+  return (reward * adjustedSeconds + originalSeconds - 1) ~/ originalSeconds;
+}
+
 class AdventureRun {
   const AdventureRun({
     required this.id,
@@ -243,7 +272,8 @@ abstract final class AdventureCatalog {
 
   static final List<AdventureDefinition> mini = List.unmodifiable(
     List.generate(200, (index) {
-      final minutes = 2 + index % 14;
+      final originalMinutes = 2 + index % 14;
+      final minutes = originalMinutes < 6 ? 6 : originalMinutes;
       return AdventureDefinition(
         id: 'mini_${index + 1}',
         kind: AdventureKind.mini,
@@ -255,9 +285,17 @@ abstract final class AdventureCatalog {
         descriptionNl:
             'Een klein torenuitstapje met een bescheiden houten beloning.',
         duration: Duration(minutes: minutes),
-        xp: 4 + index % 8,
+        xp: _scaledAdventureReward(
+          reward: 4 + index % 8,
+          originalSeconds: originalMinutes * Duration.secondsPerMinute,
+          adjustedSeconds: minutes * Duration.secondsPerMinute,
+        ),
         focus: TrainingFocus.values[index % 3],
-        statPoints: 1 + index % 2,
+        statPoints: _scaledAdventureReward(
+          reward: 1 + index % 2,
+          originalSeconds: originalMinutes * Duration.secondsPerMinute,
+          adjustedSeconds: minutes * Duration.secondsPerMinute,
+        ),
         knownChest: ChestTier.wooden,
       );
     }),
@@ -265,7 +303,8 @@ abstract final class AdventureCatalog {
 
   static final List<AdventureDefinition> short = List.unmodifiable(
     List.generate(300, (index) {
-      final hours = 2 + index % 5;
+      final originalHours = 2 + index % 5;
+      final hours = 6 + index % 3;
       return AdventureDefinition(
         id: 'short_${index + 1}',
         kind: AdventureKind.short,
@@ -276,9 +315,17 @@ abstract final class AdventureCatalog {
         descriptionEn: 'A focused expedition with one curious detour.',
         descriptionNl: 'Een gerichte expeditie met één nieuwsgierige omweg.',
         duration: Duration(hours: hours),
-        xp: 35 + hours * 18 + index % 13,
+        xp: _scaledAdventureReward(
+          reward: 35 + originalHours * 18 + index % 13,
+          originalSeconds: originalHours * Duration.secondsPerHour,
+          adjustedSeconds: hours * Duration.secondsPerHour,
+        ),
         focus: TrainingFocus.values[index % 3],
-        statPoints: 4 + hours + index % 3,
+        statPoints: _scaledAdventureReward(
+          reward: 4 + originalHours + index % 3,
+          originalSeconds: originalHours * Duration.secondsPerHour,
+          adjustedSeconds: hours * Duration.secondsPerHour,
+        ),
       );
     }),
   );

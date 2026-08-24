@@ -850,6 +850,30 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'zh': ['满员出发', '与 4 名参与者完成一次团队冒险。'],
     'ja': ['フルパーティー、全速前進', '4人でグループ冒険を完了する。'],
   },
+  'triple_expertise': {
+    'de': [
+      'Meister aller drei',
+      'Erreiche mit einem Drachen 300 Stärke, 300 Arkana und 300 Geist.'
+    ],
+    'es': [
+      'Maestro de las tres',
+      'Alcanza 300 de Poder, 300 de Arcana y 300 de Espíritu con un dragón.'
+    ],
+    'fr': [
+      'Maître des trois',
+      'Atteins 300 en Puissance, 300 en Arcanes et 300 en Esprit avec un dragon.'
+    ],
+    'it': [
+      'Maestro di tutte e tre',
+      'Raggiungi 300 Potenza, 300 Arcano e 300 Spirito con un drago.'
+    ],
+    'pt': [
+      'Mestre das três',
+      'Alcance 300 de Poder, 300 de Arcano e 300 de Espírito com um dragão.'
+    ],
+    'zh': ['三项全能大师', '让一只龙的力量、奥术和精神均达到 300。'],
+    'ja': ['三つの達人', '1体のドラゴンで力・神秘・精神をすべて300にする。'],
+  },
   'came_crawling_back': {
     'de': [
       'Sieh an, wer zurückgekrochen kam',

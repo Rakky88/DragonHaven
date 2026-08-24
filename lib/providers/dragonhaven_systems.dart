@@ -533,12 +533,13 @@ extension DragonHavenSystems on HouseholdProvider {
       return AdventureStartResult.dragonBusy;
     }
     final now = _clock();
+    final duration = expertiseAdjustedAdventureDuration(adventure, [dragon]);
     final run = AdventureRun(
       id: _uuid.v4(),
       adventureId: adventure.id,
       dragonId: dragon.id,
       startedAt: now,
-      endsAt: now.add(adventure.duration),
+      endsAt: now.add(duration),
       status: AdventureRunStatus.running,
       participantCount: participantCount,
     );

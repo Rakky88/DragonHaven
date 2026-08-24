@@ -473,9 +473,9 @@ void main() {
     expect(game.sanctuaryDragons.single.name, 'Nimbus');
   });
 
-  test('the achievement catalog has 23 unique humorous milestones', () {
-    expect(achievementCatalog, hasLength(23));
-    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(23));
+  test('the achievement catalog has 24 unique humorous milestones', () {
+    expect(achievementCatalog, hasLength(24));
+    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(24));
     expect(achievementCatalog.every((entry) => entry.target > 0), isTrue);
     expect(
         achievementCatalog.every((entry) =>

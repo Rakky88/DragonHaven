@@ -1417,6 +1417,12 @@ class HouseholdProvider extends ChangeNotifier {
         'something_spectral' => prismaticForms.isEmpty ? 0 : 1,
         'frequent_flyer' || 'are_we_there_yet' => totalAdventuresCompleted,
         'full_party' => totalGroupFourCompleted,
+        'triple_expertise' =>
+          [pet, ...sanctuaryDragons].any((dragon) => TrainingFocus.values.every(
+                    (focus) => dragon.trainingFor(focus) == maxDragonExpertise,
+                  ))
+              ? 1
+              : 0,
         'came_crawling_back' => totalReleasedReturns,
         'ghost_writer' =>
           prismaticForms.map((key) => key.split(':').first).toSet().length,

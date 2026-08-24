@@ -34,6 +34,28 @@ void main() {
     online.dispose();
   });
 
+  test('new online accounts require email confirmation before sign-in',
+      () async {
+    final game = HouseholdProvider(random: Random(11));
+    final repository = _FakeSocialRepository()..signedIn = false;
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+
+    final result = await online.signUp(
+      email: 'keeper@example.test',
+      password: 'secret-pass',
+      displayName: 'Keeper',
+    );
+
+    expect(result?.requiresEmailConfirmation, isTrue);
+    expect(online.isSignedIn, isFalse);
+    expect(online.noticeCode, 'confirm_email');
+    online.dispose();
+  });
+
   testWidgets(
       'friend profile shows favorite dragon and removal requires confirmation',
       (tester) async {
@@ -192,6 +214,8 @@ class _FakeSocialRepository implements SocialRepository {
   bool get isConfigured => true;
   @override
   bool get isSignedIn => signedIn;
+  @override
+  bool get isEmailVerified => signedIn;
 
   @override
   Future<void> importLegacyInventory(OnlineInventorySnapshot snapshot) async {
@@ -247,7 +271,7 @@ class _FakeSocialRepository implements SocialRepository {
     required String password,
     required String displayName,
   }) async =>
-      const AccountAuthResult(requiresEmailConfirmation: false);
+      const AccountAuthResult(requiresEmailConfirmation: true);
   @override
   Future<void> updateProfile({
     required String displayName,

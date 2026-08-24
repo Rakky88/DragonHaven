@@ -515,6 +515,25 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
 }
 
 const uiPhraseTranslations = <String, List<String>>{
+  'Confirm your email before signing in.': [
+    'Bestätige deine E-Mail-Adresse, bevor du dich anmeldest.',
+    'Confirma tu correo electrónico antes de iniciar sesión.',
+    'Confirme ton adresse e-mail avant de te connecter.',
+    'Conferma la tua e-mail prima di accedere.',
+    'Confirme seu e-mail antes de entrar.',
+    '登录前请先确认你的电子邮件。',
+    'ログイン前にメールアドレスを確認してください。',
+  ],
+  'Create a verified account to add friends by Keeper ID. You must confirm your email before signing in, and it is never shown to other players.':
+      [
+    'Erstelle ein bestätigtes Konto, um Freunde per Hüter-ID hinzuzufügen. Du musst deine E-Mail vor der Anmeldung bestätigen; sie wird anderen Spielern nie angezeigt.',
+    'Crea una cuenta verificada para añadir amigos por ID de Guardián. Debes confirmar tu correo antes de iniciar sesión y nunca se muestra a otros jugadores.',
+    'Crée un compte vérifié pour ajouter des amis par ID de Gardien. Tu dois confirmer ton e-mail avant de te connecter; il n’est jamais montré aux autres joueurs.',
+    'Crea un account verificato per aggiungere amici tramite ID Custode. Devi confermare l’e-mail prima di accedere e non viene mai mostrata agli altri giocatori.',
+    'Crie uma conta verificada para adicionar amigos pelo ID de Guardião. Você deve confirmar o e-mail antes de entrar, e ele nunca é mostrado a outros jogadores.',
+    '创建经过验证的账户，以便通过守护者 ID 添加好友。登录前必须确认电子邮件，且邮件地址永远不会向其他玩家显示。',
+    'キーパーIDでフレンドを追加できる認証済みアカウントを作成します。ログイン前にメール確認が必要で、アドレスは他のプレイヤーに表示されません。',
+  ],
   'A Mysterious Egg appeared in the tower nest.': [
     'Ein geheimnisvolles Ei ist im Turmnest erschienen.',
     'Un Huevo Misterioso apareció en el nido de la torre.',

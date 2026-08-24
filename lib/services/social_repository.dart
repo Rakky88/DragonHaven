@@ -12,6 +12,7 @@ class SocialException implements Exception {
 abstract interface class SocialRepository {
   bool get isConfigured;
   bool get isSignedIn;
+  bool get isEmailVerified;
   String? get currentEmail;
   Stream<bool> get authStateChanges;
 
@@ -48,6 +49,8 @@ class DisabledSocialRepository implements SocialRepository {
   bool get isConfigured => false;
   @override
   bool get isSignedIn => false;
+  @override
+  bool get isEmailVerified => false;
   @override
   String? get currentEmail => null;
   @override

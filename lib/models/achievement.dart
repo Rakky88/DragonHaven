@@ -184,6 +184,16 @@ const achievementCatalog = <AchievementDefinition>[
       category: AchievementCategory.challenging,
       badge: 'full_group'),
   AchievementDefinition(
+      id: 'triple_expertise',
+      titleEn: 'Master of All Three',
+      titleNl: 'Meester van Alle Drie',
+      descriptionEn:
+          'Reach 300 Might, 300 Arcana and 300 Spirit on one dragon.',
+      descriptionNl: 'Bereik 300 Kracht, 300 Arcana en 300 Geest op één draak.',
+      target: 1,
+      category: AchievementCategory.master,
+      badge: 'triple_mastery'),
+  AchievementDefinition(
       id: 'came_crawling_back',
       titleEn: 'Look Who Came Crawling Back',
       titleNl: 'Kijk Wie Terug Kwam Kruipen',

@@ -7,6 +7,14 @@ enum DragonStage { egg, hatchling, wyrmling, ascended }
 
 enum TrainingFocus { might, arcana, spirit }
 
+const int maxDragonExpertise = 300;
+
+Map<String, int> _normalizedTraining(Map<String, int>? values) => {
+      for (final focus in TrainingFocus.values)
+        focus.name:
+            (values?[focus.name] ?? 0).clamp(0, maxDragonExpertise).toInt(),
+    };
+
 enum LawAxis { lawful, neutral, chaotic }
 
 enum MoralAxis { good, neutral, evil }
@@ -87,7 +95,7 @@ class Pet {
         acquiredAt = acquiredAt ?? DateTime.now(),
         stageStartedAt = stageStartedAt ?? acquiredAt ?? DateTime.now(),
         needsUpdatedAt = needsUpdatedAt ?? DateTime.now(),
-        training = training ?? {'might': 0, 'arcana': 0, 'spirit': 0},
+        training = _normalizedTraining(training),
         personalityTraitIds = personalityTraitIds ?? <String>[],
         hatchSeed = hatchSeed ??
             DateTime.now().microsecondsSinceEpoch.remainder(0x7fffffff),
@@ -258,8 +266,11 @@ class Pet {
 
   void addTraining(TrainingFocus focus, int amount) {
     if (amount <= 0) return;
-    training.update(focus.name, (value) => value + amount,
-        ifAbsent: () => amount);
+    training.update(
+      focus.name,
+      (value) => (value + amount).clamp(0, maxDragonExpertise).toInt(),
+      ifAbsent: () => amount.clamp(0, maxDragonExpertise).toInt(),
+    );
   }
 
   void hatch(DateTime now) {

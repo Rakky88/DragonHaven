@@ -70,8 +70,8 @@ class OnlineAccountAccessCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               strings.pick(
-                'Create a simple account to add friends by Keeper ID. Your email is never shown to other players.',
-                'Maak een simpel account om vrienden via Keeper-ID toe te voegen. Je e-mailadres wordt nooit aan andere spelers getoond.',
+                'Create a verified account to add friends by Keeper ID. You must confirm your email before signing in, and it is never shown to other players.',
+                'Maak een geverifieerd account om vrienden via Keeper-ID toe te voegen. Je moet je e-mailadres bevestigen voordat je kunt inloggen en het wordt nooit aan andere spelers getoond.',
               ),
               textAlign: TextAlign.center,
               style: const TextStyle(color: AppColors.muted),
@@ -410,6 +410,9 @@ String socialMessage(AppStrings strings, String code) => switch (code) {
       'user already registered' || 'user_already_registered' => strings.pick(
           'An account already exists for this email.',
           'Voor dit e-mailadres bestaat al een account.'),
+      'email_not_verified' => strings.pick(
+          'Confirm your email before signing in.',
+          'Bevestig je e-mailadres voordat je inlogt.'),
       'profile_saved' => strings.pick('Profile saved.', 'Profiel opgeslagen.'),
       'request_sent' =>
         strings.pick('Friend request sent.', 'Vriendschapsverzoek verstuurd.'),

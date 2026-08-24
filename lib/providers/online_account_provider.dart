@@ -27,6 +27,7 @@ class OnlineAccountProvider extends ChangeNotifier {
 
   bool get isConfigured => _repository.isConfigured;
   bool get isSignedIn => _repository.isSignedIn;
+  bool get isEmailVerified => _repository.isEmailVerified;
   String? get currentEmail => _repository.currentEmail;
   List<FriendshipRequest> get incomingRequests => requests
       .where((request) => request.direction == FriendRequestDirection.incoming)

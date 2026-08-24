@@ -8,7 +8,9 @@ import 'social_repository.dart';
 class SupabaseSocialRepository implements SocialRepository {
   SupabaseSocialRepository(this._client) {
     _authSubscription = _client.auth.onAuthStateChange.listen(
-      (event) => _authController.add(event.session != null),
+      (event) => _authController.add(
+        event.session != null && event.session?.user.emailConfirmedAt != null,
+      ),
     );
   }
 
@@ -19,7 +21,10 @@ class SupabaseSocialRepository implements SocialRepository {
   @override
   bool get isConfigured => true;
   @override
-  bool get isSignedIn => _client.auth.currentSession != null;
+  bool get isSignedIn => _client.auth.currentSession != null && isEmailVerified;
+  @override
+  bool get isEmailVerified =>
+      _client.auth.currentUser?.emailConfirmedAt != null;
   @override
   String? get currentEmail => _client.auth.currentUser?.email;
   @override
@@ -37,8 +42,12 @@ class SupabaseSocialRepository implements SocialRepository {
         password: password,
         data: {'display_name': displayName.trim()},
       );
+      final requiresConfirmation = result.user?.emailConfirmedAt == null;
+      if (requiresConfirmation && result.session != null) {
+        await _client.auth.signOut();
+      }
       return AccountAuthResult(
-        requiresEmailConfirmation: result.session == null,
+        requiresEmailConfirmation: requiresConfirmation,
       );
     } on Object catch (error) {
       throw _socialError(error);
@@ -48,10 +57,14 @@ class SupabaseSocialRepository implements SocialRepository {
   @override
   Future<void> signIn({required String email, required String password}) async {
     try {
-      await _client.auth.signInWithPassword(
+      final result = await _client.auth.signInWithPassword(
         email: email.trim().toLowerCase(),
         password: password,
       );
+      if (result.user?.emailConfirmedAt == null) {
+        await _client.auth.signOut();
+        throw const SocialException('email_not_verified');
+      }
     } on Object catch (error) {
       throw _socialError(error);
     }
@@ -187,8 +200,12 @@ class SupabaseSocialRepository implements SocialRepository {
       'invalid_profile',
       'inventory_already_imported',
       'invalid_inventory',
+      'email_not_verified',
     };
     final normalized = message.trim().toLowerCase().replaceAll(' ', '_');
+    if (normalized.contains('email_not_confirmed')) {
+      return const SocialException('email_not_verified');
+    }
     return SocialException(
       knownCodes.firstWhere(
         (code) => normalized.contains(code),
