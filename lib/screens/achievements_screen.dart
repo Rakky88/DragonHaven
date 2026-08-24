@@ -53,8 +53,8 @@ class AchievementsScreen extends StatelessWidget {
                 Expanded(
                   child: Text(
                     strings.pick(
-                      '${game.unlockedAchievementIds.length} / 20 unlocked',
-                      '${game.unlockedAchievementIds.length} / 20 behaald',
+                      '${game.unlockedAchievementIds.length} / ${achievementCatalog.length} unlocked',
+                      '${game.unlockedAchievementIds.length} / ${achievementCatalog.length} behaald',
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,

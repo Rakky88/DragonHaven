@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
+import '../models/account_title.dart';
 import '../models/chest.dart';
 import '../models/mystic_relic.dart';
+import '../models/profile_portrait.dart';
 import 'game_icon_sprite.dart';
 
 Future<void> showChestReveal(
@@ -166,8 +168,16 @@ class _ChestRevealState extends State<_ChestReveal>
                             const SizedBox(height: 5),
                             Text(
                               _opened
-                                  ? strings.pick(
-                                      'Treasure revealed', 'Schat onthuld')
+                                  ? tier == ChestTier.portrait
+                                      ? strings.pick('Portrait revealed',
+                                          'Portret onthuld')
+                                      : tier == ChestTier.title
+                                          ? strings.pick(
+                                              'Title revealed',
+                                              'Titel onthuld',
+                                            )
+                                          : strings.pick('Treasure revealed',
+                                              'Schat onthuld')
                                   : _opening
                                       ? strings.pick('Ancient magic awakens',
                                           'Oude magie ontwaakt')
@@ -321,33 +331,48 @@ class _ChestRevealState extends State<_ChestReveal>
                                           spacing: 9,
                                           runSpacing: 9,
                                           children: [
-                                            _Reward(
-                                              kind: GameIconKind.coin,
-                                              value: '+${_reward!.coins}',
-                                              label: strings.tr('coins'),
-                                            ),
-                                            if (_reward!.gems > 0)
+                                            if (_reward!.portraitFound
+                                                case final portrait?)
+                                              _PortraitReward(
+                                                portrait: portrait,
+                                                strings: strings,
+                                              )
+                                            else if (_reward!.titleFound
+                                                case final title?)
+                                              _TitleReward(
+                                                title: title,
+                                                strings: strings,
+                                              )
+                                            else ...[
                                               _Reward(
-                                                kind: GameIconKind.gem,
-                                                value: '+${_reward!.gems}',
-                                                label: strings.tr('gems'),
+                                                kind: GameIconKind.coin,
+                                                value: '+${_reward!.coins}',
+                                                label: strings.tr('coins'),
                                               ),
-                                            if (_reward!.eggFound)
-                                              _Reward(
-                                                kind:
-                                                    GameIconKind.mysteriousEgg,
-                                                value: '1',
-                                                label: strings.pick(
-                                                  'Mysterious Egg',
-                                                  'Mysterieus Ei',
+                                              if (_reward!.gems > 0)
+                                                _Reward(
+                                                  kind: GameIconKind.gem,
+                                                  value: '+${_reward!.gems}',
+                                                  label: strings.tr('gems'),
                                                 ),
-                                              ),
-                                            if (_reward!.relicFound
-                                                case final relic?)
-                                              _RelicReward(
-                                                relic: relic,
-                                                label: strings.relicName(relic),
-                                              ),
+                                              if (_reward!.eggFound)
+                                                _Reward(
+                                                  kind: GameIconKind
+                                                      .mysteriousEgg,
+                                                  value: '1',
+                                                  label: strings.pick(
+                                                    'Mysterious Egg',
+                                                    'Mysterieus Ei',
+                                                  ),
+                                                ),
+                                              if (_reward!.relicFound
+                                                  case final relic?)
+                                                _RelicReward(
+                                                  relic: relic,
+                                                  label:
+                                                      strings.relicName(relic),
+                                                ),
+                                            ],
                                           ],
                                         ),
                                         const SizedBox(height: 18),
@@ -457,5 +482,120 @@ class _RelicReward extends StatelessWidget {
             ),
           ),
         ]),
+      );
+}
+
+class _PortraitReward extends StatelessWidget {
+  const _PortraitReward({required this.portrait, required this.strings});
+
+  final ProfilePortrait portrait;
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            key: const Key('portrait-chest-zoomed-reward'),
+            width: 228,
+            height: 228,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: .10),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x99FFFFFF),
+                  blurRadius: 38,
+                  spreadRadius: 3,
+                ),
+              ],
+            ),
+            child: Image.asset(
+              portrait.assetPath,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            strings.portraitRarity(portrait.rarity),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            strings.pick(
+              'Added to your portrait collection',
+              'Toegevoegd aan je portretcollectie',
+            ),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFC9C2E5),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      );
+}
+
+class _TitleReward extends StatelessWidget {
+  const _TitleReward({required this.title, required this.strings});
+
+  final AccountTitle title;
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            key: const Key('title-chest-zoomed-reward'),
+            constraints: const BoxConstraints(minHeight: 132, maxWidth: 360),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFF3B4), Color(0xFFD9B7FF)],
+              ),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x99FFFFFF),
+                  blurRadius: 38,
+                  spreadRadius: 3,
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                strings.accountTitle(title),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFF29184C),
+                  fontFamily: 'serif',
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: .4,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            strings.pick(
+              'Added to your title collection',
+              'Toegevoegd aan je titelcollectie',
+            ),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFC9C2E5),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       );
 }

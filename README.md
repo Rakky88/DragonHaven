@@ -4,17 +4,17 @@
 
 ## Implemented game
 
-- A first-launch keeper name and one Common Starter Egg. Its family, alignment, size and independent 5% Spectral roll are fixed before the player sees it.
+- A first-launch keeper name, one random Common account portrait, one random localized account title and one Common Starter Egg. The egg's family, alignment, size and independent 5% Spectral roll are fixed before the player sees it.
 - One shared Mysterious Egg sprite and an exact one-hour first incubation gate. Later eggs keep a fixed accelerated 4h48m–33h36m incubation roll.
 - Cinematic hatch and suspenseful, skippable evolution reveals using separately rendered art for Egg, Hatchling, Wyrmling and all Might, Arcana and Spirit Ascended forms. Evolution is gated by levels and required Expertises, never by age.
 - 42 families: 20 Common, 10 Uncommon, 6 Rare, 3 Very Rare, 2 Legendary and 1 Mythical. Every family has five distinct logical forms; the secret Sinister Everwyrm has dedicated artwork.
 - A 5% Spectral variant roll, separate Draconomicon collection, undiscovered silhouettes and one active egg or dragon at a time.
 - 200 Mini, 300 Short, 200 Long, 200 Group and 100 Special Adventure definitions. Mini slots refill every 15 minutes up to three; Short slots refill one at a time after a full hour; Long slots refill at local midnight. Group play remains locked until authenticated online friends exist.
-- Six chest tiers, fixed reward rolls, an egg inventory, chest reveal scenes, release/favorite controls, all 27 weekly returning-dragon outcome tables, Tower visits, 25/40/60% damage and three Dragon Ward levels.
-- A Tower roof plus up to 20 room floors, eight independently rendered room types, 200 raster furniture sprites, coin/gem shop tabs and room-only decoration controls.
-- Idle dragons use stored 65/35 room preferences, can share a room, roam on refresh and may trigger cosmetic 5% preferred-room interactions with a persisted 12-hour cooldown.
+- Eight chest tiers, fixed reward rolls, an egg inventory, chest reveal scenes, release/favorite controls, all 27 weekly returning-dragon outcome tables, Tower visits, 25/40/60% damage and three Dragon Ward levels. The 99-gem Portrait Chest reveals one of 100 distinct non-dragon account portraits; the 99-coin Title Chest reveals one of 500 fully localized account titles. Both choose an unowned reward only when opened and never auto-equip later rewards.
+- A Tower roof plus up to 20 room floors, eight independently rendered room types, 200 raster furniture sprites, nested coin/gem Shop sections and room-only decoration controls. Purchased furniture stays unplaced in Inventory until the player decorates with it.
+- Idle dragons use stored 65/35 room preferences, can share a room, travel along room-wide roaming routes and may trigger cosmetic 5% preferred-room interactions with a persisted 12-hour cooldown.
 - Seven local-time visual phases with separately painted Tower lighting and day/night room variants; changes crossfade instead of applying a flat color filter.
-- Exactly 300 English/Dutch dragon sayings and 20 humorous achievements.
+- Exactly 300 English/Dutch dragon sayings and 23 humorous achievements, including the first Portrait/Title Chest and 1,000-Adventure milestones.
 - English first-install default, complete gameplay text in nine selectable languages, and an automatic skippable dragon-guided tutorial that can be replayed from the three-dot menu.
 - Separate persistent Music and Sound Effects switches, four calm CC0 ambient tracks, 19 event-specific effects, local notifications, About/Ko-fi/redeem UI and GitHub update/share controls.
 

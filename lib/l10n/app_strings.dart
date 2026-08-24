@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/activity_entry.dart';
+import '../models/account_title.dart';
 import '../models/adventure.dart';
 import '../models/achievement.dart';
 import '../models/chest.dart';
@@ -9,6 +10,7 @@ import '../models/dragon_lineage.dart';
 import '../models/house.dart';
 import '../models/mystic_relic.dart';
 import '../models/pet.dart';
+import '../models/profile_portrait.dart';
 import '../models/shop_item.dart';
 import '../services/release_service.dart';
 import 'catalog_translations.dart';
@@ -303,6 +305,19 @@ class AppStrings {
         ChestTier.dragon => pick('Dragon Chest', 'Drakenkist'),
         ChestTier.mythical => pick('Mythical Chest', 'Mythische Kist'),
         ChestTier.sinister => pick('Sinister Chest', 'Sinistere Kist'),
+        ChestTier.portrait => pick('Portrait Chest', 'Portretkist'),
+        ChestTier.title => pick('Title Chest', 'Titelkist'),
+      };
+
+  String accountTitle(AccountTitle title) => title.label(languageCode);
+
+  String portraitRarity(PortraitRarity rarity) => switch (rarity) {
+        PortraitRarity.common => pick('Common', 'Common'),
+        PortraitRarity.rare => pick('Rare', 'Zeldzaam'),
+        PortraitRarity.veryRare => pick('Very Rare', 'Zeer zeldzaam'),
+        PortraitRarity.legendary => pick('Legendary', 'Legendarisch'),
+        PortraitRarity.infernal => pick('Infernal', 'Infernal'),
+        PortraitRarity.mythical => pick('Mythical', 'Mythisch'),
       };
 
   String activityMessage(ActivityEntry entry) => switch (entry.code) {
@@ -323,9 +338,24 @@ class AppStrings {
           pick('A dragon evolved.', 'Een draak is geëvolueerd.'),
         ActivityCode.achievement =>
           pick('Achievement unlocked!', 'Achievement ontgrendeld!'),
+        ActivityCode.itemPurchased => pick(
+            '${itemNameById(entry.subject)} is waiting in your Inventory.',
+            '${itemNameById(entry.subject)} wacht in je Inventory.'),
         ActivityCode.itemPlaced => pick(
             '${itemNameById(entry.subject)} now has a place in the sanctuary.',
             '${itemNameById(entry.subject)} heeft nu een plek in het reservaat.'),
+        ActivityCode.portraitChestPurchased => pick(
+            'A Portrait Chest is waiting in your Inventory.',
+            'Er wacht een Portretkist in je Inventory.'),
+        ActivityCode.portraitRevealed => pick(
+            'A new account portrait joined your collection.',
+            'Er is een nieuw accountportret aan je collectie toegevoegd.'),
+        ActivityCode.titleChestPurchased => pick(
+            'A Title Chest is waiting in your Inventory.',
+            'Er wacht een Titelkist in je Inventory.'),
+        ActivityCode.titleRevealed => pick(
+            'A new account title joined your collection.',
+            'Er is een nieuwe accounttitel aan je collectie toegevoegd.'),
         ActivityCode.legacy => entry.message,
       };
 
@@ -609,6 +639,54 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'zh': ['开箱有望', '打开你的第一个宝箱。'],
     'ja': ['箱への期待', '最初の宝箱を開ける。'],
   },
+  'profile_picture_perfect': {
+    'de': [
+      'Wie fürs Porträt gemacht',
+      'Öffne deine erste Porträttruhe. Dein Konto zeigt sich von seiner besten Seite.'
+    ],
+    'es': [
+      'Retrato perfecto',
+      'Abre tu primer Cofre de retratos. Tu cuenta encontró su mejor perfil.'
+    ],
+    'fr': [
+      'Portrait parfait',
+      'Ouvre ton premier Coffre de portraits. Ton compte a trouvé son meilleur profil.'
+    ],
+    'it': [
+      'Ritratto perfetto',
+      'Apri il tuo primo Forziere ritratto. Il tuo account ha trovato il lato migliore.'
+    ],
+    'pt': [
+      'Retrato perfeito',
+      'Abra seu primeiro Baú de retratos. Sua conta encontrou seu melhor ângulo.'
+    ],
+    'zh': ['完美肖像', '首次打开肖像宝箱。你的账号找到了最好看的角度。'],
+    'ja': ['完璧なプロフィール', 'ポートレート宝箱を初めて開ける。アカウントの決め顔が見つかった。'],
+  },
+  'highly_titled': {
+    'de': [
+      'Hochbetitelt',
+      'Öffne deine erste Titeltruhe. Lass dir den Titel nicht zu Kopf steigen.'
+    ],
+    'es': [
+      'Con mucho título',
+      'Abre tu primer Cofre de títulos. Que no se te suba a la cabeza.'
+    ],
+    'fr': [
+      'Sacré titre',
+      'Ouvre ton premier Coffre de titres. Ne prends pas la grosse tête.'
+    ],
+    'it': [
+      'Altisonante',
+      'Apri il tuo primo Forziere titolo. Cerca di non montarti la testa.'
+    ],
+    'pt': [
+      'Muito importante',
+      'Abra seu primeiro Baú de títulos. Não deixe o título subir à cabeça.'
+    ],
+    'zh': ['称号加身', '首次打开称号宝箱。可别让称号冲昏了头。'],
+    'ja': ['肩書き持ち', '称号宝箱を初めて開ける。肩書きで偉くなりすぎないように。'],
+  },
   'room_to_roost': {
     'de': ['Platz zum Nisten', 'Kaufe dein erstes zusätzliches Turmgeschoss.'],
     'es': ['Sitio para anidar', 'Compra tu primer piso adicional de la Torre.'],
@@ -663,14 +741,26 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
   'not_picking_favorites': {
     'de': [
       'Ganz bestimmt keine Lieblinge',
-      'Markiere einen Drachen als Favoriten.'
+      'Wechsle zum ersten Mal deinen Lieblingsdrachen.'
     ],
-    'es': ['Aquí no hay favoritos', 'Marca un dragón como favorito.'],
-    'fr': ['Pas de favoritisme, promis', 'Marque un dragon comme favori.'],
-    'it': ['Nessun preferito, davvero', 'Segna un drago come preferito.'],
-    'pt': ['Sem favoritos, claro', 'Marque um dragão como favorito.'],
-    'zh': ['绝对没有偏心', '将一只龙标记为最爱。'],
-    'ja': ['えこひいきではありません', 'ドラゴンをお気に入りにする。'],
+    'es': [
+      'Aquí no hay favoritos',
+      'Cambia tu dragón favorito por primera vez.'
+    ],
+    'fr': [
+      'Pas de favoritisme, promis',
+      'Change de dragon favori pour la première fois.'
+    ],
+    'it': [
+      'Nessun preferito, davvero',
+      'Cambia il tuo drago preferito per la prima volta.'
+    ],
+    'pt': [
+      'Sem favoritos, claro',
+      'Mude seu dragão favorito pela primeira vez.'
+    ],
+    'zh': ['绝对没有偏心', '第一次更换你最喜欢的龙。'],
+    'ja': ['えこひいきではありません', 'お気に入りのドラゴンを初めて変更する。'],
   },
   'halfway_clouds': {
     'de': ['Halbwegs zu den Wolken', 'Baue 10 Stockwerke im Drachenturm.'],
@@ -709,16 +799,13 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'ja': ['スペクトラルな何かが来る', '最初のスペクトラルドラゴンを発見する。'],
   },
   'well_read_scaled': {
-    'de': [
-      'Belesen und beschuppt',
-      'Entdecke alle 20 gewöhnlichen Drachenfamilien.'
-    ],
+    'de': ['Belesen und beschuppt', 'Entdecke 20 gewöhnliche Drachenfamilien.'],
     'es': ['Bien leído, bien escamado', 'Descubre las 20 familias comunes.'],
     'fr': ['Bien lu, bien écailleux', 'Découvre les 20 familles communes.'],
-    'it': ['Colto e ben squamato', 'Scopri tutte le 20 famiglie comuni.'],
+    'it': ['Colto e ben squamato', 'Scopri 20 famiglie comuni.'],
     'pt': ['Bem lido, bem escamado', 'Descubra as 20 famílias comuns.'],
-    'zh': ['博览群龙', '发现全部 20 个普通龙族。'],
-    'ja': ['読書家は鱗も立派', 'コモンのドラゴン一族20種をすべて発見する。'],
+    'zh': ['博览群龙', '发现 20 个普通龙族。'],
+    'ja': ['読書家は鱗も立派', 'コモンのドラゴン一族を20種発見する。'],
   },
   'frequent_flyer': {
     'de': ['Vielflieger', 'Schließe 50 Abenteuer ab.'],
@@ -728,6 +815,15 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'pt': ['Viajante frequente', 'Conclua 50 Aventuras.'],
     'zh': ['飞行常客', '完成 50 次冒险。'],
     'ja': ['空の常連', '冒険を50回完了する。'],
+  },
+  'are_we_there_yet': {
+    'de': ['Sind wir schon da?', 'Schließe 1.000 Abenteuer ab.'],
+    'es': ['¿Ya llegamos?', 'Completa 1.000 Aventuras.'],
+    'fr': ['On est bientôt arrivés ?', 'Termine 1 000 Aventures.'],
+    'it': ['Siamo arrivati?', 'Completa 1.000 Avventure.'],
+    'pt': ['Já chegamos?', 'Conclua 1.000 Aventuras.'],
+    'zh': ['我们到了吗？', '完成 1,000 次冒险。'],
+    'ja': ['もう着いた？', '冒険を1,000回完了する。'],
   },
   'full_party': {
     'de': [
@@ -753,26 +849,23 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
   'came_crawling_back': {
     'de': [
       'Sieh an, wer zurückgekrochen kam',
-      'Erhalte Wochenbesuch von einem freigelassenen Drachen.'
+      'Erhalte Besuch von einem freigelassenen Drachen.'
     ],
     'es': [
       'Mira quién volvió arrastrándose',
-      'Recibe la visita semanal de un dragón liberado.'
+      'Recibe la visita de un dragón liberado.'
     ],
-    'fr': [
-      'Tiens, qui revoilà',
-      'Reçois la visite hebdomadaire d’un dragon libéré.'
-    ],
+    'fr': ['Tiens, qui revoilà', 'Reçois la visite d’un dragon libéré.'],
     'it': [
       'Guarda chi è tornato strisciando',
-      'Ricevi la visita settimanale di un drago liberato.'
+      'Ricevi la visita di un drago liberato.'
     ],
     'pt': [
       'Olha quem voltou rastejando',
-      'Receba a visita semanal de um dragão libertado.'
+      'Receba a visita de um dragão libertado.'
     ],
-    'zh': ['看看谁爬回来了', '迎来一只已放归龙的每周拜访。'],
-    'ja': ['這い戻ってきたのは誰？', '放したドラゴンの週替わり訪問を受ける。'],
+    'zh': ['看看谁爬回来了', '迎来一只已放归龙的拜访。'],
+    'ja': ['這い戻ってきたのは誰？', '放したドラゴンの訪問を受ける。'],
   },
   'sky_ceiling': {
     'de': ['Der Himmel hat doch eine Decke', 'Erreiche 20 Turmgeschosse.'],
@@ -787,10 +880,7 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'ja': ['空にも天井はあった', 'ドラゴンタワーを20階まで建てる。'],
   },
   'scale_every_tale': {
-    'de': [
-      'Eine Schuppe für jede Geschichte',
-      'Entdecke alle 42 Drachenfamilien.'
-    ],
+    'de': ['Eine Schuppe für jede Geschichte', 'Entdecke 42 Drachenfamilien.'],
     'es': [
       'Una escama para cada historia',
       'Descubre las 42 familias de dragones.'
@@ -799,16 +889,13 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Une écaille pour chaque histoire',
       'Découvre les 42 familles de dragons.'
     ],
-    'it': [
-      'Una squama per ogni storia',
-      'Scopri tutte le 42 famiglie di draghi.'
-    ],
+    'it': ['Una squama per ogni storia', 'Scopri 42 famiglie di draghi.'],
     'pt': [
       'Uma escama para cada história',
       'Descubra as 42 famílias de dragões.'
     ],
-    'zh': ['一族一传奇', '发现全部 42 个龙族。'],
-    'ja': ['物語ごとに一枚の鱗', 'ドラゴン一族42種をすべて発見する。'],
+    'zh': ['一族一传奇', '发现 42 个龙族。'],
+    'ja': ['物語ごとに一枚の鱗', 'ドラゴン一族を42種発見する。'],
   },
   'ghost_writer': {
     'de': ['Geisterschreiber', 'Entdecke Spektralformen von 10 Familien.'],

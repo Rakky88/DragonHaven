@@ -645,32 +645,7 @@ extension DragonHavenSystems on HouseholdProvider {
   }
 
   ChestTier _rollAdventureChest(AdventureKind kind) {
-    final roll = _random.nextDouble();
-    return switch (kind) {
-      AdventureKind.mini => ChestTier.wooden,
-      AdventureKind.short => roll < .50
-          ? ChestTier.wooden
-          : roll < .80
-              ? ChestTier.silver
-              : roll < .995
-                  ? ChestTier.gold
-                  : roll < .9995
-                      ? ChestTier.dragon
-                      : ChestTier.mythical,
-      AdventureKind.long => roll < .55
-          ? ChestTier.silver
-          : roll < .90
-              ? ChestTier.gold
-              : roll < .995
-                  ? ChestTier.dragon
-                  : ChestTier.mythical,
-      AdventureKind.group => roll < .70
-          ? ChestTier.gold
-          : roll < .98
-              ? ChestTier.dragon
-              : ChestTier.mythical,
-      AdventureKind.special => ChestTier.gold,
-    };
+    return adventureChestForRoll(kind, _random.nextDouble());
   }
 
   Future<void> toggleFavorite(String dragonId) async {
@@ -682,6 +657,7 @@ extension DragonHavenSystems on HouseholdProvider {
     for (final dragon in ownedDragons) {
       dragon.favorite = dragon.id == dragonId;
     }
+    favoriteChanges++;
     _evaluateAchievements();
     await _notifyAndSave();
   }

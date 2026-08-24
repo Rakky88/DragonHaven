@@ -1,4 +1,9 @@
 import 'mystic_relic.dart';
+import 'profile_portrait.dart';
+import 'account_title.dart';
+
+const portraitChestGemPrice = 99;
+const titleChestCoinPrice = 99;
 
 enum ChestTier {
   wooden,
@@ -6,7 +11,9 @@ enum ChestTier {
   gold,
   dragon,
   mythical,
-  sinister;
+  sinister,
+  portrait,
+  title;
 }
 
 class ChestReward {
@@ -17,6 +24,8 @@ class ChestReward {
     required this.eggFound,
     this.sinisterEgg = false,
     this.relicFound,
+    this.portraitFound,
+    this.titleFound,
   });
   final ChestTier tier;
   final int coins;
@@ -24,6 +33,8 @@ class ChestReward {
   final bool eggFound;
   final bool sinisterEgg;
   final MysticRelic? relicFound;
+  final ProfilePortrait? portraitFound;
+  final AccountTitle? titleFound;
 }
 
 extension ChestTierPresentation on ChestTier {
@@ -34,6 +45,8 @@ extension ChestTierPresentation on ChestTier {
         ChestTier.dragon => isDutch ? 'Drakenkist' : 'Dragon Chest',
         ChestTier.mythical => isDutch ? 'Mythische Kist' : 'Mythical Chest',
         ChestTier.sinister => isDutch ? 'Sinistere Kist' : 'Sinister Chest',
+        ChestTier.portrait => isDutch ? 'Portretkist' : 'Portrait Chest',
+        ChestTier.title => isDutch ? 'Titelkist' : 'Title Chest',
       };
 
   int get colorValue => switch (this) {
@@ -43,9 +56,20 @@ extension ChestTierPresentation on ChestTier {
         ChestTier.dragon => 0xFF8D52C7,
         ChestTier.mythical => 0xFF2A9CB8,
         ChestTier.sinister => 0xFF6D204E,
+        ChestTier.portrait => 0xFF8D52C7,
+        ChestTier.title => 0xFF8D52C7,
       };
 
-  String get assetPath => 'assets/images/chests/chest_$name.png';
-  String get openedAssetPath =>
-      'assets/images/chests/open/chest_${name}_open.png';
+  String get assetPath => switch (this) {
+        ChestTier.portrait ||
+        ChestTier.title =>
+          'assets/images/chests/chest_portrait.webp',
+        _ => 'assets/images/chests/chest_$name.png',
+      };
+  String get openedAssetPath => switch (this) {
+        ChestTier.portrait ||
+        ChestTier.title =>
+          'assets/images/chests/open/chest_portrait_open.webp',
+        _ => 'assets/images/chests/open/chest_${name}_open.png',
+      };
 }

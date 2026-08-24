@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:dragon_haven/dragonhaven_app.dart';
 import 'package:dragon_haven/l10n/app_strings.dart';
+import 'package:dragon_haven/models/account_title.dart';
 import 'package:dragon_haven/models/achievement.dart';
 import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/chest.dart';
@@ -9,12 +10,15 @@ import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
+import 'package:dragon_haven/models/profile_portrait.dart';
 import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/screens/achievements_screen.dart';
 import 'package:dragon_haven/screens/adventure_hub_screen.dart';
 import 'package:dragon_haven/screens/draconomicon_screen.dart';
 import 'package:dragon_haven/screens/house_screen.dart';
+import 'package:dragon_haven/screens/inventory_screen.dart';
+import 'package:dragon_haven/screens/shop_hub_screen.dart';
 import 'package:dragon_haven/widgets/achievement_badge_sprite.dart';
 import 'package:dragon_haven/widgets/achievement_reveal.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
@@ -259,6 +263,12 @@ void main() {
     await tester.tap(find.byKey(const Key('app-overflow-menu')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
+    expect(
+      find.text(
+        '${game.unlockedAchievementIds.length}/${achievementCatalog.length}',
+      ),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const Key('app-menu-account')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
@@ -269,6 +279,8 @@ void main() {
     await tester.pump();
     expect(game.musicEnabled, isFalse);
     expect(game.soundEffectsEnabled, isTrue);
+    await tester.ensureVisible(find.byKey(const Key('sound-effects-switch')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('sound-effects-switch')));
     await tester.pump();
     expect(game.musicEnabled, isFalse);
@@ -465,7 +477,7 @@ void main() {
 
     await tester.tap(find.text('Tower').last);
     await tester.pump(const Duration(milliseconds: 350));
-    await tester.tap(find.text('My dragons'));
+    await tester.tap(find.byKey(const Key('open-my-dragons')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
     expect(find.byKey(const Key('owned-dragons-grid')), findsOneWidget);
@@ -529,9 +541,11 @@ void main() {
 
     await tester.tap(find.text('Shop').last);
     await tester.pump(const Duration(milliseconds: 350));
-    expect(find.text('Coin furniture'), findsOneWidget);
-    expect(find.text('Gem furniture'), findsOneWidget);
-    expect(find.text('Buy gems'), findsOneWidget);
+    expect(find.text('Coins'), findsOneWidget);
+    expect(find.text('Gems'), findsOneWidget);
+    expect(find.text('Furniture'), findsOneWidget);
+    expect(find.text('Chests'), findsOneWidget);
+    expect(find.text('Buy'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -546,6 +560,8 @@ void main() {
     expect(label.data, 'Meine Drachen');
     expect(label.maxLines, 1);
     expect(label.softWrap, isFalse);
+    expect(label.style?.fontFamily, 'serif');
+    expect(label.style?.fontWeight, FontWeight.w900);
     expect(tester.takeException(), isNull);
   });
 
@@ -606,7 +622,8 @@ void main() {
     await tester.tap(find.text('Inventory').last);
     await tester.pumpAndSettle();
     expect(game.chestCount(ChestTier.wooden), 1);
-    await tester.tap(find.text('Chests'));
+    DefaultTabController.of(tester.element(find.byType(TabBarView)))
+        .animateTo(1);
     await tester.pumpAndSettle();
 
     final openChest = find.byKey(const Key('inventory-open-chest-wooden'));
@@ -628,8 +645,196 @@ void main() {
     expect(find.text('Collect'), findsNothing);
     expect(find.text('Tap the chest'), findsNothing);
     expect(game.chestCount(ChestTier.wooden), 0);
-    await tester.tap(find.byKey(const Key('chest-rewards')));
+    await tester.tapAt(const Offset(30, 30));
     await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'Portrait Chest reveals an enlarged portrait without equipping it',
+      (tester) async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: Random(908),
+    )
+      ..pet = Pet(stage: DragonStage.hatchling, firstEgg: false)
+      ..chestInventory[ChestTier.portrait] = 1;
+    game.notifyListeners();
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: game,
+        child: const MaterialApp(
+          home: Scaffold(body: InventoryScreen(initialTab: 1)),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(game.chestCount(ChestTier.portrait), 1);
+    expect(find.byKey(const PageStorageKey('inventory-chests-scroll')),
+        findsOneWidget);
+    expect(find.text('Portrait Chest'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('inventory-open-chest-portrait')));
+    await tester.pump(const Duration(milliseconds: 450));
+    expect(find.text('Portrait Chest'), findsWidgets);
+    await tester.tap(find.byKey(const Key('chest-reveal-tap-target')));
+    for (var frame = 0; frame < 34; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    final portrait = find.byKey(const Key('portrait-chest-zoomed-reward'));
+    expect(portrait, findsOneWidget);
+    expect(tester.getSize(portrait), const Size(228, 228));
+    expect(game.portraitCount, 1);
+    expect(game.selectedPortrait, isNull);
+    expect(game.chestCount(ChestTier.portrait), 0);
+    await tester.tapAt(const Offset(30, 30));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('complete portrait collection warns on opening and buying',
+      (tester) async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, gems: 999);
+    game
+      ..ownedPortraitIds =
+          profilePortraitCatalog.map((portrait) => portrait.id).toSet()
+      ..chestInventory[ChestTier.portrait] = 1;
+    game.notifyListeners();
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: game,
+        child: const MaterialApp(
+          home: Scaffold(body: InventoryScreen(initialTab: 1)),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.byKey(const Key('inventory-open-chest-portrait')));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Portrait collection complete'), findsOneWidget);
+    expect(game.chestCount(ChestTier.portrait), 1);
+    await tester.tap(find.text('Understood'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: game,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: ShopHubScreen(
+              initialCurrencyTab: 1,
+              initialCategoryTab: 1,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.textContaining('of 100 collected'), findsNothing);
+    await tester.tap(find.byKey(const Key('buy-portrait-chest')));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Collection complete'), findsWidgets);
+    expect(
+      find.text(
+        'You already own all 100 portraits, so another Portrait Chest cannot be purchased.',
+      ),
+      findsOneWidget,
+    );
+    expect(game.chestCount(ChestTier.portrait), 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Title Chest reveals a translated title without equipping it',
+      (tester) async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: Random(909),
+    )
+      ..pet = Pet(stage: DragonStage.hatchling, firstEgg: false)
+      ..chestInventory[ChestTier.title] = 1;
+    game.notifyListeners();
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: game,
+        child: const MaterialApp(
+          home: Scaffold(body: InventoryScreen(initialTab: 1)),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.tap(find.byKey(const Key('inventory-open-chest-title')));
+    await tester.pump(const Duration(milliseconds: 450));
+    await tester.tap(find.byKey(const Key('chest-reveal-tap-target')));
+    for (var frame = 0; frame < 34; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byKey(const Key('title-chest-zoomed-reward')), findsOneWidget);
+    expect(game.titleCount, 1);
+    expect(game.selectedAccountTitle, isNull);
+    expect(game.chestCount(ChestTier.title), 0);
+    await tester.tapAt(const Offset(30, 30));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('complete title collection warns on opening and buying',
+      (tester) async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, coins: 999);
+    game
+      ..ownedTitleIds = accountTitleCatalog.map((title) => title.id).toSet()
+      ..chestInventory[ChestTier.title] = 1;
+    game.notifyListeners();
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: game,
+        child: const MaterialApp(
+          home: Scaffold(body: InventoryScreen(initialTab: 1)),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.tap(find.byKey(const Key('inventory-open-chest-title')));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Title collection complete'), findsOneWidget);
+    expect(game.chestCount(ChestTier.title), 1);
+    await tester.tap(find.text('Understood'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: game,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: ShopHubScreen(
+              initialCurrencyTab: 0,
+              initialCategoryTab: 1,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(find.textContaining('of 500 collected'), findsNothing);
+    await tester.tap(find.byKey(const Key('buy-title-chest')));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      find.text(
+        'You already own all 500 account titles, so another Title Chest cannot be purchased.',
+      ),
+      findsOneWidget,
+    );
+    expect(game.pet.coins, 999);
+    expect(game.chestCount(ChestTier.title), 1);
     expect(tester.takeException(), isNull);
   });
 
@@ -664,9 +869,11 @@ void main() {
     expect(game.pet.moralAxisKnown, isTrue);
     expect(game.relicCount(MysticRelic.moralPrism), 0);
     expect(find.text('Moral Prism'), findsOneWidget);
+    await tester.tapAt(const Offset(215, 250));
+    await tester.pump(const Duration(milliseconds: 650));
     expect(find.text(AppStrings('en').moralAxisName(game.pet.moralAxis)),
         findsOneWidget);
-    await tester.tap(find.text('Remember this'));
+    await tester.tap(find.byKey(const Key('close-relic-reveal')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(tester.takeException(), isNull);
@@ -972,19 +1179,21 @@ void main() {
     ));
 
     final reveal = showAchievementReveal(revealContext, achievementCatalog[4]);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1200));
-    expect(
-        find.byKey(
-          Key('achievement-reveal-${achievementCatalog[4].id}'),
-        ),
-        findsOneWidget);
+    final revealFinder = find.byKey(
+      Key('achievement-reveal-${achievementCatalog[4].id}'),
+    );
+    for (var frame = 0;
+        frame < 30 && revealFinder.evaluate().isEmpty;
+        frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(revealFinder, findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.byKey(
-      Key('achievement-reveal-${achievementCatalog[4].id}'),
-    ));
-    await tester.pump(const Duration(milliseconds: 1000));
+    await tester.tap(revealFinder);
+    for (var frame = 0; frame < 15; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
     await reveal;
     expect(tester.takeException(), isNull);
   });
@@ -999,7 +1208,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.01.07'), findsOneWidget);
+    expect(find.text('v0.01.08'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

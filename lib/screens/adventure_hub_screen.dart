@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/adventure.dart';
-import '../models/chest.dart';
 import '../models/pet.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
@@ -1060,22 +1059,20 @@ String _chestPossibilities(
 ) {
   final known = adventure.knownChest;
   if (known != null) return '${strings.chestLabel(known)} · 100%';
-  return switch (adventure.kind) {
-    AdventureKind.short => '${strings.chestLabel(ChestTier.wooden)} 50% · '
-        '${strings.chestLabel(ChestTier.silver)} 30% · '
-        '${strings.chestLabel(ChestTier.gold)} 19.5% · '
-        '${strings.chestLabel(ChestTier.dragon)} 0.45% · '
-        '${strings.chestLabel(ChestTier.mythical)} 0.05%',
-    AdventureKind.long => '${strings.chestLabel(ChestTier.silver)} 55% · '
-        '${strings.chestLabel(ChestTier.gold)} 35% · '
-        '${strings.chestLabel(ChestTier.dragon)} 9.5% · '
-        '${strings.chestLabel(ChestTier.mythical)} 0.5%',
-    AdventureKind.group => '${strings.chestLabel(ChestTier.gold)} 70% · '
-        '${strings.chestLabel(ChestTier.dragon)} 28% · '
-        '${strings.chestLabel(ChestTier.mythical)} 2%',
-    AdventureKind.mini => '${strings.chestLabel(ChestTier.wooden)} · 100%',
-    AdventureKind.special => '${strings.chestLabel(ChestTier.gold)} · 100%',
-  };
+  return adventureChestChances[adventure.kind]!
+      .map((chance) =>
+          '${strings.chestLabel(chance.tier)} ${_chancePercent(strings, chance.probability)}')
+      .join(' · ');
+}
+
+String _chancePercent(AppStrings strings, double probability) {
+  final percent = probability * 100;
+  final text = percent == percent.roundToDouble()
+      ? '${percent.toInt()}'
+      : percent.toStringAsFixed(1);
+  final usesDecimalComma =
+      const {'de', 'es', 'fr', 'it', 'nl', 'pt'}.contains(strings.languageCode);
+  return '${usesDecimalComma ? text.replaceAll('.', ',') : text}%';
 }
 
 String _remaining(DateTime end, AppStrings strings, DateTime now) {

@@ -17,25 +17,30 @@ import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
 
 class InventoryScreen extends StatelessWidget {
-  const InventoryScreen({super.key});
+  const InventoryScreen({super.key, this.initialTab = 0});
+
+  final int initialTab;
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return DefaultTabController(
       length: 4,
+      initialIndex: initialTab,
       child: Column(children: [
         TabBar(
           isScrollable: true,
           tabAlignment: TabAlignment.center,
           tabs: [
             Tab(
+              key: const Key('inventory-tab-eggs'),
               height: 70,
               icon: const GameIconSprite(GameIconKind.inventoryEggs, size: 35),
               iconMargin: const EdgeInsets.only(bottom: 1),
               text: strings.pick('Eggs', 'Eieren'),
             ),
             Tab(
+              key: const Key('inventory-tab-chests'),
               height: 70,
               icon:
                   const GameIconSprite(GameIconKind.inventoryChests, size: 35),
@@ -43,6 +48,7 @@ class InventoryScreen extends StatelessWidget {
               text: strings.pick('Chests', 'Kisten'),
             ),
             Tab(
+              key: const Key('inventory-tab-furniture'),
               height: 70,
               icon: const GameIconSprite(GameIconKind.inventoryFurniture,
                   size: 35),
@@ -50,6 +56,7 @@ class InventoryScreen extends StatelessWidget {
               text: strings.pick('Furniture', 'Meubels'),
             ),
             Tab(
+              key: const Key('inventory-tab-relics'),
               height: 70,
               icon: Image.asset(
                 MysticRelic.soulMirror.assetPath,
@@ -292,6 +299,54 @@ class _ChestInventoryTab extends StatelessWidget {
     final navigator = Navigator.of(context);
     final game = context.read<HouseholdProvider>();
     if (!navigator.mounted) return;
+    if (tier == ChestTier.portrait && game.hasEveryPortrait) {
+      final strings = AppStrings.of(context);
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          icon: Image.asset(tier.assetPath, width: 92, height: 92),
+          title: Text(strings.pick(
+            'Portrait collection complete',
+            'Portretcollectie compleet',
+          )),
+          content: Text(strings.pick(
+            'You already own all 100 portraits. This Portrait Chest stays safely in your Inventory and cannot be opened.',
+            'Je bezit alle 100 portretten al. Deze Portretkist blijft veilig in je Inventory en kan niet worden geopend.',
+          )),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(strings.pick('Understood', 'Begrepen')),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    if (tier == ChestTier.title && game.hasEveryTitle) {
+      final strings = AppStrings.of(context);
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          icon: Image.asset(tier.assetPath, width: 92, height: 92),
+          title: Text(strings.pick(
+            'Title collection complete',
+            'Titelcollectie compleet',
+          )),
+          content: Text(strings.pick(
+            'You already own all 500 account titles. This Title Chest stays safely in your Inventory and cannot be opened.',
+            'Je bezit alle 500 accounttitels al. Deze Titelkist blijft veilig in je Inventory en kan niet worden geopend.',
+          )),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(strings.pick('Understood', 'Begrepen')),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     await showChestReveal(
       navigator.context,
       tier,
@@ -308,6 +363,7 @@ HavenSound _soundForChest(ChestTier tier) => switch (tier) {
       ChestTier.dragon => HavenSound.chestDragon,
       ChestTier.mythical => HavenSound.chestMythical,
       ChestTier.sinister => HavenSound.chestSinister,
+      ChestTier.portrait || ChestTier.title => HavenSound.chestMythical,
     };
 
 class _FurnitureInventoryTab extends StatelessWidget {
@@ -376,8 +432,6 @@ class _RelicInventoryTab extends StatelessWidget {
       key: const PageStorageKey('inventory-relics-scroll'),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
       children: [
-        _RelicIntro(strings: strings),
-        const SizedBox(height: 10),
         for (final relic in owned)
           _RelicCard(
             relic: relic,
@@ -448,58 +502,6 @@ class _RelicEmptyState extends StatelessWidget {
             ]),
           ),
         ),
-      );
-}
-
-class _RelicIntro extends StatelessWidget {
-  const _RelicIntro({required this.strings});
-
-  final AppStrings strings;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF2A1B50), Color(0xFF5B3D8D)],
-          ),
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Row(children: [
-          Image.asset(
-            MysticRelic.moralPrism.assetPath,
-            width: 62,
-            height: 62,
-            fit: BoxFit.contain,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  strings.pick('Relics', 'Relieken'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 17,
-                  ),
-                ),
-                Text(
-                  strings.pick(
-                    'Choose carefully: each relic reveals one dragon and is consumed.',
-                    'Kies zorgvuldig: elk reliek onthult één draak en wordt verbruikt.',
-                  ),
-                  style: const TextStyle(
-                    color: Color(0xFFD8CFF1),
-                    fontSize: 11,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ]),
       );
 }
 
@@ -717,98 +719,188 @@ Future<void> _useRelic(BuildContext context, MysticRelic relic) async {
   await showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => _RelicRevealDialog(relic: relic, dragon: selected),
+    builder: (_) => _AnimatedRelicRevealDialog(
+      relic: relic,
+      dragon: selected,
+    ),
   );
 }
 
-class _RelicRevealDialog extends StatelessWidget {
-  const _RelicRevealDialog({required this.relic, required this.dragon});
+class _AnimatedRelicRevealDialog extends StatefulWidget {
+  const _AnimatedRelicRevealDialog({
+    required this.relic,
+    required this.dragon,
+  });
 
   final MysticRelic relic;
   final Pet dragon;
 
   @override
+  State<_AnimatedRelicRevealDialog> createState() =>
+      _AnimatedRelicRevealDialogState();
+}
+
+class _AnimatedRelicRevealDialogState
+    extends State<_AnimatedRelicRevealDialog> {
+  Timer? _timer;
+  var _frame = 0;
+  var _revealed = false;
+  var _precached = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_precached) return;
+    _precached = true;
+    for (var frame = 0; frame < 20; frame++) {
+      precacheImage(
+          AssetImage(widget.relic.animationFrameAsset(frame)), context);
+    }
+    _timer = Timer.periodic(const Duration(milliseconds: 120), (timer) {
+      if (!mounted) return;
+      if (_frame >= 19) {
+        timer.cancel();
+        Future<void>.delayed(const Duration(milliseconds: 260), () {
+          if (mounted) setState(() => _revealed = true);
+        });
+        return;
+      }
+      setState(() => _frame++);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _finishAnimation() {
+    if (_revealed) return;
+    _timer?.cancel();
+    setState(() {
+      _frame = 19;
+      _revealed = true;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final value = switch (relic) {
-      MysticRelic.moralPrism => strings.moralAxisName(dragon.moralAxis),
-      MysticRelic.orderCompass => strings.lawAxisName(dragon.lawAxis),
+    final value = switch (widget.relic) {
+      MysticRelic.moralPrism => strings.moralAxisName(widget.dragon.moralAxis),
+      MysticRelic.orderCompass => strings.lawAxisName(widget.dragon.lawAxis),
       MysticRelic.soulMirror =>
-        dragon.personalityTraitIds.map(strings.personality).join(' · '),
+        widget.dragon.personalityTraitIds.map(strings.personality).join(' · '),
     };
     return Dialog.fullscreen(
       backgroundColor: const Color(0xFF170E32),
-      child: SafeArea(
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0, -.25),
-              radius: 1.2,
-              colors: [Color(0xFF6343A0), Color(0xFF170E32)],
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _finishAnimation,
+        child: SafeArea(
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(0, -.25),
+                radius: 1.2,
+                colors: [Color(0xFF6343A0), Color(0xFF170E32)],
+              ),
             ),
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 30, 24, 24),
-            child: Column(children: [
-              Image.asset(relic.assetPath, width: 230, height: 230),
-              Text(
-                strings.relicName(relic),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFFFE39A),
-                  fontSize: 25,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox.square(
-                dimension: 118,
-                child: DragonArt(
-                  height: 118,
-                  animate: true,
-                  stageKey: dragon.stageKey,
-                  lineageId: dragon.lineageId,
-                  evolutionPath: dragon.activeEvolutionPath,
-                  prismatic: dragon.prismatic,
-                  sinister: dragon.sinister,
-                ),
-              ),
-              Text(
-                dragon.displayName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .1),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: const Color(0x66FFE39A)),
-                ),
-                child: Text(
-                  value,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
+              child: Column(
+                children: [
+                  SizedBox.square(
+                    dimension: 284,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 115),
+                      child: Image.asset(
+                        widget.relic.animationFrameAsset(_frame),
+                        key: ValueKey(_frame),
+                        fit: BoxFit.contain,
+                        gaplessPlayback: true,
+                        filterQuality: FilterQuality.high,
+                      ),
+                    ),
                   ),
-                ),
+                  AnimatedOpacity(
+                    opacity: _revealed ? 1 : 0,
+                    duration: const Duration(milliseconds: 520),
+                    child: IgnorePointer(
+                      ignoring: !_revealed,
+                      child: Column(
+                        children: [
+                          Text(
+                            strings.relicName(widget.relic),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xFFFFE39A),
+                              fontSize: 25,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          SizedBox.square(
+                            dimension: 112,
+                            child: DragonArt(
+                              height: 112,
+                              animate: true,
+                              stageKey: widget.dragon.stageKey,
+                              lineageId: widget.dragon.lineageId,
+                              evolutionPath: widget.dragon.activeEvolutionPath,
+                              prismatic: widget.dragon.prismatic,
+                              sinister: widget.dragon.sinister,
+                            ),
+                          ),
+                          Text(
+                            widget.dragon.displayName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: .1),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: const Color(0x66FFE39A),
+                              ),
+                            ),
+                            child: Text(
+                              value,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton(
+                              key: const Key('close-relic-reveal'),
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(strings.pick(
+                                'Remember this',
+                                'Onthoud dit',
+                              )),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 22),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(strings.pick('Remember this', 'Onthoud dit')),
-                ),
-              ),
-            ]),
+            ),
           ),
         ),
       ),

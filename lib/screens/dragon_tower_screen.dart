@@ -538,29 +538,7 @@ class _TowerBannerShortcut extends StatelessWidget {
                           heightFactor: .34,
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
-                            child: Text(
-                              label,
-                              key: const Key('my-dragons-banner-label'),
-                              maxLines: 1,
-                              softWrap: false,
-                              style: const TextStyle(
-                                color: Color(0xFFFFF5D7),
-                                fontSize: 27,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: .2,
-                                shadows: [
-                                  Shadow(
-                                    color: Color(0xFF2C0D4D),
-                                    blurRadius: 5,
-                                    offset: Offset(0, 2),
-                                  ),
-                                  Shadow(
-                                    color: Color(0xFFB97A1B),
-                                    blurRadius: 1,
-                                  ),
-                                ],
-                              ),
-                            ),
+                            child: _FantasyBannerLabel(label: label),
                           ),
                         ),
                       ),
@@ -570,6 +548,72 @@ class _TowerBannerShortcut extends StatelessWidget {
             ),
           ),
         ),
+      );
+}
+
+class _FantasyBannerLabel extends StatelessWidget {
+  const _FantasyBannerLabel({required this.label});
+
+  final String label;
+
+  static const _style = TextStyle(
+    fontFamily: 'serif',
+    fontFamilyFallback: [
+      'Noto Serif',
+      'Noto Serif CJK SC',
+      'Noto Serif CJK JP',
+    ],
+    fontSize: 29,
+    fontWeight: FontWeight.w900,
+    letterSpacing: .75,
+    height: 1,
+  );
+
+  @override
+  Widget build(BuildContext context) => Stack(
+        alignment: Alignment.center,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            style: _style.copyWith(
+              foreground: Paint()
+                ..style = PaintingStyle.stroke
+                ..strokeJoin = StrokeJoin.round
+                ..strokeWidth = 2.6
+                ..color = const Color(0xFF29133F),
+            ),
+          ),
+          ShaderMask(
+            blendMode: BlendMode.srcIn,
+            shaderCallback: (bounds) => const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFFFFFFF),
+                Color(0xFFFFE39A),
+                Color(0xFFE9AF3D),
+              ],
+            ).createShader(bounds),
+            child: Text(
+              label,
+              key: const Key('my-dragons-banner-label'),
+              maxLines: 1,
+              softWrap: false,
+              style: _style.copyWith(
+                color: Colors.white,
+                shadows: const [
+                  Shadow(
+                    color: Color(0xCC210C3D),
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       );
 }
 

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -8,6 +9,7 @@ import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/day_phase.dart';
 import 'package:dragon_haven/models/house.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
+import 'package:dragon_haven/models/profile_portrait.dart';
 import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
 import 'package:dragon_haven/widgets/furniture_art.dart';
@@ -233,7 +235,7 @@ void main() {
         tier.openedAssetPath,
       ],
     };
-    expect(paths, hasLength(212));
+    expect(paths, hasLength(214));
     for (final path in paths) {
       final image = await _decode(path);
       _expectContained(
@@ -277,6 +279,50 @@ void main() {
         image.height,
         path,
       );
+    }
+  });
+
+  test('all portrait and Relic animation sprites are complete and contained',
+      () async {
+    final encodedPortraits = <String>{};
+    for (final portrait in profilePortraitCatalog) {
+      encodedPortraits
+          .add(base64Encode(await File(portrait.assetPath).readAsBytes()));
+      final image = await _decode(portrait.assetPath);
+      expect(image.width, 256, reason: portrait.assetPath);
+      expect(image.height, 256, reason: portrait.assetPath);
+      _expectContained(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        portrait.assetPath,
+      );
+    }
+    expect(encodedPortraits, hasLength(100));
+    for (final relic in MysticRelic.values) {
+      final encodedFrames = <String>{};
+      for (var frame = 0; frame < 20; frame++) {
+        final path = relic.animationFrameAsset(frame);
+        final file = File(path);
+        expect(file.existsSync(), isTrue, reason: path);
+        encodedFrames.add(base64Encode(await file.readAsBytes()));
+        final image = await _decode(path);
+        expect(image.width, 512, reason: path);
+        expect(image.height, 512, reason: path);
+        _expectContained(
+          image.rgba,
+          image.width,
+          0,
+          0,
+          image.width,
+          image.height,
+          path,
+        );
+      }
+      expect(encodedFrames, hasLength(20), reason: relic.name);
     }
   });
 

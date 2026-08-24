@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
@@ -10,7 +12,7 @@ Future<void> showAchievementReveal(
   BuildContext context,
   AchievementDefinition achievement,
 ) async {
-  await HavenAudio.play(HavenSound.achievement);
+  unawaited(HavenAudio.play(HavenSound.achievement));
   if (!context.mounted) return;
   await showGeneralDialog<void>(
     context: context,
@@ -85,7 +87,7 @@ class _AchievementRevealState extends State<_AchievementReveal>
   Future<void> _close() async {
     if (_closing) return;
     _closing = true;
-    await HavenAudio.play(HavenSound.uiConfirm);
+    unawaited(HavenAudio.play(HavenSound.uiConfirm));
     if (!mounted) return;
     if (!MediaQuery.disableAnimationsOf(context)) {
       await _controller.reverse();

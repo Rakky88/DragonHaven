@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../l10n/app_strings.dart';
+import '../models/account_title.dart';
 import '../models/achievement.dart';
 import '../models/adventure.dart';
 import '../models/activity_entry.dart';
@@ -15,6 +16,7 @@ import '../models/game_presentation.dart';
 import '../models/house.dart';
 import '../models/mystic_relic.dart';
 import '../models/pet.dart';
+import '../models/profile_portrait.dart';
 import '../models/shop_item.dart';
 import '../models/tower_interaction.dart';
 import '../services/storage_service.dart';
@@ -44,6 +46,18 @@ enum MysticRelicUseResult {
   notOwned,
   dragonNotFound,
   alreadyKnown,
+}
+
+enum PortraitChestPurchaseResult {
+  purchased,
+  insufficientGems,
+  collectionComplete,
+}
+
+enum TitleChestPurchaseResult {
+  purchased,
+  insufficientCoins,
+  collectionComplete,
 }
 
 double _dragonSizeFromRoll(double roll) =>
@@ -92,6 +106,10 @@ class HouseholdProvider extends ChangeNotifier {
   Map<MysticRelic, int> relicInventory = {
     for (final relic in MysticRelic.values) relic: 0,
   };
+  Set<String> ownedPortraitIds = {};
+  String? selectedPortraitId;
+  Set<String> ownedTitleIds = {};
+  String? selectedTitleId;
   Set<String> discoveredForms = {};
   Set<String> prismaticForms = {};
   Set<String> unlockedAchievementIds = {};
@@ -101,11 +119,14 @@ class HouseholdProvider extends ChangeNotifier {
   int totalWyrmling = 0;
   int totalAscended = 0;
   int totalChestsOpened = 0;
+  int totalPortraitChestsOpened = 0;
+  int totalTitleChestsOpened = 0;
   int totalAdventuresCompleted = 0;
   int totalShortAdventuresCompleted = 0;
   int totalGroupFourCompleted = 0;
   int totalReleasedReturns = 0;
   int totalSinisterAdventuresCompleted = 0;
+  int favoriteChanges = 0;
 
   List<AdventureRun> adventureRuns = [];
   Map<AdventureKind, List<String>> adventureOptionIds = {
@@ -135,7 +156,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 31;
+  static const _schemaVersion = 35;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(
@@ -145,6 +166,82 @@ class HouseholdProvider extends ChangeNotifier {
       clock: DateTime.now,
     );
     provider._initializeShowcase();
+    return provider;
+  }
+
+  /// Creates a non-persistent focused account for Android release UI audits.
+  static HouseholdProvider createReleaseDemo() {
+    final now = DateTime.now();
+    final provider = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: Random(20260824),
+      clock: DateTime.now,
+    );
+    provider._initializeFresh();
+    provider
+      ..accountName = 'Release Keeper'
+      ..onboardingComplete = true
+      ..tutorialCompleted = true
+      ..musicEnabled = true
+      ..soundEffectsEnabled = true
+      ..pet = Pet(
+        id: 'release-demo-favorite',
+        name: 'Nova',
+        stage: DragonStage.wyrmling,
+        firstEgg: false,
+        favorite: true,
+        roamsTower: true,
+        currentRoomId: 'hearth',
+        currentFloorIndex: 0,
+        coins: 12500,
+        gems: 499,
+        hatchSeed: 20260824,
+        lineageId: dragonLineages.first.id,
+        acquiredAt: now.subtract(const Duration(days: 18)),
+        stageStartedAt: now.subtract(const Duration(days: 6)),
+      )
+      ..sanctuaryDragons = [
+        Pet(
+          id: 'release-demo-roommate-a',
+          name: 'Cinder',
+          stage: DragonStage.hatchling,
+          firstEgg: false,
+          roamsTower: true,
+          currentRoomId: 'hearth',
+          currentFloorIndex: 0,
+          hatchSeed: 20260825,
+          lineageId: dragonLineages[1].id,
+        ),
+        Pet(
+          id: 'release-demo-roommate-b',
+          name: 'Mistral',
+          stage: DragonStage.wyrmling,
+          firstEgg: false,
+          roamsTower: true,
+          currentRoomId: 'hearth',
+          currentFloorIndex: 0,
+          hatchSeed: 20260826,
+          lineageId: dragonLineages[2].id,
+        ),
+      ]
+      ..towerFloorRoomIds = ['hearth', 'crystal', 'garden']
+      ..unlockedRoomIds = {'nest', 'hearth', 'crystal', 'garden'}
+      ..activeRoomId = 'hearth'
+      ..chestInventory[ChestTier.portrait] = 2
+      ..chestInventory[ChestTier.title] = 2
+      ..ownedPortraitIds =
+          profilePortraitCatalog.take(8).map((portrait) => portrait.id).toSet()
+      ..selectedPortraitId = profilePortraitCatalog.first.id
+      ..ownedTitleIds =
+          accountTitleCatalog.take(8).map((title) => title.id).toSet()
+      ..selectedTitleId = accountTitleCatalog.first.id
+      ..relicInventory = {
+        for (final relic in MysticRelic.values) relic: 1,
+      }
+      ..pendingPresentations = [];
+    provider._ensureFavoriteDragon();
+    provider._normalizeRoamingState();
     return provider;
   }
 
@@ -283,6 +380,17 @@ class HouseholdProvider extends ChangeNotifier {
     );
     incubatingEgg = null;
     tutorialCompleted = false;
+    final commonPortraits = profilePortraitCatalog
+        .where((portrait) => portrait.rarity == PortraitRarity.common)
+        .toList(growable: false);
+    final starterPortrait =
+        commonPortraits[_random.nextInt(commonPortraits.length)];
+    ownedPortraitIds = {starterPortrait.id};
+    selectedPortraitId = starterPortrait.id;
+    final starterTitle =
+        accountTitleCatalog[_random.nextInt(accountTitleCatalog.length)];
+    ownedTitleIds = {starterTitle.id};
+    selectedTitleId = starterTitle.id;
     unlockedRoomIds = {'nest', 'hearth'};
     towerFloorRoomIds = ['hearth'];
     activities = [
@@ -430,13 +538,20 @@ class HouseholdProvider extends ChangeNotifier {
     totalWyrmling = dragonLineages.length;
     totalAscended = dragonLineages.length * TrainingFocus.values.length;
     totalChestsOpened = 250;
-    totalAdventuresCompleted = 250;
+    totalPortraitChestsOpened = 1;
+    totalTitleChestsOpened = 1;
+    totalAdventuresCompleted = 1000;
     totalShortAdventuresCompleted = 100;
     totalGroupFourCompleted = 10;
     totalReleasedReturns = 20;
     totalSinisterAdventuresCompleted = 5;
     chestInventory = {for (final tier in ChestTier.values) tier: 25};
     relicInventory = {for (final relic in MysticRelic.values) relic: 3};
+    ownedPortraitIds =
+        profilePortraitCatalog.map((portrait) => portrait.id).toSet();
+    selectedPortraitId = profilePortraitCatalog.last.id;
+    ownedTitleIds = accountTitleCatalog.map((title) => title.id).toSet();
+    selectedTitleId = accountTitleCatalog.last.id;
     for (final dragon in dragons) {
       dragon
         ..lawAxisKnown = true
@@ -563,6 +678,36 @@ class HouseholdProvider extends ChangeNotifier {
       for (final relic in MysticRelic.values)
         relic: nonNegativeIntFromJson(rawRelics[relic.name], fallback: 0),
     };
+    ownedPortraitIds = stringSetFromJson(data['ownedPortraitIds'])
+        .where((id) => profilePortraitById(id) != null)
+        .toSet();
+    final storedPortraitId = stringFromJson(data['selectedPortraitId']);
+    selectedPortraitId =
+        ownedPortraitIds.contains(storedPortraitId) ? storedPortraitId : null;
+    if (ownedPortraitIds.isEmpty) {
+      final commonPortraits = profilePortraitCatalog
+          .where((portrait) => portrait.rarity == PortraitRarity.common)
+          .toList(growable: false);
+      final starter = commonPortraits[_random.nextInt(commonPortraits.length)];
+      ownedPortraitIds.add(starter.id);
+      selectedPortraitId = starter.id;
+    } else {
+      selectedPortraitId ??= ownedPortraitIds.first;
+    }
+    ownedTitleIds = stringSetFromJson(data['ownedTitleIds'])
+        .where((id) => accountTitleById(id) != null)
+        .toSet();
+    final storedTitleId = stringFromJson(data['selectedTitleId']);
+    selectedTitleId =
+        ownedTitleIds.contains(storedTitleId) ? storedTitleId : null;
+    if (ownedTitleIds.isEmpty) {
+      final starter =
+          accountTitleCatalog[_random.nextInt(accountTitleCatalog.length)];
+      ownedTitleIds.add(starter.id);
+      selectedTitleId = starter.id;
+    } else {
+      selectedTitleId ??= ownedTitleIds.first;
+    }
     discoveredForms = stringSetFromJson(data['discoveredForms']);
     prismaticForms = stringSetFromJson(data['prismaticForms']);
     unlockedAchievementIds = stringSetFromJson(data['achievements']);
@@ -581,6 +726,10 @@ class HouseholdProvider extends ChangeNotifier {
         fallback: pet.stage == DragonStage.ascended ? 1 : 0);
     totalChestsOpened =
         nonNegativeIntFromJson(data['totalChestsOpened'], fallback: 0);
+    totalPortraitChestsOpened =
+        nonNegativeIntFromJson(data['totalPortraitChestsOpened'], fallback: 0);
+    totalTitleChestsOpened =
+        nonNegativeIntFromJson(data['totalTitleChestsOpened'], fallback: 0);
     totalAdventuresCompleted =
         nonNegativeIntFromJson(data['totalAdventuresCompleted'], fallback: 0);
     totalShortAdventuresCompleted = nonNegativeIntFromJson(
@@ -593,6 +742,15 @@ class HouseholdProvider extends ChangeNotifier {
     totalSinisterAdventuresCompleted = nonNegativeIntFromJson(
         data['totalSinisterAdventuresCompleted'],
         fallback: 0);
+    favoriteChanges =
+        nonNegativeIntFromJson(data['favoriteChanges'], fallback: 0);
+    final restoredSchema = nonNegativeIntFromJson(
+      data['schemaVersion'],
+      fallback: 0,
+    );
+    if (restoredSchema < 32 && favoriteChanges == 0) {
+      unlockedAchievementIds.remove('not_picking_favorites');
+    }
     adventureRuns = mapsFromJson(data['adventureRuns'])
         .map(AdventureRun.fromJson)
         .where((run) => AdventureCatalog.byId.containsKey(run.adventureId))
@@ -724,6 +882,79 @@ class HouseholdProvider extends ChangeNotifier {
   int get totalChestCount => chestInventory.values.fold(0, (a, b) => a + b);
   int relicCount(MysticRelic relic) => relicInventory[relic] ?? 0;
   int get totalRelicCount => relicInventory.values.fold(0, (a, b) => a + b);
+  ProfilePortrait? get selectedPortrait =>
+      profilePortraitById(selectedPortraitId);
+  int get portraitCount => ownedPortraitIds.length;
+  bool get hasEveryPortrait =>
+      ownedPortraitIds.length >= profilePortraitCatalog.length;
+  AccountTitle? get selectedAccountTitle => accountTitleById(selectedTitleId);
+  int get titleCount => ownedTitleIds.length;
+  bool get hasEveryTitle => ownedTitleIds.length >= accountTitleCatalog.length;
+
+  Future<bool> selectProfilePortrait(String portraitId) async {
+    if (!ownedPortraitIds.contains(portraitId) ||
+        selectedPortraitId == portraitId) {
+      return false;
+    }
+    selectedPortraitId = portraitId;
+    await _notifyAndSave();
+    return true;
+  }
+
+  Future<bool> selectAccountTitle(String titleId) async {
+    if (!ownedTitleIds.contains(titleId) || selectedTitleId == titleId) {
+      return false;
+    }
+    selectedTitleId = titleId;
+    await _notifyAndSave();
+    return true;
+  }
+
+  Future<PortraitChestPurchaseResult> purchasePortraitChest() async {
+    if (hasEveryPortrait) {
+      return PortraitChestPurchaseResult.collectionComplete;
+    }
+    if (pet.gems < portraitChestGemPrice) {
+      return PortraitChestPurchaseResult.insufficientGems;
+    }
+    pet.gems -= portraitChestGemPrice;
+    chestInventory.update(
+      ChestTier.portrait,
+      (count) => count + 1,
+      ifAbsent: () => 1,
+    );
+    _addActivity(
+      message: 'A Portrait Chest was purchased.',
+      type: ActivityType.purchase,
+      code: ActivityCode.portraitChestPurchased,
+      subject: ChestTier.portrait.name,
+      gems: -portraitChestGemPrice,
+    );
+    await _notifyAndSave();
+    return PortraitChestPurchaseResult.purchased;
+  }
+
+  Future<TitleChestPurchaseResult> purchaseTitleChest() async {
+    if (hasEveryTitle) return TitleChestPurchaseResult.collectionComplete;
+    if (pet.coins < titleChestCoinPrice) {
+      return TitleChestPurchaseResult.insufficientCoins;
+    }
+    pet.coins -= titleChestCoinPrice;
+    chestInventory.update(
+      ChestTier.title,
+      (count) => count + 1,
+      ifAbsent: () => 1,
+    );
+    _addActivity(
+      message: 'A Title Chest was purchased.',
+      type: ActivityType.purchase,
+      code: ActivityCode.titleChestPurchased,
+      subject: ChestTier.title.name,
+      coins: -titleChestCoinPrice,
+    );
+    await _notifyAndSave();
+    return TitleChestPurchaseResult.purchased;
+  }
 
   bool isRelicKnownFor(MysticRelic relic, Pet dragon) => switch (relic) {
         MysticRelic.moralPrism => dragon.moralAxisKnown,
@@ -777,6 +1008,7 @@ class HouseholdProvider extends ChangeNotifier {
       ChestTier.silver => 0.04,
       ChestTier.gold => 0.12,
       ChestTier.dragon || ChestTier.mythical || ChestTier.sinister => 1.0,
+      ChestTier.portrait || ChestTier.title => 0.0,
     };
     final pityEligible = tier == ChestTier.wooden ||
         tier == ChestTier.silver ||
@@ -878,6 +1110,8 @@ class HouseholdProvider extends ChangeNotifier {
 
   Future<ChestReward?> openChest(ChestTier tier) async {
     if (chestCount(tier) <= 0) return null;
+    if (tier == ChestTier.portrait) return _openPortraitChest();
+    if (tier == ChestTier.title) return _openTitleChest();
     chestInventory[tier] = chestCount(tier) - 1;
     final coins = switch (tier) {
       ChestTier.wooden => 20 + _random.nextInt(21),
@@ -885,6 +1119,7 @@ class HouseholdProvider extends ChangeNotifier {
       ChestTier.gold => 90 + _random.nextInt(71),
       ChestTier.dragon => 180 + _random.nextInt(121),
       ChestTier.mythical || ChestTier.sinister => 400 + _random.nextInt(251),
+      ChestTier.portrait || ChestTier.title => 0,
     };
     final gems = switch (tier) {
       ChestTier.wooden => _random.nextDouble() < .25 ? 1 : 0,
@@ -894,6 +1129,7 @@ class HouseholdProvider extends ChangeNotifier {
       ChestTier.dragon =>
         _random.nextDouble() < .9 ? 4 + _random.nextInt(4) : 0,
       ChestTier.mythical || ChestTier.sinister => 8 + _random.nextInt(6),
+      ChestTier.portrait || ChestTier.title => 0,
     };
     final eggChance = eggDropChance(tier);
     final eggFound = _random.nextDouble() < eggChance;
@@ -932,6 +1168,60 @@ class HouseholdProvider extends ChangeNotifier {
         relicFound: relicFound);
   }
 
+  Future<ChestReward?> _openPortraitChest() async {
+    final remaining = profilePortraitCatalog
+        .where((portrait) => !ownedPortraitIds.contains(portrait.id))
+        .toList(growable: false);
+    if (remaining.isEmpty) return null;
+    final portrait = remaining[_random.nextInt(remaining.length)];
+    chestInventory[ChestTier.portrait] = chestCount(ChestTier.portrait) - 1;
+    ownedPortraitIds.add(portrait.id);
+    totalChestsOpened++;
+    totalPortraitChestsOpened++;
+    _addActivity(
+      message: 'A new account portrait was revealed.',
+      type: ActivityType.discovery,
+      code: ActivityCode.portraitRevealed,
+      subject: ChestTier.portrait.name,
+    );
+    _evaluateAchievements();
+    await _notifyAndSave();
+    return ChestReward(
+      tier: ChestTier.portrait,
+      coins: 0,
+      gems: 0,
+      eggFound: false,
+      portraitFound: portrait,
+    );
+  }
+
+  Future<ChestReward?> _openTitleChest() async {
+    final remaining = accountTitleCatalog
+        .where((title) => !ownedTitleIds.contains(title.id))
+        .toList(growable: false);
+    if (remaining.isEmpty) return null;
+    final title = remaining[_random.nextInt(remaining.length)];
+    chestInventory[ChestTier.title] = chestCount(ChestTier.title) - 1;
+    ownedTitleIds.add(title.id);
+    totalChestsOpened++;
+    totalTitleChestsOpened++;
+    _addActivity(
+      message: 'A new account title was revealed.',
+      type: ActivityType.discovery,
+      code: ActivityCode.titleRevealed,
+      subject: ChestTier.title.name,
+    );
+    _evaluateAchievements();
+    await _notifyAndSave();
+    return ChestReward(
+      tier: ChestTier.title,
+      coins: 0,
+      gems: 0,
+      eggFound: false,
+      titleFound: title,
+    );
+  }
+
   MysticRelic? _rollRelicDrop(ChestTier tier) {
     final chance = switch (tier) {
       ChestTier.wooden || ChestTier.silver => 0.0,
@@ -939,6 +1229,7 @@ class HouseholdProvider extends ChangeNotifier {
       ChestTier.dragon => .04,
       ChestTier.mythical => .09,
       ChestTier.sinister => .06,
+      ChestTier.portrait || ChestTier.title => 0.0,
     };
     if (_random.nextDouble() >= chance) return null;
     return MysticRelic.values[_random.nextInt(MysticRelic.values.length)];
@@ -1111,6 +1402,8 @@ class HouseholdProvider extends ChangeNotifier {
         'hello_little_one' => totalHatched,
         'first_flight' => totalShortAdventuresCompleted,
         'chest_expectations' => totalChestsOpened,
+        'profile_picture_perfect' => totalPortraitChestsOpened,
+        'highly_titled' => totalTitleChestsOpened,
         'room_to_roost' ||
         'halfway_clouds' ||
         'sky_ceiling' =>
@@ -1119,11 +1412,10 @@ class HouseholdProvider extends ChangeNotifier {
         'book_wyrm' || 'well_read_scaled' => discoveredCommonLineageCount,
         'scale_every_tale' => discoveredLineageCount,
         'growing_pains' => totalWyrmling,
-        'not_picking_favorites' =>
-          [pet, ...sanctuaryDragons].any((dragon) => dragon.favorite) ? 1 : 0,
+        'not_picking_favorites' => favoriteChanges,
         'ascension_day' => totalAscended,
         'something_spectral' => prismaticForms.isEmpty ? 0 : 1,
-        'frequent_flyer' => totalAdventuresCompleted,
+        'frequent_flyer' || 'are_we_there_yet' => totalAdventuresCompleted,
         'full_party' => totalGroupFourCompleted,
         'came_crawling_back' => totalReleasedReturns,
         'ghost_writer' =>
@@ -1164,15 +1456,13 @@ class HouseholdProvider extends ChangeNotifier {
       pet.gems -= item.price;
     }
     ownedItemIds.add(item.id);
-    _autoPlace(item);
     _addActivity(
-        message: '${item.name} was placed in ${activeRoom.id}.',
+        message: '${item.name} was purchased and stored in Inventory.',
         type: ActivityType.purchase,
-        code: ActivityCode.itemPlaced,
+        code: ActivityCode.itemPurchased,
         subject: item.id,
         coins: item.currency == ItemCurrency.coins ? -item.price : 0,
         gems: item.currency == ItemCurrency.gems ? -item.price : 0);
-    _evaluateAchievements();
     await _notifyAndSave();
     return PurchaseResult.purchased;
   }
@@ -1326,6 +1616,13 @@ class HouseholdProvider extends ChangeNotifier {
           .80,
           .97
         ],
+      ChestTier.portrait || ChestTier.title => const [
+          .75,
+          .95,
+          .995,
+          .9995,
+          .99999
+        ],
     };
     final rarity = roll < thresholds[0]
         ? DragonRarity.common
@@ -1471,6 +1768,10 @@ class HouseholdProvider extends ChangeNotifier {
       'relicInventory': {
         for (final entry in relicInventory.entries) entry.key.name: entry.value
       },
+      'ownedPortraitIds': ownedPortraitIds.toList(),
+      'selectedPortraitId': selectedPortraitId,
+      'ownedTitleIds': ownedTitleIds.toList(),
+      'selectedTitleId': selectedTitleId,
       'discoveredForms': discoveredForms.toList(),
       'prismaticForms': prismaticForms.toList(),
       'achievements': unlockedAchievementIds.toList(),
@@ -1481,11 +1782,14 @@ class HouseholdProvider extends ChangeNotifier {
       'totalWyrmling': totalWyrmling,
       'totalAscended': totalAscended,
       'totalChestsOpened': totalChestsOpened,
+      'totalPortraitChestsOpened': totalPortraitChestsOpened,
+      'totalTitleChestsOpened': totalTitleChestsOpened,
       'totalAdventuresCompleted': totalAdventuresCompleted,
       'totalShortAdventuresCompleted': totalShortAdventuresCompleted,
       'totalGroupFourCompleted': totalGroupFourCompleted,
       'totalReleasedReturns': totalReleasedReturns,
       'totalSinisterAdventuresCompleted': totalSinisterAdventuresCompleted,
+      'favoriteChanges': favoriteChanges,
       'adventureRuns': adventureRuns.map((run) => run.toJson()).toList(),
       'adventureOptionIds': {
         for (final entry in adventureOptionIds.entries)

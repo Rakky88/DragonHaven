@@ -21,7 +21,8 @@ class AchievementDefinition {
   final bool secret;
   final String badge;
 
-  String get badgeAsset => 'assets/images/achievements/$badge.png';
+  String get badgeAsset =>
+      'assets/images/achievements/$badge${badge.contains('.') ? '' : '.png'}';
 }
 
 const achievementCatalog = <AchievementDefinition>[
@@ -52,6 +53,28 @@ const achievementCatalog = <AchievementDefinition>[
       target: 1,
       category: AchievementCategory.easy,
       badge: 'first_chest'),
+  AchievementDefinition(
+      id: 'profile_picture_perfect',
+      titleEn: 'Profile Picture Perfect',
+      titleNl: 'Profielplaatje Perfect',
+      descriptionEn:
+          'Open your first Portrait Chest. Your account found its good side.',
+      descriptionNl:
+          'Open je eerste Portrait Chest. Je account heeft zijn beste kant gevonden.',
+      target: 1,
+      category: AchievementCategory.easy,
+      badge: 'portrait_premiere.webp'),
+  AchievementDefinition(
+      id: 'highly_titled',
+      titleEn: 'Highly Titled',
+      titleNl: 'Hooggetiteld',
+      descriptionEn:
+          'Open your first Title Chest. Try not to let it go to your head.',
+      descriptionNl:
+          'Open je eerste Title Chest. Laat het niet naar je hoofd stijgen.',
+      target: 1,
+      category: AchievementCategory.easy,
+      badge: 'title_unboxed.webp'),
   AchievementDefinition(
       id: 'room_to_roost',
       titleEn: 'Room to Roost',
@@ -92,8 +115,8 @@ const achievementCatalog = <AchievementDefinition>[
       id: 'not_picking_favorites',
       titleEn: 'Definitely Not Picking Favorites',
       titleNl: 'Zeker Geen Favorieten Kiezen',
-      descriptionEn: 'Mark a dragon as favorite.',
-      descriptionNl: 'Markeer een draak als favoriet.',
+      descriptionEn: 'Change your favorite dragon for the first time.',
+      descriptionNl: 'Verander voor het eerst je favoriete draak.',
       target: 1,
       category: AchievementCategory.easy,
       badge: 'favorite'),
@@ -128,8 +151,8 @@ const achievementCatalog = <AchievementDefinition>[
       id: 'well_read_scaled',
       titleEn: 'Well Read, Well Scaled',
       titleNl: 'Goed Gelezen, Goed Geschubd',
-      descriptionEn: 'Discover all 20 Common dragon families.',
-      descriptionNl: 'Ontdek alle 20 Common-drakenfamilies.',
+      descriptionEn: 'Discover 20 Common dragon families.',
+      descriptionNl: 'Ontdek 20 Common-drakenfamilies.',
       target: 20,
       category: AchievementCategory.challenging,
       badge: 'common_all'),
@@ -143,6 +166,15 @@ const achievementCatalog = <AchievementDefinition>[
       category: AchievementCategory.challenging,
       badge: 'fifty_flights'),
   AchievementDefinition(
+      id: 'are_we_there_yet',
+      titleEn: 'Are We There Yet?',
+      titleNl: 'Zijn We Er Al?',
+      descriptionEn: 'Complete 1,000 Adventures.',
+      descriptionNl: 'Voltooi 1.000 Adventures.',
+      target: 1000,
+      category: AchievementCategory.master,
+      badge: 'thousand_adventures.webp'),
+  AchievementDefinition(
       id: 'full_party',
       titleEn: 'Full Party, Full Send',
       titleNl: 'Volle Groep, Vol Erin',
@@ -155,8 +187,8 @@ const achievementCatalog = <AchievementDefinition>[
       id: 'came_crawling_back',
       titleEn: 'Look Who Came Crawling Back',
       titleNl: 'Kijk Wie Terug Kwam Kruipen',
-      descriptionEn: 'Receive a weekly visit from a released dragon.',
-      descriptionNl: 'Krijg wekelijks bezoek van een vrijgelaten draak.',
+      descriptionEn: 'Receive a visit from a released dragon.',
+      descriptionNl: 'Krijg bezoek van een vrijgelaten draak.',
       target: 1,
       category: AchievementCategory.challenging,
       badge: 'first_return'),
@@ -173,8 +205,8 @@ const achievementCatalog = <AchievementDefinition>[
       id: 'scale_every_tale',
       titleEn: 'A Scale for Every Tale',
       titleNl: 'Een Schub voor Elk Verhaal',
-      descriptionEn: 'Discover all 42 dragon families.',
-      descriptionNl: 'Ontdek alle 42 drakenfamilies.',
+      descriptionEn: 'Discover 42 dragon families.',
+      descriptionNl: 'Ontdek 42 drakenfamilies.',
       target: 42,
       category: AchievementCategory.master,
       badge: 'all_families'),

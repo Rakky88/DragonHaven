@@ -1,11 +1,14 @@
 import 'dart:io';
 
+import 'package:dragon_haven/l10n/app_strings.dart';
 import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/achievement.dart';
+import 'package:dragon_haven/models/account_title.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/day_phase.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/pet.dart';
+import 'package:dragon_haven/models/profile_portrait.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -65,7 +68,7 @@ void main() {
   });
 
   test('achievements have unique badges and use Common terminology', () {
-    expect(achievementCatalog, hasLength(20));
+    expect(achievementCatalog, hasLength(23));
     expect(
       achievementCatalog.map((achievement) => achievement.badge).toSet(),
       hasLength(achievementCatalog.length),
@@ -77,12 +80,77 @@ void main() {
     );
   });
 
-  test('all six chest tiers and all 24 personality traits exist', () {
-    expect(ChestTier.values, hasLength(6));
+  test('all eight chest tiers and all 24 personality traits exist', () {
+    expect(ChestTier.values, hasLength(8));
     expect(dragonPersonalityTraits, hasLength(24));
     expect(dragonPersonalityTraits.toSet(), hasLength(24));
     for (final entry in dragonPersonalityIncompatibilities.entries) {
       expect(dragonPersonalityIncompatibilities[entry.value], entry.key);
+    }
+  });
+
+  test('adventure chest odds match the published release table exactly', () {
+    const expected = <AdventureKind, Map<ChestTier, double>>{
+      AdventureKind.short: {
+        ChestTier.wooden: .20,
+        ChestTier.silver: .40,
+        ChestTier.gold: .30,
+        ChestTier.dragon: .095,
+        ChestTier.mythical: .005,
+      },
+      AdventureKind.long: {
+        ChestTier.gold: .75,
+        ChestTier.dragon: .23,
+        ChestTier.mythical: .02,
+      },
+      AdventureKind.group: {
+        ChestTier.gold: .70,
+        ChestTier.dragon: .25,
+        ChestTier.mythical: .05,
+      },
+    };
+    for (final entry in expected.entries) {
+      final chances = adventureChestChances[entry.key]!;
+      expect(
+        {for (final chance in chances) chance.tier: chance.probability},
+        entry.value,
+      );
+      expect(
+        chances.fold<double>(0, (sum, chance) => sum + chance.probability),
+        closeTo(1, .0000001),
+      );
+    }
+    expect(
+        adventureChestForRoll(AdventureKind.short, .19999), ChestTier.wooden);
+    expect(adventureChestForRoll(AdventureKind.short, .20), ChestTier.silver);
+    expect(adventureChestForRoll(AdventureKind.short, .9001), ChestTier.dragon);
+    expect(
+        adventureChestForRoll(AdventureKind.short, .999), ChestTier.mythical);
+  });
+
+  test('portrait catalog has the requested 100-sprite rarity distribution', () {
+    expect(profilePortraitCatalog, hasLength(100));
+    expect(profilePortraitCatalog.map((entry) => entry.id).toSet(),
+        hasLength(100));
+    int count(PortraitRarity rarity) =>
+        profilePortraitCatalog.where((entry) => entry.rarity == rarity).length;
+    expect(count(PortraitRarity.common), 88);
+    expect(count(PortraitRarity.rare), 5);
+    expect(count(PortraitRarity.veryRare), 3);
+    expect(count(PortraitRarity.legendary), 2);
+    expect(count(PortraitRarity.infernal), 1);
+    expect(count(PortraitRarity.mythical), 1);
+  });
+
+  test('title catalog contains 500 distinct localized account titles', () {
+    expect(accountTitleCatalog, hasLength(500));
+    expect(
+        accountTitleCatalog.map((title) => title.id).toSet(), hasLength(500));
+    for (final language in AppStrings.supportedLanguages.keys) {
+      final labels =
+          accountTitleCatalog.map((title) => title.label(language)).toSet();
+      expect(labels, hasLength(500), reason: language);
+      expect(labels.every((label) => label.trim().isNotEmpty), isTrue);
     }
   });
 

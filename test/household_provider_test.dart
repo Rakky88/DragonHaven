@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:dragon_haven/models/achievement.dart';
+import 'package:dragon_haven/models/account_title.dart';
 import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
@@ -10,6 +11,7 @@ import 'package:dragon_haven/models/game_presentation.dart';
 import 'package:dragon_haven/models/house.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
+import 'package:dragon_haven/models/profile_portrait.dart';
 import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/services/storage_service.dart';
@@ -35,6 +37,29 @@ void main() {
     expect(game.musicEnabled, isTrue);
     expect(game.soundEffectsEnabled, isTrue);
     expect(game.totalChestCount, 0);
+    expect(game.portraitCount, 1);
+    expect(game.selectedPortrait?.rarity, PortraitRarity.common);
+    expect(game.titleCount, 1);
+    expect(game.selectedAccountTitle, isNotNull);
+  });
+
+  test('release demo exposes portraits, Relics and three roaming dragons', () {
+    final game = HouseholdProvider.createReleaseDemo();
+    expect(game.onboardingComplete, isTrue);
+    expect(game.pet.isEgg, isFalse);
+    expect(game.chestCount(ChestTier.portrait), 2);
+    expect(game.chestCount(ChestTier.title), 2);
+    expect(game.portraitCount, 8);
+    expect(game.selectedPortrait, isNotNull);
+    expect(game.titleCount, 8);
+    expect(game.selectedAccountTitle, isNotNull);
+    expect(game.totalRelicCount, 3);
+    expect(
+      game.ownedDragons.where(
+        (dragon) => dragon.roamsTower && dragon.currentFloorIndex == 0,
+      ),
+      hasLength(3),
+    );
   });
 
   test('the emulator hatch demo starts with about three minutes remaining', () {
@@ -250,6 +275,7 @@ void main() {
     expect(game.eggDropChance(ChestTier.dragon), 1);
     expect(game.eggDropChance(ChestTier.mythical), 1);
     expect(game.eggDropChance(ChestTier.sinister), 1);
+    expect(game.eggDropChance(ChestTier.portrait), 0);
 
     game.eggStash.add(DragonEgg(
       id: 'pity-stash-egg',
@@ -447,9 +473,9 @@ void main() {
     expect(game.sanctuaryDragons.single.name, 'Nimbus');
   });
 
-  test('the achievement catalog has twenty unique humorous milestones', () {
-    expect(achievementCatalog, hasLength(20));
-    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(20));
+  test('the achievement catalog has 23 unique humorous milestones', () {
+    expect(achievementCatalog, hasLength(23));
+    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(23));
     expect(achievementCatalog.every((entry) => entry.target > 0), isTrue);
     expect(
         achievementCatalog.every((entry) =>
@@ -490,8 +516,200 @@ void main() {
         shopCatalog.firstWhere((item) => item.id == 'decor_aurora_orb');
     expect(await game.purchaseOrEquip(item), PurchaseResult.purchased);
     expect(game.owns(item), isTrue);
+    expect(game.isEquipped(item), isFalse);
+    expect(game.achievementProgress('feed_furniture'), 0);
+    expect(
+      await game.placeHouseItem(
+        item.id,
+        roomId: room.id,
+        x: .42,
+        y: .70,
+      ),
+      isTrue,
+    );
     expect(game.placementsForRoom(room.id).any((p) => p.itemId == item.id),
         isTrue);
+    expect(game.achievementProgress('feed_furniture'), 1);
+  });
+
+  test('Portrait Chests cost gems and reveal one unowned portrait on open',
+      () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: Random(808),
+    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, gems: 150);
+
+    expect(await game.purchasePortraitChest(),
+        PortraitChestPurchaseResult.purchased);
+    expect(game.pet.gems, 51);
+    expect(game.chestCount(ChestTier.portrait), 1);
+    expect(game.portraitCount, 0);
+
+    final reward = await game.openChest(ChestTier.portrait);
+    expect(reward?.portraitFound, isNotNull);
+    expect(reward?.coins, 0);
+    expect(reward?.gems, 0);
+    expect(reward?.eggFound, isFalse);
+    expect(game.portraitCount, 1);
+    expect(game.selectedPortrait, isNull);
+    expect(game.chestCount(ChestTier.portrait), 0);
+    expect(game.totalPortraitChestsOpened, 1);
+    expect(game.achievementProgress('profile_picture_perfect'), 1);
+    expect(game.unlockedAchievementIds, contains('profile_picture_perfect'));
+
+    final portrait = reward!.portraitFound!;
+    expect(await game.selectProfilePortrait(portrait.id), isTrue);
+    expect(game.selectedPortraitId, portrait.id);
+  });
+
+  test('a Portrait Chest remains closed after all portraits are collected',
+      () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    )
+      ..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, gems: 999)
+      ..ownedPortraitIds =
+          profilePortraitCatalog.map((portrait) => portrait.id).toSet()
+      ..chestInventory[ChestTier.portrait] = 1;
+
+    expect(await game.openChest(ChestTier.portrait), isNull);
+    expect(game.chestCount(ChestTier.portrait), 1);
+    expect(game.totalPortraitChestsOpened, 0);
+    expect(game.unlockedAchievementIds,
+        isNot(contains('profile_picture_perfect')));
+    expect(await game.purchasePortraitChest(),
+        PortraitChestPurchaseResult.collectionComplete);
+    expect(game.pet.gems, 999);
+  });
+
+  test(
+      'Title Chests cost coins and reveal one unowned title without selecting it',
+      () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: Random(810),
+    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, coins: 150);
+
+    expect(await game.purchaseTitleChest(), TitleChestPurchaseResult.purchased);
+    expect(game.pet.coins, 51);
+    expect(game.chestCount(ChestTier.title), 1);
+    expect(game.titleCount, 0);
+
+    final reward = await game.openChest(ChestTier.title);
+    expect(reward?.titleFound, isNotNull);
+    expect(reward?.coins, 0);
+    expect(reward?.gems, 0);
+    expect(reward?.eggFound, isFalse);
+    expect(game.titleCount, 1);
+    expect(game.selectedAccountTitle, isNull);
+    expect(game.chestCount(ChestTier.title), 0);
+    expect(game.totalTitleChestsOpened, 1);
+    expect(game.achievementProgress('highly_titled'), 1);
+    expect(game.unlockedAchievementIds, contains('highly_titled'));
+
+    final title = reward!.titleFound!;
+    expect(await game.selectAccountTitle(title.id), isTrue);
+    expect(game.selectedTitleId, title.id);
+  });
+
+  test('a Title Chest remains closed after all titles are collected', () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    )
+      ..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, coins: 999)
+      ..ownedTitleIds = accountTitleCatalog.map((title) => title.id).toSet()
+      ..chestInventory[ChestTier.title] = 1;
+
+    expect(await game.openChest(ChestTier.title), isNull);
+    expect(game.chestCount(ChestTier.title), 1);
+    expect(game.totalTitleChestsOpened, 0);
+    expect(game.unlockedAchievementIds, isNot(contains('highly_titled')));
+    expect(await game.purchaseTitleChest(),
+        TitleChestPurchaseResult.collectionComplete);
+    expect(game.pet.coins, 999);
+  });
+
+  test('favorite achievement starts only after the first actual switch',
+      () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    )..pet = Pet(
+        id: 'starter',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        favorite: true,
+      );
+    game.sanctuaryDragons.add(Pet(
+      id: 'second',
+      stage: DragonStage.hatchling,
+      firstEgg: false,
+    ));
+    expect(game.achievementProgress('not_picking_favorites'), 0);
+    await game.toggleFavorite('second');
+    expect(game.favoriteChanges, 1);
+    expect(game.achievementProgress('not_picking_favorites'), 1);
+  });
+
+  test('legacy automatic favorite achievement is removed during migration',
+      () async {
+    await StorageService.save({
+      'schemaVersion': 31,
+      'pet': Pet(
+        id: 'legacy-favorite',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        favorite: true,
+      ).toJson(),
+      'achievements': ['not_picking_favorites'],
+    });
+
+    final restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.favoriteChanges, 0);
+    expect(restored.unlockedAchievementIds,
+        isNot(contains('not_picking_favorites')));
+  });
+
+  test('portrait collection and chosen account portrait persist', () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      random: Random(809),
+    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, gems: 150);
+    expect(await game.purchasePortraitChest(),
+        PortraitChestPurchaseResult.purchased);
+    final reward = await game.openChest(ChestTier.portrait);
+    expect(reward?.portraitFound, isNotNull);
+    await game.selectProfilePortrait(reward!.portraitFound!.id);
+
+    final restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.ownedPortraitIds, contains(reward.portraitFound!.id));
+    expect(restored.selectedPortraitId, reward.portraitFound!.id);
+    expect(restored.pet.gems, 51);
+    expect(restored.totalPortraitChestsOpened, 1);
+    expect(
+        restored.unlockedAchievementIds, contains('profile_picture_perfect'));
+  });
+
+  test('title collection and chosen account title persist', () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      random: Random(811),
+    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, coins: 150);
+    expect(await game.purchaseTitleChest(), TitleChestPurchaseResult.purchased);
+    final reward = await game.openChest(ChestTier.title);
+    expect(reward?.titleFound, isNotNull);
+    await game.selectAccountTitle(reward!.titleFound!.id);
+
+    final restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.ownedTitleIds, contains(reward.titleFound!.id));
+    expect(restored.selectedTitleId, reward.titleFound!.id);
+    expect(restored.pet.coins, 51);
+    expect(restored.totalTitleChestsOpened, 1);
+    expect(restored.unlockedAchievementIds, contains('highly_titled'));
   });
 
   test('Tower floor construction and repair prices are ten times higher',

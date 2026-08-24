@@ -36,4 +36,7 @@ extension MysticRelicPresentation on MysticRelic {
         MysticRelic.orderCompass => 'order_compass',
         MysticRelic.soulMirror => 'soul_mirror',
       }}.png';
+
+  String animationFrameAsset(int frame) =>
+      'assets/images/relics/animations/$name/frame_${frame.toString().padLeft(2, '0')}.webp';
 }

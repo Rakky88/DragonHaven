@@ -5,6 +5,49 @@ enum AdventureKind { mini, short, long, group, special }
 
 enum AdventureRunStatus { running, rewardReady }
 
+class AdventureChestChance {
+  const AdventureChestChance(this.tier, this.probability);
+
+  final ChestTier tier;
+  final double probability;
+}
+
+const adventureChestChances = <AdventureKind, List<AdventureChestChance>>{
+  AdventureKind.mini: [
+    AdventureChestChance(ChestTier.wooden, 1),
+  ],
+  AdventureKind.short: [
+    AdventureChestChance(ChestTier.wooden, .20),
+    AdventureChestChance(ChestTier.silver, .40),
+    AdventureChestChance(ChestTier.gold, .30),
+    AdventureChestChance(ChestTier.dragon, .095),
+    AdventureChestChance(ChestTier.mythical, .005),
+  ],
+  AdventureKind.long: [
+    AdventureChestChance(ChestTier.gold, .75),
+    AdventureChestChance(ChestTier.dragon, .23),
+    AdventureChestChance(ChestTier.mythical, .02),
+  ],
+  AdventureKind.group: [
+    AdventureChestChance(ChestTier.gold, .70),
+    AdventureChestChance(ChestTier.dragon, .25),
+    AdventureChestChance(ChestTier.mythical, .05),
+  ],
+  AdventureKind.special: [
+    AdventureChestChance(ChestTier.gold, 1),
+  ],
+};
+
+ChestTier adventureChestForRoll(AdventureKind kind, double roll) {
+  final chances = adventureChestChances[kind]!;
+  var cumulative = 0.0;
+  for (final chance in chances) {
+    cumulative += chance.probability;
+    if (roll < cumulative) return chance.tier;
+  }
+  return chances.last.tier;
+}
+
 class AdventureRequirements {
   const AdventureRequirements({
     this.players = 1,

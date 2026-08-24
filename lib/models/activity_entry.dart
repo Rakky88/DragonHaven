@@ -10,7 +10,12 @@ enum ActivityCode {
   hatched,
   evolved,
   achievement,
+  itemPurchased,
   itemPlaced,
+  portraitChestPurchased,
+  portraitRevealed,
+  titleChestPurchased,
+  titleRevealed,
   legacy,
 }
 
@@ -73,7 +78,14 @@ class ActivityEntry {
   static ActivityType _activityTypeFor(ActivityCode code) => switch (code) {
         ActivityCode.activityCompleted => ActivityType.explore,
         ActivityCode.bonusFound => ActivityType.discovery,
-        ActivityCode.itemPlaced => ActivityType.purchase,
+        ActivityCode.itemPurchased ||
+        ActivityCode.itemPlaced ||
+        ActivityCode.portraitChestPurchased ||
+        ActivityCode.titleChestPurchased =>
+          ActivityType.purchase,
+        ActivityCode.portraitRevealed ||
+        ActivityCode.titleRevealed =>
+          ActivityType.discovery,
         ActivityCode.welcome ||
         ActivityCode.chestOpened ||
         ActivityCode.hatched ||

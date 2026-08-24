@@ -399,8 +399,8 @@ class _ShopItemCard extends StatelessWidget {
     final itemName = strings.itemName(item);
     final message = switch (result) {
       PurchaseResult.purchased => strings.pick(
-          '$itemName purchased and placed in $roomName!',
-          '$itemName gekocht en in $roomName geplaatst!'),
+          '$itemName purchased and stored in Inventory.',
+          '$itemName gekocht en in Inventory gezet.'),
       PurchaseResult.equipped => strings.pick(
           '$itemName is now in $roomName.', '$itemName staat nu in $roomName.'),
       PurchaseResult.insufficientCoins => strings.pick(

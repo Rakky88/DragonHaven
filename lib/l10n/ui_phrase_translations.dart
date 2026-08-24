@@ -149,17 +149,18 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
       '$total個中$owned個を収集'
     ]);
   }
-  final unlockedCount = RegExp(r'^(\d+) / 20 unlocked$').firstMatch(text);
+  final unlockedCount = RegExp(r'^(\d+) / (\d+) unlocked$').firstMatch(text);
   if (unlockedCount != null) {
     final count = unlockedCount.group(1);
+    final total = unlockedCount.group(2);
     return _localized(languageCode, [
-      '$count / 20 freigeschaltet',
-      '$count / 20 desbloqueados',
-      '$count / 20 débloqués',
-      '$count / 20 sbloccati',
-      '$count / 20 desbloqueadas',
-      '已解锁 $count / 20',
-      '解除済み $count / 20'
+      '$count / $total freigeschaltet',
+      '$count / $total desbloqueados',
+      '$count / $total débloqués',
+      '$count / $total sbloccati',
+      '$count / $total desbloqueadas',
+      '已解锁 $count / $total',
+      '解除済み $count / $total'
     ]);
   }
   value = capture(RegExp(r'^(\d+) more coins needed\.$'));
@@ -4032,5 +4033,295 @@ const uiPhraseTranslations = <String, List<String>>{
     'Pular animação de evolução',
     '跳过进化动画',
     '進化アニメーションをスキップ'
+  ],
+  'Portraits': [
+    'Porträts',
+    'Retratos',
+    'Portraits',
+    'Ritratti',
+    'Retratos',
+    '头像',
+    'ポートレート'
+  ],
+  'Account portrait': [
+    'Kontoporträt',
+    'Retrato de cuenta',
+    'Portrait du compte',
+    'Ritratto account',
+    'Retrato da conta',
+    '账号头像',
+    'アカウントポートレート'
+  ],
+  'No portraits collected yet': [
+    'Noch keine Porträts gesammelt',
+    'Aún no has conseguido retratos',
+    'Aucun portrait collectionné',
+    'Nessun ritratto raccolto',
+    'Nenhum retrato coletado',
+    '尚未收集头像',
+    'ポートレートはまだありません'
+  ],
+  'Portrait Chests cost 99 gems in the Shop and always reveal a portrait you do not own yet.':
+      [
+    'Porträttruhen kosten im Shop 99 Edelsteine und enthüllen immer ein Porträt, das du noch nicht besitzt.',
+    'Los cofres de retrato cuestan 99 gemas en la tienda y siempre revelan un retrato que aún no tienes.',
+    'Les coffres de portrait coûtent 99 gemmes dans la boutique et révèlent toujours un portrait inédit.',
+    'I forzieri ritratto costano 99 gemme nel negozio e rivelano sempre un ritratto che non possiedi.',
+    'Baús de retrato custam 99 gemas na Loja e sempre revelam um retrato que você ainda não possui.',
+    '肖像宝箱在商店售价99宝石，并且一定会开出你尚未拥有的头像。',
+    'ポートレートチェストはショップで99ジェム。未所持のポートレートが必ず出ます。'
+  ],
+  'Choose account portrait': [
+    'Kontoporträt wählen',
+    'Elegir retrato de cuenta',
+    'Choisir le portrait du compte',
+    'Scegli ritratto account',
+    'Escolher retrato da conta',
+    '选择账号头像',
+    'アカウントポートレートを選択'
+  ],
+  'Coins': ['Münzen', 'Monedas', 'Pièces', 'Monete', 'Moedas', '金币', 'コイン'],
+  'Gems': ['Edelsteine', 'Gemas', 'Gemmes', 'Gemme', 'Gemas', '宝石', 'ジェム'],
+  'Buy': ['Kaufen', 'Comprar', 'Acheter', 'Acquista', 'Comprar', '购买', '購入'],
+  'No coin chests yet': [
+    'Noch keine Münztruhen',
+    'Aún no hay cofres de monedas',
+    'Pas encore de coffres à pièces',
+    'Nessun forziere monete per ora',
+    'Ainda não há baús de moedas',
+    '暂无金币宝箱',
+    'コイン用チェストはまだありません'
+  ],
+  'Special chests may be added here in a future update.': [
+    'In einem zukünftigen Update können hier besondere Truhen erscheinen.',
+    'En una futura actualización podrán aparecer cofres especiales aquí.',
+    'Des coffres spéciaux pourront être ajoutés ici ultérieurement.',
+    'In futuro potranno essere aggiunti forzieri speciali qui.',
+    'Baús especiais poderão ser adicionados aqui futuramente.',
+    '未来更新可能会在这里加入特殊宝箱。',
+    '今後のアップデートで特別なチェストが追加される予定です。'
+  ],
+  'Contains one random portrait you do not own. Its contents are decided only when opened.':
+      [
+    'Enthält ein zufälliges Porträt, das du noch nicht besitzt. Der Inhalt wird erst beim Öffnen bestimmt.',
+    'Contiene un retrato aleatorio que no tienes. El contenido se decide al abrirlo.',
+    'Contient un portrait aléatoire inédit. Son contenu est déterminé à l’ouverture.',
+    'Contiene un ritratto casuale che non possiedi. Il contenuto viene deciso solo all’apertura.',
+    'Contém um retrato aleatório que você ainda não possui. O conteúdo só é decidido ao abrir.',
+    '包含一个随机的未拥有头像，内容只在开启时决定。',
+    '未所持のポートレートが1つ入っています。中身は開封時に決まります。'
+  ],
+  'Collection complete': [
+    'Sammlung vollständig',
+    'Colección completa',
+    'Collection complète',
+    'Collezione completa',
+    'Coleção completa',
+    '收藏完成',
+    'コレクション完成'
+  ],
+  'Portrait Chest added to your Inventory.': [
+    'Porträttruhe zum Inventar hinzugefügt.',
+    'Cofre de retrato añadido al Inventario.',
+    'Coffre de portrait ajouté à l’Inventaire.',
+    'Forziere ritratto aggiunto all’Inventario.',
+    'Baú de retrato adicionado ao Inventário.',
+    '肖像宝箱已加入物品栏。',
+    'ポートレートチェストをインベントリに追加しました。'
+  ],
+  'You already own all 100 portraits.': [
+    'Du besitzt bereits alle 100 Porträts.',
+    'Ya tienes los 100 retratos.',
+    'Tu possèdes déjà les 100 portraits.',
+    'Possiedi già tutti e 100 i ritratti.',
+    'Você já possui todos os 100 retratos.',
+    '你已经拥有全部100个头像。',
+    '100種類すべてのポートレートを所持しています。'
+  ],
+  'You already own all 100 portraits, so another Portrait Chest cannot be purchased.':
+      [
+    'Du besitzt bereits alle 100 Porträts, daher kann keine weitere Porträttruhe gekauft werden.',
+    'Ya tienes los 100 retratos, así que no puedes comprar otro cofre de retrato.',
+    'Tu possèdes déjà les 100 portraits, il est donc impossible d’acheter un autre coffre de portrait.',
+    'Possiedi già tutti e 100 i ritratti, quindi non puoi acquistare un altro forziere ritratto.',
+    'Você já possui todos os 100 retratos, então não pode comprar outro baú de retrato.',
+    '你已经拥有全部100个头像，因此无法再购买肖像宝箱。',
+    '100種類すべてを所持しているため、追加のポートレートチェストは購入できません。'
+  ],
+  'Portrait revealed': [
+    'Porträt enthüllt',
+    'Retrato revelado',
+    'Portrait révélé',
+    'Ritratto rivelato',
+    'Retrato revelado',
+    '头像已揭晓',
+    'ポートレート出現'
+  ],
+  'Added to your portrait collection': [
+    'Deiner Porträtsammlung hinzugefügt',
+    'Añadido a tu colección de retratos',
+    'Ajouté à ta collection de portraits',
+    'Aggiunto alla tua collezione di ritratti',
+    'Adicionado à sua coleção de retratos',
+    '已加入头像收藏',
+    'ポートレートコレクションに追加しました'
+  ],
+  'Portrait collection complete': [
+    'Porträtsammlung vollständig',
+    'Colección de retratos completa',
+    'Collection de portraits complète',
+    'Collezione ritratti completa',
+    'Coleção de retratos completa',
+    '头像收藏完成',
+    'ポートレートコレクション完成'
+  ],
+  'You already own all 100 portraits. This Portrait Chest stays safely in your Inventory and cannot be opened.':
+      [
+    'Du besitzt bereits alle 100 Porträts. Diese Porträttruhe bleibt sicher im Inventar und kann nicht geöffnet werden.',
+    'Ya tienes los 100 retratos. Este cofre permanece a salvo en tu Inventario y no puede abrirse.',
+    'Tu possèdes déjà les 100 portraits. Ce coffre reste dans ton Inventaire et ne peut pas être ouvert.',
+    'Possiedi già tutti e 100 i ritratti. Il forziere rimane al sicuro nell’Inventario e non può essere aperto.',
+    'Você já possui todos os 100 retratos. Este baú fica seguro no Inventário e não pode ser aberto.',
+    '你已经拥有全部100个头像。该肖像宝箱会安全保留在物品栏中，无法开启。',
+    '100種類すべてを所持しているため、このチェストはインベントリに残り、開封できません。'
+  ],
+  'Portrait Chest': [
+    'Porträttruhe',
+    'Cofre de retrato',
+    'Coffre de portrait',
+    'Forziere ritratto',
+    'Baú de retrato',
+    '肖像宝箱',
+    'ポートレートチェスト'
+  ],
+  'Infernal': [
+    'Infernalisch',
+    'Infernal',
+    'Infernal',
+    'Infernale',
+    'Infernal',
+    '炼狱',
+    'インファーナル'
+  ],
+  'A Portrait Chest is waiting in your Inventory.': [
+    'Eine Porträttruhe wartet in deinem Inventar.',
+    'Hay un cofre de retrato esperando en tu Inventario.',
+    'Un coffre de portrait t’attend dans ton Inventaire.',
+    'Un forziere ritratto ti aspetta nell’Inventario.',
+    'Um baú de retrato está esperando no seu Inventário.',
+    '一个肖像宝箱正在物品栏中等着你。',
+    'ポートレートチェストがインベントリで待っています。'
+  ],
+  'A new account portrait joined your collection.': [
+    'Ein neues Kontoporträt wurde deiner Sammlung hinzugefügt.',
+    'Un nuevo retrato de cuenta se unió a tu colección.',
+    'Un nouveau portrait de compte a rejoint ta collection.',
+    'Un nuovo ritratto account si è aggiunto alla collezione.',
+    'Um novo retrato de conta entrou na sua coleção.',
+    '一个新的账号头像已加入收藏。',
+    '新しいアカウントポートレートがコレクションに加わりました。'
+  ],
+  'Titles': ['Titel', 'Títulos', 'Titres', 'Titoli', 'Títulos', '称号', '称号'],
+  'Choose account title': [
+    'Kontotitel wählen',
+    'Elegir título de cuenta',
+    'Choisir le titre du compte',
+    'Scegli il titolo dell’account',
+    'Escolher título da conta',
+    '选择账号称号',
+    'アカウント称号を選択'
+  ],
+  'Title Chest': [
+    'Titeltruhe',
+    'Cofre de títulos',
+    'Coffre de titres',
+    'Forziere dei titoli',
+    'Baú de títulos',
+    '称号宝箱',
+    '称号チェスト'
+  ],
+  'Contains one random account title you do not own. Its contents are decided only when opened.':
+      [
+    'Enthält einen zufälligen Kontotitel, den du noch nicht besitzt. Der Inhalt wird erst beim Öffnen bestimmt.',
+    'Contiene un título de cuenta aleatorio que aún no tienes. El contenido se decide al abrirlo.',
+    'Contient un titre de compte aléatoire que tu ne possèdes pas. Son contenu est déterminé à l’ouverture.',
+    'Contiene un titolo account casuale che non possiedi. Il contenuto viene deciso solo all’apertura.',
+    'Contém um título de conta aleatório que você ainda não possui. O conteúdo é definido apenas ao abrir.',
+    '包含一个你尚未拥有的随机账号称号，内容仅在开启时决定。',
+    '未所持のアカウント称号が1つランダムで入っています。内容は開封時に決まります。'
+  ],
+  'Title Chest added to your Inventory.': [
+    'Titeltruhe deinem Inventar hinzugefügt.',
+    'Cofre de títulos añadido a tu Inventario.',
+    'Coffre de titres ajouté à ton Inventaire.',
+    'Forziere dei titoli aggiunto all’Inventario.',
+    'Baú de títulos adicionado ao Inventário.',
+    '称号宝箱已加入物品栏。',
+    '称号チェストをインベントリに追加しました。'
+  ],
+  'You already own all 500 account titles, so another Title Chest cannot be purchased.':
+      [
+    'Du besitzt bereits alle 500 Kontotitel, daher kann keine weitere Titeltruhe gekauft werden.',
+    'Ya tienes los 500 títulos de cuenta, así que no puedes comprar otro cofre de títulos.',
+    'Tu possèdes déjà les 500 titres de compte, il est donc impossible d’acheter un autre coffre de titres.',
+    'Possiedi già tutti i 500 titoli account, quindi non puoi acquistare un altro forziere dei titoli.',
+    'Você já possui todos os 500 títulos de conta, então não pode comprar outro baú de títulos.',
+    '你已经拥有全部500个账号称号，因此无法再购买称号宝箱。',
+    '500種類すべてのアカウント称号を所持しているため、追加の称号チェストは購入できません。'
+  ],
+  'Title revealed': [
+    'Titel enthüllt',
+    'Título revelado',
+    'Titre révélé',
+    'Titolo rivelato',
+    'Título revelado',
+    '称号已揭晓',
+    '称号出現'
+  ],
+  'Added to your title collection': [
+    'Deiner Titelsammlung hinzugefügt',
+    'Añadido a tu colección de títulos',
+    'Ajouté à ta collection de titres',
+    'Aggiunto alla tua collezione di titoli',
+    'Adicionado à sua coleção de títulos',
+    '已加入称号收藏',
+    '称号コレクションに追加しました'
+  ],
+  'Title collection complete': [
+    'Titelsammlung vollständig',
+    'Colección de títulos completa',
+    'Collection de titres complète',
+    'Collezione titoli completa',
+    'Coleção de títulos completa',
+    '称号收藏完成',
+    '称号コレクション完成'
+  ],
+  'You already own all 500 account titles. This Title Chest stays safely in your Inventory and cannot be opened.':
+      [
+    'Du besitzt bereits alle 500 Kontotitel. Diese Titeltruhe bleibt sicher im Inventar und kann nicht geöffnet werden.',
+    'Ya tienes los 500 títulos de cuenta. Este cofre permanece a salvo en tu Inventario y no puede abrirse.',
+    'Tu possèdes déjà les 500 titres de compte. Ce coffre reste dans ton Inventaire et ne peut pas être ouvert.',
+    'Possiedi già tutti i 500 titoli account. Il forziere rimane al sicuro nell’Inventario e non può essere aperto.',
+    'Você já possui todos os 500 títulos de conta. Este baú fica seguro no Inventário e não pode ser aberto.',
+    '你已经拥有全部500个账号称号。该称号宝箱会安全保留在物品栏中，无法开启。',
+    '500種類すべてのアカウント称号を所持しているため、このチェストはインベントリに残り、開封できません。'
+  ],
+  'A Title Chest is waiting in your Inventory.': [
+    'Eine Titeltruhe wartet in deinem Inventar.',
+    'Hay un cofre de títulos esperando en tu Inventario.',
+    'Un coffre de titres t’attend dans ton Inventaire.',
+    'Un forziere dei titoli ti aspetta nell’Inventario.',
+    'Um baú de títulos está esperando no seu Inventário.',
+    '一个称号宝箱正在物品栏中等着你。',
+    '称号チェストがインベントリで待っています。'
+  ],
+  'A new account title joined your collection.': [
+    'Ein neuer Kontotitel wurde deiner Sammlung hinzugefügt.',
+    'Un nuevo título de cuenta se unió a tu colección.',
+    'Un nouveau titre de compte a rejoint ta collection.',
+    'Un nuovo titolo account si è aggiunto alla collezione.',
+    'Um novo título de conta entrou na sua coleção.',
+    '一个新的账号称号已加入收藏。',
+    '新しいアカウント称号がコレクションに加わりました。'
   ],
 };

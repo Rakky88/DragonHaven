@@ -13,7 +13,7 @@ import 'screens/achievements_screen.dart';
 import 'screens/adventure_hub_screen.dart';
 import 'screens/dragon_tower_screen.dart';
 import 'screens/friends_screen.dart';
-import 'screens/haven_shop_screen.dart';
+import 'screens/shop_hub_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/pet_screen.dart';
 import 'screens/inventory_screen.dart';
@@ -243,7 +243,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       const AdventureHubScreen(),
       const DragonTowerScreen(),
       const InventoryScreen(),
-      const HavenShopScreen(),
+      const ShopHubScreen(),
     ];
     return Scaffold(
       appBar: AppBar(
@@ -334,7 +334,8 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                 child: _MenuRow(
                     icon: Icons.emoji_events_rounded,
                     label: strings.tr('achievements'),
-                    trailing: '${game.unlockedAchievementIds.length}/20'),
+                    trailing:
+                        '${game.unlockedAchievementIds.length}/${achievementCatalog.length}'),
               ),
               PopupMenuItem(
                 key: const Key('app-menu-tutorial'),

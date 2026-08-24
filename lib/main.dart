@@ -19,6 +19,7 @@ Future<void> main() async {
     return;
   }
   const showcase = bool.fromEnvironment('DRAGONHAVEN_SHOWCASE');
+  const releaseDemo = bool.fromEnvironment('DRAGONHAVEN_RELEASE_DEMO');
   const lockedCodexAudit =
       bool.fromEnvironment('DRAGONHAVEN_CODEX_AUDIT_LOCKED');
   const hatchDemo = bool.fromEnvironment('DRAGONHAVEN_HATCH_DEMO');
@@ -28,17 +29,19 @@ Future<void> main() async {
   );
   const evolutionDemo = bool.fromEnvironment('DRAGONHAVEN_EVOLUTION_DEMO');
   const nestDemo = bool.fromEnvironment('DRAGONHAVEN_NEST_DEMO');
-  final game = evolutionDemo
-      ? HouseholdProvider.createEvolutionDemo()
-      : nestDemo
-          ? HouseholdProvider.createNestDemo()
-          : hatchDemo
-              ? HouseholdProvider.createHatchDemo(
-                  countdown: Duration(seconds: hatchDemoSeconds),
-                )
-              : showcase
-                  ? HouseholdProvider.createShowcase()
-                  : await HouseholdProvider.loadFromStorage();
+  final game = releaseDemo
+      ? HouseholdProvider.createReleaseDemo()
+      : evolutionDemo
+          ? HouseholdProvider.createEvolutionDemo()
+          : nestDemo
+              ? HouseholdProvider.createNestDemo()
+              : hatchDemo
+                  ? HouseholdProvider.createHatchDemo(
+                      countdown: Duration(seconds: hatchDemoSeconds),
+                    )
+                  : showcase
+                      ? HouseholdProvider.createShowcase()
+                      : await HouseholdProvider.loadFromStorage();
   if (evolutionDemo) await game.refreshForCurrentDate();
   if (showcase && lockedCodexAudit) {
     game.discoveredForms.clear();

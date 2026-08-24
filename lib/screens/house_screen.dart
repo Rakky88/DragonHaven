@@ -40,7 +40,7 @@ class _HouseScreenState extends State<HouseScreen> {
 
   final _random = Random();
   Timer? _wanderTimer;
-  Offset _dragonPosition = const Offset(0.52, 0.72);
+  Offset _dragonPosition = const Offset(0.24, 0.76);
   Duration _dragonMoveDuration = _wanderMoveDuration;
   bool _facingRight = true;
   int _wanderStep = 0;
@@ -94,8 +94,8 @@ class _HouseScreenState extends State<HouseScreen> {
       }
       _moveDragonTo(
         Offset(
-          0.20 + _random.nextDouble() * 0.60,
-          0.62 + _random.nextDouble() * 0.18,
+          0.14 + _random.nextDouble() * 0.72,
+          0.60 + _random.nextDouble() * 0.23,
         ),
         duration: _wanderMoveDuration,
       );
@@ -149,10 +149,7 @@ class _HouseScreenState extends State<HouseScreen> {
       key: const PageStorageKey('house-scroll'),
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 30),
       children: [
-        _HouseHeader(
-          coins: household.pet.coins,
-          largeText: largeText,
-        ),
+        const _HouseHeader(),
         const SizedBox(height: 13),
         _HouseRoomScene(
           room: room,
@@ -222,14 +219,6 @@ class _HouseScreenState extends State<HouseScreen> {
                   },
             onOpenShop: widget.onOpenShop,
           ),
-        ] else ...[
-          const SizedBox(height: 18),
-          _HouseSummary(
-            room: room,
-            placedCount: placements.length,
-            unlockedCount: household.unlockedRoomIds.length,
-            totalRooms: houseRoomCatalog.length,
-          ),
         ],
       ],
     );
@@ -292,15 +281,12 @@ class _HouseScreenState extends State<HouseScreen> {
 }
 
 class _HouseHeader extends StatelessWidget {
-  const _HouseHeader({required this.coins, required this.largeText});
-
-  final int coins;
-  final bool largeText;
+  const _HouseHeader();
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final heading = Column(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(strings.pick('Dragon sanctuary', 'Drakenreservaat'),
@@ -311,30 +297,6 @@ class _HouseHeader extends StatelessWidget {
               'Bouw een thuis dat met jullie draak meegroeit.'),
           style: const TextStyle(color: AppColors.muted, fontSize: 15),
         ),
-      ],
-    );
-    final coinPill = MetricPill(
-      leading: const GameIconSprite(GameIconKind.coin, size: 26),
-      value: '$coins',
-      label: strings.pick('coins', 'munten'),
-      color: const Color(0xFF9A6A00),
-    );
-    if (largeText) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          heading,
-          const SizedBox(height: 10),
-          coinPill,
-        ],
-      );
-    }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: heading),
-        const SizedBox(width: 10),
-        coinPill,
       ],
     );
   }
@@ -737,15 +699,24 @@ class _RoomAtmospherePainter extends CustomPainter {
 }
 
 Offset _idlePosition(Pet dragon, int index, int step, int dragonCount) {
-  final columns = min(4, max(1, dragonCount));
-  final movingIndex = index + step;
-  final column = movingIndex % columns;
-  final row = (movingIndex ~/ columns) % 3;
-  final seed = dragon.hatchSeed.abs() + step * 173;
-  return Offset(
-    columns == 1 ? .5 : .20 + column / (columns - 1) * .60,
-    .65 + row * .075 + (seed.remainder(5) - 2) * .004,
-  );
+  const waypoints = <Offset>[
+    Offset(.15, .76),
+    Offset(.82, .68),
+    Offset(.31, .62),
+    Offset(.72, .81),
+    Offset(.48, .70),
+    Offset(.12, .64),
+    Offset(.88, .79),
+    Offset(.37, .82),
+    Offset(.65, .62),
+    Offset(.22, .69),
+    Offset(.78, .74),
+    Offset(.53, .83),
+  ];
+  final routeOffset = dragon.hatchSeed.abs().remainder(waypoints.length);
+  final separation = max(1, waypoints.length ~/ max(1, dragonCount));
+  return waypoints[
+      (routeOffset + step + index * separation) % waypoints.length];
 }
 
 class _RoomDragon extends StatelessWidget {
@@ -1242,53 +1213,6 @@ class _InventoryPanel extends StatelessWidget {
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _HouseSummary extends StatelessWidget {
-  const _HouseSummary({
-    required this.room,
-    required this.placedCount,
-    required this.unlockedCount,
-    required this.totalRooms,
-  });
-
-  final HouseRoomDefinition room;
-  final int placedCount;
-  final int unlockedCount;
-  final int totalRooms;
-
-  @override
-  Widget build(BuildContext context) {
-    final strings = AppStrings.of(context);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.mintLight,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(strings.roomName(room),
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 2),
-                Text(
-                  strings.pick(
-                    '$placedCount items · $unlockedCount of $totalRooms rooms built',
-                    '$placedCount items · $unlockedCount van $totalRooms kamers gebouwd',
-                  ),
-                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
