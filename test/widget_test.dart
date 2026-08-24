@@ -1029,6 +1029,21 @@ void main() {
     expect(find.text('One hidden dragon is growing beneath the shell.'),
         findsOneWidget);
     expect(find.byKey(const Key('nest-egg-hatch-countdown')), findsOneWidget);
+    final detailedNest = find.byKey(const Key('rooftop-nest-scene'));
+    expect(
+      find.descendant(
+        of: detailedNest,
+        matching: find.byKey(const Key('rooftop-nest-egg')),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: detailedNest,
+        matching: find.byKey(const Key('rooftop-bird-nest-front')),
+      ),
+      findsOneWidget,
+    );
     await tester.pageBack();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(NavigationBar), findsOneWidget);
@@ -1288,7 +1303,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.02.03'), findsOneWidget);
+    expect(find.text('v0.02.04'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

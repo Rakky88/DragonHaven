@@ -24,19 +24,25 @@ class KeeperPortrait extends StatelessWidget {
   Widget build(BuildContext context) {
     final portrait = profilePortraitById(portraitKey);
     if (portrait != null) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: AppColors.gold.withValues(alpha: .28),
-        child: ClipOval(
-          child: Image.asset(
-            portrait.assetPath,
-            width: radius * 2,
-            height: radius * 2,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Icon(
-              Icons.person_rounded,
-              size: radius * 1.05,
-              color: AppColors.twilight,
+      return Semantics(
+        image: true,
+        label: displayName,
+        child: SizedBox.square(
+          dimension: radius * 2,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.gold.withValues(alpha: .28),
+            ),
+            child: Image.asset(
+              portrait.assetPath,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              errorBuilder: (_, __, ___) => Icon(
+                Icons.person_rounded,
+                size: radius * 1.05,
+                color: AppColors.twilight,
+              ),
             ),
           ),
         ),

@@ -278,7 +278,7 @@ void main() {
     expect(await game.openChest(ChestTier.wooden), isNull);
   });
 
-  test('egg pity doubles common chest odds only while no egg is owned', () {
+  test('egg pity triples common chest odds only while no egg is owned', () {
     final game = HouseholdProvider(
       initialize: false,
       persistenceEnabled: false,
@@ -286,9 +286,9 @@ void main() {
     )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false);
 
     expect(game.eggPityActive, isTrue);
-    expect(game.eggDropChance(ChestTier.wooden), .02);
-    expect(game.eggDropChance(ChestTier.silver), .08);
-    expect(game.eggDropChance(ChestTier.gold), .24);
+    expect(game.eggDropChance(ChestTier.wooden), .03);
+    expect(game.eggDropChance(ChestTier.silver), .12);
+    expect(game.eggDropChance(ChestTier.gold), .36);
     expect(game.eggDropChance(ChestTier.dragon), 1);
     expect(game.eggDropChance(ChestTier.mythical), 1);
     expect(game.eggDropChance(ChestTier.sinister), 1);

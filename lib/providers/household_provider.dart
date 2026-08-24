@@ -1040,7 +1040,7 @@ class HouseholdProvider extends ChangeNotifier {
     final pityEligible = tier == ChestTier.wooden ||
         tier == ChestTier.silver ||
         tier == ChestTier.gold;
-    return eggPityActive && pityEligible ? baseChance * 2 : baseChance;
+    return eggPityActive && pityEligible ? baseChance * 3 : baseChance;
   }
 
   Pet? dragonById(String? id) {

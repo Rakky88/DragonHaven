@@ -21,6 +21,30 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  testWidgets('keeper portraits preserve their complete circular artwork',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: KeeperPortrait(
+            portraitKey: 'portrait_001',
+            displayName: 'Keeper',
+            radius: 31,
+          ),
+        ),
+      ),
+    );
+
+    final portrait = find.byType(KeeperPortrait);
+    final image = find.descendant(of: portrait, matching: find.byType(Image));
+    expect(tester.getSize(portrait), const Size.square(62));
+    expect(tester.widget<Image>(image).fit, BoxFit.contain);
+    expect(
+      find.descendant(of: portrait, matching: find.byType(ClipOval)),
+      findsNothing,
+    );
+  });
+
   test('first online refresh imports the legacy inventory exactly once',
       () async {
     final game = HouseholdProvider(random: Random(3));

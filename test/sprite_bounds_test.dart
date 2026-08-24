@@ -58,6 +58,37 @@ void _expectContained(
       reason: '$label touches its bottom crop edge');
 }
 
+void _expectInsidePortraitCircle(
+  Uint8List rgba,
+  int width,
+  int height,
+  String label,
+) {
+  final centerX = width / 2;
+  final centerY = height / 2;
+  final maximumRadius = width * .475;
+  final maximumSquared = maximumRadius * maximumRadius;
+  (int, int)? outsidePixel;
+  for (var y = 0; y < height; y++) {
+    for (var x = 0; x < width; x++) {
+      if (rgba[(y * width + x) * 4 + 3] < 8) continue;
+      final dx = x + .5 - centerX;
+      final dy = y + .5 - centerY;
+      if (dx * dx + dy * dy > maximumSquared) {
+        outsidePixel = (x, y);
+        break;
+      }
+    }
+    if (outsidePixel != null) break;
+  }
+  expect(
+    outsidePixel,
+    isNull,
+    reason: '$label has a visible pixel outside its portrait circle at '
+        '$outsidePixel',
+  );
+}
+
 void _expectSingleSubject(
     Uint8List rgba, int width, int x0, int y0, int x1, int y1, String label) {
   // Inspect every pixel in each four-pixel cell. Sampling only one point per
@@ -343,6 +374,12 @@ void main() {
         image.width,
         0,
         0,
+        image.width,
+        image.height,
+        portrait.assetPath,
+      );
+      _expectInsidePortraitCircle(
+        image.rgba,
         image.width,
         image.height,
         portrait.assetPath,
