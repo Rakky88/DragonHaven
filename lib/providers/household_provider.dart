@@ -130,6 +130,10 @@ class HouseholdProvider extends ChangeNotifier {
 
   List<AdventureRun> adventureRuns = [];
   Set<String> appliedOnlineGroupRewardIds = {};
+  Set<String> appliedOnlineTradeIds = {};
+  Set<String> reservedOnlineTradeEggIds = {};
+  Map<String, int> reservedOnlineTradeChests = {};
+  Map<String, int> reservedOnlineTradeRelics = {};
   Map<AdventureKind, List<String>> adventureOptionIds = {
     AdventureKind.mini: <String>[],
     AdventureKind.short: <String>[],
@@ -157,7 +161,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 36;
+  static const _schemaVersion = 37;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(
@@ -749,6 +753,22 @@ class HouseholdProvider extends ChangeNotifier {
         stringSetFromJson(data['appliedOnlineGroupRewardIds'])
             .take(500)
             .toSet();
+    appliedOnlineTradeIds =
+        stringSetFromJson(data['appliedOnlineTradeIds']).take(500).toSet();
+    reservedOnlineTradeEggIds =
+        stringSetFromJson(data['reservedOnlineTradeEggIds']);
+    final rawReservedTradeChests =
+        mapFromJson(data['reservedOnlineTradeChests']);
+    reservedOnlineTradeChests = {
+      for (final entry in rawReservedTradeChests.entries)
+        entry.key: nonNegativeIntFromJson(entry.value, fallback: 0),
+    }..removeWhere((_, value) => value <= 0);
+    final rawReservedTradeRelics =
+        mapFromJson(data['reservedOnlineTradeRelics']);
+    reservedOnlineTradeRelics = {
+      for (final entry in rawReservedTradeRelics.entries)
+        entry.key: nonNegativeIntFromJson(entry.value, fallback: 0),
+    }..removeWhere((_, value) => value <= 0);
     final restoredSchema = nonNegativeIntFromJson(
       data['schemaVersion'],
       fallback: 0,
@@ -971,7 +991,9 @@ class HouseholdProvider extends ChangeNotifier {
     MysticRelic relic,
     String dragonId,
   ) async {
-    if (relicCount(relic) <= 0) return MysticRelicUseResult.notOwned;
+    if (tradeableRelicCount(relic) <= 0) {
+      return MysticRelicUseResult.notOwned;
+    }
     final dragon = ownedDragons.cast<Pet?>().firstWhere(
           (candidate) => candidate?.id == dragonId,
           orElse: () => null,
@@ -1114,7 +1136,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<ChestReward?> openChest(ChestTier tier) async {
-    if (chestCount(tier) <= 0) return null;
+    if (tradeableChestCount(tier) <= 0) return null;
     if (tier == ChestTier.portrait) return _openPortraitChest();
     if (tier == ChestTier.title) return _openTitleChest();
     chestInventory[tier] = chestCount(tier) - 1;
@@ -1371,6 +1393,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<bool> activateEgg(String eggId) async {
+    if (isEggReservedForTrade(eggId)) return false;
     final index = eggStash.indexWhere((egg) => egg.id == eggId);
     if (index < 0 || pet.isEgg || incubatingEgg != null) return false;
     final egg = eggStash.removeAt(index);
@@ -1803,6 +1826,10 @@ class HouseholdProvider extends ChangeNotifier {
       'favoriteChanges': favoriteChanges,
       'adventureRuns': adventureRuns.map((run) => run.toJson()).toList(),
       'appliedOnlineGroupRewardIds': appliedOnlineGroupRewardIds.toList(),
+      'appliedOnlineTradeIds': appliedOnlineTradeIds.toList(),
+      'reservedOnlineTradeEggIds': reservedOnlineTradeEggIds.toList(),
+      'reservedOnlineTradeChests': reservedOnlineTradeChests,
+      'reservedOnlineTradeRelics': reservedOnlineTradeRelics,
       'adventureOptionIds': {
         for (final entry in adventureOptionIds.entries)
           entry.key.name: entry.value,

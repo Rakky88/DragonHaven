@@ -223,6 +223,63 @@ class SupabaseSocialRepository implements SocialRepository {
     });
   }
 
+  @override
+  Future<void> synchronizeTradeInventory(
+    OnlineInventorySnapshot snapshot,
+  ) async {
+    await _rpc('synchronize_trade_inventory', params: {
+      'p_inventory': snapshot.toTradeJson(),
+    });
+  }
+
+  @override
+  Future<List<TradeInventoryItem>> loadTradeInventory() async =>
+      (await _listRpc('list_trade_inventory'))
+          .map(TradeInventoryItem.fromJson)
+          .toList(growable: false);
+
+  @override
+  Future<List<TradeOffer>> loadTrades() async =>
+      (await _listRpc('list_my_trades'))
+          .map(TradeOffer.fromJson)
+          .toList(growable: false);
+
+  @override
+  Future<void> createTrade(String friendId, TradeItem item) async {
+    await _rpc('create_trade', params: {
+      'p_friend_id': friendId,
+      'p_item': item.toRequestJson(),
+    });
+  }
+
+  @override
+  Future<void> respondToTrade(String tradeId, TradeItem item) async {
+    await _rpc('respond_trade', params: {
+      'p_trade_id': tradeId,
+      'p_item': item.toRequestJson(),
+    });
+  }
+
+  @override
+  Future<void> completeTrade(String tradeId) async {
+    await _rpc('complete_trade', params: {'p_trade_id': tradeId});
+  }
+
+  @override
+  Future<void> cancelTrade(String tradeId) async {
+    await _rpc('cancel_trade', params: {'p_trade_id': tradeId});
+  }
+
+  @override
+  Future<void> rejectTrade(String tradeId) async {
+    await _rpc('reject_trade', params: {'p_trade_id': tradeId});
+  }
+
+  @override
+  Future<void> acknowledgeTrade(String tradeId) async {
+    await _rpc('acknowledge_trade', params: {'p_trade_id': tradeId});
+  }
+
   Future<dynamic> _rpc(String function, {Map<String, dynamic>? params}) async {
     try {
       return await _client.rpc(function, params: params);
@@ -285,6 +342,14 @@ class SupabaseSocialRepository implements SocialRepository {
       'invalid_group_dragon',
       'group_reward_not_ready',
       'group_reward_already_claimed',
+      'trade_not_found',
+      'trade_not_friends',
+      'trade_wrong_participant',
+      'trade_wrong_state',
+      'trade_item_invalid',
+      'trade_item_unavailable',
+      'trade_inventory_locked',
+      'trade_apply_failed',
     };
     final normalized = message.trim().toLowerCase().replaceAll(' ', '_');
     if (normalized.contains('email_not_confirmed')) {

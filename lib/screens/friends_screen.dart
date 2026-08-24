@@ -3,10 +3,14 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/dragon_lineage.dart';
+import '../models/chest.dart';
+import '../models/mystic_relic.dart';
 import '../models/social.dart';
+import '../providers/household_provider.dart';
 import '../providers/online_account_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/game_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
 
 class FriendsScreen extends StatelessWidget {
@@ -319,6 +323,8 @@ class _FriendTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
+    final activeTrades =
+        context.watch<OnlineAccountProvider>().tradesWith(friend.userId);
     return Card(
       child: ListTile(
         key: Key('friend-${friend.userId}'),
@@ -334,7 +340,20 @@ class _FriendTile extends StatelessWidget {
             '${keeperTitleLabel(strings, friend.title)}\n${strings.pick('Discovered', 'Ontdekt')}: '
             '${friend.discoveredDragonCount}'),
         isThreeLine: true,
-        trailing: const Icon(Icons.chevron_right_rounded),
+        trailing: activeTrades.isEmpty
+            ? const Icon(Icons.chevron_right_rounded)
+            : IconButton(
+                key: Key('friend-trade-${friend.userId}'),
+                tooltip: strings.pick('Open trade', 'Ruil openen'),
+                onPressed: () => _showTrade(context, activeTrades.first),
+                icon: Badge(
+                  label: Text('${activeTrades.length}'),
+                  child: const GameIconSprite(
+                    GameIconKind.friendsTrade,
+                    size: 38,
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -376,6 +395,70 @@ Future<void> _showFriendProfile(
                     color: AppColors.twilight,
                     fontWeight: FontWeight.w900,
                     letterSpacing: .8)),
+            const SizedBox(height: 13),
+            Center(
+              child: Tooltip(
+                message: strings.pick(
+                    'Trade with this friend', 'Ruilen met deze vriend'),
+                child: InkWell(
+                  key: const Key('start-trade-button'),
+                  borderRadius: BorderRadius.circular(22),
+                  onTap: online.busy
+                      ? null
+                      : () => _startTrade(sheetContext, friend),
+                  child: Ink(
+                    width: 78,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [
+                        Color(0xFFFFF1A8),
+                        Color(0xFFE8CB69),
+                      ]),
+                      borderRadius: BorderRadius.circular(22),
+                      border:
+                          Border.all(color: const Color(0xFF9A6A21), width: 2),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x332D195F),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: GameIconSprite(
+                        GameIconKind.friendsTrade,
+                        size: 58,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (online.tradesWith(friend.userId).isNotEmpty) ...[
+              const SizedBox(height: 12),
+              for (final trade in online.tradesWith(friend.userId))
+                Card(
+                  color: trade.needsMyResponse
+                      ? const Color(0xFFFFF5CC)
+                      : const Color(0xFFF2ECFF),
+                  child: ListTile(
+                    key: Key('trade-${trade.id}'),
+                    leading: const GameIconSprite(
+                      GameIconKind.friendsTrade,
+                      size: 42,
+                    ),
+                    title: Text(_tradeStatusLabel(strings, trade),
+                        style: const TextStyle(fontWeight: FontWeight.w900)),
+                    subtitle: Text(_tradeItemLabel(
+                        strings,
+                        context.read<HouseholdProvider>(),
+                        trade.initiatorItem)),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => _showTrade(sheetContext, trade),
+                  ),
+                ),
+            ],
             const SizedBox(height: 18),
             _ProfileFact(
               icon: Icons.auto_stories_rounded,
@@ -525,6 +608,374 @@ class _ProfileFact extends StatelessWidget {
         ),
       );
 }
+
+Future<void> _startTrade(BuildContext context, KeeperProfile friend) async {
+  final online = context.read<OnlineAccountProvider>();
+  final item = await _pickTradeItem(context);
+  if (item == null || !context.mounted) return;
+  final strings = AppStrings.of(context);
+  final game = context.read<HouseholdProvider>();
+  final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(
+              strings.pick('Send trade proposal?', 'Ruilvoorstel versturen?')),
+          content: Text(strings.pick(
+            '${_tradeItemLabel(strings, game, item)} will be reserved until ${friend.displayName} responds or you cancel.',
+            '${_tradeItemLabel(strings, game, item)} wordt gereserveerd totdat ${friend.displayName} reageert of jij annuleert.',
+          )),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(strings.tr('cancel')),
+            ),
+            FilledButton(
+              key: const Key('confirm-create-trade'),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(strings.pick('Send', 'Versturen')),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+  if (!confirmed) return;
+  await online.createTrade(friend.userId, item);
+  if (context.mounted) _showProviderMessage(context, online);
+}
+
+Future<TradeItem?> _pickTradeItem(BuildContext context) async {
+  final online = context.read<OnlineAccountProvider>();
+  if (!await online.prepareTradeInventory() || !context.mounted) {
+    if (context.mounted) _showProviderMessage(context, online);
+    return null;
+  }
+  final strings = AppStrings.of(context);
+  final items = online.tradeInventory;
+  return showModalBottomSheet<TradeItem>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (sheetContext) => SafeArea(
+      child: FractionallySizedBox(
+        heightFactor: .82,
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 2, 20, 12),
+            child: Column(children: [
+              Text(strings.pick('Choose one item', 'Kies één item'),
+                  style: Theme.of(sheetContext).textTheme.headlineSmall),
+              const SizedBox(height: 5),
+              Text(
+                strings.pick(
+                  'The item is kept safe and cannot be used in another trade.',
+                  'Het item wordt veilig apart gezet en kan niet in een andere ruil worden gebruikt.',
+                ),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.muted),
+              ),
+            ]),
+          ),
+          Expanded(
+            child: items.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(28),
+                      child: Text(
+                        strings.pick(
+                          'You have no unreserved eggs, chests or relics to trade.',
+                          'Je hebt geen vrije eieren, kisten of relieken om te ruilen.',
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    key: const Key('trade-inventory-list'),
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 24),
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final inventoryItem = items[index];
+                      return Card(
+                        child: ListTile(
+                          key: Key(
+                              'trade-item-${inventoryItem.item.kind.name}-${inventoryItem.item.key}'),
+                          leading: _TradeItemArt(item: inventoryItem.item),
+                          title: Text(
+                            _tradeItemLabel(
+                              strings,
+                              context.read<HouseholdProvider>(),
+                              inventoryItem.item,
+                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w900),
+                          ),
+                          subtitle: inventoryItem.item.kind == TradeItemKind.egg
+                              ? Text(strings.pick(
+                                  'Mysterious Egg', 'Mysterieus Ei'))
+                              : null,
+                          trailing: inventoryItem.available > 1
+                              ? Chip(label: Text('×${inventoryItem.available}'))
+                              : const Icon(Icons.chevron_right_rounded),
+                          onTap: () =>
+                              Navigator.pop(sheetContext, inventoryItem.item),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ]),
+      ),
+    ),
+  );
+}
+
+Future<void> _showTrade(BuildContext context, TradeOffer trade) async {
+  final strings = AppStrings.of(context);
+  final online = context.read<OnlineAccountProvider>();
+  await showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (sheetContext) => SafeArea(
+      child: FractionallySizedBox(
+        heightFactor: .82,
+        child: ListView(
+          key: Key('trade-detail-${trade.id}'),
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+          children: [
+            const Center(
+              child: GameIconSprite(GameIconKind.friendsTrade, size: 76),
+            ),
+            Text(
+              strings.pick('Trade with ${trade.otherKeeper.displayName}',
+                  'Ruil met ${trade.otherKeeper.displayName}'),
+              textAlign: TextAlign.center,
+              style: Theme.of(sheetContext).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _tradeStatusLabel(strings, trade),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  color: AppColors.twilight, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 18),
+            _TradeOfferItemCard(
+              title: trade.amInitiator
+                  ? strings.pick('You offer', 'Jij biedt aan')
+                  : strings.pick('${trade.otherKeeper.displayName} offers',
+                      '${trade.otherKeeper.displayName} biedt aan'),
+              item: trade.initiatorItem,
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Icon(Icons.swap_vert_rounded,
+                  size: 34, color: AppColors.twilight),
+            ),
+            if (trade.recipientItem case final item?)
+              _TradeOfferItemCard(
+                title: trade.amInitiator
+                    ? strings.pick('${trade.otherKeeper.displayName} offers',
+                        '${trade.otherKeeper.displayName} biedt aan')
+                    : strings.pick('You offer', 'Jij biedt aan'),
+                item: item,
+              )
+            else
+              Card(
+                color: const Color(0xFFF4F0FA),
+                child: Padding(
+                  padding: const EdgeInsets.all(22),
+                  child: Text(
+                    strings.pick('Waiting for a return item.',
+                        'Wachten op een tegenaanbod.'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: AppColors.muted),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 20),
+            if (!trade.amInitiator && trade.status == 'awaiting_recipient')
+              FilledButton.icon(
+                key: const Key('answer-trade-button'),
+                onPressed: () async {
+                  final item = await _pickTradeItem(sheetContext);
+                  if (item == null || !sheetContext.mounted) return;
+                  final accepted = await online.respondToTrade(trade.id, item);
+                  if (accepted && sheetContext.mounted) {
+                    Navigator.pop(sheetContext);
+                  }
+                },
+                icon: const Icon(Icons.add_circle_outline_rounded),
+                label: Text(strings.pick('Choose my item', 'Kies mijn item')),
+              ),
+            if (trade.amInitiator && trade.status == 'awaiting_initiator')
+              FilledButton.icon(
+                key: const Key('complete-trade-button'),
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                        context: sheetContext,
+                        builder: (dialogContext) => AlertDialog(
+                          title: Text(strings.pick(
+                              'Complete this trade?', 'Deze ruil afronden?')),
+                          content: Text(strings.pick(
+                            'This is the final confirmation. Both items will change owner immediately.',
+                            'Dit is de laatste bevestiging. Beide items wisselen direct van eigenaar.',
+                          )),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: Text(strings.tr('cancel')),
+                            ),
+                            FilledButton(
+                              key: const Key('confirm-complete-trade'),
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              child: Text(strings.pick('Trade', 'Ruilen')),
+                            ),
+                          ],
+                        ),
+                      ) ??
+                      false;
+                  if (!confirmed) return;
+                  final completed = await online.completeTrade(trade.id);
+                  if (completed && sheetContext.mounted) {
+                    Navigator.pop(sheetContext);
+                  }
+                },
+                icon: const Icon(Icons.handshake_rounded),
+                label: Text(strings.pick(
+                    'Final confirmation', 'Definitief bevestigen')),
+              ),
+            if (trade.isActive) ...[
+              const SizedBox(height: 8),
+              TextButton.icon(
+                key: const Key('stop-trade-button'),
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                onPressed: () async {
+                  final stopped = trade.amInitiator
+                      ? await online.cancelTrade(trade.id)
+                      : await online.rejectTrade(trade.id);
+                  if (stopped && sheetContext.mounted) {
+                    Navigator.pop(sheetContext);
+                  }
+                },
+                icon: Icon(trade.amInitiator
+                    ? Icons.cancel_outlined
+                    : Icons.thumb_down_alt_outlined),
+                label: Text(trade.amInitiator
+                    ? strings.pick('Cancel trade', 'Ruil annuleren')
+                    : strings.pick('Reject trade', 'Ruil weigeren')),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
+  if (context.mounted) _showProviderMessage(context, online);
+}
+
+class _TradeOfferItemCard extends StatelessWidget {
+  const _TradeOfferItemCard({required this.title, required this.item});
+  final String title;
+  final TradeItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Card(
+      color: const Color(0xFFF7F2FF),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(children: [
+          _TradeItemArt(item: item, size: 58),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        color: AppColors.muted, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 3),
+                Text(
+                  _tradeItemLabel(
+                    strings,
+                    context.read<HouseholdProvider>(),
+                    item,
+                  ),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w900, fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _TradeItemArt extends StatelessWidget {
+  const _TradeItemArt({required this.item, this.size = 46});
+  final TradeItem item;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => SizedBox.square(
+        dimension: size,
+        child: switch (item.kind) {
+          TradeItemKind.egg =>
+            GameIconSprite(GameIconKind.mysteriousEgg, size: size),
+          TradeItemKind.chest => Image.asset(
+              item.chestTier?.assetPath ?? ChestTier.wooden.assetPath,
+              fit: BoxFit.contain,
+            ),
+          TradeItemKind.relic => Image.asset(
+              item.relic?.assetPath ?? MysticRelic.moralPrism.assetPath,
+              fit: BoxFit.contain,
+            ),
+        },
+      );
+}
+
+String _tradeItemLabel(
+  AppStrings strings,
+  HouseholdProvider game,
+  TradeItem item,
+) {
+  switch (item.kind) {
+    case TradeItemKind.egg:
+      final egg = item.egg;
+      return egg == null
+          ? strings.pick('Mysterious Egg', 'Mysterieus Ei')
+          : game.eggHintForEgg(egg, locale: strings.languageCode);
+    case TradeItemKind.chest:
+      return item.chestTier?.label(strings.isDutch) ??
+          strings.pick('Chest', 'Kist');
+    case TradeItemKind.relic:
+      final relic = item.relic;
+      return relic == null
+          ? strings.pick('Relic', 'Reliek')
+          : strings.relicName(relic);
+  }
+}
+
+String _tradeStatusLabel(AppStrings strings, TradeOffer trade) =>
+    switch (trade.status) {
+      'awaiting_recipient' => trade.amInitiator
+          ? strings.pick('Waiting for your friend', 'Wacht op je vriend')
+          : strings.pick('New trade proposal', 'Nieuw ruilvoorstel'),
+      'awaiting_initiator' => trade.amInitiator
+          ? strings.pick('Your final confirmation is needed',
+              'Jouw definitieve bevestiging is nodig')
+          : strings.pick('Waiting for final confirmation',
+              'Wacht op definitieve bevestiging'),
+      'completed' => strings.pick('Trade completed', 'Ruil afgerond'),
+      'cancelled' => strings.pick('Trade cancelled', 'Ruil geannuleerd'),
+      'rejected' => strings.pick('Trade rejected', 'Ruil geweigerd'),
+      _ => strings.pick('Trade', 'Ruil'),
+    };
 
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.text);

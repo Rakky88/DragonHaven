@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:dragon_haven/dragonhaven_app.dart';
 import 'package:dragon_haven/models/chest.dart';
+import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
@@ -170,6 +171,47 @@ void main() {
     online.dispose();
   });
 
+  test('trade reservations block use and completed swaps apply only once',
+      () async {
+    final game = HouseholdProvider(random: Random(20));
+    game.chestInventory[ChestTier.gold] = 1;
+
+    await game.synchronizeOnlineTradeReservations(
+      const {},
+      const {'gold': 1},
+      const {},
+    );
+    expect(game.tradeableChestCount(ChestTier.gold), 0);
+    expect(await game.openChest(ChestTier.gold), isNull);
+
+    final applied = await game.applyOnlineTradeSettlement(
+      tradeId: 'trade-1',
+      sentKind: 'chest',
+      sentKey: 'gold',
+      sentData: const {},
+      receivedKind: 'relic',
+      receivedKey: 'moralPrism',
+      receivedData: const {},
+    );
+    expect(applied, isTrue);
+    expect(game.chestCount(ChestTier.gold), 0);
+    expect(game.relicCount(MysticRelic.moralPrism), 1);
+
+    expect(
+      await game.applyOnlineTradeSettlement(
+        tradeId: 'trade-1',
+        sentKind: 'chest',
+        sentKey: 'gold',
+        sentData: const {},
+        receivedKind: 'relic',
+        receivedKey: 'moralPrism',
+        receivedData: const {},
+      ),
+      isTrue,
+    );
+    expect(game.relicCount(MysticRelic.moralPrism), 1);
+  });
+
   test('a completed weekly Group Adventure cannot be entered a second time',
       () async {
     final game = HouseholdProvider(random: Random(21));
@@ -280,7 +322,15 @@ void main() {
     game.pet
       ..stage = DragonStage.hatchling
       ..name = 'Ember';
-    final repository = _FakeSocialRepository(inventoryImported: true);
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..tradeInventoryRows.add(const TradeInventoryItem(
+        item: TradeItem(
+          kind: TradeItemKind.chest,
+          key: 'gold',
+          data: {},
+        ),
+        available: 2,
+      ));
     final online = OnlineAccountProvider(
       repository: repository,
       inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
@@ -309,6 +359,20 @@ void main() {
     expect(find.text('Might'), findsOneWidget);
     expect(find.text('Arcana'), findsOneWidget);
     expect(find.text('Spirit'), findsOneWidget);
+    expect(find.byKey(const Key('start-trade-button')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('start-trade-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    expect(find.byKey(const Key('trade-inventory-list')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('trade-item-chest-gold')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    expect(find.text('Send trade proposal?'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('confirm-create-trade')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 650));
+    expect(repository.createTradeCount, 1);
 
     await tester.scrollUntilVisible(
       find.byKey(const Key('remove-friend-button')),
@@ -384,6 +448,7 @@ class _FakeSocialRepository implements SocialRepository {
   String? updatedTitle;
   String? updatedPortraitKey;
   int acknowledgeCount = 0;
+  int createTradeCount = 0;
   GroupAdventureReward? groupReward;
   String? createGroupError;
   bool signedIn = true;
@@ -417,6 +482,8 @@ class _FakeSocialRepository implements SocialRepository {
   final List<FriendshipRequest> requestRows = [];
   final List<KeeperProfile> blockedRows = [];
   final List<GroupAdventureLobby> groupRows = [];
+  final List<TradeOffer> tradeRows = [];
+  final List<TradeInventoryItem> tradeInventoryRows = [];
   GroupAdventureStatus groupStatus = const GroupAdventureStatus(
     slot: 1,
     adventureId: 'group_1',
@@ -537,6 +604,30 @@ class _FakeSocialRepository implements SocialRepository {
     groupRows.removeWhere((lobby) => lobby.id == lobbyId);
     groupReward = null;
   }
+
+  @override
+  Future<void> synchronizeTradeInventory(
+      OnlineInventorySnapshot snapshot) async {}
+  @override
+  Future<List<TradeInventoryItem>> loadTradeInventory() async =>
+      List.of(tradeInventoryRows);
+  @override
+  Future<List<TradeOffer>> loadTrades() async => List.of(tradeRows);
+  @override
+  Future<void> createTrade(String friendId, TradeItem item) async {
+    createTradeCount++;
+  }
+
+  @override
+  Future<void> respondToTrade(String tradeId, TradeItem item) async {}
+  @override
+  Future<void> completeTrade(String tradeId) async {}
+  @override
+  Future<void> cancelTrade(String tradeId) async {}
+  @override
+  Future<void> rejectTrade(String tradeId) async {}
+  @override
+  Future<void> acknowledgeTrade(String tradeId) async {}
 
   @override
   void dispose() {}

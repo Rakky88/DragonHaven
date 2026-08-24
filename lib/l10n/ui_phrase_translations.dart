@@ -5167,4 +5167,322 @@ const uiPhraseTranslations = <String, List<String>>{
     '一个新的账号称号已加入收藏。',
     '新しいアカウント称号がコレクションに加わりました。'
   ],
+  'Cancel trade': [
+    'Handel abbrechen',
+    'Cancelar intercambio',
+    'Annuler l’échange',
+    'Annulla scambio',
+    'Cancelar troca',
+    '取消交易',
+    '交換をキャンセル'
+  ],
+  'Chest': ['Truhe', 'Cofre', 'Coffre', 'Forziere', 'Baú', '宝箱', '宝箱'],
+  'Choose my item': [
+    'Meinen Gegenstand wählen',
+    'Elegir mi objeto',
+    'Choisir mon objet',
+    'Scegli il mio oggetto',
+    'Escolher meu item',
+    '选择我的物品',
+    '自分のアイテムを選ぶ'
+  ],
+  'Choose one item': [
+    'Einen Gegenstand wählen',
+    'Elige un objeto',
+    'Choisis un objet',
+    'Scegli un oggetto',
+    'Escolha um item',
+    '选择一件物品',
+    'アイテムを1つ選ぶ'
+  ],
+  'Complete this trade?': [
+    'Diesen Handel abschließen?',
+    '¿Completar este intercambio?',
+    'Finaliser cet échange ?',
+    'Completare questo scambio?',
+    'Concluir esta troca?',
+    '完成这笔交易吗？',
+    'この交換を完了しますか？'
+  ],
+  'Final confirmation': [
+    'Endgültig bestätigen',
+    'Confirmación final',
+    'Confirmation finale',
+    'Conferma finale',
+    'Confirmação final',
+    '最终确认',
+    '最終確認'
+  ],
+  'New trade proposal': [
+    'Neues Handelsangebot',
+    'Nueva propuesta de intercambio',
+    'Nouvelle proposition d’échange',
+    'Nuova proposta di scambio',
+    'Nova proposta de troca',
+    '新的交易提议',
+    '新しい交換提案'
+  ],
+  'Open trade': [
+    'Handel öffnen',
+    'Abrir intercambio',
+    'Ouvrir l’échange',
+    'Apri scambio',
+    'Abrir troca',
+    '打开交易',
+    '交換を開く'
+  ],
+  'Reject trade': [
+    'Handel ablehnen',
+    'Rechazar intercambio',
+    'Refuser l’échange',
+    'Rifiuta scambio',
+    'Recusar troca',
+    '拒绝交易',
+    '交換を拒否'
+  ],
+  'Relic': [
+    'Relikt',
+    'Reliquia',
+    'Relique',
+    'Reliquia',
+    'Relíquia',
+    '遗物',
+    'レリック'
+  ],
+  'Reserved for trade': [
+    'Für Handel reserviert',
+    'Reservado para intercambio',
+    'Réservé pour un échange',
+    'Riservato per lo scambio',
+    'Reservado para troca',
+    '已为交易保留',
+    '交換用に予約済み'
+  ],
+  'Send': ['Senden', 'Enviar', 'Envoyer', 'Invia', 'Enviar', '发送', '送信'],
+  'Send trade proposal?': [
+    'Handelsangebot senden?',
+    '¿Enviar propuesta de intercambio?',
+    'Envoyer la proposition d’échange ?',
+    'Inviare la proposta di scambio?',
+    'Enviar proposta de troca?',
+    '发送交易提议吗？',
+    '交換提案を送りますか？'
+  ],
+  'The completed trade could not be stored locally. Your server items remain safe; please refresh.':
+      [
+    'Der abgeschlossene Handel konnte lokal nicht gespeichert werden. Deine Servergegenstände sind sicher; bitte aktualisieren.',
+    'El intercambio completado no pudo guardarse localmente. Tus objetos del servidor están seguros; actualiza.',
+    'L’échange terminé n’a pas pu être enregistré localement. Tes objets serveur restent en sécurité ; actualise.',
+    'Lo scambio completato non è stato salvato localmente. Gli oggetti sul server sono al sicuro; aggiorna.',
+    'A troca concluída não pôde ser salva localmente. Seus itens no servidor estão seguros; atualize.',
+    '已完成的交易无法保存在本地。服务器物品仍然安全；请刷新。',
+    '完了した交換を端末に保存できませんでした。サーバー上のアイテムは安全です。更新してください。'
+  ],
+  'The item is kept safe and cannot be used in another trade.': [
+    'Der Gegenstand wird sicher verwahrt und kann nicht in einem anderen Handel verwendet werden.',
+    'El objeto queda protegido y no puede usarse en otro intercambio.',
+    'L’objet est conservé en sécurité et ne peut pas servir dans un autre échange.',
+    'L’oggetto viene custodito e non può essere usato in un altro scambio.',
+    'O item fica protegido e não pode ser usado em outra troca.',
+    '该物品会被安全保留，不能用于其他交易。',
+    'アイテムは安全に確保され、別の交換には使えません。'
+  ],
+  'This is the final confirmation. Both items will change owner immediately.': [
+    'Dies ist die endgültige Bestätigung. Beide Gegenstände wechseln sofort den Besitzer.',
+    'Esta es la confirmación final. Ambos objetos cambiarán de dueño inmediatamente.',
+    'C’est la confirmation finale. Les deux objets changeront immédiatement de propriétaire.',
+    'Questa è la conferma finale. Entrambi gli oggetti cambieranno subito proprietario.',
+    'Esta é a confirmação final. Os dois itens mudarão de dono imediatamente.',
+    '这是最终确认。两件物品会立即交换所有者。',
+    'これが最終確認です。両方のアイテムはすぐに所有者が変わります。'
+  ],
+  'This item cannot be traded.': [
+    'Dieser Gegenstand kann nicht gehandelt werden.',
+    'Este objeto no se puede intercambiar.',
+    'Cet objet ne peut pas être échangé.',
+    'Questo oggetto non può essere scambiato.',
+    'Este item não pode ser trocado.',
+    '该物品无法交易。',
+    'このアイテムは交換できません。'
+  ],
+  'This item is no longer available or is already reserved.': [
+    'Dieser Gegenstand ist nicht mehr verfügbar oder bereits reserviert.',
+    'Este objeto ya no está disponible o ya está reservado.',
+    'Cet objet n’est plus disponible ou est déjà réservé.',
+    'Questo oggetto non è più disponibile o è già riservato.',
+    'Este item não está mais disponível ou já está reservado.',
+    '该物品已不可用或已被保留。',
+    'このアイテムは利用できないか、すでに予約されています。'
+  ],
+  'This trade has already changed. Refresh and try again.': [
+    'Dieser Handel hat sich bereits geändert. Aktualisiere und versuche es erneut.',
+    'Este intercambio ya ha cambiado. Actualiza e inténtalo de nuevo.',
+    'Cet échange a déjà changé. Actualise et réessaie.',
+    'Questo scambio è già cambiato. Aggiorna e riprova.',
+    'Esta troca já mudou. Atualize e tente novamente.',
+    '该交易已发生变化。请刷新后重试。',
+    'この交換はすでに変更されています。更新してもう一度お試しください。'
+  ],
+  'Trade': [
+    'Handeln',
+    'Intercambiar',
+    'Échanger',
+    'Scambia',
+    'Trocar',
+    '交易',
+    '交換'
+  ],
+  'Trade cancelled': [
+    'Handel abgebrochen',
+    'Intercambio cancelado',
+    'Échange annulé',
+    'Scambio annullato',
+    'Troca cancelada',
+    '交易已取消',
+    '交換はキャンセルされました'
+  ],
+  'Trade cancelled. Reserved items are available again.': [
+    'Handel abgebrochen. Reservierte Gegenstände sind wieder verfügbar.',
+    'Intercambio cancelado. Los objetos reservados vuelven a estar disponibles.',
+    'Échange annulé. Les objets réservés sont de nouveau disponibles.',
+    'Scambio annullato. Gli oggetti riservati sono di nuovo disponibili.',
+    'Troca cancelada. Os itens reservados estão disponíveis novamente.',
+    '交易已取消。保留的物品可再次使用。',
+    '交換をキャンセルしました。予約アイテムは再び利用できます。'
+  ],
+  'Trade completed': [
+    'Handel abgeschlossen',
+    'Intercambio completado',
+    'Échange terminé',
+    'Scambio completato',
+    'Troca concluída',
+    '交易完成',
+    '交換完了'
+  ],
+  'Trade completed. The received item is in your inventory.': [
+    'Handel abgeschlossen. Der erhaltene Gegenstand ist in deinem Inventar.',
+    'Intercambio completado. El objeto recibido está en tu inventario.',
+    'Échange terminé. L’objet reçu est dans ton inventaire.',
+    'Scambio completato. L’oggetto ricevuto è nel tuo inventario.',
+    'Troca concluída. O item recebido está no seu inventário.',
+    '交易完成。收到的物品已放入库存。',
+    '交換完了。受け取ったアイテムはインベントリにあります。'
+  ],
+  'Trade proposal sent.': [
+    'Handelsangebot gesendet.',
+    'Propuesta de intercambio enviada.',
+    'Proposition d’échange envoyée.',
+    'Proposta di scambio inviata.',
+    'Proposta de troca enviada.',
+    '交易提议已发送。',
+    '交換提案を送信しました。'
+  ],
+  'Trade rejected': [
+    'Handel abgelehnt',
+    'Intercambio rechazado',
+    'Échange refusé',
+    'Scambio rifiutato',
+    'Troca recusada',
+    '交易已拒绝',
+    '交換は拒否されました'
+  ],
+  'Trade rejected. Reserved items are available again.': [
+    'Handel abgelehnt. Reservierte Gegenstände sind wieder verfügbar.',
+    'Intercambio rechazado. Los objetos reservados vuelven a estar disponibles.',
+    'Échange refusé. Les objets réservés sont de nouveau disponibles.',
+    'Scambio rifiutato. Gli oggetti riservati sono di nuovo disponibili.',
+    'Troca recusada. Os itens reservados estão disponíveis novamente.',
+    '交易已拒绝。保留的物品可再次使用。',
+    '交換を拒否しました。予約アイテムは再び利用できます。'
+  ],
+  'Trade with this friend': [
+    'Mit diesem Freund handeln',
+    'Intercambiar con este amigo',
+    'Échanger avec cet ami',
+    'Scambia con questo amico',
+    'Trocar com este amigo',
+    '与这位好友交易',
+    'このフレンドと交換'
+  ],
+  'Trades are only available between friends.': [
+    'Handel ist nur zwischen Freunden möglich.',
+    'Los intercambios solo están disponibles entre amigos.',
+    'Les échanges sont réservés aux amis.',
+    'Gli scambi sono disponibili solo tra amici.',
+    'Trocas estão disponíveis apenas entre amigos.',
+    '只有好友之间可以交易。',
+    '交換はフレンド同士でのみ利用できます。'
+  ],
+  'Waiting for a return item.': [
+    'Warten auf einen Gegengegenstand.',
+    'Esperando un objeto a cambio.',
+    'En attente d’un objet en retour.',
+    'In attesa di un oggetto in cambio.',
+    'Aguardando um item em troca.',
+    '正在等待对方提供物品。',
+    '相手のアイテムを待っています。'
+  ],
+  'Waiting for final confirmation': [
+    'Warten auf die endgültige Bestätigung',
+    'Esperando la confirmación final',
+    'En attente de la confirmation finale',
+    'In attesa della conferma finale',
+    'Aguardando a confirmação final',
+    '正在等待最终确认',
+    '最終確認を待っています'
+  ],
+  'Waiting for your friend': [
+    'Warten auf deinen Freund',
+    'Esperando a tu amigo',
+    'En attente de ton ami',
+    'In attesa del tuo amico',
+    'Aguardando seu amigo',
+    '正在等待好友',
+    'フレンドを待っています'
+  ],
+  'You have no unreserved eggs, chests or relics to trade.': [
+    'Du hast keine freien Eier, Truhen oder Relikte zum Handeln.',
+    'No tienes huevos, cofres ni reliquias sin reservar para intercambiar.',
+    'Tu n’as aucun œuf, coffre ou relique libre à échanger.',
+    'Non hai uova, forzieri o reliquie liberi da scambiare.',
+    'Você não tem ovos, baús ou relíquias livres para trocar.',
+    '你没有可交易的未保留蛋、宝箱或遗物。',
+    '交換できる未予約の卵、宝箱、レリックがありません。'
+  ],
+  'You have too many active trades. Finish or cancel one first.': [
+    'Du hast zu viele aktive Handel. Schließe zuerst einen ab oder brich ihn ab.',
+    'Tienes demasiados intercambios activos. Completa o cancela uno primero.',
+    'Tu as trop d’échanges actifs. Termine ou annule-en un d’abord.',
+    'Hai troppi scambi attivi. Completane o annullane prima uno.',
+    'Você tem trocas ativas demais. Conclua ou cancele uma primeiro.',
+    '你的进行中交易过多。请先完成或取消一笔。',
+    '進行中の交換が多すぎます。先に1件完了またはキャンセルしてください。'
+  ],
+  'You offer': [
+    'Du bietest an',
+    'Tú ofreces',
+    'Tu proposes',
+    'Tu offri',
+    'Você oferece',
+    '你提供',
+    'あなたの提示'
+  ],
+  'Your final confirmation is needed': [
+    'Deine endgültige Bestätigung ist erforderlich',
+    'Se necesita tu confirmación final',
+    'Ta confirmation finale est nécessaire',
+    'Serve la tua conferma finale',
+    'Sua confirmação final é necessária',
+    '需要你的最终确认',
+    'あなたの最終確認が必要です'
+  ],
+  'Your item is reserved. Your friend can now confirm the trade.': [
+    'Dein Gegenstand ist reserviert. Dein Freund kann den Handel jetzt bestätigen.',
+    'Tu objeto está reservado. Tu amigo ya puede confirmar el intercambio.',
+    'Ton objet est réservé. Ton ami peut maintenant confirmer l’échange.',
+    'Il tuo oggetto è riservato. Il tuo amico può ora confermare lo scambio.',
+    'Seu item está reservado. Seu amigo já pode confirmar a troca.',
+    '你的物品已保留。好友现在可以确认交易。',
+    'アイテムを予約しました。フレンドが交換を確認できます。'
+  ],
 };

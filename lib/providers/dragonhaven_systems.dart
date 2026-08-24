@@ -508,6 +508,129 @@ extension DragonHavenSystems on HouseholdProvider {
     return List.unmodifiable(adventureRuns);
   }
 
+  Future<void> synchronizeOnlineTradeReservations(
+    Set<String> eggIds,
+    Map<String, int> chests,
+    Map<String, int> relics,
+  ) async {
+    final normalizedChests = Map<String, int>.from(chests)
+      ..removeWhere((key, value) =>
+          value <= 0 || !ChestTier.values.any((tier) => tier.name == key));
+    final normalizedRelics = Map<String, int>.from(relics)
+      ..removeWhere((key, value) =>
+          value <= 0 || !MysticRelic.values.any((relic) => relic.name == key));
+    if (setEquals(reservedOnlineTradeEggIds, eggIds) &&
+        mapEquals(reservedOnlineTradeChests, normalizedChests) &&
+        mapEquals(reservedOnlineTradeRelics, normalizedRelics)) {
+      return;
+    }
+    reservedOnlineTradeEggIds = Set<String>.from(eggIds);
+    reservedOnlineTradeChests = normalizedChests;
+    reservedOnlineTradeRelics = normalizedRelics;
+    await _notifyAndSave();
+  }
+
+  bool isEggReservedForTrade(String eggId) =>
+      reservedOnlineTradeEggIds.contains(eggId);
+
+  int tradeableChestCount(ChestTier tier) =>
+      max(0, chestCount(tier) - (reservedOnlineTradeChests[tier.name] ?? 0));
+
+  int tradeableRelicCount(MysticRelic relic) =>
+      max(0, relicCount(relic) - (reservedOnlineTradeRelics[relic.name] ?? 0));
+
+  Future<bool> applyOnlineTradeSettlement({
+    required String tradeId,
+    required String sentKind,
+    required String sentKey,
+    required Map<String, dynamic> sentData,
+    required String receivedKind,
+    required String receivedKey,
+    required Map<String, dynamic> receivedData,
+  }) async {
+    if (appliedOnlineTradeIds.contains(tradeId)) return true;
+
+    final sentEggIndex = sentKind == 'egg'
+        ? eggStash.indexWhere((egg) => egg.id == sentKey)
+        : -1;
+    final sentChest = sentKind == 'chest'
+        ? ChestTier.values.cast<ChestTier?>().firstWhere(
+              (tier) => tier?.name == sentKey,
+              orElse: () => null,
+            )
+        : null;
+    final sentRelic = sentKind == 'relic'
+        ? MysticRelic.values.cast<MysticRelic?>().firstWhere(
+              (relic) => relic?.name == sentKey,
+              orElse: () => null,
+            )
+        : null;
+    if ((sentKind == 'egg' && sentEggIndex < 0) ||
+        (sentKind == 'chest' &&
+            (sentChest == null || chestCount(sentChest) <= 0)) ||
+        (sentKind == 'relic' &&
+            (sentRelic == null || relicCount(sentRelic) <= 0)) ||
+        !const {'egg', 'chest', 'relic'}.contains(sentKind)) {
+      return false;
+    }
+
+    DragonEgg? receivedEgg;
+    ChestTier? receivedChest;
+    MysticRelic? receivedRelic;
+    if (receivedKind == 'egg') {
+      receivedEgg = DragonEgg.fromJson({...receivedData, 'id': receivedKey});
+      if (ownedDragons.any((dragon) => dragon.id == receivedKey) ||
+          eggStash.any((egg) => egg.id == receivedKey)) {
+        return false;
+      }
+    } else if (receivedKind == 'chest') {
+      receivedChest = ChestTier.values.cast<ChestTier?>().firstWhere(
+            (tier) => tier?.name == receivedKey,
+            orElse: () => null,
+          );
+      if (receivedChest == null) return false;
+    } else if (receivedKind == 'relic') {
+      receivedRelic = MysticRelic.values.cast<MysticRelic?>().firstWhere(
+            (relic) => relic?.name == receivedKey,
+            orElse: () => null,
+          );
+      if (receivedRelic == null) return false;
+    } else {
+      return false;
+    }
+
+    if (sentEggIndex >= 0) {
+      eggStash.removeAt(sentEggIndex);
+    }
+    if (sentChest != null) {
+      chestInventory[sentChest] = chestCount(sentChest) - 1;
+    }
+    if (sentRelic != null) {
+      relicInventory[sentRelic] = relicCount(sentRelic) - 1;
+    }
+    if (receivedEgg != null) eggStash.add(receivedEgg);
+    if (receivedChest != null) {
+      chestInventory.update(receivedChest, (value) => value + 1,
+          ifAbsent: () => 1);
+    }
+    if (receivedRelic != null) {
+      relicInventory.update(receivedRelic, (value) => value + 1,
+          ifAbsent: () => 1);
+    }
+    appliedOnlineTradeIds.add(tradeId);
+    if (appliedOnlineTradeIds.length > 500) {
+      appliedOnlineTradeIds = appliedOnlineTradeIds.skip(100).toSet();
+    }
+    _addActivity(
+      message: 'A trade was completed.',
+      type: ActivityType.discovery,
+      code: ActivityCode.bonusFound,
+      subject: tradeId,
+    );
+    await _notifyAndSave();
+    return true;
+  }
+
   Future<void> synchronizeOnlineGroupReservations(
     Map<String, String> reservations,
   ) async {
@@ -828,6 +951,7 @@ extension DragonHavenSystems on HouseholdProvider {
   }
 
   Future<bool> discardEgg(String eggId) async {
+    if (isEggReservedForTrade(eggId)) return false;
     final before = eggStash.length;
     eggStash.removeWhere((egg) => egg.id == eggId);
     if (eggStash.length == before) return false;

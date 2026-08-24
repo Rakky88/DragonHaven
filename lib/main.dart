@@ -77,6 +77,17 @@ Future<void> main() async {
       chestTier: reward.chestTier,
       participantCount: reward.participantCount,
     ),
+    synchronizeTradeReservations: game.synchronizeOnlineTradeReservations,
+    applyTradeSettlement: (settlement) => game.applyOnlineTradeSettlement(
+      tradeId: settlement.tradeId,
+      sentKind: settlement.sent.kind.name,
+      sentKey: settlement.sent.key,
+      sentData: settlement.sent.data,
+      receivedKind: settlement.received.kind.name,
+      receivedKey: settlement.received.key,
+      receivedData: settlement.received.data,
+    ),
+    languageCode: () => game.languageCode,
   );
   await online.initialize();
   await HavenAudio.applyPreferences(

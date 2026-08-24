@@ -100,6 +100,7 @@ class _EggInventoryTab extends StatelessWidget {
       itemCount: game.eggStash.length,
       itemBuilder: (context, index) {
         final egg = game.eggStash[index];
+        final reserved = game.isEggReservedForTrade(egg.id);
         return Card(
           margin: const EdgeInsets.only(bottom: 10),
           child: Padding(
@@ -135,6 +136,16 @@ class _EggInventoryTab extends StatelessWidget {
                             fontSize: 11,
                           ),
                         ),
+                        if (reserved)
+                          Text(
+                            strings.pick(
+                                'Reserved for trade', 'Gereserveerd voor ruil'),
+                            style: const TextStyle(
+                              color: AppColors.twilight,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 11,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -162,13 +173,14 @@ class _EggInventoryTab extends StatelessWidget {
                 Row(children: [
                   IconButton.outlined(
                     tooltip: strings.pick('Discard egg', 'Ei wegdoen'),
-                    onPressed: () => _discardEgg(context, egg.id),
+                    onPressed:
+                        reserved ? null : () => _discardEgg(context, egg.id),
                     icon: const Icon(Icons.delete_outline_rounded),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: FilledButton(
-                      onPressed: game.hasEggInNest
+                      onPressed: game.hasEggInNest || reserved
                           ? null
                           : () async {
                               final ok = await game.activateEgg(egg.id);
@@ -279,7 +291,9 @@ class _ChestInventoryTab extends StatelessWidget {
                 ),
                 FilledButton(
                   key: Key('inventory-open-chest-${tier.name}'),
-                  onPressed: () => _openChest(context, tier),
+                  onPressed: game.tradeableChestCount(tier) > 0
+                      ? () => _openChest(context, tier)
+                      : null,
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 13,
@@ -436,7 +450,7 @@ class _RelicInventoryTab extends StatelessWidget {
           _RelicCard(
             relic: relic,
             count: game.relicCount(relic),
-            canUse: true,
+            canUse: game.tradeableRelicCount(relic) > 0,
           ),
       ],
     );

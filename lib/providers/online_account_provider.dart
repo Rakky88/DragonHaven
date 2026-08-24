@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../models/social.dart';
+import '../services/notification_service.dart';
 import '../services/social_repository.dart';
 
 class OnlineAccountProvider extends ChangeNotifier {
@@ -13,12 +14,23 @@ class OnlineAccountProvider extends ChangeNotifier {
     Future<void> Function(Map<String, String> reservations)?
         synchronizeGroupReservations,
     Future<bool> Function(GroupAdventureReward reward)? applyGroupReward,
+    Future<void> Function(
+      Set<String> eggIds,
+      Map<String, int> chests,
+      Map<String, int> relics,
+    )? synchronizeTradeReservations,
+    Future<bool> Function(TradeSettlement settlement)? applyTradeSettlement,
+    String Function()? languageCode,
   })  : _repository = repository,
         _inventorySnapshot = inventorySnapshot,
         _profileSnapshot = profileSnapshot ?? _fallbackProfileSnapshot,
         _synchronizeGroupReservations =
             synchronizeGroupReservations ?? _ignoreGroupReservations,
-        _applyGroupReward = applyGroupReward ?? _rejectGroupReward;
+        _applyGroupReward = applyGroupReward ?? _rejectGroupReward,
+        _synchronizeTradeReservations =
+            synchronizeTradeReservations ?? _ignoreTradeReservations,
+        _applyTradeSettlement = applyTradeSettlement ?? _rejectTradeSettlement,
+        _languageCode = languageCode ?? _defaultLanguageCode;
 
   final SocialRepository _repository;
   final OnlineInventorySnapshot Function() _inventorySnapshot;
@@ -26,7 +38,16 @@ class OnlineAccountProvider extends ChangeNotifier {
   final Future<void> Function(Map<String, String> reservations)
       _synchronizeGroupReservations;
   final Future<bool> Function(GroupAdventureReward reward) _applyGroupReward;
+  final Future<void> Function(
+    Set<String> eggIds,
+    Map<String, int> chests,
+    Map<String, int> relics,
+  ) _synchronizeTradeReservations;
+  final Future<bool> Function(TradeSettlement settlement) _applyTradeSettlement;
+  final String Function() _languageCode;
   StreamSubscription<bool>? _authSubscription;
+  Timer? _refreshTimer;
+  final Set<String> _notifiedTradeStates = {};
   bool _disposed = false;
 
   KeeperProfile? profile;
@@ -35,6 +56,8 @@ class OnlineAccountProvider extends ChangeNotifier {
   List<KeeperProfile> blockedKeepers = const [];
   List<GroupAdventureLobby> groupLobbies = const [];
   GroupAdventureStatus? groupAdventureStatus;
+  List<TradeOffer> trades = const [];
+  List<TradeInventoryItem> tradeInventory = const [];
   bool busy = false;
   String? errorCode;
   String? noticeCode;
@@ -59,6 +82,9 @@ class OnlineAccountProvider extends ChangeNotifier {
   bool get currentGroupOfferConsumed =>
       groupAdventureStatus?.alreadyCompleted == true ||
       groupLobbies.any((lobby) => lobby.isCurrentOffer && lobby.isParticipant);
+  List<TradeOffer> tradesWith(String userId) => trades
+      .where((trade) => trade.otherKeeper.userId == userId && trade.isActive)
+      .toList(growable: false);
 
   Future<void> initialize() async {
     _authSubscription = _repository.authStateChanges.listen((signedIn) {
@@ -70,6 +96,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       }
     });
     if (isSignedIn) await refresh();
+    _ensureRefreshTimer();
   }
 
   Future<AccountAuthResult?> signUp({
@@ -97,6 +124,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       await _run(() async {
         await _repository.signIn(email: email, password: password);
         await _refreshData();
+        _ensureRefreshTimer();
         noticeCode = 'signed_in';
         return true;
       }) ??
@@ -222,6 +250,60 @@ class OnlineAccountProvider extends ChangeNotifier {
         return reward;
       });
 
+  Future<bool> prepareTradeInventory() async =>
+      await _run(() async {
+        await _refreshData();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> createTrade(String friendId, TradeItem item) async =>
+      await _run(() async {
+        await _refreshData();
+        await _repository.createTrade(friendId, item);
+        await _refreshData();
+        noticeCode = 'trade_sent';
+        return true;
+      }) ??
+      false;
+
+  Future<bool> respondToTrade(String tradeId, TradeItem item) async =>
+      await _run(() async {
+        await _refreshData();
+        await _repository.respondToTrade(tradeId, item);
+        await _refreshData();
+        noticeCode = 'trade_response_sent';
+        return true;
+      }) ??
+      false;
+
+  Future<bool> completeTrade(String tradeId) async =>
+      await _run(() async {
+        await _repository.completeTrade(tradeId);
+        await _refreshData();
+        noticeCode = 'trade_completed';
+        return true;
+      }) ??
+      false;
+
+  Future<bool> cancelTrade(String tradeId) async =>
+      await _run(() async {
+        await _repository.cancelTrade(tradeId);
+        await _refreshData();
+        noticeCode = 'trade_cancelled';
+        return true;
+      }) ??
+      false;
+
+  Future<bool> rejectTrade(String tradeId) async =>
+      await _run(() async {
+        await _repository.rejectTrade(tradeId);
+        await _refreshData();
+        noticeCode = 'trade_rejected';
+        return true;
+      }) ??
+      false;
+
   void clearMessages() {
     errorCode = null;
     noticeCode = null;
@@ -239,7 +321,22 @@ class OnlineAccountProvider extends ChangeNotifier {
     if (!ownProfile.inventoryImported) {
       await _repository.importLegacyInventory(snapshot);
     }
-    await _repository.publishSocialShowcase(snapshot);
+    final pendingTrades = await _repository.loadTrades();
+    trades = pendingTrades;
+    await _synchronizeLocalTradeReservations();
+    for (final trade in pendingTrades.where(
+      (trade) => trade.isCompleted && !trade.myAcknowledged,
+    )) {
+      final applied = await _applyTradeSettlement(TradeSettlement(
+        tradeId: trade.id,
+        sent: trade.myItem,
+        received: trade.receivedItem,
+      ));
+      if (!applied) throw const SocialException('trade_apply_failed');
+      await _repository.acknowledgeTrade(trade.id);
+    }
+    await _repository.synchronizeTradeInventory(_inventorySnapshot());
+    await _repository.publishSocialShowcase(_inventorySnapshot());
     ownProfile = await _repository.loadMyProfile();
     final results = await Future.wait([
       _repository.loadFriends(),
@@ -247,6 +344,8 @@ class OnlineAccountProvider extends ChangeNotifier {
       _repository.loadBlockedKeepers(),
       _repository.loadGroupAdventureStatus(),
       _repository.loadGroupAdventures(),
+      _repository.loadTrades(),
+      _repository.loadTradeInventory(),
     ]);
     profile = ownProfile;
     friends = results[0] as List<KeeperProfile>;
@@ -254,9 +353,59 @@ class OnlineAccountProvider extends ChangeNotifier {
     blockedKeepers = results[2] as List<KeeperProfile>;
     groupAdventureStatus = results[3] as GroupAdventureStatus;
     groupLobbies = results[4] as List<GroupAdventureLobby>;
+    trades = results[5] as List<TradeOffer>;
+    tradeInventory = results[6] as List<TradeInventoryItem>;
     await _synchronizeGroupReservations({
       for (final lobby in myGroupAdventures)
         if (lobby.myDragonId case final dragonId?) dragonId: lobby.id,
+    });
+    await _synchronizeLocalTradeReservations();
+    _notifyAboutTradeUpdates();
+  }
+
+  Future<void> _synchronizeLocalTradeReservations() async {
+    final eggs = <String>{};
+    final chests = <String, int>{};
+    final relics = <String, int>{};
+    for (final trade in trades.where((trade) => trade.isActive)) {
+      final item =
+          trade.amInitiator ? trade.initiatorItem : trade.recipientItem;
+      if (item == null) continue;
+      switch (item.kind) {
+        case TradeItemKind.egg:
+          eggs.add(item.key);
+        case TradeItemKind.chest:
+          chests.update(item.key, (value) => value + 1, ifAbsent: () => 1);
+        case TradeItemKind.relic:
+          relics.update(item.key, (value) => value + 1, ifAbsent: () => 1);
+      }
+    }
+    await _synchronizeTradeReservations(eggs, chests, relics);
+  }
+
+  void _notifyAboutTradeUpdates() {
+    for (final trade in trades.where((trade) => trade.needsMyResponse)) {
+      final state = '${trade.id}:${trade.status}';
+      if (!_notifiedTradeStates.add(state)) continue;
+      final dutch = _languageCode() == 'nl';
+      unawaited(HavenNotifications.tradeUpdate(
+        id: state,
+        title: dutch ? 'Nieuwe ruil' : 'New trade',
+        body: trade.amInitiator
+            ? (dutch
+                ? '${trade.otherKeeper.displayName} heeft een item aangeboden. Bevestig de ruil.'
+                : '${trade.otherKeeper.displayName} offered an item. Confirm the trade.')
+            : (dutch
+                ? '${trade.otherKeeper.displayName} wil een item met je ruilen.'
+                : '${trade.otherKeeper.displayName} wants to trade with you.'),
+      ));
+    }
+  }
+
+  void _ensureRefreshTimer() {
+    if (!isConfigured || !isSignedIn || _refreshTimer != null) return;
+    _refreshTimer = Timer.periodic(const Duration(seconds: 45), (_) {
+      if (isSignedIn && !busy) unawaited(refresh());
     });
   }
 
@@ -286,6 +435,8 @@ class OnlineAccountProvider extends ChangeNotifier {
     blockedKeepers = const [];
     groupLobbies = const [];
     groupAdventureStatus = null;
+    trades = const [];
+    tradeInventory = const [];
     unawaited(_synchronizeGroupReservations(const {}));
   }
 
@@ -297,6 +448,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _authSubscription?.cancel();
+    _refreshTimer?.cancel();
     _repository.dispose();
     super.dispose();
   }
@@ -313,3 +465,13 @@ OnlineProfileSnapshot _fallbackProfileSnapshot() => _fallbackOnlineProfile;
 Future<void> _ignoreGroupReservations(Map<String, String> _) async {}
 
 Future<bool> _rejectGroupReward(GroupAdventureReward _) async => false;
+
+Future<void> _ignoreTradeReservations(
+  Set<String> _,
+  Map<String, int> __,
+  Map<String, int> ___,
+) async {}
+
+Future<bool> _rejectTradeSettlement(TradeSettlement _) async => false;
+
+String _defaultLanguageCode() => 'en';

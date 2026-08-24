@@ -1,4 +1,7 @@
 import '../providers/household_provider.dart';
+import 'chest.dart';
+import 'dragon_egg.dart';
+import 'mystic_relic.dart';
 import 'pet.dart';
 
 enum FriendRequestDirection { incoming, outgoing }
@@ -353,6 +356,162 @@ class GroupAdventureReward {
       );
 }
 
+enum TradeItemKind { egg, chest, relic }
+
+class TradeItem {
+  const TradeItem({
+    required this.kind,
+    required this.key,
+    required this.data,
+  });
+
+  final TradeItemKind kind;
+  final String key;
+  final Map<String, dynamic> data;
+
+  factory TradeItem.fromJson(Map<String, dynamic> json) {
+    final kind = TradeItemKind.values.firstWhere(
+      (value) => value.name == json['kind']?.toString(),
+      orElse: () => TradeItemKind.egg,
+    );
+    return TradeItem(
+      kind: kind,
+      key: json['key']?.toString() ?? '',
+      data: json['data'] is Map
+          ? Map<String, dynamic>.from(json['data'] as Map)
+          : const {},
+    );
+  }
+
+  factory TradeItem.egg(DragonEgg egg) => TradeItem(
+        kind: TradeItemKind.egg,
+        key: egg.id,
+        data: egg.toJson(),
+      );
+
+  factory TradeItem.chest(ChestTier tier) => TradeItem(
+        kind: TradeItemKind.chest,
+        key: tier.name,
+        data: const {},
+      );
+
+  factory TradeItem.relic(MysticRelic relic) => TradeItem(
+        kind: TradeItemKind.relic,
+        key: relic.name,
+        data: const {},
+      );
+
+  Map<String, dynamic> toRequestJson() => {'kind': kind.name, 'key': key};
+
+  DragonEgg? get egg => kind == TradeItemKind.egg
+      ? DragonEgg.fromJson({...data, 'id': key})
+      : null;
+  ChestTier? get chestTier => kind == TradeItemKind.chest
+      ? ChestTier.values.cast<ChestTier?>().firstWhere(
+            (value) => value?.name == key,
+            orElse: () => null,
+          )
+      : null;
+  MysticRelic? get relic => kind == TradeItemKind.relic
+      ? MysticRelic.values.cast<MysticRelic?>().firstWhere(
+            (value) => value?.name == key,
+            orElse: () => null,
+          )
+      : null;
+}
+
+class TradeInventoryItem {
+  const TradeInventoryItem({required this.item, required this.available});
+
+  final TradeItem item;
+  final int available;
+
+  factory TradeInventoryItem.fromJson(Map<String, dynamic> json) {
+    final rawData = json['item_data'];
+    return TradeInventoryItem(
+      item: TradeItem.fromJson({
+        'kind': json['item_type'],
+        'key': json['item_key'],
+        'data': rawData is Map ? Map<String, dynamic>.from(rawData) : const {},
+      }),
+      available: _int(json['available'], fallback: 1),
+    );
+  }
+}
+
+class TradeOffer {
+  const TradeOffer({
+    required this.id,
+    required this.status,
+    required this.initiatorId,
+    required this.recipientId,
+    required this.otherKeeper,
+    required this.amInitiator,
+    required this.initiatorItem,
+    required this.recipientItem,
+    required this.myAcknowledged,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  final String id;
+  final String status;
+  final String initiatorId;
+  final String recipientId;
+  final KeeperProfile otherKeeper;
+  final bool amInitiator;
+  final TradeItem initiatorItem;
+  final TradeItem? recipientItem;
+  final bool myAcknowledged;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  bool get isActive =>
+      status == 'awaiting_recipient' || status == 'awaiting_initiator';
+  bool get isCompleted => status == 'completed';
+  bool get needsMyResponse =>
+      (!amInitiator && status == 'awaiting_recipient') ||
+      (amInitiator && status == 'awaiting_initiator');
+  TradeItem get myItem => amInitiator ? initiatorItem : recipientItem!;
+  TradeItem get receivedItem => amInitiator ? recipientItem! : initiatorItem;
+
+  factory TradeOffer.fromJson(Map<String, dynamic> json) {
+    final rawInitiator = json['initiator_item'];
+    final rawRecipient = json['recipient_item'];
+    return TradeOffer(
+      id: json['trade_id']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'awaiting_recipient',
+      initiatorId: json['initiator_id']?.toString() ?? '',
+      recipientId: json['recipient_id']?.toString() ?? '',
+      otherKeeper: KeeperProfile.fromJson(json),
+      amInitiator: json['am_initiator'] == true,
+      initiatorItem: TradeItem.fromJson(rawInitiator is Map
+          ? Map<String, dynamic>.from(rawInitiator)
+          : const {}),
+      recipientItem: rawRecipient is Map
+          ? TradeItem.fromJson(Map<String, dynamic>.from(rawRecipient))
+          : null,
+      myAcknowledged: json['my_acknowledged'] == true,
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+    );
+  }
+}
+
+class TradeSettlement {
+  const TradeSettlement({
+    required this.tradeId,
+    required this.sent,
+    required this.received,
+  });
+
+  final String tradeId;
+  final TradeItem sent;
+  final TradeItem received;
+}
+
 class OnlineInventorySnapshot {
   const OnlineInventorySnapshot({
     required this.coins,
@@ -360,6 +519,7 @@ class OnlineInventorySnapshot {
     required this.dragons,
     required this.eggs,
     required this.chests,
+    required this.relics,
     required this.furnitureCatalogIds,
     required this.discoveredLineageIds,
   });
@@ -369,6 +529,7 @@ class OnlineInventorySnapshot {
   final List<Map<String, dynamic>> dragons;
   final List<Map<String, dynamic>> eggs;
   final Map<String, int> chests;
+  final Map<String, int> relics;
   final List<String> furnitureCatalogIds;
   final List<String> discoveredLineageIds;
 
@@ -396,24 +557,45 @@ class OnlineInventorySnapshot {
           'client_id': game.pet.id,
           'lineage_id': game.pet.lineageId,
           'acquired_at': game.pet.acquiredAt.toUtc().toIso8601String(),
+          'hatch_seed': game.pet.hatchSeed,
           'prismatic': game.pet.prismatic,
+          'law_axis': game.pet.lawAxis.name,
+          'moral_axis': game.pet.moralAxis.name,
+          'size_factor': game.pet.sizeFactor,
+          'incubation_minutes': game.pet.incubationMinutes,
           'sinister': game.pet.sinister,
+          'xp': game.pet.xp,
+          'tradeable': false,
         },
       if (game.incubatingEgg case final egg?)
         {
           'client_id': egg.id,
           'lineage_id': egg.lineageId,
           'acquired_at': egg.acquiredAt.toUtc().toIso8601String(),
+          'hatch_seed': egg.hatchSeed,
           'prismatic': egg.prismatic,
+          'law_axis': egg.lawAxis.name,
+          'moral_axis': egg.moralAxis.name,
+          'size_factor': egg.sizeFactor,
+          'incubation_minutes': egg.incubationMinutes,
           'sinister': egg.sinister,
+          'xp': egg.xp,
+          'tradeable': false,
         },
       for (final egg in game.eggStash)
         {
           'client_id': egg.id,
           'lineage_id': egg.lineageId,
           'acquired_at': egg.acquiredAt.toUtc().toIso8601String(),
+          'hatch_seed': egg.hatchSeed,
           'prismatic': egg.prismatic,
+          'law_axis': egg.lawAxis.name,
+          'moral_axis': egg.moralAxis.name,
+          'size_factor': egg.sizeFactor,
+          'incubation_minutes': egg.incubationMinutes,
           'sinister': egg.sinister,
+          'xp': egg.xp,
+          'tradeable': true,
         },
     ];
     return OnlineInventorySnapshot(
@@ -423,6 +605,10 @@ class OnlineInventorySnapshot {
       eggs: eggs,
       chests: {
         for (final entry in game.chestInventory.entries)
+          entry.key.name: entry.value,
+      },
+      relics: {
+        for (final entry in game.relicInventory.entries)
           entry.key.name: entry.value,
       },
       furnitureCatalogIds: game.ownedItemIds.toList(growable: false),
@@ -439,8 +625,18 @@ class OnlineInventorySnapshot {
         'dragons': dragons,
         'eggs': eggs,
         'chests': chests,
+        'relics': relics,
         'furniture_catalog_ids': furnitureCatalogIds,
         'discovered_lineage_ids': discoveredLineageIds,
+      };
+
+  Map<String, dynamic> toTradeJson() => {
+        'eggs': [
+          for (final egg in eggs)
+            if (egg['tradeable'] == true) egg,
+        ],
+        'chests': chests,
+        'relics': relics,
       };
 
   Map<String, dynamic> toShowcaseJson() {

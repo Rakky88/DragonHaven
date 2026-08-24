@@ -83,6 +83,18 @@ abstract final class HavenNotifications {
         kind: 'evolution',
       );
 
+  static Future<void> tradeUpdate({
+    required String id,
+    required String title,
+    required String body,
+  }) =>
+      _showWhenBackground(
+        id: 'trade-$id',
+        title: title,
+        body: body,
+        kind: 'trade',
+      );
+
   static Future<void> _showWhenBackground({
     required String id,
     required String title,

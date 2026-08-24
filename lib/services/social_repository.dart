@@ -53,6 +53,15 @@ abstract interface class SocialRepository {
   Future<void> removeGroupParticipant(String lobbyId, String userId);
   Future<GroupAdventureReward?> claimGroupReward(String lobbyId);
   Future<void> acknowledgeGroupReward(String lobbyId);
+  Future<void> synchronizeTradeInventory(OnlineInventorySnapshot snapshot);
+  Future<List<TradeInventoryItem>> loadTradeInventory();
+  Future<List<TradeOffer>> loadTrades();
+  Future<void> createTrade(String friendId, TradeItem item);
+  Future<void> respondToTrade(String tradeId, TradeItem item);
+  Future<void> completeTrade(String tradeId);
+  Future<void> cancelTrade(String tradeId);
+  Future<void> rejectTrade(String tradeId);
+  Future<void> acknowledgeTrade(String tradeId);
   void dispose();
 }
 
@@ -132,6 +141,28 @@ class DisabledSocialRepository implements SocialRepository {
       _disabled();
   @override
   Future<void> acknowledgeGroupReward(String lobbyId) async => _disabled();
+  @override
+  Future<void> synchronizeTradeInventory(
+          OnlineInventorySnapshot snapshot) async =>
+      _disabled();
+  @override
+  Future<List<TradeInventoryItem>> loadTradeInventory() async => _disabled();
+  @override
+  Future<List<TradeOffer>> loadTrades() async => _disabled();
+  @override
+  Future<void> createTrade(String friendId, TradeItem item) async =>
+      _disabled();
+  @override
+  Future<void> respondToTrade(String tradeId, TradeItem item) async =>
+      _disabled();
+  @override
+  Future<void> completeTrade(String tradeId) async => _disabled();
+  @override
+  Future<void> cancelTrade(String tradeId) async => _disabled();
+  @override
+  Future<void> rejectTrade(String tradeId) async => _disabled();
+  @override
+  Future<void> acknowledgeTrade(String tradeId) async => _disabled();
   @override
   Future<void> updateProfile({
     required String displayName,

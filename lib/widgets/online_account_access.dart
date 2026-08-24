@@ -354,6 +354,37 @@ String socialMessage(AppStrings strings, String code) => switch (code) {
       'group_reward_apply_failed' => strings.pick(
           'The reward could not be linked to your local dragon.',
           'De beloning kon niet aan je lokale draak worden gekoppeld.'),
+      'trade_sent' =>
+        strings.pick('Trade proposal sent.', 'Ruilvoorstel verstuurd.'),
+      'trade_response_sent' => strings.pick(
+          'Your item is reserved. Your friend can now confirm the trade.',
+          'Je item is gereserveerd. Je vriend kan de ruil nu bevestigen.'),
+      'trade_completed' => strings.pick(
+          'Trade completed. The received item is in your inventory.',
+          'Ruil afgerond. Het ontvangen item staat in je inventaris.'),
+      'trade_cancelled' => strings.pick(
+          'Trade cancelled. Reserved items are available again.',
+          'Ruil geannuleerd. Gereserveerde items zijn weer beschikbaar.'),
+      'trade_rejected' => strings.pick(
+          'Trade rejected. Reserved items are available again.',
+          'Ruil geweigerd. Gereserveerde items zijn weer beschikbaar.'),
+      'trade_not_friends' => strings.pick(
+          'Trades are only available between friends.',
+          'Ruilen kan alleen tussen vrienden.'),
+      'trade_wrong_state' => strings.pick(
+          'This trade has already changed. Refresh and try again.',
+          'Deze ruil is al gewijzigd. Vernieuw en probeer opnieuw.'),
+      'trade_item_invalid' => strings.pick(
+          'This item cannot be traded.', 'Dit item kan niet worden geruild.'),
+      'trade_item_unavailable' => strings.pick(
+          'This item is no longer available or is already reserved.',
+          'Dit item is niet meer beschikbaar of is al gereserveerd.'),
+      'trade_inventory_locked' => strings.pick(
+          'You have too many active trades. Finish or cancel one first.',
+          'Je hebt te veel actieve ruilen. Rond er eerst één af of annuleer er één.'),
+      'trade_apply_failed' => strings.pick(
+          'The completed trade could not be stored locally. Your server items remain safe; please refresh.',
+          'De afgeronde ruil kon niet lokaal worden opgeslagen. Je serveritems blijven veilig; vernieuw opnieuw.'),
       _ => strings.pick(
           'The online service could not complete this action. Please try again.',
           'De online dienst kon deze actie niet uitvoeren. Probeer het opnieuw.'),
