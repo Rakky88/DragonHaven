@@ -19,6 +19,7 @@ import '../models/pet.dart';
 import '../models/profile_portrait.dart';
 import '../models/shop_item.dart';
 import '../models/tower_interaction.dart';
+import '../models/trial.dart';
 import '../services/storage_service.dart';
 import '../services/audio_service.dart';
 import '../services/notification_service.dart';
@@ -129,6 +130,8 @@ class HouseholdProvider extends ChangeNotifier {
   int favoriteChanges = 0;
 
   List<AdventureRun> adventureRuns = [];
+  List<TrialOffer> trialOffers = [];
+  DateTime? trialRefilledAt;
   Set<String> appliedOnlineGroupRewardIds = {};
   Set<String> appliedOnlineTradeIds = {};
   Set<String> reservedOnlineTradeEggIds = {};
@@ -161,7 +164,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 37;
+  static const _schemaVersion = 38;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(
@@ -244,6 +247,26 @@ class HouseholdProvider extends ChangeNotifier {
       ..relicInventory = {
         for (final relic in MysticRelic.values) relic: 1,
       }
+      ..trialOffers = [
+        TrialOffer(
+          id: 'release-demo-flight',
+          kind: TrialKind.cavernFlight,
+          appearedAt: now,
+        ),
+        TrialOffer(
+          id: 'release-demo-ruin',
+          kind: TrialKind.ruinBreaker,
+          appearedAt: now,
+        ),
+        TrialOffer(
+          id: 'release-demo-rune',
+          kind: TrialKind.runeweaver,
+          appearedAt: now,
+        ),
+      ]
+      ..trialRefilledAt = now
+      ..unlockedAchievementIds =
+          achievementCatalog.map((achievement) => achievement.id).toSet()
       ..pendingPresentations = [];
     provider._ensureFavoriteDragon();
     provider._normalizeRoamingState();
@@ -780,6 +803,13 @@ class HouseholdProvider extends ChangeNotifier {
         .map(AdventureRun.fromJson)
         .where((run) => AdventureCatalog.byId.containsKey(run.adventureId))
         .toList();
+    trialOffers = mapsFromJson(data['trialOffers'])
+        .map(TrialOffer.fromJson)
+        .where((offer) => offer.id.isNotEmpty)
+        .take(3)
+        .toList();
+    trialRefilledAt =
+        DateTime.tryParse(stringFromJson(data['trialRefilledAt']) ?? '');
     final rawAdventureOptions = mapFromJson(data['adventureOptionIds']);
     adventureOptionIds = {
       AdventureKind.mini: (rawAdventureOptions['mini'] as List?)
@@ -1586,9 +1616,14 @@ class HouseholdProvider extends ChangeNotifier {
       shortAdventureRefilledAt?.toIso8601String() ?? '',
       longAdventureRefillDay,
     ].join('|');
+    final trialsBefore = [
+      ...trialOffers.map((offer) => '${offer.id}:${offer.kind.name}'),
+      trialRefilledAt?.toIso8601String() ?? '',
+    ].join('|');
     adventuresFor(AdventureKind.mini);
     adventuresFor(AdventureKind.short);
     adventuresFor(AdventureKind.long);
+    availableTrials;
     final adventureOptionsAfter = [
       ...?adventureOptionIds[AdventureKind.mini],
       '#',
@@ -1599,8 +1634,13 @@ class HouseholdProvider extends ChangeNotifier {
       shortAdventureRefilledAt?.toIso8601String() ?? '',
       longAdventureRefillDay,
     ].join('|');
+    final trialsAfter = [
+      ...trialOffers.map((offer) => '${offer.id}:${offer.kind.name}'),
+      trialRefilledAt?.toIso8601String() ?? '',
+    ].join('|');
     final roamingAssignmentsChanged = _normalizeRoamingState();
     final changed = (adventureOptionsBefore != adventureOptionsAfter) |
+        (trialsBefore != trialsAfter) |
         pet.applyTimeDecay(_clock()) |
         _registerCurrentStage() |
         _evolveReadyDragons(_clock()) |
@@ -1827,6 +1867,8 @@ class HouseholdProvider extends ChangeNotifier {
       'totalSinisterAdventuresCompleted': totalSinisterAdventuresCompleted,
       'favoriteChanges': favoriteChanges,
       'adventureRuns': adventureRuns.map((run) => run.toJson()).toList(),
+      'trialOffers': trialOffers.map((offer) => offer.toJson()).toList(),
+      'trialRefilledAt': trialRefilledAt?.toIso8601String(),
       'appliedOnlineGroupRewardIds': appliedOnlineGroupRewardIds.toList(),
       'appliedOnlineTradeIds': appliedOnlineTradeIds.toList(),
       'reservedOnlineTradeEggIds': reservedOnlineTradeEggIds.toList(),

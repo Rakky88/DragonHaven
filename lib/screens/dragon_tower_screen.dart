@@ -9,6 +9,7 @@ import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/dragon_trial_records.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/haven_lighting.dart';
 import '../widgets/rooftop_egg_nest.dart';
@@ -744,6 +745,12 @@ class _OwnedDragonsSheet extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             _DragonProgressCard(dragon: dragon),
+            const SizedBox(height: 10),
+            DragonTrialRecords(
+              cavernFlightBest: dragon.trialBest('cavernFlight'),
+              ruinBreakerBest: dragon.trialBest('ruinBreaker'),
+              runeweaverBest: dragon.trialBest('runeweaver'),
+            ),
             const SizedBox(height: 10),
             Card(
               margin: EdgeInsets.zero,

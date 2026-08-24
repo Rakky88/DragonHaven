@@ -8,13 +8,16 @@ import '../models/adventure.dart';
 import '../models/chest.dart';
 import '../models/pet.dart';
 import '../models/social.dart';
+import '../models/trial.dart';
 import '../providers/household_provider.dart';
 import '../providers/online_account_provider.dart';
+import 'trial_game_screen.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
+import '../widgets/ui_bits.dart';
 
 class AdventureHubScreen extends StatefulWidget {
   const AdventureHubScreen({super.key});
@@ -32,7 +35,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 2, vsync: this);
+    _tabs = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final online = context.read<OnlineAccountProvider>();
@@ -66,6 +69,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
     final online = context.watch<OnlineAccountProvider>();
     final activeCount = game.activeAdventureRuns.length +
         (online.isSignedIn ? online.myGroupAdventures.length : 0);
+    final trialCount = game.availableTrials.length;
     return Column(
       children: [
         Padding(
@@ -98,28 +102,38 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
           color: Theme.of(context).scaffoldBackgroundColor,
           child: TabBar(
             controller: _tabs,
+            isScrollable: true,
+            tabAlignment: TabAlignment.center,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 10),
             tabs: [
-              Tab(text: strings.pick('Available', 'Beschikbaar')),
+              Tab(
+                child: Text(
+                  strings.pick('Available', 'Beschikbaar'),
+                  key: const Key('adventure-tab-available'),
+                ),
+              ),
               Tab(
                 child: Row(
+                  key: const Key('adventure-tab-trials'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(strings.pick('Trials', 'Proeven')),
+                    if (trialCount > 0) ...[
+                      const SizedBox(width: 6),
+                      _TabCount(value: trialCount, gold: true),
+                    ],
+                  ],
+                ),
+              ),
+              Tab(
+                child: Row(
+                  key: const Key('adventure-tab-active'),
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(strings.pick('Active', 'Actief')),
                     if (activeCount > 0) ...[
                       const SizedBox(width: 7),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.twilight,
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        child: Text('$activeCount',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900)),
-                      ),
+                      _TabCount(value: activeCount),
                     ],
                   ],
                 ),
@@ -132,6 +146,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
             controller: _tabs,
             children: [
               _AvailableAdventures(now: game.currentTime),
+              _TrialsTab(now: game.currentTime),
               _ActiveAdventures(now: game.currentTime),
             ],
           ),
@@ -140,6 +155,460 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
     );
   }
 }
+
+class _TabCount extends StatelessWidget {
+  const _TabCount({required this.value, this.gold = false});
+
+  final int value;
+  final bool gold;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        decoration: BoxDecoration(
+          color: gold ? AppColors.gold : AppColors.twilight,
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Text(
+          '$value',
+          style: TextStyle(
+            color: gold ? const Color(0xFF2A1E50) : Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      );
+}
+
+class _TrialsTab extends StatelessWidget {
+  const _TrialsTab({required this.now});
+
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final game = context.watch<HouseholdProvider>();
+    final offers = game.availableTrials;
+    return ListView(
+      key: const PageStorageKey('trials-scroll'),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF2A1E50), Color(0xFF5B3D91)],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.gold, width: 1.2),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x302A1E50),
+                blurRadius: 14,
+                offset: Offset(0, 7),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              const GameIconSprite(GameIconKind.adventureSpecial, size: 52),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.pick('Dragon Trials', 'Drakenproeven'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      strings.pick(
+                        'Your dragon helps, but your performance decides the reward.',
+                        'Je draak helpt, maar jouw prestatie bepaalt de beloning.',
+                      ),
+                      style: const TextStyle(
+                        color: Color(0xFFDCD2F4),
+                        fontSize: 11.5,
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              _TrialRefreshCountdown(
+                remaining: game.trialRefreshRemaining(from: now),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        if (offers.isEmpty)
+          const _EmptyTrials()
+        else
+          for (final offer in offers) ...[
+            _TrialOfferCard(offer: offer),
+            const SizedBox(height: 12),
+          ],
+      ],
+    );
+  }
+}
+
+class _TrialRefreshCountdown extends StatelessWidget {
+  const _TrialRefreshCountdown({required this.remaining});
+
+  final Duration remaining;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        key: const Key('trial-refresh-countdown'),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: .24),
+          borderRadius: BorderRadius.circular(99),
+          border: Border.all(color: Colors.white24),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const GameIconSprite(GameIconKind.clock, size: 18),
+            const SizedBox(width: 4),
+            Text(
+              _formatRefreshCountdown(remaining, includeDays: false),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _EmptyTrials extends StatelessWidget {
+  const _EmptyTrials();
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            const GameIconSprite(GameIconKind.adventureActive, size: 96),
+            const SizedBox(height: 12),
+            Text(
+              strings.pick('The Trial gates are resting',
+                  'De poorten van de proeven rusten'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              strings.pick(
+                'A new Trial appears at the next quarter-hour.',
+                'Op het volgende kwartier verschijnt een nieuwe proef.',
+              ),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.muted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrialOfferCard extends StatelessWidget {
+  const _TrialOfferCard({required this.offer});
+
+  final TrialOffer offer;
+
+  String get _asset => switch (offer.kind) {
+        TrialKind.cavernFlight =>
+          'assets/images/ui/trials/trial_cavern_flight.webp',
+        TrialKind.ruinBreaker =>
+          'assets/images/ui/trials/trial_ruin_breaker.webp',
+        TrialKind.runeweaver => 'assets/images/ui/trials/trial_runeweaver.webp',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final game = context.watch<HouseholdProvider>();
+    final definition = offer.definition;
+    final best = game.accountTrialBest(offer.kind);
+    return Card(
+      key: Key('trial-offer-${offer.id}'),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _startTrial(context, offer),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: 148,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(_asset, fit: BoxFit.cover),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.transparent, Color(0xD9231746)],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 15,
+                    right: 54,
+                    bottom: 12,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings.pick(
+                            definition.titleEn,
+                            definition.titleNl,
+                          ),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 21,
+                            fontWeight: FontWeight.w900,
+                            shadows: [Shadow(blurRadius: 7)],
+                          ),
+                        ),
+                        Text(
+                          _focusName(strings, definition.focus),
+                          style: const TextStyle(
+                            color: Color(0xFFFFE08A),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: IconButton.filledTonal(
+                      key: Key('dismiss-trial-${offer.id}'),
+                      tooltip: strings.pick('Dismiss Trial', 'Proef negeren'),
+                      onPressed: () => game.dismissTrial(offer.id),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 12, 12, 13),
+              child: Row(
+                children: [
+                  GameIconSprite(
+                    GameIconSprite.forTrainingFocus(definition.focus),
+                    size: 34,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings.pick(
+                            definition.subtitleEn,
+                            definition.subtitleNl,
+                          ),
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 11.5,
+                            height: 1.25,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          best == 0
+                              ? strings.pick('No account record yet',
+                                  'Nog geen accountrecord')
+                              : '${strings.pick('Account best', 'Accountrecord')}: $best',
+                          style: const TextStyle(
+                            color: AppColors.twilight,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: const BoxDecoration(
+                      color: AppColors.goldLight,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow_rounded,
+                      color: AppColors.twilight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
+  final game = context.read<HouseholdProvider>();
+  final strings = AppStrings.of(context);
+  final dragons = game.ownedDragons
+      .where((dragon) => dragon.activeAdventureId == null)
+      .toList()
+    ..sort((a, b) => b
+        .trainingFor(offer.definition.focus)
+        .compareTo(a.trainingFor(offer.definition.focus)));
+  if (dragons.isEmpty) {
+    showAppSnackBar(
+      context,
+      strings.pick(
+        'No dragon is currently available for this Trial.',
+        'Er is nu geen draak beschikbaar voor deze proef.',
+      ),
+    );
+    return;
+  }
+  final dragon = await showModalBottomSheet<Pet>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => _TrialDragonPicker(
+      offer: offer,
+      dragons: dragons,
+    ),
+  );
+  if (dragon == null || !context.mounted) return;
+  await Navigator.of(context).push<TrialCompletion>(
+    MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (_) => TrialGameScreen(
+        offerId: offer.id,
+        dragonId: dragon.id,
+      ),
+    ),
+  );
+}
+
+class _TrialDragonPicker extends StatelessWidget {
+  const _TrialDragonPicker({required this.offer, required this.dragons});
+
+  final TrialOffer offer;
+  final List<Pet> dragons;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final focus = offer.definition.focus;
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * .72,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 4, 18, 12),
+              child: Column(
+                children: [
+                  Text(
+                    strings.pick('Choose your Trial dragon',
+                        'Kies je draak voor de proef'),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _trialStatBenefit(strings, offer.kind),
+                    textAlign: TextAlign.center,
+                    style:
+                        const TextStyle(color: AppColors.muted, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.separated(
+                key: const Key('trial-dragon-picker'),
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
+                itemCount: dragons.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 7),
+                itemBuilder: (context, index) {
+                  final dragon = dragons[index];
+                  return Card(
+                    color: index == 0 ? const Color(0xFFFFFAE9) : Colors.white,
+                    child: ListTile(
+                      key: Key('trial-dragon-${dragon.id}'),
+                      onTap: () => Navigator.pop(context, dragon),
+                      leading: SizedBox.square(
+                        dimension: 58,
+                        child: DragonArt(
+                          height: 58,
+                          animate: false,
+                          stageKey: dragon.stageKey,
+                          lineageId: dragon.lineageId,
+                          evolutionPath: dragon.activeEvolutionPath,
+                          prismatic: dragon.prismatic,
+                          sinister: dragon.sinister,
+                        ),
+                      ),
+                      title: Text(
+                        dragon.displayName,
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      subtitle: Text(
+                        '${_focusName(strings, focus)} ${dragon.trainingFor(focus)} · '
+                        '${strings.pick('Best', 'Beste')}: ${dragon.trialBest(offer.kind.name)}',
+                      ),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _trialStatBenefit(AppStrings strings, TrialKind kind) => switch (kind) {
+      TrialKind.cavernFlight => strings.pick(
+          'Higher Spirit makes the real collision box up to 10% smaller.',
+          'Hogere Spirit maakt de echte hitbox tot 10% kleiner.'),
+      TrialKind.ruinBreaker => strings.pick(
+          'Higher Might widens successful timing up to 15% and Perfect up to 5%.',
+          'Hogere Kracht vergroot succesvolle timing tot 15% en Perfect tot 5%.'),
+      TrialKind.runeweaver => strings.pick(
+          'Higher Arcana keeps every demonstrated rune visible longer.',
+          'Hogere Arcana houdt iedere getoonde rune langer zichtbaar.'),
+    };
 
 class _AvailableAdventures extends StatelessWidget {
   const _AvailableAdventures({required this.now});

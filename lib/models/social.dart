@@ -40,6 +40,9 @@ class FavoriteDragonSummary {
     required this.evolutionPath,
     required this.prismatic,
     required this.sinister,
+    this.cavernFlightBest = 0,
+    this.ruinBreakerBest = 0,
+    this.runeweaverBest = 0,
   });
 
   final String id;
@@ -53,6 +56,9 @@ class FavoriteDragonSummary {
   final String evolutionPath;
   final bool prismatic;
   final bool sinister;
+  final int cavernFlightBest;
+  final int ruinBreakerBest;
+  final int runeweaverBest;
 
   String get stageKey => switch (stage) {
         'egg' => 'moonEgg',
@@ -75,6 +81,9 @@ class FavoriteDragonSummary {
             json['favorite_dragon_evolution_path']?.toString() ?? 'spirit',
         prismatic: json['favorite_dragon_prismatic'] == true,
         sinister: json['favorite_dragon_sinister'] == true,
+        cavernFlightBest: _int(json['favorite_dragon_cavern_flight_best']),
+        ruinBreakerBest: _int(json['favorite_dragon_ruin_breaker_best']),
+        runeweaverBest: _int(json['favorite_dragon_runeweaver_best']),
       );
 }
 
@@ -87,6 +96,9 @@ class KeeperProfile {
     required this.portraitKey,
     required this.discoveredDragonCount,
     required this.inventoryImported,
+    this.cavernFlightBest = 0,
+    this.ruinBreakerBest = 0,
+    this.runeweaverBest = 0,
     this.favoriteDragon,
   });
 
@@ -97,6 +109,9 @@ class KeeperProfile {
   final String portraitKey;
   final int discoveredDragonCount;
   final bool inventoryImported;
+  final int cavernFlightBest;
+  final int ruinBreakerBest;
+  final int runeweaverBest;
   final FavoriteDragonSummary? favoriteDragon;
 
   factory KeeperProfile.fromJson(Map<String, dynamic> json) {
@@ -109,6 +124,9 @@ class KeeperProfile {
       portraitKey: json['portrait_key']?.toString() ?? 'moon',
       discoveredDragonCount: _int(json['discovered_dragon_count']),
       inventoryImported: json['inventory_imported'] == true,
+      cavernFlightBest: _int(json['cavern_flight_best']),
+      ruinBreakerBest: _int(json['ruin_breaker_best']),
+      runeweaverBest: _int(json['runeweaver_best']),
       favoriteDragon: favoriteId == null || favoriteId.isEmpty
           ? null
           : FavoriteDragonSummary.fromJson(json),
@@ -549,6 +567,7 @@ class OnlineInventorySnapshot {
               'favorite': dragon.favorite,
               'prismatic': dragon.prismatic,
               'sinister': dragon.sinister,
+              'trial_high_scores': dragon.trialHighScores,
             })
         .toList(growable: false);
     final eggs = <Map<String, dynamic>>[
@@ -646,9 +665,23 @@ class OnlineInventorySnapshot {
         );
     return {
       'discovered_dragon_count': discoveredLineageIds.length,
+      'trial_high_scores': {
+        'cavernFlight': _bestDragonTrialScore('cavernFlight'),
+        'ruinBreaker': _bestDragonTrialScore('ruinBreaker'),
+        'runeweaver': _bestDragonTrialScore('runeweaver'),
+      },
       'favorite_dragon': favorite,
     };
   }
+
+  int _bestDragonTrialScore(String key) => dragons.fold<int>(
+        0,
+        (best, dragon) {
+          final scores = dragon['trial_high_scores'];
+          if (scores is! Map) return best;
+          return best > _int(scores[key]) ? best : _int(scores[key]);
+        },
+      );
 }
 
 int _int(Object? value, {int fallback = 0}) =>

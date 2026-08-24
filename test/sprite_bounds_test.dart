@@ -457,4 +457,48 @@ void main() {
     }
     expect(fingerprints, hasLength(paths.length));
   });
+
+  test('Trial card art and dragon-free game backgrounds are release quality',
+      () async {
+    const paths = [
+      'assets/images/ui/trials/trial_cavern_flight.webp',
+      'assets/images/ui/trials/trial_ruin_breaker.webp',
+      'assets/images/ui/trials/trial_runeweaver.webp',
+      'assets/images/ui/trials/trial_cavern_background.webp',
+      'assets/images/ui/trials/trial_ruin_background.webp',
+      'assets/images/ui/trials/trial_rune_background.webp',
+    ];
+    final fingerprints = <int>{};
+    for (final path in paths) {
+      final bytes = await File(path).readAsBytes();
+      final image = await _decode(path);
+      expect(image.width, 1536, reason: path);
+      expect(image.height, 1024, reason: path);
+      expect(bytes.length, greaterThan(1000000),
+          reason: '$path should retain detailed source art');
+      fingerprints.add(Object.hash(bytes.length, Object.hashAll(bytes)));
+    }
+    expect(fingerprints, hasLength(paths.length));
+
+    const wingsPath = 'assets/images/ui/trials/trial_flight_wings.png';
+    final wingImage = await _decode(wingsPath);
+    expect(wingImage.width, wingImage.height * 3);
+    final bytes = wingImage.rgba;
+    expect(
+      List.generate(3, (frame) {
+        final left = frame * wingImage.height;
+        var opaquePixels = 0;
+        for (var y = 0; y < wingImage.height; y += 4) {
+          for (var x = left; x < left + wingImage.height; x += 4) {
+            if (bytes[(y * wingImage.width + x) * 4 + 3] > 32) {
+              opaquePixels++;
+            }
+          }
+        }
+        return opaquePixels;
+      }),
+      everyElement(greaterThan(1000)),
+      reason: 'every flight frame needs a complete transparent wing pair',
+    );
+  });
 }

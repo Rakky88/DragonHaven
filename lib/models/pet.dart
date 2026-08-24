@@ -15,6 +15,13 @@ Map<String, int> _normalizedTraining(Map<String, int>? values) => {
             (values?[focus.name] ?? 0).clamp(0, maxDragonExpertise).toInt(),
     };
 
+const _trialKeys = {'cavernFlight', 'ruinBreaker', 'runeweaver'};
+
+Map<String, int> _normalizedTrialHighScores(Map<String, int>? values) => {
+      for (final key in _trialKeys)
+        key: (values?[key] ?? 0).clamp(0, 1000000000).toInt(),
+    };
+
 enum LawAxis { lawful, neutral, chaotic }
 
 enum MoralAxis { good, neutral, evil }
@@ -88,6 +95,7 @@ class Pet {
     DateTime? stageStartedAt,
     DateTime? needsUpdatedAt,
     Map<String, int>? training,
+    Map<String, int>? trialHighScores,
     int? hatchSeed,
     String? lineageId,
     this.evolutionPath,
@@ -96,6 +104,7 @@ class Pet {
         stageStartedAt = stageStartedAt ?? acquiredAt ?? DateTime.now(),
         needsUpdatedAt = needsUpdatedAt ?? DateTime.now(),
         training = _normalizedTraining(training),
+        trialHighScores = _normalizedTrialHighScores(trialHighScores),
         personalityTraitIds = personalityTraitIds ?? <String>[],
         hatchSeed = hatchSeed ??
             DateTime.now().microsecondsSinceEpoch.remainder(0x7fffffff),
@@ -137,6 +146,7 @@ class Pet {
   DateTime stageStartedAt;
   DateTime needsUpdatedAt;
   final Map<String, int> training;
+  final Map<String, int> trialHighScores;
   final int hatchSeed;
   final String lineageId;
   String? evolutionPath;
@@ -214,6 +224,16 @@ class Pet {
 
   double get wellbeing => (joy + energy + comfort) / 300;
   int trainingFor(TrainingFocus focus) => training[focus.name] ?? 0;
+  int trialBest(String trialKey) => trialHighScores[trialKey] ?? 0;
+
+  bool recordTrialScore(String trialKey, int score) {
+    if (!_trialKeys.contains(trialKey) || score <= trialBest(trialKey)) {
+      return false;
+    }
+    trialHighScores[trialKey] = score.clamp(0, 1000000000).toInt();
+    return true;
+  }
+
   int get totalTraining => TrainingFocus.values
       .fold(0, (total, focus) => total + trainingFor(focus));
 
@@ -363,6 +383,7 @@ class Pet {
         'stageStartedAt': stageStartedAt.toIso8601String(),
         'needsUpdatedAt': needsUpdatedAt.toIso8601String(),
         'training': training,
+        'trialHighScores': trialHighScores,
         'hatchSeed': hatchSeed,
         'lineageId': lineageId,
         'evolutionPath': evolutionPath,
@@ -467,6 +488,10 @@ class Pet {
           rawTraining['spirit'] ?? oldTraining['bond'],
           fallback: 0,
         ),
+      },
+      trialHighScores: {
+        for (final entry in mapFromJson(json['trialHighScores']).entries)
+          entry.key: nonNegativeIntFromJson(entry.value, fallback: 0),
       },
     );
   }

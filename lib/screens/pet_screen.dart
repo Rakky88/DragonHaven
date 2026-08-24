@@ -14,6 +14,7 @@ import '../services/audio_service.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/dragon_trial_records.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/rooftop_egg_nest.dart';
 import '../widgets/ui_bits.dart';
@@ -69,6 +70,14 @@ class PetScreen extends StatelessWidget {
         if (pet.stage == DragonStage.wyrmling ||
             pet.stage == DragonStage.ascended) ...[
           _TrainingPanel(pet: pet),
+          const SizedBox(height: 18),
+        ],
+        if (!pet.isEgg) ...[
+          DragonTrialRecords(
+            cavernFlightBest: pet.trialBest('cavernFlight'),
+            ruinBreakerBest: pet.trialBest('ruinBreaker'),
+            runeweaverBest: pet.trialBest('runeweaver'),
+          ),
           const SizedBox(height: 18),
         ],
         _EvolutionPanel(pet: pet),

@@ -394,6 +394,9 @@ void main() {
     expect(find.text('Might'), findsOneWidget);
     expect(find.text('Arcana'), findsOneWidget);
     expect(find.text('Spirit'), findsOneWidget);
+    expect(find.byKey(const Key('account-trial-records')), findsOneWidget);
+    expect(find.byKey(const Key('dragon-trial-records')), findsOneWidget);
+    expect(find.text('Cavern Flight'), findsNWidgets(2));
     expect(find.byKey(const Key('start-trade-button')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('start-trade-button')));
@@ -500,6 +503,9 @@ class _FakeSocialRepository implements SocialRepository {
     evolutionPath: 'spirit',
     prismatic: false,
     sinister: false,
+    cavernFlightBest: 148,
+    ruinBreakerBest: 720,
+    runeweaverBest: 8,
   );
 
   static const _friend = KeeperProfile(
@@ -510,6 +516,9 @@ class _FakeSocialRepository implements SocialRepository {
     portraitKey: 'portrait_042',
     discoveredDragonCount: 12,
     inventoryImported: true,
+    cavernFlightBest: 211,
+    ruinBreakerBest: 1200,
+    runeweaverBest: 11,
     favoriteDragon: _favorite,
   );
 

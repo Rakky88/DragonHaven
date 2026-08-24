@@ -13,6 +13,7 @@ import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/profile_portrait.dart';
 import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/models/social.dart';
+import 'package:dragon_haven/models/trial.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/providers/online_account_provider.dart';
 import 'package:dragon_haven/screens/achievements_screen.dart';
@@ -291,8 +292,9 @@ void main() {
       child: const MaterialApp(home: Scaffold(body: AdventureHubScreen())),
     ));
     await tester.pump(const Duration(milliseconds: 300));
-    await tester.drag(find.byType(TabBarView), const Offset(-420, 0));
+    await tester.tap(find.byKey(const Key('adventure-tab-active')));
     await tester.pumpAndSettle();
+    expect(tester.widget<TabBar>(find.byType(TabBar)).controller?.index, 2);
     final activeList = find.byKey(
       const PageStorageKey('active-adventures-scroll'),
     );
@@ -313,6 +315,70 @@ void main() {
     await tester.pump();
     expect(game.chestCount(ChestTier.wooden), 1);
     expect(game.activeAdventureRuns, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Trials sit between Available and Active and open a real game',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final game = HouseholdProvider(random: Random(714))
+      ..pet = Pet(
+        id: 'trial-widget-dragon',
+        name: 'Moss',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+      );
+    final online = OnlineAccountProvider(
+      repository: const DisabledSocialRepository(),
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    addTearDown(online.dispose);
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const MaterialApp(home: Scaffold(body: AdventureHubScreen())),
+    ));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    final labels = tester
+        .widgetList<Text>(find.descendant(
+          of: find.byType(TabBar),
+          matching: find.byType(Text),
+        ))
+        .map((text) => text.data)
+        .whereType<String>()
+        .toList();
+    expect(labels, containsAllInOrder(['Available', 'Trials', 'Active']));
+
+    await tester.tap(find.byKey(const Key('adventure-tab-trials')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TabBar>(find.byType(TabBar)).controller?.index, 1);
+    expect(find.byKey(const PageStorageKey('trials-scroll')), findsOneWidget);
+    expect(find.byKey(const Key('trial-refresh-countdown')), findsOneWidget);
+    expect(find.byKey(const Key('trial-dragon-picker')), findsNothing);
+    final offers = game.availableTrials;
+    expect(offers, hasLength(3));
+    await tester.tap(find.byKey(Key('trial-offer-${offers.first.id}')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    expect(find.byKey(const Key('trial-dragon-picker')), findsOneWidget);
+
+    final dragonChoice =
+        find.byKey(const Key('trial-dragon-trial-widget-dragon'));
+    await tester.ensureVisible(dragonChoice);
+    await tester.pump();
+    await tester.tap(dragonChoice);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    final gameKey = switch (offers.first.kind) {
+      TrialKind.cavernFlight => const Key('cavern-flight-game'),
+      TrialKind.ruinBreaker => const Key('ruin-breaker-game'),
+      TrialKind.runeweaver => const Key('runeweaver-game'),
+    };
+    expect(find.byKey(gameKey), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -570,6 +636,7 @@ void main() {
     expect(find.text('Might'), findsOneWidget);
     expect(find.text('Arcana'), findsOneWidget);
     expect(find.text('Spirit'), findsOneWidget);
+    expect(find.byKey(const Key('dragon-trial-records')), findsOneWidget);
     expect(find.text('Moral nature'), findsOneWidget);
     expect(find.text('Order nature'), findsOneWidget);
     expect(find.text('Personality'), findsOneWidget);
@@ -1303,7 +1370,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.02.04'), findsOneWidget);
+    expect(find.text('v0.03.00'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

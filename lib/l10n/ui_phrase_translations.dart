@@ -1,3 +1,5 @@
+import 'trial_phrase_translations.dart';
+
 /// Offline translations for complete, user-visible UI phrases.
 ///
 /// The list order is German, Spanish, French, Italian, Portuguese,
@@ -15,7 +17,8 @@ const _languageIndex = <String, int>{
 
 String? translatedUiPhrase(String english, String languageCode) {
   final index = _languageIndex[languageCode];
-  final values = uiPhraseTranslations[english];
+  final values =
+      uiPhraseTranslations[english] ?? trialPhraseTranslations[english];
   if (index == null) return null;
   if (values != null && values.length == 7) return values[index];
   return _translatedDynamicUiPhrase(english, languageCode);
@@ -28,7 +31,20 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
   String? capture(RegExp expression, [int group = 1]) =>
       expression.firstMatch(text)?.group(group);
 
-  var value = capture(RegExp(r'^(.+) already has a place in the house\.$'));
+  var value = capture(RegExp(r'^NEW (.+) RECORD!$'));
+  if (value != null) {
+    return _localized(languageCode, [
+      'NEUER REKORD FÜR $value!',
+      '¡NUEVO RÉCORD DE $value!',
+      'NOUVEAU RECORD DE $value !',
+      'NUOVO RECORD DI $value!',
+      'NOVO RECORDE DE $value!',
+      '$value 的新纪录！',
+      '$valueの新記録！',
+    ]);
+  }
+
+  value = capture(RegExp(r'^(.+) already has a place in the house\.$'));
   if (value != null) {
     return _localized(languageCode, [
       '$value hat bereits einen Platz im Haus.',

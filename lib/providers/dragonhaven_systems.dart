@@ -132,6 +132,17 @@ extension DragonHavenSystems on HouseholdProvider {
     return remaining.isNegative ? Duration.zero : remaining;
   }
 
+  DateTime nextTrialRefreshAt({DateTime? from}) {
+    final now = from ?? _clock();
+    return _adventureRefillBoundary(now, 15).add(const Duration(minutes: 15));
+  }
+
+  Duration trialRefreshRemaining({DateTime? from}) {
+    final now = from ?? _clock();
+    final remaining = nextTrialRefreshAt(from: now).difference(now);
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
   List<Pet> get ownedDragons => [
         if (!pet.isEgg) pet,
         ...sanctuaryDragons.where((dragon) => !dragon.isEgg),
@@ -484,6 +495,104 @@ extension DragonHavenSystems on HouseholdProvider {
         .map((id) => AdventureCatalog.byId[id])
         .whereType<AdventureDefinition>()
         .toList(growable: false);
+  }
+
+  List<TrialOffer> get availableTrials {
+    _refreshTrialOffers();
+    return List.unmodifiable(trialOffers);
+  }
+
+  int accountTrialBest(TrialKind kind) => ownedDragons.fold(
+        0,
+        (best, dragon) => max(best, dragon.trialBest(kind.name)),
+      );
+
+  bool _refreshTrialOffers() {
+    final now = _clock();
+    final currentBoundary = _adventureRefillBoundary(now, 15);
+    final previous = trialRefilledAt;
+    var refillCount = 0;
+    if (previous == null) {
+      refillCount = 3;
+    } else {
+      final previousBoundary = _adventureRefillBoundary(previous, 15);
+      refillCount =
+          (currentBoundary.difference(previousBoundary).inMinutes ~/ 15)
+              .clamp(0, 3)
+              .toInt();
+    }
+    final oldBoundary = trialRefilledAt;
+    if (previous == null || currentBoundary.isAfter(previous)) {
+      trialRefilledAt = currentBoundary;
+    }
+    var added = false;
+    while (refillCount > 0 && trialOffers.length < 3) {
+      final kind = TrialKind.values[_random.nextInt(TrialKind.values.length)];
+      trialOffers.add(TrialOffer(
+        id: _uuid.v4(),
+        kind: kind,
+        appearedAt: currentBoundary,
+      ));
+      refillCount--;
+      added = true;
+    }
+    return added || oldBoundary != trialRefilledAt;
+  }
+
+  Future<void> dismissTrial(String offerId) async {
+    _refreshTrialOffers();
+    final before = trialOffers.length;
+    trialOffers.removeWhere((offer) => offer.id == offerId);
+    if (trialOffers.length == before) return;
+    await _notifyAndSave();
+  }
+
+  Future<TrialCompletion?> completeTrial({
+    required String offerId,
+    required String dragonId,
+    required int score,
+  }) async {
+    _refreshTrialOffers();
+    final offerIndex = trialOffers.indexWhere((offer) => offer.id == offerId);
+    if (offerIndex < 0 || score < 0) return null;
+    final dragon = ownedDragons.cast<Pet?>().firstWhere(
+          (candidate) => candidate?.id == dragonId,
+          orElse: () => null,
+        );
+    if (dragon == null) return null;
+    final offer = trialOffers[offerIndex];
+    final grade = trialGradeForScore(offer.kind, score);
+    final reward = trialRewardForGrade(grade, _random.nextDouble());
+    final newBest = dragon.recordTrialScore(offer.kind.name, score);
+    pet.coins += reward.coins;
+    dragon.xp += reward.xp;
+    dragon.addTraining(offer.definition.focus, reward.statPoints);
+    final chestTier = reward.chestTier;
+    if (chestTier != null) {
+      chestInventory.update(
+        chestTier,
+        (value) => value + 1,
+        ifAbsent: () => 1,
+      );
+    }
+    trialOffers.removeAt(offerIndex);
+    _evolveReadyDragons(_clock());
+    _addActivity(
+      message:
+          '${dragon.displayName} earned ${trialGradeLabel(grade)} in ${offer.definition.titleEn}.',
+      type: ActivityType.explore,
+      code: ActivityCode.activityCompleted,
+      subject: offer.kind.name,
+      xp: reward.xp,
+    );
+    _evaluateAchievements();
+    await _notifyAndSave();
+    return TrialCompletion(
+      kind: offer.kind,
+      score: score,
+      newDragonBest: newBest,
+      reward: reward,
+    );
   }
 
   void _addAdventureOptions({

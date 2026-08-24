@@ -10,6 +10,7 @@ import '../providers/household_provider.dart';
 import '../providers/online_account_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/dragon_trial_records.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
 
@@ -645,6 +646,13 @@ Future<void> _showFriendProfile(
               label: strings.pick('Discovered dragons', 'Ontdekte draken'),
               value: '${friend.discoveredDragonCount}',
             ),
+            const SizedBox(height: 10),
+            DragonTrialRecords(
+              account: true,
+              cavernFlightBest: friend.cavernFlightBest,
+              ruinBreakerBest: friend.ruinBreakerBest,
+              runeweaverBest: friend.runeweaverBest,
+            ),
             const SizedBox(height: 14),
             if (friend.favoriteDragon case final dragon?)
               _FavoriteDragonCard(dragon: dragon)
@@ -749,6 +757,13 @@ class _FavoriteDragonCard extends StatelessWidget {
             Expanded(child: _Expertise(label: 'Arcana', value: dragon.arcana)),
             Expanded(child: _Expertise(label: 'Spirit', value: dragon.spirit)),
           ]),
+          const SizedBox(height: 13),
+          DragonTrialRecords(
+            compact: true,
+            cavernFlightBest: dragon.cavernFlightBest,
+            ruinBreakerBest: dragon.ruinBreakerBest,
+            runeweaverBest: dragon.runeweaverBest,
+          ),
         ]),
       ),
     );

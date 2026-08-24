@@ -32,13 +32,15 @@ void main() {
     expect(release('v0.02.02').isNewerThanInstalled, isFalse);
     expect(release('v0.02.03').isNewerThanInstalled, isFalse);
     expect(release('v0.02.04').isNewerThanInstalled, isFalse);
-    expect(release('v0.02.05').isNewerThanInstalled, isTrue);
+    expect(release('v0.02.05').isNewerThanInstalled, isFalse);
+    expect(release('v0.03.00').isNewerThanInstalled, isFalse);
+    expect(release('v0.03.01').isNewerThanInstalled, isTrue);
     expect(release('v0.00.00').isNewerThanInstalled, isFalse);
   });
 
   test('the copy button uses one permanent latest APK link', () {
     expect(ReleaseConfig.owner, 'Rakky88');
-    expect(ReleaseConfig.installedVersion, '0.02.04');
+    expect(ReleaseConfig.installedVersion, '0.03.00');
     expect(
       ReleaseConfig.downloadUrl,
       'https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk',
