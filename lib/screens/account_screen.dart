@@ -5,8 +5,10 @@ import '../l10n/app_strings.dart';
 import '../models/account_title.dart';
 import '../models/profile_portrait.dart';
 import '../providers/household_provider.dart';
+import '../providers/online_account_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_icon_sprite.dart';
+import '../widgets/online_account_access.dart';
 import '../widgets/profile_portrait_sprite.dart';
 
 class AccountScreen extends StatelessWidget {
@@ -149,6 +151,11 @@ class AccountScreen extends StatelessWidget {
               onTap: () => _chooseTitle(context),
             ),
           ),
+          const SizedBox(height: 18),
+          Text(strings.pick('Online account', 'Online account'),
+              style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          _OnlineAccountSection(suggestedName: game.accountName),
           const SizedBox(height: 18),
           Text(strings.pick('Audio', 'Audio'),
               style: Theme.of(context).textTheme.titleLarge),
@@ -456,5 +463,92 @@ class AccountScreen extends StatelessWidget {
     if (selected != null && context.mounted) {
       await context.read<HouseholdProvider>().selectAccountTitle(selected.id);
     }
+  }
+}
+
+class _OnlineAccountSection extends StatelessWidget {
+  const _OnlineAccountSection({required this.suggestedName});
+
+  final String suggestedName;
+
+  @override
+  Widget build(BuildContext context) {
+    final online = context.watch<OnlineAccountProvider>();
+    final strings = AppStrings.of(context);
+    if (!online.isConfigured) {
+      return Card(
+        child: ListTile(
+          leading:
+              const Icon(Icons.cloud_off_rounded, color: AppColors.twilight),
+          title: Text(strings.pick(
+              'Server setup required', 'Serverinstellingen vereist')),
+          subtitle: Text(strings.pick(
+            'This installation has no online server configuration yet.',
+            'Deze installatie heeft nog geen online serverconfiguratie.',
+          )),
+        ),
+      );
+    }
+    if (!online.isSignedIn) {
+      return OnlineAccountAccessCard(suggestedName: suggestedName);
+    }
+    final profile = online.profile;
+    if (profile == null) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(22),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+    return Card(
+      key: const Key('online-account-profile'),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: KeeperPortrait(
+              portraitKey: profile.portraitKey,
+              displayName: profile.displayName,
+              radius: 29,
+            ),
+            title: Text(profile.displayName,
+                style: const TextStyle(fontWeight: FontWeight.w900)),
+            subtitle: Text('${profile.title}\n${online.currentEmail ?? ''}'),
+            isThreeLine: true,
+            trailing: IconButton(
+              key: const Key('edit-online-profile'),
+              tooltip: strings.pick('Edit profile', 'Profiel aanpassen'),
+              onPressed: () => showOnlineProfileEditor(context, profile),
+              icon: const Icon(Icons.edit_rounded),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading:
+                const Icon(Icons.badge_outlined, color: AppColors.twilight),
+            title: const Text('Keeper ID'),
+            subtitle: Text(profile.keeperCode,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w900, letterSpacing: .8)),
+            trailing: IconButton(
+              onPressed: () => copyKeeperCode(context, profile.keeperCode),
+              icon: const Icon(Icons.copy_rounded),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              key: const Key('sign-out-online-account'),
+              onPressed: online.busy ? null : online.signOut,
+              icon: const Icon(Icons.logout_rounded),
+              label: Text(strings.pick('Sign out', 'Uitloggen')),
+            ),
+          ),
+        ]),
+      ),
+    );
   }
 }

@@ -60,13 +60,15 @@ jobs:
         shell: bash
         run: |
           APP_VERSION="${GITHUB_REF_NAME#v}"
-          if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then APP_VERSION="0.00.09"; fi
+          if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then APP_VERSION="0.01.09"; fi
           flutter build apk --release --no-pub \
             --build-name="$APP_VERSION" \
             --build-number="$((10000 + GITHUB_RUN_NUMBER))" \
             --dart-define=DRAGONHAVEN_GITHUB_OWNER=${{ github.repository_owner }} \
             --dart-define=DRAGONHAVEN_GITHUB_REPO=${{ github.event.repository.name }} \
-            --dart-define=DRAGONHAVEN_APP_VERSION="$APP_VERSION"
+            --dart-define=DRAGONHAVEN_APP_VERSION="$APP_VERSION" \
+            --dart-define=SUPABASE_URL=https://tnzathhutuwmohmjfrlo.supabase.co \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_SllXjneKVmDAgtBGgkSgOg_tOJmYkX4
           mkdir -p release
           cp build/app/outputs/flutter-apk/app-release.apk release/DragonHaven.apk
 

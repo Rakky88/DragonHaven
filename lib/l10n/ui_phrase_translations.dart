@@ -4315,6 +4315,505 @@ const uiPhraseTranslations = <String, List<String>>{
     '一个称号宝箱正在物品栏中等着你。',
     '称号チェストがインベントリで待っています。'
   ],
+  'A request is already pending.': [
+    'Eine Anfrage steht bereits aus.',
+    'Ya hay una solicitud pendiente.',
+    'Une demande est déjà en attente.',
+    'Una richiesta è già in attesa.',
+    'Já existe uma solicitação pendente.',
+    '已有一个待处理的请求。',
+    'すでに保留中の申請があります。'
+  ],
+  'Accept': [
+    'Akzeptieren',
+    'Aceptar',
+    'Accepter',
+    'Accetta',
+    'Aceitar',
+    '接受',
+    '承認'
+  ],
+  'Add by Keeper ID': [
+    'Per Hüter-ID hinzufügen',
+    'Añadir por ID de Guardián',
+    'Ajouter par ID de Gardien',
+    'Aggiungi tramite ID Custode',
+    'Adicionar por ID de Guardião',
+    '通过守护者 ID 添加',
+    'キーパーIDで追加'
+  ],
+  'An account already exists for this email.': [
+    'Für diese E-Mail-Adresse existiert bereits ein Konto.',
+    'Ya existe una cuenta para este correo electrónico.',
+    'Un compte existe déjà pour cette adresse e-mail.',
+    'Esiste già un account per questa e-mail.',
+    'Já existe uma conta para este e-mail.',
+    '此电子邮箱已注册账户。',
+    'このメールアドレスのアカウントはすでに存在します。'
+  ],
+  'Block': [
+    'Blockieren',
+    'Bloquear',
+    'Bloquer',
+    'Blocca',
+    'Bloquear',
+    '屏蔽',
+    'ブロック'
+  ],
+  'Block keeper': [
+    'Hüter blockieren',
+    'Bloquear Guardián',
+    'Bloquer le Gardien',
+    'Blocca Custode',
+    'Bloquear Guardião',
+    '屏蔽守护者',
+    'キーパーをブロック'
+  ],
+  'Blocked': [
+    'Blockiert',
+    'Bloqueados',
+    'Bloqués',
+    'Bloccati',
+    'Bloqueados',
+    '已屏蔽',
+    'ブロック中'
+  ],
+  'Check your email to confirm the account, then sign in.': [
+    'Bestätige das Konto über deine E-Mail und melde dich danach an.',
+    'Revisa tu correo para confirmar la cuenta y luego inicia sesión.',
+    'Consulte ton e-mail pour confirmer le compte, puis connecte-toi.',
+    'Controlla l’e-mail per confermare l’account, poi accedi.',
+    'Verifique seu e-mail para confirmar a conta e depois entre.',
+    '请查看电子邮件确认账户，然后登录。',
+    'メールでアカウントを確認してからログインしてください。'
+  ],
+  'Connect your keeper': [
+    'Verbinde deinen Hüter',
+    'Conecta a tu Guardián',
+    'Connecte ton Gardien',
+    'Collega il tuo Custode',
+    'Conecte seu Guardião',
+    '连接你的守护者',
+    'キーパーを接続'
+  ],
+  'Copy Keeper ID': [
+    'Hüter-ID kopieren',
+    'Copiar ID de Guardián',
+    'Copier l’ID de Gardien',
+    'Copia ID Custode',
+    'Copiar ID de Guardião',
+    '复制守护者 ID',
+    'キーパーIDをコピー'
+  ],
+  'Create': ['Erstellen', 'Crear', 'Créer', 'Crea', 'Criar', '创建', '作成'],
+  'Create a simple account to add friends by Keeper ID. Your email is never shown to other players.':
+      [
+    'Erstelle ein einfaches Konto, um Freunde per Hüter-ID hinzuzufügen. Deine E-Mail wird anderen Spielern nie angezeigt.',
+    'Crea una cuenta sencilla para añadir amigos por ID de Guardián. Tu correo nunca se muestra a otros jugadores.',
+    'Crée un compte simple pour ajouter des amis par ID de Gardien. Ton e-mail n’est jamais montré aux autres joueurs.',
+    'Crea un account semplice per aggiungere amici tramite ID Custode. La tua e-mail non viene mai mostrata agli altri giocatori.',
+    'Crie uma conta simples para adicionar amigos pelo ID de Guardião. Seu e-mail nunca é exibido a outros jogadores.',
+    '创建简单账户即可通过守护者 ID 添加好友。你的电子邮箱绝不会向其他玩家显示。',
+    'シンプルなアカウントを作成すると、キーパーIDでフレンドを追加できます。メールアドレスが他のプレイヤーに表示されることはありません。'
+  ],
+  'Create account': [
+    'Konto erstellen',
+    'Crear cuenta',
+    'Créer un compte',
+    'Crea account',
+    'Criar conta',
+    '创建账户',
+    'アカウントを作成'
+  ],
+  'Create online account': [
+    'Online-Konto erstellen',
+    'Crear cuenta en línea',
+    'Créer un compte en ligne',
+    'Crea account online',
+    'Criar conta online',
+    '创建在线账户',
+    'オンラインアカウントを作成'
+  ],
+  'Discovered': [
+    'Entdeckt',
+    'Descubiertos',
+    'Découverts',
+    'Scoperti',
+    'Descobertos',
+    '已发现',
+    '発見済み'
+  ],
+  'Discovered dragons': [
+    'Entdeckte Drachen',
+    'Dragones descubiertos',
+    'Dragons découverts',
+    'Draghi scoperti',
+    'Dragões descobertos',
+    '已发现的龙',
+    '発見したドラゴン'
+  ],
+  'Edit online profile': [
+    'Online-Profil bearbeiten',
+    'Editar perfil en línea',
+    'Modifier le profil en ligne',
+    'Modifica profilo online',
+    'Editar perfil online',
+    '编辑在线资料',
+    'オンラインプロフィールを編集'
+  ],
+  'Edit profile': [
+    'Profil bearbeiten',
+    'Editar perfil',
+    'Modifier le profil',
+    'Modifica profilo',
+    'Editar perfil',
+    '编辑资料',
+    'プロフィールを編集'
+  ],
+  'Enter a name.': [
+    'Gib einen Namen ein.',
+    'Introduce un nombre.',
+    'Saisis un nom.',
+    'Inserisci un nome.',
+    'Digite um nome.',
+    '请输入名称。',
+    '名前を入力してください。'
+  ],
+  'Enter a valid email.': [
+    'Gib eine gültige E-Mail-Adresse ein.',
+    'Introduce un correo electrónico válido.',
+    'Saisis une adresse e-mail valide.',
+    'Inserisci un indirizzo e-mail valido.',
+    'Digite um e-mail válido.',
+    '请输入有效的电子邮箱。',
+    '有効なメールアドレスを入力してください。'
+  ],
+  'Favorite dragon': [
+    'Lieblingsdrache',
+    'Dragón favorito',
+    'Dragon favori',
+    'Drago preferito',
+    'Dragão favorito',
+    '最喜爱的龙',
+    'お気に入りのドラゴン'
+  ],
+  'Find trusted keepers, compare collections and visit their profiles.': [
+    'Finde vertrauenswürdige Hüter, vergleiche Sammlungen und besuche ihre Profile.',
+    'Encuentra Guardianes de confianza, compara colecciones y visita sus perfiles.',
+    'Trouve des Gardiens de confiance, compare les collections et consulte leurs profils.',
+    'Trova Custodi fidati, confronta le collezioni e visita i loro profili.',
+    'Encontre Guardiões confiáveis, compare coleções e visite seus perfis.',
+    '寻找可信的守护者、比较收藏并查看他们的资料。',
+    '信頼できるキーパーを見つけ、コレクションを比べてプロフィールを訪問しましょう。'
+  ],
+  'Friend removed for both keepers.': [
+    'Die Freundschaft wurde für beide Hüter entfernt.',
+    'La amistad se eliminó para ambos Guardianes.',
+    'L’amitié a été supprimée pour les deux Gardiens.',
+    'L’amicizia è stata rimossa per entrambi i Custodi.',
+    'A amizade foi removida para ambos os Guardiões.',
+    '双方守护者的好友关系已移除。',
+    '両方のキーパーのフレンド関係を削除しました。'
+  ],
+  'Friend request sent.': [
+    'Freundschaftsanfrage gesendet.',
+    'Solicitud de amistad enviada.',
+    'Demande d’amitié envoyée.',
+    'Richiesta di amicizia inviata.',
+    'Solicitação de amizade enviada.',
+    '好友请求已发送。',
+    'フレンド申請を送信しました。'
+  ],
+  'Friend requests': [
+    'Freundschaftsanfragen',
+    'Solicitudes de amistad',
+    'Demandes d’amitié',
+    'Richieste di amicizia',
+    'Solicitações de amizade',
+    '好友请求',
+    'フレンド申請'
+  ],
+  'Incorrect email or password.': [
+    'E-Mail oder Passwort ist falsch.',
+    'Correo o contraseña incorrectos.',
+    'E-mail ou mot de passe incorrect.',
+    'E-mail o password errati.',
+    'E-mail ou senha incorretos.',
+    '电子邮箱或密码错误。',
+    'メールアドレスまたはパスワードが正しくありません。'
+  ],
+  'Keeper blocked.': [
+    'Hüter blockiert.',
+    'Guardián bloqueado.',
+    'Gardien bloqué.',
+    'Custode bloccato.',
+    'Guardião bloqueado.',
+    '守护者已屏蔽。',
+    'キーパーをブロックしました。'
+  ],
+  'Keeper ID copied.': [
+    'Hüter-ID kopiert.',
+    'ID de Guardián copiado.',
+    'ID de Gardien copié.',
+    'ID Custode copiato.',
+    'ID de Guardião copiado.',
+    '守护者 ID 已复制。',
+    'キーパーIDをコピーしました。'
+  ],
+  'Keeper name': [
+    'Hütername',
+    'Nombre del Guardián',
+    'Nom du Gardien',
+    'Nome Custode',
+    'Nome do Guardião',
+    '守护者名称',
+    'キーパー名'
+  ],
+  'Keeper unblocked.': [
+    'Hüter entsperrt.',
+    'Guardián desbloqueado.',
+    'Gardien débloqué.',
+    'Custode sbloccato.',
+    'Guardião desbloqueado.',
+    '已取消屏蔽守护者。',
+    'キーパーのブロックを解除しました。'
+  ],
+  'No favorite dragon selected.': [
+    'Kein Lieblingsdrache ausgewählt.',
+    'No se ha elegido un dragón favorito.',
+    'Aucun dragon favori sélectionné.',
+    'Nessun drago preferito selezionato.',
+    'Nenhum dragão favorito selecionado.',
+    '尚未选择最喜爱的龙。',
+    'お気に入りのドラゴンが選ばれていません。'
+  ],
+  'No friends yet. Share your Keeper ID or add someone else.': [
+    'Noch keine Freunde. Teile deine Hüter-ID oder füge jemanden hinzu.',
+    'Aún no tienes amigos. Comparte tu ID de Guardián o añade a alguien.',
+    'Pas encore d’amis. Partage ton ID de Gardien ou ajoute quelqu’un.',
+    'Ancora nessun amico. Condividi il tuo ID Custode o aggiungi qualcuno.',
+    'Ainda não há amigos. Compartilhe seu ID de Guardião ou adicione alguém.',
+    '还没有好友。分享你的守护者 ID 或添加其他人。',
+    'まだフレンドはいません。キーパーIDを共有するか、誰かを追加しましょう。'
+  ],
+  'No keeper with that ID was found.': [
+    'Kein Hüter mit dieser ID wurde gefunden.',
+    'No se encontró ningún Guardián con ese ID.',
+    'Aucun Gardien avec cet ID n’a été trouvé.',
+    'Nessun Custode trovato con questo ID.',
+    'Nenhum Guardião com esse ID foi encontrado.',
+    '未找到使用该 ID 的守护者。',
+    'そのIDのキーパーは見つかりませんでした。'
+  ],
+  'Online account': [
+    'Online-Konto',
+    'Cuenta en línea',
+    'Compte en ligne',
+    'Account online',
+    'Conta online',
+    '在线账户',
+    'オンラインアカウント'
+  ],
+  'Online accounts are ready in this build, but this installation still needs its server URL and publishable key.':
+      [
+    'Online-Konten sind in diesem Build bereit, aber dieser Installation fehlen noch Server-URL und öffentlicher Schlüssel.',
+    'Las cuentas en línea están listas, pero esta instalación aún necesita la URL del servidor y la clave pública.',
+    'Les comptes en ligne sont prêts, mais cette installation nécessite encore l’URL du serveur et la clé publique.',
+    'Gli account online sono pronti, ma questa installazione richiede ancora l’URL del server e la chiave pubblica.',
+    'As contas online estão prontas, mas esta instalação ainda precisa da URL do servidor e da chave pública.',
+    '此版本已支持在线账户，但此安装仍需要服务器 URL 和公开密钥。',
+    'オンラインアカウントには対応していますが、このインストールにはサーバーURLと公開キーが必要です。'
+  ],
+  'Password': [
+    'Passwort',
+    'Contraseña',
+    'Mot de passe',
+    'Password',
+    'Senha',
+    '密码',
+    'パスワード'
+  ],
+  'Pending': [
+    'Ausstehend',
+    'Pendiente',
+    'En attente',
+    'In attesa',
+    'Pendente',
+    '待处理',
+    '保留中'
+  ],
+  'Profile saved.': [
+    'Profil gespeichert.',
+    'Perfil guardado.',
+    'Profil enregistré.',
+    'Profilo salvato.',
+    'Perfil salvo.',
+    '资料已保存。',
+    'プロフィールを保存しました。'
+  ],
+  'Reject': [
+    'Ablehnen',
+    'Rechazar',
+    'Refuser',
+    'Rifiuta',
+    'Recusar',
+    '拒绝',
+    '拒否'
+  ],
+  'Remove friend': [
+    'Freund entfernen',
+    'Eliminar amigo',
+    'Retirer l’ami',
+    'Rimuovi amico',
+    'Remover amigo',
+    '删除好友',
+    'フレンドを削除'
+  ],
+  'Remove friend?': [
+    'Freund entfernen?',
+    '¿Eliminar amigo?',
+    'Retirer cet ami ?',
+    'Rimuovere l’amico?',
+    'Remover amigo?',
+    '删除好友？',
+    'フレンドを削除しますか？'
+  ],
+  'Send request': [
+    'Anfrage senden',
+    'Enviar solicitud',
+    'Envoyer la demande',
+    'Invia richiesta',
+    'Enviar solicitação',
+    '发送请求',
+    '申請を送信'
+  ],
+  'Sent requests': [
+    'Gesendete Anfragen',
+    'Solicitudes enviadas',
+    'Demandes envoyées',
+    'Richieste inviate',
+    'Solicitações enviadas',
+    '已发送的请求',
+    '送信済み申請'
+  ],
+  'Server setup required': [
+    'Server-Einrichtung erforderlich',
+    'Configuración del servidor necesaria',
+    'Configuration du serveur requise',
+    'Configurazione server necessaria',
+    'Configuração do servidor necessária',
+    '需要配置服务器',
+    'サーバー設定が必要です'
+  ],
+  'Sign in': [
+    'Anmelden',
+    'Iniciar sesión',
+    'Se connecter',
+    'Accedi',
+    'Entrar',
+    '登录',
+    'ログイン'
+  ],
+  'Sign out': [
+    'Abmelden',
+    'Cerrar sesión',
+    'Se déconnecter',
+    'Esci',
+    'Sair',
+    '退出登录',
+    'ログアウト'
+  ],
+  'The online service could not complete this action. Please try again.': [
+    'Der Onlinedienst konnte diese Aktion nicht abschließen. Versuche es erneut.',
+    'El servicio en línea no pudo completar esta acción. Inténtalo de nuevo.',
+    'Le service en ligne n’a pas pu terminer cette action. Réessaie.',
+    'Il servizio online non ha potuto completare l’azione. Riprova.',
+    'O serviço online não conseguiu concluir esta ação. Tente novamente.',
+    '在线服务无法完成此操作。请重试。',
+    'オンラインサービスでこの操作を完了できませんでした。もう一度お試しください。'
+  ],
+  'This installation has no online server configuration yet.': [
+    'Diese Installation hat noch keine Online-Serverkonfiguration.',
+    'Esta instalación aún no tiene configuración de servidor en línea.',
+    'Cette installation n’a pas encore de configuration de serveur en ligne.',
+    'Questa installazione non ha ancora una configurazione server online.',
+    'Esta instalação ainda não possui configuração de servidor online.',
+    '此安装尚未配置在线服务器。',
+    'このインストールにはオンラインサーバー設定がありません。'
+  ],
+  'This keeper is unavailable.': [
+    'Dieser Hüter ist nicht verfügbar.',
+    'Este Guardián no está disponible.',
+    'Ce Gardien est indisponible.',
+    'Questo Custode non è disponibile.',
+    'Este Guardião não está disponível.',
+    '此守护者不可用。',
+    'このキーパーは利用できません。'
+  ],
+  'This request was recently rejected. Try again later.': [
+    'Diese Anfrage wurde kürzlich abgelehnt. Versuche es später erneut.',
+    'Esta solicitud se rechazó recientemente. Inténtalo más tarde.',
+    'Cette demande a été refusée récemment. Réessaie plus tard.',
+    'Questa richiesta è stata rifiutata di recente. Riprova più tardi.',
+    'Esta solicitação foi recusada recentemente. Tente novamente mais tarde.',
+    '此请求最近被拒绝。请稍后重试。',
+    'この申請は最近拒否されました。後でもう一度お試しください。'
+  ],
+  'Title': ['Titel', 'Título', 'Titre', 'Titolo', 'Título', '称号', '称号'],
+  'Too many requests are pending.': [
+    'Zu viele Anfragen stehen aus.',
+    'Hay demasiadas solicitudes pendientes.',
+    'Trop de demandes sont en attente.',
+    'Ci sono troppe richieste in attesa.',
+    'Há solicitações pendentes demais.',
+    '待处理的请求过多。',
+    '保留中の申請が多すぎます。'
+  ],
+  'Unblock': [
+    'Entsperren',
+    'Desbloquear',
+    'Débloquer',
+    'Sblocca',
+    'Desbloquear',
+    '取消屏蔽',
+    'ブロック解除'
+  ],
+  'Use at least 8 characters.': [
+    'Verwende mindestens 8 Zeichen.',
+    'Usa al menos 8 caracteres.',
+    'Utilise au moins 8 caractères.',
+    'Usa almeno 8 caratteri.',
+    'Use pelo menos 8 caracteres.',
+    '请至少使用 8 个字符。',
+    '8文字以上使用してください。'
+  ],
+  'You are already friends.': [
+    'Ihr seid bereits Freunde.',
+    'Ya sois amigos.',
+    'Vous êtes déjà amis.',
+    'Siete già amici.',
+    'Vocês já são amigos.',
+    '你们已经是好友。',
+    'すでにフレンドです。'
+  ],
+  'You cannot add yourself.': [
+    'Du kannst dich nicht selbst hinzufügen.',
+    'No puedes añadirte a ti mismo.',
+    'Tu ne peux pas t’ajouter toi-même.',
+    'Non puoi aggiungere te stesso.',
+    'Você não pode adicionar a si mesmo.',
+    '你不能添加自己。',
+    '自分自身を追加することはできません。'
+  ],
+  'Your online account is ready.': [
+    'Dein Online-Konto ist bereit.',
+    'Tu cuenta en línea está lista.',
+    'Ton compte en ligne est prêt.',
+    'Il tuo account online è pronto.',
+    'Sua conta online está pronta.',
+    '你的在线账户已准备就绪。',
+    'オンラインアカウントの準備ができました。'
+  ],
   'A new account title joined your collection.': [
     'Ein neuer Kontotitel wurde deiner Sammlung hinzugefügt.',
     'Un nuevo título de cuenta se unió a tu colección.',

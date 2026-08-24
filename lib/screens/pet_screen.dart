@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
-import '../models/day_phase.dart';
 import '../models/dragon_egg.dart';
 import '../models/dragon_dialogue.dart';
 import '../models/game_presentation.dart';
@@ -16,7 +15,7 @@ import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
-import '../widgets/haven_lighting.dart';
+import '../widgets/rooftop_egg_nest.dart';
 import '../widgets/ui_bits.dart';
 
 class PetScreen extends StatelessWidget {
@@ -459,33 +458,32 @@ class _DragonStageCard extends StatelessWidget {
                 Positioned.fill(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(28),
-                    child: HavenPhaseImage(
-                      assetFor: (phase) =>
-                          'assets/images/tower_nest_${phase.assetKey}.webp',
-                    ),
+                    child: const RooftopEggNest(),
                   ),
                 ),
-              const Positioned(
-                  left: 25,
-                  top: 25,
-                  child: Icon(Icons.star_rounded,
-                      color: AppColors.gold, size: 18)),
-              const Positioned(
-                  right: 42,
-                  top: 50,
-                  child: Icon(Icons.auto_awesome_rounded,
-                      color: Colors.white54, size: 14)),
-              Align(
-                  alignment:
-                      pet.isEgg ? const Alignment(.02, .43) : Alignment.center,
+              if (!pet.isEgg)
+                const Positioned(
+                    left: 25,
+                    top: 25,
+                    child: Icon(Icons.star_rounded,
+                        color: AppColors.gold, size: 18)),
+              if (!pet.isEgg)
+                const Positioned(
+                    right: 42,
+                    top: 50,
+                    child: Icon(Icons.auto_awesome_rounded,
+                        color: Colors.white54, size: 14)),
+              if (!pet.isEgg)
+                Align(
+                  alignment: Alignment.center,
                   child: SizedBox.square(
                     dimension: 280,
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: SizedBox.square(
-                        dimension: 248 * (pet.isEgg ? 1 : pet.sizeFactor),
+                        dimension: 248 * pet.sizeFactor,
                         child: DragonArt(
-                          height: 248 * (pet.isEgg ? 1 : pet.sizeFactor),
+                          height: 248 * pet.sizeFactor,
                           stageKey: pet.stageKey,
                           lineageId: pet.lineageId,
                           evolutionPath: pet.activeEvolutionPath,
@@ -494,31 +492,24 @@ class _DragonStageCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  )),
-              Positioned(
-                  left: 16,
-                  bottom: 15,
-                  child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 11, vertical: 7),
-                      decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: .9),
-                          borderRadius: BorderRadius.circular(99)),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        if (pet.isEgg) ...[
-                          const GameIconSprite(GameIconKind.mysteriousEgg,
-                              size: 25),
-                          const SizedBox(width: 5),
-                        ],
-                        Text(
-                            pet.isEgg
-                                ? strings.pick(
-                                    'Mysterious Egg', 'Mysterieus Ei')
-                                : strings.petStage(pet),
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.twilightDark)),
-                      ]))),
+                  ),
+                ),
+              if (!pet.isEgg)
+                Positioned(
+                    left: 16,
+                    bottom: 15,
+                    child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 11, vertical: 7),
+                        decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: .9),
+                            borderRadius: BorderRadius.circular(99)),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Text(strings.petStage(pet),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.twilightDark)),
+                        ]))),
             ],
           ),
         ),

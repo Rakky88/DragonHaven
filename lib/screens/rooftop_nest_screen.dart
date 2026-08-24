@@ -7,9 +7,9 @@ import '../models/dragon_egg.dart';
 import '../models/pet.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
-import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/haven_lighting.dart';
+import '../widgets/rooftop_egg_nest.dart';
 import 'pet_screen.dart';
 
 class RooftopNestScreen extends StatefulWidget {
@@ -205,53 +205,50 @@ class _NestScene extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  const Positioned.fill(
-                    child: HavenPhaseImage(
-                      assetFor: _nestAssetForPhase,
-                    ),
-                  ),
-                  if (egg != null)
+                  if (egg == null)
+                    const Positioned.fill(
+                      child: HavenPhaseImage(
+                        assetFor: _nestAssetForPhase,
+                      ),
+                    )
+                  else
                     const Positioned(
-                      top: 65,
-                      child: DragonArt(
-                        height: 210,
-                        stageKey: 'moonEgg',
-                      ),
+                      left: 0,
+                      top: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: RooftopEggNest(),
                     ),
-                  Positioned(
-                    left: 18,
-                    right: 18,
-                    bottom: 15,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 15,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xD91D1639),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: .18),
+                  if (egg == null)
+                    Positioned(
+                      left: 18,
+                      right: 18,
+                      bottom: 15,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 15,
+                          vertical: 10,
                         ),
-                      ),
-                      child: Text(
-                        egg == null
-                            ? AppStrings.of(context).pick(
-                                'Tap the nest to choose an egg',
-                                'Tik op het nest om een ei te kiezen',
-                              )
-                            : AppStrings.of(context).pick(
-                                'Something is moving inside...',
-                                'Er beweegt iets binnenin...',
-                              ),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
+                        decoration: BoxDecoration(
+                          color: const Color(0xD91D1639),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: .18),
+                          ),
+                        ),
+                        child: Text(
+                          AppStrings.of(context).pick(
+                            'Tap the nest to choose an egg',
+                            'Tik op het nest om een ei te kiezen',
+                          ),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

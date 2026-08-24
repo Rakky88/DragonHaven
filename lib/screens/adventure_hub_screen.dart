@@ -830,7 +830,11 @@ class _ActiveAdventureCard extends StatelessWidget {
                           ready
                               ? strings.pick(
                                   'Ready to return', 'Klaar om terug te keren')
-                              : _remaining(run.endsAt, strings, now),
+                              : adventureRemainingLabel(
+                                  run.endsAt,
+                                  strings,
+                                  now: now,
+                                ),
                           style: TextStyle(
                             color: ready
                                 ? const Color(0xFF24735B)
@@ -914,7 +918,11 @@ Future<void> _showRunDetails(
                     : strings.pick('Return in', 'Terug over'),
                 value: ready
                     ? strings.pick('Ready to return', 'Klaar om terug te keren')
-                    : _remaining(run.endsAt, strings, game.currentTime)),
+                    : adventureRemainingLabel(
+                        run.endsAt,
+                        strings,
+                        now: game.currentTime,
+                      )),
             _DetailRow(
                 icon: const GameIconSprite(GameIconKind.experience, size: 34),
                 title: strings.pick('Dragon experience', 'Drakenervaring'),
@@ -1075,8 +1083,12 @@ String _chancePercent(AppStrings strings, double probability) {
   return '${usesDecimalComma ? text.replaceAll('.', ',') : text}%';
 }
 
-String _remaining(DateTime end, AppStrings strings, DateTime now) {
-  final remaining = end.difference(now);
+String adventureRemainingLabel(
+  DateTime end,
+  AppStrings strings, {
+  DateTime? now,
+}) {
+  final remaining = end.difference(now ?? DateTime.now());
   if (remaining <= Duration.zero) return strings.pick('Ready', 'Klaar');
   return strings.remainingDuration(remaining);
 }

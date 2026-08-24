@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'config/online_config.dart';
 import 'dragonhaven_app.dart';
+import 'models/social.dart';
 import 'providers/household_provider.dart';
+import 'providers/online_account_provider.dart';
 import 'screens/sprite_audit_screen.dart';
 import 'services/audio_service.dart';
+import 'services/social_repository.dart';
+import 'services/supabase_social_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +53,20 @@ Future<void> main() async {
     game.discoveredForms.clear();
     game.prismaticForms.clear();
   }
+  final onlineConfig = OnlineConfig.fromEnvironment();
+  SocialRepository socialRepository = const DisabledSocialRepository();
+  if (onlineConfig.isConfigured) {
+    await Supabase.initialize(
+      url: onlineConfig.url,
+      publishableKey: onlineConfig.publishableKey,
+    );
+    socialRepository = SupabaseSocialRepository(Supabase.instance.client);
+  }
+  final online = OnlineAccountProvider(
+    repository: socialRepository,
+    inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+  );
+  await online.initialize();
   await HavenAudio.applyPreferences(
     musicEnabled: game.musicEnabled,
     soundEffectsEnabled: game.soundEffectsEnabled,
@@ -55,8 +75,11 @@ Future<void> main() async {
   await HavenAudio.setMusicScene(hour >= 21 || hour < 7
       ? HavenMusicScene.towerNight
       : HavenMusicScene.towerDay);
-  runApp(ChangeNotifierProvider.value(
-    value: game,
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider.value(value: game),
+      ChangeNotifierProvider.value(value: online),
+    ],
     child: const DragonHavenApp(),
   ));
 }

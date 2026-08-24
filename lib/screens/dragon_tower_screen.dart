@@ -11,6 +11,7 @@ import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/haven_lighting.dart';
+import '../widgets/rooftop_egg_nest.dart';
 import 'draconomicon_screen.dart';
 import 'house_screen.dart';
 import 'pet_screen.dart';
@@ -202,60 +203,16 @@ class _TowerRoof extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: Stack(children: [
-            Positioned.fill(
-              child: HavenPhaseImage(
-                assetFor: (value) =>
-                    'assets/images/tower_nest_${value.assetKey}.webp',
-              ),
-            ),
-            if (game.nestEgg != null)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 39,
-                child: IgnorePointer(
-                  child: Center(
-                    child: Container(
-                      key: const Key('tower-roof-egg'),
-                      width: 62,
-                      height: 72,
-                      decoration: const BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0x88FFE39A),
-                            blurRadius: 18,
-                            spreadRadius: 1,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const GameIconSprite(
-                        GameIconKind.mysteriousEgg,
-                        size: 66,
-                      ),
-                    ),
-                  ),
+            if (game.nestEgg == null)
+              Positioned.fill(
+                child: HavenPhaseImage(
+                  assetFor: (value) =>
+                      'assets/images/tower_nest_${value.assetKey}.webp',
                 ),
-              ),
-            if (game.nestEgg != null)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 25,
-                child: IgnorePointer(
-                  child: Center(
-                    child: SizedBox(
-                      key: const Key('tower-roof-nest-rim'),
-                      width: 128,
-                      height: 68,
-                      child: Image.asset(
-                        'assets/images/ui/ui_rooftop_nest_foreground.png',
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
-                      ),
-                    ),
-                  ),
-                ),
+              )
+            else
+              const Positioned.fill(
+                child: IgnorePointer(child: RooftopEggNest()),
               ),
             Positioned(
               left: 14,

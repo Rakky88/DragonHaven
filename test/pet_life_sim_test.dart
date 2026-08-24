@@ -29,6 +29,21 @@ void main() {
     expect(egg.canHatch(start.add(const Duration(hours: 1))), isTrue);
   });
 
+  test('an older saved starter egg is migrated to one hour', () {
+    final restored = Pet.fromJson({
+      'id': 'legacy-starter-egg',
+      'stage': 'egg',
+      'firstEgg': true,
+      'incubationMinutes': 24 * 60,
+      'stageStartedAt': start.toIso8601String(),
+      'hatchSeed': 9,
+    });
+
+    expect(restored.incubationDuration, const Duration(hours: 1));
+    expect(restored.canHatch(start.add(const Duration(minutes: 59))), isFalse);
+    expect(restored.canHatch(start.add(const Duration(hours: 1))), isTrue);
+  });
+
   test('later eggs use their fixed accelerated incubation roll', () {
     final egg = Pet(
       firstEgg: false,

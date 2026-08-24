@@ -12,13 +12,16 @@ import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/profile_portrait.dart';
 import 'package:dragon_haven/models/shop_item.dart';
+import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
+import 'package:dragon_haven/providers/online_account_provider.dart';
 import 'package:dragon_haven/screens/achievements_screen.dart';
 import 'package:dragon_haven/screens/adventure_hub_screen.dart';
 import 'package:dragon_haven/screens/draconomicon_screen.dart';
 import 'package:dragon_haven/screens/house_screen.dart';
 import 'package:dragon_haven/screens/inventory_screen.dart';
 import 'package:dragon_haven/screens/shop_hub_screen.dart';
+import 'package:dragon_haven/services/social_repository.dart';
 import 'package:dragon_haven/widgets/achievement_badge_sprite.dart';
 import 'package:dragon_haven/widgets/achievement_reveal.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
@@ -71,8 +74,17 @@ void main() {
         ..favorite = true;
       game.unlockedAchievementIds.add('not_picking_favorites');
     }
-    await tester.pumpWidget(ChangeNotifierProvider.value(
-      value: game,
+    final online = OnlineAccountProvider(
+      repository: const DisabledSocialRepository(),
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+    addTearDown(online.dispose);
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
       child: const DragonHavenApp(),
     ));
     await tester.pump(const Duration(milliseconds: 450));
@@ -107,6 +119,42 @@ void main() {
     expect(find.text('Next form: Hatchling'), findsNothing);
     expect(find.text('Egg stash'), findsNothing);
     expect(find.text('Not ready yet'), findsNothing);
+    final starterEggCard = find.byKey(const Key('mysterious-egg-hint'));
+    expect(
+      find.descendant(
+        of: starterEggCard,
+        matching: find.byIcon(Icons.star_rounded),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: starterEggCard,
+        matching: find.byKey(const Key('rooftop-bird-nest-front')),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: starterEggCard,
+        matching: find.byKey(const Key('rooftop-nest-egg')),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: starterEggCard,
+        matching: find.textContaining('Mysterious Egg'),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: starterEggCard,
+        matching: find.textContaining('Something is moving inside'),
+      ),
+      findsNothing,
+    );
     expect(find.byKey(const Key('egg-hatch-countdown')), findsOneWidget);
     expect(
       find.byKey(const Key('egg-hatch-countdown-value')),
@@ -273,8 +321,15 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
 
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('music-switch')),
+      260,
+      scrollable: find.descendant(
+        of: find.byKey(const PageStorageKey('account-scroll')),
+        matching: find.byType(Scrollable),
+      ),
+    );
     expect(find.byKey(const Key('music-switch')), findsOneWidget);
-    expect(find.byKey(const Key('sound-effects-switch')), findsOneWidget);
     await tester.tap(find.byKey(const Key('music-switch')));
     await tester.pump();
     expect(game.musicEnabled, isFalse);
@@ -960,13 +1015,20 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Adventure'), findsWidgets);
-    expect(find.byKey(const Key('tower-roof-egg')), findsOneWidget);
-    expect(find.byKey(const Key('tower-roof-nest-rim')), findsOneWidget);
-    final roofEggSize = tester.getSize(find.byKey(const Key('tower-roof-egg')));
-    final roofNestSize =
-        tester.getSize(find.byKey(const Key('tower-roof-nest-rim')));
-    expect(roofNestSize.width / roofEggSize.width, lessThan(2.2));
-    expect(roofNestSize.height, lessThan(roofEggSize.height));
+    final roofEgg = find.descendant(
+      of: towerRoof,
+      matching: find.byKey(const Key('rooftop-nest-egg')),
+    );
+    final roofNest = find.descendant(
+      of: towerRoof,
+      matching: find.byKey(const Key('rooftop-bird-nest-front')),
+    );
+    expect(roofEgg, findsOneWidget);
+    expect(roofNest, findsOneWidget);
+    final roofEggSize = tester.getSize(roofEgg);
+    final roofNestSize = tester.getSize(roofNest);
+    expect(roofEggSize, const Size(62, 66));
+    expect(roofNestSize, const Size(128, 68));
     expect(tester.takeException(), isNull);
   });
 
@@ -1208,7 +1270,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.01.08'), findsOneWidget);
+    expect(find.text('v0.01.09'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

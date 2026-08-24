@@ -369,6 +369,8 @@ class Pet {
         DateTime.tryParse(stringFromJson(json['stageStartedAt']) ?? '') ??
             acquired;
     final lineage = stringFromJson(json['lineageId']);
+    final isFirstEgg =
+        json['firstEgg'] is bool ? json['firstEgg'] as bool : true;
     final storedPath = stringFromJson(json['evolutionPath']);
     final migratedPath = switch (storedPath) {
       'earth' => 'might',
@@ -384,7 +386,7 @@ class Pet {
       coins: nonNegativeIntFromJson(json['coins'], fallback: 25),
       gems: nonNegativeIntFromJson(json['gems'], fallback: 3),
       stage: storedStage ?? legacyStage,
-      firstEgg: json['firstEgg'] is bool ? json['firstEgg'] as bool : true,
+      firstEgg: isFirstEgg,
       prismatic: (json['spectral'] is bool && json['spectral'] as bool) ||
           (json['prismatic'] is bool && json['prismatic'] as bool),
       sinister: json['sinister'] is bool && json['sinister'] as bool,
@@ -401,7 +403,7 @@ class Pet {
       sizeFactor: ((json['sizeFactor'] as num?)?.toDouble() ?? 1)
           .clamp(.5, 1.5)
           .toDouble(),
-      incubationMinutes: _incubationMinutesFromJson(json),
+      incubationMinutes: _incubationMinutesFromJson(json, firstEgg: isFirstEgg),
       personalityTraitIds: (json['personalityTraitIds'] as List?)
               ?.whereType<String>()
               .where(dragonPersonalityTraits.contains)
@@ -445,7 +447,11 @@ class Pet {
     );
   }
 
-  static int _incubationMinutesFromJson(Map<String, dynamic> json) {
+  static int _incubationMinutesFromJson(
+    Map<String, dynamic> json, {
+    required bool firstEgg,
+  }) {
+    if (firstEgg) return 60;
     final savedMinutes = json['incubationMinutes'];
     if (savedMinutes is num) {
       return savedMinutes.toInt().clamp(1, 14 * 24 * 60);
@@ -454,7 +460,6 @@ class Pet {
     // Versions through v0.01.02 stored whole hours. Starter Eggs now take one
     // hour, while every already-incubating later egg immediately adopts one
     // tenth of its original duration without resetting its start time.
-    if (json['firstEgg'] != false) return 60;
     final legacyHours = nonNegativeIntFromJson(
       json['incubationHours'],
       fallback: 24 * 7,

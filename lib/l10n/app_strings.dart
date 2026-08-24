@@ -202,6 +202,9 @@ class AppStrings {
           : _durationPart(duration.inMinutes.clamp(1, 59), 'minute');
 
   String remainingDuration(Duration duration) {
+    if (duration.inSeconds <= 60) {
+      return _durationPart(duration.inSeconds.clamp(1, 60), 'second');
+    }
     if (duration.inDays > 0) {
       return '${_durationPart(duration.inDays, 'day')} '
           '${_durationPart(duration.inHours % 24, 'hour')}';
@@ -238,6 +241,7 @@ class AppStrings {
         ('ja', 'day') => '$value日',
         ('ja', 'hour') => '$value時間',
         ('ja', 'minute') => '$value分',
+        (_, 'second') => '${value}s',
         (_, 'day') => '${value}d',
         (_, 'hour') => '${value}h',
         _ => '${value}m',

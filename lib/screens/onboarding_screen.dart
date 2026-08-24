@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
-import '../models/day_phase.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/haven_lighting.dart';
-import '../widgets/dragon_art.dart';
+import '../widgets/rooftop_egg_nest.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -80,22 +78,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(28),
-                child: Stack(children: [
-                  Positioned.fill(
-                    child: HavenPhaseImage(
-                      assetFor: (phase) =>
-                          'assets/images/tower_nest_${phase.assetKey}.webp',
-                    ),
-                  ),
-                  const Align(
-                    alignment: Alignment(.02, .56),
-                    child: DragonArt(
-                      height: 150,
-                      stageKey: 'moonEgg',
-                      animate: true,
-                    ),
-                  ),
-                ]),
+                child: const RooftopEggNest(),
               ),
             ),
             const SizedBox(height: 22),

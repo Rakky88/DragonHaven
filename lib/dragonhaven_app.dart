@@ -8,6 +8,7 @@ import 'l10n/app_strings.dart';
 import 'models/achievement.dart';
 import 'models/game_presentation.dart';
 import 'providers/household_provider.dart';
+import 'providers/online_account_provider.dart';
 import 'screens/account_screen.dart';
 import 'screens/achievements_screen.dart';
 import 'screens/adventure_hub_screen.dart';
@@ -72,6 +73,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   final _visited = <int>{2};
   late final AppLifecycleListener _lifecycle;
   late final HouseholdProvider _game;
+  late final OnlineAccountProvider _online;
   Timer? _presentationRetry;
   Timer? _gameClock;
   bool _presentationBusy = false;
@@ -81,6 +83,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   void initState() {
     super.initState();
     _game = context.read<HouseholdProvider>();
+    _online = context.read<OnlineAccountProvider>();
     _game.addListener(_schedulePresentations);
     _gameClock = Timer.periodic(const Duration(minutes: 1), (_) async {
       await _game.refreshForCurrentDate();
@@ -90,6 +93,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       onResume: () async {
         _setTowerAmbientMusic();
         await _game.refreshForCurrentDate();
+        await _online.refresh();
         _schedulePresentations();
       },
     );
@@ -97,6 +101,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       if (!mounted) return;
       _setTowerAmbientMusic();
       await _game.refreshForCurrentDate();
+      await _online.refresh();
       _schedulePresentations();
     });
   }
@@ -231,6 +236,9 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       _visited.add(index);
     });
     _setTowerAmbientMusic();
+    if (index == 0) {
+      unawaited(_online.refresh());
+    }
   }
 
   @override
