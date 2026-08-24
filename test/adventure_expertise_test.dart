@@ -17,16 +17,16 @@ void main() {
         statPoints: 1,
       );
 
-  Pet dragon(int might) => Pet(training: {
+  Pet dragon(int might, {int arcana = 0, int spirit = 0}) => Pet(training: {
         'might': might,
-        'arcana': 0,
-        'spirit': 0,
+        'arcana': arcana,
+        'spirit': spirit,
       });
 
   test('mini expertise removes seconds from the advertised duration', () {
     expect(
       expertiseAdjustedAdventureDuration(
-        adventure(AdventureKind.mini, const Duration(minutes: 6)),
+        adventure(AdventureKind.mini, const Duration(minutes: 2)),
         [dragon(300)],
       ),
       const Duration(minutes: 1),
@@ -36,27 +36,47 @@ void main() {
   test('short expertise removes minutes from the advertised duration', () {
     expect(
       expertiseAdjustedAdventureDuration(
-        adventure(AdventureKind.short, const Duration(hours: 6)),
+        adventure(AdventureKind.short, const Duration(hours: 3)),
         [dragon(300)],
       ),
       const Duration(hours: 1),
     );
   });
 
-  test('long and group adventures use combined expertise in minutes', () {
+  test('long expertise removes hours with a one-day minimum', () {
     expect(
       expertiseAdjustedAdventureDuration(
-        adventure(AdventureKind.long, const Duration(days: 6)),
-        [dragon(300)],
+        adventure(AdventureKind.long, const Duration(days: 3)),
+        [dragon(24)],
       ),
-      const Duration(days: 5, hours: 19),
+      const Duration(days: 2),
     );
     expect(
       expertiseAdjustedAdventureDuration(
-        adventure(AdventureKind.group, const Duration(days: 6)),
-        [dragon(175), dragon(125)],
+        adventure(AdventureKind.long, const Duration(days: 3)),
+        [dragon(300)],
       ),
-      const Duration(days: 5, hours: 19),
+      const Duration(days: 1),
+    );
+  });
+
+  test('group adventures remove the average expertise in hours', () {
+    expect(
+      expertiseAdjustedAdventureDuration(
+        adventure(AdventureKind.group, const Duration(days: 6)),
+        [dragon(24), dragon(48)],
+      ),
+      const Duration(days: 4, hours: 12),
+    );
+  });
+
+  test('only the adventure focus changes its duration', () {
+    expect(
+      expertiseAdjustedAdventureDuration(
+        adventure(AdventureKind.short, const Duration(hours: 3)),
+        [dragon(30, arcana: 300, spirit: 300)],
+      ),
+      const Duration(hours: 2, minutes: 30),
     );
   });
 

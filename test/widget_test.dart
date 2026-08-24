@@ -346,6 +346,8 @@ void main() {
       ),
     );
     expect(find.byKey(const Key('music-switch')), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('music-switch')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('music-switch')));
     await tester.pump();
     expect(game.musicEnabled, isFalse);
@@ -1286,7 +1288,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.02.02'), findsOneWidget);
+    expect(find.text('v0.02.03'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

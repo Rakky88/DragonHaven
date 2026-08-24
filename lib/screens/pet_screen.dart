@@ -709,7 +709,7 @@ class _EvolutionPanel extends StatelessWidget {
             Padding(
                 padding: const EdgeInsets.only(top: 5),
                 child: Text(
-                    '${strings.pick('Expertises', 'Expertises')}: ${pet.totalTraining}/300 · ${pet.leadingPath == 'unknown' ? strings.pick('path undecided', 'pad onbeslist') : pet.leadingPath}',
+                    '${strings.pick('Expertises', 'Expertises')}: ${pet.totalTraining}/${maxDragonExpertise * TrainingFocus.values.length} · ${pet.leadingPath == 'unknown' ? strings.pick('path undecided', 'pad onbeslist') : pet.leadingPath}',
                     style:
                         const TextStyle(color: AppColors.muted, fontSize: 12))),
         ]),

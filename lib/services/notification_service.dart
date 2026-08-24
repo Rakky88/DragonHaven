@@ -95,6 +95,18 @@ abstract final class HavenNotifications {
         kind: 'trade',
       );
 
+  static Future<void> friendRequest({
+    required String id,
+    required String title,
+    required String body,
+  }) =>
+      _showWhenBackground(
+        id: 'friend-request-$id',
+        title: title,
+        body: body,
+        kind: 'friend_request',
+      );
+
   static Future<void> _showWhenBackground({
     required String id,
     required String title,

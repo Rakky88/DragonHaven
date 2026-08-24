@@ -30,7 +30,7 @@ void main() {
     expect(all.map((entry) => entry.id).toSet(), hasLength(1000));
     expect(
         AdventureCatalog.mini.every((entry) =>
-            entry.duration >= const Duration(minutes: 6) &&
+            entry.duration >= const Duration(minutes: 2) &&
             entry.duration <= const Duration(minutes: 15) &&
             entry.xp >= 4 &&
             entry.statPoints >= 1 &&
@@ -38,25 +38,31 @@ void main() {
         isTrue);
     expect(
         AdventureCatalog.short.every((entry) =>
-            entry.duration >= const Duration(hours: 6) &&
-            entry.duration <= const Duration(hours: 8)),
+            entry.duration >= const Duration(hours: 3) &&
+            entry.duration <= const Duration(hours: 6)),
         isTrue);
     expect(
         AdventureCatalog.long.every((entry) =>
-            entry.duration >= const Duration(days: 2) &&
+            entry.duration >= const Duration(days: 3) &&
             entry.duration <= const Duration(days: 6)),
         isTrue);
     expect(
         AdventureCatalog.group.every((entry) =>
-            entry.duration >= const Duration(days: 2) &&
-            entry.duration <= const Duration(days: 5)),
+            entry.duration >= const Duration(days: 3) &&
+            entry.duration <= const Duration(days: 6)),
         isTrue);
-    expect(AdventureCatalog.mini.first.duration, const Duration(minutes: 6));
-    expect(AdventureCatalog.mini.first.xp, 12);
-    expect(AdventureCatalog.mini.first.statPoints, 3);
-    expect(AdventureCatalog.short.first.duration, const Duration(hours: 6));
-    expect(AdventureCatalog.short.first.xp, 213);
-    expect(AdventureCatalog.short.first.statPoints, 18);
+    expect(AdventureCatalog.mini.first.duration, const Duration(minutes: 2));
+    expect(AdventureCatalog.mini.first.xp, 4);
+    expect(AdventureCatalog.mini.first.statPoints, 1);
+    expect(AdventureCatalog.short.first.duration, const Duration(hours: 3));
+    expect(AdventureCatalog.short.first.xp, 89);
+    expect(AdventureCatalog.short.first.statPoints, 7);
+    expect(AdventureCatalog.long.first.duration, const Duration(days: 3));
+    expect(AdventureCatalog.long.first.xp, 710);
+    expect(AdventureCatalog.long.first.statPoints, 68);
+    expect(AdventureCatalog.group.first.duration, const Duration(days: 3));
+    expect(AdventureCatalog.group.first.xp, 885);
+    expect(AdventureCatalog.group.first.statPoints, 91);
   });
 
   test('lineage rarities match the 42-family distribution', () {
@@ -72,7 +78,7 @@ void main() {
   });
 
   test('achievements have unique badges and use Common terminology', () {
-    expect(achievementCatalog, hasLength(24));
+    expect(achievementCatalog, hasLength(25));
     expect(
       achievementCatalog.map((achievement) => achievement.badge).toSet(),
       hasLength(achievementCatalog.length),
@@ -92,6 +98,25 @@ void main() {
       provider.pet.addTraining(focus, maxDragonExpertise);
     }
     expect(provider.achievementProgress('triple_expertise'), 1);
+  });
+
+  test('the secret Mastery achievement unlocks only after Mastery evolution',
+      () {
+    final provider = HouseholdProvider();
+    provider.pet
+      ..stage = DragonStage.wyrmling
+      ..xp = Pet.ascendedXp
+      ..training.addAll({'might': 100, 'arcana': 100, 'spirit': 100});
+
+    expect(provider.achievementProgress('hidden_mastery'), 0);
+    provider.pet.evolve(DateTime.utc(2026, 8, 24));
+    expect(provider.achievementProgress('hidden_mastery'), 1);
+    expect(
+      achievementCatalog
+          .singleWhere((item) => item.id == 'hidden_mastery')
+          .secret,
+      isTrue,
+    );
   });
 
   test('all eight chest tiers and all 24 personality traits exist', () {

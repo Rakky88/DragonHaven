@@ -220,10 +220,7 @@ class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
                       : Icons.visibility_off_rounded),
                 ),
               ),
-              validator: (value) => value == null || value.length < 8
-                  ? strings.pick('Use at least 8 characters.',
-                      'Gebruik minimaal 8 tekens.')
-                  : null,
+              validator: (value) => _passwordValidator(strings, value),
             ),
             if (online.errorCode case final error?) ...[
               const SizedBox(height: 12),
@@ -260,10 +257,12 @@ class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final online = context.read<OnlineAccountProvider>();
+    final password = _password.text;
+    _password.clear();
     if (widget.createAccount) {
       final result = await online.signUp(
         email: _email.text,
-        password: _password.text,
+        password: password,
       );
       if (!mounted || result == null) return;
       Navigator.pop(context);
@@ -279,10 +278,33 @@ class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
     } else {
       final success = await online.signIn(
         email: _email.text,
-        password: _password.text,
+        password: password,
       );
       if (success && mounted) Navigator.pop(context);
     }
+  }
+
+  String? _passwordValidator(AppStrings strings, String? value) {
+    final password = value ?? '';
+    if (password.isEmpty) {
+      return strings.pick('Enter your password.', 'Vul je wachtwoord in.');
+    }
+    if (!widget.createAccount) return null;
+    if (password.length < 8) {
+      return strings.pick(
+          'Use at least 8 characters.', 'Gebruik minimaal 8 tekens.');
+    }
+    final hasRequiredCharacters = RegExp(r'[a-z]').hasMatch(password) &&
+        RegExp(r'[A-Z]').hasMatch(password) &&
+        RegExp(r'[0-9]').hasMatch(password) &&
+        RegExp(r'''[!@#$%^&*()_+\-=\[\]{};':"\\|<>?,./`]''').hasMatch(password);
+    if (!hasRequiredCharacters) {
+      return strings.pick(
+        'Use an uppercase letter, lowercase letter, number and symbol.',
+        'Gebruik een hoofdletter, kleine letter, cijfer en symbool.',
+      );
+    }
+    return null;
   }
 }
 

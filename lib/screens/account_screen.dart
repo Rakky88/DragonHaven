@@ -24,66 +24,11 @@ class AccountScreen extends StatelessWidget {
         key: const PageStorageKey('account-scroll'),
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
         children: [
-          Card(
-            clipBehavior: Clip.antiAlias,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.white, Color(0xFFF0EAFF)],
-                ),
-              ),
-              child: Row(
-                children: [
-                  InkWell(
-                    key: const Key('account-current-portrait'),
-                    borderRadius: BorderRadius.circular(48),
-                    onTap: () => _choosePortrait(context),
-                    child: ProfilePortraitSprite(
-                      portrait: game.selectedPortrait,
-                      size: 88,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          game.accountName,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          game.selectedAccountTitle == null
-                              ? strings.pick('Dragon keeper', 'Drakenhoeder')
-                              : strings
-                                  .accountTitle(game.selectedAccountTitle!),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton.filledTonal(
-                    tooltip: strings.pick('Edit name', 'Naam wijzigen'),
-                    onPressed: () => _editName(context, game.accountName),
-                    icon: const Icon(Icons.edit_rounded),
-                  ),
-                ],
-              ),
-            ),
+          _AccountIdentityCard(
+            game: game,
+            onEditName: () => _editName(context, game.accountName),
+            onChoosePortrait: () => _choosePortrait(context),
+            onChooseTitle: () => _chooseTitle(context),
           ),
           const SizedBox(height: 18),
           Text(strings.pick('Portraits', 'Portretten'),
@@ -151,11 +96,6 @@ class AccountScreen extends StatelessWidget {
               onTap: () => _chooseTitle(context),
             ),
           ),
-          const SizedBox(height: 18),
-          Text(strings.pick('Online account', 'Online account'),
-              style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          const _OnlineAccountSection(),
           const SizedBox(height: 18),
           Text(strings.pick('Audio', 'Audio'),
               style: Theme.of(context).textTheme.titleLarge),
@@ -478,90 +418,218 @@ class AccountScreen extends StatelessWidget {
   }
 }
 
-class _OnlineAccountSection extends StatelessWidget {
-  const _OnlineAccountSection();
+class _AccountIdentityCard extends StatelessWidget {
+  const _AccountIdentityCard({
+    required this.game,
+    required this.onEditName,
+    required this.onChoosePortrait,
+    required this.onChooseTitle,
+  });
+
+  final HouseholdProvider game;
+  final VoidCallback onEditName;
+  final VoidCallback onChoosePortrait;
+  final VoidCallback onChooseTitle;
 
   @override
   Widget build(BuildContext context) {
     final online = context.watch<OnlineAccountProvider>();
     final strings = AppStrings.of(context);
-    if (!online.isConfigured) {
-      return Card(
-        child: ListTile(
-          leading:
-              const Icon(Icons.cloud_off_rounded, color: AppColors.twilight),
-          title: Text(strings.pick(
-              'Server setup required', 'Serverinstellingen vereist')),
-          subtitle: Text(strings.pick(
-            'This installation has no online server configuration yet.',
-            'Deze installatie heeft nog geen online serverconfiguratie.',
-          )),
-        ),
-      );
-    }
-    if (!online.isSignedIn) {
-      return const OnlineAccountAccessCard();
-    }
     final profile = online.profile;
-    if (profile == null) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(22),
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      );
-    }
     return Card(
       key: const Key('online-account-profile'),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: KeeperPortrait(
-              portraitKey: profile.portraitKey,
-              displayName: profile.displayName,
-              radius: 29,
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.white, Color(0xFFF0EAFF), Color(0xFFFFF6DC)],
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                InkWell(
+                  key: const Key('account-current-portrait'),
+                  borderRadius: BorderRadius.circular(50),
+                  onTap: onChoosePortrait,
+                  child: ProfilePortraitSprite(
+                    portrait: game.selectedPortrait,
+                    size: 92,
+                  ),
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        game.accountName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: onChooseTitle,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Text(
+                            game.selectedAccountTitle == null
+                                ? strings.pick('Dragon keeper', 'Drakenhoeder')
+                                : strings
+                                    .accountTitle(game.selectedAccountTitle!),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.twilight,
+                              fontFamily: 'serif',
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton.filledTonal(
+                  tooltip: strings.pick('Edit name', 'Naam wijzigen'),
+                  onPressed: onEditName,
+                  icon: const Icon(Icons.edit_rounded),
+                ),
+              ],
             ),
-            title: Text(profile.displayName,
-                style: const TextStyle(fontWeight: FontWeight.w900)),
-            subtitle: Text(
-              '${keeperTitleLabel(strings, profile.title)}\n${online.currentEmail ?? ''}',
-            ),
-            isThreeLine: true,
-            trailing: Tooltip(
-              message: strings.pick(
-                'Synced with your offline profile',
-                'Gesynchroniseerd met je offline profiel',
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+            if (!online.isConfigured)
+              _IdentityInfoRow(
+                icon: Icons.cloud_off_rounded,
+                label: strings.pick(
+                  'Online server is not configured',
+                  'Online server is niet ingesteld',
+                ),
+              )
+            else if (!online.isSignedIn) ...[
+              _IdentityInfoRow(
+                icon: Icons.shield_outlined,
+                label: strings.pick(
+                  'This profile is currently stored offline',
+                  'Dit profiel is momenteel offline opgeslagen',
+                ),
               ),
-              child: const Icon(Icons.sync_rounded, color: AppColors.twilight),
-            ),
-          ),
-          const Divider(),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading:
-                const Icon(Icons.badge_outlined, color: AppColors.twilight),
-            title: const Text('Keeper ID'),
-            subtitle: Text(profile.keeperCode,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w900, letterSpacing: .8)),
-            trailing: IconButton(
-              onPressed: () => copyKeeperCode(context, profile.keeperCode),
-              icon: const Icon(Icons.copy_rounded),
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              key: const Key('sign-out-online-account'),
-              onPressed: online.busy ? null : online.signOut,
-              icon: const Icon(Icons.logout_rounded),
-              label: Text(strings.pick('Sign out', 'Uitloggen')),
-            ),
-          ),
-        ]),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      key: const Key('create-online-account'),
+                      onPressed: () => showOnlineAuthDialog(
+                        context,
+                        createAccount: true,
+                      ),
+                      icon: const Icon(Icons.person_add_alt_1_rounded),
+                      label: Text(strings.pick('Create', 'Maken')),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: const Key('sign-in-online-account'),
+                      onPressed: () => showOnlineAuthDialog(
+                        context,
+                        createAccount: false,
+                      ),
+                      icon: const Icon(Icons.login_rounded),
+                      label: Text(strings.pick('Sign in', 'Inloggen')),
+                    ),
+                  ),
+                ],
+              ),
+            ] else if (profile == null)
+              const Padding(
+                padding: EdgeInsets.all(18),
+                child: CircularProgressIndicator(),
+              )
+            else ...[
+              _IdentityInfoRow(
+                icon: Icons.verified_user_rounded,
+                label: online.currentEmail ?? '',
+                trailing: const Icon(
+                  Icons.verified_rounded,
+                  color: Color(0xFF2B8B68),
+                ),
+              ),
+              _IdentityInfoRow(
+                icon: Icons.badge_outlined,
+                label: profile.keeperCode,
+                labelStyle: const TextStyle(
+                  color: AppColors.twilight,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: .8,
+                ),
+                trailing: IconButton(
+                  tooltip: strings.pick('Copy Keeper ID', 'Keeper-ID kopiëren'),
+                  onPressed: () => copyKeeperCode(context, profile.keeperCode),
+                  icon: const Icon(Icons.copy_rounded),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  key: const Key('sign-out-online-account'),
+                  onPressed: online.busy ? null : online.signOut,
+                  icon: const Icon(Icons.logout_rounded),
+                  label: Text(strings.pick('Sign out', 'Uitloggen')),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
+}
+
+class _IdentityInfoRow extends StatelessWidget {
+  const _IdentityInfoRow({
+    required this.icon,
+    required this.label,
+    this.trailing,
+    this.labelStyle,
+  });
+
+  final IconData icon;
+  final String label;
+  final Widget? trailing;
+  final TextStyle? labelStyle;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 9),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.twilight, size: 22),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: labelStyle ??
+                    const TextStyle(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+            if (trailing case final child?) child,
+          ],
+        ),
+      );
 }

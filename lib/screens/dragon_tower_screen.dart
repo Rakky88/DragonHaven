@@ -542,32 +542,31 @@ class _FantasyBannerLabel extends StatelessWidget {
                 ..color = const Color(0xFF29133F),
             ),
           ),
-          ShaderMask(
-            blendMode: BlendMode.srcIn,
-            shaderCallback: (bounds) => const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFFFFFFFF),
-                Color(0xFFFFE39A),
-                Color(0xFFE9AF3D),
+          Text(
+            label,
+            key: const Key('my-dragons-banner-label'),
+            maxLines: 1,
+            softWrap: false,
+            style: _style.copyWith(
+              foreground: Paint()
+                ..isAntiAlias = true
+                ..shader = const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFFFF4C8),
+                    Color(0xFFFFDA73),
+                    Color(0xFFD99119),
+                  ],
+                  stops: [0, .54, 1],
+                ).createShader(const Rect.fromLTWH(0, 0, 360, 44)),
+              shadows: const [
+                Shadow(
+                  color: Color(0xCC210C3D),
+                  blurRadius: 8,
+                  offset: Offset(0, 3),
+                ),
               ],
-            ).createShader(bounds),
-            child: Text(
-              label,
-              key: const Key('my-dragons-banner-label'),
-              maxLines: 1,
-              softWrap: false,
-              style: _style.copyWith(
-                color: Colors.white,
-                shadows: const [
-                  Shadow(
-                    color: Color(0xCC210C3D),
-                    blurRadius: 8,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
             ),
           ),
         ],

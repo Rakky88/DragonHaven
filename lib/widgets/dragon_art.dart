@@ -71,6 +71,9 @@ abstract final class DragonArtwork {
   static String formsAsset(String? lineageId) =>
       'assets/images/dragons/${_spriteLineageId(lineageId)}_forms.webp';
 
+  static String masteryAsset(String? lineageId) =>
+      'assets/images/dragons/${dragonLineageById(lineageId).id}_mastery.webp';
+
   static String safeStandaloneFormAsset(String lineageId, String form) =>
       secondPassStandaloneForms[lineageId]?.contains(form) == true
           ? 'assets/images/dragons/${_spriteLineageId(lineageId)}_${form}_safe_v2.webp'
@@ -105,6 +108,12 @@ abstract final class DragonArtwork {
     required String evolutionPath,
     bool sinister = false,
   }) {
+    if (stageKey == 'homeGuardian' && evolutionPath == 'mastery') {
+      return DragonArtworkSelection(
+        masteryAsset(lineageId),
+        DragonArtworkFrame.fullImage,
+      );
+    }
     if (lineageId == 'seraphscale') {
       final individualAsset = switch (stageKey) {
         'spark' => seraphscaleHatchlingAsset,
@@ -178,12 +187,13 @@ abstract final class DragonArtwork {
         for (final lineage in dragonLineages) ...{
           hatchlingAsset(lineage.id),
           formsAsset(lineage.id),
+          masteryAsset(lineage.id),
         },
         sinisterHatchlingAsset(),
         sinisterFormsAsset(),
       };
 
-  static int get logicalFormCount => 1 + dragonLineages.length * 5;
+  static int get logicalFormCount => 1 + dragonLineages.length * 6;
 
   static String _spriteLineageId(String? lineageId) =>
       dragonLineageById(lineageId).spriteId;

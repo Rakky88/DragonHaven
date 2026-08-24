@@ -10,18 +10,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('forty-two lineages provide 126 distinct Ascended forms', () {
+  test('forty-two lineages provide 168 distinct Ascended forms', () {
     expect(dragonLineages, hasLength(42));
     expect(dragonLineages.map((lineage) => lineage.id).toSet(), hasLength(42));
     final adultNames = <String>{};
     for (final lineage in dragonLineages) {
-      for (final path in ['might', 'arcana', 'spirit']) {
+      for (final path in ['might', 'arcana', 'spirit', 'mastery']) {
         adultNames.add(lineage.formName(path, false));
       }
     }
-    expect(adultNames, hasLength(126));
-    expect(DragonArtwork.logicalFormCount, 211);
-    expect(DragonArtwork.allAssetPaths, hasLength(170));
+    expect(adultNames, hasLength(168));
+    expect(DragonArtwork.logicalFormCount, 253);
+    expect(DragonArtwork.allAssetPaths, hasLength(212));
   });
 
   test('all dragon artwork files exist', () {
@@ -102,8 +102,8 @@ void main() {
   });
 
   test('all achievements are bilingual and uniquely identified', () {
-    expect(achievementCatalog, hasLength(24));
-    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(24));
+    expect(achievementCatalog, hasLength(25));
+    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(25));
     expect(
         achievementCatalog.every((entry) =>
             entry.titleEn.isNotEmpty &&

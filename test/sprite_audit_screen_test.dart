@@ -19,6 +19,7 @@ void main() {
             .fold<int>(0, (count, forms) => count + forms.length),
         77);
     expect(releaseRepairAuditEntryIds(), hasLength(308));
+    expect(masteryAuditEntryIds(), hasLength(84));
   });
 
   testWidgets('sprite audit follows the requested four-pass family order',
@@ -32,7 +33,7 @@ void main() {
     expect(find.text('Mossprout'), findsOneWidget);
     expect(find.text('1/4 · Normal silhouettes'), findsOneWidget);
     var artwork = tester.widgetList<DragonArt>(find.byType(DragonArt));
-    expect(artwork, hasLength(5));
+    expect(artwork, hasLength(6));
     expect(artwork.every((art) => art.silhouette && !art.prismatic), isTrue);
 
     await tester.tap(find.byKey(const Key('audit-next')));

@@ -1451,6 +1451,8 @@ class HouseholdProvider extends ChangeNotifier {
                   ))
               ? 1
               : 0,
+        'hidden_mastery' =>
+          [pet, ...sanctuaryDragons].any((dragon) => dragon.isMastery) ? 1 : 0,
         'came_crawling_back' => totalReleasedReturns,
         'ghost_writer' =>
           prismaticForms.map((key) => key.split(':').first).toSet().length,

@@ -35,6 +35,10 @@ class FriendsScreen extends StatelessWidget {
     if (online.profile == null && online.busy) {
       return const Center(child: CircularProgressIndicator());
     }
+    final sortedFriends = online.friends.toList(growable: false)
+      ..sort((a, b) => a.displayName.toLowerCase().compareTo(
+            b.displayName.toLowerCase(),
+          ));
     return RefreshIndicator(
       onRefresh: online.refresh,
       child: _FriendsList(children: [
@@ -46,11 +50,12 @@ class FriendsScreen extends StatelessWidget {
             error: true,
           ),
         if (online.profile case final profile?) _MyKeeperCard(profile: profile),
+        _FriendsOverview(online: online),
         const SizedBox(height: 14),
         FilledButton.icon(
           key: const Key('add-friend-button'),
           onPressed: online.busy ? null : () => _showAddFriend(context),
-          icon: const Icon(Icons.person_add_alt_1_rounded),
+          icon: const GameIconSprite(GameIconKind.friendsAdd, size: 39),
           label:
               Text(strings.pick('Add by Keeper ID', 'Toevoegen via Keeper-ID')),
         ),
@@ -66,19 +71,19 @@ class FriendsScreen extends StatelessWidget {
             _OutgoingRequestCard(request: request),
         ],
         _SectionTitle(strings.pick(
-          'Friends (${online.friends.length})',
-          'Vrienden (${online.friends.length})',
+          'Friends (${sortedFriends.length})',
+          'Vrienden (${sortedFriends.length})',
         )),
-        if (online.friends.isEmpty)
+        if (sortedFriends.isEmpty)
           _StatusCard(
-            icon: Icons.people_outline_rounded,
+            sprite: GameIconKind.navFriends,
             text: strings.pick(
               'No friends yet. Share your Keeper ID or add someone else.',
               'Nog geen vrienden. Deel je Keeper-ID of voeg iemand toe.',
             ),
           )
         else
-          for (final friend in online.friends) _FriendTile(friend: friend),
+          for (final friend in sortedFriends) _FriendTile(friend: friend),
         if (online.blockedKeepers.isNotEmpty) ...[
           _SectionTitle(strings.pick('Blocked', 'Geblokkeerd')),
           for (final keeper in online.blockedKeepers)
@@ -162,18 +167,57 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(bottom: 18),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(strings.tr('friends'),
-              style: Theme.of(context).textTheme.displaySmall),
-          const SizedBox(height: 7),
-          Text(
-            strings.pick(
-              'Find trusted keepers, compare collections and visit their profiles.',
-              'Vind vertrouwde hoeders, vergelijk collecties en bezoek hun profiel.',
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 13, 16, 14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF241747), Color(0xFF6548A0)],
             ),
-            style: const TextStyle(color: AppColors.muted, fontSize: 15),
+            borderRadius: BorderRadius.circular(26),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x332B174D),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
           ),
-        ]),
+          child: Row(
+            children: [
+              const GameIconSprite(GameIconKind.navFriends, size: 92),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.tr('friends'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      strings.pick(
+                        'Trusted keepers, shared adventures and safe trades.',
+                        'Vertrouwde hoeders, gedeelde avonturen en veilige ruilen.',
+                      ),
+                      style: const TextStyle(
+                        color: Color(0xFFE7DFFA),
+                        height: 1.25,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       );
 }
 
@@ -197,9 +241,14 @@ class _MyKeeperCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return Card(
-      color: const Color(0xFFEDE8FF),
-      child: Padding(
+      clipBehavior: Clip.antiAlias,
+      child: Container(
         padding: const EdgeInsets.all(14),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFFFFFFF), Color(0xFFEDE8FF)],
+          ),
+        ),
         child: Row(children: [
           KeeperPortrait(
             portraitKey: profile.portraitKey,
@@ -235,6 +284,92 @@ class _MyKeeperCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _FriendsOverview extends StatelessWidget {
+  const _FriendsOverview({required this.online});
+
+  final OnlineAccountProvider online;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final activeTrades = online.trades.where((trade) => trade.isActive).length;
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: _OverviewPill(
+              sprite: GameIconKind.navFriends,
+              value: '${online.friends.length}',
+              label: strings.pick('friends', 'vrienden'),
+            ),
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: _OverviewPill(
+              sprite: GameIconKind.friendsAdd,
+              value: '${online.incomingRequests.length}',
+              label: strings.pick('requests', 'verzoeken'),
+            ),
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: _OverviewPill(
+              sprite: GameIconKind.friendsTrade,
+              value: '$activeTrades',
+              label: strings.pick('trades', 'ruilen'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OverviewPill extends StatelessWidget {
+  const _OverviewPill({
+    required this.sprite,
+    required this.value,
+    required this.label,
+  });
+
+  final GameIconKind sprite;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 7),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF4F0FF),
+          borderRadius: BorderRadius.circular(17),
+          border: Border.all(color: const Color(0xFFD8CCF2)),
+        ),
+        child: Row(
+          children: [
+            GameIconSprite(sprite, size: 31),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(value,
+                      style: const TextStyle(
+                          color: AppColors.twilight,
+                          fontWeight: FontWeight.w900)),
+                  Text(label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: AppColors.muted, fontSize: 9.5)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 class _IncomingRequestCard extends StatelessWidget {
@@ -326,34 +461,79 @@ class _FriendTile extends StatelessWidget {
     final activeTrades =
         context.watch<OnlineAccountProvider>().tradesWith(friend.userId);
     return Card(
-      child: ListTile(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
         key: Key('friend-${friend.userId}'),
         onTap: () => _showFriendProfile(context, friend),
-        leading: KeeperPortrait(
-          portraitKey: friend.portraitKey,
-          displayName: friend.displayName,
-          radius: 27,
-        ),
-        title: Text(friend.displayName,
-            style: const TextStyle(fontWeight: FontWeight.w900)),
-        subtitle: Text(
-            '${keeperTitleLabel(strings, friend.title)}\n${strings.pick('Discovered', 'Ontdekt')}: '
-            '${friend.discoveredDragonCount}'),
-        isThreeLine: true,
-        trailing: activeTrades.isEmpty
-            ? const Icon(Icons.chevron_right_rounded)
-            : IconButton(
-                key: Key('friend-trade-${friend.userId}'),
-                tooltip: strings.pick('Open trade', 'Ruil openen'),
-                onPressed: () => _showTrade(context, activeTrades.first),
-                icon: Badge(
-                  label: Text('${activeTrades.length}'),
-                  child: const GameIconSprite(
-                    GameIconKind.friendsTrade,
-                    size: 38,
-                  ),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(11, 11, 8, 11),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.white, Color(0xFFFFF8E8)],
+            ),
+          ),
+          child: Row(
+            children: [
+              KeeperPortrait(
+                portraitKey: friend.portraitKey,
+                displayName: friend.displayName,
+                radius: 29,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(friend.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w900, fontSize: 16)),
+                    Text(keeperTitleLabel(strings, friend.title),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: AppColors.muted)),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDE8FF),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Text(
+                        '${friend.discoveredDragonCount} ${strings.pick('dragons discovered', 'draken ontdekt')}',
+                        style: const TextStyle(
+                          color: AppColors.twilight,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(width: 5),
+              if (activeTrades.isNotEmpty)
+                IconButton(
+                  key: Key('friend-trade-${friend.userId}'),
+                  tooltip: strings.pick('Open trade', 'Ruil openen'),
+                  onPressed: () => _showTrade(context, activeTrades.first),
+                  icon: Badge(
+                    label: Text('${activeTrades.length}'),
+                    child: const GameIconSprite(
+                      GameIconKind.friendsTrade,
+                      size: 40,
+                    ),
+                  ),
+                )
+              else
+                const GameIconSprite(GameIconKind.friendsVisit, size: 44),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -667,8 +847,8 @@ Future<TradeItem?> _pickTradeItem(BuildContext context) async {
               const SizedBox(height: 5),
               Text(
                 strings.pick(
-                  'The item is kept safe and cannot be used in another trade. Each response has a ten-minute window.',
-                  'Het item wordt veilig apart gezet en kan niet in een andere ruil worden gebruikt. Voor iedere reactie geldt tien minuten.',
+                  'The item is kept safe and cannot be used in another trade. The proposal expires ten minutes after it is created.',
+                  'Het item wordt veilig apart gezet en kan niet in een andere ruil worden gebruikt. Het voorstel vervalt tien minuten nadat het is aangemaakt.',
                 ),
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: AppColors.muted),
@@ -990,8 +1170,10 @@ class _SectionTitle extends StatelessWidget {
 
 class _StatusCard extends StatelessWidget {
   const _StatusCard(
-      {required this.icon, required this.text, this.error = false});
-  final IconData icon;
+      {this.icon, this.sprite, required this.text, this.error = false})
+      : assert(icon != null || sprite != null);
+  final IconData? icon;
+  final GameIconKind? sprite;
   final String text;
   final bool error;
   @override
@@ -1000,8 +1182,12 @@ class _StatusCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Column(children: [
-            Icon(icon,
-                color: error ? Colors.redAccent : AppColors.twilight, size: 38),
+            if (sprite case final kind?)
+              GameIconSprite(kind, size: 64)
+            else
+              Icon(icon,
+                  color: error ? Colors.redAccent : AppColors.twilight,
+                  size: 38),
             const SizedBox(height: 8),
             Text(text,
                 textAlign: TextAlign.center,

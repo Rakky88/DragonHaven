@@ -56,6 +56,24 @@ void main() {
     });
   });
 
+  test('friend requests use a stable background notification identity',
+      () async {
+    await HavenNotifications.friendRequest(
+      id: 'request-42',
+      title: 'New friend request',
+      body: 'Lyra wants to be friends.',
+    );
+
+    expect(calls, hasLength(1));
+    expect(calls.single.method, 'showWhenBackground');
+    expect(calls.single.arguments, {
+      'id': 'friend-request-request-42',
+      'title': 'New friend request',
+      'body': 'Lyra wants to be friends.',
+      'kind': 'friend_request',
+    });
+  });
+
   test('egg-ready notifications retain their hatch time and event kind',
       () async {
     final at = DateTime(2036, 8, 23, 12, 34, 56);

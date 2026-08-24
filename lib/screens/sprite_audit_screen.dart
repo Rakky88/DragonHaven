@@ -40,6 +40,12 @@ const _auditForms = <_AuditForm>[
     stageKey: 'homeGuardian',
     path: 'spirit',
   ),
+  _AuditForm(
+    id: 'ascended-mastery',
+    label: 'Ascended · Mastery',
+    stageKey: 'homeGuardian',
+    path: 'mastery',
+  ),
 ];
 
 const _marksKey = 'dragonhaven_sprite_audit_marks';
@@ -49,6 +55,9 @@ const _startWithMarkedOnly = bool.fromEnvironment(
 );
 const _startFamily = String.fromEnvironment(
   'DRAGONHAVEN_SPRITE_AUDIT_START_FAMILY',
+);
+const _masteryAuditOnly = bool.fromEnvironment(
+  'DRAGONHAVEN_MASTERY_AUDIT_ONLY',
 );
 
 /// Every runtime rendering of the 77 source forms repaired for this release.
@@ -76,6 +85,13 @@ Set<String> releaseRepairAuditEntryIds() {
   }
   return entries;
 }
+
+Set<String> masteryAuditEntryIds() => {
+      for (final lineage in dragonLineages)
+        for (final spectral in [false, true])
+          '${lineage.id}-${spectral ? 'spectral' : 'normal'}-color-'
+              'ascended-mastery',
+    };
 
 class SpriteAuditApp extends StatelessWidget {
   const SpriteAuditApp({super.key});
@@ -113,9 +129,11 @@ class _SpriteAuditScreenState extends State<SpriteAuditScreen> {
 
   static final List<_AuditPage> _allPages = [
     for (final lineage in dragonLineages) ...[
-      _AuditPage(lineage: lineage, spectral: false, silhouette: true),
+      if (!_masteryAuditOnly)
+        _AuditPage(lineage: lineage, spectral: false, silhouette: true),
       _AuditPage(lineage: lineage, spectral: false, silhouette: false),
-      _AuditPage(lineage: lineage, spectral: true, silhouette: true),
+      if (!_masteryAuditOnly)
+        _AuditPage(lineage: lineage, spectral: true, silhouette: true),
       _AuditPage(lineage: lineage, spectral: true, silhouette: false),
     ],
   ];
@@ -312,6 +330,7 @@ class _SpriteAuditScreenState extends State<SpriteAuditScreen> {
                   pageNumber: safeIndex + 1,
                   pageCount: pages.length,
                   markedOnly: _markedOnly,
+                  masteryOnly: _masteryAuditOnly,
                   onInspect: (form) => _inspect(page, form),
                 ),
       bottomNavigationBar: !_ready || _finished || page == null
@@ -358,6 +377,7 @@ class _AuditPageView extends StatelessWidget {
     required this.pageNumber,
     required this.pageCount,
     required this.markedOnly,
+    required this.masteryOnly,
     required this.onInspect,
   });
 
@@ -366,16 +386,22 @@ class _AuditPageView extends StatelessWidget {
   final int pageNumber;
   final int pageCount;
   final bool markedOnly;
+  final bool masteryOnly;
   final ValueChanged<_AuditForm> onInspect;
 
   @override
   Widget build(BuildContext context) {
     final familyIndex = dragonLineages.indexOf(page.lineage) + 1;
-    final forms = markedOnly
+    final availableForms = masteryOnly
         ? _auditForms
-            .where((form) => marked.contains(page.entryId(form)))
+            .where((form) => form.id == 'ascended-mastery')
             .toList(growable: false)
         : _auditForms;
+    final forms = markedOnly
+        ? availableForms
+            .where((form) => marked.contains(page.entryId(form)))
+            .toList(growable: false)
+        : availableForms;
     return Column(
       children: [
         Container(
@@ -771,12 +797,16 @@ class _AuditPage {
   String get id =>
       '${lineage.id}-${spectral ? 'spectral' : 'normal'}-${silhouette ? 'black' : 'color'}';
 
-  String get variantLabel => switch ((spectral, silhouette)) {
-        (false, true) => '1/4 · Normal silhouettes',
-        (false, false) => '2/4 · Normal colors',
-        (true, true) => '3/4 · Spectral silhouettes',
-        (true, false) => '4/4 · Spectral colors',
-      };
+  String get variantLabel => _masteryAuditOnly
+      ? spectral
+          ? '2/2 · Spectral Mastery'
+          : '1/2 · Normal Mastery'
+      : switch ((spectral, silhouette)) {
+          (false, true) => '1/4 · Normal silhouettes',
+          (false, false) => '2/4 · Normal colors',
+          (true, true) => '3/4 · Spectral silhouettes',
+          (true, false) => '4/4 · Spectral colors',
+        };
 
   String entryId(_AuditForm form) => '$id-${form.id}';
 }

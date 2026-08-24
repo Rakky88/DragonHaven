@@ -356,24 +356,80 @@ class _GroupOfferCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        key: Key('group-offer-${adventure.id}'),
-        leading: const GameIconSprite(GameIconKind.adventureStart, size: 48),
-        title: Text(strings.adventureTitle(adventure),
-            style: const TextStyle(fontWeight: FontWeight.w900)),
-        subtitle: Text(
-          '${strings.adventureDuration(adventure.duration)} · '
-          '${adventure.requirements.players} ${strings.pick('dragons', 'draken')}',
+    return SizedBox(
+      height: 88,
+      child: Card(
+        margin: EdgeInsets.zero,
+        color: Colors.white.withValues(alpha: .96),
+        elevation: 0,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: Key('group-offer-${adventure.id}'),
+          onTap: () => _showAdventureDetailsForGroup(context, adventure),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(11, 8, 7, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        strings.adventureTitle(adventure),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          const GameIconSprite(GameIconKind.clock, size: 19),
+                          const SizedBox(width: 3),
+                          Text(
+                            strings.adventureDuration(adventure.duration),
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.group_rounded,
+                              size: 18, color: AppColors.twilight),
+                          const SizedBox(width: 3),
+                          Text(
+                            '${adventure.requirements.players} ${strings.pick('dragons', 'draken')}',
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GameIconSprite(
+                            GameIconSprite.forTrainingFocus(adventure.focus),
+                            size: 19,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                _GroupActionButton(
+                  key: const Key('create-group-lobby'),
+                  label: strings.pick('Create', 'Maken'),
+                  icon: GameIconKind.adventureStart,
+                  onPressed: () => _createGroupLobby(context, adventure),
+                ),
+              ],
+            ),
+          ),
         ),
-        trailing: FilledButton(
-          key: const Key('create-group-lobby'),
-          onPressed: () => _createGroupLobby(context, adventure),
-          child: Text(strings.pick('Create', 'Maken')),
-        ),
-        onTap: () => _showAdventureDetailsForGroup(context, adventure),
       ),
     );
   }
@@ -390,27 +446,136 @@ class _JoinableGroupLobbyCard extends StatelessWidget {
     final owner = lobby.owner;
     final definition = AdventureCatalog.byId[lobby.adventureId];
     return Card(
-      margin: const EdgeInsets.only(top: 6),
-      child: ListTile(
+      margin: const EdgeInsets.only(top: 7),
+      color: Colors.white.withValues(alpha: .96),
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
         key: Key('joinable-group-${lobby.id}'),
-        leading: KeeperPortrait(
-          portraitKey: owner?.keeper.portraitKey ?? 'portrait_001',
-          displayName: owner?.keeper.displayName ?? 'Keeper',
-          radius: 23,
-        ),
-        title: Text(owner?.keeper.displayName ?? 'Keeper',
-            style: const TextStyle(fontWeight: FontWeight.w900)),
-        subtitle: Text(
-          '${definition == null ? lobby.adventureId : strings.adventureTitle(definition)}\n'
-          '${lobby.participants.length}/${lobby.requiredPlayers} ${strings.pick('dragons', 'draken')}',
-        ),
-        isThreeLine: true,
-        trailing:
-            const Icon(Icons.chevron_right_rounded, color: AppColors.twilight),
         onTap: () => _showGroupLobbyDetails(context, lobby),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 9, 8, 9),
+          child: Row(
+            children: [
+              KeeperPortrait(
+                portraitKey: owner?.keeper.portraitKey ?? 'portrait_001',
+                displayName: owner?.keeper.displayName ?? 'Keeper',
+                radius: 24,
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(owner?.keeper.displayName ?? 'Keeper',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w900)),
+                    Text(
+                      definition == null
+                          ? lobby.adventureId
+                          : strings.adventureTitle(definition),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(99),
+                      child: LinearProgressIndicator(
+                        minHeight: 6,
+                        value: lobby.participants.length /
+                            lobby.requiredPlayers.clamp(1, 4),
+                        color: const Color(0xFF5F9F86),
+                        backgroundColor: const Color(0xFFDDF1E8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const GameIconSprite(GameIconKind.adventureGroup, size: 39),
+                  Text(
+                    '${lobby.participants.length}/${lobby.requiredPlayers}',
+                    style: const TextStyle(
+                      color: AppColors.twilight,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
+}
+
+class _GroupActionButton extends StatelessWidget {
+  const _GroupActionButton({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String label;
+  final GameIconKind icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        button: true,
+        label: label,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(18),
+            child: Ink(
+              width: 56,
+              height: 58,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF7256B5), Color(0xFF4C358D)],
+                ),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x334C358D),
+                    blurRadius: 9,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GameIconSprite(icon, size: 33),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9.5,
+                      height: 1,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 Future<Pet?> _pickGroupDragon(
@@ -525,12 +690,30 @@ class _GroupRequirementSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final requirements = adventure.requirements;
-    final details = <String>[
-      '${requirements.players} ${strings.pick('participants', 'deelnemers')}',
+    final details = <({Widget icon, String label})>[
+      (
+        icon: const Icon(Icons.group_rounded,
+            color: AppColors.twilight, size: 21),
+        label:
+            '${requirements.players} ${strings.pick('participants', 'deelnemers')}'
+      ),
       if (requirements.combinedLevel > 0)
-        '${strings.pick('combined level', 'gecombineerd niveau')} ${requirements.combinedLevel}',
+        (
+          icon: const GameIconSprite(GameIconKind.experience, size: 23),
+          label:
+              '${strings.pick('combined level', 'gecombineerd niveau')} ${requirements.combinedLevel}'
+        ),
       if (requirements.combinedStat > 0)
-        '${strings.pick('combined', 'gecombineerde')} ${_focusName(strings, requirements.focus ?? adventure.focus)} ${requirements.combinedStat}',
+        (
+          icon: GameIconSprite(
+            GameIconSprite.forTrainingFocus(
+              requirements.focus ?? adventure.focus,
+            ),
+            size: 23,
+          ),
+          label:
+              '${strings.pick('combined', 'gecombineerde')} ${_focusName(strings, requirements.focus ?? adventure.focus)} ${requirements.combinedStat}'
+        ),
     ];
     return Container(
       width: double.infinity,
@@ -539,7 +722,30 @@ class _GroupRequirementSummary extends StatelessWidget {
         color: const Color(0xFFE9FBF4),
         borderRadius: BorderRadius.circular(17),
       ),
-      child: Text(details.join(' · '), textAlign: TextAlign.center),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        runAlignment: WrapAlignment.center,
+        spacing: 12,
+        runSpacing: 7,
+        children: [
+          for (final detail in details)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                detail.icon,
+                const SizedBox(width: 4),
+                Text(
+                  detail.label,
+                  style: const TextStyle(
+                    color: AppColors.twilight,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }

@@ -62,6 +62,7 @@ class DragonLineage {
         'earth' || 'might' => isDutch ? earthFormNl : earthFormEn,
         'storm' || 'arcana' => isDutch ? stormFormNl : stormFormEn,
         'bond' || 'spirit' => isDutch ? bondFormNl : bondFormEn,
+        'mastery' => '${name(isDutch)} Mastery',
         _ => name(isDutch),
       };
 

@@ -48,6 +48,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   StreamSubscription<bool>? _authSubscription;
   Timer? _refreshTimer;
   final Set<String> _notifiedTradeStates = {};
+  final Set<String> _knownIncomingRequestIds = {};
   bool _disposed = false;
 
   KeeperProfile? profile;
@@ -360,7 +361,25 @@ class OnlineAccountProvider extends ChangeNotifier {
         if (lobby.myDragonId case final dragonId?) dragonId: lobby.id,
     });
     await _synchronizeLocalTradeReservations();
+    _notifyAboutFriendRequests();
     _notifyAboutTradeUpdates();
+  }
+
+  void _notifyAboutFriendRequests() {
+    for (final request in incomingRequests) {
+      if (!_knownIncomingRequestIds.add(request.id)) continue;
+      final dutch = _languageCode() == 'nl';
+      unawaited(HavenNotifications.friendRequest(
+        id: request.id,
+        title: dutch ? 'Nieuw vriendschapsverzoek' : 'New friend request',
+        body: dutch
+            ? '${request.keeper.displayName} wil vrienden worden.'
+            : '${request.keeper.displayName} wants to be friends.',
+      ));
+    }
+    _knownIncomingRequestIds.removeWhere(
+      (id) => !incomingRequests.any((request) => request.id == id),
+    );
   }
 
   Future<void> _synchronizeLocalTradeReservations() async {
@@ -437,7 +456,10 @@ class OnlineAccountProvider extends ChangeNotifier {
     groupAdventureStatus = null;
     trades = const [];
     tradeInventory = const [];
+    _knownIncomingRequestIds.clear();
+    _notifiedTradeStates.clear();
     unawaited(_synchronizeGroupReservations(const {}));
+    unawaited(_synchronizeTradeReservations(const {}, const {}, const {}));
   }
 
   void _notify() {

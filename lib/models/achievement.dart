@@ -194,6 +194,16 @@ const achievementCatalog = <AchievementDefinition>[
       category: AchievementCategory.master,
       badge: 'triple_mastery'),
   AchievementDefinition(
+      id: 'hidden_mastery',
+      titleEn: 'Perfectly Balanced',
+      titleNl: 'Perfect in Balans',
+      descriptionEn: 'Evolve a dragon into its secret Mastery form.',
+      descriptionNl: 'Laat een draak evolueren naar zijn geheime Mastery-vorm.',
+      target: 1,
+      category: AchievementCategory.master,
+      secret: true,
+      badge: 'mastery_secret.webp'),
+  AchievementDefinition(
       id: 'came_crawling_back',
       titleEn: 'Look Who Came Crawling Back',
       titleNl: 'Kijk Wie Terug Kwam Kruipen',

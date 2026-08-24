@@ -45,12 +45,17 @@ void main() {
       }
     }
     expect(fixedPhrases, isNotEmpty);
+    final missingTranslations = <String>[];
     for (final phrase in fixedPhrases) {
       for (final language in translatedLanguages) {
-        expect(translatedUiPhrase(phrase, language), isNotNull,
-            reason: '$phrase ($language)');
+        if (translatedUiPhrase(phrase, language) == null) {
+          missingTranslations.add('$phrase ($language)');
+        }
       }
     }
+    expect(missingTranslations, isEmpty,
+        reason: 'Missing fixed UI translations:\n'
+            '${missingTranslations.join('\n')}');
   });
 
   test('variable UI phrases preserve values in every language', () {

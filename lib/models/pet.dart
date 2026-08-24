@@ -217,6 +217,15 @@ class Pet {
   int get totalTraining => TrainingFocus.values
       .fold(0, (total, focus) => total + trainingFor(focus));
 
+  bool get hasMasteryBalance {
+    if (stage != DragonStage.wyrmling) return false;
+    final scores = TrainingFocus.values.map(trainingFor).toList();
+    return scores.toSet().length == 1;
+  }
+
+  bool get isMastery =>
+      stage == DragonStage.ascended && activeEvolutionPath == 'mastery';
+
   String get leadingPath {
     if (totalTraining == 0) return 'unknown';
     final ranked = TrainingFocus.values.toList()
@@ -313,7 +322,11 @@ class Pet {
     if (stage == DragonStage.hatchling) {
       stage = DragonStage.wyrmling;
     } else if (stage == DragonStage.wyrmling) {
-      evolutionPath = leadingPath == 'unknown' ? 'spirit' : leadingPath;
+      evolutionPath = hasMasteryBalance
+          ? 'mastery'
+          : leadingPath == 'unknown'
+              ? 'spirit'
+              : leadingPath;
       stage = DragonStage.ascended;
     }
     stageStartedAt = now;
@@ -387,7 +400,7 @@ class Pet {
       'earth' => 'might',
       'storm' => 'arcana',
       'bond' => 'spirit',
-      'might' || 'arcana' || 'spirit' => storedPath,
+      'might' || 'arcana' || 'spirit' || 'mastery' => storedPath,
       _ => null,
     };
     return Pet(

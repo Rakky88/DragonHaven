@@ -110,6 +110,51 @@ void main() {
     );
   });
 
+  test('equal expertises unlock the secret Mastery form', () {
+    final dragon = Pet(
+      stage: DragonStage.wyrmling,
+      xp: Pet.ascendedXp,
+      acquiredAt: start,
+      stageStartedAt: start,
+      training: const {'might': 100, 'arcana': 100, 'spirit': 100},
+    );
+
+    expect(dragon.hasMasteryBalance, isTrue);
+    dragon.evolve(start);
+
+    expect(dragon.stage, DragonStage.ascended);
+    expect(dragon.evolutionPath, 'mastery');
+    expect(dragon.isMastery, isTrue);
+  });
+
+  test('Mastery balance has no separate minimum expertise', () {
+    final dragon = Pet(
+      stage: DragonStage.wyrmling,
+      xp: Pet.ascendedXp,
+      acquiredAt: start,
+      stageStartedAt: start,
+      training: const {'might': 99, 'arcana': 99, 'spirit': 99},
+    );
+
+    expect(dragon.hasMasteryBalance, isTrue);
+    expect(dragon.canEvolve(start), isFalse);
+  });
+
+  test('a spectral Mastery dragon keeps both forms after serialization', () {
+    final dragon = Pet(
+      stage: DragonStage.wyrmling,
+      xp: Pet.ascendedXp,
+      prismatic: true,
+      acquiredAt: start,
+      stageStartedAt: start,
+      training: const {'might': 180, 'arcana': 180, 'spirit': 180},
+    )..evolve(start);
+
+    final restored = Pet.fromJson(dragon.toJson());
+    expect(restored.isMastery, isTrue);
+    expect(restored.prismatic, isTrue);
+  });
+
   test('legacy evolution values migrate to the new training paths', () {
     final restored = Pet.fromJson({
       'xp': 2300,

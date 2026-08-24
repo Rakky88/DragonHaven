@@ -259,16 +259,21 @@ class AppStrings {
         _ => pick('Dragon room', 'Drakenkamer'),
       };
 
-  String evolutionHint(Pet pet) => switch (pet.leadingPath) {
-        'might' =>
-          pick('Might is currently leading.', 'Might staat momenteel voor.'),
-        'arcana' =>
-          pick('Arcana is currently leading.', 'Arcana staat momenteel voor.'),
-        'spirit' =>
-          pick('Spirit is currently leading.', 'Spirit staat momenteel voor.'),
-        _ => pick('The future form is still a mystery.',
-            'De toekomstige vorm is nog een mysterie.'),
-      };
+  String evolutionHint(Pet pet) => pet.hasMasteryBalance
+      ? pick(
+          'Perfect balance hums with a secret power.',
+          'Perfecte balans trilt van een geheime kracht.',
+        )
+      : switch (pet.leadingPath) {
+          'might' =>
+            pick('Might is currently leading.', 'Might staat momenteel voor.'),
+          'arcana' => pick(
+              'Arcana is currently leading.', 'Arcana staat momenteel voor.'),
+          'spirit' => pick(
+              'Spirit is currently leading.', 'Spirit staat momenteel voor.'),
+          _ => pick('The future form is still a mystery.',
+              'De toekomstige vorm is nog een mysterie.'),
+        };
 
   String itemName(ShopItem item) {
     if (languageCode == 'en') return item.name;
@@ -873,6 +878,30 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     ],
     'zh': ['三项全能大师', '让一只龙的力量、奥术和精神均达到 300。'],
     'ja': ['三つの達人', '1体のドラゴンで力・神秘・精神をすべて300にする。'],
+  },
+  'hidden_mastery': {
+    'de': [
+      'Perfekt im Gleichgewicht',
+      'Entwickle einen Drachen zu seiner geheimen Mastery-Form.'
+    ],
+    'es': [
+      'Perfectamente equilibrado',
+      'Evoluciona un dragón a su forma secreta de Mastery.'
+    ],
+    'fr': [
+      'Parfaitement équilibré',
+      'Fais évoluer un dragon vers sa forme secrète de Mastery.'
+    ],
+    'it': [
+      'Perfettamente equilibrato',
+      'Fai evolvere un drago nella sua forma segreta Mastery.'
+    ],
+    'pt': [
+      'Perfeitamente equilibrado',
+      'Evolua um dragão para sua forma secreta de Mastery.'
+    ],
+    'zh': ['完美平衡', '让一只龙进化为隐藏的精通形态。'],
+    'ja': ['完璧な均衡', 'ドラゴンを秘密のマスタリー形態へ進化させる。'],
   },
   'came_crawling_back': {
     'de': [

@@ -160,6 +160,9 @@ class DragonLineageEntry extends StatelessWidget {
         collection.any((key) => key.startsWith('${lineage.id}:'));
     final count =
         collection.where((key) => key.startsWith('${lineage.id}:')).length;
+    final masteryKnown =
+        game.hasDiscovered(lineage.id, 'ascended:mastery', prismatic: spectral);
+    final visibleFormCount = masteryKnown ? 6 : 5;
     final firstKnown =
         game.hasDiscovered(lineage.id, 'hatchling', prismatic: spectral);
     return Card(
@@ -188,7 +191,7 @@ class DragonLineageEntry extends StatelessWidget {
                 : strings.pick('Unknown lineage', 'Onbekende drakenlijn'),
             style: const TextStyle(fontWeight: FontWeight.w900)),
         subtitle: Text(
-            '#${number.toString().padLeft(3, '0')} · ${strings.lineageRarity(lineage)} · $count/5 ${strings.pick('forms', 'vormen')}'),
+            '#${number.toString().padLeft(3, '0')} · ${strings.lineageRarity(lineage)} · $count/$visibleFormCount ${strings.pick('forms', 'vormen')}'),
         trailing: const Icon(Icons.expand_more_rounded),
         children: [
           GridView.count(
@@ -235,6 +238,14 @@ class DragonLineageEntry extends StatelessWidget {
                   stageKey: 'homeGuardian',
                   path: 'spirit',
                   spectral: spectral),
+              if (masteryKnown)
+                _FormTile(
+                    lineage: lineage,
+                    formKey: 'ascended:mastery',
+                    label: 'Mastery',
+                    stageKey: 'homeGuardian',
+                    path: 'mastery',
+                    spectral: spectral),
             ],
           ),
         ],
@@ -270,6 +281,7 @@ class _FormTile extends StatelessWidget {
     final focusKind = switch (path) {
       'arcana' => GameIconKind.arcana,
       'spirit' => GameIconKind.spirit,
+      'mastery' => GameIconKind.dragonFavorite,
       _ => GameIconKind.might,
     };
     return Container(

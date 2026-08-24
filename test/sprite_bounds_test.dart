@@ -200,6 +200,53 @@ void main() {
     }
   });
 
+  test('all 42 Mastery Ascended sprites are complete standalone subjects',
+      () async {
+    for (final lineage in dragonLineages) {
+      final path = DragonArtwork.masteryAsset(lineage.id);
+      final image = await _decode(path);
+      expect(image.width, 1024, reason: path);
+      expect(image.height, 1024, reason: path);
+      _expectContained(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        path,
+      );
+      _expectSingleSubject(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        path,
+      );
+      final sampledAlpha = _alphaCount(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        step: 4,
+      );
+      expect(
+        sampledAlpha,
+        lessThan((image.width ~/ 4) * (image.height ~/ 4) * .62),
+        reason: '$path appears to contain an opaque generated backdrop',
+      );
+      expect(
+        sampledAlpha,
+        greaterThan((image.width ~/ 4) * (image.height ~/ 4) * .08),
+        reason: '$path appears to have lost most of its dragon artwork',
+      );
+    }
+  });
+
   test('all furniture atlases contain eight safely separated sprites',
       () async {
     final files = Directory('assets/images/furniture_atlases')

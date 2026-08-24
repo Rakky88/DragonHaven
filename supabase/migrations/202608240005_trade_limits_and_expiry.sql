@@ -1,6 +1,7 @@
 -- Keep asynchronous trades small, fair and race-safe.
 -- Each account can participate in one active trade, complete at most three
--- trades per Amsterdam calendar day, and gets ten minutes for each response.
+-- trades per Amsterdam calendar day, and each proposal expires ten minutes
+-- after it is created.
 
 alter table public.trades
   add column expires_at timestamptz not null
@@ -177,8 +178,7 @@ begin
   );
   update public.trades set
     recipient_item = snapshot,
-    status = 'awaiting_initiator',
-    expires_at = now() + interval '10 minutes'
+    status = 'awaiting_initiator'
   where id = trade.id;
 end;
 $$;

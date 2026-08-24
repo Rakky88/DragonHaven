@@ -5485,15 +5485,15 @@ const uiPhraseTranslations = <String, List<String>>{
     '你的物品已保留。好友现在可以确认交易。',
     'アイテムを予約しました。フレンドが交換を確認できます。'
   ],
-  'The item is kept safe and cannot be used in another trade. Each response has a ten-minute window.':
+  'The item is kept safe and cannot be used in another trade. The proposal expires ten minutes after it is created.':
       [
-    'Der Gegenstand wird sicher verwahrt und kann nicht in einem anderen Handel verwendet werden. Für jede Antwort gilt ein Zeitfenster von zehn Minuten.',
-    'El objeto queda protegido y no puede usarse en otro intercambio. Cada respuesta tiene un plazo de diez minutos.',
-    'L’objet est conservé en sécurité et ne peut pas servir dans un autre échange. Chaque réponse dispose de dix minutes.',
-    'L’oggetto viene custodito e non può essere usato in un altro scambio. Ogni risposta ha un limite di dieci minuti.',
-    'O item fica protegido e não pode ser usado em outra troca. Cada resposta tem um prazo de dez minutos.',
-    '该物品会被安全保留，不能用于其他交易。每次回应都有十分钟的时限。',
-    'アイテムは安全に確保され、別の交換には使えません。各応答の制限時間は10分です。'
+    'Der Gegenstand wird sicher verwahrt und kann nicht in einem anderen Handel verwendet werden. Der Vorschlag verfällt zehn Minuten nach seiner Erstellung.',
+    'El objeto queda protegido y no puede usarse en otro intercambio. La propuesta caduca diez minutos después de su creación.',
+    'L’objet est conservé en sécurité et ne peut pas servir dans un autre échange. La proposition expire dix minutes après sa création.',
+    'L’oggetto viene custodito e non può essere usato in un altro scambio. La proposta scade dieci minuti dopo la creazione.',
+    'O item fica protegido e não pode ser usado em outra troca. A proposta expira dez minutos após ser criada.',
+    '该物品会被安全保留，不能用于其他交易。提议创建十分钟后过期。',
+    'アイテムは安全に確保され、別の交換には使えません。提案は作成から10分後に期限切れになります。'
   ],
   'Only one active trade is allowed per account. Finish, reject or cancel it first.':
       [
@@ -5532,5 +5532,78 @@ const uiPhraseTranslations = <String, List<String>>{
     'Troca expirada',
     '交易已过期',
     '交換期限切れ'
+  ],
+  'Enter your password.': [
+    'Gib dein Passwort ein.',
+    'Introduce tu contraseña.',
+    'Saisis ton mot de passe.',
+    'Inserisci la password.',
+    'Digite sua senha.',
+    '请输入密码。',
+    'パスワードを入力してください。'
+  ],
+  'Online server is not configured': [
+    'Der Online-Server ist nicht konfiguriert.',
+    'El servidor en línea no está configurado.',
+    'Le serveur en ligne n’est pas configuré.',
+    'Il server online non è configurato.',
+    'O servidor online não está configurado.',
+    '在线服务器尚未配置。',
+    'オンラインサーバーが設定されていません。'
+  ],
+  'This profile is currently stored offline': [
+    'Dieses Profil wird derzeit offline gespeichert.',
+    'Este perfil se guarda actualmente sin conexión.',
+    'Ce profil est actuellement enregistré hors ligne.',
+    'Questo profilo è attualmente salvato offline.',
+    'Este perfil está armazenado offline no momento.',
+    '此档案目前保存在本地。',
+    'このプロフィールは現在オフラインで保存されています。'
+  ],
+  'Trusted keepers, shared adventures and safe trades.': [
+    'Vertrauenswürdige Hüter, gemeinsame Abenteuer und sichere Tauschgeschäfte.',
+    'Guardianes de confianza, aventuras compartidas e intercambios seguros.',
+    'Gardiens de confiance, aventures partagées et échanges sécurisés.',
+    'Custodi fidati, avventure condivise e scambi sicuri.',
+    'Guardiões confiáveis, aventuras compartilhadas e trocas seguras.',
+    '值得信赖的守护者、共享冒险与安全交易。',
+    '信頼できるキーパー、協力アドベンチャー、安全な交換。'
+  ],
+  'friends': ['Freunde', 'amigos', 'amis', 'amici', 'amigos', '好友', 'フレンド'],
+  'requests': [
+    'Anfragen',
+    'solicitudes',
+    'demandes',
+    'richieste',
+    'pedidos',
+    '请求',
+    'リクエスト'
+  ],
+  'trades': [
+    'Tauschgeschäfte',
+    'intercambios',
+    'échanges',
+    'scambi',
+    'trocas',
+    '交易',
+    '交換'
+  ],
+  'dragons discovered': [
+    'Drachen entdeckt',
+    'dragones descubiertos',
+    'dragons découverts',
+    'draghi scoperti',
+    'dragões descobertos',
+    '已发现的龙',
+    '発見したドラゴン'
+  ],
+  'Use an uppercase letter, lowercase letter, number and symbol.': [
+    'Verwende einen Großbuchstaben, einen Kleinbuchstaben, eine Zahl und ein Symbol.',
+    'Usa una mayúscula, una minúscula, un número y un símbolo.',
+    'Utilise une majuscule, une minuscule, un chiffre et un symbole.',
+    'Usa una lettera maiuscola, una minuscola, un numero e un simbolo.',
+    'Use uma letra maiúscula, uma minúscula, um número e um símbolo.',
+    '请使用大写字母、小写字母、数字和符号。',
+    '大文字、小文字、数字、記号をそれぞれ使用してください。'
   ],
 };

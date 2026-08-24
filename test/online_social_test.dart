@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:dragon_haven/dragonhaven_app.dart';
+import 'package:dragon_haven/models/account_title.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
@@ -10,6 +11,7 @@ import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/providers/online_account_provider.dart';
 import 'package:dragon_haven/screens/adventure_hub_screen.dart';
 import 'package:dragon_haven/services/social_repository.dart';
+import 'package:dragon_haven/widgets/online_account_access.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -350,12 +352,19 @@ void main() {
     await tester.tap(find.text('Friends').last);
     await tester.pump(const Duration(milliseconds: 350));
     expect(find.text('Lyra'), findsOneWidget);
-    expect(find.textContaining('Discovered: 12'), findsOneWidget);
+    expect(find.textContaining('12 dragons discovered'), findsOneWidget);
+    final friendPortrait = tester.widget<KeeperPortrait>(find.descendant(
+      of: find.byKey(const Key('friend-friend-user')),
+      matching: find.byType(KeeperPortrait),
+    ));
+    expect(friendPortrait.portraitKey, 'portrait_042');
+    final friendTitle = accountTitleById('title_321')!.label('en');
+    expect(find.text(friendTitle), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('friend-friend-user')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Skywarden'), findsOneWidget);
+    expect(find.text(friendTitle), findsWidgets);
     expect(find.text('Nimbus'), findsOneWidget);
     expect(find.textContaining('Level 4'), findsOneWidget);
     expect(find.text('Might'), findsOneWidget);
@@ -473,8 +482,8 @@ class _FakeSocialRepository implements SocialRepository {
     userId: 'friend-user',
     keeperCode: 'DH-1234ABCD',
     displayName: 'Lyra',
-    title: 'Skywarden',
-    portraitKey: 'storm',
+    title: 'title_321',
+    portraitKey: 'portrait_042',
     discoveredDragonCount: 12,
     inventoryImported: true,
     favoriteDragon: _favorite,
