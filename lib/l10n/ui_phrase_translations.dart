@@ -5485,4 +5485,52 @@ const uiPhraseTranslations = <String, List<String>>{
     '你的物品已保留。好友现在可以确认交易。',
     'アイテムを予約しました。フレンドが交換を確認できます。'
   ],
+  'The item is kept safe and cannot be used in another trade. Each response has a ten-minute window.':
+      [
+    'Der Gegenstand wird sicher verwahrt und kann nicht in einem anderen Handel verwendet werden. Für jede Antwort gilt ein Zeitfenster von zehn Minuten.',
+    'El objeto queda protegido y no puede usarse en otro intercambio. Cada respuesta tiene un plazo de diez minutos.',
+    'L’objet est conservé en sécurité et ne peut pas servir dans un autre échange. Chaque réponse dispose de dix minutes.',
+    'L’oggetto viene custodito e non può essere usato in un altro scambio. Ogni risposta ha un limite di dieci minuti.',
+    'O item fica protegido e não pode ser usado em outra troca. Cada resposta tem um prazo de dez minutos.',
+    '该物品会被安全保留，不能用于其他交易。每次回应都有十分钟的时限。',
+    'アイテムは安全に確保され、別の交換には使えません。各応答の制限時間は10分です。'
+  ],
+  'Only one active trade is allowed per account. Finish, reject or cancel it first.':
+      [
+    'Pro Konto ist nur ein aktiver Handel erlaubt. Schließe ihn zuerst ab, lehne ihn ab oder brich ihn ab.',
+    'Solo se permite un intercambio activo por cuenta. Complétalo, recházalo o cancélalo primero.',
+    'Un seul échange actif est autorisé par compte. Termine-le, refuse-le ou annule-le d’abord.',
+    'È consentito un solo scambio attivo per account. Prima completalo, rifiutalo o annullalo.',
+    'Só é permitida uma troca ativa por conta. Primeiro conclua, recuse ou cancele essa troca.',
+    '每个账户同时只能进行一笔交易。请先完成、拒绝或取消当前交易。',
+    'アカウントごとに同時進行できる交換は1件だけです。先に完了、拒否、またはキャンセルしてください。'
+  ],
+  'One of you has already completed three trades today. Try again tomorrow.': [
+    'Einer von euch hat heute bereits drei Handelsvorgänge abgeschlossen. Versucht es morgen erneut.',
+    'Uno de vosotros ya ha completado tres intercambios hoy. Inténtalo de nuevo mañana.',
+    'L’un de vous a déjà terminé trois échanges aujourd’hui. Réessayez demain.',
+    'Uno di voi ha già completato tre scambi oggi. Riprova domani.',
+    'Um de vocês já concluiu três trocas hoje. Tente novamente amanhã.',
+    '你们其中一人今天已经完成了三笔交易。请明天再试。',
+    'どちらかが今日すでに3件の交換を完了しています。明日もう一度お試しください。'
+  ],
+  'This trade expired after ten minutes. The reserved items are available again.':
+      [
+    'Dieser Handel ist nach zehn Minuten abgelaufen. Die reservierten Gegenstände sind wieder verfügbar.',
+    'Este intercambio caducó tras diez minutos. Los objetos reservados vuelven a estar disponibles.',
+    'Cet échange a expiré après dix minutes. Les objets réservés sont de nouveau disponibles.',
+    'Questo scambio è scaduto dopo dieci minuti. Gli oggetti riservati sono di nuovo disponibili.',
+    'Esta troca expirou após dez minutos. Os itens reservados estão disponíveis novamente.',
+    '这笔交易已在十分钟后过期。保留的物品现在可以再次使用。',
+    'この交換は10分後に期限切れになりました。確保されていたアイテムは再び使用できます。'
+  ],
+  'Trade expired': [
+    'Handel abgelaufen',
+    'Intercambio caducado',
+    'Échange expiré',
+    'Scambio scaduto',
+    'Troca expirada',
+    '交易已过期',
+    '交換期限切れ'
+  ],
 };

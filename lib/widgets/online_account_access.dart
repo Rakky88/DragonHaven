@@ -382,6 +382,15 @@ String socialMessage(AppStrings strings, String code) => switch (code) {
       'trade_inventory_locked' => strings.pick(
           'You have too many active trades. Finish or cancel one first.',
           'Je hebt te veel actieve ruilen. Rond er eerst één af of annuleer er één.'),
+      'trade_active_limit' => strings.pick(
+          'Only one active trade is allowed per account. Finish, reject or cancel it first.',
+          'Per account kan maar één ruil tegelijk actief zijn. Rond die eerst af, weiger of annuleer hem.'),
+      'trade_daily_limit' => strings.pick(
+          'One of you has already completed three trades today. Try again tomorrow.',
+          'Een van jullie heeft vandaag al drie ruilen afgerond. Probeer het morgen opnieuw.'),
+      'trade_expired' => strings.pick(
+          'This trade expired after ten minutes. The reserved items are available again.',
+          'Deze ruil is na tien minuten verlopen. De gereserveerde items zijn weer beschikbaar.'),
       'trade_apply_failed' => strings.pick(
           'The completed trade could not be stored locally. Your server items remain safe; please refresh.',
           'De afgeronde ruil kon niet lokaal worden opgeslagen. Je serveritems blijven veilig; vernieuw opnieuw.'),

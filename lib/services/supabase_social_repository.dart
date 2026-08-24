@@ -349,6 +349,9 @@ class SupabaseSocialRepository implements SocialRepository {
       'trade_item_invalid',
       'trade_item_unavailable',
       'trade_inventory_locked',
+      'trade_active_limit',
+      'trade_daily_limit',
+      'trade_expired',
       'trade_apply_failed',
     };
     final normalized = message.trim().toLowerCase().replaceAll(' ', '_');

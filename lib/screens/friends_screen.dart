@@ -621,8 +621,8 @@ Future<void> _startTrade(BuildContext context, KeeperProfile friend) async {
           title: Text(
               strings.pick('Send trade proposal?', 'Ruilvoorstel versturen?')),
           content: Text(strings.pick(
-            '${_tradeItemLabel(strings, game, item)} will be reserved until ${friend.displayName} responds or you cancel.',
-            '${_tradeItemLabel(strings, game, item)} wordt gereserveerd totdat ${friend.displayName} reageert of jij annuleert.',
+            '${_tradeItemLabel(strings, game, item)} will be reserved for ten minutes while ${friend.displayName} responds.',
+            '${_tradeItemLabel(strings, game, item)} wordt tien minuten gereserveerd terwijl ${friend.displayName} reageert.',
           )),
           actions: [
             TextButton(
@@ -667,8 +667,8 @@ Future<TradeItem?> _pickTradeItem(BuildContext context) async {
               const SizedBox(height: 5),
               Text(
                 strings.pick(
-                  'The item is kept safe and cannot be used in another trade.',
-                  'Het item wordt veilig apart gezet en kan niet in een andere ruil worden gebruikt.',
+                  'The item is kept safe and cannot be used in another trade. Each response has a ten-minute window.',
+                  'Het item wordt veilig apart gezet en kan niet in een andere ruil worden gebruikt. Voor iedere reactie geldt tien minuten.',
                 ),
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: AppColors.muted),
@@ -974,6 +974,7 @@ String _tradeStatusLabel(AppStrings strings, TradeOffer trade) =>
       'completed' => strings.pick('Trade completed', 'Ruil afgerond'),
       'cancelled' => strings.pick('Trade cancelled', 'Ruil geannuleerd'),
       'rejected' => strings.pick('Trade rejected', 'Ruil geweigerd'),
+      'expired' => strings.pick('Trade expired', 'Ruil verlopen'),
       _ => strings.pick('Trade', 'Ruil'),
     };
 
