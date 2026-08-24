@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../l10n/app_strings.dart';
 import '../models/dragon_lineage.dart';
 import '../models/social.dart';
-import '../providers/household_provider.dart';
 import '../providers/online_account_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
@@ -17,7 +16,6 @@ class FriendsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final online = context.watch<OnlineAccountProvider>();
-    final game = context.watch<HouseholdProvider>();
     if (!online.isConfigured) {
       return _FriendsList(children: [
         _Header(strings: strings),
@@ -27,7 +25,7 @@ class FriendsScreen extends StatelessWidget {
     if (!online.isSignedIn) {
       return _FriendsList(children: [
         _Header(strings: strings),
-        OnlineAccountAccessCard(suggestedName: game.accountName),
+        const OnlineAccountAccessCard(),
       ]);
     }
     if (online.profile == null && online.busy) {
@@ -212,7 +210,7 @@ class _MyKeeperCard extends StatelessWidget {
                 Text(profile.displayName,
                     style: const TextStyle(
                         fontWeight: FontWeight.w900, fontSize: 17)),
-                Text(profile.title,
+                Text(keeperTitleLabel(strings, profile.title),
                     style: const TextStyle(color: AppColors.muted)),
                 const SizedBox(height: 4),
                 Text(profile.keeperCode,
@@ -255,8 +253,8 @@ class _IncomingRequestCard extends StatelessWidget {
             ),
             title: Text(request.keeper.displayName,
                 style: const TextStyle(fontWeight: FontWeight.w900)),
-            subtitle:
-                Text('${request.keeper.title}\n${request.keeper.keeperCode}'),
+            subtitle: Text(
+                '${keeperTitleLabel(strings, request.keeper.title)}\n${request.keeper.keeperCode}'),
             isThreeLine: true,
           ),
           Wrap(
@@ -308,7 +306,7 @@ class _OutgoingRequestCard extends StatelessWidget {
         ),
         title: Text(request.keeper.displayName,
             style: const TextStyle(fontWeight: FontWeight.w900)),
-        subtitle: Text(request.keeper.title),
+        subtitle: Text(keeperTitleLabel(strings, request.keeper.title)),
         trailing: Chip(label: Text(strings.pick('Pending', 'In afwachting'))),
       ),
     );
@@ -332,9 +330,9 @@ class _FriendTile extends StatelessWidget {
         ),
         title: Text(friend.displayName,
             style: const TextStyle(fontWeight: FontWeight.w900)),
-        subtitle:
-            Text('${friend.title}\n${strings.pick('Discovered', 'Ontdekt')}: '
-                '${friend.discoveredDragonCount}'),
+        subtitle: Text(
+            '${keeperTitleLabel(strings, friend.title)}\n${strings.pick('Discovered', 'Ontdekt')}: '
+            '${friend.discoveredDragonCount}'),
         isThreeLine: true,
         trailing: const Icon(Icons.chevron_right_rounded),
       ),
@@ -368,7 +366,7 @@ Future<void> _showFriendProfile(
             Text(friend.displayName,
                 textAlign: TextAlign.center,
                 style: Theme.of(sheetContext).textTheme.headlineSmall),
-            Text(friend.title,
+            Text(keeperTitleLabel(strings, friend.title),
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: AppColors.muted, fontSize: 16)),
             const SizedBox(height: 6),

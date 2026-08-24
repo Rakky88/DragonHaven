@@ -129,6 +129,7 @@ class HouseholdProvider extends ChangeNotifier {
   int favoriteChanges = 0;
 
   List<AdventureRun> adventureRuns = [];
+  Set<String> appliedOnlineGroupRewardIds = {};
   Map<AdventureKind, List<String>> adventureOptionIds = {
     AdventureKind.mini: <String>[],
     AdventureKind.short: <String>[],
@@ -156,7 +157,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 35;
+  static const _schemaVersion = 36;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(
@@ -744,6 +745,10 @@ class HouseholdProvider extends ChangeNotifier {
         fallback: 0);
     favoriteChanges =
         nonNegativeIntFromJson(data['favoriteChanges'], fallback: 0);
+    appliedOnlineGroupRewardIds =
+        stringSetFromJson(data['appliedOnlineGroupRewardIds'])
+            .take(500)
+            .toSet();
     final restoredSchema = nonNegativeIntFromJson(
       data['schemaVersion'],
       fallback: 0,
@@ -1797,6 +1802,7 @@ class HouseholdProvider extends ChangeNotifier {
       'totalSinisterAdventuresCompleted': totalSinisterAdventuresCompleted,
       'favoriteChanges': favoriteChanges,
       'adventureRuns': adventureRuns.map((run) => run.toJson()).toList(),
+      'appliedOnlineGroupRewardIds': appliedOnlineGroupRewardIds.toList(),
       'adventureOptionIds': {
         for (final entry in adventureOptionIds.entries)
           entry.key.name: entry.value,

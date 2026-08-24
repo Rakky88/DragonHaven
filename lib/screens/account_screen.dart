@@ -155,7 +155,7 @@ class AccountScreen extends StatelessWidget {
           Text(strings.pick('Online account', 'Online account'),
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          _OnlineAccountSection(suggestedName: game.accountName),
+          const _OnlineAccountSection(),
           const SizedBox(height: 18),
           Text(strings.pick('Audio', 'Audio'),
               style: Theme.of(context).textTheme.titleLarge),
@@ -246,6 +246,10 @@ class AccountScreen extends StatelessWidget {
     controller.dispose();
     if (result != null && context.mounted) {
       await context.read<HouseholdProvider>().updateAccountName(result);
+      if (context.mounted) {
+        final online = context.read<OnlineAccountProvider>();
+        if (online.isSignedIn) await online.synchronizeProfile();
+      }
     }
   }
 
@@ -368,6 +372,10 @@ class AccountScreen extends StatelessWidget {
       await context
           .read<HouseholdProvider>()
           .selectProfilePortrait(selected.id);
+      if (context.mounted) {
+        final online = context.read<OnlineAccountProvider>();
+        if (online.isSignedIn) await online.synchronizeProfile();
+      }
     }
   }
 
@@ -462,14 +470,16 @@ class AccountScreen extends StatelessWidget {
     );
     if (selected != null && context.mounted) {
       await context.read<HouseholdProvider>().selectAccountTitle(selected.id);
+      if (context.mounted) {
+        final online = context.read<OnlineAccountProvider>();
+        if (online.isSignedIn) await online.synchronizeProfile();
+      }
     }
   }
 }
 
 class _OnlineAccountSection extends StatelessWidget {
-  const _OnlineAccountSection({required this.suggestedName});
-
-  final String suggestedName;
+  const _OnlineAccountSection();
 
   @override
   Widget build(BuildContext context) {
@@ -490,7 +500,7 @@ class _OnlineAccountSection extends StatelessWidget {
       );
     }
     if (!online.isSignedIn) {
-      return OnlineAccountAccessCard(suggestedName: suggestedName);
+      return const OnlineAccountAccessCard();
     }
     final profile = online.profile;
     if (profile == null) {
@@ -515,13 +525,16 @@ class _OnlineAccountSection extends StatelessWidget {
             ),
             title: Text(profile.displayName,
                 style: const TextStyle(fontWeight: FontWeight.w900)),
-            subtitle: Text('${profile.title}\n${online.currentEmail ?? ''}'),
+            subtitle: Text(
+              '${keeperTitleLabel(strings, profile.title)}\n${online.currentEmail ?? ''}',
+            ),
             isThreeLine: true,
-            trailing: IconButton(
-              key: const Key('edit-online-profile'),
-              tooltip: strings.pick('Edit profile', 'Profiel aanpassen'),
-              onPressed: () => showOnlineProfileEditor(context, profile),
-              icon: const Icon(Icons.edit_rounded),
+            trailing: Tooltip(
+              message: strings.pick(
+                'Synced with your offline profile',
+                'Gesynchroniseerd met je offline profiel',
+              ),
+              child: const Icon(Icons.sync_rounded, color: AppColors.twilight),
             ),
           ),
           const Divider(),

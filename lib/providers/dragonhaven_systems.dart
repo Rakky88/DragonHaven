@@ -508,6 +508,89 @@ extension DragonHavenSystems on HouseholdProvider {
     return List.unmodifiable(adventureRuns);
   }
 
+  Future<void> synchronizeOnlineGroupReservations(
+    Map<String, String> reservations,
+  ) async {
+    var changed = false;
+    for (final dragon in ownedDragons) {
+      final expectedLobby = reservations[dragon.id];
+      final current = dragon.activeAdventureId;
+      if (current?.startsWith('online-group:') == true) {
+        final expected =
+            expectedLobby == null ? null : 'online-group:$expectedLobby';
+        if (current != expected) {
+          dragon.activeAdventureId = null;
+          changed = true;
+        }
+      }
+      if (expectedLobby != null &&
+          (dragon.activeAdventureId == null ||
+              dragon.activeAdventureId!.startsWith('online-group:'))) {
+        final expected = 'online-group:$expectedLobby';
+        if (dragon.activeAdventureId != expected) {
+          dragon.activeAdventureId = expected;
+          changed = true;
+        }
+      }
+    }
+    if (changed) await _notifyAndSave();
+  }
+
+  Future<bool> applyOnlineGroupReward({
+    required String lobbyId,
+    required String adventureId,
+    required String dragonId,
+    required int xp,
+    required String focus,
+    required int statPoints,
+    required String chestTier,
+    required int participantCount,
+  }) async {
+    if (appliedOnlineGroupRewardIds.contains(lobbyId)) return true;
+    final definition = AdventureCatalog.byId[adventureId];
+    if (definition?.kind != AdventureKind.group) return false;
+    final dragon = ownedDragons.cast<Pet?>().firstWhere(
+          (candidate) => candidate?.id == dragonId,
+          orElse: () => null,
+        );
+    final parsedFocus = TrainingFocus.values.cast<TrainingFocus?>().firstWhere(
+          (value) => value?.name == focus,
+          orElse: () => null,
+        );
+    final parsedChest = ChestTier.values.cast<ChestTier?>().firstWhere(
+          (value) => value?.name == chestTier,
+          orElse: () => null,
+        );
+    if (dragon == null || parsedFocus == null || parsedChest == null) {
+      return false;
+    }
+
+    dragon.xp += xp.clamp(0, 100000000);
+    dragon.addTraining(parsedFocus, statPoints.clamp(0, maxDragonExpertise));
+    if (dragon.activeAdventureId?.startsWith('online-group:') == true) {
+      dragon.activeAdventureId = null;
+    }
+    chestInventory.update(parsedChest, (value) => value + 1, ifAbsent: () => 1);
+    totalAdventuresCompleted++;
+    if (participantCount >= 4) totalGroupFourCompleted++;
+    appliedOnlineGroupRewardIds.add(lobbyId);
+    if (appliedOnlineGroupRewardIds.length > 500) {
+      appliedOnlineGroupRewardIds =
+          appliedOnlineGroupRewardIds.skip(100).toSet();
+    }
+    _evolveReadyDragons(_clock());
+    _addActivity(
+      message: '${dragon.displayName} returned from ${definition!.titleEn}.',
+      type: ActivityType.explore,
+      code: ActivityCode.activityCompleted,
+      subject: definition.id,
+      xp: xp,
+    );
+    _evaluateAchievements();
+    await _notifyAndSave();
+    return true;
+  }
+
   Future<AdventureStartResult> startAdventure(
     AdventureDefinition adventure, {
     String? dragonId,

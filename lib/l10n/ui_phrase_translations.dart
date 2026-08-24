@@ -515,6 +515,322 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
 }
 
 const uiPhraseTranslations = <String, List<String>>{
+  'Cancel group': [
+    'Gruppe abbrechen',
+    'Cancelar grupo',
+    'Annuler le groupe',
+    'Annulla gruppo',
+    'Cancelar grupo',
+    '取消队伍',
+    'グループをキャンセル'
+  ],
+  'Cancel this group?': [
+    'Diese Gruppe abbrechen?',
+    '¿Cancelar este grupo?',
+    'Annuler ce groupe ?',
+    'Annullare questo gruppo?',
+    'Cancelar este grupo?',
+    '要取消这个队伍吗？',
+    'このグループをキャンセルしますか？'
+  ],
+  'Confirm': [
+    'Bestätigen',
+    'Confirmar',
+    'Confirmer',
+    'Conferma',
+    'Confirmar',
+    '确认',
+    '確認'
+  ],
+  'Create group': [
+    'Gruppe erstellen',
+    'Crear grupo',
+    'Créer un groupe',
+    'Crea gruppo',
+    'Criar grupo',
+    '创建队伍',
+    'グループを作成'
+  ],
+  'Friends looking for dragons': [
+    'Freunde suchen Drachen',
+    'Amigos que buscan dragones',
+    'Amis à la recherche de dragons',
+    'Amici in cerca di draghi',
+    'Amigos à procura de dragões',
+    '正在寻找龙的好友',
+    'ドラゴンを探しているフレンド'
+  ],
+  'Group Adventures are only available to verified online accounts.': [
+    'Gruppenabenteuer sind nur für bestätigte Online-Konten verfügbar.',
+    'Las Aventuras de grupo solo están disponibles para cuentas verificadas.',
+    'Les Aventures de groupe sont réservées aux comptes en ligne vérifiés.',
+    'Le Avventure di gruppo sono disponibili solo per gli account verificati.',
+    'As Aventuras de grupo só estão disponíveis para contas verificadas.',
+    '组队冒险仅对已验证的在线账号开放。',
+    'グループアドベンチャーは認証済みオンラインアカウントでのみ利用できます。'
+  ],
+  'Group created. Friends can now join.': [
+    'Gruppe erstellt. Freunde können jetzt beitreten.',
+    'Grupo creado. Tus amigos ya pueden unirse.',
+    'Groupe créé. Tes amis peuvent maintenant le rejoindre.',
+    'Gruppo creato. Ora gli amici possono unirsi.',
+    'Grupo criado. Os amigos já podem participar.',
+    '队伍已创建，好友现在可以加入。',
+    'グループを作成しました。フレンドが参加できます。'
+  ],
+  'Join with a dragon': [
+    'Mit einem Drachen beitreten',
+    'Unirse con un dragón',
+    'Rejoindre avec un dragon',
+    'Unisciti con un drago',
+    'Participar com um dragão',
+    '携带一条龙加入',
+    'ドラゴンと参加'
+  ],
+  'Only friends of the group starter can join.': [
+    'Nur Freunde des Gruppengründers können beitreten.',
+    'Solo los amigos del creador del grupo pueden unirse.',
+    'Seuls les amis du créateur du groupe peuvent le rejoindre.',
+    'Solo gli amici di chi ha creato il gruppo possono unirsi.',
+    'Só os amigos de quem criou o grupo podem participar.',
+    '只有发起者的好友可以加入。',
+    'グループ作成者のフレンドだけが参加できます。'
+  ],
+  'Participants': [
+    'Teilnehmer',
+    'Participantes',
+    'Participants',
+    'Partecipanti',
+    'Participantes',
+    '参与者',
+    '参加者'
+  ],
+  'Remove dragon': [
+    'Drachen entfernen',
+    'Quitar dragón',
+    'Retirer le dragon',
+    'Rimuovi drago',
+    'Remover dragão',
+    '移除龙',
+    'ドラゴンを外す'
+  ],
+  'Rewards are ready': [
+    'Belohnungen sind bereit',
+    'Las recompensas están listas',
+    'Les récompenses sont prêtes',
+    'Le ricompense sono pronte',
+    'As recompensas estão prontas',
+    '奖励已就绪',
+    '報酬を受け取れます'
+  ],
+  'Sign in for Group Adventures': [
+    'Für Gruppenabenteuer anmelden',
+    'Inicia sesión para las Aventuras de grupo',
+    'Connecte-toi pour les Aventures de groupe',
+    'Accedi per le Avventure di gruppo',
+    'Inicia sessão para as Aventuras de grupo',
+    '登录以参加组队冒险',
+    'グループアドベンチャーにログイン'
+  ],
+  'The dragon was removed from the group.': [
+    'Der Drache wurde aus der Gruppe entfernt.',
+    'El dragón fue retirado del grupo.',
+    'Le dragon a été retiré du groupe.',
+    'Il drago è stato rimosso dal gruppo.',
+    'O dragão foi removido do grupo.',
+    '这条龙已被移出队伍。',
+    'ドラゴンをグループから外しました。'
+  ],
+  'The group has returned.': [
+    'Die Gruppe ist zurückgekehrt.',
+    'El grupo ha regresado.',
+    'Le groupe est de retour.',
+    'Il gruppo è tornato.',
+    'O grupo regressou.',
+    '队伍已经归来。',
+    'グループが帰還しました。'
+  ],
+  'The journey starts automatically when all requirements are met.': [
+    'Die Reise startet automatisch, sobald alle Anforderungen erfüllt sind.',
+    'El viaje comienza automáticamente cuando se cumplen todos los requisitos.',
+    'Le voyage commence automatiquement lorsque toutes les conditions sont remplies.',
+    'Il viaggio inizia automaticamente quando tutti i requisiti sono soddisfatti.',
+    'A viagem começa automaticamente quando todos os requisitos forem cumpridos.',
+    '满足所有要求后，旅程会自动开始。',
+    'すべての条件を満たすと旅が自動的に始まります。'
+  ],
+  'The reward could not be linked to your local dragon.': [
+    'Die Belohnung konnte deinem lokalen Drachen nicht zugeordnet werden.',
+    'No se pudo vincular la recompensa con tu dragón local.',
+    'La récompense n’a pas pu être associée à ton dragon local.',
+    'Non è stato possibile collegare la ricompensa al tuo drago locale.',
+    'Não foi possível associar a recompensa ao teu dragão local.',
+    '无法将奖励关联到你的本地龙。',
+    '報酬をローカルのドラゴンに反映できませんでした。'
+  ],
+  'These Group Adventure rewards are not ready yet.': [
+    'Diese Gruppenabenteuer-Belohnungen sind noch nicht bereit.',
+    'Estas recompensas de la Aventura de grupo aún no están listas.',
+    'Ces récompenses d’Aventure de groupe ne sont pas encore prêtes.',
+    'Le ricompense di questa Avventura di gruppo non sono ancora pronte.',
+    'Estas recompensas da Aventura de grupo ainda não estão prontas.',
+    '这些组队冒险奖励尚未就绪。',
+    'このグループアドベンチャーの報酬はまだ受け取れません。'
+  ],
+  'This dragon is already reserved for a Group Adventure.': [
+    'Dieser Drache ist bereits für ein Gruppenabenteuer reserviert.',
+    'Este dragón ya está reservado para una Aventura de grupo.',
+    'Ce dragon est déjà réservé pour une Aventure de groupe.',
+    'Questo drago è già riservato per un’Avventura di gruppo.',
+    'Este dragão já está reservado para uma Aventura de grupo.',
+    '这条龙已被预留给一次组队冒险。',
+    'このドラゴンはすでにグループアドベンチャーに予約されています。'
+  ],
+  'This group has already started or expired.': [
+    'Diese Gruppe ist bereits gestartet oder abgelaufen.',
+    'Este grupo ya ha comenzado o ha caducado.',
+    'Ce groupe a déjà commencé ou a expiré.',
+    'Questo gruppo è già partito o è scaduto.',
+    'Este grupo já começou ou expirou.',
+    '这个队伍已经出发或已过期。',
+    'このグループはすでに出発したか期限切れです。'
+  ],
+  'This group is full.': [
+    'Diese Gruppe ist voll.',
+    'Este grupo está completo.',
+    'Ce groupe est complet.',
+    'Questo gruppo è al completo.',
+    'Este grupo está cheio.',
+    '这个队伍已满。',
+    'このグループは満員です。'
+  ],
+  'This is only possible before the adventure starts.': [
+    'Dies ist nur möglich, bevor das Abenteuer beginnt.',
+    'Esto solo es posible antes de que comience la aventura.',
+    'Cela n’est possible qu’avant le début de l’aventure.',
+    'È possibile farlo solo prima dell’inizio dell’avventura.',
+    'Isto só é possível antes de a aventura começar.',
+    '只能在冒险开始前进行此操作。',
+    'この操作はアドベンチャー開始前のみ可能です。'
+  ],
+  'Withdraw': [
+    'Zurückziehen',
+    'Retirarse',
+    'Se retirer',
+    'Ritirati',
+    'Retirar-se',
+    '退出',
+    '参加を取り消す'
+  ],
+  'Withdraw from this group?': [
+    'Aus dieser Gruppe zurückziehen?',
+    '¿Retirarte de este grupo?',
+    'Te retirer de ce groupe ?',
+    'Ritirarti da questo gruppo?',
+    'Retirar-te deste grupo?',
+    '要退出这个队伍吗？',
+    'このグループへの参加を取り消しますか？'
+  ],
+  'You already used this weekly Group Adventure.': [
+    'Du hast dieses wöchentliche Gruppenabenteuer bereits genutzt.',
+    'Ya has usado esta Aventura de grupo semanal.',
+    'Tu as déjà utilisé cette Aventure de groupe hebdomadaire.',
+    'Hai già usato questa Avventura di gruppo settimanale.',
+    'Já usaste esta Aventura de grupo semanal.',
+    '你已经参加过本周的组队冒险。',
+    '今週のグループアドベンチャーにはすでに参加しています。'
+  ],
+  "You have already completed this week's Group Adventure.": [
+    'Du hast das Gruppenabenteuer dieser Woche bereits abgeschlossen.',
+    'Ya has completado la Aventura de grupo de esta semana.',
+    'Tu as déjà terminé l’Aventure de groupe de cette semaine.',
+    'Hai già completato l’Avventura di gruppo di questa settimana.',
+    'Já concluíste a Aventura de grupo desta semana.',
+    '你已经完成了本周的组队冒险。',
+    '今週のグループアドベンチャーはすでに完了しています。'
+  ],
+  'Your current weekly Group Adventure is reserved. Its lobby or run is shown under Active.':
+      [
+    'Dein aktuelles wöchentliches Gruppenabenteuer ist reserviert. Die Gruppe oder Reise wird unter „Aktiv“ angezeigt.',
+    'Tu Aventura de grupo semanal está reservada. Su grupo o viaje aparece en Activas.',
+    'Ton Aventure de groupe hebdomadaire est réservée. Son groupe ou son trajet apparaît dans Actives.',
+    'La tua Avventura di gruppo settimanale è riservata. Il gruppo o il viaggio appare in Attive.',
+    'A tua Aventura de grupo semanal está reservada. O grupo ou a viagem aparece em Ativas.',
+    '本周的组队冒险已预留，其队伍或旅程会显示在“进行中”。',
+    '今週のグループアドベンチャーは予約済みです。グループまたは旅は「進行中」に表示されます。'
+  ],
+  'Your dragon': [
+    'Dein Drache',
+    'Tu dragón',
+    'Ton dragon',
+    'Il tuo drago',
+    'O teu dragão',
+    '你的龙',
+    'あなたのドラゴン'
+  ],
+  'Your dragon joined the group.': [
+    'Dein Drache ist der Gruppe beigetreten.',
+    'Tu dragón se ha unido al grupo.',
+    'Ton dragon a rejoint le groupe.',
+    'Il tuo drago si è unito al gruppo.',
+    'O teu dragão entrou no grupo.',
+    '你的龙已加入队伍。',
+    'ドラゴンがグループに参加しました。'
+  ],
+  'Your dragon left the group.': [
+    'Dein Drache hat die Gruppe verlassen.',
+    'Tu dragón ha abandonado el grupo.',
+    'Ton dragon a quitté le groupe.',
+    'Il tuo drago ha lasciato il gruppo.',
+    'O teu dragão saiu do grupo.',
+    '你的龙已退出队伍。',
+    'ドラゴンがグループを離れました。'
+  ],
+  'Your offline name, portrait and title are used automatically online.': [
+    'Dein Offline-Name, Porträt und Titel werden online automatisch verwendet.',
+    'Tu nombre, retrato y título sin conexión se usan automáticamente en línea.',
+    'Ton nom, ton portrait et ton titre hors ligne sont utilisés automatiquement en ligne.',
+    'Il nome, il ritratto e il titolo offline vengono usati automaticamente online.',
+    'O teu nome, retrato e título offline são usados automaticamente online.',
+    '你的离线名称、头像和称号会自动用于在线账号。',
+    'オフラインの名前、ポートレート、称号がオンラインでも自動的に使われます。'
+  ],
+  'combined': [
+    'kombinierte',
+    'combinado',
+    'combiné',
+    'combinato',
+    'combinado',
+    '合计',
+    '合計'
+  ],
+  'combined level': [
+    'kombiniertes Level',
+    'nivel combinado',
+    'niveau combiné',
+    'livello combinato',
+    'nível combinado',
+    '总等级',
+    '合計レベル'
+  ],
+  'dragons': [
+    'Drachen',
+    'dragones',
+    'dragons',
+    'draghi',
+    'dragões',
+    '龙',
+    'ドラゴン'
+  ],
+  'participants': [
+    'Teilnehmer',
+    'participantes',
+    'participants',
+    'partecipanti',
+    'participantes',
+    '参与者',
+    '参加者'
+  ],
   'Confirm your email before signing in.': [
     'Bestätige deine E-Mail-Adresse, bevor du dich anmeldest.',
     'Confirma tu correo electrónico antes de iniciar sesión.',
@@ -1873,6 +2189,15 @@ const uiPhraseTranslations = <String, List<String>>{
     'Pesquise por um código fixo de jogador; nomes nunca são tratados como IDs exclusivos.',
     '请使用固定的玩家代码搜索；名字不会作为唯一 ID。',
     '固定のプレイヤーコードで検索します。名前は一意のIDとして扱われません。'
+  ],
+  'Synced with your offline profile': [
+    'Mit deinem Offline-Profil synchronisiert',
+    'Sincronizado con tu perfil sin conexión',
+    'Synchronisé avec ton profil hors ligne',
+    'Sincronizzato con il tuo profilo offline',
+    'Sincronizado com o teu perfil offline',
+    '已与你的离线资料同步',
+    'オフラインプロフィールと同期済み'
   ],
   'Secret achievement': [
     'Geheimer Erfolg',

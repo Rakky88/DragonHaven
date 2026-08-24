@@ -5,12 +5,16 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/adventure.dart';
+import '../models/chest.dart';
 import '../models/pet.dart';
+import '../models/social.dart';
 import '../providers/household_provider.dart';
+import '../providers/online_account_provider.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
+import '../widgets/online_account_access.dart';
 
 class AdventureHubScreen extends StatefulWidget {
   const AdventureHubScreen({super.key});
@@ -23,14 +27,27 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   Timer? _clock;
+  int _onlineRefreshTicks = 0;
 
   @override
   void initState() {
     super.initState();
     _tabs = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final online = context.read<OnlineAccountProvider>();
+      if (online.isSignedIn) unawaited(online.refresh());
+    });
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
         setState(() {});
+        _onlineRefreshTicks++;
+        if (_onlineRefreshTicks % 15 == 0) {
+          final online = context.read<OnlineAccountProvider>();
+          if (online.isSignedIn && !online.busy) {
+            unawaited(online.refresh());
+          }
+        }
       }
     });
   }
@@ -46,7 +63,9 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
-    final activeCount = game.activeAdventureRuns.length;
+    final online = context.watch<OnlineAccountProvider>();
+    final activeCount = game.activeAdventureRuns.length +
+        (online.isSignedIn ? online.myGroupAdventures.length : 0);
     return Column(
       children: [
         Padding(
@@ -135,11 +154,17 @@ class _AvailableAdventures extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
       children: [
         for (final kind in AdventureKind.values)
-          _AdventureSection(
-            kind: kind,
-            adventures: game.adventuresFor(kind),
-            now: now,
-          ),
+          if (kind == AdventureKind.group)
+            _GroupAdventureSection(
+              adventure: game.adventuresFor(kind).firstOrNull,
+              now: now,
+            )
+          else
+            _AdventureSection(
+              kind: kind,
+              adventures: game.adventuresFor(kind),
+              now: now,
+            ),
       ],
     );
   }
@@ -217,6 +242,304 @@ class _AdventureSection extends StatelessWidget {
               _AdventureCard(adventure: adventure),
         ],
       ),
+    );
+  }
+}
+
+class _GroupAdventureSection extends StatelessWidget {
+  const _GroupAdventureSection({required this.adventure, required this.now});
+
+  final AdventureDefinition? adventure;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final game = context.watch<HouseholdProvider>();
+    final online = context.watch<OnlineAccountProvider>();
+    final colors = _kindColors(AdventureKind.group);
+    final serverAdventureId = online.groupAdventureStatus?.adventureId;
+    final effectiveAdventure = serverAdventureId == null
+        ? adventure
+        : AdventureCatalog.byId[serverAdventureId] ?? adventure;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: colors),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: colors.last.withValues(alpha: .55)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const GameIconSprite(GameIconKind.adventureGroup, size: 46),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_kindTitle(strings, AdventureKind.group),
+                      style: const TextStyle(
+                          color: AppColors.ink,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900)),
+                  Text(_kindDescription(strings, AdventureKind.group),
+                      style: const TextStyle(
+                          color: AppColors.muted, fontSize: 10)),
+                ],
+              ),
+            ),
+            _AdventureRefreshCountdown(
+              kind: AdventureKind.group,
+              remaining: game.adventureRefreshRemaining(
+                AdventureKind.group,
+                from: now,
+              )!,
+            ),
+          ]),
+          const SizedBox(height: 7),
+          if (!online.isConfigured || !online.isSignedIn)
+            Card(
+              margin: EdgeInsets.zero,
+              child: ListTile(
+                leading:
+                    const Icon(Icons.lock_rounded, color: AppColors.twilight),
+                title: Text(strings.pick('Sign in for Group Adventures',
+                    'Log in voor groepsavonturen')),
+                subtitle: Text(strings.pick(
+                  'Group Adventures are only available to verified online accounts.',
+                  'Groepsavonturen zijn alleen beschikbaar voor geverifieerde online accounts.',
+                )),
+              ),
+            )
+          else ...[
+            if (effectiveAdventure case final definition?)
+              if (!online.currentGroupOfferConsumed)
+                _GroupOfferCard(adventure: definition)
+              else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 10),
+                  child: Text(
+                    strings.pick(
+                      'Your current weekly Group Adventure is reserved. Its lobby or run is shown under Active.',
+                      'Je huidige wekelijkse groepsavontuur is gereserveerd. De lobby of reis staat onder Actief.',
+                    ),
+                    style: const TextStyle(color: AppColors.muted),
+                  ),
+                ),
+            if (online.joinableGroupAdventures.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(6, 10, 6, 5),
+                child: Text(
+                  strings.pick('Friends looking for dragons',
+                      'Vrienden zoeken nog draken'),
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+              for (final lobby in online.joinableGroupAdventures)
+                _JoinableGroupLobbyCard(lobby: lobby),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _GroupOfferCard extends StatelessWidget {
+  const _GroupOfferCard({required this.adventure});
+
+  final AdventureDefinition adventure;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        key: Key('group-offer-${adventure.id}'),
+        leading: const GameIconSprite(GameIconKind.adventureStart, size: 48),
+        title: Text(strings.adventureTitle(adventure),
+            style: const TextStyle(fontWeight: FontWeight.w900)),
+        subtitle: Text(
+          '${strings.adventureDuration(adventure.duration)} · '
+          '${adventure.requirements.players} ${strings.pick('dragons', 'draken')}',
+        ),
+        trailing: FilledButton(
+          key: const Key('create-group-lobby'),
+          onPressed: () => _createGroupLobby(context, adventure),
+          child: Text(strings.pick('Create', 'Maken')),
+        ),
+        onTap: () => _showAdventureDetailsForGroup(context, adventure),
+      ),
+    );
+  }
+}
+
+class _JoinableGroupLobbyCard extends StatelessWidget {
+  const _JoinableGroupLobbyCard({required this.lobby});
+
+  final GroupAdventureLobby lobby;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final owner = lobby.owner;
+    final definition = AdventureCatalog.byId[lobby.adventureId];
+    return Card(
+      margin: const EdgeInsets.only(top: 6),
+      child: ListTile(
+        key: Key('joinable-group-${lobby.id}'),
+        leading: KeeperPortrait(
+          portraitKey: owner?.keeper.portraitKey ?? 'portrait_001',
+          displayName: owner?.keeper.displayName ?? 'Keeper',
+          radius: 23,
+        ),
+        title: Text(owner?.keeper.displayName ?? 'Keeper',
+            style: const TextStyle(fontWeight: FontWeight.w900)),
+        subtitle: Text(
+          '${definition == null ? lobby.adventureId : strings.adventureTitle(definition)}\n'
+          '${lobby.participants.length}/${lobby.requiredPlayers} ${strings.pick('dragons', 'draken')}',
+        ),
+        isThreeLine: true,
+        trailing:
+            const Icon(Icons.chevron_right_rounded, color: AppColors.twilight),
+        onTap: () => _showGroupLobbyDetails(context, lobby),
+      ),
+    );
+  }
+}
+
+Future<Pet?> _pickGroupDragon(
+  BuildContext context,
+  AdventureDefinition adventure,
+) async {
+  final game = context.read<HouseholdProvider>();
+  final available = game.ownedDragons
+      .where((dragon) => dragon.activeAdventureId == null)
+      .toList()
+    ..sort((a, b) {
+      final score = _recommendationScore(b, adventure)
+          .compareTo(_recommendationScore(a, adventure));
+      return score != 0 ? score : a.acquiredAt.compareTo(b.acquiredAt);
+    });
+  if (available.isEmpty) {
+    await _showStartResult(context, AdventureStartResult.dragonBusy);
+    return null;
+  }
+  if (!context.mounted) return null;
+  return showModalBottomSheet<Pet>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (_) => _DragonPicker(adventure: adventure, dragons: available),
+  );
+}
+
+Future<void> _createGroupLobby(
+  BuildContext context,
+  AdventureDefinition adventure,
+) async {
+  final dragon = await _pickGroupDragon(context, adventure);
+  if (dragon == null || !context.mounted) return;
+  final online = context.read<OnlineAccountProvider>();
+  final success = await online.createGroupLobby(
+    adventure.id,
+    GroupDragonSubmission.fromPet(dragon),
+  );
+  if (!context.mounted) return;
+  if (success) unawaited(HavenAudio.play(HavenSound.adventureStart));
+  _showOnlineAdventureMessage(context, online);
+}
+
+Future<void> _joinGroupLobby(
+  BuildContext context,
+  GroupAdventureLobby lobby,
+) async {
+  final adventure = AdventureCatalog.byId[lobby.adventureId];
+  if (adventure == null) return;
+  final dragon = await _pickGroupDragon(context, adventure);
+  if (dragon == null || !context.mounted) return;
+  final online = context.read<OnlineAccountProvider>();
+  final success = await online.joinGroupLobby(
+    lobby.id,
+    GroupDragonSubmission.fromPet(dragon),
+  );
+  if (!context.mounted) return;
+  if (success) unawaited(HavenAudio.play(HavenSound.adventureStart));
+  _showOnlineAdventureMessage(context, online);
+}
+
+void _showAdventureDetailsForGroup(
+  BuildContext context,
+  AdventureDefinition adventure,
+) {
+  final strings = AppStrings.of(context);
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const GameIconSprite(GameIconKind.adventureGroup, size: 110),
+          Text(strings.adventureTitle(adventure),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(strings.adventureDescription(adventure),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.muted)),
+          const SizedBox(height: 14),
+          _GroupRequirementSummary(adventure: adventure),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(sheetContext);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (context.mounted) _createGroupLobby(context, adventure);
+                });
+              },
+              icon: const Icon(Icons.group_add_rounded),
+              label: Text(strings.pick('Create group', 'Groep maken')),
+            ),
+          ),
+        ]),
+      ),
+    ),
+  );
+}
+
+class _GroupRequirementSummary extends StatelessWidget {
+  const _GroupRequirementSummary({required this.adventure});
+
+  final AdventureDefinition adventure;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final requirements = adventure.requirements;
+    final details = <String>[
+      '${requirements.players} ${strings.pick('participants', 'deelnemers')}',
+      if (requirements.combinedLevel > 0)
+        '${strings.pick('combined level', 'gecombineerd niveau')} ${requirements.combinedLevel}',
+      if (requirements.combinedStat > 0)
+        '${strings.pick('combined', 'gecombineerde')} ${_focusName(strings, requirements.focus ?? adventure.focus)} ${requirements.combinedStat}',
+    ];
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE9FBF4),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      child: Text(details.join(' · '), textAlign: TextAlign.center),
     );
   }
 }
@@ -733,8 +1056,12 @@ class _ActiveAdventures extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
+    final online = context.watch<OnlineAccountProvider>();
     final runs = game.activeAdventureRuns;
-    if (runs.isEmpty) {
+    final groupRuns = online.isSignedIn
+        ? online.myGroupAdventures
+        : const <GroupAdventureLobby>[];
+    if (runs.isEmpty && groupRuns.isEmpty) {
       return Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(30),
@@ -761,15 +1088,383 @@ class _ActiveAdventures extends StatelessWidget {
         ),
       );
     }
+    final itemCount = groupRuns.length + runs.length;
     return ListView.separated(
       key: const PageStorageKey('active-adventures-scroll'),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
-      itemCount: runs.length,
+      itemCount: itemCount,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (context, index) =>
-          _ActiveAdventureCard(run: runs[index], now: now),
+      itemBuilder: (context, index) => index < groupRuns.length
+          ? _ActiveGroupAdventureCard(lobby: groupRuns[index], now: now)
+          : _ActiveAdventureCard(
+              run: runs[index - groupRuns.length],
+              now: now,
+            ),
     );
   }
+}
+
+class _ActiveGroupAdventureCard extends StatelessWidget {
+  const _ActiveGroupAdventureCard({required this.lobby, required this.now});
+
+  final GroupAdventureLobby lobby;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final definition = AdventureCatalog.byId[lobby.adventureId];
+    if (definition == null) return const SizedBox.shrink();
+    final timedReady = lobby.endsAt?.isAfter(now) == false && !lobby.isWaiting;
+    final ready = lobby.isRewardReady || timedReady;
+    final myDragon =
+        lobby.participants.cast<GroupAdventureParticipant?>().firstWhere(
+              (participant) => participant?.dragonId == lobby.myDragonId,
+              orElse: () => null,
+            );
+    final status = lobby.isWaiting
+        ? strings.pick(
+            'Waiting for ${lobby.requiredPlayers - lobby.participants.length} dragon(s)',
+            'Wacht op ${lobby.requiredPlayers - lobby.participants.length} draak/draken')
+        : ready
+            ? strings.pick('Rewards are ready', 'Beloningen staan klaar')
+            : adventureRemainingLabel(lobby.endsAt!, strings, now: now);
+    return Card(
+      key: Key('active-group-${lobby.id}'),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _showGroupLobbyDetails(context, lobby),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 10, 13, 10),
+          child: Row(children: [
+            Container(
+              width: 82,
+              height: 82,
+              decoration: BoxDecoration(
+                gradient:
+                    LinearGradient(colors: _kindColors(AdventureKind.group)),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child:
+                  const GameIconSprite(GameIconKind.adventureGroup, size: 74),
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(strings.adventureTitle(definition),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${myDragon?.dragonName ?? strings.pick('Your dragon', 'Jouw draak')} · '
+                    '${lobby.participants.length}/${lobby.requiredPlayers}',
+                    style:
+                        const TextStyle(color: AppColors.muted, fontSize: 12),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(status,
+                      style: TextStyle(
+                        color: ready
+                            ? const Color(0xFF24735B)
+                            : AppColors.twilight,
+                        fontWeight: FontWeight.w900,
+                      )),
+                ],
+              ),
+            ),
+            if (ready)
+              FilledButton.tonal(
+                key: Key('claim-group-${lobby.id}'),
+                onPressed: () => _claimGroupReward(context, lobby.id),
+                child: Text(strings.pick('Claim', 'Ophalen')),
+              )
+            else
+              const Icon(Icons.chevron_right_rounded,
+                  color: AppColors.twilight),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _showGroupLobbyDetails(
+  BuildContext context,
+  GroupAdventureLobby originalLobby,
+) async {
+  final rootContext = context;
+  final strings = AppStrings.of(context);
+  await showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (sheetContext) => Consumer<OnlineAccountProvider>(
+      builder: (context, online, _) {
+        final lobby =
+            online.groupLobbies.cast<GroupAdventureLobby?>().firstWhere(
+                      (candidate) => candidate?.id == originalLobby.id,
+                      orElse: () => originalLobby,
+                    ) ??
+                originalLobby;
+        final definition = AdventureCatalog.byId[lobby.adventureId];
+        if (definition == null) return const SizedBox.shrink();
+        final now = rootContext.read<HouseholdProvider>().currentTime;
+        final ready = lobby.isRewardReady ||
+            (lobby.endsAt?.isAfter(now) == false && !lobby.isWaiting);
+        return SafeArea(
+          child: DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: .78,
+            maxChildSize: .94,
+            builder: (_, controller) => ListView(
+              controller: controller,
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
+              children: [
+                const Center(
+                  child: GameIconSprite(GameIconKind.adventureGroup, size: 108),
+                ),
+                Text(strings.adventureTitle(definition),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 6),
+                Text(
+                  lobby.isWaiting
+                      ? strings.pick(
+                          'The journey starts automatically when all requirements are met.',
+                          'De reis start automatisch zodra aan alle vereisten is voldaan.')
+                      : ready
+                          ? strings.pick('The group has returned.',
+                              'De groep is teruggekeerd.')
+                          : adventureRemainingLabel(
+                              lobby.endsAt!,
+                              strings,
+                              now: now,
+                            ),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.muted),
+                ),
+                const SizedBox(height: 12),
+                _GroupRequirementSummary(adventure: definition),
+                const SizedBox(height: 14),
+                Text(
+                  '${strings.pick('Participants', 'Deelnemers')} '
+                  '${lobby.participants.length}/${lobby.requiredPlayers}',
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 6),
+                for (final participant in lobby.participants)
+                  Card(
+                    child: ListTile(
+                      leading: KeeperPortrait(
+                        portraitKey: participant.keeper.portraitKey,
+                        displayName: participant.keeper.displayName,
+                        radius: 23,
+                      ),
+                      title: Text(participant.keeper.displayName,
+                          style: const TextStyle(fontWeight: FontWeight.w900)),
+                      subtitle: Text(
+                        '${keeperTitleLabel(strings, participant.keeper.title)}\n'
+                        '${participant.dragonName} · ${strings.pick('Level', 'Niveau')} ${participant.level} · '
+                        'M ${participant.might} / A ${participant.arcana} / S ${participant.spirit}',
+                      ),
+                      isThreeLine: true,
+                      trailing: lobby.isWaiting &&
+                              lobby.isOwner &&
+                              !participant.isOwner
+                          ? IconButton(
+                              key: Key(
+                                  'remove-group-participant-${participant.keeper.userId}'),
+                              tooltip: strings.pick(
+                                  'Remove dragon', 'Draak verwijderen'),
+                              onPressed: online.busy
+                                  ? null
+                                  : () => _confirmRemoveGroupParticipant(
+                                        sheetContext,
+                                        lobby,
+                                        participant,
+                                      ),
+                              icon: const Icon(Icons.person_remove_rounded,
+                                  color: Colors.redAccent),
+                            )
+                          : null,
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                if (lobby.isWaiting && !lobby.isParticipant)
+                  FilledButton.icon(
+                    key: const Key('join-group-lobby'),
+                    onPressed: online.busy
+                        ? null
+                        : () async {
+                            Navigator.pop(sheetContext);
+                            if (rootContext.mounted) {
+                              await _joinGroupLobby(rootContext, lobby);
+                            }
+                          },
+                    icon: const Icon(Icons.group_add_rounded),
+                    label: Text(strings.pick(
+                        'Join with a dragon', 'Aanmelden met een draak')),
+                  ),
+                if (lobby.isWaiting && lobby.isParticipant)
+                  OutlinedButton.icon(
+                    key: const Key('leave-group-lobby'),
+                    onPressed: online.busy
+                        ? null
+                        : () => _confirmLeaveGroupLobby(
+                              sheetContext,
+                              lobby,
+                            ),
+                    icon: const Icon(Icons.logout_rounded),
+                    label: Text(lobby.isOwner
+                        ? strings.pick('Cancel group', 'Groep annuleren')
+                        : strings.pick('Withdraw', 'Uitschrijven')),
+                  ),
+                if (ready && lobby.isParticipant)
+                  FilledButton.icon(
+                    key: const Key('claim-group-reward'),
+                    onPressed: online.busy
+                        ? null
+                        : () async {
+                            final reward =
+                                await online.claimGroupReward(lobby.id);
+                            if (!sheetContext.mounted || reward == null) {
+                              if (sheetContext.mounted) {
+                                _showOnlineAdventureMessage(
+                                    sheetContext, online);
+                              }
+                              return;
+                            }
+                            Navigator.pop(sheetContext);
+                            if (rootContext.mounted) {
+                              _showGroupRewardMessage(rootContext, reward);
+                            }
+                          },
+                    icon: const GameIconSprite(GameIconKind.chest, size: 32),
+                    label: Text(
+                        strings.pick('Claim rewards', 'Beloningen ophalen')),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
+
+Future<void> _confirmLeaveGroupLobby(
+  BuildContext context,
+  GroupAdventureLobby lobby,
+) async {
+  final strings = AppStrings.of(context);
+  final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(lobby.isOwner
+              ? strings.pick('Cancel this group?', 'Deze groep annuleren?')
+              : strings.pick('Withdraw from this group?',
+                  'Uitschrijven voor deze groep?')),
+          content: Text(strings.pick(
+            'This is only possible before the adventure starts.',
+            'Dit kan alleen voordat het avontuur begint.',
+          )),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(strings.tr('cancel')),
+            ),
+            FilledButton(
+              key: const Key('confirm-leave-group'),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(strings.pick('Confirm', 'Bevestigen')),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+  if (!confirmed || !context.mounted) return;
+  final online = context.read<OnlineAccountProvider>();
+  final success = await online.leaveGroupLobby(lobby.id);
+  if (!context.mounted) return;
+  if (success) Navigator.pop(context);
+  _showOnlineAdventureMessage(context, online);
+}
+
+Future<void> _confirmRemoveGroupParticipant(
+  BuildContext context,
+  GroupAdventureLobby lobby,
+  GroupAdventureParticipant participant,
+) async {
+  final strings = AppStrings.of(context);
+  final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(strings.pick(
+              'Remove this dragon?', 'Deze draak uit de groep verwijderen?')),
+          content: Text(
+              '${participant.keeper.displayName} · ${participant.dragonName}'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(strings.tr('cancel')),
+            ),
+            FilledButton(
+              key: const Key('confirm-remove-group-participant'),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(strings.pick('Remove', 'Verwijderen')),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+  if (!confirmed || !context.mounted) return;
+  final online = context.read<OnlineAccountProvider>();
+  await online.removeGroupParticipant(lobby.id, participant.keeper.userId);
+  if (context.mounted) _showOnlineAdventureMessage(context, online);
+}
+
+Future<void> _claimGroupReward(BuildContext context, String lobbyId) async {
+  final online = context.read<OnlineAccountProvider>();
+  final reward = await online.claimGroupReward(lobbyId);
+  if (!context.mounted) return;
+  if (reward == null) {
+    _showOnlineAdventureMessage(context, online);
+    return;
+  }
+  _showGroupRewardMessage(context, reward);
+}
+
+void _showGroupRewardMessage(
+  BuildContext context,
+  GroupAdventureReward reward,
+) {
+  final strings = AppStrings.of(context);
+  final tier = ChestTier.values.firstWhere(
+    (candidate) => candidate.name == reward.chestTier,
+    orElse: () => ChestTier.gold,
+  );
+  unawaited(HavenAudio.play(HavenSound.adventureReturn));
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Text(strings.pick(
+      '${strings.chestLabel(tier)} and Group Adventure rewards added.',
+      '${strings.chestLabel(tier)} en groepsbeloningen toegevoegd.',
+    )),
+  ));
+}
+
+void _showOnlineAdventureMessage(
+  BuildContext context,
+  OnlineAccountProvider online,
+) {
+  final code = online.errorCode ?? online.noticeCode;
+  if (code == null) return;
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Text(socialMessage(AppStrings.of(context), code)),
+  ));
+  online.clearMessages();
 }
 
 class _ActiveAdventureCard extends StatelessWidget {

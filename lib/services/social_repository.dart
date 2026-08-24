@@ -39,6 +39,20 @@ abstract interface class SocialRepository {
   Future<void> removeFriend(String userId);
   Future<void> blockKeeper(String userId);
   Future<void> unblockKeeper(String userId);
+  Future<GroupAdventureStatus> loadGroupAdventureStatus();
+  Future<List<GroupAdventureLobby>> loadGroupAdventures();
+  Future<void> createGroupLobby(
+    String adventureId,
+    GroupDragonSubmission dragon,
+  );
+  Future<void> joinGroupLobby(
+    String lobbyId,
+    GroupDragonSubmission dragon,
+  );
+  Future<void> leaveGroupLobby(String lobbyId);
+  Future<void> removeGroupParticipant(String lobbyId, String userId);
+  Future<GroupAdventureReward?> claimGroupReward(String lobbyId);
+  Future<void> acknowledgeGroupReward(String lobbyId);
   void dispose();
 }
 
@@ -96,6 +110,28 @@ class DisabledSocialRepository implements SocialRepository {
   Future<void> signOut() async => _disabled();
   @override
   Future<void> unblockKeeper(String userId) async => _disabled();
+  @override
+  Future<GroupAdventureStatus> loadGroupAdventureStatus() async => _disabled();
+  @override
+  Future<List<GroupAdventureLobby>> loadGroupAdventures() async => _disabled();
+  @override
+  Future<void> createGroupLobby(
+          String adventureId, GroupDragonSubmission dragon) async =>
+      _disabled();
+  @override
+  Future<void> joinGroupLobby(
+          String lobbyId, GroupDragonSubmission dragon) async =>
+      _disabled();
+  @override
+  Future<void> leaveGroupLobby(String lobbyId) async => _disabled();
+  @override
+  Future<void> removeGroupParticipant(String lobbyId, String userId) async =>
+      _disabled();
+  @override
+  Future<GroupAdventureReward?> claimGroupReward(String lobbyId) async =>
+      _disabled();
+  @override
+  Future<void> acknowledgeGroupReward(String lobbyId) async => _disabled();
   @override
   Future<void> updateProfile({
     required String displayName,

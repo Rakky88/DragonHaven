@@ -245,6 +245,23 @@ void main() {
     expect(afterWinterRefresh, isNot(beforeWinterRefresh));
   });
 
+  test('every player sees the same Group Adventure at the same moment', () {
+    final now = DateTime.utc(2026, 8, 24, 14, 30);
+    final firstPlayer = HouseholdProvider(
+      random: Random(1),
+      clock: () => now,
+    );
+    final secondPlayer = HouseholdProvider(
+      random: Random(999),
+      clock: () => now,
+    );
+
+    expect(
+      firstPlayer.adventuresFor(AdventureKind.group).single.id,
+      secondPlayer.adventuresFor(AdventureKind.group).single.id,
+    );
+  });
+
   test('a chest can only be opened when it exists', () async {
     final game = HouseholdProvider(random: Random(3));
     game.chestInventory[ChestTier.wooden] = 1;

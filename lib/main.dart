@@ -65,6 +65,18 @@ Future<void> main() async {
   final online = OnlineAccountProvider(
     repository: socialRepository,
     inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    profileSnapshot: () => OnlineProfileSnapshot.fromGame(game),
+    synchronizeGroupReservations: game.synchronizeOnlineGroupReservations,
+    applyGroupReward: (reward) => game.applyOnlineGroupReward(
+      lobbyId: reward.lobbyId,
+      adventureId: reward.adventureId,
+      dragonId: reward.dragonId,
+      xp: reward.xp,
+      focus: reward.focus,
+      statPoints: reward.statPoints,
+      chestTier: reward.chestTier,
+      participantCount: reward.participantCount,
+    ),
   );
   await online.initialize();
   await HavenAudio.applyPreferences(

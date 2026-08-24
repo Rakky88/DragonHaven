@@ -1,6 +1,28 @@
 import '../providers/household_provider.dart';
+import 'pet.dart';
 
 enum FriendRequestDirection { incoming, outgoing }
+
+class OnlineProfileSnapshot {
+  const OnlineProfileSnapshot({
+    required this.displayName,
+    required this.titleId,
+    required this.portraitId,
+  });
+
+  final String displayName;
+  final String titleId;
+  final String portraitId;
+
+  factory OnlineProfileSnapshot.fromGame(HouseholdProvider game) =>
+      OnlineProfileSnapshot(
+        displayName: game.accountName.trim().isEmpty
+            ? 'Keeper'
+            : game.accountName.trim(),
+        titleId: game.selectedTitleId ?? 'title_001',
+        portraitId: game.selectedPortraitId ?? 'portrait_001',
+      );
+}
 
 class FavoriteDragonSummary {
   const FavoriteDragonSummary({
@@ -134,6 +156,201 @@ class AccountAuthResult {
   const AccountAuthResult({required this.requiresEmailConfirmation});
 
   final bool requiresEmailConfirmation;
+}
+
+class GroupDragonSubmission {
+  const GroupDragonSubmission({required this.data});
+
+  final Map<String, dynamic> data;
+
+  factory GroupDragonSubmission.fromPet(Pet dragon) => GroupDragonSubmission(
+        data: {
+          'client_id': dragon.id,
+          'name': dragon.displayName,
+          'lineage_id': dragon.lineageId,
+          'stage': dragon.stage.name,
+          'xp': dragon.xp,
+          'might': dragon.training['might'] ?? 0,
+          'arcana': dragon.training['arcana'] ?? 0,
+          'spirit': dragon.training['spirit'] ?? 0,
+          'evolution_path': dragon.activeEvolutionPath,
+          'prismatic': dragon.prismatic,
+          'sinister': dragon.sinister,
+        },
+      );
+}
+
+class GroupAdventureStatus {
+  const GroupAdventureStatus({
+    required this.slot,
+    required this.adventureId,
+    required this.alreadyCompleted,
+  });
+
+  final int slot;
+  final String adventureId;
+  final bool alreadyCompleted;
+
+  factory GroupAdventureStatus.fromJson(Map<String, dynamic> json) =>
+      GroupAdventureStatus(
+        slot: _int(json['slot']),
+        adventureId: json['adventure_id']?.toString() ?? '',
+        alreadyCompleted: json['already_completed'] == true,
+      );
+}
+
+class GroupAdventureParticipant {
+  const GroupAdventureParticipant({
+    required this.keeper,
+    required this.dragonId,
+    required this.dragonName,
+    required this.lineageId,
+    required this.stage,
+    required this.level,
+    required this.might,
+    required this.arcana,
+    required this.spirit,
+    required this.evolutionPath,
+    required this.prismatic,
+    required this.sinister,
+    required this.isOwner,
+  });
+
+  final KeeperProfile keeper;
+  final String dragonId;
+  final String dragonName;
+  final String lineageId;
+  final String stage;
+  final int level;
+  final int might;
+  final int arcana;
+  final int spirit;
+  final String evolutionPath;
+  final bool prismatic;
+  final bool sinister;
+  final bool isOwner;
+
+  factory GroupAdventureParticipant.fromJson(Map<String, dynamic> json) =>
+      GroupAdventureParticipant(
+        keeper: KeeperProfile.fromJson(json),
+        dragonId: json['dragon_id']?.toString() ?? '',
+        dragonName: json['dragon_name']?.toString() ?? 'Dragon',
+        lineageId: json['dragon_lineage_id']?.toString() ?? '',
+        stage: json['dragon_stage']?.toString() ?? 'hatchling',
+        level: _int(json['dragon_level'], fallback: 1),
+        might: _int(json['dragon_might']),
+        arcana: _int(json['dragon_arcana']),
+        spirit: _int(json['dragon_spirit']),
+        evolutionPath: json['dragon_evolution_path']?.toString() ?? 'spirit',
+        prismatic: json['dragon_prismatic'] == true,
+        sinister: json['dragon_sinister'] == true,
+        isOwner: json['is_owner'] == true,
+      );
+}
+
+class GroupAdventureLobby {
+  const GroupAdventureLobby({
+    required this.id,
+    required this.slot,
+    required this.adventureId,
+    required this.ownerId,
+    required this.status,
+    required this.requiredPlayers,
+    required this.focus,
+    required this.startedAt,
+    required this.endsAt,
+    required this.isCurrentOffer,
+    required this.isOwner,
+    required this.isParticipant,
+    required this.myDragonId,
+    required this.rewardAcknowledged,
+    required this.participants,
+  });
+
+  final String id;
+  final int slot;
+  final String adventureId;
+  final String ownerId;
+  final String status;
+  final int requiredPlayers;
+  final String focus;
+  final DateTime? startedAt;
+  final DateTime? endsAt;
+  final bool isCurrentOffer;
+  final bool isOwner;
+  final bool isParticipant;
+  final String? myDragonId;
+  final bool rewardAcknowledged;
+  final List<GroupAdventureParticipant> participants;
+
+  bool get isWaiting => status == 'waiting';
+  bool get isRunning => status == 'running';
+  bool get isRewardReady => status == 'completed';
+  GroupAdventureParticipant? get owner => participants
+      .cast<GroupAdventureParticipant?>()
+      .firstWhere((participant) => participant?.isOwner == true,
+          orElse: () => null);
+
+  factory GroupAdventureLobby.fromJson(Map<String, dynamic> json) {
+    final rawParticipants = json['participants'];
+    return GroupAdventureLobby(
+      id: json['lobby_id']?.toString() ?? '',
+      slot: _int(json['slot']),
+      adventureId: json['adventure_id']?.toString() ?? '',
+      ownerId: json['owner_id']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'waiting',
+      requiredPlayers: _int(json['required_players'], fallback: 2),
+      focus: json['focus']?.toString() ?? 'might',
+      startedAt: DateTime.tryParse(json['started_at']?.toString() ?? ''),
+      endsAt: DateTime.tryParse(json['ends_at']?.toString() ?? ''),
+      isCurrentOffer: json['is_current_offer'] == true,
+      isOwner: json['is_owner'] == true,
+      isParticipant: json['is_participant'] == true,
+      myDragonId: json['my_dragon_id']?.toString(),
+      rewardAcknowledged: json['reward_acknowledged'] == true,
+      participants: rawParticipants is List
+          ? rawParticipants
+              .whereType<Map>()
+              .map((entry) => GroupAdventureParticipant.fromJson(
+                  Map<String, dynamic>.from(entry)))
+              .toList(growable: false)
+          : const [],
+    );
+  }
+}
+
+class GroupAdventureReward {
+  const GroupAdventureReward({
+    required this.lobbyId,
+    required this.adventureId,
+    required this.dragonId,
+    required this.xp,
+    required this.focus,
+    required this.statPoints,
+    required this.chestTier,
+    required this.participantCount,
+  });
+
+  final String lobbyId;
+  final String adventureId;
+  final String dragonId;
+  final int xp;
+  final String focus;
+  final int statPoints;
+  final String chestTier;
+  final int participantCount;
+
+  factory GroupAdventureReward.fromJson(Map<String, dynamic> json) =>
+      GroupAdventureReward(
+        lobbyId: json['lobby_id']?.toString() ?? '',
+        adventureId: json['adventure_id']?.toString() ?? '',
+        dragonId: json['dragon_id']?.toString() ?? '',
+        xp: _int(json['xp']),
+        focus: json['focus']?.toString() ?? 'might',
+        statPoints: _int(json['stat_points']),
+        chestTier: json['chest_tier']?.toString() ?? 'gold',
+        participantCount: _int(json['participant_count'], fallback: 2),
+      );
 }
 
 class OnlineInventorySnapshot {

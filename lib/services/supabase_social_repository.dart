@@ -158,6 +158,71 @@ class SupabaseSocialRepository implements SocialRepository {
     await _rpc('unblock_keeper', params: {'p_keeper_id': userId});
   }
 
+  @override
+  Future<GroupAdventureStatus> loadGroupAdventureStatus() async {
+    final rows = await _listRpc('get_current_group_adventure_status');
+    if (rows.isEmpty) throw const SocialException('group_offer_unavailable');
+    return GroupAdventureStatus.fromJson(rows.first);
+  }
+
+  @override
+  Future<List<GroupAdventureLobby>> loadGroupAdventures() async =>
+      (await _listRpc('list_group_adventures'))
+          .map(GroupAdventureLobby.fromJson)
+          .toList(growable: false);
+
+  @override
+  Future<void> createGroupLobby(
+    String adventureId,
+    GroupDragonSubmission dragon,
+  ) async {
+    await _rpc('create_group_adventure_lobby', params: {
+      'p_adventure_id': adventureId,
+      'p_dragon': dragon.data,
+    });
+  }
+
+  @override
+  Future<void> joinGroupLobby(
+    String lobbyId,
+    GroupDragonSubmission dragon,
+  ) async {
+    await _rpc('join_group_adventure_lobby', params: {
+      'p_lobby_id': lobbyId,
+      'p_dragon': dragon.data,
+    });
+  }
+
+  @override
+  Future<void> leaveGroupLobby(String lobbyId) async {
+    await _rpc('leave_group_adventure_lobby', params: {
+      'p_lobby_id': lobbyId,
+    });
+  }
+
+  @override
+  Future<void> removeGroupParticipant(String lobbyId, String userId) async {
+    await _rpc('remove_group_adventure_participant', params: {
+      'p_lobby_id': lobbyId,
+      'p_user_id': userId,
+    });
+  }
+
+  @override
+  Future<GroupAdventureReward?> claimGroupReward(String lobbyId) async {
+    final rows = await _listRpc('claim_group_adventure_reward', params: {
+      'p_lobby_id': lobbyId,
+    });
+    return rows.isEmpty ? null : GroupAdventureReward.fromJson(rows.first);
+  }
+
+  @override
+  Future<void> acknowledgeGroupReward(String lobbyId) async {
+    await _rpc('acknowledge_group_adventure_reward', params: {
+      'p_lobby_id': lobbyId,
+    });
+  }
+
   Future<dynamic> _rpc(String function, {Map<String, dynamic>? params}) async {
     try {
       return await _client.rpc(function, params: params);
@@ -172,8 +237,11 @@ class SupabaseSocialRepository implements SocialRepository {
     return rows.first;
   }
 
-  Future<List<Map<String, dynamic>>> _listRpc(String function) async {
-    final result = await _rpc(function);
+  Future<List<Map<String, dynamic>>> _listRpc(
+    String function, {
+    Map<String, dynamic>? params,
+  }) async {
+    final result = await _rpc(function, params: params);
     if (result is! List) return const [];
     return result
         .whereType<Map>()
@@ -201,6 +269,22 @@ class SupabaseSocialRepository implements SocialRepository {
       'inventory_already_imported',
       'invalid_inventory',
       'email_not_verified',
+      'group_login_required',
+      'group_offer_unavailable',
+      'group_lobby_not_found',
+      'group_lobby_closed',
+      'group_lobby_full',
+      'group_lobby_already_exists',
+      'group_already_joined',
+      'group_adventure_already_completed',
+      'group_not_friends',
+      'group_not_owner',
+      'group_owner_cannot_be_removed',
+      'group_participant_not_found',
+      'group_dragon_busy',
+      'invalid_group_dragon',
+      'group_reward_not_ready',
+      'group_reward_already_claimed',
     };
     final normalized = message.trim().toLowerCase().replaceAll(' ', '_');
     if (normalized.contains('email_not_confirmed')) {

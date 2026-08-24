@@ -208,8 +208,16 @@ void main() {
     game.pet
       ..stage = DragonStage.hatchling
       ..name = 'Ember';
-    await tester.pumpWidget(ChangeNotifierProvider.value(
-      value: game,
+    final online = OnlineAccountProvider(
+      repository: const DisabledSocialRepository(),
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    addTearDown(online.dispose);
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
       child: MaterialApp(
         locale: const Locale('de'),
         supportedLocales: AppStrings.supportedLanguages.keys.map(Locale.new),
@@ -270,8 +278,16 @@ void main() {
       ),
     ];
     game.pet.activeAdventureId = 'live-countdown';
-    await tester.pumpWidget(ChangeNotifierProvider.value(
-      value: game,
+    final online = OnlineAccountProvider(
+      repository: const DisabledSocialRepository(),
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    addTearDown(online.dispose);
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
       child: const MaterialApp(home: Scaffold(body: AdventureHubScreen())),
     ));
     await tester.pump(const Duration(milliseconds: 300));
@@ -1270,7 +1286,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.01.10'), findsOneWidget);
+    expect(find.text('v0.02.00'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

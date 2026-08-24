@@ -3,18 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
-import '../models/social.dart';
+import '../models/account_title.dart';
+import '../models/profile_portrait.dart';
 import '../providers/online_account_provider.dart';
 import '../theme/app_theme.dart';
-
-const keeperPortraitKeys = ['moon', 'ember', 'forest', 'tide', 'storm'];
-const keeperTitles = [
-  'Dragon Keeper',
-  'Nest Guardian',
-  'Sky Explorer',
-  'Draconomicon Scholar',
-  'Tower Architect',
-];
 
 class KeeperPortrait extends StatelessWidget {
   const KeeperPortrait({
@@ -30,6 +22,26 @@ class KeeperPortrait extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final portrait = profilePortraitById(portraitKey);
+    if (portrait != null) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: AppColors.gold.withValues(alpha: .28),
+        child: ClipOval(
+          child: Image.asset(
+            portrait.assetPath,
+            width: radius * 2,
+            height: radius * 2,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Icon(
+              Icons.person_rounded,
+              size: radius * 1.05,
+              color: AppColors.twilight,
+            ),
+          ),
+        ),
+      );
+    }
     final (color, icon) = switch (portraitKey) {
       'ember' => (const Color(0xFFE66B4E), Icons.local_fire_department_rounded),
       'forest' => (const Color(0xFF4A956C), Icons.park_rounded),
@@ -46,10 +58,11 @@ class KeeperPortrait extends StatelessWidget {
   }
 }
 
-class OnlineAccountAccessCard extends StatelessWidget {
-  const OnlineAccountAccessCard({super.key, required this.suggestedName});
+String keeperTitleLabel(AppStrings strings, String titleId) =>
+    accountTitleById(titleId)?.label(strings.languageCode) ?? titleId;
 
-  final String suggestedName;
+class OnlineAccountAccessCard extends StatelessWidget {
+  const OnlineAccountAccessCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +98,6 @@ class OnlineAccountAccessCard extends StatelessWidget {
                     onPressed: () => showOnlineAuthDialog(
                       context,
                       createAccount: true,
-                      suggestedName: suggestedName,
                     ),
                     icon: const Icon(Icons.person_add_alt_1_rounded),
                     label:
@@ -99,7 +111,6 @@ class OnlineAccountAccessCard extends StatelessWidget {
                     onPressed: () => showOnlineAuthDialog(
                       context,
                       createAccount: false,
-                      suggestedName: suggestedName,
                     ),
                     child: Text(strings.pick('Sign in', 'Inloggen')),
                   ),
@@ -116,24 +127,20 @@ class OnlineAccountAccessCard extends StatelessWidget {
 Future<void> showOnlineAuthDialog(
   BuildContext context, {
   required bool createAccount,
-  required String suggestedName,
 }) =>
     showDialog<void>(
       context: context,
       builder: (_) => _OnlineAuthDialog(
         createAccount: createAccount,
-        suggestedName: suggestedName,
       ),
     );
 
 class _OnlineAuthDialog extends StatefulWidget {
   const _OnlineAuthDialog({
     required this.createAccount,
-    required this.suggestedName,
   });
 
   final bool createAccount;
-  final String suggestedName;
 
   @override
   State<_OnlineAuthDialog> createState() => _OnlineAuthDialogState();
@@ -141,7 +148,6 @@ class _OnlineAuthDialog extends StatefulWidget {
 
 class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _name;
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _hidePassword = true;
@@ -149,12 +155,10 @@ class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
   @override
   void initState() {
     super.initState();
-    _name = TextEditingController(text: widget.suggestedName);
   }
 
   @override
   void dispose() {
-    _name.dispose();
     _email.dispose();
     _password.dispose();
     super.dispose();
@@ -175,19 +179,15 @@ class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (widget.createAccount) ...[
-              TextFormField(
-                key: const Key('online-display-name'),
-                controller: _name,
-                maxLength: 24,
-                textCapitalization: TextCapitalization.words,
-                decoration: InputDecoration(
-                  labelText: strings.pick('Keeper name', 'Naam van hoeder'),
+              Text(
+                strings.pick(
+                  'Your offline name, portrait and title are used automatically online.',
+                  'Je offline naam, portrait en titel worden automatisch online gebruikt.',
                 ),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? strings.pick('Enter a name.', 'Vul een naam in.')
-                    : null,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.muted),
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 12),
             ],
             TextFormField(
               key: const Key('online-email'),
@@ -264,7 +264,6 @@ class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
       final result = await online.signUp(
         email: _email.text,
         password: _password.text,
-        displayName: _name.text,
       );
       if (!mounted || result == null) return;
       Navigator.pop(context);
@@ -285,106 +284,6 @@ class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
       if (success && mounted) Navigator.pop(context);
     }
   }
-}
-
-Future<void> showOnlineProfileEditor(
-    BuildContext context, KeeperProfile profile) async {
-  final name = TextEditingController(text: profile.displayName);
-  var title =
-      keeperTitles.contains(profile.title) ? profile.title : keeperTitles.first;
-  var portrait = keeperPortraitKeys.contains(profile.portraitKey)
-      ? profile.portraitKey
-      : keeperPortraitKeys.first;
-  final strings = AppStrings.of(context);
-  await showDialog<void>(
-    context: context,
-    builder: (dialogContext) => StatefulBuilder(
-      builder: (context, setState) {
-        final online = context.watch<OnlineAccountProvider>();
-        return AlertDialog(
-          scrollable: true,
-          title: Text(
-              strings.pick('Edit online profile', 'Online profiel aanpassen')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                key: const Key('edit-online-name'),
-                controller: name,
-                maxLength: 24,
-                decoration: InputDecoration(
-                    labelText: strings.pick('Keeper name', 'Naam van hoeder')),
-              ),
-              DropdownButtonFormField<String>(
-                key: const Key('edit-online-title'),
-                initialValue: title,
-                decoration:
-                    InputDecoration(labelText: strings.pick('Title', 'Titel')),
-                items: [
-                  for (final candidate in keeperTitles)
-                    DropdownMenuItem(value: candidate, child: Text(candidate)),
-                ],
-                onChanged: (value) => setState(() => title = value ?? title),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final key in keeperPortraitKeys)
-                    InkWell(
-                      key: Key('portrait-$key'),
-                      borderRadius: BorderRadius.circular(99),
-                      onTap: () => setState(() => portrait = key),
-                      child: Padding(
-                        padding: const EdgeInsets.all(3),
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: portrait == key
-                                  ? AppColors.gold
-                                  : Colors.transparent,
-                              width: 3,
-                            ),
-                          ),
-                          child: KeeperPortrait(
-                            portraitKey: key,
-                            displayName: name.text,
-                            radius: 21,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: online.busy ? null : () => Navigator.pop(context),
-              child: Text(strings.tr('cancel')),
-            ),
-            FilledButton(
-              key: const Key('save-online-profile'),
-              onPressed: online.busy || name.text.trim().isEmpty
-                  ? null
-                  : () async {
-                      final saved = await online.updateProfile(
-                        displayName: name.text,
-                        title: title,
-                        portraitKey: portrait,
-                      );
-                      if (saved && context.mounted) Navigator.pop(context);
-                    },
-              child: Text(strings.tr('save')),
-            ),
-          ],
-        );
-      },
-    ),
-  );
-  name.dispose();
 }
 
 String socialMessage(AppStrings strings, String code) => switch (code) {
@@ -422,6 +321,39 @@ String socialMessage(AppStrings strings, String code) => switch (code) {
         strings.pick('Keeper blocked.', 'Hoeder geblokkeerd.'),
       'keeper_unblocked' =>
         strings.pick('Keeper unblocked.', 'Blokkade opgeheven.'),
+      'group_lobby_created' => strings.pick(
+          'Group created. Friends can now join.',
+          'Groep gemaakt. Vrienden kunnen zich nu aanmelden.'),
+      'group_joined' => strings.pick('Your dragon joined the group.',
+          'Je draak is bij de groep aangemeld.'),
+      'group_left' => strings.pick('Your dragon left the group.',
+          'Je draak is uit de groep uitgeschreven.'),
+      'group_participant_removed' => strings.pick(
+          'The dragon was removed from the group.',
+          'De draak is uit de groep verwijderd.'),
+      'group_lobby_full' =>
+        strings.pick('This group is full.', 'Deze groep zit vol.'),
+      'group_already_joined' => strings.pick(
+          'You already used this weekly Group Adventure.',
+          'Je hebt dit wekelijkse groepsavontuur al gebruikt.'),
+      'group_adventure_already_completed' => strings.pick(
+          "You have already completed this week's Group Adventure.",
+          'Je hebt het groepsavontuur van deze week al voltooid.'),
+      'group_lobby_closed' => strings.pick(
+          'This group has already started or expired.',
+          'Deze groep is al gestart of verlopen.'),
+      'group_not_friends' => strings.pick(
+          'Only friends of the group starter can join.',
+          'Alleen vrienden van de groepsstarter kunnen meedoen.'),
+      'group_dragon_busy' => strings.pick(
+          'This dragon is already reserved for a Group Adventure.',
+          'Deze draak is al gereserveerd voor een groepsavontuur.'),
+      'group_reward_not_ready' => strings.pick(
+          'These Group Adventure rewards are not ready yet.',
+          'Deze groepsbeloningen staan nog niet klaar.'),
+      'group_reward_apply_failed' => strings.pick(
+          'The reward could not be linked to your local dragon.',
+          'De beloning kon niet aan je lokale draak worden gekoppeld.'),
       _ => strings.pick(
           'The online service could not complete this action. Please try again.',
           'De online dienst kon deze actie niet uitvoeren. Probeer het opnieuw.'),
