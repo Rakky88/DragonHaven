@@ -316,6 +316,8 @@ void main() {
   testWidgets(
       'friend profile shows favorite dragon and removal requires confirmation',
       (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final game = HouseholdProvider(random: Random(7))
       ..accountName = 'Rick'
       ..onboardingComplete = true;
