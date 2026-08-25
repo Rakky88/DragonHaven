@@ -89,6 +89,23 @@ void _expectInsidePortraitCircle(
   );
 }
 
+void _expectTransparentCorners(
+  Uint8List rgba,
+  int width,
+  int height,
+  String label,
+) {
+  for (final (x, y) in [
+    (0, 0),
+    (width - 1, 0),
+    (0, height - 1),
+    (width - 1, height - 1),
+  ]) {
+    expect(rgba[(y * width + x) * 4 + 3], 0,
+        reason: '$label must have real alpha at corner ($x, $y)');
+  }
+}
+
 void _expectSingleSubject(
     Uint8List rgba, int width, int x0, int y0, int x1, int y1, String label) {
   // Inspect every pixel in each four-pixel cell. Sampling only one point per
@@ -168,12 +185,40 @@ void main() {
     }
   });
 
+  test('new Trial and combined egg-nest sprites have genuine alpha', () async {
+    const gradeNames = ['d', 'c', 'b', 'a', 's', 's_plus'];
+    const runeNames = ['fire', 'water', 'moon', 'star', 'wind'];
+    const recordNames = ['cavern_flight', 'ruin_breaker', 'runeweaver'];
+    final paths = <String>[
+      'assets/images/ui/ui_rooftop_egg_nest_combined.png',
+      for (final name in gradeNames) 'assets/images/ui/trials/grade_$name.png',
+      for (final name in runeNames) ...[
+        'assets/images/ui/trials/rune_$name.png',
+        'assets/images/ui/trials/rune_${name}_lit.png',
+      ],
+      for (final name in recordNames)
+        'assets/images/ui/trials/trial_record_$name.png',
+      'assets/images/ui/trials/trial_stalactite.png',
+      'assets/images/ui/trials/trial_stalagmite.png',
+      'assets/images/ui/trials/trial_reaction_bar.png',
+    ];
+    for (final path in paths) {
+      final image = await _decode(path);
+      expect(
+          _alphaCount(image.rgba, image.width, 0, 0, image.width, image.height,
+              step: 4),
+          greaterThan(100),
+          reason: '$path is empty');
+      _expectTransparentCorners(image.rgba, image.width, image.height, path);
+    }
+  });
+
   test('egg and every Hatchling sprite fit fully inside their image box',
       () async {
     expect(
       DragonArtwork.eggAsset,
       'assets/images/ui/ui_mysterious_egg.webp',
-      reason: 'the nest must compose a standalone egg with its separate nest',
+      reason: 'inventory hints still use the standalone egg sprite',
     );
     for (final path in <String>[
       DragonArtwork.eggAsset,

@@ -129,7 +129,13 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byKey(const Key('trial-result-grade')), findsOneWidget);
-    expect(find.text('D'), findsOneWidget);
+    final grade = tester.widget<Image>(
+      find.byKey(const Key('trial-result-grade')),
+    );
+    expect(
+      (grade.image as AssetImage).assetName,
+      'assets/images/ui/trials/grade_d.png',
+    );
     expect(find.text('+20 coins'), findsOneWidget);
     expect(
       gameState.availableTrials.any((item) => item.id == offer.id),

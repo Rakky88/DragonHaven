@@ -8,6 +8,7 @@ import '../models/chest.dart';
 import '../models/mystic_relic.dart';
 import '../models/profile_portrait.dart';
 import 'game_icon_sprite.dart';
+import 'profile_portrait_sprite.dart';
 
 Future<void> showChestReveal(
   BuildContext context,
@@ -511,11 +512,7 @@ class _PortraitReward extends StatelessWidget {
                 ),
               ],
             ),
-            child: Image.asset(
-              portrait.assetPath,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-            ),
+            child: ProfilePortraitSprite(portrait: portrait, size: 220),
           ),
           const SizedBox(height: 10),
           Text(

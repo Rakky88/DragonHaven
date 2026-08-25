@@ -82,6 +82,11 @@ void main() {
       sortAt: now.subtract(const Duration(days: 3)),
       dragonId: 'dragon',
       previousStageKey: 'spark',
+      payload: const {
+        'sentKind': 'chest',
+        'sentKey': 'gold',
+        'receivedData': {'id': 'egg-1'},
+      },
     );
     expect(GamePresentation.fromJson(presentation.toJson()).toJson(),
         presentation.toJson());

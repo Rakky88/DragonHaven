@@ -16,6 +16,7 @@ import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
+import '../widgets/trial_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
 import '../widgets/ui_bits.dart';
 
@@ -418,10 +419,7 @@ class _TrialOfferCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(15, 12, 12, 13),
               child: Row(
                 children: [
-                  GameIconSprite(
-                    GameIconSprite.forTrainingFocus(definition.focus),
-                    size: 34,
-                  ),
+                  TrialIconSprite(kind: offer.kind, size: 40),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -585,7 +583,13 @@ class _TrialDragonPicker extends StatelessWidget {
                         '${_focusName(strings, focus)} ${dragon.trainingFor(focus)} · '
                         '${strings.pick('Best', 'Beste')}: ${dragon.trialBest(offer.kind.name)}',
                       ),
-                      trailing: const Icon(Icons.chevron_right_rounded),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TrialIconSprite(kind: offer.kind, size: 34),
+                          const Icon(Icons.chevron_right_rounded),
+                        ],
+                      ),
                     ),
                   );
                 },

@@ -1,6 +1,6 @@
 import '../utils/json_utils.dart';
 
-enum GamePresentationType { hatch, evolution, achievement }
+enum GamePresentationType { hatch, evolution, trade, achievement }
 
 /// A persisted cinematic milestone waiting to be shown to the player.
 ///
@@ -16,6 +16,7 @@ class GamePresentation {
     this.dragonId,
     this.achievementId,
     this.previousStageKey,
+    this.payload = const {},
   });
 
   final String id;
@@ -25,11 +26,13 @@ class GamePresentation {
   final String? dragonId;
   final String? achievementId;
   final String? previousStageKey;
+  final Map<String, dynamic> payload;
 
   int get priority => switch (type) {
         GamePresentationType.hatch => 0,
         GamePresentationType.evolution => 1,
-        GamePresentationType.achievement => 2,
+        GamePresentationType.trade => 2,
+        GamePresentationType.achievement => 3,
       };
 
   Map<String, dynamic> toJson() => {
@@ -40,6 +43,7 @@ class GamePresentation {
         'dragonId': dragonId,
         'achievementId': achievementId,
         'previousStageKey': previousStageKey,
+        'payload': payload,
       };
 
   factory GamePresentation.fromJson(Map<String, dynamic> json) {
@@ -55,6 +59,9 @@ class GamePresentation {
       dragonId: nonEmptyStringFromJson(json['dragonId']),
       achievementId: nonEmptyStringFromJson(json['achievementId']),
       previousStageKey: nonEmptyStringFromJson(json['previousStageKey']),
+      payload: json['payload'] is Map
+          ? Map<String, dynamic>.from(json['payload'] as Map)
+          : const {},
     );
   }
 }

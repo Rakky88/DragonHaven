@@ -7,6 +7,7 @@ import '../models/account_title.dart';
 import '../models/profile_portrait.dart';
 import '../providers/online_account_provider.dart';
 import '../theme/app_theme.dart';
+import 'profile_portrait_sprite.dart';
 
 class KeeperPortrait extends StatelessWidget {
   const KeeperPortrait({
@@ -34,15 +35,9 @@ class KeeperPortrait extends StatelessWidget {
               shape: BoxShape.circle,
               color: AppColors.gold.withValues(alpha: .28),
             ),
-            child: Image.asset(
-              portrait.assetPath,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-              errorBuilder: (_, __, ___) => Icon(
-                Icons.person_rounded,
-                size: radius * 1.05,
-                color: AppColors.twilight,
-              ),
+            child: ProfilePortraitSprite(
+              portrait: portrait,
+              size: radius * 2,
             ),
           ),
         ),

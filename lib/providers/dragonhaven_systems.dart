@@ -736,6 +736,21 @@ extension DragonHavenSystems on HouseholdProvider {
       code: ActivityCode.bonusFound,
       subject: tradeId,
     );
+    final completedAt = DateTime.now();
+    _queuePresentation(GamePresentation(
+      id: 'trade-$tradeId',
+      type: GamePresentationType.trade,
+      createdAt: completedAt,
+      sortAt: completedAt,
+      payload: {
+        'sentKind': sentKind,
+        'sentKey': sentKey,
+        'sentData': sentData,
+        'receivedKind': receivedKind,
+        'receivedKey': receivedKey,
+        'receivedData': receivedData,
+      },
+    ));
     await _notifyAndSave();
     return true;
   }

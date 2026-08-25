@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:dragon_haven/dragonhaven_app.dart';
 import 'package:dragon_haven/models/account_title.dart';
 import 'package:dragon_haven/models/chest.dart';
+import 'package:dragon_haven/models/game_presentation.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/social.dart';
@@ -38,10 +39,10 @@ void main() {
     final portrait = find.byType(KeeperPortrait);
     final image = find.descendant(of: portrait, matching: find.byType(Image));
     expect(tester.getSize(portrait), const Size.square(62));
-    expect(tester.widget<Image>(image).fit, BoxFit.contain);
+    expect(tester.widget<Image>(image).fit, BoxFit.cover);
     expect(
       find.descendant(of: portrait, matching: find.byType(ClipOval)),
-      findsNothing,
+      findsOneWidget,
     );
   });
 
@@ -222,6 +223,8 @@ void main() {
     expect(applied, isTrue);
     expect(game.chestCount(ChestTier.gold), 0);
     expect(game.relicCount(MysticRelic.moralPrism), 1);
+    expect(game.nextPresentation?.type, GamePresentationType.trade);
+    expect(game.nextPresentation?.payload['receivedKey'], 'moralPrism');
 
     expect(
       await game.applyOnlineTradeSettlement(
@@ -236,6 +239,11 @@ void main() {
       isTrue,
     );
     expect(game.relicCount(MysticRelic.moralPrism), 1);
+    expect(
+      game.pendingPresentations
+          .where((item) => item.type == GamePresentationType.trade),
+      hasLength(1),
+    );
   });
 
   test('a completed weekly Group Adventure cannot be entered a second time',
@@ -384,6 +392,7 @@ void main() {
     expect(friendPortrait.portraitKey, 'portrait_042');
     final friendTitle = accountTitleById('title_321')!.label('en');
     expect(find.text(friendTitle), findsOneWidget);
+    expect(find.byKey(const Key('friend-trade-friend-user')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('friend-friend-user')));
     await tester.pump();
@@ -396,10 +405,11 @@ void main() {
     expect(find.text('Spirit'), findsOneWidget);
     expect(find.byKey(const Key('account-trial-records')), findsOneWidget);
     expect(find.byKey(const Key('dragon-trial-records')), findsOneWidget);
-    expect(find.text('Cavern Flight'), findsNWidgets(2));
+    expect(find.text('Cavern Flight'), findsNothing);
     expect(find.byKey(const Key('start-trade-button')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('start-trade-button')));
+    final startTrade = find.byKey(const Key('start-trade-button'));
+    await tester.tap(startTrade);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 450));
     expect(find.byKey(const Key('trade-inventory-list')), findsOneWidget);
@@ -412,6 +422,32 @@ void main() {
     await tester.pump(const Duration(milliseconds: 650));
     expect(repository.createTradeCount, 1);
 
+    await tester.tap(find.byKey(const Key('toggle-account-trial-records')));
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('Cavern Flight'), findsOneWidget);
+    final dragonRecordsToggle =
+        find.byKey(const Key('toggle-dragon-trial-records'));
+    await tester.ensureVisible(dragonRecordsToggle);
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(dragonRecordsToggle);
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('Cavern Flight'), findsNWidgets(2));
+
+    // Restore the modal's default compact state before exercising the
+    // destructive action at its foot. This also verifies that both sections
+    // can be collapsed again after being inspected.
+    final accountRecordsToggle =
+        find.byKey(const Key('toggle-account-trial-records'));
+    await tester.ensureVisible(accountRecordsToggle);
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(accountRecordsToggle);
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.ensureVisible(dragonRecordsToggle);
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(find.byKey(const Key('toggle-dragon-trial-records')));
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('Cavern Flight'), findsNothing);
+
     await tester.scrollUntilVisible(
       find.byKey(const Key('remove-friend-button')),
       300,
@@ -420,7 +456,10 @@ void main() {
         matching: find.byType(Scrollable),
       ),
     );
-    await tester.tap(find.byKey(const Key('remove-friend-button')));
+    final removeFriend = find.byKey(const Key('remove-friend-button'));
+    await tester.ensureVisible(removeFriend);
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(removeFriend);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Remove friend?'), findsOneWidget);

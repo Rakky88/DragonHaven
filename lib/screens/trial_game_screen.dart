@@ -13,8 +13,9 @@ import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
+import '../widgets/trial_icon_sprite.dart';
 
-class TrialGameScreen extends StatelessWidget {
+class TrialGameScreen extends StatefulWidget {
   const TrialGameScreen({
     super.key,
     required this.offerId,
@@ -25,16 +26,32 @@ class TrialGameScreen extends StatelessWidget {
   final String dragonId;
 
   @override
-  Widget build(BuildContext context) {
+  State<TrialGameScreen> createState() => _TrialGameScreenState();
+}
+
+class _TrialGameScreenState extends State<TrialGameScreen> {
+  TrialOffer? _offer;
+  Pet? _dragon;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_offer != null && _dragon != null) return;
     final game = context.read<HouseholdProvider>();
-    final offer = game.availableTrials.cast<TrialOffer?>().firstWhere(
-          (candidate) => candidate?.id == offerId,
+    _offer = game.availableTrials.cast<TrialOffer?>().firstWhere(
+          (candidate) => candidate?.id == widget.offerId,
           orElse: () => null,
         );
-    final dragon = game.ownedDragons.cast<Pet?>().firstWhere(
-          (candidate) => candidate?.id == dragonId,
+    _dragon = game.ownedDragons.cast<Pet?>().firstWhere(
+          (candidate) => candidate?.id == widget.dragonId,
           orElse: () => null,
         );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final offer = _offer;
+    final dragon = _dragon;
     if (offer == null || dragon == null) {
       return _UnavailableTrial(onClose: () => Navigator.pop(context));
     }
@@ -138,6 +155,15 @@ class _TrialScaffold extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
+                  TrialIconSprite(
+                    kind: switch (focus) {
+                      TrainingFocus.spirit => TrialKind.cavernFlight,
+                      TrainingFocus.might => TrialKind.ruinBreaker,
+                      TrainingFocus.arcana => TrialKind.runeweaver,
+                    },
+                    size: 30,
+                  ),
+                  const SizedBox(width: 7),
                   _HudValue(
                     label: strings.pick('SCORE', 'SCORE'),
                     value: '$score',
@@ -200,19 +226,20 @@ Future<void> _finishTrial(
   // rebuilds this screen, so the individual game's BuildContext can be disposed
   // while the result dialog is still visible.
   final routeNavigator = Navigator.of(context);
-  final completion = await context.read<HouseholdProvider>().completeTrial(
-        offerId: offer.id,
-        dragonId: dragon.id,
-        score: score,
-      );
-  if (!context.mounted) return;
+  final game = context.read<HouseholdProvider>();
+  final completion = await game.completeTrial(
+    offerId: offer.id,
+    dragonId: dragon.id,
+    score: score,
+  );
+  if (!routeNavigator.mounted) return;
   if (completion == null) {
-    Navigator.pop(context);
+    routeNavigator.pop();
     return;
   }
   unawaited(HavenAudio.play(HavenSound.adventureReturn));
   await showGeneralDialog<void>(
-    context: context,
+    context: routeNavigator.context,
     barrierDismissible: false,
     barrierColor: Colors.black87,
     transitionDuration: const Duration(milliseconds: 500),
@@ -293,28 +320,47 @@ class _TrialResultCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: .2, end: 1),
-                    duration: const Duration(milliseconds: 850),
-                    curve: Curves.elasticOut,
-                    builder: (_, scale, child) => Transform.scale(
-                      scale: scale,
-                      child: child,
-                    ),
-                    child: Text(
-                      grade,
-                      key: const Key('trial-result-grade'),
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 94,
-                        height: 1,
-                        fontWeight: FontWeight.w900,
-                        shadows: [
-                          Shadow(
-                              color: color.withValues(alpha: .65),
-                              blurRadius: 22),
-                        ],
-                      ),
+                  SizedBox(
+                    height: 158,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: const Duration(milliseconds: 1350),
+                          curve: Curves.easeOutCubic,
+                          builder: (_, turn, child) => Transform.rotate(
+                            angle: turn * pi * 1.5,
+                            child: Transform.scale(
+                              scale: .75 + turn * .42,
+                              child: child,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 142,
+                            color: color.withValues(alpha: .28),
+                          ),
+                        ),
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: .06, end: 1),
+                          duration: const Duration(milliseconds: 1050),
+                          curve: Curves.elasticOut,
+                          builder: (_, scale, child) => Transform.scale(
+                            scale: scale,
+                            child: child,
+                          ),
+                          child: Image.asset(
+                            _trialGradeAsset(reward.grade),
+                            key: const Key('trial-result-grade'),
+                            width: 154,
+                            height: 154,
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
+                            semanticLabel: 'Trial grade $grade',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Text(
@@ -390,6 +436,15 @@ class _TrialResultCard extends StatelessWidget {
     );
   }
 }
+
+String _trialGradeAsset(TrialGrade grade) => switch (grade) {
+      TrialGrade.d => 'assets/images/ui/trials/grade_d.png',
+      TrialGrade.c => 'assets/images/ui/trials/grade_c.png',
+      TrialGrade.b => 'assets/images/ui/trials/grade_b.png',
+      TrialGrade.a => 'assets/images/ui/trials/grade_a.png',
+      TrialGrade.s => 'assets/images/ui/trials/grade_s.png',
+      TrialGrade.sPlus => 'assets/images/ui/trials/grade_s_plus.png',
+    };
 
 class _RewardLine extends StatelessWidget {
   const _RewardLine({required this.icon, required this.label});
@@ -575,9 +630,12 @@ class _CavernFlightGameState extends State<_CavernFlightGame>
                   'assets/images/ui/trials/trial_cavern_background.webp',
                   fit: BoxFit.cover,
                 ),
+                _CavernObstacleSprites(
+                  obstacles: _obstacles,
+                  elapsed: _elapsed,
+                ),
                 CustomPaint(
                   painter: _CavernPainter(
-                    obstacles: _obstacles,
                     elapsed: _elapsed,
                     spirit: widget.dragon.trainingFor(TrainingFocus.spirit),
                   ),
@@ -747,12 +805,10 @@ class _FlightObstacle {
 
 class _CavernPainter extends CustomPainter {
   const _CavernPainter({
-    required this.obstacles,
     required this.elapsed,
     required this.spirit,
   });
 
-  final List<_FlightObstacle> obstacles;
   final double elapsed;
   final int spirit;
 
@@ -765,50 +821,6 @@ class _CavernPainter extends CustomPainter {
         colors: [Color(0x44120C29), Color(0x552C1746), Color(0x660C1026)],
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, background);
-    final rock = Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xFF1A163A), Color(0xFF4A2D67)],
-      ).createShader(Offset.zero & size);
-    final edge = Paint()
-      ..color = const Color(0xFFB58AE8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    for (final obstacle in obstacles) {
-      final left = obstacle.x * size.width;
-      final width = size.width * .14;
-      final gap = obstacle.gapAt(elapsed);
-      final topBottom = (gap - obstacle.halfGap) * size.height;
-      final bottomTop = (gap + obstacle.halfGap) * size.height;
-      final topPath = Path()
-        ..moveTo(left, 0)
-        ..lineTo(left + width, 0)
-        ..lineTo(left + width * .72, topBottom - 18)
-        ..lineTo(left + width * .48, topBottom + 16)
-        ..lineTo(left + width * .18, topBottom - 7)
-        ..close();
-      final bottomPath = Path()
-        ..moveTo(left, size.height)
-        ..lineTo(left + width, size.height)
-        ..lineTo(left + width * .82, bottomTop + 12)
-        ..lineTo(left + width * .48, bottomTop - 18)
-        ..lineTo(left + width * .15, bottomTop + 8)
-        ..close();
-      canvas.drawPath(topPath, rock);
-      canvas.drawPath(bottomPath, rock);
-      canvas.drawPath(topPath, edge);
-      canvas.drawPath(bottomPath, edge);
-      if (obstacle.crystal) {
-        final crystal = Paint()..color = const Color(0xFF64F0DF);
-        canvas.drawPath(
-          Path()
-            ..moveTo(left + width * .40, topBottom - 3)
-            ..lineTo(left + width * .54, topBottom - 33)
-            ..lineTo(left + width * .66, topBottom - 2)
-            ..close(),
-          crystal,
-        );
-      }
-    }
     final particlePaint = Paint()
       ..color =
           spirit >= 200 ? const Color(0xA8A7FFF0) : const Color(0x6552C9DD)
@@ -822,6 +834,63 @@ class _CavernPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _CavernPainter oldDelegate) => true;
+}
+
+class _CavernObstacleSprites extends StatelessWidget {
+  const _CavernObstacleSprites({
+    required this.obstacles,
+    required this.elapsed,
+  });
+
+  final List<_FlightObstacle> obstacles;
+  final double elapsed;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) {
+          final size = constraints.biggest;
+          // The artwork deliberately fans out beyond the real .13-wide
+          // collision column. Keep that gameplay column unchanged, while
+          // centring a broader silhouette over it so the crystal formations
+          // read as substantial cave obstacles instead of thin needles.
+          final width = size.width * .22;
+          return ClipRect(
+            child: Stack(
+              children: [
+                for (final obstacle in obstacles) ...[
+                  Positioned(
+                    left: (obstacle.x - .045) * size.width,
+                    top: 0,
+                    width: width,
+                    height: max(
+                      1.0,
+                      (obstacle.gapAt(elapsed) - obstacle.halfGap) *
+                          size.height,
+                    ),
+                    child: Image.asset(
+                      'assets/images/ui/trials/trial_stalactite.png',
+                      fit: BoxFit.fill,
+                      filterQuality: FilterQuality.high,
+                    ),
+                  ),
+                  Positioned(
+                    left: (obstacle.x - .045) * size.width,
+                    top: (obstacle.gapAt(elapsed) + obstacle.halfGap) *
+                        size.height,
+                    bottom: 0,
+                    width: width,
+                    child: Image.asset(
+                      'assets/images/ui/trials/trial_stalagmite.png',
+                      fit: BoxFit.fill,
+                      filterQuality: FilterQuality.high,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      );
 }
 
 class _StartOverlay extends StatelessWidget {
@@ -1180,49 +1249,92 @@ class _PowerMeter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        height: 54,
+        height: 62,
         child: LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth;
             return Stack(
               alignment: Alignment.center,
               children: [
-                Container(
-                  height: 26,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF30264A),
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: Colors.white30),
+                Positioned.fill(
+                  child: Image.asset(
+                    'assets/images/ui/trials/trial_reaction_bar.png',
+                    fit: BoxFit.fill,
+                    filterQuality: FilterQuality.high,
                   ),
                 ),
-                Container(
-                  width: width * successHalf * 2,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF55C6A9),
-                    borderRadius: BorderRadius.circular(99),
+                Positioned(
+                  top: 20,
+                  child: Container(
+                    width: width * successHalf * 2,
+                    height: 25,
+                    decoration: BoxDecoration(
+                      color: const Color(0x2255C6A9),
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(
+                        color: const Color(0xFF6FF0B4),
+                        width: 1.4,
+                      ),
+                    ),
                   ),
                 ),
-                Container(
-                  width: width * perfectHalf * 2,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: AppColors.gold,
-                    borderRadius: BorderRadius.circular(99),
-                    boxShadow: const [
-                      BoxShadow(color: Color(0x99F4C95D), blurRadius: 10),
+                Positioned(
+                  top: 18,
+                  child: Container(
+                    width: width * perfectHalf * 2,
+                    height: 29,
+                    decoration: BoxDecoration(
+                      color: const Color(0x33FFF0A0),
+                      borderRadius: BorderRadius.circular(99),
+                      border:
+                          Border.all(color: const Color(0xFFFFE08A), width: 2),
+                    ),
+                  ),
+                ),
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'GOOD',
+                        style: TextStyle(
+                          color: Color(0xFF8FF4C4),
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      SizedBox(width: 13),
+                      Text(
+                        'PERFECT',
+                        style: TextStyle(
+                          color: Color(0xFFFFE08A),
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 Positioned(
-                  left: (width - 12) * value,
+                  left: (width - 13) * value,
+                  top: 13,
                   child: Container(
-                    width: 12,
+                    width: 13,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(6),
-                      boxShadow: const [BoxShadow(blurRadius: 8)],
+                      gradient: const LinearGradient(
+                        colors: [Colors.white, Color(0xFFFFD96A)],
+                      ),
+                      borderRadius: BorderRadius.circular(7),
+                      border: Border.all(color: const Color(0xFF6B3F14)),
+                      boxShadow: const [
+                        BoxShadow(color: Color(0xAAFFE08A), blurRadius: 9),
+                      ],
                     ),
                   ),
                 ),
@@ -1257,21 +1369,7 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
   int _inputIndex = 0;
   int _rounds = 0;
 
-  static const _icons = [
-    Icons.local_fire_department_rounded,
-    Icons.water_drop_rounded,
-    Icons.dark_mode_rounded,
-    Icons.auto_awesome_rounded,
-    Icons.air_rounded,
-  ];
-
-  static const _colors = [
-    Color(0xFFFF8B66),
-    Color(0xFF66D8FF),
-    Color(0xFFB68CFF),
-    Color(0xFFFFD86B),
-    Color(0xFF74E6C7),
-  ];
+  static const _runeKeys = ['fire', 'water', 'moon', 'star', 'wind'];
 
   @override
   void initState() {
@@ -1290,7 +1388,7 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
 
   Future<void> _nextRound() async {
     if (_ended) return;
-    _sequence.add(_random.nextInt(_icons.length));
+    _sequence.add(_random.nextInt(_runeKeys.length));
     _inputIndex = 0;
     _showing = true;
     _accepting = false;
@@ -1426,8 +1524,7 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
                       for (final rune in _positions)
                         _RuneButton(
                           key: Key('rune-$rune'),
-                          icon: _icons[rune],
-                          color: _colors[rune],
+                          runeKey: _runeKeys[rune],
                           lit: _litRune == rune,
                           echo: _echoRune == rune,
                           enabled: _accepting,
@@ -1471,16 +1568,14 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
 class _RuneButton extends StatelessWidget {
   const _RuneButton({
     super.key,
-    required this.icon,
-    required this.color,
+    required this.runeKey,
     required this.lit,
     required this.echo,
     required this.enabled,
     required this.onTap,
   });
 
-  final IconData icon;
-  final Color color;
+  final String runeKey;
   final bool lit;
   final bool echo;
   final bool enabled;
@@ -1493,36 +1588,27 @@ class _RuneButton extends StatelessWidget {
         child: InkWell(
           onTap: enabled ? onTap : null,
           borderRadius: BorderRadius.circular(99),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
+          child: SizedBox(
             width: 82,
             height: 82,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  color.withValues(
-                      alpha: lit
-                          ? .95
-                          : echo
-                              ? .34
-                              : .16),
-                  const Color(0xEE231643),
-                ],
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 145),
+              switchInCurve: Curves.easeOutBack,
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(scale: animation, child: child),
               ),
-              border: Border.all(
-                color: lit
-                    ? Colors.white
-                    : echo
-                        ? color.withValues(alpha: .65)
-                        : AppColors.gold.withValues(alpha: .65),
-                width: lit ? 3 : 1.3,
+              child: Opacity(
+                key: ValueKey('$runeKey-$lit-$echo'),
+                opacity: echo && !lit ? .78 : 1,
+                child: Image.asset(
+                  'assets/images/ui/trials/rune_$runeKey${lit || echo ? '_lit' : ''}.png',
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  semanticLabel: '$runeKey rune',
+                ),
               ),
-              boxShadow: lit || echo
-                  ? [BoxShadow(color: color, blurRadius: lit ? 24 : 10)]
-                  : null,
             ),
-            child: Icon(icon, color: lit ? Colors.white : color, size: 38),
           ),
         ),
       );

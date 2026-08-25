@@ -18,14 +18,19 @@ class ProfilePortraitSprite extends StatelessWidget {
     final selected = portrait;
     return SizedBox.square(
       dimension: size,
-      child: selected == null
-          ? GameIconSprite(GameIconKind.screenAccount, size: size)
-          : Image.asset(
-              selected.assetPath,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-              semanticLabel: 'Dragonkeeper portrait',
-            ),
+      child: ClipOval(
+        child: selected == null
+            ? GameIconSprite(GameIconKind.screenAccount, size: size)
+            : Transform.scale(
+                scale: 1.055,
+                child: Image.asset(
+                  selected.assetPath,
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.high,
+                  semanticLabel: 'Dragonkeeper portrait',
+                ),
+              ),
+      ),
     );
   }
 }

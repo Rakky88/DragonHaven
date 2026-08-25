@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
+import '../models/trial.dart';
 import '../theme/app_theme.dart';
+import 'trial_icon_sprite.dart';
 
-class DragonTrialRecords extends StatelessWidget {
+class DragonTrialRecords extends StatefulWidget {
   const DragonTrialRecords({
     super.key,
     required this.cavernFlightBest,
@@ -11,6 +13,8 @@ class DragonTrialRecords extends StatelessWidget {
     required this.runeweaverBest,
     this.account = false,
     this.compact = false,
+    this.collapsible = false,
+    this.initiallyExpanded = true,
   });
 
   final int cavernFlightBest;
@@ -18,13 +22,29 @@ class DragonTrialRecords extends StatelessWidget {
   final int runeweaverBest;
   final bool account;
   final bool compact;
+  final bool collapsible;
+  final bool initiallyExpanded;
+
+  @override
+  State<DragonTrialRecords> createState() => _DragonTrialRecordsState();
+}
+
+class _DragonTrialRecordsState extends State<DragonTrialRecords> {
+  late bool _expanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _expanded = !widget.collapsible || widget.initiallyExpanded;
+  }
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return Container(
-      key: Key(account ? 'account-trial-records' : 'dragon-trial-records'),
-      padding: EdgeInsets.all(compact ? 11 : 14),
+      key: Key(
+          widget.account ? 'account-trial-records' : 'dragon-trial-records'),
+      padding: EdgeInsets.all(widget.compact ? 11 : 14),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFF8F3FF), Color(0xFFFFF7DF)],
@@ -42,7 +62,7 @@ class DragonTrialRecords extends StatelessWidget {
               const SizedBox(width: 7),
               Expanded(
                 child: Text(
-                  account
+                  widget.account
                       ? strings.pick(
                           'Account Trial records', 'Trial-records van account')
                       : strings.pick(
@@ -53,26 +73,49 @@ class DragonTrialRecords extends StatelessWidget {
                   ),
                 ),
               ),
+              if (widget.collapsible)
+                IconButton(
+                  key: Key(widget.account
+                      ? 'toggle-account-trial-records'
+                      : 'toggle-dragon-trial-records'),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: _expanded
+                      ? strings.pick('Collapse records', 'Records inklappen')
+                      : strings.pick('Expand records', 'Records uitklappen'),
+                  onPressed: () => setState(() => _expanded = !_expanded),
+                  icon: AnimatedRotation(
+                    turns: _expanded ? .5 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: const Icon(Icons.keyboard_arrow_down_rounded),
+                  ),
+                ),
             ],
           ),
-          const SizedBox(height: 9),
-          _Record(
-            icon: Icons.flight_rounded,
-            color: const Color(0xFF479B90),
-            label: 'Cavern Flight',
-            score: cavernFlightBest,
-          ),
-          _Record(
-            icon: Icons.gavel_rounded,
-            color: const Color(0xFFD56850),
-            label: 'Ruin Breaker',
-            score: ruinBreakerBest,
-          ),
-          _Record(
-            icon: Icons.auto_awesome_rounded,
-            color: const Color(0xFF7855C7),
-            label: 'Runeweaver',
-            score: runeweaverBest,
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeInOut,
+            child: !_expanded
+                ? const SizedBox(width: double.infinity)
+                : Column(
+                    children: [
+                      const SizedBox(height: 9),
+                      _Record(
+                        kind: TrialKind.cavernFlight,
+                        label: 'Cavern Flight',
+                        score: widget.cavernFlightBest,
+                      ),
+                      _Record(
+                        kind: TrialKind.ruinBreaker,
+                        label: 'Ruin Breaker',
+                        score: widget.ruinBreakerBest,
+                      ),
+                      _Record(
+                        kind: TrialKind.runeweaver,
+                        label: 'Runeweaver',
+                        score: widget.runeweaverBest,
+                      ),
+                    ],
+                  ),
           ),
         ],
       ),
@@ -82,14 +125,12 @@ class DragonTrialRecords extends StatelessWidget {
 
 class _Record extends StatelessWidget {
   const _Record({
-    required this.icon,
-    required this.color,
+    required this.kind,
     required this.label,
     required this.score,
   });
 
-  final IconData icon;
-  final Color color;
+  final TrialKind kind;
   final String label;
   final int score;
 
@@ -100,15 +141,7 @@ class _Record extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: .12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 17, color: color),
-          ),
+          TrialIconSprite(kind: kind, size: 31),
           const SizedBox(width: 8),
           Expanded(
             child: Text(label,

@@ -25,6 +25,7 @@ import 'widgets/game_icon_sprite.dart';
 import 'widgets/game_tutorial.dart';
 import 'widgets/achievement_reveal.dart';
 import 'widgets/pull_to_dismiss_sheet.dart';
+import 'widgets/trade_reveal.dart';
 
 class DragonHavenApp extends StatelessWidget {
   const DragonHavenApp({super.key});
@@ -169,6 +170,10 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
               _game,
               presentation,
             );
+            break;
+          case GamePresentationType.trade:
+            if (!mounted) return;
+            await showTradeReveal(context, _game, presentation);
             break;
           case GamePresentationType.achievement:
             final achievement = _achievementById(presentation.achievementId);

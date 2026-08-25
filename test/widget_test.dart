@@ -131,7 +131,7 @@ void main() {
     expect(
       find.descendant(
         of: starterEggCard,
-        matching: find.byKey(const Key('rooftop-bird-nest-front')),
+        matching: find.byKey(const Key('rooftop-egg-nest-combined')),
       ),
       findsOneWidget,
     );
@@ -140,7 +140,7 @@ void main() {
         of: starterEggCard,
         matching: find.byKey(const Key('rooftop-nest-egg')),
       ),
-      findsOneWidget,
+      findsNothing,
     );
     expect(
       find.descendant(
@@ -1100,7 +1100,7 @@ void main() {
     expect(
       find.descendant(
         of: detailedNest,
-        matching: find.byKey(const Key('rooftop-nest-egg')),
+        matching: find.byKey(const Key('rooftop-egg-nest-combined')),
       ),
       findsOneWidget,
     );
@@ -1109,26 +1109,22 @@ void main() {
         of: detailedNest,
         matching: find.byKey(const Key('rooftop-bird-nest-front')),
       ),
-      findsOneWidget,
+      findsNothing,
     );
     await tester.pageBack();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Adventure'), findsWidgets);
-    final roofEgg = find.descendant(
+    final roofEggNest = find.descendant(
       of: towerRoof,
-      matching: find.byKey(const Key('rooftop-nest-egg')),
+      matching: find.byKey(const Key('rooftop-egg-nest-combined')),
     );
-    final roofNest = find.descendant(
-      of: towerRoof,
-      matching: find.byKey(const Key('rooftop-bird-nest-front')),
-    );
-    expect(roofEgg, findsOneWidget);
-    expect(roofNest, findsOneWidget);
-    final roofEggSize = tester.getSize(roofEgg);
-    final roofNestSize = tester.getSize(roofNest);
-    expect(roofEggSize, const Size(62, 66));
-    expect(roofNestSize, const Size(128, 68));
+    expect(roofEggNest, findsOneWidget);
+    expect(find.byKey(const Key('rooftop-nest-egg')), findsNothing);
+    expect(find.byKey(const Key('rooftop-bird-nest-front')), findsNothing);
+    final roofEggNestSize = tester.getSize(roofEggNest);
+    expect(roofEggNestSize.width, closeTo(148, .1));
+    expect(roofEggNestSize.height, closeTo(129.48, .1));
     expect(tester.takeException(), isNull);
   });
 
@@ -1370,7 +1366,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.03.01'), findsOneWidget);
+    expect(find.text('v0.03.02'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

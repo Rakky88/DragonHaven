@@ -517,21 +517,16 @@ class _FriendTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 5),
-              if (activeTrades.isNotEmpty)
-                IconButton(
-                  key: Key('friend-trade-${friend.userId}'),
-                  tooltip: strings.pick('Open trade', 'Ruil openen'),
-                  onPressed: () => _showTrade(context, activeTrades.first),
-                  icon: Badge(
-                    label: Text('${activeTrades.length}'),
-                    child: const GameIconSprite(
-                      GameIconKind.friendsTrade,
-                      size: 40,
-                    ),
-                  ),
-                )
-              else
-                const GameIconSprite(GameIconKind.friendsVisit, size: 44),
+              _FriendTradeButton(
+                key: Key('friend-trade-${friend.userId}'),
+                activeCount: activeTrades.length,
+                tooltip: activeTrades.isEmpty
+                    ? strings.pick('Start trade', 'Ruil starten')
+                    : strings.pick('Open trade', 'Ruil openen'),
+                onPressed: () => activeTrades.isEmpty
+                    ? _startTrade(context, friend)
+                    : _showTrade(context, activeTrades.first),
+              ),
             ],
           ),
         ),
@@ -649,6 +644,8 @@ Future<void> _showFriendProfile(
             const SizedBox(height: 10),
             DragonTrialRecords(
               account: true,
+              collapsible: true,
+              initiallyExpanded: false,
               cavernFlightBest: friend.cavernFlightBest,
               ruinBreakerBest: friend.ruinBreakerBest,
               runeweaverBest: friend.runeweaverBest,
@@ -760,6 +757,8 @@ class _FavoriteDragonCard extends StatelessWidget {
           const SizedBox(height: 13),
           DragonTrialRecords(
             compact: true,
+            collapsible: true,
+            initiallyExpanded: false,
             cavernFlightBest: dragon.cavernFlightBest,
             ruinBreakerBest: dragon.ruinBreakerBest,
             runeweaverBest: dragon.runeweaverBest,
@@ -768,6 +767,61 @@ class _FavoriteDragonCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _FriendTradeButton extends StatelessWidget {
+  const _FriendTradeButton({
+    super.key,
+    required this.activeCount,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final int activeCount;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+        message: tooltip,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: onPressed,
+            child: Ink(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFFFF4B3), Color(0xFFE7C763)],
+                ),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFF9A6A21), width: 1.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x332D195F),
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Badge(
+                  isLabelVisible: activeCount > 0,
+                  label: Text('$activeCount'),
+                  child: const GameIconSprite(
+                    GameIconKind.friendsTrade,
+                    size: 46,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 class _Expertise extends StatelessWidget {
