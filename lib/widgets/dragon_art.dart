@@ -15,7 +15,7 @@ class DragonArtworkSelection {
 }
 
 abstract final class DragonArtwork {
-  static const eggAsset = 'assets/images/dragons/mysterious_egg.webp';
+  static const eggAsset = 'assets/images/ui/ui_mysterious_egg.webp';
   static const seraphscaleHatchlingAsset =
       'assets/images/dragons/seraphscale_hatchling_v2.webp';
   static const seraphscaleHatchlingSilhouetteAsset =

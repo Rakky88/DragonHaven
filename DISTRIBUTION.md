@@ -35,4 +35,18 @@ https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk
 
 Een release-tag gebruikt dezelfde weergaveversie als About, bijvoorbeeld `v0.00.09`, en bevat een asset met exact de naam `DragonHaven.apk`.
 
+### Verplichte server-preflight
+
+Voor iedere release moet eerst de gekoppelde DragonHaven Supabase-server worden
+gecontroleerd:
+
+```powershell
+.\tool\release_server_preflight.ps1 -SupabaseCli <pad-naar-supabase.exe>
+```
+
+Deze controle moet slagen voordat een tag of GitHub Release wordt gemaakt. Hij
+vergelijkt alle lokale en remote migraties, lint de remote database en test de
+publieke Auth health- en e-mailconfiguratie-endpoints. Publiceer niet wanneer
+een van deze controles faalt.
+
 Lokale forks kunnen `DRAGONHAVEN_GITHUB_OWNER`, `DRAGONHAVEN_GITHUB_REPO` en `DRAGONHAVEN_APP_VERSION` via `--dart-define` overschrijven.

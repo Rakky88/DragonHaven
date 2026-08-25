@@ -170,6 +170,11 @@ void main() {
 
   test('egg and every Hatchling sprite fit fully inside their image box',
       () async {
+    expect(
+      DragonArtwork.eggAsset,
+      'assets/images/ui/ui_mysterious_egg.webp',
+      reason: 'the nest must compose a standalone egg with its separate nest',
+    );
     for (final path in <String>[
       DragonArtwork.eggAsset,
       for (final lineage in dragonLineages)
