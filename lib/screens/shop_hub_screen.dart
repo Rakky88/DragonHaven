@@ -320,11 +320,6 @@ class _CurrencyPacks extends StatelessWidget {
     final packs = currency == ItemCurrency.coins
         ? const [500, 1200, 2800, 6500, 15000, 35000]
         : const [50, 120, 280, 650, 1500, 3500];
-    final label = currency == ItemCurrency.coins
-        ? strings.pick('coins', 'munten')
-        : strings.tr('gems');
-    final kind =
-        currency == ItemCurrency.coins ? GameIconKind.coin : GameIconKind.gem;
     return ListView(
       key: PageStorageKey('${currency.name}-packs-scroll'),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -343,22 +338,177 @@ class _CurrencyPacks extends StatelessWidget {
             style: const TextStyle(fontSize: 12),
           ),
         ),
-        const SizedBox(height: 10),
-        for (var index = 0; index < packs.length; index++)
-          Card(
-            child: ListTile(
-              leading: GameIconSprite(kind, size: 42),
-              title: Text(
-                '${packs[index]} $label',
-                style: const TextStyle(fontWeight: FontWeight.w900),
-              ),
-              subtitle: Text(strings.pick(
-                'Pack ${index + 1} of ${packs.length}',
-                'Pakket ${index + 1} van ${packs.length}',
-              )),
-              trailing: const Icon(Icons.lock_rounded, color: AppColors.muted),
-            ),
+        const SizedBox(height: 12),
+        GridView.builder(
+          key: Key('shop-${currency.name}-pack-grid'),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
           ),
+          itemCount: packs.length,
+          itemBuilder: (context, index) => _CurrencyPackTile(
+            key: Key('shop-${currency.name}-pack-$index'),
+            currency: currency,
+            amount: packs[index],
+            stage: index,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CurrencyPackTile extends StatelessWidget {
+  const _CurrencyPackTile({
+    super.key,
+    required this.currency,
+    required this.amount,
+    required this.stage,
+  });
+
+  final ItemCurrency currency;
+  final int amount;
+  final int stage;
+
+  @override
+  Widget build(BuildContext context) {
+    final coin = currency == ItemCurrency.coins;
+    final label = coin
+        ? AppStrings.of(context).pick('coins', 'munten')
+        : AppStrings.of(context).tr('gems');
+    return Semantics(
+      label: '$amount $label',
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: coin
+                ? const [Color(0xFFFFFBEB), Color(0xFFFFE8A9)]
+                : const [Color(0xFFFBF6FF), Color(0xFFE5D5FF)],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: coin ? const Color(0xFFE2B84E) : const Color(0xFF9B72D0),
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1F3C236F),
+              blurRadius: 8,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(5, 5, 5, 24),
+                child: _CurrencyPackArt(currency: currency, stage: stage),
+              ),
+            ),
+            Positioned(
+              right: 6,
+              top: 6,
+              child: Icon(
+                Icons.lock_rounded,
+                size: 14,
+                color: AppColors.twilight.withValues(alpha: .62),
+              ),
+            ),
+            Positioned(
+              left: 4,
+              right: 4,
+              bottom: 7,
+              child: Text(
+                '$amount',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.ink,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CurrencyPackArt extends StatelessWidget {
+  const _CurrencyPackArt({required this.currency, required this.stage});
+
+  final ItemCurrency currency;
+  final int stage;
+
+  GameIconKind get _currencyKind =>
+      currency == ItemCurrency.coins ? GameIconKind.coin : GameIconKind.gem;
+
+  @override
+  Widget build(BuildContext context) {
+    if (stage >= 4) return _chests();
+    const offsets = <List<Offset>>[
+      [Offset.zero],
+      [Offset(-13, 4), Offset(13, -4)],
+      [Offset(-18, 8), Offset(0, -7), Offset(18, 8)],
+      [
+        Offset(-23, 10),
+        Offset(0, 11),
+        Offset(23, 10),
+        Offset(-12, -12),
+        Offset(12, -12),
+      ],
+    ];
+    final sprites = offsets[stage.clamp(0, 3)];
+    final size = switch (stage) { 0 => 56.0, 1 => 45.0, 2 => 39.0, _ => 33.0 };
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        for (final offset in sprites)
+          Transform.translate(
+            offset: offset,
+            child: GameIconSprite(_currencyKind, size: size),
+          ),
+      ],
+    );
+  }
+
+  Widget _chests() {
+    final chest = currency == ItemCurrency.coins
+        ? ChestTier.gold.assetPath
+        : ChestTier.mythical.assetPath;
+    if (stage == 4) {
+      return Stack(
+        alignment: Alignment.center,
+        children: [
+          Image.asset(chest, width: 86, height: 72, fit: BoxFit.contain),
+          Transform.translate(
+            offset: const Offset(23, 20),
+            child: GameIconSprite(_currencyKind, size: 31),
+          ),
+        ],
+      );
+    }
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Transform.translate(
+          offset: const Offset(-17, 4),
+          child: Image.asset(chest, width: 65, height: 58),
+        ),
+        Transform.translate(
+          offset: const Offset(18, -5),
+          child: Image.asset(chest, width: 70, height: 62),
+        ),
+        Transform.translate(
+          offset: const Offset(2, 23),
+          child: GameIconSprite(_currencyKind, size: 27),
+        ),
       ],
     );
   }

@@ -96,6 +96,8 @@ class KeeperProfile {
     required this.portraitKey,
     required this.discoveredDragonCount,
     required this.inventoryImported,
+    this.achievementCount = 0,
+    this.dragonCount = 0,
     this.discoveredForms = const [],
     this.prismaticForms = const [],
     this.cavernFlightBest = 0,
@@ -111,6 +113,8 @@ class KeeperProfile {
   final String portraitKey;
   final int discoveredDragonCount;
   final bool inventoryImported;
+  final int achievementCount;
+  final int dragonCount;
   final List<String> discoveredForms;
   final List<String> prismaticForms;
   final int cavernFlightBest;
@@ -128,6 +132,8 @@ class KeeperProfile {
       portraitKey: json['portrait_key']?.toString() ?? 'moon',
       discoveredDragonCount: _int(json['discovered_dragon_count']),
       inventoryImported: json['inventory_imported'] == true,
+      achievementCount: _int(json['achievement_count']),
+      dragonCount: _int(json['dragon_count']),
       discoveredForms: _stringList(json['discovered_forms']),
       prismaticForms: _stringList(json['prismatic_forms']),
       cavernFlightBest: _int(json['cavern_flight_best']),
@@ -659,6 +665,7 @@ class OnlineInventorySnapshot {
     required this.discoveredLineageIds,
     required this.discoveredForms,
     required this.prismaticForms,
+    required this.achievementCount,
   });
 
   final int coins;
@@ -671,6 +678,7 @@ class OnlineInventorySnapshot {
   final List<String> discoveredLineageIds;
   final List<String> discoveredForms;
   final List<String> prismaticForms;
+  final int achievementCount;
 
   factory OnlineInventorySnapshot.fromGame(HouseholdProvider game) {
     final dragons = [game.pet, ...game.sanctuaryDragons]
@@ -758,6 +766,7 @@ class OnlineInventorySnapshot {
       }.toList(growable: false),
       discoveredForms: game.discoveredForms.toList(growable: false),
       prismaticForms: game.prismaticForms.toList(growable: false),
+      achievementCount: game.unlockedAchievementIds.length,
     );
   }
 
@@ -788,6 +797,8 @@ class OnlineInventorySnapshot {
         );
     return {
       'discovered_dragon_count': discoveredLineageIds.length,
+      'dragon_count': dragons.length,
+      'achievement_count': achievementCount,
       'discovered_forms': discoveredForms,
       'prismatic_forms': prismaticForms,
       'trial_high_scores': {

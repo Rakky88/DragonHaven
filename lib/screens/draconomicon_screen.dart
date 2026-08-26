@@ -14,11 +14,13 @@ class DraconomiconScreen extends StatelessWidget {
     this.discoveredForms,
     this.prismaticForms,
     this.keeperName,
+    this.dragonCount,
   });
 
   final Set<String>? discoveredForms;
   final Set<String>? prismaticForms;
   final String? keeperName;
+  final int? dragonCount;
 
   @override
   Widget build(BuildContext context) {
@@ -26,8 +28,11 @@ class DraconomiconScreen extends StatelessWidget {
     final game = context.watch<HouseholdProvider>();
     final normalCollection = discoveredForms ?? game.discoveredForms;
     final spectralCollection = prismaticForms ?? game.prismaticForms;
-    final discoveredLineageCount =
-        normalCollection.map((key) => key.split(':').first).toSet().length;
+    final discoveredLineageCount = {
+      ...normalCollection,
+      ...spectralCollection,
+    }.map((key) => key.split(':').first).toSet().length;
+    final ownedDragonCount = dragonCount ?? game.ownedDragons.length;
     final hasSpectralCollection = spectralCollection.isNotEmpty;
     return DefaultTabController(
       length: hasSpectralCollection ? 2 : 1,
@@ -123,9 +128,30 @@ class DraconomiconScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(13)),
                       tabs: [
                         Tab(
-                            text: strings.pick(
-                                'Dragons $discoveredLineageCount/${dragonLineages.length}',
-                                'Draken $discoveredLineageCount/${dragonLineages.length}')),
+                          height: 58,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                  strings.pick(
+                                    'Dragons $ownedDragonCount',
+                                    'Draken $ownedDragonCount',
+                                  ),
+                                  maxLines: 1),
+                              const SizedBox(height: 1),
+                              Text(
+                                strings.pick(
+                                  'Dragon families $discoveredLineageCount/${dragonLineages.length}',
+                                  'Drakenfamilies $discoveredLineageCount/${dragonLineages.length}',
+                                ),
+                                style: const TextStyle(fontSize: 10),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
                         if (hasSpectralCollection)
                           Tab(text: strings.pick('Spectral', 'Spectral')),
                       ]))

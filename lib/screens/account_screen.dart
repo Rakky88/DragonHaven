@@ -33,7 +33,7 @@ class AccountScreen extends StatelessWidget {
             onChooseTitle: () => _chooseTitle(context),
           ),
           const SizedBox(height: 18),
-          Text(strings.pick('Portraits', 'Portretten'),
+          Text(strings.pick('Vanity', 'Uiterlijk'),
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           Card(
@@ -56,10 +56,7 @@ class AccountScreen extends StatelessWidget {
               onTap: () => _choosePortrait(context),
             ),
           ),
-          const SizedBox(height: 18),
-          Text(strings.pick('Titles', 'Titels'),
-              style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Card(
             child: ListTile(
               key: const Key('account-title-collection'),
@@ -96,42 +93,6 @@ class AccountScreen extends StatelessWidget {
               )),
               trailing: const Icon(Icons.format_list_bulleted_rounded),
               onTap: () => _chooseTitle(context),
-            ),
-          ),
-          const SizedBox(height: 18),
-          Card(
-            child: ListTile(
-              key: const Key('notification-settings-button'),
-              contentPadding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
-              leading: Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFE49A), Color(0xFFDCCEFF)],
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(
-                  Icons.notifications_active_rounded,
-                  color: AppColors.twilight,
-                  size: 32,
-                ),
-              ),
-              title: Text(
-                strings.pick('Notifications', 'Notificaties'),
-                style: const TextStyle(fontWeight: FontWeight.w900),
-              ),
-              subtitle: Text(strings.pick(
-                'Choose which reminders you receive',
-                'Kies welke meldingen je ontvangt',
-              )),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const NotificationSettingsScreen(),
-                ),
-              ),
             ),
           ),
           const SizedBox(height: 18),
@@ -205,9 +166,45 @@ class AccountScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18),
           ],
-          Text(strings.pick('Audio', 'Audio'),
+          Text(strings.pick('Preferences', 'Voorkeuren'),
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              key: const Key('notification-settings-button'),
+              contentPadding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
+              leading: Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFE49A), Color(0xFFDCCEFF)],
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.notifications_active_rounded,
+                  color: AppColors.twilight,
+                  size: 32,
+                ),
+              ),
+              title: Text(
+                strings.pick('Notifications', 'Notificaties'),
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+              subtitle: Text(strings.pick(
+                'Choose which reminders you receive',
+                'Kies welke meldingen je ontvangt',
+              )),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const NotificationSettingsScreen(),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           Card(
             clipBehavior: Clip.antiAlias,
             child: Container(

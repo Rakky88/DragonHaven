@@ -26,6 +26,9 @@ The Android audio layer bundles the music and effects, fades scene changes, rota
 
 The detailed implementation map and remaining service boundaries are documented in [DRAGONHAVEN_IMPLEMENTATION.md](DRAGONHAVEN_IMPLEMENTATION.md).
 
+De actuele checklist, taakverdeling en kostenraming voor een openbare lancering
+staan in [PUBLIC_LAUNCH.md](PUBLIC_LAUNCH.md).
+
 ## Run and verify
 
 ```powershell

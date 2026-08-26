@@ -340,9 +340,35 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
       '$valueを1つ破棄しますか？'
     ]);
   }
-  final dragons = RegExp(r'^Dragons (\d+)/42$').firstMatch(text);
-  if (dragons != null) {
-    final count = dragons.group(1);
+  final dragonCount = RegExp(r'^Dragons (\d+)$').firstMatch(text);
+  if (dragonCount != null) {
+    final count = dragonCount.group(1);
+    return _localized(languageCode, [
+      'Drachen $count',
+      'Dragones $count',
+      'Dragons $count',
+      'Draghi $count',
+      'Dragões $count',
+      '龙 $count',
+      'ドラゴン $count'
+    ]);
+  }
+  final dragonFamilies = RegExp(r'^Dragon families (\d+)/42$').firstMatch(text);
+  if (dragonFamilies != null) {
+    final count = dragonFamilies.group(1);
+    return _localized(languageCode, [
+      'Drachenfamilien $count/42',
+      'Familias de dragones $count/42',
+      'Familles de dragons $count/42',
+      'Famiglie di draghi $count/42',
+      'Famílias de dragões $count/42',
+      '龙族 $count/42',
+      'ドラゴンの系統 $count/42'
+    ]);
+  }
+  final legacyDragons = RegExp(r'^Dragons (\d+)/42$').firstMatch(text);
+  if (legacyDragons != null) {
+    final count = legacyDragons.group(1);
     return _localized(languageCode, [
       'Drachen $count/42',
       'Dragones $count/42',
@@ -829,6 +855,16 @@ const uiPhraseTranslations = <String, List<String>>{
     'Já concluíste a Aventura de grupo desta semana.',
     '你已经完成了本周的组队冒险。',
     '今週のグループアドベンチャーはすでに完了しています。'
+  ],
+  'Your current weekly Group Adventure is reserved. Its lobby or journey stays under Active, then moves to Completed when rewards are ready.':
+      [
+    'Dein aktuelles wöchentliches Gruppenabenteuer ist reserviert. Lobby oder Reise bleibt unter Aktiv und wechselt zu Abgeschlossen, sobald die Belohnungen bereit sind.',
+    'Tu aventura de grupo semanal está reservada. El grupo o viaje permanece en Activas y pasa a Completadas cuando las recompensas están listas.',
+    'Ton aventure de groupe hebdomadaire est réservée. Le groupe ou le voyage reste dans Actives, puis passe dans Terminées quand les récompenses sont prêtes.',
+    'La tua avventura di gruppo settimanale è riservata. Il gruppo o viaggio resta in Attive e passa a Completate quando le ricompense sono pronte.',
+    'Sua aventura de grupo semanal está reservada. O grupo ou jornada fica em Ativas e passa para Concluídas quando as recompensas estão prontas.',
+    '你本周的团队冒险已保留。队伍或旅程会留在“进行中”，奖励准备好后移至“已完成”。',
+    '今週のグループ冒険は予約済みです。ロビーまたは旅は「進行中」に表示され、報酬の準備ができると「完了」に移動します。'
   ],
   'Your current weekly Group Adventure is reserved. Its lobby or run is shown under Active.':
       [
@@ -3572,6 +3608,147 @@ const uiPhraseTranslations = <String, List<String>>{
     'Aventuras especiais',
     '特殊冒险',
     '特別な冒険'
+  ],
+  'Tiny outings': [
+    'Kleine Ausflüge',
+    'Pequeñas salidas',
+    'Petites sorties',
+    'Piccole uscite',
+    'Pequenos passeios',
+    '短途外出',
+    '小さなお出かけ'
+  ],
+  'Quick routes': [
+    'Schnelle Routen',
+    'Rutas rápidas',
+    'Itinéraires rapides',
+    'Percorsi rapidi',
+    'Rotas rápidas',
+    '快速路线',
+    '短いルート'
+  ],
+  'Patient journeys': [
+    'Geduldige Reisen',
+    'Viajes pacientes',
+    'Voyages patients',
+    'Viaggi pazienti',
+    'Jornadas pacientes',
+    '耐心旅程',
+    '気長な旅'
+  ],
+  'Shared discoveries': [
+    'Gemeinsame Entdeckungen',
+    'Descubrimientos compartidos',
+    'Découvertes partagées',
+    'Scoperte condivise',
+    'Descobertas compartilhadas',
+    '共同发现',
+    '共有の発見'
+  ],
+  'Rare trails': [
+    'Seltene Pfade',
+    'Rutas raras',
+    'Pistes rares',
+    'Percorsi rari',
+    'Trilhas raras',
+    '稀有路线',
+    '珍しい道'
+  ],
+  'Refresh rules': [
+    'Aktualisierungsregeln',
+    'Reglas de renovación',
+    'Règles de renouvellement',
+    'Regole di rinnovo',
+    'Regras de renovação',
+    '刷新规则',
+    '更新ルール'
+  ],
+  'Close': ['Schließen', 'Cerrar', 'Fermer', 'Chiudi', 'Fechar', '关闭', '閉じる'],
+  'Vanity': [
+    'Erscheinungsbild',
+    'Apariencia',
+    'Apparence',
+    'Aspetto',
+    'Aparência',
+    '外观',
+    '外見'
+  ],
+  'Preferences': [
+    'Einstellungen',
+    'Preferencias',
+    'Préférences',
+    'Preferenze',
+    'Preferências',
+    '偏好设置',
+    '環境設定'
+  ],
+  'No completed adventures': [
+    'Keine abgeschlossenen Abenteuer',
+    'No hay aventuras completadas',
+    'Aucune aventure terminée',
+    'Nessuna avventura completata',
+    'Nenhuma aventura concluída',
+    '没有已完成的冒险',
+    '完了した冒険はありません'
+  ],
+  'Finished journeys wait here until you collect their rewards.': [
+    'Beendete Reisen warten hier, bis du ihre Belohnungen abholst.',
+    'Los viajes terminados esperan aquí hasta que recojas sus recompensas.',
+    'Les voyages terminés attendent ici que vous récupériez leurs récompenses.',
+    'I viaggi conclusi restano qui finché non ritiri le ricompense.',
+    'As jornadas concluídas ficam aqui até você coletar as recompensas.',
+    '完成的旅程会在这里等待你领取奖励。',
+    '終わった旅は報酬を受け取るまでここで待機します。'
+  ],
+  'Up to three routes wait. One free slot refills every 15 minutes. Visible routes stay until you start or dismiss them; they are not automatically replaced.':
+      [
+    'Bis zu drei Routen warten. Alle 15 Minuten wird ein freier Platz aufgefüllt. Sichtbare Routen bleiben, bis du sie startest oder verwirfst; sie werden nicht automatisch ersetzt.',
+    'Esperan hasta tres rutas. Cada 15 minutos se rellena un espacio libre. Las rutas visibles permanecen hasta que las inicies o descartes; no se sustituyen automáticamente.',
+    'Jusqu’à trois itinéraires attendent. Une place libre est remplie toutes les 15 minutes. Les itinéraires visibles restent jusqu’à leur lancement ou rejet ; ils ne sont pas remplacés automatiquement.',
+    'Sono disponibili fino a tre percorsi. Ogni 15 minuti viene riempito uno spazio libero. I percorsi visibili restano finché non li avvii o scarti; non vengono sostituiti automaticamente.',
+    'Até três rotas ficam disponíveis. Uma vaga livre é preenchida a cada 15 minutos. As rotas visíveis permanecem até serem iniciadas ou descartadas; não são substituídas automaticamente.',
+    '最多保留三条路线。每15分钟补充一个空位。可见路线会保留到你开始或关闭它们，不会自动替换。',
+    '最大3つのルートが待機します。空き枠は15分ごとに1つ補充されます。表示中のルートは開始または破棄するまで残り、自動では入れ替わりません。'
+  ],
+  'Up to three routes wait. One free slot refills every hour. Visible routes stay until you start or dismiss them; they are not automatically replaced.':
+      [
+    'Bis zu drei Routen warten. Jede Stunde wird ein freier Platz aufgefüllt. Sichtbare Routen bleiben, bis du sie startest oder verwirfst; sie werden nicht automatisch ersetzt.',
+    'Esperan hasta tres rutas. Cada hora se rellena un espacio libre. Las rutas visibles permanecen hasta que las inicies o descartes; no se sustituyen automáticamente.',
+    'Jusqu’à trois itinéraires attendent. Une place libre est remplie chaque heure. Les itinéraires visibles restent jusqu’à leur lancement ou rejet ; ils ne sont pas remplacés automatiquement.',
+    'Sono disponibili fino a tre percorsi. Ogni ora viene riempito uno spazio libero. I percorsi visibili restano finché non li avvii o scarti; non vengono sostituiti automaticamente.',
+    'Até três rotas ficam disponíveis. Uma vaga livre é preenchida a cada hora. As rotas visíveis permanecem até serem iniciadas ou descartadas; não são substituídas automaticamente.',
+    '最多保留三条路线。每小时补充一个空位。可见路线会保留到你开始或关闭它们，不会自动替换。',
+    '最大3つのルートが待機します。空き枠は1時間ごとに1つ補充されます。表示中のルートは開始または破棄するまで残り、自動では入れ替わりません。'
+  ],
+  'Up to three routes wait. Free slots refill at local midnight. Visible routes stay until you start or dismiss them; they are not automatically replaced.':
+      [
+    'Bis zu drei Routen warten. Freie Plätze werden um lokale Mitternacht aufgefüllt. Sichtbare Routen bleiben, bis du sie startest oder verwirfst; sie werden nicht automatisch ersetzt.',
+    'Esperan hasta tres rutas. Los espacios libres se rellenan a medianoche local. Las rutas visibles permanecen hasta que las inicies o descartes; no se sustituyen automáticamente.',
+    'Jusqu’à trois itinéraires attendent. Les places libres sont remplies à minuit, heure locale. Les itinéraires visibles restent jusqu’à leur lancement ou rejet ; ils ne sont pas remplacés automatiquement.',
+    'Sono disponibili fino a tre percorsi. Gli spazi liberi vengono riempiti alla mezzanotte locale. I percorsi visibili restano finché non li avvii o scarti; non vengono sostituiti automaticamente.',
+    'Até três rotas ficam disponíveis. As vagas livres são preenchidas à meia-noite local. As rotas visíveis permanecem até serem iniciadas ou descartadas; não são substituídas automaticamente.',
+    '最多保留三条路线。空位会在当地午夜补充。可见路线会保留到你开始或关闭它们，不会自动替换。',
+    '最大3つのルートが待機します。空き枠は現地時間の深夜0時に補充されます。表示中のルートは開始または破棄するまで残り、自動では入れ替わりません。'
+  ],
+  'Every keeper sees the same weekly route. It changes automatically every Sunday at 12:00 in Europe/Amsterdam. A group that already started always finishes and keeps its reward.':
+      [
+    'Alle Hüter sehen dieselbe wöchentliche Route. Sie wechselt automatisch jeden Sonntag um 12:00 Uhr in Europe/Amsterdam. Eine bereits gestartete Gruppe beendet die Reise immer und behält ihre Belohnung.',
+    'Todos los cuidadores ven la misma ruta semanal. Cambia automáticamente cada domingo a las 12:00 en Europe/Amsterdam. Un grupo que ya empezó siempre termina y conserva su recompensa.',
+    'Tous les gardiens voient le même itinéraire hebdomadaire. Il change automatiquement chaque dimanche à 12 h dans Europe/Amsterdam. Un groupe déjà parti termine toujours et conserve sa récompense.',
+    'Tutti i custodi vedono lo stesso percorso settimanale. Cambia automaticamente ogni domenica alle 12:00 in Europe/Amsterdam. Un gruppo già partito conclude sempre il viaggio e conserva la ricompensa.',
+    'Todos os guardiões veem a mesma rota semanal. Ela muda automaticamente todo domingo às 12:00 em Europe/Amsterdam. Um grupo que já começou sempre termina e mantém a recompensa.',
+    '所有守护者每周都会看到同一条路线。路线会在Europe/Amsterdam时区每周日12:00自动更换。已经出发的小组一定会完成并保留奖励。',
+    'すべてのキーパーに同じ週間ルートが表示されます。Europe/Amsterdamの毎週日曜12:00に自動更新されます。出発済みのグループは必ず完走し、報酬も保持されます。'
+  ],
+  'Special routes appear only after certain events. They can expire or change automatically; their card shows them only while they are available.':
+      [
+    'Spezialrouten erscheinen nur nach bestimmten Ereignissen. Sie können automatisch ablaufen oder wechseln; ihre Karte wird nur während der Verfügbarkeit angezeigt.',
+    'Las rutas especiales solo aparecen tras ciertos eventos. Pueden caducar o cambiar automáticamente; su tarjeta solo se muestra mientras estén disponibles.',
+    'Les itinéraires spéciaux n’apparaissent qu’après certains événements. Ils peuvent expirer ou changer automatiquement ; leur carte n’est visible que pendant leur disponibilité.',
+    'I percorsi speciali appaiono solo dopo determinati eventi. Possono scadere o cambiare automaticamente; la loro scheda è visibile solo mentre sono disponibili.',
+    'Rotas especiais aparecem apenas após certos eventos. Elas podem expirar ou mudar automaticamente; o cartão só aparece enquanto estão disponíveis.',
+    '特殊路线只会在特定事件后出现，可能会自动到期或更换；仅在可用期间显示卡片。',
+    '特別ルートは特定の出来事の後にだけ現れます。自動で期限切れまたは変更されることがあり、利用可能な間だけカードが表示されます。'
   ],
   'Tiny outings, quick training and wooden chests.': [
     'Winzige Ausflüge, schnelles Training und Holzkisten.',

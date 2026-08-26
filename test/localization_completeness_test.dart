@@ -81,6 +81,8 @@ void main() {
       'Claim Whispering Ruins',
       'Discard one Gold Chest?',
       'Dragons 17/42',
+      'Dragons 17',
+      'Dragon families 9/42',
       'Hatches in 23:59:59',
       'GitHub could not be checked (code 503).',
       'Next form: Wyrmling',

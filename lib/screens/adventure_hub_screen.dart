@@ -36,7 +36,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final online = context.read<OnlineAccountProvider>();
@@ -61,8 +61,22 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
     final online = context.watch<OnlineAccountProvider>();
-    final activeCount = game.activeAdventureRuns.length +
-        (online.isSignedIn ? online.myGroupAdventures.length : 0);
+    final localRuns = game.activeAdventureRuns;
+    final groupRuns = online.isSignedIn
+        ? online.myGroupAdventures
+        : const <GroupAdventureLobby>[];
+    final activeCount = localRuns
+            .where((run) => run.status == AdventureRunStatus.running)
+            .length +
+        groupRuns
+            .where((lobby) => !_groupAdventureReady(lobby, game.currentTime))
+            .length;
+    final completedCount = localRuns
+            .where((run) => run.status == AdventureRunStatus.rewardReady)
+            .length +
+        groupRuns
+            .where((lobby) => _groupAdventureReady(lobby, game.currentTime))
+            .length;
     final trialCount = game.availableTrials.length;
     return Column(
       children: [
@@ -132,6 +146,19 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
                   ],
                 ),
               ),
+              Tab(
+                child: Row(
+                  key: const Key('adventure-tab-completed'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(strings.pick('Completed', 'Voltooid')),
+                    if (completedCount > 0) ...[
+                      const SizedBox(width: 7),
+                      _TabCount(value: completedCount, gold: true),
+                    ],
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -142,6 +169,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
               _AvailableAdventures(now: game.currentTime),
               _TrialsTab(now: game.currentTime),
               _ActiveAdventures(now: game.currentTime),
+              _CompletedAdventures(now: game.currentTime),
             ],
           ),
         ),
@@ -686,11 +714,24 @@ class _AdventureSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_kindTitle(strings, kind),
-                        style: const TextStyle(
-                            color: AppColors.ink,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900)),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            _kindTitle(strings, kind),
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.ink,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        _AdventureInfoButton(kind: kind),
+                      ],
+                    ),
                     Text(_kindDescription(strings, kind),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -761,11 +802,21 @@ class _GroupAdventureSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_kindTitle(strings, AdventureKind.group),
-                      style: const TextStyle(
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _kindTitle(strings, AdventureKind.group),
+                        style: const TextStyle(
                           color: AppColors.ink,
                           fontSize: 16,
-                          fontWeight: FontWeight.w900)),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const _AdventureInfoButton(kind: AdventureKind.group),
+                    ],
+                  ),
                   Text(_kindDescription(strings, AdventureKind.group),
                       style: const TextStyle(
                           color: AppColors.muted, fontSize: 10)),
@@ -804,8 +855,8 @@ class _GroupAdventureSection extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(8, 6, 8, 10),
                   child: Text(
                     strings.pick(
-                      'Your current weekly Group Adventure is reserved. Its lobby or run is shown under Active.',
-                      'Je huidige wekelijkse groepsavontuur is gereserveerd. De lobby of reis staat onder Actief.',
+                      'Your current weekly Group Adventure is reserved. Its lobby or journey stays under Active, then moves to Completed when rewards are ready.',
+                      'Je huidige wekelijkse groepsavontuur is gereserveerd. De lobby of reis staat onder Actief en verhuist naar Voltooid zodra de beloningen klaarstaan.',
                     ),
                     style: const TextStyle(color: AppColors.muted),
                   ),
@@ -1745,9 +1796,13 @@ class _ActiveAdventures extends StatelessWidget {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
     final online = context.watch<OnlineAccountProvider>();
-    final runs = game.activeAdventureRuns;
+    final runs = game.activeAdventureRuns
+        .where((run) => run.status == AdventureRunStatus.running)
+        .toList(growable: false);
     final groupRuns = online.isSignedIn
         ? online.myGroupAdventures
+            .where((lobby) => !_groupAdventureReady(lobby, now))
+            .toList(growable: false)
         : const <GroupAdventureLobby>[];
     if (runs.isEmpty && groupRuns.isEmpty) {
       return Center(
@@ -1791,6 +1846,74 @@ class _ActiveAdventures extends StatelessWidget {
     );
   }
 }
+
+class _CompletedAdventures extends StatelessWidget {
+  const _CompletedAdventures({required this.now});
+
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final game = context.watch<HouseholdProvider>();
+    final online = context.watch<OnlineAccountProvider>();
+    final runs = game.activeAdventureRuns
+        .where((run) => run.status == AdventureRunStatus.rewardReady)
+        .toList(growable: false);
+    final groupRuns = online.isSignedIn
+        ? online.myGroupAdventures
+            .where((lobby) => _groupAdventureReady(lobby, now))
+            .toList(growable: false)
+        : const <GroupAdventureLobby>[];
+    if (runs.isEmpty && groupRuns.isEmpty) {
+      return Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(30),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const GameIconSprite(GameIconKind.chest, size: 142),
+              Text(
+                strings.pick(
+                  'No completed adventures',
+                  'Geen voltooide avonturen',
+                ),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                strings.pick(
+                  'Finished journeys wait here until you collect their rewards.',
+                  'Afgeronde reizen wachten hier tot je hun beloningen ophaalt.',
+                ),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.muted),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    final itemCount = groupRuns.length + runs.length;
+    return ListView.separated(
+      key: const PageStorageKey('completed-adventures-scroll'),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
+      itemCount: itemCount,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) => index < groupRuns.length
+          ? _ActiveGroupAdventureCard(lobby: groupRuns[index], now: now)
+          : _ActiveAdventureCard(
+              run: runs[index - groupRuns.length],
+              now: now,
+            ),
+    );
+  }
+}
+
+bool _groupAdventureReady(GroupAdventureLobby lobby, DateTime now) =>
+    lobby.isRewardReady ||
+    (lobby.endsAt?.isAfter(now) == false && !lobby.isWaiting);
 
 class _ActiveGroupAdventureCard extends StatelessWidget {
   const _ActiveGroupAdventureCard({required this.lobby, required this.now});
@@ -2411,21 +2534,102 @@ String _kindTitle(AppStrings strings, AdventureKind kind) => switch (kind) {
 
 String _kindDescription(AppStrings strings, AdventureKind kind) =>
     switch (kind) {
+      AdventureKind.mini => strings.pick('Tiny outings', 'Kleine uitstapjes'),
+      AdventureKind.short => strings.pick('Quick routes', 'Snelle routes'),
+      AdventureKind.long =>
+        strings.pick('Patient journeys', 'Geduldige reizen'),
+      AdventureKind.group =>
+        strings.pick('Shared discoveries', 'Gedeelde ontdekkingen'),
+      AdventureKind.special => strings.pick('Rare trails', 'Zeldzame routes'),
+    };
+
+class _AdventureInfoButton extends StatelessWidget {
+  const _AdventureInfoButton({required this.kind});
+
+  final AdventureKind kind;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Semantics(
+      button: true,
+      label: strings.pick('Refresh rules', 'Verversregels'),
+      child: Material(
+        color: Colors.white.withValues(alpha: .72),
+        shape: const CircleBorder(
+          side: BorderSide(color: Color(0x665D438D)),
+        ),
+        child: InkWell(
+          key: Key('adventure-info-${kind.name}'),
+          customBorder: const CircleBorder(),
+          onTap: () => _showAdventureRefreshInfo(context, kind),
+          child: const SizedBox.square(
+            dimension: 24,
+            child: Icon(
+              Icons.info_outline_rounded,
+              size: 17,
+              color: AppColors.twilight,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _showAdventureRefreshInfo(
+  BuildContext context,
+  AdventureKind kind,
+) async {
+  final strings = AppStrings.of(context);
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      icon: GameIconSprite(_kindIcon(kind), size: 78),
+      title: Text(
+        '${_kindTitle(strings, kind)} · ${strings.pick('Refresh rules', 'Verversregels')}',
+        textAlign: TextAlign.center,
+      ),
+      content: Text(
+        _adventureRefreshExplanation(strings, kind),
+        textAlign: TextAlign.center,
+      ),
+      actionsAlignment: MainAxisAlignment.center,
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text(strings.pick('Close', 'Sluiten')),
+        ),
+      ],
+    ),
+  );
+}
+
+String _adventureRefreshExplanation(
+  AppStrings strings,
+  AdventureKind kind,
+) =>
+    switch (kind) {
       AdventureKind.mini => strings.pick(
-          'Tiny outings, quick training and wooden chests.',
-          'Kleine uitstapjes, snelle training en houten kisten.'),
+          'Up to three routes wait. One free slot refills every 15 minutes. Visible routes stay until you start or dismiss them; they are not automatically replaced.',
+          'Er staan maximaal drie routes klaar. Elke 15 minuten wordt één vrije plek aangevuld. Zichtbare routes blijven staan tot je ze start of wegklikt; ze worden niet automatisch vervangen.',
+        ),
       AdventureKind.short => strings.pick(
-          'Quick routes that refresh throughout the day.',
-          'Snelle routes die door de dag heen verversen.'),
+          'Up to three routes wait. One free slot refills every hour. Visible routes stay until you start or dismiss them; they are not automatically replaced.',
+          'Er staan maximaal drie routes klaar. Elk uur wordt één vrije plek aangevuld. Zichtbare routes blijven staan tot je ze start of wegklikt; ze worden niet automatisch vervangen.',
+        ),
       AdventureKind.long => strings.pick(
-          'Patient journeys with richer returns.',
-          'Geduldige reizen met rijkere opbrengsten.'),
+          'Up to three routes wait. Free slots refill at local midnight. Visible routes stay until you start or dismiss them; they are not automatically replaced.',
+          'Er staan maximaal drie routes klaar. Vrije plekken worden om lokale middernacht aangevuld. Zichtbare routes blijven staan tot je ze start of wegklikt; ze worden niet automatisch vervangen.',
+        ),
       AdventureKind.group => strings.pick(
-          'Shared discoveries for connected keepers.',
-          'Gedeelde ontdekkingen voor gekoppelde hoeders.'),
+          'Every keeper sees the same weekly route. It changes automatically every Sunday at 12:00 in Europe/Amsterdam. A group that already started always finishes and keeps its reward.',
+          'Elke hoeder ziet dezelfde wekelijkse route. Deze verandert automatisch op zondag om 12:00 uur in Europe/Amsterdam. Een gestarte groep maakt de reis altijd af en behoudt de beloning.',
+        ),
       AdventureKind.special => strings.pick(
-          'Rare trails that only appear at special moments.',
-          'Zeldzame routes die alleen op bijzondere momenten verschijnen.'),
+          'Special routes appear only after certain events. They can expire or change automatically; their card shows them only while they are available.',
+          'Speciale routes verschijnen alleen na bepaalde gebeurtenissen. Ze kunnen automatisch verlopen of veranderen; hun kaart is alleen zichtbaar zolang ze beschikbaar zijn.',
+        ),
     };
 
 String _focusName(AppStrings strings, TrainingFocus focus) => switch (focus) {

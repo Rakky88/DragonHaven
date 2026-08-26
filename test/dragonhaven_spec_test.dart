@@ -348,6 +348,9 @@ void main() {
     final discoveryGuard = File(
       'supabase/migrations/202608260015_preserve_draconomicon_discoveries.sql',
     ).readAsStringSync();
+    final socialCounts = File(
+      'supabase/migrations/202608260016_social_summary_counts.sql',
+    ).readAsStringSync();
 
     for (final kind in const [
       'friend_request',
@@ -368,5 +371,8 @@ void main() {
     expect(discoveryGuard, contains('preserve_social_showcase_discoveries'));
     expect(discoveryGuard, contains('public.discovered_lineages'));
     expect(discoveryGuard, contains('greatest('));
+    expect(socialCounts, contains('achievement_count integer'));
+    expect(socialCounts, contains('dragon_count integer'));
+    expect(socialCounts, contains('publish_social_summary_counts'));
   });
 }

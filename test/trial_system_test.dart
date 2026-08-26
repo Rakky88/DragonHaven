@@ -360,6 +360,8 @@ void main() {
     ));
 
     final showcase = OnlineInventorySnapshot.fromGame(game).toShowcaseJson();
+    expect(showcase['dragon_count'], 2);
+    expect(showcase['achievement_count'], 0);
     expect(showcase['trial_high_scores'], {
       'cavernFlight': 222,
       'ruinBreaker': 900,
@@ -379,12 +381,16 @@ void main() {
       'cavern_flight_best': 222,
       'ruin_breaker_best': 900,
       'runeweaver_best': 12,
+      'achievement_count': 19,
+      'dragon_count': 7,
       'favorite_dragon_id': 'favorite-trial-dragon',
       'favorite_dragon_cavern_flight_best': 148,
       'favorite_dragon_ruin_breaker_best': 900,
       'favorite_dragon_runeweaver_best': 7,
     });
     expect(profile.cavernFlightBest, 222);
+    expect(profile.achievementCount, 19);
+    expect(profile.dragonCount, 7);
     expect(profile.favoriteDragon?.runeweaverBest, 7);
   });
 }

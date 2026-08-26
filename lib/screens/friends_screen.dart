@@ -630,9 +630,10 @@ Future<void> _showFriendProfile(
               ),
             const SizedBox(height: 18),
             _ProfileFact(
-              icon: Icons.auto_stories_rounded,
-              label: strings.pick('Discovered dragons', 'Ontdekte draken'),
-              value: '${friend.discoveredDragonCount}',
+              icon: Icons.emoji_events_rounded,
+              label: strings.pick('Achievements', 'Prestaties'),
+              value:
+                  '${ownProfile ? context.read<HouseholdProvider>().unlockedAchievementIds.length : friend.achievementCount}',
             ),
             if (!ownProfile) ...[
               const SizedBox(height: 10),
@@ -645,6 +646,7 @@ Future<void> _showFriendProfile(
                       appBar: AppBar(),
                       body: DraconomiconScreen(
                         keeperName: friend.displayName,
+                        dragonCount: friend.dragonCount,
                         discoveredForms: friend.discoveredForms.toSet(),
                         prismaticForms: friend.prismaticForms.toSet(),
                       ),

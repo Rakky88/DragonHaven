@@ -561,6 +561,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text(friendTitle), findsWidgets);
+    expect(find.text('Achievements'), findsOneWidget);
+    expect(find.text('17'), findsOneWidget);
     expect(find.text('Nimbus'), findsOneWidget);
     expect(find.textContaining('Level 4'), findsOneWidget);
     expect(find.text('Might'), findsOneWidget);
@@ -577,6 +579,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text("Lyra's Draconomicon"), findsOneWidget);
+    expect(find.text('Dragons 7'), findsOneWidget);
+    expect(find.text('Dragon families 1/42'), findsOneWidget);
     expect(
       find.byKey(const PageStorageKey(
         'draconomicon-lineage-normal-mossprout',
@@ -817,6 +821,8 @@ class _FakeSocialRepository implements SocialRepository {
     title: 'title_321',
     portraitKey: 'portrait_042',
     discoveredDragonCount: 12,
+    achievementCount: 17,
+    dragonCount: 7,
     inventoryImported: true,
     discoveredForms: [
       'mossprout:hatchling',

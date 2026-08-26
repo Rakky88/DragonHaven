@@ -1,5 +1,8 @@
 # DragonHaven publiceren en updaten
 
+Voor de complete Google Play/App Store-checklist, verantwoordelijkheden,
+productiebeveiliging en kostenramingen: [PUBLIC_LAUNCH.md](PUBLIC_LAUNCH.md).
+
 De update- en kopieerknoppen in **About DragonHaven** gebruiken de nieuwste openbare GitHub Release. Android vraagt altijd zelf om bevestiging voordat een APK wordt geïnstalleerd.
 
 ## Updatecompatibiliteit

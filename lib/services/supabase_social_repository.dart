@@ -198,6 +198,10 @@ class SupabaseSocialRepository implements SocialRepository {
     await _rpc('publish_social_showcase', params: {
       'p_showcase': snapshot.toShowcaseJson(),
     });
+    await _rpc('publish_social_summary_counts', params: {
+      'p_achievement_count': snapshot.achievementCount,
+      'p_dragon_count': snapshot.dragons.length,
+    });
   }
 
   @override

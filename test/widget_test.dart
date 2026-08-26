@@ -324,6 +324,14 @@ void main() {
 
     now = now.add(const Duration(minutes: 2));
     await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Ready to return'), findsNothing);
+    await tester.tap(find.byKey(const Key('adventure-tab-completed')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TabBar>(find.byType(TabBar)).controller?.index, 3);
+    expect(
+      find.byKey(const PageStorageKey('completed-adventures-scroll')),
+      findsOneWidget,
+    );
     expect(find.text('Ready to return'), findsOneWidget);
     final claim = find.byKey(const Key('claim-adventure-live-countdown'));
     expect(claim, findsOneWidget);
@@ -368,7 +376,10 @@ void main() {
         .map((text) => text.data)
         .whereType<String>()
         .toList();
-    expect(labels, containsAllInOrder(['Available', 'Trials', 'Active']));
+    expect(
+      labels,
+      containsAllInOrder(['Available', 'Trials', 'Active', 'Completed']),
+    );
 
     await tester.tap(find.byKey(const Key('adventure-tab-trials')));
     await tester.pumpAndSettle();
@@ -427,15 +438,24 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
 
+    final accountScroll = find.descendant(
+      of: find.byKey(const PageStorageKey('account-scroll')),
+      matching: find.byType(Scrollable),
+    );
+    await tester.scrollUntilVisible(
+      find.text('Vanity'),
+      180,
+      scrollable: accountScroll,
+    );
+    expect(find.text('Vanity'), findsOneWidget);
+
     await tester.scrollUntilVisible(
       find.byKey(const Key('music-switch')),
       260,
-      scrollable: find.descendant(
-        of: find.byKey(const PageStorageKey('account-scroll')),
-        matching: find.byType(Scrollable),
-      ),
+      scrollable: accountScroll,
     );
     expect(find.byKey(const Key('music-style-selector')), findsNothing);
+    expect(find.text('Preferences'), findsOneWidget);
     expect(find.text('Music · Rêverie'), findsOneWidget);
     expect(game.musicStyle, HavenMusicStyle.classic);
     expect(find.byKey(const Key('music-switch')), findsOneWidget);
@@ -661,6 +681,17 @@ void main() {
     expect(find.text('Available'), findsOneWidget);
     expect(find.text('Active'), findsOneWidget);
     expect(find.text('Short'), findsOneWidget);
+    expect(find.text('Tiny outings'), findsOneWidget);
+    expect(
+      find.text('Tiny outings, quick training and wooden chests.'),
+      findsNothing,
+    );
+    await tester.tap(find.byKey(const Key('adventure-info-mini')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Refresh rules'), findsOneWidget);
+    expect(find.textContaining('not automatically replaced'), findsOneWidget);
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
     final shortCards = game
         .adventuresFor(AdventureKind.short)
         .map((adventure) => find.byKey(Key('adventure-card-${adventure.id}')))
@@ -758,6 +789,16 @@ void main() {
     expect(find.text('Furniture'), findsOneWidget);
     expect(find.text('Chests'), findsOneWidget);
     expect(find.text('Buy'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('shop-coins-tab-buy')));
+    await tester.pumpAndSettle();
+    final packGrid = find.byKey(const Key('shop-coins-pack-grid'));
+    expect(packGrid, findsOneWidget);
+    for (var index = 0; index < 6; index++) {
+      final tile = find.byKey(Key('shop-coins-pack-$index'));
+      expect(tile, findsOneWidget);
+      final size = tester.getSize(tile);
+      expect((size.width - size.height).abs(), lessThan(.01));
+    }
     expect(tester.takeException(), isNull);
   });
 
@@ -1448,7 +1489,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.04.01'), findsOneWidget);
+    expect(find.text('v0.04.02'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);
