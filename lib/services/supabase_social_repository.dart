@@ -96,6 +96,21 @@ class SupabaseSocialRepository implements SocialRepository {
           .toList(growable: false);
 
   @override
+  Future<List<SocialNotification>> loadSocialNotifications() async =>
+      (await _listRpc('list_social_notifications'))
+          .map(SocialNotification.fromJson)
+          .toList(growable: false);
+
+  @override
+  Future<void> acknowledgeSocialNotifications(
+      List<String> notificationIds) async {
+    if (notificationIds.isEmpty) return;
+    await _rpc('acknowledge_social_notifications', params: {
+      'p_notification_ids': notificationIds,
+    });
+  }
+
+  @override
   Future<List<KeeperProfile>> loadBlockedKeepers() async =>
       (await _listRpc('list_blocked_keepers'))
           .map(KeeperProfile.fromJson)

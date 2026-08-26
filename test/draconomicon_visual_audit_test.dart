@@ -46,7 +46,7 @@ void main() {
                   child: DragonLineageEntry(
                     lineage: lineage,
                     number: index + 1,
-                    game: game,
+                    collection: game.discoveredForms,
                     spectral: false,
                   ),
                 ),
@@ -132,7 +132,7 @@ void main() {
             child: DragonLineageEntry(
               lineage: lineage,
               number: 1,
-              game: game,
+              collection: game.discoveredForms,
               spectral: false,
             ),
           ),
@@ -181,7 +181,7 @@ void main() {
             child: DragonLineageEntry(
               lineage: lineage,
               number: 1,
-              game: game,
+              collection: game.discoveredForms,
               spectral: false,
             ),
           ),

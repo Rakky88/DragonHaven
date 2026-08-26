@@ -37,9 +37,40 @@ class DragonTowerScreen extends StatelessWidget {
       key: const PageStorageKey('dragon-tower-scroll'),
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 34),
       children: [
-        Text(
-          strings.tr('tower'),
-          style: Theme.of(context).textTheme.displaySmall,
+        Row(
+          children: [
+            Expanded(
+              child: FittedBox(
+                alignment: Alignment.centerLeft,
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  strings.tr('tower'),
+                  style: Theme.of(context).textTheme.displaySmall,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            _TowerTopIconButton(
+              key: const Key('open-my-dragons'),
+              icon: GameIconKind.myDragons,
+              tooltip: strings.pick('My dragons', 'Mijn draken'),
+              onPressed: () => _showOwnedDragons(context),
+            ),
+            const SizedBox(width: 7),
+            _TowerTopIconButton(
+              key: const Key('open-draconomicon'),
+              icon: GameIconKind.draconomicon,
+              tooltip: 'Draconomicon',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const Scaffold(
+                    appBar: _CodexBar(),
+                    body: DraconomiconScreen(),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 4),
         Row(children: [
@@ -63,28 +94,6 @@ class DragonTowerScreen extends StatelessWidget {
                   color: AppColors.muted, fontWeight: FontWeight.w700)),
         ]),
         const SizedBox(height: 12),
-        _TowerBannerShortcut(
-          key: const Key('open-my-dragons'),
-          onPressed: () => _showOwnedDragons(context),
-          assetPath: GameBannerAssets.myDragons,
-          semanticLabel: strings.pick('My dragons', 'Mijn draken'),
-          localizedLabel: strings.pick('My dragons', 'Mijn draken'),
-        ),
-        const SizedBox(height: 8),
-        _TowerBannerShortcut(
-          key: const Key('open-draconomicon'),
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const Scaffold(
-                appBar: _CodexBar(),
-                body: DraconomiconScreen(),
-              ),
-            ),
-          ),
-          assetPath: GameBannerAssets.draconomicon,
-          semanticLabel: 'Draconomicon',
-        ),
-        const SizedBox(height: 14),
         const _TowerRoof(),
         const SizedBox(height: 9),
         for (var index = game.towerFloorRoomIds.length - 1; index >= 0; index--)
@@ -451,126 +460,37 @@ class _BuildFloorButton extends StatelessWidget {
       );
 }
 
-class _TowerBannerShortcut extends StatelessWidget {
-  const _TowerBannerShortcut({
+class _TowerTopIconButton extends StatelessWidget {
+  const _TowerTopIconButton({
     super.key,
+    required this.icon,
+    required this.tooltip,
     required this.onPressed,
-    required this.assetPath,
-    required this.semanticLabel,
-    this.localizedLabel,
   });
 
+  final GameIconKind icon;
+  final String tooltip;
   final VoidCallback onPressed;
-  final String assetPath;
-  final String semanticLabel;
-  final String? localizedLabel;
 
   @override
   Widget build(BuildContext context) => Semantics(
-        label: semanticLabel,
         button: true,
-        child: ExcludeSemantics(
+        label: tooltip,
+        child: Tooltip(
+          message: tooltip,
           child: Material(
             color: Colors.transparent,
-            child: InkWell(
+            child: InkResponse(
               onTap: onPressed,
-              borderRadius: BorderRadius.circular(28),
-              splashColor: Colors.white.withValues(alpha: .18),
-              highlightColor: Colors.white.withValues(alpha: .08),
-              child: AspectRatio(
-                aspectRatio: 3,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.asset(
-                      assetPath,
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
-                      gaplessPlayback: true,
-                    ),
-                    if (localizedLabel case final label?)
-                      Align(
-                        alignment: const Alignment(.7, .04),
-                        child: FractionallySizedBox(
-                          widthFactor: .55,
-                          heightFactor: .34,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: _FantasyBannerLabel(label: label),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+              radius: 32,
+              child: SizedBox(
+                width: 64,
+                height: 64,
+                child: Center(child: GameIconSprite(icon, size: 60)),
               ),
             ),
           ),
         ),
-      );
-}
-
-class _FantasyBannerLabel extends StatelessWidget {
-  const _FantasyBannerLabel({required this.label});
-
-  final String label;
-
-  static const _style = TextStyle(
-    fontFamily: 'serif',
-    fontFamilyFallback: [
-      'Noto Serif',
-      'Noto Serif CJK SC',
-      'Noto Serif CJK JP',
-    ],
-    fontSize: 29,
-    fontWeight: FontWeight.w900,
-    letterSpacing: .75,
-    height: 1,
-  );
-
-  @override
-  Widget build(BuildContext context) => Stack(
-        alignment: Alignment.center,
-        children: [
-          Text(
-            label,
-            maxLines: 1,
-            softWrap: false,
-            style: _style.copyWith(
-              foreground: Paint()
-                ..style = PaintingStyle.stroke
-                ..strokeJoin = StrokeJoin.round
-                ..strokeWidth = 2.6
-                ..color = const Color(0xFF29133F),
-            ),
-          ),
-          Text(
-            label,
-            key: const Key('my-dragons-banner-label'),
-            maxLines: 1,
-            softWrap: false,
-            style: _style.copyWith(
-              foreground: Paint()
-                ..isAntiAlias = true
-                ..shader = const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFFFF4C8),
-                    Color(0xFFFFDA73),
-                    Color(0xFFD99119),
-                  ],
-                  stops: [0, .54, 1],
-                ).createShader(const Rect.fromLTWH(0, 0, 360, 44)),
-              shadows: const [
-                Shadow(
-                  color: Color(0xCC210C3D),
-                  blurRadius: 8,
-                  offset: Offset(0, 3),
-                ),
-              ],
-            ),
-          ),
-        ],
       );
 }
 

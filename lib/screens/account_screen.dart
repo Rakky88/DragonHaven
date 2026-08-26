@@ -6,7 +6,7 @@ import '../models/account_title.dart';
 import '../models/profile_portrait.dart';
 import '../providers/household_provider.dart';
 import '../providers/online_account_provider.dart';
-import '../services/audio_service.dart';
+import 'notification_settings_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
@@ -98,6 +98,42 @@ class AccountScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
+          Card(
+            child: ListTile(
+              key: const Key('notification-settings-button'),
+              contentPadding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
+              leading: Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFE49A), Color(0xFFDCCEFF)],
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.notifications_active_rounded,
+                  color: AppColors.twilight,
+                  size: 32,
+                ),
+              ),
+              title: Text(
+                strings.pick('Notifications', 'Notificaties'),
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+              subtitle: Text(strings.pick(
+                'Choose which reminders you receive',
+                'Kies welke meldingen je ontvangt',
+              )),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const NotificationSettingsScreen(),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
           Text(strings.pick('Audio', 'Audio'),
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
@@ -113,48 +149,14 @@ class AccountScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Padding(
-                    key: const Key('music-style-selector'),
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 13),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          strings.tr('music_style'),
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                        const SizedBox(height: 9),
-                        SizedBox(
-                          width: double.infinity,
-                          child: SegmentedButton<HavenMusicStyle>(
-                            key: const Key('music-style-segments'),
-                            showSelectedIcon: false,
-                            segments: [
-                              ButtonSegment(
-                                value: HavenMusicStyle.basic,
-                                label: Text(strings.tr('basic')),
-                              ),
-                              ButtonSegment(
-                                value: HavenMusicStyle.classic,
-                                label: Text(strings.tr('classic')),
-                              ),
-                            ],
-                            selected: {game.musicStyle},
-                            onSelectionChanged: (selection) =>
-                                game.setMusicStyle(selection.single),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
                   SwitchListTile(
                     key: const Key('music-switch'),
                     secondary: const GameIconSprite(
                       GameIconKind.audioMusic,
                       size: 58,
                     ),
-                    title: Text(strings.tr('music'),
+                    title: Text(
+                        strings.pick('Music · Rêverie', 'Muziek · Rêverie'),
                         style: const TextStyle(fontWeight: FontWeight.w800)),
                     subtitle: Text(game.musicEnabled
                         ? strings.tr('on')

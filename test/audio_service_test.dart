@@ -24,12 +24,12 @@ void main() {
     await HavenAudio.applyPreferences(
       musicEnabled: true,
       soundEffectsEnabled: true,
-      musicStyle: HavenMusicStyle.basic,
+      musicStyle: HavenMusicStyle.classic,
     );
     expect(calls.first.arguments, {
       'music': true,
       'effects': true,
-      'style': 'basic',
+      'style': 'classic',
       'scene': null,
     });
     await HavenAudio.setMusicScene(HavenMusicScene.towerDay);

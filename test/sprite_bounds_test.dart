@@ -495,9 +495,9 @@ void main() {
         .map((entry) => '${entry.key}=${entry.value.toStringAsFixed(3)}')
         .join(', ');
     expect(
-      ProfilePortraitSprite.portraitBackdropFillScale,
+      ProfilePortraitSprite.portraitFillScale,
       greaterThanOrEqualTo(requiredScaleEntries.first.value),
-      reason: 'The portrait backdrop must sit at least two source pixels '
+      reason: 'The single portrait must sit at least two source pixels '
           'inside continuously opaque artwork for every angle. Worst '
           'portraits: '
           '$worstPortraits',

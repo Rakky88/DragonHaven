@@ -13,6 +13,7 @@ import '../widgets/dragon_art.dart';
 import '../widgets/dragon_trial_records.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
+import 'draconomicon_screen.dart';
 
 class FriendsScreen extends StatelessWidget {
   const FriendsScreen({super.key});
@@ -243,45 +244,49 @@ class _MyKeeperCard extends StatelessWidget {
     final strings = AppStrings.of(context);
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFFFFFFF), Color(0xFFEDE8FF)],
-          ),
-        ),
-        child: Row(children: [
-          KeeperPortrait(
-            portraitKey: profile.portraitKey,
-            displayName: profile.displayName,
-            radius: 29,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(profile.displayName,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w900, fontSize: 17)),
-                Text(keeperTitleLabel(strings, profile.title),
-                    style: const TextStyle(color: AppColors.muted)),
-                const SizedBox(height: 4),
-                Text(profile.keeperCode,
-                    style: const TextStyle(
-                        color: AppColors.twilight,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: .8)),
-              ],
+      child: InkWell(
+        key: const Key('my-keeper-profile-card'),
+        onTap: () => _showFriendProfile(context, profile, ownProfile: true),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFFFFFFF), Color(0xFFEDE8FF)],
             ),
           ),
-          IconButton(
-            key: const Key('copy-keeper-code'),
-            tooltip: strings.pick('Copy Keeper ID', 'Keeper-ID kopiëren'),
-            onPressed: () => copyKeeperCode(context, profile.keeperCode),
-            icon: const Icon(Icons.copy_rounded),
-          ),
-        ]),
+          child: Row(children: [
+            KeeperPortrait(
+              portraitKey: profile.portraitKey,
+              displayName: profile.displayName,
+              radius: 29,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(profile.displayName,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w900, fontSize: 17)),
+                  Text(keeperTitleLabel(strings, profile.title),
+                      style: const TextStyle(color: AppColors.muted)),
+                  const SizedBox(height: 4),
+                  Text(profile.keeperCode,
+                      style: const TextStyle(
+                          color: AppColors.twilight,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: .8)),
+                ],
+              ),
+            ),
+            IconButton(
+              key: const Key('copy-keeper-code'),
+              tooltip: strings.pick('Copy Keeper ID', 'Keeper-ID kopiëren'),
+              onPressed: () => copyKeeperCode(context, profile.keeperCode),
+              icon: const Icon(Icons.copy_rounded),
+            ),
+          ]),
+        ),
       ),
     );
   }
@@ -536,7 +541,10 @@ class _FriendTile extends StatelessWidget {
 }
 
 Future<void> _showFriendProfile(
-    BuildContext context, KeeperProfile friend) async {
+  BuildContext context,
+  KeeperProfile friend, {
+  bool ownProfile = false,
+}) async {
   final strings = AppStrings.of(context);
   final online = context.read<OnlineAccountProvider>();
   await showModalBottomSheet<void>(
@@ -547,7 +555,9 @@ Future<void> _showFriendProfile(
       child: FractionallySizedBox(
         heightFactor: .88,
         child: ListView(
-          key: Key('friend-profile-${friend.userId}'),
+          key: Key(ownProfile
+              ? 'own-account-profile'
+              : 'friend-profile-${friend.userId}'),
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
           children: [
             Center(
@@ -572,75 +582,77 @@ Future<void> _showFriendProfile(
                     fontWeight: FontWeight.w900,
                     letterSpacing: .8)),
             const SizedBox(height: 13),
-            Center(
-              child: Tooltip(
-                message: strings.pick(
-                    'Trade with this friend', 'Ruilen met deze vriend'),
-                child: InkWell(
-                  key: const Key('start-trade-button'),
-                  borderRadius: BorderRadius.circular(22),
-                  onTap: online.busy
-                      ? null
-                      : () => _startTrade(sheetContext, friend),
-                  child: Ink(
-                    width: 78,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [
-                        Color(0xFFFFF1A8),
-                        Color(0xFFE8CB69),
-                      ]),
-                      borderRadius: BorderRadius.circular(22),
-                      border:
-                          Border.all(color: const Color(0xFF9A6A21), width: 2),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x332D195F),
-                          blurRadius: 10,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: GameIconSprite(
-                        GameIconKind.friendsTrade,
-                        size: 58,
+            if (!ownProfile)
+              Consumer<OnlineAccountProvider>(
+                builder: (context, liveOnline, _) {
+                  final activeTrades = liveOnline.tradesWith(friend.userId);
+                  final activeTrade = activeTrades.firstOrNull;
+                  return Column(
+                    children: [
+                      _FriendTradeCallToAction(
+                        key: const Key('start-trade-button'),
+                        friendName: friend.displayName,
+                        trade: activeTrade,
+                        enabled: !liveOnline.busy,
+                        onPressed: activeTrade == null
+                            ? () => _startTrade(sheetContext, friend)
+                            : () => _showTrade(sheetContext, activeTrade),
                       ),
-                    ),
-                  ),
-                ),
+                      if (activeTrades.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        for (final trade in activeTrades)
+                          Card(
+                            color: trade.needsMyResponse
+                                ? const Color(0xFFFFF5CC)
+                                : const Color(0xFFF2ECFF),
+                            child: ListTile(
+                              key: Key('trade-${trade.id}'),
+                              leading: const GameIconSprite(
+                                GameIconKind.friendsTrade,
+                                size: 42,
+                              ),
+                              title: Text(_tradeStatusLabel(strings, trade),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w900)),
+                              subtitle: Text(_tradeItemLabel(
+                                strings,
+                                context.read<HouseholdProvider>(),
+                                trade.initiatorItem,
+                              )),
+                              trailing: const Icon(Icons.chevron_right_rounded),
+                              onTap: () => _showTrade(sheetContext, trade),
+                            ),
+                          ),
+                      ],
+                    ],
+                  );
+                },
               ),
-            ),
-            if (online.tradesWith(friend.userId).isNotEmpty) ...[
-              const SizedBox(height: 12),
-              for (final trade in online.tradesWith(friend.userId))
-                Card(
-                  color: trade.needsMyResponse
-                      ? const Color(0xFFFFF5CC)
-                      : const Color(0xFFF2ECFF),
-                  child: ListTile(
-                    key: Key('trade-${trade.id}'),
-                    leading: const GameIconSprite(
-                      GameIconKind.friendsTrade,
-                      size: 42,
-                    ),
-                    title: Text(_tradeStatusLabel(strings, trade),
-                        style: const TextStyle(fontWeight: FontWeight.w900)),
-                    subtitle: Text(_tradeItemLabel(
-                        strings,
-                        context.read<HouseholdProvider>(),
-                        trade.initiatorItem)),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => _showTrade(sheetContext, trade),
-                  ),
-                ),
-            ],
             const SizedBox(height: 18),
             _ProfileFact(
               icon: Icons.auto_stories_rounded,
               label: strings.pick('Discovered dragons', 'Ontdekte draken'),
               value: '${friend.discoveredDragonCount}',
             ),
+            if (!ownProfile) ...[
+              const SizedBox(height: 10),
+              _FriendDraconomiconButton(
+                key: const Key('friend-draconomicon-button'),
+                friend: friend,
+                onPressed: () => Navigator.of(sheetContext).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => Scaffold(
+                      appBar: AppBar(),
+                      body: DraconomiconScreen(
+                        keeperName: friend.displayName,
+                        discoveredForms: friend.discoveredForms.toSet(),
+                        prismaticForms: friend.prismaticForms.toSet(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 10),
             DragonTrialRecords(
               account: true,
@@ -659,64 +671,157 @@ Future<void> _showFriendProfile(
                 text: strings.pick('No favorite dragon selected.',
                     'Geen favoriete draak gekozen.'),
               ),
-            const SizedBox(height: 22),
-            OutlinedButton.icon(
-              key: const Key('remove-friend-button'),
-              style:
-                  OutlinedButton.styleFrom(foregroundColor: Colors.redAccent),
-              onPressed: () async {
-                final confirmed = await showDialog<bool>(
-                      context: sheetContext,
-                      builder: (dialogContext) => AlertDialog(
-                        title: Text(strings.pick(
-                            'Remove friend?', 'Vriend verwijderen?')),
-                        content: Text(strings.pick(
-                          '${friend.displayName} will disappear from both friend lists.',
-                          '${friend.displayName} verdwijnt uit beide vriendenlijsten.',
-                        )),
-                        actions: [
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pop(dialogContext, false),
-                            child: Text(strings.tr('cancel')),
-                          ),
-                          FilledButton(
-                            key: const Key('confirm-remove-friend'),
-                            style: FilledButton.styleFrom(
-                                backgroundColor: Colors.redAccent),
-                            onPressed: () => Navigator.pop(dialogContext, true),
-                            child: Text(strings.pick('Remove', 'Verwijderen')),
-                          ),
-                        ],
-                      ),
-                    ) ??
-                    false;
-                if (!confirmed) return;
-                final removed = await online.removeFriend(friend.userId);
-                if (removed && sheetContext.mounted) {
-                  Navigator.pop(sheetContext);
-                }
-              },
-              icon: const Icon(Icons.person_remove_rounded),
-              label: Text(strings.pick('Remove friend', 'Vriend verwijderen')),
-            ),
-            TextButton.icon(
-              onPressed: () async {
-                final blocked = await online.blockKeeper(friend.userId);
-                if (blocked && sheetContext.mounted) {
-                  Navigator.pop(sheetContext);
-                }
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-              icon: const Icon(Icons.block_rounded),
-              label: Text(strings.pick('Block keeper', 'Hoeder blokkeren')),
-            ),
+            if (!ownProfile) ...[
+              const SizedBox(height: 22),
+              OutlinedButton.icon(
+                key: const Key('remove-friend-button'),
+                style:
+                    OutlinedButton.styleFrom(foregroundColor: Colors.redAccent),
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                        context: sheetContext,
+                        builder: (dialogContext) => AlertDialog(
+                          title: Text(strings.pick(
+                              'Remove friend?', 'Vriend verwijderen?')),
+                          content: Text(strings.pick(
+                            '${friend.displayName} will disappear from both friend lists.',
+                            '${friend.displayName} verdwijnt uit beide vriendenlijsten.',
+                          )),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: Text(strings.tr('cancel')),
+                            ),
+                            FilledButton(
+                              key: const Key('confirm-remove-friend'),
+                              style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.redAccent),
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              child:
+                                  Text(strings.pick('Remove', 'Verwijderen')),
+                            ),
+                          ],
+                        ),
+                      ) ??
+                      false;
+                  if (!confirmed) return;
+                  final removed = await online.removeFriend(friend.userId);
+                  if (removed && sheetContext.mounted) {
+                    Navigator.pop(sheetContext);
+                  }
+                },
+                icon: const Icon(Icons.person_remove_rounded),
+                label:
+                    Text(strings.pick('Remove friend', 'Vriend verwijderen')),
+              ),
+              TextButton.icon(
+                onPressed: () async {
+                  final blocked = await online.blockKeeper(friend.userId);
+                  if (blocked && sheetContext.mounted) {
+                    Navigator.pop(sheetContext);
+                  }
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                icon: const Icon(Icons.block_rounded),
+                label: Text(strings.pick('Block keeper', 'Hoeder blokkeren')),
+              ),
+            ],
           ],
         ),
       ),
     ),
   );
-  if (context.mounted) _showProviderMessage(context, online);
+  if (!ownProfile && context.mounted) _showProviderMessage(context, online);
+}
+
+class _FriendDraconomiconButton extends StatelessWidget {
+  const _FriendDraconomiconButton({
+    super.key,
+    required this.friend,
+    required this.onPressed,
+  });
+
+  final KeeperProfile friend;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Semantics(
+      button: true,
+      label: strings.pick(
+        "View ${friend.displayName}'s Draconomicon",
+        'Bekijk het Draconomicon van ${friend.displayName}',
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(21),
+          child: Ink(
+            padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF2D175A), Color(0xFF7249A5)],
+              ),
+              borderRadius: BorderRadius.circular(21),
+              border: Border.all(color: const Color(0xFFEBC05F), width: 1.4),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x292D175A),
+                  blurRadius: 10,
+                  offset: Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                const GameIconSprite(GameIconKind.draconomicon, size: 58),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Draconomicon',
+                        style: TextStyle(
+                          color: Color(0xFFFFE29A),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 17,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        strings.pick(
+                          "Explore ${friend.displayName}'s discovered forms",
+                          'Bekijk de ontdekte vormen van ${friend.displayName}',
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFFE9DFF7),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFFFFE29A),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _FavoriteDragonCard extends StatelessWidget {
@@ -782,7 +887,13 @@ class _FriendTradeButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) => Tooltip(
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final active = activeCount > 0;
+    return Semantics(
+      button: true,
+      label: tooltip,
+      child: Tooltip(
         message: tooltip,
         child: Material(
           color: Colors.transparent,
@@ -790,16 +901,23 @@ class _FriendTradeButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             onTap: onPressed,
             child: Ink(
-              width: 58,
-              height: 58,
+              width: 64,
+              height: 68,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFFFFF4B3), Color(0xFFE7C763)],
+                  colors: active
+                      ? const [Color(0xFF5C3C99), Color(0xFF32205F)]
+                      : const [Color(0xFFFFF4B3), Color(0xFFE7C763)],
                 ),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFF9A6A21), width: 1.5),
+                border: Border.all(
+                  color: active
+                      ? const Color(0xFFF3D77A)
+                      : const Color(0xFF9A6A21),
+                  width: 1.5,
+                ),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x332D195F),
@@ -808,20 +926,137 @@ class _FriendTradeButton extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Center(
-                child: Badge(
-                  isLabelVisible: activeCount > 0,
-                  label: Text('$activeCount'),
-                  child: const GameIconSprite(
-                    GameIconKind.friendsTrade,
-                    size: 46,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Badge(
+                    isLabelVisible: active,
+                    label: Text('$activeCount'),
+                    child: const GameIconSprite(
+                      GameIconKind.friendsTrade,
+                      size: 40,
+                    ),
                   ),
-                ),
+                  Text(
+                    active
+                        ? strings.pick('OPEN', 'OPEN')
+                        : strings.pick('TRADE', 'RUIL'),
+                    style: TextStyle(
+                      color: active ? Colors.white : const Color(0xFF4A2D11),
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: .5,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
-      );
+      ),
+    );
+  }
+}
+
+class _FriendTradeCallToAction extends StatelessWidget {
+  const _FriendTradeCallToAction({
+    super.key,
+    required this.friendName,
+    required this.trade,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final String friendName;
+  final TradeOffer? trade;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final active = trade != null;
+    final needsResponse = trade?.needsMyResponse == true;
+    final title = needsResponse
+        ? strings.pick('Trade needs your answer', 'Ruil wacht op jouw antwoord')
+        : active
+            ? strings.pick('Open active trade', 'Open actieve ruil')
+            : strings.pick('Trade with $friendName', 'Ruil met $friendName');
+    final subtitle = active
+        ? strings.pick(
+            'Your reserved exchange is ready to view.',
+            'Je gereserveerde ruil staat klaar om te bekijken.',
+          )
+        : strings.pick(
+            'Choose an egg, chest or relic for a safe exchange.',
+            'Kies een ei, kist of relic voor een veilige ruil.',
+          );
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onPressed : null,
+        borderRadius: BorderRadius.circular(24),
+        child: Ink(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: active
+                  ? const [Color(0xFF35205F), Color(0xFF684CA3)]
+                  : const [Color(0xFFFFF3B8), Color(0xFFE6C45A)],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: active ? const Color(0xFFF2D276) : const Color(0xFF9A6A21),
+              width: 1.8,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x332D195F),
+                blurRadius: 12,
+                offset: Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              GameIconSprite(GameIconKind.friendsTrade, size: active ? 58 : 54),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: active ? Colors.white : AppColors.ink,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: active
+                            ? Colors.white.withValues(alpha: .82)
+                            : const Color(0xFF664A27),
+                        fontSize: 11.5,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: active ? Colors.white : const Color(0xFF5D3D17),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _Expertise extends StatelessWidget {

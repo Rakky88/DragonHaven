@@ -93,8 +93,10 @@ class HouseholdProvider extends ChangeNotifier {
   String accountName = '';
   bool onboardingComplete = false;
   bool musicEnabled = true;
-  HavenMusicStyle musicStyle = HavenMusicStyle.basic;
+  HavenMusicStyle musicStyle = HavenMusicStyle.classic;
   bool soundEffectsEnabled = true;
+  Set<HavenNotificationCategory> enabledNotificationCategories =
+      HavenNotificationCategory.values.toSet();
   bool achievementsCompact = false;
   bool tutorialCompleted = false;
   bool showcaseMode = false;
@@ -165,7 +167,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 38;
+  static const _schemaVersion = 39;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(
@@ -389,6 +391,8 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   void _initializeFresh() {
+    enabledNotificationCategories = HavenNotificationCategory.values.toSet();
+    HavenNotifications.configure(enabledNotificationCategories);
     final now = _clock();
     final seed = _random.nextInt(0x7fffffff);
     final sizeRoll = _random.nextDouble();
@@ -657,12 +661,25 @@ class HouseholdProvider extends ChangeNotifier {
         : true;
     musicEnabled =
         data['musicEnabled'] is! bool || data['musicEnabled'] as bool;
-    musicStyle = HavenMusicStyle.values.firstWhere(
-      (value) => value.name == data['musicStyle'],
-      orElse: () => HavenMusicStyle.basic,
-    );
+    // Rêverie is DragonHaven's sole soundtrack. Older saves can still contain
+    // the retired "basic" preference, which deliberately migrates to classic.
+    musicStyle = HavenMusicStyle.classic;
     soundEffectsEnabled = data['soundEffectsEnabled'] is! bool ||
         data['soundEffectsEnabled'] as bool;
+    final storedNotificationCategories = data['enabledNotificationCategories'];
+    enabledNotificationCategories = storedNotificationCategories is List
+        ? storedNotificationCategories
+            .whereType<String>()
+            .map((name) => HavenNotificationCategory.values
+                .cast<HavenNotificationCategory?>()
+                .firstWhere(
+                  (category) => category?.name == name,
+                  orElse: () => null,
+                ))
+            .whereType<HavenNotificationCategory>()
+            .toSet()
+        : HavenNotificationCategory.values.toSet();
+    HavenNotifications.configure(enabledNotificationCategories);
     achievementsCompact = data['achievementsCompact'] is bool &&
         data['achievementsCompact'] as bool;
     pet = Pet.fromJson(mapFromJson(data['pet']));
@@ -968,6 +985,34 @@ class HouseholdProvider extends ChangeNotifier {
     selectedTitleId = titleId;
     await _notifyAndSave();
     return true;
+  }
+
+  bool notificationEnabled(HavenNotificationCategory category) =>
+      enabledNotificationCategories.contains(category);
+
+  Future<void> setNotificationEnabled(
+    HavenNotificationCategory category,
+    bool enabled,
+  ) async {
+    final changed = enabled
+        ? enabledNotificationCategories.add(category)
+        : enabledNotificationCategories.remove(category);
+    if (!changed) return;
+    HavenNotifications.configure(enabledNotificationCategories);
+    if (!enabled) {
+      if (category == HavenNotificationCategory.trialsFull) {
+        await HavenNotifications.cancel('trials-full');
+      } else if (category == HavenNotificationCategory.eggReady) {
+        for (final egg in [pet, incubatingEgg].whereType<Pet>()) {
+          if (egg.isEgg) await HavenNotifications.cancel('egg-${egg.id}');
+        }
+      }
+    } else if (category == HavenNotificationCategory.trialsFull) {
+      _scheduleTrialsFullNotification();
+    } else if (category == HavenNotificationCategory.eggReady) {
+      await _rescheduleNestEggNotification();
+    }
+    await _notifyAndSave();
   }
 
   Future<PortraitChestPurchaseResult> purchasePortraitChest() async {
@@ -1495,6 +1540,12 @@ class HouseholdProvider extends ChangeNotifier {
                 .any((dragon) => dragon.lineage.rarity == DragonRarity.mythical)
             ? 1
             : 0,
+        'trial_might_s_plus' =>
+          accountTrialBest(TrialKind.ruinBreaker) >= 9000 ? 1 : 0,
+        'trial_spirit_s_plus' =>
+          accountTrialBest(TrialKind.cavernFlight) >= 1500 ? 1 : 0,
+        'trial_arcana_s_plus' =>
+          accountTrialBest(TrialKind.runeweaver) >= 15 ? 1 : 0,
         'probably_fine' => totalSinisterAdventuresCompleted,
         _ => 0,
       };
@@ -1837,6 +1888,9 @@ class HouseholdProvider extends ChangeNotifier {
       'musicEnabled': musicEnabled,
       'musicStyle': musicStyle.name,
       'soundEffectsEnabled': soundEffectsEnabled,
+      'enabledNotificationCategories': enabledNotificationCategories
+          .map((category) => category.name)
+          .toList(),
       'achievementsCompact': achievementsCompact,
       'tutorialCompleted': tutorialCompleted,
       'pet': pet.toJson(),

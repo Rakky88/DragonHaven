@@ -24,6 +24,7 @@ import 'package:dragon_haven/screens/inventory_screen.dart';
 import 'package:dragon_haven/screens/shop_hub_screen.dart';
 import 'package:dragon_haven/services/social_repository.dart';
 import 'package:dragon_haven/services/audio_service.dart';
+import 'package:dragon_haven/services/notification_service.dart';
 import 'package:dragon_haven/widgets/achievement_badge_sprite.dart';
 import 'package:dragon_haven/widgets/achievement_reveal.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
@@ -434,23 +435,8 @@ void main() {
         matching: find.byType(Scrollable),
       ),
     );
-    expect(find.byKey(const Key('music-style-selector')), findsOneWidget);
-    expect(game.musicStyle, HavenMusicStyle.basic);
-    final classic = find.descendant(
-      of: find.byKey(const Key('music-style-segments')),
-      matching: find.text('Classic'),
-    );
-    await tester.scrollUntilVisible(
-      classic,
-      120,
-      scrollable: find.descendant(
-        of: find.byKey(const PageStorageKey('account-scroll')),
-        matching: find.byType(Scrollable),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(classic);
-    await tester.pump();
+    expect(find.byKey(const Key('music-style-selector')), findsNothing);
+    expect(find.text('Music · Rêverie'), findsOneWidget);
     expect(game.musicStyle, HavenMusicStyle.classic);
     expect(find.byKey(const Key('music-switch')), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('music-switch')));
@@ -465,6 +451,55 @@ void main() {
     await tester.pump();
     expect(game.musicEnabled, isFalse);
     expect(game.soundEffectsEnabled, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('notification settings expose every reason and save each toggle',
+      (tester) async {
+    final game = await pumpGame(
+      tester,
+      onboarded: true,
+      hatched: true,
+      surfaceSize: const Size(390, 800),
+    );
+    await tester.tap(find.byKey(const Key('app-overflow-menu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('app-menu-account')));
+    await tester.pumpAndSettle();
+    final settingsButton = find.byKey(
+      const Key('notification-settings-button'),
+    );
+    await tester.scrollUntilVisible(
+      settingsButton,
+      240,
+      scrollable: find.descendant(
+        of: find.byKey(const PageStorageKey('account-scroll')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.tap(settingsButton);
+    await tester.pumpAndSettle();
+
+    for (final category in HavenNotificationCategory.values) {
+      expect(find.byKey(Key('notification-${category.name}')), findsOneWidget);
+      expect(game.notificationEnabled(category), isTrue);
+    }
+    final tradeReturn = find.byKey(
+      const Key('notification-tradeReturns'),
+    );
+    await tester.drag(
+      find.byKey(const PageStorageKey('notification-settings-scroll')),
+      const Offset(0, -650),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(tradeReturn);
+    await tester.pumpAndSettle();
+    await tester.tap(tradeReturn);
+    await tester.pump();
+    expect(
+      game.notificationEnabled(HavenNotificationCategory.tradeReturns),
+      isFalse,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -609,13 +644,9 @@ void main() {
     final openMyDragons = find.byKey(const Key('open-my-dragons'));
     final openCodex = find.byKey(const Key('open-draconomicon'));
     expect(openMyDragons, findsOneWidget);
-    expect(find.byKey(const Key('my-dragons-banner-label')), findsOneWidget);
-    expect(
-      tester
-          .widget<Text>(find.byKey(const Key('my-dragons-banner-label')))
-          .maxLines,
-      1,
-    );
+    expect(openCodex, findsOneWidget);
+    expect(tester.getSize(openMyDragons), const Size.square(64));
+    expect(tester.getSize(openCodex), const Size.square(64));
     expect(tester.getTopLeft(openCodex).dy,
         lessThan(tester.getTopLeft(towerRoof).dy));
     expect(
@@ -730,19 +761,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the My Dragons banner localizes without wrapping',
-      (tester) async {
+  testWidgets('the My Dragons shortcut tooltip localizes', (tester) async {
     final game = await pumpGame(tester, onboarded: true, hatched: true);
     await game.setLanguage('de');
     await tester.pump(const Duration(milliseconds: 300));
 
-    final label =
-        tester.widget<Text>(find.byKey(const Key('my-dragons-banner-label')));
-    expect(label.data, 'Meine Drachen');
-    expect(label.maxLines, 1);
-    expect(label.softWrap, isFalse);
-    expect(label.style?.fontFamily, 'serif');
-    expect(label.style?.fontWeight, FontWeight.w900);
+    final shortcut = find.byKey(const Key('open-my-dragons'));
+    final tooltip = tester.widget<Tooltip>(
+      find.descendant(of: shortcut, matching: find.byType(Tooltip)),
+    );
+    expect(tooltip.message, 'Meine Drachen');
     expect(tester.takeException(), isNull);
   });
 
@@ -1194,7 +1222,6 @@ void main() {
     await tester.tap(openCodex);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    await tester.pump();
 
     expect(find.text('The Draconomicon'), findsWidgets);
     final finalLineage = find.byKey(PageStorageKey(

@@ -16,6 +16,7 @@ import android.net.Uri
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import androidx.core.app.NotificationManagerCompat
 
 class MainActivity : FlutterActivity() {
     private data class ScheduledNotification(
@@ -28,7 +29,6 @@ class MainActivity : FlutterActivity() {
 
     private var activityInForeground = false
     private var musicEnabled = true
-    private var musicStyle = "basic"
     private var effectsEnabled = true
     private var musicPlayer: MediaPlayer? = null
     private var musicEnhancer: LoudnessEnhancer? = null
@@ -103,18 +103,12 @@ class MainActivity : FlutterActivity() {
             when (call.method) {
                 "setPreferences" -> {
                     val wasMusicEnabled = musicEnabled
-                    val previousMusicStyle = musicStyle
                     musicEnabled = call.argument<Boolean>("music") ?: true
                     effectsEnabled = call.argument<Boolean>("effects") ?: true
-                    musicStyle = call.argument<String>("style") ?: musicStyle
                     musicScene = call.argument<String>("scene") ?: musicScene
                     if (!musicEnabled) {
                         fadeOutAndStopMusic()
-                    } else if (
-                        !wasMusicEnabled ||
-                        musicPlayer == null ||
-                        previousMusicStyle != musicStyle
-                    ) {
+                    } else if (!wasMusicEnabled || musicPlayer == null) {
                         musicScene?.let(::startMusic)
                     }
                     result.success(true)
@@ -125,9 +119,8 @@ class MainActivity : FlutterActivity() {
                 }
                 "setMusicScene" -> {
                     val id = call.argument<String>("id")
-                    val unchanged = id != null && id == musicScene
                     musicScene = id
-                    if (unchanged && musicPlayer != null) {
+                    if (id != null && musicPlayer != null) {
                         musicPlayer?.let { player ->
                             if (!player.isPlaying) player.start()
                             player.setVolume(MUSIC_VOLUME, MUSIC_VOLUME)
@@ -209,6 +202,15 @@ class MainActivity : FlutterActivity() {
                     )
                     result.success(true)
                 }
+                "cancel" -> {
+                    val id = call.argument<String>("id")
+                    if (id == null) {
+                        result.error("invalid_notification", "Missing notification id.", null)
+                        return@setMethodCallHandler
+                    }
+                    cancelNotification(id)
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
         }
@@ -221,13 +223,12 @@ class MainActivity : FlutterActivity() {
         "achievement" -> R.raw.achievement
         "adventure_return" -> R.raw.adventure_return
         "adventure_start" -> R.raw.adventure_start
-        // Higher chest tiers use the warm celebratory cues instead of the
-        // older, heavier impacts. Mythical deliberately gets the full magical
-        // fanfare while Dragon uses the shorter achievement flourish.
-        "chest_dragon" -> R.raw.achievement
+        // Higher chest tiers use distinct uplifting reveal cues instead of the
+        // older, downbeat impacts. Mythical receives the ascension flourish.
+        "chest_dragon" -> R.raw.hatch_reveal
         "chest_dragon_legacy" -> R.raw.chest_dragon
         "chest_gold" -> R.raw.chest_gold
-        "chest_mythical" -> R.raw.hatch_reveal
+        "chest_mythical" -> R.raw.evolution_ascended
         "chest_mythical_legacy" -> R.raw.chest_mythical
         "chest_silver" -> R.raw.chest_silver
         "chest_sinister" -> R.raw.chest_sinister
@@ -296,6 +297,23 @@ class MainActivity : FlutterActivity() {
         alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, notification.at, pending)
     }
 
+    private fun cancelNotification(id: String) {
+        notificationsWaitingForPermission.remove(id)
+        val intent = Intent(this, DragonHavenNotificationReceiver::class.java)
+        val pending = PendingIntent.getBroadcast(
+            this,
+            id.hashCode(),
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
+        )
+        if (pending != null) {
+            val alarm = getSystemService(ALARM_SERVICE) as AlarmManager
+            alarm.cancel(pending)
+            pending.cancel()
+        }
+        NotificationManagerCompat.from(this).cancel(id.hashCode())
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -327,11 +345,7 @@ class MainActivity : FlutterActivity() {
 
     private fun startMusic(id: String): Boolean {
         if (!musicEnabled) return false
-        val resource = if (musicStyle == "classic") {
-            rawResourceId("reverie")
-        } else {
-            rawResourceId(id)
-        }
+        val resource = rawResourceId("reverie")
         if (resource == 0) return false
         if (!requestMusicFocus()) return false
         releaseMusicPlayer()

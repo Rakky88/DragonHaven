@@ -552,11 +552,29 @@ extension DragonHavenSystems on HouseholdProvider {
     return added || oldBoundary != trialRefilledAt;
   }
 
+  void _scheduleTrialsFullNotification() {
+    final missingOffers = 3 - trialOffers.length;
+    if (missingOffers <= 0) return;
+    final fullAt = nextTrialRefreshAt().add(
+      Duration(minutes: 15 * (missingOffers - 1)),
+    );
+    final strings = AppStrings(languageCode);
+    unawaited(HavenNotifications.trialsFull(
+      at: fullAt,
+      title: strings.pick('Three Trials are ready', 'Drie Trials staan klaar'),
+      body: strings.pick(
+        'Your Trial board is full. Choose a dragon and chase a new high score.',
+        'Je Trial-bord is vol. Kies een draak en jaag op een nieuwe highscore.',
+      ),
+    ));
+  }
+
   Future<void> dismissTrial(String offerId) async {
     _refreshTrialOffers();
     final before = trialOffers.length;
     trialOffers.removeWhere((offer) => offer.id == offerId);
     if (trialOffers.length == before) return;
+    _scheduleTrialsFullNotification();
     await _notifyAndSave();
   }
 
@@ -598,6 +616,7 @@ extension DragonHavenSystems on HouseholdProvider {
       relicInventory.update(relic, (value) => value + 1, ifAbsent: () => 1);
     }
     trialOffers.removeAt(offerIndex);
+    _scheduleTrialsFullNotification();
     _evolveReadyDragons(_clock());
     _addActivity(
       message:

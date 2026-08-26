@@ -78,7 +78,7 @@ void main() {
   });
 
   test('achievements have unique badges and use Common terminology', () {
-    expect(achievementCatalog, hasLength(25));
+    expect(achievementCatalog, hasLength(28));
     expect(
       achievementCatalog.map((achievement) => achievement.badge).toSet(),
       hasLength(achievementCatalog.length),
@@ -236,8 +236,11 @@ void main() {
     expect(File('${directory.path}/hatch_reveal.wav').lengthSync(),
         greaterThan(1000000),
         reason: 'The hatch reveal uses the full original cinematic fanfare.');
-    expect(nativeBridge, contains('"chest_dragon" -> R.raw.achievement'));
-    expect(nativeBridge, contains('"chest_mythical" -> R.raw.hatch_reveal'));
+    expect(nativeBridge, contains('"chest_dragon" -> R.raw.hatch_reveal'));
+    expect(
+        nativeBridge, contains('"chest_mythical" -> R.raw.evolution_ascended'));
+    expect(nativeBridge, contains('val resource = rawResourceId("reverie")'));
+    expect(nativeBridge, isNot(contains('previousMusicStyle')));
   });
 
   test('Android keeps hatch reminders through permission and exact-alarm paths',
@@ -329,5 +332,35 @@ void main() {
       ),
       [40, 30, 25, 5],
     );
+  });
+
+  test('Supabase stores durable social events and private profile metadata',
+      () {
+    final notifications = File(
+      'supabase/migrations/202608260009_social_notification_inbox.sql',
+    ).readAsStringSync();
+    final presence = File(
+      'supabase/migrations/202608260010_profile_last_online.sql',
+    ).readAsStringSync();
+    final friendCodex = File(
+      'supabase/migrations/202608260011_friend_draconomicon.sql',
+    ).readAsStringSync();
+
+    for (final kind in const [
+      'friend_request',
+      'friend_accepted',
+      'trade_request',
+      'trade_return',
+      'trade_completed',
+    ]) {
+      expect(notifications, contains("'$kind'"));
+    }
+    expect(notifications, contains('list_social_notifications'));
+    expect(notifications, contains('acknowledge_social_notifications'));
+    expect(presence, contains('last_online_datetime timestamptz'));
+    expect(presence, contains('profiles_touch_last_online_datetime'));
+    expect(friendCodex, contains('discovered_forms text[]'));
+    expect(friendCodex, contains('prismatic_forms text[]'));
+    expect(friendCodex, contains('list_my_friends'));
   });
 }

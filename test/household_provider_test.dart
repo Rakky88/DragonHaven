@@ -16,6 +16,7 @@ import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/services/storage_service.dart';
 import 'package:dragon_haven/services/audio_service.dart';
+import 'package:dragon_haven/services/notification_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -36,7 +37,7 @@ void main() {
     expect(game.pet.incubationMinutes, 60);
     expect(game.onboardingComplete, isFalse);
     expect(game.musicEnabled, isTrue);
-    expect(game.musicStyle, HavenMusicStyle.basic);
+    expect(game.musicStyle, HavenMusicStyle.classic);
     expect(game.soundEffectsEnabled, isTrue);
     expect(game.totalChestCount, 0);
     expect(game.portraitCount, 1);
@@ -113,6 +114,38 @@ void main() {
     expect(restored.musicEnabled, isTrue);
     expect(restored.musicStyle, HavenMusicStyle.classic);
     expect(restored.soundEffectsEnabled, isFalse);
+  });
+
+  test('retired basic soundtrack preferences migrate to Rêverie', () async {
+    SharedPreferences.setMockInitialValues({
+      'dragon_haven_state_v1': '{"musicStyle":"basic"}',
+    });
+
+    final restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.musicStyle, HavenMusicStyle.classic);
+  });
+
+  test('notification reasons default on and persist independently', () async {
+    final game = HouseholdProvider(random: Random(30));
+    expect(
+      game.enabledNotificationCategories,
+      containsAll(HavenNotificationCategory.values),
+    );
+
+    await game.setNotificationEnabled(
+      HavenNotificationCategory.tradeReturns,
+      false,
+    );
+    final restored = await HouseholdProvider.loadFromStorage();
+
+    expect(
+      restored.notificationEnabled(HavenNotificationCategory.tradeReturns),
+      isFalse,
+    );
+    expect(
+      restored.notificationEnabled(HavenNotificationCategory.tradeRequests),
+      isTrue,
+    );
   });
 
   test('the preferred achievement view persists', () async {
@@ -495,8 +528,8 @@ void main() {
   });
 
   test('the achievement catalog has 25 unique humorous milestones', () {
-    expect(achievementCatalog, hasLength(25));
-    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(25));
+    expect(achievementCatalog, hasLength(28));
+    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(28));
     expect(achievementCatalog.every((entry) => entry.target > 0), isTrue);
     expect(
         achievementCatalog.every((entry) =>

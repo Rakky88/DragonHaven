@@ -36,7 +36,6 @@ enum HavenMusicScene {
 }
 
 enum HavenMusicStyle {
-  basic('basic'),
   classic('classic');
 
   const HavenMusicStyle(this.assetId);
@@ -52,7 +51,7 @@ abstract final class HavenAudio {
   static const _channel = MethodChannel('nl.dragonhaven.app/audio');
   static bool _musicEnabled = true;
   static bool _effectsEnabled = true;
-  static HavenMusicStyle _musicStyle = HavenMusicStyle.basic;
+  static HavenMusicStyle _musicStyle = HavenMusicStyle.classic;
   static HavenMusicScene? _musicScene;
 
   static Future<void> applyPreferences({

@@ -96,6 +96,8 @@ class KeeperProfile {
     required this.portraitKey,
     required this.discoveredDragonCount,
     required this.inventoryImported,
+    this.discoveredForms = const [],
+    this.prismaticForms = const [],
     this.cavernFlightBest = 0,
     this.ruinBreakerBest = 0,
     this.runeweaverBest = 0,
@@ -109,6 +111,8 @@ class KeeperProfile {
   final String portraitKey;
   final int discoveredDragonCount;
   final bool inventoryImported;
+  final List<String> discoveredForms;
+  final List<String> prismaticForms;
   final int cavernFlightBest;
   final int ruinBreakerBest;
   final int runeweaverBest;
@@ -124,6 +128,8 @@ class KeeperProfile {
       portraitKey: json['portrait_key']?.toString() ?? 'moon',
       discoveredDragonCount: _int(json['discovered_dragon_count']),
       inventoryImported: json['inventory_imported'] == true,
+      discoveredForms: _stringList(json['discovered_forms']),
+      prismaticForms: _stringList(json['prismatic_forms']),
       cavernFlightBest: _int(json['cavern_flight_best']),
       ruinBreakerBest: _int(json['ruin_breaker_best']),
       runeweaverBest: _int(json['runeweaver_best']),
@@ -154,6 +160,32 @@ class FriendshipRequest {
             ? FriendRequestDirection.incoming
             : FriendRequestDirection.outgoing,
         keeper: KeeperProfile.fromJson(json),
+        createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0),
+      );
+}
+
+class SocialNotification {
+  const SocialNotification({
+    required this.id,
+    required this.kind,
+    required this.entityId,
+    required this.actorDisplayName,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String kind;
+  final String entityId;
+  final String actorDisplayName;
+  final DateTime createdAt;
+
+  factory SocialNotification.fromJson(Map<String, dynamic> json) =>
+      SocialNotification(
+        id: json['notification_id']?.toString() ?? '',
+        kind: json['kind']?.toString() ?? '',
+        entityId: json['entity_id']?.toString() ?? '',
+        actorDisplayName: json['actor_display_name']?.toString() ?? 'Keeper',
         createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
             DateTime.fromMillisecondsSinceEpoch(0),
       );
@@ -540,6 +572,8 @@ class OnlineInventorySnapshot {
     required this.relics,
     required this.furnitureCatalogIds,
     required this.discoveredLineageIds,
+    required this.discoveredForms,
+    required this.prismaticForms,
   });
 
   final int coins;
@@ -550,6 +584,8 @@ class OnlineInventorySnapshot {
   final Map<String, int> relics;
   final List<String> furnitureCatalogIds;
   final List<String> discoveredLineageIds;
+  final List<String> discoveredForms;
+  final List<String> prismaticForms;
 
   factory OnlineInventorySnapshot.fromGame(HouseholdProvider game) {
     final dragons = [game.pet, ...game.sanctuaryDragons]
@@ -635,6 +671,8 @@ class OnlineInventorySnapshot {
         ...game.discoveredForms.map((key) => key.split(':').first),
         ...game.prismaticForms.map((key) => key.split(':').first),
       }.toList(growable: false),
+      discoveredForms: game.discoveredForms.toList(growable: false),
+      prismaticForms: game.prismaticForms.toList(growable: false),
     );
   }
 
@@ -665,6 +703,8 @@ class OnlineInventorySnapshot {
         );
     return {
       'discovered_dragon_count': discoveredLineageIds.length,
+      'discovered_forms': discoveredForms,
+      'prismatic_forms': prismaticForms,
       'trial_high_scores': {
         'cavernFlight': _bestDragonTrialScore('cavernFlight'),
         'ruinBreaker': _bestDragonTrialScore('ruinBreaker'),
@@ -686,3 +726,7 @@ class OnlineInventorySnapshot {
 
 int _int(Object? value, {int fallback = 0}) =>
     value is num ? value.toInt() : int.tryParse('$value') ?? fallback;
+
+List<String> _stringList(Object? value) => value is List
+    ? value.map((entry) => entry.toString()).toList(growable: false)
+    : const [];

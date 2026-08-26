@@ -9,11 +9,30 @@ void main() {
 
   setUp(() {
     calls.clear();
+    HavenNotifications.configure(HavenNotificationCategory.values.toSet());
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
       return true;
     });
+  });
+
+  test('disabled notification reasons do not reach the native bridge',
+      () async {
+    HavenNotifications.configure(
+      HavenNotificationCategory.values
+          .where((category) =>
+              category != HavenNotificationCategory.friendRequests)
+          .toSet(),
+    );
+
+    await HavenNotifications.friendRequest(
+      id: 'muted-request',
+      title: 'New friend request',
+      body: 'Lyra wants to be friends.',
+    );
+
+    expect(calls, isEmpty);
   });
 
   tearDown(() {
@@ -71,6 +90,26 @@ void main() {
       'title': 'New friend request',
       'body': 'Lyra wants to be friends.',
       'kind': 'friend_request',
+    });
+  });
+
+  test('a full Trial board is scheduled for the exact refill boundary',
+      () async {
+    final at = DateTime(2036, 8, 26, 10, 45);
+    await HavenNotifications.trialsFull(
+      at: at,
+      title: 'Three Trials are ready',
+      body: 'Your Trial board is full.',
+    );
+
+    expect(calls, hasLength(1));
+    expect(calls.single.method, 'schedule');
+    expect(calls.single.arguments, {
+      'id': 'trials-full',
+      'at': at.millisecondsSinceEpoch,
+      'title': 'Three Trials are ready',
+      'body': 'Your Trial board is full.',
+      'kind': 'trials_full',
     });
   });
 

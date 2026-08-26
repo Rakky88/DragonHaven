@@ -49,8 +49,6 @@ class OnlineAccountProvider extends ChangeNotifier {
   final String Function() _languageCode;
   StreamSubscription<bool>? _authSubscription;
   Timer? _refreshTimer;
-  final Set<String> _notifiedTradeStates = {};
-  final Set<String> _knownIncomingRequestIds = {};
   bool _disposed = false;
 
   KeeperProfile? profile;
@@ -361,6 +359,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       _repository.loadGroupAdventures(),
       _repository.loadTrades(),
       _repository.loadTradeInventory(),
+      _repository.loadSocialNotifications(),
     ]);
     profile = ownProfile;
     friends = results[0] as List<KeeperProfile>;
@@ -370,29 +369,71 @@ class OnlineAccountProvider extends ChangeNotifier {
     groupLobbies = results[4] as List<GroupAdventureLobby>;
     trades = results[5] as List<TradeOffer>;
     tradeInventory = results[6] as List<TradeInventoryItem>;
+    final socialNotifications = results[7] as List<SocialNotification>;
     await _synchronizeGroupReservations({
       for (final lobby in myGroupAdventures)
         if (lobby.myDragonId case final dragonId?) dragonId: lobby.id,
     });
     await _synchronizeLocalTradeReservations();
-    _notifyAboutFriendRequests();
-    _notifyAboutTradeUpdates();
+    await _deliverSocialNotifications(socialNotifications);
   }
 
-  void _notifyAboutFriendRequests() {
-    for (final request in incomingRequests) {
-      if (!_knownIncomingRequestIds.add(request.id)) continue;
-      final dutch = _languageCode() == 'nl';
-      unawaited(HavenNotifications.friendRequest(
-        id: request.id,
-        title: dutch ? 'Nieuw vriendschapsverzoek' : 'New friend request',
-        body: dutch
-            ? '${request.keeper.displayName} wil vrienden worden.'
-            : '${request.keeper.displayName} wants to be friends.',
-      ));
+  Future<void> _deliverSocialNotifications(
+      List<SocialNotification> notifications) async {
+    if (notifications.isEmpty) return;
+    final dutch = _languageCode() == 'nl';
+    for (final notification in notifications) {
+      final name = notification.actorDisplayName;
+      switch (notification.kind) {
+        case 'friend_request':
+          await HavenNotifications.friendRequest(
+            id: notification.id,
+            title: dutch ? 'Nieuw vriendschapsverzoek' : 'New friend request',
+            body: dutch
+                ? '$name wil vrienden worden.'
+                : '$name wants to be friends.',
+          );
+        case 'friend_accepted':
+          await HavenNotifications.friendAccepted(
+            id: notification.id,
+            title: dutch
+                ? 'Vriendschapsverzoek geaccepteerd'
+                : 'Friend request accepted',
+            body: dutch
+                ? '$name staat nu in je vriendenlijst.'
+                : '$name is now in your friends list.',
+          );
+        case 'trade_request':
+          await HavenNotifications.tradeUpdate(
+            id: notification.id,
+            title: dutch ? 'Nieuw ruilvoorstel' : 'New trade offer',
+            body: dutch
+                ? '$name wil een item met je ruilen.'
+                : '$name wants to trade an item with you.',
+            category: HavenNotificationCategory.tradeRequests,
+          );
+        case 'trade_return':
+          await HavenNotifications.tradeUpdate(
+            id: notification.id,
+            title: dutch ? 'Tegenaanbod ontvangen' : 'Return item offered',
+            body: dutch
+                ? '$name heeft een item aangeboden. Bevestig de ruil.'
+                : '$name offered an item. Confirm the trade.',
+            category: HavenNotificationCategory.tradeReturns,
+          );
+        case 'trade_completed':
+          await HavenNotifications.tradeUpdate(
+            id: notification.id,
+            title: dutch ? 'Ruil afgerond' : 'Trade completed',
+            body: dutch
+                ? 'Je ruil met $name is veilig afgerond.'
+                : 'Your trade with $name completed safely.',
+            category: HavenNotificationCategory.tradeCompletions,
+          );
+      }
     }
-    _knownIncomingRequestIds.removeWhere(
-      (id) => !incomingRequests.any((request) => request.id == id),
+    await _repository.acknowledgeSocialNotifications(
+      notifications.map((notification) => notification.id).toList(),
     );
   }
 
@@ -414,25 +455,6 @@ class OnlineAccountProvider extends ChangeNotifier {
       }
     }
     await _synchronizeTradeReservations(eggs, chests, relics);
-  }
-
-  void _notifyAboutTradeUpdates() {
-    for (final trade in trades.where((trade) => trade.needsMyResponse)) {
-      final state = '${trade.id}:${trade.status}';
-      if (!_notifiedTradeStates.add(state)) continue;
-      final dutch = _languageCode() == 'nl';
-      unawaited(HavenNotifications.tradeUpdate(
-        id: state,
-        title: dutch ? 'Nieuwe ruil' : 'New trade',
-        body: trade.amInitiator
-            ? (dutch
-                ? '${trade.otherKeeper.displayName} heeft een item aangeboden. Bevestig de ruil.'
-                : '${trade.otherKeeper.displayName} offered an item. Confirm the trade.')
-            : (dutch
-                ? '${trade.otherKeeper.displayName} wil een item met je ruilen.'
-                : '${trade.otherKeeper.displayName} wants to trade with you.'),
-      ));
-    }
   }
 
   void _ensureRefreshTimer() {
@@ -470,8 +492,6 @@ class OnlineAccountProvider extends ChangeNotifier {
     groupAdventureStatus = null;
     trades = const [];
     tradeInventory = const [];
-    _knownIncomingRequestIds.clear();
-    _notifiedTradeStates.clear();
     unawaited(_synchronizeGroupReservations(const {}));
     unawaited(_synchronizeTradeReservations(const {}, const {}, const {}));
   }

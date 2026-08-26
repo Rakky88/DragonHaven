@@ -26,6 +26,8 @@ abstract interface class SocialRepository {
   Future<KeeperProfile> loadMyProfile();
   Future<List<KeeperProfile>> loadFriends();
   Future<List<FriendshipRequest>> loadRequests();
+  Future<List<SocialNotification>> loadSocialNotifications();
+  Future<void> acknowledgeSocialNotifications(List<String> notificationIds);
   Future<List<KeeperProfile>> loadBlockedKeepers();
   Future<void> updateProfile({
     required String displayName,
@@ -89,6 +91,13 @@ class DisabledSocialRepository implements SocialRepository {
   Future<KeeperProfile> loadMyProfile() async => _disabled();
   @override
   Future<List<FriendshipRequest>> loadRequests() async => _disabled();
+  @override
+  Future<List<SocialNotification>> loadSocialNotifications() async =>
+      _disabled();
+  @override
+  Future<void> acknowledgeSocialNotifications(
+          List<String> notificationIds) async =>
+      _disabled();
   @override
   Future<void> blockKeeper(String userId) async => _disabled();
   @override

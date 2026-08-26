@@ -9,14 +9,28 @@ import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
 
 class DraconomiconScreen extends StatelessWidget {
-  const DraconomiconScreen({super.key});
+  const DraconomiconScreen({
+    super.key,
+    this.discoveredForms,
+    this.prismaticForms,
+    this.keeperName,
+  });
+
+  final Set<String>? discoveredForms;
+  final Set<String>? prismaticForms;
+  final String? keeperName;
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
+    final normalCollection = discoveredForms ?? game.discoveredForms;
+    final spectralCollection = prismaticForms ?? game.prismaticForms;
+    final discoveredLineageCount =
+        normalCollection.map((key) => key.split(':').first).toSet().length;
+    final hasSpectralCollection = spectralCollection.isNotEmpty;
     return DefaultTabController(
-      length: game.hasSpectralCollection ? 2 : 1,
+      length: hasSpectralCollection ? 2 : 1,
       child: Column(
         children: [
           Padding(
@@ -51,7 +65,13 @@ class DraconomiconScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          strings.pick('The Draconomicon', 'Het Draconomicon'),
+                          keeperName == null
+                              ? strings.pick(
+                                  'The Draconomicon', 'Het Draconomicon')
+                              : strings.pick(
+                                  "$keeperName's Draconomicon",
+                                  'Draconomicon van $keeperName',
+                                ),
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w900,
@@ -61,8 +81,12 @@ class DraconomiconScreen extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           strings.pick(
-                            'Every form you raise leaves its magic on the page.',
-                            'Elke vorm die je grootbrengt laat zijn magie achter op de bladzij.',
+                            keeperName == null
+                                ? 'Every form you raise leaves its magic on the page.'
+                                : 'Every form this keeper discovered left its magic on the page.',
+                            keeperName == null
+                                ? 'Elke vorm die je grootbrengt laat zijn magie achter op de bladzij.'
+                                : 'Elke vorm die deze hoeder ontdekte liet magie achter op de bladzij.',
                           ),
                           style: const TextStyle(
                             color: Color(0xFFE4DCF5),
@@ -74,7 +98,8 @@ class DraconomiconScreen extends StatelessWidget {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(99),
                           child: LinearProgressIndicator(
-                            value: game.discoveredLineageCount / 42,
+                            value:
+                                discoveredLineageCount / dragonLineages.length,
                             minHeight: 7,
                             color: const Color(0xFFFFD66E),
                             backgroundColor: Colors.white24,
@@ -99,18 +124,24 @@ class DraconomiconScreen extends StatelessWidget {
                       tabs: [
                         Tab(
                             text: strings.pick(
-                                'Dragons ${game.discoveredLineageCount}/42',
-                                'Draken ${game.discoveredLineageCount}/42')),
-                        if (game.hasSpectralCollection)
+                                'Dragons $discoveredLineageCount/${dragonLineages.length}',
+                                'Draken $discoveredLineageCount/${dragonLineages.length}')),
+                        if (hasSpectralCollection)
                           Tab(text: strings.pick('Spectral', 'Spectral')),
                       ]))
             ]),
           ),
           Expanded(
               child: TabBarView(children: [
-            const _DragonCollection(spectral: false),
-            if (game.hasSpectralCollection)
-              const _DragonCollection(spectral: true),
+            _DragonCollection(
+              spectral: false,
+              collection: normalCollection,
+            ),
+            if (hasSpectralCollection)
+              _DragonCollection(
+                spectral: true,
+                collection: spectralCollection,
+              ),
           ])),
         ],
       ),
@@ -119,11 +150,14 @@ class DraconomiconScreen extends StatelessWidget {
 }
 
 class _DragonCollection extends StatelessWidget {
-  const _DragonCollection({required this.spectral});
+  const _DragonCollection({
+    required this.spectral,
+    required this.collection,
+  });
   final bool spectral;
+  final Set<String> collection;
   @override
   Widget build(BuildContext context) {
-    final game = context.watch<HouseholdProvider>();
     return ListView.builder(
       key: PageStorageKey(
           spectral ? 'draconomicon-spectral' : 'draconomicon-dragons'),
@@ -134,7 +168,7 @@ class _DragonCollection extends StatelessWidget {
         child: DragonLineageEntry(
             lineage: dragonLineages[index],
             number: index + 1,
-            game: game,
+            collection: collection,
             spectral: spectral),
       ),
     );
@@ -145,26 +179,23 @@ class DragonLineageEntry extends StatelessWidget {
   const DragonLineageEntry(
       {required this.lineage,
       required this.number,
-      required this.game,
+      required this.collection,
       required this.spectral,
       super.key});
   final DragonLineage lineage;
   final int number;
-  final HouseholdProvider game;
+  final Set<String> collection;
   final bool spectral;
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final collection = spectral ? game.prismaticForms : game.discoveredForms;
     final discovered =
         collection.any((key) => key.startsWith('${lineage.id}:'));
     final count =
         collection.where((key) => key.startsWith('${lineage.id}:')).length;
-    final masteryKnown =
-        game.hasDiscovered(lineage.id, 'ascended:mastery', prismatic: spectral);
+    final masteryKnown = collection.contains('${lineage.id}:ascended:mastery');
     final visibleFormCount = masteryKnown ? 6 : 5;
-    final firstKnown =
-        game.hasDiscovered(lineage.id, 'hatchling', prismatic: spectral);
+    final firstKnown = collection.contains('${lineage.id}:hatchling');
     return Card(
       clipBehavior: Clip.antiAlias,
       color: discovered ? Colors.white : const Color(0xFFF0EDF5),
@@ -207,18 +238,21 @@ class DragonLineageEntry extends StatelessWidget {
             children: [
               _FormTile(
                   lineage: lineage,
+                  collection: collection,
                   formKey: 'hatchling',
                   label: strings.petStageNameByKey('spark'),
                   stageKey: 'spark',
                   spectral: spectral),
               _FormTile(
                   lineage: lineage,
+                  collection: collection,
                   formKey: 'wyrmling',
                   label: strings.petStageNameByKey('nestDragon'),
                   stageKey: 'nestDragon',
                   spectral: spectral),
               _FormTile(
                   lineage: lineage,
+                  collection: collection,
                   formKey: 'ascended:might',
                   label: strings.pick('Might', 'Kracht'),
                   stageKey: 'homeGuardian',
@@ -226,6 +260,7 @@ class DragonLineageEntry extends StatelessWidget {
                   spectral: spectral),
               _FormTile(
                   lineage: lineage,
+                  collection: collection,
                   formKey: 'ascended:arcana',
                   label: strings.pick('Arcana', 'Arcana'),
                   stageKey: 'homeGuardian',
@@ -233,6 +268,7 @@ class DragonLineageEntry extends StatelessWidget {
                   spectral: spectral),
               _FormTile(
                   lineage: lineage,
+                  collection: collection,
                   formKey: 'ascended:spirit',
                   label: strings.pick('Spirit', 'Geest'),
                   stageKey: 'homeGuardian',
@@ -241,6 +277,7 @@ class DragonLineageEntry extends StatelessWidget {
               if (masteryKnown)
                 _FormTile(
                     lineage: lineage,
+                    collection: collection,
                     formKey: 'ascended:mastery',
                     label: 'Mastery',
                     stageKey: 'homeGuardian',
@@ -257,12 +294,14 @@ class DragonLineageEntry extends StatelessWidget {
 class _FormTile extends StatelessWidget {
   const _FormTile(
       {required this.lineage,
+      required this.collection,
       required this.formKey,
       required this.label,
       required this.stageKey,
       required this.spectral,
       this.path = 'might'});
   final DragonLineage lineage;
+  final Set<String> collection;
   final String formKey;
   final String label;
   final String stageKey;
@@ -270,9 +309,8 @@ class _FormTile extends StatelessWidget {
   final bool spectral;
   @override
   Widget build(BuildContext context) {
-    final game = context.watch<HouseholdProvider>();
     final strings = AppStrings.of(context);
-    final known = game.hasDiscovered(lineage.id, formKey, prismatic: spectral);
+    final known = collection.contains('${lineage.id}:$formKey');
     final title = !known
         ? '???'
         : stageKey == 'homeGuardian'

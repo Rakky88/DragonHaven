@@ -1011,6 +1011,33 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'zh': ['神话成真', '获得一只神话族龙。'],
     'ja': ['神話が現実に', 'ミシカル一族のドラゴンを手に入れる。'],
   },
+  'trial_might_s_plus': {
+    'de': ['Mauer? Welche Mauer?', 'Erreiche Rang S+ in Ruinenbrecher.'],
+    'es': ['¿Muro? ¿Qué muro?', 'Consigue rango S+ en Romperruinas.'],
+    'fr': ['Un mur ? Quel mur ?', 'Obtiens le rang S+ dans Briseur de ruines.'],
+    'it': ['Muro? Quale muro?', 'Ottieni il grado S+ in Spezzarovine.'],
+    'pt': ['Muro? Que muro?', 'Alcance a classificação S+ em Quebra-ruínas.'],
+    'zh': ['墙？什么墙？', '在遗迹破坏者中获得 S+ 评级。'],
+    'ja': ['壁？何の壁？', 'ルインブレイカーでS+ランクを獲得する。'],
+  },
+  'trial_spirit_s_plus': {
+    'de': ['Kristallklarer Flug', 'Erreiche Rang S+ im Höhlenflug.'],
+    'es': ['Vuelo cristalino', 'Consigue rango S+ en Vuelo cavernario.'],
+    'fr': ['Vol cristallin', 'Obtiens le rang S+ dans Vol cavernicole.'],
+    'it': ['Volo cristallino', 'Ottieni il grado S+ in Volo nella caverna.'],
+    'pt': ['Voo cristalino', 'Alcance a classificação S+ em Voo na caverna.'],
+    'zh': ['水晶般的飞行', '在洞窟飞行中获得 S+ 评级。'],
+    'ja': ['水晶のような飛行', '洞窟飛行でS+ランクを獲得する。'],
+  },
+  'trial_arcana_s_plus': {
+    'de': ['Rune erledigt', 'Erreiche Rang S+ in Runenweber.'],
+    'es': ['Runa resuelta', 'Consigue rango S+ en Tejerrunas.'],
+    'fr': ['Rune accomplie', 'Obtiens le rang S+ dans Tisseur de runes.'],
+    'it': ['Runa compiuta', 'Ottieni il grado S+ in Tessirune.'],
+    'pt': ['Runa concluída', 'Alcance a classificação S+ em Tecelão de runas.'],
+    'zh': ['符文已成', '在符文编织者中获得 S+ 评级。'],
+    'ja': ['ルーン完了', 'ルーンウィーバーでS+ランクを獲得する。'],
+  },
   'probably_fine': {
     'de': [
       'Das geht bestimmt gut',

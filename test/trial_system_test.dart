@@ -7,6 +7,7 @@ import 'package:dragon_haven/models/trial.dart';
 import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -37,6 +38,32 @@ void main() {
     expect(game.availableTrials, hasLength(2));
     now = DateTime(2026, 8, 24, 10, 15);
     expect(game.availableTrials, hasLength(3));
+  });
+
+  test('using a Trial schedules one full-board notification at the right slot',
+      () async {
+    const channel = MethodChannel('nl.dragonhaven.app/notifications');
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return true;
+    });
+    addTearDown(() => TestDefaultBinaryMessengerBinding
+        .instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+    var now = DateTime(2036, 8, 26, 10, 7);
+    final game = HouseholdProvider(random: Random(48), clock: () => now);
+    final offer = game.availableTrials.first;
+
+    await game.dismissTrial(offer.id);
+
+    final scheduled = calls.where((call) => call.method == 'schedule').last;
+    expect((scheduled.arguments as Map)['id'], 'trials-full');
+    expect(
+      (scheduled.arguments as Map)['at'],
+      DateTime(2036, 8, 26, 10, 15).millisecondsSinceEpoch,
+    );
   });
 
   test('a Trial pays once and records dragon and account best scores',
@@ -200,6 +227,55 @@ void main() {
         trialRewardForGrade(TrialGrade.sPlus, .90).chestTier, ChestTier.dragon);
     expect(trialRewardForGrade(TrialGrade.sPlus, .99).chestTier,
         ChestTier.mythical);
+  });
+
+  test('each Trial S+ rank unlocks its dedicated achievement', () async {
+    final now = DateTime(2026, 8, 26, 10);
+    final game = HouseholdProvider(random: Random(47), clock: () => now)
+      ..pet = Pet(
+        id: 's-plus-dragon',
+        name: 'Astra',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+      )
+      ..trialOffers = [
+        TrialOffer(
+          id: 's-plus-might',
+          kind: TrialKind.ruinBreaker,
+          appearedAt: now,
+        ),
+        TrialOffer(
+          id: 's-plus-spirit',
+          kind: TrialKind.cavernFlight,
+          appearedAt: now,
+        ),
+        TrialOffer(
+          id: 's-plus-arcana',
+          kind: TrialKind.runeweaver,
+          appearedAt: now,
+        ),
+      ]
+      ..trialRefilledAt = now;
+
+    await game.completeTrial(
+      offerId: 's-plus-might',
+      dragonId: game.pet.id,
+      score: 9000,
+    );
+    await game.completeTrial(
+      offerId: 's-plus-spirit',
+      dragonId: game.pet.id,
+      score: 1500,
+    );
+    await game.completeTrial(
+      offerId: 's-plus-arcana',
+      dragonId: game.pet.id,
+      score: 15,
+    );
+
+    expect(game.unlockedAchievementIds, contains('trial_might_s_plus'));
+    expect(game.unlockedAchievementIds, contains('trial_spirit_s_plus'));
+    expect(game.unlockedAchievementIds, contains('trial_arcana_s_plus'));
   });
 
   test('dragon expertise applies only the requested subtle gameplay assists',

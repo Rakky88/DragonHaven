@@ -244,13 +244,23 @@ Future<void> _finishTrial(
     barrierDismissible: false,
     barrierColor: Colors.black87,
     transitionDuration: const Duration(milliseconds: 500),
-    transitionBuilder: (_, animation, __, child) => FadeTransition(
-      opacity: animation,
-      child: ScaleTransition(
-        scale: CurvedAnimation(parent: animation, curve: Curves.elasticOut),
-        child: child,
-      ),
-    ),
+    transitionBuilder: (_, animation, __, child) {
+      final entrance = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutBack,
+        reverseCurve: Curves.easeIn,
+      );
+      return FadeTransition(
+        opacity: animation,
+        child: RotationTransition(
+          turns: Tween<double>(begin: -.16, end: 0).animate(entrance),
+          child: ScaleTransition(
+            scale: Tween<double>(begin: .68, end: 1).animate(entrance),
+            child: child,
+          ),
+        ),
+      );
+    },
     pageBuilder: (dialogContext, _, __) => _TrialResultCard(
       completion: completion,
       dragonName: dragon.displayName,
@@ -691,18 +701,6 @@ class _CavernFlightGameState extends State<_CavernFlightGame>
                       'Vlieg door iedere opening. Spirit verkleint subtiel je echte hitbox.',
                     ),
                     icon: Icons.touch_app_rounded,
-                  ),
-                if (_ended)
-                  Center(
-                    child: Text(
-                      strings.pick('RECOVERING...', 'HERSTELLEN...'),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        shadows: [Shadow(blurRadius: 12)],
-                      ),
-                    ),
                   ),
               ],
             ),

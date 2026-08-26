@@ -74,6 +74,7 @@ void main() {
     await tester.tap(game);
     await tester.pump(const Duration(milliseconds: 48));
     expect(find.text('Tap to flap'), findsNothing);
+    expect(find.text('RECOVERING...'), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -129,6 +130,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byKey(const Key('trial-result-grade')), findsOneWidget);
+    expect(find.byType(RotationTransition), findsWidgets);
     final grade = tester.widget<Image>(
       find.byKey(const Key('trial-result-grade')),
     );

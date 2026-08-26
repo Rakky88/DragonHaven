@@ -14,6 +14,7 @@ import 'package:dragon_haven/screens/adventure_hub_screen.dart';
 import 'package:dragon_haven/services/social_repository.dart';
 import 'package:dragon_haven/widgets/online_account_access.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -39,7 +40,7 @@ void main() {
     final portrait = find.byType(KeeperPortrait);
     final images = find.descendant(of: portrait, matching: find.byType(Image));
     expect(tester.getSize(portrait), const Size.square(62));
-    expect(images, findsNWidgets(2));
+    expect(images, findsOneWidget);
     expect(
       tester.widgetList<Image>(images).map((image) => image.fit),
       everyElement(BoxFit.cover),
@@ -48,6 +49,79 @@ void main() {
       find.descendant(of: portrait, matching: find.byType(ClipOval)),
       findsOneWidget,
     );
+  });
+
+  test('server-authored friend and trade events become notifications once',
+      () async {
+    const channel = MethodChannel('nl.dragonhaven.app/notifications');
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return true;
+    });
+    addTearDown(() => TestDefaultBinaryMessengerBinding
+        .instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+    final game = HouseholdProvider(random: Random(31));
+    final now = DateTime.utc(2026, 8, 26);
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..notificationRows.addAll([
+        SocialNotification(
+          id: 'notice-request',
+          kind: 'friend_request',
+          entityId: 'friendship-1',
+          actorDisplayName: 'Lyra',
+          createdAt: now,
+        ),
+        SocialNotification(
+          id: 'notice-accepted',
+          kind: 'friend_accepted',
+          entityId: 'friendship-2',
+          actorDisplayName: 'Miriam',
+          createdAt: now,
+        ),
+        SocialNotification(
+          id: 'notice-trade',
+          kind: 'trade_request',
+          entityId: 'trade-1',
+          actorDisplayName: 'Onosick',
+          createdAt: now,
+        ),
+        SocialNotification(
+          id: 'notice-return',
+          kind: 'trade_return',
+          entityId: 'trade-2',
+          actorDisplayName: 'Lyra',
+          createdAt: now,
+        ),
+        SocialNotification(
+          id: 'notice-complete',
+          kind: 'trade_completed',
+          entityId: 'trade-3',
+          actorDisplayName: 'Miriam',
+          createdAt: now,
+        ),
+      ]);
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+
+    await online.initialize();
+
+    expect(calls, hasLength(5));
+    expect(
+      calls.map((call) => (call.arguments as Map)['kind']),
+      containsAll([
+        'friend_request',
+        'friend_accepted',
+        'trade',
+      ]),
+    );
+    expect(repository.acknowledgedNotificationIds, hasLength(5));
+    expect(repository.notificationRows, isEmpty);
+    online.dispose();
   });
 
   test('first online refresh imports the legacy inventory exactly once',
@@ -426,6 +500,16 @@ void main() {
     expect(find.text(friendTitle), findsOneWidget);
     expect(find.byKey(const Key('friend-trade-friend-user')), findsOneWidget);
 
+    await tester.tap(find.byKey(const Key('my-keeper-profile-card')));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byKey(const Key('own-account-profile')), findsOneWidget);
+    expect(find.byKey(const Key('start-trade-button')), findsNothing);
+    expect(find.byKey(const Key('remove-friend-button')), findsNothing);
+    expect(find.text('Block keeper'), findsNothing);
+    Navigator.of(tester.element(find.byKey(const Key('own-account-profile'))))
+        .pop();
+    await tester.pump(const Duration(milliseconds: 500));
+
     await tester.tap(find.byKey(const Key('friend-friend-user')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
@@ -439,6 +523,28 @@ void main() {
     expect(find.byKey(const Key('dragon-trial-records')), findsOneWidget);
     expect(find.text('Cavern Flight'), findsNothing);
     expect(find.byKey(const Key('start-trade-button')), findsOneWidget);
+    final friendCodex = find.byKey(const Key('friend-draconomicon-button'));
+    await tester.ensureVisible(friendCodex);
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(friendCodex);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.text("Lyra's Draconomicon"), findsOneWidget);
+    expect(
+      find.byKey(const PageStorageKey(
+        'draconomicon-lineage-normal-mossprout',
+      )),
+      findsOneWidget,
+    );
+    Navigator.of(tester.element(find.text("Lyra's Draconomicon"))).pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.fling(
+      find.byKey(const Key('friend-profile-friend-user')),
+      const Offset(0, 700),
+      1800,
+    );
+    await tester.pump(const Duration(milliseconds: 500));
 
     final startTrade = find.byKey(const Key('start-trade-button'));
     await tester.tap(startTrade);
@@ -621,6 +727,11 @@ class _FakeSocialRepository implements SocialRepository {
     portraitKey: 'portrait_042',
     discoveredDragonCount: 12,
     inventoryImported: true,
+    discoveredForms: [
+      'mossprout:hatchling',
+      'mossprout:wyrmling',
+    ],
+    prismaticForms: ['mossprout:hatchling'],
     cavernFlightBest: 211,
     ruinBreakerBest: 1200,
     runeweaverBest: 11,
@@ -629,6 +740,8 @@ class _FakeSocialRepository implements SocialRepository {
 
   final List<KeeperProfile> friendRows = [];
   final List<FriendshipRequest> requestRows = [];
+  final List<SocialNotification> notificationRows = [];
+  final List<String> acknowledgedNotificationIds = [];
   final List<KeeperProfile> blockedRows = [];
   final List<GroupAdventureLobby> groupRows = [];
   final List<TradeOffer> tradeRows = [];
@@ -679,6 +792,17 @@ class _FakeSocialRepository implements SocialRepository {
   Future<KeeperProfile> loadMyProfile() async => _profile;
   @override
   Future<List<FriendshipRequest>> loadRequests() async => List.of(requestRows);
+  @override
+  Future<List<SocialNotification>> loadSocialNotifications() async =>
+      List.of(notificationRows);
+  @override
+  Future<void> acknowledgeSocialNotifications(
+      List<String> notificationIds) async {
+    acknowledgedNotificationIds.addAll(notificationIds);
+    notificationRows.removeWhere(
+      (notification) => notificationIds.contains(notification.id),
+    );
+  }
 
   @override
   Future<void> removeFriend(String userId) async {

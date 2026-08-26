@@ -1,4 +1,5 @@
 import 'trial_phrase_translations.dart';
+import 'notification_phrase_translations.dart';
 
 /// Offline translations for complete, user-visible UI phrases.
 ///
@@ -531,6 +532,7 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
 }
 
 const uiPhraseTranslations = <String, List<String>>{
+  ...notificationPhraseTranslations,
   'Start trade': [
     'Handel starten',
     'Iniciar intercambio',
