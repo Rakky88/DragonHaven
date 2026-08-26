@@ -9,9 +9,7 @@ abstract final class ReleaseConfig {
       defaultValue: 'Rakky88');
   static const repository = String.fromEnvironment('DRAGONHAVEN_GITHUB_REPO',
       defaultValue: 'DragonHaven');
-  static const installedVersion = String.fromEnvironment(
-      'DRAGONHAVEN_APP_VERSION',
-      defaultValue: AppInfo.version);
+  static const installedVersion = AppInfo.version;
 
   static bool get isConfigured =>
       owner.trim().isNotEmpty && repository.trim().isNotEmpty;

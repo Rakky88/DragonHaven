@@ -25,19 +25,32 @@ class KeeperPortrait extends StatelessWidget {
   Widget build(BuildContext context) {
     final portrait = profilePortraitById(portraitKey);
     if (portrait != null) {
+      final rarityColor = Color(portrait.rarity.colorValue);
+      final frameWidth = radius >= 40 ? 3.0 : 2.2;
       return Semantics(
         image: true,
         label: displayName,
         child: SizedBox.square(
           dimension: radius * 2,
-          child: DecoratedBox(
+          child: Container(
+            padding: EdgeInsets.all(frameWidth),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.gold.withValues(alpha: .28),
+              color: Colors.white,
+              border: Border.all(color: rarityColor, width: frameWidth),
+              boxShadow: portrait.rarity.hasGlow
+                  ? [
+                      BoxShadow(
+                        color: rarityColor.withValues(alpha: .58),
+                        blurRadius: radius * .34,
+                        spreadRadius: radius * .055,
+                      ),
+                    ]
+                  : const [],
             ),
             child: ProfilePortraitSprite(
               portrait: portrait,
-              size: radius * 2,
+              size: radius * 2 - frameWidth * 2,
             ),
           ),
         ),

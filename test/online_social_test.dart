@@ -7,6 +7,7 @@ import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/game_presentation.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
+import 'package:dragon_haven/models/profile_portrait.dart';
 import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/providers/online_account_provider.dart';
@@ -49,6 +50,52 @@ void main() {
       find.descendant(of: portrait, matching: find.byType(ClipOval)),
       findsOneWidget,
     );
+  });
+
+  testWidgets('friend portraits use the correct rarity frame and glow',
+      (tester) async {
+    const expectedColors = {
+      PortraitRarity.common: 0xFFD9B84E,
+      PortraitRarity.rare: 0xFF3F8FE5,
+      PortraitRarity.veryRare: 0xFF8157D9,
+      PortraitRarity.legendary: 0xFFD39B21,
+      PortraitRarity.infernal: 0xFFD94B3D,
+      PortraitRarity.mythical: 0xFF2A9CB8,
+    };
+
+    for (final entry in expectedColors.entries) {
+      expect(entry.key.colorValue, entry.value);
+      expect(entry.key.hasGlow, entry.key != PortraitRarity.common);
+    }
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: KeeperPortrait(
+            portraitKey: 'portrait_100',
+            displayName: 'Mythical Keeper',
+            radius: 31,
+          ),
+        ),
+      ),
+    );
+
+    final decorated = tester.widget<DecoratedBox>(
+      find
+          .descendant(
+            of: find.byType(KeeperPortrait),
+            matching: find.byType(DecoratedBox),
+          )
+          .first,
+    );
+    final decoration = decorated.decoration as BoxDecoration;
+    expect(decoration.border!.top.color, const Color(0xFF2A9CB8));
+    expect(decoration.boxShadow, hasLength(1));
+    final glowColor = decoration.boxShadow!.single.color;
+    expect(glowColor.r, const Color(0xFF2A9CB8).r);
+    expect(glowColor.g, const Color(0xFF2A9CB8).g);
+    expect(glowColor.b, const Color(0xFF2A9CB8).b);
+    expect(glowColor.a, closeTo(.58, .0001));
   });
 
   test('server-authored friend and trade events become notifications once',
