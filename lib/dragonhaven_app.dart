@@ -222,12 +222,12 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     }
     _tutorialBusy = true;
     try {
-      await showDragonHavenTutorial(
+      final fullyViewed = await showDragonHavenTutorial(
         context,
         dragon: _game.towerControllableDragon,
         onNavigate: _selectIndex,
       );
-      await _game.completeTutorial();
+      await _game.completeTutorial(fullyViewed: fullyViewed);
     } finally {
       _tutorialBusy = false;
       _schedulePresentations();

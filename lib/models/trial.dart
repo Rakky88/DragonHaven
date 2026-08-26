@@ -119,7 +119,7 @@ class TrialCompletion {
 
 TrialGrade trialGradeForScore(TrialKind kind, int score) {
   final thresholds = switch (kind) {
-    TrialKind.cavernFlight => const [150, 350, 650, 1000, 1500],
+    TrialKind.cavernFlight => const [250, 600, 1100, 1700, 2500],
     TrialKind.ruinBreaker => const [900, 2250, 4000, 6750, 9000],
     TrialKind.runeweaver => const [3, 6, 9, 12, 15],
   };

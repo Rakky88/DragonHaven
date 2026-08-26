@@ -93,7 +93,7 @@ void main() {
     final result = await game.completeTrial(
       offerId: offer.id,
       dragonId: game.pet.id,
-      score: 150,
+      score: 250,
     );
 
     expect(result?.reward.grade, TrialGrade.c);
@@ -102,8 +102,8 @@ void main() {
     expect(game.pet.coins, 10);
     expect(game.pet.xp, 20);
     expect(game.pet.trainingFor(TrainingFocus.spirit), 2);
-    expect(game.pet.trialBest(TrialKind.cavernFlight.name), 150);
-    expect(game.accountTrialBest(TrialKind.cavernFlight), 150);
+    expect(game.pet.trialBest(TrialKind.cavernFlight.name), 250);
+    expect(game.accountTrialBest(TrialKind.cavernFlight), 250);
     expect(game.chestCount(ChestTier.wooden), 1);
     expect(game.availableTrials.any((item) => item.id == offer.id), isFalse);
 
@@ -114,22 +114,22 @@ void main() {
     );
     expect(duplicate, isNull);
     expect(game.pet.coins, 10);
-    expect(game.pet.trialBest(TrialKind.cavernFlight.name), 150);
+    expect(game.pet.trialBest(TrialKind.cavernFlight.name), 250);
   });
 
   test('Trial score tiers and reward chest tables use performance', () {
     final flightBoundaries = <int, TrialGrade>{
       0: TrialGrade.d,
-      149: TrialGrade.d,
-      150: TrialGrade.c,
-      349: TrialGrade.c,
-      350: TrialGrade.b,
-      649: TrialGrade.b,
-      650: TrialGrade.a,
-      999: TrialGrade.a,
-      1000: TrialGrade.s,
-      1499: TrialGrade.s,
-      1500: TrialGrade.sPlus,
+      249: TrialGrade.d,
+      250: TrialGrade.c,
+      599: TrialGrade.c,
+      600: TrialGrade.b,
+      1099: TrialGrade.b,
+      1100: TrialGrade.a,
+      1699: TrialGrade.a,
+      1700: TrialGrade.s,
+      2499: TrialGrade.s,
+      2500: TrialGrade.sPlus,
     };
     for (final entry in flightBoundaries.entries) {
       expect(
@@ -265,7 +265,7 @@ void main() {
     await game.completeTrial(
       offerId: 's-plus-spirit',
       dragonId: game.pet.id,
-      score: 1500,
+      score: 2500,
     );
     await game.completeTrial(
       offerId: 's-plus-arcana',

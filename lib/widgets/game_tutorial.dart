@@ -5,26 +5,28 @@ import '../models/pet.dart';
 import '../theme/app_theme.dart';
 import 'dragon_art.dart';
 
-Future<void> showDragonHavenTutorial(
+Future<bool> showDragonHavenTutorial(
   BuildContext context, {
   required Pet dragon,
   required ValueChanged<int> onNavigate,
 }) async {
-  await showGeneralDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    barrierColor: Colors.transparent,
-    barrierLabel: 'DragonHaven tutorial',
-    transitionDuration: const Duration(milliseconds: 360),
-    transitionBuilder: (_, animation, __, child) => FadeTransition(
-      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-      child: child,
-    ),
-    pageBuilder: (_, __, ___) => _DragonHavenTutorial(
-      dragon: dragon,
-      onNavigate: onNavigate,
-    ),
-  );
+  return await showGeneralDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.transparent,
+        barrierLabel: 'DragonHaven tutorial',
+        transitionDuration: const Duration(milliseconds: 360),
+        transitionBuilder: (_, animation, __, child) => FadeTransition(
+          opacity:
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+          child: child,
+        ),
+        pageBuilder: (_, __, ___) => _DragonHavenTutorial(
+          dragon: dragon,
+          onNavigate: onNavigate,
+        ),
+      ) ??
+      false;
 }
 
 class _DragonHavenTutorial extends StatefulWidget {
@@ -53,7 +55,7 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial> {
 
   void _next(List<_TutorialStep> steps) {
     if (_stepIndex == steps.length - 1) {
-      Navigator.pop(context);
+      Navigator.pop(context, true);
       return;
     }
     setState(() => _stepIndex++);
@@ -67,7 +69,7 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial> {
     final step = steps[_stepIndex];
     final size = MediaQuery.sizeOf(context);
     final padding = MediaQuery.paddingOf(context);
-    final target = _targetFor(step.tabIndex, size, padding);
+    final target = _targetFor(step, size, padding);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
     return Material(
@@ -76,7 +78,7 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial> {
         children: [
           Positioned.fill(
             child: TweenAnimationBuilder<double>(
-              key: ValueKey('tutorial-spotlight-${step.tabIndex}'),
+              key: ValueKey('tutorial-spotlight-$_stepIndex'),
               duration: reduceMotion
                   ? Duration.zero
                   : const Duration(milliseconds: 520),
@@ -139,7 +141,7 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial> {
                             const SizedBox(height: 11),
                             Text(
                               step.body,
-                              textAlign: TextAlign.center,
+                              textAlign: TextAlign.start,
                               style: const TextStyle(
                                 color: AppColors.muted,
                                 fontSize: 15,
@@ -150,21 +152,29 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial> {
                             const SizedBox(height: 18),
                             Row(
                               children: [
-                                TextButton(
-                                  key: const Key('skip-tutorial'),
-                                  onPressed: () => Navigator.pop(context),
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 7,
-                                      vertical: 10,
+                                Flexible(
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: TextButton(
+                                      key: const Key('skip-tutorial'),
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      style: TextButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 7,
+                                          vertical: 10,
+                                        ),
+                                      ),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(strings.pick(
+                                          'Skip tutorial',
+                                          'Tutorial overslaan',
+                                        )),
+                                      ),
                                     ),
                                   ),
-                                  child: Text(strings.pick(
-                                    'Skip tutorial',
-                                    'Tutorial overslaan',
-                                  )),
                                 ),
-                                const Spacer(),
                                 Text(
                                   '${_stepIndex + 1}/${steps.length}',
                                   style: const TextStyle(
@@ -173,19 +183,29 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial> {
                                   ),
                                 ),
                                 const SizedBox(width: 10),
-                                FilledButton(
-                                  key: const Key('next-tutorial-step'),
-                                  onPressed: () => _next(steps),
-                                  style: FilledButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 11,
+                                Flexible(
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: FilledButton(
+                                      key: const Key('next-tutorial-step'),
+                                      onPressed: () => _next(steps),
+                                      style: FilledButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 11,
+                                        ),
+                                      ),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          _stepIndex == steps.length - 1
+                                              ? strings.pick(
+                                                  'Finish', 'Afronden')
+                                              : strings.pick(
+                                                  'Next', 'Volgende'),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  child: Text(
-                                    _stepIndex == steps.length - 1
-                                        ? strings.pick('Finish', 'Afronden')
-                                        : strings.pick('Next', 'Volgende'),
                                   ),
                                 ),
                               ],
@@ -250,12 +270,20 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial> {
 }
 
 class _TutorialStep {
-  const _TutorialStep(this.tabIndex, this.title, this.body);
+  const _TutorialStep(
+    this.tabIndex,
+    this.title,
+    this.body, {
+    this.spotlight = _TutorialSpotlight.navigation,
+  });
 
   final int tabIndex;
   final String title;
   final String body;
+  final _TutorialSpotlight spotlight;
 }
+
+enum _TutorialSpotlight { navigation, overflowMenu }
 
 List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
       _TutorialStep(
@@ -268,50 +296,78 @@ List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
       ),
       _TutorialStep(
         0,
-        strings.tr('friends'),
+        strings.pick('Online friends', 'Online vrienden'),
         strings.pick(
-          'This is the future meeting place for linked Dragonkeepers, visits and fair trades.',
-          'Dit wordt de ontmoetingsplek voor gekoppelde Drakenhoeders, bezoekjes en eerlijke ruilhandel.',
+          "Create an e-mail-verified online account, then add other keepers by their Keeper ID. Friends can open each other's public profile and see portraits, titles, favorite dragons, discovered forms and Trial records.",
+          'Maak een online account met e-mailverificatie en voeg daarna andere hoeders toe via hun Keeper ID. Vrienden kunnen elkaars openbare profiel openen en portraits, titles, favoriete draken, ontdekte vormen en Trial-records bekijken.',
+        ),
+      ),
+      _TutorialStep(
+        0,
+        strings.pick('Trade and travel together', 'Samen ruilen en reizen'),
+        strings.pick(
+          'From a friend you can offer a protected one-to-one Trade: eggs, chests and Relics stay reserved until it completes or expires. Logged-in friends can also enroll dragons together in asynchronous Group Adventures.',
+          'Bij een vriend kun je een beveiligde één-op-één Trade aanbieden: eieren, kisten en Relieken blijven gereserveerd totdat de ruil voltooid is of verloopt. Ingelogde vrienden kunnen hun draken ook samen inschrijven voor asynchrone Group Adventures.',
         ),
       ),
       _TutorialStep(
         1,
         strings.tr('adventure'),
         strings.pick(
-          'Send an available dragon on an Adventure to earn XP, Expertises and treasure chests.',
-          'Stuur een beschikbare draak op Avontuur om XP, Expertises en schatkisten te verdienen.',
+          "Mini Adventures take minutes, Short Adventures hours and Long Adventures days. A dragon's matching Expertise shortens the timer. Group Adventures need 2–4 logged-in friends and begin automatically when their requirements are met.",
+          'Mini Adventures duren minuten, Short Adventures uren en Long Adventures dagen. De bijpassende Expertise van een draak verkort de timer. Group Adventures vereisen 2–4 ingelogde vrienden en beginnen automatisch zodra aan de vereisten is voldaan.',
+        ),
+      ),
+      _TutorialStep(
+        1,
+        strings.pick('Trials', 'Trials'),
+        strings.pick(
+          'Trials are skill-based minigames and refill every 15 minutes, up to three waiting. Cavern Flight trains Spirit, Ruin Breaker trains Might and Runeweaver trains Arcana; your performance sets the rank, rewards and personal high score.',
+          'Trials zijn minigames gebaseerd op vaardigheid en worden elke 15 minuten aangevuld, tot maximaal drie klaarstaan. Cavern Flight traint Spirit, Ruin Breaker traint Might en Runeweaver traint Arcana; je prestatie bepaalt de rank, beloningen en persoonlijke highscore.',
         ),
       ),
       _TutorialStep(
         2,
         strings.tr('tower'),
         strings.pick(
-          'Build unique rooms, decorate them and choose which dragons may roam through their home.',
-          'Bouw unieke kamers, richt ze in en kies welke draken vrij door hun thuis mogen lopen.',
+          'Use the two large sprites at the top right: My Dragons opens your complete dragon collection, while the Draconomicon shows every discovered dragon form. Below them you can build, visit and decorate Tower floors.',
+          'Gebruik de twee grote sprites rechtsboven: My Dragons opent je volledige drakenverzameling en het Draconomicon toont iedere ontdekte drakenvorm. Daaronder kun je Torenverdiepingen bouwen, bezoeken en inrichten.',
         ),
       ),
       _TutorialStep(
         3,
         strings.tr('inventory'),
         strings.pick(
-          'Your eggs, unopened chests, furniture and consumable Relics are safely stored here.',
-          'Je eieren, ongeopende kisten, meubels en verbruikbare Relieken worden hier veilig bewaard.',
+          'Eggs, unopened chests, furniture and Relics are stored here. Open chests, start an egg incubation or inspect what you own; items reserved for a Trade cannot be used until released.',
+          'Hier worden eieren, ongeopende kisten, meubels en Relieken bewaard. Open kisten, start de incubatie van een ei of bekijk wat je bezit; voor een Trade gereserveerde items kun je pas weer gebruiken wanneer ze zijn vrijgegeven.',
         ),
       ),
       _TutorialStep(
         4,
         strings.tr('shop'),
         strings.pick(
-          'Spend coins or gems on furniture that makes every Tower room feel like home.',
-          'Besteed munten of edelstenen aan meubels die elke Torenkamer als thuis laten voelen.',
+          'Buy furniture for your Tower with coins or gems. Title Chests cost coins and unlock account titles; Portrait Chests cost gems and unlock profile portraits. Open both from Inventory.',
+          'Koop met munten of edelstenen meubels voor je Toren. Title Chests kosten munten en ontgrendelen account-titles; Portrait Chests kosten edelstenen en ontgrendelen profielportraits. Je opent beide vanuit Inventory.',
         ),
+      ),
+      _TutorialStep(
+        2,
+        strings.pick('The three-dot menu', 'Het menu met drie stippen'),
+        strings.pick(
+          'Tap the three dots at the top right for Account info, where you can change your portrait and title and manage Notifications and Audio. The same menu opens Language, Achievements and this Tutorial again.',
+          'Tik rechtsboven op de drie stippen voor Account info, waar je jouw portrait en title kunt wijzigen en Notifications en Audio kunt beheren. Via hetzelfde menu open je Language, Achievements en deze Tutorial opnieuw.',
+        ),
+        spotlight: _TutorialSpotlight.overflowMenu,
       ),
     ];
 
-Rect _targetFor(int tabIndex, Size size, EdgeInsets padding) {
+Rect _targetFor(_TutorialStep step, Size size, EdgeInsets padding) {
+  if (step.spotlight == _TutorialSpotlight.overflowMenu) {
+    return Rect.fromLTWH(size.width - 68, padding.top + 5, 62, 60);
+  }
   final segmentWidth = size.width / 5;
   return Rect.fromLTWH(
-    segmentWidth * tabIndex + 6,
+    segmentWidth * step.tabIndex + 6,
     size.height - padding.bottom - 83,
     segmentWidth - 12,
     77,

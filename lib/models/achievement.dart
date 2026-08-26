@@ -36,6 +36,15 @@ const achievementCatalog = <AchievementDefinition>[
       category: AchievementCategory.starter,
       badge: 'egg'),
   AchievementDefinition(
+      id: 'guided_tour',
+      titleEn: 'A Little Less Lost',
+      titleNl: 'Iets Minder Verdwaald',
+      descriptionEn: 'Finish the DragonHaven tutorial.',
+      descriptionNl: 'Voltooi de DragonHaven-tutorial.',
+      target: 1,
+      category: AchievementCategory.starter,
+      badge: 'tutorial_tour'),
+  AchievementDefinition(
       id: 'first_flight',
       titleEn: 'First Flight',
       titleNl: 'Eerste Vlucht',

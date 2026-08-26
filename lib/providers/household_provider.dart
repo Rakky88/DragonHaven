@@ -99,6 +99,7 @@ class HouseholdProvider extends ChangeNotifier {
       HavenNotificationCategory.values.toSet();
   bool achievementsCompact = false;
   bool tutorialCompleted = false;
+  bool tutorialFullyViewed = false;
   bool showcaseMode = false;
   late Pet pet;
   Pet? incubatingEgg;
@@ -194,6 +195,7 @@ class HouseholdProvider extends ChangeNotifier {
       ..accountName = 'Release Keeper'
       ..onboardingComplete = true
       ..tutorialCompleted = true
+      ..tutorialFullyViewed = true
       ..musicEnabled = true
       ..soundEffectsEnabled = true
       ..pet = Pet(
@@ -288,7 +290,8 @@ class HouseholdProvider extends ChangeNotifier {
     provider
       ..accountName = 'Evolution Keeper'
       ..onboardingComplete = true
-      ..tutorialCompleted = true;
+      ..tutorialCompleted = true
+      ..tutorialFullyViewed = true;
     provider.pet
       ..name = 'Nova'
       ..stage = DragonStage.hatchling
@@ -413,6 +416,7 @@ class HouseholdProvider extends ChangeNotifier {
     );
     incubatingEgg = null;
     tutorialCompleted = false;
+    tutorialFullyViewed = false;
     final commonPortraits = profilePortraitCatalog
         .where((portrait) => portrait.rarity == PortraitRarity.common)
         .toList(growable: false);
@@ -449,6 +453,7 @@ class HouseholdProvider extends ChangeNotifier {
     soundEffectsEnabled = true;
     achievementsCompact = false;
     tutorialCompleted = true;
+    tutorialFullyViewed = true;
 
     final dragons = <Pet>[];
     var serial = 0;
@@ -686,6 +691,8 @@ class HouseholdProvider extends ChangeNotifier {
     tutorialCompleted = data['tutorialCompleted'] is bool
         ? data['tutorialCompleted'] as bool
         : !pet.isEgg;
+    tutorialFullyViewed = data['tutorialFullyViewed'] is bool &&
+        data['tutorialFullyViewed'] as bool;
     final storedIncubatingEgg = mapFromJson(data['incubatingEgg']);
     incubatingEgg =
         storedIncubatingEgg.isEmpty ? null : Pet.fromJson(storedIncubatingEgg);
@@ -1209,9 +1216,17 @@ class HouseholdProvider extends ChangeNotifier {
 
   bool get shouldStartTutorial => !tutorialCompleted && canStartTutorial;
 
-  Future<void> completeTutorial() async {
-    if (tutorialCompleted) return;
-    tutorialCompleted = true;
+  Future<void> completeTutorial({bool fullyViewed = false}) async {
+    var changed = false;
+    if (!tutorialCompleted) {
+      tutorialCompleted = true;
+      changed = true;
+    }
+    if (fullyViewed && !tutorialFullyViewed) {
+      tutorialFullyViewed = true;
+      changed = _evaluateAchievements() || changed;
+    }
+    if (!changed) return;
     await _notifyAndSave();
   }
 
@@ -1508,6 +1523,7 @@ class HouseholdProvider extends ChangeNotifier {
 
   int achievementProgress(String id) => switch (id) {
         'hello_little_one' => totalHatched,
+        'guided_tour' => tutorialFullyViewed ? 1 : 0,
         'first_flight' => totalShortAdventuresCompleted,
         'chest_expectations' => totalChestsOpened,
         'profile_picture_perfect' => totalPortraitChestsOpened,
@@ -1540,12 +1556,21 @@ class HouseholdProvider extends ChangeNotifier {
                 .any((dragon) => dragon.lineage.rarity == DragonRarity.mythical)
             ? 1
             : 0,
-        'trial_might_s_plus' =>
-          accountTrialBest(TrialKind.ruinBreaker) >= 9000 ? 1 : 0,
-        'trial_spirit_s_plus' =>
-          accountTrialBest(TrialKind.cavernFlight) >= 1500 ? 1 : 0,
-        'trial_arcana_s_plus' =>
-          accountTrialBest(TrialKind.runeweaver) >= 15 ? 1 : 0,
+        'trial_might_s_plus' => trialGradeForScore(TrialKind.ruinBreaker,
+                    accountTrialBest(TrialKind.ruinBreaker)) ==
+                TrialGrade.sPlus
+            ? 1
+            : 0,
+        'trial_spirit_s_plus' => trialGradeForScore(TrialKind.cavernFlight,
+                    accountTrialBest(TrialKind.cavernFlight)) ==
+                TrialGrade.sPlus
+            ? 1
+            : 0,
+        'trial_arcana_s_plus' => trialGradeForScore(TrialKind.runeweaver,
+                    accountTrialBest(TrialKind.runeweaver)) ==
+                TrialGrade.sPlus
+            ? 1
+            : 0,
         'probably_fine' => totalSinisterAdventuresCompleted,
         _ => 0,
       };
@@ -1893,6 +1918,7 @@ class HouseholdProvider extends ChangeNotifier {
           .toList(),
       'achievementsCompact': achievementsCompact,
       'tutorialCompleted': tutorialCompleted,
+      'tutorialFullyViewed': tutorialFullyViewed,
       'pet': pet.toJson(),
       'incubatingEgg': incubatingEgg?.toJson(),
       'eggStash': eggStash.map((egg) => egg.toJson()).toList(),

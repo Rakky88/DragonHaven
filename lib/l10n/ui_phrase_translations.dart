@@ -4353,6 +4353,114 @@ const uiPhraseTranslations = <String, List<String>>{
     '会带你参观。你现在可以跳过，之后可从三点菜单重新开始导览。',
     'が案内します。今はスキップしても、後で三点メニューからもう一度始められます。'
   ],
+  'Online friends': [
+    'Online-Freunde',
+    'Amigos en línea',
+    'Amis en ligne',
+    'Amici online',
+    'Amigos online',
+    '在线好友',
+    'オンラインのフレンド'
+  ],
+  "Create an e-mail-verified online account, then add other keepers by their Keeper ID. Friends can open each other's public profile and see portraits, titles, favorite dragons, discovered forms and Trial records.":
+      [
+    'Erstelle ein per E-Mail bestätigtes Online-Konto und füge andere Hüter über ihre Hüter-ID hinzu. Freunde können gegenseitig ihre öffentlichen Profile öffnen und Porträts, Titel, Lieblingsdrachen, entdeckte Formen und Prüfungsrekorde sehen.',
+    'Crea una cuenta en línea verificada por correo electrónico y añade a otros guardianes mediante su ID. Los amigos pueden abrir sus perfiles públicos y ver retratos, títulos, dragones favoritos, formas descubiertas y récords de Pruebas.',
+    'Crée un compte en ligne vérifié par e-mail, puis ajoute d’autres gardiens grâce à leur identifiant. Les amis peuvent consulter leurs profils publics, portraits, titres, dragons favoris, formes découvertes et records d’Épreuves.',
+    'Crea un account online verificato via e-mail e aggiungi altri custodi tramite il loro ID. Gli amici possono aprire i profili pubblici e vedere ritratti, titoli, draghi preferiti, forme scoperte e record delle Prove.',
+    'Crie uma conta online verificada por e-mail e adicione outros guardiões pelo ID. Amigos podem abrir os perfis públicos uns dos outros e ver retratos, títulos, dragões favoritos, formas descobertas e recordes das Provas.',
+    '创建经过电子邮件验证的在线账号，然后通过 Keeper ID 添加其他守护者。好友可以查看彼此的公开资料、头像、称号、最喜欢的龙、已发现形态和试炼纪录。',
+    'メール認証済みのオンラインアカウントを作成し、Keeper IDでほかのキーパーを追加できます。フレンド同士で公開プロフィール、ポートレート、称号、お気に入りのドラゴン、発見済み形態、試練記録を確認できます。'
+  ],
+  'Trade and travel together': [
+    'Gemeinsam handeln und reisen',
+    'Intercambia y viaja en compañía',
+    'Échanger et voyager ensemble',
+    'Scambia e viaggia insieme',
+    'Troque e viaje em grupo',
+    '一起交易与冒险',
+    '一緒に交換して冒険'
+  ],
+  'From a friend you can offer a protected one-to-one Trade: eggs, chests and Relics stay reserved until it completes or expires. Logged-in friends can also enroll dragons together in asynchronous Group Adventures.':
+      [
+    'Bei einem Freund kannst du einen geschützten Eins-zu-eins-Tausch anbieten: Eier, Truhen und Relikte bleiben reserviert, bis der Tausch abgeschlossen ist oder abläuft. Angemeldete Freunde können ihre Drachen außerdem gemeinsam für asynchrone Gruppenabenteuer anmelden.',
+    'Desde el perfil de un amigo puedes ofrecer un intercambio individual protegido: los huevos, cofres y Reliquias quedan reservados hasta que termine o caduque. Los amigos conectados también pueden inscribir dragones juntos en Aventuras grupales asíncronas.',
+    'Depuis le profil d’un ami, tu peux proposer un échange individuel sécurisé : œufs, coffres et Reliques restent réservés jusqu’à sa conclusion ou son expiration. Les amis connectés peuvent aussi inscrire ensemble leurs dragons à des Aventures de groupe asynchrones.',
+    'Dal profilo di un amico puoi proporre uno scambio uno a uno protetto: uova, scrigni e Reliquie restano riservati finché lo scambio non termina o scade. Gli amici connessi possono anche iscrivere insieme i draghi alle Avventure di gruppo asincrone.',
+    'No perfil de um amigo, você pode oferecer uma troca individual protegida: ovos, baús e Relíquias ficam reservados até a conclusão ou expiração. Amigos conectados também podem inscrever dragões juntos em Aventuras em grupo assíncronas.',
+    '你可以向好友发起受保护的一对一交易：龙蛋、宝箱和遗物会一直保留到交易完成或过期。已登录的好友还可以一起让龙报名参加异步团队冒险。',
+    'フレンドには保護された1対1の交換を提案できます。卵、宝箱、レリックは交換が完了または期限切れになるまで確保されます。ログイン中のフレンド同士で、非同期のグループ冒険にドラゴンを参加させることもできます。'
+  ],
+  "Mini Adventures take minutes, Short Adventures hours and Long Adventures days. A dragon's matching Expertise shortens the timer. Group Adventures need 2–4 logged-in friends and begin automatically when their requirements are met.":
+      [
+    'Mini-Abenteuer dauern Minuten, kurze Abenteuer Stunden und lange Abenteuer Tage. Die passende Expertise eines Drachen verkürzt den Timer. Gruppenabenteuer benötigen 2–4 angemeldete Freunde und starten automatisch, sobald ihre Anforderungen erfüllt sind.',
+    'Las Aventuras mini duran minutos, las cortas horas y las largas días. La Pericia correspondiente del dragón reduce el tiempo. Las Aventuras grupales necesitan entre 2 y 4 amigos conectados y comienzan automáticamente cuando se cumplen los requisitos.',
+    'Les mini-Aventures durent quelques minutes, les Aventures courtes plusieurs heures et les longues plusieurs jours. L’Expertise correspondante du dragon réduit le temps. Les Aventures de groupe nécessitent 2 à 4 amis connectés et commencent automatiquement lorsque leurs conditions sont remplies.',
+    'Le Avventure mini durano minuti, quelle brevi ore e quelle lunghe giorni. La Competenza corrispondente del drago riduce il tempo. Le Avventure di gruppo richiedono 2–4 amici connessi e iniziano automaticamente quando i requisiti sono soddisfatti.',
+    'Aventuras mini duram minutos, Aventuras curtas duram horas e Aventuras longas duram dias. A Especialidade correspondente do dragão reduz o tempo. Aventuras em grupo precisam de 2–4 amigos conectados e começam automaticamente quando os requisitos são atendidos.',
+    '迷你冒险持续数分钟，短途冒险持续数小时，长途冒险持续数天。龙对应的专长会缩短计时。团队冒险需要2至4名已登录好友，并会在满足要求后自动开始。',
+    'ミニ冒険は数分、ショート冒険は数時間、ロング冒険は数日かかります。ドラゴンの対応する専門技能で時間が短縮されます。グループ冒険にはログイン中のフレンドが2～4人必要で、条件を満たすと自動で始まります。'
+  ],
+  'Trials': ['Prüfungen', 'Pruebas', 'Épreuves', 'Prove', 'Provas', '试炼', '試練'],
+  'Trials are skill-based minigames and refill every 15 minutes, up to three waiting. Cavern Flight trains Spirit, Ruin Breaker trains Might and Runeweaver trains Arcana; your performance sets the rank, rewards and personal high score.':
+      [
+    'Prüfungen sind geschicklichkeitsbasierte Minispiele und werden alle 15 Minuten bis zu maximal drei ergänzt. Höhlenflug trainiert Geist, Ruinenbrecher Stärke und Runenweber Arkana; deine Leistung bestimmt Rang, Belohnungen und persönlichen Rekord.',
+    'Las Pruebas son minijuegos de habilidad y se reponen cada 15 minutos, hasta un máximo de tres. Vuelo cavernario entrena Espíritu, Romperruinas Poder y Tejerrunas Arcana; tu rendimiento determina el rango, las recompensas y el récord personal.',
+    'Les Épreuves sont des mini-jeux d’adresse renouvelés toutes les 15 minutes, jusqu’à trois en attente. Vol cavernicole entraîne l’Esprit, Briseur de ruines la Puissance et Tisseur de runes les Arcanes ; ta performance détermine le rang, les récompenses et le record personnel.',
+    'Le Prove sono minigiochi di abilità e si ricaricano ogni 15 minuti, fino a un massimo di tre. Volo nella caverna allena lo Spirito, Spezzarovine la Potenza e Tessirune l’Arcano; la prestazione determina grado, ricompense e record personale.',
+    'As Provas são minijogos de habilidade e são renovadas a cada 15 minutos, até três disponíveis. Voo na caverna treina Espírito, Quebra-ruínas Poder e Tecelão de runas Arcano; seu desempenho determina classificação, recompensas e recorde pessoal.',
+    '试炼是技巧型小游戏，每15分钟补充一次，最多可等待3个。洞窟飞行训练精神，遗迹破坏者训练力量，符文编织者训练奥术；你的表现决定评级、奖励和个人最高分。',
+    '試練は腕前を試すミニゲームで、15分ごとに最大3つまで補充されます。洞窟飛行は精神、ルインブレイカーは力、ルーンウィーバーは神秘を鍛え、成績によってランク、報酬、自己ベストが決まります。'
+  ],
+  'Use the two large sprites at the top right: My Dragons opens your complete dragon collection, while the Draconomicon shows every discovered dragon form. Below them you can build, visit and decorate Tower floors.':
+      [
+    'Nutze die beiden großen Symbole oben rechts: Meine Drachen öffnet deine vollständige Drachensammlung, während das Draconomicon jede entdeckte Drachenform zeigt. Darunter kannst du Turmgeschosse bauen, besuchen und dekorieren.',
+    'Usa los dos iconos grandes de arriba a la derecha: Mis dragones abre tu colección completa y el Draconomicon muestra cada forma de dragón descubierta. Debajo puedes construir, visitar y decorar pisos de la Torre.',
+    'Utilise les deux grandes icônes en haut à droite : Mes dragons ouvre ta collection complète, tandis que le Draconomicon montre chaque forme de dragon découverte. En dessous, tu peux construire, visiter et décorer les étages de la Tour.',
+    'Usa le due grandi icone in alto a destra: I miei draghi apre la collezione completa, mentre il Draconomicon mostra ogni forma di drago scoperta. Sotto puoi costruire, visitare e decorare i piani della Torre.',
+    'Use os dois ícones grandes no canto superior direito: Meus dragões abre sua coleção completa, enquanto o Draconomicon mostra cada forma de dragão descoberta. Abaixo deles você pode construir, visitar e decorar andares da Torre.',
+    '使用右上角的两个大图标：“我的龙”会打开完整的龙收藏，而《龙族图鉴》会显示每个已发现的龙形态。你还可以在下方建造、参观和装饰塔楼楼层。',
+    '右上の2つの大きなアイコンを使います。「マイドラゴン」では全ドラゴンを確認でき、ドラコノミコンには発見済みのドラゴン形態が表示されます。その下では塔の階を建築、訪問、装飾できます。'
+  ],
+  'Eggs, unopened chests, furniture and Relics are stored here. Open chests, start an egg incubation or inspect what you own; items reserved for a Trade cannot be used until released.':
+      [
+    'Hier werden Eier, ungeöffnete Truhen, Möbel und Relikte aufbewahrt. Öffne Truhen, beginne die Brut eines Eis oder prüfe deinen Besitz; für einen Tausch reservierte Gegenstände bleiben bis zur Freigabe unbenutzbar.',
+    'Aquí se guardan huevos, cofres sin abrir, muebles y Reliquias. Abre cofres, inicia la incubación de un huevo o revisa lo que tienes; los objetos reservados para un intercambio no pueden usarse hasta quedar libres.',
+    'Tes œufs, coffres non ouverts, meubles et Reliques sont conservés ici. Ouvre des coffres, lance l’incubation d’un œuf ou consulte tes possessions ; les objets réservés pour un échange restent inutilisables jusqu’à leur libération.',
+    'Qui vengono conservati uova, scrigni non aperti, mobili e Reliquie. Apri gli scrigni, avvia l’incubazione di un uovo o controlla ciò che possiedi; gli oggetti riservati per uno scambio non possono essere usati finché non vengono liberati.',
+    'Ovos, baús fechados, móveis e Relíquias ficam guardados aqui. Abra baús, inicie a incubação de um ovo ou confira o que possui; itens reservados para uma troca não podem ser usados até serem liberados.',
+    '龙蛋、未开启的宝箱、家具和遗物都存放在这里。你可以开启宝箱、开始孵蛋或查看藏品；为交易保留的物品在解除保留前无法使用。',
+    '卵、未開封の宝箱、家具、レリックはここに保管されます。宝箱を開けたり、卵の孵化を始めたり、所持品を確認できます。交換用に確保されたアイテムは解放されるまで使えません。'
+  ],
+  'Buy furniture for your Tower with coins or gems. Title Chests cost coins and unlock account titles; Portrait Chests cost gems and unlock profile portraits. Open both from Inventory.':
+      [
+    'Kaufe mit Münzen oder Edelsteinen Möbel für deinen Turm. Titeltruhen kosten Münzen und schalten Kontotitel frei; Porträttruhen kosten Edelsteine und schalten Profilporträts frei. Beide öffnest du im Inventar.',
+    'Compra muebles para tu Torre con monedas o gemas. Los Cofres de títulos cuestan monedas y desbloquean títulos de cuenta; los Cofres de retratos cuestan gemas y desbloquean retratos de perfil. Abre ambos desde el Inventario.',
+    'Achète des meubles pour ta Tour avec des pièces ou des gemmes. Les Coffres de titres coûtent des pièces et débloquent des titres de compte ; les Coffres de portraits coûtent des gemmes et débloquent des portraits de profil. Ouvre-les depuis l’Inventaire.',
+    'Acquista mobili per la Torre con monete o gemme. Gli Scrigni dei titoli costano monete e sbloccano titoli dell’account; gli Scrigni dei ritratti costano gemme e sbloccano ritratti del profilo. Aprili dall’Inventario.',
+    'Compre móveis para a Torre com moedas ou gemas. Baús de títulos custam moedas e desbloqueiam títulos da conta; Baús de retratos custam gemas e desbloqueiam retratos de perfil. Abra ambos no Inventário.',
+    '使用金币或宝石为塔楼购买家具。称号宝箱消耗金币并解锁账号称号；头像宝箱消耗宝石并解锁个人头像。两者都可在物品栏中开启。',
+    'コインやジェムで塔の家具を購入できます。称号の宝箱はコインでアカウント称号を、ポートレートの宝箱はジェムでプロフィール画像を解放します。どちらもインベントリから開けます。'
+  ],
+  'The three-dot menu': [
+    'Das Dreipunkt-Menü',
+    'El menú de tres puntos',
+    'Le menu à trois points',
+    'Il menu con tre puntini',
+    'O menu de três pontos',
+    '三点菜单',
+    '3点メニュー'
+  ],
+  'Tap the three dots at the top right for Account info, where you can change your portrait and title and manage Notifications and Audio. The same menu opens Language, Achievements and this Tutorial again.':
+      [
+    'Tippe oben rechts auf die drei Punkte, um die Kontoinformationen zu öffnen. Dort kannst du Porträt und Titel ändern sowie Benachrichtigungen und Audio verwalten. Dasselbe Menü öffnet Sprache, Erfolge und erneut dieses Tutorial.',
+    'Toca los tres puntos de arriba a la derecha para abrir la información de la cuenta, donde puedes cambiar el retrato y el título y gestionar Notificaciones y Audio. El mismo menú abre Idioma, Logros y este Tutorial de nuevo.',
+    'Touche les trois points en haut à droite pour ouvrir les informations du compte, où tu peux modifier portrait et titre et gérer Notifications et Audio. Le même menu ouvre aussi Langue, Succès et ce Tutoriel.',
+    'Tocca i tre puntini in alto a destra per aprire le informazioni dell’account, dove puoi cambiare ritratto e titolo e gestire Notifiche e Audio. Lo stesso menu apre Lingua, Obiettivi e di nuovo questo Tutorial.',
+    'Toque nos três pontos no canto superior direito para abrir as informações da conta, onde você pode mudar retrato e título e gerenciar Notificações e Áudio. O mesmo menu abre Idioma, Conquistas e este Tutorial novamente.',
+    '点击右上角的三点菜单打开账号信息，你可以在其中更换头像和称号，并管理通知与音频。同一菜单还可打开语言、成就并重新查看本教程。',
+    '右上の3点をタップするとアカウント情報が開き、ポートレートと称号の変更、通知とオーディオの管理ができます。同じメニューから言語、実績、このチュートリアルも開けます。'
+  ],
   'This is the future meeting place for linked Dragonkeepers, visits and fair trades.':
       [
     'Dies wird der Treffpunkt für verbundene Drachenhüter, Besuche und faire Tauschgeschäfte.',

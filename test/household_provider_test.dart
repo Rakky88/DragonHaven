@@ -527,9 +527,9 @@ void main() {
     expect(game.sanctuaryDragons.single.name, 'Nimbus');
   });
 
-  test('the achievement catalog has 25 unique humorous milestones', () {
-    expect(achievementCatalog, hasLength(28));
-    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(28));
+  test('the achievement catalog has 29 unique humorous milestones', () {
+    expect(achievementCatalog, hasLength(29));
+    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(29));
     expect(achievementCatalog.every((entry) => entry.target > 0), isTrue);
     expect(
         achievementCatalog.every((entry) =>
@@ -538,6 +538,34 @@ void main() {
             entry.descriptionEn.isNotEmpty &&
             entry.descriptionNl.isNotEmpty),
         isTrue);
+  });
+
+  test('the guided tour achievement requires a fully viewed tutorial',
+      () async {
+    final game = HouseholdProvider(random: Random(48));
+
+    await game.completeTutorial();
+    expect(game.tutorialCompleted, isTrue);
+    expect(game.tutorialFullyViewed, isFalse);
+    expect(game.achievementProgress('guided_tour'), 0);
+    expect(game.unlockedAchievementIds, isNot(contains('guided_tour')));
+
+    await game.completeTutorial(fullyViewed: true);
+    expect(game.tutorialFullyViewed, isTrue);
+    expect(game.achievementProgress('guided_tour'), 1);
+    expect(game.unlockedAchievementIds, contains('guided_tour'));
+    expect(
+      game.pendingPresentations
+          .where((event) => event.achievementId == 'guided_tour'),
+      hasLength(1),
+    );
+
+    await game.completeTutorial(fullyViewed: true);
+    expect(
+      game.pendingPresentations
+          .where((event) => event.achievementId == 'guided_tour'),
+      hasLength(1),
+    );
   });
 
   test('Common-family achievements do not count rarer discoveries', () {

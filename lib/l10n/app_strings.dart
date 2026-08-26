@@ -663,6 +663,15 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'zh': ['你好，小家伙！', '孵化你的初始龙蛋。'],
     'ja': ['こんにちは、ちびちゃん！', '最初のドラゴンの卵を孵化させる。'],
   },
+  'guided_tour': {
+    'de': ['Etwas weniger verloren', 'Schließe das DragonHaven-Tutorial ab.'],
+    'es': ['Un poco menos perdido', 'Completa el tutorial de DragonHaven.'],
+    'fr': ['Un peu moins perdu', 'Termine le tutoriel de DragonHaven.'],
+    'it': ['Un po’ meno spaesato', 'Completa il tutorial di DragonHaven.'],
+    'pt': ['Um pouco menos perdido', 'Conclua o tutorial de DragonHaven.'],
+    'zh': ['没那么迷路了', '完成 DragonHaven 教程。'],
+    'ja': ['少し迷わなくなった', 'DragonHavenのチュートリアルを完了する。'],
+  },
   'first_flight': {
     'de': ['Erster Flug', 'Schließe dein erstes kurzes Abenteuer ab.'],
     'es': ['Primer vuelo', 'Completa tu primera Aventura corta.'],

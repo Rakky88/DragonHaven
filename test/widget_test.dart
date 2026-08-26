@@ -774,11 +774,12 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('starter tutorial auto-starts, can be skipped and replayed',
+  testWidgets('starter tutorial can be skipped and replayed to completion',
       (tester) async {
     final game = await pumpGame(tester, onboarded: true, hatched: true);
     game
       ..tutorialCompleted = false
+      ..tutorialFullyViewed = false
       ..unlockedAchievementIds.add('hello_little_one');
     game.notifyListeners();
 
@@ -798,6 +799,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(game.tutorialCompleted, isTrue);
+    expect(game.tutorialFullyViewed, isFalse);
+    expect(game.unlockedAchievementIds, isNot(contains('guided_tour')));
     expect(
         find.byKey(const Key('tutorial-step-1')).hitTestable(), findsNothing);
 
@@ -809,10 +812,21 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
     expect(find.byKey(const Key('tutorial-step-0')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('skip-tutorial')));
+    for (var step = 1; step < 9; step++) {
+      await tester.tap(find.byKey(const Key('next-tutorial-step')));
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.byKey(Key('tutorial-step-$step')), findsOneWidget);
+      expect(tester.takeException(), isNull, reason: 'tutorial step $step');
+    }
+    expect(find.text('The three-dot menu'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('next-tutorial-step')));
     for (var frame = 0; frame < 10; frame++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
+    expect(game.tutorialFullyViewed, isTrue);
+    expect(game.unlockedAchievementIds, contains('guided_tour'));
+    expect(
+        find.byKey(const Key('tutorial-step-8')).hitTestable(), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
