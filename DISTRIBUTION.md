@@ -14,6 +14,8 @@ De releaseworkflow verwacht deze GitHub-secrets:
 - `DRAGONHAVEN_KEYSTORE_PASSWORD`
 - `DRAGONHAVEN_KEY_ALIAS`
 - `DRAGONHAVEN_KEY_PASSWORD`
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_DB_PASSWORD`
 
 De secret-namen blijven om compatibiliteitsredenen gelijk; ze zijn niet zichtbaar in de app.
 
@@ -34,6 +36,11 @@ https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk
 ```
 
 Een release-tag gebruikt dezelfde weergaveversie als About, bijvoorbeeld `v0.00.09`, en bevat een asset met exact de naam `DragonHaven.apk`.
+
+De GitHub Actions-workflow publiceert zelf geen tweede release. Hij controleert
+de server en bouwt een gesigneerde `DragonHaven.aab` als tijdelijk
+workflow-artifact voor Google Play. De vaste GitHub APK-release blijft via het
+lokale, gecontroleerde releaseproces lopen.
 
 ### Verplichte server-preflight
 

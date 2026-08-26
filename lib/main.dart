@@ -11,6 +11,7 @@ import 'providers/online_account_provider.dart';
 import 'screens/sprite_audit_screen.dart';
 import 'services/audio_service.dart';
 import 'services/social_repository.dart';
+import 'services/storage_service.dart';
 import 'services/supabase_social_repository.dart';
 
 Future<void> main() async {
@@ -87,6 +88,9 @@ Future<void> main() async {
       receivedKey: settlement.received.key,
       receivedData: settlement.received.data,
     ),
+    gameStateSnapshot: game.exportState,
+    applyCloudState: game.restoreCloudState,
+    deviceId: StorageService.deviceId,
     languageCode: () => game.languageCode,
   );
   await online.initialize();

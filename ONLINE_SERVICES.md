@@ -1,7 +1,7 @@
 # DragonHaven online social MVP
 
-Deze fase voegt asynchrone accounts en vriendschappen toe zonder trading of
-realtime multiplayer te simuleren.
+DragonHaven gebruikt asynchrone online accounts. Er wordt geen realtime
+multiplayer gesimuleerd.
 
 ## Wat nu is geïmplementeerd
 
@@ -15,6 +15,14 @@ realtime multiplayer te simuleren.
 - genormaliseerde servertabellen voor wallet, draken, eieren, kisten en
   afzonderlijke meubelinstanties;
 - een eenmalige migratie van de bestaande lokale inventory.
+- transactionele 1-op-1 trades met reserveringen, limieten en vervaltijd;
+- wereldwijd gelijke, asynchrone Group Adventures;
+- een gebundelde online snapshot zodat een refresh niet langer vele losse
+  netwerkverzoeken nodig heeft;
+- handmatige, versioned cloudback-ups met revisieconflicten en bevestigd
+  herstel vanaf een tweede apparaat.
+- self-service accountverwijdering na wachtwoordcontrole; het online profiel,
+  friendships, trades en de cloudback-up worden door database-cascades gewist.
 
 Inventorytabellen geven de mobiele `authenticated` rol geen directe lees- of
 schrijfrechten. Nieuwe gameplay- en tradeacties moeten later als gevalideerde
@@ -25,8 +33,8 @@ van eigendom zijn voor rewards of trading.
 ## Backend activeren
 
 1. Maak een Supabase-project en laat e-mail/wachtwoordauthenticatie aanstaan.
-2. Pas [de migratie](supabase/migrations/202608240001_online_social_mvp.sql)
-   toe met de Supabase CLI of de SQL Editor.
+2. Pas alle bestanden in `supabase/migrations` in versievolgorde toe met de
+   Supabase CLI.
 3. Kopieer `online_config.example.json` naar `online_config.json` en vul de
    Project URL en publishable key uit het Connect-scherm in.
 4. Start of bouw Flutter met de configuratie:
@@ -59,14 +67,16 @@ Gebruik twee verschillende e-mailaccounts en twee apparaten/emulators:
    krijgt over de blokkade.
 8. Deblokkeer bij B en controleer dat een nieuw verzoek weer mogelijk is.
 
-## Bewuste grens van deze fase
+## Bewuste beveiligingsgrens
 
-De lokale save blijft voorlopig de gameplayloop uitvoeren. De eerste online
-login importeert inventory exact één keer naar serverobjecten. Bij openen of
-verversen van Friends wordt alleen de cosmetische showcase opnieuw gepubliceerd
-zodat profielinformatie actueel blijft. Serverinventory wordt niet vanuit de
-client overschreven.
+De lokale save blijft de offline gameplayloop uitvoeren. De eerste online login
+importeert inventory en latere online verversingen synchroniseren de tradebare
+inventory vanuit die lokale bron. Trades zelf worden atomair en met serverlocks
+afgehandeld, maar dit maakt de oorsprong van offline verkregen items nog niet
+anti-cheatbestendig. De cosmetische showcase blijft uitdrukkelijk geen bewijs
+van eigendom.
 
-Voor trading of gedeelde Group Adventures moet eerst iedere relevante
-economiemutatie (chest openen, reward claimen, kopen, egg activeren enzovoort)
-naar server-side commando's met idempotency keys en transacties worden verhuisd.
+Voor volledige server-authority moet iedere relevante economiemutatie (chest
+openen, reward claimen, kopen, egg activeren enzovoort) later naar server-side
+commando's met idempotency keys en transacties worden verhuisd. Cloudback-up is
+bedoeld voor herstel en meerdere apparaten, niet als anti-cheatbron.

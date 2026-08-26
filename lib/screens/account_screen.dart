@@ -19,6 +19,7 @@ class AccountScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
+    final online = context.watch<OnlineAccountProvider>();
     return Scaffold(
       appBar: AppBar(title: Text(strings.tr('account'))),
       body: ListView(
@@ -134,6 +135,76 @@ class AccountScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
+          if (online.isSignedIn) ...[
+            Text(strings.pick('Cloud backup', 'Cloudback-up'),
+                style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Card(
+              key: const Key('cloud-save-card'),
+              clipBehavior: Clip.antiAlias,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const GameIconSprite(
+                          GameIconKind.screenAccount,
+                          size: 54,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            online.cloudGameSave == null
+                                ? strings.pick(
+                                    'Keep a versioned copy of this device\'s progress online.',
+                                    'Bewaar online een versieback-up van de voortgang op dit apparaat.',
+                                  )
+                                : '${strings.pick(
+                                    'Cloud backup revision',
+                                    'Cloudback-up revisie',
+                                  )} ${online.cloudGameSave!.revision}',
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.icon(
+                            key: const Key('cloud-backup-button'),
+                            onPressed: online.busy
+                                ? null
+                                : () => _backupToCloud(context),
+                            icon: const Icon(Icons.cloud_upload_rounded),
+                            label: Text(strings.pick('Back up', 'Back-up')),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            key: const Key('cloud-restore-button'),
+                            onPressed: online.busy
+                                ? null
+                                : () => _restoreFromCloud(context),
+                            icon: const Icon(Icons.cloud_download_rounded),
+                            label: Text(strings.pick('Restore', 'Herstellen')),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+          ],
           Text(strings.pick('Audio', 'Audio'),
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
@@ -194,6 +265,84 @@ class AccountScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _backupToCloud(BuildContext context) async {
+    final strings = AppStrings.of(context);
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(
+                strings.pick('Back up progress?', 'Voortgang back-uppen?')),
+            content: Text(strings.pick(
+              'This stores the current progress from this device in your online account. An older cloud backup will be replaced.',
+              'Hiermee wordt de huidige voortgang van dit apparaat in je online account opgeslagen. Een oudere cloudback-up wordt vervangen.',
+            )),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(strings.tr('cancel')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(strings.pick('Back up', 'Back-up')),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed || !context.mounted) return;
+    final online = context.read<OnlineAccountProvider>();
+    final success = await online.backupToCloud();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(success
+          ? strings.pick('Cloud backup saved.', 'Cloudback-up opgeslagen.')
+          : strings.pick(
+              'Cloud backup failed. Refresh and try again.',
+              'Cloudback-up mislukt. Ververs en probeer opnieuw.',
+            )),
+    ));
+  }
+
+  Future<void> _restoreFromCloud(BuildContext context) async {
+    final strings = AppStrings.of(context);
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(strings.pick(
+              'Restore cloud progress?',
+              'Cloudvoortgang herstellen?',
+            )),
+            content: Text(strings.pick(
+              'Your current local progress will be replaced by the latest cloud backup. A local recovery copy is kept.',
+              'Je huidige lokale voortgang wordt vervangen door de nieuwste cloudback-up. Er blijft een lokale herstelkopie bewaard.',
+            )),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(strings.tr('cancel')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(strings.pick('Restore', 'Herstellen')),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed || !context.mounted) return;
+    final online = context.read<OnlineAccountProvider>();
+    final success = await online.restoreFromCloud();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(success
+          ? strings.pick('Cloud progress restored.', 'Cloudvoortgang hersteld.')
+          : strings.pick(
+              'No usable cloud backup was found.',
+              'Er is geen bruikbare cloudback-up gevonden.',
+            )),
+    ));
   }
 
   Future<void> _editName(BuildContext context, String current) async {
@@ -617,14 +766,30 @@ class _AccountIdentityCard extends StatelessWidget {
                   icon: const Icon(Icons.copy_rounded),
                 ),
               ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  key: const Key('sign-out-online-account'),
-                  onPressed: online.busy ? null : online.signOut,
-                  icon: const Icon(Icons.logout_rounded),
-                  label: Text(strings.pick('Sign out', 'Uitloggen')),
-                ),
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 4,
+                runSpacing: 2,
+                children: [
+                  TextButton.icon(
+                    key: const Key('delete-online-account'),
+                    onPressed: online.busy
+                        ? null
+                        : () => _deleteOnlineAccount(context),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFB3261E),
+                    ),
+                    icon: const Icon(Icons.delete_forever_rounded),
+                    label: Text(
+                        strings.pick('Delete account', 'Account verwijderen')),
+                  ),
+                  TextButton.icon(
+                    key: const Key('sign-out-online-account'),
+                    onPressed: online.busy ? null : online.signOut,
+                    icon: const Icon(Icons.logout_rounded),
+                    label: Text(strings.pick('Sign out', 'Uitloggen')),
+                  ),
+                ],
               ),
             ],
           ],
@@ -632,6 +797,72 @@ class _AccountIdentityCard extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _deleteOnlineAccount(BuildContext context) async {
+  final strings = AppStrings.of(context);
+  final passwordController = TextEditingController();
+  final password = await showDialog<String>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(strings.pick(
+        'Delete online account?',
+        'Online account verwijderen?',
+      )),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(strings.pick(
+            'This permanently deletes your online profile, friends, trades and cloud backup. Your current offline save stays on this device.',
+            'Hiermee verwijder je permanent je online profiel, vrienden, trades en cloudback-up. Je huidige offline save blijft op dit apparaat staan.',
+          )),
+          const SizedBox(height: 14),
+          TextField(
+            key: const Key('delete-account-password'),
+            controller: passwordController,
+            obscureText: true,
+            autofillHints: const [AutofillHints.password],
+            decoration: InputDecoration(
+              labelText:
+                  strings.pick('Confirm password', 'Bevestig wachtwoord'),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text(strings.tr('cancel')),
+        ),
+        FilledButton(
+          key: const Key('confirm-delete-online-account'),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFB3261E),
+          ),
+          onPressed: () {
+            final value = passwordController.text;
+            if (value.isNotEmpty) Navigator.pop(dialogContext, value);
+          },
+          child:
+              Text(strings.pick('Delete permanently', 'Permanent verwijderen')),
+        ),
+      ],
+    ),
+  );
+  passwordController.dispose();
+  if (password == null || !context.mounted) return;
+  final success =
+      await context.read<OnlineAccountProvider>().deleteAccount(password);
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Text(success
+        ? strings.pick('Online account deleted.', 'Online account verwijderd.')
+        : strings.pick(
+            'Account deletion failed. Check your password and connection.',
+            'Account verwijderen mislukt. Controleer je wachtwoord en verbinding.',
+          )),
+  ));
 }
 
 class _IdentityInfoRow extends StatelessWidget {

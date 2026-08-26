@@ -345,6 +345,9 @@ void main() {
     final friendCodex = File(
       'supabase/migrations/202608260011_friend_draconomicon.sql',
     ).readAsStringSync();
+    final discoveryGuard = File(
+      'supabase/migrations/202608260015_preserve_draconomicon_discoveries.sql',
+    ).readAsStringSync();
 
     for (final kind in const [
       'friend_request',
@@ -362,5 +365,8 @@ void main() {
     expect(friendCodex, contains('discovered_forms text[]'));
     expect(friendCodex, contains('prismatic_forms text[]'));
     expect(friendCodex, contains('list_my_friends'));
+    expect(discoveryGuard, contains('preserve_social_showcase_discoveries'));
+    expect(discoveryGuard, contains('public.discovered_lineages'));
+    expect(discoveryGuard, contains('greatest('));
   });
 }

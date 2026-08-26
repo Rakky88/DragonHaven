@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import '../l10n/app_strings.dart';
 import '../models/social.dart';
 import '../services/notification_service.dart';
 import '../services/social_repository.dart';
@@ -22,6 +24,9 @@ class OnlineAccountProvider extends ChangeNotifier {
       Map<String, int> relics,
     )? synchronizeTradeReservations,
     Future<bool> Function(TradeSettlement settlement)? applyTradeSettlement,
+    Map<String, dynamic> Function()? gameStateSnapshot,
+    Future<bool> Function(Map<String, dynamic> state)? applyCloudState,
+    Future<String> Function()? deviceId,
     String Function()? languageCode,
   })  : _repository = repository,
         _inventorySnapshot = inventorySnapshot,
@@ -32,6 +37,9 @@ class OnlineAccountProvider extends ChangeNotifier {
         _synchronizeTradeReservations =
             synchronizeTradeReservations ?? _ignoreTradeReservations,
         _applyTradeSettlement = applyTradeSettlement ?? _rejectTradeSettlement,
+        _gameStateSnapshot = gameStateSnapshot,
+        _applyCloudState = applyCloudState,
+        _deviceId = deviceId,
         _languageCode = languageCode ?? _defaultLanguageCode;
 
   final SocialRepository _repository;
@@ -46,9 +54,16 @@ class OnlineAccountProvider extends ChangeNotifier {
     Map<String, int> relics,
   ) _synchronizeTradeReservations;
   final Future<bool> Function(TradeSettlement settlement) _applyTradeSettlement;
+  final Map<String, dynamic> Function()? _gameStateSnapshot;
+  final Future<bool> Function(Map<String, dynamic> state)? _applyCloudState;
+  final Future<String> Function()? _deviceId;
   final String Function() _languageCode;
   StreamSubscription<bool>? _authSubscription;
   Timer? _refreshTimer;
+  String? _lastProfileFingerprint;
+  String? _lastTradeInventoryFingerprint;
+  String? _lastShowcaseFingerprint;
+  DateTime? _lastPresenceUpdate;
   bool _disposed = false;
 
   KeeperProfile? profile;
@@ -59,6 +74,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   GroupAdventureStatus? groupAdventureStatus;
   List<TradeOffer> trades = const [];
   List<TradeInventoryItem> tradeInventory = const [];
+  CloudGameSave? cloudGameSave;
   bool busy = false;
   String? errorCode;
   String? noticeCode;
@@ -151,6 +167,15 @@ class OnlineAccountProvider extends ChangeNotifier {
       }) ??
       false;
 
+  Future<bool> deleteAccount(String password) async =>
+      await _run(() async {
+        await _repository.deleteMyAccount(password);
+        _clearAccountData();
+        noticeCode = 'account_deleted';
+        return true;
+      }) ??
+      false;
+
   Future<bool> refresh() async =>
       await _run(() async {
         if (!isSignedIn) return false;
@@ -160,6 +185,52 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> synchronizeProfile() => refresh();
+
+  Future<bool> loadCloudSaveStatus() async =>
+      await _run(() async {
+        if (!isSignedIn) return false;
+        cloudGameSave = await _repository.loadCloudGameSave();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> backupToCloud() async =>
+      await _run(() async {
+        final snapshot = _gameStateSnapshot;
+        final loadDeviceId = _deviceId;
+        if (!isSignedIn || snapshot == null || loadDeviceId == null) {
+          throw const SocialException('cloud_save_unavailable');
+        }
+        cloudGameSave = await _repository.loadCloudGameSave();
+        cloudGameSave = await _repository.pushCloudGameSave(
+          expectedRevision: cloudGameSave?.revision ?? 0,
+          state: snapshot(),
+          deviceId: await loadDeviceId(),
+        );
+        noticeCode = 'cloud_save_backed_up';
+        return true;
+      }) ??
+      false;
+
+  Future<bool> restoreFromCloud() async =>
+      await _run(() async {
+        final apply = _applyCloudState;
+        if (!isSignedIn || apply == null) {
+          throw const SocialException('cloud_save_unavailable');
+        }
+        final remote = await _repository.loadCloudGameSave();
+        if (remote == null) throw const SocialException('cloud_save_missing');
+        if (!await apply(remote.state)) {
+          throw const SocialException('cloud_save_invalid');
+        }
+        cloudGameSave = remote;
+        _lastTradeInventoryFingerprint = null;
+        _lastShowcaseFingerprint = null;
+        await _refreshData();
+        noticeCode = 'cloud_save_restored';
+        return true;
+      }) ??
+      false;
 
   Future<bool> sendFriendRequest(String keeperCode) async =>
       await _run(() async {
@@ -325,16 +396,31 @@ class OnlineAccountProvider extends ChangeNotifier {
   Future<void> _refreshData() async {
     final snapshot = _inventorySnapshot();
     final localProfile = _profileSnapshot();
-    await _repository.updateProfile(
-      displayName: localProfile.displayName,
-      title: localProfile.titleId,
-      portraitKey: localProfile.portraitId,
-    );
-    var ownProfile = await _repository.loadMyProfile();
+    final profileFingerprint = jsonEncode({
+      'displayName': localProfile.displayName,
+      'title': localProfile.titleId,
+      'portrait': localProfile.portraitId,
+    });
+    final now = DateTime.now();
+    final presenceExpired = _lastPresenceUpdate == null ||
+        now.difference(_lastPresenceUpdate!) >= const Duration(minutes: 5);
+    if (_lastProfileFingerprint != profileFingerprint || presenceExpired) {
+      await _repository.updateProfile(
+        displayName: localProfile.displayName,
+        title: localProfile.titleId,
+        portraitKey: localProfile.portraitId,
+      );
+      _lastProfileFingerprint = profileFingerprint;
+      _lastPresenceUpdate = now;
+    }
+    var serverChanged = false;
+    var onlineSnapshot = await _repository.loadOnlineSnapshot();
+    var ownProfile = onlineSnapshot.profile;
     if (!ownProfile.inventoryImported) {
       await _repository.importLegacyInventory(snapshot);
+      serverChanged = true;
     }
-    final pendingTrades = await _repository.loadTrades();
+    final pendingTrades = onlineSnapshot.trades;
     trades = pendingTrades;
     await _synchronizeLocalTradeReservations();
     for (final trade in pendingTrades.where(
@@ -347,87 +433,105 @@ class OnlineAccountProvider extends ChangeNotifier {
       ));
       if (!applied) throw const SocialException('trade_apply_failed');
       await _repository.acknowledgeTrade(trade.id);
+      serverChanged = true;
     }
-    await _repository.synchronizeTradeInventory(_inventorySnapshot());
-    await _repository.publishSocialShowcase(_inventorySnapshot());
-    ownProfile = await _repository.loadMyProfile();
-    final results = await Future.wait([
-      _repository.loadFriends(),
-      _repository.loadRequests(),
-      _repository.loadBlockedKeepers(),
-      _repository.loadGroupAdventureStatus(),
-      _repository.loadGroupAdventures(),
-      _repository.loadTrades(),
-      _repository.loadTradeInventory(),
-      _repository.loadSocialNotifications(),
-    ]);
+    final currentSnapshot = _inventorySnapshot();
+    final tradeInventoryFingerprint = jsonEncode(currentSnapshot.toTradeJson());
+    if (_lastTradeInventoryFingerprint != tradeInventoryFingerprint) {
+      await _repository.synchronizeTradeInventory(currentSnapshot);
+      _lastTradeInventoryFingerprint = tradeInventoryFingerprint;
+      serverChanged = true;
+    }
+    final showcaseFingerprint = jsonEncode(currentSnapshot.toShowcaseJson());
+    if (_lastShowcaseFingerprint != showcaseFingerprint) {
+      await _repository.publishSocialShowcase(currentSnapshot);
+      _lastShowcaseFingerprint = showcaseFingerprint;
+      serverChanged = true;
+    }
+    if (serverChanged) {
+      onlineSnapshot = await _repository.loadOnlineSnapshot();
+      ownProfile = onlineSnapshot.profile;
+    }
     profile = ownProfile;
-    friends = results[0] as List<KeeperProfile>;
-    requests = results[1] as List<FriendshipRequest>;
-    blockedKeepers = results[2] as List<KeeperProfile>;
-    groupAdventureStatus = results[3] as GroupAdventureStatus;
-    groupLobbies = results[4] as List<GroupAdventureLobby>;
-    trades = results[5] as List<TradeOffer>;
-    tradeInventory = results[6] as List<TradeInventoryItem>;
-    final socialNotifications = results[7] as List<SocialNotification>;
+    friends = onlineSnapshot.friends;
+    requests = onlineSnapshot.requests;
+    blockedKeepers = onlineSnapshot.blockedKeepers;
+    groupAdventureStatus = onlineSnapshot.groupAdventureStatus;
+    groupLobbies = onlineSnapshot.groupLobbies;
+    trades = onlineSnapshot.trades;
+    tradeInventory = onlineSnapshot.tradeInventory;
     await _synchronizeGroupReservations({
       for (final lobby in myGroupAdventures)
         if (lobby.myDragonId case final dragonId?) dragonId: lobby.id,
     });
     await _synchronizeLocalTradeReservations();
-    await _deliverSocialNotifications(socialNotifications);
+    await _deliverSocialNotifications(onlineSnapshot.notifications);
   }
 
   Future<void> _deliverSocialNotifications(
       List<SocialNotification> notifications) async {
     if (notifications.isEmpty) return;
-    final dutch = _languageCode() == 'nl';
+    final strings = AppStrings(_languageCode());
     for (final notification in notifications) {
       final name = notification.actorDisplayName;
+      String withName(String english, String dutch) =>
+          strings.pick(english, dutch).replaceAll('{name}', name);
       switch (notification.kind) {
         case 'friend_request':
           await HavenNotifications.friendRequest(
             id: notification.id,
-            title: dutch ? 'Nieuw vriendschapsverzoek' : 'New friend request',
-            body: dutch
-                ? '$name wil vrienden worden.'
-                : '$name wants to be friends.',
+            title: strings.pick(
+              'New friend request',
+              'Nieuw vriendschapsverzoek',
+            ),
+            body: withName(
+              '{name} wants to be friends.',
+              '{name} wil vrienden worden.',
+            ),
           );
         case 'friend_accepted':
           await HavenNotifications.friendAccepted(
             id: notification.id,
-            title: dutch
-                ? 'Vriendschapsverzoek geaccepteerd'
-                : 'Friend request accepted',
-            body: dutch
-                ? '$name staat nu in je vriendenlijst.'
-                : '$name is now in your friends list.',
+            title: strings.pick(
+              'Friend request accepted',
+              'Vriendschapsverzoek geaccepteerd',
+            ),
+            body: withName(
+              '{name} is now in your friends list.',
+              '{name} staat nu in je vriendenlijst.',
+            ),
           );
         case 'trade_request':
           await HavenNotifications.tradeUpdate(
             id: notification.id,
-            title: dutch ? 'Nieuw ruilvoorstel' : 'New trade offer',
-            body: dutch
-                ? '$name wil een item met je ruilen.'
-                : '$name wants to trade an item with you.',
+            title: strings.pick('New trade offer', 'Nieuw ruilvoorstel'),
+            body: withName(
+              '{name} wants to trade an item with you.',
+              '{name} wil een item met je ruilen.',
+            ),
             category: HavenNotificationCategory.tradeRequests,
           );
         case 'trade_return':
           await HavenNotifications.tradeUpdate(
             id: notification.id,
-            title: dutch ? 'Tegenaanbod ontvangen' : 'Return item offered',
-            body: dutch
-                ? '$name heeft een item aangeboden. Bevestig de ruil.'
-                : '$name offered an item. Confirm the trade.',
+            title: strings.pick(
+              'Return item offered',
+              'Tegenaanbod ontvangen',
+            ),
+            body: withName(
+              '{name} offered an item. Confirm the trade.',
+              '{name} heeft een item aangeboden. Bevestig de ruil.',
+            ),
             category: HavenNotificationCategory.tradeReturns,
           );
         case 'trade_completed':
           await HavenNotifications.tradeUpdate(
             id: notification.id,
-            title: dutch ? 'Ruil afgerond' : 'Trade completed',
-            body: dutch
-                ? 'Je ruil met $name is veilig afgerond.'
-                : 'Your trade with $name completed safely.',
+            title: strings.pick('Trade completed', 'Ruil afgerond'),
+            body: withName(
+              'Your trade with {name} completed safely.',
+              'Je ruil met {name} is veilig afgerond.',
+            ),
             category: HavenNotificationCategory.tradeCompletions,
           );
       }
@@ -459,7 +563,7 @@ class OnlineAccountProvider extends ChangeNotifier {
 
   void _ensureRefreshTimer() {
     if (!isConfigured || !isSignedIn || _refreshTimer != null) return;
-    _refreshTimer = Timer.periodic(const Duration(seconds: 45), (_) {
+    _refreshTimer = Timer.periodic(const Duration(minutes: 2), (_) {
       if (isSignedIn && !busy) unawaited(refresh());
     });
   }
@@ -492,6 +596,11 @@ class OnlineAccountProvider extends ChangeNotifier {
     groupAdventureStatus = null;
     trades = const [];
     tradeInventory = const [];
+    cloudGameSave = null;
+    _lastProfileFingerprint = null;
+    _lastTradeInventoryFingerprint = null;
+    _lastShowcaseFingerprint = null;
+    _lastPresenceUpdate = null;
     unawaited(_synchronizeGroupReservations(const {}));
     unawaited(_synchronizeTradeReservations(const {}, const {}, const {}));
   }

@@ -205,10 +205,95 @@ class SocialDashboard {
   final List<KeeperProfile> blockedKeepers;
 }
 
+class OnlineSocialSnapshot {
+  const OnlineSocialSnapshot({
+    required this.profile,
+    required this.friends,
+    required this.requests,
+    required this.blockedKeepers,
+    required this.groupAdventureStatus,
+    required this.groupLobbies,
+    required this.trades,
+    required this.tradeInventory,
+    required this.notifications,
+  });
+
+  final KeeperProfile profile;
+  final List<KeeperProfile> friends;
+  final List<FriendshipRequest> requests;
+  final List<KeeperProfile> blockedKeepers;
+  final GroupAdventureStatus groupAdventureStatus;
+  final List<GroupAdventureLobby> groupLobbies;
+  final List<TradeOffer> trades;
+  final List<TradeInventoryItem> tradeInventory;
+  final List<SocialNotification> notifications;
+
+  factory OnlineSocialSnapshot.fromJson(Map<String, dynamic> json) {
+    List<T> parseList<T>(
+      String key,
+      T Function(Map<String, dynamic>) parser,
+    ) {
+      final value = json[key];
+      if (value is! List) return const [];
+      return value
+          .whereType<Map>()
+          .map((row) => parser(Map<String, dynamic>.from(row)))
+          .toList(growable: false);
+    }
+
+    final rawProfile = json['profile'];
+    final rawGroupStatus = json['group_status'];
+    if (rawProfile is! Map || rawGroupStatus is! Map) {
+      throw const FormatException('Online snapshot is incomplete.');
+    }
+    return OnlineSocialSnapshot(
+      profile: KeeperProfile.fromJson(Map<String, dynamic>.from(rawProfile)),
+      friends: parseList('friends', KeeperProfile.fromJson),
+      requests: parseList('requests', FriendshipRequest.fromJson),
+      blockedKeepers: parseList('blocked_keepers', KeeperProfile.fromJson),
+      groupAdventureStatus: GroupAdventureStatus.fromJson(
+        Map<String, dynamic>.from(rawGroupStatus),
+      ),
+      groupLobbies: parseList('group_lobbies', GroupAdventureLobby.fromJson),
+      trades: parseList('trades', TradeOffer.fromJson),
+      tradeInventory: parseList('trade_inventory', TradeInventoryItem.fromJson),
+      notifications: parseList('notifications', SocialNotification.fromJson),
+    );
+  }
+}
+
 class AccountAuthResult {
   const AccountAuthResult({required this.requiresEmailConfirmation});
 
   final bool requiresEmailConfirmation;
+}
+
+class CloudGameSave {
+  const CloudGameSave({
+    required this.revision,
+    required this.state,
+    required this.updatedAt,
+    required this.deviceId,
+  });
+
+  final int revision;
+  final Map<String, dynamic> state;
+  final DateTime updatedAt;
+  final String deviceId;
+
+  factory CloudGameSave.fromJson(Map<String, dynamic> json) {
+    final rawState = json['state'];
+    if (rawState is! Map) {
+      throw const FormatException('Cloud save has no valid game state.');
+    }
+    return CloudGameSave(
+      revision: _int(json['revision']),
+      state: Map<String, dynamic>.from(rawState),
+      updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      deviceId: json['device_id']?.toString() ?? '',
+    );
+  }
 }
 
 class GroupDragonSubmission {

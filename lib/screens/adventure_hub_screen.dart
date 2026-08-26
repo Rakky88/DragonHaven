@@ -32,7 +32,6 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   Timer? _clock;
-  int _onlineRefreshTicks = 0;
 
   @override
   void initState() {
@@ -46,13 +45,6 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
         setState(() {});
-        _onlineRefreshTicks++;
-        if (_onlineRefreshTicks % 15 == 0) {
-          final online = context.read<OnlineAccountProvider>();
-          if (online.isSignedIn && !online.busy) {
-            unawaited(online.refresh());
-          }
-        }
       }
     });
   }

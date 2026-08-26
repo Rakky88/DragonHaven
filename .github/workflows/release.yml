@@ -5,9 +5,14 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'App version without the v prefix (for example 0.04.01)'
+        required: true
+        type: string
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-release:
@@ -30,6 +35,26 @@ jobs:
 
       - name: Dependencies
         run: flutter pub get
+
+      - name: Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.115.0
+
+      - name: Verify linked production server
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SUPABASE_ACCESS_TOKEN)) {
+            throw 'SUPABASE_ACCESS_TOKEN ontbreekt.'
+          }
+          if ([string]::IsNullOrWhiteSpace($env:SUPABASE_DB_PASSWORD)) {
+            throw 'SUPABASE_DB_PASSWORD ontbreekt.'
+          }
+          supabase link --project-ref tnzathhutuwmohmjfrlo --password $env:SUPABASE_DB_PASSWORD
+          ./tool/release_server_preflight.ps1
 
       - name: Analyze
         run: flutter analyze --no-pub
@@ -56,12 +81,18 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > android/key.properties
 
-      - name: Build signed APK
+      - name: Build signed Play Store bundle
         shell: bash
+        env:
+          MANUAL_VERSION: ${{ inputs.version }}
         run: |
-          APP_VERSION="${GITHUB_REF_NAME#v}"
-          if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then APP_VERSION="0.02.00"; fi
-          flutter build apk --release --no-pub \
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            APP_VERSION="${GITHUB_REF_NAME#v}"
+          else
+            APP_VERSION="$MANUAL_VERSION"
+          fi
+          [[ "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || (echo "Ongeldige versie: $APP_VERSION" && exit 1)
+          flutter build appbundle --release --no-pub \
             --build-name="$APP_VERSION" \
             --build-number="$((10000 + GITHUB_RUN_NUMBER))" \
             --dart-define=DRAGONHAVEN_GITHUB_OWNER=${{ github.repository_owner }} \
@@ -70,17 +101,11 @@ jobs:
             --dart-define=SUPABASE_URL=https://tnzathhutuwmohmjfrlo.supabase.co \
             --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_SllXjneKVmDAgtBGgkSgOg_tOJmYkX4
           mkdir -p release
-          cp build/app/outputs/flutter-apk/app-release.apk release/DragonHaven.apk
+          cp build/app/outputs/bundle/release/app-release.aab release/DragonHaven.aab
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DragonHaven-Android
-          path: release/DragonHaven.apk
-
-      - name: Publish GitHub Release
-        if: github.ref_type == 'tag'
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release/DragonHaven.apk
-          generate_release_notes: true
+          name: DragonHaven-Play-Store
+          path: release/DragonHaven.aab
+          retention-days: 7

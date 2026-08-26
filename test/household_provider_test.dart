@@ -99,6 +99,40 @@ void main() {
     expect(restored.pet.hatchSeed, seed);
   });
 
+  test('a corrupt current save automatically restores the last valid backup',
+      () async {
+    final game = HouseholdProvider(random: Random(12));
+    await game.setLanguage('nl');
+    await game.setLanguage('de');
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(StorageService.currentKey, '{broken json');
+
+    final restored = await HouseholdProvider.loadFromStorage();
+
+    expect(restored.languageCode, 'nl');
+    expect(StorageService.lastLoadRecoveredFromBackup, isTrue);
+    expect(
+      preferences.getString(StorageService.recoveryKey),
+      '{broken json',
+    );
+  });
+
+  test('a structurally invalid save also falls back without deleting recovery',
+      () async {
+    final game = HouseholdProvider(random: Random(13));
+    await game.setLanguage('nl');
+    await game.setLanguage('de');
+    final preferences = await SharedPreferences.getInstance();
+    const invalidState = '{"schemaVersion":39,"languageCode":"de"}';
+    await preferences.setString(StorageService.currentKey, invalidState);
+
+    final restored = await HouseholdProvider.loadFromStorage();
+
+    expect(restored.languageCode, 'nl');
+    expect(StorageService.lastLoadRecoveredFromBackup, isTrue);
+    expect(preferences.getString(StorageService.recoveryKey), invalidState);
+  });
+
   test('music and sound effects persist independently', () async {
     final game = HouseholdProvider(random: Random(19));
     await game.setMusicEnabled(false);
@@ -754,6 +788,41 @@ void main() {
     expect(restored.favoriteChanges, 0);
     expect(restored.unlockedAchievementIds,
         isNot(contains('not_picking_favorites')));
+  });
+
+  test('loading an older save rebuilds discoveries for every owned dragon',
+      () async {
+    final normalLineage = dragonLineages.first.id;
+    final prismaticLineage = dragonLineages[1].id;
+    await StorageService.save({
+      'schemaVersion': 31,
+      'pet': Pet(
+        id: 'active-old-save',
+        lineageId: normalLineage,
+        stage: DragonStage.wyrmling,
+        firstEgg: false,
+      ).toJson(),
+      'sanctuaryDragons': [
+        Pet(
+          id: 'sanctuary-old-save',
+          lineageId: prismaticLineage,
+          stage: DragonStage.ascended,
+          firstEgg: false,
+          prismatic: true,
+          evolutionPath: 'arcana',
+        ).toJson(),
+      ],
+    });
+
+    final restored = await HouseholdProvider.loadFromStorage();
+
+    expect(restored.discoveredForms, contains('$normalLineage:hatchling'));
+    expect(restored.discoveredForms, contains('$normalLineage:wyrmling'));
+    expect(restored.prismaticForms, contains('$prismaticLineage:hatchling'));
+    expect(restored.prismaticForms, contains('$prismaticLineage:wyrmling'));
+    expect(
+        restored.prismaticForms, contains('$prismaticLineage:ascended:arcana'));
+    expect(restored.discoveredLineageCount, 1);
   });
 
   test('portrait collection and chosen account portrait persist', () async {

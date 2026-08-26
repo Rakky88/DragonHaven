@@ -23,7 +23,15 @@ abstract interface class SocialRepository {
   });
   Future<void> signIn({required String email, required String password});
   Future<void> signOut();
+  Future<void> deleteMyAccount(String password);
   Future<KeeperProfile> loadMyProfile();
+  Future<OnlineSocialSnapshot> loadOnlineSnapshot();
+  Future<CloudGameSave?> loadCloudGameSave();
+  Future<CloudGameSave> pushCloudGameSave({
+    required int expectedRevision,
+    required Map<String, dynamic> state,
+    required String deviceId,
+  });
   Future<List<KeeperProfile>> loadFriends();
   Future<List<FriendshipRequest>> loadRequests();
   Future<List<SocialNotification>> loadSocialNotifications();
@@ -90,6 +98,17 @@ class DisabledSocialRepository implements SocialRepository {
   @override
   Future<KeeperProfile> loadMyProfile() async => _disabled();
   @override
+  Future<OnlineSocialSnapshot> loadOnlineSnapshot() async => _disabled();
+  @override
+  Future<CloudGameSave?> loadCloudGameSave() async => _disabled();
+  @override
+  Future<CloudGameSave> pushCloudGameSave({
+    required int expectedRevision,
+    required Map<String, dynamic> state,
+    required String deviceId,
+  }) async =>
+      _disabled();
+  @override
   Future<List<FriendshipRequest>> loadRequests() async => _disabled();
   @override
   Future<List<SocialNotification>> loadSocialNotifications() async =>
@@ -126,6 +145,8 @@ class DisabledSocialRepository implements SocialRepository {
       _disabled();
   @override
   Future<void> signOut() async => _disabled();
+  @override
+  Future<void> deleteMyAccount(String password) async => _disabled();
   @override
   Future<void> unblockKeeper(String userId) async => _disabled();
   @override

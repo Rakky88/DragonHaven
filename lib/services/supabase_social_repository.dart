@@ -80,8 +80,65 @@ class SupabaseSocialRepository implements SocialRepository {
   }
 
   @override
+  Future<void> deleteMyAccount(String password) async {
+    final email = currentEmail;
+    if (email == null || password.isEmpty) {
+      throw const SocialException('account_delete_reauthentication_failed');
+    }
+    try {
+      final result = await _client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      if (result.user?.emailConfirmedAt == null) {
+        throw const SocialException('email_not_verified');
+      }
+      await _rpc('delete_my_account');
+      try {
+        await _client.auth.signOut(scope: SignOutScope.local);
+      } on Object {
+        // Deleting auth.users invalidates the remote session already.
+      }
+    } on SocialException {
+      rethrow;
+    } on Object catch (error) {
+      throw _socialError(error);
+    }
+  }
+
+  @override
   Future<KeeperProfile> loadMyProfile() async =>
       KeeperProfile.fromJson(await _singleRpc('get_my_profile'));
+
+  @override
+  Future<OnlineSocialSnapshot> loadOnlineSnapshot() async {
+    final result = await _rpc('get_online_snapshot');
+    if (result is Map) {
+      return OnlineSocialSnapshot.fromJson(Map<String, dynamic>.from(result));
+    }
+    throw const SocialException('invalid_online_snapshot');
+  }
+
+  @override
+  Future<CloudGameSave?> loadCloudGameSave() async {
+    final rows = await _listRpc('get_cloud_game_save');
+    return rows.isEmpty ? null : CloudGameSave.fromJson(rows.first);
+  }
+
+  @override
+  Future<CloudGameSave> pushCloudGameSave({
+    required int expectedRevision,
+    required Map<String, dynamic> state,
+    required String deviceId,
+  }) async {
+    final rows = await _listRpc('push_cloud_game_save', params: {
+      'p_expected_revision': expectedRevision,
+      'p_state': state,
+      'p_device_id': deviceId,
+    });
+    if (rows.isEmpty) throw const SocialException('cloud_save_failed');
+    return CloudGameSave.fromJson(rows.first);
+  }
 
   @override
   Future<List<KeeperProfile>> loadFriends() async =>
@@ -368,6 +425,12 @@ class SupabaseSocialRepository implements SocialRepository {
       'trade_daily_limit',
       'trade_expired',
       'trade_apply_failed',
+      'cloud_save_conflict',
+      'cloud_save_invalid',
+      'cloud_save_too_large',
+      'cloud_save_failed',
+      'account_delete_reauthentication_failed',
+      'account_delete_failed',
     };
     final normalized = message.trim().toLowerCase().replaceAll(' ', '_');
     if (normalized.contains('email_not_confirmed')) {

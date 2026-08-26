@@ -352,7 +352,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   static Future<HouseholdProvider> loadFromStorage() async {
-    final provider = HouseholdProvider(initialize: false);
+    var provider = HouseholdProvider(initialize: false);
     final data = await StorageService.load();
     if (data == null) {
       provider._initializeFresh();
@@ -360,37 +360,65 @@ class HouseholdProvider extends ChangeNotifier {
       return provider;
     }
     try {
-      provider._restore(data);
-      final schemaChanged = data['schemaVersion'] != _schemaVersion;
-      final evolutionChanged = provider._evolveReadyDragons(provider._clock());
-      final changed = provider.pet.applyTimeDecay(provider._clock()) |
-          provider._registerCurrentStage();
-      final achievementsChanged =
-          provider._evaluateAchievements(addActivities: false);
-      if (schemaChanged || evolutionChanged || changed || achievementsChanged) {
+      await _restoreStoredState(provider, data);
+    } on Object {
+      await StorageService.preserveCurrentForRecovery();
+      final backup = await StorageService.loadBackup();
+      var recovered = false;
+      if (backup != null) {
+        final backupProvider = HouseholdProvider(initialize: false);
+        try {
+          await _restoreStoredState(backupProvider, backup);
+          if (await StorageService.promoteBackup()) {
+            provider = backupProvider;
+            recovered = true;
+          }
+        } on Object {
+          recovered = false;
+        }
+      }
+      if (!recovered) {
+        const supportedLanguages = {
+          'en',
+          'nl',
+          'de',
+          'fr',
+          'es',
+          'pt',
+          'it',
+          'zh',
+          'ja'
+        };
+        final rawLanguage = stringFromJson(data['languageCode']);
+        final savedLanguage =
+            supportedLanguages.contains(rawLanguage) ? rawLanguage! : 'en';
+        provider._initializeFresh();
+        provider.languageCode = savedLanguage;
         await provider._save();
       }
-    } on Object {
-      const supportedLanguages = {
-        'en',
-        'nl',
-        'de',
-        'fr',
-        'es',
-        'pt',
-        'it',
-        'zh',
-        'ja'
-      };
-      final rawLanguage = stringFromJson(data['languageCode']);
-      final savedLanguage =
-          supportedLanguages.contains(rawLanguage) ? rawLanguage! : 'en';
-      provider._initializeFresh();
-      provider.languageCode = savedLanguage;
-      await provider._save();
     }
     await provider._rescheduleNestEggNotification();
     return provider;
+  }
+
+  static Future<void> _restoreStoredState(
+    HouseholdProvider provider,
+    Map<String, dynamic> data,
+  ) async {
+    final storedPet = data['pet'];
+    if (storedPet is! Map || storedPet.isEmpty) {
+      throw const FormatException('Stored game has no dragon state.');
+    }
+    provider._restore(data);
+    final schemaChanged = data['schemaVersion'] != _schemaVersion;
+    final evolutionChanged = provider._evolveReadyDragons(provider._clock());
+    final changed = provider.pet.applyTimeDecay(provider._clock()) |
+        provider._registerOwnedDragonStages();
+    final achievementsChanged =
+        provider._evaluateAchievements(addActivities: false);
+    if (schemaChanged || evolutionChanged || changed || achievementsChanged) {
+      await provider._save();
+    }
   }
 
   void _initializeFresh() {
@@ -1799,6 +1827,14 @@ class HouseholdProvider extends ChangeNotifier {
 
   bool _registerCurrentStage() => _registerDragonStage(pet);
 
+  bool _registerOwnedDragonStages() {
+    var changed = false;
+    for (final dragon in [pet, ...sanctuaryDragons]) {
+      changed = _registerDragonStage(dragon) || changed;
+    }
+    return changed;
+  }
+
   bool _registerDragonStage(Pet dragon) {
     if (dragon.isEgg) return false;
     final collection = dragon.prismatic ? prismaticForms : discoveredForms;
@@ -1903,102 +1939,128 @@ class HouseholdProvider extends ChangeNotifier {
     await _save();
   }
 
+  Map<String, dynamic> exportState() => <String, dynamic>{
+        'schemaVersion': _schemaVersion,
+        'languageCode': languageCode,
+        'accountName': accountName,
+        'onboardingComplete': onboardingComplete,
+        'musicEnabled': musicEnabled,
+        'musicStyle': musicStyle.name,
+        'soundEffectsEnabled': soundEffectsEnabled,
+        'enabledNotificationCategories': enabledNotificationCategories
+            .map((category) => category.name)
+            .toList(),
+        'achievementsCompact': achievementsCompact,
+        'tutorialCompleted': tutorialCompleted,
+        'tutorialFullyViewed': tutorialFullyViewed,
+        'pet': pet.toJson(),
+        'incubatingEgg': incubatingEgg?.toJson(),
+        'eggStash': eggStash.map((egg) => egg.toJson()).toList(),
+        'sanctuaryDragons':
+            sanctuaryDragons.map((dragon) => dragon.toJson()).toList(),
+        'chestInventory': {
+          for (final entry in chestInventory.entries)
+            entry.key.name: entry.value
+        },
+        'relicInventory': {
+          for (final entry in relicInventory.entries)
+            entry.key.name: entry.value
+        },
+        'ownedPortraitIds': ownedPortraitIds.toList(),
+        'selectedPortraitId': selectedPortraitId,
+        'ownedTitleIds': ownedTitleIds.toList(),
+        'selectedTitleId': selectedTitleId,
+        'discoveredForms': discoveredForms.toList(),
+        'prismaticForms': prismaticForms.toList(),
+        'achievements': unlockedAchievementIds.toList(),
+        'pendingPresentations':
+            pendingPresentations.map((event) => event.toJson()).toList(),
+        'totalHatched': totalHatched,
+        'totalNamed': totalNamed,
+        'totalWyrmling': totalWyrmling,
+        'totalAscended': totalAscended,
+        'totalChestsOpened': totalChestsOpened,
+        'totalPortraitChestsOpened': totalPortraitChestsOpened,
+        'totalTitleChestsOpened': totalTitleChestsOpened,
+        'totalAdventuresCompleted': totalAdventuresCompleted,
+        'totalShortAdventuresCompleted': totalShortAdventuresCompleted,
+        'totalGroupFourCompleted': totalGroupFourCompleted,
+        'totalReleasedReturns': totalReleasedReturns,
+        'totalSinisterAdventuresCompleted': totalSinisterAdventuresCompleted,
+        'favoriteChanges': favoriteChanges,
+        'adventureRuns': adventureRuns.map((run) => run.toJson()).toList(),
+        'trialOffers': trialOffers.map((offer) => offer.toJson()).toList(),
+        'trialRefilledAt': trialRefilledAt?.toIso8601String(),
+        'appliedOnlineGroupRewardIds': appliedOnlineGroupRewardIds.toList(),
+        'appliedOnlineTradeIds': appliedOnlineTradeIds.toList(),
+        'reservedOnlineTradeEggIds': reservedOnlineTradeEggIds.toList(),
+        'reservedOnlineTradeChests': reservedOnlineTradeChests,
+        'reservedOnlineTradeRelics': reservedOnlineTradeRelics,
+        'adventureOptionIds': {
+          for (final entry in adventureOptionIds.entries)
+            entry.key.name: entry.value,
+        },
+        'miniAdventureRefilledAt': miniAdventureRefilledAt?.toIso8601String(),
+        'shortAdventureRefilledAt': shortAdventureRefilledAt?.toIso8601String(),
+        'longAdventureRefillDay': longAdventureRefillDay,
+        'towerFloorRoomIds': towerFloorRoomIds,
+        'releasedDragons':
+            releasedDragons.map((dragon) => dragon.toJson()).toList(),
+        'dragonWardLevel': dragonWardLevel,
+        'damagedTowerFloors': damagedTowerFloors.toList(),
+        'damagedTowerRepairFactors': {
+          for (final entry in damagedTowerRepairFactors.entries)
+            '${entry.key}': entry.value,
+        },
+        'returningVisitors': {
+          for (final entry in returningVisitors.entries)
+            entry.key: entry.value.toIso8601String(),
+        },
+        'rareInteractionAt': {
+          for (final entry in rareInteractionAt.entries)
+            entry.key: entry.value.toIso8601String(),
+        },
+        'lastReturningWeekKey': lastReturningWeekKey,
+        'latestReturningEvent': latestReturningEvent,
+        'returningSpecialAdventureId': returningSpecialAdventureId,
+        'returningSpecialAvailableUntil':
+            returningSpecialAvailableUntil?.toIso8601String(),
+        'ownedItemIds': ownedItemIds.toList(),
+        'equippedItemIds': {
+          for (final entry in equippedItemIds.entries)
+            entry.key.name: entry.value
+        },
+        'unlockedRoomIds': unlockedRoomIds.toList(),
+        'activeRoomId': activeRoomId,
+        'housePlacements':
+            housePlacements.map((placement) => placement.toJson()).toList(),
+        'activities': activities.map((entry) => entry.toJson()).toList(),
+      };
+
+  Future<bool> restoreCloudState(Map<String, dynamic> state) async {
+    final candidate = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    );
+    try {
+      await _restoreStoredState(candidate, state);
+      _restore(state);
+      _evolveReadyDragons(_clock());
+      pet.applyTimeDecay(_clock());
+      _registerOwnedDragonStages();
+      _evaluateAchievements(addActivities: false);
+      await _save();
+      await _rescheduleNestEggNotification();
+      notifyListeners();
+      return true;
+    } on Object {
+      return false;
+    }
+  }
+
   Future<void> _save() {
     if (!_persistenceEnabled) return Future<void>.value();
-    final state = <String, dynamic>{
-      'schemaVersion': _schemaVersion,
-      'languageCode': languageCode,
-      'accountName': accountName,
-      'onboardingComplete': onboardingComplete,
-      'musicEnabled': musicEnabled,
-      'musicStyle': musicStyle.name,
-      'soundEffectsEnabled': soundEffectsEnabled,
-      'enabledNotificationCategories': enabledNotificationCategories
-          .map((category) => category.name)
-          .toList(),
-      'achievementsCompact': achievementsCompact,
-      'tutorialCompleted': tutorialCompleted,
-      'tutorialFullyViewed': tutorialFullyViewed,
-      'pet': pet.toJson(),
-      'incubatingEgg': incubatingEgg?.toJson(),
-      'eggStash': eggStash.map((egg) => egg.toJson()).toList(),
-      'sanctuaryDragons':
-          sanctuaryDragons.map((dragon) => dragon.toJson()).toList(),
-      'chestInventory': {
-        for (final entry in chestInventory.entries) entry.key.name: entry.value
-      },
-      'relicInventory': {
-        for (final entry in relicInventory.entries) entry.key.name: entry.value
-      },
-      'ownedPortraitIds': ownedPortraitIds.toList(),
-      'selectedPortraitId': selectedPortraitId,
-      'ownedTitleIds': ownedTitleIds.toList(),
-      'selectedTitleId': selectedTitleId,
-      'discoveredForms': discoveredForms.toList(),
-      'prismaticForms': prismaticForms.toList(),
-      'achievements': unlockedAchievementIds.toList(),
-      'pendingPresentations':
-          pendingPresentations.map((event) => event.toJson()).toList(),
-      'totalHatched': totalHatched,
-      'totalNamed': totalNamed,
-      'totalWyrmling': totalWyrmling,
-      'totalAscended': totalAscended,
-      'totalChestsOpened': totalChestsOpened,
-      'totalPortraitChestsOpened': totalPortraitChestsOpened,
-      'totalTitleChestsOpened': totalTitleChestsOpened,
-      'totalAdventuresCompleted': totalAdventuresCompleted,
-      'totalShortAdventuresCompleted': totalShortAdventuresCompleted,
-      'totalGroupFourCompleted': totalGroupFourCompleted,
-      'totalReleasedReturns': totalReleasedReturns,
-      'totalSinisterAdventuresCompleted': totalSinisterAdventuresCompleted,
-      'favoriteChanges': favoriteChanges,
-      'adventureRuns': adventureRuns.map((run) => run.toJson()).toList(),
-      'trialOffers': trialOffers.map((offer) => offer.toJson()).toList(),
-      'trialRefilledAt': trialRefilledAt?.toIso8601String(),
-      'appliedOnlineGroupRewardIds': appliedOnlineGroupRewardIds.toList(),
-      'appliedOnlineTradeIds': appliedOnlineTradeIds.toList(),
-      'reservedOnlineTradeEggIds': reservedOnlineTradeEggIds.toList(),
-      'reservedOnlineTradeChests': reservedOnlineTradeChests,
-      'reservedOnlineTradeRelics': reservedOnlineTradeRelics,
-      'adventureOptionIds': {
-        for (final entry in adventureOptionIds.entries)
-          entry.key.name: entry.value,
-      },
-      'miniAdventureRefilledAt': miniAdventureRefilledAt?.toIso8601String(),
-      'shortAdventureRefilledAt': shortAdventureRefilledAt?.toIso8601String(),
-      'longAdventureRefillDay': longAdventureRefillDay,
-      'towerFloorRoomIds': towerFloorRoomIds,
-      'releasedDragons':
-          releasedDragons.map((dragon) => dragon.toJson()).toList(),
-      'dragonWardLevel': dragonWardLevel,
-      'damagedTowerFloors': damagedTowerFloors.toList(),
-      'damagedTowerRepairFactors': {
-        for (final entry in damagedTowerRepairFactors.entries)
-          '${entry.key}': entry.value,
-      },
-      'returningVisitors': {
-        for (final entry in returningVisitors.entries)
-          entry.key: entry.value.toIso8601String(),
-      },
-      'rareInteractionAt': {
-        for (final entry in rareInteractionAt.entries)
-          entry.key: entry.value.toIso8601String(),
-      },
-      'lastReturningWeekKey': lastReturningWeekKey,
-      'latestReturningEvent': latestReturningEvent,
-      'returningSpecialAdventureId': returningSpecialAdventureId,
-      'returningSpecialAvailableUntil':
-          returningSpecialAvailableUntil?.toIso8601String(),
-      'ownedItemIds': ownedItemIds.toList(),
-      'equippedItemIds': {
-        for (final entry in equippedItemIds.entries) entry.key.name: entry.value
-      },
-      'unlockedRoomIds': unlockedRoomIds.toList(),
-      'activeRoomId': activeRoomId,
-      'housePlacements':
-          housePlacements.map((placement) => placement.toJson()).toList(),
-      'activities': activities.map((entry) => entry.toJson()).toList(),
-    };
+    final state = exportState();
     final operation = _saveQueue.then((_) => StorageService.save(state),
         onError: (_) => StorageService.save(state));
     _saveQueue = operation;

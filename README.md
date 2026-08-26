@@ -20,7 +20,7 @@
 
 ## Honest online boundary
 
-Email-authenticated accounts, Friends and requests, profile summaries, one-to-one trades and globally shared asynchronous Group Adventures are backed by Supabase. Core collection progress remains offline-first; full cross-device save synchronization, interactive friend Tower visits and real-money gem packs still require additional authenticated server or Google Play receipt infrastructure and are not simulated locally.
+Email-authenticated accounts, Friends and requests, profile summaries, one-to-one trades, globally shared asynchronous Group Adventures and confirmed versioned cloud backups are backed by Supabase. Core collection progress remains offline-first; automatic conflict resolution, interactive friend Tower visits, fully server-authoritative economy commands and real-money gem packs still require additional authenticated server or Google Play receipt infrastructure and are not simulated locally.
 
 The Android audio layer bundles the music and effects, fades scene changes, rotates ambient variants and respects audio focus. Sources and licences are documented in [AUDIO_LICENSES.md](AUDIO_LICENSES.md).
 

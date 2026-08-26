@@ -682,6 +682,48 @@ void main() {
       online.dispose();
     }
   });
+
+  test('cloud backup uses revisions and can safely restore local progress',
+      () async {
+    final game = HouseholdProvider(random: Random(991));
+    await game.updateAccountName('Cloud Keeper');
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+      profileSnapshot: () => OnlineProfileSnapshot.fromGame(game),
+      gameStateSnapshot: game.exportState,
+      applyCloudState: game.restoreCloudState,
+      deviceId: () async => 'test-device',
+    );
+    await online.initialize();
+
+    expect(await online.backupToCloud(), isTrue);
+    expect(repository.cloudSave?.revision, 1);
+    expect(repository.cloudSave?.state['accountName'], 'Cloud Keeper');
+
+    await game.updateAccountName('Local Change');
+    expect(await online.restoreFromCloud(), isTrue);
+    expect(game.accountName, 'Cloud Keeper');
+    online.dispose();
+  });
+
+  test('online account deletion requires the repository password flow',
+      () async {
+    final game = HouseholdProvider(random: Random(992));
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+
+    expect(await online.deleteAccount('correct horse battery staple'), isTrue);
+    expect(repository.deletedWithPassword, 'correct horse battery staple');
+    expect(online.isSignedIn, isFalse);
+    expect(online.profile, isNull);
+    online.dispose();
+  });
 }
 
 TradeOffer _testTrade({
@@ -748,6 +790,8 @@ class _FakeSocialRepository implements SocialRepository {
   GroupAdventureReward? groupReward;
   String? createGroupError;
   bool signedIn = true;
+  CloudGameSave? cloudSave;
+  String? deletedWithPassword;
 
   static const _favorite = FavoriteDragonSummary(
     id: 'dragon-1',
@@ -838,6 +882,38 @@ class _FakeSocialRepository implements SocialRepository {
   @override
   Future<KeeperProfile> loadMyProfile() async => _profile;
   @override
+  Future<OnlineSocialSnapshot> loadOnlineSnapshot() async =>
+      OnlineSocialSnapshot(
+        profile: _profile,
+        friends: List.of(friendRows),
+        requests: List.of(requestRows),
+        blockedKeepers: List.of(blockedRows),
+        groupAdventureStatus: groupStatus,
+        groupLobbies: List.of(groupRows),
+        trades: List.of(tradeRows),
+        tradeInventory: List.of(tradeInventoryRows),
+        notifications: List.of(notificationRows),
+      );
+  @override
+  Future<CloudGameSave?> loadCloudGameSave() async => cloudSave;
+  @override
+  Future<CloudGameSave> pushCloudGameSave({
+    required int expectedRevision,
+    required Map<String, dynamic> state,
+    required String deviceId,
+  }) async {
+    if ((cloudSave?.revision ?? 0) != expectedRevision) {
+      throw const SocialException('cloud_save_conflict');
+    }
+    return cloudSave = CloudGameSave(
+      revision: expectedRevision + 1,
+      state: state,
+      updatedAt: DateTime.utc(2026, 8, 26),
+      deviceId: deviceId,
+    );
+  }
+
+  @override
   Future<List<FriendshipRequest>> loadRequests() async => List.of(requestRows);
   @override
   Future<List<SocialNotification>> loadSocialNotifications() async =>
@@ -859,6 +935,12 @@ class _FakeSocialRepository implements SocialRepository {
 
   @override
   Future<void> signOut() async => signedIn = false;
+  @override
+  Future<void> deleteMyAccount(String password) async {
+    deletedWithPassword = password;
+    signedIn = false;
+  }
+
   @override
   Future<void> blockKeeper(String userId) async => removeFriend(userId);
   @override
