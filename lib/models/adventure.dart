@@ -19,8 +19,8 @@ const adventureChestChances = <AdventureKind, List<AdventureChestChance>>{
   AdventureKind.short: [
     AdventureChestChance(ChestTier.wooden, .20),
     AdventureChestChance(ChestTier.silver, .40),
-    AdventureChestChance(ChestTier.gold, .30),
-    AdventureChestChance(ChestTier.dragon, .095),
+    AdventureChestChance(ChestTier.gold, .35),
+    AdventureChestChance(ChestTier.dragon, .045),
     AdventureChestChance(ChestTier.mythical, .005),
   ],
   AdventureKind.long: [

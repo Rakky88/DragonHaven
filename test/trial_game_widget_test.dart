@@ -136,7 +136,8 @@ void main() {
       (grade.image as AssetImage).assetName,
       'assets/images/ui/trials/grade_d.png',
     );
-    expect(find.text('+20 coins'), findsOneWidget);
+    expect(find.textContaining('coins'), findsNothing);
+    expect(find.text('+10 XP'), findsOneWidget);
     expect(
       gameState.availableTrials.any((item) => item.id == offer.id),
       isFalse,

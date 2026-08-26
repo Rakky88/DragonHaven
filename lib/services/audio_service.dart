@@ -35,27 +35,39 @@ enum HavenMusicScene {
   final String assetId;
 }
 
+enum HavenMusicStyle {
+  basic('basic'),
+  classic('classic');
+
+  const HavenMusicStyle(this.assetId);
+  final String assetId;
+}
+
 /// Small, dependency-free bridge around DragonHaven's Android audio layer.
 ///
-/// Android resolves these stable IDs from the bundled `res/raw` CC0 library.
+/// Android resolves these stable IDs from the bundled `res/raw` audio library.
 /// Music and effects remain independently gated. Failures stay non-fatal so a
 /// device audio problem can never block gameplay or saving preferences.
 abstract final class HavenAudio {
   static const _channel = MethodChannel('nl.dragonhaven.app/audio');
   static bool _musicEnabled = true;
   static bool _effectsEnabled = true;
+  static HavenMusicStyle _musicStyle = HavenMusicStyle.basic;
   static HavenMusicScene? _musicScene;
 
   static Future<void> applyPreferences({
     required bool musicEnabled,
     required bool soundEffectsEnabled,
+    required HavenMusicStyle musicStyle,
   }) async {
     _musicEnabled = musicEnabled;
     _effectsEnabled = soundEffectsEnabled;
+    _musicStyle = musicStyle;
     try {
       await _channel.invokeMethod<void>('setPreferences', {
         'music': musicEnabled,
         'effects': soundEffectsEnabled,
+        'style': _musicStyle.assetId,
         'scene': _musicScene?.assetId,
       });
     } on MissingPluginException {

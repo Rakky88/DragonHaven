@@ -530,6 +530,39 @@ const _coreTranslations = <String, Map<String, String>>{
     'zh': '音乐',
     'ja': '音楽'
   },
+  'music_style': {
+    'en': 'Music style',
+    'nl': 'Muziekstijl',
+    'de': 'Musikstil',
+    'fr': 'Style musical',
+    'es': 'Estilo musical',
+    'pt': 'Estilo musical',
+    'it': 'Stile musicale',
+    'zh': '\u97f3\u4e50\u98ce\u683c',
+    'ja': '\u97f3\u697d\u30b9\u30bf\u30a4\u30eb'
+  },
+  'basic': {
+    'en': 'Basic',
+    'nl': 'Basic',
+    'de': 'Einfach',
+    'fr': 'Basique',
+    'es': 'B\u00e1sico',
+    'pt': 'B\u00e1sico',
+    'it': 'Base',
+    'zh': '\u57fa\u7840',
+    'ja': '\u30d9\u30fc\u30b7\u30c3\u30af'
+  },
+  'classic': {
+    'en': 'Classic',
+    'nl': 'Klassiek',
+    'de': 'Klassisch',
+    'fr': 'Classique',
+    'es': 'Cl\u00e1sico',
+    'pt': 'Cl\u00e1ssico',
+    'it': 'Classica',
+    'zh': '\u53e4\u5178',
+    'ja': '\u30af\u30e9\u30b7\u30c3\u30af'
+  },
   'sound_effects': {
     'en': 'Sound Effects',
     'nl': 'Geluidseffecten',

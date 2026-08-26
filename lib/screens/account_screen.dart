@@ -6,6 +6,7 @@ import '../models/account_title.dart';
 import '../models/profile_portrait.dart';
 import '../providers/household_provider.dart';
 import '../providers/online_account_provider.dart';
+import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
@@ -112,6 +113,41 @@ class AccountScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
+                  Padding(
+                    key: const Key('music-style-selector'),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 13),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings.tr('music_style'),
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 9),
+                        SizedBox(
+                          width: double.infinity,
+                          child: SegmentedButton<HavenMusicStyle>(
+                            key: const Key('music-style-segments'),
+                            showSelectedIcon: false,
+                            segments: [
+                              ButtonSegment(
+                                value: HavenMusicStyle.basic,
+                                label: Text(strings.tr('basic')),
+                              ),
+                              ButtonSegment(
+                                value: HavenMusicStyle.classic,
+                                label: Text(strings.tr('classic')),
+                              ),
+                            ],
+                            selected: {game.musicStyle},
+                            onSelectionChanged: (selection) =>
+                                game.setMusicStyle(selection.single),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
                   SwitchListTile(
                     key: const Key('music-switch'),
                     secondary: const GameIconSprite(

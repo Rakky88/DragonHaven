@@ -93,6 +93,7 @@ Future<void> main() async {
   await HavenAudio.applyPreferences(
     musicEnabled: game.musicEnabled,
     soundEffectsEnabled: game.soundEffectsEnabled,
+    musicStyle: game.musicStyle,
   );
   final hour = DateTime.now().hour;
   await HavenAudio.setMusicScene(hour >= 21 || hour < 7

@@ -23,6 +23,7 @@ import 'package:dragon_haven/screens/house_screen.dart';
 import 'package:dragon_haven/screens/inventory_screen.dart';
 import 'package:dragon_haven/screens/shop_hub_screen.dart';
 import 'package:dragon_haven/services/social_repository.dart';
+import 'package:dragon_haven/services/audio_service.dart';
 import 'package:dragon_haven/widgets/achievement_badge_sprite.dart';
 import 'package:dragon_haven/widgets/achievement_reveal.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
@@ -209,6 +210,9 @@ void main() {
     game.pet
       ..stage = DragonStage.hatchling
       ..name = 'Ember';
+    for (final focus in TrainingFocus.values) {
+      game.pet.training[focus.name] = maxDragonExpertise;
+    }
     final online = OnlineAccountProvider(
       repository: const DisabledSocialRepository(),
       inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
@@ -230,7 +234,7 @@ void main() {
         home: const Scaffold(body: AdventureHubScreen()),
       ),
     ));
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
 
     final cards = game
         .adventuresFor(AdventureKind.mini)
@@ -252,10 +256,21 @@ void main() {
     expect(afterTick, isNot(beforeTick));
     final first = game.adventuresFor(AdventureKind.mini).first;
     await tester.tap(find.byKey(Key('adventure-details-${first.id}')));
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
     expect(find.text('Mögliche Truhen'), findsOneWidget);
     expect(find.text(AppStrings('de').adventureDescription(first)),
         findsOneWidget);
+    final chooseDragon =
+        find.byKey(const Key('adventure-details-choose-dragon'));
+    await tester.ensureVisible(chooseDragon);
+    await tester.pumpAndSettle();
+    await tester.tap(chooseDragon);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    expect(
+      find.byKey(Key('expertise-max-${game.pet.id}-${first.focus.name}')),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -328,6 +343,7 @@ void main() {
         name: 'Moss',
         stage: DragonStage.hatchling,
         firstEgg: false,
+        training: const {'might': 300, 'arcana': 300, 'spirit': 300},
       );
     final online = OnlineAccountProvider(
       repository: const DisabledSocialRepository(),
@@ -365,6 +381,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 450));
     expect(find.byKey(const Key('trial-dragon-picker')), findsOneWidget);
+    expect(
+      find.byKey(Key(
+        'expertise-max-trial-widget-dragon-'
+        '${offers.first.definition.focus.name}',
+      )),
+      findsOneWidget,
+    );
 
     final dragonChoice =
         find.byKey(const Key('trial-dragon-trial-widget-dragon'));
@@ -411,6 +434,24 @@ void main() {
         matching: find.byType(Scrollable),
       ),
     );
+    expect(find.byKey(const Key('music-style-selector')), findsOneWidget);
+    expect(game.musicStyle, HavenMusicStyle.basic);
+    final classic = find.descendant(
+      of: find.byKey(const Key('music-style-segments')),
+      matching: find.text('Classic'),
+    );
+    await tester.scrollUntilVisible(
+      classic,
+      120,
+      scrollable: find.descendant(
+        of: find.byKey(const PageStorageKey('account-scroll')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(classic);
+    await tester.pump();
+    expect(game.musicStyle, HavenMusicStyle.classic);
     expect(find.byKey(const Key('music-switch')), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('music-switch')));
     await tester.pumpAndSettle();
@@ -1124,7 +1165,7 @@ void main() {
     expect(find.byKey(const Key('rooftop-bird-nest-front')), findsNothing);
     final roofEggNestSize = tester.getSize(roofEggNest);
     expect(roofEggNestSize.width, closeTo(148, .1));
-    expect(roofEggNestSize.height, closeTo(129.48, .1));
+    expect(roofEggNestSize.height, closeTo(148 / (960 / 700), .1));
     expect(tester.takeException(), isNull);
   });
 
@@ -1366,7 +1407,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.03.02'), findsOneWidget);
+    expect(find.text('v0.03.03'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

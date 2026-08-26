@@ -13,6 +13,17 @@ class ProfilePortraitSprite extends StatelessWidget {
   final ProfilePortrait? portrait;
   final double size;
 
+  /// Every portrait has a deliberately transparent outer safety margin.
+  /// Overscan it just beyond the oval clip so even compact friend portraits
+  /// remain completely filled at device-pixel rounding boundaries.
+  static const portraitFillScale = 1.12;
+
+  /// Several source portraits contain a transparent crescent inside their
+  /// decorative gold rim. A deeper copy of the same artwork fills those
+  /// openings with matching portrait colours without cropping the foreground
+  /// composition or exposing a white card background.
+  static const portraitBackdropFillScale = 1.68;
+
   @override
   Widget build(BuildContext context) {
     final selected = portrait;
@@ -21,14 +32,28 @@ class ProfilePortraitSprite extends StatelessWidget {
       child: ClipOval(
         child: selected == null
             ? GameIconSprite(GameIconKind.screenAccount, size: size)
-            : Transform.scale(
-                scale: 1.055,
-                child: Image.asset(
-                  selected.assetPath,
-                  fit: BoxFit.cover,
-                  filterQuality: FilterQuality.high,
-                  semanticLabel: 'Dragonkeeper portrait',
-                ),
+            : Stack(
+                fit: StackFit.expand,
+                children: [
+                  Transform.scale(
+                    scale: portraitBackdropFillScale,
+                    child: Image.asset(
+                      selected.assetPath,
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.high,
+                      excludeFromSemantics: true,
+                    ),
+                  ),
+                  Transform.scale(
+                    scale: portraitFillScale,
+                    child: Image.asset(
+                      selected.assetPath,
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.high,
+                      semanticLabel: 'Dragonkeeper portrait',
+                    ),
+                  ),
+                ],
               ),
       ),
     );

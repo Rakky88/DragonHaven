@@ -15,6 +15,7 @@ import 'trial_game_screen.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/expertise_score_badge.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/trial_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
@@ -579,9 +580,24 @@ class _TrialDragonPicker extends StatelessWidget {
                         dragon.displayName,
                         style: const TextStyle(fontWeight: FontWeight.w900),
                       ),
-                      subtitle: Text(
-                        '${_focusName(strings, focus)} ${dragon.trainingFor(focus)} · '
-                        '${strings.pick('Best', 'Beste')}: ${dragon.trialBest(offer.kind.name)}',
+                      subtitle: Row(
+                        children: [
+                          ExpertiseScoreBadge(
+                            dragonId: dragon.id,
+                            focus: focus,
+                            focusLabel: _focusName(strings, focus),
+                            score: dragon.trainingFor(focus),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '${strings.pick('Best', 'Beste')}: '
+                              '${dragon.trialBest(offer.kind.name)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -1429,6 +1445,9 @@ class _AdventureCard extends StatelessWidget {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * .9,
+      ),
       builder: (sheetContext) => SafeArea(
         child: SingleChildScrollView(
           key: const Key('available-adventure-details-scroll'),
@@ -1484,6 +1503,7 @@ class _AdventureCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
+                key: const Key('adventure-details-choose-dragon'),
                 onPressed: () {
                   Navigator.pop(sheetContext);
                   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1704,15 +1724,12 @@ class _DragonPickerTile extends StatelessWidget {
                           const TextStyle(color: AppColors.muted, fontSize: 11),
                     ),
                     const SizedBox(height: 5),
-                    Row(children: [
-                      GameIconSprite(GameIconSprite.forTrainingFocus(focus),
-                          size: 21),
-                      const SizedBox(width: 4),
-                      Text(
-                          '${_focusName(strings, focus)} ${dragon.trainingFor(focus)}',
-                          style: const TextStyle(
-                              fontSize: 11, fontWeight: FontWeight.w800)),
-                    ]),
+                    ExpertiseScoreBadge(
+                      dragonId: dragon.id,
+                      focus: focus,
+                      focusLabel: _focusName(strings, focus),
+                      score: dragon.trainingFor(focus),
+                    ),
                   ],
                 ),
               ),

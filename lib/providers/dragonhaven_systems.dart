@@ -396,6 +396,18 @@ extension DragonHavenSystems on HouseholdProvider {
     await HavenAudio.applyPreferences(
       musicEnabled: musicEnabled,
       soundEffectsEnabled: soundEffectsEnabled,
+      musicStyle: musicStyle,
+    );
+    await _notifyAndSave();
+  }
+
+  Future<void> setMusicStyle(HavenMusicStyle style) async {
+    if (musicStyle == style) return;
+    musicStyle = style;
+    await HavenAudio.applyPreferences(
+      musicEnabled: musicEnabled,
+      soundEffectsEnabled: soundEffectsEnabled,
+      musicStyle: musicStyle,
     );
     await _notifyAndSave();
   }
@@ -406,6 +418,7 @@ extension DragonHavenSystems on HouseholdProvider {
     await HavenAudio.applyPreferences(
       musicEnabled: musicEnabled,
       soundEffectsEnabled: soundEffectsEnabled,
+      musicStyle: musicStyle,
     );
     await _notifyAndSave();
   }
@@ -562,7 +575,12 @@ extension DragonHavenSystems on HouseholdProvider {
     if (dragon == null) return null;
     final offer = trialOffers[offerIndex];
     final grade = trialGradeForScore(offer.kind, score);
-    final reward = trialRewardForGrade(grade, _random.nextDouble());
+    final reward = trialRewardForGrade(
+      grade,
+      _random.nextDouble(),
+      relicRoll: _random.nextDouble(),
+      relicChoice: _random.nextInt(MysticRelic.values.length),
+    );
     final newBest = dragon.recordTrialScore(offer.kind.name, score);
     pet.coins += reward.coins;
     dragon.xp += reward.xp;
@@ -574,6 +592,10 @@ extension DragonHavenSystems on HouseholdProvider {
         (value) => value + 1,
         ifAbsent: () => 1,
       );
+    }
+    final relic = reward.relic;
+    if (relic != null) {
+      relicInventory.update(relic, (value) => value + 1, ifAbsent: () => 1);
     }
     trialOffers.removeAt(offerIndex);
     _evolveReadyDragons(_clock());

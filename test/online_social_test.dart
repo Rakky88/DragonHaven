@@ -37,9 +37,13 @@ void main() {
     );
 
     final portrait = find.byType(KeeperPortrait);
-    final image = find.descendant(of: portrait, matching: find.byType(Image));
+    final images = find.descendant(of: portrait, matching: find.byType(Image));
     expect(tester.getSize(portrait), const Size.square(62));
-    expect(tester.widget<Image>(image).fit, BoxFit.cover);
+    expect(images, findsNWidgets(2));
+    expect(
+      tester.widgetList<Image>(images).map((image) => image.fit),
+      everyElement(BoxFit.cover),
+    );
     expect(
       find.descendant(of: portrait, matching: find.byType(ClipOval)),
       findsOneWidget,
@@ -246,6 +250,33 @@ void main() {
     );
   });
 
+  test('daily successful trade count ignores old and unfinished trades',
+      () async {
+    final now = DateTime.now();
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..tradeRows.addAll([
+        _testTrade(status: 'completed', updatedAt: now),
+        _testTrade(status: 'completed', updatedAt: now),
+        _testTrade(
+          status: 'completed',
+          updatedAt: now.subtract(const Duration(days: 1)),
+        ),
+        _testTrade(status: 'awaiting_recipient', updatedAt: now),
+      ]);
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(
+        HouseholdProvider(random: Random(29)),
+      ),
+    );
+
+    await online.initialize();
+
+    expect(online.completedTradesOn(now), 2);
+    expect(OnlineAccountProvider.maxSuccessfulTradesPerDay, 3);
+    online.dispose();
+  });
+
   test('a completed weekly Group Adventure cannot be entered a second time',
       () async {
     final game = HouseholdProvider(random: Random(21));
@@ -385,6 +416,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
     expect(find.text('Lyra'), findsOneWidget);
     expect(find.textContaining('12 dragons discovered'), findsOneWidget);
+    expect(find.text('0/3'), findsOneWidget);
     final friendPortrait = tester.widget<KeeperPortrait>(find.descendant(
       of: find.byKey(const Key('friend-friend-user')),
       matching: find.byType(KeeperPortrait),
@@ -498,6 +530,40 @@ void main() {
     }
   });
 }
+
+TradeOffer _testTrade({
+  required String status,
+  required DateTime updatedAt,
+}) =>
+    TradeOffer(
+      id: 'trade-$status-${updatedAt.microsecondsSinceEpoch}',
+      status: status,
+      initiatorId: 'my-user',
+      recipientId: 'friend-user',
+      otherKeeper: const KeeperProfile(
+        userId: 'friend-user',
+        keeperCode: 'DH-1234ABCD',
+        displayName: 'Lyra',
+        title: 'title_321',
+        portraitKey: 'portrait_042',
+        discoveredDragonCount: 12,
+        inventoryImported: true,
+      ),
+      amInitiator: true,
+      initiatorItem: const TradeItem(
+        kind: TradeItemKind.chest,
+        key: 'gold',
+        data: {},
+      ),
+      recipientItem: const TradeItem(
+        kind: TradeItemKind.relic,
+        key: 'moralPrism',
+        data: {},
+      ),
+      myAcknowledged: true,
+      createdAt: updatedAt.subtract(const Duration(minutes: 1)),
+      updatedAt: updatedAt,
+    );
 
 class _FakeSocialRepository implements SocialRepository {
   _FakeSocialRepository({

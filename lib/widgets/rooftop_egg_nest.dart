@@ -18,7 +18,7 @@ class RooftopEggNest extends StatelessWidget {
           final sceneHeight = constraints.maxHeight;
           final scale = sceneHeight / 215;
           final artWidth = (148 * scale).clamp(0, sceneWidth * .66).toDouble();
-          final artHeight = artWidth / 1.143;
+          final artHeight = artWidth / (960 / 700);
 
           return Stack(
             fit: StackFit.expand,

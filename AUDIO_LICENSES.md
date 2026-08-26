@@ -1,8 +1,9 @@
 # DragonHaven audio sources
 
-All audio shipped with DragonHaven is available under Creative Commons Zero
-(CC0 1.0). Attribution is not required by the licence, but the creators and
-original source pages are recorded here deliberately.
+DragonHaven's original ambient tracks and sound effects are available under
+Creative Commons Zero (CC0 1.0). The optional classical recording is in the
+public domain. Attribution is not required, but the creators and original
+source pages are recorded here deliberately.
 
 ## Ambient music
 
@@ -16,6 +17,15 @@ original source pages are recorded here deliberately.
 Each source page identifies the work as CC0 and provides the original audio
 download. The files are included unmodified and renamed only to match their
 runtime scene IDs.
+
+## Classic music
+
+| DragonHaven resource | Original work | Composer | Recording source | Status |
+|---|---|---|---|---|
+| `reverie.ogg` | Rêverie, L. 68 | Claude Debussy | https://commons.wikimedia.org/wiki/File:Reverie.ogg | Public domain / free of known copyright restrictions |
+
+The recording is included unmodified from Wikimedia Commons. It is used when
+the player selects the **Classic** music style.
 
 ## Interface and game sound effects
 

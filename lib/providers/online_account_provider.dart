@@ -7,6 +7,8 @@ import '../services/notification_service.dart';
 import '../services/social_repository.dart';
 
 class OnlineAccountProvider extends ChangeNotifier {
+  static const maxSuccessfulTradesPerDay = 3;
+
   OnlineAccountProvider({
     required SocialRepository repository,
     required OnlineInventorySnapshot Function() inventorySnapshot,
@@ -86,6 +88,18 @@ class OnlineAccountProvider extends ChangeNotifier {
   List<TradeOffer> tradesWith(String userId) => trades
       .where((trade) => trade.otherKeeper.userId == userId && trade.isActive)
       .toList(growable: false);
+  int get completedTradesToday => completedTradesOn(DateTime.now());
+
+  int completedTradesOn(DateTime day) {
+    final localDay = day.toLocal();
+    return trades.where((trade) {
+      if (!trade.isCompleted) return false;
+      final completedDay = trade.updatedAt.toLocal();
+      return completedDay.year == localDay.year &&
+          completedDay.month == localDay.month &&
+          completedDay.day == localDay.day;
+    }).length;
+  }
 
   Future<void> initialize() async {
     _authSubscription = _repository.authStateChanges.listen((signedIn) {

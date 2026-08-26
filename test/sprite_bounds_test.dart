@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -14,6 +15,7 @@ import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
 import 'package:dragon_haven/widgets/furniture_art.dart';
 import 'package:dragon_haven/widgets/game_icon_sprite.dart';
+import 'package:dragon_haven/widgets/profile_portrait_sprite.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Future<({int width, int height, Uint8List rgba})> _decode(String path) async {
@@ -40,6 +42,42 @@ int _alphaCount(Uint8List rgba, int width, int x0, int y0, int x1, int y1,
     }
   }
   return pixels;
+}
+
+double _maximumAlphaRadius(Uint8List rgba, int width, int height) {
+  var maximumSquared = 0.0;
+  for (var y = 0; y < height; y++) {
+    for (var x = 0; x < width; x++) {
+      if (rgba[(y * width + x) * 4 + 3] < 8) continue;
+      final dx = x + .5 - width / 2;
+      final dy = y + .5 - height / 2;
+      maximumSquared = max(maximumSquared, dx * dx + dy * dy);
+    }
+  }
+  return sqrt(maximumSquared);
+}
+
+double _minimumContiguousOpaquePortraitRadius(
+  Uint8List rgba,
+  int width,
+  int height,
+) {
+  final centerX = width / 2;
+  final centerY = height / 2;
+  final outerRadius = min(width, height) / 2;
+  var minimumRadius = outerRadius;
+  for (var angleStep = 0; angleStep < 1440; angleStep++) {
+    final angle = angleStep * 2 * pi / 1440;
+    var contiguousRadius = 0.0;
+    for (var radius = 0.0; radius <= outerRadius; radius += .25) {
+      final x = (centerX + cos(angle) * radius).floor().clamp(0, width - 1);
+      final y = (centerY + sin(angle) * radius).floor().clamp(0, height - 1);
+      if (rgba[(y * width + x) * 4 + 3] < 8) break;
+      contiguousRadius = radius;
+    }
+    minimumRadius = min(minimumRadius, contiguousRadius);
+  }
+  return minimumRadius;
 }
 
 void _expectContained(
@@ -191,6 +229,7 @@ void main() {
     const recordNames = ['cavern_flight', 'ruin_breaker', 'runeweaver'];
     final paths = <String>[
       'assets/images/ui/ui_rooftop_egg_nest_combined.png',
+      'assets/images/ui/ui_expertise_max.png',
       for (final name in gradeNames) 'assets/images/ui/trials/grade_$name.png',
       for (final name in runeNames) ...[
         'assets/images/ui/trials/rune_$name.png',
@@ -413,6 +452,7 @@ void main() {
   test('all portrait and Relic animation sprites are complete and contained',
       () async {
     final encodedPortraits = <String>{};
+    final requiredPortraitScales = <String, double>{};
     for (final portrait in profilePortraitCatalog) {
       encodedPortraits
           .add(base64Encode(await File(portrait.assetPath).readAsBytes()));
@@ -434,7 +474,34 @@ void main() {
         image.height,
         portrait.assetPath,
       );
+      expect(
+        _maximumAlphaRadius(image.rgba, image.width, image.height) *
+            ProfilePortraitSprite.portraitFillScale,
+        greaterThan(image.width / 2),
+        reason: '${portrait.assetPath} must fill its circular UI clip',
+      );
+      final minimumOpaqueRadius = _minimumContiguousOpaquePortraitRadius(
+        image.rgba,
+        image.width,
+        image.height,
+      );
+      requiredPortraitScales[portrait.assetPath] =
+          (image.width / 2) / max(1, minimumOpaqueRadius - 2);
     }
+    final requiredScaleEntries = requiredPortraitScales.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final worstPortraits = requiredScaleEntries
+        .take(5)
+        .map((entry) => '${entry.key}=${entry.value.toStringAsFixed(3)}')
+        .join(', ');
+    expect(
+      ProfilePortraitSprite.portraitBackdropFillScale,
+      greaterThanOrEqualTo(requiredScaleEntries.first.value),
+      reason: 'The portrait backdrop must sit at least two source pixels '
+          'inside continuously opaque artwork for every angle. Worst '
+          'portraits: '
+          '$worstPortraits',
+    );
     expect(encodedPortraits, hasLength(100));
     for (final relic in MysticRelic.values) {
       final encodedFrames = <String>{};

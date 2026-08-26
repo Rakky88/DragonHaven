@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/pet.dart';
+import '../models/mystic_relic.dart';
 import '../models/trial.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
@@ -394,11 +395,12 @@ class _TrialResultCard extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        _RewardLine(
-                          icon: GameIconKind.coin,
-                          label:
-                              '+${reward.coins} ${strings.pick('coins', 'munten')}',
-                        ),
+                        if (reward.coins > 0)
+                          _RewardLine(
+                            icon: GameIconKind.coin,
+                            label:
+                                '+${reward.coins} ${strings.pick('coins', 'munten')}',
+                          ),
                         _RewardLine(
                           icon: GameIconKind.experience,
                           label: '+${reward.xp} XP',
@@ -414,6 +416,11 @@ class _TrialResultCard extends StatelessWidget {
                           _RewardLine(
                             icon: GameIconKind.chest,
                             label: strings.chestLabel(chest),
+                          ),
+                        if (reward.relic case final relic?)
+                          _RelicRewardLine(
+                            relic: relic,
+                            label: strings.relicName(relic),
                           ),
                       ],
                     ),
@@ -461,6 +468,31 @@ class _RewardLine extends StatelessWidget {
             const SizedBox(width: 9),
             Text(
               label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _RelicRewardLine extends StatelessWidget {
+  const _RelicRewardLine({required this.relic, required this.label});
+
+  final MysticRelic relic;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          children: [
+            Image.asset(relic.assetPath, width: 27, height: 27),
+            const SizedBox(width: 9),
+            Text(
+              '+1 $label',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,
@@ -1067,9 +1099,6 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final might = widget.dragon.trainingFor(TrainingFocus.might);
-    final successHalf = .18 * ruinBreakerSuccessZoneScale(might);
-    final perfectHalf = .045 * ruinBreakerPerfectZoneScale(might);
     final obstacle = _obstacles[_round % _obstacles.length];
     return _TrialScaffold(
       title: strings.pick(
@@ -1140,11 +1169,7 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  _PowerMeter(
-                    value: _meter,
-                    successHalf: successHalf,
-                    perfectHalf: perfectHalf,
-                  ),
+                  _PowerMeter(value: _meter),
                   const SizedBox(height: 10),
                   Row(
                     children: [
@@ -1237,15 +1262,9 @@ class _RuinDragonSprite extends StatelessWidget {
 }
 
 class _PowerMeter extends StatelessWidget {
-  const _PowerMeter({
-    required this.value,
-    required this.successHalf,
-    required this.perfectHalf,
-  });
+  const _PowerMeter({required this.value});
 
   final double value;
-  final double successHalf;
-  final double perfectHalf;
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -1261,63 +1280,6 @@ class _PowerMeter extends StatelessWidget {
                     'assets/images/ui/trials/trial_reaction_bar.png',
                     fit: BoxFit.fill,
                     filterQuality: FilterQuality.high,
-                  ),
-                ),
-                Positioned(
-                  top: 20,
-                  child: Container(
-                    width: width * successHalf * 2,
-                    height: 25,
-                    decoration: BoxDecoration(
-                      color: const Color(0x2255C6A9),
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(
-                        color: const Color(0xFF6FF0B4),
-                        width: 1.4,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 18,
-                  child: Container(
-                    width: width * perfectHalf * 2,
-                    height: 29,
-                    decoration: BoxDecoration(
-                      color: const Color(0x33FFF0A0),
-                      borderRadius: BorderRadius.circular(99),
-                      border:
-                          Border.all(color: const Color(0xFFFFE08A), width: 2),
-                    ),
-                  ),
-                ),
-                const Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'GOOD',
-                        style: TextStyle(
-                          color: Color(0xFF8FF4C4),
-                          fontSize: 8,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      SizedBox(width: 13),
-                      Text(
-                        'PERFECT',
-                        style: TextStyle(
-                          color: Color(0xFFFFE08A),
-                          fontSize: 8,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
                 Positioned(

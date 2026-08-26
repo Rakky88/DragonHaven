@@ -133,8 +133,8 @@ void main() {
       AdventureKind.short: {
         ChestTier.wooden: .20,
         ChestTier.silver: .40,
-        ChestTier.gold: .30,
-        ChestTier.dragon: .095,
+        ChestTier.gold: .35,
+        ChestTier.dragon: .045,
         ChestTier.mythical: .005,
       },
       AdventureKind.long: {
@@ -162,7 +162,8 @@ void main() {
     expect(
         adventureChestForRoll(AdventureKind.short, .19999), ChestTier.wooden);
     expect(adventureChestForRoll(AdventureKind.short, .20), ChestTier.silver);
-    expect(adventureChestForRoll(AdventureKind.short, .9001), ChestTier.dragon);
+    expect(adventureChestForRoll(AdventureKind.short, .9499), ChestTier.gold);
+    expect(adventureChestForRoll(AdventureKind.short, .9501), ChestTier.dragon);
     expect(
         adventureChestForRoll(AdventureKind.short, .999), ChestTier.mythical);
   });
@@ -235,6 +236,8 @@ void main() {
     expect(File('${directory.path}/hatch_reveal.wav').lengthSync(),
         greaterThan(1000000),
         reason: 'The hatch reveal uses the full original cinematic fanfare.');
+    expect(nativeBridge, contains('"chest_dragon" -> R.raw.achievement'));
+    expect(nativeBridge, contains('"chest_mythical" -> R.raw.hatch_reveal'));
   });
 
   test('Android keeps hatch reminders through permission and exact-alarm paths',

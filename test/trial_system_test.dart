@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:dragon_haven/models/chest.dart';
+import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/trial.dart';
 import 'package:dragon_haven/models/social.dart';
@@ -65,17 +66,17 @@ void main() {
     final result = await game.completeTrial(
       offerId: offer.id,
       dragonId: game.pet.id,
-      score: 25,
+      score: 150,
     );
 
     expect(result?.reward.grade, TrialGrade.c);
     expect(result?.reward.chestTier, ChestTier.wooden);
     expect(result?.newDragonBest, isTrue);
-    expect(game.pet.coins, 45);
+    expect(game.pet.coins, 10);
     expect(game.pet.xp, 20);
     expect(game.pet.trainingFor(TrainingFocus.spirit), 2);
-    expect(game.pet.trialBest(TrialKind.cavernFlight.name), 25);
-    expect(game.accountTrialBest(TrialKind.cavernFlight), 25);
+    expect(game.pet.trialBest(TrialKind.cavernFlight.name), 150);
+    expect(game.accountTrialBest(TrialKind.cavernFlight), 150);
     expect(game.chestCount(ChestTier.wooden), 1);
     expect(game.availableTrials.any((item) => item.id == offer.id), isFalse);
 
@@ -85,28 +86,120 @@ void main() {
       score: 999,
     );
     expect(duplicate, isNull);
-    expect(game.pet.coins, 45);
-    expect(game.pet.trialBest(TrialKind.cavernFlight.name), 25);
+    expect(game.pet.coins, 10);
+    expect(game.pet.trialBest(TrialKind.cavernFlight.name), 150);
   });
 
   test('Trial score tiers and reward chest tables use performance', () {
-    expect(trialGradeForScore(TrialKind.cavernFlight, 24), TrialGrade.d);
-    expect(trialGradeForScore(TrialKind.cavernFlight, 25), TrialGrade.c);
-    expect(trialGradeForScore(TrialKind.ruinBreaker, 2600), TrialGrade.sPlus);
+    final flightBoundaries = <int, TrialGrade>{
+      0: TrialGrade.d,
+      149: TrialGrade.d,
+      150: TrialGrade.c,
+      349: TrialGrade.c,
+      350: TrialGrade.b,
+      649: TrialGrade.b,
+      650: TrialGrade.a,
+      999: TrialGrade.a,
+      1000: TrialGrade.s,
+      1499: TrialGrade.s,
+      1500: TrialGrade.sPlus,
+    };
+    for (final entry in flightBoundaries.entries) {
+      expect(
+        trialGradeForScore(TrialKind.cavernFlight, entry.key),
+        entry.value,
+        reason: 'Cavern Flight ${entry.key}',
+      );
+    }
+
+    final ruinBoundaries = <int, TrialGrade>{
+      0: TrialGrade.d,
+      899: TrialGrade.d,
+      900: TrialGrade.c,
+      2249: TrialGrade.c,
+      2250: TrialGrade.b,
+      3999: TrialGrade.b,
+      4000: TrialGrade.a,
+      6749: TrialGrade.a,
+      6750: TrialGrade.s,
+      8999: TrialGrade.s,
+      9000: TrialGrade.sPlus,
+    };
+    for (final entry in ruinBoundaries.entries) {
+      expect(
+        trialGradeForScore(TrialKind.ruinBreaker, entry.key),
+        entry.value,
+        reason: 'Ruin Breaker ${entry.key}',
+      );
+    }
     expect(trialGradeForScore(TrialKind.runeweaver, 12), TrialGrade.s);
 
     expect(
       trialRewardForGrade(TrialGrade.b, .84).chestTier,
-      ChestTier.silver,
+      ChestTier.wooden,
     );
     expect(
       trialRewardForGrade(TrialGrade.b, .85).chestTier,
-      ChestTier.gold,
+      ChestTier.silver,
     );
     expect(
       trialRewardForGrade(TrialGrade.sPlus, .999).chestTier,
       ChestTier.mythical,
     );
+
+    final sPlusRelic = trialRewardForGrade(
+      TrialGrade.sPlus,
+      .50,
+      relicRoll: .009,
+      relicChoice: 2,
+    );
+    expect(sPlusRelic.relic, MysticRelic.soulMirror);
+    expect(
+      trialRewardForGrade(
+        TrialGrade.sPlus,
+        .50,
+        relicRoll: .01,
+      ).relic,
+      isNull,
+    );
+    expect(
+      trialRewardForGrade(
+        TrialGrade.s,
+        .50,
+        relicRoll: 0,
+      ).relic,
+      isNull,
+    );
+  });
+
+  test('Trial rewards match every grade table without coins', () {
+    final rewards = <TrialGrade, (int, int, ChestTier?)>{
+      TrialGrade.d: (10, 1, null),
+      TrialGrade.c: (20, 2, ChestTier.wooden),
+      TrialGrade.b: (30, 3, ChestTier.wooden),
+      TrialGrade.a: (40, 4, ChestTier.wooden),
+      TrialGrade.s: (50, 5, ChestTier.silver),
+      TrialGrade.sPlus: (69, 7, ChestTier.gold),
+    };
+    for (final entry in rewards.entries) {
+      final reward = trialRewardForGrade(entry.key, 0);
+      expect(reward.coins, 0, reason: entry.key.name);
+      expect(reward.xp, entry.value.$1, reason: entry.key.name);
+      expect(reward.statPoints, entry.value.$2, reason: entry.key.name);
+      expect(reward.chestTier, entry.value.$3, reason: entry.key.name);
+    }
+
+    expect(
+        trialRewardForGrade(TrialGrade.b, .9499).chestTier, ChestTier.silver);
+    expect(trialRewardForGrade(TrialGrade.b, .95).chestTier, ChestTier.gold);
+    expect(trialRewardForGrade(TrialGrade.a, .30).chestTier, ChestTier.silver);
+    expect(trialRewardForGrade(TrialGrade.a, .80).chestTier, ChestTier.gold);
+    expect(trialRewardForGrade(TrialGrade.s, .30).chestTier, ChestTier.gold);
+    expect(trialRewardForGrade(TrialGrade.s, .99).chestTier, ChestTier.dragon);
+    expect(
+        trialRewardForGrade(TrialGrade.sPlus, .90).chestTier, ChestTier.dragon);
+    expect(trialRewardForGrade(TrialGrade.sPlus, .99).chestTier,
+        ChestTier.mythical);
   });
 
   test('dragon expertise applies only the requested subtle gameplay assists',

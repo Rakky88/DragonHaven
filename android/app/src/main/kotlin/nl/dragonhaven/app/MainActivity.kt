@@ -28,6 +28,7 @@ class MainActivity : FlutterActivity() {
 
     private var activityInForeground = false
     private var musicEnabled = true
+    private var musicStyle = "basic"
     private var effectsEnabled = true
     private var musicPlayer: MediaPlayer? = null
     private var musicEnhancer: LoudnessEnhancer? = null
@@ -102,12 +103,18 @@ class MainActivity : FlutterActivity() {
             when (call.method) {
                 "setPreferences" -> {
                     val wasMusicEnabled = musicEnabled
+                    val previousMusicStyle = musicStyle
                     musicEnabled = call.argument<Boolean>("music") ?: true
                     effectsEnabled = call.argument<Boolean>("effects") ?: true
+                    musicStyle = call.argument<String>("style") ?: musicStyle
                     musicScene = call.argument<String>("scene") ?: musicScene
                     if (!musicEnabled) {
                         fadeOutAndStopMusic()
-                    } else if (!wasMusicEnabled || musicPlayer == null) {
+                    } else if (
+                        !wasMusicEnabled ||
+                        musicPlayer == null ||
+                        previousMusicStyle != musicStyle
+                    ) {
                         musicScene?.let(::startMusic)
                     }
                     result.success(true)
@@ -214,9 +221,14 @@ class MainActivity : FlutterActivity() {
         "achievement" -> R.raw.achievement
         "adventure_return" -> R.raw.adventure_return
         "adventure_start" -> R.raw.adventure_start
-        "chest_dragon" -> R.raw.chest_dragon
+        // Higher chest tiers use the warm celebratory cues instead of the
+        // older, heavier impacts. Mythical deliberately gets the full magical
+        // fanfare while Dragon uses the shorter achievement flourish.
+        "chest_dragon" -> R.raw.achievement
+        "chest_dragon_legacy" -> R.raw.chest_dragon
         "chest_gold" -> R.raw.chest_gold
-        "chest_mythical" -> R.raw.chest_mythical
+        "chest_mythical" -> R.raw.hatch_reveal
+        "chest_mythical_legacy" -> R.raw.chest_mythical
         "chest_silver" -> R.raw.chest_silver
         "chest_sinister" -> R.raw.chest_sinister
         "chest_wooden" -> R.raw.chest_wooden
@@ -229,6 +241,7 @@ class MainActivity : FlutterActivity() {
         "hatch_crack_3" -> R.raw.hatch_crack_3
         "hatch_reveal" -> R.raw.hatch_reveal
         "reveal" -> R.raw.reveal
+        "reverie" -> R.raw.reverie
         "room" -> R.raw.room
         "spectral_reveal" -> R.raw.spectral_reveal
         "tower_day" -> R.raw.tower_day
@@ -314,7 +327,11 @@ class MainActivity : FlutterActivity() {
 
     private fun startMusic(id: String): Boolean {
         if (!musicEnabled) return false
-        val resource = rawResourceId(id)
+        val resource = if (musicStyle == "classic") {
+            rawResourceId("reverie")
+        } else {
+            rawResourceId(id)
+        }
         if (resource == 0) return false
         if (!requestMusicFocus()) return false
         releaseMusicPlayer()

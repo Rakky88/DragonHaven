@@ -295,7 +295,6 @@ class _FriendsOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final activeTrades = online.trades.where((trade) => trade.isActive).length;
     return Padding(
       padding: const EdgeInsets.only(top: 10),
       child: Row(
@@ -319,7 +318,8 @@ class _FriendsOverview extends StatelessWidget {
           Expanded(
             child: _OverviewPill(
               sprite: GameIconKind.friendsTrade,
-              value: '$activeTrades',
+              value: '${online.completedTradesToday}/'
+                  '${OnlineAccountProvider.maxSuccessfulTradesPerDay}',
               label: strings.pick('trades', 'ruilen'),
             ),
           ),

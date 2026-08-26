@@ -93,6 +93,7 @@ class HouseholdProvider extends ChangeNotifier {
   String accountName = '';
   bool onboardingComplete = false;
   bool musicEnabled = true;
+  HavenMusicStyle musicStyle = HavenMusicStyle.basic;
   bool soundEffectsEnabled = true;
   bool achievementsCompact = false;
   bool tutorialCompleted = false;
@@ -656,6 +657,10 @@ class HouseholdProvider extends ChangeNotifier {
         : true;
     musicEnabled =
         data['musicEnabled'] is! bool || data['musicEnabled'] as bool;
+    musicStyle = HavenMusicStyle.values.firstWhere(
+      (value) => value.name == data['musicStyle'],
+      orElse: () => HavenMusicStyle.basic,
+    );
     soundEffectsEnabled = data['soundEffectsEnabled'] is! bool ||
         data['soundEffectsEnabled'] as bool;
     achievementsCompact = data['achievementsCompact'] is bool &&
@@ -1830,6 +1835,7 @@ class HouseholdProvider extends ChangeNotifier {
       'accountName': accountName,
       'onboardingComplete': onboardingComplete,
       'musicEnabled': musicEnabled,
+      'musicStyle': musicStyle.name,
       'soundEffectsEnabled': soundEffectsEnabled,
       'achievementsCompact': achievementsCompact,
       'tutorialCompleted': tutorialCompleted,

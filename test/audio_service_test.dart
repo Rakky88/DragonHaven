@@ -24,11 +24,30 @@ void main() {
     await HavenAudio.applyPreferences(
       musicEnabled: true,
       soundEffectsEnabled: true,
+      musicStyle: HavenMusicStyle.basic,
     );
+    expect(calls.first.arguments, {
+      'music': true,
+      'effects': true,
+      'style': 'basic',
+      'scene': null,
+    });
     await HavenAudio.setMusicScene(HavenMusicScene.towerDay);
     await HavenAudio.setMusicScene(HavenMusicScene.towerDay);
 
+    await HavenAudio.applyPreferences(
+      musicEnabled: true,
+      soundEffectsEnabled: true,
+      musicStyle: HavenMusicStyle.classic,
+    );
+
     expect(calls.where((call) => call.method == 'setMusicScene'), hasLength(2));
-    expect(calls.last.arguments, {'id': 'tower_day'});
+    expect(
+        calls.where((call) => call.method == 'setPreferences').last.arguments, {
+      'music': true,
+      'effects': true,
+      'style': 'classic',
+      'scene': 'tower_day',
+    });
   });
 }

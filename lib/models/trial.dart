@@ -1,5 +1,6 @@
 import 'chest.dart';
 import 'pet.dart';
+import 'mystic_relic.dart';
 
 enum TrialKind { cavernFlight, ruinBreaker, runeweaver }
 
@@ -91,6 +92,7 @@ class TrialReward {
     required this.xp,
     required this.statPoints,
     this.chestTier,
+    this.relic,
   });
 
   final TrialGrade grade;
@@ -98,6 +100,7 @@ class TrialReward {
   final int xp;
   final int statPoints;
   final ChestTier? chestTier;
+  final MysticRelic? relic;
 }
 
 class TrialCompletion {
@@ -116,8 +119,8 @@ class TrialCompletion {
 
 TrialGrade trialGradeForScore(TrialKind kind, int score) {
   final thresholds = switch (kind) {
-    TrialKind.cavernFlight => const [25, 60, 100, 150, 220],
-    TrialKind.ruinBreaker => const [300, 700, 1200, 1800, 2600],
+    TrialKind.cavernFlight => const [150, 350, 650, 1000, 1500],
+    TrialKind.ruinBreaker => const [900, 2250, 4000, 6750, 9000],
     TrialKind.runeweaver => const [3, 6, 9, 12, 15],
   };
   if (score >= thresholds[4]) return TrialGrade.sPlus;
@@ -144,36 +147,53 @@ Duration runeweaverRuneDuration(int arcana) => Duration(
       milliseconds: 500 + (100 * (arcana.clamp(0, 300) / 300)).round(),
     );
 
-TrialReward trialRewardForGrade(TrialGrade grade, double chestRoll) {
+TrialReward trialRewardForGrade(
+  TrialGrade grade,
+  double chestRoll, {
+  double relicRoll = 1,
+  int relicChoice = 0,
+}) {
   final chest = switch (grade) {
     TrialGrade.d => null,
     TrialGrade.c => ChestTier.wooden,
-    TrialGrade.b => chestRoll < .85 ? ChestTier.silver : ChestTier.gold,
-    TrialGrade.a => chestRoll < .10
+    TrialGrade.b => chestRoll < .85
+        ? ChestTier.wooden
+        : chestRoll < .95
+            ? ChestTier.silver
+            : ChestTier.gold,
+    TrialGrade.a => chestRoll < .30
+        ? ChestTier.wooden
+        : chestRoll < .80
+            ? ChestTier.silver
+            : ChestTier.gold,
+    TrialGrade.s => chestRoll < .30
         ? ChestTier.silver
-        : chestRoll < .98
+        : chestRoll < .99
             ? ChestTier.gold
             : ChestTier.dragon,
-    TrialGrade.s => chestRoll < .92 ? ChestTier.gold : ChestTier.dragon,
-    TrialGrade.sPlus => chestRoll < .04
+    TrialGrade.sPlus => chestRoll < .90
         ? ChestTier.gold
         : chestRoll < .99
             ? ChestTier.dragon
             : ChestTier.mythical,
   };
   final (coins, xp, statPoints) = switch (grade) {
-    TrialGrade.d => (20, 10, 1),
-    TrialGrade.c => (35, 20, 2),
-    TrialGrade.b => (60, 40, 3),
-    TrialGrade.a => (100, 70, 5),
-    TrialGrade.s => (160, 100, 7),
-    TrialGrade.sPlus => (250, 150, 10),
+    TrialGrade.d => (0, 10, 1),
+    TrialGrade.c => (0, 20, 2),
+    TrialGrade.b => (0, 30, 3),
+    TrialGrade.a => (0, 40, 4),
+    TrialGrade.s => (0, 50, 5),
+    TrialGrade.sPlus => (0, 69, 7),
   };
+  final relic = grade == TrialGrade.sPlus && relicRoll < .01
+      ? MysticRelic.values[relicChoice.abs() % MysticRelic.values.length]
+      : null;
   return TrialReward(
     grade: grade,
     coins: coins,
     xp: xp,
     statPoints: statPoints,
     chestTier: chest,
+    relic: relic,
   );
 }
