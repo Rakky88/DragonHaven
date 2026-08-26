@@ -29,6 +29,9 @@ The detailed implementation map and remaining service boundaries are documented 
 De actuele checklist, taakverdeling en kostenraming voor een openbare lancering
 staan in [PUBLIC_LAUNCH.md](PUBLIC_LAUNCH.md).
 
+De brede code-, UI-, logging-, sprite-, server- en bugaudit van v0.04.02 staat
+in [DRAGONHAVEN_AUDIT_2026-08-26.md](DRAGONHAVEN_AUDIT_2026-08-26.md).
+
 ## Run and verify
 
 ```powershell
