@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_strings.dart';
 import '../models/account_title.dart';
 import '../models/chest.dart';
+import '../models/mystic_relic.dart';
 import '../models/profile_portrait.dart';
 import '../models/shop_item.dart';
 import '../providers/household_provider.dart';
@@ -77,9 +78,11 @@ class _CurrencyShop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
+    final sellsRelics = currency == ItemCurrency.gems;
+    final categoryCount = sellsRelics ? 4 : 3;
     return DefaultTabController(
-      length: 3,
-      initialIndex: initialCategoryTab,
+      length: categoryCount,
+      initialIndex: initialCategoryTab.clamp(0, categoryCount - 1),
       child: Column(
         children: [
           Material(
@@ -92,6 +95,11 @@ class _CurrencyShop extends StatelessWidget {
                   key: Key('shop-${currency.name}-tab-furniture'),
                   text: strings.pick('Furniture', 'Meubels'),
                 ),
+                if (sellsRelics)
+                  Tab(
+                    key: const Key('shop-gems-tab-relics'),
+                    text: strings.pick('Relics', 'Relieken'),
+                  ),
                 Tab(
                   key: Key('shop-${currency.name}-tab-chests'),
                   text: strings.pick('Chests', 'Kisten'),
@@ -107,6 +115,7 @@ class _CurrencyShop extends StatelessWidget {
             child: TabBarView(
               children: [
                 ShopScreen(currency: currency),
+                if (sellsRelics) const _RelicShop(),
                 _ChestShop(currency: currency),
                 _CurrencyPacks(currency: currency),
               ],
@@ -114,6 +123,167 @@ class _CurrencyShop extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _RelicShop extends StatelessWidget {
+  const _RelicShop();
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final game = context.watch<HouseholdProvider>();
+    return ListView(
+      key: const PageStorageKey('shop-gems-relics-scroll'),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF2D8),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFE4C46B)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.lock_rounded, color: AppColors.twilight),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  strings.pick(
+                    'Relics bought here are untradeable. Relics found through gameplay remain tradeable. You may buy as many as you like.',
+                    'Relieken die je hier koopt zijn niet ruilbaar. Relieken die je via gameplay vindt blijven wel ruilbaar. Je mag er onbeperkt kopen.',
+                  ),
+                  style: const TextStyle(
+                    color: AppColors.ink,
+                    height: 1.35,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        for (final relic in MysticRelic.values)
+          _RelicShopCard(
+            relic: relic,
+            owned: game.relicCount(relic),
+            untradeable: game.untradeableRelicCount(relic),
+          ),
+      ],
+    );
+  }
+}
+
+class _RelicShopCard extends StatelessWidget {
+  const _RelicShopCard({
+    required this.relic,
+    required this.owned,
+    required this.untradeable,
+  });
+
+  final MysticRelic relic;
+  final int owned;
+  final int untradeable;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final game = context.watch<HouseholdProvider>();
+    return Card(
+      key: Key('shop-relic-${relic.name}'),
+      margin: const EdgeInsets.only(bottom: 11),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Container(
+              width: 92,
+              height: 92,
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFF4EEFF), Color(0xFFFFF2D8)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Image.asset(relic.assetPath, fit: BoxFit.contain),
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    strings.relicName(relic),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    strings.relicDescription(relic),
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 12,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    strings.pick(
+                      'Owned: $owned · shop-bought: $untradeable (untradeable)',
+                      'In bezit: $owned · uit shop: $untradeable (niet ruilbaar)',
+                    ),
+                    style: const TextStyle(
+                      color: AppColors.twilight,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      key: Key('buy-relic-${relic.name}'),
+                      onPressed: game.pet.gems < relicShopGemPrice
+                          ? null
+                          : () => _buy(context),
+                      icon: const GameIconSprite(GameIconKind.gem, size: 25),
+                      label: const Text('$relicShopGemPrice'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _buy(BuildContext context) async {
+    final result = await context.read<HouseholdProvider>().purchaseRelic(relic);
+    if (!context.mounted) return;
+    final strings = AppStrings.of(context);
+    final name = strings.relicName(relic);
+    showAppSnackBar(
+      context,
+      switch (result) {
+        MysticRelicPurchaseResult.purchased => strings.pick(
+            '$name added to your Inventory. This copy is untradeable.',
+            '$name is aan je Inventory toegevoegd. Dit exemplaar is niet ruilbaar.',
+          ),
+        MysticRelicPurchaseResult.insufficientGems => strings.pick(
+            '${relicShopGemPrice - context.read<HouseholdProvider>().pet.gems} more gems needed.',
+            'Je hebt nog ${relicShopGemPrice - context.read<HouseholdProvider>().pet.gems} edelstenen nodig.',
+          ),
+      },
     );
   }
 }

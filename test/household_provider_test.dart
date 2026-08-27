@@ -46,6 +46,52 @@ void main() {
     expect(game.selectedAccountTitle, isNotNull);
   });
 
+  test('starter egg taps remove one second but preserve the final second', () {
+    final now = DateTime.utc(2026, 8, 27, 20);
+    final game = HouseholdProvider(
+      random: Random(38),
+      clock: () => now,
+      persistenceEnabled: false,
+    );
+    game.pet.stageStartedAt = now.subtract(
+      game.pet.incubationDuration - const Duration(seconds: 3),
+    );
+
+    expect(game.accelerateStarterEgg(), isTrue);
+    expect(game.pet.remainingForNextStage(now), const Duration(seconds: 2));
+    expect(game.accelerateStarterEgg(), isTrue);
+    expect(game.pet.remainingForNextStage(now), const Duration(seconds: 1));
+    expect(game.accelerateStarterEgg(), isFalse);
+    expect(game.pet.canHatch(now), isFalse);
+
+    game.pet.firstEgg = false;
+    expect(game.accelerateStarterEgg(), isFalse);
+    game.dispose();
+  });
+
+  test('egg clues reveal lineage affinity but never moral or order', () {
+    String hintFor(LawAxis law, MoralAxis moral) {
+      final game = HouseholdProvider(
+        initialize: false,
+        persistenceEnabled: false,
+      )..pet = Pet(
+          stage: DragonStage.egg,
+          firstEgg: true,
+          lineageId: 'quietstar',
+          lawAxis: law,
+          moralAxis: moral,
+        );
+      return game.eggHint(locale: 'en');
+    }
+
+    final lawfulGood = hintFor(LawAxis.lawful, MoralAxis.good);
+    expect(hintFor(LawAxis.chaotic, MoralAxis.evil), lawfulGood);
+    expect(hintFor(LawAxis.neutral, MoralAxis.neutral), lawfulGood);
+    expect(lawfulGood, isNot(contains('rhythm')));
+    expect(lawfulGood, isNot(contains('glow')));
+    expect(lawfulGood, isNot(contains('tapped back')));
+  });
+
   test('release demo exposes portraits, Relics and three roaming dragons', () {
     final game = HouseholdProvider.createReleaseDemo();
     expect(game.onboardingComplete, isTrue);
@@ -451,6 +497,47 @@ void main() {
     expect(restored.totalRelicCount, 0);
   });
 
+  test('shop relics cost 500 gems, persist and cannot be traded', () async {
+    final game = HouseholdProvider(random: Random(204));
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..gems = 1000;
+
+    expect(
+      await game.purchaseRelic(MysticRelic.moralPrism),
+      MysticRelicPurchaseResult.purchased,
+    );
+    expect(
+      await game.purchaseRelic(MysticRelic.moralPrism),
+      MysticRelicPurchaseResult.purchased,
+    );
+    expect(game.pet.gems, 0);
+    expect(game.relicCount(MysticRelic.moralPrism), 2);
+    expect(game.untradeableRelicCount(MysticRelic.moralPrism), 2);
+    expect(game.tradeableRelicCount(MysticRelic.moralPrism), 0);
+    expect(
+      await game.purchaseRelic(MysticRelic.moralPrism),
+      MysticRelicPurchaseResult.insufficientGems,
+    );
+
+    final restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.relicCount(MysticRelic.moralPrism), 2);
+    expect(restored.untradeableRelicCount(MysticRelic.moralPrism), 2);
+    expect(restored.tradeableRelicCount(MysticRelic.moralPrism), 0);
+
+    restored.relicInventory[MysticRelic.moralPrism] = 3;
+    expect(restored.gameplayRelicCount(MysticRelic.moralPrism), 1);
+    expect(restored.tradeableRelicCount(MysticRelic.moralPrism), 1);
+    expect(
+      await restored.useRelic(MysticRelic.moralPrism, restored.pet.id),
+      MysticRelicUseResult.revealed,
+    );
+    expect(restored.relicCount(MysticRelic.moralPrism), 2);
+    expect(restored.untradeableRelicCount(MysticRelic.moralPrism), 1,
+        reason: 'using a Relic consumes an untradeable shop copy first');
+    expect(restored.gameplayRelicCount(MysticRelic.moralPrism), 1);
+  });
+
   test('dragon levels expose the exact next evolution milestone', () {
     final hatchling = Pet(
       stage: DragonStage.hatchling,
@@ -658,7 +745,7 @@ void main() {
 
     expect(await game.purchasePortraitChest(),
         PortraitChestPurchaseResult.purchased);
-    expect(game.pet.gems, 51);
+    expect(game.pet.gems, 50);
     expect(game.chestCount(ChestTier.portrait), 1);
     expect(game.portraitCount, 0);
 
@@ -731,7 +818,7 @@ void main() {
     )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, coins: 150);
 
     expect(await game.purchaseTitleChest(), TitleChestPurchaseResult.purchased);
-    expect(game.pet.coins, 51);
+    expect(game.pet.coins, 50);
     expect(game.chestCount(ChestTier.title), 1);
     expect(game.titleCount, 0);
 
@@ -880,7 +967,7 @@ void main() {
     final restored = await HouseholdProvider.loadFromStorage();
     expect(restored.ownedPortraitIds, contains(reward.portraitFound!.id));
     expect(restored.selectedPortraitId, reward.portraitFound!.id);
-    expect(restored.pet.gems, 51);
+    expect(restored.pet.gems, 50);
     expect(restored.totalPortraitChestsOpened, 1);
     expect(
         restored.unlockedAchievementIds, contains('profile_picture_perfect'));
@@ -899,7 +986,7 @@ void main() {
     final restored = await HouseholdProvider.loadFromStorage();
     expect(restored.ownedTitleIds, contains(reward.titleFound!.id));
     expect(restored.selectedTitleId, reward.titleFound!.id);
-    expect(restored.pet.coins, 51);
+    expect(restored.pet.coins, 50);
     expect(restored.totalTitleChestsOpened, 1);
     expect(restored.unlockedAchievementIds, contains('highly_titled'));
   });

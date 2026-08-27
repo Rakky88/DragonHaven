@@ -53,6 +53,24 @@ class PetScreen extends StatelessWidget {
             pet: pet,
             onElapsed: game.hatchActiveDragon,
           ),
+          if (pet.firstEgg) ...[
+            const SizedBox(height: 9),
+            Text(
+              strings.pick(
+                'Tap the egg to shorten the wait by one second per tap. The final second always counts down normally.',
+                'Tik op het ei om de wachttijd per tik met één seconde te verkorten. De laatste seconde telt altijd normaal af.',
+              ),
+              key: const Key('starter-egg-tap-instruction'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.twilight,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          _EggCluePanel(hint: game.eggHint(locale: strings.languageCode)),
         ],
         if (!pet.isEgg) ...[
           const SizedBox(height: 18),
@@ -389,7 +407,11 @@ class _CountdownFramePainter extends CustomPainter {
 }
 
 (String, String, String) _countdownParts(Duration duration) {
-  final totalSeconds = duration.inSeconds.clamp(0, 14 * 24 * 60 * 60).toInt();
+  final roundedUpSeconds = duration <= Duration.zero
+      ? 0
+      : (duration.inMicroseconds + Duration.microsecondsPerSecond - 1) ~/
+          Duration.microsecondsPerSecond;
+  final totalSeconds = roundedUpSeconds.clamp(0, 14 * 24 * 60 * 60).toInt();
   final hours = totalSeconds ~/ 3600;
   final minutes = (totalSeconds % 3600) ~/ 60;
   final seconds = totalSeconds % 60;
@@ -435,19 +457,18 @@ class _DragonStageCard extends StatelessWidget {
       button: pet.isEgg,
       label: pet.isEgg
           ? strings.pick(
-              'Listen to the mysterious egg', 'Luister naar het mysterieuze ei')
+              'Tap the starter egg to shorten the timer by one second',
+              'Tik op het startersei om de timer één seconde te verkorten')
           : pet.displayName,
       child: GestureDetector(
         key: pet.isEgg ? const Key('mysterious-egg-hint') : null,
         behavior: HitTestBehavior.opaque,
         onTap: pet.isEgg
             ? () {
-                HavenAudio.play(HavenSound.uiConfirm);
                 final game = context.read<HouseholdProvider>();
-                showAppSnackBar(
-                  context,
-                  game.eggHint(locale: strings.languageCode),
-                );
+                if (game.accelerateStarterEgg()) {
+                  HavenAudio.play(HavenSound.uiConfirm);
+                }
               }
             : null,
         child: Container(
@@ -525,6 +546,39 @@ class _DragonStageCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _EggCluePanel extends StatelessWidget {
+  const _EggCluePanel({required this.hint});
+
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        key: const Key('starter-egg-clue'),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(21),
+          border: Border.all(color: AppColors.mist),
+        ),
+        child: Row(
+          children: [
+            const GameIconSprite(GameIconKind.mysteriousEgg, size: 46),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                hint,
+                style: const TextStyle(
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 class _DragonNeedsPanel extends StatelessWidget {

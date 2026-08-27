@@ -2,8 +2,8 @@ import 'mystic_relic.dart';
 import 'profile_portrait.dart';
 import 'account_title.dart';
 
-const portraitChestGemPrice = 99;
-const titleChestCoinPrice = 99;
+const portraitChestGemPrice = 100;
+const titleChestCoinPrice = 100;
 
 enum ChestTier {
   wooden,

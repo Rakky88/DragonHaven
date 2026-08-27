@@ -11,12 +11,18 @@ class SupabaseSocialRepository implements SocialRepository {
       (event) => _authController.add(
         event.session != null && event.session?.user.emailConfirmedAt != null,
       ),
+      onError: (Object error, StackTrace stackTrace) {
+        if (!_authController.isClosed) {
+          _authController.addError(_socialError(error), stackTrace);
+        }
+      },
     );
   }
 
   final SupabaseClient _client;
   final _authController = StreamController<bool>.broadcast();
   late final StreamSubscription<AuthState> _authSubscription;
+  Future<void>? _sessionRefreshInFlight;
 
   @override
   bool get isConfigured => true;
@@ -375,7 +381,39 @@ class SupabaseSocialRepository implements SocialRepository {
 
   Future<dynamic> _rpc(String function, {Map<String, dynamic>? params}) async {
     try {
+      await _ensureFreshSession();
       return await _client.rpc(function, params: params);
+    } on Object catch (error) {
+      throw _socialError(error);
+    }
+  }
+
+  Future<void> _ensureFreshSession() async {
+    final session = _client.auth.currentSession;
+    if (session == null) throw const SocialException('online_login_required');
+    if (!session.isExpired) return;
+
+    final existingRefresh = _sessionRefreshInFlight;
+    if (existingRefresh != null) return existingRefresh;
+    final refresh = _refreshExpiredSession();
+    _sessionRefreshInFlight = refresh;
+    try {
+      await refresh;
+    } finally {
+      if (identical(_sessionRefreshInFlight, refresh)) {
+        _sessionRefreshInFlight = null;
+      }
+    }
+  }
+
+  Future<void> _refreshExpiredSession() async {
+    try {
+      final response = await _client.auth.refreshSession();
+      if (response.session == null) {
+        throw const SocialException('online_session_expired');
+      }
+    } on SocialException {
+      rethrow;
     } on Object catch (error) {
       throw _socialError(error);
     }
@@ -452,6 +490,8 @@ class SupabaseSocialRepository implements SocialRepository {
       'cloud_save_failed',
       'account_delete_reauthentication_failed',
       'account_delete_failed',
+      'online_login_required',
+      'online_session_expired',
     };
     final normalized = message.trim().toLowerCase().replaceAll(' ', '_');
     if (normalized.contains('email_not_confirmed')) {

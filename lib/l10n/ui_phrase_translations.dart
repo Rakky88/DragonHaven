@@ -554,6 +554,36 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
       '$selected / $capacity 体が巡回中・1部屋につき最大3体',
     ]);
   }
+  final relicOwnership = RegExp(
+    r'^Owned: (\d+) · shop-bought: (\d+) \(untradeable\)$',
+  ).firstMatch(text);
+  if (relicOwnership != null) {
+    final owned = relicOwnership.group(1)!;
+    final shopBought = relicOwnership.group(2)!;
+    return _localized(languageCode, [
+      'Im Besitz: $owned · im Shop gekauft: $shopBought (nicht handelbar)',
+      'En propiedad: $owned · compradas en la tienda: $shopBought (no intercambiables)',
+      'Possédées : $owned · achetées en boutique : $shopBought (non échangeables)',
+      'Posseduti: $owned · acquistati nel negozio: $shopBought (non scambiabili)',
+      'Possuídas: $owned · compradas na loja: $shopBought (não negociáveis)',
+      '拥有：$owned · 商店购买：$shopBought（不可交易）',
+      '所持数：$owned・ショップ購入：$shopBought（交換不可）',
+    ]);
+  }
+  value = capture(RegExp(
+    r'^(.+) added to your Inventory\. This copy is untradeable\.$',
+  ));
+  if (value != null) {
+    return _localized(languageCode, [
+      '$value wurde deinem Inventar hinzugefügt. Dieses Exemplar ist nicht handelbar.',
+      '$value se añadió a tu inventario. Esta copia no se puede intercambiar.',
+      '$value a été ajouté à ton inventaire. Cet exemplaire n’est pas échangeable.',
+      '$value è stato aggiunto al tuo inventario. Questa copia non è scambiabile.',
+      '$value foi adicionado ao seu inventário. Esta cópia não é negociável.',
+      '$value 已添加到你的库存中。此件不可交易。',
+      '$value をインベントリに追加しました。この個体は交換できません。',
+    ]);
+  }
   return null;
 }
 
@@ -6025,5 +6055,34 @@ const uiPhraseTranslations = <String, List<String>>{
     'Probabilidades atuais de retrato',
     '当前头像概率',
     '現在の肖像確率'
+  ],
+  'Tap the egg to shorten the wait by one second per tap. The final second always counts down normally.':
+      [
+    'Tippe auf das Ei, um die Wartezeit pro Tippen um eine Sekunde zu verkürzen. Die letzte Sekunde läuft immer normal ab.',
+    'Toca el huevo para acortar la espera un segundo por toque. El último segundo siempre transcurre con normalidad.',
+    'Touchez l’œuf pour raccourcir l’attente d’une seconde à chaque fois. La dernière seconde se déroule toujours normalement.',
+    'Tocca l’uovo per ridurre l’attesa di un secondo a ogni tocco. L’ultimo secondo scorre sempre normalmente.',
+    'Toque no ovo para reduzir a espera em um segundo por toque. O último segundo sempre passa normalmente.',
+    '每点击一次蛋，等待时间就缩短一秒。最后一秒始终正常倒计时。',
+    '卵をタップするたびに待ち時間が1秒短くなります。最後の1秒は必ず通常どおりカウントダウンします。'
+  ],
+  'Tap the starter egg to shorten the timer by one second': [
+    'Tippe auf das Starter-Ei, um den Timer um eine Sekunde zu verkürzen',
+    'Toca el huevo inicial para acortar el temporizador un segundo',
+    'Touchez l’œuf de départ pour raccourcir le minuteur d’une seconde',
+    'Tocca l’uovo iniziale per accorciare il timer di un secondo',
+    'Toque no ovo inicial para reduzir o temporizador em um segundo',
+    '点击初始蛋可将计时器缩短一秒',
+    'スターターエッグをタップしてタイマーを1秒短縮'
+  ],
+  'Relics bought here are untradeable. Relics found through gameplay remain tradeable. You may buy as many as you like.':
+      [
+    'Hier gekaufte Relikte sind nicht handelbar. Im Spiel gefundene Relikte bleiben handelbar. Du kannst beliebig viele kaufen.',
+    'Las reliquias compradas aquí no se pueden intercambiar. Las encontradas durante el juego sí siguen siendo intercambiables. Puedes comprar todas las que quieras.',
+    'Les reliques achetées ici ne sont pas échangeables. Celles trouvées en jouant restent échangeables. Vous pouvez en acheter autant que vous voulez.',
+    'Le reliquie acquistate qui non sono scambiabili. Quelle trovate durante il gioco restano scambiabili. Puoi acquistarne quante ne vuoi.',
+    'As relíquias compradas aqui não são negociáveis. As encontradas durante o jogo continuam negociáveis. Você pode comprar quantas quiser.',
+    '在此购买的遗物不可交易。通过游戏获得的遗物仍可交易。购买数量不限。',
+    'ここで購入したレリックは交換できません。ゲームで入手したレリックは引き続き交換できます。購入数に制限はありません。'
   ],
 };

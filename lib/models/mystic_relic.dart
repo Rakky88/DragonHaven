@@ -1,5 +1,7 @@
 enum MysticRelic { moralPrism, orderCompass, soulMirror }
 
+const relicShopGemPrice = 500;
+
 extension MysticRelicPresentation on MysticRelic {
   String get nameEn => switch (this) {
         MysticRelic.moralPrism => 'Moral Prism',

@@ -60,6 +60,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   final String Function() _languageCode;
   StreamSubscription<bool>? _authSubscription;
   Timer? _refreshTimer;
+  Timer? _authRecoveryTimer;
   String? _lastProfileFingerprint;
   String? _lastTradeInventoryFingerprint;
   String? _lastShowcaseFingerprint;
@@ -116,14 +117,24 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    _authSubscription = _repository.authStateChanges.listen((signedIn) {
-      if (signedIn) {
-        unawaited(refresh());
-      } else {
-        _clearAccountData();
+    _authSubscription = _repository.authStateChanges.listen(
+      (signedIn) {
+        if (signedIn) {
+          unawaited(refresh());
+        } else {
+          _clearAccountData();
+          _notify();
+        }
+      },
+      onError: (Object error) {
+        errorCode = error is SocialException ? error.code : error.toString();
         _notify();
-      }
-    });
+        _authRecoveryTimer?.cancel();
+        _authRecoveryTimer = Timer(const Duration(seconds: 2), () {
+          if (isSignedIn && !busy) unawaited(refresh());
+        });
+      },
+    );
     if (isSignedIn) await refresh();
     _ensureRefreshTimer();
   }
@@ -408,6 +419,28 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   Future<void> _refreshData() async {
+    Object? lastError;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        await _refreshDataOnce();
+        return;
+      } on SocialException catch (error) {
+        lastError = error;
+        if (!_retryableRefreshCode(error.code) || attempt == 2) rethrow;
+      } on Object catch (error) {
+        lastError = error;
+        if (attempt == 2) rethrow;
+      }
+      await Future<void>.delayed(
+        attempt == 0
+            ? const Duration(milliseconds: 250)
+            : const Duration(milliseconds: 750),
+      );
+    }
+    throw lastError!;
+  }
+
+  Future<void> _refreshDataOnce() async {
     await _repository.ensureAccount();
     final snapshot = _inventorySnapshot();
     final localProfile = _profileSnapshot();
@@ -484,6 +517,13 @@ class OnlineAccountProvider extends ChangeNotifier {
     await _synchronizeLocalTradeReservations();
     await _deliverSocialNotifications(onlineSnapshot.notifications);
   }
+
+  bool _retryableRefreshCode(String code) => !const {
+        'invalid_profile',
+        'invalid_inventory',
+        'email_not_verified',
+        'online_login_required',
+      }.contains(code);
 
   Future<void> _deliverSocialNotifications(
       List<SocialNotification> notifications) async {
@@ -631,6 +671,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     _disposed = true;
     _authSubscription?.cancel();
     _refreshTimer?.cancel();
+    _authRecoveryTimer?.cancel();
     _repository.dispose();
     super.dispose();
   }

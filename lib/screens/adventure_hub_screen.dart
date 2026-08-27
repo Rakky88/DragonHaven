@@ -1124,7 +1124,7 @@ Future<Pet?> _pickGroupDragon(
       return score != 0 ? score : a.acquiredAt.compareTo(b.acquiredAt);
     });
   if (available.isEmpty) {
-    await _showStartResult(context, AdventureStartResult.dragonBusy);
+    await _showStartResult(context, AdventureStartResult.eggCannotAdventure);
     return null;
   }
   if (!context.mounted) return null;

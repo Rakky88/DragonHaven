@@ -688,8 +688,11 @@ extension DragonHavenSystems on HouseholdProvider {
   int tradeableChestCount(ChestTier tier) =>
       max(0, chestCount(tier) - (reservedOnlineTradeChests[tier.name] ?? 0));
 
-  int tradeableRelicCount(MysticRelic relic) =>
-      max(0, relicCount(relic) - (reservedOnlineTradeRelics[relic.name] ?? 0));
+  int tradeableRelicCount(MysticRelic relic) => max(
+        0,
+        gameplayRelicCount(relic) -
+            (reservedOnlineTradeRelics[relic.name] ?? 0),
+      );
 
   Future<bool> applyOnlineTradeSettlement({
     required String tradeId,
@@ -723,7 +726,7 @@ extension DragonHavenSystems on HouseholdProvider {
                 !sentChest.isTradeable ||
                 chestCount(sentChest) <= 0)) ||
         (sentKind == 'relic' &&
-            (sentRelic == null || relicCount(sentRelic) <= 0)) ||
+            (sentRelic == null || gameplayRelicCount(sentRelic) <= 0)) ||
         !const {'egg', 'chest', 'relic'}.contains(sentKind)) {
       return false;
     }
@@ -1152,23 +1155,17 @@ extension DragonHavenSystems on HouseholdProvider {
     return _eggHintFor(
       strings,
       lineage: egg.lineage,
-      lawAxis: egg.lawAxis,
-      moralAxis: egg.moralAxis,
     );
   }
 
   String eggHintForEgg(DragonEgg egg, {String? locale}) => _eggHintFor(
         AppStrings(locale ?? languageCode),
         lineage: egg.lineage,
-        lawAxis: egg.lawAxis,
-        moralAxis: egg.moralAxis,
       );
 
   String _eggHintFor(
     AppStrings strings, {
     required DragonLineage lineage,
-    required LawAxis lawAxis,
-    required MoralAxis moralAxis,
   }) {
     final affinity = switch (lineage.affinityCategory) {
       'ember' || 'solar' => strings.pick(
@@ -1187,27 +1184,7 @@ extension DragonHavenSystems on HouseholdProvider {
       _ => strings.pick('A strange musical tap answers from within.',
           'Er klinkt een vreemd muzikaal tikje van binnen.'),
     };
-    final rhythm = switch (lawAxis) {
-      LawAxis.lawful => strings.pick(
-          'The movements inside follow a precise rhythm.',
-          'De bewegingen binnenin volgen een precies ritme.'),
-      LawAxis.neutral => strings.pick(
-          'It goes quiet whenever you try to find a pattern.',
-          'Het wordt stil zodra je probeert een patroon te vinden.'),
-      LawAxis.chaotic => strings.pick('The egg rolls a little. Uphill.',
-          'Het ei rolt een stukje. Tegen de helling op.'),
-    };
-    final aura = switch (moralAxis) {
-      MoralAxis.good => strings.pick('A gentle glow lingers beneath your hand.',
-          'Een zachte gloed blijft even onder je hand hangen.'),
-      MoralAxis.neutral => strings.pick(
-          'Something inside seems to listen back.',
-          'Iets binnenin luistert aandachtig terug.'),
-      MoralAxis.evil => strings.pick(
-          'You are fairly sure the egg just tapped back.',
-          'Je weet vrij zeker dat het ei net terug tikte.'),
-    };
-    return '$affinity $rhythm $aura';
+    return affinity;
   }
 
   String dragonSizeLabel(Pet dragon) {

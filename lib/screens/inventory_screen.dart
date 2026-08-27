@@ -450,7 +450,7 @@ class _RelicInventoryTab extends StatelessWidget {
           _RelicCard(
             relic: relic,
             count: game.relicCount(relic),
-            canUse: game.tradeableRelicCount(relic) > 0,
+            canUse: game.usableRelicCount(relic) > 0,
           ),
       ],
     );

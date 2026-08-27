@@ -89,7 +89,12 @@ class _RooftopNestScreenState extends State<RooftopNestScreen> {
     BuildContext context,
     HouseholdProvider game,
   ) async {
-    if (game.nestEgg == null) await _chooseEgg(context, game);
+    final egg = game.nestEgg;
+    if (egg == null) {
+      await _chooseEgg(context, game);
+    } else if (egg.firstEgg) {
+      game.accelerateStarterEgg();
+    }
   }
 
   Future<void> _chooseEgg(
@@ -192,7 +197,7 @@ class _NestScene extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-        button: egg == null,
+        button: egg == null || egg?.firstEgg == true,
         child: InkWell(
           key: const Key('rooftop-nest-scene'),
           onTap: onTap,

@@ -189,6 +189,25 @@ void main() {
     online.dispose();
   });
 
+  test('initial online refresh recovers from transient server failures',
+      () async {
+    final game = HouseholdProvider(random: Random(4));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..transientSnapshotFailures = 2;
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+
+    await online.initialize();
+
+    expect(repository.snapshotLoadCount, 4,
+        reason: 'three attempts plus the post-sync authoritative reload');
+    expect(online.profile, isNotNull);
+    expect(online.errorCode, isNull);
+    online.dispose();
+  });
+
   test('new online accounts require email confirmation before sign-in',
       () async {
     final game = HouseholdProvider(random: Random(11));
@@ -283,6 +302,24 @@ void main() {
     expect(online.errorCode, 'trade_item_invalid');
     expect(repository.createTradeCount, 0);
     online.dispose();
+  });
+
+  test('shop-bought Relics never enter the authoritative trade inventory',
+      () async {
+    final game = HouseholdProvider(random: Random(181));
+    game.pet.gems = 500;
+    await game.purchaseRelic(MysticRelic.soulMirror);
+    final relics = OnlineInventorySnapshot.fromGame(game)
+        .toTradeJson()['relics'] as Map<String, dynamic>;
+
+    expect(game.relicCount(MysticRelic.soulMirror), 1);
+    expect(game.untradeableRelicCount(MysticRelic.soulMirror), 1);
+    expect(relics[MysticRelic.soulMirror.name], 0);
+
+    game.relicInventory[MysticRelic.soulMirror] = 2;
+    final withGameplayDrop = OnlineInventorySnapshot.fromGame(game)
+        .toTradeJson()['relics'] as Map<String, dynamic>;
+    expect(withGameplayDrop[MysticRelic.soulMirror.name], 1);
   });
 
   test('group reward is applied locally once before server acknowledgement',
@@ -546,6 +583,53 @@ void main() {
     await tester.pump();
     expect(offer, findsNothing);
 
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+  });
+
+  testWidgets('Group Create uses the normal no-dragon message', (tester) async {
+    final game = HouseholdProvider(random: Random(26));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..groupStatus = const GroupAdventureStatus(
+        slot: 13,
+        adventureId: 'group_120',
+        alreadyCompleted: false,
+      );
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const MaterialApp(
+        home: Scaffold(body: AdventureHubScreen()),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final create = find.byKey(const Key('create-group-lobby'));
+    await tester.scrollUntilVisible(
+      create,
+      350,
+      scrollable: find.descendant(
+        of: find.byKey(
+          const PageStorageKey('available-adventures-scroll'),
+        ),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.tap(create);
+    await tester.pump();
+
+    expect(
+      find.text('No dragon is available for this adventure.'),
+      findsOneWidget,
+    );
+    expect(find.text('That dragon is already away.'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
     online.dispose();
   });
@@ -843,6 +927,8 @@ class _FakeSocialRepository implements SocialRepository {
   int acknowledgeCount = 0;
   int createTradeCount = 0;
   int ensureAccountCount = 0;
+  int snapshotLoadCount = 0;
+  int transientSnapshotFailures = 0;
   String? resentConfirmationEmail;
   GroupAdventureReward? groupReward;
   String? createGroupError;
@@ -941,18 +1027,25 @@ class _FakeSocialRepository implements SocialRepository {
   @override
   Future<KeeperProfile> loadMyProfile() async => _profile;
   @override
-  Future<OnlineSocialSnapshot> loadOnlineSnapshot() async =>
-      OnlineSocialSnapshot(
-        profile: _profile,
-        friends: List.of(friendRows),
-        requests: List.of(requestRows),
-        blockedKeepers: List.of(blockedRows),
-        groupAdventureStatus: groupStatus,
-        groupLobbies: List.of(groupRows),
-        trades: List.of(tradeRows),
-        tradeInventory: List.of(tradeInventoryRows),
-        notifications: List.of(notificationRows),
-      );
+  Future<OnlineSocialSnapshot> loadOnlineSnapshot() async {
+    snapshotLoadCount++;
+    if (transientSnapshotFailures > 0) {
+      transientSnapshotFailures--;
+      throw const SocialException('temporary_server_failure');
+    }
+    return OnlineSocialSnapshot(
+      profile: _profile,
+      friends: List.of(friendRows),
+      requests: List.of(requestRows),
+      blockedKeepers: List.of(blockedRows),
+      groupAdventureStatus: groupStatus,
+      groupLobbies: List.of(groupRows),
+      trades: List.of(tradeRows),
+      tradeInventory: List.of(tradeInventoryRows),
+      notifications: List.of(notificationRows),
+    );
+  }
+
   @override
   Future<CloudGameSave?> loadCloudGameSave() async => cloudSave;
   @override

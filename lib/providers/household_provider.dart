@@ -49,6 +49,11 @@ enum MysticRelicUseResult {
   alreadyKnown,
 }
 
+enum MysticRelicPurchaseResult {
+  purchased,
+  insufficientGems,
+}
+
 enum PortraitChestPurchaseResult {
   purchased,
   insufficientGems,
@@ -88,6 +93,7 @@ class HouseholdProvider extends ChangeNotifier {
   final bool _persistenceEnabled;
   final _uuid = const Uuid();
   Future<void> _saveQueue = Future<void>.value();
+  Timer? _starterEggTapPersistenceTimer;
 
   String languageCode = 'en';
   String accountName = '';
@@ -109,6 +115,9 @@ class HouseholdProvider extends ChangeNotifier {
     for (final tier in ChestTier.values) tier: 0,
   };
   Map<MysticRelic, int> relicInventory = {
+    for (final relic in MysticRelic.values) relic: 0,
+  };
+  Map<MysticRelic, int> untradeableRelicInventory = {
     for (final relic in MysticRelic.values) relic: 0,
   };
   Set<String> ownedPortraitIds = {};
@@ -168,7 +177,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 39;
+  static const _schemaVersion = 40;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(
@@ -763,6 +772,17 @@ class HouseholdProvider extends ChangeNotifier {
       for (final relic in MysticRelic.values)
         relic: nonNegativeIntFromJson(rawRelics[relic.name], fallback: 0),
     };
+    final rawUntradeableRelics = mapFromJson(data['untradeableRelicInventory']);
+    untradeableRelicInventory = {
+      for (final relic in MysticRelic.values)
+        relic: min(
+          relicCount(relic),
+          nonNegativeIntFromJson(
+            rawUntradeableRelics[relic.name],
+            fallback: 0,
+          ),
+        ),
+    };
     ownedPortraitIds = stringSetFromJson(data['ownedPortraitIds'])
         .where((id) => profilePortraitById(id) != null)
         .toSet();
@@ -993,6 +1013,14 @@ class HouseholdProvider extends ChangeNotifier {
   int chestCount(ChestTier tier) => chestInventory[tier] ?? 0;
   int get totalChestCount => chestInventory.values.fold(0, (a, b) => a + b);
   int relicCount(MysticRelic relic) => relicInventory[relic] ?? 0;
+  int untradeableRelicCount(MysticRelic relic) =>
+      untradeableRelicInventory[relic] ?? 0;
+  int gameplayRelicCount(MysticRelic relic) =>
+      max(0, relicCount(relic) - untradeableRelicCount(relic));
+  int usableRelicCount(MysticRelic relic) => max(
+        0,
+        relicCount(relic) - (reservedOnlineTradeRelics[relic.name] ?? 0),
+      );
   int get totalRelicCount => relicInventory.values.fold(0, (a, b) => a + b);
   ProfilePortrait? get selectedPortrait =>
       profilePortraitById(selectedPortraitId);
@@ -1123,7 +1151,7 @@ class HouseholdProvider extends ChangeNotifier {
     MysticRelic relic,
     String dragonId,
   ) async {
-    if (tradeableRelicCount(relic) <= 0) {
+    if (usableRelicCount(relic) <= 0) {
       return MysticRelicUseResult.notOwned;
     }
     final dragon = ownedDragons.cast<Pet?>().firstWhere(
@@ -1135,6 +1163,9 @@ class HouseholdProvider extends ChangeNotifier {
       return MysticRelicUseResult.alreadyKnown;
     }
     relicInventory[relic] = relicCount(relic) - 1;
+    if (untradeableRelicCount(relic) > 0) {
+      untradeableRelicInventory[relic] = untradeableRelicCount(relic) - 1;
+    }
     switch (relic) {
       case MysticRelic.moralPrism:
         dragon.moralAxisKnown = true;
@@ -1155,6 +1186,30 @@ class HouseholdProvider extends ChangeNotifier {
     );
     await _notifyAndSave();
     return MysticRelicUseResult.revealed;
+  }
+
+  Future<MysticRelicPurchaseResult> purchaseRelic(
+    MysticRelic relic,
+  ) async {
+    if (pet.gems < relicShopGemPrice) {
+      return MysticRelicPurchaseResult.insufficientGems;
+    }
+    pet.gems -= relicShopGemPrice;
+    relicInventory.update(relic, (count) => count + 1, ifAbsent: () => 1);
+    untradeableRelicInventory.update(
+      relic,
+      (count) => count + 1,
+      ifAbsent: () => 1,
+    );
+    _addActivity(
+      message: 'A ${relic.nameEn} was purchased for $relicShopGemPrice gems.',
+      type: ActivityType.purchase,
+      code: ActivityCode.bonusFound,
+      subject: relic.name,
+      gems: -relicShopGemPrice,
+    );
+    await _notifyAndSave();
+    return MysticRelicPurchaseResult.purchased;
   }
 
   Pet? get nestEgg => pet.isEgg ? pet : incubatingEgg;
@@ -1402,12 +1457,46 @@ class HouseholdProvider extends ChangeNotifier {
     return MysticRelic.values[_random.nextInt(MysticRelic.values.length)];
   }
 
+  bool accelerateStarterEgg() {
+    final egg = nestEgg;
+    if (egg == null || !egg.isEgg || !egg.firstEgg) return false;
+    final now = _clock();
+    final hatchAt = egg.stageStartedAt.add(egg.incubationDuration);
+    final earliestHatchAt = now.add(const Duration(seconds: 1));
+    if (!hatchAt.isAfter(earliestHatchAt)) return false;
+    final acceleratedHatchAt = hatchAt.subtract(const Duration(seconds: 1));
+    final nextHatchAt = acceleratedHatchAt.isBefore(earliestHatchAt)
+        ? earliestHatchAt
+        : acceleratedHatchAt;
+    egg.stageStartedAt = nextHatchAt.subtract(egg.incubationDuration);
+    notifyListeners();
+
+    // A player may tap hundreds of times in quick succession. Persist and
+    // replace the ready notification once after that burst, rather than doing
+    // a full encrypted save and platform notification call for every tap.
+    _starterEggTapPersistenceTimer?.cancel();
+    _starterEggTapPersistenceTimer = Timer(
+      const Duration(milliseconds: 300),
+      () {
+        unawaited(_save());
+        final currentEgg = nestEgg;
+        if (onboardingComplete && currentEgg?.isEgg == true) {
+          unawaited(_scheduleEggReadyNotification(currentEgg!));
+        }
+      },
+    );
+    return true;
+  }
+
   Future<bool> hatchActiveDragon() async {
     final now = _clock();
     final egg = nestEgg;
     if (egg == null || !egg.canHatch(now)) return false;
     final dragonId = egg.id;
     final acquiredAt = egg.acquiredAt;
+    _starterEggTapPersistenceTimer?.cancel();
+    _starterEggTapPersistenceTimer = null;
+    unawaited(HavenNotifications.cancel('egg-${egg.id}'));
     egg.hatch(now);
     if (!identical(egg, pet)) {
       final previousActiveDragon = pet;
@@ -1983,6 +2072,10 @@ class HouseholdProvider extends ChangeNotifier {
           for (final entry in relicInventory.entries)
             entry.key.name: entry.value
         },
+        'untradeableRelicInventory': {
+          for (final entry in untradeableRelicInventory.entries)
+            entry.key.name: entry.value
+        },
         'ownedPortraitIds': ownedPortraitIds.toList(),
         'selectedPortraitId': selectedPortraitId,
         'ownedTitleIds': ownedTitleIds.toList(),
@@ -2082,6 +2175,12 @@ class HouseholdProvider extends ChangeNotifier {
         onError: (_) => StorageService.save(state));
     _saveQueue = operation;
     return operation;
+  }
+
+  @override
+  void dispose() {
+    _starterEggTapPersistenceTimer?.cancel();
+    super.dispose();
   }
 
   static String _dayKey(DateTime date) =>

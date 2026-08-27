@@ -762,8 +762,8 @@ class OnlineInventorySnapshot {
           entry.key.name: entry.value,
       },
       relics: {
-        for (final entry in game.relicInventory.entries)
-          entry.key.name: entry.value,
+        for (final relic in MysticRelic.values)
+          relic.name: game.gameplayRelicCount(relic),
       },
       furnitureCatalogIds: game.ownedItemIds.toList(growable: false),
       discoveredLineageIds: {

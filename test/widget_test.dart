@@ -159,6 +159,11 @@ void main() {
       findsNothing,
     );
     expect(find.byKey(const Key('egg-hatch-countdown')), findsOneWidget);
+    expect(find.byKey(const Key('starter-egg-clue')), findsOneWidget);
+    expect(
+      find.byKey(const Key('starter-egg-tap-instruction')),
+      findsOneWidget,
+    );
     expect(
       find.byKey(const Key('egg-hatch-countdown-value')),
       findsOneWidget,
@@ -166,9 +171,15 @@ void main() {
     expect(find.byType(NavigationBar), findsNothing);
     expect(tester.takeException(), isNull);
 
+    final startedAt = game.pet.stageStartedAt;
     await tester.tap(find.byKey(const Key('mysterious-egg-hint')));
     await tester.pump();
+    expect(
+      game.pet.stageStartedAt,
+      startedAt.subtract(const Duration(seconds: 1)),
+    );
     expect(find.text(game.eggHint(isDutch: false)), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 350));
   });
 
   testWidgets('the animated egg timer stays centered on a compact screen',
@@ -992,7 +1003,7 @@ void main() {
           home: Scaffold(
             body: ShopHubScreen(
               initialCurrencyTab: 1,
-              initialCategoryTab: 1,
+              initialCategoryTab: 2,
             ),
           ),
         ),
@@ -1037,7 +1048,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 700));
     }
 
-    await pumpShop(1, 1);
+    await pumpShop(1, 2);
     expect(find.byKey(const Key('portrait-chest-progress')), findsOneWidget);
     expect(find.text('0 / 100'), findsOneWidget);
     expect(find.text('Current portrait odds'), findsOneWidget);
@@ -1054,7 +1065,7 @@ void main() {
         findsOneWidget,
       );
     }
-    await pumpShop(1, 2);
+    await pumpShop(1, 3);
     for (var pack = 1; pack <= 6; pack++) {
       expect(
         find.byKey(Key(
@@ -1063,6 +1074,51 @@ void main() {
         findsOneWidget,
       );
     }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('gems shop sells unlimited untradeable Relics for 500 gems',
+      (tester) async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    )..pet = Pet(
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        gems: 1000,
+      );
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: game,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: ShopHubScreen(
+              initialCurrencyTab: 1,
+              initialCategoryTab: 1,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 700));
+
+    expect(find.byKey(const Key('shop-gems-tab-relics')), findsOneWidget);
+    expect(find.textContaining('untradeable'), findsWidgets);
+    expect(find.text('Moral Prism'), findsOneWidget);
+    final buy = find.byKey(const Key('buy-relic-moralPrism'));
+    expect(buy, findsOneWidget);
+
+    await tester.tap(buy);
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(game.pet.gems, 500);
+    expect(game.untradeableRelicCount(MysticRelic.moralPrism), 1);
+    await tester.tap(buy);
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(game.pet.gems, 0);
+    expect(game.relicCount(MysticRelic.moralPrism), 2);
+    expect(game.untradeableRelicCount(MysticRelic.moralPrism), 2);
+    expect(game.tradeableRelicCount(MysticRelic.moralPrism), 0);
+    expect(tester.widget<FilledButton>(buy).onPressed, isNull);
     expect(tester.takeException(), isNull);
   });
 
