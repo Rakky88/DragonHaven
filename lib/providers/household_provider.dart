@@ -999,9 +999,24 @@ class HouseholdProvider extends ChangeNotifier {
   int get portraitCount => ownedPortraitIds.length;
   bool get hasEveryPortrait =>
       ownedPortraitIds.length >= profilePortraitCatalog.length;
+  bool get portraitChestCapacityReached =>
+      portraitCount + chestCount(ChestTier.portrait) >=
+      profilePortraitCatalog.length;
+  int get remainingPortraitCount =>
+      max(0, profilePortraitCatalog.length - portraitCount);
+  Map<PortraitRarity, int> get remainingPortraitsByRarity => {
+        for (final rarity in PortraitRarity.values)
+          rarity: profilePortraitCatalog
+              .where((portrait) =>
+                  portrait.rarity == rarity &&
+                  !ownedPortraitIds.contains(portrait.id))
+              .length,
+      };
   AccountTitle? get selectedAccountTitle => accountTitleById(selectedTitleId);
   int get titleCount => ownedTitleIds.length;
   bool get hasEveryTitle => ownedTitleIds.length >= accountTitleCatalog.length;
+  bool get titleChestCapacityReached =>
+      titleCount + chestCount(ChestTier.title) >= accountTitleCatalog.length;
 
   Future<bool> selectProfilePortrait(String portraitId) async {
     if (!ownedPortraitIds.contains(portraitId) ||
@@ -1051,7 +1066,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<PortraitChestPurchaseResult> purchasePortraitChest() async {
-    if (hasEveryPortrait) {
+    if (portraitChestCapacityReached) {
       return PortraitChestPurchaseResult.collectionComplete;
     }
     if (pet.gems < portraitChestGemPrice) {
@@ -1075,7 +1090,9 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<TitleChestPurchaseResult> purchaseTitleChest() async {
-    if (hasEveryTitle) return TitleChestPurchaseResult.collectionComplete;
+    if (titleChestCapacityReached) {
+      return TitleChestPurchaseResult.collectionComplete;
+    }
     if (pet.coins < titleChestCoinPrice) {
       return TitleChestPurchaseResult.insufficientCoins;
     }

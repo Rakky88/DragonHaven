@@ -14,13 +14,11 @@ class DraconomiconScreen extends StatelessWidget {
     this.discoveredForms,
     this.prismaticForms,
     this.keeperName,
-    this.dragonCount,
   });
 
   final Set<String>? discoveredForms;
   final Set<String>? prismaticForms;
   final String? keeperName;
-  final int? dragonCount;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +30,7 @@ class DraconomiconScreen extends StatelessWidget {
       ...normalCollection,
       ...spectralCollection,
     }.map((key) => key.split(':').first).toSet().length;
-    final ownedDragonCount = dragonCount ?? game.ownedDragons.length;
+    final discoveredDragonFormCount = normalCollection.length;
     final hasSpectralCollection = spectralCollection.isNotEmpty;
     return DefaultTabController(
       length: hasSpectralCollection ? 2 : 1,
@@ -134,8 +132,8 @@ class DraconomiconScreen extends StatelessWidget {
                             children: [
                               Text(
                                   strings.pick(
-                                    'Dragons $ownedDragonCount',
-                                    'Draken $ownedDragonCount',
+                                    'Dragons $discoveredDragonFormCount',
+                                    'Draken $discoveredDragonFormCount',
                                   ),
                                   maxLines: 1),
                               const SizedBox(height: 1),

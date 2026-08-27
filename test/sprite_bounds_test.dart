@@ -252,6 +252,35 @@ void main() {
     }
   });
 
+  test('all twelve currency pack sprites are distinct transparent assets',
+      () async {
+    final paths = <String>[
+      for (final currency in const ['coins', 'gems'])
+        for (var pack = 1; pack <= 6; pack++)
+          'assets/images/shop/currency_pack_${currency}_${pack.toString().padLeft(2, '0')}.webp',
+    ];
+    expect(paths.toSet(), hasLength(12));
+    final byteFingerprints = <String>{};
+    for (final path in paths) {
+      final bytes = await File(path).readAsBytes();
+      byteFingerprints.add(base64Encode(bytes));
+      final image = await _decode(path);
+      expect(image.width, 512, reason: path);
+      expect(image.height, 512, reason: path);
+      _expectTransparentCorners(image.rgba, image.width, image.height, path);
+      _expectContained(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        path,
+      );
+    }
+    expect(byteFingerprints, hasLength(12));
+  });
+
   test('egg and every Hatchling sprite fit fully inside their image box',
       () async {
     expect(

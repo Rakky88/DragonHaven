@@ -5972,4 +5972,58 @@ const uiPhraseTranslations = <String, List<String>>{
     '请使用大写字母、小写字母、数字和符号。',
     '大文字、小文字、数字、記号をそれぞれ使用してください。'
   ],
+  'Resend confirmation email': [
+    'Bestätigungs-E-Mail erneut senden',
+    'Reenviar correo de confirmación',
+    'Renvoyer l’e-mail de confirmation',
+    'Invia di nuovo l’e-mail di conferma',
+    'Reenviar e-mail de confirmação',
+    '重新发送确认邮件',
+    '確認メールを再送'
+  ],
+  'Confirmation email sent. Check your inbox and spam folder.': [
+    'Bestätigungs-E-Mail gesendet. Prüfe deinen Posteingang und Spam-Ordner.',
+    'Correo de confirmación enviado. Revisa tu bandeja de entrada y spam.',
+    'E-mail de confirmation envoyé. Vérifiez votre boîte de réception et vos spams.',
+    'E-mail di conferma inviata. Controlla la posta in arrivo e lo spam.',
+    'E-mail de confirmação enviado. Verifique a caixa de entrada e o spam.',
+    '确认邮件已发送。请检查收件箱和垃圾邮件文件夹。',
+    '確認メールを送信しました。受信トレイと迷惑メールをご確認ください。'
+  ],
+  'All remaining rewards covered': [
+    'Alle übrigen Belohnungen abgedeckt',
+    'Todas las recompensas restantes cubiertas',
+    'Toutes les récompenses restantes sont couvertes',
+    'Tutte le ricompense rimanenti sono coperte',
+    'Todas as recompensas restantes estão cobertas',
+    '已涵盖所有剩余奖励',
+    '残りの報酬はすべて確保済み'
+  ],
+  'Collection progress': [
+    'Sammlungsfortschritt',
+    'Progreso de la colección',
+    'Progression de la collection',
+    'Progresso della collezione',
+    'Progresso da coleção',
+    '收藏进度',
+    'コレクション進捗'
+  ],
+  'unopened chests': [
+    'ungeöffnete Truhen',
+    'cofres sin abrir',
+    'coffres non ouverts',
+    'forzieri non aperti',
+    'baús fechados',
+    '个未开启宝箱',
+    '個の未開封宝箱'
+  ],
+  'Current portrait odds': [
+    'Aktuelle Porträtchancen',
+    'Probabilidades actuales de retrato',
+    'Chances actuelles de portrait',
+    'Probabilità attuali dei ritratti',
+    'Probabilidades atuais de retrato',
+    '当前头像概率',
+    '現在の肖像確率'
+  ],
 };

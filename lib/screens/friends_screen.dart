@@ -646,7 +646,6 @@ Future<void> _showFriendProfile(
                       appBar: AppBar(),
                       body: DraconomiconScreen(
                         keeperName: friend.displayName,
-                        dragonCount: friend.dragonCount,
                         discoveredForms: friend.discoveredForms.toSet(),
                         prismaticForms: friend.prismaticForms.toSet(),
                       ),

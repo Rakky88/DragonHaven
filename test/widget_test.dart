@@ -1000,17 +1000,69 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pump(const Duration(milliseconds: 350));
-    expect(find.textContaining('of 100 collected'), findsNothing);
-    await tester.tap(find.byKey(const Key('buy-portrait-chest')));
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Collection complete'), findsWidgets);
-    expect(
-      find.text(
-        'You already own all 100 portraits, so another Portrait Chest cannot be purchased.',
-      ),
-      findsOneWidget,
+    expect(find.byKey(const Key('portrait-chest-collection-status')),
+        findsOneWidget);
+    expect(find.text('100 / 100'), findsOneWidget);
+    expect(find.text('1 unopened chests'), findsOneWidget);
+    final buyPortrait = tester.widget<FilledButton>(
+      find.byKey(const Key('buy-portrait-chest')),
     );
+    expect(buyPortrait.onPressed, isNull);
     expect(game.chestCount(ChestTier.portrait), 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('portrait chest shop shows live rarity odds and all pack art',
+      (tester) async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, gems: 999);
+
+    Future<void> pumpShop(int currencyTab, int categoryTab) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: game,
+          child: MaterialApp(
+            key: ValueKey('shop-$currencyTab-$categoryTab'),
+            home: Scaffold(
+              body: ShopHubScreen(
+                initialCurrencyTab: currencyTab,
+                initialCategoryTab: categoryTab,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 700));
+    }
+
+    await pumpShop(1, 1);
+    expect(find.byKey(const Key('portrait-chest-progress')), findsOneWidget);
+    expect(find.text('0 / 100'), findsOneWidget);
+    expect(find.text('Current portrait odds'), findsOneWidget);
+    for (final rarity in PortraitRarity.values) {
+      expect(find.byKey(Key('portrait-odds-${rarity.name}')), findsOneWidget);
+    }
+
+    await pumpShop(0, 2);
+    for (var pack = 1; pack <= 6; pack++) {
+      expect(
+        find.byKey(Key(
+          'currency-pack-art-coins-${pack.toString().padLeft(2, '0')}',
+        )),
+        findsOneWidget,
+      );
+    }
+    await pumpShop(1, 2);
+    for (var pack = 1; pack <= 6; pack++) {
+      expect(
+        find.byKey(Key(
+          'currency-pack-art-gems-${pack.toString().padLeft(2, '0')}',
+        )),
+        findsOneWidget,
+      );
+    }
     expect(tester.takeException(), isNull);
   });
 
@@ -1088,15 +1140,13 @@ void main() {
       ),
     );
     await tester.pump(const Duration(milliseconds: 700));
-    expect(find.textContaining('of 500 collected'), findsNothing);
-    await tester.tap(find.byKey(const Key('buy-title-chest')));
-    await tester.pump(const Duration(milliseconds: 300));
     expect(
-      find.text(
-        'You already own all 500 account titles, so another Title Chest cannot be purchased.',
-      ),
-      findsOneWidget,
+        find.byKey(const Key('title-chest-collection-status')), findsOneWidget);
+    expect(find.text('500 / 500'), findsOneWidget);
+    final buyTitle = tester.widget<FilledButton>(
+      find.byKey(const Key('buy-title-chest')),
     );
+    expect(buyTitle.onPressed, isNull);
     expect(game.pet.coins, 999);
     expect(game.chestCount(ChestTier.title), 1);
     expect(tester.takeException(), isNull);
@@ -1322,6 +1372,37 @@ void main() {
     );
   });
 
+  testWidgets('Draconomicon counts every discovered evolved form',
+      (tester) async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    );
+    final lineages = dragonLineages.take(4).toList();
+    final forms = <String>{
+      '${lineages[0].id}:hatchling',
+      '${lineages[0].id}:wyrmling',
+      '${lineages[0].id}:ascended:might',
+      '${lineages[1].id}:hatchling',
+      '${lineages[1].id}:wyrmling',
+      '${lineages[2].id}:hatchling',
+      '${lineages[2].id}:wyrmling',
+      '${lineages[3].id}:hatchling',
+    };
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: MaterialApp(
+        home: Scaffold(
+          body: DraconomiconScreen(discoveredForms: forms),
+        ),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Dragons 8'), findsOneWidget);
+    expect(find.text('Dragon families 4/42'), findsOneWidget);
+  });
+
   testWidgets('every dragon artwork stage renders as a widget', (tester) async {
     final game = HouseholdProvider.createShowcase();
     for (final stage in const ['spark', 'nestDragon', 'homeGuardian']) {
@@ -1489,7 +1570,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.04.02'), findsOneWidget);
+    expect(find.text('v0.04.03'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

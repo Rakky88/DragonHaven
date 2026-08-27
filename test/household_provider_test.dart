@@ -700,6 +700,27 @@ void main() {
     expect(game.pet.gems, 999);
   });
 
+  test('unopened Portrait Chests reserve the remaining collection capacity',
+      () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    )
+      ..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, gems: 999)
+      ..ownedPortraitIds = profilePortraitCatalog
+          .take(profilePortraitCatalog.length - 2)
+          .map((portrait) => portrait.id)
+          .toSet()
+      ..chestInventory[ChestTier.portrait] = 2;
+
+    expect(game.hasEveryPortrait, isFalse);
+    expect(game.portraitChestCapacityReached, isTrue);
+    expect(await game.purchasePortraitChest(),
+        PortraitChestPurchaseResult.collectionComplete);
+    expect(game.pet.gems, 999);
+    expect(game.remainingPortraitsByRarity.values.fold(0, (a, b) => a + b), 2);
+  });
+
   test(
       'Title Chests cost coins and reveal one unowned title without selecting it',
       () async {
@@ -744,6 +765,26 @@ void main() {
     expect(game.chestCount(ChestTier.title), 1);
     expect(game.totalTitleChestsOpened, 0);
     expect(game.unlockedAchievementIds, isNot(contains('highly_titled')));
+    expect(await game.purchaseTitleChest(),
+        TitleChestPurchaseResult.collectionComplete);
+    expect(game.pet.coins, 999);
+  });
+
+  test('unopened Title Chests reserve the remaining collection capacity',
+      () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    )
+      ..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, coins: 999)
+      ..ownedTitleIds = accountTitleCatalog
+          .take(accountTitleCatalog.length - 1)
+          .map((title) => title.id)
+          .toSet()
+      ..chestInventory[ChestTier.title] = 1;
+
+    expect(game.hasEveryTitle, isFalse);
+    expect(game.titleChestCapacityReached, isTrue);
     expect(await game.purchaseTitleChest(),
         TitleChestPurchaseResult.collectionComplete);
     expect(game.pet.coins, 999);

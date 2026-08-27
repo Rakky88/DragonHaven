@@ -38,6 +38,8 @@ class ChestReward {
 }
 
 extension ChestTierPresentation on ChestTier {
+  bool get isTradeable => this != ChestTier.portrait && this != ChestTier.title;
+
   String label(bool isDutch) => switch (this) {
         ChestTier.wooden => isDutch ? 'Houten Kist' : 'Wooden Chest',
         ChestTier.silver => isDutch ? 'Zilveren Kist' : 'Silver Chest',

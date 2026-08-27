@@ -665,7 +665,9 @@ extension DragonHavenSystems on HouseholdProvider {
   ) async {
     final normalizedChests = Map<String, int>.from(chests)
       ..removeWhere((key, value) =>
-          value <= 0 || !ChestTier.values.any((tier) => tier.name == key));
+          value <= 0 ||
+          !ChestTier.values
+              .any((tier) => tier.name == key && tier.isTradeable));
     final normalizedRelics = Map<String, int>.from(relics)
       ..removeWhere((key, value) =>
           value <= 0 || !MysticRelic.values.any((relic) => relic.name == key));
@@ -717,7 +719,9 @@ extension DragonHavenSystems on HouseholdProvider {
         : null;
     if ((sentKind == 'egg' && sentEggIndex < 0) ||
         (sentKind == 'chest' &&
-            (sentChest == null || chestCount(sentChest) <= 0)) ||
+            (sentChest == null ||
+                !sentChest.isTradeable ||
+                chestCount(sentChest) <= 0)) ||
         (sentKind == 'relic' &&
             (sentRelic == null || relicCount(sentRelic) <= 0)) ||
         !const {'egg', 'chest', 'relic'}.contains(sentKind)) {
@@ -738,7 +742,7 @@ extension DragonHavenSystems on HouseholdProvider {
             (tier) => tier?.name == receivedKey,
             orElse: () => null,
           );
-      if (receivedChest == null) return false;
+      if (receivedChest == null || !receivedChest.isTradeable) return false;
     } else if (receivedKind == 'relic') {
       receivedRelic = MysticRelic.values.cast<MysticRelic?>().firstWhere(
             (relic) => relic?.name == receivedKey,

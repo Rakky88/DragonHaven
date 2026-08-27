@@ -71,12 +71,29 @@ class SupabaseSocialRepository implements SocialRepository {
   }
 
   @override
+  Future<void> resendSignupConfirmation(String email) async {
+    try {
+      await _client.auth.resend(
+        email: email.trim().toLowerCase(),
+        type: OtpType.signup,
+      );
+    } on Object catch (error) {
+      throw _socialError(error);
+    }
+  }
+
+  @override
   Future<void> signOut() async {
     try {
       await _client.auth.signOut();
     } on Object catch (error) {
       throw _socialError(error);
     }
+  }
+
+  @override
+  Future<void> ensureAccount() async {
+    await _rpc('ensure_my_online_account');
   }
 
   @override

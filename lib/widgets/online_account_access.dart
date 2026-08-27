@@ -165,6 +165,7 @@ class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _hidePassword = true;
+  String? _emailError;
 
   @override
   void initState() {
@@ -208,13 +209,14 @@ class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
               controller: _email,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
-              decoration: const InputDecoration(labelText: 'E-mail'),
-              validator: (value) => value == null ||
-                      !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-                          .hasMatch(value.trim())
-                  ? strings.pick(
-                      'Enter a valid email.', 'Vul een geldig e-mailadres in.')
-                  : null,
+              onChanged: (_) {
+                if (_emailError != null) setState(() => _emailError = null);
+              },
+              decoration: InputDecoration(
+                labelText: 'E-mail',
+                errorText: _emailError,
+              ),
+              validator: (value) => _validateEmail(strings, value),
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -248,6 +250,15 @@ class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
         ),
       ),
       actions: [
+        if (!widget.createAccount)
+          TextButton(
+            key: const Key('resend-online-confirmation'),
+            onPressed: online.busy ? null : _resendConfirmation,
+            child: Text(strings.pick(
+              'Resend confirmation email',
+              'Bevestigingsmail opnieuw versturen',
+            )),
+          ),
         TextButton(
           onPressed: online.busy ? null : () => Navigator.pop(context),
           child: Text(strings.tr('cancel')),
@@ -297,6 +308,30 @@ class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
       if (success && mounted) Navigator.pop(context);
     }
   }
+
+  Future<void> _resendConfirmation() async {
+    final strings = AppStrings.of(context);
+    final error = _validateEmail(strings, _email.text);
+    if (error != null) {
+      setState(() => _emailError = error);
+      return;
+    }
+    final success = await context
+        .read<OnlineAccountProvider>()
+        .resendSignupConfirmation(_email.text);
+    if (!success || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(strings.pick(
+        'Confirmation email sent. Check your inbox and spam folder.',
+        'Bevestigingsmail verstuurd. Controleer je inbox en spammap.',
+      )),
+    ));
+  }
+
+  String? _validateEmail(AppStrings strings, String? value) => value == null ||
+          !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value.trim())
+      ? strings.pick('Enter a valid email.', 'Vul een geldig e-mailadres in.')
+      : null;
 
   String? _passwordValidator(AppStrings strings, String? value) {
     final password = value ?? '';
@@ -348,6 +383,9 @@ String socialMessage(AppStrings strings, String code) => switch (code) {
       'email_not_verified' => strings.pick(
           'Confirm your email before signing in.',
           'Bevestig je e-mailadres voordat je inlogt.'),
+      'confirmation_resent' => strings.pick(
+          'Confirmation email sent. Check your inbox and spam folder.',
+          'Bevestigingsmail verstuurd. Controleer je inbox en spammap.'),
       'profile_saved' => strings.pick('Profile saved.', 'Profiel opgeslagen.'),
       'request_sent' =>
         strings.pick('Friend request sent.', 'Vriendschapsverzoek verstuurd.'),

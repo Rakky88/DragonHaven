@@ -1,8 +1,8 @@
 # DragonHaven openbaar lanceren
 
-Laatst gecontroleerd: **26 augustus 2026**
+Laatst gecontroleerd: **27 augustus 2026**
 
-Huidige appversie bij deze controle: **v0.04.02**
+Huidige appversie bij deze controle: **v0.04.03**
 Android package name: **`nl.dragonhaven.app`**
 
 Dit is de centrale, levende checklist voor een openbare lancering van
@@ -34,7 +34,7 @@ moeten daarna met het werkelijke gebruik meegroeien.
   gebouwd. Google Play gebruikt de AAB.
 - De releaseprocedure controleert vóór elke release de live Supabase-migraties,
   database-lint, Auth-health en e-mailconfiguratie.
-- Bij v0.04.02 waren alle 16 database-migraties gelijk, waren er geen remote
+- Bij v0.04.03 waren alle 18 database-migraties gelijk, waren er geen remote
   lintfouten en werkten de gecontroleerde Auth/e-mail-endpoints.
 - E-mailaccounts, verificatie, Friends, Trades, globale Group Adventures,
   profielsamenvattingen en cloudback-ups gebruiken Supabase.

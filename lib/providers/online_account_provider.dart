@@ -159,6 +159,14 @@ class OnlineAccountProvider extends ChangeNotifier {
       }) ??
       false;
 
+  Future<bool> resendSignupConfirmation(String email) async =>
+      await _run(() async {
+        await _repository.resendSignupConfirmation(email);
+        noticeCode = 'confirmation_resent';
+        return true;
+      }) ??
+      false;
+
   Future<bool> signOut() async =>
       await _run(() async {
         await _repository.signOut();
@@ -343,6 +351,9 @@ class OnlineAccountProvider extends ChangeNotifier {
 
   Future<bool> createTrade(String friendId, TradeItem item) async =>
       await _run(() async {
+        if (!item.isTradeable) {
+          throw const SocialException('trade_item_invalid');
+        }
         await _refreshData();
         await _repository.createTrade(friendId, item);
         await _refreshData();
@@ -353,6 +364,9 @@ class OnlineAccountProvider extends ChangeNotifier {
 
   Future<bool> respondToTrade(String tradeId, TradeItem item) async =>
       await _run(() async {
+        if (!item.isTradeable) {
+          throw const SocialException('trade_item_invalid');
+        }
         await _refreshData();
         await _repository.respondToTrade(tradeId, item);
         await _refreshData();
@@ -394,6 +408,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   Future<void> _refreshData() async {
+    await _repository.ensureAccount();
     final snapshot = _inventorySnapshot();
     final localProfile = _profileSnapshot();
     final profileFingerprint = jsonEncode({
@@ -459,7 +474,9 @@ class OnlineAccountProvider extends ChangeNotifier {
     groupAdventureStatus = onlineSnapshot.groupAdventureStatus;
     groupLobbies = onlineSnapshot.groupLobbies;
     trades = onlineSnapshot.trades;
-    tradeInventory = onlineSnapshot.tradeInventory;
+    tradeInventory = onlineSnapshot.tradeInventory
+        .where((entry) => entry.item.isTradeable)
+        .toList(growable: false);
     await _synchronizeGroupReservations({
       for (final lobby in myGroupAdventures)
         if (lobby.myDragonId case final dragonId?) dragonId: lobby.id,

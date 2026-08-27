@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
+import '../models/account_title.dart';
 import '../models/chest.dart';
+import '../models/profile_portrait.dart';
 import '../models/shop_item.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
@@ -129,7 +131,16 @@ class _ChestShop extends StatelessWidget {
     final game = context.watch<HouseholdProvider>();
     final portraitChest = currency == ItemCurrency.gems;
     final tier = portraitChest ? ChestTier.portrait : ChestTier.title;
-    final complete = portraitChest ? game.hasEveryPortrait : game.hasEveryTitle;
+    final collectionComplete =
+        portraitChest ? game.hasEveryPortrait : game.hasEveryTitle;
+    final capacityReached = portraitChest
+        ? game.portraitChestCapacityReached
+        : game.titleChestCapacityReached;
+    final owned = portraitChest ? game.portraitCount : game.titleCount;
+    final total = portraitChest
+        ? profilePortraitCatalog.length
+        : accountTitleCatalog.length;
+    final unopened = game.chestCount(tier);
     final price = portraitChest ? portraitChestGemPrice : titleChestCoinPrice;
     final currencyKind = portraitChest ? GameIconKind.gem : GameIconKind.coin;
     return ListView(
@@ -189,22 +200,38 @@ class _ChestShop extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 15),
+              _ChestCollectionStatus(
+                portraitChest: portraitChest,
+                owned: owned,
+                total: total,
+                unopened: unopened,
+                remainingPortraitsByRarity:
+                    portraitChest ? game.remainingPortraitsByRarity : null,
+              ),
+              const SizedBox(height: 15),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
                   key: Key('buy-${tier.name}-chest'),
-                  onPressed: () => _buy(context, portraitChest: portraitChest),
+                  onPressed: capacityReached
+                      ? null
+                      : () => _buy(context, portraitChest: portraitChest),
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFFFFE39A),
                     foregroundColor: const Color(0xFF29184C),
                     disabledBackgroundColor: const Color(0xFF7F7394),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: complete
-                      ? Text(strings.pick(
-                          'Collection complete',
-                          'Collectie compleet',
-                        ))
+                  child: capacityReached
+                      ? Text(collectionComplete
+                          ? strings.pick(
+                              'Collection complete',
+                              'Collectie compleet',
+                            )
+                          : strings.pick(
+                              'All remaining rewards covered',
+                              'Alle resterende beloningen gedekt',
+                            ))
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -306,6 +333,154 @@ class _ChestShop extends StatelessWidget {
       _ChestPurchaseOutcome.collectionComplete => '',
     };
     showAppSnackBar(context, message);
+  }
+}
+
+class _ChestCollectionStatus extends StatelessWidget {
+  const _ChestCollectionStatus({
+    required this.portraitChest,
+    required this.owned,
+    required this.total,
+    required this.unopened,
+    required this.remainingPortraitsByRarity,
+  });
+
+  final bool portraitChest;
+  final int owned;
+  final int total;
+  final int unopened;
+  final Map<PortraitRarity, int>? remainingPortraitsByRarity;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final remaining = total - owned;
+    final rarityCounts = remainingPortraitsByRarity;
+    return Container(
+      key: Key(portraitChest
+          ? 'portrait-chest-collection-status'
+          : 'title-chest-collection-status'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .1),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.collections_bookmark_rounded,
+                  color: Color(0xFFFFD66E), size: 20),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  strings.pick('Collection progress', 'Collectievoortgang'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Text(
+                '$owned / $total',
+                key: Key(portraitChest
+                    ? 'portrait-chest-progress'
+                    : 'title-chest-progress'),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: LinearProgressIndicator(
+              value: total == 0 ? 1 : owned / total,
+              minHeight: 7,
+              color: const Color(0xFFFFD66E),
+              backgroundColor: Colors.white24,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            '$unopened ${strings.pick('unopened chests', 'ongeopende kisten')}',
+            style: const TextStyle(
+              color: Color(0xFFE2D8F5),
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
+          if (portraitChest && remaining > 0 && rarityCounts != null) ...[
+            const SizedBox(height: 13),
+            Text(
+              strings.pick('Current portrait odds', 'Actuele portretkansen'),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 7),
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: [
+                for (final rarity in PortraitRarity.values)
+                  if ((rarityCounts[rarity] ?? 0) > 0)
+                    _PortraitOddsChip(
+                      rarity: rarity,
+                      remaining: rarityCounts[rarity]!,
+                      totalRemaining: remaining,
+                    ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PortraitOddsChip extends StatelessWidget {
+  const _PortraitOddsChip({
+    required this.rarity,
+    required this.remaining,
+    required this.totalRemaining,
+  });
+
+  final PortraitRarity rarity;
+  final int remaining;
+  final int totalRemaining;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final odds = remaining / totalRemaining * 100;
+    final oddsText = odds == odds.roundToDouble()
+        ? odds.toStringAsFixed(0)
+        : odds.toStringAsFixed(1);
+    final color = Color(rarity.colorValue);
+    return Container(
+      key: Key('portrait-odds-${rarity.name}'),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .2),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: color.withValues(alpha: .8)),
+      ),
+      child: Text(
+        '${strings.portraitRarity(rarity)}  $remaining · $oddsText%',
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+          fontSize: 11,
+        ),
+      ),
+    );
   }
 }
 
@@ -446,70 +621,15 @@ class _CurrencyPackArt extends StatelessWidget {
   final ItemCurrency currency;
   final int stage;
 
-  GameIconKind get _currencyKind =>
-      currency == ItemCurrency.coins ? GameIconKind.coin : GameIconKind.gem;
-
   @override
   Widget build(BuildContext context) {
-    if (stage >= 4) return _chests();
-    const offsets = <List<Offset>>[
-      [Offset.zero],
-      [Offset(-13, 4), Offset(13, -4)],
-      [Offset(-18, 8), Offset(0, -7), Offset(18, 8)],
-      [
-        Offset(-23, 10),
-        Offset(0, 11),
-        Offset(23, 10),
-        Offset(-12, -12),
-        Offset(12, -12),
-      ],
-    ];
-    final sprites = offsets[stage.clamp(0, 3)];
-    final size = switch (stage) { 0 => 56.0, 1 => 45.0, 2 => 39.0, _ => 33.0 };
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        for (final offset in sprites)
-          Transform.translate(
-            offset: offset,
-            child: GameIconSprite(_currencyKind, size: size),
-          ),
-      ],
-    );
-  }
-
-  Widget _chests() {
-    final chest = currency == ItemCurrency.coins
-        ? ChestTier.gold.assetPath
-        : ChestTier.mythical.assetPath;
-    if (stage == 4) {
-      return Stack(
-        alignment: Alignment.center,
-        children: [
-          Image.asset(chest, width: 86, height: 72, fit: BoxFit.contain),
-          Transform.translate(
-            offset: const Offset(23, 20),
-            child: GameIconSprite(_currencyKind, size: 31),
-          ),
-        ],
-      );
-    }
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Transform.translate(
-          offset: const Offset(-17, 4),
-          child: Image.asset(chest, width: 65, height: 58),
-        ),
-        Transform.translate(
-          offset: const Offset(18, -5),
-          child: Image.asset(chest, width: 70, height: 62),
-        ),
-        Transform.translate(
-          offset: const Offset(2, 23),
-          child: GameIconSprite(_currencyKind, size: 27),
-        ),
-      ],
+    final currencyName = currency == ItemCurrency.coins ? 'coins' : 'gems';
+    final packNumber = (stage + 1).toString().padLeft(2, '0');
+    return Image.asset(
+      'assets/images/shop/currency_pack_${currencyName}_$packNumber.webp',
+      key: Key('currency-pack-art-$currencyName-$packNumber'),
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.medium,
     );
   }
 }

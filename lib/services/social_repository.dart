@@ -22,7 +22,9 @@ abstract interface class SocialRepository {
     required String displayName,
   });
   Future<void> signIn({required String email, required String password});
+  Future<void> resendSignupConfirmation(String email);
   Future<void> signOut();
+  Future<void> ensureAccount();
   Future<void> deleteMyAccount(String password);
   Future<KeeperProfile> loadMyProfile();
   Future<OnlineSocialSnapshot> loadOnlineSnapshot();
@@ -137,6 +139,8 @@ class DisabledSocialRepository implements SocialRepository {
           {required String email, required String password}) async =>
       _disabled();
   @override
+  Future<void> resendSignupConfirmation(String email) async => _disabled();
+  @override
   Future<AccountAuthResult> signUp({
     required String email,
     required String password,
@@ -145,6 +149,8 @@ class DisabledSocialRepository implements SocialRepository {
       _disabled();
   @override
   Future<void> signOut() async => _disabled();
+  @override
+  Future<void> ensureAccount() async => _disabled();
   @override
   Future<void> deleteMyAccount(String password) async => _disabled();
   @override

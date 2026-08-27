@@ -559,6 +559,12 @@ class TradeItem {
             orElse: () => null,
           )
       : null;
+
+  bool get isTradeable => switch (kind) {
+        TradeItemKind.egg => egg != null,
+        TradeItemKind.chest => chestTier?.isTradeable == true,
+        TradeItemKind.relic => relic != null,
+      };
 }
 
 class TradeInventoryItem {
@@ -786,7 +792,13 @@ class OnlineInventorySnapshot {
           for (final egg in eggs)
             if (egg['tradeable'] == true) egg,
         ],
-        'chests': chests,
+        'chests': {
+          for (final entry in chests.entries)
+            if (ChestTier.values.any(
+              (tier) => tier.name == entry.key && tier.isTradeable,
+            ))
+              entry.key: entry.value,
+        },
         'relics': relics,
       };
 

@@ -210,6 +210,25 @@ void main() {
     online.dispose();
   });
 
+  test('confirmation email can be resent without a signed-in session',
+      () async {
+    final game = HouseholdProvider(random: Random(12));
+    final repository = _FakeSocialRepository()..signedIn = false;
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+
+    expect(
+      await online.resendSignupConfirmation('Visnet@Example.Test '),
+      isTrue,
+    );
+    expect(repository.resentConfirmationEmail, 'Visnet@Example.Test ');
+    expect(online.noticeCode, 'confirmation_resent');
+    online.dispose();
+  });
+
   test('offline name portrait and title are the only online profile source',
       () async {
     final game = HouseholdProvider(random: Random(17))
@@ -225,12 +244,44 @@ void main() {
 
     await online.initialize();
 
+    expect(repository.ensureAccountCount, 1);
     expect(repository.updatedDisplayName, 'Offline Lyra');
     expect(repository.updatedPortraitKey, 'portrait_042');
     expect(repository.updatedTitle, 'title_321');
     expect(online.profile?.displayName, 'Offline Lyra');
     expect(online.profile?.portraitKey, 'portrait_042');
     expect(online.profile?.title, 'title_321');
+    online.dispose();
+  });
+
+  test('cosmetic chests never enter trade payloads or trade commands',
+      () async {
+    final game = HouseholdProvider(random: Random(18))
+      ..chestInventory[ChestTier.gold] = 2
+      ..chestInventory[ChestTier.portrait] = 3
+      ..chestInventory[ChestTier.title] = 4;
+    final tradeChests = OnlineInventorySnapshot.fromGame(game)
+        .toTradeJson()['chests'] as Map<String, dynamic>;
+    expect(tradeChests['gold'], 2);
+    expect(tradeChests, isNot(contains(ChestTier.portrait.name)));
+    expect(tradeChests, isNot(contains(ChestTier.title.name)));
+
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+
+    expect(
+      await online.createTrade(
+        'friend-user',
+        TradeItem.chest(ChestTier.portrait),
+      ),
+      isFalse,
+    );
+    expect(online.errorCode, 'trade_item_invalid');
+    expect(repository.createTradeCount, 0);
     online.dispose();
   });
 
@@ -579,7 +630,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text("Lyra's Draconomicon"), findsOneWidget);
-    expect(find.text('Dragons 7'), findsOneWidget);
+    expect(find.text('Dragons 2'), findsOneWidget);
     expect(find.text('Dragon families 1/42'), findsOneWidget);
     expect(
       find.byKey(const PageStorageKey(
@@ -791,6 +842,8 @@ class _FakeSocialRepository implements SocialRepository {
   String? updatedPortraitKey;
   int acknowledgeCount = 0;
   int createTradeCount = 0;
+  int ensureAccountCount = 0;
+  String? resentConfirmationEmail;
   GroupAdventureReward? groupReward;
   String? createGroupError;
   bool signedIn = true;
@@ -968,12 +1021,22 @@ class _FakeSocialRepository implements SocialRepository {
           {required String email, required String password}) async =>
       signedIn = true;
   @override
+  Future<void> resendSignupConfirmation(String email) async {
+    resentConfirmationEmail = email;
+  }
+
+  @override
   Future<AccountAuthResult> signUp({
     required String email,
     required String password,
     required String displayName,
   }) async =>
       const AccountAuthResult(requiresEmailConfirmation: true);
+  @override
+  Future<void> ensureAccount() async {
+    ensureAccountCount++;
+  }
+
   @override
   Future<void> updateProfile({
     required String displayName,
