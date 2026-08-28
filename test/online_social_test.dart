@@ -1223,7 +1223,7 @@ void main() {
       gameStateSnapshot: game.exportState,
       applyCloudState: game.restoreCloudState,
       deviceId: () async => 'history-device',
-      clientVersion: '0.04.07-test',
+      clientVersion: '0.04.08-test',
       loadCloudBaseRevision: (_) async => storedBaseRevision,
       saveCloudBaseRevision: (_, revision) async {
         storedBaseRevision = revision;
@@ -1244,7 +1244,7 @@ void main() {
     expect(online.cloudSaveHistory.first.isCurrent, isTrue);
     expect(
       online.cloudSaveHistory.every(
-        (save) => save.clientVersion == '0.04.07-test',
+        (save) => save.clientVersion == '0.04.08-test',
       ),
       isTrue,
     );
@@ -1287,7 +1287,7 @@ void main() {
       gameStateSnapshot: game.exportState,
       applyCloudState: game.restoreCloudState,
       deviceId: () async => 'this-device',
-      clientVersion: '0.04.07',
+      clientVersion: '0.04.08',
     );
     await online.initialize();
 

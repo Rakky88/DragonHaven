@@ -6,8 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('About and update checks share the same release version', () {
-    expect(AppInfo.version, '0.04.07');
-    expect(AppInfo.displayVersion, 'v0.04.07');
+    expect(AppInfo.version, '0.04.08');
+    expect(AppInfo.displayVersion, 'v0.04.08');
     expect(ReleaseConfig.installedVersion, AppInfo.version);
   });
 
@@ -63,14 +63,14 @@ void main() {
     expect(release('v0.04.03').isNewerThanInstalled, isFalse);
     expect(release('v0.04.04').isNewerThanInstalled, isFalse);
     expect(release('v0.04.06').isNewerThanInstalled, isFalse);
-    expect(release('v0.04.07').isNewerThanInstalled, isFalse);
-    expect(release('v0.04.08').isNewerThanInstalled, isTrue);
+    expect(release('v0.04.08').isNewerThanInstalled, isFalse);
+    expect(release('v0.04.09').isNewerThanInstalled, isTrue);
     expect(release('v0.00.00').isNewerThanInstalled, isFalse);
   });
 
   test('the copy button uses one permanent latest APK link', () {
     expect(ReleaseConfig.owner, 'Rakky88');
-    expect(ReleaseConfig.installedVersion, '0.04.07');
+    expect(ReleaseConfig.installedVersion, '0.04.08');
     expect(
       ReleaseConfig.downloadUrl,
       'https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk',

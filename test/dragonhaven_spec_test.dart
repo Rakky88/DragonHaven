@@ -515,4 +515,26 @@ void main() {
       reason: 'the time control must never become a player-callable RPC',
     );
   });
+
+  test('production migration workflow is explicit and bounded to 21-23', () {
+    final workflow =
+        File('.github/workflows/production-migrate.yml').readAsStringSync();
+
+    expect(workflow, contains('workflow_dispatch'));
+    expect(workflow, contains('MIGRATE_PRODUCTION_20_TO_23'));
+    expect(workflow, contains('tnzathhutuwmohmjfrlo'));
+    expect(workflow, contains("'202608280020'"));
+    for (final version in const [
+      '202608280021',
+      '202608280022',
+      '202608280023',
+    ]) {
+      expect(workflow, contains("'$version'"));
+    }
+    expect(workflow, contains('Compare-Object'));
+    expect(workflow, contains('db push --linked --include-all --dry-run'));
+    expect(workflow, contains('release_server_preflight.ps1'));
+    expect(workflow, contains('DragonHaven-production-migration-20-to-23'));
+    expect(workflow, isNot(contains("tags:\n      - 'v*'")));
+  });
 }

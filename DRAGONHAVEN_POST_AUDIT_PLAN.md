@@ -39,7 +39,7 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | Google Play-voorbereiding | circa 25% | Permanent package-ID, vaste signing-identiteit, versiecontrole en een ondertekende AAB zijn bewezen | Actuele Play-eisen opnieuw controleren; storeteksten, graphics, Data Safety-inventaris, appgrootte-analyse en rolloutchecklist maken | Play Console openen/verifiëren; app en Play App Signing aanmaken; testers, publieke support/privacy-URL's en storeverklaringen beheren |
 | Fase 0 — releasepipeline en secrets | circa 92% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.04.07 zijn groen; verouderde Node 20-acties zijn vervangen en opnieuw bewezen | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
 | Fase 1 — monitoring en incidenten | circa 55% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan | Externe crash/performance-SDK koppelen zodra config bestaat; publieke Auth- en read-only healthchecks plus testalerts automatiseren | Gratis monitoring/Firebase-project bezitten; ontvangers, uren, budget, regio, retentie en privacy/Data Safety kiezen; alleen clientconfig via secrets geven |
-| Fase 2 — staging en E2E | circa 70% | Afzonderlijke staging, migratiepariteit, account/login, back-up/conflict, Friends, trade en Group Adventure-wachtlobby zijn echt getest | E-mailbevestiging automatiseren; Group Adventure completion/reward-E2E bouwen; realistisch 100-user en daarna 1.000-user loadprofiel meten | Veilige stagingmailroute instellen; bevestigen dat testaccounts geen echte persoonsgegevens zijn; testbudget boven 1.000 gebruikers vooraf goedkeuren |
+| Fase 2 — staging en E2E | circa 78% | Afzonderlijke staging, migratiepariteit, account/login, back-up/conflict, Friends, trade en volledige Group Adventure completion/reward/replay zijn echt getest | E-mailbevestiging automatiseren; realistisch 100-user en daarna 1.000-user loadprofiel meten | Veilige stagingmailroute instellen; bevestigen dat testaccounts geen echte persoonsgegevens zijn; testbudget boven 1.000 gebruikers vooraf goedkeuren |
 | Fase 3 — back-up en multi-device | circa 80% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, metadata, oudere restore en veilige lokale vervanging zijn op staging bewezen | Periodieke integriteits-/restorecheck toevoegen; later server-owned velden van restores afschermen | Kiezen of back-up ook automatisch gebeurt; RPO/RTO, definitieve conflicttekst/samenvatting en eigenaar van periodieke restorecontrole bepalen |
 | Fase 4 — server-authoritative economie | circa 15% | Uitgeschakelde payment-providergrens en geauditeerde eenmalige save-import met limieten, hash, rapport en private herstelkopie bestaan | Wallet/ledger/itemtabellen, idempotente RPC's, serverrandomness, compatibiliteitsvenster en gefaseerde migratie van shops, chests, dragons en rewards bouwen | Migratievenster, spelerscommunicatie en gecontroleerd rollbackbeleid goedkeuren; compensatie- en storingsbeleid plus nooit-stil-afnemen-grenzen bevestigen |
 | Fase 5 — Google Play Billing | circa 5%, bewust uitgesteld | Product-ID-contract en uitgeschakelde nepimplementatie houden de architectuur upgradebaar zonder nu kosten te maken | Pas na fase 4 de Billing-SDK, servervalidatie, acknowledgement, refunds/retries en Play-tracktests bouwen | Pas later beslissen of verkoop wenselijk is; merchantprofiel, producten/prijzen/landen, service-identiteit, testers en beleid beheren |
@@ -222,6 +222,54 @@ moeten de bestaande tests voor deze punten blijven slagen.
 
 Codex legt ieder besluit na bevestiging vast in de sectie **Besluitenlog** onderaan.
 
+### Concrete keuzehulp voor monitoring (B5)
+
+De aanbevolen kosteloze begininstelling is:
+
+- Firebase [**Spark**](https://firebase.google.com/docs/projects/billing/firebase-pricing-plans)
+  zonder betaalmethode, alleen Crashlytics en Performance
+  Monitoring; Google Analytics blijft aanvankelijk uit voor minder dataverzameling;
+- Rick ontvangt SEV-1/SEV-2 crash- en bereikbaarheidsalerts direct per e-mail;
+  niet-kritieke trends worden tijdens testweken eenmaal per dag bekeken;
+- geen extra beheerder totdat er een concrete tweede support-/releasebeheerder is;
+- Crashlytics en Performance zijn wereldwijde diensten zonder eigen vaste
+  DragonHaven-regiokeuze. Als Analytics later nodig is, wordt Nederland als
+  rapportageregio gekozen;
+- de officiële [Firebase-retentie](https://firebase.google.com/support/privacy)
+  accepteren: Crashlytics circa negentig dagen, Performance
+  circa dertig dagen voor IP-gekoppelde events en zestig dagen voor installatie-
+  gekoppelde/geanonimiseerde performancegegevens;
+- privacyarme DragonHaven-supportexports maximaal zeven dagen bewaren en
+  incidentbewijs zonder persoonsgegevens maximaal dertig dagen.
+
+Nog door jou te bevestigen: Spark plus Crashlytics/Performance, Analytics uit,
+Rick als enige eerste alertontvanger en bovenstaande termijnen. Daarna kan Codex
+de Android-clientconfig, opt-in/initialisatie, redactiontests en testalert bouwen.
+
+### Concrete keuzehulp voor back-up en herstel (B6)
+
+De al bevestigde servergrens is vijf revisies en maximaal dertig dagen. Voor de
+resterende keuzes is het aanbevolen startpunt:
+
+- handmatige back-up blijft beschikbaar; daarnaast automatisch na een
+  betekenisvolle voortgangsmutatie, maximaal eenmaal per vijftien minuten en
+  alleen ingelogd wanneer geen conflict of upload actief is;
+- ook proberen bij veilig naar achtergrond gaan; offline wijzigingen wachten
+  zonder gameplay te blokkeren tot de volgende verbinding;
+- **RPO:** maximaal vijftien minuten online voortgang sinds de laatste geslaagde
+  automatische back-up; offline is het verliesvenster noodgedwongen tot de
+  eerstvolgende verbinding;
+- **RTO:** een speler kan een van de vijf revisies binnen vijftien minuten zelf
+  herstellen; een supportherstel heeft als eerste doel vier uur tijdens
+  beschikbare supporturen;
+- wekelijks een geautomatiseerde restore-integriteitstest op staging en
+  maandelijks handmatig bewijs controleren; Rick is in eerste instantie de
+  menselijke controle-eigenaar.
+
+Nog door jou te bevestigen: automatische back-up met vijftienminutengrens,
+RPO/RTO en Rick als controle-eigenaar. Codex kan daarna de automatische trigger,
+wekelijkse stagingtest en bijbehorende UI-/conflicttests bouwen.
+
 ## Prioriteiten en releasepoorten
 
 - **P0 — eerst:** releasepipeline, observability en aparte staging.
@@ -358,7 +406,7 @@ bewaren de controle-uitkomst blijvend.
   5. [x] Friends request en acceptatie;
   6. [x] trade reserveren, accepteren, afronden en inventarisbehoud bewijzen;
   7. [x] Group Adventure aanmaken, lijsten, deelnemen en veilig verlaten;
-  8. [ ] Group Adventure starten, afronden en reward-idempotentie bewijzen.
+  8. [x] Group Adventure starten, afronden en reward-idempotentie bewijzen.
 - [x] Voeg scenario's toe voor timeout, offline/online wissel, verlopen sessie,
   dubbele request, appherstart en een halverwege mislukte actie.
 - [ ] Maak een loadtestprofiel dat snapshotpolling en echte gebruikersacties
@@ -402,9 +450,16 @@ een atomaire Wooden Chest-ruil met inventarisbehoud, plus Group Adventure
 aanmaken/lijsten/deelnemen/verlaten. Tijdelijke vriendschap, trade en wachtlobby
 zijn veilig opgeruimd en beide sessies ingetrokken. Analyzer, alle 252 tests,
 staging-APK en het bewijsartifact waren opnieuw groen. De workflow bewaart ook
-hierbij geen e-mailadres, wachtwoord, token, keepercode of user-id. Het starten,
-uitspelen en belonen van een Group Adventure blijft bewust apart open: met twee
-accounts zou dat afhankelijk van de week een echte meerdaagse testactie starten.
+hierbij geen e-mailadres, wachtwoord, token, keepercode of user-id.
+
+Na expliciete toestemming voor een staging-only tijdregeling slaagde ook
+[run 33196707499](https://github.com/Rakky88/DragonHaven/actions/runs/33196707499).
+De afgeschermde workflow weigerde het productieproject hard, normaliseerde
+uitsluitend de tijdelijke synthetische lobby naar de twee beschikbare accounts,
+startte vervolgens via de gewone server-RPC en liet alleen de eindtijd verlopen.
+Beide deelnemers ontvingen dezelfde serverreward, een tweede acknowledgement
+voegde niets toe en de fixture plus testreward zijn weer opgeruimd. Analyzer,
+260 tests, staging-APK en bewijsartifact waren groen.
 
 - [ ] Bepaal het testbudget en keur iedere test boven 1.000 gelijktijdige
   gebruikers vooraf goed.
