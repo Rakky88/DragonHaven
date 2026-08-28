@@ -439,9 +439,6 @@ void main() {
     expect(migration, contains("'gems_clamped'"));
     expect(migration, contains("'chests_clamped'"));
     expect(migration, contains('pg_advisory_xact_lock'));
-    expect(migration, contains('purge_expired_cloud_game_save_history'));
-    expect(migration, contains('create extension if not exists pg_cron'));
-    expect(migration, contains("'17 3 * * *'"));
     expect(migration, contains("interval '30 days'"));
     expect(migration, contains('enable row level security'));
     expect(
@@ -475,6 +472,9 @@ void main() {
     expect(migration, contains('list_my_cloud_game_save_revisions'));
     expect(migration, contains('get_my_cloud_game_save_revision'));
     expect(migration, contains('pg_advisory_xact_lock'));
+    expect(migration, contains('purge_expired_cloud_game_save_history'));
+    expect(migration, contains('create extension if not exists pg_cron'));
+    expect(migration, contains("'17 3 * * *'"));
     expect(migration, contains('enable row level security'));
     expect(
       migration,
