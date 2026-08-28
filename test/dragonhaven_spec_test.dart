@@ -480,5 +480,14 @@ void main() {
       migration,
       contains('revoke all on table public.cloud_game_save_history'),
     );
+    final lintFix = File(
+      'supabase/migrations/202608280023_fix_cloud_save_history_conflict_target.sql',
+    ).readAsStringSync();
+    expect(
+      lintFix,
+      contains(
+        'on conflict on constraint cloud_game_save_history_user_id_revision_key',
+      ),
+    );
   });
 }

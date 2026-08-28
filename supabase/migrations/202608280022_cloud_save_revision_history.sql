@@ -195,7 +195,8 @@ begin
       existing.schema_version,
       existing.created_at,
       now()
-    ) on conflict (user_id, revision) do nothing;
+    ) on conflict on constraint cloud_game_save_history_user_id_revision_key
+      do nothing;
 
     update public.cloud_game_saves save
     set save_id = next_save_id,
