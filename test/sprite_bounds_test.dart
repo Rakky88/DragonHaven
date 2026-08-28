@@ -252,6 +252,43 @@ void main() {
     }
   });
 
+  test('Special Event sprites use alpha instead of a baked checkerboard',
+      () async {
+    const paths = <String>[
+      'assets/images/dragons/cluckatrice_hatchling.webp',
+      'assets/images/dragons/cluckatrice_wyrmling_safe.webp',
+      'assets/images/dragons/cluckatrice_might_safe.webp',
+      'assets/images/dragons/cluckatrice_arcana_safe.webp',
+      'assets/images/dragons/cluckatrice_spirit_safe.webp',
+      'assets/images/dragons/cluckatrice_mastery.webp',
+      'assets/images/dragons/cluckatrice_forms.webp',
+      'assets/images/chests/chest_special.webp',
+      'assets/images/chests/open/chest_special_open.webp',
+      'assets/images/achievements/winner_chicken_dinner.webp',
+    ];
+    for (final path in paths) {
+      final image = await _decode(path);
+      var transparent = 0;
+      for (var offset = 3; offset < image.rgba.length; offset += 4) {
+        if (image.rgba[offset] < 8) transparent++;
+      }
+      expect(
+        transparent,
+        greaterThan(image.width * image.height ~/ 2),
+        reason: '$path must not contain an opaque generated checkerboard',
+      );
+      _expectContained(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        path,
+      );
+    }
+  });
+
   test('all twelve currency pack sprites are distinct transparent assets',
       () async {
     final paths = <String>[
@@ -431,7 +468,7 @@ void main() {
         tier.openedAssetPath,
       ],
     };
-    expect(paths, hasLength(214));
+    expect(paths, hasLength(216));
     for (final path in paths) {
       final image = await _decode(path);
       _expectContained(

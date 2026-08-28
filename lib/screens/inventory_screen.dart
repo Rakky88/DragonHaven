@@ -268,7 +268,10 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                                 ),
                               ),
                               Text(
-                                strings.pick('Mysterious Egg', 'Mysterieus Ei'),
+                                egg.isSpecialEgg
+                                    ? strings.pick('Special Egg', 'Speciaal Ei')
+                                    : strings.pick(
+                                        'Mysterious Egg', 'Mysterieus Ei'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -357,7 +360,9 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                           ),
                         ),
                         title: Text(
-                          strings.pick('Mysterious Egg', 'Mysterieus Ei'),
+                          egg.isSpecialEgg
+                              ? strings.pick('Special Egg', 'Speciaal Ei')
+                              : strings.pick('Mysterious Egg', 'Mysterieus Ei'),
                           style: const TextStyle(fontWeight: FontWeight.w900),
                         ),
                         subtitle: Text(
@@ -397,7 +402,9 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                 stageKey: 'moonEgg',
               ),
               Text(
-                strings.pick('Mysterious Egg', 'Mysterieus Ei'),
+                egg.isSpecialEgg
+                    ? strings.pick('Special Egg', 'Speciaal Ei')
+                    : strings.pick('Mysterious Egg', 'Mysterieus Ei'),
                 style: Theme.of(sheetContext).textTheme.titleLarge,
               ),
               const SizedBox(height: 10),
@@ -568,6 +575,7 @@ class _ChestInventoryTab extends StatelessWidget {
       ChestTier.dragon,
       ChestTier.mythical,
       ChestTier.sinister,
+      ChestTier.special,
       ChestTier.portrait,
       ChestTier.title,
       ChestTier.music,
@@ -732,6 +740,7 @@ HavenSound _soundForChest(ChestTier tier) => switch (tier) {
       ChestTier.dragon => HavenSound.chestDragon,
       ChestTier.mythical => HavenSound.chestMythical,
       ChestTier.sinister => HavenSound.chestSinister,
+      ChestTier.special => HavenSound.chestSpecial,
       ChestTier.portrait ||
       ChestTier.title ||
       ChestTier.music =>

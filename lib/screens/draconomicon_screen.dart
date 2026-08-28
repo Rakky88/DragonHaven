@@ -32,6 +32,14 @@ class DraconomiconScreen extends StatelessWidget {
     }.map((key) => key.split(':').first).toSet().length;
     final discoveredDragonFormCount = normalCollection.length;
     final hasSpectralCollection = spectralCollection.isNotEmpty;
+    final allKnownLineageIds = {
+      ...normalCollection,
+      ...spectralCollection,
+    }.map((key) => key.split(':').first).toSet();
+    final visibleLineages = dragonLineages
+        .where((lineage) =>
+            !lineage.secret || allKnownLineageIds.contains(lineage.id))
+        .toList(growable: false);
     return DefaultTabController(
       length: hasSpectralCollection ? 2 : 1,
       child: Column(
@@ -102,7 +110,7 @@ class DraconomiconScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(99),
                           child: LinearProgressIndicator(
                             value:
-                                discoveredLineageCount / dragonLineages.length,
+                                discoveredLineageCount / visibleLineages.length,
                             minHeight: 7,
                             color: const Color(0xFFFFD66E),
                             backgroundColor: Colors.white24,
@@ -139,8 +147,8 @@ class DraconomiconScreen extends StatelessWidget {
                               const SizedBox(height: 1),
                               Text(
                                 strings.pick(
-                                  'Dragon families $discoveredLineageCount/${dragonLineages.length}',
-                                  'Drakenfamilies $discoveredLineageCount/${dragonLineages.length}',
+                                  'Dragon families $discoveredLineageCount/${visibleLineages.length}',
+                                  'Drakenfamilies $discoveredLineageCount/${visibleLineages.length}',
                                 ),
                                 style: const TextStyle(fontSize: 10),
                                 maxLines: 1,
@@ -160,11 +168,13 @@ class DraconomiconScreen extends StatelessWidget {
             _DragonCollection(
               spectral: false,
               collection: normalCollection,
+              lineages: visibleLineages,
             ),
             if (hasSpectralCollection)
               _DragonCollection(
                 spectral: true,
                 collection: spectralCollection,
+                lineages: visibleLineages,
               ),
           ])),
         ],
@@ -177,20 +187,22 @@ class _DragonCollection extends StatelessWidget {
   const _DragonCollection({
     required this.spectral,
     required this.collection,
+    required this.lineages,
   });
   final bool spectral;
   final Set<String> collection;
+  final List<DragonLineage> lineages;
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
       key: PageStorageKey(
           spectral ? 'draconomicon-spectral' : 'draconomicon-dragons'),
       padding: const EdgeInsets.fromLTRB(18, 2, 18, 30),
-      itemCount: dragonLineages.length,
+      itemCount: lineages.length,
       itemBuilder: (context, index) => Padding(
         padding: const EdgeInsets.only(bottom: 10),
         child: DragonLineageEntry(
-            lineage: dragonLineages[index],
+            lineage: lineages[index],
             number: index + 1,
             collection: collection,
             spectral: spectral),

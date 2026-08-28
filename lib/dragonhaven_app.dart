@@ -279,6 +279,13 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
           _index = 1;
           _visited.add(1);
         });
+      case HavenNotificationDestination.adventureAvailable:
+        setState(() {
+          _adventureInitialTab = 0;
+          _adventureNavigationRevision++;
+          _index = 1;
+          _visited.add(1);
+        });
       case HavenNotificationDestination.adventureTrials:
         setState(() {
           _adventureInitialTab = 1;

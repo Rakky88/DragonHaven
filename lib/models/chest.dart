@@ -14,6 +14,7 @@ enum ChestTier {
   dragon,
   mythical,
   sinister,
+  special,
   portrait,
   title,
   music;
@@ -26,6 +27,7 @@ class ChestReward {
     required this.gems,
     required this.eggFound,
     this.sinisterEgg = false,
+    this.specialEgg = false,
     this.relicFound,
     this.portraitFound,
     this.titleFound,
@@ -36,6 +38,7 @@ class ChestReward {
   final int gems;
   final bool eggFound;
   final bool sinisterEgg;
+  final bool specialEgg;
   final MysticRelic? relicFound;
   final ProfilePortrait? portraitFound;
   final AccountTitle? titleFound;
@@ -55,6 +58,7 @@ extension ChestTierPresentation on ChestTier {
         ChestTier.dragon => isDutch ? 'Drakenkist' : 'Dragon Chest',
         ChestTier.mythical => isDutch ? 'Mythische Kist' : 'Mythical Chest',
         ChestTier.sinister => isDutch ? 'Sinistere Kist' : 'Sinister Chest',
+        ChestTier.special => isDutch ? 'Speciale Kist' : 'Special Chest',
         ChestTier.portrait => isDutch ? 'Portretkist' : 'Portrait Chest',
         ChestTier.title => isDutch ? 'Titelkist' : 'Title Chest',
         ChestTier.music => isDutch ? 'Muziekkist' : 'Music Chest',
@@ -67,6 +71,7 @@ extension ChestTierPresentation on ChestTier {
         ChestTier.dragon => 0xFF8D52C7,
         ChestTier.mythical => 0xFF2A9CB8,
         ChestTier.sinister => 0xFF6D204E,
+        ChestTier.special => 0xFFE4A63A,
         ChestTier.portrait => 0xFF8D52C7,
         ChestTier.title => 0xFF8D52C7,
         ChestTier.music => 0xFF8D52C7,
@@ -77,6 +82,7 @@ extension ChestTierPresentation on ChestTier {
         ChestTier.title =>
           'assets/images/chests/chest_portrait.webp',
         ChestTier.music => 'assets/images/chests/chest_portrait.webp',
+        ChestTier.special => 'assets/images/chests/chest_special.webp',
         _ => 'assets/images/chests/chest_$name.png',
       };
   String get openedAssetPath => switch (this) {
@@ -84,6 +90,8 @@ extension ChestTierPresentation on ChestTier {
         ChestTier.title =>
           'assets/images/chests/open/chest_portrait_open.webp',
         ChestTier.music => 'assets/images/chests/open/chest_portrait_open.webp',
+        ChestTier.special =>
+          'assets/images/chests/open/chest_special_open.webp',
         _ => 'assets/images/chests/open/chest_${name}_open.png',
       };
 }

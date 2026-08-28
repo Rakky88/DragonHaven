@@ -21,6 +21,8 @@ void main() {
   test('notification kinds map to their logical in-app destinations', () {
     final cases = <String, HavenNotificationDestination>{
       'adventure_complete': HavenNotificationDestination.adventureCompleted,
+      'special_adventure_available':
+          HavenNotificationDestination.adventureAvailable,
       'trials_full': HavenNotificationDestination.adventureTrials,
       'friend_request': HavenNotificationDestination.friends,
       'friend_accepted': HavenNotificationDestination.friends,
@@ -131,6 +133,46 @@ void main() {
       'body': 'Your Trial board is full.',
       'kind': 'trials_full',
     });
+  });
+
+  test('enabled Special Adventure availability is scheduled with deep link',
+      () async {
+    final at = DateTime(2036, 5, 13);
+    await HavenNotifications.specialAdventureAvailable(
+      id: 'special-adventure-birthday-2036',
+      at: at,
+      title: 'A Special Adventure has appeared',
+      body: 'A Wish on Golden Wings is waiting.',
+    );
+
+    expect(calls, hasLength(1));
+    expect(calls.single.method, 'schedule');
+    expect(calls.single.arguments, {
+      'id': 'special-adventure-birthday-2036',
+      'at': at.millisecondsSinceEpoch,
+      'title': 'A Special Adventure has appeared',
+      'body': 'A Wish on Golden Wings is waiting.',
+      'kind': 'special_adventure_available',
+    });
+  });
+
+  test('disabled Special Event notifications do not reach native bridge',
+      () async {
+    HavenNotifications.configure(
+      HavenNotificationCategory.values
+          .where(
+              (category) => category != HavenNotificationCategory.specialEvents)
+          .toSet(),
+    );
+
+    await HavenNotifications.specialAdventureAvailable(
+      id: 'special-adventure-muted',
+      at: DateTime(2036, 5, 13),
+      title: 'A Special Adventure has appeared',
+      body: 'A Wish on Golden Wings is waiting.',
+    );
+
+    expect(calls, isEmpty);
   });
 
   test('egg-ready notifications retain their hatch time and event kind',

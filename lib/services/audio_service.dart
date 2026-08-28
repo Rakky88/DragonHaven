@@ -8,6 +8,7 @@ enum HavenSound {
   chestDragon('chest_dragon'),
   chestMythical('chest_mythical'),
   chestSinister('chest_sinister'),
+  chestSpecial('chest_special'),
   hatchBuild('hatch_build'),
   hatchCrackOne('hatch_crack_1'),
   hatchCrackTwo('hatch_crack_2'),

@@ -1,4 +1,5 @@
 import 'chest.dart';
+import 'mystic_relic.dart';
 import 'pet.dart';
 
 enum AdventureKind { mini, short, long, group, special }
@@ -77,6 +78,8 @@ class AdventureDefinition {
     this.requirements = const AdventureRequirements(),
     this.knownChest,
     this.sinister = false,
+    this.combinedExpertise = false,
+    this.seasonalSpecial = false,
   });
 
   final String id;
@@ -92,6 +95,8 @@ class AdventureDefinition {
   final AdventureRequirements requirements;
   final ChestTier? knownChest;
   final bool sinister;
+  final bool combinedExpertise;
+  final bool seasonalSpecial;
 }
 
 Duration expertiseAdjustedAdventureDuration(
@@ -107,18 +112,27 @@ Duration expertiseAdjustedAdventureDuration(
       ? 0
       : expertiseScores.reduce((first, second) => first + second) ~/
           expertiseScores.length;
+  final combinedExpertise = dragons.isEmpty
+      ? 0
+      : dragons.first.trainingFor(TrainingFocus.might) +
+          dragons.first.trainingFor(TrainingFocus.arcana) +
+          dragons.first.trainingFor(TrainingFocus.spirit);
   final reduction = switch (adventure.kind) {
     AdventureKind.mini => Duration(seconds: singleDragonExpertise),
     AdventureKind.short => Duration(minutes: singleDragonExpertise),
     AdventureKind.long => Duration(hours: singleDragonExpertise),
     AdventureKind.group => Duration(hours: averageGroupExpertise),
-    AdventureKind.special => Duration.zero,
+    AdventureKind.special => adventure.combinedExpertise
+        ? Duration(hours: combinedExpertise)
+        : Duration.zero,
   };
   final minimum = switch (adventure.kind) {
     AdventureKind.mini => const Duration(minutes: 1),
     AdventureKind.short => const Duration(hours: 1),
     AdventureKind.long || AdventureKind.group => const Duration(days: 1),
-    AdventureKind.special => adventure.duration,
+    AdventureKind.special => adventure.combinedExpertise
+        ? const Duration(days: 1)
+        : adventure.duration,
   };
   final adjusted = adventure.duration - reduction;
   return adjusted < minimum ? minimum : adjusted;
@@ -134,6 +148,8 @@ class AdventureRun {
     required this.status,
     this.rewardTier,
     this.participantCount = 1,
+    this.specialEventId,
+    this.specialEventKey,
   });
 
   final String id;
@@ -144,6 +160,8 @@ class AdventureRun {
   final AdventureRunStatus status;
   final ChestTier? rewardTier;
   final int participantCount;
+  final String? specialEventId;
+  final String? specialEventKey;
 
   AdventureRun copyWith({
     AdventureRunStatus? status,
@@ -158,6 +176,8 @@ class AdventureRun {
         status: status ?? this.status,
         rewardTier: rewardTier ?? this.rewardTier,
         participantCount: participantCount,
+        specialEventId: specialEventId,
+        specialEventKey: specialEventKey,
       );
 
   Map<String, dynamic> toJson() => {
@@ -169,6 +189,8 @@ class AdventureRun {
         'status': status.name,
         'rewardTier': rewardTier?.name,
         'participantCount': participantCount,
+        'specialEventId': specialEventId,
+        'specialEventKey': specialEventKey,
       };
 
   factory AdventureRun.fromJson(Map<String, dynamic> json) => AdventureRun(
@@ -188,10 +210,80 @@ class AdventureRun {
               orElse: () => null,
             ),
         participantCount: (json['participantCount'] as num?)?.toInt() ?? 1,
+        specialEventId: json['specialEventId'] as String?,
+        specialEventKey: json['specialEventKey'] as String?,
       );
 }
 
+class SpecialAdventureRewardBundle {
+  const SpecialAdventureRewardBundle({
+    required this.chestTier,
+    required this.xp,
+    this.randomRelicPool = const [],
+    this.musicChest = false,
+  });
+
+  final ChestTier chestTier;
+  final int xp;
+  final List<MysticRelic> randomRelicPool;
+  final bool musicChest;
+}
+
+class SpecialAdventureEventDefinition {
+  const SpecialAdventureEventDefinition({
+    required this.id,
+    required this.adventureId,
+    required this.initialYear,
+    required this.initialMonth,
+    required this.initialDay,
+    required this.initialAvailability,
+    required this.rewards,
+    required this.storyEn,
+    required this.storyNl,
+    this.initialHour = 0,
+    this.recursYearlyFrom,
+    this.recurrenceMonth,
+    this.recurrenceDay,
+    this.recurrenceHour = 0,
+    this.recurrenceAvailability,
+  });
+
+  final String id;
+  final String adventureId;
+  final int initialYear;
+  final int initialMonth;
+  final int initialDay;
+  final int initialHour;
+  final Duration initialAvailability;
+  final int? recursYearlyFrom;
+  final int? recurrenceMonth;
+  final int? recurrenceDay;
+  final int recurrenceHour;
+  final Duration? recurrenceAvailability;
+  final SpecialAdventureRewardBundle rewards;
+  final String storyEn;
+  final String storyNl;
+}
+
 abstract final class AdventureCatalog {
+  static const goldenWingsBirthday = AdventureDefinition(
+    id: 'special_golden_wings_birthday',
+    kind: AdventureKind.special,
+    titleEn: 'A Wish on Golden Wings',
+    titleNl: 'Een Wens op Gouden Vleugels',
+    descriptionEn:
+        'For the birthday of a beautiful woman whose kindness makes every day brighter, the Haven sends one golden wish into the sky.',
+    descriptionNl:
+        'Voor de verjaardag van een mooie vrouw wier warmte elke dag lichter maakt, stuurt de Haven één gouden wens de hemel in.',
+    duration: Duration(days: 10),
+    xp: 500,
+    focus: TrainingFocus.might,
+    statPoints: 0,
+    knownChest: ChestTier.special,
+    combinedExpertise: true,
+    seasonalSpecial: true,
+  );
+
   static const _placesEn = [
     'Cloud Orchard',
     'Whispering Ruins',
@@ -385,7 +477,60 @@ abstract final class AdventureCatalog {
   );
 
   static final Map<String, AdventureDefinition> byId = Map.unmodifiable({
-    for (final adventure in [...mini, ...short, ...long, ...group, ...special])
+    for (final adventure in [
+      ...mini,
+      ...short,
+      ...long,
+      ...group,
+      ...special,
+      goldenWingsBirthday,
+    ])
       adventure.id: adventure,
   });
+}
+
+const specialAdventureEventCatalog = <SpecialAdventureEventDefinition>[
+  SpecialAdventureEventDefinition(
+    id: 'golden_wings_birthday',
+    adventureId: 'special_golden_wings_birthday',
+    initialYear: 2026,
+    initialMonth: DateTime.september,
+    initialDay: 1,
+    initialAvailability: Duration(days: 2),
+    recursYearlyFrom: 2027,
+    recurrenceMonth: DateTime.may,
+    recurrenceDay: 13,
+    recurrenceAvailability: Duration(days: 1),
+    rewards: SpecialAdventureRewardBundle(
+      chestTier: ChestTier.special,
+      xp: 500,
+      randomRelicPool: [
+        MysticRelic.moralPrism,
+        MysticRelic.orderCompass,
+        MysticRelic.soulMirror,
+        MysticRelic.astralLens,
+      ],
+      musicChest: true,
+    ),
+    storyEn:
+        'A golden birthday wish for a beautiful woman whose kindness brightens the Haven.',
+    storyNl:
+        'Een gouden verjaardagswens voor een mooie vrouw wier warmte de Haven laat stralen.',
+  ),
+];
+
+SpecialAdventureEventDefinition? specialAdventureEventById(String? id) {
+  for (final event in specialAdventureEventCatalog) {
+    if (event.id == id) return event;
+  }
+  return null;
+}
+
+SpecialAdventureEventDefinition? specialAdventureEventForAdventure(
+  String adventureId,
+) {
+  for (final event in specialAdventureEventCatalog) {
+    if (event.adventureId == adventureId) return event;
+  }
+  return null;
 }

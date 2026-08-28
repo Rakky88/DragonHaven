@@ -1502,7 +1502,10 @@ class _EggInventory extends StatelessWidget {
         Card(
             child: ListTile(
                 leading: const Text('🥚', style: TextStyle(fontSize: 34)),
-                title: Text(strings.pick('Mysterious Egg', 'Mysterieus Ei'),
+                title: Text(
+                    egg.isSpecialEgg
+                        ? strings.pick('Special Egg', 'Speciaal Ei')
+                        : strings.pick('Mysterious Egg', 'Mysterieus Ei'),
                     style: const TextStyle(fontWeight: FontWeight.w900)),
                 subtitle: Text(strings.pick(
                     'Acquired ${_date(egg.acquiredAt)} · identity fixed',

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_strings.dart';
 import '../models/adventure.dart';
 import '../models/chest.dart';
+import '../models/mystic_relic.dart';
 import '../models/pet.dart';
 import '../models/social.dart';
 import '../models/trial.dart';
@@ -1432,7 +1433,10 @@ class _AdventureCard extends StatelessWidget {
                       const SizedBox(width: 3),
                       Expanded(
                         child: Text(
-                          _focusName(strings, adventure.focus),
+                          adventure.combinedExpertise
+                              ? strings.pick(
+                                  'All Expertises', 'Alle Expertises')
+                              : _focusName(strings, adventure.focus),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -1504,6 +1508,8 @@ class _AdventureCard extends StatelessWidget {
     AdventureDefinition definition,
   ) {
     final strings = AppStrings.of(context);
+    final game = context.read<HouseholdProvider>();
+    final specialEvent = specialAdventureEventForAdventure(definition.id);
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -1522,6 +1528,26 @@ class _AdventureCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: Theme.of(sheetContext).textTheme.titleLarge,
             ),
+            if (specialEvent != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(13),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF5DE),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Text(
+                  strings.pick(specialEvent.storyEn, specialEvent.storyNl),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFF795225),
+                    height: 1.35,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 6),
             Text(
               strings.adventureDescription(definition),
@@ -1539,21 +1565,75 @@ class _AdventureCard extends StatelessWidget {
               title: strings.pick('Dragon experience', 'Drakenervaring'),
               value: '${definition.xp} XP',
             ),
-            _DetailRow(
-              icon: GameIconSprite(
-                GameIconSprite.forTrainingFocus(definition.focus),
-                size: 34,
+            if (!definition.combinedExpertise)
+              _DetailRow(
+                icon: GameIconSprite(
+                  GameIconSprite.forTrainingFocus(definition.focus),
+                  size: 34,
+                ),
+                title: strings.pick('Expertise training', 'Expertisetraining'),
+                value:
+                    '+${definition.statPoints} ${_focusName(strings, definition.focus)} · '
+                    '${_focusExplanation(strings, definition.focus)}',
               ),
-              title: strings.pick('Expertise training', 'Expertisetraining'),
-              value:
-                  '+${definition.statPoints} ${_focusName(strings, definition.focus)} · '
-                  '${_focusExplanation(strings, definition.focus)}',
-            ),
-            _DetailRow(
-              icon: const GameIconSprite(GameIconKind.chest, size: 34),
-              title: strings.pick('Possible chests', 'Mogelijke kisten'),
-              value: _chestPossibilities(strings, definition),
-            ),
+            if (definition.combinedExpertise)
+              _DetailRow(
+                icon: const GameIconSprite(GameIconKind.adventureSpecial,
+                    size: 34),
+                title: strings.pick('Journey shortening', 'Reisverkorting'),
+                value: strings.pick(
+                  'Might + Arcana + Spirit: every combined point removes 1 hour (minimum 1 day).',
+                  'Might + Arcana + Spirit: elk gecombineerd punt haalt 1 uur van de reis af (minimum 1 dag).',
+                ),
+              ),
+            if (specialEvent == null)
+              _DetailRow(
+                icon: const GameIconSprite(GameIconKind.chest, size: 34),
+                title: strings.pick('Possible chests', 'Mogelijke kisten'),
+                value: _chestPossibilities(strings, definition),
+              ),
+            if (specialEvent != null) ...[
+              _DetailRow(
+                icon: Image.asset(
+                  ChestTier.special.assetPath,
+                  width: 38,
+                  height: 38,
+                ),
+                title: strings.pick(
+                    'Guaranteed Special Chest', 'Gegarandeerde Speciale Kist'),
+                value: strings.pick(
+                  '269 coins, 10 gems and a Special Egg with an event dragon.',
+                  '269 coins, 10 gems en een Speciaal Ei met een eventdraak.',
+                ),
+              ),
+              _DetailRow(
+                icon: Image.asset(
+                  MysticRelic.moralPrism.assetPath,
+                  width: 36,
+                  height: 36,
+                ),
+                title: strings.pick('Guaranteed relic', 'Gegarandeerde relic'),
+                value: strings.pick(
+                  '1 random relic; which one remains a surprise until you claim it.',
+                  '1 willekeurige relic; welke het is blijft een verrassing tot je hem ophaalt.',
+                ),
+              ),
+              if (specialEvent.rewards.musicChest &&
+                  !game.musicChestCapacityReached)
+                _DetailRow(
+                  icon: Image.asset(
+                    ChestTier.music.assetPath,
+                    width: 38,
+                    height: 38,
+                  ),
+                  title: strings.pick(
+                      'Guaranteed Music Chest', 'Gegarandeerde Muziekkist'),
+                  value: strings.pick(
+                    '1 Music Chest, rolled only when you open it.',
+                    '1 Muziekkist, pas gerolld wanneer je hem opent.',
+                  ),
+                ),
+            ],
             if (definition.kind == AdventureKind.group)
               _DetailRow(
                 icon: const Icon(Icons.group_rounded,
@@ -2416,6 +2496,7 @@ Future<void> _showRunDetails(
 ) async {
   final strings = AppStrings.of(context);
   final game = context.read<HouseholdProvider>();
+  final specialEvent = specialAdventureEventById(run.specialEventId);
   final ready = run.status == AdventureRunStatus.rewardReady;
   final abortable = !ready && definition.kind != AdventureKind.group;
   await showModalBottomSheet<void>(
@@ -2472,17 +2553,53 @@ Future<void> _showRunDetails(
                 icon: const GameIconSprite(GameIconKind.experience, size: 34),
                 title: strings.pick('Dragon experience', 'Drakenervaring'),
                 value: '${definition.xp} XP'),
-            _DetailRow(
-                icon: GameIconSprite(
-                    GameIconSprite.forTrainingFocus(definition.focus),
-                    size: 34),
-                title: strings.pick('Training reward', 'Trainingsbeloning'),
-                value:
-                    '+${definition.statPoints} ${_focusName(strings, definition.focus)}'),
-            _DetailRow(
-                icon: const GameIconSprite(GameIconKind.chest, size: 34),
-                title: strings.pick('Treasure', 'Schat'),
-                value: strings.pick('One sealed chest', 'Eén verzegelde kist')),
+            if (!definition.combinedExpertise)
+              _DetailRow(
+                  icon: GameIconSprite(
+                      GameIconSprite.forTrainingFocus(definition.focus),
+                      size: 34),
+                  title: strings.pick('Training reward', 'Trainingsbeloning'),
+                  value:
+                      '+${definition.statPoints} ${_focusName(strings, definition.focus)}'),
+            if (specialEvent == null)
+              _DetailRow(
+                  icon: const GameIconSprite(GameIconKind.chest, size: 34),
+                  title: strings.pick('Treasure', 'Schat'),
+                  value:
+                      strings.pick('One sealed chest', 'Eén verzegelde kist')),
+            if (specialEvent != null) ...[
+              _DetailRow(
+                icon: Image.asset(ChestTier.special.assetPath,
+                    width: 38, height: 38),
+                title: strings.pick(
+                    'Guaranteed Special Chest', 'Gegarandeerde Speciale Kist'),
+                value: strings.pick(
+                  '269 coins, 10 gems and a Special Egg with an event dragon.',
+                  '269 coins, 10 gems en een Speciaal Ei met een eventdraak.',
+                ),
+              ),
+              _DetailRow(
+                icon: Image.asset(MysticRelic.moralPrism.assetPath,
+                    width: 36, height: 36),
+                title: strings.pick('Guaranteed relic', 'Gegarandeerde relic'),
+                value: strings.pick(
+                  '1 random relic; the exact relic is still a surprise.',
+                  '1 willekeurige relic; de exacte relic blijft nog een verrassing.',
+                ),
+              ),
+              if (specialEvent.rewards.musicChest &&
+                  !game.musicChestCapacityReached)
+                _DetailRow(
+                  icon: Image.asset(ChestTier.music.assetPath,
+                      width: 38, height: 38),
+                  title: strings.pick(
+                      'Guaranteed Music Chest', 'Gegarandeerde Muziekkist'),
+                  value: strings.pick(
+                    '1 Music Chest, rolled when it is opened.',
+                    '1 Muziekkist, gerolld wanneer hij wordt geopend.',
+                  ),
+                ),
+            ],
             const SizedBox(height: 14),
             if (ready)
               SizedBox(
@@ -2726,8 +2843,8 @@ String _adventureRefreshExplanation(
           'Elke hoeder ziet dezelfde wekelijkse route. Deze verandert automatisch op zondag om 12:00 uur in Europe/Amsterdam. Een gestarte groep maakt de reis altijd af en behoudt de beloning.',
         ),
       AdventureKind.special => strings.pick(
-          'Special routes appear only after certain events. They can expire or change automatically; their card shows them only while they are available.',
-          'Speciale routes verschijnen alleen na bepaalde gebeurtenissen. Ze kunnen automatisch verlopen of veranderen; hun kaart is alleen zichtbaar zolang ze beschikbaar zijn.',
+          'Special routes appear only during certain events. They can expire or change automatically; their card shows them only while they are available.',
+          'Speciale routes verschijnen alleen tijdens bepaalde gebeurtenissen. Ze kunnen automatisch verlopen of veranderen; hun kaart is alleen zichtbaar zolang ze beschikbaar zijn.',
         ),
     };
 

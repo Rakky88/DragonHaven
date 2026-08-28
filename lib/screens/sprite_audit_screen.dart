@@ -60,7 +60,7 @@ const _masteryAuditOnly = bool.fromEnvironment(
   'DRAGONHAVEN_MASTERY_AUDIT_ONLY',
 );
 
-/// Every runtime rendering of the 77 source forms repaired for this release.
+/// Every runtime rendering of the 81 source forms repaired for this release.
 /// Four variants are included per form: normal/spectral, each in color/black.
 Set<String> releaseRepairAuditEntryIds() {
   final entries = <String>{};

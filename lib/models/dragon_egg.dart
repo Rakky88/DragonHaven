@@ -31,6 +31,7 @@ class DragonEgg {
   final int xp;
 
   DragonLineage get lineage => dragonLineageById(lineageId);
+  bool get isSpecialEgg => lineage.secret;
 
   Pet activate(
           {required int coins, required int gems, DateTime? activatedAt}) =>
@@ -74,7 +75,9 @@ class DragonEgg {
       id: nonEmptyStringFromJson(json['id']) ?? 'egg-$seed',
       lineageId: dragonLineages.any((lineage) => lineage.id == lineageId)
           ? lineageId!
-          : dragonLineages[seed.remainder(dragonLineages.length)].id,
+          : standardDragonLineages[
+                  seed.remainder(standardDragonLineages.length)]
+              .id,
       acquiredAt: DateTime.tryParse(stringFromJson(json['acquiredAt']) ?? '') ??
           DateTime.now(),
       hatchSeed: seed,

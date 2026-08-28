@@ -143,7 +143,9 @@ class _RooftopNestScreenState extends State<RooftopNestScreen> {
                         size: 54,
                       ),
                       title: Text(
-                        strings.pick('Mysterious Egg', 'Mysterieus Ei'),
+                        egg.isSpecialEgg
+                            ? strings.pick('Special Egg', 'Speciaal Ei')
+                            : strings.pick('Mysterious Egg', 'Mysterieus Ei'),
                         style: const TextStyle(fontWeight: FontWeight.w900),
                       ),
                       subtitle: Text(

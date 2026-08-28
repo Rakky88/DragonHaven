@@ -3298,14 +3298,14 @@ const uiPhraseTranslations = <String, List<String>>{
     'Todos os guardiões veem a mesma rota semanal. Ela muda automaticamente todo domingo às 12:00 em Europe/Amsterdam. Um grupo que já começou sempre termina e mantém a recompensa.',
     'すべてのキーパーに同じ週間ルートが表示されます。Europe/Amsterdamの毎週日曜12:00に自動更新されます。出発済みのグループは必ず完走し、報酬も保持されます。'
   ],
-  'Special routes appear only after certain events. They can expire or change automatically; their card shows them only while they are available.':
+  'Special routes appear only during certain events. They can expire or change automatically; their card shows them only while they are available.':
       [
-    'Spezialrouten erscheinen nur nach bestimmten Ereignissen. Sie können automatisch ablaufen oder wechseln; ihre Karte wird nur während der Verfügbarkeit angezeigt.',
-    'Las rutas especiales solo aparecen tras ciertos eventos. Pueden caducar o cambiar automáticamente; su tarjeta solo se muestra mientras estén disponibles.',
-    'Les itinéraires spéciaux n’apparaissent qu’après certains événements. Ils peuvent expirer ou changer automatiquement ; leur carte n’est visible que pendant leur disponibilité.',
-    'I percorsi speciali appaiono solo dopo determinati eventi. Possono scadere o cambiare automaticamente; la loro scheda è visibile solo mentre sono disponibili.',
-    'Rotas especiais aparecem apenas após certos eventos. Elas podem expirar ou mudar automaticamente; o cartão só aparece enquanto estão disponíveis.',
-    '特別ルートは特定の出来事の後にだけ現れます。自動で期限切れまたは変更されることがあり、利用可能な間だけカードが表示されます。'
+    'Spezialrouten erscheinen nur während bestimmter Ereignisse. Sie können automatisch ablaufen oder wechseln; ihre Karte wird nur während der Verfügbarkeit angezeigt.',
+    'Las rutas especiales solo aparecen durante ciertos eventos. Pueden caducar o cambiar automáticamente; su tarjeta solo se muestra mientras estén disponibles.',
+    'Les itinéraires spéciaux n’apparaissent que pendant certains événements. Ils peuvent expirer ou changer automatiquement ; leur carte n’est visible que pendant leur disponibilité.',
+    'I percorsi speciali appaiono solo durante determinati eventi. Possono scadere o cambiare automaticamente; la loro scheda è visibile solo mentre sono disponibili.',
+    'Rotas especiais aparecem apenas durante certos eventos. Elas podem expirar ou mudar automaticamente; o cartão só aparece enquanto estão disponíveis.',
+    '特別ルートは特定のイベント中にのみ表示されます。自動で期限切れまたは変更されることがあり、利用可能な間だけカードが表示されます。'
   ],
   'Tiny outings, quick training and wooden chests.': [
     'Winzige Ausflüge, schnelles Training und Holzkisten.',
@@ -5335,5 +5335,144 @@ const uiPhraseTranslations = <String, List<String>>{
     'Le reliquie acquistate qui non sono scambiabili. Quelle trovate durante il gioco restano scambiabili. Puoi acquistarne quante ne vuoi.',
     'As relíquias compradas aqui não são negociáveis. As encontradas durante o jogo continuam negociáveis. Você pode comprar quantas quiser.',
     'ここで購入したレリックは交換できません。ゲームで入手したレリックは引き続き交換できます。購入数に制限はありません。'
+  ],
+  'A Special Adventure has appeared': [
+    'Ein Spezialabenteuer ist erschienen',
+    'Ha aparecido una Aventura especial',
+    'Une Aventure spéciale est apparue',
+    'È apparsa un’Avventura speciale',
+    'Uma Aventura especial apareceu',
+    'スペシャルアドベンチャーが出現しました'
+  ],
+  'A gentle golden warmth lingers around this egg, as if it carries a wish meant for someone truly special.':
+      [
+    'Eine sanfte goldene Wärme umgibt dieses Ei, als trüge es einen Wunsch für einen ganz besonderen Menschen.',
+    'Una suave calidez dorada rodea este huevo, como si llevara un deseo para alguien realmente especial.',
+    'Une douce chaleur dorée entoure cet œuf, comme s’il portait un vœu destiné à une personne vraiment spéciale.',
+    'Un dolce calore dorato avvolge questo uovo, come se custodisse un desiderio per una persona davvero speciale.',
+    'Um suave calor dourado envolve este ovo, como se carregasse um desejo para alguém realmente especial.',
+    'この卵には、かけがえのない誰かへの願いを宿すような、優しい黄金のぬくもりが残っています。'
+  ],
+  'All Expertises': [
+    'Alle Expertisen',
+    'Todas las pericias',
+    'Toutes les expertises',
+    'Tutte le competenze',
+    'Todas as especialidades',
+    'すべての専門能力'
+  ],
+  'Journey shortening': [
+    'Reiseverkürzung',
+    'Reducción del viaje',
+    'Réduction du voyage',
+    'Riduzione del viaggio',
+    'Redução da jornada',
+    '旅程の短縮'
+  ],
+  'Might + Arcana + Spirit: every combined point removes 1 hour (minimum 1 day).':
+      [
+    'Macht + Arkana + Geist: Jeder gemeinsame Punkt verkürzt um 1 Stunde (mindestens 1 Tag).',
+    'Poder + Arcana + Espíritu: cada punto combinado reduce 1 hora (mínimo 1 día).',
+    'Puissance + Arcane + Esprit : chaque point cumulé retire 1 heure (minimum 1 jour).',
+    'Forza + Arcano + Spirito: ogni punto combinato riduce di 1 ora (minimo 1 giorno).',
+    'Poder + Arcana + Espírito: cada ponto combinado reduz 1 hora (mínimo de 1 dia).',
+    'マイト＋アルカナ＋スピリット：合計1ポイントごとに1時間短縮（最短1日）。'
+  ],
+  'Guaranteed Special Chest': [
+    'Garantierte Spezialtruhe',
+    'Cofre especial garantizado',
+    'Coffre spécial garanti',
+    'Forziere speciale garantito',
+    'Baú especial garantido',
+    'スペシャルチェスト確定'
+  ],
+  '269 coins, 10 gems and a Special Egg with an event dragon.': [
+    '269 Münzen, 10 Edelsteine und ein Spezial-Ei mit einem Eventdrachen.',
+    '269 monedas, 10 gemas y un Huevo especial con un dragón del evento.',
+    '269 pièces, 10 gemmes et un Œuf spécial contenant un dragon d’événement.',
+    '269 monete, 10 gemme e un Uovo speciale con un drago dell’evento.',
+    '269 moedas, 10 gemas e um Ovo especial com um dragão do evento.',
+    '269コイン、10ジェム、イベントドラゴン入りのスペシャルエッグ。'
+  ],
+  'Guaranteed relic': [
+    'Garantiertes Relikt',
+    'Reliquia garantizada',
+    'Relique garantie',
+    'Reliquia garantita',
+    'Relíquia garantida',
+    'レリック確定'
+  ],
+  '1 random relic; which one remains a surprise until you claim it.': [
+    '1 zufälliges Relikt; welches es ist, bleibt bis zum Abholen eine Überraschung.',
+    '1 reliquia aleatoria; cuál será seguirá siendo una sorpresa hasta reclamarla.',
+    '1 relique aléatoire ; son identité reste une surprise jusqu’à sa récupération.',
+    '1 reliquia casuale; quale sarà resta una sorpresa fino alla riscossione.',
+    '1 relíquia aleatória; qual será continua sendo surpresa até o resgate.',
+    'ランダムなレリック1個。受け取るまで中身は秘密です。'
+  ],
+  'Guaranteed Music Chest': [
+    'Garantierte Musiktruhe',
+    'Cofre de música garantizado',
+    'Coffre musical garanti',
+    'Forziere musicale garantito',
+    'Baú de música garantido',
+    'ミュージックチェスト確定'
+  ],
+  '1 Music Chest, rolled only when you open it.': [
+    '1 Musiktruhe, deren Inhalt erst beim Öffnen bestimmt wird.',
+    '1 Cofre de música, cuyo contenido se decide solo al abrirlo.',
+    '1 Coffre musical, dont le contenu est tiré uniquement à l’ouverture.',
+    '1 Forziere musicale, estratto solo quando lo apri.',
+    '1 Baú de música, sorteado somente quando você o abre.',
+    'ミュージックチェスト1個。開けた時にだけ抽選されます。'
+  ],
+  '1 random relic; the exact relic is still a surprise.': [
+    '1 zufälliges Relikt; das genaue Relikt bleibt eine Überraschung.',
+    '1 reliquia aleatoria; la reliquia exacta sigue siendo una sorpresa.',
+    '1 relique aléatoire ; la relique exacte reste une surprise.',
+    '1 reliquia casuale; la reliquia esatta resta una sorpresa.',
+    '1 relíquia aleatória; a relíquia exata continua sendo surpresa.',
+    'ランダムなレリック1個。どれかはまだ秘密です。'
+  ],
+  '1 Music Chest, rolled when it is opened.': [
+    '1 Musiktruhe, deren Inhalt beim Öffnen bestimmt wird.',
+    '1 Cofre de música, cuyo contenido se decide al abrirlo.',
+    '1 Coffre musical, dont le contenu est tiré à l’ouverture.',
+    '1 Forziere musicale, estratto quando viene aperto.',
+    '1 Baú de música, sorteado quando é aberto.',
+    'ミュージックチェスト1個。開封時に抽選されます。'
+  ],
+  'Special Egg': [
+    'Spezial-Ei',
+    'Huevo especial',
+    'Œuf spécial',
+    'Uovo speciale',
+    'Ovo especial',
+    'スペシャルエッグ'
+  ],
+  'Special Events': [
+    'Spezialevents',
+    'Eventos especiales',
+    'Événements spéciaux',
+    'Eventi speciali',
+    'Eventos especiais',
+    'スペシャルイベント'
+  ],
+  'When a Special Adventure becomes available.': [
+    'Wenn ein Spezialabenteuer verfügbar wird.',
+    'Cuando una Aventura especial esté disponible.',
+    'Lorsqu’une Aventure spéciale devient disponible.',
+    'Quando diventa disponibile un’Avventura speciale.',
+    'Quando uma Aventura especial fica disponível.',
+    'スペシャルアドベンチャーが利用可能になった時。'
+  ],
+  'A golden birthday wish for a beautiful woman whose kindness brightens the Haven.':
+      [
+    'Ein goldener Geburtstagswunsch für eine wundervolle Frau, deren Güte den Haven erhellt.',
+    'Un deseo dorado de cumpleaños para una mujer maravillosa cuya bondad ilumina el Haven.',
+    'Un vœu d’anniversaire doré pour une femme merveilleuse dont la bonté illumine le Haven.',
+    'Un augurio di compleanno dorato per una donna meravigliosa la cui gentilezza illumina l’Haven.',
+    'Um desejo dourado de aniversário para uma mulher maravilhosa cuja bondade ilumina o Haven.',
+    '優しさでヘイヴンを照らす素敵な女性へ贈る、黄金の誕生日の願い。'
   ],
 };

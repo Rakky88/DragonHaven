@@ -309,6 +309,7 @@ class AppStrings {
         ChestTier.dragon => pick('Dragon Chest', 'Drakenkist'),
         ChestTier.mythical => pick('Mythical Chest', 'Mythische Kist'),
         ChestTier.sinister => pick('Sinister Chest', 'Sinistere Kist'),
+        ChestTier.special => pick('Special Chest', 'Speciale Kist'),
         ChestTier.portrait => pick('Portrait Chest', 'Portretkist'),
         ChestTier.title => pick('Title Chest', 'Titelkist'),
         ChestTier.music => pick('Music Chest', 'Muziekkist'),
@@ -991,6 +992,29 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'it': ['Runa compiuta', 'Ottieni il grado S+ in Tessirune.'],
     'pt': ['Runa concluída', 'Alcance a classificação S+ em Tecelão de runas.'],
     'ja': ['ルーン完了', 'ルーンウィーバーでS+ランクを獲得する。'],
+  },
+  'winner_chicken_dinner': {
+    'de': [
+      'Gewinner, Gewinner, Hühnerdinner',
+      'Brüte die geheime Cluckatrice aus einem Spezial-Ei aus.'
+    ],
+    'es': [
+      'Ganador, ganador, cena de pollo',
+      'Haz eclosionar a la Cluckatrice secreta de un Huevo especial.'
+    ],
+    'fr': [
+      'Gagnant, gagnant, dîner de poulet',
+      'Fais éclore la Cluckatrice secrète d’un Œuf spécial.'
+    ],
+    'it': [
+      'Vincitore, vincitore, cena di pollo',
+      'Fai schiudere la Cluckatrice segreta da un Uovo speciale.'
+    ],
+    'pt': [
+      'Vencedor, vencedor, jantar de frango',
+      'Faça a Cluckatrice secreta nascer de um Ovo especial.'
+    ],
+    'ja': ['勝者のチキンディナー', 'スペシャルエッグから秘密のクッカトリスを孵化させる。'],
   },
   'probably_fine': {
     'de': [

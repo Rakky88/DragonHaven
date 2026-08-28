@@ -218,7 +218,7 @@ void main() {
       HavenNotificationCategory.tradeReturns,
       false,
     );
-    final restored = await HouseholdProvider.loadFromStorage();
+    var restored = await HouseholdProvider.loadFromStorage();
 
     expect(
       restored.notificationEnabled(HavenNotificationCategory.tradeReturns),
@@ -226,6 +226,29 @@ void main() {
     );
     expect(
       restored.notificationEnabled(HavenNotificationCategory.tradeRequests),
+      isTrue,
+    );
+
+    await restored.setNotificationEnabled(
+      HavenNotificationCategory.specialEvents,
+      false,
+    );
+    restored = await HouseholdProvider.loadFromStorage();
+    expect(
+      restored.notificationEnabled(HavenNotificationCategory.specialEvents),
+      isFalse,
+    );
+  });
+
+  test('existing saves inherit Special Event notifications as default on',
+      () async {
+    SharedPreferences.setMockInitialValues({
+      'dragon_haven_state_v1': '{"enabledNotificationCategories":["eggReady"]}',
+    });
+
+    final restored = await HouseholdProvider.loadFromStorage();
+    expect(
+      restored.notificationEnabled(HavenNotificationCategory.specialEvents),
       isTrue,
     );
   });
@@ -919,8 +942,8 @@ void main() {
   });
 
   test('the achievement catalog has 29 unique humorous milestones', () {
-    expect(achievementCatalog, hasLength(29));
-    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(29));
+    expect(achievementCatalog, hasLength(30));
+    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(30));
     expect(achievementCatalog.every((entry) => entry.target > 0), isTrue);
     expect(
         achievementCatalog.every((entry) =>

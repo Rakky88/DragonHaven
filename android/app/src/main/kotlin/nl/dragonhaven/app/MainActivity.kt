@@ -275,6 +275,7 @@ class MainActivity : FlutterActivity() {
         "chest_mythical_legacy" -> R.raw.chest_mythical_legacy
         "chest_silver" -> R.raw.chest_silver
         "chest_sinister" -> R.raw.chest_sinister
+        "chest_special" -> R.raw.chest_special
         "chest_sinister_legacy" -> R.raw.chest_sinister_legacy
         "chest_wooden" -> R.raw.chest_wooden
         "evolution_ascended" -> R.raw.evolution_ascended

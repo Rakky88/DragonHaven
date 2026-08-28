@@ -67,8 +67,9 @@ void main() {
   });
 
   test('lineage rarities match the 42-family distribution', () {
-    int count(DragonRarity rarity) =>
-        dragonLineages.where((lineage) => lineage.rarity == rarity).length;
+    int count(DragonRarity rarity) => standardDragonLineages
+        .where((lineage) => lineage.rarity == rarity)
+        .length;
 
     expect(count(DragonRarity.common), 20);
     expect(count(DragonRarity.uncommon), 10);
@@ -79,7 +80,7 @@ void main() {
   });
 
   test('achievements have unique badges and use Common terminology', () {
-    expect(achievementCatalog, hasLength(29));
+    expect(achievementCatalog, hasLength(30));
     expect(
       achievementCatalog.map((achievement) => achievement.badge).toSet(),
       hasLength(achievementCatalog.length),
@@ -120,8 +121,8 @@ void main() {
     );
   });
 
-  test('all nine chest tiers and all 24 personality traits exist', () {
-    expect(ChestTier.values, hasLength(9));
+  test('all ten chest tiers and all 24 personality traits exist', () {
+    expect(ChestTier.values, hasLength(10));
     expect(dragonPersonalityTraits, hasLength(24));
     expect(dragonPersonalityTraits.toSet(), hasLength(24));
     for (final entry in dragonPersonalityIncompatibilities.entries) {
@@ -206,6 +207,7 @@ void main() {
       'chest_mythical_legacy.ogg',
       'chest_sinister.wav',
       'chest_sinister_legacy.ogg',
+      'chest_special.wav',
       'hatch_build.ogg',
       'hatch_crack_1.ogg',
       'hatch_crack_2.ogg',
@@ -241,10 +243,13 @@ void main() {
         reason: 'The hatch reveal uses the full original cinematic fanfare.');
     final mythical = File('${directory.path}/chest_mythical.wav');
     final sinister = File('${directory.path}/chest_sinister.wav');
+    final special = File('${directory.path}/chest_special.wav');
     expect(mythical.lengthSync(), greaterThan(800000));
     expect(sinister.lengthSync(), greaterThan(780000));
+    expect(special.lengthSync(), greaterThan(1100000));
     expect(mythical.readAsBytesSync().take(4), [82, 73, 70, 70]);
     expect(sinister.readAsBytesSync().take(4), [82, 73, 70, 70]);
+    expect(special.readAsBytesSync().take(4), [82, 73, 70, 70]);
     expect(
       mythical.lengthSync(),
       greaterThan(
@@ -258,6 +263,7 @@ void main() {
     expect(nativeBridge, contains('"chest_dragon" -> R.raw.hatch_reveal'));
     expect(nativeBridge, contains('"chest_mythical" -> R.raw.chest_mythical'));
     expect(nativeBridge, contains('"chest_sinister" -> R.raw.chest_sinister'));
+    expect(nativeBridge, contains('"chest_special" -> R.raw.chest_special'));
     expect(nativeBridge, contains('listOf("music_reverie")'));
     expect(nativeBridge, isNot(contains('previousMusicStyle')));
   });
@@ -612,11 +618,34 @@ void main() {
 
     expect(workflow, contains('MIGRATE_PRODUCTION_24_TO_25'));
     expect(workflow, contains("'202608280024'"));
-    expect(workflow, contains("@('202608280025')"));
+    expect(workflow, contains("@('202608280025', '202608290026')"));
+    expect(workflow, contains('deferred-202608290026.sql'));
+    expect(workflow, contains("Compare-Object @('202608280025')"));
     expect(workflow, contains('Compare-Object'));
     expect(workflow, contains('db push --linked --include-all --dry-run'));
     expect(workflow, contains('release_server_preflight.ps1'));
     expect(workflow, contains('DragonHaven-production-migration-24-to-25'));
     expect(workflow, isNot(contains("tags:\n      - 'v*'")));
+  });
+
+  test('Special Chest trade migration and bounded workflow are explicit', () {
+    final migration = File(
+      'supabase/migrations/202608290026_special_chest_trade_support.sql',
+    ).readAsStringSync();
+    expect(migration, contains("'sinister', 'special'"));
+    expect(migration, contains("r.item_key = 'special'"));
+    expect(migration, contains('synchronize_trade_inventory_v25'));
+    expect(migration, contains('reserve_trade_item_v25'));
+    expect(migration, contains('transfer_trade_item_v25'));
+    expect(migration, contains('import_legacy_inventory_v25'));
+
+    final workflow =
+        File('.github/workflows/production-migrate-26.yml').readAsStringSync();
+    expect(workflow, contains('MIGRATE_PRODUCTION_25_TO_26'));
+    expect(workflow, contains("\$expectedRemote = '202608280025'"));
+    expect(workflow, contains("@('202608290026')"));
+    expect(workflow,
+        contains('supabase db push --linked --include-all --dry-run'));
+    expect(workflow, contains('./tool/release_server_preflight.ps1'));
   });
 }

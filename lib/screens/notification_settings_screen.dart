@@ -184,6 +184,13 @@ class _NotificationToggle extends StatelessWidget {
           'When your Trial board reaches 3/3.',
           'Wanneer je Trial-bord 3/3 bereikt.',
         ),
+      HavenNotificationCategory.specialEvents => (
+          Icons.auto_awesome_motion_rounded,
+          'Special Events',
+          'Special Events',
+          'When a Special Adventure becomes available.',
+          'Wanneer een Speciaal Avontuur beschikbaar wordt.',
+        ),
     };
     return SwitchListTile(
       key: Key('notification-${category.name}'),

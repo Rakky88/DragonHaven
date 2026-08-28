@@ -342,6 +342,16 @@ String? translatedAdventureTitle(
   String languageCode,
 ) {
   if (!catalogLanguageIndex.containsKey(languageCode)) return null;
+  if (adventure.id == 'special_golden_wings_birthday') {
+    return _localizedAdventure(languageCode, const [
+      'Ein Wunsch auf goldenen Schwingen',
+      'Un deseo sobre alas doradas',
+      'Un vœu sur des ailes dorées',
+      'Un desiderio su ali dorate',
+      'Um desejo em asas douradas',
+      '黄金の翼に託す願い',
+    ]);
+  }
   final index = int.tryParse(adventure.id.split('_').last);
   if (index == null || index < 1) return null;
   final zeroBased = index - 1;
@@ -373,6 +383,16 @@ String? translatedAdventureDescription(
   String languageCode,
 ) {
   if (!catalogLanguageIndex.containsKey(languageCode)) return null;
+  if (adventure.id == 'special_golden_wings_birthday') {
+    return _localizedAdventure(languageCode, const [
+      'Ein goldener Geburtstagswunsch für eine wundervolle Frau, deren Güte den Haven erhellt.',
+      'Un deseo dorado de cumpleaños para una mujer maravillosa cuya bondad ilumina el Haven.',
+      'Un vœu d’anniversaire doré pour une femme merveilleuse dont la bonté illumine le Haven.',
+      'Un augurio di compleanno dorato per una donna meravigliosa la cui gentilezza illumina l’Haven.',
+      'Um desejo dourado de aniversário para uma mulher maravilhosa cuja bondade ilumina o Haven.',
+      '優しさでヘイヴンを照らす素敵な女性へ贈る、黄金の誕生日の願い。',
+    ]);
+  }
   return switch (adventure.kind) {
     AdventureKind.mini => _localizedAdventure(languageCode, const [
         'Ein winziger Turmausflug mit einer bescheidenen Holzbelohnung.',
@@ -458,7 +478,6 @@ String _specialAdventureTitle(
           'L’Ombre Courbe',
           'L’Ombra Storta',
           'A Sombra Torta',
-          '扭曲之影',
           '歪んだ影',
         ]
       : [
@@ -467,7 +486,6 @@ String _specialAdventureTitle(
           'Une étrange invitation',
           'Uno strano invito',
           'Um convite estranho',
-          '奇怪的邀请',
           '不思議な招待状',
         ];
   return _localizedAdventure(language, values);
@@ -480,7 +498,6 @@ String _groupAdventureDescription(String language, int players) =>
       'Une découverte coopérative pour $players gardiens de dragons.',
       'Una scoperta cooperativa per $players custodi di draghi.',
       'Uma descoberta cooperativa para $players guardiões de dragões.',
-      '供 $players 名龙守护者合作探索。',
       '$players人のドラゴンキーパーで挑む協力探索。',
     ]);
 

@@ -33,6 +33,7 @@ class DragonLineage {
     this.primaryRoomId = 'hearth',
     this.secondaryRoomIds = const [],
     this.artSourceId,
+    this.secret = false,
   });
 
   final String id;
@@ -53,6 +54,7 @@ class DragonLineage {
   final String primaryRoomId;
   final List<String> secondaryRoomIds;
   final String? artSourceId;
+  final bool secret;
 
   String get spriteId => artSourceId ?? id;
 
@@ -815,7 +817,30 @@ const dragonLineages = <DragonLineage>[
     primaryRoomId: 'hearth',
     secondaryRoomIds: ['crystal', 'cloud'],
   ),
+  DragonLineage(
+    id: 'cluckatrice',
+    nameEn: 'Cluckatrice',
+    nameNl: 'Cluckatrice',
+    affinityCategory: 'dawn',
+    primaryColorValue: 0xFFF2DFC1,
+    secondaryColorValue: 0xFFC94B3C,
+    accentColorValue: 0xFFFFC857,
+    trait: DragonTrait.featherWings,
+    earthFormEn: 'Roostguard Colossus',
+    earthFormNl: 'Nestwachtkolos',
+    stormFormEn: 'Dawnspell Plume',
+    stormFormNl: 'Dageraadsveer',
+    bondFormEn: 'Hearthflock Herald',
+    bondFormNl: 'Haardverenheraut',
+    rarity: DragonRarity.mythical,
+    primaryRoomId: 'garden',
+    secondaryRoomIds: ['hearth', 'sunforge'],
+    secret: true,
+  ),
 ];
+
+final List<DragonLineage> standardDragonLineages =
+    List.unmodifiable(dragonLineages.where((lineage) => !lineage.secret));
 
 final Map<String, DragonLineage> _dragonLineagesById =
     Map<String, DragonLineage>.unmodifiable({

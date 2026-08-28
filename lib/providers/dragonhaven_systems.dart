@@ -54,6 +54,134 @@ Duration _amsterdamOffsetAtUtc(DateTime instant) {
       : const Duration(hours: 1);
 }
 
+class SpecialAdventureWindow {
+  const SpecialAdventureWindow({
+    required this.event,
+    required this.key,
+    required this.startsAt,
+    required this.endsAt,
+  });
+
+  final SpecialAdventureEventDefinition event;
+  final String key;
+  final DateTime startsAt;
+  final DateTime endsAt;
+
+  bool contains(DateTime instant) {
+    final utc = instant.toUtc();
+    return !utc.isBefore(startsAt) && utc.isBefore(endsAt);
+  }
+}
+
+DateTime _amsterdamWallTimeToUtc(
+  int year,
+  int month,
+  int day, [
+  int hour = 0,
+]) {
+  final wall = DateTime.utc(year, month, day, hour);
+  for (final offset in const [Duration(hours: 2), Duration(hours: 1)]) {
+    final candidate = wall.subtract(offset);
+    if (_amsterdamOffsetAtUtc(candidate) == offset) return candidate;
+  }
+  throw StateError('Invalid Europe/Amsterdam wall time: $wall');
+}
+
+SpecialAdventureWindow _initialSpecialWindow(
+  SpecialAdventureEventDefinition event,
+) {
+  final start = _amsterdamWallTimeToUtc(
+    event.initialYear,
+    event.initialMonth,
+    event.initialDay,
+    event.initialHour,
+  );
+  return SpecialAdventureWindow(
+    event: event,
+    key: '${event.id}:launch:${event.initialYear}',
+    startsAt: start,
+    endsAt: start.add(event.initialAvailability),
+  );
+}
+
+SpecialAdventureWindow? _annualSpecialWindow(
+  SpecialAdventureEventDefinition event,
+  int year,
+) {
+  final firstYear = event.recursYearlyFrom;
+  final month = event.recurrenceMonth;
+  final day = event.recurrenceDay;
+  final availability = event.recurrenceAvailability;
+  if (firstYear == null ||
+      year < firstYear ||
+      month == null ||
+      day == null ||
+      availability == null) {
+    return null;
+  }
+  final start = _amsterdamWallTimeToUtc(
+    year,
+    month,
+    day,
+    event.recurrenceHour,
+  );
+  return SpecialAdventureWindow(
+    event: event,
+    key: '${event.id}:year:$year',
+    startsAt: start,
+    endsAt: start.add(availability),
+  );
+}
+
+List<SpecialAdventureWindow> specialAdventureWindowsAt(DateTime instant) {
+  final windows = <SpecialAdventureWindow>[];
+  final utc = instant.toUtc();
+  final amsterdamYear = utc.add(_amsterdamOffsetAtUtc(utc)).year;
+  for (final event in specialAdventureEventCatalog) {
+    final initial = _initialSpecialWindow(event);
+    if (initial.contains(instant)) windows.add(initial);
+    final annual = _annualSpecialWindow(event, amsterdamYear);
+    if (annual != null && annual.contains(instant)) windows.add(annual);
+  }
+  return windows;
+}
+
+SpecialAdventureWindow? specialAdventureWindowAt(DateTime instant) {
+  final windows = specialAdventureWindowsAt(instant);
+  return windows.isEmpty ? null : windows.first;
+}
+
+List<SpecialAdventureWindow> nextSpecialAdventureWindowsAfter(
+  DateTime instant,
+) {
+  final utc = instant.toUtc();
+  final amsterdamYear =
+      utc.add(_amsterdamOffsetAtUtc(utc)).year.clamp(2027, 9996).toInt();
+  final result = <SpecialAdventureWindow>[];
+  for (final event in specialAdventureEventCatalog) {
+    final candidates = <SpecialAdventureWindow>[_initialSpecialWindow(event)];
+    for (var year = amsterdamYear; year <= amsterdamYear + 2; year++) {
+      final annual = _annualSpecialWindow(event, year);
+      if (annual != null) candidates.add(annual);
+    }
+    candidates.sort((a, b) => a.startsAt.compareTo(b.startsAt));
+    final future = candidates
+        .where((window) => window.startsAt.isAfter(utc))
+        .toList(growable: false);
+    if (future.isNotEmpty) result.add(future.first);
+  }
+  return result;
+}
+
+SpecialAdventureWindow nextSpecialAdventureWindowAfter(DateTime instant) {
+  final windows = nextSpecialAdventureWindowsAfter(instant)
+    ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+  if (windows.isEmpty) {
+    throw StateError('No future Special Adventure is configured.');
+  }
+  return windows.first;
+}
+
 /// Stable weekly slot anchored to Sunday 12:00 in Europe/Amsterdam, including
 /// the European daylight-saving transition rules used by the Netherlands.
 int _amsterdamGroupAdventureSlot(DateTime instant) {
@@ -102,6 +230,65 @@ extension DragonHavenSystems on HouseholdProvider {
   static const int maxDragonsPerTowerFloor = 3;
 
   DateTime get currentTime => _clock();
+
+  Future<bool> refreshSpecialAdventureNotifications() async {
+    if (!notificationEnabled(HavenNotificationCategory.specialEvents)) {
+      return false;
+    }
+    final now = _clock();
+    var changed = false;
+    final strings = AppStrings(languageCode);
+    for (final current in specialAdventureWindowsAt(now)) {
+      if (!notifiedSeasonalSpecialEventKeys.contains(current.key)) {
+        final adventure = AdventureCatalog.byId[current.event.adventureId];
+        await HavenNotifications.specialAdventureAvailable(
+          id: 'special-adventure-${current.key}',
+          title: strings.pick(
+            'A Special Adventure has appeared',
+            'Er is een Speciaal Avontuur verschenen',
+          ),
+          body: strings.pick(
+            '${adventure?.titleEn ?? 'A rare route'} is waiting in Adventures for a limited time.',
+            '${adventure?.titleNl ?? 'Een zeldzame route'} wacht tijdelijk bij Adventures.',
+          ),
+        );
+        notifiedSeasonalSpecialEventKeys.add(current.key);
+        changed = true;
+      }
+    }
+    for (final next in nextSpecialAdventureWindowsAfter(now)) {
+      final adventure = AdventureCatalog.byId[next.event.adventureId];
+      await HavenNotifications.specialAdventureAvailable(
+        id: 'special-adventure-${next.key}',
+        at: next.startsAt,
+        title: strings.pick(
+          'A Special Adventure has appeared',
+          'Er is een Speciaal Avontuur verschenen',
+        ),
+        body: strings.pick(
+          '${adventure?.titleEn ?? 'A rare route'} is waiting in Adventures for a limited time.',
+          '${adventure?.titleNl ?? 'Een zeldzame route'} wacht tijdelijk bij Adventures.',
+        ),
+      );
+    }
+    if (notifiedSeasonalSpecialEventKeys.length > 20) {
+      notifiedSeasonalSpecialEventKeys =
+          notifiedSeasonalSpecialEventKeys.skip(10).toSet();
+      changed = true;
+    }
+    return changed;
+  }
+
+  Future<void> cancelSpecialAdventureNotifications() async {
+    final now = _clock();
+    final windows = <SpecialAdventureWindow>{
+      ...specialAdventureWindowsAt(now),
+      ...nextSpecialAdventureWindowsAfter(now),
+    };
+    for (final window in windows) {
+      await HavenNotifications.cancel('special-adventure-${window.key}');
+    }
+  }
 
   DateTime? nextAdventureRefreshAt(
     AdventureKind kind, {
@@ -427,13 +614,23 @@ extension DragonHavenSystems on HouseholdProvider {
     _refreshAdventureRuns();
     final now = _clock();
     if (kind == AdventureKind.special) {
-      final returningId = returningSpecialAdventureId;
-      if (returningId == null ||
-          returningSpecialAvailableUntil?.isAfter(now) != true) {
-        return const [];
+      final available = <AdventureDefinition>[];
+      for (final seasonalWindow in specialAdventureWindowsAt(now)) {
+        if (!startedSeasonalSpecialEventKeys.contains(seasonalWindow.key)) {
+          final definition =
+              AdventureCatalog.byId[seasonalWindow.event.adventureId];
+          if (definition != null && !available.contains(definition)) {
+            available.add(definition);
+          }
+        }
       }
-      final definition = AdventureCatalog.byId[returningId];
-      return definition == null ? const [] : [definition];
+      final returningId = returningSpecialAdventureId;
+      if (returningId != null &&
+          returningSpecialAvailableUntil?.isAfter(now) == true) {
+        final definition = AdventureCatalog.byId[returningId];
+        if (definition != null) available.add(definition);
+      }
+      return available;
     }
     if (kind == AdventureKind.group) {
       final slot = _amsterdamGroupAdventureSlot(now);
@@ -1022,6 +1219,19 @@ extension DragonHavenSystems on HouseholdProvider {
       return AdventureStartResult.dragonBusy;
     }
     final now = _clock();
+    SpecialAdventureWindow? specialWindow;
+    if (adventure.seasonalSpecial) {
+      final matches = specialAdventureWindowsAt(now)
+          .where((window) =>
+              window.event.adventureId == adventure.id &&
+              !startedSeasonalSpecialEventKeys.contains(window.key))
+          .toList(growable: false);
+      if (matches.isEmpty) {
+        return AdventureStartResult.unavailable;
+      }
+      specialWindow = matches.first;
+      startedSeasonalSpecialEventKeys.add(specialWindow.key);
+    }
     final duration = expertiseAdjustedAdventureDuration(adventure, [dragon]);
     final run = AdventureRun(
       id: _uuid.v4(),
@@ -1031,6 +1241,8 @@ extension DragonHavenSystems on HouseholdProvider {
       endsAt: now.add(duration),
       status: AdventureRunStatus.running,
       participantCount: participantCount,
+      specialEventId: specialWindow?.event.id,
+      specialEventKey: specialWindow?.key,
     );
     dragon.activeAdventureId = run.id;
     adventureRuns.add(run);
@@ -1102,6 +1314,20 @@ extension DragonHavenSystems on HouseholdProvider {
     _evolveReadyDragons(_clock());
     dragon.activeAdventureId = null;
     chestInventory.update(tier, (value) => value + 1, ifAbsent: () => 1);
+    final event = specialAdventureEventById(run.specialEventId);
+    if (event != null) {
+      final relics = event.rewards.randomRelicPool;
+      if (relics.isNotEmpty) {
+        _grantRelic(relics[_random.nextInt(relics.length)]);
+      }
+      if (event.rewards.musicChest && !musicChestCapacityReached) {
+        chestInventory.update(
+          ChestTier.music,
+          (value) => value + 1,
+          ifAbsent: () => 1,
+        );
+      }
+    }
     adventureRuns.removeAt(index);
     totalAdventuresCompleted++;
     if (definition.kind == AdventureKind.short) totalShortAdventuresCompleted++;
@@ -1329,7 +1555,11 @@ extension DragonHavenSystems on HouseholdProvider {
       _ => strings.pick('A strange musical tap answers from within.',
           'Er klinkt een vreemd muzikaal tikje van binnen.'),
     };
-    return affinity;
+    if (!lineage.secret) return affinity;
+    return '$affinity\n\n${strings.pick(
+      'A gentle golden warmth lingers around this egg, as if it carries a wish meant for someone truly special.',
+      'Rond dit ei blijft een zachte gouden warmte hangen, alsof het een wens draagt voor iemand die echt bijzonder is.',
+    )}';
   }
 
   String dragonSizeLabel(Pet dragon) {
@@ -1589,6 +1819,18 @@ extension DragonHavenSystems on HouseholdProvider {
     latestReturningEvent = sinister
         ? '${dragon.displayName} left a Sinister Adventure. It is available for 48 hours.'
         : '${dragon.displayName} revealed a Special Adventure. It is available for 48 hours.';
+    final strings = AppStrings(languageCode);
+    unawaited(HavenNotifications.specialAdventureAvailable(
+      id: 'returning-special-${definition.id}-${now.millisecondsSinceEpoch}',
+      title: strings.pick(
+        'A Special Adventure has appeared',
+        'Er is een Speciaal Avontuur verschenen',
+      ),
+      body: strings.pick(
+        '${dragon.displayName} revealed a rare route. It is available for 48 hours.',
+        '${dragon.displayName} onthulde een zeldzame route. Deze is 48 uur beschikbaar.',
+      ),
+    ));
   }
 
   void _recordMischief(Pet dragon, {required bool major}) {

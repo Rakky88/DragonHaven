@@ -1201,8 +1201,11 @@ Future<TradeItem?> _pickTradeItem(BuildContext context) async {
                             style: const TextStyle(fontWeight: FontWeight.w900),
                           ),
                           subtitle: inventoryItem.item.kind == TradeItemKind.egg
-                              ? Text(strings.pick(
-                                  'Mysterious Egg', 'Mysterieus Ei'))
+                              ? Text(inventoryItem.item.egg?.isSpecialEgg ==
+                                      true
+                                  ? strings.pick('Special Egg', 'Speciaal Ei')
+                                  : strings.pick(
+                                      'Mysterious Egg', 'Mysterieus Ei'))
                               : null,
                           trailing: inventoryItem.available > 1
                               ? Chip(label: Text('×${inventoryItem.available}'))

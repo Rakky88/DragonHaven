@@ -369,8 +369,12 @@ class _ChestRevealState extends State<_ChestReveal>
                                                       .mysteriousEgg,
                                                   value: '1',
                                                   label: strings.pick(
-                                                    'Mysterious Egg',
-                                                    'Mysterieus Ei',
+                                                    _reward!.specialEgg
+                                                        ? 'Special Egg'
+                                                        : 'Mysterious Egg',
+                                                    _reward!.specialEgg
+                                                        ? 'Speciaal Ei'
+                                                        : 'Mysterieus Ei',
                                                   ),
                                                 ),
                                               if (_reward!.relicFound

@@ -127,9 +127,9 @@ void main() {
     }
   });
 
-  test('all 1000 generated adventures have localized content', () {
+  test('all generated and authored adventures have localized content', () {
     final adventures = AdventureCatalog.byId.values;
-    expect(adventures, hasLength(1000));
+    expect(adventures, hasLength(1001));
     for (final language in translatedLanguages) {
       final strings = AppStrings(language);
       for (final adventure in adventures) {

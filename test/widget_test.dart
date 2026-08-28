@@ -1463,7 +1463,7 @@ void main() {
     final activeDragonId = game.pet.id;
     game.eggStash.add(DragonEgg(
       id: 'widget-later-egg',
-      lineageId: dragonLineages.last.id,
+      lineageId: standardDragonLineages.last.id,
       acquiredAt: DateTime(2026, 8, 22),
       hatchSeed: 991,
       prismatic: false,
@@ -1578,7 +1578,7 @@ void main() {
 
     expect(find.text('The Draconomicon'), findsWidgets);
     final finalLineage = find.byKey(PageStorageKey(
-      'draconomicon-lineage-normal-${dragonLineages.last.id}',
+      'draconomicon-lineage-normal-${standardDragonLineages.last.id}',
     ));
     await tester.scrollUntilVisible(
       finalLineage,

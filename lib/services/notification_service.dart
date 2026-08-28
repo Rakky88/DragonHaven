@@ -13,12 +13,14 @@ enum HavenNotificationCategory {
   tradeReturns,
   tradeCompletions,
   trialsFull,
+  specialEvents,
 }
 
 enum HavenNotificationDestination {
   tower,
   friends,
   adventureCompleted,
+  adventureAvailable,
   adventureTrials,
   achievements,
 }
@@ -64,6 +66,8 @@ abstract final class HavenNotifications {
   static void _recordNavigation(String? kind, {bool emit = true}) {
     final destination = switch (kind) {
       'adventure_complete' => HavenNotificationDestination.adventureCompleted,
+      'special_adventure_available' =>
+        HavenNotificationDestination.adventureAvailable,
       'trials_full' => HavenNotificationDestination.adventureTrials,
       'friend_request' ||
       'friend_accepted' ||
@@ -227,6 +231,33 @@ abstract final class HavenNotifications {
               kind: 'trials_full',
             )
           : Future<void>.value();
+
+  static Future<void> specialAdventureAvailable({
+    required String id,
+    required String title,
+    required String body,
+    DateTime? at,
+  }) {
+    if (!isEnabled(HavenNotificationCategory.specialEvents)) {
+      return Future<void>.value();
+    }
+    if (at != null && at.isAfter(DateTime.now())) {
+      return schedule(
+        id: id,
+        at: at,
+        title: title,
+        body: body,
+        kind: 'special_adventure_available',
+      );
+    }
+    return _showWhenBackground(
+      category: HavenNotificationCategory.specialEvents,
+      id: id,
+      title: title,
+      body: body,
+      kind: 'special_adventure_available',
+    );
+  }
 
   static Future<void> cancel(String id) async {
     try {

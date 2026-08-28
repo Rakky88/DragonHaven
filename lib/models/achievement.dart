@@ -285,6 +285,16 @@ const achievementCatalog = <AchievementDefinition>[
       category: AchievementCategory.master,
       badge: 'trial_arcana_s_plus'),
   AchievementDefinition(
+      id: 'winner_chicken_dinner',
+      titleEn: 'Winner, winner, chicken dinner',
+      titleNl: 'Winner, winner, chicken dinner',
+      descriptionEn: 'Hatch the secret Cluckatrice from a Special Egg.',
+      descriptionNl: 'Laat de geheime Cluckatrice uit een Speciaal Ei komen.',
+      target: 1,
+      category: AchievementCategory.master,
+      secret: true,
+      badge: 'winner_chicken_dinner.webp'),
+  AchievementDefinition(
       id: 'probably_fine',
       titleEn: 'This Is Probably Fine',
       titleNl: 'Dit Komt Vast Goed',

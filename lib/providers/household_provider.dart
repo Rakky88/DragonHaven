@@ -204,6 +204,8 @@ class HouseholdProvider extends ChangeNotifier {
   String? latestReturningEvent;
   String? returningSpecialAdventureId;
   DateTime? returningSpecialAvailableUntil;
+  Set<String> startedSeasonalSpecialEventKeys = {};
+  Set<String> notifiedSeasonalSpecialEventKeys = {};
 
   Set<String> ownedItemIds = {};
   Map<ItemSlot, String> equippedItemIds = {};
@@ -770,6 +772,13 @@ class HouseholdProvider extends ChangeNotifier {
             .whereType<HavenNotificationCategory>()
             .toSet()
         : HavenNotificationCategory.values.toSet();
+    // Version 2 introduced Special Event notifications. Existing saves inherit
+    // the requested default-on setting once; afterwards an explicit opt-out is
+    // preserved because version 2 is saved alongside the category list.
+    if ((data['notificationSettingsVersion'] as num?)?.toInt() != 2) {
+      enabledNotificationCategories
+          .add(HavenNotificationCategory.specialEvents);
+    }
     HavenNotifications.configure(enabledNotificationCategories);
     achievementsCompact = data['achievementsCompact'] is bool &&
         data['achievementsCompact'] as bool;
@@ -1048,6 +1057,14 @@ class HouseholdProvider extends ChangeNotifier {
         stringFromJson(data['returningSpecialAdventureId']);
     returningSpecialAvailableUntil = DateTime.tryParse(
         stringFromJson(data['returningSpecialAvailableUntil']) ?? '');
+    startedSeasonalSpecialEventKeys =
+        stringSetFromJson(data['startedSeasonalSpecialEventKeys'])
+            .take(50)
+            .toSet();
+    notifiedSeasonalSpecialEventKeys =
+        stringSetFromJson(data['notifiedSeasonalSpecialEventKeys'])
+            .take(50)
+            .toSet();
 
     ownedItemIds = stringSetFromJson(data['ownedItemIds'])
         .where((id) => shopItemById(id) != null)
@@ -1231,11 +1248,15 @@ class HouseholdProvider extends ChangeNotifier {
         for (final egg in [pet, incubatingEgg].whereType<Pet>()) {
           if (egg.isEgg) await HavenNotifications.cancel('egg-${egg.id}');
         }
+      } else if (category == HavenNotificationCategory.specialEvents) {
+        await cancelSpecialAdventureNotifications();
       }
     } else if (category == HavenNotificationCategory.trialsFull) {
       _scheduleTrialsFullNotification();
     } else if (category == HavenNotificationCategory.eggReady) {
       await _rescheduleNestEggNotification();
+    } else if (category == HavenNotificationCategory.specialEvents) {
+      await refreshSpecialAdventureNotifications();
     }
     await _notifyAndSave();
   }
@@ -1523,7 +1544,11 @@ class HouseholdProvider extends ChangeNotifier {
       ChestTier.silver => 0.04,
       ChestTier.gold => 0.12,
       ChestTier.dragon || ChestTier.mythical || ChestTier.sinister => 1.0,
-      ChestTier.portrait || ChestTier.title || ChestTier.music => 0.0,
+      ChestTier.special ||
+      ChestTier.portrait ||
+      ChestTier.title ||
+      ChestTier.music =>
+        0.0,
     };
     final pityEligible = tier == ChestTier.wooden ||
         tier == ChestTier.silver ||
@@ -1636,6 +1661,7 @@ class HouseholdProvider extends ChangeNotifier {
     if (tier == ChestTier.portrait) return _openPortraitChest();
     if (tier == ChestTier.title) return _openTitleChest();
     if (tier == ChestTier.music) return _openMusicChest();
+    if (tier == ChestTier.special) return _openSpecialChest();
     chestInventory[tier] = chestCount(tier) - 1;
     final coins = switch (tier) {
       ChestTier.wooden => 20 + _random.nextInt(21),
@@ -1643,6 +1669,7 @@ class HouseholdProvider extends ChangeNotifier {
       ChestTier.gold => 90 + _random.nextInt(71),
       ChestTier.dragon => 180 + _random.nextInt(121),
       ChestTier.mythical || ChestTier.sinister => 400 + _random.nextInt(251),
+      ChestTier.special => 269,
       ChestTier.portrait || ChestTier.title || ChestTier.music => 0,
     };
     final gems = switch (tier) {
@@ -1653,6 +1680,7 @@ class HouseholdProvider extends ChangeNotifier {
       ChestTier.dragon =>
         _random.nextDouble() < .9 ? 4 + _random.nextInt(4) : 0,
       ChestTier.mythical || ChestTier.sinister => 8 + _random.nextInt(6),
+      ChestTier.special => 10,
       ChestTier.portrait || ChestTier.title || ChestTier.music => 0,
     };
     final eggChance = eggDropChance(tier);
@@ -1686,6 +1714,31 @@ class HouseholdProvider extends ChangeNotifier {
         eggFound: eggFound,
         sinisterEgg: foundEgg?.sinister ?? false,
         relicFound: relicFound);
+  }
+
+  Future<ChestReward?> _openSpecialChest() async {
+    chestInventory[ChestTier.special] = chestCount(ChestTier.special) - 1;
+    eggStash.add(_createSpecialEgg());
+    pet.coins += 269;
+    pet.gems += 10;
+    totalChestsOpened++;
+    _addActivity(
+      message: 'A Special Chest revealed a one-of-a-kind egg.',
+      type: ActivityType.discovery,
+      code: ActivityCode.chestOpened,
+      subject: ChestTier.special.name,
+      coins: 269,
+      gems: 10,
+    );
+    _evaluateAchievements();
+    await _notifyAndSave();
+    return const ChestReward(
+      tier: ChestTier.special,
+      coins: 269,
+      gems: 10,
+      eggFound: true,
+      specialEgg: true,
+    );
   }
 
   Future<ChestReward?> _openPortraitChest() async {
@@ -1776,7 +1829,11 @@ class HouseholdProvider extends ChangeNotifier {
         ChestTier.dragon => .02,
         ChestTier.mythical => .04,
         ChestTier.sinister => 1.0,
-        ChestTier.portrait || ChestTier.title || ChestTier.music => 0.0,
+        ChestTier.special ||
+        ChestTier.portrait ||
+        ChestTier.title ||
+        ChestTier.music =>
+          0.0,
       };
 
   MysticRelic? _rollRelicDrop(ChestTier tier) {
@@ -2042,6 +2099,8 @@ class HouseholdProvider extends ChangeNotifier {
             ? 1
             : 0,
         'probably_fine' => totalSinisterAdventuresCompleted,
+        'winner_chicken_dinner' =>
+          discoveredForms.contains('cluckatrice:hatchling') ? 1 : 0,
         _ => 0,
       };
 
@@ -2157,6 +2216,8 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<void> refreshForCurrentDate() async {
+    final specialNotificationsChanged =
+        await refreshSpecialAdventureNotifications();
     final adventureOptionsBefore = [
       ...?adventureOptionIds[AdventureKind.mini],
       '#',
@@ -2190,7 +2251,8 @@ class HouseholdProvider extends ChangeNotifier {
       trialRefilledAt?.toIso8601String() ?? '',
     ].join('|');
     final roamingAssignmentsChanged = _normalizeRoamingState();
-    final changed = (adventureOptionsBefore != adventureOptionsAfter) |
+    final changed = specialNotificationsChanged |
+        (adventureOptionsBefore != adventureOptionsAfter) |
         (trialsBefore != trialsAfter) |
         pet.applyTimeDecay(_clock()) |
         _registerCurrentStage() |
@@ -2227,6 +2289,18 @@ class HouseholdProvider extends ChangeNotifier {
     );
   }
 
+  DragonEgg _createSpecialEgg() => DragonEgg(
+        id: _uuid.v4(),
+        lineageId: 'cluckatrice',
+        acquiredAt: _clock(),
+        hatchSeed: _random.nextInt(0x7fffffff),
+        prismatic: false,
+        lawAxis: LawAxis.values[_random.nextInt(LawAxis.values.length)],
+        moralAxis: MoralAxis.values[_random.nextInt(MoralAxis.values.length)],
+        sizeFactor: _dragonSizeFromRoll(_random.nextDouble()),
+        incubationMinutes: 21 * 60,
+      );
+
   DragonLineage _rollEggLineage(ChestTier sourceTier) {
     // Every chest tier has its own rarity curve. The later curves deliberately
     // make exceptional families more plausible without making Mythical routine.
@@ -2243,13 +2317,11 @@ class HouseholdProvider extends ChangeNotifier {
           .80,
           .97
         ],
-      ChestTier.portrait || ChestTier.title || ChestTier.music => const [
-          .75,
-          .95,
-          .995,
-          .9995,
-          .99999
-        ],
+      ChestTier.special ||
+      ChestTier.portrait ||
+      ChestTier.title ||
+      ChestTier.music =>
+        const [.75, .95, .995, .9995, .99999],
     };
     final rarity = roll < thresholds[0]
         ? DragonRarity.common
@@ -2262,8 +2334,9 @@ class HouseholdProvider extends ChangeNotifier {
                     : roll < thresholds[4]
                         ? DragonRarity.legendary
                         : DragonRarity.mythical;
-    final candidates =
-        dragonLineages.where((lineage) => lineage.rarity == rarity).toList();
+    final candidates = standardDragonLineages
+        .where((lineage) => lineage.rarity == rarity)
+        .toList();
     return candidates[_random.nextInt(candidates.length)];
   }
 
@@ -2397,6 +2470,7 @@ class HouseholdProvider extends ChangeNotifier {
         'enabledNotificationCategories': enabledNotificationCategories
             .map((category) => category.name)
             .toList(),
+        'notificationSettingsVersion': 2,
         'achievementsCompact': achievementsCompact,
         'tutorialCompleted': tutorialCompleted,
         'tutorialFullyViewed': tutorialFullyViewed,
@@ -2482,6 +2556,10 @@ class HouseholdProvider extends ChangeNotifier {
         'returningSpecialAdventureId': returningSpecialAdventureId,
         'returningSpecialAvailableUntil':
             returningSpecialAvailableUntil?.toIso8601String(),
+        'startedSeasonalSpecialEventKeys':
+            startedSeasonalSpecialEventKeys.toList(),
+        'notifiedSeasonalSpecialEventKeys':
+            notifiedSeasonalSpecialEventKeys.toList(),
         'ownedItemIds': ownedItemIds.toList(),
         'equippedItemIds': {
           for (final entry in equippedItemIds.entries)

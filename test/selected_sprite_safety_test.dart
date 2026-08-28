@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 
 const _selectedForms = <String, List<String>>{
+  'cluckatrice': ['wyrmling', 'might', 'arcana', 'spirit'],
   'auroracrown': ['wyrmling', 'might', 'arcana', 'spirit'],
   'bramblequill': ['wyrmling', 'might', 'arcana', 'spirit'],
   'cinderlynx': ['wyrmling', 'might', 'arcana', 'spirit'],
@@ -49,7 +50,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets(
-      'all 77 selected source forms retain a safety margin in five complete passes',
+      'all 81 selected source forms retain a safety margin in five complete passes',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(180, 180));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -126,7 +127,7 @@ void main() {
     }
   }, timeout: const Timeout(Duration(minutes: 12)));
 
-  test('all 77 selected source forms resolve to standalone safe artwork', () {
+  test('all 81 selected source forms resolve to standalone safe artwork', () {
     var count = 0;
     for (final selection in _selectedForms.entries) {
       for (final form in selection.value) {
@@ -143,10 +144,10 @@ void main() {
         count++;
       }
     }
-    expect(count, 77);
+    expect(count, 81);
   });
 
-  test('all 77 standalone sprites keep every opaque pixel inside the safe area',
+  test('all 81 standalone sprites keep every opaque pixel inside the safe area',
       () {
     for (var pass = 1; pass <= 5; pass++) {
       for (final selection in _selectedForms.entries) {

@@ -151,12 +151,12 @@ class Pet {
         hatchSeed = hatchSeed ??
             DateTime.now().microsecondsSinceEpoch.remainder(0x7fffffff),
         lineageId = lineageId ??
-            dragonLineages[(hatchSeed ??
+            standardDragonLineages[(hatchSeed ??
                         DateTime.now()
                             .microsecondsSinceEpoch
                             .remainder(0x7fffffff))
                     .abs()
-                    .remainder(dragonLineages.length)]
+                    .remainder(standardDragonLineages.length)]
                 .id;
 
   final String id;
@@ -202,8 +202,9 @@ class Pet {
   DragonLineage get lineage => dragonLineageById(lineageId);
   bool get spectral => prismatic;
   bool get isEgg => stage == DragonStage.egg;
+  bool get isSpecialEgg => isEgg && lineage.secret;
   String get displayName => isEgg
-      ? 'Mysterious Egg'
+      ? (isSpecialEgg ? 'Special Egg' : 'Mysterious Egg')
       : name.trim().isEmpty
           ? lineage.nameEn
           : name.trim();
@@ -524,7 +525,9 @@ class Pet {
       hatchSeed: seed,
       lineageId: dragonLineages.any((candidate) => candidate.id == lineage)
           ? lineage
-          : dragonLineages[seed.remainder(dragonLineages.length)].id,
+          : standardDragonLineages[
+                  seed.remainder(standardDragonLineages.length)]
+              .id,
       evolutionPath: migratedPath,
       training: {
         'might': nonNegativeIntFromJson(

@@ -278,11 +278,94 @@ _StereoTrack _sinisterChest() {
   return track;
 }
 
+void _addFanfareTone(
+  _StereoTrack track, {
+  required double start,
+  required double frequency,
+  required double duration,
+  required double gain,
+  double pan = 0,
+}) {
+  final first = (start * _sampleRate).round();
+  final count = (duration * _sampleRate).round();
+  for (var local = 0; local < count; local++) {
+    final t = local / _sampleRate;
+    final envelope = _attackRelease(t, duration, attack: .055, release: .5);
+    final vibrato = 1 + .0035 * sin(2 * pi * 5.2 * t);
+    final phase = 2 * pi * frequency * vibrato * t;
+    final tone = sin(phase) + .42 * sin(phase * 2) + .18 * sin(phase * 3);
+    track.add(first + local, tone * envelope * gain, pan: pan);
+  }
+}
+
+_StereoTrack _specialChest() {
+  final track = _StereoTrack(6.4);
+  final random = Random(0x2690513);
+  _addSweep(track, start: 0, duration: 1.25, from: 58, to: 30, gain: .84);
+  _addNoiseSwell(track, start: .05, duration: 2.9, gain: .33, random: random);
+  _addSweep(track,
+      start: .2, duration: 2.25, from: 180, to: 2450, gain: .24, pan: -.18);
+  _addSweep(track,
+      start: .35, duration: 2.4, from: 240, to: 3300, gain: .19, pan: .22);
+
+  const fanfare = [
+    (0.45, 261.63, .72),
+    (1.18, 329.63, .72),
+    (1.91, 392.00, .85),
+    (2.78, 523.25, 1.55),
+  ];
+  for (var index = 0; index < fanfare.length; index++) {
+    final (start, note, duration) = fanfare[index];
+    _addFanfareTone(
+      track,
+      start: start,
+      frequency: note,
+      duration: duration,
+      gain: .34,
+      pan: index.isEven ? -.24 : .24,
+    );
+    _addFanfareTone(
+      track,
+      start: start,
+      frequency: note / 2,
+      duration: duration,
+      gain: .28,
+      pan: index.isEven ? .16 : -.16,
+    );
+  }
+  for (final (frequency, pan) in const [
+    (523.25, -.62),
+    (659.25, .62),
+    (783.99, -.28),
+    (1046.50, .28),
+    (1318.51, 0.0),
+  ]) {
+    _addChime(
+      track,
+      start: 3.0,
+      frequency: frequency,
+      gain: .34,
+      pan: pan,
+      duration: 2.9,
+    );
+  }
+  _addSweep(track, start: 3.05, duration: 2.1, from: 720, to: 4300, gain: .18);
+  track.addReverb(const [
+    (.09, .30, .22),
+    (.19, .26, .76),
+    (.36, .20, .45),
+    (.61, .15, .68),
+    (.94, .09, .38),
+  ]);
+  return track;
+}
+
 void main() {
   const raw = 'android/app/src/main/res/raw';
   Directory(raw).createSync(recursive: true);
   _mythicalChest().writeWav('$raw/chest_mythical.wav');
   _sinisterChest().writeWav('$raw/chest_sinister.wav');
+  _specialChest().writeWav('$raw/chest_special.wav');
   stdout.writeln(
-      'Generated original DragonHaven Mythical and Sinister chest audio.');
+      'Generated original DragonHaven Mythical, Sinister and Special chest audio.');
 }

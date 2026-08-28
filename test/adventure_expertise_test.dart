@@ -90,4 +90,35 @@ void main() {
       duration,
     );
   });
+
+  test('combined Special Adventure subtracts all three expertises in hours',
+      () {
+    final definition = AdventureDefinition(
+      id: 'combined-special',
+      kind: AdventureKind.special,
+      titleEn: 'Combined',
+      titleNl: 'Gecombineerd',
+      descriptionEn: 'Test',
+      descriptionNl: 'Test',
+      duration: const Duration(days: 10),
+      xp: 500,
+      focus: TrainingFocus.might,
+      statPoints: 0,
+      combinedExpertise: true,
+    );
+    expect(
+      expertiseAdjustedAdventureDuration(
+        definition,
+        [dragon(24, arcana: 24, spirit: 24)],
+      ),
+      const Duration(days: 7),
+    );
+    expect(
+      expertiseAdjustedAdventureDuration(
+        definition,
+        [dragon(350, arcana: 350, spirit: 350)],
+      ),
+      const Duration(days: 1),
+    );
+  });
 }
