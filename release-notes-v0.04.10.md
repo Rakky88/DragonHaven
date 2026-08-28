@@ -15,8 +15,8 @@
   Soul Mirror of Astral Lens, een Special Chest en — zolang er ruimte is — een
   Music Chest.
 - De Special Chest bevat exact 269 coins, 10 gems en een Special Egg. Dit ei
-  broedt 21 uur en bevat de geheime Cluckatrice-familie, met zes nieuwe vormen,
-  een eigen achievement en een nieuw episch kistgeluid.
+  broedt in precies 21 uur uit en bevat de geheime Cluckatrice-familie, met zes
+  nieuwe vormen, een eigen achievement en een nieuw episch kistgeluid.
 - Special Event-meldingen openen direct de beschikbare Adventures en kunnen in
   Account info afzonderlijk worden uitgezet; ze staan standaard aan, ook voor
   bestaande saves.
