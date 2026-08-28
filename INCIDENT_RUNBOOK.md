@@ -1,7 +1,7 @@
 # DragonHaven incident- en diagnoserunbook
 
 Laatst bijgewerkt: **28 augustus 2026**  
-Uitgangsversie: **v0.04.07 plus post-auditverbeteringen**
+Uitgangsversie: **v0.04.08 / productieschema 23**
 
 ## Doel
 

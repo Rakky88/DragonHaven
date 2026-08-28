@@ -2,7 +2,7 @@
 
 Laatst gecontroleerd: **28 augustus 2026**
 
-Huidige openbare appversie bij deze controle: **v0.04.07**
+Huidige openbare appversie bij deze controle: **v0.04.08**
 Android package name: **`nl.dragonhaven.app`**
 
 Dit is de centrale, levende checklist voor een openbare lancering van
@@ -34,7 +34,7 @@ moeten daarna met het werkelijke gebruik meegroeien.
   gebouwd. Google Play gebruikt de AAB.
 - De releaseprocedure controleert vóór elke release de live Supabase-migraties,
   database-lint, Auth-health en e-mailconfiguratie.
-- Bij de v0.04.07-release waren alle 20 database-migraties gelijk, waren er
+- Bij de v0.04.08-release waren alle 23 database-migraties gelijk, waren er
   geen remote lintfouten en werkten de gecontroleerde Auth/e-mail-endpoints.
 - E-mailaccounts, verificatie, Friends, Trades, globale Group Adventures,
   profielsamenvattingen en cloudback-ups gebruiken Supabase.
@@ -50,8 +50,8 @@ moeten daarna met het werkelijke gebruik meegroeien.
 - Lokale save recovery en een handmatige, bevestigde cloudback-up bestaan.
 - De releaseworkflow bouwt aantoonbaar een Play-ready, vast ondertekende AAB
   plus verificatierapport. Release-gate
-  [33185616650](https://github.com/Rakky88/DragonHaven/actions/runs/33185616650)
-  was volledig groen voor v0.04.07.
+  [33198225157](https://github.com/Rakky88/DragonHaven/actions/runs/33198225157)
+  was volledig groen voor v0.04.08 met 261 tests.
 
 ## Wat nog geen productiegarantie heeft
 
@@ -97,8 +97,10 @@ een grote openbare lancering te zijn opgelost.
 | Productielanden en releasepad kiezen | Jij | Begin bij voorkeur met een kleine staged rollout. |
 | Betalingen voor digitale goederen | Jij opent merchant/betalingsprofiel; Codex implementeert billing | Alleen nodig als gems of andere digitale goederen voor echt geld worden verkocht. Gebruik dan Google Play Billing en server-side aankoopverificatie. |
 
-Let op: de openbare APK van v0.04.07 is **327.829.216 bytes** (ongeveer
-312,6 MiB). Voor bereik en installatieconversie blijft verdere compressie
+Let op: de openbare APK van v0.04.08 is **327.993.256 bytes** (ongeveer
+312,8 MiB), met SHA-256
+`3880354b1dafebabcc39c824eac8899bfc4a339ad8b5b0b712edb7e971cb2826`.
+Voor bereik en installatieconversie blijft verdere compressie
 en/of Play Asset Delivery sterk aan te raden.
 
 ## Wat jij zelf moet regelen

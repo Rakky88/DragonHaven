@@ -1,10 +1,10 @@
 # DragonHaven v0.04.06 audit — 28 augustus 2026
 
 > **Status 28 augustus 2026:** deze audit blijft het historische
-> v0.04.06-baselinebewijs. v0.04.07 is daarna gepubliceerd via de volledig
-> groene [release-gate 33185616650](https://github.com/Rakky88/DragonHaven/actions/runs/33185616650).
-> De actuele stand, inclusief 256 groene lokale tests, negatieve online
-> herstelpaden en de nog niet uitgerolde geaudite bestaande-save-import, staat
+> v0.04.06-baselinebewijs. v0.04.08 is daarna gepubliceerd via de volledig
+> groene [release-gate 33198225157](https://github.com/Rakky88/DragonHaven/actions/runs/33198225157).
+> De actuele stand, inclusief 261 groene tests, negatieve online herstelpaden,
+> volledige Group Adventure-staging-E2E en productiemigraties 21–23, staat
 > in [DRAGONHAVEN_POST_AUDIT_PLAN.md](DRAGONHAVEN_POST_AUDIT_PLAN.md).
 
 ## Samenvatting

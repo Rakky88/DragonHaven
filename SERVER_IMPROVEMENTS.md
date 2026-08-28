@@ -1,4 +1,4 @@
-# DragonHaven serververbeteringen — v0.04.07
+# DragonHaven serververbeteringen — v0.04.08
 
 ## Wat is verbeterd
 
@@ -45,12 +45,14 @@ powershell -ExecutionPolicy Bypass -File .\tool\release_server_preflight.ps1 `
 
 Resultaat:
 
-- migraties: 20 lokaal en 20 remote;
+- migraties: 23 lokaal en 23 remote;
 - database lint: 0 fouten voor `extensions`, `private` en `public`;
 - Auth health: HTTP 200;
 - Auth settings: HTTP 200;
 - e-mailauth: geconfigureerd.
 
+Deze huidige productie-uitkomst is opnieuw bewezen door
+[release-gate 33198225157](https://github.com/Rakky88/DragonHaven/actions/runs/33198225157).
 De release mag niet worden gepubliceerd wanneer deze preflight op een later
 moment een mismatch of fout meldt.
 
@@ -75,9 +77,9 @@ moment een mismatch of fout meldt.
    voordat echte aankopen worden geactiveerd.
 3. Plan de gebouwde restore-integriteitstest periodiek in en leg RPO/RTO plus
    het beleid voor eventuele automatische back-ups vast.
-4. Breid de bestaande end-to-end stagingtests uit met geautomatiseerde
-   e-mailconfirmatie en het starten, afronden en idempotent belonen van een
-   Group Adventure, zonder een meerdaagse testactie achter te laten.
+4. Automatiseer de resterende staging-e-mailconfirmatie; Group Adventure
+   starten, afronden en idempotent belonen is inmiddels volledig bewezen met
+   begrensde, automatisch opgeruimde stagingfixtures.
 
 ## Post-auditfundament in uitvoering
 
@@ -143,8 +145,8 @@ gewerkt aan de auditpunten die geen betaalde dienst vereisen:
 - accounts die al vóór deze migratie geïmporteerd waren krijgen uitsluitend
   een historisch auditrecord en worden nooit opnieuw geïmporteerd.
 
-Deze tranche is nog **niet** naar productie gemigreerd of als volgende appversie
-uitgebracht. Geïsoleerde
+Deze tranche was tijdens de eerste controle nog niet naar productie gemigreerd.
+Zij is inmiddels gecontroleerd uitgerold in v0.04.08. De voorafgaande geïsoleerde
 [stagingrun 33188269327](https://github.com/Rakky88/DragonHaven/actions/runs/33188269327)
 paste migratie 21 toe en bewees 21/21 parity, schema-lint/preflight, analyzer,
 256 tests en een staging-APK. De bevestigde-accountflow in
@@ -172,9 +174,11 @@ De volgende gratis, database-native back-upstap is daarna gebouwd:
   op save-ID terug en bewijst opnieuw dat een stale write atomair wordt
   geweigerd.
 
-Migraties 22 en 23 staan uitsluitend op staging. Productie blijft op 20
-migraties totdat een volgende release met verplichte productiepreflight en
-expliciete toestemming wordt uitgerold.
+Migraties 21–23 zijn op 28 augustus 2026 via de apart begrensde
+[productiemigratierun 33198153589](https://github.com/Rakky88/DragonHaven/actions/runs/33198153589)
+uitgerold. De workflow accepteerde uitsluitend de exacte productiestand 20,
+bewees eerst de dry-run en controleerde na toepassing 23/23 parity,
+database-lint en publieke Auth.
 
 [Stagingrun 33193296552](https://github.com/Rakky88/DragonHaven/actions/runs/33193296552)
 bewees vervolgens 23/23 migratiepariteit, foutloze database-lint/preflight,
@@ -193,5 +197,9 @@ bewijsartifact succesvol.
 
 Zie [DRAGONHAVEN_POST_AUDIT_PLAN.md](DRAGONHAVEN_POST_AUDIT_PLAN.md) en
 [INCIDENT_RUNBOOK.md](INCIDENT_RUNBOOK.md) voor eigenaarschap, vervolgfasen en
-incidentafhandeling. De post-releasewijzigingen staan op `main` en staging,
-maar zijn nog geen nieuwe apprelease of productiemigratie.
+incidentafhandeling. De wijzigingen staan op `main`, staging en productie en
+zijn uitgebracht als [v0.04.08](https://github.com/Rakky88/DragonHaven/releases/tag/v0.04.08).
+De productie-releasegate
+[33198225157](https://github.com/Rakky88/DragonHaven/actions/runs/33198225157)
+bewees opnieuw 23/23 migraties, lint/Auth, analyzer, 261 tests en de vaste
+ondertekening van de Play-ready AAB.

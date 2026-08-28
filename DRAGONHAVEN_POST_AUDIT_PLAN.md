@@ -3,9 +3,11 @@
 Laatst opgesteld: **28 augustus 2026**  
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.04.07**
+Actuele openbare versie: **v0.04.08**
 
-Actuele lokale post-release-tranche: **v0.04.07 + niet-uitgerolde auditverbeteringen**
+Actuele productieserver: **23/23 migraties**
+
+Actuele lokale tranche: **gelijk aan v0.04.08; geen niet-uitgerolde wijzigingen**
 
 Bronnen: [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md),
 [SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md),
@@ -37,10 +39,10 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | Onderdeel | Voortgang | Aantoonbaar klaar | Nog door Codex | Nog door jou |
 | --- | ---: | --- | --- | --- |
 | Google Play-voorbereiding | circa 25% | Permanent package-ID, vaste signing-identiteit, versiecontrole en een ondertekende AAB zijn bewezen | Actuele Play-eisen opnieuw controleren; storeteksten, graphics, Data Safety-inventaris, appgrootte-analyse en rolloutchecklist maken | Play Console openen/verifiëren; app en Play App Signing aanmaken; testers, publieke support/privacy-URL's en storeverklaringen beheren |
-| Fase 0 — releasepipeline en secrets | circa 92% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.04.07 zijn groen; verouderde Node 20-acties zijn vervangen en opnieuw bewezen | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
+| Fase 0 — releasepipeline en secrets | circa 94% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.04.08 zijn groen; een apart begrensd productie-migratiepad en actuele CI-runtimes zijn bewezen | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
 | Fase 1 — monitoring en incidenten | circa 55% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan | Externe crash/performance-SDK koppelen zodra config bestaat; publieke Auth- en read-only healthchecks plus testalerts automatiseren | Gratis monitoring/Firebase-project bezitten; ontvangers, uren, budget, regio, retentie en privacy/Data Safety kiezen; alleen clientconfig via secrets geven |
-| Fase 2 — staging en E2E | circa 78% | Afzonderlijke staging, migratiepariteit, account/login, back-up/conflict, Friends, trade en volledige Group Adventure completion/reward/replay zijn echt getest | E-mailbevestiging automatiseren; realistisch 100-user en daarna 1.000-user loadprofiel meten | Veilige stagingmailroute instellen; bevestigen dat testaccounts geen echte persoonsgegevens zijn; testbudget boven 1.000 gebruikers vooraf goedkeuren |
-| Fase 3 — back-up en multi-device | circa 80% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, metadata, oudere restore en veilige lokale vervanging zijn op staging bewezen | Periodieke integriteits-/restorecheck toevoegen; later server-owned velden van restores afschermen | Kiezen of back-up ook automatisch gebeurt; RPO/RTO, definitieve conflicttekst/samenvatting en eigenaar van periodieke restorecontrole bepalen |
+| Fase 2 — staging en E2E | circa 82% | Afzonderlijke staging, migratiepariteit, account/login, back-up/conflict, Friends, trade en volledige Group Adventure completion/reward/replay zijn echt getest | E-mailbevestiging automatiseren; realistisch 100-user en daarna 1.000-user loadprofiel meten | Veilige stagingmailroute instellen; bevestigen dat testaccounts geen echte persoonsgegevens zijn; testbudget boven 1.000 gebruikers vooraf goedkeuren |
+| Fase 3 — back-up en multi-device | circa 82% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, metadata, oudere restore en veilige lokale vervanging zijn op staging bewezen en migraties 21–23 staan op productie | Periodieke integriteits-/restorecheck toevoegen; later server-owned velden van restores afschermen | Kiezen of back-up ook automatisch gebeurt; RPO/RTO, definitieve conflicttekst/samenvatting en eigenaar van periodieke restorecontrole bepalen |
 | Fase 4 — server-authoritative economie | circa 15% | Uitgeschakelde payment-providergrens en geauditeerde eenmalige save-import met limieten, hash, rapport en private herstelkopie bestaan | Wallet/ledger/itemtabellen, idempotente RPC's, serverrandomness, compatibiliteitsvenster en gefaseerde migratie van shops, chests, dragons en rewards bouwen | Migratievenster, spelerscommunicatie en gecontroleerd rollbackbeleid goedkeuren; compensatie- en storingsbeleid plus nooit-stil-afnemen-grenzen bevestigen |
 | Fase 5 — Google Play Billing | circa 5%, bewust uitgesteld | Product-ID-contract en uitgeschakelde nepimplementatie houden de architectuur upgradebaar zonder nu kosten te maken | Pas na fase 4 de Billing-SDK, servervalidatie, acknowledgement, refunds/retries en Play-tracktests bouwen | Pas later beslissen of verkoop wenselijk is; merchantprofiel, producten/prijzen/landen, service-identiteit, testers en beleid beheren |
 | Fase 6 — support en privacy | circa 20% | Accountverwijdering, veilige supportdiagnostiek en eerste incidentprocedures bestaan | Minimaal supportzoekpad, procedures, least-privilege logging en consistente retentie/verwijdertests bouwen | Publiek supportadres, verantwoordelijken/reactietijden, privacy- en verwijderpagina, wettelijke retentie en productietoegang beheren |
@@ -820,22 +822,22 @@ Een taak of mijlpaal is pas gereed wanneer:
    workflow bewezen, zonder release, tag of productiewijziging.
 5. **Afgerond door jou:** een afzonderlijk gratis Supabase-stagingproject en de
    GitHub Environment `staging` zijn ingericht.
-6. **Deels afgerond samen:** signup, handmatige bevestiging van twee accounts,
-   eerste login, accountbootstrap, vijfdelige cloudhistorie, oudere restore,
-   bewuste lokale vervanging, stale-conflicten, Friends, trade en de Group
-   Adventure-wachtlobbyfase zijn echt op staging bewezen. Het starten/afronden
-   en rewardpad wacht op een derde synthetisch account of een veilige
-   staging-only tijdregeling.
+6. **Afgerond samen:** signup, handmatige bevestiging van twee accounts, eerste
+   login, accountbootstrap, vijfdelige cloudhistorie, oudere restore, bewuste
+   lokale vervanging, stale-conflicten, Friends, trade en Group Adventure van
+   create tot completion/reward/replay zijn echt op staging bewezen. De
+   begrensde staging-only tijdregeling kan uitsluitend de zojuist aangemaakte
+   fixture versnellen en weigert de vaste productiereferentie hard.
 7. **Samen:** beoordeel de meetresultaten en leg pas daarna grenzen voor
    capaciteit, alerts en publieke uitrol vast.
-8. **Afgerond door Codex:** v0.04.07 is met groene release-gate gepubliceerd;
-   de daaropvolgende lokale tranche dekt de negatieve online herstelpaden en
-   legt het veilige bestaande-save-importprotocol vast.
-9. **Afgerond door Codex op staging:** M3 bewaart de huidige plus vier vorige
+8. **Afgerond door Codex:** v0.04.08 is met groene staging- en productie-gates
+   gepubliceerd; APK en AAB hebben de vaste release-identiteit en productie
+   doorstond na migratie opnieuw lint-, parity- en Auth-controles.
+9. **Afgerond door Codex op staging en productie:** M3 bewaart de huidige plus vier vorige
    cloudrevisies gedurende maximaal dertig dagen, toont metadata, ondersteunt
    een expliciete oudere restore en bewaart de vorige cloudkopie bij bewuste
-   vervanging. Productie blijft bewust op migratie 20 totdat een volgende
-   release inclusief productiepreflight apart is toegestaan.
+   vervanging. Migraties 21–23 zijn na afzonderlijke expliciete toestemming en
+   een exacte 20→23-dry-run naar productie gebracht.
 
 ## Besluitenlog
 
@@ -844,6 +846,8 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 28-08-2026 | B1 | Lokale weergave en gameplay blijven offline bruikbaar; toekomstige waardevolle online claims en mutaties worden server-authoritative | Eerlijkheid combineren met offline speelbaarheid | M4 mag deze grens als uitgangspunt gebruiken |
 | 28-08-2026 | B2 | Bestaande saves krijgen één gelogde import met plausibiliteitslimieten en daarna server-lock; bestaande voortgang wordt nooit stil verwijderd | Veilige overgang zonder trouwe spelers voortgang af te nemen | Importprotocol en compatibiliteitstests mogen worden gebouwd |
 | 28-08-2026 | B6-back-up | Per account de laatste vijf cloudrevisies maximaal dertig dagen bewaren | Voldoende herstelruimte met beperkte gratis opslag en privacy-impact | Back-uphistorie, opschoning en herstelkeuze mogen worden gebouwd |
+| 28-08-2026 | M2-testtijd | Een hard staging-only tijdregeling mag Group Adventure completion versnellen | Volledige meerdaagse flow veilig en reproduceerbaar testen zonder productiepad | Completion/reward/replay en cleanup zijn volledig bewezen |
+| 28-08-2026 | Release 0.04.08 | Migraties 21–23 en de nieuwe release zijn expliciet toegestaan | Auditverbeteringen gecontroleerd naar productie brengen | Productie staat op 23/23 en v0.04.08 is openbaar |
 | Nog te bepalen | B3–B5, overige B6 en B7 | Nog niet bevestigd | Beslissen vlak vóór de afhankelijke fase | Alleen de nog afhankelijke delen van M3–M6 wachten |
 
 ## Voortgangslog
@@ -872,6 +876,10 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 28-08-2026 | M3 herstelbare cloudhistorie | Codex | [Stagingrun 33193296552](https://github.com/Rakky88/DragonHaven/actions/runs/33193296552), migraties 22 en 23 | 23/23 migraties, database-lint/preflight, twee echte revisies, oude-save-readback, stale-writeweigering, analyzer, 259 tests, staging-APK en bewijsartifact groen; productie ongewijzigd op 20 migraties |
 | 28-08-2026 | CI-runtimeonderhoud | Codex | [Stagingrun 33194122823](https://github.com/Rakky88/DragonHaven/actions/runs/33194122823), commit `2a52e9af804f8415a6546d1c5c128b2ab4fe912c` | Supabase Setup CLI v3 en Upload Artifact v6 bewezen; 23/23 stagingmigraties, lint/preflight, analyzer, 259 tests, staging-APK en artifact groen |
 | 28-08-2026 | Publieke productie-healthcheck | Codex | [Healthrun 33194121092](https://github.com/Rakky88/DragonHaven/actions/runs/33194121092) | Read-only Auth-healthcheck en het driedaagse privacyarme bewijsartifact groen; veilige applicatie-RPC, planning en alerts blijven onder fase 1 open |
+| 28-08-2026 | Volledige Group Adventure staging-E2E | Codex | [Stagingrun 33196707499](https://github.com/Rakky88/DragonHaven/actions/runs/33196707499) | Create/join/start/completion, exact één reward per deelnemer, duplicate acknowledgement, claim-replay en volledige cleanup groen via een hard staging-only tijdregeling |
+| 28-08-2026 | v0.04.08 releasecandidate op staging | Codex | [Stagingrun 33197572353](https://github.com/Rakky88/DragonHaven/actions/runs/33197572353) | 23/23 migraties, volledige sociale E2E, analyzer, 261 tests en geïsoleerde staging-APK groen |
+| 28-08-2026 | Productiemigraties 21–23 | Codex, na jouw toestemming | [Migratierun 33198153589](https://github.com/Rakky88/DragonHaven/actions/runs/33198153589) | Exacte beginstand 20, dry-run, database-lint en Auth groen; productie gecontroleerd naar 23/23 gemigreerd en opnieuw geverifieerd |
+| 28-08-2026 | Openbare release v0.04.08 | Codex, na jouw toestemming | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.04.08), [productiegate 33198225157](https://github.com/Rakky88/DragonHaven/actions/runs/33198225157), [taggate 33198930542](https://github.com/Rakky88/DragonHaven/actions/runs/33198930542) | Ondertekende APK van 327.993.256 bytes gepubliceerd; SHA-256 `3880354b1dafebabcc39c824eac8899bfc4a339ad8b5b0b712edb7e971cb2826`; beide productiepreflights, 261 tests en Play-ready AAB groen |
 
 ## Onderhoud van dit plan
 
