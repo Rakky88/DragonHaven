@@ -7,9 +7,13 @@ function Invoke-DragonHavenPublicRequest {
         [int]$TimeoutSeconds = 60
     )
 
-    $curl = Get-Command 'curl.exe' -CommandType Application -ErrorAction SilentlyContinue
+    $curl = @(
+        Get-Command 'curl.exe' -CommandType Application -ErrorAction SilentlyContinue
+    ) | Select-Object -First 1
     if ($null -eq $curl) {
-        $curl = Get-Command 'curl' -CommandType Application -ErrorAction SilentlyContinue
+        $curl = @(
+            Get-Command 'curl' -CommandType Application -ErrorAction SilentlyContinue
+        ) | Select-Object -First 1
     }
     if ($null -eq $curl) {
         throw 'curl is required for the public server health check.'
