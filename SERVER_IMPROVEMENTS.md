@@ -183,7 +183,15 @@ stale write, een groene analyzer, 259 tests en een nieuwe staging-APK. De
 databasejob is met de migratie geïnstalleerd; periodieke controle van de
 daadwerkelijke jobuitvoering en een geplande restore-oefening blijven open.
 
+Na het vervangen van de verouderde CI-runtimes bewees
+[stagingrun 33194122823](https://github.com/Rakky88/DragonHaven/actions/runs/33194122823)
+dezelfde 23/23 migratie-, lint-, test-, APK- en artifactgrens opnieuw met
+`supabase/setup-cli@v3` en `actions/upload-artifact@v6`. De afzonderlijke
+[productie-healthrun 33194121092](https://github.com/Rakky88/DragonHaven/actions/runs/33194121092)
+controleerde de publieke Auth-endpoints read-only en bewaarde het privacyarme
+bewijsartifact succesvol.
+
 Zie [DRAGONHAVEN_POST_AUDIT_PLAN.md](DRAGONHAVEN_POST_AUDIT_PLAN.md) en
 [INCIDENT_RUNBOOK.md](INCIDENT_RUNBOOK.md) voor eigenaarschap, vervolgfasen en
-incidentafhandeling. Deze lokale wijzigingen zijn nog geen nieuwe release of
-productiemigratie.
+incidentafhandeling. De post-releasewijzigingen staan op `main` en staging,
+maar zijn nog geen nieuwe apprelease of productiemigratie.

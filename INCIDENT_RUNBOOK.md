@@ -24,6 +24,9 @@ databasewachtwoorden of volledige saves in een ticket of incidentlog.
   kan een JSON-rapport bewaren.
 - De handmatige GitHub-workflow **Public server health check** voert dezelfde
   check uit zonder private secrets en bewaart het artifact drie dagen.
+- [Healthrun 33194121092](https://github.com/Rakky88/DragonHaven/actions/runs/33194121092)
+  bewees op 28 augustus 2026 dat deze productiecheck en artifactopslag groen
+  werken met de actuele CI-runtime.
 - `tool/release_server_preflight.ps1` controleert daarnaast migration parity,
   database-lint en e-mailauth op de gekoppelde server.
 - De Supabase Dashboard-logs en -metrics blijven de primaire bron voor
