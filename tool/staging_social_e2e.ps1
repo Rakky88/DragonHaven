@@ -20,7 +20,13 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$PeerPassword,
 
-    [string]$EvidencePath = 'staging/social-e2e.txt'
+    [string]$EvidencePath = 'staging/social-e2e.txt',
+
+    [switch]$CompleteGroupAdventure,
+
+    [string]$ProjectRef = '',
+
+    [string]$ManagementAccessToken = ''
 )
 
 Set-StrictMode -Version Latest
@@ -50,6 +56,20 @@ foreach ($candidate in @($normalizedPrimaryEmail, $normalizedPeerEmail)) {
 }
 if ($PrimaryPassword.Length -lt 12 -or $PeerPassword.Length -lt 12) {
     throw 'Een afgeschermd sociaal staging-testwachtwoord is te kort.'
+}
+if ($CompleteGroupAdventure) {
+    if ($ProjectRef -notmatch '^[a-z0-9]{20}$') {
+        throw 'De Group Adventure-tijdregeling vereist een geldige staging-projectreference.'
+    }
+    if ($ProjectRef -eq 'tnzathhutuwmohmjfrlo') {
+        throw 'De Group Adventure-tijdregeling mag nooit het productieproject gebruiken.'
+    }
+    if ($baseUrl -ne "https://$ProjectRef.supabase.co") {
+        throw 'De Group Adventure-tijdregeling hoort niet bij de opgegeven staging-URL.'
+    }
+    if ([string]::IsNullOrWhiteSpace($ManagementAccessToken)) {
+        throw 'De Group Adventure-tijdregeling vereist het afgeschermde staging-beheertoken.'
+    }
 }
 
 function Get-PropertyValue {
@@ -213,6 +233,150 @@ function Get-Rows {
     return @($Body)
 }
 
+function Get-ManagementRows {
+    param([AllowNull()][object]$Body)
+
+    if ($null -eq $Body) { return @() }
+    foreach ($name in @('result', 'data')) {
+        $value = Get-PropertyValue -InputObject $Body -Name $name
+        if ($null -ne $value) { return @($value) }
+    }
+    return @($Body)
+}
+
+function Invoke-StagingManagementQuery {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Query,
+        [Parameter(Mandatory = $true)]
+        [string]$Operation
+    )
+
+    if (-not $CompleteGroupAdventure -or
+        $ProjectRef -eq 'tnzathhutuwmohmjfrlo') {
+        throw 'De staging-only databasebesturing is niet veilig geactiveerd.'
+    }
+    $managementStatusCode = 0
+    $body = Invoke-RestMethod `
+        -Method Post `
+        -Uri "https://api.supabase.com/v1/projects/$ProjectRef/database/query" `
+        -Headers @{
+            Authorization = "Bearer $ManagementAccessToken"
+            Accept = 'application/json'
+        } `
+        -ContentType 'application/json' `
+        -Body (ConvertTo-Json -InputObject @{
+            query = $Query
+            read_only = $false
+        } -Compress) `
+        -SkipHttpErrorCheck `
+        -StatusCodeVariable managementStatusCode `
+        -ErrorAction Stop
+    if (-not (Test-SuccessStatus $managementStatusCode)) {
+        throw "$Operation mislukte met HTTP $managementStatusCode."
+    }
+    return $body
+}
+
+function Set-StagingGroupAdventureElapsed {
+    param([Parameter(Mandatory = $true)][string]$LobbyId)
+
+    $parsedLobbyId = [Guid]::Empty
+    if (-not [Guid]::TryParse($LobbyId, [ref]$parsedLobbyId)) {
+        throw 'De staging-only tijdregeling kreeg geen geldige lobby-id.'
+    }
+    $safeLobbyId = $parsedLobbyId.ToString()
+    $query = @"
+with advanced as (
+  update public.group_adventure_lobbies
+  set ends_at = now() - interval '1 second'
+  where id = '$safeLobbyId'::uuid
+    and status = 'running'
+    and started_at is not null
+  returning id, status, ends_at
+)
+select id::text as lobby_id, status, ends_at <= now() as elapsed
+from advanced;
+"@
+    $rows = Get-ManagementRows (Invoke-StagingManagementQuery `
+        -Query $query `
+        -Operation 'Staging-only Group Adventure-tijdregeling')
+    if ($rows.Count -ne 1 -or
+        [string](Get-PropertyValue -InputObject $rows[0] -Name 'lobby_id') -ne $safeLobbyId -or
+        [string](Get-PropertyValue -InputObject $rows[0] -Name 'status') -ne 'running' -or
+        -not [bool](Get-PropertyValue -InputObject $rows[0] -Name 'elapsed')) {
+        throw 'De staging-only tijdregeling heeft niet exact één lopende testlobby versneld.'
+    }
+}
+
+function Remove-StagingGroupAdventureFixture {
+    param([Parameter(Mandatory = $true)][string]$LobbyId)
+
+    $parsedLobbyId = [Guid]::Empty
+    if (-not [Guid]::TryParse($LobbyId, [ref]$parsedLobbyId)) {
+        throw 'De staging-only cleanup kreeg geen geldige lobby-id.'
+    }
+    $safeLobbyId = $parsedLobbyId.ToString()
+    $query = @"
+with target as materialized (
+  select id, chest_tier
+  from public.group_adventure_lobbies
+  where id = '$safeLobbyId'::uuid
+), participants as materialized (
+  select gp.user_id, gp.dragon_id, gp.reward_acknowledged_at
+  from public.group_adventure_participants gp
+  where gp.lobby_id = '$safeLobbyId'::uuid
+), reverted_chests as (
+  update public.player_chests c
+  set quantity = greatest(0, c.quantity - 1), updated_at = now()
+  from target t, participants p
+  where p.reward_acknowledged_at is not null
+    and c.owner_id = p.user_id
+    and c.tier = t.chest_tier
+  returning c.owner_id
+), deleted_lobby as (
+  delete from public.group_adventure_lobbies
+  where id in (select id from target)
+  returning id
+), deleted_test_dragons as (
+  delete from public.player_dragons d
+  using participants p
+  where d.id = p.dragon_id
+    and d.legacy_client_id in ('staging-e2e-alpha', 'staging-e2e-beta')
+    and exists (select 1 from deleted_lobby)
+  returning d.id
+)
+select
+  (select count(*) from deleted_lobby)::integer as lobby_deleted,
+  (select count(*) from reverted_chests)::integer as rewards_reverted,
+  (select count(*) from deleted_test_dragons)::integer as dragons_deleted;
+"@
+    $rows = Get-ManagementRows (Invoke-StagingManagementQuery `
+        -Query $query `
+        -Operation 'Staging-only Group Adventure-cleanup')
+    if ($rows.Count -ne 1 -or
+        [int](Get-PropertyValue -InputObject $rows[0] -Name 'lobby_deleted') -ne 1) {
+        throw 'De staging-only cleanup heeft de tijdelijke testlobby niet verwijderd.'
+    }
+}
+
+function Get-ChestQuantity {
+    param(
+        [Parameter(Mandatory = $true)][object]$Session,
+        [Parameter(Mandatory = $true)][string]$Tier
+    )
+
+    $inventory = Get-Rows (Invoke-RequiredRpc `
+        -Session $Session `
+        -Function 'list_trade_inventory')
+    $row = $inventory | Where-Object {
+        [string](Get-PropertyValue -InputObject $_ -Name 'item_type') -eq 'chest' -and
+        [string](Get-PropertyValue -InputObject $_ -Name 'item_key') -eq $Tier
+    } | Select-Object -First 1
+    if ($null -eq $row) { return 0 }
+    return [int](Get-PropertyValue -InputObject $row -Name 'available')
+}
+
 function Find-RowByUser {
     param(
         [object[]]$Rows,
@@ -260,6 +424,7 @@ $createdLobbyId = $null
 $peerJoinedLobby = $false
 $friendshipCreated = $false
 $groupJoinResult = 'not-run'
+$groupCompletionResult = 'not-requested'
 $tradeResult = 'not-run'
 
 function Remove-ActiveTrades {
@@ -602,11 +767,137 @@ try {
             throw 'De deelname aan de staging Group Adventure was niet zichtbaar.'
         }
         $groupJoinResult = "created, joined and left safely ($requiredPlayers-player offer)"
-    } else {
+        if ($CompleteGroupAdventure) {
+            throw "De huidige stagingroute vereist $requiredPlayers spelers; de veilige tweepersoonstijdtest kan deze route niet vervroegd voltooien."
+        }
+    } elseif (-not $CompleteGroupAdventure) {
         $groupJoinResult = 'join skipped safely because a 2-player offer would start a multi-day run'
+    } else {
+        $joinResponse = Invoke-StagingRpc `
+            -Session $peer `
+            -Function 'join_group_adventure_lobby' `
+            -Parameters @{ p_lobby_id = $createdLobbyId; p_dragon = $dragonBeta }
+        Assert-Success -Response $joinResponse -Operation 'Staging Group Adventure starten'
+        if (-not [bool]$joinResponse.Body) {
+            throw 'De volledige stagingtest heeft de tweepersoons-Group Adventure niet gestart.'
+        }
+        $groupJoinResult = 'two-player adventure started server-authoritatively'
+
+        foreach ($session in @($primary, $peer)) {
+            $runningLobby = Get-Rows (Invoke-RequiredRpc `
+                -Session $session `
+                -Function 'list_group_adventures') | Where-Object {
+                    [string](Get-PropertyValue -InputObject $_ -Name 'lobby_id') -eq $createdLobbyId
+                } | Select-Object -First 1
+            if ($null -eq $runningLobby -or
+                [string](Get-PropertyValue -InputObject $runningLobby -Name 'status') -ne 'running' -or
+                -not [bool](Get-PropertyValue -InputObject $runningLobby -Name 'is_participant')) {
+                throw 'De gestarte staging-Group Adventure was niet voor beide deelnemers zichtbaar.'
+            }
+        }
+
+        Set-StagingGroupAdventureElapsed -LobbyId $createdLobbyId
+
+        foreach ($session in @($primary, $peer)) {
+            $completedLobby = Get-Rows (Invoke-RequiredRpc `
+                -Session $session `
+                -Function 'list_group_adventures') | Where-Object {
+                    [string](Get-PropertyValue -InputObject $_ -Name 'lobby_id') -eq $createdLobbyId
+                } | Select-Object -First 1
+            if ($null -eq $completedLobby -or
+                [string](Get-PropertyValue -InputObject $completedLobby -Name 'status') -ne 'completed' -or
+                [bool](Get-PropertyValue -InputObject $completedLobby -Name 'reward_acknowledged')) {
+                throw 'De versnelde staging-Group Adventure leverde niet voor beide spelers een openstaande reward op.'
+            }
+        }
+
+        $claimedRewards = @()
+        foreach ($entry in @(
+            [pscustomobject]@{ Session = $primary; DragonId = 'staging-e2e-alpha' },
+            [pscustomobject]@{ Session = $peer; DragonId = 'staging-e2e-beta' }
+        )) {
+            $rewardRows = Get-Rows (Invoke-RequiredRpc `
+                -Session $entry.Session `
+                -Function 'claim_group_adventure_reward' `
+                -Parameters @{ p_lobby_id = $createdLobbyId } `
+                -Operation 'Group Adventure-reward claimen')
+            if ($rewardRows.Count -ne 1) {
+                throw 'De staging-Group Adventure leverde niet exact één reward per deelnemer.'
+            }
+            $reward = $rewardRows[0]
+            $rewardTier = [string](Get-PropertyValue -InputObject $reward -Name 'chest_tier')
+            if ([string](Get-PropertyValue -InputObject $reward -Name 'lobby_id') -ne $createdLobbyId -or
+                [string](Get-PropertyValue -InputObject $reward -Name 'adventure_id') -ne $adventureId -or
+                [string](Get-PropertyValue -InputObject $reward -Name 'dragon_id') -ne $entry.DragonId -or
+                [int](Get-PropertyValue -InputObject $reward -Name 'participant_count') -ne 2 -or
+                [int](Get-PropertyValue -InputObject $reward -Name 'xp') -le 0 -or
+                [int](Get-PropertyValue -InputObject $reward -Name 'stat_points') -le 0 -or
+                [string](Get-PropertyValue -InputObject $reward -Name 'focus') -notin @('might', 'arcana', 'spirit') -or
+                $rewardTier -notin @('gold', 'dragon', 'mythical')) {
+                throw 'De staging-Group Adventure-reward bevatte ongeldige servervelden.'
+            }
+
+            $beforeChest = Get-ChestQuantity `
+                -Session $entry.Session `
+                -Tier $rewardTier
+            Invoke-RequiredRpc `
+                -Session $entry.Session `
+                -Function 'acknowledge_group_adventure_reward' `
+                -Parameters @{ p_lobby_id = $createdLobbyId } `
+                -Operation 'Group Adventure-reward bevestigen' | Out-Null
+            $afterChest = Get-ChestQuantity `
+                -Session $entry.Session `
+                -Tier $rewardTier
+            if ($afterChest -ne $beforeChest + 1) {
+                throw 'De eerste Group Adventure-acknowledgement voegde niet exact één rewardkist toe.'
+            }
+
+            Invoke-RequiredRpc `
+                -Session $entry.Session `
+                -Function 'acknowledge_group_adventure_reward' `
+                -Parameters @{ p_lobby_id = $createdLobbyId } `
+                -Operation 'Group Adventure-acknowledgement herhalen' | Out-Null
+            if ((Get-ChestQuantity -Session $entry.Session -Tier $rewardTier) -ne $afterChest) {
+                throw 'Een herhaalde Group Adventure-acknowledgement voegde een dubbele reward toe.'
+            }
+
+            $replayClaim = Invoke-StagingRpc `
+                -Session $entry.Session `
+                -Function 'claim_group_adventure_reward' `
+                -Parameters @{ p_lobby_id = $createdLobbyId }
+            if ((Test-SuccessStatus $replayClaim.StatusCode) -or
+                (Get-SafeFailure `
+                    -Body $replayClaim.Body `
+                    -StatusCode $replayClaim.StatusCode) -notmatch 'group_reward_not_ready') {
+                throw 'Een reeds bevestigde Group Adventure-reward kon opnieuw worden geclaimd.'
+            }
+            $claimedRewards += $reward
+        }
+
+        foreach ($field in @(
+            'adventure_id', 'xp', 'focus', 'stat_points', 'chest_tier',
+            'participant_count'
+        )) {
+            if ((Get-PropertyValue -InputObject $claimedRewards[0] -Name $field) -ne
+                (Get-PropertyValue -InputObject $claimedRewards[1] -Name $field)) {
+                throw "De Group Adventure-deelnemers kregen geen identieke serverreward voor $field."
+            }
+        }
+
+        Remove-StagingGroupAdventureFixture -LobbyId $createdLobbyId
+        $createdLobbyId = $null
+        $peerJoinedLobby = $false
+        $postCleanupStatus = Get-Rows (Invoke-RequiredRpc `
+            -Session $primary `
+            -Function 'get_current_group_adventure_status')
+        if ($postCleanupStatus.Count -ne 1 -or
+            [bool](Get-PropertyValue -InputObject $postCleanupStatus[0] -Name 'already_completed')) {
+            throw 'De staging-only Group Adventure-fixture is niet volledig herbruikbaar opgeruimd.'
+        }
+        $groupCompletionResult = 'completion, equal rewards, acknowledgement and replay guard passed'
     }
 
-    if ($peerJoinedLobby) {
+    if ($null -ne $createdLobbyId -and $peerJoinedLobby) {
         Invoke-RequiredRpc `
             -Session $peer `
             -Function 'leave_group_adventure_lobby' `
@@ -614,12 +905,14 @@ try {
             -Operation 'Tweede account uit staginglobby laten vertrekken' | Out-Null
         $peerJoinedLobby = $false
     }
-    Invoke-RequiredRpc `
-        -Session $primary `
-        -Function 'leave_group_adventure_lobby' `
-        -Parameters @{ p_lobby_id = $createdLobbyId } `
-        -Operation 'Staging Group Adventure-lobby verwijderen' | Out-Null
-    $createdLobbyId = $null
+    if ($null -ne $createdLobbyId) {
+        Invoke-RequiredRpc `
+            -Session $primary `
+            -Function 'leave_group_adventure_lobby' `
+            -Parameters @{ p_lobby_id = $createdLobbyId } `
+            -Operation 'Staging Group Adventure-lobby verwijderen' | Out-Null
+        $createdLobbyId = $null
+    }
 
     Invoke-RequiredRpc `
         -Session $primary `
@@ -649,12 +942,21 @@ try {
         "Trade flow: $tradeResult."
         'Trade inventory transfer invariant: passed.'
         "Group Adventure flow: $groupJoinResult."
-        'Waiting Group Adventure cleanup: passed.'
+        "Group Adventure completion: $groupCompletionResult."
+        'Group Adventure fixture cleanup: passed.'
         'Temporary friendship cleanup: passed.'
-        'Group completion/reward remains a separate safe test.'
     )
-    'Tweepersoons stagingflow voor Friends, trade en veilige Group Adventure-deelname is geslaagd.'
+    'Tweepersoons stagingflow voor Friends, trade en Group Adventures is geslaagd.'
 } finally {
+    try {
+        if ($CompleteGroupAdventure -and $null -ne $createdLobbyId) {
+            Remove-StagingGroupAdventureFixture -LobbyId $createdLobbyId
+            $createdLobbyId = $null
+            $peerJoinedLobby = $false
+        }
+    } catch {
+        Write-Warning 'De staging-only Group Adventure-fixture kon niet volledig worden opgeruimd.'
+    }
     try {
         if ($peerJoinedLobby -and $null -ne $createdLobbyId -and $null -ne $peer) {
             Invoke-RequiredRpc `

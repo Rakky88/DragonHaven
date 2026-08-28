@@ -490,4 +490,26 @@ void main() {
       ),
     );
   });
+
+  test('Group Adventure completion E2E is strictly staging-only', () {
+    final script = File('tool/staging_social_e2e.ps1').readAsStringSync();
+    final workflow = File('.github/workflows/staging.yml').readAsStringSync();
+
+    expect(workflow, contains('social-flow-complete'));
+    expect(workflow, contains(r'$parameters.CompleteGroupAdventure = $true'));
+    expect(workflow, contains('STAGING_SUPABASE_ACCESS_TOKEN'));
+    expect(script, contains('https://api.supabase.com/v1/projects/'));
+    expect(script, contains('/database/query'));
+    expect(script, contains(r"$ProjectRef -eq 'tnzathhutuwmohmjfrlo'"));
+    expect(script, contains("status = 'running'"));
+    expect(script, contains("interval '1 second'"));
+    expect(script, contains('acknowledge_group_adventure_reward'));
+    expect(script, contains('Een herhaalde Group Adventure-acknowledgement'));
+    expect(script, contains('Remove-StagingGroupAdventureFixture'));
+    expect(
+      script,
+      isNot(contains('grant execute')),
+      reason: 'the time control must never become a player-callable RPC',
+    );
+  });
 }
