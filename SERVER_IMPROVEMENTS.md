@@ -88,8 +88,12 @@ Na de v0.04.06-audit is lokaal alvast gebouwd:
 - een expliciete conflictmelding met veilig herstellen of lokaal doorgaan;
 - een production/staging/local omgevingsgrens die staging nooit naar de vaste
   productieserver laat terugvallen;
-- een handmatige, volledig afgescheiden stagingworkflow die pas werkt zodra de
-  eigenaar een stagingproject en GitHub Environment Secrets toevoegt;
+- een handmatige, volledig afgescheiden stagingworkflow met zeven afgeschermde
+  Environment Secrets en drie standen: public-only, bevestiging aanvragen en
+  een bevestigd account controleren;
+- een echte stagingtest voor password-login, bevestigde e-mail, idempotente
+  accountbootstrap, profielread, cloud-back-up/restore, stale-revisionweigering
+  en veilige logout;
 - een handmatige publieke healthworkflow en curl-gebaseerde health/preflight-
   metingen met latencyrapportage;
 - een CI-verificatierapport met commit, appversie, versionCode, AAB-hash en
@@ -100,6 +104,13 @@ De productiepreflight na deze aanpassing rapporteerde opnieuw 20/20 migraties,
 duurde 24,5 seconden en de warme settingsresponse 0,13 seconde. Daarom is de
 herstelbare clienttimeout naar 75 seconden verhoogd terwijl lokale gameplay
 niet op online acties wacht.
+
+De geïsoleerde stagingrun
+[`33180648232`](https://github.com/Rakky88/DragonHaven/actions/runs/33180648232)
+bewees deze account- en back-upflow samen met opnieuw een groene analyzer, alle
+252 tests en een staging-APK. Friends, trade en Group Adventure blijven bewust
+open totdat een tweede synthetisch testaccount en veilige opruimlogica zijn
+toegevoegd. Er is hierbij niets op productie gewijzigd of gepubliceerd.
 
 Zie [DRAGONHAVEN_POST_AUDIT_PLAN.md](DRAGONHAVEN_POST_AUDIT_PLAN.md) en
 [INCIDENT_RUNBOOK.md](INCIDENT_RUNBOOK.md) voor eigenaarschap, vervolgfasen en
