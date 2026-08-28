@@ -444,6 +444,9 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   void _handleMenuAction(_HavenMenuAction action) {
     switch (action) {
       case _HavenMenuAction.account:
+        if (_online.isSignedIn && !_online.busy) {
+          unawaited(_online.loadCloudSaveStatus());
+        }
         Navigator.of(context).push(
             MaterialPageRoute<void>(builder: (_) => const AccountScreen()));
       case _HavenMenuAction.language:

@@ -17,9 +17,41 @@ permissions:
 jobs:
   build-release:
     runs-on: ubuntu-latest
+    env:
+      EXPECTED_SIGNING_CERT_SHA256: 477C5A5D7453384CA756265E77AF97D5A002A907177CCD2D9065A9BEC3414942
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Verify required secret configuration
+        shell: pwsh
+        env:
+          DRAGONHAVEN_KEYSTORE_BASE64: ${{ secrets.DRAGONHAVEN_KEYSTORE_BASE64 }}
+          DRAGONHAVEN_KEYSTORE_PASSWORD: ${{ secrets.DRAGONHAVEN_KEYSTORE_PASSWORD }}
+          DRAGONHAVEN_KEY_ALIAS: ${{ secrets.DRAGONHAVEN_KEY_ALIAS }}
+          DRAGONHAVEN_KEY_PASSWORD: ${{ secrets.DRAGONHAVEN_KEY_PASSWORD }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          $required = @(
+            'DRAGONHAVEN_KEYSTORE_BASE64',
+            'DRAGONHAVEN_KEYSTORE_PASSWORD',
+            'DRAGONHAVEN_KEY_ALIAS',
+            'DRAGONHAVEN_KEY_PASSWORD',
+            'SUPABASE_ACCESS_TOKEN',
+            'SUPABASE_DB_PASSWORD'
+          )
+          $missing = @(
+            foreach ($name in $required) {
+              if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+                $name
+              }
+            }
+          )
+          if ($missing.Count -gt 0) {
+            throw "Ontbrekende GitHub Actions secrets: $($missing -join ', ')."
+          }
+          'Alle vereiste secretnamen zijn geconfigureerd; waarden worden niet gelogd.'
 
       - name: Java 17
         uses: actions/setup-java@v4
@@ -54,7 +86,9 @@ jobs:
             throw 'SUPABASE_DB_PASSWORD ontbreekt.'
           }
           supabase link --project-ref tnzathhutuwmohmjfrlo --password $env:SUPABASE_DB_PASSWORD
-          ./tool/release_server_preflight.ps1
+          New-Item -ItemType Directory -Path release -Force | Out-Null
+          ./tool/release_server_preflight.ps1 |
+            Tee-Object -FilePath release/server-preflight.txt
 
       - name: Analyze
         run: flutter analyze --no-pub
@@ -92,20 +126,70 @@ jobs:
             APP_VERSION="$MANUAL_VERSION"
           fi
           [[ "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || (echo "Ongeldige versie: $APP_VERSION" && exit 1)
+          PUBSPEC_FULL_VERSION="$(sed -n 's/^version: //p' pubspec.yaml)"
+          BUILD_NUMBER="${PUBSPEC_FULL_VERSION##*+}"
+          [[ "$BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]] || (echo "Ongeldig pubspec buildnummer: $BUILD_NUMBER" && exit 1)
+          echo "DRAGONHAVEN_BUILD_NAME=$APP_VERSION" >> "$GITHUB_ENV"
+          echo "DRAGONHAVEN_BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
           flutter build appbundle --release --no-pub \
             --build-name="$APP_VERSION" \
-            --build-number="$((10000 + GITHUB_RUN_NUMBER))" \
+            --build-number="$BUILD_NUMBER" \
             --dart-define=DRAGONHAVEN_GITHUB_OWNER=${{ github.repository_owner }} \
             --dart-define=DRAGONHAVEN_GITHUB_REPO=${{ github.event.repository.name }} \
             --dart-define=DRAGONHAVEN_APP_VERSION="$APP_VERSION" \
+            --dart-define=DRAGONHAVEN_ENVIRONMENT=production \
             --dart-define=SUPABASE_URL=https://tnzathhutuwmohmjfrlo.supabase.co \
             --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_SllXjneKVmDAgtBGgkSgOg_tOJmYkX4
           mkdir -p release
           cp build/app/outputs/bundle/release/app-release.aab release/DragonHaven.aab
 
+      - name: Verify and document release artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          AAB=release/DragonHaven.aab
+          test -s "$AAB"
+
+          normalize_version() {
+            local major minor patch
+            IFS=. read -r major minor patch <<< "$1"
+            printf '%d.%d.%d' "$((10#$major))" "$((10#$minor))" "$((10#$patch))"
+          }
+
+          PUBSPEC_VERSION="$(sed -n 's/^version: \([^+]*\)+.*/\1/p' pubspec.yaml)"
+          test -n "$PUBSPEC_VERSION"
+          test "$(normalize_version "$PUBSPEC_VERSION")" = \
+            "$(normalize_version "$DRAGONHAVEN_BUILD_NAME")"
+          APPLICATION_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)"/\1/p' android/app/build.gradle.kts)"
+          test "$APPLICATION_ID" = 'nl.dragonhaven.app'
+
+          AAB_SHA256="$(sha256sum "$AAB" | awk '{print toupper($1)}')"
+          CERT_SHA256="$(keytool -printcert -jarfile "$AAB" | sed -n 's/^[[:space:]]*SHA256: //p' | head -n 1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          test -n "$CERT_SHA256"
+          test "$CERT_SHA256" = "$EXPECTED_SIGNING_CERT_SHA256"
+
+          cat > release/release-verification.md <<EOF
+          # DragonHaven Play artifact verification
+
+          - Commit: \`$GITHUB_SHA\`
+          - Ref: \`$GITHUB_REF\`
+          - Version: \`$DRAGONHAVEN_BUILD_NAME\`
+          - Version code: \`$DRAGONHAVEN_BUILD_NUMBER\`
+          - Android application ID: \`$APPLICATION_ID\`
+          - Artifact: \`DragonHaven.aab\`
+          - SHA-256: \`$AAB_SHA256\`
+          - Signing certificate SHA-256: \`$CERT_SHA256\`
+          - Expected signing certificate matched: yes
+          - Server preflight: passed (see \`server-preflight.txt\`)
+          - Flutter analyze: passed
+          - Flutter tests: passed
+          EOF
+
+          cat release/release-verification.md
+
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: DragonHaven-Play-Store
-          path: release/DragonHaven.aab
+          path: release/
           retention-days: 7

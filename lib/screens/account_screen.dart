@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../app_info.dart';
 import '../l10n/app_strings.dart';
 import '../models/account_title.dart';
 import '../models/profile_portrait.dart';
@@ -163,6 +165,29 @@ class AccountScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: ListTile(
+                key: const Key('copy-support-diagnostics'),
+                leading: const Icon(
+                  Icons.health_and_safety_outlined,
+                  color: AppColors.twilight,
+                ),
+                title: Text(
+                  strings.pick(
+                    'Copy support diagnostics',
+                    'Supportdiagnose kopiëren',
+                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                subtitle: Text(strings.pick(
+                  'Contains technical IDs and timings, never your password, e-mail or game save.',
+                  'Bevat technische ID’s en tijden, nooit je wachtwoord, e-mail of gamesave.',
+                )),
+                trailing: const Icon(Icons.copy_rounded),
+                onTap: () => _copySupportDiagnostics(context, online),
               ),
             ),
             const SizedBox(height: 18),
@@ -329,12 +354,96 @@ class AccountScreen extends StatelessWidget {
     final online = context.read<OnlineAccountProvider>();
     final success = await online.backupToCloud();
     if (!context.mounted) return;
+    if (!success && online.errorCode == 'cloud_save_conflict') {
+      await _showCloudSaveConflict(context, online);
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(success
           ? strings.pick('Cloud backup saved.', 'Cloudback-up opgeslagen.')
-          : strings.pick(
-              'Cloud backup failed. Refresh and try again.',
-              'Cloudback-up mislukt. Ververs en probeer opnieuw.',
+          : socialMessage(
+              strings,
+              online.errorCode ?? 'cloud_save_failed',
+              supportCode: online.supportCode,
+            )),
+    ));
+  }
+
+  Future<void> _copySupportDiagnostics(
+    BuildContext context,
+    OnlineAccountProvider online,
+  ) async {
+    final strings = AppStrings.of(context);
+    await Clipboard.setData(ClipboardData(
+      text: online.buildSupportDiagnosticReport(
+        appVersion: AppInfo.displayVersion,
+      ),
+    ));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(strings.pick(
+        'Support diagnostics copied. Only share them with trusted DragonHaven support.',
+        'Supportdiagnose gekopieerd. Deel deze alleen met vertrouwde DragonHaven-support.',
+      )),
+    ));
+  }
+
+  Future<void> _showCloudSaveConflict(
+    BuildContext context,
+    OnlineAccountProvider online,
+  ) async {
+    final strings = AppStrings.of(context);
+    final remote = online.cloudConflictSave;
+    final material = MaterialLocalizations.of(context);
+    final updated = remote == null
+        ? null
+        : '${material.formatFullDate(remote.updatedAt.toLocal())}, '
+            '${material.formatTimeOfDay(TimeOfDay.fromDateTime(remote.updatedAt.toLocal()))}';
+    final restore = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(strings.pick(
+              'Different cloud progress found',
+              'Andere cloudvoortgang gevonden',
+            )),
+            content: Text(strings.pick(
+              'This device is not based on the latest cloud revision${remote == null ? '' : ' ${remote.revision} from $updated'}. Nothing was overwritten. Restore the cloud copy, or keep playing locally for now.',
+              'Dit apparaat is niet gebaseerd op de nieuwste cloudrevisie${remote == null ? '' : ' ${remote.revision} van $updated'}. Er is niets overschreven. Herstel de cloudkopie, of speel voorlopig lokaal verder.',
+            )),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(strings.pick(
+                  'Keep local for now',
+                  'Voorlopig lokaal houden',
+                )),
+              ),
+              FilledButton(
+                onPressed: remote == null
+                    ? null
+                    : () => Navigator.pop(dialogContext, true),
+                child: Text(strings.pick(
+                  'Restore cloud',
+                  'Cloud herstellen',
+                )),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!restore || !context.mounted) return;
+    final success = await online.restoreFromCloud();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(success
+          ? strings.pick(
+              'Cloud progress restored. A local recovery copy was kept.',
+              'Cloudvoortgang hersteld. Er is een lokale herstelkopie bewaard.',
+            )
+          : socialMessage(
+              strings,
+              online.errorCode ?? 'cloud_save_failed',
+              supportCode: online.supportCode,
             )),
     ));
   }
@@ -372,9 +481,10 @@ class AccountScreen extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(success
           ? strings.pick('Cloud progress restored.', 'Cloudvoortgang hersteld.')
-          : strings.pick(
-              'No usable cloud backup was found.',
-              'Er is geen bruikbare cloudback-up gevonden.',
+          : socialMessage(
+              strings,
+              online.errorCode ?? 'cloud_save_missing',
+              supportCode: online.supportCode,
             )),
     ));
   }

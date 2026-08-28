@@ -1,6 +1,9 @@
 [CmdletBinding()]
 param(
-    [string]$SupabaseCli = 'supabase'
+    [string]$SupabaseCli = 'supabase',
+    [string]$ExpectedProjectRef = 'tnzathhutuwmohmjfrlo',
+    [string]$ExpectedUrl = '',
+    [string]$ExpectedPublishableKey = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -8,6 +11,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $configPath = Join-Path $repoRoot 'lib\config\online_config.dart'
 $migrationPath = Join-Path $repoRoot 'supabase\migrations'
 $projectRefPath = Join-Path $repoRoot 'supabase\.temp\project-ref'
+. (Join-Path $PSScriptRoot 'lib\public_auth_health.ps1')
 
 if (Test-Path -LiteralPath $SupabaseCli) {
     $resolvedCli = (Resolve-Path -LiteralPath $SupabaseCli).Path
@@ -23,7 +27,10 @@ else {
 if (-not (Test-Path -LiteralPath $projectRefPath)) {
     throw 'The Supabase project is not linked in this checkout.'
 }
-if ((Get-Content -LiteralPath $projectRefPath -Raw).Trim() -ne 'tnzathhutuwmohmjfrlo') {
+if ([string]::IsNullOrWhiteSpace($ExpectedProjectRef)) {
+    throw 'The expected Supabase project reference is empty.'
+}
+if ((Get-Content -LiteralPath $projectRefPath -Raw).Trim() -ne $ExpectedProjectRef.Trim()) {
     throw 'This checkout is linked to an unexpected Supabase project.'
 }
 
@@ -38,7 +45,10 @@ $keyMatch = [regex]::Match(
     "defaultValue:\s*'(sb_publishable_[^']+)'",
     [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
 )
-if (-not $urlMatch.Success -or -not $keyMatch.Success) {
+if ([string]::IsNullOrWhiteSpace($ExpectedUrl) -and -not $urlMatch.Success) {
+    throw 'The bundled public Supabase configuration could not be parsed.'
+}
+if ([string]::IsNullOrWhiteSpace($ExpectedPublishableKey) -and -not $keyMatch.Success) {
     throw 'The bundled public Supabase configuration could not be parsed.'
 }
 
@@ -73,12 +83,31 @@ try {
         throw 'The linked database contains schema lint errors.'
     }
 
-    $baseUrl = $urlMatch.Groups[1].Value
-    $publicKey = $keyMatch.Groups[1].Value
-    $headers = @{ apikey = $publicKey }
-    $health = Invoke-WebRequest -Uri "$baseUrl/auth/v1/health" -Headers $headers -UseBasicParsing
-    $settings = Invoke-WebRequest -Uri "$baseUrl/auth/v1/settings" -Headers $headers -UseBasicParsing
-    if ($health.StatusCode -ne 200 -or $settings.StatusCode -ne 200) {
+    $baseUrl = if ([string]::IsNullOrWhiteSpace($ExpectedUrl)) {
+        $urlMatch.Groups[1].Value
+    } else {
+        $ExpectedUrl.TrimEnd('/')
+    }
+    $publicKey = if ([string]::IsNullOrWhiteSpace($ExpectedPublishableKey)) {
+        $keyMatch.Groups[1].Value
+    } else {
+        $ExpectedPublishableKey.Trim()
+    }
+    if ($baseUrl -notmatch '^https://[^/]+$') {
+        throw 'The expected Supabase URL is invalid.'
+    }
+    if ($publicKey -notmatch '^sb_publishable_') {
+        throw 'The expected Supabase publishable key is invalid.'
+    }
+    $health = Invoke-DragonHavenPublicRequest `
+        -BaseUrl $baseUrl `
+        -Path '/auth/v1/health' `
+        -PublishableKey $publicKey
+    $settings = Invoke-DragonHavenPublicRequest `
+        -BaseUrl $baseUrl `
+        -Path '/auth/v1/settings' `
+        -PublishableKey $publicKey
+    if ($health.Status -ne 200 -or $settings.Status -ne 200) {
         throw 'The public Supabase Auth endpoints are not healthy.'
     }
     if ($settings.Content -notmatch '"email"') {
@@ -86,11 +115,13 @@ try {
     }
 
     [pscustomobject]@{
-        ProjectRef = 'tnzathhutuwmohmjfrlo'
+        ProjectRef = $ExpectedProjectRef.Trim()
         MigrationCount = $localVersions.Count
         DatabaseLintErrors = 0
-        AuthHealthStatus = $health.StatusCode
-        AuthSettingsStatus = $settings.StatusCode
+        AuthHealthStatus = $health.Status
+        AuthHealthDurationMs = $health.DurationMs
+        AuthSettingsStatus = $settings.Status
+        AuthSettingsDurationMs = $settings.DurationMs
         EmailAuthConfigured = $true
     }
 }

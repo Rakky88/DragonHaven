@@ -7,7 +7,8 @@
 - App-initialisatie wacht niet langer op de eerste volledige online refresh.
   Lokale gameplay en navigatie blijven beschikbaar wanneer Supabase traag of
   tijdelijk onbereikbaar is.
-- Afzonderlijke online acties hebben een harde timeout van 30 seconden en tonen
+- Afzonderlijke online acties hebben vanaf de post-auditverbetering een harde
+  timeout van 75 seconden en tonen
   daarna dat de lokale save veilig is.
 - Nieuwe accounts krijgen een expliciete e-mailbevestigingsstatus en kunnen de
   bevestigingsmail opnieuw aanvragen zonder ingelogde sessie.
@@ -75,3 +76,32 @@ moment een mismatch of fout meldt.
    multi-device conflictbeleid.
 4. Voeg end-to-end stagingtests toe die signup, e-mailconfirmatie, eerste login,
    backup, Friends, trade en Group Adventure als één flow uitvoeren.
+
+## Post-auditfundament in uitvoering
+
+Na de v0.04.06-audit is lokaal alvast gebouwd:
+
+- privacyveilige, begrensde in-memory diagnostiek met supportcodes en een door
+  de speler te kopiëren supportrapport zonder e-mail, tokens of save-inhoud;
+- persistente cloud-basisrevisies per account, zodat de client een bestaande
+  remote revision niet langer stil kan overschrijven;
+- een expliciete conflictmelding met veilig herstellen of lokaal doorgaan;
+- een production/staging/local omgevingsgrens die staging nooit naar de vaste
+  productieserver laat terugvallen;
+- een handmatige, volledig afgescheiden stagingworkflow die pas werkt zodra de
+  eigenaar een stagingproject en GitHub Environment Secrets toevoegt;
+- een handmatige publieke healthworkflow en curl-gebaseerde health/preflight-
+  metingen met latencyrapportage;
+- een CI-verificatierapport met commit, appversie, versionCode, AAB-hash en
+  verwachte signingfingerprint.
+
+De productiepreflight na deze aanpassing rapporteerde opnieuw 20/20 migraties,
+0 lintfouten en HTTP 200 voor Auth health/settings. De eerste Auth-response
+duurde 24,5 seconden en de warme settingsresponse 0,13 seconde. Daarom is de
+herstelbare clienttimeout naar 75 seconden verhoogd terwijl lokale gameplay
+niet op online acties wacht.
+
+Zie [DRAGONHAVEN_POST_AUDIT_PLAN.md](DRAGONHAVEN_POST_AUDIT_PLAN.md) en
+[INCIDENT_RUNBOOK.md](INCIDENT_RUNBOOK.md) voor eigenaarschap, vervolgfasen en
+incidentafhandeling. Deze lokale wijzigingen zijn nog geen nieuwe release of
+productiemigratie.

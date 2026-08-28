@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../l10n/app_strings.dart';
 import '../models/mystic_relic.dart';
 import '../models/social.dart';
+import '../services/diagnostic_reporter.dart';
 import '../services/notification_service.dart';
 import '../services/social_repository.dart';
 
@@ -28,8 +29,11 @@ class OnlineAccountProvider extends ChangeNotifier {
     Map<String, dynamic> Function()? gameStateSnapshot,
     Future<bool> Function(Map<String, dynamic> state)? applyCloudState,
     Future<String> Function()? deviceId,
+    Future<int?> Function(String userId)? loadCloudBaseRevision,
+    Future<void> Function(String userId, int revision)? saveCloudBaseRevision,
     String Function()? languageCode,
-    Duration operationTimeout = const Duration(seconds: 30),
+    DiagnosticReporter diagnostics = const NoopDiagnosticReporter(),
+    Duration operationTimeout = const Duration(seconds: 75),
   })  : _repository = repository,
         _inventorySnapshot = inventorySnapshot,
         _profileSnapshot = profileSnapshot ?? _fallbackProfileSnapshot,
@@ -42,7 +46,12 @@ class OnlineAccountProvider extends ChangeNotifier {
         _gameStateSnapshot = gameStateSnapshot,
         _applyCloudState = applyCloudState,
         _deviceId = deviceId,
+        _loadCloudBaseRevision =
+            loadCloudBaseRevision ?? _missingCloudBaseRevision,
+        _saveCloudBaseRevision =
+            saveCloudBaseRevision ?? _ignoreCloudBaseRevision,
         _languageCode = languageCode ?? _defaultLanguageCode,
+        _diagnostics = diagnostics,
         _operationTimeout = operationTimeout;
 
   final SocialRepository _repository;
@@ -60,7 +69,11 @@ class OnlineAccountProvider extends ChangeNotifier {
   final Map<String, dynamic> Function()? _gameStateSnapshot;
   final Future<bool> Function(Map<String, dynamic> state)? _applyCloudState;
   final Future<String> Function()? _deviceId;
+  final Future<int?> Function(String userId) _loadCloudBaseRevision;
+  final Future<void> Function(String userId, int revision)
+      _saveCloudBaseRevision;
   final String Function() _languageCode;
+  final DiagnosticReporter _diagnostics;
   final Duration _operationTimeout;
   StreamSubscription<bool>? _authSubscription;
   Timer? _refreshTimer;
@@ -70,6 +83,8 @@ class OnlineAccountProvider extends ChangeNotifier {
   String? _lastShowcaseFingerprint;
   DateTime? _lastPresenceUpdate;
   bool _disposed = false;
+  String? _cloudBaseUserId;
+  int? _cloudBaseRevision;
 
   KeeperProfile? profile;
   List<KeeperProfile> friends = const [];
@@ -80,9 +95,32 @@ class OnlineAccountProvider extends ChangeNotifier {
   List<TradeOffer> trades = const [];
   List<TradeInventoryItem> tradeInventory = const [];
   CloudGameSave? cloudGameSave;
+  CloudGameSave? cloudConflictSave;
   bool busy = false;
   String? errorCode;
   String? noticeCode;
+  String? supportCode;
+
+  List<DiagnosticEvent> get recentDiagnostics => _diagnostics.recentEvents;
+
+  String buildSupportDiagnosticReport({required String appVersion}) =>
+      const JsonEncoder.withIndent('  ').convert({
+        'generatedAtUtc': DateTime.now().toUtc().toIso8601String(),
+        'appVersion': appVersion,
+        'onlineConfigured': isConfigured,
+        'signedIn': isSignedIn,
+        'emailVerified': isEmailVerified,
+        if (profile case final currentProfile?) ...{
+          'keeperId': currentProfile.keeperCode,
+          'userId': currentProfile.userId,
+        },
+        if (errorCode case final currentError?) 'lastErrorCode': currentError,
+        if (supportCode case final currentSupport?)
+          'lastSupportCode': currentSupport,
+        'recentOnlineEvents': recentDiagnostics
+            .map((event) => event.toSafeJson())
+            .toList(growable: false),
+      });
 
   bool get isConfigured => _repository.isConfigured;
   bool get isSignedIn => _repository.isSignedIn;
@@ -131,7 +169,18 @@ class OnlineAccountProvider extends ChangeNotifier {
         }
       },
       onError: (Object error) {
-        errorCode = error is SocialException ? error.code : error.toString();
+        final correlationId = DiagnosticIds.create();
+        errorCode =
+            error is SocialException ? error.code : 'online_unexpected_error';
+        supportCode = DiagnosticIds.supportCode(correlationId);
+        _diagnostics.record(DiagnosticEvent(
+          operation: 'auth.state_change',
+          correlationId: correlationId,
+          outcome: DiagnosticOutcome.failure,
+          startedAt: DateTime.now(),
+          duration: Duration.zero,
+          errorCode: errorCode,
+        ));
         _notify();
         _authRecoveryTimer?.cancel();
         _authRecoveryTimer = Timer(const Duration(seconds: 2), () {
@@ -154,7 +203,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     required String email,
     required String password,
   }) async =>
-      _run(() async {
+      _run('auth.sign_up', () async {
         final localProfile = _profileSnapshot();
         final result = await _repository.signUp(
           email: email,
@@ -172,7 +221,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     required String email,
     required String password,
   }) async =>
-      await _run(() async {
+      await _run('auth.sign_in', () async {
         await _repository.signIn(email: email, password: password);
         await _refreshData();
         _ensureRefreshTimer();
@@ -182,7 +231,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> resendSignupConfirmation(String email) async =>
-      await _run(() async {
+      await _run('auth.resend_confirmation', () async {
         await _repository.resendSignupConfirmation(email);
         noticeCode = 'confirmation_resent';
         return true;
@@ -190,7 +239,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> signOut() async =>
-      await _run(() async {
+      await _run('auth.sign_out', () async {
         await _repository.signOut();
         _clearAccountData();
         return true;
@@ -198,7 +247,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> deleteAccount(String password) async =>
-      await _run(() async {
+      await _run('auth.delete_account', () async {
         await _repository.deleteMyAccount(password);
         _clearAccountData();
         noticeCode = 'account_deleted';
@@ -207,7 +256,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> refresh() async =>
-      await _run(() async {
+      await _run('social.refresh', () async {
         if (!isSignedIn) return false;
         await _refreshData();
         return true;
@@ -217,7 +266,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   Future<bool> synchronizeProfile() => refresh();
 
   Future<bool> loadCloudSaveStatus() async =>
-      await _run(() async {
+      await _run('cloud_save.status', () async {
         if (!isSignedIn) return false;
         cloudGameSave = await _repository.loadCloudGameSave();
         return true;
@@ -225,25 +274,47 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> backupToCloud() async =>
-      await _run(() async {
+      await _run('cloud_save.backup', () async {
         final snapshot = _gameStateSnapshot;
         final loadDeviceId = _deviceId;
         if (!isSignedIn || snapshot == null || loadDeviceId == null) {
           throw const SocialException('cloud_save_unavailable');
         }
-        cloudGameSave = await _repository.loadCloudGameSave();
-        cloudGameSave = await _repository.pushCloudGameSave(
-          expectedRevision: cloudGameSave?.revision ?? 0,
-          state: snapshot(),
-          deviceId: await loadDeviceId(),
-        );
+        final remote = await _repository.loadCloudGameSave();
+        cloudGameSave = remote;
+        final baseRevision = await _currentCloudBaseRevision();
+        final remoteRevision = remote?.revision ?? 0;
+        if ((baseRevision == null && remote != null) ||
+            (baseRevision != null && baseRevision != remoteRevision)) {
+          cloudConflictSave = remote;
+          throw const SocialException('cloud_save_conflict');
+        }
+        try {
+          cloudGameSave = await _repository.pushCloudGameSave(
+            expectedRevision: baseRevision ?? 0,
+            state: snapshot(),
+            deviceId: await loadDeviceId(),
+          );
+        } on SocialException catch (error) {
+          if (error.code == 'cloud_save_conflict') {
+            try {
+              cloudConflictSave = await _repository.loadCloudGameSave();
+              cloudGameSave = cloudConflictSave;
+            } on Object {
+              cloudConflictSave = remote;
+            }
+          }
+          rethrow;
+        }
+        await _rememberCloudBaseRevision(cloudGameSave!.revision);
+        cloudConflictSave = null;
         noticeCode = 'cloud_save_backed_up';
         return true;
       }) ??
       false;
 
   Future<bool> restoreFromCloud() async =>
-      await _run(() async {
+      await _run('cloud_save.restore', () async {
         final apply = _applyCloudState;
         if (!isSignedIn || apply == null) {
           throw const SocialException('cloud_save_unavailable');
@@ -254,6 +325,8 @@ class OnlineAccountProvider extends ChangeNotifier {
           throw const SocialException('cloud_save_invalid');
         }
         cloudGameSave = remote;
+        await _rememberCloudBaseRevision(remote.revision);
+        cloudConflictSave = null;
         _lastTradeInventoryFingerprint = null;
         _lastShowcaseFingerprint = null;
         await _refreshData();
@@ -263,7 +336,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> sendFriendRequest(String keeperCode) async =>
-      await _run(() async {
+      await _run('friends.send_request', () async {
         await _repository.sendFriendRequest(keeperCode);
         await _refreshData();
         noticeCode = 'request_sent';
@@ -272,7 +345,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> respondToRequest(String requestId, String response) async =>
-      await _run(() async {
+      await _run('friends.respond_request', () async {
         await _repository.respondToRequest(requestId, response);
         await _refreshData();
         noticeCode = 'request_$response';
@@ -281,7 +354,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> removeFriend(String userId) async =>
-      await _run(() async {
+      await _run('friends.remove', () async {
         await _repository.removeFriend(userId);
         await _refreshData();
         noticeCode = 'friend_removed';
@@ -290,7 +363,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> blockKeeper(String userId) async =>
-      await _run(() async {
+      await _run('friends.block', () async {
         await _repository.blockKeeper(userId);
         await _refreshData();
         noticeCode = 'keeper_blocked';
@@ -299,7 +372,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> unblockKeeper(String userId) async =>
-      await _run(() async {
+      await _run('friends.unblock', () async {
         await _repository.unblockKeeper(userId);
         await _refreshData();
         noticeCode = 'keeper_unblocked';
@@ -311,7 +384,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     String adventureId,
     GroupDragonSubmission dragon,
   ) async =>
-      await _run(() async {
+      await _run('group.create', () async {
         await _repository.createGroupLobby(adventureId, dragon);
         await _refreshData();
         noticeCode = 'group_lobby_created';
@@ -323,7 +396,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     String lobbyId,
     GroupDragonSubmission dragon,
   ) async =>
-      await _run(() async {
+      await _run('group.join', () async {
         await _repository.joinGroupLobby(lobbyId, dragon);
         await _refreshData();
         noticeCode = 'group_joined';
@@ -332,7 +405,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> leaveGroupLobby(String lobbyId) async =>
-      await _run(() async {
+      await _run('group.leave', () async {
         await _repository.leaveGroupLobby(lobbyId);
         await _refreshData();
         noticeCode = 'group_left';
@@ -341,7 +414,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> removeGroupParticipant(String lobbyId, String userId) async =>
-      await _run(() async {
+      await _run('group.remove_participant', () async {
         await _repository.removeGroupParticipant(lobbyId, userId);
         await _refreshData();
         noticeCode = 'group_participant_removed';
@@ -350,7 +423,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<GroupAdventureReward?> claimGroupReward(String lobbyId) =>
-      _run(() async {
+      _run('group.claim_reward', () async {
         final reward = await _repository.claimGroupReward(lobbyId);
         if (reward == null) {
           throw const SocialException('group_reward_not_ready');
@@ -365,14 +438,14 @@ class OnlineAccountProvider extends ChangeNotifier {
       });
 
   Future<bool> prepareTradeInventory() async =>
-      await _run(() async {
+      await _run('trade.prepare_inventory', () async {
         await _refreshData();
         return true;
       }) ??
       false;
 
   Future<bool> createTrade(String friendId, TradeItem item) async =>
-      await _run(() async {
+      await _run('trade.create', () async {
         if (!item.isTradeable) {
           throw const SocialException('trade_item_invalid');
         }
@@ -385,7 +458,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> respondToTrade(String tradeId, TradeItem item) async =>
-      await _run(() async {
+      await _run('trade.respond', () async {
         if (!item.isTradeable) {
           throw const SocialException('trade_item_invalid');
         }
@@ -398,7 +471,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> completeTrade(String tradeId) async =>
-      await _run(() async {
+      await _run('trade.complete', () async {
         await _repository.completeTrade(tradeId);
         await _refreshData();
         noticeCode = 'trade_completed';
@@ -407,7 +480,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> cancelTrade(String tradeId) async =>
-      await _run(() async {
+      await _run('trade.cancel', () async {
         await _repository.cancelTrade(tradeId);
         await _refreshData();
         noticeCode = 'trade_cancelled';
@@ -416,7 +489,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       false;
 
   Future<bool> rejectTrade(String tradeId) async =>
-      await _run(() async {
+      await _run('trade.reject', () async {
         await _repository.rejectTrade(tradeId);
         await _refreshData();
         noticeCode = 'trade_rejected';
@@ -427,6 +500,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   void clearMessages() {
     errorCode = null;
     noticeCode = null;
+    supportCode = null;
   }
 
   Future<void> _refreshData() async {
@@ -643,26 +717,83 @@ class OnlineAccountProvider extends ChangeNotifier {
     });
   }
 
-  Future<T?> _run<T>(Future<T> Function() operation) async {
+  Future<T?> _run<T>(
+    String operationName,
+    Future<T> Function() operation,
+  ) async {
     if (busy) return null;
+    final correlationId = DiagnosticIds.create();
+    final startedAt = DateTime.now();
+    final stopwatch = Stopwatch()..start();
     busy = true;
     errorCode = null;
+    supportCode = null;
     _notify();
     try {
-      return await operation().timeout(
+      final result = await operation().timeout(
         _operationTimeout,
         onTimeout: () => throw const SocialException('online_timeout'),
       );
+      stopwatch.stop();
+      _diagnostics.record(DiagnosticEvent(
+        operation: operationName,
+        correlationId: correlationId,
+        outcome: DiagnosticOutcome.success,
+        startedAt: startedAt,
+        duration: stopwatch.elapsed,
+      ));
+      return result;
     } on SocialException catch (error) {
+      stopwatch.stop();
       errorCode = error.code;
+      supportCode = DiagnosticIds.supportCode(correlationId);
+      _diagnostics.record(DiagnosticEvent(
+        operation: operationName,
+        correlationId: correlationId,
+        outcome: DiagnosticOutcome.failure,
+        startedAt: startedAt,
+        duration: stopwatch.elapsed,
+        errorCode: error.code,
+      ));
       return null;
-    } on Object catch (error) {
-      errorCode = error.toString();
+    } on Object {
+      stopwatch.stop();
+      errorCode = 'online_unexpected_error';
+      supportCode = DiagnosticIds.supportCode(correlationId);
+      _diagnostics.record(DiagnosticEvent(
+        operation: operationName,
+        correlationId: correlationId,
+        outcome: DiagnosticOutcome.failure,
+        startedAt: startedAt,
+        duration: stopwatch.elapsed,
+        errorCode: errorCode,
+      ));
       return null;
     } finally {
       busy = false;
       _notify();
     }
+  }
+
+  Future<int?> _currentCloudBaseRevision() async {
+    final userId = _repository.currentUserId;
+    if (userId == null || userId.isEmpty) {
+      throw const SocialException('online_login_required');
+    }
+    if (_cloudBaseUserId == userId) return _cloudBaseRevision;
+    _cloudBaseUserId = userId;
+    _cloudBaseRevision = await _loadCloudBaseRevision(userId);
+    return _cloudBaseRevision;
+  }
+
+  Future<void> _rememberCloudBaseRevision(int revision) async {
+    final userId = _repository.currentUserId;
+    if (userId == null || userId.isEmpty) {
+      throw const SocialException('online_login_required');
+    }
+    await _saveCloudBaseRevision(userId, revision);
+    _cloudBaseUserId = userId;
+    _cloudBaseRevision = revision;
   }
 
   void _clearAccountData() {
@@ -675,6 +806,9 @@ class OnlineAccountProvider extends ChangeNotifier {
     trades = const [];
     tradeInventory = const [];
     cloudGameSave = null;
+    cloudConflictSave = null;
+    _cloudBaseUserId = null;
+    _cloudBaseRevision = null;
     _lastProfileFingerprint = null;
     _lastTradeInventoryFingerprint = null;
     _lastShowcaseFingerprint = null;
@@ -719,3 +853,7 @@ Future<void> _ignoreTradeReservations(
 Future<bool> _rejectTradeSettlement(TradeSettlement _) async => false;
 
 String _defaultLanguageCode() => 'en';
+
+Future<int?> _missingCloudBaseRevision(String _) async => null;
+
+Future<void> _ignoreCloudBaseRevision(String _, int __) async {}

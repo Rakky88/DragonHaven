@@ -48,7 +48,11 @@ class FriendsScreen extends StatelessWidget {
         if (online.errorCode case final error?)
           _StatusCard(
             icon: Icons.cloud_off_rounded,
-            text: socialMessage(strings, error),
+            text: socialMessage(
+              strings,
+              error,
+              supportCode: online.supportCode,
+            ),
             error: true,
           ),
         if (online.profile case final profile?) _MyKeeperCard(profile: profile),
@@ -1511,7 +1515,12 @@ void _showProviderMessage(BuildContext context, OnlineAccountProvider online) {
   final code = online.errorCode ?? online.noticeCode;
   if (code == null) return;
   final strings = AppStrings.of(context);
-  ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text(socialMessage(strings, code))));
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Text(socialMessage(
+      strings,
+      code,
+      supportCode: online.errorCode == null ? null : online.supportCode,
+    )),
+  ));
   online.clearMessages();
 }

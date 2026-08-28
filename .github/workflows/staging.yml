@@ -1,0 +1,128 @@
+name: Android staging verification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify staging secret configuration
+        shell: pwsh
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          STAGING_SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+        run: |
+          $required = @(
+            'STAGING_SUPABASE_URL',
+            'STAGING_SUPABASE_PUBLISHABLE_KEY',
+            'STAGING_SUPABASE_PROJECT_REF',
+            'STAGING_SUPABASE_ACCESS_TOKEN',
+            'STAGING_SUPABASE_DB_PASSWORD'
+          )
+          $missing = @(
+            foreach ($name in $required) {
+              if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+                $name
+              }
+            }
+          )
+          if ($missing.Count -gt 0) {
+            throw "Ontbrekende stagingsecrets: $($missing -join ', ')."
+          }
+          if ($env:STAGING_SUPABASE_URL.TrimEnd('/') -eq 'https://tnzathhutuwmohmjfrlo.supabase.co') {
+            throw 'De stagingworkflow mag nooit de productieserver gebruiken.'
+          }
+          $projectRef = $env:STAGING_SUPABASE_PROJECT_REF.Trim()
+          if ($projectRef -eq 'tnzathhutuwmohmjfrlo') {
+            throw 'De stagingworkflow mag nooit de productie-projectreference gebruiken.'
+          }
+          $expectedUrl = "https://$projectRef.supabase.co"
+          if ($env:STAGING_SUPABASE_URL.TrimEnd('/') -ne $expectedUrl) {
+            throw 'De staging-URL hoort niet bij de opgegeven staging-projectreference.'
+          }
+          if (-not $env:STAGING_SUPABASE_PUBLISHABLE_KEY.StartsWith('sb_publishable_')) {
+            throw 'Gebruik voor staging uitsluitend een sb_publishable_ clientkey.'
+          }
+          'Stagingconfiguratie aanwezig; waarden worden niet gelogd.'
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Flutter stable
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Dependencies
+        run: flutter pub get
+
+      - name: Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.115.0
+
+      - name: Initialize and verify isolated staging server
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+        run: |
+          supabase link `
+            --project-ref $env:STAGING_SUPABASE_PROJECT_REF `
+            --password $env:SUPABASE_DB_PASSWORD
+          New-Item -ItemType Directory -Path staging -Force | Out-Null
+          supabase db push --linked --include-all --dry-run |
+            Tee-Object -FilePath staging/migration-dry-run.txt
+          supabase db push --linked --include-all --yes |
+            Tee-Object -FilePath staging/migration-apply.txt
+          supabase config push `
+            --project-ref $env:STAGING_SUPABASE_PROJECT_REF `
+            --yes |
+            Tee-Object -FilePath staging/config-push.txt
+          ./tool/release_server_preflight.ps1 `
+            -ExpectedProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ExpectedUrl $env:STAGING_SUPABASE_URL `
+            -ExpectedPublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY |
+            Tee-Object -FilePath staging/server-preflight.txt
+
+      - name: Analyze
+        run: flutter analyze --no-pub
+
+      - name: Test
+        run: flutter test --no-pub
+
+      - name: Build isolated staging APK
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          flutter build apk --debug --no-pub \
+            --dart-define=DRAGONHAVEN_ENVIRONMENT=staging \
+            --dart-define=SUPABASE_URL="$STAGING_SUPABASE_URL" \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_SUPABASE_PUBLISHABLE_KEY"
+          cp build/app/outputs/flutter-apk/app-debug.apk staging/DragonHaven-staging.apk
+
+      - name: Upload staging evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: DragonHaven-staging-verification
+          path: staging/
+          retention-days: 3

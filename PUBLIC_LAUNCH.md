@@ -1,8 +1,8 @@
 # DragonHaven openbaar lanceren
 
-Laatst gecontroleerd: **27 augustus 2026**
+Laatst gecontroleerd: **28 augustus 2026**
 
-Huidige appversie bij deze controle: **v0.04.03**
+Huidige appversie bij deze controle: **v0.04.06**
 Android package name: **`nl.dragonhaven.app`**
 
 Dit is de centrale, levende checklist voor een openbare lancering van
@@ -34,7 +34,7 @@ moeten daarna met het werkelijke gebruik meegroeien.
   gebouwd. Google Play gebruikt de AAB.
 - De releaseprocedure controleert vóór elke release de live Supabase-migraties,
   database-lint, Auth-health en e-mailconfiguratie.
-- Bij v0.04.03 waren alle 18 database-migraties gelijk, waren er geen remote
+- Bij v0.04.06 waren alle 20 database-migraties gelijk, waren er geen remote
   lintfouten en werkten de gecontroleerde Auth/e-mail-endpoints.
 - E-mailaccounts, verificatie, Friends, Trades, globale Group Adventures,
   profielsamenvattingen en cloudback-ups gebruiken Supabase.
@@ -48,7 +48,9 @@ moeten daarna met het werkelijke gebruik meegroeien.
   op de achtergrond minder vaak opgehaald. Profiel-, showcase- en
   inventory-snapshots worden alleen geschreven wanneer ze zijn veranderd.
 - Lokale save recovery en een handmatige, bevestigde cloudback-up bestaan.
-- De releaseworkflow kan een Play-ready AAB als gecontroleerd artifact bouwen.
+- De releaseworkflow is voorbereid om een Play-ready AAB plus verificatierapport
+  te bouwen. De eerste groene CI-run wacht nog op de zes GitHub Actions-secrets
+  uit `DISTRIBUTION.md`.
 
 ## Wat nog geen productiegarantie heeft
 
@@ -94,11 +96,11 @@ een grote openbare lancering te zijn opgelost.
 | Productielanden en releasepad kiezen | Jij | Begin bij voorkeur met een kleine staged rollout. |
 | Betalingen voor digitale goederen | Jij opent merchant/betalingsprofiel; Codex implementeert billing | Alleen nodig als gems of andere digitale goederen voor echt geld worden verkocht. Gebruik dan Google Play Billing en server-side aankoopverificatie. |
 
-Let op: de AAB van v0.04.01 is ongeveer **279,3 MiB**. Dat past onder de
-500-MB-limiet voor een base module, maar ligt boven de 200-MB-grens waarbij
-Google Play een grote-downloadwaarschuwing kan tonen. Voor bereik en
-installatieconversie is verdere compressie en/of Play Asset Delivery sterk aan
-te raden.
+Let op: de openbare APK van v0.04.06 is ongeveer **312,6 MiB**. De exacte
+omvang van de volgende AAB wordt door de voorbereide CI-workflow vastgelegd
+zodra de signing- en Supabase-secrets zijn ingesteld. Voor bereik en
+installatieconversie blijft verdere compressie en/of Play Asset Delivery sterk
+aan te raden.
 
 ## Wat jij zelf moet regelen
 

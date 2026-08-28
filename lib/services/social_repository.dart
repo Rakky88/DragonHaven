@@ -14,6 +14,7 @@ abstract interface class SocialRepository {
   bool get isSignedIn;
   bool get isEmailVerified;
   String? get currentEmail;
+  String? get currentUserId;
   Stream<bool> get authStateChanges;
 
   Future<AccountAuthResult> signUp({
@@ -88,6 +89,8 @@ class DisabledSocialRepository implements SocialRepository {
   bool get isEmailVerified => false;
   @override
   String? get currentEmail => null;
+  @override
+  String? get currentUserId => null;
   @override
   Stream<bool> get authStateChanges => const Stream.empty();
 

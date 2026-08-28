@@ -241,7 +241,11 @@ class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
             if (online.errorCode case final error?) ...[
               const SizedBox(height: 12),
               Text(
-                socialMessage(strings, error),
+                socialMessage(
+                  strings,
+                  error,
+                  supportCode: online.supportCode,
+                ),
                 key: const Key('online-auth-error'),
                 style: const TextStyle(color: Colors.redAccent),
               ),
@@ -357,124 +361,143 @@ class _OnlineAuthDialogState extends State<_OnlineAuthDialog> {
   }
 }
 
-String socialMessage(AppStrings strings, String code) => switch (code) {
-      'keeper_not_found' => strings.pick('No keeper with that ID was found.',
-          'Er is geen hoeder met dat ID gevonden.'),
-      'keeper_unavailable' => strings.pick(
-          'This keeper is unavailable.', 'Deze hoeder is niet beschikbaar.'),
-      'cannot_friend_self' => strings.pick(
-          'You cannot add yourself.', 'Je kunt jezelf niet toevoegen.'),
-      'request_already_pending' => strings.pick(
-          'A request is already pending.', 'Er staat al een verzoek open.'),
-      'request_recently_rejected' => strings.pick(
-          'This request was recently rejected. Try again later.',
-          'Dit verzoek is onlangs afgewezen. Probeer het later opnieuw.'),
-      'too_many_requests' => strings.pick(
-          'Too many requests are pending.', 'Er staan te veel verzoeken open.'),
-      'already_friends' =>
-        strings.pick('You are already friends.', 'Jullie zijn al vrienden.'),
-      'invalid login credentials' ||
-      'invalid_login_credentials' =>
-        strings.pick('Incorrect email or password.',
-            'Onjuist e-mailadres of wachtwoord.'),
-      'user already registered' || 'user_already_registered' => strings.pick(
-          'An account already exists for this email.',
-          'Voor dit e-mailadres bestaat al een account.'),
-      'email_not_verified' => strings.pick(
-          'Confirm your email before signing in.',
-          'Bevestig je e-mailadres voordat je inlogt.'),
-      'confirmation_resent' => strings.pick(
-          'Confirmation email sent. Check your inbox and spam folder.',
-          'Bevestigingsmail verstuurd. Controleer je inbox en spammap.'),
-      'profile_saved' => strings.pick('Profile saved.', 'Profiel opgeslagen.'),
-      'request_sent' =>
-        strings.pick('Friend request sent.', 'Vriendschapsverzoek verstuurd.'),
-      'friend_removed' => strings.pick('Friend removed for both keepers.',
-          'Vriend bij beide hoeders verwijderd.'),
-      'keeper_blocked' =>
-        strings.pick('Keeper blocked.', 'Hoeder geblokkeerd.'),
-      'keeper_unblocked' =>
-        strings.pick('Keeper unblocked.', 'Blokkade opgeheven.'),
-      'group_lobby_created' => strings.pick(
-          'Group created. Friends can now join.',
-          'Groep gemaakt. Vrienden kunnen zich nu aanmelden.'),
-      'group_joined' => strings.pick('Your dragon joined the group.',
-          'Je draak is bij de groep aangemeld.'),
-      'group_left' => strings.pick('Your dragon left the group.',
-          'Je draak is uit de groep uitgeschreven.'),
-      'group_participant_removed' => strings.pick(
-          'The dragon was removed from the group.',
-          'De draak is uit de groep verwijderd.'),
-      'group_lobby_full' =>
-        strings.pick('This group is full.', 'Deze groep zit vol.'),
-      'group_already_joined' => strings.pick(
-          'You already used this weekly Group Adventure.',
-          'Je hebt dit wekelijkse groepsavontuur al gebruikt.'),
-      'group_adventure_already_completed' => strings.pick(
-          "You have already completed this week's Group Adventure.",
-          'Je hebt het groepsavontuur van deze week al voltooid.'),
-      'group_lobby_closed' => strings.pick(
-          'This group has already started or expired.',
-          'Deze groep is al gestart of verlopen.'),
-      'group_not_friends' => strings.pick(
-          'Only friends of the group starter can join.',
-          'Alleen vrienden van de groepsstarter kunnen meedoen.'),
-      'group_dragon_busy' => strings.pick(
-          'This dragon is already reserved for a Group Adventure.',
-          'Deze draak is al gereserveerd voor een groepsavontuur.'),
-      'group_reward_not_ready' => strings.pick(
-          'These Group Adventure rewards are not ready yet.',
-          'Deze groepsbeloningen staan nog niet klaar.'),
-      'group_reward_apply_failed' => strings.pick(
-          'The reward could not be linked to your local dragon.',
-          'De beloning kon niet aan je lokale draak worden gekoppeld.'),
-      'trade_sent' =>
-        strings.pick('Trade proposal sent.', 'Ruilvoorstel verstuurd.'),
-      'trade_response_sent' => strings.pick(
-          'Your item is reserved. Your friend can now confirm the trade.',
-          'Je item is gereserveerd. Je vriend kan de ruil nu bevestigen.'),
-      'trade_completed' => strings.pick(
-          'Trade completed. The received item is in your inventory.',
-          'Ruil afgerond. Het ontvangen item staat in je inventaris.'),
-      'trade_cancelled' => strings.pick(
-          'Trade cancelled. Reserved items are available again.',
-          'Ruil geannuleerd. Gereserveerde items zijn weer beschikbaar.'),
-      'trade_rejected' => strings.pick(
-          'Trade rejected. Reserved items are available again.',
-          'Ruil geweigerd. Gereserveerde items zijn weer beschikbaar.'),
-      'trade_not_friends' => strings.pick(
-          'Trades are only available between friends.',
-          'Ruilen kan alleen tussen vrienden.'),
-      'trade_wrong_state' => strings.pick(
-          'This trade has already changed. Refresh and try again.',
-          'Deze ruil is al gewijzigd. Vernieuw en probeer opnieuw.'),
-      'trade_item_invalid' => strings.pick(
-          'This item cannot be traded.', 'Dit item kan niet worden geruild.'),
-      'trade_item_unavailable' => strings.pick(
-          'This item is no longer available or is already reserved.',
-          'Dit item is niet meer beschikbaar of is al gereserveerd.'),
-      'trade_inventory_locked' => strings.pick(
-          'You have too many active trades. Finish or cancel one first.',
-          'Je hebt te veel actieve ruilen. Rond er eerst één af of annuleer er één.'),
-      'trade_active_limit' => strings.pick(
-          'Only one active trade is allowed per account. Finish, reject or cancel it first.',
-          'Per account kan maar één ruil tegelijk actief zijn. Rond die eerst af, weiger of annuleer hem.'),
-      'trade_daily_limit' => strings.pick(
-          'One of you has already completed three trades today. Try again tomorrow.',
-          'Een van jullie heeft vandaag al drie ruilen afgerond. Probeer het morgen opnieuw.'),
-      'trade_expired' => strings.pick(
-          'This trade expired after ten minutes. The reserved items are available again.',
-          'Deze ruil is na tien minuten verlopen. De gereserveerde items zijn weer beschikbaar.'),
-      'trade_apply_failed' => strings.pick(
-          'The completed trade could not be stored locally. Your server items remain safe; please refresh.',
-          'De afgeronde ruil kon niet lokaal worden opgeslagen. Je serveritems blijven veilig; vernieuw opnieuw.'),
-      'online_timeout' => strings.pick(
-          'The online service took too long. Your local game is safe; please try again.',
-          'De online dienst deed er te lang over. Je lokale spel is veilig; probeer het opnieuw.'),
-      _ => strings.pick(
-          'The online service could not complete this action. Please try again.',
-          'De online dienst kon deze actie niet uitvoeren. Probeer het opnieuw.'),
-    };
+String socialMessage(
+  AppStrings strings,
+  String code, {
+  String? supportCode,
+}) {
+  final message = switch (code) {
+    'keeper_not_found' => strings.pick('No keeper with that ID was found.',
+        'Er is geen hoeder met dat ID gevonden.'),
+    'keeper_unavailable' => strings.pick(
+        'This keeper is unavailable.', 'Deze hoeder is niet beschikbaar.'),
+    'cannot_friend_self' => strings.pick(
+        'You cannot add yourself.', 'Je kunt jezelf niet toevoegen.'),
+    'request_already_pending' => strings.pick(
+        'A request is already pending.', 'Er staat al een verzoek open.'),
+    'request_recently_rejected' => strings.pick(
+        'This request was recently rejected. Try again later.',
+        'Dit verzoek is onlangs afgewezen. Probeer het later opnieuw.'),
+    'too_many_requests' => strings.pick(
+        'Too many requests are pending.', 'Er staan te veel verzoeken open.'),
+    'already_friends' =>
+      strings.pick('You are already friends.', 'Jullie zijn al vrienden.'),
+    'invalid login credentials' || 'invalid_login_credentials' => strings.pick(
+        'Incorrect email or password.', 'Onjuist e-mailadres of wachtwoord.'),
+    'user already registered' || 'user_already_registered' => strings.pick(
+        'An account already exists for this email.',
+        'Voor dit e-mailadres bestaat al een account.'),
+    'email_not_verified' => strings.pick(
+        'Confirm your email before signing in.',
+        'Bevestig je e-mailadres voordat je inlogt.'),
+    'confirmation_resent' => strings.pick(
+        'Confirmation email sent. Check your inbox and spam folder.',
+        'Bevestigingsmail verstuurd. Controleer je inbox en spammap.'),
+    'profile_saved' => strings.pick('Profile saved.', 'Profiel opgeslagen.'),
+    'request_sent' =>
+      strings.pick('Friend request sent.', 'Vriendschapsverzoek verstuurd.'),
+    'friend_removed' => strings.pick('Friend removed for both keepers.',
+        'Vriend bij beide hoeders verwijderd.'),
+    'keeper_blocked' => strings.pick('Keeper blocked.', 'Hoeder geblokkeerd.'),
+    'keeper_unblocked' =>
+      strings.pick('Keeper unblocked.', 'Blokkade opgeheven.'),
+    'group_lobby_created' => strings.pick(
+        'Group created. Friends can now join.',
+        'Groep gemaakt. Vrienden kunnen zich nu aanmelden.'),
+    'group_joined' => strings.pick(
+        'Your dragon joined the group.', 'Je draak is bij de groep aangemeld.'),
+    'group_left' => strings.pick('Your dragon left the group.',
+        'Je draak is uit de groep uitgeschreven.'),
+    'group_participant_removed' => strings.pick(
+        'The dragon was removed from the group.',
+        'De draak is uit de groep verwijderd.'),
+    'group_lobby_full' =>
+      strings.pick('This group is full.', 'Deze groep zit vol.'),
+    'group_already_joined' => strings.pick(
+        'You already used this weekly Group Adventure.',
+        'Je hebt dit wekelijkse groepsavontuur al gebruikt.'),
+    'group_adventure_already_completed' => strings.pick(
+        "You have already completed this week's Group Adventure.",
+        'Je hebt het groepsavontuur van deze week al voltooid.'),
+    'group_lobby_closed' => strings.pick(
+        'This group has already started or expired.',
+        'Deze groep is al gestart of verlopen.'),
+    'group_not_friends' => strings.pick(
+        'Only friends of the group starter can join.',
+        'Alleen vrienden van de groepsstarter kunnen meedoen.'),
+    'group_dragon_busy' => strings.pick(
+        'This dragon is already reserved for a Group Adventure.',
+        'Deze draak is al gereserveerd voor een groepsavontuur.'),
+    'group_reward_not_ready' => strings.pick(
+        'These Group Adventure rewards are not ready yet.',
+        'Deze groepsbeloningen staan nog niet klaar.'),
+    'group_reward_apply_failed' => strings.pick(
+        'The reward could not be linked to your local dragon.',
+        'De beloning kon niet aan je lokale draak worden gekoppeld.'),
+    'trade_sent' =>
+      strings.pick('Trade proposal sent.', 'Ruilvoorstel verstuurd.'),
+    'trade_response_sent' => strings.pick(
+        'Your item is reserved. Your friend can now confirm the trade.',
+        'Je item is gereserveerd. Je vriend kan de ruil nu bevestigen.'),
+    'trade_completed' => strings.pick(
+        'Trade completed. The received item is in your inventory.',
+        'Ruil afgerond. Het ontvangen item staat in je inventaris.'),
+    'trade_cancelled' => strings.pick(
+        'Trade cancelled. Reserved items are available again.',
+        'Ruil geannuleerd. Gereserveerde items zijn weer beschikbaar.'),
+    'trade_rejected' => strings.pick(
+        'Trade rejected. Reserved items are available again.',
+        'Ruil geweigerd. Gereserveerde items zijn weer beschikbaar.'),
+    'trade_not_friends' => strings.pick(
+        'Trades are only available between friends.',
+        'Ruilen kan alleen tussen vrienden.'),
+    'trade_wrong_state' => strings.pick(
+        'This trade has already changed. Refresh and try again.',
+        'Deze ruil is al gewijzigd. Vernieuw en probeer opnieuw.'),
+    'trade_item_invalid' => strings.pick(
+        'This item cannot be traded.', 'Dit item kan niet worden geruild.'),
+    'trade_item_unavailable' => strings.pick(
+        'This item is no longer available or is already reserved.',
+        'Dit item is niet meer beschikbaar of is al gereserveerd.'),
+    'trade_inventory_locked' => strings.pick(
+        'You have too many active trades. Finish or cancel one first.',
+        'Je hebt te veel actieve ruilen. Rond er eerst één af of annuleer er één.'),
+    'trade_active_limit' => strings.pick(
+        'Only one active trade is allowed per account. Finish, reject or cancel it first.',
+        'Per account kan maar één ruil tegelijk actief zijn. Rond die eerst af, weiger of annuleer hem.'),
+    'trade_daily_limit' => strings.pick(
+        'One of you has already completed three trades today. Try again tomorrow.',
+        'Een van jullie heeft vandaag al drie ruilen afgerond. Probeer het morgen opnieuw.'),
+    'trade_expired' => strings.pick(
+        'This trade expired after ten minutes. The reserved items are available again.',
+        'Deze ruil is na tien minuten verlopen. De gereserveerde items zijn weer beschikbaar.'),
+    'trade_apply_failed' => strings.pick(
+        'The completed trade could not be stored locally. Your server items remain safe; please refresh.',
+        'De afgeronde ruil kon niet lokaal worden opgeslagen. Je serveritems blijven veilig; vernieuw opnieuw.'),
+    'cloud_save_conflict' => strings.pick(
+        'Newer or different cloud progress was found. Nothing was overwritten.',
+        'Er is nieuwere of andere cloudvoortgang gevonden. Er is niets overschreven.'),
+    'cloud_save_missing' => strings.pick('No cloud backup is available yet.',
+        'Er is nog geen cloudback-up beschikbaar.'),
+    'cloud_save_invalid' => strings.pick(
+        'The cloud backup could not be validated. Your local game is unchanged.',
+        'De cloudback-up kon niet worden gecontroleerd. Je lokale spel is ongewijzigd.'),
+    'cloud_save_too_large' => strings.pick(
+        'This backup is too large for the online service. Your local game is safe.',
+        'Deze back-up is te groot voor de online dienst. Je lokale spel is veilig.'),
+    'cloud_save_failed' => strings.pick(
+        'Cloud backup failed. Refresh and try again.',
+        'Cloudback-up mislukt. Ververs en probeer opnieuw.'),
+    'online_timeout' => strings.pick(
+        'The online service took too long. Your local game is safe; please try again.',
+        'De online dienst deed er te lang over. Je lokale spel is veilig; probeer het opnieuw.'),
+    _ => strings.pick(
+        'The online service could not complete this action. Please try again.',
+        'De online dienst kon deze actie niet uitvoeren. Probeer het opnieuw.'),
+  };
+  if (supportCode == null || supportCode.isEmpty) return message;
+  return '$message\n${strings.pick('Support code', 'Supportcode')}: $supportCode';
+}
 
 Future<void> copyKeeperCode(BuildContext context, String code) async {
   await Clipboard.setData(ClipboardData(text: code));

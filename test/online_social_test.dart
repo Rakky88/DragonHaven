@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:dragon_haven/dragonhaven_app.dart';
@@ -12,6 +13,7 @@ import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/providers/online_account_provider.dart';
 import 'package:dragon_haven/screens/adventure_hub_screen.dart';
+import 'package:dragon_haven/services/diagnostic_reporter.dart';
 import 'package:dragon_haven/services/social_repository.dart';
 import 'package:dragon_haven/widgets/online_account_access.dart';
 import 'package:flutter/material.dart';
@@ -233,9 +235,11 @@ void main() {
     final game = HouseholdProvider(random: Random(402));
     final repository = _FakeSocialRepository(inventoryImported: true)
       ..signedIn = false;
+    final diagnostics = BufferedDiagnosticReporter();
     final online = OnlineAccountProvider(
       repository: repository,
       inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+      diagnostics: diagnostics,
       operationTimeout: const Duration(milliseconds: 10),
     );
     await online.initialize();
@@ -246,7 +250,71 @@ void main() {
     expect(await online.refresh(), isFalse);
     expect(online.busy, isFalse);
     expect(online.errorCode, 'online_timeout');
+    expect(online.supportCode, hasLength(8));
+    expect(diagnostics.recentEvents, hasLength(1));
+    expect(diagnostics.recentEvents.single.operation, 'social.refresh');
+    expect(diagnostics.recentEvents.single.errorCode, 'online_timeout');
+    expect(
+      diagnostics.recentEvents.single.supportCode,
+      online.supportCode,
+    );
     repository.ensureAccountGate!.complete();
+    online.dispose();
+  });
+
+  test('unexpected online errors are redacted from diagnostics and UI',
+      () async {
+    final game = HouseholdProvider(random: Random(403));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..signedIn = false;
+    final diagnostics = BufferedDiagnosticReporter();
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+      diagnostics: diagnostics,
+    );
+    await online.initialize();
+    repository
+      ..signedIn = true
+      ..ensureAccountGate = Completer<void>();
+
+    final refresh = online.refresh();
+    repository.ensureAccountGate!.completeError(
+      StateError('token=private-secret keeper@example.test'),
+    );
+
+    expect(await refresh, isFalse);
+    expect(online.errorCode, 'online_unexpected_error');
+    expect(online.supportCode, hasLength(8));
+    final encoded = jsonEncode(
+      diagnostics.recentEvents.map((event) => event.toSafeJson()).toList(),
+    );
+    expect(encoded, isNot(contains('private-secret')));
+    expect(encoded, isNot(contains('keeper@example.test')));
+    expect(encoded, contains('online_unexpected_error'));
+    online.dispose();
+  });
+
+  test('support report contains technical IDs but no e-mail or game state',
+      () async {
+    final game = HouseholdProvider(random: Random(404));
+    await game.updateAccountName('Private Local Name');
+    final diagnostics = BufferedDiagnosticReporter();
+    final online = OnlineAccountProvider(
+      repository: _FakeSocialRepository(inventoryImported: true),
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+      diagnostics: diagnostics,
+    );
+    await online.initialize();
+
+    final report = online.buildSupportDiagnosticReport(appVersion: 'v-test');
+    final decoded = jsonDecode(report) as Map<String, dynamic>;
+    expect(decoded['keeperId'], 'DH-AABBCCDD');
+    expect(decoded['userId'], 'my-user');
+    expect(decoded['appVersion'], 'v-test');
+    expect(report, isNot(contains('rick@example.test')));
+    expect(report, isNot(contains('Private Local Name')));
+    expect(report, isNot(contains('accountName')));
     online.dispose();
   });
 
@@ -947,6 +1015,50 @@ void main() {
     online.dispose();
   });
 
+  test('cloud backup refuses to silently replace a different device revision',
+      () async {
+    final game = HouseholdProvider(random: Random(993));
+    await game.updateAccountName('Local Keeper');
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..cloudSave = CloudGameSave(
+        revision: 4,
+        state: game.exportState()..['accountName'] = 'Cloud Keeper',
+        updatedAt: DateTime.utc(2026, 8, 28, 10, 30),
+        deviceId: 'other-device',
+      );
+    int? storedBaseRevision;
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+      gameStateSnapshot: game.exportState,
+      applyCloudState: game.restoreCloudState,
+      deviceId: () async => 'this-device',
+      loadCloudBaseRevision: (_) async => storedBaseRevision,
+      saveCloudBaseRevision: (_, revision) async {
+        storedBaseRevision = revision;
+      },
+    );
+    await online.initialize();
+
+    expect(await online.backupToCloud(), isFalse);
+    expect(online.errorCode, 'cloud_save_conflict');
+    expect(online.cloudConflictSave?.revision, 4);
+    expect(repository.cloudSave?.state['accountName'], 'Cloud Keeper');
+    expect(game.accountName, 'Local Keeper');
+    expect(storedBaseRevision, isNull);
+
+    expect(await online.restoreFromCloud(), isTrue);
+    expect(game.accountName, 'Cloud Keeper');
+    expect(storedBaseRevision, 4);
+
+    await game.updateAccountName('Safely Updated');
+    expect(await online.backupToCloud(), isTrue);
+    expect(repository.cloudSave?.revision, 5);
+    expect(repository.cloudSave?.state['accountName'], 'Safely Updated');
+    expect(storedBaseRevision, 5);
+    online.dispose();
+  });
+
   test('online account deletion requires the repository password flow',
       () async {
     final game = HouseholdProvider(random: Random(992));
@@ -1103,6 +1215,8 @@ class _FakeSocialRepository implements SocialRepository {
   Stream<bool> get authStateChanges => const Stream.empty();
   @override
   String? get currentEmail => 'rick@example.test';
+  @override
+  String? get currentUserId => 'my-user';
   @override
   bool get isConfigured => true;
   @override

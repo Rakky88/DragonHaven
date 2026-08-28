@@ -33,6 +33,11 @@ De actuele code-, UI-, sprite-, licentie-, server- en release-audit van v0.04.06
 staat in [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md).
 De concrete serververbeteringen en resterende grenzen staan in
 [SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md).
+Het gefaseerde vervolgplan met taakverdeling, afhankelijkheden en
+releasepoorten staat in
+[DRAGONHAVEN_POST_AUDIT_PLAN.md](DRAGONHAVEN_POST_AUDIT_PLAN.md).
+De gratis eerste diagnose-, support- en incidentprocedure staat in
+[INCIDENT_RUNBOOK.md](INCIDENT_RUNBOOK.md).
 
 ## Run and verify
 

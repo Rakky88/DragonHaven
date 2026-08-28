@@ -8,6 +8,7 @@ abstract final class StorageService {
   static const backupKey = 'dragon_haven_state_v1_backup';
   static const recoveryKey = 'dragon_haven_state_v1_recovery';
   static const deviceIdKey = 'dragon_haven_device_id_v1';
+  static const cloudBaseRevisionPrefix = 'dragon_haven_cloud_base_revision_v1_';
 
   static bool lastLoadRecoveredFromBackup = false;
 
@@ -69,6 +70,27 @@ abstract final class StorageService {
     final saved = await prefs.setString(deviceIdKey, generated);
     if (!saved) throw StateError('DragonHaven device ID could not be saved.');
     return generated;
+  }
+
+  static Future<int?> loadCloudBaseRevision(String userId) async {
+    if (userId.trim().isEmpty) return null;
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('$cloudBaseRevisionPrefix$userId');
+  }
+
+  static Future<void> saveCloudBaseRevision(
+    String userId,
+    int revision,
+  ) async {
+    if (userId.trim().isEmpty || revision < 0) {
+      throw ArgumentError('Invalid cloud base revision.');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final saved =
+        await prefs.setInt('$cloudBaseRevisionPrefix$userId', revision);
+    if (!saved) {
+      throw StateError('Cloud base revision could not be saved.');
+    }
   }
 
   static Map<String, dynamic>? _decode(String? raw) {

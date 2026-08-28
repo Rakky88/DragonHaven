@@ -570,4 +570,102 @@ const releasePhraseTranslations = <String, List<String>>{
     'Uma relíquia equipável única que duplica toda a EXP recebida apenas enquanto o dragão escolhido a usa.',
     '選んだドラゴンが装備している間だけ、獲得経験値をすべて2倍にする唯一の装備レリックです。'
   ],
+  'Copy support diagnostics': [
+    'Supportdiagnose kopieren',
+    'Copiar diagnóstico de soporte',
+    'Copier le diagnostic d’assistance',
+    'Copia diagnostica di supporto',
+    'Copiar diagnóstico de suporte',
+    'サポート診断をコピー'
+  ],
+  'Contains technical IDs and timings, never your password, e-mail or game save.':
+      [
+    'Enthält technische IDs und Zeitangaben, niemals dein Passwort, deine E-Mail-Adresse oder deinen Spielstand.',
+    'Contiene identificadores técnicos y tiempos, nunca tu contraseña, correo electrónico ni partida guardada.',
+    'Contient des identifiants techniques et des durées, jamais ton mot de passe, ton e-mail ni ta sauvegarde.',
+    'Contiene ID tecnici e tempi, mai la password, l’e-mail o il salvataggio del gioco.',
+    'Contém IDs técnicos e tempos, nunca sua senha, e-mail ou jogo salvo.',
+    '技術的なIDと処理時間のみが含まれ、パスワード、メールアドレス、ゲームデータは含まれません。'
+  ],
+  'Support diagnostics copied. Only share them with trusted DragonHaven support.':
+      [
+    'Supportdiagnose kopiert. Teile sie nur mit dem vertrauenswürdigen DragonHaven-Support.',
+    'Diagnóstico de soporte copiado. Compártelo solo con el soporte de confianza de DragonHaven.',
+    'Diagnostic d’assistance copié. Partage-le uniquement avec l’assistance DragonHaven de confiance.',
+    'Diagnostica di supporto copiata. Condividila solo con l’assistenza DragonHaven fidata.',
+    'Diagnóstico de suporte copiado. Compartilhe somente com o suporte confiável do DragonHaven.',
+    'サポート診断をコピーしました。信頼できるDragonHavenサポートとのみ共有してください。'
+  ],
+  'Different cloud progress found': [
+    'Anderer Cloud-Fortschritt gefunden',
+    'Se encontró un progreso diferente en la nube',
+    'Une progression différente a été trouvée dans le cloud',
+    'Trovati progressi cloud differenti',
+    'Foi encontrado um progresso diferente na nuvem',
+    '異なるクラウド進行状況が見つかりました'
+  ],
+  'Keep local for now': [
+    'Vorerst lokal behalten',
+    'Mantener local por ahora',
+    'Garder la version locale pour le moment',
+    'Mantieni locale per ora',
+    'Manter local por enquanto',
+    '今はローカル版を保持'
+  ],
+  'Restore cloud': [
+    'Cloud wiederherstellen',
+    'Restaurar desde la nube',
+    'Restaurer depuis le cloud',
+    'Ripristina dal cloud',
+    'Restaurar da nuvem',
+    'クラウド版を復元'
+  ],
+  'Cloud progress restored. A local recovery copy was kept.': [
+    'Cloud-Fortschritt wiederhergestellt. Eine lokale Wiederherstellungskopie wurde behalten.',
+    'Progreso de la nube restaurado. Se conservó una copia de recuperación local.',
+    'Progression du cloud restaurée. Une copie de récupération locale a été conservée.',
+    'Progressi cloud ripristinati. È stata conservata una copia di recupero locale.',
+    'Progresso da nuvem restaurado. Uma cópia de recuperação local foi mantida.',
+    'クラウドの進行状況を復元しました。ローカルの復旧用コピーは保持されています。'
+  ],
+  'Newer or different cloud progress was found. Nothing was overwritten.': [
+    'Neuerer oder anderer Cloud-Fortschritt wurde gefunden. Nichts wurde überschrieben.',
+    'Se encontró un progreso más reciente o diferente en la nube. No se sobrescribió nada.',
+    'Une progression plus récente ou différente a été trouvée dans le cloud. Rien n’a été écrasé.',
+    'Sono stati trovati progressi cloud più recenti o differenti. Nulla è stato sovrascritto.',
+    'Foi encontrado um progresso mais recente ou diferente na nuvem. Nada foi sobrescrito.',
+    'より新しい、または異なるクラウド進行状況が見つかりました。上書きは行われていません。'
+  ],
+  'No cloud backup is available yet.': [
+    'Es ist noch kein Cloud-Backup verfügbar.',
+    'Todavía no hay ninguna copia de seguridad en la nube disponible.',
+    'Aucune sauvegarde cloud n’est encore disponible.',
+    'Non è ancora disponibile alcun backup cloud.',
+    'Ainda não há backup na nuvem disponível.',
+    'クラウドバックアップはまだありません。'
+  ],
+  'The cloud backup could not be validated. Your local game is unchanged.': [
+    'Das Cloud-Backup konnte nicht überprüft werden. Dein lokales Spiel wurde nicht verändert.',
+    'No se pudo validar la copia de seguridad en la nube. Tu partida local no ha cambiado.',
+    'La sauvegarde cloud n’a pas pu être validée. Ta partie locale n’a pas été modifiée.',
+    'Non è stato possibile convalidare il backup cloud. La partita locale non è stata modificata.',
+    'Não foi possível validar o backup na nuvem. Seu jogo local não foi alterado.',
+    'クラウドバックアップを検証できませんでした。ローカルのゲームデータは変更されていません。'
+  ],
+  'This backup is too large for the online service. Your local game is safe.': [
+    'Dieses Backup ist zu groß für den Onlinedienst. Dein lokales Spiel ist sicher.',
+    'Esta copia de seguridad es demasiado grande para el servicio en línea. Tu partida local está a salvo.',
+    'Cette sauvegarde est trop volumineuse pour le service en ligne. Ta partie locale est en sécurité.',
+    'Questo backup è troppo grande per il servizio online. La partita locale è al sicuro.',
+    'Este backup é grande demais para o serviço online. Seu jogo local está seguro.',
+    'このバックアップはオンラインサービスの上限を超えています。ローカルのゲームデータは安全です。'
+  ],
+  'Support code': [
+    'Supportcode',
+    'Código de soporte',
+    'Code d’assistance',
+    'Codice di supporto',
+    'Código de suporte',
+    'サポートコード'
+  ],
 };

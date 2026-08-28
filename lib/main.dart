@@ -10,6 +10,7 @@ import 'providers/household_provider.dart';
 import 'providers/online_account_provider.dart';
 import 'screens/sprite_audit_screen.dart';
 import 'services/audio_service.dart';
+import 'services/diagnostic_reporter.dart';
 import 'services/social_repository.dart';
 import 'services/storage_service.dart';
 import 'services/supabase_social_repository.dart';
@@ -55,6 +56,7 @@ Future<void> main() async {
     game.prismaticForms.clear();
   }
   final onlineConfig = OnlineConfig.fromEnvironment();
+  final diagnostics = BufferedDiagnosticReporter();
   SocialRepository socialRepository = const DisabledSocialRepository();
   if (onlineConfig.isConfigured) {
     await Supabase.initialize(
@@ -91,7 +93,10 @@ Future<void> main() async {
     gameStateSnapshot: game.exportState,
     applyCloudState: game.restoreCloudState,
     deviceId: StorageService.deviceId,
+    loadCloudBaseRevision: StorageService.loadCloudBaseRevision,
+    saveCloudBaseRevision: StorageService.saveCloudBaseRevision,
     languageCode: () => game.languageCode,
+    diagnostics: diagnostics,
   );
   await online.initialize(waitForFirstRefresh: false);
   await HavenAudio.configureJukebox(

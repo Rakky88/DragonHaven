@@ -2273,7 +2273,11 @@ void _showOnlineAdventureMessage(
   final code = online.errorCode ?? online.noticeCode;
   if (code == null) return;
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text(socialMessage(AppStrings.of(context), code)),
+    content: Text(socialMessage(
+      AppStrings.of(context),
+      code,
+      supportCode: online.errorCode == null ? null : online.supportCode,
+    )),
   ));
   online.clearMessages();
 }

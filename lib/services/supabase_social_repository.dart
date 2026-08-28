@@ -34,6 +34,8 @@ class SupabaseSocialRepository implements SocialRepository {
   @override
   String? get currentEmail => _client.auth.currentUser?.email;
   @override
+  String? get currentUserId => _client.auth.currentUser?.id;
+  @override
   Stream<bool> get authStateChanges => _authController.stream;
 
   @override
