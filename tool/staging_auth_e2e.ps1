@@ -249,6 +249,22 @@ if (-not (Test-SuccessStatus $profile.StatusCode) -or $profileRows.Count -ne 1) 
     throw "Het stagingprofiel kon niet eenduidig worden geladen: $failure"
 }
 
+$importReport = Invoke-StagingRpc -Function 'get_my_legacy_import_report'
+$importReportRows = @($importReport.Body)
+if (-not (Test-SuccessStatus $importReport.StatusCode) -or
+    $importReportRows.Count -ne 1) {
+    $failure = Get-SafeFailure -Body $importReport.Body -StatusCode $importReport.StatusCode
+    throw "Het privacyveilige import-auditrapport kon niet eenduidig worden geladen: $failure"
+}
+$importVersion = [int](Get-PropertyValue -InputObject $importReportRows[0] -Name 'import_version')
+$sourceSchemaVersion = [int](Get-PropertyValue -InputObject $importReportRows[0] -Name 'source_schema_version')
+$importSummary = Get-PropertyValue -InputObject $importReportRows[0] -Name 'report'
+if ($importVersion -lt 0 -or $importVersion -gt 1 -or
+    $sourceSchemaVersion -lt 0 -or $sourceSchemaVersion -gt 1000 -or
+    $null -eq $importSummary) {
+    throw 'Het import-auditrapport bevat geen geldige versie of samenvatting.'
+}
+
 $before = Invoke-StagingRpc -Function 'get_cloud_game_save'
 if (-not (Test-SuccessStatus $before.StatusCode)) {
     $failure = Get-SafeFailure -Body $before.Body -StatusCode $before.StatusCode
@@ -329,6 +345,7 @@ Write-SafeEvidence -Lines @(
     'Password login and confirmed-email check: passed.'
     'Idempotent account bootstrap: passed.'
     'Profile read: passed.'
+    "Privacy-safe legacy import report: version $importVersion passed."
     "Cloud backup roundtrip: revision $expectedRevision -> $newRevision passed."
     'Stale cloud backup conflict protection: passed.'
     'Session logout: passed.'
