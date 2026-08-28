@@ -2,6 +2,16 @@ name: Android staging verification
 
 on:
   workflow_dispatch:
+    inputs:
+      auth_check:
+        description: Optional confirmed-account staging check
+        required: true
+        default: public-only
+        type: choice
+        options:
+          - public-only
+          - request-confirmation
+          - confirmed-account
 
 permissions:
   contents: read
@@ -22,6 +32,9 @@ jobs:
           STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
           STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
           STAGING_SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+          AUTH_CHECK: ${{ inputs.auth_check }}
         run: |
           $required = @(
             'STAGING_SUPABASE_URL',
@@ -53,6 +66,18 @@ jobs:
           }
           if (-not $env:STAGING_SUPABASE_PUBLISHABLE_KEY.StartsWith('sb_publishable_')) {
             throw 'Gebruik voor staging uitsluitend een sb_publishable_ clientkey.'
+          }
+          if ($env:AUTH_CHECK -ne 'public-only') {
+            $missingE2E = @(
+              foreach ($name in @('STAGING_E2E_EMAIL', 'STAGING_E2E_PASSWORD')) {
+                if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+                  $name
+                }
+              }
+            )
+            if ($missingE2E.Count -gt 0) {
+              throw "Ontbrekende afgeschermde staging-E2E-configuratie: $($missingE2E -join ', ')."
+            }
           }
           'Stagingconfiguratie aanwezig; waarden worden niet gelogd.'
 
@@ -102,6 +127,38 @@ jobs:
             -ExpectedUrl $env:STAGING_SUPABASE_URL `
             -ExpectedPublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY |
             Tee-Object -FilePath staging/server-preflight.txt
+
+      - name: Request staging account confirmation
+        if: ${{ inputs.auth_check == 'request-confirmation' }}
+        shell: pwsh
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+        run: |
+          ./tool/staging_auth_e2e.ps1 `
+            -Mode RequestConfirmation `
+            -SupabaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Email $env:STAGING_E2E_EMAIL `
+            -Password $env:STAGING_E2E_PASSWORD
+
+      - name: Verify confirmed staging account and cloud backup
+        if: ${{ inputs.auth_check == 'confirmed-account' }}
+        shell: pwsh
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+        run: |
+          ./tool/staging_auth_e2e.ps1 `
+            -Mode VerifyConfirmedAccount `
+            -SupabaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Email $env:STAGING_E2E_EMAIL `
+            -Password $env:STAGING_E2E_PASSWORD
 
       - name: Analyze
         run: flutter analyze --no-pub
