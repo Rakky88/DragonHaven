@@ -317,16 +317,18 @@ bewaren de controle-uitkomst blijvend.
   zonder productiecredentials in testbuilds.
 - [x] Laat lokale tests en GitHub Actions zoveel mogelijk werk afvangen voordat
   een externe stagingresource wordt belast.
-- [ ] Maak reproduceerbare stagingmigraties, testdata en veilige opruimlogica.
+- [x] Maak reproduceerbare stagingmigraties en veilige tweepersoons-testdata met
+  opruimlogica voor Friends, trades en Group Adventure-wachtlobby's.
 - [ ] Automatiseer minimaal deze volledige flow:
   1. [x] signup en bevestigingsmail aanvragen;
   2. [ ] e-mailbevestiging volledig automatiseren — de eerste staginglink is
      veilig handmatig bevestigd zonder mailboxwachtwoord te delen;
   3. [x] eerste login en idempotente accountbootstrap;
   4. [x] cloudback-up, restore en weigering van een verouderde revisie;
-  5. [ ] Friends request en acceptatie;
-  6. [ ] trade reserveren, accepteren en afronden;
-  7. [ ] Group Adventure aanmaken, deelnemen en afronden.
+  5. [x] Friends request en acceptatie;
+  6. [x] trade reserveren, accepteren, afronden en inventarisbehoud bewijzen;
+  7. [x] Group Adventure aanmaken, lijsten, deelnemen en veilig verlaten;
+  8. [ ] Group Adventure starten, afronden en reward-idempotentie bewijzen.
 - [ ] Voeg scenario's toe voor timeout, offline/online wissel, verlopen sessie,
   dubbele request, appherstart en een halverwege mislukte actie.
 - [ ] Maak een loadtestprofiel dat snapshotpolling en echte gebruikersacties
@@ -343,7 +345,7 @@ bewaren de controle-uitkomst blijvend.
   actuele limieten passen.
 - [ ] Configureer een staging-e-mailroute/inbox waarmee bevestigingslinks veilig
   geautomatiseerd kunnen worden.
-- [x] Richt een afzonderlijke staginginbox in en bevestig het eerste testaccount
+- [x] Richt afzonderlijke stagingaliases in en bevestig beide testaccounts
   zonder het mailboxwachtwoord met Codex te delen.
 - [x] Voeg stagingcredentials rechtstreeks als afgeschermde GitHub Environment
   Secrets toe en vereis zo nodig jouw goedkeuring voor runs.
@@ -352,9 +354,8 @@ De eerste geïsoleerde stagingrun
 [`33176572637`](https://github.com/Rakky88/DragonHaven/actions/runs/33176572637)
 is volledig geslaagd: secret- en production-safetychecks, 20 migraties,
 Auth/configuratie, schemalint, publieke serverpreflight, analyzer, 252 tests,
-APK-build en artifactupload waren groen. Dit bewijst nog niet de volledige
-signup-tot-Group-Adventure-E2E-flow; die wacht nog op een tweede synthetisch
-account en veilige opruimlogica voor Friends, trade en Group Adventure.
+APK-build en artifactupload waren groen. Dit was het bewijs voor de publieke
+stagingbasis, nog zonder ingelogde sociale acties.
 
 De bevestigde-accountworkflow
 [`33180648232`](https://github.com/Rakky88/DragonHaven/actions/runs/33180648232)
@@ -363,6 +364,17 @@ e-mail, idempotente accountbootstrap, profielread, cloud-back-up en restore,
 weigering van een stale revisie en het intrekken van de testsessie. Daarna
 slaagden analyzer, alle 252 tests, staging-APK en artifactupload opnieuw. De
 workflow bewaart geen e-mailadres, wachtwoord, token of user-id in het rapport.
+
+Na bevestiging van het tweede testaccount slaagde de sociale workflow
+[`33182884493`](https://github.com/Rakky88/DragonHaven/actions/runs/33182884493)
+volledig. De run bewees Friends request/acceptatie en wederzijdse zichtbaarheid,
+een atomaire Wooden Chest-ruil met inventarisbehoud, plus Group Adventure
+aanmaken/lijsten/deelnemen/verlaten. Tijdelijke vriendschap, trade en wachtlobby
+zijn veilig opgeruimd en beide sessies ingetrokken. Analyzer, alle 252 tests,
+staging-APK en het bewijsartifact waren opnieuw groen. De workflow bewaart ook
+hierbij geen e-mailadres, wachtwoord, token, keepercode of user-id. Het starten,
+uitspelen en belonen van een Group Adventure blijft bewust apart open: met twee
+accounts zou dat afhankelijk van de week een echte meerdaagse testactie starten.
 
 - [ ] Bepaal het testbudget en keur iedere test boven 1.000 gelijktijdige
   gebruikers vooraf goed.
@@ -701,15 +713,16 @@ Een taak of mijlpaal is pas gereed wanneer:
 2. **Afgerond door jou:** Android Studio is gesloten; Codex heeft daarna de
    volledige Flutter-analyzer en alle 252 tests succesvol uitgevoerd.
 3. **Afgerond door jou:** de zes repositorysecrets voor signing en productie-
-   Supabase en de zeven afgeschermde stagingsecrets zijn toegevoegd.
+   Supabase en de negen afgeschermde stagingsecrets zijn toegevoegd.
 4. **Afgerond door Codex:** M0 is met een volledig groene handmatige AAB-
    workflow bewezen, zonder release, tag of productiewijziging.
 5. **Afgerond door jou:** een afzonderlijk gratis Supabase-stagingproject en de
    GitHub Environment `staging` zijn ingericht.
-6. **Deels afgerond samen:** signup, handmatige bevestiging, eerste login,
-   accountbootstrap en de cloud-back-up/restore/conflicttest zijn echt op
-   staging bewezen. Voor Friends, trade en Group Adventure maakt Codex hierna
-   een veilige tweepersoons-testopzet met synthetische accounts en opruimlogica.
+6. **Deels afgerond samen:** signup, handmatige bevestiging van twee accounts,
+   eerste login, accountbootstrap, cloud-back-up/restore/conflicttest, Friends,
+   trade en de Group Adventure-wachtlobbyfase zijn echt op staging bewezen. Het
+   starten/afronden en rewardpad wacht op een derde synthetisch account of een
+   veilige staging-only tijdregeling.
 7. **Samen:** beoordeel de meetresultaten en leg pas daarna grenzen voor
    capaciteit, alerts en publieke uitrol vast.
 
@@ -737,7 +750,8 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 28-08-2026 | Lokalisatie support- en cloudteksten | Codex | `lib/l10n/release_phrase_translations.dart`, `test/localization_completeness_test.dart` | Twaalf nieuwe vaste teksten in alle zes aanvullende talen toegevoegd; 10/10 lokalisatiecontroles geslaagd |
 | 28-08-2026 | M2 eerste echte stagingverificatie | Jij + Codex | [GitHub Actions-run 33176572637](https://github.com/Rakky88/DragonHaven/actions/runs/33176572637) | Public-only basis: safetychecks, 20 migraties, lint, preflight, analyzer, 252 tests en geïsoleerde APK groen |
 | 28-08-2026 | M0 Play Store-readinessbewijs | Jij + Codex | [GitHub Actions-run 33177281257](https://github.com/Rakky88/DragonHaven/actions/runs/33177281257) | Ondertekende AAB, productiepreflight, analyzer en 252 tests groen; bewijsartifact gemaakt, geen release of tag gepubliceerd |
-| 28-08-2026 | M2 bevestigde account- en back-up-E2E | Jij + Codex | [GitHub Actions-run 33180648232](https://github.com/Rakky88/DragonHaven/actions/runs/33180648232) | Login, bevestigde e-mail, bootstrap, profiel, back-up/restore, stale-revisionweigering, logout, analyzer, 252 tests en staging-APK groen; Friends/trade/group wachten op tweede synthetische account |
+| 28-08-2026 | M2 bevestigde account- en back-up-E2E | Jij + Codex | [GitHub Actions-run 33180648232](https://github.com/Rakky88/DragonHaven/actions/runs/33180648232) | Login, bevestigde e-mail, bootstrap, profiel, back-up/restore, stale-revisionweigering, logout, analyzer, 252 tests en staging-APK groen |
+| 28-08-2026 | M2 tweepersoons sociale staging-E2E | Jij + Codex | [GitHub Actions-run 33182884493](https://github.com/Rakky88/DragonHaven/actions/runs/33182884493) | Friends, atomaire chest-trade en Group Adventure create/list/join/leave met veilige cleanup groen; analyzer, 252 tests, staging-APK en bewijsartifact groen; completion/rewardpad blijft open |
 
 ## Onderhoud van dit plan
 

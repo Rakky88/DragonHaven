@@ -74,8 +74,9 @@ moment een mismatch of fout meldt.
    voordat echte aankopen worden geactiveerd.
 3. Voeg periodieke restore-tests van backups toe en definieer een expliciet
    multi-device conflictbeleid.
-4. Voeg end-to-end stagingtests toe die signup, e-mailconfirmatie, eerste login,
-   backup, Friends, trade en Group Adventure als één flow uitvoeren.
+4. Breid de bestaande end-to-end stagingtests uit met geautomatiseerde
+   e-mailconfirmatie en het starten, afronden en idempotent belonen van een
+   Group Adventure, zonder een meerdaagse testactie achter te laten.
 
 ## Post-auditfundament in uitvoering
 
@@ -88,12 +89,15 @@ Na de v0.04.06-audit is lokaal alvast gebouwd:
 - een expliciete conflictmelding met veilig herstellen of lokaal doorgaan;
 - een production/staging/local omgevingsgrens die staging nooit naar de vaste
   productieserver laat terugvallen;
-- een handmatige, volledig afgescheiden stagingworkflow met zeven afgeschermde
-  Environment Secrets en drie standen: public-only, bevestiging aanvragen en
-  een bevestigd account controleren;
+- een handmatige, volledig afgescheiden stagingworkflow met negen afgeschermde
+  Environment Secrets en vijf standen: public-only, bevestiging per account,
+  een bevestigd account controleren en een tweepersoons-sociale flow;
 - een echte stagingtest voor password-login, bevestigde e-mail, idempotente
   accountbootstrap, profielread, cloud-back-up/restore, stale-revisionweigering
   en veilige logout;
+- een privacyveilige tweepersoons-stagingtest voor Friends request/acceptatie,
+  een atomaire chest-ruil met inventariscontrole en Group Adventure
+  aanmaken/lijsten/deelnemen/verlaten, inclusief veilige opruimlogica;
 - een handmatige publieke healthworkflow en curl-gebaseerde health/preflight-
   metingen met latencyrapportage;
 - een CI-verificatierapport met commit, appversie, versionCode, AAB-hash en
@@ -105,12 +109,16 @@ duurde 24,5 seconden en de warme settingsresponse 0,13 seconde. Daarom is de
 herstelbare clienttimeout naar 75 seconden verhoogd terwijl lokale gameplay
 niet op online acties wacht.
 
-De geïsoleerde stagingrun
+De geïsoleerde account- en back-uprun
 [`33180648232`](https://github.com/Rakky88/DragonHaven/actions/runs/33180648232)
 bewees deze account- en back-upflow samen met opnieuw een groene analyzer, alle
-252 tests en een staging-APK. Friends, trade en Group Adventure blijven bewust
-open totdat een tweede synthetisch testaccount en veilige opruimlogica zijn
-toegevoegd. Er is hierbij niets op productie gewijzigd of gepubliceerd.
+252 tests en een staging-APK. De daaropvolgende sociale stagingrun
+[`33182884493`](https://github.com/Rakky88/DragonHaven/actions/runs/33182884493)
+bewees Friends, trade en de veilige wachtlobbyfase van Group Adventures met twee
+bevestigde testaccounts; analyzer, 252 tests, staging-APK en bewijsartifact waren
+opnieuw groen. Group Adventure starten/afronden/reward-idempotentie blijft open
+totdat dit zonder een meerdaagse testactie kan worden uitgevoerd. Er is hierbij
+niets op productie gewijzigd of gepubliceerd.
 
 Zie [DRAGONHAVEN_POST_AUDIT_PLAN.md](DRAGONHAVEN_POST_AUDIT_PLAN.md) en
 [INCIDENT_RUNBOOK.md](INCIDENT_RUNBOOK.md) voor eigenaarschap, vervolgfasen en
