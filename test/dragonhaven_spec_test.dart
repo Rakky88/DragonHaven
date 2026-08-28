@@ -439,6 +439,9 @@ void main() {
     expect(migration, contains("'gems_clamped'"));
     expect(migration, contains("'chests_clamped'"));
     expect(migration, contains('pg_advisory_xact_lock'));
+    expect(migration, contains('purge_expired_cloud_game_save_history'));
+    expect(migration, contains('create extension if not exists pg_cron'));
+    expect(migration, contains("'17 3 * * *'"));
     expect(migration, contains("interval '30 days'"));
     expect(migration, contains('enable row level security'));
     expect(
@@ -453,6 +456,29 @@ void main() {
       migration,
       isNot(contains("'name', entry ->> 'name'")),
       reason: 'the public import report must not retain authored names',
+    );
+  });
+
+  test('cloud saves retain five recoverable revisions for thirty days', () {
+    final migration = File(
+      'supabase/migrations/202608280022_cloud_save_revision_history.sql',
+    ).readAsStringSync();
+
+    expect(migration, contains('cloud_game_save_history'));
+    expect(migration, contains('save_id uuid'));
+    expect(migration, contains('parent_revision bigint'));
+    expect(migration, contains('client_version text'));
+    expect(migration, contains('schema_version integer'));
+    expect(migration, contains("interval '30 days'"));
+    expect(migration, contains('offset 4'));
+    expect(migration, contains('push_cloud_game_save_v2'));
+    expect(migration, contains('list_my_cloud_game_save_revisions'));
+    expect(migration, contains('get_my_cloud_game_save_revision'));
+    expect(migration, contains('pg_advisory_xact_lock'));
+    expect(migration, contains('enable row level security'));
+    expect(
+      migration,
+      contains('revoke all on table public.cloud_game_save_history'),
     );
   });
 }

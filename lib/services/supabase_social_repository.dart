@@ -151,15 +151,32 @@ class SupabaseSocialRepository implements SocialRepository {
   }
 
   @override
+  Future<List<CloudGameSaveSummary>> loadCloudGameSaveHistory() async =>
+      (await _listRpc('list_my_cloud_game_save_revisions'))
+          .map(CloudGameSaveSummary.fromJson)
+          .toList(growable: false);
+
+  @override
+  Future<CloudGameSave?> loadCloudGameSaveRevision(String saveId) async {
+    final rows = await _listRpc(
+      'get_my_cloud_game_save_revision',
+      params: {'p_save_id': saveId},
+    );
+    return rows.isEmpty ? null : CloudGameSave.fromJson(rows.first);
+  }
+
+  @override
   Future<CloudGameSave> pushCloudGameSave({
     required int expectedRevision,
     required Map<String, dynamic> state,
     required String deviceId,
+    required String clientVersion,
   }) async {
-    final rows = await _listRpc('push_cloud_game_save', params: {
+    final rows = await _listRpc('push_cloud_game_save_v2', params: {
       'p_expected_revision': expectedRevision,
       'p_state': state,
       'p_device_id': deviceId,
+      'p_client_version': clientVersion,
     });
     if (rows.isEmpty) throw const SocialException('cloud_save_failed');
     return CloudGameSave.fromJson(rows.first);

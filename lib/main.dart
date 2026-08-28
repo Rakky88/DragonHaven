@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'app_info.dart';
 import 'config/online_config.dart';
 import 'dragonhaven_app.dart';
 import 'models/social.dart';
@@ -93,6 +94,7 @@ Future<void> main() async {
     gameStateSnapshot: game.exportState,
     applyCloudState: game.restoreCloudState,
     deviceId: StorageService.deviceId,
+    clientVersion: AppInfo.version,
     loadCloudBaseRevision: StorageService.loadCloudBaseRevision,
     saveCloudBaseRevision: StorageService.saveCloudBaseRevision,
     languageCode: () => game.languageCode,

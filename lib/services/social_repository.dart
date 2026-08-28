@@ -30,10 +30,13 @@ abstract interface class SocialRepository {
   Future<KeeperProfile> loadMyProfile();
   Future<OnlineSocialSnapshot> loadOnlineSnapshot();
   Future<CloudGameSave?> loadCloudGameSave();
+  Future<List<CloudGameSaveSummary>> loadCloudGameSaveHistory();
+  Future<CloudGameSave?> loadCloudGameSaveRevision(String saveId);
   Future<CloudGameSave> pushCloudGameSave({
     required int expectedRevision,
     required Map<String, dynamic> state,
     required String deviceId,
+    required String clientVersion,
   });
   Future<List<KeeperProfile>> loadFriends();
   Future<List<FriendshipRequest>> loadRequests();
@@ -107,10 +110,17 @@ class DisabledSocialRepository implements SocialRepository {
   @override
   Future<CloudGameSave?> loadCloudGameSave() async => _disabled();
   @override
+  Future<List<CloudGameSaveSummary>> loadCloudGameSaveHistory() async =>
+      _disabled();
+  @override
+  Future<CloudGameSave?> loadCloudGameSaveRevision(String saveId) async =>
+      _disabled();
+  @override
   Future<CloudGameSave> pushCloudGameSave({
     required int expectedRevision,
     required Map<String, dynamic> state,
     required String deviceId,
+    required String clientVersion,
   }) async =>
       _disabled();
   @override

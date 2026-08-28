@@ -15,6 +15,8 @@ import '../widgets/game_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
 import '../widgets/profile_portrait_sprite.dart';
 
+enum _CloudConflictChoice { viewCloud, keepLocal, replaceCloud, restoreCloud }
+
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
 
@@ -163,6 +165,23 @@ class AccountScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (online.cloudGameSave != null) ...[
+                      const SizedBox(height: 4),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          key: const Key('cloud-history-button'),
+                          onPressed: online.busy
+                              ? null
+                              : () => _showCloudHistory(context, online),
+                          icon: const Icon(Icons.history_rounded),
+                          label: Text(strings.pick(
+                            'Backup history',
+                            'Back-upgeschiedenis',
+                          )),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -399,7 +418,7 @@ class AccountScreen extends StatelessWidget {
         ? null
         : '${material.formatFullDate(remote.updatedAt.toLocal())}, '
             '${material.formatTimeOfDay(TimeOfDay.fromDateTime(remote.updatedAt.toLocal()))}';
-    final restore = await showDialog<bool>(
+    final choice = await showDialog<_CloudConflictChoice>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: Text(strings.pick(
@@ -412,16 +431,39 @@ class AccountScreen extends StatelessWidget {
             )),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
+                onPressed: () => Navigator.pop(
+                  dialogContext,
+                  _CloudConflictChoice.viewCloud,
+                ),
+                child: Text(strings.pick('View cloud', 'Cloud bekijken')),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(
+                  dialogContext,
+                  _CloudConflictChoice.keepLocal,
+                ),
                 child: Text(strings.pick(
                   'Keep local for now',
                   'Voorlopig lokaal houden',
                 )),
               ),
+              TextButton(
+                onPressed: () => Navigator.pop(
+                  dialogContext,
+                  _CloudConflictChoice.replaceCloud,
+                ),
+                child: Text(strings.pick(
+                  'Replace cloud',
+                  'Cloud vervangen',
+                )),
+              ),
               FilledButton(
                 onPressed: remote == null
                     ? null
-                    : () => Navigator.pop(dialogContext, true),
+                    : () => Navigator.pop(
+                          dialogContext,
+                          _CloudConflictChoice.restoreCloud,
+                        ),
                 child: Text(strings.pick(
                   'Restore cloud',
                   'Cloud herstellen',
@@ -430,9 +472,202 @@ class AccountScreen extends StatelessWidget {
             ],
           ),
         ) ??
-        false;
-    if (!restore || !context.mounted) return;
+        _CloudConflictChoice.keepLocal;
+    if (!context.mounted || choice == _CloudConflictChoice.keepLocal) return;
+    if (choice == _CloudConflictChoice.viewCloud) {
+      await _showCloudHistory(context, online);
+      return;
+    }
+    if (choice == _CloudConflictChoice.replaceCloud) {
+      await _replaceCloudWithLocal(context, online);
+      return;
+    }
     final success = await online.restoreFromCloud();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(success
+          ? strings.pick(
+              'Cloud progress restored. A local recovery copy was kept.',
+              'Cloudvoortgang hersteld. Er is een lokale herstelkopie bewaard.',
+            )
+          : socialMessage(
+              strings,
+              online.errorCode ?? 'cloud_save_failed',
+              supportCode: online.supportCode,
+            )),
+    ));
+  }
+
+  Future<void> _replaceCloudWithLocal(
+    BuildContext context,
+    OnlineAccountProvider online,
+  ) async {
+    final strings = AppStrings.of(context);
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(strings.pick(
+              'Replace cloud progress?',
+              'Cloudvoortgang vervangen?',
+            )),
+            content: Text(strings.pick(
+              'The current cloud progress will be replaced by this device. The previous cloud revision remains recoverable for up to thirty days.',
+              'De huidige cloudvoortgang wordt vervangen door dit apparaat. De vorige cloudrevisie blijft maximaal dertig dagen herstelbaar.',
+            )),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(strings.tr('cancel')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(strings.pick(
+                  'Replace cloud',
+                  'Cloud vervangen',
+                )),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed || !context.mounted) return;
+    final success = await online.replaceCloudWithLocal();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(success
+          ? strings.pick(
+              'Cloud progress replaced safely.',
+              'Cloudvoortgang veilig vervangen.',
+            )
+          : socialMessage(
+              strings,
+              online.errorCode ?? 'cloud_save_failed',
+              supportCode: online.supportCode,
+            )),
+    ));
+  }
+
+  Future<void> _showCloudHistory(
+    BuildContext context,
+    OnlineAccountProvider online,
+  ) async {
+    final strings = AppStrings.of(context);
+    final loaded = await online.loadCloudSaveHistory();
+    if (!context.mounted) return;
+    if (!loaded) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(socialMessage(
+          strings,
+          online.errorCode ?? 'cloud_save_failed',
+          supportCode: online.supportCode,
+        )),
+      ));
+      return;
+    }
+    final history = online.cloudSaveHistory;
+    if (history.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(strings.pick(
+          'No cloud backup history is available.',
+          'Er is geen cloudback-upgeschiedenis beschikbaar.',
+        )),
+      ));
+      return;
+    }
+    final material = MaterialLocalizations.of(context);
+    final selectedSaveId = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(strings.pick('Backup history', 'Back-upgeschiedenis')),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520, maxHeight: 430),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(strings.pick(
+                'Up to five cloud revisions are kept for thirty days.',
+                'Maximaal vijf cloudrevisies worden dertig dagen bewaard.',
+              )),
+              const SizedBox(height: 10),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: history.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final save = history[index];
+                    final localDate = save.updatedAt.toLocal();
+                    final updated =
+                        '${material.formatShortDate(localDate)} ${material.formatTimeOfDay(TimeOfDay.fromDateTime(localDate))}';
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${strings.pick('Revision', 'Revisie')} ${save.revision}',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                          if (save.isCurrent)
+                            Chip(
+                              visualDensity: VisualDensity.compact,
+                              label: Text(strings.pick('Current', 'Huidig')),
+                            ),
+                        ],
+                      ),
+                      subtitle: Text(
+                        '$updated\n${strings.pick('App version', 'Appversie')} ${save.clientVersion} · ${strings.pick('Save schema', 'Opslagschema')} ${save.schemaVersion}',
+                      ),
+                      isThreeLine: true,
+                      trailing: const Icon(Icons.restore_rounded),
+                      onTap: () => Navigator.pop(dialogContext, save.saveId),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(strings.tr('cancel')),
+          ),
+        ],
+      ),
+    );
+    if (selectedSaveId == null || !context.mounted) return;
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(strings.pick(
+              'Restore this revision?',
+              'Deze revisie herstellen?',
+            )),
+            content: Text(strings.pick(
+              'Your local progress will be replaced by this cloud revision. A local recovery copy is kept.',
+              'Je lokale voortgang wordt vervangen door deze cloudrevisie. Er blijft een lokale herstelkopie bewaard.',
+            )),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(strings.tr('cancel')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(strings.pick(
+                  'Restore revision',
+                  'Revisie herstellen',
+                )),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed || !context.mounted) return;
+    final success = await online.restoreCloudRevision(selectedSaveId);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(success

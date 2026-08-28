@@ -276,16 +276,24 @@ class AccountAuthResult {
 
 class CloudGameSave {
   const CloudGameSave({
+    this.saveId = '',
     required this.revision,
+    this.parentRevision,
     required this.state,
     required this.updatedAt,
     required this.deviceId,
+    this.clientVersion = 'legacy',
+    this.schemaVersion = 1,
   });
 
+  final String saveId;
   final int revision;
+  final int? parentRevision;
   final Map<String, dynamic> state;
   final DateTime updatedAt;
   final String deviceId;
+  final String clientVersion;
+  final int schemaVersion;
 
   factory CloudGameSave.fromJson(Map<String, dynamic> json) {
     final rawState = json['state'];
@@ -293,13 +301,58 @@ class CloudGameSave {
       throw const FormatException('Cloud save has no valid game state.');
     }
     return CloudGameSave(
+      saveId: json['save_id']?.toString() ?? '',
       revision: _int(json['revision']),
+      parentRevision: json['parent_revision'] == null
+          ? null
+          : _int(json['parent_revision']),
       state: Map<String, dynamic>.from(rawState),
       updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
       deviceId: json['device_id']?.toString() ?? '',
+      clientVersion: json['client_version']?.toString() ?? 'legacy',
+      schemaVersion: json['schema_version'] == null
+          ? _int(rawState['schemaVersion'])
+          : _int(json['schema_version']),
     );
   }
+}
+
+class CloudGameSaveSummary {
+  const CloudGameSaveSummary({
+    required this.saveId,
+    required this.revision,
+    this.parentRevision,
+    required this.updatedAt,
+    required this.deviceId,
+    required this.clientVersion,
+    required this.schemaVersion,
+    required this.isCurrent,
+  });
+
+  final String saveId;
+  final int revision;
+  final int? parentRevision;
+  final DateTime updatedAt;
+  final String deviceId;
+  final String clientVersion;
+  final int schemaVersion;
+  final bool isCurrent;
+
+  factory CloudGameSaveSummary.fromJson(Map<String, dynamic> json) =>
+      CloudGameSaveSummary(
+        saveId: json['save_id']?.toString() ?? '',
+        revision: _int(json['revision']),
+        parentRevision: json['parent_revision'] == null
+            ? null
+            : _int(json['parent_revision']),
+        updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+        deviceId: json['device_id']?.toString() ?? '',
+        clientVersion: json['client_version']?.toString() ?? 'legacy',
+        schemaVersion: _int(json['schema_version']),
+        isCurrent: json['is_current'] == true,
+      );
 }
 
 class GroupDragonSubmission {

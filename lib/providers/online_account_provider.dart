@@ -29,6 +29,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     Map<String, dynamic> Function()? gameStateSnapshot,
     Future<bool> Function(Map<String, dynamic> state)? applyCloudState,
     Future<String> Function()? deviceId,
+    String clientVersion = 'unknown',
     Future<int?> Function(String userId)? loadCloudBaseRevision,
     Future<void> Function(String userId, int revision)? saveCloudBaseRevision,
     String Function()? languageCode,
@@ -46,6 +47,7 @@ class OnlineAccountProvider extends ChangeNotifier {
         _gameStateSnapshot = gameStateSnapshot,
         _applyCloudState = applyCloudState,
         _deviceId = deviceId,
+        _clientVersion = clientVersion,
         _loadCloudBaseRevision =
             loadCloudBaseRevision ?? _missingCloudBaseRevision,
         _saveCloudBaseRevision =
@@ -69,6 +71,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   final Map<String, dynamic> Function()? _gameStateSnapshot;
   final Future<bool> Function(Map<String, dynamic> state)? _applyCloudState;
   final Future<String> Function()? _deviceId;
+  final String _clientVersion;
   final Future<int?> Function(String userId) _loadCloudBaseRevision;
   final Future<void> Function(String userId, int revision)
       _saveCloudBaseRevision;
@@ -97,6 +100,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   List<TradeInventoryItem> tradeInventory = const [];
   CloudGameSave? cloudGameSave;
   CloudGameSave? cloudConflictSave;
+  List<CloudGameSaveSummary> cloudSaveHistory = const [];
   bool busy = false;
   String? errorCode;
   String? noticeCode;
@@ -274,6 +278,14 @@ class OnlineAccountProvider extends ChangeNotifier {
       }) ??
       false;
 
+  Future<bool> loadCloudSaveHistory() async =>
+      await _run('cloud_save.history', () async {
+        if (!isSignedIn) return false;
+        cloudSaveHistory = await _repository.loadCloudGameSaveHistory();
+        return true;
+      }) ??
+      false;
+
   Future<bool> backupToCloud() async =>
       await _run('cloud_save.backup', () async {
         final snapshot = _gameStateSnapshot;
@@ -295,6 +307,7 @@ class OnlineAccountProvider extends ChangeNotifier {
             expectedRevision: baseRevision ?? 0,
             state: snapshot(),
             deviceId: await loadDeviceId(),
+            clientVersion: _clientVersion,
           );
         } on SocialException catch (error) {
           if (error.code == 'cloud_save_conflict') {
@@ -309,6 +322,37 @@ class OnlineAccountProvider extends ChangeNotifier {
         }
         await _rememberCloudBaseRevision(cloudGameSave!.revision);
         cloudConflictSave = null;
+        cloudSaveHistory = const [];
+        noticeCode = 'cloud_save_backed_up';
+        return true;
+      }) ??
+      false;
+
+  Future<bool> replaceCloudWithLocal() async =>
+      await _run('cloud_save.replace_with_local', () async {
+        final snapshot = _gameStateSnapshot;
+        final loadDeviceId = _deviceId;
+        if (!isSignedIn || snapshot == null || loadDeviceId == null) {
+          throw const SocialException('cloud_save_unavailable');
+        }
+        final remote = await _repository.loadCloudGameSave();
+        try {
+          cloudGameSave = await _repository.pushCloudGameSave(
+            expectedRevision: remote?.revision ?? 0,
+            state: snapshot(),
+            deviceId: await loadDeviceId(),
+            clientVersion: _clientVersion,
+          );
+        } on SocialException catch (error) {
+          if (error.code == 'cloud_save_conflict') {
+            cloudConflictSave = await _repository.loadCloudGameSave();
+            cloudGameSave = cloudConflictSave;
+          }
+          rethrow;
+        }
+        await _rememberCloudBaseRevision(cloudGameSave!.revision);
+        cloudConflictSave = null;
+        cloudSaveHistory = const [];
         noticeCode = 'cloud_save_backed_up';
         return true;
       }) ??
@@ -327,6 +371,30 @@ class OnlineAccountProvider extends ChangeNotifier {
         }
         cloudGameSave = remote;
         await _rememberCloudBaseRevision(remote.revision);
+        cloudConflictSave = null;
+        _lastTradeInventoryFingerprint = null;
+        _lastShowcaseFingerprint = null;
+        await _refreshData();
+        noticeCode = 'cloud_save_restored';
+        return true;
+      }) ??
+      false;
+
+  Future<bool> restoreCloudRevision(String saveId) async =>
+      await _run('cloud_save.restore_revision', () async {
+        final apply = _applyCloudState;
+        if (!isSignedIn || apply == null || saveId.isEmpty) {
+          throw const SocialException('cloud_save_unavailable');
+        }
+        final current = await _repository.loadCloudGameSave();
+        if (current == null) throw const SocialException('cloud_save_missing');
+        final selected = await _repository.loadCloudGameSaveRevision(saveId);
+        if (selected == null) throw const SocialException('cloud_save_missing');
+        if (!await apply(selected.state)) {
+          throw const SocialException('cloud_save_invalid');
+        }
+        cloudGameSave = current;
+        await _rememberCloudBaseRevision(current.revision);
         cloudConflictSave = null;
         _lastTradeInventoryFingerprint = null;
         _lastShowcaseFingerprint = null;
@@ -818,6 +886,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     tradeInventory = const [];
     cloudGameSave = null;
     cloudConflictSave = null;
+    cloudSaveHistory = const [];
     _cloudBaseUserId = null;
     _cloudBaseRevision = null;
     _lastProfileFingerprint = null;

@@ -294,16 +294,17 @@ if ($beforeRows.Count -eq 1) {
             -AsHashtable
     }
 }
-$nonce = [Guid]::NewGuid().ToString('N')
+$firstNonce = [Guid]::NewGuid().ToString('N')
 $state['_stagingE2E'] = @{
-    nonce = $nonce
+    nonce = $firstNonce
     checkedAt = [DateTimeOffset]::UtcNow.ToString('O')
 }
 
-$pushed = Invoke-StagingRpc -Function 'push_cloud_game_save' -Parameters @{
+$pushed = Invoke-StagingRpc -Function 'push_cloud_game_save_v2' -Parameters @{
     p_expected_revision = $expectedRevision
     p_state = $state
     p_device_id = 'github-staging-e2e'
+    p_client_version = 'staging-e2e'
 }
 $pushedRows = @($pushed.Body)
 if (-not (Test-SuccessStatus $pushed.StatusCode) -or $pushedRows.Count -ne 1) {
@@ -311,8 +312,33 @@ if (-not (Test-SuccessStatus $pushed.StatusCode) -or $pushedRows.Count -ne 1) {
     throw "De stagingback-up kon niet worden opgeslagen: $failure"
 }
 $newRevision = [long](Get-PropertyValue -InputObject $pushedRows[0] -Name 'revision')
+$firstSaveId = [string](Get-PropertyValue -InputObject $pushedRows[0] -Name 'save_id')
 if ($newRevision -ne ($expectedRevision + 1)) {
     throw 'De stagingback-up kreeg niet de verwachte volgende revisie.'
+}
+if ([string]::IsNullOrWhiteSpace($firstSaveId)) {
+    throw 'De stagingback-up kreeg geen stabiel save-ID.'
+}
+
+$secondNonce = [Guid]::NewGuid().ToString('N')
+$state['_stagingE2E'] = @{
+    nonce = $secondNonce
+    checkedAt = [DateTimeOffset]::UtcNow.ToString('O')
+}
+$secondPush = Invoke-StagingRpc -Function 'push_cloud_game_save_v2' -Parameters @{
+    p_expected_revision = $newRevision
+    p_state = $state
+    p_device_id = 'github-staging-e2e'
+    p_client_version = 'staging-e2e'
+}
+$secondPushRows = @($secondPush.Body)
+if (-not (Test-SuccessStatus $secondPush.StatusCode) -or $secondPushRows.Count -ne 1) {
+    $failure = Get-SafeFailure -Body $secondPush.Body -StatusCode $secondPush.StatusCode
+    throw "De tweede stagingback-up kon niet worden opgeslagen: $failure"
+}
+$latestRevision = [long](Get-PropertyValue -InputObject $secondPushRows[0] -Name 'revision')
+if ($latestRevision -ne ($newRevision + 1)) {
+    throw 'De tweede stagingback-up kreeg niet de verwachte volgende revisie.'
 }
 
 $restored = Invoke-StagingRpc -Function 'get_cloud_game_save'
@@ -324,14 +350,45 @@ if (-not (Test-SuccessStatus $restored.StatusCode) -or $restoredRows.Count -ne 1
 $restoredState = Get-PropertyValue -InputObject $restoredRows[0] -Name 'state'
 $restoredMarker = Get-PropertyValue -InputObject $restoredState -Name '_stagingE2E'
 $restoredNonce = Get-PropertyValue -InputObject $restoredMarker -Name 'nonce'
-if ([string]$restoredNonce -ne $nonce) {
+if ([string]$restoredNonce -ne $secondNonce) {
     throw 'De herstelde stagingback-up komt niet overeen met de opgeslagen revisie.'
 }
 
-$conflict = Invoke-StagingRpc -Function 'push_cloud_game_save' -Parameters @{
+$history = Invoke-StagingRpc -Function 'list_my_cloud_game_save_revisions'
+$historyRows = @($history.Body)
+if (-not (Test-SuccessStatus $history.StatusCode) -or
+    $historyRows.Count -lt 2 -or $historyRows.Count -gt 5) {
+    $failure = Get-SafeFailure -Body $history.Body -StatusCode $history.StatusCode
+    throw "De herstelbare staginggeschiedenis is niet begrensd op twee tot vijf revisies: $failure"
+}
+$currentRows = @($historyRows | Where-Object {
+    [bool](Get-PropertyValue -InputObject $_ -Name 'is_current')
+})
+if ($currentRows.Count -ne 1 -or
+    [long](Get-PropertyValue -InputObject $currentRows[0] -Name 'revision') -ne $latestRevision) {
+    throw 'De staginggeschiedenis markeert niet exact de nieuwste revisie als huidig.'
+}
+
+$historic = Invoke-StagingRpc `
+    -Function 'get_my_cloud_game_save_revision' `
+    -Parameters @{ p_save_id = $firstSaveId }
+$historicRows = @($historic.Body)
+if (-not (Test-SuccessStatus $historic.StatusCode) -or $historicRows.Count -ne 1) {
+    $failure = Get-SafeFailure -Body $historic.Body -StatusCode $historic.StatusCode
+    throw "De vorige stagingrevisie kon niet afzonderlijk worden hersteld: $failure"
+}
+$historicState = Get-PropertyValue -InputObject $historicRows[0] -Name 'state'
+$historicMarker = Get-PropertyValue -InputObject $historicState -Name '_stagingE2E'
+$historicNonce = Get-PropertyValue -InputObject $historicMarker -Name 'nonce'
+if ([string]$historicNonce -ne $firstNonce) {
+    throw 'De herstelbare vorige stagingrevisie bevat niet de oorspronkelijke gegevens.'
+}
+
+$conflict = Invoke-StagingRpc -Function 'push_cloud_game_save_v2' -Parameters @{
     p_expected_revision = $expectedRevision
     p_state = $state
     p_device_id = 'github-staging-e2e-stale'
+    p_client_version = 'staging-e2e'
 }
 $conflictFailure = Get-SafeFailure -Body $conflict.Body -StatusCode $conflict.StatusCode
 if ((Test-SuccessStatus $conflict.StatusCode) -or
@@ -355,7 +412,8 @@ Write-SafeEvidence -Lines @(
     'Idempotent account bootstrap: passed.'
     'Profile read: passed.'
     $importAuditEvidence
-    "Cloud backup roundtrip: revision $expectedRevision -> $newRevision passed."
+    "Cloud backup roundtrip: revision $expectedRevision -> $latestRevision passed."
+    "Cloud revision history: $($historyRows.Count) retained revisions and historic restore passed."
     'Stale cloud backup conflict protection: passed.'
     'Session logout: passed.'
 )

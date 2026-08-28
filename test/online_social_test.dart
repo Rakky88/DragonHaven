@@ -1212,6 +1212,95 @@ void main() {
     online.dispose();
   });
 
+  test('cloud history keeps five revisions and restores an older snapshot',
+      () async {
+    final game = HouseholdProvider(random: Random(994));
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    int? storedBaseRevision;
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+      gameStateSnapshot: game.exportState,
+      applyCloudState: game.restoreCloudState,
+      deviceId: () async => 'history-device',
+      clientVersion: '0.04.07-test',
+      loadCloudBaseRevision: (_) async => storedBaseRevision,
+      saveCloudBaseRevision: (_, revision) async {
+        storedBaseRevision = revision;
+      },
+    );
+    await online.initialize();
+
+    for (var revision = 1; revision <= 6; revision++) {
+      await game.updateAccountName('Keeper $revision');
+      expect(await online.backupToCloud(), isTrue);
+    }
+    expect(storedBaseRevision, 6);
+    expect(await online.loadCloudSaveHistory(), isTrue);
+    expect(
+      online.cloudSaveHistory.map((save) => save.revision),
+      orderedEquals([6, 5, 4, 3, 2]),
+    );
+    expect(online.cloudSaveHistory.first.isCurrent, isTrue);
+    expect(
+      online.cloudSaveHistory.every(
+        (save) => save.clientVersion == '0.04.07-test',
+      ),
+      isTrue,
+    );
+
+    final older = online.cloudSaveHistory.last;
+    expect(await online.restoreCloudRevision(older.saveId), isTrue);
+    expect(game.accountName, 'Keeper 2');
+    expect(storedBaseRevision, 6,
+        reason:
+            'restoring history must remain based on the current server head');
+
+    await game.updateAccountName('Keeper restored safely');
+    expect(await online.backupToCloud(), isTrue);
+    expect(repository.cloudSave?.revision, 7);
+    expect(repository.cloudSave?.parentRevision, 6);
+    expect(
+        repository.cloudSave?.state['accountName'], 'Keeper restored safely');
+    online.dispose();
+  });
+
+  test('explicit local replacement preserves the previous cloud revision',
+      () async {
+    final game = HouseholdProvider(random: Random(995));
+    await game.updateAccountName('Local keeper');
+    final remoteState = game.exportState()..['accountName'] = 'Cloud keeper';
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..cloudSave = CloudGameSave(
+        saveId: 'save-4',
+        revision: 4,
+        parentRevision: 3,
+        state: remoteState,
+        updatedAt: DateTime.utc(2026, 8, 28, 10, 30),
+        deviceId: 'other-device',
+        clientVersion: '0.04.06',
+        schemaVersion: HouseholdProvider.saveSchemaVersion,
+      );
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+      gameStateSnapshot: game.exportState,
+      applyCloudState: game.restoreCloudState,
+      deviceId: () async => 'this-device',
+      clientVersion: '0.04.07',
+    );
+    await online.initialize();
+
+    expect(await online.backupToCloud(), isFalse);
+    expect(online.errorCode, 'cloud_save_conflict');
+    expect(await online.replaceCloudWithLocal(), isTrue);
+    expect(repository.cloudSave?.revision, 5);
+    expect(repository.cloudSave?.state['accountName'], 'Local keeper');
+    expect(repository.cloudSaveRevisions.single.state['accountName'],
+        'Cloud keeper');
+    online.dispose();
+  });
+
   test('online account deletion requires the repository password flow',
       () async {
     final game = HouseholdProvider(random: Random(992));
@@ -1306,6 +1395,7 @@ class _FakeSocialRepository implements SocialRepository {
   String? createGroupError;
   bool signedIn = true;
   CloudGameSave? cloudSave;
+  final List<CloudGameSave> cloudSaveRevisions = [];
   String? deletedWithPassword;
 
   static const _favorite = FavoriteDragonSummary(
@@ -1423,19 +1513,60 @@ class _FakeSocialRepository implements SocialRepository {
   @override
   Future<CloudGameSave?> loadCloudGameSave() async => cloudSave;
   @override
+  Future<List<CloudGameSaveSummary>> loadCloudGameSaveHistory() async {
+    final saves = [
+      if (cloudSave case final current?) current,
+      ...cloudSaveRevisions.reversed,
+    ].take(5);
+    return [
+      for (final save in saves)
+        CloudGameSaveSummary(
+          saveId: save.saveId,
+          revision: save.revision,
+          parentRevision: save.parentRevision,
+          updatedAt: save.updatedAt,
+          deviceId: save.deviceId,
+          clientVersion: save.clientVersion,
+          schemaVersion: save.schemaVersion,
+          isCurrent: identical(save, cloudSave),
+        ),
+    ];
+  }
+
+  @override
+  Future<CloudGameSave?> loadCloudGameSaveRevision(String saveId) async {
+    if (cloudSave?.saveId == saveId) return cloudSave;
+    for (final save in cloudSaveRevisions) {
+      if (save.saveId == saveId) return save;
+    }
+    return null;
+  }
+
+  @override
   Future<CloudGameSave> pushCloudGameSave({
     required int expectedRevision,
     required Map<String, dynamic> state,
     required String deviceId,
+    required String clientVersion,
   }) async {
     if ((cloudSave?.revision ?? 0) != expectedRevision) {
       throw const SocialException('cloud_save_conflict');
     }
+    if (cloudSave case final previous?) {
+      cloudSaveRevisions.add(previous);
+      while (cloudSaveRevisions.length > 4) {
+        cloudSaveRevisions.removeAt(0);
+      }
+    }
     return cloudSave = CloudGameSave(
+      saveId: 'save-${expectedRevision + 1}',
       revision: expectedRevision + 1,
+      parentRevision: expectedRevision == 0 ? null : expectedRevision,
       state: state,
       updatedAt: DateTime.utc(2026, 8, 26),
       deviceId: deviceId,
+      clientVersion: clientVersion,
+      schemaVersion: state['schemaVersion'] as int? ?? 1,
     );
   }
 
