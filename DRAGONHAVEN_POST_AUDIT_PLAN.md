@@ -47,7 +47,7 @@ Alle technische keuzes in dit plan moeten daarom verenigbaar blijven met:
 
 ### Wat Codex voor Google Play voorbereidt
 
-- [ ] De release-AAB bouwen en package name, versie, signingcertificaat en hash
+- [x] De release-AAB bouwen en package name, versie, signingcertificaat en hash
   controleren.
 - [ ] De CI/releasegate onderhouden en vóór iedere storebuild de actuele Play-
   en target-API-eisen opnieuw controleren.
@@ -224,11 +224,11 @@ APK en productiepreflight waren wel geldig.
   fingerprint gebruikt als de gepubliceerde APK.
 - [x] Laat een succesvolle workflow de versie, versionCode, commit, AAB-hash,
   migratie-uitkomst en certificaatfingerprint als verificatierapport bewaren.
-- [ ] Documenteer herstel bij een mislukte serverpreflight of signingcheck.
+- [x] Documenteer herstel bij een mislukte serverpreflight of signingcheck.
 
 ### Jij
 
-- [ ] Plaats rechtstreeks in GitHub Actions Secrets:
+- [x] Plaats rechtstreeks in GitHub Actions Secrets:
   `DRAGONHAVEN_KEYSTORE_BASE64`, `DRAGONHAVEN_KEYSTORE_PASSWORD`,
   `DRAGONHAVEN_KEY_ALIAS`, `DRAGONHAVEN_KEY_PASSWORD`,
   `SUPABASE_ACCESS_TOKEN` en `SUPABASE_DB_PASSWORD`.
@@ -241,11 +241,21 @@ APK en productiepreflight waren wel geldig.
 
 ### Samen klaar wanneer
 
-- [ ] Een handmatige CI-run analyse, alle tests, serverpreflight en een
+- [x] Een handmatige CI-run analyse, alle tests, serverpreflight en een
   ondertekende `DragonHaven.aab` volledig groen afrondt.
-- [ ] Het signingcertificaat exact overeenkomt met bestaande DragonHaven-
+- [x] Het signingcertificaat exact overeenkomt met bestaande DragonHaven-
   releases en geen secretwaarde in logs of artifacts staat.
-- [ ] Het verificatierapport aan de run gekoppeld is.
+- [x] Het verificatierapport aan de run gekoppeld is.
+
+Bewijs: handmatige GitHub Actions-run
+[`33177281257`](https://github.com/Rakky88/DragonHaven/actions/runs/33177281257)
+bouwde zonder publicatie versie `0.04.06` (`versionCode 10039`) met commit
+`ade9b71939ee642290374a927f2d5f6df3935491`. De AAB-hash was
+`C68D448229800BF6663E3CB33EC297032D6D3DA94B3E146B66D4F2B691C21C5E` en de
+signingfingerprint kwam overeen met
+`477C5A5D7453384CA756265E77AF97D5A002A907177CCD2D9065A9BEC3414942`.
+Het tijdelijke bewijsartifact verloopt op 04-09-2026; de run en dit plan
+bewaren de controle-uitkomst blijvend.
 
 ## Fase 1 — observability, alerts en incidentbasis
 
@@ -305,7 +315,7 @@ APK en productiepreflight waren wel geldig.
 
 - [x] Maak omgevinggestuurde configuratie voor lokaal, staging en productie,
   zonder productiecredentials in testbuilds.
-- [ ] Laat lokale tests en GitHub Actions zoveel mogelijk werk afvangen voordat
+- [x] Laat lokale tests en GitHub Actions zoveel mogelijk werk afvangen voordat
   een externe stagingresource wordt belast.
 - [ ] Maak reproduceerbare stagingmigraties, testdata en veilige opruimlogica.
 - [ ] Automatiseer minimaal deze volledige flow:
@@ -327,13 +337,22 @@ APK en productiepreflight waren wel geldig.
 
 ### Jij
 
-- [ ] Maak een afzonderlijk Supabase-stagingproject onder jouw account.
-- [ ] Start daarvoor met de gratis tier zolang de geplande tests binnen de
+- [x] Maak een afzonderlijk Supabase-stagingproject onder jouw account.
+- [x] Start daarvoor met de gratis tier zolang de geplande tests binnen de
   actuele limieten passen.
 - [ ] Configureer een staging-e-mailroute/inbox waarmee bevestigingslinks veilig
   geautomatiseerd kunnen worden.
-- [ ] Voeg stagingcredentials rechtstreeks als afgeschermde GitHub Environment
+- [x] Voeg stagingcredentials rechtstreeks als afgeschermde GitHub Environment
   Secrets toe en vereis zo nodig jouw goedkeuring voor runs.
+
+De eerste geïsoleerde stagingrun
+[`33176572637`](https://github.com/Rakky88/DragonHaven/actions/runs/33176572637)
+is volledig geslaagd: secret- en production-safetychecks, 20 migraties,
+Auth/configuratie, schemalint, publieke serverpreflight, analyzer, 252 tests,
+APK-build en artifactupload waren groen. Dit bewijst nog niet de volledige
+signup-tot-Group-Adventure-E2E-flow; daarvoor blijft de afzonderlijke
+staging-inbox hierboven nodig.
+
 - [ ] Bepaal het testbudget en keur iedere test boven 1.000 gelijktijdige
   gebruikers vooraf goed.
 - [ ] Bevestig dat synthetische accounts en testmailadressen geen echte
@@ -670,13 +689,15 @@ Een taak of mijlpaal is pas gereed wanneer:
    voordat de bijbehorende productiefase start.
 2. **Afgerond door jou:** Android Studio is gesloten; Codex heeft daarna de
    volledige Flutter-analyzer en alle 252 tests succesvol uitgevoerd.
-3. **Jij:** vul de zes GitHub Actions-secrets uit fase 0 rechtstreeks in.
-4. **Codex:** voer daarna M0 uit en bewijs een volledig groene handmatige
-   AAB-workflow zonder een release te publiceren.
-5. **Jij:** maak het gekozen monitoringproject en een apart Supabase-
-   stagingproject aan, beide eerst op een geschikt gratis plan.
-6. **Codex:** implementeer M1 en M2 verder, inclusief externe monitoring en
-   echte staging-E2E-tests.
+3. **Afgerond door jou:** de zes repositorysecrets voor signing en productie-
+   Supabase en de vijf afgeschermde stagingsecrets zijn toegevoegd.
+4. **Afgerond door Codex:** M0 is met een volledig groene handmatige AAB-
+   workflow bewezen, zonder release, tag of productiewijziging.
+5. **Afgerond door jou:** een afzonderlijk gratis Supabase-stagingproject en de
+   GitHub Environment `staging` zijn ingericht.
+6. **Volgende gedeelde stap:** jij maakt een afzonderlijke staging-inbox of
+   testmailroute; Codex sluit daarna de echte signup-, bevestigings-, backup-,
+   Friends-, trade- en Group Adventure-E2E-tests aan.
 7. **Samen:** beoordeel de meetresultaten en leg pas daarna grenzen voor
    capaciteit, alerts en publieke uitrol vast.
 
@@ -694,14 +715,16 @@ Een taak of mijlpaal is pas gereed wanneer:
 | Datum | Mijlpaal/taak | Uitgevoerd door | Bewijs of link | Resultaat/vervolg |
 | --- | --- | --- | --- | --- |
 | 28-08-2026 | Uitgangsaudit v0.04.06 | Codex | `DRAGONHAVEN_AUDIT_2026-08-28.md` | Basis groen; resterende grenzen in dit plan verwerkt |
-| 28-08-2026 | M0 workflowhardening | Codex | `.github/workflows/release.yml` | Vroege secretcheck, pubspec-versionCode, AAB-hash/certificaat en bewijsrapport gebouwd; echte CI-run wacht op zes GitHub-secrets |
+| 28-08-2026 | M0 workflowhardening | Codex | `.github/workflows/release.yml` | Vroege secretcheck, pubspec-versionCode, AAB-hash/certificaat en bewijsrapport gebouwd |
 | 28-08-2026 | M1 gratis diagnostiekbasis | Codex | `lib/services/diagnostic_reporter.dart`, `INCIDENT_RUNBOOK.md` | Supportcodes, veilige export, redactiontests en handmatige healthworkflow gebouwd |
 | 28-08-2026 | Productiepreflight na healthrefactor | Codex | `tool/release_server_preflight.ps1` | 20/20 migraties, 0 lintfouten, Auth 200/200; eerste health 24,5 s, clienttimeout daarom 75 s |
-| 28-08-2026 | M2 stagingafscheiding | Codex | `.github/workflows/staging.yml`, `lib/config/online_config.dart` | Production/staging/local veilig gescheiden; echte run wacht op gratis stagingproject en secrets |
+| 28-08-2026 | M2 stagingafscheiding | Codex | `.github/workflows/staging.yml`, `lib/config/online_config.dart` | Production/staging/local veilig gescheiden |
 | 28-08-2026 | M3 conservatieve conflictbeveiliging | Codex | `OnlineAccountProvider`, `StorageService`, `AccountScreen` | Stil cloudoverschrijven geblokkeerd; restore/lokaal-doorgaan gebouwd, force-overwrite wacht op retentie- en historiebeleid |
 | 28-08-2026 | Uitgestelde payment-ready grens | Codex | `lib/services/purchase_provider.dart` | Twaalf interne product-ID's en server-verified contract; geen Billing-SDK, liveproducten of kosten geactiveerd |
 | 28-08-2026 | Volledige lokale kwaliteitscontrole | Codex | `flutter analyze --no-pub`, `flutter test --no-pub` | Analyzer zonder issues; 252/252 tests geslaagd nadat Android Studio was gesloten |
 | 28-08-2026 | Lokalisatie support- en cloudteksten | Codex | `lib/l10n/release_phrase_translations.dart`, `test/localization_completeness_test.dart` | Twaalf nieuwe vaste teksten in alle zes aanvullende talen toegevoegd; 10/10 lokalisatiecontroles geslaagd |
+| 28-08-2026 | M2 eerste echte stagingverificatie | Jij + Codex | [GitHub Actions-run 33176572637](https://github.com/Rakky88/DragonHaven/actions/runs/33176572637) | Safetychecks, 20 migraties, lint, preflight, analyzer, 252 tests en geïsoleerde APK groen; echte Auth-E2E wacht alleen nog op test-inbox |
+| 28-08-2026 | M0 Play Store-readinessbewijs | Jij + Codex | [GitHub Actions-run 33177281257](https://github.com/Rakky88/DragonHaven/actions/runs/33177281257) | Ondertekende AAB, productiepreflight, analyzer en 252 tests groen; bewijsartifact gemaakt, geen release of tag gepubliceerd |
 
 ## Onderhoud van dit plan
 
