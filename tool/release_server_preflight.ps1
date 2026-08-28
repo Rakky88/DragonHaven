@@ -76,6 +76,10 @@ try {
 
     $lintJson = & $resolvedCli db lint --linked --level error --fail-on error --output-format json
     if ($LASTEXITCODE -ne 0) {
+        # The CLI result contains only schema object names and lint messages;
+        # surface it so a failed CI gate can be diagnosed without database
+        # credentials or user data.
+        $lintJson | ForEach-Object { Write-Output $_ }
         throw 'The linked database lint failed.'
     }
     $lintResult = ($lintJson | Out-String) | ConvertFrom-Json
