@@ -424,4 +424,35 @@ void main() {
     expect(socialCounts, contains('dragon_count integer'));
     expect(socialCounts, contains('publish_social_summary_counts'));
   });
+
+  test('legacy save import is versioned, audited and rollback-prepared', () {
+    final migration = File(
+      'supabase/migrations/202608280021_audited_legacy_inventory_import.sql',
+    ).readAsStringSync();
+
+    expect(migration, contains('legacy_inventory_import_audit'));
+    expect(migration, contains('legacy_inventory_import_backups'));
+    expect(migration, contains("import_version <> 1"));
+    expect(migration, contains('source_schema_version'));
+    expect(migration, contains('source_sha256'));
+    expect(migration, contains("'coins_clamped'"));
+    expect(migration, contains("'gems_clamped'"));
+    expect(migration, contains("'chests_clamped'"));
+    expect(migration, contains('pg_advisory_xact_lock'));
+    expect(migration, contains("interval '30 days'"));
+    expect(migration, contains('enable row level security'));
+    expect(
+      migration,
+      contains('get_my_legacy_import_report'),
+    );
+    expect(
+      migration,
+      contains('revoke all on table public.legacy_inventory_import_audit'),
+    );
+    expect(
+      migration,
+      isNot(contains("'name', entry ->> 'name'")),
+      reason: 'the public import report must not retain authored names',
+    );
+  });
 }

@@ -499,10 +499,27 @@ class SupabaseSocialRepository implements SocialRepository {
     if (normalized.contains('email_not_confirmed')) {
       return const SocialException('email_not_verified');
     }
+    if (normalized.contains('invalid_login_credentials')) {
+      return const SocialException('invalid_login_credentials');
+    }
+    if (normalized.contains('user_already_registered')) {
+      return const SocialException('user_already_registered');
+    }
+    if (normalized.contains('refresh_token') ||
+        normalized.contains('jwt_expired') ||
+        normalized.contains('token_has_expired') ||
+        normalized.contains('invalid_jwt')) {
+      return const SocialException('online_session_expired');
+    }
+    if (normalized.contains('group_login_required')) {
+      return const SocialException('online_login_required');
+    }
     return SocialException(
       knownCodes.firstWhere(
         (code) => normalized.contains(code),
-        orElse: () => message,
+        // Never surface an unclassified server/auth message in diagnostics or
+        // UI: it can contain implementation details or user-provided values.
+        orElse: () => 'online_server_error',
       ),
     );
   }

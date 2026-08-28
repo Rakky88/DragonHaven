@@ -29,8 +29,9 @@ The detailed implementation map and remaining service boundaries are documented 
 De actuele checklist, taakverdeling en kostenraming voor een openbare lancering
 staan in [PUBLIC_LAUNCH.md](PUBLIC_LAUNCH.md).
 
-De actuele code-, UI-, sprite-, licentie-, server- en release-audit van v0.04.06
-staat in [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md).
+De historische code-, UI-, sprite-, licentie- en serverbasisaudit van v0.04.06
+staat in [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md);
+de actuele v0.04.07-status en vervolgacties staan in het post-auditplan.
 De concrete serververbeteringen en resterende grenzen staan in
 [SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md).
 Het gefaseerde vervolgplan met taakverdeling, afhankelijkheden en

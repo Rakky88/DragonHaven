@@ -511,6 +511,14 @@ const releasePhraseTranslations = <String, List<String>>{
     'O serviço online demorou demais. Seu jogo local está seguro; tente novamente.',
     'オンラインサービスがタイムアウトしました。端末のゲームデータは安全です。もう一度お試しください。'
   ],
+  'Your online session expired. Sign in again.': [
+    'Deine Online-Sitzung ist abgelaufen. Melde dich erneut an.',
+    'Tu sesión en línea ha caducado. Inicia sesión de nuevo.',
+    'Votre session en ligne a expiré. Reconnectez-vous.',
+    'La sessione online è scaduta. Accedi di nuovo.',
+    'Sua sessão online expirou. Entre novamente.',
+    'オンラインセッションの有効期限が切れました。もう一度ログインしてください。',
+  ],
   'Astral Lens': [
     'Astrallinse',
     'Lente Astral',

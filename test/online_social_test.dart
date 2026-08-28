@@ -187,6 +187,11 @@ void main() {
 
     expect(repository.importCount, 1);
     expect(repository.lastImport?.eggs, hasLength(1));
+    expect(repository.lastImport?.toJson()['import_version'], 1);
+    expect(
+      repository.lastImport?.toJson()['source_schema_version'],
+      HouseholdProvider.saveSchemaVersion,
+    );
     expect(online.profile?.inventoryImported, isTrue);
     online.dispose();
   });
@@ -205,6 +210,32 @@ void main() {
 
     expect(repository.snapshotLoadCount, 4,
         reason: 'three attempts plus the post-sync authoritative reload');
+    expect(online.profile, isNotNull);
+    expect(online.errorCode, isNull);
+    online.dispose();
+  });
+
+  test('an expired session fails once and can recover after signing in again',
+      () async {
+    final game = HouseholdProvider(random: Random(405));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..signedIn = false;
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+    repository
+      ..signedIn = true
+      ..ensureAccountError = 'online_session_expired';
+
+    expect(await online.refresh(), isFalse);
+    expect(repository.ensureAccountCount, 1,
+        reason: 'an expired credential must not be retried as a server outage');
+    expect(online.errorCode, 'online_session_expired');
+
+    repository.ensureAccountError = null;
+    expect(await online.refresh(), isTrue);
     expect(online.profile, isNotNull);
     expect(online.errorCode, isNull);
     online.dispose();
@@ -258,7 +289,52 @@ void main() {
       diagnostics.recentEvents.single.supportCode,
       online.supportCode,
     );
+
+    expect(await online.refresh(), isFalse,
+        reason: 'the timed-out source request is still running');
+    expect(repository.ensureAccountCount, 1,
+        reason: 'a retry must not overlap the timed-out request');
     repository.ensureAccountGate!.complete();
+    while (repository.snapshotLoadCount == 0) {
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+    }
+    expect(await online.refresh(), isTrue,
+        reason: 'online actions recover after the source request settles');
+    expect(online.errorCode, isNull);
+    online.dispose();
+  });
+
+  test('rapid duplicate trade actions create only one server request',
+      () async {
+    final game = HouseholdProvider(random: Random(406))
+      ..chestInventory[ChestTier.gold] = 1;
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..createTradeGate = Completer<void>();
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+
+    final first = online.createTrade(
+      'friend-user',
+      TradeItem.chest(ChestTier.gold),
+    );
+    while (repository.createTradeCount == 0) {
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+    }
+    expect(
+      await online.createTrade(
+        'friend-user',
+        TradeItem.chest(ChestTier.gold),
+      ),
+      isFalse,
+    );
+    expect(repository.createTradeCount, 1);
+
+    repository.createTradeGate!.complete();
+    expect(await first, isTrue);
+    expect(repository.createTradeCount, 1);
     online.dispose();
   });
 
@@ -540,6 +616,7 @@ void main() {
     );
     final repository = _FakeSocialRepository(inventoryImported: true)
       ..groupRows.add(lobby)
+      ..acknowledgeGroupFailures = 1
       ..groupReward = GroupAdventureReward(
         lobbyId: lobby.id,
         adventureId: lobby.adventureId,
@@ -569,13 +646,21 @@ void main() {
     await online.initialize();
     expect(game.pet.activeAdventureId, 'online-group:lobby-1');
 
-    expect(await online.claimGroupReward(lobby.id), isNotNull);
+    expect(await online.claimGroupReward(lobby.id), isNull,
+        reason: 'the first server acknowledgement is intentionally failed');
     expect(game.pet.xp, beforeXp + 25);
     expect(game.pet.trainingFor(TrainingFocus.spirit), 7);
     expect(game.chestInventory[ChestTier.gold], beforeGold + 1);
     expect(game.pet.activeAdventureId, isNull);
     expect(repository.acknowledgeCount, 1);
     expect(game.appliedOnlineGroupRewardIds, contains('lobby-1'));
+
+    expect(await online.claimGroupReward(lobby.id), isNotNull);
+    expect(game.pet.xp, beforeXp + 25);
+    expect(game.pet.trainingFor(TrainingFocus.spirit), 7);
+    expect(game.chestInventory[ChestTier.gold], beforeGold + 1,
+        reason: 'a replay must not grant the chest twice');
+    expect(repository.acknowledgeCount, 2);
     online.dispose();
   });
 
@@ -625,6 +710,74 @@ void main() {
           .where((item) => item.type == GamePresentationType.trade),
       hasLength(1),
     );
+  });
+
+  test('a half-acknowledged trade replays safely after an app restart',
+      () async {
+    final game = HouseholdProvider(random: Random(407))
+      ..chestInventory[ChestTier.gold] = 1;
+    final now = DateTime.utc(2026, 8, 28, 12);
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..tradeRows.add(_testTrade(
+        status: 'completed',
+        updatedAt: now,
+        myAcknowledged: false,
+      ))
+      ..acknowledgeTradeFailures = 3;
+    var online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+      applyTradeSettlement: (settlement) => game.applyOnlineTradeSettlement(
+        tradeId: settlement.tradeId,
+        sentKind: settlement.sent.kind.name,
+        sentKey: settlement.sent.key,
+        sentData: settlement.sent.data,
+        receivedKind: settlement.received.kind.name,
+        receivedKey: settlement.received.key,
+        receivedData: settlement.received.data,
+      ),
+    );
+
+    await online.initialize();
+    expect(online.errorCode, 'temporary_server_failure');
+    expect(game.chestCount(ChestTier.gold), 0);
+    expect(game.relicCount(MysticRelic.moralPrism), 1);
+    expect(game.appliedOnlineTradeIds, hasLength(1));
+    expect(repository.acknowledgeTradeCount, 3);
+    online.dispose();
+
+    final restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.chestCount(ChestTier.gold), 0);
+    expect(restored.relicCount(MysticRelic.moralPrism), 1);
+    expect(
+      restored.appliedOnlineTradeIds,
+      contains(repository.tradeRows.single.id),
+    );
+
+    repository.acknowledgeTradeFailures = 0;
+    online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(restored),
+      applyTradeSettlement: (settlement) => restored.applyOnlineTradeSettlement(
+        tradeId: settlement.tradeId,
+        sentKind: settlement.sent.kind.name,
+        sentKey: settlement.sent.key,
+        sentData: settlement.sent.data,
+        receivedKind: settlement.received.kind.name,
+        receivedKey: settlement.received.key,
+        receivedData: settlement.received.data,
+      ),
+    );
+    await online.initialize();
+
+    expect(online.errorCode, isNull);
+    expect(restored.chestCount(ChestTier.gold), 0);
+    expect(restored.relicCount(MysticRelic.moralPrism), 1,
+        reason: 'the received Relic must not be granted twice');
+    expect(restored.appliedOnlineTradeIds, hasLength(1));
+    expect(repository.acknowledgeTradeCount, 4);
+    expect(repository.tradeRows, isEmpty);
+    online.dispose();
   });
 
   test('daily successful trade count ignores old and unfinished trades',
@@ -1080,6 +1233,7 @@ void main() {
 TradeOffer _testTrade({
   required String status,
   required DateTime updatedAt,
+  bool myAcknowledged = true,
 }) =>
     TradeOffer(
       id: 'trade-$status-${updatedAt.microsecondsSinceEpoch}',
@@ -1106,7 +1260,7 @@ TradeOffer _testTrade({
         key: 'moralPrism',
         data: {},
       ),
-      myAcknowledged: true,
+      myAcknowledged: myAcknowledged,
       createdAt: updatedAt.subtract(const Duration(minutes: 1)),
       updatedAt: updatedAt,
     );
@@ -1137,11 +1291,16 @@ class _FakeSocialRepository implements SocialRepository {
   String? updatedTitle;
   String? updatedPortraitKey;
   int acknowledgeCount = 0;
+  int acknowledgeGroupFailures = 0;
   int createTradeCount = 0;
+  int acknowledgeTradeCount = 0;
+  int acknowledgeTradeFailures = 0;
   int ensureAccountCount = 0;
   int snapshotLoadCount = 0;
   int transientSnapshotFailures = 0;
   Completer<void>? ensureAccountGate;
+  Completer<void>? createTradeGate;
+  String? ensureAccountError;
   String? resentConfirmationEmail;
   GroupAdventureReward? groupReward;
   String? createGroupError;
@@ -1344,6 +1503,7 @@ class _FakeSocialRepository implements SocialRepository {
   Future<void> ensureAccount() async {
     ensureAccountCount++;
     await ensureAccountGate?.future;
+    if (ensureAccountError case final code?) throw SocialException(code);
   }
 
   @override
@@ -1381,6 +1541,10 @@ class _FakeSocialRepository implements SocialRepository {
   @override
   Future<void> acknowledgeGroupReward(String lobbyId) async {
     acknowledgeCount++;
+    if (acknowledgeGroupFailures > 0) {
+      acknowledgeGroupFailures--;
+      throw const SocialException('temporary_server_failure');
+    }
     groupRows.removeWhere((lobby) => lobby.id == lobbyId);
     groupReward = null;
   }
@@ -1396,6 +1560,7 @@ class _FakeSocialRepository implements SocialRepository {
   @override
   Future<void> createTrade(String friendId, TradeItem item) async {
     createTradeCount++;
+    await createTradeGate?.future;
   }
 
   @override
@@ -1407,7 +1572,14 @@ class _FakeSocialRepository implements SocialRepository {
   @override
   Future<void> rejectTrade(String tradeId) async {}
   @override
-  Future<void> acknowledgeTrade(String tradeId) async {}
+  Future<void> acknowledgeTrade(String tradeId) async {
+    acknowledgeTradeCount++;
+    if (acknowledgeTradeFailures > 0) {
+      acknowledgeTradeFailures--;
+      throw const SocialException('temporary_server_failure');
+    }
+    tradeRows.removeWhere((trade) => trade.id == tradeId);
+  }
 
   @override
   void dispose() {}

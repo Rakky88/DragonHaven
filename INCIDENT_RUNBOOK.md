@@ -1,7 +1,7 @@
 # DragonHaven incident- en diagnoserunbook
 
 Laatst bijgewerkt: **28 augustus 2026**  
-Uitgangsversie: **v0.04.06 plus post-auditverbeteringen**
+Uitgangsversie: **v0.04.07 plus post-auditverbeteringen**
 
 ## Doel
 
@@ -98,6 +98,20 @@ gepauzeerd project moeten als incident worden behandeld. Zie de officiële
 - Forceer geen overschrijving totdat servergeschiedenis, bewaartermijn en een
   expliciete hersteloptie zijn geïmplementeerd.
 - Test restores eerst op staging en behoud altijd een lokale recovery copy.
+
+### Eenmalige import van een bestaande save
+
+- Controleer eerst `get_my_legacy_import_report()` voor protocolversie,
+  save-schemaversie, importtijd en alleen de privacyarme aantallen/clampvelden.
+- Een historisch versie-0-record betekent dat de import al vóór de uitgebreide
+  auditregistratie plaatsvond; probeer die import nooit opnieuw te forceren.
+- Deel de `source_sha256` of de private pre-import snapshot niet met de speler
+  en kopieer de snapshot niet naar een ticket.
+- Een private herstelkopie is maximaal dertig dagen beschikbaar. Er is bewust
+  geen rollbackknop in de app: herstel vereist doelcontrole, een vastgelegde
+  reden, stagingreproductie en expliciete productietoestemming.
+- Verwijder of wijzig nooit alleen `inventory_imported_at`; dat kan een tweede
+  import en daarmee dubbele serveritems veroorzaken.
 
 ### Trades en Group Adventures
 

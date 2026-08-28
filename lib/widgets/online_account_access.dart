@@ -491,6 +491,9 @@ String socialMessage(
     'online_timeout' => strings.pick(
         'The online service took too long. Your local game is safe; please try again.',
         'De online dienst deed er te lang over. Je lokale spel is veilig; probeer het opnieuw.'),
+    'online_login_required' || 'online_session_expired' => strings.pick(
+        'Your online session expired. Sign in again.',
+        'Je online sessie is verlopen. Log opnieuw in.'),
     _ => strings.pick(
         'The online service could not complete this action. Please try again.',
         'De online dienst kon deze actie niet uitvoeren. Probeer het opnieuw.'),

@@ -786,6 +786,8 @@ class OnlineInventorySnapshot {
   }
 
   Map<String, dynamic> toJson() => {
+        'import_version': 1,
+        'source_schema_version': HouseholdProvider.saveSchemaVersion,
         'coins': coins,
         'gems': gems,
         'dragons': dragons,

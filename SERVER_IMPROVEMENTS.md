@@ -1,4 +1,4 @@
-# DragonHaven serververbeteringen — v0.04.06
+# DragonHaven serververbeteringen — v0.04.07
 
 ## Wat is verbeterd
 
@@ -119,6 +119,33 @@ bevestigde testaccounts; analyzer, 252 tests, staging-APK en bewijsartifact ware
 opnieuw groen. Group Adventure starten/afronden/reward-idempotentie blijft open
 totdat dit zonder een meerdaagse testactie kan worden uitgevoerd. Er is hierbij
 niets op productie gewijzigd of gepubliceerd.
+
+### Online herstelpaden en veilige bestaande-save-import
+
+Na de openbare v0.04.07-release is in de volgende lokale bouwtranche verder
+gewerkt aan de auditpunten die geen betaalde dienst vereisen:
+
+- een getimede-out online request houdt zijn single-flight-slot vast totdat de
+  onderliggende request echt klaar is, zodat snel opnieuw drukken geen
+  overlappende mutatie kan veroorzaken;
+- verlopen sessies worden niet als tijdelijke serverstoring driemaal herhaald
+  en krijgen een expliciete, volledig vertaalde herinlogmelding;
+- onbekende Auth/databasefouten worden tot een vaste veilige foutcode
+  teruggebracht in plaats van een ruwe providertekst te loggen;
+- timeout/herstel, dubbele taps, verlopen sessie, half afgemaakte Group Reward
+  en trade-replay na lokale save plus appherstart zijn geautomatiseerd getest;
+- migratie `202608280021_audited_legacy_inventory_import.sql` maakt de
+  bestaande-save-import versieerbaar, bewaart een SHA-256-herkomstbewijs,
+  rapporteert aantallen en toegepaste plausibiliteitslimieten zonder namen of
+  save-inhoud openbaar te maken, en bewaart afgeschermd maximaal dertig dagen
+  een pre-import herstelkopie;
+- accounts die al vóór deze migratie geïmporteerd waren krijgen uitsluitend
+  een historisch auditrecord en worden nooit opnieuw geïmporteerd.
+
+Deze tranche is nog **niet** naar productie gemigreerd of als volgende appversie
+uitgebracht. Eerst volgt een geïsoleerde stagingmigratie en importtest. Een
+handmatig, gecontroleerd rollbackcommando blijft apart open; de herstelkopie is
+al beschikbaar, maar wordt bewust niet via de app uitvoerbaar gemaakt.
 
 Zie [DRAGONHAVEN_POST_AUDIT_PLAN.md](DRAGONHAVEN_POST_AUDIT_PLAN.md) en
 [INCIDENT_RUNBOOK.md](INCIDENT_RUNBOOK.md) voor eigenaarschap, vervolgfasen en

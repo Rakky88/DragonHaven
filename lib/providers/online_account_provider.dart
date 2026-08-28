@@ -82,6 +82,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   String? _lastTradeInventoryFingerprint;
   String? _lastShowcaseFingerprint;
   DateTime? _lastPresenceUpdate;
+  bool _operationInFlight = false;
   bool _disposed = false;
   String? _cloudBaseUserId;
   int? _cloudBaseRevision;
@@ -608,6 +609,7 @@ class OnlineAccountProvider extends ChangeNotifier {
         'invalid_inventory',
         'email_not_verified',
         'online_login_required',
+        'online_session_expired',
       }.contains(code);
 
   Future<void> _deliverSocialNotifications(
@@ -721,16 +723,25 @@ class OnlineAccountProvider extends ChangeNotifier {
     String operationName,
     Future<T> Function() operation,
   ) async {
-    if (busy) return null;
+    // Future.timeout does not cancel its source future. Keep the single-flight
+    // guard active until that source really settles, so a retry after a timeout
+    // cannot overlap the original server mutation.
+    if (busy || _operationInFlight) return null;
     final correlationId = DiagnosticIds.create();
     final startedAt = DateTime.now();
     final stopwatch = Stopwatch()..start();
+    _operationInFlight = true;
     busy = true;
     errorCode = null;
     supportCode = null;
     _notify();
+    final operationFuture = Future<T>.sync(operation);
+    unawaited(operationFuture.then<void>(
+      (_) => _operationInFlight = false,
+      onError: (Object _, StackTrace __) => _operationInFlight = false,
+    ));
     try {
-      final result = await operation().timeout(
+      final result = await operationFuture.timeout(
         _operationTimeout,
         onTimeout: () => throw const SocialException('online_timeout'),
       );

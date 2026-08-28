@@ -97,6 +97,8 @@ enum RoomUnlockResult {
 }
 
 class HouseholdProvider extends ChangeNotifier {
+  static const saveSchemaVersion = 43;
+
   HouseholdProvider({
     Random? random,
     DateTime Function()? clock,
@@ -207,7 +209,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 43;
+  static const _schemaVersion = saveSchemaVersion;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(

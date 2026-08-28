@@ -1,7 +1,12 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
 Laatst opgesteld: **28 augustus 2026**  
-Technische uitgangsversie: **v0.04.06**  
+Technische uitgangsversie: **v0.04.06**
+
+Actuele openbare versie: **v0.04.07**
+
+Actuele lokale post-release-tranche: **v0.04.07 + niet-uitgerolde auditverbeteringen**
+
 Bronnen: [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md),
 [SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md),
 [DISTRIBUTION.md](DISTRIBUTION.md) en [PUBLIC_LAUNCH.md](PUBLIC_LAUNCH.md)
@@ -329,7 +334,7 @@ bewaren de controle-uitkomst blijvend.
   6. [x] trade reserveren, accepteren, afronden en inventarisbehoud bewijzen;
   7. [x] Group Adventure aanmaken, lijsten, deelnemen en veilig verlaten;
   8. [ ] Group Adventure starten, afronden en reward-idempotentie bewijzen.
-- [ ] Voeg scenario's toe voor timeout, offline/online wissel, verlopen sessie,
+- [x] Voeg scenario's toe voor timeout, offline/online wissel, verlopen sessie,
   dubbele request, appherstart en een halverwege mislukte actie.
 - [ ] Maak een loadtestprofiel dat snapshotpolling en echte gebruikersacties
   combineert; geen onrealistische constante spam.
@@ -468,8 +473,10 @@ alleen het serverresultaat en bezit nooit een service-role key.
 - [ ] Koppel de provider later pas via een feature flag aan de zichtbare shop,
   nadat de serverwallet en receiptvalidatie bestaan.
 - [ ] Voeg constraints, RLS, rate limits en serverfuncties toe.
-- [ ] Bouw een versieerbaar eenmalig importpad voor bestaande saves met
-  validatie, limieten, rapportage en rollback.
+- [ ] Rond het versieerbare eenmalige importpad af. Protocol/saveversie,
+  validatie, plausibiliteitslimieten, privacyarme rapportage, SHA-256-bewijs,
+  server-lock en een private herstelkopie van dertig dagen zijn gebouwd;
+  gecontroleerde rollbackuitvoering en stagingbewijs blijven open.
 - [ ] Maak een compatibiliteitsvenster zodat oude clients geen ongeldige nieuwe
   mutaties kunnen doen.
 
@@ -694,8 +701,10 @@ Een taak of mijlpaal is pas gereed wanneer:
 
 - [ ] implementatie en relevante migraties zijn gereviewd;
 - [x] analyzer en alle bestaande plus nieuwe tests slagen voor de huidige
-  lokale bouwtranche (252/252 op 28-08-2026);
-- [ ] negatieve, timeout-, retry- en replaypaden zijn getest;
+  lokale bouwtranche (256/256 op 28-08-2026);
+- [x] negatieve, timeout-, retry- en replaypaden zijn getest voor de huidige
+  online clientgrens; toekomstige server-economiecommando's krijgen opnieuw
+  dezelfde verplichte scenario's;
 - [ ] compacte UI, grote tekst, reduced motion en minimaal één echt Android-
   toestel waar relevant zijn gecontroleerd;
 - [ ] geen secrets of onnodige persoonsgegevens in code, logs of artifacts staan;
@@ -725,6 +734,9 @@ Een taak of mijlpaal is pas gereed wanneer:
    veilige staging-only tijdregeling.
 7. **Samen:** beoordeel de meetresultaten en leg pas daarna grenzen voor
    capaciteit, alerts en publieke uitrol vast.
+8. **Afgerond door Codex:** v0.04.07 is met groene release-gate gepubliceerd;
+   de daaropvolgende lokale tranche dekt de negatieve online herstelpaden en
+   legt het veilige bestaande-save-importprotocol vast.
 
 ## Besluitenlog
 
@@ -752,6 +764,9 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 28-08-2026 | M0 Play Store-readinessbewijs | Jij + Codex | [GitHub Actions-run 33177281257](https://github.com/Rakky88/DragonHaven/actions/runs/33177281257) | Ondertekende AAB, productiepreflight, analyzer en 252 tests groen; bewijsartifact gemaakt, geen release of tag gepubliceerd |
 | 28-08-2026 | M2 bevestigde account- en back-up-E2E | Jij + Codex | [GitHub Actions-run 33180648232](https://github.com/Rakky88/DragonHaven/actions/runs/33180648232) | Login, bevestigde e-mail, bootstrap, profiel, back-up/restore, stale-revisionweigering, logout, analyzer, 252 tests en staging-APK groen |
 | 28-08-2026 | M2 tweepersoons sociale staging-E2E | Jij + Codex | [GitHub Actions-run 33182884493](https://github.com/Rakky88/DragonHaven/actions/runs/33182884493) | Friends, atomaire chest-trade en Group Adventure create/list/join/leave met veilige cleanup groen; analyzer, 252 tests, staging-APK en bewijsartifact groen; completion/rewardpad blijft open |
+| 28-08-2026 | Openbare release v0.04.07 | Codex | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.04.07), [gate 33185616650](https://github.com/Rakky88/DragonHaven/actions/runs/33185616650) | Ondertekende APK gepubliceerd; productiepreflight, analyzer, 252 tests, AAB-signing en hashbewijs groen |
+| 28-08-2026 | Negatieve online herstelpaden | Codex | `test/online_social_test.dart` | Verlopen sessie, timeout plus reconnect, dubbele tap, half afgemaakte Group Reward en trade-replay na save/herstart getest; volledige set 256/256 groen |
+| 28-08-2026 | Veilige bestaande-save-importbasis | Codex | `202608280021_audited_legacy_inventory_import.sql` | Versie, limieten, privacyarm rapport, SHA-256 en private 30-daagse herstelkopie gebouwd; staging en gecontroleerde rollbackuitvoering volgen |
 
 ## Onderhoud van dit plan
 
