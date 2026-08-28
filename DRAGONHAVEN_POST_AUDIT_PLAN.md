@@ -7,7 +7,8 @@ Actuele openbare versie: **v0.04.08**
 
 Actuele productieserver: **23/23 migraties**
 
-Actuele lokale tranche: **gelijk aan v0.04.08; geen niet-uitgerolde wijzigingen**
+Actuele lokale tranche: **v0.04.09-releasecandidate; migratie 24 en release nog
+niet uitgerold**
 
 Bronnen: [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md),
 [SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md),
@@ -40,9 +41,9 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | --- | ---: | --- | --- | --- |
 | Google Play-voorbereiding | circa 25% | Permanent package-ID, vaste signing-identiteit, versiecontrole en een ondertekende AAB zijn bewezen | Actuele Play-eisen opnieuw controleren; storeteksten, graphics, Data Safety-inventaris, appgrootte-analyse en rolloutchecklist maken | Play Console openen/verifiëren; app en Play App Signing aanmaken; testers, publieke support/privacy-URL's en storeverklaringen beheren |
 | Fase 0 — releasepipeline en secrets | circa 94% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.04.08 zijn groen; een apart begrensd productie-migratiepad en actuele CI-runtimes zijn bewezen | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
-| Fase 1 — monitoring en incidenten | circa 55% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan | Externe crash/performance-SDK koppelen zodra config bestaat; publieke Auth- en read-only healthchecks plus testalerts automatiseren | Gratis monitoring/Firebase-project bezitten; ontvangers, uren, budget, regio, retentie en privacy/Data Safety kiezen; alleen clientconfig via secrets geven |
+| Fase 1 — monitoring en incidenten | circa 70% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan; de productie-Auth-check is elk uur gepland en opent/sluit één toegewezen SEV-1-issue | Firebase Crashlytics/Performance koppelen zodra de Android-projectconfig bestaat; veilige read-only applicatiecheck toevoegen en testalert bewijzen | Gratis Firebase Spark-project maken, `nl.dragonhaven.app` registreren, Analytics uit laten en `google-services.json` veilig in de werkmap zetten; testalert ontvangen en privacy/Data Safety beoordelen |
 | Fase 2 — staging en E2E | circa 82% | Afzonderlijke staging, migratiepariteit, account/login, back-up/conflict, Friends, trade en volledige Group Adventure completion/reward/replay zijn echt getest | E-mailbevestiging automatiseren; realistisch 100-user en daarna 1.000-user loadprofiel meten | Veilige stagingmailroute instellen; bevestigen dat testaccounts geen echte persoonsgegevens zijn; testbudget boven 1.000 gebruikers vooraf goedkeuren |
-| Fase 3 — back-up en multi-device | circa 82% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, metadata, oudere restore en veilige lokale vervanging zijn op staging bewezen en migraties 21–23 staan op productie | Periodieke integriteits-/restorecheck toevoegen; later server-owned velden van restores afschermen | Kiezen of back-up ook automatisch gebeurt; RPO/RTO, definitieve conflicttekst/samenvatting en eigenaar van periodieke restorecontrole bepalen |
+| Fase 3 — back-up en multi-device | circa 94% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen zijn bewezen; een niet-blokkerende automatische 15-minutentrigger en wekelijkse staging-restoreworkflow zijn gebouwd | De eerste geplande restore-run controleren; later server-owned velden van restores afschermen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
 | Fase 4 — server-authoritative economie | circa 15% | Uitgeschakelde payment-providergrens en geauditeerde eenmalige save-import met limieten, hash, rapport en private herstelkopie bestaan | Wallet/ledger/itemtabellen, idempotente RPC's, serverrandomness, compatibiliteitsvenster en gefaseerde migratie van shops, chests, dragons en rewards bouwen | Migratievenster, spelerscommunicatie en gecontroleerd rollbackbeleid goedkeuren; compensatie- en storingsbeleid plus nooit-stil-afnemen-grenzen bevestigen |
 | Fase 5 — Google Play Billing | circa 5%, bewust uitgesteld | Product-ID-contract en uitgeschakelde nepimplementatie houden de architectuur upgradebaar zonder nu kosten te maken | Pas na fase 4 de Billing-SDK, servervalidatie, acknowledgement, refunds/retries en Play-tracktests bouwen | Pas later beslissen of verkoop wenselijk is; merchantprofiel, producten/prijzen/landen, service-identiteit, testers en beleid beheren |
 | Fase 6 — support en privacy | circa 20% | Accountverwijdering, veilige supportdiagnostiek en eerste incidentprocedures bestaan | Minimaal supportzoekpad, procedures, least-privilege logging en consistente retentie/verwijdertests bouwen | Publiek supportadres, verantwoordelijken/reactietijden, privacy- en verwijderpagina, wettelijke retentie en productietoegang beheren |
@@ -244,9 +245,11 @@ De aanbevolen kosteloze begininstelling is:
 - privacyarme DragonHaven-supportexports maximaal zeven dagen bewaren en
   incidentbewijs zonder persoonsgegevens maximaal dertig dagen.
 
-Nog door jou te bevestigen: Spark plus Crashlytics/Performance, Analytics uit,
-Rick als enige eerste alertontvanger en bovenstaande termijnen. Daarna kan Codex
-de Android-clientconfig, opt-in/initialisatie, redactiontests en testalert bouwen.
+Bevestigd op 28 augustus 2026: Spark plus Crashlytics/Performance, Analytics
+uit, Rick als enige eerste alertontvanger en bovenstaande termijnen. De gratis
+GitHub-healthalert is gebouwd. De Android-SDK-koppeling wacht alleen nog op het
+door Rick aangemaakte Firebase-project en `google-services.json`; exacte stappen
+staan in `FIREBASE_MONITORING_SETUP.md`.
 
 ### Concrete keuzehulp voor back-up en herstel (B6)
 
@@ -268,9 +271,10 @@ resterende keuzes is het aanbevolen startpunt:
   maandelijks handmatig bewijs controleren; Rick is in eerste instantie de
   menselijke controle-eigenaar.
 
-Nog door jou te bevestigen: automatische back-up met vijftienminutengrens,
-RPO/RTO en Rick als controle-eigenaar. Codex kan daarna de automatische trigger,
-wekelijkse stagingtest en bijbehorende UI-/conflicttests bouwen.
+Bevestigd op 28 augustus 2026: automatische back-up met vijftienminutengrens,
+bovenstaande RPO/RTO en Rick als maandelijkse controle-eigenaar. De automatische
+trigger en wekelijkse stagingtest zijn gebouwd; de eerste geplande workflowrun
+moet na opname op `main` nog bewijs leveren.
 
 ## Prioriteiten en releasepoorten
 
@@ -367,10 +371,10 @@ bewaren de controle-uitkomst blijvend.
 
 - [ ] Maak en bezit het gekozen monitoring/Firebase-project en registreer
   `nl.dragonhaven.app`.
-- [ ] Kies in eerste instantie het gratis plan en zet budgetmeldingen aan waar
+- [x] Kies in eerste instantie het gratis plan en zet budgetmeldingen aan waar
   de provider dat ondersteunt; een upgrade vereist een apart besluit.
-- [ ] Kies wie waarschuwingen ontvangt, tijdens welke uren en via welk kanaal.
-- [ ] Stel maandbudget, datalocatie en bewaartermijn in.
+- [x] Kies wie waarschuwingen ontvangt, tijdens welke uren en via welk kanaal.
+- [x] Stel maandbudget, datalocatie en bewaartermijn in.
 - [ ] Beoordeel of diagnostische gegevens en toestemming in de
   privacyverklaring/Data Safety moeten worden aangepast.
 - [ ] Geef alleen projectconfiguratie via veilige configuratie of secret stores;
@@ -506,7 +510,7 @@ economie server-authoritative is.
   valuta of items kan terugzetten of dupliceren.
 - [x] Maak automatische integratietests met twee apparaten en overlappende
   uploads/restores.
-- [ ] Voeg een periodieke restore-test en controle op save-integriteit toe.
+- [x] Voeg een periodieke restore-test en controle op save-integriteit toe.
 
 Implementatiebewijs: migraties
 `202608280022_cloud_save_revision_history.sql` en
@@ -522,14 +526,14 @@ stale writes, oudere restore en daarna veilig doorback-uppen.
 
 ### Jij
 
-- [ ] Kies bewaartermijn en aantal herstelrevisies.
-- [ ] Kies of back-up handmatig blijft of ook automatisch op veilige momenten
+- [x] Kies bewaartermijn en aantal herstelrevisies.
+- [x] Kies of back-up handmatig blijft of ook automatisch op veilige momenten
   gebeurt.
 - [ ] Bevestig de conflictteksten en welke voortgangssamenvatting voor spelers
   begrijpelijk is.
-- [ ] Kies RPO en RTO: hoeveel voortgang maximaal verloren mag gaan en binnen
+- [x] Kies RPO en RTO: hoeveel voortgang maximaal verloren mag gaan en binnen
   welke tijd herstel mogelijk moet zijn.
-- [ ] Wijs iemand aan die periodieke restore-resultaten controleert.
+- [x] Wijs iemand aan die periodieke restore-resultaten controleert.
 
 ### Samen klaar wanneer
 
@@ -838,6 +842,12 @@ Een taak of mijlpaal is pas gereed wanneer:
    een expliciete oudere restore en bewaart de vorige cloudkopie bij bewuste
    vervanging. Migraties 21–23 zijn na afzonderlijke expliciete toestemming en
    een exacte 20→23-dry-run naar productie gebracht.
+10. **Gebouwd, bewijsrun volgt na push:** automatische cloudback-up maximaal
+    iedere vijftien minuten, een directe veilige flush bij achtergrond, de wekelijkse
+    staging-restorecontrole en de uurlijkse productie-healthalert.
+11. **Nog door jou voor volledige Firebase-monitoring:** maak het Spark-project,
+    registreer `nl.dragonhaven.app`, laat Analytics uit en zet de gedownloade
+    Android-config volgens `FIREBASE_MONITORING_SETUP.md` in de werkmap.
 
 ## Besluitenlog
 
@@ -848,7 +858,10 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 28-08-2026 | B6-back-up | Per account de laatste vijf cloudrevisies maximaal dertig dagen bewaren | Voldoende herstelruimte met beperkte gratis opslag en privacy-impact | Back-uphistorie, opschoning en herstelkeuze mogen worden gebouwd |
 | 28-08-2026 | M2-testtijd | Een hard staging-only tijdregeling mag Group Adventure completion versnellen | Volledige meerdaagse flow veilig en reproduceerbaar testen zonder productiepad | Completion/reward/replay en cleanup zijn volledig bewezen |
 | 28-08-2026 | Release 0.04.08 | Migraties 21–23 en de nieuwe release zijn expliciet toegestaan | Auditverbeteringen gecontroleerd naar productie brengen | Productie staat op 23/23 en v0.04.08 is openbaar |
-| Nog te bepalen | B3–B5, overige B6 en B7 | Nog niet bevestigd | Beslissen vlak vóór de afhankelijke fase | Alleen de nog afhankelijke delen van M3–M6 wachten |
+| 28-08-2026 | B5-monitoring | Firebase Spark met Crashlytics/Performance, Analytics uit; Rick ontvangt de eerste alerts; afgesproken providerretentie en 7/30 dagen voor support-/incidentbewijs | Gratis en privacyarm beginnen, later makkelijk uitbreidbaar | Healthalert mag worden geautomatiseerd; Firebase-SDK volgt zodra Rick het project/appconfig heeft gemaakt |
+| 28-08-2026 | B6-automatische back-up | Betekenisvolle voortgang maximaal iedere 15 minuten automatisch back-uppen en openstaande voortgang direct veilig flushen bij achtergrond; RPO 15 minuten online, self-service RTO 15 minuten, supportdoel 4 uur; wekelijkse stagingtest en maandelijkse controle door Rick | Voortgang beschermen zonder gameplay of free tier onnodig te belasten | Automatische trigger en wekelijkse restoreworkflow mogen worden gebouwd |
+| 28-08-2026 | Release 0.04.09 | Migratie 24 en een afzonderlijke nieuwe apprelease zijn expliciet toegestaan | Expertisegrenzen en aanvullende fixes client/server-consistent uitrollen | Uitrol volgt pas na staging-, migratie- en releasegates |
+| Nog te bepalen | Overige B3, B4 en B7 | Nog niet bevestigd | Beslissen vlak vóór de afhankelijke fase | Alleen de nog afhankelijke delen van M4–M6 wachten |
 
 ## Voortgangslog
 
@@ -880,6 +893,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 28-08-2026 | v0.04.08 releasecandidate op staging | Codex | [Stagingrun 33197572353](https://github.com/Rakky88/DragonHaven/actions/runs/33197572353) | 23/23 migraties, volledige sociale E2E, analyzer, 261 tests en geïsoleerde staging-APK groen |
 | 28-08-2026 | Productiemigraties 21–23 | Codex, na jouw toestemming | [Migratierun 33198153589](https://github.com/Rakky88/DragonHaven/actions/runs/33198153589) | Exacte beginstand 20, dry-run, database-lint en Auth groen; productie gecontroleerd naar 23/23 gemigreerd en opnieuw geverifieerd |
 | 28-08-2026 | Openbare release v0.04.08 | Codex, na jouw toestemming | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.04.08), [productiegate 33198225157](https://github.com/Rakky88/DragonHaven/actions/runs/33198225157), [taggate 33198930542](https://github.com/Rakky88/DragonHaven/actions/runs/33198930542) | Ondertekende APK van 327.993.256 bytes gepubliceerd; SHA-256 `3880354b1dafebabcc39c824eac8899bfc4a339ad8b5b0b712edb7e971cb2826`; beide productiepreflights, 261 tests en Play-ready AAB groen |
+| 28-08-2026 | B5/B6 implementatietranche voor v0.04.09 | Codex | `automatic_cloud_backup.dart`, `weekly-staging-restore.yml`, `health-check.yml`, `FIREBASE_MONITORING_SETUP.md` | Automatische 15-minutenback-up en achtergrondpoging, wekelijkse echte restore en uurlijkse productiecheck met één toegewezen SEV-1-issue gebouwd; Firebase-client wacht uitsluitend op Rick's projectconfig |
 
 ## Onderhoud van dit plan
 

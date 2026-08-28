@@ -8,11 +8,49 @@ enum DragonStage { egg, hatchling, wyrmling, ascended }
 enum TrainingFocus { might, arcana, spirit }
 
 const int maxDragonExpertise = 300;
+const int ascendedDragonExpertise = 350;
+const int infernalSpecialistExpertise = 400;
 
-Map<String, int> _normalizedTraining(Map<String, int>? values) => {
+int dragonExpertiseMaximum({
+  required DragonStage stage,
+  required bool sinister,
+  required String? evolutionPath,
+  required TrainingFocus focus,
+}) {
+  if (sinister) {
+    if (stage == DragonStage.ascended &&
+        evolutionPath != 'mastery' &&
+        evolutionPath == focus.name) {
+      return infernalSpecialistExpertise;
+    }
+    return ascendedDragonExpertise;
+  }
+  if (stage != DragonStage.ascended) return maxDragonExpertise;
+  if (evolutionPath == 'mastery' || evolutionPath == focus.name) {
+    return ascendedDragonExpertise;
+  }
+  return maxDragonExpertise;
+}
+
+Map<String, int> _normalizedTraining(
+  Map<String, int>? values, {
+  required DragonStage stage,
+  required bool sinister,
+  required String? evolutionPath,
+}) =>
+    {
       for (final focus in TrainingFocus.values)
-        focus.name:
-            (values?[focus.name] ?? 0).clamp(0, maxDragonExpertise).toInt(),
+        focus.name: (values?[focus.name] ?? 0)
+            .clamp(
+              0,
+              dragonExpertiseMaximum(
+                stage: stage,
+                sinister: sinister,
+                evolutionPath: evolutionPath,
+                focus: focus,
+              ),
+            )
+            .toInt(),
     };
 
 const _trialKeys = {'cavernFlight', 'ruinBreaker', 'runeweaver'};
@@ -103,7 +141,12 @@ class Pet {
         acquiredAt = acquiredAt ?? DateTime.now(),
         stageStartedAt = stageStartedAt ?? acquiredAt ?? DateTime.now(),
         needsUpdatedAt = needsUpdatedAt ?? DateTime.now(),
-        training = _normalizedTraining(training),
+        training = _normalizedTraining(
+          training,
+          stage: stage,
+          sinister: sinister,
+          evolutionPath: evolutionPath,
+        ),
         trialHighScores = _normalizedTrialHighScores(trialHighScores),
         personalityTraitIds = personalityTraitIds ?? <String>[],
         hatchSeed = hatchSeed ??
@@ -224,6 +267,14 @@ class Pet {
 
   double get wellbeing => (joy + energy + comfort) / 300;
   int trainingFor(TrainingFocus focus) => training[focus.name] ?? 0;
+  int expertiseMaximum(TrainingFocus focus) => dragonExpertiseMaximum(
+        stage: stage,
+        sinister: sinister,
+        evolutionPath: evolutionPath,
+        focus: focus,
+      );
+  int get maximumTotalExpertise => TrainingFocus.values
+      .fold(0, (total, focus) => total + expertiseMaximum(focus));
   int trialBest(String trialKey) => trialHighScores[trialKey] ?? 0;
 
   bool recordTrialScore(String trialKey, int score) {
@@ -295,10 +346,11 @@ class Pet {
 
   void addTraining(TrainingFocus focus, int amount) {
     if (amount <= 0) return;
+    final maximum = expertiseMaximum(focus);
     training.update(
       focus.name,
-      (value) => (value + amount).clamp(0, maxDragonExpertise).toInt(),
-      ifAbsent: () => amount.clamp(0, maxDragonExpertise).toInt(),
+      (value) => (value + amount).clamp(0, maximum).toInt(),
+      ifAbsent: () => amount.clamp(0, maximum).toInt(),
     );
   }
 

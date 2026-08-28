@@ -10,6 +10,7 @@ class ExpertiseScoreBadge extends StatelessWidget {
     required this.focus,
     required this.focusLabel,
     required this.score,
+    required this.maximum,
     this.iconSize = 21,
     this.expand = false,
   });
@@ -20,10 +21,11 @@ class ExpertiseScoreBadge extends StatelessWidget {
   final TrainingFocus focus;
   final String focusLabel;
   final int score;
+  final int maximum;
   final double iconSize;
   final bool expand;
 
-  bool get isMaxed => score >= maxDragonExpertise;
+  bool get isMaxed => score >= maximum;
 
   @override
   Widget build(BuildContext context) => Row(

@@ -12,13 +12,13 @@ void main() {
       PurchaseCatalog.products
           .where((product) => product.currency == PurchaseCurrency.coins)
           .map((product) => product.amount),
-      [500, 1200, 2800, 6500, 15000, 35000],
+      [500, 1200, 3200, 6500, 15000, 35000],
     );
     expect(
       PurchaseCatalog.products
           .where((product) => product.currency == PurchaseCurrency.gems)
           .map((product) => product.amount),
-      [50, 120, 280, 650, 1500, 3500],
+      [50, 120, 320, 650, 1500, 3500],
     );
   });
 

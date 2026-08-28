@@ -658,6 +658,7 @@ class _TrainingPanel extends StatelessWidget {
             _TrainingBar(
                 focus: focus,
                 value: pet.trainingFor(focus),
+                maximum: pet.expertiseMaximum(focus),
                 leading: pet.leadingPath == focus.name),
         ]),
       ),
@@ -667,9 +668,13 @@ class _TrainingPanel extends StatelessWidget {
 
 class _TrainingBar extends StatelessWidget {
   const _TrainingBar(
-      {required this.focus, required this.value, required this.leading});
+      {required this.focus,
+      required this.value,
+      required this.maximum,
+      required this.leading});
   final TrainingFocus focus;
   final int value;
+  final int maximum;
   final bool leading;
   @override
   Widget build(BuildContext context) {
@@ -696,7 +701,7 @@ class _TrainingBar extends StatelessWidget {
           ]),
           const SizedBox(height: 6),
           LinearProgressIndicator(
-              value: (value / 300).clamp(0, 1),
+              value: (value / maximum).clamp(0, 1),
               minHeight: 8,
               color: color,
               backgroundColor: AppColors.mist,

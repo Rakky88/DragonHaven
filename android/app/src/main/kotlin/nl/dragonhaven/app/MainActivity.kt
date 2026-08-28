@@ -29,7 +29,8 @@ class MainActivity : FlutterActivity() {
     )
 
     private var activityInForeground = false
-    private var musicEnabled = true
+    // Stay silent until Flutter has loaded and sent the persisted preference.
+    private var musicEnabled = false
     private var effectsEnabled = true
     private var musicPlayer: MediaPlayer? = null
     private var musicEnhancer: LoudnessEnhancer? = null
@@ -43,6 +44,7 @@ class MainActivity : FlutterActivity() {
     private var currentMusicTrack: String? = null
     private var fadeGeneration = 0
     private var notificationPermissionRequestPending = false
+    private var notificationChannel: MethodChannel? = null
     private val notificationsWaitingForPermission = linkedMapOf<String, ScheduledNotification>()
     private val mainHandler = Handler(Looper.getMainLooper())
     private val audioManager by lazy { getSystemService(AUDIO_SERVICE) as AudioManager }
@@ -159,8 +161,16 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NOTIFICATION_CHANNEL).setMethodCallHandler { call, result ->
+        notificationChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            NOTIFICATION_CHANNEL,
+        ).also { channel -> channel.setMethodCallHandler { call, result ->
             when (call.method) {
+                "takePendingNavigation" -> {
+                    val kind = intent?.getStringExtra(NOTIFICATION_KIND_EXTRA)
+                    intent?.removeExtra(NOTIFICATION_KIND_EXTRA)
+                    result.success(kind)
+                }
                 "schedule" -> {
                     val id = call.argument<String>("id")
                     val at = call.argument<Long>("at")
@@ -238,7 +248,15 @@ class MainActivity : FlutterActivity() {
                 }
                 else -> result.notImplemented()
             }
-        }
+        } }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val kind = intent.getStringExtra(NOTIFICATION_KIND_EXTRA) ?: return
+        intent.removeExtra(NOTIFICATION_KIND_EXTRA)
+        notificationChannel?.invokeMethod("notificationTap", mapOf("kind" to kind))
     }
 
     // Keep these references explicit. Android's release resource shrinker
@@ -605,6 +623,7 @@ class MainActivity : FlutterActivity() {
     }
 
     companion object {
+        const val NOTIFICATION_KIND_EXTRA = "dragonhaven.notification_kind"
         private const val CHANNEL = "nl.dragonhaven.app/platform"
         private const val AUDIO_CHANNEL = "nl.dragonhaven.app/audio"
         private const val NOTIFICATION_CHANNEL = "nl.dragonhaven.app/notifications"

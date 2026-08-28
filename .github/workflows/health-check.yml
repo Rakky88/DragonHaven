@@ -1,14 +1,22 @@
 name: Public server health check
 
 on:
+  schedule:
+    - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
+  issues: write
+
+concurrency:
+  group: dragonhaven-production-health
+  cancel-in-progress: true
 
 jobs:
   public-health:
     runs-on: windows-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -21,8 +29,58 @@ jobs:
             -OutputPath health/public-health.json
 
       - name: Upload health evidence
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: DragonHaven-public-health
           path: health/public-health.json
-          retention-days: 3
+          retention-days: 30
+
+      - name: Alert Rick on production health failure
+        if: failure()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const title = 'SEV-1: DragonHaven production health check failed';
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            if (!issues.some(issue => issue.title === title)) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body: `The scheduled production health check failed. Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nFollow INCIDENT_RUNBOOK.md. No credentials or player data are included.`,
+                assignees: ['Rakky88'],
+              });
+            }
+
+      - name: Close recovered production health alert
+        if: success()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const title = 'SEV-1: DragonHaven production health check failed';
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            for (const issue of issues.filter(issue => issue.title === title)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `Recovered in health run ${context.runId}.`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+              });
+            }

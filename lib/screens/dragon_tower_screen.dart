@@ -1006,6 +1006,7 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                         TrainingFocus.spirit => strings.pick('Spirit', 'Geest'),
                       },
                       score: dragon.trainingFor(focus),
+                      maximum: dragon.expertiseMaximum(focus),
                       iconSize: 27,
                       expand: true,
                     ),
@@ -1143,7 +1144,9 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                 const Divider(height: 1),
                 ListTile(
                   leading: Opacity(
-                    opacity: dragon.favorite ? .38 : 1,
+                    opacity: dragon.favorite || dragon.activeAdventureId != null
+                        ? .38
+                        : 1,
                     child: const GameIconSprite(
                       GameIconKind.dragonRelease,
                       key: Key('dragon-release-action-sprite'),
@@ -1152,8 +1155,13 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                   ),
                   title:
                       Text(strings.pick('Release dragon…', 'Draak vrijlaten…')),
-                  enabled: !dragon.favorite,
-                  onTap: dragon.favorite
+                  subtitle: dragon.activeAdventureId == null
+                      ? null
+                      : Text(strings.pick(
+                          'This dragon is currently away on an Adventure.',
+                          'Deze draak is momenteel op avontuur.')),
+                  enabled: !dragon.favorite && dragon.activeAdventureId == null,
+                  onTap: dragon.favorite || dragon.activeAdventureId != null
                       ? null
                       : () async {
                           Navigator.pop(sheetContext);

@@ -130,6 +130,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   bool get isConfigured => _repository.isConfigured;
   bool get isSignedIn => _repository.isSignedIn;
   bool get isEmailVerified => _repository.isEmailVerified;
+  String? get currentUserId => _repository.currentUserId;
   String? get currentEmail => _repository.currentEmail;
   List<FriendshipRequest> get incomingRequests => requests
       .where((request) => request.direction == FriendRequestDirection.incoming)
@@ -286,7 +287,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       }) ??
       false;
 
-  Future<bool> backupToCloud() async =>
+  Future<bool> backupToCloud({bool automatic = false}) async =>
       await _run('cloud_save.backup', () async {
         final snapshot = _gameStateSnapshot;
         final loadDeviceId = _deviceId;
@@ -323,9 +324,9 @@ class OnlineAccountProvider extends ChangeNotifier {
         await _rememberCloudBaseRevision(cloudGameSave!.revision);
         cloudConflictSave = null;
         cloudSaveHistory = const [];
-        noticeCode = 'cloud_save_backed_up';
+        if (!automatic) noticeCode = 'cloud_save_backed_up';
         return true;
-      }) ??
+      }, background: automatic) ??
       false;
 
   Future<bool> replaceCloudWithLocal() async =>
@@ -787,10 +788,8 @@ class OnlineAccountProvider extends ChangeNotifier {
     });
   }
 
-  Future<T?> _run<T>(
-    String operationName,
-    Future<T> Function() operation,
-  ) async {
+  Future<T?> _run<T>(String operationName, Future<T> Function() operation,
+      {bool background = false}) async {
     // Future.timeout does not cancel its source future. Keep the single-flight
     // guard active until that source really settles, so a retry after a timeout
     // cannot overlap the original server mutation.
@@ -800,9 +799,11 @@ class OnlineAccountProvider extends ChangeNotifier {
     final stopwatch = Stopwatch()..start();
     _operationInFlight = true;
     busy = true;
-    errorCode = null;
-    supportCode = null;
-    _notify();
+    if (!background) {
+      errorCode = null;
+      supportCode = null;
+      _notify();
+    }
     final operationFuture = Future<T>.sync(operation);
     unawaited(operationFuture.then<void>(
       (_) => _operationInFlight = false,
@@ -824,8 +825,10 @@ class OnlineAccountProvider extends ChangeNotifier {
       return result;
     } on SocialException catch (error) {
       stopwatch.stop();
-      errorCode = error.code;
-      supportCode = DiagnosticIds.supportCode(correlationId);
+      if (!background) {
+        errorCode = error.code;
+        supportCode = DiagnosticIds.supportCode(correlationId);
+      }
       _diagnostics.record(DiagnosticEvent(
         operation: operationName,
         correlationId: correlationId,
@@ -837,20 +840,22 @@ class OnlineAccountProvider extends ChangeNotifier {
       return null;
     } on Object {
       stopwatch.stop();
-      errorCode = 'online_unexpected_error';
-      supportCode = DiagnosticIds.supportCode(correlationId);
+      if (!background) {
+        errorCode = 'online_unexpected_error';
+        supportCode = DiagnosticIds.supportCode(correlationId);
+      }
       _diagnostics.record(DiagnosticEvent(
         operation: operationName,
         correlationId: correlationId,
         outcome: DiagnosticOutcome.failure,
         startedAt: startedAt,
         duration: stopwatch.elapsed,
-        errorCode: errorCode,
+        errorCode: 'online_unexpected_error',
       ));
       return null;
     } finally {
       busy = false;
-      _notify();
+      if (!background) _notify();
     }
   }
 

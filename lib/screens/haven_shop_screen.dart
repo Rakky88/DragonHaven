@@ -37,7 +37,7 @@ class _GemPacks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    const packs = [50, 120, 280, 650, 1500, 3500];
+    const packs = [50, 120, 320, 650, 1500, 3500];
     return ListView(
       key: const PageStorageKey('gem-packs-scroll'),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),

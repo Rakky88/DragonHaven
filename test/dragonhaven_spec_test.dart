@@ -296,6 +296,9 @@ void main() {
       () {
     final manifest =
         File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+    final receiver = File(
+      'android/app/src/main/kotlin/nl/dragonhaven/app/DragonHavenNotificationReceiver.kt',
+    ).readAsStringSync();
     final nativeBridge = File(
       'android/app/src/main/kotlin/nl/dragonhaven/app/MainActivity.kt',
     ).readAsStringSync();
@@ -305,6 +308,12 @@ void main() {
     expect(nativeBridge, contains('setAndAllowWhileIdle'));
     expect(nativeBridge, contains('onRequestPermissionsResult'));
     expect(nativeBridge, contains('notificationsWaitingForPermission'));
+    expect(nativeBridge, contains('private var musicEnabled = false'));
+    expect(nativeBridge, contains('"takePendingNavigation"'));
+    expect(nativeBridge, contains('override fun onNewIntent'));
+    expect(nativeBridge, contains('"notificationTap"'));
+    expect(receiver, contains('NOTIFICATION_KIND_EXTRA'));
+    expect(receiver, contains('notificationId,'));
   });
 
   test('local time maps to the seven requested day phases', () {
@@ -535,6 +544,43 @@ void main() {
     expect(workflow, contains('db push --linked --include-all --dry-run'));
     expect(workflow, contains('release_server_preflight.ps1'));
     expect(workflow, contains('DragonHaven-production-migration-20-to-23'));
+    expect(workflow, isNot(contains("tags:\n      - 'v*'")));
+  });
+
+  test('variable Expertise caps are enforced by migration 24', () {
+    final migration = File(
+      'supabase/migrations/202608280024_variable_expertise_caps.sql',
+    ).readAsStringSync();
+
+    expect(migration, contains('private.dragon_expertise_maximum'));
+    expect(migration, contains('then 400'));
+    expect(migration, contains('then 350'));
+    expect(migration, contains('between 0 and 400'));
+    expect(migration, contains('private.upsert_group_dragon'));
+    expect(migration, contains('publish_social_showcase_v23'));
+    expect(migration, contains('acknowledge_group_adventure_reward'));
+    expect(migration, contains("evolution_path = 'mastery'"));
+    expect(
+      migration,
+      contains(
+        'revoke all on function private.dragon_expertise_maximum',
+      ),
+    );
+  });
+
+  test('production migration 24 workflow is exact and separately confirmed',
+      () {
+    final workflow = File(
+      '.github/workflows/production-migrate-24.yml',
+    ).readAsStringSync();
+
+    expect(workflow, contains('MIGRATE_PRODUCTION_23_TO_24'));
+    expect(workflow, contains("'202608280023'"));
+    expect(workflow, contains("@('202608280024')"));
+    expect(workflow, contains('Compare-Object'));
+    expect(workflow, contains('db push --linked --include-all --dry-run'));
+    expect(workflow, contains('release_server_preflight.ps1'));
+    expect(workflow, contains('DragonHaven-production-migration-23-to-24'));
     expect(workflow, isNot(contains("tags:\n      - 'v*'")));
   });
 }

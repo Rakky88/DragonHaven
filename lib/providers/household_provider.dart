@@ -116,6 +116,7 @@ class HouseholdProvider extends ChangeNotifier {
   final _uuid = const Uuid();
   Future<void> _saveQueue = Future<void>.value();
   Timer? _starterEggTapPersistenceTimer;
+  int _localMutationRevision = 0;
 
   String languageCode = 'en';
   String accountName = '';
@@ -133,6 +134,8 @@ class HouseholdProvider extends ChangeNotifier {
   bool tutorialCompleted = false;
   bool tutorialFullyViewed = false;
   bool showcaseMode = false;
+
+  int get localMutationRevision => _localMutationRevision;
   late Pet pet;
   Pet? incubatingEgg;
   List<DragonEgg> eggStash = [];
@@ -1801,6 +1804,7 @@ class HouseholdProvider extends ChangeNotifier {
         ? earliestHatchAt
         : acceleratedHatchAt;
     egg.stageStartedAt = nextHatchAt.subtract(egg.incubationDuration);
+    _localMutationRevision++;
     notifyListeners();
 
     // A player may tap hundreds of times in quick succession. Persist and
@@ -2009,7 +2013,7 @@ class HouseholdProvider extends ChangeNotifier {
         'full_party' => totalGroupFourCompleted,
         'triple_expertise' =>
           [pet, ...sanctuaryDragons].any((dragon) => TrainingFocus.values.every(
-                    (focus) => dragon.trainingFor(focus) == maxDragonExpertise,
+                    (focus) => dragon.trainingFor(focus) >= maxDragonExpertise,
                   ))
               ? 1
               : 0,
@@ -2373,6 +2377,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<void> _notifyAndSave() async {
+    _localMutationRevision++;
     notifyListeners();
     await _save();
   }

@@ -1434,6 +1434,24 @@ void main() {
     expect(other.favorite, isTrue);
   });
 
+  test('a dragon away on any Adventure cannot be released', () async {
+    final game = HouseholdProvider(random: Random(611));
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..favorite = true;
+    final away = Pet(
+      id: 'away-dragon',
+      name: 'Voyager',
+      stage: DragonStage.ascended,
+      evolutionPath: 'spirit',
+      activeAdventureId: 'group-lobby-or-local-run',
+    );
+    game.sanctuaryDragons.add(away);
+
+    expect(await game.releaseDragon(away.id), isFalse);
+    expect(game.ownedDragons, contains(away));
+  });
+
   test('Tower selection and room occupancy are capped at three per floor',
       () async {
     final game = HouseholdProvider(random: Random(62));

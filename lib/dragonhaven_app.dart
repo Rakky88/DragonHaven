@@ -19,6 +19,8 @@ import 'screens/onboarding_screen.dart';
 import 'screens/pet_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'services/audio_service.dart';
+import 'services/automatic_cloud_backup.dart';
+import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/about_sheet.dart';
 import 'widgets/game_icon_sprite.dart';
@@ -75,8 +77,13 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   late final AppLifecycleListener _lifecycle;
   late final HouseholdProvider _game;
   late final OnlineAccountProvider _online;
+  late final AutomaticCloudBackupCoordinator _automaticCloudBackup;
+  late final StreamSubscription<HavenNotificationDestination>
+      _notificationNavigation;
   Timer? _presentationRetry;
   Timer? _gameClock;
+  int _adventureInitialTab = 0;
+  int _adventureNavigationRevision = 0;
   bool _presentationBusy = false;
   bool _tutorialBusy = false;
 
@@ -85,12 +92,24 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     super.initState();
     _game = context.read<HouseholdProvider>();
     _online = context.read<OnlineAccountProvider>();
+    _automaticCloudBackup = AutomaticCloudBackupCoordinator(
+      game: _game,
+      online: _online,
+    );
+    unawaited(_automaticCloudBackup.initialize());
+    _notificationNavigation = HavenNotifications.navigationEvents.listen(
+      (_) {
+        final destination = HavenNotifications.takePendingNavigation();
+        if (destination != null) _openNotificationDestination(destination);
+      },
+    );
     _game.addListener(_schedulePresentations);
     _gameClock = Timer.periodic(const Duration(minutes: 1), (_) async {
       await _game.refreshForCurrentDate();
       _schedulePresentations();
     });
     _lifecycle = AppLifecycleListener(
+      onPause: () => unawaited(_automaticCloudBackup.tryWhenBackgrounded()),
       onResume: () async {
         _setTowerAmbientMusic();
         await _game.refreshForCurrentDate();
@@ -104,6 +123,8 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       await _game.refreshForCurrentDate();
       await _online.refresh();
       _schedulePresentations();
+      final destination = HavenNotifications.takePendingNavigation();
+      if (destination != null) _openNotificationDestination(destination);
     });
   }
 
@@ -119,6 +140,8 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     _presentationRetry?.cancel();
     _gameClock?.cancel();
     _game.removeListener(_schedulePresentations);
+    _automaticCloudBackup.dispose();
+    unawaited(_notificationNavigation.cancel());
     _lifecycle.dispose();
     super.dispose();
   }
@@ -246,6 +269,34 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     }
   }
 
+  void _openNotificationDestination(HavenNotificationDestination destination) {
+    if (!mounted) return;
+    switch (destination) {
+      case HavenNotificationDestination.adventureCompleted:
+        setState(() {
+          _adventureInitialTab = 3;
+          _adventureNavigationRevision++;
+          _index = 1;
+          _visited.add(1);
+        });
+      case HavenNotificationDestination.adventureTrials:
+        setState(() {
+          _adventureInitialTab = 1;
+          _adventureNavigationRevision++;
+          _index = 1;
+          _visited.add(1);
+        });
+      case HavenNotificationDestination.friends:
+        _selectIndex(0);
+      case HavenNotificationDestination.tower:
+        _selectIndex(2);
+      case HavenNotificationDestination.achievements:
+        Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => const AchievementsScreen(),
+        ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
@@ -253,7 +304,10 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     final eggOnly = game.pet.isEgg;
     final screens = <Widget>[
       const FriendsScreen(),
-      const AdventureHubScreen(),
+      AdventureHubScreen(
+        initialTab: _adventureInitialTab,
+        navigationRevision: _adventureNavigationRevision,
+      ),
       const DragonTowerScreen(),
       const InventoryScreen(),
       const ShopHubScreen(),

@@ -22,7 +22,14 @@ import '../widgets/online_account_access.dart';
 import '../widgets/ui_bits.dart';
 
 class AdventureHubScreen extends StatefulWidget {
-  const AdventureHubScreen({super.key});
+  const AdventureHubScreen({
+    super.key,
+    this.initialTab = 0,
+    this.navigationRevision = 0,
+  });
+
+  final int initialTab;
+  final int navigationRevision;
 
   @override
   State<AdventureHubScreen> createState() => _AdventureHubScreenState();
@@ -36,7 +43,11 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 4, vsync: this);
+    _tabs = TabController(
+      length: 4,
+      initialIndex: widget.initialTab.clamp(0, 3),
+      vsync: this,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final online = context.read<OnlineAccountProvider>();
@@ -47,6 +58,14 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
         setState(() {});
       }
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant AdventureHubScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.navigationRevision != oldWidget.navigationRevision) {
+      _tabs.animateTo(widget.initialTab.clamp(0, 3));
+    }
   }
 
   @override
@@ -607,6 +626,7 @@ class _TrialDragonPicker extends StatelessWidget {
                             focus: focus,
                             focusLabel: _focusName(strings, focus),
                             score: dragon.trainingFor(focus),
+                            maximum: dragon.expertiseMaximum(focus),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -1772,6 +1792,7 @@ class _DragonPickerTile extends StatelessWidget {
                       focus: focus,
                       focusLabel: _focusName(strings, focus),
                       score: dragon.trainingFor(focus),
+                      maximum: dragon.expertiseMaximum(focus),
                     ),
                   ],
                 ),

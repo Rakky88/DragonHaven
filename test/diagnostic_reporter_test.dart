@@ -45,4 +45,14 @@ void main() {
     expect(await StorageService.loadCloudBaseRevision('keeper-a'), 3);
     expect(await StorageService.loadCloudBaseRevision('keeper-b'), 8);
   });
+
+  test('automatic cloud backup cadence is stored per account', () async {
+    final at = DateTime.utc(2026, 8, 28, 14, 30);
+    expect(await StorageService.loadAutomaticCloudBackupAt('keeper-a'), isNull);
+
+    await StorageService.saveAutomaticCloudBackupAt('keeper-a', at);
+
+    expect(await StorageService.loadAutomaticCloudBackupAt('keeper-a'), at);
+    expect(await StorageService.loadAutomaticCloudBackupAt('keeper-b'), isNull);
+  });
 }

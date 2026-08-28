@@ -12,12 +12,14 @@ import 'providers/online_account_provider.dart';
 import 'screens/sprite_audit_screen.dart';
 import 'services/audio_service.dart';
 import 'services/diagnostic_reporter.dart';
+import 'services/notification_service.dart';
 import 'services/social_repository.dart';
 import 'services/storage_service.dart';
 import 'services/supabase_social_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await HavenNotifications.initializeNavigation();
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,

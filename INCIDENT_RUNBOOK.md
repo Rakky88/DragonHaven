@@ -1,7 +1,8 @@
 # DragonHaven incident- en diagnoserunbook
 
 Laatst bijgewerkt: **28 augustus 2026**  
-Uitgangsversie: **v0.04.08 / productieschema 23**
+Uitgangsversie: **v0.04.09-releasecandidate / productieschema 23; migratie 24
+voorbereid**
 
 ## Doel
 
@@ -22,8 +23,10 @@ databasewachtwoorden of volledige saves in een ticket of incidentlog.
   en timings. E-mail, wachtwoord, tokens, inventory en save-inhoud ontbreken.
 - `tool/public_server_health_check.ps1` meet de twee publieke Auth-endpoints en
   kan een JSON-rapport bewaren.
-- De handmatige GitHub-workflow **Public server health check** voert dezelfde
-  check uit zonder private secrets en bewaart het artifact drie dagen.
+- De GitHub-workflow **Public server health check** voert dezelfde check ieder
+  uur en handmatig uit zonder private secrets en bewaart het artifact dertig
+  dagen. Een mislukking opent één aan `Rakky88` toegewezen SEV-1-issue; een
+  geslaagde herstelrun sluit die melding met een herstelnotitie.
 - [Healthrun 33194121092](https://github.com/Rakky88/DragonHaven/actions/runs/33194121092)
   bewees op 28 augustus 2026 dat deze productiecheck en artifactopslag groen
   werken met de actuele CI-runtime.

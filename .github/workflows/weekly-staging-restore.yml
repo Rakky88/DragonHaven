@@ -1,0 +1,81 @@
+name: Weekly staging restore verification
+
+on:
+  schedule:
+    - cron: '20 4 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dragonhaven-weekly-staging-restore
+  cancel-in-progress: false
+
+jobs:
+  restore-roundtrip:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Verify isolated staging configuration
+        shell: pwsh
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+        run: |
+          $required = @(
+            'STAGING_SUPABASE_URL',
+            'STAGING_SUPABASE_PUBLISHABLE_KEY',
+            'STAGING_SUPABASE_PROJECT_REF',
+            'STAGING_E2E_EMAIL',
+            'STAGING_E2E_PASSWORD'
+          )
+          foreach ($name in $required) {
+            if ([string]::IsNullOrWhiteSpace(
+              [Environment]::GetEnvironmentVariable($name)
+            )) {
+              throw "Ontbrekend stagingsecret: $name."
+            }
+          }
+          if ($env:STAGING_SUPABASE_PROJECT_REF -eq 'tnzathhutuwmohmjfrlo') {
+            throw 'De restoretest mag nooit het productieproject gebruiken.'
+          }
+          if ($env:STAGING_SUPABASE_URL -notmatch
+              [regex]::Escape($env:STAGING_SUPABASE_PROJECT_REF)) {
+            throw 'De staging-URL en projectreference horen niet bij elkaar.'
+          }
+          New-Item -ItemType Directory -Path staging -Force | Out-Null
+          'Stagingconfiguratie is aanwezig en van productie geïsoleerd.' |
+            Set-Content staging/restore-environment.txt -Encoding utf8
+
+      - name: Exercise current and historic cloud-save restore
+        shell: pwsh
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+        run: |
+          ./tool/staging_auth_e2e.ps1 `
+            -Mode VerifyConfirmedAccount `
+            -SupabaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Email $env:STAGING_E2E_EMAIL `
+            -Password $env:STAGING_E2E_PASSWORD `
+            -EvidencePath staging/weekly-restore.txt
+
+      - name: Upload restore evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: DragonHaven-weekly-staging-restore-${{ github.run_number }}
+          path: staging/
+          if-no-files-found: warn
+          retention-days: 30

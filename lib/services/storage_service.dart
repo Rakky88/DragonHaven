@@ -9,6 +9,8 @@ abstract final class StorageService {
   static const recoveryKey = 'dragon_haven_state_v1_recovery';
   static const deviceIdKey = 'dragon_haven_device_id_v1';
   static const cloudBaseRevisionPrefix = 'dragon_haven_cloud_base_revision_v1_';
+  static const automaticCloudBackupPrefix =
+      'dragon_haven_automatic_cloud_backup_v1_';
 
   static bool lastLoadRecoveredFromBackup = false;
 
@@ -90,6 +92,32 @@ abstract final class StorageService {
         await prefs.setInt('$cloudBaseRevisionPrefix$userId', revision);
     if (!saved) {
       throw StateError('Cloud base revision could not be saved.');
+    }
+  }
+
+  static Future<DateTime?> loadAutomaticCloudBackupAt(String userId) async {
+    if (userId.trim().isEmpty) return null;
+    final prefs = await SharedPreferences.getInstance();
+    final milliseconds = prefs.getInt('$automaticCloudBackupPrefix$userId');
+    return milliseconds == null
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(milliseconds, isUtc: true);
+  }
+
+  static Future<void> saveAutomaticCloudBackupAt(
+    String userId,
+    DateTime at,
+  ) async {
+    if (userId.trim().isEmpty) {
+      throw ArgumentError('Invalid automatic cloud backup account.');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final saved = await prefs.setInt(
+      '$automaticCloudBackupPrefix$userId',
+      at.millisecondsSinceEpoch,
+    );
+    if (!saved) {
+      throw StateError('Automatic cloud backup timestamp could not be saved.');
     }
   }
 

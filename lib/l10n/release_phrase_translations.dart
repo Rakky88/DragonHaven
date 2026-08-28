@@ -1,6 +1,14 @@
 /// Fixed UI translations added for the 0.04.06 release.
 /// Order: German, Spanish, French, Italian, Portuguese and Japanese.
 const releasePhraseTranslations = <String, List<String>>{
+  'This dragon is currently away on an Adventure.': [
+    'Dieser Drache ist gerade auf einem Abenteuer.',
+    'Este dragón está actualmente en una Aventura.',
+    'Ce dragon est actuellement parti en Aventure.',
+    'Questo drago è attualmente in Avventura.',
+    'Este dragão está atualmente em uma Aventura.',
+    'このドラゴンは現在アドベンチャー中です。'
+  ],
   'Jukebox': [
     'Musikbox',
     'Gramola',

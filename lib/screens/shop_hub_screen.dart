@@ -880,8 +880,8 @@ class _CurrencyPacks extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final packs = currency == ItemCurrency.coins
-        ? const [500, 1200, 2800, 6500, 15000, 35000]
-        : const [50, 120, 280, 650, 1500, 3500];
+        ? const [500, 1200, 3200, 6500, 15000, 35000]
+        : const [50, 120, 320, 650, 1500, 3500];
     return ListView(
       key: PageStorageKey('${currency.name}-packs-scroll'),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),

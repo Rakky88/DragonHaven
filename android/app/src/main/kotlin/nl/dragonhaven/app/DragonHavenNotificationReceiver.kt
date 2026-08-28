@@ -62,9 +62,11 @@ class DragonHavenNotificationReceiver : BroadcastReceiver() {
             }
             val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
                 ?: Intent(context, MainActivity::class.java)
+            launch.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            launch.putExtra(MainActivity.NOTIFICATION_KIND_EXTRA, kind)
             val pendingLaunch = PendingIntent.getActivity(
                 context,
-                0,
+                notificationId,
                 launch,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )

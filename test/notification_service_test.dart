@@ -9,12 +9,32 @@ void main() {
 
   setUp(() {
     calls.clear();
+    HavenNotifications.takePendingNavigation();
     HavenNotifications.configure(HavenNotificationCategory.values.toSet());
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
       return true;
     });
+  });
+
+  test('notification kinds map to their logical in-app destinations', () {
+    final cases = <String, HavenNotificationDestination>{
+      'adventure_complete': HavenNotificationDestination.adventureCompleted,
+      'trials_full': HavenNotificationDestination.adventureTrials,
+      'friend_request': HavenNotificationDestination.friends,
+      'friend_accepted': HavenNotificationDestination.friends,
+      'trade': HavenNotificationDestination.friends,
+      'achievement': HavenNotificationDestination.achievements,
+      'egg': HavenNotificationDestination.tower,
+      'evolution': HavenNotificationDestination.tower,
+    };
+
+    for (final entry in cases.entries) {
+      HavenNotifications.handleNavigationKindForTest(entry.key);
+      expect(HavenNotifications.takePendingNavigation(), entry.value,
+          reason: entry.key);
+    }
   });
 
   test('disabled notification reasons do not reach the native bridge',

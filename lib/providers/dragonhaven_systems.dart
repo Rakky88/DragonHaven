@@ -969,7 +969,10 @@ extension DragonHavenSystems on HouseholdProvider {
     }
 
     final grantedXp = _grantDragonXp(dragon, xp);
-    dragon.addTraining(parsedFocus, statPoints.clamp(0, maxDragonExpertise));
+    dragon.addTraining(
+      parsedFocus,
+      statPoints.clamp(0, dragon.expertiseMaximum(parsedFocus)),
+    );
     if (dragon.activeAdventureId?.startsWith('online-group:') == true) {
       dragon.activeAdventureId = null;
     }
@@ -1044,6 +1047,7 @@ extension DragonHavenSystems on HouseholdProvider {
         'An Adventure reward is ready in DragonHaven.',
         'Er staat een Adventure-beloning klaar in DragonHaven.',
       ),
+      kind: 'adventure_complete',
     );
     adventureOptionIds[adventure.kind]?.remove(adventure.id);
     if (adventure.kind == AdventureKind.mini) {

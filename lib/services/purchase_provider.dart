@@ -27,9 +27,9 @@ abstract final class PurchaseCatalog {
       amount: 1200,
     ),
     PurchaseProductDefinition(
-      internalId: 'coins_2800',
+      internalId: 'coins_3200',
       currency: PurchaseCurrency.coins,
-      amount: 2800,
+      amount: 3200,
     ),
     PurchaseProductDefinition(
       internalId: 'coins_6500',
@@ -57,9 +57,9 @@ abstract final class PurchaseCatalog {
       amount: 120,
     ),
     PurchaseProductDefinition(
-      internalId: 'gems_0280',
+      internalId: 'gems_0320',
       currency: PurchaseCurrency.gems,
-      amount: 280,
+      amount: 320,
     ),
     PurchaseProductDefinition(
       internalId: 'gems_0650',

@@ -14,6 +14,7 @@ import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/providers/online_account_provider.dart';
 import 'package:dragon_haven/screens/adventure_hub_screen.dart';
 import 'package:dragon_haven/services/diagnostic_reporter.dart';
+import 'package:dragon_haven/services/automatic_cloud_backup.dart';
 import 'package:dragon_haven/services/social_repository.dart';
 import 'package:dragon_haven/widgets/online_account_access.dart';
 import 'package:flutter/material.dart';
@@ -1165,6 +1166,60 @@ void main() {
     await game.updateAccountName('Local Change');
     expect(await online.restoreFromCloud(), isTrue);
     expect(game.accountName, 'Cloud Keeper');
+    online.dispose();
+  });
+
+  test('automatic backup coalesces progress to a fifteen-minute cadence',
+      () async {
+    var now = DateTime.utc(2026, 8, 28, 12);
+    final game = HouseholdProvider(random: Random(990), clock: () => now);
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+      gameStateSnapshot: game.exportState,
+      deviceId: () async => 'automatic-device',
+    );
+    await online.initialize();
+    final savedCadence = <DateTime>[];
+    final coordinator = AutomaticCloudBackupCoordinator(
+      game: game,
+      online: online,
+      clock: () => now,
+      loadLastSuccessfulAt: (_) async => null,
+      saveLastSuccessfulAt: (_, at) async => savedCadence.add(at),
+    );
+    await coordinator.initialize();
+
+    await game.updateAccountName('First automatic change');
+    while (repository.cloudSave == null || online.busy) {
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+    }
+    expect(repository.cloudSave?.revision, 1);
+    expect(savedCadence, [now]);
+    expect(online.noticeCode, isNull,
+        reason: 'a background save must not show a foreground success toast');
+
+    await game.updateAccountName('Coalesced change');
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(repository.cloudSave?.revision, 1);
+
+    now = now.add(const Duration(minutes: 1));
+    expect(await coordinator.tryWhenBackgrounded(), isTrue);
+    expect(repository.cloudSave?.revision, 2);
+    expect(repository.cloudSave?.state['accountName'], 'Coalesced change');
+
+    await game.updateAccountName('Next foreground change');
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(repository.cloudSave?.revision, 2);
+
+    now = now.add(const Duration(minutes: 15));
+    expect(await coordinator.tryWhenBackgrounded(), isTrue);
+    expect(repository.cloudSave?.revision, 3);
+    expect(
+        repository.cloudSave?.state['accountName'], 'Next foreground change');
+
+    coordinator.dispose();
     online.dispose();
   });
 

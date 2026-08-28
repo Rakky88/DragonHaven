@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 enum HavenNotificationCategory {
@@ -12,10 +15,71 @@ enum HavenNotificationCategory {
   trialsFull,
 }
 
+enum HavenNotificationDestination {
+  tower,
+  friends,
+  adventureCompleted,
+  adventureTrials,
+  achievements,
+}
+
 abstract final class HavenNotifications {
   static const _channel = MethodChannel('nl.dragonhaven.app/notifications');
+  static final _navigationEvents =
+      StreamController<HavenNotificationDestination>.broadcast();
   static Set<HavenNotificationCategory> _enabled =
       HavenNotificationCategory.values.toSet();
+  static HavenNotificationDestination? _pendingNavigation;
+
+  static Stream<HavenNotificationDestination> get navigationEvents =>
+      _navigationEvents.stream;
+
+  static Future<void> initializeNavigation() async {
+    _channel.setMethodCallHandler((call) async {
+      if (call.method != 'notificationTap') return;
+      _recordNavigation(call.arguments is Map
+          ? (call.arguments as Map)['kind']?.toString()
+          : null);
+    });
+    try {
+      final kind = await _channel.invokeMethod<String>('takePendingNavigation');
+      if (kind != null) _recordNavigation(kind, emit: false);
+    } on MissingPluginException {
+      // Tests and unsupported platforms intentionally have no native bridge.
+    } on PlatformException {
+      // A malformed launch intent must never block application startup.
+    }
+  }
+
+  static HavenNotificationDestination? takePendingNavigation() {
+    final destination = _pendingNavigation;
+    _pendingNavigation = null;
+    return destination;
+  }
+
+  @visibleForTesting
+  static void handleNavigationKindForTest(String kind) =>
+      _recordNavigation(kind);
+
+  static void _recordNavigation(String? kind, {bool emit = true}) {
+    final destination = switch (kind) {
+      'adventure_complete' => HavenNotificationDestination.adventureCompleted,
+      'trials_full' => HavenNotificationDestination.adventureTrials,
+      'friend_request' ||
+      'friend_accepted' ||
+      'trade' =>
+        HavenNotificationDestination.friends,
+      'achievement' => HavenNotificationDestination.achievements,
+      'egg' ||
+      'evolution' ||
+      'event' ||
+      null =>
+        HavenNotificationDestination.tower,
+      _ => HavenNotificationDestination.tower,
+    };
+    _pendingNavigation = destination;
+    if (emit) _navigationEvents.add(destination);
+  }
 
   static void configure(Set<HavenNotificationCategory> enabled) {
     _enabled = Set.of(enabled);
