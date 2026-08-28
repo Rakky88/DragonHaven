@@ -502,6 +502,9 @@ void main() {
     expect(script, contains('/database/query'));
     expect(script, contains(r"$ProjectRef -eq 'tnzathhutuwmohmjfrlo'"));
     expect(script, contains("status = 'running'"));
+    expect(script, contains('Set-StagingGroupAdventureTwoPlayerFixture'));
+    expect(script, contains('set required_players = 2'));
+    expect(script, contains("l.status = 'waiting'"));
     expect(script, contains("interval '1 second'"));
     expect(script, contains('acknowledge_group_adventure_reward'));
     expect(script, contains('Een herhaalde Group Adventure-acknowledgement'));

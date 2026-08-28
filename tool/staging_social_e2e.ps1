@@ -309,6 +309,41 @@ from advanced;
     }
 }
 
+function Set-StagingGroupAdventureTwoPlayerFixture {
+    param([Parameter(Mandatory = $true)][string]$LobbyId)
+
+    $parsedLobbyId = [Guid]::Empty
+    if (-not [Guid]::TryParse($LobbyId, [ref]$parsedLobbyId)) {
+        throw 'De staging-only deelnemersregeling kreeg geen geldige lobby-id.'
+    }
+    $safeLobbyId = $parsedLobbyId.ToString()
+    $query = @"
+with adjusted as (
+  update public.group_adventure_lobbies l
+  set required_players = 2
+  where l.id = '$safeLobbyId'::uuid
+    and l.status = 'waiting'
+    and l.owner_id is not null
+    and (
+      select count(*)
+      from public.group_adventure_participants gp
+      where gp.lobby_id = l.id
+    ) = 1
+  returning l.id, l.required_players
+)
+select id::text as lobby_id, required_players
+from adjusted;
+"@
+    $rows = Get-ManagementRows (Invoke-StagingManagementQuery `
+        -Query $query `
+        -Operation 'Staging-only Group Adventure-deelnemersregeling')
+    if ($rows.Count -ne 1 -or
+        [string](Get-PropertyValue -InputObject $rows[0] -Name 'lobby_id') -ne $safeLobbyId -or
+        [int](Get-PropertyValue -InputObject $rows[0] -Name 'required_players') -ne 2) {
+        throw 'De staging-only deelnemersregeling heeft niet exact één wachtende testlobby aangepast.'
+    }
+}
+
 function Remove-StagingGroupAdventureFixture {
     param([Parameter(Mandatory = $true)][string]$LobbyId)
 
@@ -747,6 +782,11 @@ try {
     $requiredPlayers = [int](Get-PropertyValue `
         -InputObject $peerLobby `
         -Name 'required_players')
+    $originalRequiredPlayers = $requiredPlayers
+    if ($CompleteGroupAdventure -and $requiredPlayers -gt 2) {
+        Set-StagingGroupAdventureTwoPlayerFixture -LobbyId $createdLobbyId
+        $requiredPlayers = 2
+    }
     if ($requiredPlayers -gt 2) {
         $joinResponse = Invoke-StagingRpc `
             -Session $peer `
@@ -767,9 +807,6 @@ try {
             throw 'De deelname aan de staging Group Adventure was niet zichtbaar.'
         }
         $groupJoinResult = "created, joined and left safely ($requiredPlayers-player offer)"
-        if ($CompleteGroupAdventure) {
-            throw "De huidige stagingroute vereist $requiredPlayers spelers; de veilige tweepersoonstijdtest kan deze route niet vervroegd voltooien."
-        }
     } elseif (-not $CompleteGroupAdventure) {
         $groupJoinResult = 'join skipped safely because a 2-player offer would start a multi-day run'
     } else {
@@ -781,7 +818,11 @@ try {
         if (-not [bool]$joinResponse.Body) {
             throw 'De volledige stagingtest heeft de tweepersoons-Group Adventure niet gestart.'
         }
-        $groupJoinResult = 'two-player adventure started server-authoritatively'
+        $groupJoinResult = if ($originalRequiredPlayers -gt 2) {
+            "${originalRequiredPlayers}-player fixture normalized to two; adventure started through the regular server RPC"
+        } else {
+            'two-player adventure started server-authoritatively'
+        }
 
         foreach ($session in @($primary, $peer)) {
             $runningLobby = Get-Rows (Invoke-RequiredRpc `
