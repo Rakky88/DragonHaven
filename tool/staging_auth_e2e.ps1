@@ -69,7 +69,10 @@ function Get-SafeFailure {
         [int]$StatusCode
     )
 
-    foreach ($name in @('error_code', 'code', 'msg', 'message', 'error_description')) {
+    # PostgREST returns raised SQL exceptions as code P0001 plus the useful,
+    # stable application error in message. Prefer that application error so
+    # assertions do not mistake a correctly rejected request for a test failure.
+    foreach ($name in @('error_code', 'message', 'msg', 'code', 'error_description')) {
         $value = Get-PropertyValue -InputObject $Body -Name $name
         if (-not [string]::IsNullOrWhiteSpace([string]$value)) {
             $safe = ([string]$value).Replace($normalizedEmail, '[redacted-email]')
