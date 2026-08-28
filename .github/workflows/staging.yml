@@ -12,6 +12,8 @@ on:
           - public-only
           - request-confirmation
           - confirmed-account
+          - request-peer-confirmation
+          - social-flow
 
 permissions:
   contents: read
@@ -34,6 +36,8 @@ jobs:
           STAGING_SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
           STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
           STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+          STAGING_E2E_PEER_EMAIL: ${{ secrets.STAGING_E2E_PEER_EMAIL }}
+          STAGING_E2E_PEER_PASSWORD: ${{ secrets.STAGING_E2E_PEER_PASSWORD }}
           AUTH_CHECK: ${{ inputs.auth_check }}
         run: |
           $required = @(
@@ -77,6 +81,18 @@ jobs:
             )
             if ($missingE2E.Count -gt 0) {
               throw "Ontbrekende afgeschermde staging-E2E-configuratie: $($missingE2E -join ', ')."
+            }
+          }
+          if ($env:AUTH_CHECK -in @('request-peer-confirmation', 'social-flow')) {
+            $missingPeer = @(
+              foreach ($name in @('STAGING_E2E_PEER_EMAIL', 'STAGING_E2E_PEER_PASSWORD')) {
+                if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+                  $name
+                }
+              }
+            )
+            if ($missingPeer.Count -gt 0) {
+              throw "Ontbrekende afgeschermde tweede stagingaccountconfiguratie: $($missingPeer -join ', ')."
             }
           }
           'Stagingconfiguratie aanwezig; waarden worden niet gelogd.'
@@ -159,6 +175,42 @@ jobs:
             -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
             -Email $env:STAGING_E2E_EMAIL `
             -Password $env:STAGING_E2E_PASSWORD
+
+      - name: Request second staging account confirmation
+        if: ${{ inputs.auth_check == 'request-peer-confirmation' }}
+        shell: pwsh
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_E2E_PEER_EMAIL: ${{ secrets.STAGING_E2E_PEER_EMAIL }}
+          STAGING_E2E_PEER_PASSWORD: ${{ secrets.STAGING_E2E_PEER_PASSWORD }}
+        run: |
+          ./tool/staging_auth_e2e.ps1 `
+            -Mode RequestConfirmation `
+            -SupabaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Email $env:STAGING_E2E_PEER_EMAIL `
+            -Password $env:STAGING_E2E_PEER_PASSWORD `
+            -EvidencePath staging/peer-auth-e2e.txt
+
+      - name: Verify two-account social staging flow
+        if: ${{ inputs.auth_check == 'social-flow' }}
+        shell: pwsh
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+          STAGING_E2E_PEER_EMAIL: ${{ secrets.STAGING_E2E_PEER_EMAIL }}
+          STAGING_E2E_PEER_PASSWORD: ${{ secrets.STAGING_E2E_PEER_PASSWORD }}
+        run: |
+          ./tool/staging_social_e2e.ps1 `
+            -SupabaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -PrimaryEmail $env:STAGING_E2E_EMAIL `
+            -PrimaryPassword $env:STAGING_E2E_PASSWORD `
+            -PeerEmail $env:STAGING_E2E_PEER_EMAIL `
+            -PeerPassword $env:STAGING_E2E_PEER_PASSWORD
 
       - name: Analyze
         run: flutter analyze --no-pub
