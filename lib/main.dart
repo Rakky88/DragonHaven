@@ -93,7 +93,12 @@ Future<void> main() async {
     deviceId: StorageService.deviceId,
     languageCode: () => game.languageCode,
   );
-  await online.initialize();
+  await online.initialize(waitForFirstRefresh: false);
+  await HavenAudio.configureJukebox(
+    trackIds: game.enabledMusicResourceIds,
+    shuffle: game.jukeboxShuffle,
+    repeat: game.jukeboxRepeat,
+  );
   await HavenAudio.applyPreferences(
     musicEnabled: game.musicEnabled,
     soundEffectsEnabled: game.soundEffectsEnabled,

@@ -12,12 +12,12 @@ import 'package:dragon_haven/models/shop_item.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  const translatedLanguages = ['de', 'es', 'fr', 'it', 'pt', 'zh', 'ja'];
+  const translatedLanguages = ['de', 'es', 'fr', 'it', 'pt', 'ja'];
 
-  test('every fixed UI phrase has all seven additional translations', () {
+  test('every fixed UI phrase has all six additional translations', () {
     expect(uiPhraseTranslations.length, greaterThanOrEqualTo(260));
     for (final entry in uiPhraseTranslations.entries) {
-      expect(entry.value, hasLength(7), reason: entry.key);
+      expect(entry.value, hasLength(6), reason: entry.key);
       expect(entry.value.every((value) => value.trim().isNotEmpty), isTrue,
           reason: entry.key);
       for (final language in translatedLanguages) {

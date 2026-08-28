@@ -7,8 +7,7 @@ const catalogLanguageIndex = <String, int>{
   'fr': 2,
   'it': 3,
   'pt': 4,
-  'zh': 5,
-  'ja': 6,
+  'ja': 5,
 };
 
 String _catalogValue(String languageCode, List<String> values) =>
@@ -43,7 +42,6 @@ const _originalItemNames = <String, List<String>>{
     'Coussin de mousse',
     'Cuscino di muschio',
     'Almofada de musgo',
-    '苔藓软垫',
     '苔のクッション'
   ],
   'cloud_basket': [
@@ -52,7 +50,6 @@ const _originalItemNames = <String, List<String>>{
     'Panier-nuage',
     'Cesta di nuvole',
     'Cesto de nuvens',
-    '云朵篮',
     '雲のかご'
   ],
   'moon_fern': [
@@ -61,7 +58,6 @@ const _originalItemNames = <String, List<String>>{
     'Fougère lunaire',
     'Felce lunare',
     'Samambaia lunar',
-    '月光蕨',
     '月のシダ'
   ],
   'star_bonsai': [
@@ -70,7 +66,6 @@ const _originalItemNames = <String, List<String>>{
     'Bonsaï étoilé',
     'Bonsai stellare',
     'Bonsai estelar',
-    '星辰盆景',
     '星の盆栽'
   ],
   'spire_map': [
@@ -79,7 +74,6 @@ const _originalItemNames = <String, List<String>>{
     'Carte de la Flèche',
     'Mappa della Guglia',
     'Mapa da Torre',
-    '尖塔地图',
     '塔の地図'
   ],
   'moon_banner': [
@@ -88,7 +82,6 @@ const _originalItemNames = <String, List<String>>{
     'Bannière lunaire',
     'Stendardo lunare',
     'Estandarte lunar',
-    '月光旗帜',
     '月の旗'
   ],
   'firefly_lamp': [
@@ -97,7 +90,6 @@ const _originalItemNames = <String, List<String>>{
     'Lampe aux lucioles',
     'Lampada delle lucciole',
     'Lâmpada de vaga-lumes',
-    '萤火虫灯',
     '蛍のランプ'
   ],
   'crystal_lantern': [
@@ -106,7 +98,6 @@ const _originalItemNames = <String, List<String>>{
     'Lanterne de cristal',
     'Lanterna di cristallo',
     'Lanterna de cristal',
-    '水晶灯笼',
     '水晶のランタン'
   ],
 };
@@ -118,7 +109,6 @@ const _originalItemDescriptions = <String, List<String>>{
     'Un coussin moelleux qui sent la pluie.',
     'Un morbido cuscino che profuma di pioggia.',
     'Uma almofada macia com cheiro de chuva.',
-    '散发着雨水气息的柔软坐垫。',
     '雨の香りがする柔らかなクッション。'
   ],
   'cloud_basket': [
@@ -127,7 +117,6 @@ const _originalItemDescriptions = <String, List<String>>{
     'Pour des rêves de dragon sans angles pointus.',
     'Per sogni di drago senza spigoli.',
     'Para sonhos de dragão sem pontas afiadas.',
-    '让龙做没有尖角的美梦。',
     '角のない、やさしいドラゴンの夢のために。'
   ],
   'moon_fern': [
@@ -136,7 +125,6 @@ const _originalItemDescriptions = <String, List<String>>{
     'Ses feuilles se déploient au clair de lune.',
     'Le sue foglie si aprono al chiaro di luna.',
     'Suas folhas se abrem ao luar.',
-    '叶片会在月光下舒展。',
     '月明かりを浴びると葉が開きます。'
   ],
   'star_bonsai': [
@@ -145,7 +133,6 @@ const _originalItemDescriptions = <String, List<String>>{
     'Un petit arbre rare aux bourgeons dorés.',
     'Un raro alberello con gemme dorate.',
     'Uma rara arvorezinha com brotos dourados.',
-    '一棵长着金色花苞的稀有小树。',
     '金色のつぼみをつけた珍しい小さな木。'
   ],
   'spire_map': [
@@ -154,7 +141,6 @@ const _originalItemDescriptions = <String, List<String>>{
     'Chaque balcon indiqué promet une petite découverte.',
     'Ogni balcone segnato promette una piccola scoperta.',
     'Cada varanda marcada promete uma pequena descoberta.',
-    '每个标记的阳台都预示着一个小发现。',
     '印のついたバルコニーには小さな発見が待っています。'
   ],
   'moon_banner': [
@@ -163,7 +149,6 @@ const _originalItemDescriptions = <String, List<String>>{
     'Donne au nid une lueur héroïque.',
     'Dona al nido un bagliore eroico.',
     'Dá ao ninho um brilho heroico.',
-    '为巢穴增添英雄般的光辉。',
     '巣を勇ましく輝かせます。'
   ],
   'firefly_lamp': [
@@ -172,7 +157,6 @@ const _originalItemDescriptions = <String, List<String>>{
     'Une lumière chaude, poliment conservée dans un bocal.',
     'Luce calda, custodita con garbo in un barattolo.',
     'Luz quente, educadamente guardada em um pote.',
-    '温暖的光，被礼貌地收在罐子里。',
     '瓶の中でお行儀よく光る、あたたかな明かり。'
   ],
   'crystal_lantern': [
@@ -181,93 +165,49 @@ const _originalItemDescriptions = <String, List<String>>{
     'Une lueur turquoise pour les lectures nocturnes.',
     'Un bagliore turchese per leggere a tarda notte.',
     'Um brilho turquesa para leituras noturnas.',
-    '适合深夜阅读的青绿色光芒。',
     '夜更けの読書にぴったりなターコイズの光。'
   ],
 };
 
 const _furnitureThemes = <String, List<String>>{
-  'aurora': [
-    'Polarlicht',
-    'Aurora',
-    'Aurore',
-    'Aurora',
-    'Aurora',
-    '极光',
-    'オーロラ'
-  ],
-  'ember': ['Glut', 'Brasa', 'Braise', 'Brace', 'Brasa', '余烬', '残り火'],
-  'moon': ['Mond', 'Luna', 'Lune', 'Luna', 'Lua', '月光', '月'],
-  'forest': ['Wald', 'Bosque', 'Forêt', 'Foresta', 'Floresta', '森林', '森'],
-  'ocean': ['Ozean', 'Océano', 'Océan', 'Oceano', 'Oceano', '海洋', '海'],
-  'crystal': [
-    'Kristall',
-    'Cristal',
-    'Cristal',
-    'Cristallo',
-    'Cristal',
-    '水晶',
-    '水晶'
-  ],
-  'cloud': ['Wolken', 'Nube', 'Nuage', 'Nuvola', 'Nuvem', '云朵', '雲'],
-  'sun': ['Sonnen', 'Sol', 'Soleil', 'Sole', 'Sol', '太阳', '太陽'],
-  'lavender': [
-    'Lavendel',
-    'Lavanda',
-    'Lavande',
-    'Lavanda',
-    'Lavanda',
-    '薰衣草',
-    'ラベンダー'
-  ],
-  'copper': ['Kupfer', 'Cobre', 'Cuivre', 'Rame', 'Cobre', '铜', '銅'],
+  'aurora': ['Polarlicht', 'Aurora', 'Aurore', 'Aurora', 'Aurora', 'オーロラ'],
+  'ember': ['Glut', 'Brasa', 'Braise', 'Brace', 'Brasa', '残り火'],
+  'moon': ['Mond', 'Luna', 'Lune', 'Luna', 'Lua', '月'],
+  'forest': ['Wald', 'Bosque', 'Forêt', 'Foresta', 'Floresta', '森'],
+  'ocean': ['Ozean', 'Océano', 'Océan', 'Oceano', 'Oceano', '海'],
+  'crystal': ['Kristall', 'Cristal', 'Cristal', 'Cristallo', 'Cristal', '水晶'],
+  'cloud': ['Wolken', 'Nube', 'Nuage', 'Nuvola', 'Nuvem', '雲'],
+  'sun': ['Sonnen', 'Sol', 'Soleil', 'Sole', 'Sol', '太陽'],
+  'lavender': ['Lavendel', 'Lavanda', 'Lavande', 'Lavanda', 'Lavanda', 'ラベンダー'],
+  'copper': ['Kupfer', 'Cobre', 'Cuivre', 'Rame', 'Cobre', '銅'],
   'starlight': [
     'Sternenlicht',
     'Luz estelar',
     'Lumière astrale',
     'Luce stellare',
     'Luz estelar',
-    '星光',
     '星明かり'
   ],
-  'meadow': ['Wiesen', 'Pradera', 'Prairie', 'Prato', 'Prado', '草甸', '草原'],
-  'storm': [
-    'Sturm',
-    'Tormenta',
-    'Tempête',
-    'Tempesta',
-    'Tempestade',
-    '风暴',
-    '嵐'
-  ],
+  'meadow': ['Wiesen', 'Pradera', 'Prairie', 'Prato', 'Prado', '草原'],
+  'storm': ['Sturm', 'Tormenta', 'Tempête', 'Tempesta', 'Tempestade', '嵐'],
   'cherry': [
     'Kirschblüten',
     'Cerezo',
     'Cerisier',
     'Ciliegio',
     'Cerejeira',
-    '樱花',
     '桜'
   ],
-  'frost': ['Frost', 'Escarcha', 'Givre', 'Brina', 'Geada', '霜冻', '霜'],
-  'honey': ['Honig', 'Miel', 'Miel', 'Miele', 'Mel', '蜂蜜', '蜂蜜'],
-  'mushroom': ['Pilz', 'Seta', 'Champignon', 'Fungo', 'Cogumelo', '蘑菇', 'キノコ'],
-  'velvet': [
-    'Samt',
-    'Terciopelo',
-    'Velours',
-    'Velluto',
-    'Veludo',
-    '天鹅绒',
-    'ベルベット'
-  ],
+  'frost': ['Frost', 'Escarcha', 'Givre', 'Brina', 'Geada', '霜'],
+  'honey': ['Honig', 'Miel', 'Miel', 'Miele', 'Mel', '蜂蜜'],
+  'mushroom': ['Pilz', 'Seta', 'Champignon', 'Fungo', 'Cogumelo', 'キノコ'],
+  'velvet': ['Samt', 'Terciopelo', 'Velours', 'Velluto', 'Veludo', 'ベルベット'],
   'rainbow': [
     'Regenbogen',
     'Arcoíris',
     'Arc-en-ciel',
     'Arcobaleno',
     'Arco-íris',
-    '彩虹',
     '虹'
   ],
   'twilight': [
@@ -276,59 +216,32 @@ const _furnitureThemes = <String, List<String>>{
     'Crépuscule',
     'Crepuscolo',
     'Crepúsculo',
-    '暮光',
     '黄昏'
   ],
-  'coral': ['Korallen', 'Coral', 'Corail', 'Corallo', 'Coral', '珊瑚', 'サンゴ'],
-  'sapphire': [
-    'Saphir',
-    'Zafiro',
-    'Saphir',
-    'Zaffiro',
-    'Safira',
-    '蓝宝石',
-    'サファイア'
-  ],
-  'rose': ['Rosen', 'Rosa', 'Rose', 'Rosa', 'Rosa', '玫瑰', 'バラ'],
-  'dragon': ['Drachen', 'Dragón', 'Dragon', 'Drago', 'Dragão', '龙纹', 'ドラゴン'],
+  'coral': ['Korallen', 'Coral', 'Corail', 'Corallo', 'Coral', 'サンゴ'],
+  'sapphire': ['Saphir', 'Zafiro', 'Saphir', 'Zaffiro', 'Safira', 'サファイア'],
+  'rose': ['Rosen', 'Rosa', 'Rose', 'Rosa', 'Rosa', 'バラ'],
+  'dragon': ['Drachen', 'Dragón', 'Dragon', 'Drago', 'Dragão', 'ドラゴン'],
 };
 
 const _furnitureForms = <String, List<String>>{
-  'cushion': [
-    'Kissen',
-    'cojín',
-    'coussin',
-    'cuscino',
-    'almofada',
-    '软垫',
-    'クッション'
-  ],
-  'daybed': [
-    'Ruhebett',
-    'diván',
-    'lit de repos',
-    'lettino',
-    'divã',
-    '休憩床',
-    'デイベッド'
-  ],
+  'cushion': ['Kissen', 'cojín', 'coussin', 'cuscino', 'almofada', 'クッション'],
+  'daybed': ['Ruhebett', 'diván', 'lit de repos', 'lettino', 'divã', 'デイベッド'],
   'planter': [
     'Pflanzkübel',
     'macetero',
     'jardinière',
     'fioriera',
     'vaso',
-    '花盆',
     'プランター'
   ],
-  'bonsai': ['Bonsai', 'bonsái', 'bonsaï', 'bonsai', 'bonsai', '盆景', '盆栽'],
+  'bonsai': ['Bonsai', 'bonsái', 'bonsaï', 'bonsai', 'bonsai', '盆栽'],
   'tapestry': [
     'Wandteppich',
     'tapiz',
     'tapisserie',
     'arazzo',
     'tapeçaria',
-    '挂毯',
     'タペストリー'
   ],
   'shelf': [
@@ -337,7 +250,6 @@ const _furnitureForms = <String, List<String>>{
     'étagère à curiosités',
     'mensola delle curiosità',
     'prateleira de curiosidades',
-    '珍藏架',
     '飾り棚'
   ],
   'lantern': [
@@ -346,7 +258,6 @@ const _furnitureForms = <String, List<String>>{
     'lanterne lumineuse',
     'lanterna luminosa',
     'lanterna brilhante',
-    '辉光灯笼',
     '光のランタン'
   ],
   'orb': [
@@ -355,7 +266,6 @@ const _furnitureForms = <String, List<String>>{
     'orbe magique',
     'sfera magica',
     'orbe mágico',
-    '魔法宝珠',
     '魔法のオーブ'
   ],
 };
@@ -367,7 +277,6 @@ const _furnitureDescriptions = <String, List<String>>{
     'Un repos moelleux tissé d’une magie assortie.',
     'Un soffice posto di riposo intrecciato di magia a tema.',
     'Um lugar macio para descansar, tecido com magia temática.',
-    '一处蓬松的休息角落，交织着主题魔法。',
     'テーマの魔法を織り込んだ、ふかふかの休憩場所。'
   ],
   'daybed': [
@@ -376,7 +285,6 @@ const _furnitureDescriptions = <String, List<String>>{
     'Un grand lit de dragon pour les siestes entre deux aventures.',
     'Un ampio letto per i sonnellini tra un’avventura e l’altra.',
     'Uma cama espaçosa para cochilos entre aventuras.',
-    '宽敞的龙床，适合在冒险间隙小睡。',
     '冒険の合間に昼寝できる、ゆったりしたドラゴン用ベッド。'
   ],
   'planter': [
@@ -385,7 +293,6 @@ const _furnitureDescriptions = <String, List<String>>{
     'Une touche vivante qui transforme l’ambiance de la pièce.',
     'Un tocco vivo che cambia l’atmosfera della stanza.',
     'Um detalhe vivo que muda o clima do cômodo.',
-    '鲜活的点缀，能改变整个房间的氛围。',
     '部屋の雰囲気を変える、生き生きとしたアクセント。'
   ],
   'bonsai': [
@@ -394,7 +301,6 @@ const _furnitureDescriptions = <String, List<String>>{
     'Un petit arbre enchanté au caractère bien trempé.',
     'Un piccolo albero incantato dalla forte personalità.',
     'Uma pequena árvore encantada cheia de personalidade.',
-    '一棵个性十足的迷你魔法树。',
     '個性の強い、小さな魔法の木。'
   ],
   'tapestry': [
@@ -403,7 +309,6 @@ const _furnitureDescriptions = <String, List<String>>{
     'Une décoration murale faite main pour une pièce plus majestueuse.',
     'Un decoro da parete rifinito a mano per una stanza più maestosa.',
     'Uma peça de parede feita à mão para um cômodo mais grandioso.',
-    '手工完成的墙饰，让房间更显华丽。',
     '部屋を豪華にする、手仕上げの壁飾り。'
   ],
   'shelf': [
@@ -412,7 +317,6 @@ const _furnitureDescriptions = <String, List<String>>{
     'Une étagère remplie de petits mystères inoffensifs.',
     'Una mensola piena di piccoli misteri innocui.',
     'Uma prateleira cheia de pequenos mistérios inofensivos.',
-    '摆满无害小秘密的墙架。',
     '無害な小さな謎でいっぱいの壁棚。'
   ],
   'lantern': [
@@ -421,7 +325,6 @@ const _furnitureDescriptions = <String, List<String>>{
     'Une lumière magique et chaleureuse à la teinte douce.',
     'Una calda luce magica dalla delicata tonalità.',
     'Uma luz mágica e quente com sua própria cor suave.',
-    '带有独特色彩的温暖魔法灯光。',
     '独自のやさしい色を持つ、あたたかな魔法の光。'
   ],
   'orb': [
@@ -430,7 +333,6 @@ const _furnitureDescriptions = <String, List<String>>{
     'Une étincelle flottante qui donne une ambiance à toute la pièce.',
     'Una scintilla fluttuante che avvolge l’intera stanza.',
     'Uma faísca flutuante que dá atmosfera ao cômodo inteiro.',
-    '一颗漂浮的火花，为整个房间营造氛围。',
     '部屋全体を彩る、宙に浮かぶ小さな光。'
   ],
 };
@@ -478,7 +380,6 @@ String? translatedAdventureDescription(
         'Une toute petite sortie depuis la tour avec une modeste récompense en bois.',
         'Una piccola uscita dalla torre con una modesta ricompensa di legno.',
         'Um pequeno passeio pela torre com uma modesta recompensa de madeira.',
-        '一次短暂的高塔外出，奖励是一只朴素的木箱。',
         '塔からの小さなお出かけ。ささやかな木の報酬が待っています。'
       ]),
     AdventureKind.short => _localizedAdventure(languageCode, [
@@ -487,7 +388,6 @@ String? translatedAdventureDescription(
         'Une expédition ciblée avec un curieux détour.',
         'Una spedizione mirata con una curiosa deviazione.',
         'Uma expedição focada com um desvio curioso.',
-        '一次目标明确、略带好奇心的远征。',
         '好奇心に導かれた小さな寄り道つきの探索。'
       ]),
     AdventureKind.long => _localizedAdventure(languageCode, const [
@@ -496,7 +396,6 @@ String? translatedAdventureDescription(
         'Un voyage prudent de plusieurs jours sous des ciels changeants.',
         'Un viaggio attento di più giorni sotto cieli mutevoli.',
         'Uma jornada cuidadosa de vários dias sob céus mutáveis.',
-        '一场穿越变幻天空、为期数日的谨慎旅程。',
         '移り変わる空の下を進む、慎重な数日間の旅。'
       ]),
     AdventureKind.group => _groupAdventureDescription(
@@ -512,7 +411,6 @@ String? translatedAdventureDescription(
                 'Un dragon libéré a laissé une carte inquiétante. La suivre reste facultatif.',
                 'Un drago liberato ha lasciato una mappa dall’aria pericolosa. Seguirla è facoltativo.',
                 'Um dragão libertado deixou um mapa de aparência perigosa. Segui-lo é opcional.',
-                '一只被放归的龙留下了一张看起来很危险的地图。是否跟随由你决定。',
                 '放したドラゴンが危険そうな地図を残しました。追跡するかは自由です。'
               ]
             : const [
@@ -521,7 +419,6 @@ String? translatedAdventureDescription(
                 'Une piste unique dont la récompense est entièrement connue.',
                 'Una pista irripetibile con una ricompensa del tutto nota.',
                 'Uma trilha única com recompensa totalmente conhecida.',
-                '一条仅出现一次、奖励完全已知的线索。',
                 '報酬がすべて分かっている、一度きりの手がかり。'
               ],
       ),
@@ -537,7 +434,6 @@ String _longAdventureTitle(String language, String place) => switch (language) {
       'fr' => 'Expédition vers $place',
       'it' => 'Spedizione a $place',
       'pt' => 'Expedição a $place',
-      'zh' => '$place远征',
       _ => '$place遠征',
     };
 
@@ -548,7 +444,6 @@ String _groupAdventureTitle(String language, String place) =>
       'fr' => 'Concorde de $place',
       'it' => 'Concordia di $place',
       'pt' => 'Concórdia de $place',
-      'zh' => '$place盟约',
       _ => '$placeの盟約',
     };
 
@@ -700,28 +595,6 @@ const _adventurePlaces = <String, List<String>>{
     'Observatório das Marés',
     'Mercado de Runas'
   ],
-  'zh': [
-    '云端果园',
-    '低语遗迹',
-    '月光湖',
-    '余烬隘口',
-    '水晶谷',
-    '银冠林',
-    '发条幽谷',
-    '星落海岸',
-    '苔藓之门',
-    '沉没档案馆',
-    '极光山脊',
-    '灯笼沼泽',
-    '雷鸣高地',
-    '蓝宝石洞窟',
-    '晨风谷',
-    '彗星花园',
-    '遗忘钟楼',
-    '梦境沙丘',
-    '潮汐观测站',
-    '符文市场'
-  ],
   'ja': [
     '雲の果樹園',
     'ささやきの遺跡',
@@ -831,23 +704,6 @@ const _adventureMissions = <String, List<String>>{
     'Rastrear',
     'Recuperar',
     'Estudar'
-  ],
-  'zh': [
-    '绘制地图',
-    '侦察',
-    '采集',
-    '护送',
-    '解码',
-    '修复',
-    '观察',
-    '递送',
-    '搜寻',
-    '勘察',
-    '编入图鉴',
-    '保护',
-    '追踪',
-    '寻回',
-    '研究'
   ],
   'ja': [
     '地図を作る',

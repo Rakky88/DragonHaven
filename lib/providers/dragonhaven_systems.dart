@@ -510,6 +510,64 @@ extension DragonHavenSystems on HouseholdProvider {
         .toList(growable: false);
   }
 
+  Future<WayfinderSigilUseResult> useWayfinderSigil(
+    AdventureKind kind, {
+    String? replaceAdventureId,
+  }) async {
+    if (usableRelicCount(MysticRelic.wayfinderSigil) <= 0) {
+      return WayfinderSigilUseResult.notOwned;
+    }
+    if (kind != AdventureKind.mini &&
+        kind != AdventureKind.short &&
+        kind != AdventureKind.long) {
+      return WayfinderSigilUseResult.unsupportedAdventure;
+    }
+    adventuresFor(kind);
+    final ids = adventureOptionIds.putIfAbsent(kind, () => <String>[]);
+    if (replaceAdventureId != null && !ids.contains(replaceAdventureId)) {
+      return WayfinderSigilUseResult.adventureNotFound;
+    }
+    if (replaceAdventureId == null && ids.length >= 3) {
+      return WayfinderSigilUseResult.noCapacity;
+    }
+    final source = switch (kind) {
+      AdventureKind.mini => AdventureCatalog.mini,
+      AdventureKind.short => AdventureCatalog.short,
+      AdventureKind.long => AdventureCatalog.long,
+      AdventureKind.group ||
+      AdventureKind.special =>
+        const <AdventureDefinition>[],
+    };
+    if (replaceAdventureId != null) {
+      ids.remove(replaceAdventureId);
+    }
+    final candidates = source
+        .where(
+          (adventure) =>
+              !ids.contains(adventure.id) &&
+              adventure.id != replaceAdventureId &&
+              !adventureRuns.any((run) => run.adventureId == adventure.id),
+        )
+        .toList(growable: false);
+    if (candidates.isEmpty) {
+      if (replaceAdventureId != null) ids.add(replaceAdventureId);
+      return WayfinderSigilUseResult.noCapacity;
+    }
+    final replacement = candidates[_random.nextInt(candidates.length)];
+    ids.add(replacement.id);
+    _consumeRelic(MysticRelic.wayfinderSigil);
+    _addActivity(
+      message: replaceAdventureId == null
+          ? 'A Wayfinder Sigil discovered ${replacement.titleEn}.'
+          : 'A Wayfinder Sigil rerolled an Adventure into ${replacement.titleEn}.',
+      type: ActivityType.discovery,
+      code: ActivityCode.bonusFound,
+      subject: '${MysticRelic.wayfinderSigil.name}:${kind.name}',
+    );
+    await _notifyAndSave();
+    return WayfinderSigilUseResult.changed;
+  }
+
   List<TrialOffer> get availableTrials {
     _refreshTrialOffers();
     return List.unmodifiable(trialOffers);
@@ -593,15 +651,31 @@ extension DragonHavenSystems on HouseholdProvider {
     if (dragon == null) return null;
     final offer = trialOffers[offerIndex];
     final grade = trialGradeForScore(offer.kind, score);
-    final reward = trialRewardForGrade(
+    final rolledReward = trialRewardForGrade(
       grade,
       _random.nextDouble(),
       relicRoll: _random.nextDouble(),
       relicChoice: _random.nextInt(MysticRelic.values.length),
     );
+    var earnedRelic = rolledReward.relic;
+    if (earnedRelic == MysticRelic.twinstarBrooch &&
+        twinstarBroochEverObtained) {
+      final alternatives = MysticRelic.values
+          .where((relic) => relic != MysticRelic.twinstarBrooch)
+          .toList(growable: false);
+      earnedRelic = alternatives[_random.nextInt(alternatives.length)];
+    }
     final newBest = dragon.recordTrialScore(offer.kind.name, score);
-    pet.coins += reward.coins;
-    dragon.xp += reward.xp;
+    pet.coins += rolledReward.coins;
+    final grantedXp = _grantDragonXp(dragon, rolledReward.xp);
+    final reward = TrialReward(
+      grade: rolledReward.grade,
+      coins: rolledReward.coins,
+      xp: grantedXp,
+      statPoints: rolledReward.statPoints,
+      chestTier: rolledReward.chestTier,
+      relic: earnedRelic,
+    );
     dragon.addTraining(offer.definition.focus, reward.statPoints);
     final chestTier = reward.chestTier;
     if (chestTier != null) {
@@ -613,7 +687,7 @@ extension DragonHavenSystems on HouseholdProvider {
     }
     final relic = reward.relic;
     if (relic != null) {
-      relicInventory.update(relic, (value) => value + 1, ifAbsent: () => 1);
+      _grantRelic(relic);
     }
     trialOffers.removeAt(offerIndex);
     _scheduleTrialsFullNotification();
@@ -670,7 +744,11 @@ extension DragonHavenSystems on HouseholdProvider {
               .any((tier) => tier.name == key && tier.isTradeable));
     final normalizedRelics = Map<String, int>.from(relics)
       ..removeWhere((key, value) =>
-          value <= 0 || !MysticRelic.values.any((relic) => relic.name == key));
+          value <= 0 ||
+          !(MysticRelic.values.any(
+                (relic) => relic.name == key && !relic.isAlwaysUntradeable,
+              ) ||
+              RegExp(r'^chronoshard:(?:[1-8][0-9]|90)$').hasMatch(key)));
     if (setEquals(reservedOnlineTradeEggIds, eggIds) &&
         mapEquals(reservedOnlineTradeChests, normalizedChests) &&
         mapEquals(reservedOnlineTradeRelics, normalizedRelics)) {
@@ -688,11 +766,12 @@ extension DragonHavenSystems on HouseholdProvider {
   int tradeableChestCount(ChestTier tier) =>
       max(0, chestCount(tier) - (reservedOnlineTradeChests[tier.name] ?? 0));
 
-  int tradeableRelicCount(MysticRelic relic) => max(
-        0,
-        gameplayRelicCount(relic) -
-            (reservedOnlineTradeRelics[relic.name] ?? 0),
-      );
+  int tradeableRelicCount(MysticRelic relic) => relic.isAlwaysUntradeable
+      ? 0
+      : max(
+          0,
+          gameplayRelicCount(relic) - reservedOnlineRelicCount(relic),
+        );
 
   Future<bool> applyOnlineTradeSettlement({
     required String tradeId,
@@ -720,13 +799,24 @@ extension DragonHavenSystems on HouseholdProvider {
               orElse: () => null,
             )
         : null;
+    final sentChronoshardReduction = sentRelic == MysticRelic.chronoshard
+        ? (sentData['reductionPercent'] as num?)?.toInt()
+        : null;
+    final sentChronoshardInvalid = sentRelic == MysticRelic.chronoshard &&
+        (sentChronoshardReduction == null ||
+            sentChronoshardReduction < 10 ||
+            sentChronoshardReduction > 90 ||
+            !chronoshardReductions.contains(sentChronoshardReduction));
     if ((sentKind == 'egg' && sentEggIndex < 0) ||
         (sentKind == 'chest' &&
             (sentChest == null ||
                 !sentChest.isTradeable ||
                 chestCount(sentChest) <= 0)) ||
         (sentKind == 'relic' &&
-            (sentRelic == null || gameplayRelicCount(sentRelic) <= 0)) ||
+            (sentRelic == null ||
+                sentRelic.isAlwaysUntradeable ||
+                gameplayRelicCount(sentRelic) <= 0 ||
+                sentChronoshardInvalid)) ||
         !const {'egg', 'chest', 'relic'}.contains(sentKind)) {
       return false;
     }
@@ -751,7 +841,15 @@ extension DragonHavenSystems on HouseholdProvider {
             (relic) => relic?.name == receivedKey,
             orElse: () => null,
           );
-      if (receivedRelic == null) return false;
+      if (receivedRelic == null || receivedRelic.isAlwaysUntradeable) {
+        return false;
+      }
+      if (receivedRelic == MysticRelic.chronoshard) {
+        final reduction = (receivedData['reductionPercent'] as num?)?.toInt();
+        if (reduction == null || reduction < 10 || reduction > 90) {
+          return false;
+        }
+      }
     } else {
       return false;
     }
@@ -764,6 +862,13 @@ extension DragonHavenSystems on HouseholdProvider {
     }
     if (sentRelic != null) {
       relicInventory[sentRelic] = relicCount(sentRelic) - 1;
+      if (sentRelic == MysticRelic.chronoshard) {
+        final reductionIndex =
+            chronoshardReductions.indexOf(sentChronoshardReduction!);
+        if (reductionIndex >= 0) {
+          chronoshardReductions.removeAt(reductionIndex);
+        }
+      }
     }
     if (receivedEgg != null) eggStash.add(receivedEgg);
     if (receivedChest != null) {
@@ -771,8 +876,11 @@ extension DragonHavenSystems on HouseholdProvider {
           ifAbsent: () => 1);
     }
     if (receivedRelic != null) {
-      relicInventory.update(receivedRelic, (value) => value + 1,
-          ifAbsent: () => 1);
+      _grantRelic(
+        receivedRelic,
+        chronoshardReduction:
+            (receivedData['reductionPercent'] as num?)?.toInt(),
+      );
     }
     appliedOnlineTradeIds.add(tradeId);
     if (appliedOnlineTradeIds.length > 500) {
@@ -860,7 +968,7 @@ extension DragonHavenSystems on HouseholdProvider {
       return false;
     }
 
-    dragon.xp += xp.clamp(0, 100000000);
+    final grantedXp = _grantDragonXp(dragon, xp);
     dragon.addTraining(parsedFocus, statPoints.clamp(0, maxDragonExpertise));
     if (dragon.activeAdventureId?.startsWith('online-group:') == true) {
       dragon.activeAdventureId = null;
@@ -879,7 +987,7 @@ extension DragonHavenSystems on HouseholdProvider {
       type: ActivityType.explore,
       code: ActivityCode.activityCompleted,
       subject: definition.id,
-      xp: xp,
+      xp: grantedXp,
     );
     _evaluateAchievements();
     await _notifyAndSave();
@@ -926,7 +1034,10 @@ extension DragonHavenSystems on HouseholdProvider {
     final strings = AppStrings(languageCode);
     await HavenNotifications.schedule(
       id: 'adventure-${run.id}',
-      at: run.endsAt,
+      // Keep the OS alarm just beyond the authoritative gameplay boundary.
+      // This prevents sub-second clock/serialization rounding from announcing
+      // a return while the run still has a fraction of a second left.
+      at: adventureReturnNotificationAt(run.endsAt),
       title: strings.pick('${dragon.displayName} has returned',
           '${dragon.displayName} is teruggekeerd'),
       body: strings.pick(
@@ -943,6 +1054,9 @@ extension DragonHavenSystems on HouseholdProvider {
     await _notifyAndSave();
     return AdventureStartResult.started;
   }
+
+  DateTime adventureReturnNotificationAt(DateTime endsAt) =>
+      endsAt.add(const Duration(seconds: 1));
 
   Future<void> dismissAdventure(AdventureDefinition adventure) async {
     if ((adventure.kind != AdventureKind.mini &&
@@ -979,7 +1093,7 @@ extension DragonHavenSystems on HouseholdProvider {
         );
     if (dragon == null) return null;
     final tier = run.rewardTier ?? _rollAdventureChest(definition.kind);
-    dragon.xp += definition.xp;
+    final grantedXp = _grantDragonXp(dragon, definition.xp);
     dragon.addTraining(definition.focus, definition.statPoints);
     _evolveReadyDragons(_clock());
     dragon.activeAdventureId = null;
@@ -996,11 +1110,35 @@ extension DragonHavenSystems on HouseholdProvider {
       type: ActivityType.explore,
       code: ActivityCode.activityCompleted,
       subject: definition.id,
-      xp: definition.xp,
+      xp: grantedXp,
     );
     _evaluateAchievements();
     await _notifyAndSave();
     return tier;
+  }
+
+  Future<bool> abortAdventure(String runId) async {
+    _refreshAdventureRuns();
+    final index = adventureRuns.indexWhere((run) => run.id == runId);
+    if (index < 0) return false;
+    final run = adventureRuns[index];
+    final definition = AdventureCatalog.byId[run.adventureId];
+    if (run.status != AdventureRunStatus.running ||
+        definition == null ||
+        definition.kind == AdventureKind.group) {
+      return false;
+    }
+    final dragon = ownedDragons.cast<Pet?>().firstWhere(
+          (candidate) => candidate?.id == run.dragonId,
+          orElse: () => null,
+        );
+    if (dragon?.activeAdventureId == run.id) {
+      dragon!.activeAdventureId = null;
+    }
+    adventureRuns.removeAt(index);
+    await HavenNotifications.cancel('adventure-${run.id}');
+    await _notifyAndSave();
+    return true;
   }
 
   bool _refreshAdventureRuns() {
@@ -1066,6 +1204,9 @@ extension DragonHavenSystems on HouseholdProvider {
       sanctuaryDragons.removeWhere((item) => item.id == dragon.id);
     }
     dragon.favorite = false;
+    if (twinstarBroochDragonId == dragon.id) {
+      twinstarBroochDragonId = null;
+    }
     releasedDragons.add(dragon);
     _ensureFavoriteDragon();
     _normalizeRoamingState();
@@ -1195,17 +1336,48 @@ extension DragonHavenSystems on HouseholdProvider {
     return '';
   }
 
-  bool _processWeeklyReturningDragon() {
+  bool _processDailyReturningDragon() {
     if (releasedDragons.isEmpty) return false;
     final now = _clock();
-    final monday = now.subtract(Duration(days: now.weekday - 1));
-    final weekKey = '${monday.year}-${monday.month}-${monday.day}';
-    if (lastReturningWeekKey == weekKey) return false;
-    lastReturningWeekKey = weekKey;
-    if (_random.nextDouble() >= .10) {
-      latestReturningEvent = null;
-      return true;
+    var changed = false;
+
+    // Always resolve a persisted overdue arrival before rolling the new day,
+    // so returning dragons are not lost when the game stayed closed overnight.
+    if (scheduledReturningAt?.isAfter(now) == false) {
+      scheduledReturningAt = null;
+      _resolveReturningDragon(now);
+      changed = true;
     }
+
+    final dayKey = HouseholdProvider._dayKey(now);
+    if (lastReturningDayKey != dayKey) {
+      lastReturningDayKey = dayKey;
+      final dayStart = now.isUtc
+          ? DateTime.utc(now.year, now.month, now.day)
+          : DateTime(now.year, now.month, now.day);
+      scheduledReturningAt = _random.nextDouble() < .10
+          ? dayStart.add(
+              Duration(seconds: _random.nextInt(Duration.secondsPerDay)),
+            )
+          : null;
+      changed = true;
+    }
+
+    // A roll can land earlier than the first time the app opened that day.
+    // In that case the return is resolved immediately and still counts once.
+    if (scheduledReturningAt?.isAfter(now) == false) {
+      scheduledReturningAt = null;
+      _resolveReturningDragon(now);
+      changed = true;
+    }
+    return changed;
+  }
+
+  @visibleForTesting
+  bool processDailyReturningDragonForTesting() =>
+      _processDailyReturningDragon();
+
+  void _resolveReturningDragon(DateTime now) {
     final dragon = releasedDragons[_random.nextInt(releasedDragons.length)];
     totalReleasedReturns++;
     if (returningSpecialAvailableUntil?.isAfter(now) != true) {
@@ -1256,7 +1428,6 @@ extension DragonHavenSystems on HouseholdProvider {
             '${dragon.displayName} passed nearby without leaving a reward or causing harm.';
     }
     _evaluateAchievements();
-    return true;
   }
 
   _ReturnOutcome _rollReturnOutcome(Pet dragon) {

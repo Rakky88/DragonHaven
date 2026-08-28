@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
+import '../models/adventure.dart';
 import '../models/chest.dart';
 import '../models/dragon_egg.dart';
 import '../models/mystic_relic.dart';
@@ -82,8 +83,63 @@ class InventoryScreen extends StatelessWidget {
   }
 }
 
-class _EggInventoryTab extends StatelessWidget {
+class _InventoryControlChip extends StatelessWidget {
+  const _InventoryControlChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1ECFB),
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 17, color: AppColors.twilight),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.twilight,
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+enum _EggInventoryView { tiles, list }
+
+enum _EggSortMode { acquiredAt, hatchTime }
+
+class _EggInventoryTab extends StatefulWidget {
   const _EggInventoryTab();
+
+  @override
+  State<_EggInventoryTab> createState() => _EggInventoryTabState();
+}
+
+class _EggInventoryTabState extends State<_EggInventoryTab> {
+  _EggInventoryView _view = _EggInventoryView.tiles;
+  _EggSortMode _sortMode = _EggSortMode.acquiredAt;
+  bool _sortDescending = true;
+
+  void _selectSort(_EggSortMode mode) {
+    setState(() {
+      if (_sortMode == mode) {
+        _sortDescending = !_sortDescending;
+      } else {
+        _sortMode = mode;
+        _sortDescending = mode == _EggSortMode.acquiredAt;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,13 +152,24 @@ class _EggInventoryTab extends StatelessWidget {
             'Nog geen Mysterious Eggs in je inventaris.'),
       );
     }
-    final eggs = [...game.eggStash]
-      ..sort((a, b) => b.acquiredAt.compareTo(a.acquiredAt));
+    final eggs = [...game.eggStash]..sort((a, b) {
+        final comparison = switch (_sortMode) {
+          _EggSortMode.acquiredAt => a.acquiredAt.compareTo(b.acquiredAt),
+          _EggSortMode.hatchTime =>
+            a.incubationMinutes.compareTo(b.incubationMinutes),
+        };
+        final stable = comparison != 0 ? comparison : a.id.compareTo(b.id);
+        return _sortDescending ? -stable : stable;
+      });
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 13, 16, 8),
-          child: Row(
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 7,
             children: [
               Container(
                 padding:
@@ -120,118 +187,191 @@ class _EggInventoryTab extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  strings.pick(
-                    'Tap an egg for its clue and actions.',
-                    'Tik op een ei voor de hint en acties.',
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  PopupMenuButton<_EggSortMode>(
+                    key: const Key('egg-inventory-sort'),
+                    initialValue: _sortMode,
+                    onSelected: _selectSort,
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        key: const Key('egg-sort-acquiredAt'),
+                        value: _EggSortMode.acquiredAt,
+                        child: Text(strings.pick('Received', 'Ontvangen')),
+                      ),
+                      PopupMenuItem(
+                        key: const Key('egg-sort-hatchTime'),
+                        value: _EggSortMode.hatchTime,
+                        child: Text(strings.pick('Hatch time', 'Broedtijd')),
+                      ),
+                    ],
+                    child: _InventoryControlChip(
+                      icon: _sortDescending
+                          ? Icons.arrow_downward_rounded
+                          : Icons.arrow_upward_rounded,
+                      label: _sortMode == _EggSortMode.acquiredAt
+                          ? strings.pick('Received', 'Ontvangen')
+                          : strings.pick('Hatch time', 'Broedtijd'),
+                    ),
                   ),
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                  const SizedBox(width: 7),
+                  IconButton.filledTonal(
+                    key: const Key('egg-inventory-view-toggle'),
+                    tooltip: _view == _EggInventoryView.tiles
+                        ? strings.pick('Show list', 'Lijst tonen')
+                        : strings.pick('Show tiles', 'Tegels tonen'),
+                    onPressed: () => setState(() {
+                      _view = _view == _EggInventoryView.tiles
+                          ? _EggInventoryView.list
+                          : _EggInventoryView.tiles;
+                    }),
+                    icon: Icon(_view == _EggInventoryView.tiles
+                        ? Icons.view_list_rounded
+                        : Icons.grid_view_rounded),
                   ),
-                ),
+                ],
               ),
             ],
           ),
         ),
         Expanded(
-          child: GridView.builder(
-            key: const PageStorageKey('inventory-eggs-scroll'),
-            padding: const EdgeInsets.fromLTRB(12, 3, 12, 32),
-            itemCount: eggs.length,
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 210,
-              childAspectRatio: .82,
-              mainAxisSpacing: 9,
-              crossAxisSpacing: 9,
-            ),
-            itemBuilder: (context, index) {
-              final egg = eggs[index];
-              final reserved = game.isEggReservedForTrade(egg.id);
-              return Card(
-                clipBehavior: Clip.antiAlias,
-                margin: EdgeInsets.zero,
-                child: InkWell(
-                  key: Key('inventory-egg-${egg.id}'),
-                  onTap: () => _showEggDetails(context, egg),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(9, 8, 9, 9),
-                    child: Column(
-                      children: [
-                        const Expanded(
+          child: _view == _EggInventoryView.tiles
+              ? GridView.builder(
+                  key: const PageStorageKey('inventory-eggs-scroll'),
+                  padding: const EdgeInsets.fromLTRB(12, 3, 12, 32),
+                  itemCount: eggs.length,
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 210,
+                    childAspectRatio: .82,
+                    mainAxisSpacing: 9,
+                    crossAxisSpacing: 9,
+                  ),
+                  itemBuilder: (context, index) {
+                    final egg = eggs[index];
+                    final reserved = game.isEggReservedForTrade(egg.id);
+                    return Card(
+                      clipBehavior: Clip.antiAlias,
+                      margin: EdgeInsets.zero,
+                      child: InkWell(
+                        key: Key('inventory-egg-${egg.id}'),
+                        onTap: () => _showEggDetails(context, egg),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(9, 8, 9, 9),
+                          child: Column(
+                            children: [
+                              const Expanded(
+                                child: DragonArt(
+                                  height: 86,
+                                  animate: false,
+                                  stageKey: 'moonEgg',
+                                ),
+                              ),
+                              Text(
+                                strings.pick('Mysterious Egg', 'Mysterieus Ei'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w900),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                strings
+                                    .remainingDuration(egg.incubationDuration),
+                                style: const TextStyle(
+                                  color: AppColors.twilight,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                game.eggHintForEgg(
+                                  egg,
+                                  locale: strings.languageCode,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: AppColors.muted,
+                                  fontSize: 10.5,
+                                  height: 1.2,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                              if (reserved) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.swap_horiz_rounded,
+                                        size: 14, color: AppColors.twilight),
+                                    const SizedBox(width: 3),
+                                    Flexible(
+                                      child: Text(
+                                        strings.pick(
+                                          'Reserved for trade',
+                                          'Gereserveerd voor ruil',
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: AppColors.twilight,
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                )
+              : ListView.separated(
+                  key: const PageStorageKey('inventory-eggs-list-scroll'),
+                  padding: const EdgeInsets.fromLTRB(12, 3, 12, 32),
+                  itemCount: eggs.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 7),
+                  itemBuilder: (context, index) {
+                    final egg = eggs[index];
+                    final reserved = game.isEggReservedForTrade(egg.id);
+                    final received = MaterialLocalizations.of(context)
+                        .formatShortDate(egg.acquiredAt);
+                    return Card(
+                      margin: EdgeInsets.zero,
+                      child: ListTile(
+                        key: Key('inventory-egg-list-${egg.id}'),
+                        onTap: () => _showEggDetails(context, egg),
+                        leading: const SizedBox.square(
+                          dimension: 54,
                           child: DragonArt(
-                            height: 86,
+                            height: 52,
                             animate: false,
                             stageKey: 'moonEgg',
                           ),
                         ),
-                        Text(
+                        title: Text(
                           strings.pick('Mysterious Egg', 'Mysterieus Ei'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.w900),
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          strings.remainingDuration(egg.incubationDuration),
-                          style: const TextStyle(
-                            color: AppColors.twilight,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          game.eggHintForEgg(
-                            egg,
-                            locale: strings.languageCode,
-                          ),
+                        subtitle: Text(
+                          '${strings.remainingDuration(egg.incubationDuration)} · '
+                          '${strings.pick('Received', 'Ontvangen')} $received'
+                          '${reserved ? strings.pick(' · Reserved', ' · Gereserveerd') : ''}',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 10.5,
-                            height: 1.2,
-                            fontStyle: FontStyle.italic,
-                          ),
                         ),
-                        if (reserved) ...[
-                          const SizedBox(height: 4),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.swap_horiz_rounded,
-                                  size: 14, color: AppColors.twilight),
-                              const SizedBox(width: 3),
-                              Flexible(
-                                child: Text(
-                                  strings.pick(
-                                    'Reserved for trade',
-                                    'Gereserveerd voor ruil',
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: AppColors.twilight,
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
       ],
     );
@@ -280,6 +420,45 @@ class _EggInventoryTab extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
+              if (game.isEggRarityKnown(egg.id))
+                ListTile(
+                  key: Key('inventory-egg-rarity-${egg.id}'),
+                  dense: true,
+                  leading: const Icon(Icons.auto_awesome_rounded),
+                  title: Text(strings.pick('Rarity', 'Zeldzaamheid')),
+                  trailing: Text(
+                    strings.lineageRarity(egg.lineage),
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                )
+              else if (game.usableRelicCount(MysticRelic.astralLens) > 0)
+                ListTile(
+                  key: Key('inventory-egg-use-astral-${egg.id}'),
+                  leading: Image.asset(
+                    MysticRelic.astralLens.assetPath,
+                    width: 38,
+                    height: 38,
+                  ),
+                  title: Text(strings.pick(
+                    'Reveal rarity with Astral Lens',
+                    'Onthul zeldzaamheid met Astrale Lens',
+                  )),
+                  onTap: () async {
+                    final result = await game.useAstralLens(egg.id);
+                    if (!sheetContext.mounted ||
+                        result != AstralLensUseResult.revealed) {
+                      return;
+                    }
+                    Navigator.pop(sheetContext);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(strings.pick(
+                        'Rarity: ${strings.lineageRarity(egg.lineage)}',
+                        'Zeldzaamheid: ${strings.lineageRarity(egg.lineage)}',
+                      )),
+                    ));
+                  },
+                ),
               ListTile(
                 dense: true,
                 leading: const Icon(Icons.schedule_rounded),
@@ -382,8 +561,19 @@ class _ChestInventoryTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final game = context.watch<HouseholdProvider>();
     final strings = AppStrings.of(context);
+    const chestOrder = [
+      ChestTier.wooden,
+      ChestTier.silver,
+      ChestTier.gold,
+      ChestTier.dragon,
+      ChestTier.mythical,
+      ChestTier.sinister,
+      ChestTier.portrait,
+      ChestTier.title,
+      ChestTier.music,
+    ];
     final tiers =
-        ChestTier.values.where((tier) => game.chestCount(tier) > 0).toList();
+        chestOrder.where((tier) => game.chestCount(tier) > 0).toList();
     if (tiers.isEmpty) {
       return _EmptyState(
           kind: GameIconKind.inventoryChests,
@@ -502,6 +692,30 @@ class _ChestInventoryTab extends StatelessWidget {
       );
       return;
     }
+    if (tier == ChestTier.music && game.hasEveryMusicTrack) {
+      final strings = AppStrings.of(context);
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          icon: Image.asset(tier.assetPath, width: 92, height: 92),
+          title: Text(strings.pick(
+            'Music collection complete',
+            'Muziekcollectie compleet',
+          )),
+          content: Text(strings.pick(
+            'You already own every song. This Music Chest stays safely in your Inventory and cannot be opened.',
+            'Je bezit alle liedjes al. Deze Muziekkist blijft veilig in je Inventory en kan niet worden geopend.',
+          )),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(strings.pick('Understood', 'Begrepen')),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     await showChestReveal(
       navigator.context,
       tier,
@@ -518,55 +732,322 @@ HavenSound _soundForChest(ChestTier tier) => switch (tier) {
       ChestTier.dragon => HavenSound.chestDragon,
       ChestTier.mythical => HavenSound.chestMythical,
       ChestTier.sinister => HavenSound.chestSinister,
-      ChestTier.portrait || ChestTier.title => HavenSound.chestMythical,
+      ChestTier.portrait ||
+      ChestTier.title ||
+      ChestTier.music =>
+        HavenSound.chestMythical,
     };
 
-class _FurnitureInventoryTab extends StatelessWidget {
+enum _FurnitureInventoryView { tiles, list }
+
+enum _FurnitureSortMode { name, type, rarity }
+
+class _FurnitureInventoryTab extends StatefulWidget {
   const _FurnitureInventoryTab();
+
+  @override
+  State<_FurnitureInventoryTab> createState() => _FurnitureInventoryTabState();
+}
+
+class _FurnitureInventoryTabState extends State<_FurnitureInventoryTab> {
+  _FurnitureInventoryView _view = _FurnitureInventoryView.tiles;
+  _FurnitureSortMode _sortMode = _FurnitureSortMode.name;
+  bool _sortDescending = false;
+  final Set<ItemSlot> _slotFilters = {};
+  final Set<ItemRarity> _rarityFilters = {};
+  bool _placedOnly = false;
+
+  void _selectSort(_FurnitureSortMode mode) {
+    setState(() {
+      if (_sortMode == mode) {
+        _sortDescending = !_sortDescending;
+      } else {
+        _sortMode = mode;
+        _sortDescending = mode == _FurnitureSortMode.rarity;
+      }
+    });
+  }
+
+  String _sortLabel(AppStrings strings) => switch (_sortMode) {
+        _FurnitureSortMode.name => strings.pick('Name', 'Naam'),
+        _FurnitureSortMode.type => strings.pick('Type', 'Type'),
+        _FurnitureSortMode.rarity => strings.pick('Rarity', 'Zeldzaamheid'),
+      };
+
+  String _slotLabel(AppStrings strings, ItemSlot slot) => switch (slot) {
+        ItemSlot.bed => strings.pick('Beds', 'Bedden'),
+        ItemSlot.plant => strings.pick('Plants', 'Planten'),
+        ItemSlot.wall => strings.pick('Wall', 'Muur'),
+        ItemSlot.light => strings.pick('Lights', 'Lampen'),
+      };
+
+  String _rarityLabel(AppStrings strings, ItemRarity rarity) =>
+      switch (rarity) {
+        ItemRarity.common => strings.pick('Common', 'Gewoon'),
+        ItemRarity.special => strings.pick('Special', 'Speciaal'),
+        ItemRarity.rare => strings.pick('Rare', 'Zeldzaam'),
+      };
+
   @override
   Widget build(BuildContext context) {
     final game = context.watch<HouseholdProvider>();
     final strings = AppStrings.of(context);
-    final items = game.ownedItemIds
+    final ownedItems = game.ownedItemIds
         .map(shopItemById)
         .whereType<ShopItem>()
-        .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
-    if (items.isEmpty) {
+        .toList(growable: false);
+    if (ownedItems.isEmpty) {
       return _EmptyState(
           kind: GameIconKind.inventoryFurniture,
           text: strings.pick('Your purchased furniture is stored here.',
               'Je gekochte meubels worden hier bewaard.'));
     }
-    return GridView.builder(
-      key: const PageStorageKey('inventory-furniture-scroll'),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: .92,
-          crossAxisSpacing: 9,
-          mainAxisSpacing: 9),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(children: [
-              Expanded(child: FurnitureArt(item: item)),
-              Text(strings.itemName(item),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w900)),
-              if (game.isEquipped(item))
-                Text(strings.pick('Placed', 'Geplaatst'),
-                    style:
-                        const TextStyle(color: AppColors.muted, fontSize: 11)),
-            ]),
+    final items = ownedItems
+        .where((item) =>
+            (_slotFilters.isEmpty || _slotFilters.contains(item.slot)) &&
+            (_rarityFilters.isEmpty || _rarityFilters.contains(item.rarity)) &&
+            (!_placedOnly || game.isEquipped(item)))
+        .toList()
+      ..sort((a, b) {
+        final comparison = switch (_sortMode) {
+          _FurnitureSortMode.name =>
+            strings.itemName(a).compareTo(strings.itemName(b)),
+          _FurnitureSortMode.type => a.slot.index.compareTo(b.slot.index),
+          _FurnitureSortMode.rarity => a.rarity.index.compareTo(b.rarity.index),
+        };
+        final stable = comparison != 0 ? comparison : a.id.compareTo(b.id);
+        return _sortDescending ? -stable : stable;
+      });
+    final activeFilterCount =
+        _slotFilters.length + _rarityFilters.length + (_placedOnly ? 1 : 0);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 7),
+          child: Row(
+            children: [
+              PopupMenuButton<_FurnitureSortMode>(
+                key: const Key('furniture-inventory-sort'),
+                initialValue: _sortMode,
+                onSelected: _selectSort,
+                itemBuilder: (_) => [
+                  for (final mode in _FurnitureSortMode.values)
+                    PopupMenuItem(
+                      key: Key('furniture-sort-${mode.name}'),
+                      value: mode,
+                      child: Text(switch (mode) {
+                        _FurnitureSortMode.name => strings.pick('Name', 'Naam'),
+                        _FurnitureSortMode.type => strings.pick('Type', 'Type'),
+                        _FurnitureSortMode.rarity =>
+                          strings.pick('Rarity', 'Zeldzaamheid'),
+                      }),
+                    ),
+                ],
+                child: _InventoryControlChip(
+                  icon: _sortDescending
+                      ? Icons.arrow_downward_rounded
+                      : Icons.arrow_upward_rounded,
+                  label: _sortLabel(strings),
+                ),
+              ),
+              const Spacer(),
+              Badge(
+                isLabelVisible: activeFilterCount > 0,
+                label: Text('$activeFilterCount'),
+                child: IconButton.filledTonal(
+                  key: const Key('furniture-inventory-filter'),
+                  onPressed: () => _showFilters(context, game),
+                  icon: const Icon(Icons.filter_alt_rounded),
+                ),
+              ),
+              const SizedBox(width: 7),
+              IconButton.filledTonal(
+                key: const Key('furniture-inventory-view-toggle'),
+                onPressed: () => setState(() {
+                  _view = _view == _FurnitureInventoryView.tiles
+                      ? _FurnitureInventoryView.list
+                      : _FurnitureInventoryView.tiles;
+                }),
+                icon: Icon(_view == _FurnitureInventoryView.tiles
+                    ? Icons.view_list_rounded
+                    : Icons.grid_view_rounded),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+        Expanded(
+          child: items.isEmpty
+              ? Center(
+                  child: Text(strings.pick(
+                    'No furniture matches these filters.',
+                    'Geen meubels voldoen aan deze filters.',
+                  )),
+                )
+              : _view == _FurnitureInventoryView.tiles
+                  ? GridView.builder(
+                      key: const PageStorageKey('inventory-furniture-scroll'),
+                      padding: const EdgeInsets.fromLTRB(14, 2, 14, 32),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: .92,
+                        crossAxisSpacing: 9,
+                        mainAxisSpacing: 9,
+                      ),
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        return Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Column(children: [
+                              Expanded(child: FurnitureArt(item: item)),
+                              Text(
+                                strings.itemName(item),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w900),
+                              ),
+                              if (game.isEquipped(item))
+                                Text(strings.pick('Placed', 'Geplaatst'),
+                                    style: const TextStyle(
+                                        color: AppColors.muted, fontSize: 11)),
+                            ]),
+                          ),
+                        );
+                      },
+                    )
+                  : ListView.separated(
+                      key: const PageStorageKey(
+                          'inventory-furniture-list-scroll'),
+                      padding: const EdgeInsets.fromLTRB(14, 2, 14, 32),
+                      itemCount: items.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 7),
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        return Card(
+                          margin: EdgeInsets.zero,
+                          child: ListTile(
+                            leading: SizedBox.square(
+                              dimension: 58,
+                              child: FurnitureArt(item: item),
+                            ),
+                            title: Text(strings.itemName(item),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w900)),
+                            subtitle: Text(
+                              '${_slotLabel(strings, item.slot)} · '
+                              '${_rarityLabel(strings, item.rarity)}',
+                            ),
+                            trailing: game.isEquipped(item)
+                                ? const Icon(Icons.check_circle_rounded,
+                                    color: AppColors.twilight)
+                                : null,
+                          ),
+                        );
+                      },
+                    ),
+        ),
+      ],
     );
+  }
+
+  Future<void> _showFilters(
+    BuildContext context,
+    HouseholdProvider game,
+  ) async {
+    final strings = AppStrings.of(context);
+    final ownedItems =
+        game.ownedItemIds.map(shopItemById).whereType<ShopItem>();
+    final slots = ownedItems.map((item) => item.slot).toSet().toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
+    final rarities = ownedItems.map((item) => item.rarity).toSet().toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, modalSetState) => SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Expanded(
+                    child: Text(
+                      strings.pick('Filter furniture', 'Meubels filteren'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  TextButton(
+                    key: const Key('furniture-filter-clear'),
+                    onPressed: () => modalSetState(() {
+                      _slotFilters.clear();
+                      _rarityFilters.clear();
+                      _placedOnly = false;
+                    }),
+                    child: Text(strings.pick('Clear', 'Wissen')),
+                  ),
+                ]),
+                Text(strings.pick('Type', 'Type'),
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                Wrap(
+                  spacing: 7,
+                  children: [
+                    for (final slot in slots)
+                      FilterChip(
+                        key: Key('furniture-filter-slot-${slot.name}'),
+                        label: Text(_slotLabel(strings, slot)),
+                        selected: _slotFilters.contains(slot),
+                        onSelected: (selected) => modalSetState(() => selected
+                            ? _slotFilters.add(slot)
+                            : _slotFilters.remove(slot)),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(strings.pick('Rarity', 'Zeldzaamheid'),
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                Wrap(
+                  spacing: 7,
+                  children: [
+                    for (final rarity in rarities)
+                      FilterChip(
+                        key: Key('furniture-filter-rarity-${rarity.name}'),
+                        label: Text(_rarityLabel(strings, rarity)),
+                        selected: _rarityFilters.contains(rarity),
+                        onSelected: (selected) => modalSetState(() => selected
+                            ? _rarityFilters.add(rarity)
+                            : _rarityFilters.remove(rarity)),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                FilterChip(
+                  key: const Key('furniture-filter-placed'),
+                  label: Text(strings.pick('Placed only', 'Alleen geplaatst')),
+                  selected: _placedOnly,
+                  onSelected: (selected) =>
+                      modalSetState(() => _placedOnly = selected),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(sheetContext),
+                    child:
+                        Text(strings.pick('Show furniture', 'Meubels tonen')),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
   }
 }
 
@@ -674,6 +1155,15 @@ class _RelicCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
+    final game = context.watch<HouseholdProvider>();
+    final detail = switch (relic) {
+      MysticRelic.chronoshard =>
+        game.chronoshardReductions.map((value) => '$value%').join(' · '),
+      MysticRelic.twinstarBrooch => game.twinstarBroochDragonId == null
+          ? strings.pick('Not equipped', 'Niet gekoppeld')
+          : strings.pick('Equipped to a dragon', 'Aan een draak gekoppeld'),
+      _ => null,
+    };
     return Card(
       margin: const EdgeInsets.only(bottom: 9),
       clipBehavior: Clip.antiAlias,
@@ -721,6 +1211,17 @@ class _RelicCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: AppColors.muted, fontSize: 11),
                 ),
+                if (detail != null && detail.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    detail,
+                    style: const TextStyle(
+                      color: AppColors.twilight,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 7),
                 Align(
                   alignment: Alignment.centerRight,
@@ -740,6 +1241,27 @@ class _RelicCard extends StatelessWidget {
 }
 
 Future<void> _useRelic(BuildContext context, MysticRelic relic) async {
+  switch (relic) {
+    case MysticRelic.astralLens:
+      return _useAstralLens(context);
+    case MysticRelic.chronoshard:
+      return _useChronoshard(context);
+    case MysticRelic.wayfinderSigil:
+      return _useWayfinderSigil(context);
+    case MysticRelic.twinstarBrooch:
+      return _equipTwinstarBrooch(context);
+    case MysticRelic.moralPrism:
+    case MysticRelic.orderCompass:
+    case MysticRelic.soulMirror:
+      break;
+  }
+  return _useDragonRevealRelic(context, relic);
+}
+
+Future<void> _useDragonRevealRelic(
+  BuildContext context,
+  MysticRelic relic,
+) async {
   final game = context.read<HouseholdProvider>();
   final strings = AppStrings.of(context);
   final eligibleDragons = game.ownedDragons
@@ -881,6 +1403,293 @@ Future<void> _useRelic(BuildContext context, MysticRelic relic) async {
   );
 }
 
+Future<void> _useAstralLens(BuildContext context) async {
+  final game = context.read<HouseholdProvider>();
+  final strings = AppStrings.of(context);
+  final targets = <({String id, String name, String rarity})>[
+    if (game.nestEgg case final egg?)
+      if (!game.isEggRarityKnown(egg.id))
+        (
+          id: egg.id,
+          name: strings.pick('Egg in rooftop nest', 'Ei in het daknest'),
+          rarity: strings.lineageRarity(egg.lineage),
+        ),
+    for (final egg in game.eggStash)
+      if (!game.isEggRarityKnown(egg.id))
+        (
+          id: egg.id,
+          name: strings.pick('Inventory egg', 'Ei in inventaris'),
+          rarity: strings.lineageRarity(egg.lineage),
+        ),
+  ];
+  if (targets.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(strings.pick(
+        'There is no egg with an unknown rarity.',
+        'Er is geen ei waarvan de zeldzaamheid nog onbekend is.',
+      )),
+    ));
+    return;
+  }
+  final selected =
+      await showModalBottomSheet<({String id, String name, String rarity})>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 22),
+        children: [
+          Text(strings.pick('Reveal which egg?', 'Welk ei onthullen?'),
+              style: Theme.of(sheetContext).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          for (var index = 0; index < targets.length; index++)
+            Card(
+              child: ListTile(
+                key: Key('astral-lens-egg-${targets[index].id}'),
+                leading: const GameIconSprite(
+                  GameIconKind.mysteriousEgg,
+                  size: 42,
+                ),
+                title: Text(targets[index].name),
+                subtitle: Text(strings.pick(
+                  'Rarity is still hidden',
+                  'Zeldzaamheid is nog verborgen',
+                )),
+                onTap: () => Navigator.pop(sheetContext, targets[index]),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+  if (selected == null || !context.mounted) return;
+  final result = await game.useAstralLens(selected.id);
+  if (!context.mounted || result != AstralLensUseResult.revealed) return;
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      icon:
+          Image.asset(MysticRelic.astralLens.assetPath, width: 92, height: 92),
+      title: Text(strings.pick('Rarity revealed', 'Zeldzaamheid onthuld')),
+      content: Text(selected.rarity,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text(strings.pick('Done', 'Klaar')),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> _useChronoshard(BuildContext context) async {
+  final game = context.read<HouseholdProvider>();
+  final strings = AppStrings.of(context);
+  if (!game.hasEggInNest) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(strings.pick(
+        'Place an egg in the rooftop nest first.',
+        'Plaats eerst een ei in het daknest.',
+      )),
+    ));
+    return;
+  }
+  final values = [...game.chronoshardReductions];
+  final selected = await showModalBottomSheet<int>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 22),
+        children: [
+          Text(strings.pick('Choose a Chronoshard', 'Kies een Chronoscherf'),
+              style: Theme.of(sheetContext).textTheme.titleLarge),
+          Text(strings.pick(
+            'Its percentage was fixed when this relic was found.',
+            'Het percentage werd vastgelegd toen dit reliek werd gevonden.',
+          )),
+          const SizedBox(height: 8),
+          for (var index = 0; index < values.length; index++)
+            Card(
+              child: ListTile(
+                key: Key('chronoshard-${values[index]}-$index'),
+                leading: Image.asset(
+                  MysticRelic.chronoshard.assetPath,
+                  width: 48,
+                  height: 48,
+                ),
+                title: Text(
+                  '${values[index]}%',
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                subtitle: Text(strings.pick(
+                  'Shorten remaining incubation',
+                  'Verkort de resterende broedtijd',
+                )),
+                onTap: () => Navigator.pop(sheetContext, values[index]),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+  if (selected == null || !context.mounted) return;
+  final result = await game.useChronoshard(selected);
+  if (!context.mounted || result != ChronoshardUseResult.accelerated) return;
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Text(strings.pick(
+      'Remaining incubation shortened by $selected%.',
+      'Resterende broedtijd met $selected% verkort.',
+    )),
+  ));
+}
+
+Future<void> _useWayfinderSigil(BuildContext context) async {
+  final game = context.read<HouseholdProvider>();
+  final strings = AppStrings.of(context);
+  final kind = await showDialog<AdventureKind>(
+    context: context,
+    builder: (dialogContext) => SimpleDialog(
+      title: Text(strings.pick('Choose Adventure type', 'Kies avontuurtype')),
+      children: [
+        for (final value in const [
+          AdventureKind.mini,
+          AdventureKind.short,
+          AdventureKind.long,
+        ])
+          SimpleDialogOption(
+            key: Key('wayfinder-kind-${value.name}'),
+            onPressed: () => Navigator.pop(dialogContext, value),
+            child: Text(switch (value) {
+              AdventureKind.mini => strings.pick('Mini', 'Mini'),
+              AdventureKind.short => strings.pick('Short', 'Kort'),
+              AdventureKind.long => strings.pick('Long', 'Lang'),
+              AdventureKind.group || AdventureKind.special => value.name,
+            }),
+          ),
+      ],
+    ),
+  );
+  if (kind == null || !context.mounted) return;
+  final adventures = game.adventuresFor(kind);
+  const createKey = '__create__';
+  final choice = await showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 22),
+        children: [
+          Text(strings.pick('Use Wayfinder Sigil', 'Padvinderszegel gebruiken'),
+              style: Theme.of(sheetContext).textTheme.titleLarge),
+          if (adventures.length < 3)
+            Card(
+              child: ListTile(
+                key: const Key('wayfinder-create'),
+                leading: const Icon(Icons.add_circle_rounded),
+                title: Text(strings.pick(
+                  'Create an extra Adventure',
+                  'Maak een extra avontuur',
+                )),
+                onTap: () => Navigator.pop(sheetContext, createKey),
+              ),
+            ),
+          for (final adventure in adventures)
+            Card(
+              child: ListTile(
+                key: Key('wayfinder-reroll-${adventure.id}'),
+                leading: const Icon(Icons.casino_rounded),
+                title: Text(strings.pick(adventure.titleEn, adventure.titleNl)),
+                subtitle: Text(strings.pick(
+                    'Reroll this Adventure', 'Dit avontuur opnieuw rollen')),
+                onTap: () => Navigator.pop(sheetContext, adventure.id),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+  if (choice == null || !context.mounted) return;
+  final result = await game.useWayfinderSigil(
+    kind,
+    replaceAdventureId: choice == createKey ? null : choice,
+  );
+  if (!context.mounted || result != WayfinderSigilUseResult.changed) return;
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Text(strings.pick(
+      'The Adventure choices have changed.',
+      'De avontuurkeuzes zijn gewijzigd.',
+    )),
+  ));
+}
+
+Future<void> _equipTwinstarBrooch(BuildContext context) async {
+  final game = context.read<HouseholdProvider>();
+  final strings = AppStrings.of(context);
+  const unequipKey = '__unequip__';
+  final choice = await showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (sheetContext) => FractionallySizedBox(
+      heightFactor: .72,
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 22),
+          children: [
+            Text(strings.pick('Twinstar Brooch', 'Tweesterbroche'),
+                style: Theme.of(sheetContext).textTheme.titleLarge),
+            Text(strings.pick(
+              'Only its current wearer receives double XP.',
+              'Alleen de huidige drager ontvangt dubbele XP.',
+            )),
+            if (game.twinstarBroochDragonId != null)
+              Card(
+                child: ListTile(
+                  key: const Key('twinstar-unequip'),
+                  leading: const Icon(Icons.link_off_rounded),
+                  title: Text(strings.pick('Unequip', 'Ontkoppelen')),
+                  onTap: () => Navigator.pop(sheetContext, unequipKey),
+                ),
+              ),
+            for (final dragon in game.ownedDragons)
+              Card(
+                child: ListTile(
+                  key: Key('twinstar-equip-${dragon.id}'),
+                  leading: SizedBox.square(
+                    dimension: 52,
+                    child: DragonArt(
+                      height: 52,
+                      animate: false,
+                      stageKey: dragon.stageKey,
+                      lineageId: dragon.lineageId,
+                      evolutionPath: dragon.activeEvolutionPath,
+                      prismatic: dragon.prismatic,
+                      sinister: dragon.sinister,
+                    ),
+                  ),
+                  title: Text(dragon.displayName),
+                  trailing: game.isTwinstarEquippedOn(dragon.id)
+                      ? const Icon(Icons.check_circle_rounded,
+                          color: AppColors.twilight)
+                      : const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.pop(sheetContext, dragon.id),
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+  if (choice == null || !context.mounted) return;
+  await game.equipTwinstarBrooch(choice == unequipKey ? null : choice);
+}
+
 class _AnimatedRelicRevealDialog extends StatefulWidget {
   const _AnimatedRelicRevealDialog({
     required this.relic,
@@ -947,6 +1756,11 @@ class _AnimatedRelicRevealDialogState
       MysticRelic.orderCompass => strings.lawAxisName(widget.dragon.lawAxis),
       MysticRelic.soulMirror =>
         widget.dragon.personalityTraitIds.map(strings.personality).join(' · '),
+      MysticRelic.astralLens ||
+      MysticRelic.chronoshard ||
+      MysticRelic.wayfinderSigil ||
+      MysticRelic.twinstarBrooch =>
+        '',
     };
     return Dialog.fullscreen(
       backgroundColor: const Color(0xFF170E32),

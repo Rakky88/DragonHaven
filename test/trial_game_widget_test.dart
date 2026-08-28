@@ -88,7 +88,8 @@ void main() {
     await tester.tap(game);
     await tester.pump(const Duration(milliseconds: 48));
     expect(find.text('Tap for the perfect hit'), findsNothing);
-    expect(find.text('ATTEMPTS LEFT: 3'), findsOneWidget);
+    expect(find.text('SCORING TURNS LEFT: 30'), findsOneWidget);
+    expect(find.text('Misses left: 3'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -104,6 +105,7 @@ void main() {
     }
     await tester.tap(game);
     await tester.pump();
+    expect(find.byKey(const Key('runeweaver-timer')), findsNothing);
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Tap to awaken the gate'), findsNothing);
     expect(find.text('WATCH THE RUNES'), findsOneWidget);
@@ -126,7 +128,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 330));
       await tester.pump();
     }
-    expect(find.text('ATTEMPTS LEFT: 0'), findsOneWidget);
+    expect(find.text('SCORING TURNS LEFT: 0'), findsOneWidget);
+    expect(find.text('Misses left: 0'), findsOneWidget);
     expect(
       tester
           .widget<AnimatedOpacity>(
@@ -198,6 +201,23 @@ void main() {
     expect(
         gameState.availableTrials.any((item) => item.id == offer.id), isFalse);
     expect(gameState.pet.xp, greaterThan(startingXp));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Arcana has no time limit and waits indefinitely for input',
+      (tester) async {
+    final (gameState, offer) = await pumpTrial(tester, TrialKind.runeweaver);
+    final startingXp = gameState.pet.xp;
+    await tester.tap(find.byKey(const Key('runeweaver-game')));
+    await tester.pump(const Duration(minutes: 10));
+
+    expect(find.byKey(const Key('runeweaver-timer')), findsNothing);
+    expect(find.byKey(const Key('runeweaver-game')), findsOneWidget);
+    expect(
+      gameState.availableTrials.any((item) => item.id == offer.id),
+      isTrue,
+    );
+    expect(gameState.pet.xp, startingXp);
     expect(tester.takeException(), isNull);
   });
 

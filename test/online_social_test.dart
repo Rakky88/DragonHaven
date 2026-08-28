@@ -208,6 +208,48 @@ void main() {
     online.dispose();
   });
 
+  test('app initialization does not wait for a slow online refresh', () async {
+    final game = HouseholdProvider(random: Random(401));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..ensureAccountGate = Completer<void>();
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+
+    await online.initialize(waitForFirstRefresh: false);
+
+    expect(online.busy, isTrue);
+    repository.ensureAccountGate!.complete();
+    while (online.busy) {
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+    }
+    expect(online.profile, isNotNull);
+    online.dispose();
+  });
+
+  test('slow online actions time out without blocking the local game',
+      () async {
+    final game = HouseholdProvider(random: Random(402));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..signedIn = false;
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+      operationTimeout: const Duration(milliseconds: 10),
+    );
+    await online.initialize();
+    repository
+      ..signedIn = true
+      ..ensureAccountGate = Completer<void>();
+
+    expect(await online.refresh(), isFalse);
+    expect(online.busy, isFalse);
+    expect(online.errorCode, 'online_timeout');
+    repository.ensureAccountGate!.complete();
+    online.dispose();
+  });
+
   test('new online accounts require email confirmation before sign-in',
       () async {
     final game = HouseholdProvider(random: Random(11));
@@ -320,6 +362,64 @@ void main() {
     final withGameplayDrop = OnlineInventorySnapshot.fromGame(game)
         .toTradeJson()['relics'] as Map<String, dynamic>;
     expect(withGameplayDrop[MysticRelic.soulMirror.name], 1);
+  });
+
+  test('Chronoshard trade data and percentage-specific reservations persist',
+      () async {
+    final game = HouseholdProvider(random: Random(182))
+      ..relicInventory[MysticRelic.chronoshard] = 2
+      ..chronoshardReductions = [37, 64];
+    final snapshot = OnlineInventorySnapshot.fromGame(game).toTradeJson();
+    expect(
+      (snapshot['relic_variants'] as Map)[MysticRelic.chronoshard.name],
+      [37, 64],
+    );
+    final item = TradeItem.relic(
+      MysticRelic.chronoshard,
+      data: const {'reductionPercent': 37},
+    );
+    expect(item.toRequestJson()['data'], const {'reductionPercent': 37});
+
+    await game.synchronizeOnlineTradeReservations(
+      const {},
+      const {},
+      const {'chronoshard:37': 1},
+    );
+    expect(game.isChronoshardReserved(37), isTrue);
+    expect(game.isChronoshardReserved(64), isFalse);
+    expect(await game.useChronoshard(37), ChronoshardUseResult.notOwned);
+
+    final applied = await game.applyOnlineTradeSettlement(
+      tradeId: 'chrono-trade',
+      sentKind: 'relic',
+      sentKey: 'chronoshard',
+      sentData: const {'reductionPercent': 37},
+      receivedKind: 'relic',
+      receivedKey: 'chronoshard',
+      receivedData: const {'reductionPercent': 81},
+    );
+    expect(applied, isTrue);
+    expect(game.chronoshardReductions, [64, 81]);
+  });
+
+  test('Twinstar Brooch is rejected by every client trade boundary', () async {
+    final item = TradeItem.relic(MysticRelic.twinstarBrooch);
+    expect(item.isTradeable, isFalse);
+
+    final game = HouseholdProvider(random: Random(183))
+      ..relicInventory[MysticRelic.twinstarBrooch] = 1;
+    expect(
+      await game.applyOnlineTradeSettlement(
+        tradeId: 'invalid-twinstar-trade',
+        sentKind: 'relic',
+        sentKey: 'twinstarBrooch',
+        sentData: const {},
+        receivedKind: 'relic',
+        receivedKey: 'moralPrism',
+        receivedData: const {},
+      ),
+      isFalse,
+    );
   });
 
   test('group reward is applied locally once before server acknowledgement',
@@ -929,6 +1029,7 @@ class _FakeSocialRepository implements SocialRepository {
   int ensureAccountCount = 0;
   int snapshotLoadCount = 0;
   int transientSnapshotFailures = 0;
+  Completer<void>? ensureAccountGate;
   String? resentConfirmationEmail;
   GroupAdventureReward? groupReward;
   String? createGroupError;
@@ -1128,6 +1229,7 @@ class _FakeSocialRepository implements SocialRepository {
   @override
   Future<void> ensureAccount() async {
     ensureAccountCount++;
+    await ensureAccountGate?.future;
   }
 
   @override

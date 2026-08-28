@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/day_phase.dart';
+import '../models/dragon_lineage.dart';
 import '../models/house.dart';
+import '../models/mystic_relic.dart';
 import '../models/pet.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
@@ -509,6 +511,30 @@ class _OwnedDragonsSheet extends StatefulWidget {
 class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
   _DragonCollectionView _view = _DragonCollectionView.gallery;
   _DragonSortMode _sortMode = _DragonSortMode.acquiredAt;
+  bool _sortDescending = true;
+  final Set<String> _formFilters = {};
+  final Set<String> _rarityFilters = {};
+  bool _spectralOnly = false;
+
+  String _formKey(Pet dragon) => switch (dragon.stage) {
+        DragonStage.hatchling => 'hatchling',
+        DragonStage.wyrmling => 'wyrmling',
+        DragonStage.ascended => dragon.activeEvolutionPath,
+        DragonStage.egg => 'egg',
+      };
+
+  String _rarityKey(Pet dragon) =>
+      dragon.sinister ? 'infernal' : dragon.lineage.rarity.name;
+
+  List<Pet> _filteredDragons(Iterable<Pet> source) => source
+      .where(
+        (dragon) =>
+            (_formFilters.isEmpty || _formFilters.contains(_formKey(dragon))) &&
+            (_rarityFilters.isEmpty ||
+                _rarityFilters.contains(_rarityKey(dragon))) &&
+            (!_spectralOnly || dragon.spectral),
+      )
+      .toList(growable: false);
 
   List<Pet> _sortedDragons(Iterable<Pet> source) {
     final dragons = source.toList(growable: false);
@@ -516,16 +542,20 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
       final comparison = switch (_sortMode) {
         _DragonSortMode.name =>
           a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
-        _DragonSortMode.acquiredAt => b.acquiredAt.compareTo(a.acquiredAt),
-        _DragonSortMode.rarity =>
-          b.lineage.rarity.index.compareTo(a.lineage.rarity.index),
+        _DragonSortMode.acquiredAt => a.acquiredAt.compareTo(b.acquiredAt),
+        _DragonSortMode.rarity => _rarityRank(a).compareTo(_rarityRank(b)),
       };
-      return comparison != 0
+      final stable = comparison != 0
           ? comparison
           : a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase());
+      return _sortDescending ? -stable : stable;
     });
     return dragons;
   }
+
+  int _rarityRank(Pet dragon) => dragon.sinister
+      ? DragonRarity.values.length
+      : dragon.lineage.rarity.index;
 
   String _sortLabel(AppStrings strings) => switch (_sortMode) {
         _DragonSortMode.name => strings.pick('Name', 'Naam'),
@@ -533,11 +563,42 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
         _DragonSortMode.rarity => strings.pick('Rarity', 'Zeldzaamheid'),
       };
 
+  void _selectSort(_DragonSortMode value) {
+    setState(() {
+      if (_sortMode == value) {
+        _sortDescending = !_sortDescending;
+      } else {
+        _sortMode = value;
+        _sortDescending = value != _DragonSortMode.name;
+      }
+    });
+  }
+
+  String _formLabel(AppStrings strings, String key) => switch (key) {
+        'hatchling' => strings.pick('Hatchling', 'Jong'),
+        'wyrmling' => 'Wyrmling',
+        'might' => strings.pick('Might', 'Kracht'),
+        'arcana' => 'Arcana',
+        'spirit' => strings.pick('Spirit', 'Geest'),
+        'mastery' => strings.pick('Mastery', 'Meesterschap'),
+        _ => key,
+      };
+
+  String _rarityLabel(AppStrings strings, String key) {
+    if (key == 'infernal') return strings.pick('Infernal', 'Infernaal');
+    final rarity = DragonRarity.values.firstWhere((value) => value.name == key);
+    return strings.lineageRarity(
+      dragonLineages.firstWhere((lineage) => lineage.rarity == rarity),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final game = context.watch<HouseholdProvider>();
     final strings = AppStrings.of(context);
-    final dragons = _sortedDragons(game.ownedDragons);
+    final dragons = _sortedDragons(_filteredDragons(game.ownedDragons));
+    final activeFilterCount =
+        _formFilters.length + _rarityFilters.length + (_spectralOnly ? 1 : 0);
     return SafeArea(
       child: DraggableScrollableSheet(
         expand: false,
@@ -567,8 +628,7 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                           'Volgorde van draken wijzigen',
                         ),
                         initialValue: _sortMode,
-                        onSelected: (value) =>
-                            setState(() => _sortMode = value),
+                        onSelected: _selectSort,
                         itemBuilder: (_) => [
                           for (final mode in _DragonSortMode.values)
                             PopupMenuItem(
@@ -609,8 +669,13 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.swap_vert_rounded,
-                                  size: 18, color: AppColors.twilight),
+                              Icon(
+                                _sortDescending
+                                    ? Icons.arrow_downward_rounded
+                                    : Icons.arrow_upward_rounded,
+                                size: 18,
+                                color: AppColors.twilight,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 _sortLabel(strings),
@@ -622,6 +687,23 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                               ),
                             ],
                           ),
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      Badge(
+                        isLabelVisible: activeFilterCount > 0,
+                        label: Text('$activeFilterCount'),
+                        child: IconButton.filledTonal(
+                          key: const Key('owned-dragons-filter'),
+                          tooltip: strings.pick(
+                            'Filter dragons',
+                            'Draken filteren',
+                          ),
+                          onPressed: () => _showFilters(
+                            context,
+                            game.ownedDragons,
+                          ),
+                          icon: const Icon(Icons.filter_alt_rounded),
                         ),
                       ),
                       const SizedBox(width: 7),
@@ -680,46 +762,181 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
               ),
             ),
             Expanded(
-              child: _view == _DragonCollectionView.gallery
-                  ? GridView.builder(
-                      key: const Key('owned-dragons-grid'),
-                      controller: controller,
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
-                      itemCount: dragons.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount:
-                            MediaQuery.sizeOf(context).width >= 600 ? 3 : 2,
-                        childAspectRatio: .88,
-                        mainAxisSpacing: 8,
-                        crossAxisSpacing: 8,
+              child: dragons.isEmpty
+                  ? Center(
+                      child: Text(
+                        strings.pick(
+                          'No dragons match these filters.',
+                          'Geen draken voldoen aan deze filters.',
+                        ),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: AppColors.muted),
                       ),
-                      itemBuilder: (context, index) {
-                        final dragon = dragons[index];
-                        return _OwnedDragonGridCard(
-                          dragon: dragon,
-                          onTap: () => _showDragonDetails(context, dragon),
-                        );
-                      },
                     )
-                  : ListView.separated(
-                      key: const Key('owned-dragons-list'),
-                      controller: controller,
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
-                      itemCount: dragons.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 7),
-                      itemBuilder: (context, index) {
-                        final dragon = dragons[index];
-                        return _OwnedDragonListCard(
-                          dragon: dragon,
-                          onTap: () => _showDragonDetails(context, dragon),
-                        );
-                      },
-                    ),
+                  : _view == _DragonCollectionView.gallery
+                      ? GridView.builder(
+                          key: const Key('owned-dragons-grid'),
+                          controller: controller,
+                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
+                          itemCount: dragons.length,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount:
+                                MediaQuery.sizeOf(context).width >= 600 ? 3 : 2,
+                            childAspectRatio: .88,
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
+                          ),
+                          itemBuilder: (context, index) {
+                            final dragon = dragons[index];
+                            return _OwnedDragonGridCard(
+                              dragon: dragon,
+                              twinstarEquipped:
+                                  game.isTwinstarEquippedOn(dragon.id),
+                              onTap: () => _showDragonDetails(context, dragon),
+                            );
+                          },
+                        )
+                      : ListView.separated(
+                          key: const Key('owned-dragons-list'),
+                          controller: controller,
+                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
+                          itemCount: dragons.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 7),
+                          itemBuilder: (context, index) {
+                            final dragon = dragons[index];
+                            return _OwnedDragonListCard(
+                              dragon: dragon,
+                              twinstarEquipped:
+                                  game.isTwinstarEquippedOn(dragon.id),
+                              onTap: () => _showDragonDetails(context, dragon),
+                            );
+                          },
+                        ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _showFilters(
+    BuildContext context,
+    Iterable<Pet> ownedDragons,
+  ) async {
+    final strings = AppStrings.of(context);
+    final availableForms = ownedDragons.map(_formKey).toSet().toList()..sort();
+    final availableRarities = ownedDragons.map(_rarityKey).toSet().toList()
+      ..sort((a, b) {
+        const order = [
+          'common',
+          'uncommon',
+          'rare',
+          'veryRare',
+          'legendary',
+          'mythical',
+          'infernal',
+        ];
+        return order.indexOf(a).compareTo(order.indexOf(b));
+      });
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, modalSetState) => SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        strings.pick('Filter dragons', 'Draken filteren'),
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    TextButton(
+                      key: const Key('owned-dragons-filter-clear'),
+                      onPressed: () => modalSetState(() {
+                        _formFilters.clear();
+                        _rarityFilters.clear();
+                        _spectralOnly = false;
+                      }),
+                      child: Text(strings.pick('Clear', 'Wissen')),
+                    ),
+                  ],
+                ),
+                Text(strings.pick('Form', 'Vorm'),
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 5,
+                  children: [
+                    for (final form in availableForms)
+                      FilterChip(
+                        key: Key('dragon-filter-form-$form'),
+                        label: Text(_formLabel(strings, form)),
+                        selected: _formFilters.contains(form),
+                        onSelected: (selected) => modalSetState(() => selected
+                            ? _formFilters.add(form)
+                            : _formFilters.remove(form)),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Text(strings.pick('Rarity', 'Zeldzaamheid'),
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 5,
+                  children: [
+                    for (final rarity in availableRarities)
+                      FilterChip(
+                        key: Key('dragon-filter-rarity-$rarity'),
+                        label: Text(_rarityLabel(strings, rarity)),
+                        selected: _rarityFilters.contains(rarity),
+                        onSelected: (selected) => modalSetState(() => selected
+                            ? _rarityFilters.add(rarity)
+                            : _rarityFilters.remove(rarity)),
+                      ),
+                  ],
+                ),
+                if (ownedDragons.any((dragon) => dragon.spectral)) ...[
+                  const SizedBox(height: 14),
+                  FilterChip(
+                    key: const Key('dragon-filter-spectral'),
+                    avatar: const Icon(Icons.auto_awesome_rounded, size: 18),
+                    label: Text(strings.pick(
+                      'Spectral only',
+                      'Alleen spectraal',
+                    )),
+                    selected: _spectralOnly,
+                    onSelected: (selected) =>
+                        modalSetState(() => _spectralOnly = selected),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    key: const Key('owned-dragons-filter-done'),
+                    onPressed: () => Navigator.pop(sheetContext),
+                    child: Text(strings.pick('Show dragons', 'Draken tonen')),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   Future<void> _showDragonDetails(BuildContext context, Pet dragon) async {
@@ -857,6 +1074,52 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                   },
                 ),
                 const Divider(height: 1),
+                if (game.hasTwinstarBrooch) ...[
+                  ListTile(
+                    key: Key('dragon-twinstar-${dragon.id}'),
+                    leading: SizedBox.square(
+                      dimension: 40,
+                      child: Image.asset(
+                        MysticRelic.twinstarBrooch.assetPath,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    title: Text(
+                      game.isTwinstarEquippedOn(dragon.id)
+                          ? strings.pick(
+                              'Unequip Twinstar Brooch',
+                              'Tweesterbroche afdoen',
+                            )
+                          : game.twinstarBroochDragonId == null
+                              ? strings.pick(
+                                  'Equip Twinstar Brooch',
+                                  'Tweesterbroche omdoen',
+                                )
+                              : strings.pick(
+                                  'Move Twinstar Brooch here',
+                                  'Tweesterbroche hierheen verplaatsen',
+                                ),
+                    ),
+                    subtitle: Text(strings.pick(
+                      'Doubles all XP while equipped',
+                      'Verdubbelt alle XP zolang hij gedragen wordt',
+                    )),
+                    trailing: game.isTwinstarEquippedOn(dragon.id)
+                        ? const Icon(
+                            Icons.check_circle_rounded,
+                            color: AppColors.twilight,
+                          )
+                        : null,
+                    onTap: () async {
+                      final equipped = game.isTwinstarEquippedOn(dragon.id);
+                      await game.equipTwinstarBrooch(
+                        equipped ? null : dragon.id,
+                      );
+                      if (sheetContext.mounted) Navigator.pop(sheetContext);
+                    },
+                  ),
+                  const Divider(height: 1),
+                ],
                 ListTile(
                   leading: const GameIconSprite(
                     GameIconKind.dragonFavorite,
@@ -902,8 +1165,8 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                                       'Release ${dragon.displayName}?',
                                       '${dragon.displayName} vrijlaten?')),
                                   content: Text(strings.pick(
-                                      'This dragon leaves your collection and cannot be trained. Its identity, form, alignment and hidden personality are preserved.',
-                                      'Deze draak verlaat je collectie en kan niet meer worden getraind. Identiteit, vorm, alignment en verborgen persoonlijkheid blijven bewaard.')),
+                                      'This dragon leaves your collection and cannot be trained. Its identity, form, alignment and hidden personality are preserved. Each day it has a 10% chance to return at a random time.',
+                                      'Deze draak verlaat je collectie en kan niet meer worden getraind. Identiteit, vorm, alignment en verborgen persoonlijkheid blijven bewaard. Elke dag heeft hij 10% kans om op een willekeurig tijdstip terug te keren.')),
                                   actions: [
                                     TextButton(
                                         onPressed: () =>
@@ -1049,9 +1312,14 @@ class _DragonProgressCard extends StatelessWidget {
 }
 
 class _OwnedDragonGridCard extends StatelessWidget {
-  const _OwnedDragonGridCard({required this.dragon, required this.onTap});
+  const _OwnedDragonGridCard({
+    required this.dragon,
+    required this.twinstarEquipped,
+    required this.onTap,
+  });
 
   final Pet dragon;
+  final bool twinstarEquipped;
   final VoidCallback onTap;
 
   @override
@@ -1110,6 +1378,29 @@ class _OwnedDragonGridCard extends StatelessWidget {
                   ),
                 ),
               ),
+            if (twinstarEquipped)
+              Positioned(
+                top: 3,
+                left: 3,
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: Color(0x22000000), blurRadius: 5),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(3),
+                    child: Image.asset(
+                      MysticRelic.twinstarBrooch.assetPath,
+                      key: Key('dragon-twinstar-badge-${dragon.id}'),
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
+                ),
+              ),
           ]),
         ),
       ),
@@ -1118,9 +1409,14 @@ class _OwnedDragonGridCard extends StatelessWidget {
 }
 
 class _OwnedDragonListCard extends StatelessWidget {
-  const _OwnedDragonListCard({required this.dragon, required this.onTap});
+  const _OwnedDragonListCard({
+    required this.dragon,
+    required this.twinstarEquipped,
+    required this.onTap,
+  });
 
   final Pet dragon;
+  final bool twinstarEquipped;
   final VoidCallback onTap;
 
   @override
@@ -1176,6 +1472,15 @@ class _OwnedDragonListCard extends StatelessWidget {
                             Icons.favorite_rounded,
                             color: Color(0xFFE05A78),
                             size: 15,
+                          ),
+                        ],
+                        if (twinstarEquipped) ...[
+                          const SizedBox(width: 4),
+                          Image.asset(
+                            MysticRelic.twinstarBrooch.assetPath,
+                            key: Key('dragon-twinstar-list-${dragon.id}'),
+                            width: 19,
+                            height: 19,
                           ),
                         ],
                       ],

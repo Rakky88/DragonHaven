@@ -6,6 +6,7 @@ import '../l10n/app_strings.dart';
 import '../models/account_title.dart';
 import '../models/chest.dart';
 import '../models/mystic_relic.dart';
+import '../models/music_track.dart';
 import '../models/profile_portrait.dart';
 import 'game_icon_sprite.dart';
 import 'profile_portrait_sprite.dart';
@@ -344,6 +345,12 @@ class _ChestRevealState extends State<_ChestReveal>
                                                 title: title,
                                                 strings: strings,
                                               )
+                                            else if (_reward!.musicTrackFound
+                                                case final track?)
+                                              _MusicReward(
+                                                track: track,
+                                                strings: strings,
+                                              )
                                             else ...[
                                               _Reward(
                                                 kind: GameIconKind.coin,
@@ -586,6 +593,80 @@ class _TitleReward extends StatelessWidget {
             strings.pick(
               'Added to your title collection',
               'Toegevoegd aan je titelcollectie',
+            ),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFC9C2E5),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      );
+}
+
+class _MusicReward extends StatelessWidget {
+  const _MusicReward({required this.track, required this.strings});
+
+  final MusicTrack track;
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            key: const Key('music-chest-zoomed-reward'),
+            constraints: const BoxConstraints(minHeight: 150, maxWidth: 360),
+            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 24),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFB7E8FF), Color(0xFFE1C8FF)],
+              ),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x99FFFFFF),
+                  blurRadius: 38,
+                  spreadRadius: 3,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.library_music_rounded,
+                  color: Color(0xFF29184C),
+                  size: 42,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  track.title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFF29184C),
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  track.composer,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFF5C4B76),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            strings.pick(
+              'Added to your Jukebox',
+              'Toegevoegd aan je Jukebox',
             ),
             textAlign: TextAlign.center,
             style: const TextStyle(

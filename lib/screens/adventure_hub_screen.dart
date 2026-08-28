@@ -2294,6 +2294,7 @@ class _ActiveAdventureCard extends StatelessWidget {
           orElse: () => null,
         );
     final ready = run.status == AdventureRunStatus.rewardReady;
+    final abortable = !ready && definition.kind != AdventureKind.group;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -2359,6 +2360,18 @@ class _ActiveAdventureCard extends StatelessWidget {
                   onPressed: () => _claimAdventure(context, run.id),
                   child: Text(strings.pick('Claim', 'Ophalen')),
                 )
+              else if (abortable)
+                IconButton(
+                  key: Key('abort-adventure-${run.id}'),
+                  tooltip: strings.pick('Abort adventure', 'Avontuur afbreken'),
+                  onPressed: () => _confirmAbortAdventure(
+                    context,
+                    run,
+                    dragon?.displayName,
+                  ),
+                  icon: const Icon(Icons.cancel_outlined,
+                      color: AppColors.twilight),
+                )
               else
                 const Icon(Icons.chevron_right_rounded,
                     color: AppColors.twilight),
@@ -2379,6 +2392,7 @@ Future<void> _showRunDetails(
   final strings = AppStrings.of(context);
   final game = context.read<HouseholdProvider>();
   final ready = run.status == AdventureRunStatus.rewardReady;
+  final abortable = !ready && definition.kind != AdventureKind.group;
   await showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
@@ -2466,12 +2480,72 @@ Future<void> _showRunDetails(
                   label:
                       Text(strings.pick('Claim rewards', 'Beloningen ophalen')),
                 ),
+              )
+            else if (abortable)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: Key('abort-adventure-details-${run.id}'),
+                  onPressed: () async {
+                    Navigator.pop(sheetContext);
+                    await _confirmAbortAdventure(
+                      context,
+                      run,
+                      dragon?.displayName,
+                    );
+                  },
+                  icon: const Icon(Icons.cancel_outlined),
+                  label: Text(
+                    strings.pick('Abort adventure', 'Avontuur afbreken'),
+                  ),
+                ),
               ),
           ],
         ),
       ),
     ),
   );
+}
+
+Future<void> _confirmAbortAdventure(
+  BuildContext context,
+  AdventureRun run,
+  String? dragonName,
+) async {
+  final strings = AppStrings.of(context);
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(strings.pick('Abort adventure?', 'Avontuur afbreken?')),
+          content: Text(strings.pick(
+            '${dragonName ?? 'Your dragon'} returns immediately, but you receive no rewards.',
+            '${dragonName ?? 'Je draak'} keert direct terug, maar je ontvangt geen beloningen.',
+          )),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(strings.pick('Keep going', 'Doorgaan')),
+            ),
+            FilledButton(
+              key: Key('confirm-abort-adventure-${run.id}'),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(strings.pick('Abort', 'Afbreken')),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+  if (!confirmed || !context.mounted) return;
+  final aborted =
+      await context.read<HouseholdProvider>().abortAdventure(run.id);
+  if (!aborted || messenger?.mounted != true) return;
+  messenger!.showSnackBar(SnackBar(
+    content: Text(strings.pick(
+      'Adventure aborted. Your dragon is available again.',
+      'Avontuur afgebroken. Je draak is weer beschikbaar.',
+    )),
+  ));
 }
 
 class _DetailRow extends StatelessWidget {

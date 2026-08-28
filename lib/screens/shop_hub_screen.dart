@@ -5,6 +5,7 @@ import '../l10n/app_strings.dart';
 import '../models/account_title.dart';
 import '../models/chest.dart';
 import '../models/mystic_relic.dart';
+import '../models/music_track.dart';
 import '../models/profile_portrait.dart';
 import '../models/shop_item.dart';
 import '../providers/household_provider.dart';
@@ -167,7 +168,9 @@ class _RelicShop extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        for (final relic in MysticRelic.values)
+        for (final relic in MysticRelic.values.where(
+          (candidate) => candidate.isShopAvailable,
+        ))
           _RelicShopCard(
             relic: relic,
             owned: game.relicCount(relic),
@@ -282,6 +285,10 @@ class _RelicShopCard extends StatelessWidget {
         MysticRelicPurchaseResult.insufficientGems => strings.pick(
             '${relicShopGemPrice - context.read<HouseholdProvider>().pet.gems} more gems needed.',
             'Je hebt nog ${relicShopGemPrice - context.read<HouseholdProvider>().pet.gems} edelstenen nodig.',
+          ),
+        MysticRelicPurchaseResult.notAvailable => strings.pick(
+            'This Relic is not available in the shop.',
+            'Dit Reliek is niet verkrijgbaar in de shop.',
           ),
       },
     );
@@ -421,6 +428,10 @@ class _ChestShop extends StatelessWidget {
             ],
           ),
         ),
+        if (portraitChest) ...[
+          const SizedBox(height: 18),
+          const _MusicChestShopCard(),
+        ],
       ],
     );
   }
@@ -503,6 +514,212 @@ class _ChestShop extends StatelessWidget {
       _ChestPurchaseOutcome.collectionComplete => '',
     };
     showAppSnackBar(context, message);
+  }
+}
+
+class _MusicChestShopCard extends StatelessWidget {
+  const _MusicChestShopCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final game = context.watch<HouseholdProvider>();
+    const tier = ChestTier.music;
+    return Container(
+      key: const Key('shop-music-chest-card'),
+      constraints: const BoxConstraints(maxWidth: 520),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 17),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2B185B), Color(0xFF6B3FA0)],
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x443C236F),
+            blurRadius: 26,
+            offset: Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Image.asset(
+            tier.assetPath,
+            width: 238,
+            height: 190,
+            fit: BoxFit.contain,
+          ),
+          Text(
+            strings.chestLabel(tier),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 25,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            strings.pick(
+              'Contains one random song you do not own. Its contents are decided only when opened.',
+              'Bevat één willekeurig liedje dat je nog niet bezit. De inhoud wordt pas bij het openen bepaald.',
+            ),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFE2D8F5),
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 15),
+          Container(
+            key: const Key('music-chest-collection-status'),
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .1),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  const Icon(Icons.library_music_rounded,
+                      color: Color(0xFFFFD66E), size: 20),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      strings.pick('Collection progress', 'Collectievoortgang'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${game.musicTrackCount} / ${musicCatalog.length}',
+                    key: const Key('music-chest-progress'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: game.musicTrackCount / musicCatalog.length,
+                    minHeight: 7,
+                    color: const Color(0xFFFFD66E),
+                    backgroundColor: Colors.white24,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  '${game.chestCount(tier)} ${strings.pick('unopened chests', 'ongeopende kisten')}',
+                  style: const TextStyle(
+                    color: Color(0xFFE2D8F5),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 15),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              key: const Key('buy-music-chest'),
+              onPressed: game.musicChestCapacityReached
+                  ? null
+                  : () => _buyMusic(context),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFFE39A),
+                foregroundColor: const Color(0xFF29184C),
+                disabledBackgroundColor: const Color(0xFF7F7394),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: game.musicChestCapacityReached
+                  ? Text(game.hasEveryMusicTrack
+                      ? strings.pick(
+                          'Collection complete', 'Collectie compleet')
+                      : strings.pick('All remaining rewards covered',
+                          'Alle resterende beloningen gedekt'))
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GameIconSprite(GameIconKind.gem, size: 29),
+                        SizedBox(width: 7),
+                        Text(
+                          '$musicChestGemPrice',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _buyMusic(BuildContext context) async {
+    final game = context.read<HouseholdProvider>();
+    final result = await game.purchaseMusicChest();
+    if (!context.mounted) return;
+    final strings = AppStrings.of(context);
+    switch (result) {
+      case MusicChestPurchaseResult.purchased:
+        showAppSnackBar(
+          context,
+          strings.pick(
+            'Music Chest added to your Inventory.',
+            'Muziekkist toegevoegd aan je Inventory.',
+          ),
+        );
+      case MusicChestPurchaseResult.insufficientGems:
+        showAppSnackBar(
+          context,
+          strings.pick(
+            '${musicChestGemPrice - game.pet.gems} more gems needed.',
+            'Nog ${musicChestGemPrice - game.pet.gems} edelstenen nodig.',
+          ),
+        );
+      case MusicChestPurchaseResult.collectionComplete:
+        await showDialog<void>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            icon: Image.asset(
+              ChestTier.music.assetPath,
+              width: 92,
+              height: 92,
+            ),
+            title: Text(strings.pick(
+              'Collection complete',
+              'Collectie compleet',
+            )),
+            content: Text(strings.pick(
+              'Every song is already owned or covered by an unopened Music Chest.',
+              'Elk liedje is al in bezit of wordt gedekt door een ongeopende Muziekkist.',
+            )),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(strings.pick('Understood', 'Begrepen')),
+              ),
+            ],
+          ),
+        );
+    }
   }
 }
 

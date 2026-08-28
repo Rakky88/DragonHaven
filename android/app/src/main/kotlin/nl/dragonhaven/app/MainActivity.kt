@@ -17,6 +17,7 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import androidx.core.app.NotificationManagerCompat
+import kotlin.random.Random
 
 class MainActivity : FlutterActivity() {
     private data class ScheduledNotification(
@@ -33,6 +34,13 @@ class MainActivity : FlutterActivity() {
     private var musicPlayer: MediaPlayer? = null
     private var musicEnhancer: LoudnessEnhancer? = null
     private var musicScene: String? = null
+    private var jukeboxTracks = listOf("music_reverie")
+    private var jukeboxQueue = mutableListOf<String>()
+    private var jukeboxShuffle = false
+    private var jukeboxRepeat = true
+    private var jukeboxCycleStarted = false
+    private var jukeboxFinished = false
+    private var currentMusicTrack: String? = null
     private var fadeGeneration = 0
     private var notificationPermissionRequestPending = false
     private val notificationsWaitingForPermission = linkedMapOf<String, ScheduledNotification>()
@@ -53,7 +61,7 @@ class MainActivity : FlutterActivity() {
                     musicPlayer?.let { player ->
                         if (!player.isPlaying) player.start()
                         fadeMusic(player, MUSIC_VOLUME)
-                    } ?: musicScene?.let(::startMusic)
+                    } ?: startNextMusic()
                 }
             }
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK ->
@@ -106,11 +114,28 @@ class MainActivity : FlutterActivity() {
                     musicEnabled = call.argument<Boolean>("music") ?: true
                     effectsEnabled = call.argument<Boolean>("effects") ?: true
                     musicScene = call.argument<String>("scene") ?: musicScene
+                    val tracks = call.argument<List<String>>("tracks")
+                    if (tracks != null) {
+                        updateJukebox(
+                            tracks,
+                            call.argument<Boolean>("shuffle") ?: jukeboxShuffle,
+                            call.argument<Boolean>("repeat") ?: jukeboxRepeat,
+                        )
+                    }
                     if (!musicEnabled) {
                         fadeOutAndStopMusic()
-                    } else if (!wasMusicEnabled || musicPlayer == null) {
-                        musicScene?.let(::startMusic)
+                    } else if (musicPlayer == null) {
+                        if (!wasMusicEnabled) jukeboxFinished = false
+                        startNextMusic()
                     }
+                    result.success(true)
+                }
+                "setJukebox" -> {
+                    updateJukebox(
+                        call.argument<List<String>>("tracks") ?: emptyList(),
+                        call.argument<Boolean>("shuffle") ?: false,
+                        call.argument<Boolean>("repeat") ?: true,
+                    )
                     result.success(true)
                 }
                 "playSound" -> {
@@ -127,7 +152,7 @@ class MainActivity : FlutterActivity() {
                         }
                         result.success(true)
                     } else {
-                        result.success(id != null && startMusic(id))
+                        result.success(id != null && startNextMusic())
                     }
                 }
                 else -> result.notImplemented()
@@ -243,7 +268,86 @@ class MainActivity : FlutterActivity() {
         "hatch_crack_3" -> R.raw.hatch_crack_3
         "hatch_reveal" -> R.raw.hatch_reveal
         "reveal" -> R.raw.reveal
-        "reverie" -> R.raw.reverie
+        "music_clair_de_lune" -> R.raw.music_clair_de_lune
+        "music_arabesque_1" -> R.raw.music_arabesque_1
+        "music_reverie" -> R.raw.music_reverie
+        "music_flaxen_hair" -> R.raw.music_flaxen_hair
+        "music_golliwoggs_cakewalk" -> R.raw.music_golliwoggs_cakewalk
+        "music_gymnopedie_1" -> R.raw.music_gymnopedie_1
+        "music_gymnopedie_2" -> R.raw.music_gymnopedie_2
+        "music_gymnopedie_3" -> R.raw.music_gymnopedie_3
+        "music_gnossienne_1" -> R.raw.music_gnossienne_1
+        "music_gnossienne_3" -> R.raw.music_gnossienne_3
+        "music_je_te_veux" -> R.raw.music_je_te_veux
+        "music_fur_elise" -> R.raw.music_fur_elise
+        "music_moonlight_1" -> R.raw.music_moonlight_1
+        "music_moonlight_3" -> R.raw.music_moonlight_3
+        "music_pathetique_2" -> R.raw.music_pathetique_2
+        "music_ode_to_joy" -> R.raw.music_ode_to_joy
+        "music_symphony_5_1" -> R.raw.music_symphony_5_1
+        "music_symphony_7_2" -> R.raw.music_symphony_7_2
+        "music_eine_kleine_nachtmusik" -> R.raw.music_eine_kleine_nachtmusik
+        "music_rondo_alla_turca" -> R.raw.music_rondo_alla_turca
+        "music_symphony_40_1" -> R.raw.music_symphony_40_1
+        "music_sonata_k545_1" -> R.raw.music_sonata_k545_1
+        "music_lacrimosa" -> R.raw.music_lacrimosa
+        "music_dies_irae" -> R.raw.music_dies_irae
+        "music_ave_verum" -> R.raw.music_ave_verum
+        "music_canon_in_d" -> R.raw.music_canon_in_d
+        "music_air_g_string" -> R.raw.music_air_g_string
+        "music_prelude_c_major" -> R.raw.music_prelude_c_major
+        "music_toccata_fugue_d_minor" -> R.raw.music_toccata_fugue_d_minor
+        "music_cello_suite_1_prelude" -> R.raw.music_cello_suite_1_prelude
+        "music_jesu_joy" -> R.raw.music_jesu_joy
+        "music_badinerie" -> R.raw.music_badinerie
+        "music_minuet_g_major" -> R.raw.music_minuet_g_major
+        "music_spring" -> R.raw.music_spring
+        "music_summer_presto" -> R.raw.music_summer_presto
+        "music_autumn_1" -> R.raw.music_autumn_1
+        "music_winter_1" -> R.raw.music_winter_1
+        "music_winter_2" -> R.raw.music_winter_2
+        "music_sugar_plum" -> R.raw.music_sugar_plum
+        "music_waltz_flowers" -> R.raw.music_waltz_flowers
+        "music_trepak" -> R.raw.music_trepak
+        "music_swan_lake_scene" -> R.raw.music_swan_lake_scene
+        "music_sleeping_beauty_waltz" -> R.raw.music_sleeping_beauty_waltz
+        "music_1812_finale" -> R.raw.music_1812_finale
+        "music_mountain_king" -> R.raw.music_mountain_king
+        "music_morning_mood" -> R.raw.music_morning_mood
+        "music_anitras_dance" -> R.raw.music_anitras_dance
+        "music_solveigs_song" -> R.raw.music_solveigs_song
+        "music_nocturne_9_2" -> R.raw.music_nocturne_9_2
+        "music_prelude_28_4" -> R.raw.music_prelude_28_4
+        "music_raindrop_prelude" -> R.raw.music_raindrop_prelude
+        "music_minute_waltz" -> R.raw.music_minute_waltz
+        "music_funeral_march" -> R.raw.music_funeral_march
+        "music_fantaisie_impromptu" -> R.raw.music_fantaisie_impromptu
+        "music_hungarian_dance_5" -> R.raw.music_hungarian_dance_5
+        "music_hungarian_dance_6" -> R.raw.music_hungarian_dance_6
+        "music_lullaby" -> R.raw.music_lullaby
+        "music_blue_danube" -> R.raw.music_blue_danube
+        "music_tritsch_tratsch" -> R.raw.music_tritsch_tratsch
+        "music_radetzky_march" -> R.raw.music_radetzky_march
+        "music_can_can" -> R.raw.music_can_can
+        "music_barcarolle" -> R.raw.music_barcarolle
+        "music_ride_valkyries" -> R.raw.music_ride_valkyries
+        "music_bridal_chorus" -> R.raw.music_bridal_chorus
+        "music_bumblebee" -> R.raw.music_bumblebee
+        "music_scheherazade_prince_princess" -> R.raw.music_scheherazade_prince_princess
+        "music_procession_nobles" -> R.raw.music_procession_nobles
+        "music_entertainer" -> R.raw.music_entertainer
+        "music_maple_leaf_rag" -> R.raw.music_maple_leaf_rag
+        "music_easy_winners" -> R.raw.music_easy_winners
+        "music_solace" -> R.raw.music_solace
+        "music_elite_syncopations" -> R.raw.music_elite_syncopations
+        "music_greensleeves" -> R.raw.music_greensleeves
+        "music_scarborough_fair" -> R.raw.music_scarborough_fair
+        "music_drunken_sailor" -> R.raw.music_drunken_sailor
+        "music_irish_washerwoman" -> R.raw.music_irish_washerwoman
+        "music_korobeiniki" -> R.raw.music_korobeiniki
+        "music_house_rising_sun" -> R.raw.music_house_rising_sun
+        "music_amazing_grace" -> R.raw.music_amazing_grace
+        "music_auld_lang_syne" -> R.raw.music_auld_lang_syne
         "room" -> R.raw.room
         "spectral_reveal" -> R.raw.spectral_reveal
         "tower_day" -> R.raw.tower_day
@@ -344,22 +448,71 @@ class MainActivity : FlutterActivity() {
         return true
     }
 
-    private fun startMusic(id: String): Boolean {
+    private fun updateJukebox(tracks: List<String>, shuffle: Boolean, repeat: Boolean) {
+        val cleaned = tracks.distinct().filter { rawResourceId(it) != 0 }
+        val changed = cleaned != jukeboxTracks ||
+            shuffle != jukeboxShuffle || repeat != jukeboxRepeat
+        if (!changed) return
+        jukeboxTracks = cleaned
+        jukeboxShuffle = shuffle
+        jukeboxRepeat = repeat
+        jukeboxCycleStarted = currentMusicTrack != null
+        jukeboxFinished = false
+        rebuildJukeboxQueue(excluding = currentMusicTrack)
+        if (cleaned.isEmpty()) {
+            fadeOutAndStopMusic()
+        } else if (currentMusicTrack !in cleaned) {
+            releaseMusicPlayer()
+            startNextMusic()
+        }
+    }
+
+    private fun rebuildJukeboxQueue(excluding: String? = null) {
+        jukeboxQueue = jukeboxTracks.filter { it != excluding }.toMutableList()
+        if (jukeboxShuffle) jukeboxQueue.shuffle(Random.Default)
+    }
+
+    private fun startNextMusic(): Boolean {
+        if (!musicEnabled || jukeboxTracks.isEmpty() || jukeboxFinished) return false
+        if (jukeboxQueue.isEmpty()) {
+            if (jukeboxCycleStarted && !jukeboxRepeat) {
+                jukeboxFinished = true
+                releaseMusicPlayer()
+                return false
+            }
+            rebuildJukeboxQueue()
+            jukeboxCycleStarted = true
+        }
+        if (jukeboxQueue.isEmpty()) return false
+        val next = jukeboxQueue.removeAt(0)
+        return startMusic(next)
+    }
+
+    private fun startMusic(trackId: String): Boolean {
         if (!musicEnabled) return false
-        val resource = rawResourceId("reverie")
+        val resource = rawResourceId(trackId)
         if (resource == 0) return false
         if (!requestMusicFocus()) return false
         releaseMusicPlayer()
+        currentMusicTrack = trackId
         musicPlayer = MediaPlayer.create(this, resource, musicAttributes, 0)?.apply {
-            // The bundled tracks are authored as calm ambient loops. Android's
-            // native looping avoids the audible pause that completion/restart
-            // callbacks introduce between tracks.
-            isLooping = true
+            isLooping = false
             setVolume(0f, 0f)
             attachMusicEnhancer(this)
+            setOnCompletionListener { completed ->
+                if (musicPlayer !== completed) return@setOnCompletionListener
+                releaseMusicPlayer()
+                startNextMusic()
+            }
+            setOnErrorListener { failed, _, _ ->
+                if (musicPlayer === failed) releaseMusicPlayer()
+                startNextMusic()
+                true
+            }
             start()
             fadeMusic(this, MUSIC_VOLUME)
         }
+        if (musicPlayer == null) currentMusicTrack = null
         return musicPlayer != null
     }
 
@@ -406,6 +559,7 @@ class MainActivity : FlutterActivity() {
         musicEnhancer = null
         musicPlayer?.release()
         musicPlayer = null
+        currentMusicTrack = null
     }
 
     private fun attachMusicEnhancer(player: MediaPlayer) {
@@ -441,7 +595,7 @@ class MainActivity : FlutterActivity() {
             musicPlayer?.let { player ->
                 if (!player.isPlaying) player.start()
                 player.setVolume(MUSIC_VOLUME, MUSIC_VOLUME)
-            } ?: musicScene?.let(::startMusic)
+            } ?: startNextMusic()
         }
     }
 

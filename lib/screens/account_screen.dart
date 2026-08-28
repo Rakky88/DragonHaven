@@ -7,6 +7,7 @@ import '../models/profile_portrait.dart';
 import '../providers/household_provider.dart';
 import '../providers/online_account_provider.dart';
 import 'notification_settings_screen.dart';
+import 'jukebox_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
@@ -49,8 +50,8 @@ class AccountScreen extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w900),
               ),
               subtitle: Text(strings.pick(
-                '${game.portraitCount} of ${profilePortraitCatalog.length} collected',
-                '${game.portraitCount} van ${profilePortraitCatalog.length} verzameld',
+                '${game.portraitCount} collected',
+                '${game.portraitCount} verzameld',
               )),
               trailing: const Icon(Icons.grid_view_rounded),
               onTap: () => _choosePortrait(context),
@@ -88,8 +89,8 @@ class AccountScreen extends StatelessWidget {
                 ),
               ),
               subtitle: Text(strings.pick(
-                '${game.titleCount} of ${accountTitleCatalog.length} collected',
-                '${game.titleCount} van ${accountTitleCatalog.length} verzameld',
+                '${game.titleCount} collected',
+                '${game.titleCount} verzameld',
               )),
               trailing: const Icon(Icons.format_list_bulleted_rounded),
               onTap: () => _chooseTitle(context),
@@ -206,6 +207,42 @@ class AccountScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Card(
+            child: ListTile(
+              key: const Key('jukebox-settings-button'),
+              contentPadding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
+              leading: Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFB7E8FF), Color(0xFFE1C8FF)],
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.queue_music_rounded,
+                  color: AppColors.twilight,
+                  size: 34,
+                ),
+              ),
+              title: Text(
+                strings.pick('Jukebox', 'Jukebox'),
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+              subtitle: Text(strings.pick(
+                '${game.musicTrackCount} tracks collected',
+                '${game.musicTrackCount} nummers verzameld',
+              )),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const JukeboxScreen(),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Card(
             clipBehavior: Clip.antiAlias,
             child: Container(
               decoration: const BoxDecoration(
@@ -224,7 +261,7 @@ class AccountScreen extends StatelessWidget {
                       size: 58,
                     ),
                     title: Text(
-                        strings.pick('Music · Rêverie', 'Muziek · Rêverie'),
+                        strings.pick('Background music', 'Achtergrondmuziek'),
                         style: const TextStyle(fontWeight: FontWeight.w800)),
                     subtitle: Text(game.musicEnabled
                         ? strings.tr('on')
@@ -393,8 +430,8 @@ class AccountScreen extends StatelessWidget {
             'Nog geen portretten verzameld',
           )),
           content: Text(strings.pick(
-            'Portrait Chests cost 99 gems in the Shop and always reveal a portrait you do not own yet.',
-            'Portretkisten kosten 99 edelstenen in de Shop en onthullen altijd een portret dat je nog niet bezit.',
+            'Portrait Chests cost 100 gems in the Shop and always reveal a portrait you do not own yet.',
+            'Portretkisten kosten 100 edelstenen in de Shop en onthullen altijd een portret dat je nog niet bezit.',
           )),
           actions: [
             FilledButton(
@@ -429,7 +466,7 @@ class AccountScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${portraits.length}/${profilePortraitCatalog.length}',
+                      '${portraits.length}',
                       style: const TextStyle(
                         color: AppColors.muted,
                         fontWeight: FontWeight.w900,
@@ -534,7 +571,7 @@ class AccountScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${titles.length}/${accountTitleCatalog.length}',
+                      '${titles.length}',
                       style: const TextStyle(
                         color: AppColors.muted,
                         fontWeight: FontWeight.w900,

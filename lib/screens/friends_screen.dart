@@ -1183,7 +1183,10 @@ Future<TradeItem?> _pickTradeItem(BuildContext context) async {
                       return Card(
                         child: ListTile(
                           key: Key(
-                              'trade-item-${inventoryItem.item.kind.name}-${inventoryItem.item.key}'),
+                            'trade-item-${inventoryItem.item.kind.name}-'
+                            '${inventoryItem.item.key}'
+                            '${inventoryItem.item.data['reductionPercent'] == null ? '' : '-${inventoryItem.item.data['reductionPercent']}'}',
+                          ),
                           leading: _TradeItemArt(item: inventoryItem.item),
                           title: Text(
                             _tradeItemLabel(
@@ -1440,8 +1443,10 @@ String _tradeItemLabel(
           strings.pick('Chest', 'Kist');
     case TradeItemKind.relic:
       final relic = item.relic;
-      return relic == null
-          ? strings.pick('Relic', 'Reliek')
+      if (relic == null) return strings.pick('Relic', 'Reliek');
+      final reduction = (item.data['reductionPercent'] as num?)?.toInt();
+      return relic == MysticRelic.chronoshard && reduction != null
+          ? '${strings.relicName(relic)} ($reduction%)'
           : strings.relicName(relic);
   }
 }

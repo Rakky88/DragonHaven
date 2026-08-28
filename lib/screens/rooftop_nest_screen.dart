@@ -117,7 +117,7 @@ class _RooftopNestScreenState extends State<RooftopNestScreen> {
       showDragHandle: true,
       isScrollControlled: true,
       builder: (sheetContext) {
-        final height = (game.eggStash.length * 96.0 + 92)
+        final height = (game.eggStash.length * 112.0 + 92)
             .clamp(230.0, MediaQuery.sizeOf(sheetContext).height * .72)
             .toDouble();
         return SafeArea(
@@ -146,10 +146,13 @@ class _RooftopNestScreenState extends State<RooftopNestScreen> {
                         strings.pick('Mysterious Egg', 'Mysterieus Ei'),
                         style: const TextStyle(fontWeight: FontWeight.w900),
                       ),
-                      subtitle: Text(strings.pick(
-                        'Its identity is already safely hidden inside.',
-                        'Zijn identiteit zit al veilig binnenin verborgen.',
-                      )),
+                      subtitle: Text(
+                        strings.pick(
+                          'Hatch time: ${strings.remainingDuration(egg.incubationDuration)}\nIts identity is already safely hidden inside.',
+                          'Broedtijd: ${strings.remainingDuration(egg.incubationDuration)}\nZijn identiteit zit al veilig binnenin verborgen.',
+                        ),
+                        key: Key('nest-egg-hatch-time-${egg.id}'),
+                      ),
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () => Navigator.pop(sheetContext, egg),
                     ),

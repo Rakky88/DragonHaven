@@ -50,7 +50,6 @@ void main() {
         'Italiano',
         'Nederlands',
         'Português',
-        '中文',
         '日本語',
       ],
     );
@@ -353,6 +352,61 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('an active solo Adventure can be aborted after confirmation',
+      (tester) async {
+    final now = DateTime.utc(2026, 8, 28, 12);
+    final game = HouseholdProvider(
+      random: Random(847),
+      clock: () => now,
+      persistenceEnabled: false,
+    );
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Ember';
+    final adventure = game.adventuresFor(AdventureKind.mini).first;
+    final run = AdventureRun(
+      id: 'abort-widget-run',
+      adventureId: adventure.id,
+      dragonId: game.pet.id,
+      startedAt: now,
+      endsAt: now.add(const Duration(minutes: 2)),
+      status: AdventureRunStatus.running,
+    );
+    game.adventureRuns = [run];
+    game.pet.activeAdventureId = run.id;
+    final online = OnlineAccountProvider(
+      repository: const DisabledSocialRepository(),
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    addTearDown(online.dispose);
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const MaterialApp(home: Scaffold(body: AdventureHubScreen())),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byKey(const Key('adventure-tab-active')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+
+    await tester.tap(find.byKey(Key('abort-adventure-${run.id}')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Abort adventure?'), findsOneWidget);
+    expect(game.adventureRuns, hasLength(1));
+    await tester.tap(find.byKey(Key('confirm-abort-adventure-${run.id}')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(game.adventureRuns, isEmpty);
+    expect(game.pet.activeAdventureId, isNull);
+    expect(game.totalChestCount, 0);
+    expect(game.totalAdventuresCompleted, 0);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Trials sit between Available and Active and open a real game',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 800));
@@ -467,7 +521,8 @@ void main() {
     );
     expect(find.byKey(const Key('music-style-selector')), findsNothing);
     expect(find.text('Preferences'), findsOneWidget);
-    expect(find.text('Music · Rêverie'), findsOneWidget);
+    expect(find.byKey(const Key('jukebox-settings-button')), findsOneWidget);
+    expect(find.text('Jukebox'), findsOneWidget);
     expect(game.musicStyle, HavenMusicStyle.classic);
     expect(find.byKey(const Key('music-switch')), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('music-switch')));
@@ -1427,6 +1482,11 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.byKey(const Key('nest-egg-picker')), findsOneWidget);
+    expect(
+      find.byKey(const Key('nest-egg-hatch-time-widget-later-egg')),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Hatch time:'), findsOneWidget);
     final eggChoice = find.text('Mysterious Egg').last;
     await tester.ensureVisible(eggChoice);
     await tester.pump();
@@ -1755,7 +1815,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.04.05'), findsOneWidget);
+    expect(find.text('v0.04.06'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

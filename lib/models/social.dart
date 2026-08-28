@@ -536,13 +536,17 @@ class TradeItem {
         data: const {},
       );
 
-  factory TradeItem.relic(MysticRelic relic) => TradeItem(
-        kind: TradeItemKind.relic,
-        key: relic.name,
-        data: const {},
-      );
+  factory TradeItem.relic(
+    MysticRelic relic, {
+    Map<String, dynamic> data = const {},
+  }) =>
+      TradeItem(kind: TradeItemKind.relic, key: relic.name, data: data);
 
-  Map<String, dynamic> toRequestJson() => {'kind': kind.name, 'key': key};
+  Map<String, dynamic> toRequestJson() => {
+        'kind': kind.name,
+        'key': key,
+        if (data.isNotEmpty) 'data': data,
+      };
 
   DragonEgg? get egg => kind == TradeItemKind.egg
       ? DragonEgg.fromJson({...data, 'id': key})
@@ -563,7 +567,7 @@ class TradeItem {
   bool get isTradeable => switch (kind) {
         TradeItemKind.egg => egg != null,
         TradeItemKind.chest => chestTier?.isTradeable == true,
-        TradeItemKind.relic => relic != null,
+        TradeItemKind.relic => relic?.isAlwaysUntradeable == false,
       };
 }
 
@@ -667,6 +671,7 @@ class OnlineInventorySnapshot {
     required this.eggs,
     required this.chests,
     required this.relics,
+    this.relicVariants = const {},
     required this.furnitureCatalogIds,
     required this.discoveredLineageIds,
     required this.discoveredForms,
@@ -680,6 +685,7 @@ class OnlineInventorySnapshot {
   final List<Map<String, dynamic>> eggs;
   final Map<String, int> chests;
   final Map<String, int> relics;
+  final Map<String, List<int>> relicVariants;
   final List<String> furnitureCatalogIds;
   final List<String> discoveredLineageIds;
   final List<String> discoveredForms;
@@ -765,6 +771,9 @@ class OnlineInventorySnapshot {
         for (final relic in MysticRelic.values)
           relic.name: game.gameplayRelicCount(relic),
       },
+      relicVariants: {
+        MysticRelic.chronoshard.name: [...game.chronoshardReductions],
+      },
       furnitureCatalogIds: game.ownedItemIds.toList(growable: false),
       discoveredLineageIds: {
         ...game.discoveredForms.map((key) => key.split(':').first),
@@ -800,6 +809,7 @@ class OnlineInventorySnapshot {
               entry.key: entry.value,
         },
         'relics': relics,
+        'relic_variants': relicVariants,
       };
 
   Map<String, dynamic> toShowcaseJson() {

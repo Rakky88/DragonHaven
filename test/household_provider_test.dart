@@ -10,6 +10,7 @@ import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/game_presentation.dart';
 import 'package:dragon_haven/models/house.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
+import 'package:dragon_haven/models/music_track.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/profile_portrait.dart';
 import 'package:dragon_haven/models/shop_item.dart';
@@ -92,7 +93,8 @@ void main() {
     expect(lawfulGood, isNot(contains('tapped back')));
   });
 
-  test('release demo exposes portraits, Relics and three roaming dragons', () {
+  test('release demo exposes portraits, all Relics and three roaming dragons',
+      () {
     final game = HouseholdProvider.createReleaseDemo();
     expect(game.onboardingComplete, isTrue);
     expect(game.pet.isEgg, isFalse);
@@ -102,7 +104,7 @@ void main() {
     expect(game.selectedPortrait, isNotNull);
     expect(game.titleCount, 8);
     expect(game.selectedAccountTitle, isNotNull);
-    expect(game.totalRelicCount, 3);
+    expect(game.totalRelicCount, MysticRelic.values.length);
     expect(
       game.ownedDragons.where(
         (dragon) => dragon.roamsTower && dragon.currentFloorIndex == 0,
@@ -467,12 +469,13 @@ void main() {
     final game = HouseholdProvider(random: Random(204));
     expect(game.relicDropChance(ChestTier.wooden), 0);
     expect(game.relicDropChance(ChestTier.silver), 0);
-    expect(game.relicDropChance(ChestTier.gold), .015);
-    expect(game.relicDropChance(ChestTier.dragon), .04);
-    expect(game.relicDropChance(ChestTier.mythical), .09);
-    expect(game.relicDropChance(ChestTier.sinister), .06);
+    expect(game.relicDropChance(ChestTier.gold), .01);
+    expect(game.relicDropChance(ChestTier.dragon), .02);
+    expect(game.relicDropChance(ChestTier.mythical), .04);
+    expect(game.relicDropChance(ChestTier.sinister), 1);
     expect(game.relicDropChance(ChestTier.portrait), 0);
     expect(game.relicDropChance(ChestTier.title), 0);
+    expect(game.relicDropChance(ChestTier.music), 0);
   });
 
   test('using each relic reveals only its secret and persists it', () async {
@@ -481,7 +484,10 @@ void main() {
       ..stage = DragonStage.hatchling
       ..name = 'Nova';
     game.relicInventory = {
-      for (final relic in MysticRelic.values) relic: 1,
+      for (final relic in MysticRelic.values) relic: 0,
+      MysticRelic.moralPrism: 1,
+      MysticRelic.orderCompass: 1,
+      MysticRelic.soulMirror: 1,
     };
 
     expect(
@@ -549,6 +555,184 @@ void main() {
     expect(restored.untradeableRelicCount(MysticRelic.moralPrism), 1,
         reason: 'using a Relic consumes an untradeable shop copy first');
     expect(restored.gameplayRelicCount(MysticRelic.moralPrism), 1);
+  });
+
+  test('new Relics keep their distinct use, shop and trade rules', () async {
+    var now = DateTime.utc(2026, 8, 28, 12);
+    final game = HouseholdProvider(
+      random: Random(852),
+      clock: () => now,
+      persistenceEnabled: false,
+    );
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Nova';
+    final egg = DragonEgg(
+      id: 'relic-test-egg',
+      lineageId: dragonLineages.last.id,
+      acquiredAt: now,
+      hatchSeed: 852,
+      prismatic: false,
+      incubationMinutes: 100,
+    );
+    game.eggStash.add(egg);
+    game.relicInventory[MysticRelic.astralLens] = 1;
+    expect(
+      await game.useAstralLens(egg.id),
+      AstralLensUseResult.revealed,
+    );
+    expect(game.isEggRarityKnown(egg.id), isTrue);
+    expect(game.relicCount(MysticRelic.astralLens), 0);
+    expect(game.pet.moralAxisKnown, isFalse);
+    expect(game.pet.lawAxisKnown, isFalse);
+
+    expect(await game.activateEgg(egg.id), isTrue);
+    final before = game.nestEgg!.remainingForNextStage(now);
+    game.relicInventory[MysticRelic.chronoshard] = 1;
+    game.chronoshardReductions = [37];
+    expect(
+      await game.useChronoshard(37),
+      ChronoshardUseResult.accelerated,
+    );
+    final after = game.nestEgg!.remainingForNextStage(now);
+    expect(after.inMilliseconds, closeTo(before.inMilliseconds * .63, 2));
+    expect(game.chronoshardReductions, isEmpty);
+    expect(game.relicCount(MysticRelic.chronoshard), 0);
+
+    game.relicInventory[MysticRelic.wayfinderSigil] = 1;
+    final original = game.adventuresFor(AdventureKind.mini).first.id;
+    expect(
+      await game.useWayfinderSigil(
+        AdventureKind.mini,
+        replaceAdventureId: original,
+      ),
+      WayfinderSigilUseResult.changed,
+    );
+    expect(
+        game.adventureOptionIds[AdventureKind.mini], isNot(contains(original)));
+    expect(game.relicCount(MysticRelic.wayfinderSigil), 0);
+
+    game.pet.gems = 1500;
+    expect(
+      await game.purchaseRelic(MysticRelic.astralLens),
+      MysticRelicPurchaseResult.purchased,
+    );
+    expect(game.untradeableRelicCount(MysticRelic.astralLens), 1);
+    expect(
+      await game.purchaseRelic(MysticRelic.chronoshard),
+      MysticRelicPurchaseResult.notAvailable,
+    );
+    expect(
+      await game.purchaseRelic(MysticRelic.wayfinderSigil),
+      MysticRelicPurchaseResult.notAvailable,
+    );
+    expect(game.pet.gems, 1000);
+  });
+
+  test('Twinstar Brooch moves, unequips and doubles XP only for its wearer',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(853),
+      persistenceEnabled: false,
+    );
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Nova'
+      ..gems = 9;
+    final other = Pet(
+      id: 'twinstar-other',
+      name: 'Ember',
+      stage: DragonStage.hatchling,
+      firstEgg: false,
+    );
+    game.sanctuaryDragons.add(other);
+    game.relicInventory[MysticRelic.twinstarBrooch] = 1;
+    game.untradeableRelicInventory[MysticRelic.twinstarBrooch] = 1;
+    game.twinstarBroochEverObtained = true;
+
+    expect(await game.equipTwinstarBrooch(game.pet.id), isTrue);
+    expect(await game.buyStarlightTreat(), isTrue);
+    expect(game.pet.xp, 50);
+    expect(game.tradeableRelicCount(MysticRelic.twinstarBrooch), 0);
+    expect(await game.equipTwinstarBrooch(other.id), isTrue);
+    expect(game.isTwinstarEquippedOn(game.pet.id), isFalse);
+    expect(game.isTwinstarEquippedOn(other.id), isTrue);
+    expect(await game.buyStarlightTreat(), isTrue);
+    expect(game.pet.xp, 75,
+        reason: 'moving the Brooch restores normal XP for the old wearer');
+    expect(await game.equipTwinstarBrooch(null), isTrue);
+    expect(await game.buyStarlightTreat(), isTrue);
+    expect(game.pet.xp, 100);
+    expect(game.twinstarBroochDragonId, isNull);
+  });
+
+  test('Music Chests cost 250 gems, roll at open and never duplicate',
+      () async {
+    final game = HouseholdProvider(random: Random(854));
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..gems = 500;
+    expect(game.ownedMusicTrackIds, {'reverie'});
+    expect(game.enabledMusicTrackIds, {'reverie'});
+    expect(
+      await game.purchaseMusicChest(),
+      MusicChestPurchaseResult.purchased,
+    );
+    expect(game.pet.gems, 250);
+    expect(game.musicTrackCount, 1,
+        reason: 'the song is rolled only when the chest opens');
+    final first = await game.openChest(ChestTier.music);
+    expect(first?.musicTrackFound, isNotNull);
+    expect(first?.musicTrackFound?.id, isNot('reverie'));
+    expect(game.musicTrackCount, 2);
+    expect(
+      game.enabledMusicTrackIds,
+      contains(first!.musicTrackFound!.id),
+    );
+
+    expect(
+      await game.purchaseMusicChest(),
+      MusicChestPurchaseResult.purchased,
+    );
+    final second = await game.openChest(ChestTier.music);
+    expect(second?.musicTrackFound?.id, isNot(first.musicTrackFound!.id));
+    expect(game.pet.gems, 0);
+    expect(game.chestCount(ChestTier.music), 0);
+
+    await game.setMusicTrackEnabled('reverie', false);
+    await game.setJukeboxShuffle(true);
+    await game.setJukeboxRepeat(false);
+    final restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.musicTrackCount, 3);
+    expect(restored.enabledMusicTrackIds, isNot(contains('reverie')));
+    expect(restored.jukeboxShuffle, isTrue);
+    expect(restored.jukeboxRepeat, isFalse);
+  });
+
+  test('Music Chest capacity counts unopened chests against all 80 tracks',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(855),
+      persistenceEnabled: false,
+    );
+    game.pet.gems = musicChestGemPrice;
+    game.ownedMusicTrackIds = musicCatalog
+        .take(musicCatalog.length - 1)
+        .map((track) => track.id)
+        .toSet();
+    expect(game.musicChestCapacityReached, isFalse);
+    expect(
+      await game.purchaseMusicChest(),
+      MusicChestPurchaseResult.purchased,
+    );
+    expect(game.musicChestCapacityReached, isTrue);
+    expect(
+      await game.purchaseMusicChest(),
+      MusicChestPurchaseResult.collectionComplete,
+    );
+    final reward = await game.openChest(ChestTier.music);
+    expect(reward?.musicTrackFound?.id, musicCatalog.last.id);
+    expect(game.hasEveryMusicTrack, isTrue);
   });
 
   test('dragon levels expose the exact next evolution milestone', () {
@@ -659,6 +843,79 @@ void main() {
     expect(game.pet.coins, 444);
     expect(game.pet.gems, 19);
     expect(game.sanctuaryDragons.single.name, 'Nimbus');
+  });
+
+  test('aborting a solo Adventure gives nothing and frees only its dragon',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(845),
+      persistenceEnabled: false,
+    );
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Ember';
+    final adventure = game.adventuresFor(AdventureKind.mini).first;
+    final startingXp = game.pet.xp;
+    final startingTraining = game.pet.trainingFor(adventure.focus);
+    final startingChests = game.totalChestCount;
+
+    final run = AdventureRun(
+      id: 'abort-unit-run',
+      adventureId: adventure.id,
+      dragonId: game.pet.id,
+      startedAt: DateTime.now(),
+      endsAt: DateTime.now().add(const Duration(minutes: 2)),
+      status: AdventureRunStatus.running,
+    );
+    game.adventureRuns = [run];
+    game.pet.activeAdventureId = run.id;
+    expect(await game.abortAdventure(run.id), isTrue);
+    expect(game.adventureRuns, isEmpty);
+    expect(game.pet.activeAdventureId, isNull);
+    expect(game.pet.xp, startingXp);
+    expect(game.pet.trainingFor(adventure.focus), startingTraining);
+    expect(game.totalChestCount, startingChests);
+    expect(game.totalAdventuresCompleted, 0);
+    expect(await game.abortAdventure(run.id), isFalse);
+  });
+
+  test('Adventure return reminders never precede the claimable boundary', () {
+    final game = HouseholdProvider(
+      random: Random(851),
+      persistenceEnabled: false,
+    );
+    final endsAt = DateTime.utc(2026, 8, 28, 12, 30, 0, 750);
+    final reminderAt = game.adventureReturnNotificationAt(endsAt);
+
+    expect(reminderAt.isAfter(endsAt), isTrue);
+    expect(reminderAt.difference(endsAt), const Duration(seconds: 1));
+  });
+
+  test('a Group Adventure cannot be aborted through the local safety API',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(846),
+      persistenceEnabled: false,
+    );
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..activeAdventureId = 'legacy-group-run';
+    final group = AdventureCatalog.group.first;
+    game.adventureRuns = [
+      AdventureRun(
+        id: 'legacy-group-run',
+        adventureId: group.id,
+        dragonId: game.pet.id,
+        startedAt: DateTime.now(),
+        endsAt: DateTime.now().add(const Duration(days: 2)),
+        status: AdventureRunStatus.running,
+        participantCount: 2,
+      ),
+    ];
+
+    expect(await game.abortAdventure('legacy-group-run'), isFalse);
+    expect(game.adventureRuns, hasLength(1));
+    expect(game.pet.activeAdventureId, 'legacy-group-run');
   });
 
   test('the achievement catalog has 29 unique humorous milestones', () {
@@ -1029,6 +1286,63 @@ void main() {
     expect(game.pet.coins, 8620);
   });
 
+  test('released dragons get one persisted 10% roll at a random daily time',
+      () {
+    var now = DateTime(2026, 8, 28, 8);
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: _DailyReturningRandom(),
+      clock: () => now,
+    )..pet = Pet(
+        id: 'active-dragon',
+        name: 'Ember',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        favorite: true,
+      );
+
+    expect(game.processDailyReturningDragonForTesting(), isFalse);
+    expect(game.lastReturningDayKey, isEmpty,
+        reason: 'No daily roll is consumed without a released dragon.');
+    expect(game.scheduledReturningAt, isNull);
+
+    game.releasedDragons.add(Pet(
+      id: 'released-dragon',
+      name: 'Cinder',
+      stage: DragonStage.hatchling,
+      firstEgg: false,
+      moralAxis: MoralAxis.good,
+      lawAxis: LawAxis.lawful,
+    ));
+
+    expect(game.processDailyReturningDragonForTesting(), isTrue);
+    expect(game.lastReturningDayKey, '2026-08-28');
+    expect(game.scheduledReturningAt, DateTime(2026, 8, 28, 18));
+    expect(game.totalReleasedReturns, 0);
+
+    now = DateTime(2026, 8, 28, 17, 59);
+    expect(game.processDailyReturningDragonForTesting(), isFalse);
+    now = DateTime(2026, 8, 28, 18);
+    expect(game.processDailyReturningDragonForTesting(), isTrue);
+    expect(game.totalReleasedReturns, 1);
+    expect(game.chestCount(ChestTier.wooden), 1);
+    expect(game.scheduledReturningAt, isNull);
+
+    now = DateTime(2026, 8, 28, 23);
+    expect(game.processDailyReturningDragonForTesting(), isFalse);
+    expect(game.totalReleasedReturns, 1,
+        reason: 'A local day may only resolve one newly rolled return.');
+
+    now = DateTime(2026, 8, 29, 8);
+    expect(game.processDailyReturningDragonForTesting(), isTrue);
+    expect(game.lastReturningDayKey, '2026-08-29');
+    expect(game.scheduledReturningAt, DateTime(2026, 8, 29, 18));
+    final state = game.exportState();
+    expect(state['lastReturningDayKey'], '2026-08-29');
+    expect(state['scheduledReturningAt'], '2026-08-29T18:00:00.000');
+  });
+
   test('Tower roaming is per dragon, persistent and uses one room at a time',
       () async {
     final game = HouseholdProvider(random: Random(51));
@@ -1187,4 +1501,16 @@ class _ZeroRandom implements Random {
 
   @override
   int nextInt(int max) => 0;
+}
+
+class _DailyReturningRandom implements Random {
+  @override
+  bool nextBool() => false;
+
+  @override
+  double nextDouble() => .05;
+
+  @override
+  int nextInt(int max) =>
+      max == Duration.secondsPerDay ? const Duration(hours: 18).inSeconds : 0;
 }

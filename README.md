@@ -10,27 +10,29 @@
 - 42 families: 20 Common, 10 Uncommon, 6 Rare, 3 Very Rare, 2 Legendary and 1 Mythical. Every family has five public forms plus a hidden Mastery Ascended form for perfectly balanced expertise; the secret Sinister Everwyrm has dedicated artwork.
 - A 5% Spectral variant roll, separate Draconomicon collection, undiscovered silhouettes and one active egg or dragon at a time.
 - 200 Mini, 300 Short, 200 Long, 200 Group and 100 Special Adventure definitions. Mini slots refill every 15 minutes up to three; Short slots refill one at a time after a full hour; Long slots refill at local midnight. Group play remains locked until authenticated online friends exist.
-- Eight chest tiers, fixed reward rolls, an egg inventory, chest reveal scenes, release/favorite controls, all 27 weekly returning-dragon outcome tables, Tower visits, 25/40/60% damage and three Dragon Ward levels. The 99-gem Portrait Chest reveals one of 100 distinct non-dragon account portraits; the 99-coin Title Chest reveals one of 500 fully localized account titles. Both choose an unowned reward only when opened and never auto-equip later rewards.
+- Nine chest tiers, fixed reward rolls, an egg inventory, chest reveal scenes, release/favorite controls, all 27 returning-dragon outcome tables, and one daily 10% return roll at a persisted random time. Tower visits last 24/48/72 hours, Special Adventures stay available for 48 hours, damage remains 25/40/60%, and Dragon Wards retain three levels. Portrait, Title and Music Chests choose an unowned reward only when opened and are never tradeable.
 - A Tower roof plus up to 20 room floors, eight independently rendered room types, 200 raster furniture sprites, nested coin/gem Shop sections and room-only decoration controls. Purchased furniture stays unplaced in Inventory until the player decorates with it.
 - Idle dragons use stored 65/35 room preferences, can share a room, travel along room-wide roaming routes and may trigger cosmetic 5% preferred-room interactions with a persisted 12-hour cooldown.
 - Seven local-time visual phases with separately painted Tower lighting and day/night room variants; changes crossfade instead of applying a flat color filter.
 - Exactly 300 English/Dutch dragon sayings and 25 achievements, including hidden Mastery, triple-300 expertise, the first Portrait/Title Chest and 1,000-Adventure milestones.
-- English first-install default, complete gameplay text in nine selectable languages, and an automatic skippable dragon-guided tutorial that can be replayed from the three-dot menu.
-- Separate persistent Music and Sound Effects switches, four calm CC0 ambient tracks, 19 event-specific effects, local notifications, About/Ko-fi/redeem UI and GitHub update/share controls.
+- English first-install default, complete gameplay text in eight selectable languages, and an automatic skippable dragon-guided tutorial that can be replayed from the three-dot menu.
+- Separate persistent Music and Sound Effects switches, a Jukebox with 80 explicitly CC0/Public Domain recordings, 19 event-specific effects, local notifications, About/Ko-fi/redeem UI and GitHub update/share controls.
 
 ## Honest online boundary
 
 Email-authenticated accounts, Friends and requests, profile summaries, one-to-one trades, globally shared asynchronous Group Adventures and confirmed versioned cloud backups are backed by Supabase. Core collection progress remains offline-first; automatic conflict resolution, interactive friend Tower visits, fully server-authoritative economy commands and real-money gem packs still require additional authenticated server or Google Play receipt infrastructure and are not simulated locally.
 
-The Android audio layer bundles the music and effects, fades scene changes, rotates ambient variants and respects audio focus. Sources and licences are documented in [AUDIO_LICENSES.md](AUDIO_LICENSES.md).
+The Android audio layer bundles the music and effects, fades scene changes, follows the saved Jukebox order and respects audio focus. Effect licences are documented in [AUDIO_LICENSES.md](AUDIO_LICENSES.md); the exact music files and public-domain evidence are documented in [MUSIC_SOURCES.md](assets/licenses/MUSIC_SOURCES.md).
 
 The detailed implementation map and remaining service boundaries are documented in [DRAGONHAVEN_IMPLEMENTATION.md](DRAGONHAVEN_IMPLEMENTATION.md).
 
 De actuele checklist, taakverdeling en kostenraming voor een openbare lancering
 staan in [PUBLIC_LAUNCH.md](PUBLIC_LAUNCH.md).
 
-De brede code-, UI-, logging-, sprite-, server- en bugaudit van v0.04.02 staat
-in [DRAGONHAVEN_AUDIT_2026-08-26.md](DRAGONHAVEN_AUDIT_2026-08-26.md).
+De actuele code-, UI-, sprite-, licentie-, server- en release-audit van v0.04.06
+staat in [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md).
+De concrete serververbeteringen en resterende grenzen staan in
+[SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md).
 
 ## Run and verify
 

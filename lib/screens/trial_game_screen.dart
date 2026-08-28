@@ -1201,14 +1201,25 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
                       ],
                     ),
                     child: Text(
-                      '${strings.pick('ATTEMPTS LEFT', 'KANSEN OVER')}: '
-                      '${max(0, 3 - _misses)}',
+                      '${strings.pick('SCORING TURNS LEFT', 'SCOREBEURTEN OVER')}: '
+                      '${_ended ? 0 : max(0, 30 - _round)}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 21,
                         letterSpacing: .8,
                         fontWeight: FontWeight.w900,
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${strings.pick('Misses left', 'Missers over')}: '
+                    '${max(0, 3 - _misses)}',
+                    key: const Key('ruin-misses-left'),
+                    style: const TextStyle(
+                      color: Color(0xFFE9DDF8),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -1410,6 +1421,7 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
   int? _wrongRune;
   int _inputIndex = 0;
   int _rounds = 0;
+  bool _resultStarting = false;
 
   static const _runeKeys = ['fire', 'water', 'moon', 'star', 'wind'];
 
@@ -1417,6 +1429,23 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
   void initState() {
     super.initState();
     _random = Random(widget.offer.id.hashCode ^ widget.dragon.hatchSeed);
+  }
+
+  Future<void> _finishAfter(Duration delay) async {
+    if (_resultStarting) return;
+    _resultStarting = true;
+    _ended = true;
+    _accepting = false;
+    _showing = false;
+    if (mounted) setState(() {});
+    await Future<void>.delayed(delay);
+    if (!mounted) return;
+    await _finishTrial(
+      context,
+      offer: widget.offer,
+      dragon: widget.dragon,
+      score: _rounds,
+    );
   }
 
   Future<void> _start() async {
@@ -1466,20 +1495,10 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
     if (!_accepting || _ended) return;
     _echoRune = null;
     if (rune != _sequence[_inputIndex]) {
-      _accepting = false;
-      _ended = true;
       _litRune = rune;
       _wrongRune = rune;
       unawaited(HavenAudio.play(HavenSound.uiConfirm));
-      setState(() {});
-      await Future<void>.delayed(const Duration(seconds: 1));
-      if (!mounted) return;
-      await _finishTrial(
-        context,
-        offer: widget.offer,
-        dragon: widget.dragon,
-        score: _rounds,
-      );
+      await _finishAfter(const Duration(seconds: 1));
       return;
     }
     _litRune = rune;
@@ -1487,26 +1506,14 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
     unawaited(HavenAudio.play(HavenSound.uiConfirm));
     setState(() {});
     await Future<void>.delayed(const Duration(milliseconds: 150));
-    if (!mounted) return;
+    if (!mounted || _ended) return;
     _litRune = null;
     if (_inputIndex == _sequence.length) {
       _accepting = false;
       _rounds++;
       setState(() {});
-      if (_rounds >= 15) {
-        _ended = true;
-        await Future<void>.delayed(const Duration(milliseconds: 500));
-        if (!mounted) return;
-        await _finishTrial(
-          context,
-          offer: widget.offer,
-          dragon: widget.dragon,
-          score: _rounds,
-        );
-      } else {
-        await Future<void>.delayed(const Duration(milliseconds: 650));
-        if (mounted) await _nextRound();
-      }
+      await Future<void>.delayed(const Duration(milliseconds: 650));
+      if (mounted && !_ended) await _nextRound();
     } else {
       setState(() {});
     }

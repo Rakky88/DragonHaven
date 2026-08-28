@@ -7,6 +7,7 @@ import 'package:dragon_haven/models/account_title.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/day_phase.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
+import 'package:dragon_haven/models/music_track.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/profile_portrait.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
@@ -119,8 +120,8 @@ void main() {
     );
   });
 
-  test('all eight chest tiers and all 24 personality traits exist', () {
-    expect(ChestTier.values, hasLength(8));
+  test('all nine chest tiers and all 24 personality traits exist', () {
+    expect(ChestTier.values, hasLength(9));
     expect(dragonPersonalityTraits, hasLength(24));
     expect(dragonPersonalityTraits.toSet(), hasLength(24));
     for (final entry in dragonPersonalityIncompatibilities.entries) {
@@ -257,8 +258,38 @@ void main() {
     expect(nativeBridge, contains('"chest_dragon" -> R.raw.hatch_reveal'));
     expect(nativeBridge, contains('"chest_mythical" -> R.raw.chest_mythical'));
     expect(nativeBridge, contains('"chest_sinister" -> R.raw.chest_sinister'));
-    expect(nativeBridge, contains('val resource = rawResourceId("reverie")'));
+    expect(nativeBridge, contains('listOf("music_reverie")'));
     expect(nativeBridge, isNot(contains('previousMusicStyle')));
+  });
+
+  test('all 80 jukebox tracks have licensed native audio resources', () {
+    expect(musicCatalog, hasLength(80));
+    expect(musicCatalog.map((track) => track.id).toSet(), hasLength(80));
+    final directory = Directory('android/app/src/main/res/raw');
+    final resources = directory
+        .listSync()
+        .whereType<File>()
+        .where((file) => file.uri.pathSegments.last.startsWith('music_'))
+        .toList(growable: false);
+    expect(resources, hasLength(80));
+    final nativeBridge = File(
+      'android/app/src/main/kotlin/nl/dragonhaven/app/MainActivity.kt',
+    ).readAsStringSync();
+    final licenses =
+        File('assets/licenses/MUSIC_SOURCES.md').readAsStringSync();
+    for (final track in musicCatalog) {
+      final matches = resources.where((file) =>
+          file.uri.pathSegments.last.startsWith('${track.rawResourceId}.'));
+      expect(matches, hasLength(1), reason: track.rawResourceId);
+      final file = matches.single;
+      expect(file.lengthSync(), greaterThan(100), reason: track.rawResourceId);
+      expect(nativeBridge, contains('R.raw.${track.rawResourceId}'),
+          reason: '${track.rawResourceId} must survive release shrinking');
+      expect(licenses, contains('`${track.rawResourceId}`'),
+          reason: '${track.rawResourceId} needs an exact source record');
+    }
+    expect(licenses, contains('`no_license_conflict`'));
+    expect(licenses, contains('`all_valid`'));
   });
 
   test('Android keeps hatch reminders through permission and exact-alarm paths',

@@ -15,6 +15,7 @@ import '../models/dragon_lineage.dart';
 import '../models/game_presentation.dart';
 import '../models/house.dart';
 import '../models/mystic_relic.dart';
+import '../models/music_track.dart';
 import '../models/pet.dart';
 import '../models/profile_portrait.dart';
 import '../models/shop_item.dart';
@@ -52,6 +53,19 @@ enum MysticRelicUseResult {
 enum MysticRelicPurchaseResult {
   purchased,
   insufficientGems,
+  notAvailable,
+}
+
+enum AstralLensUseResult { revealed, notOwned, eggNotFound, alreadyKnown }
+
+enum ChronoshardUseResult { accelerated, notOwned, noEggInNest }
+
+enum WayfinderSigilUseResult {
+  changed,
+  notOwned,
+  unsupportedAdventure,
+  adventureNotFound,
+  noCapacity,
 }
 
 enum PortraitChestPurchaseResult {
@@ -63,6 +77,12 @@ enum PortraitChestPurchaseResult {
 enum TitleChestPurchaseResult {
   purchased,
   insufficientCoins,
+  collectionComplete,
+}
+
+enum MusicChestPurchaseResult {
+  purchased,
+  insufficientGems,
   collectionComplete,
 }
 
@@ -100,6 +120,10 @@ class HouseholdProvider extends ChangeNotifier {
   bool onboardingComplete = false;
   bool musicEnabled = true;
   HavenMusicStyle musicStyle = HavenMusicStyle.classic;
+  Set<String> ownedMusicTrackIds = {'reverie'};
+  Set<String> enabledMusicTrackIds = {'reverie'};
+  bool jukeboxShuffle = false;
+  bool jukeboxRepeat = true;
   bool soundEffectsEnabled = true;
   Set<HavenNotificationCategory> enabledNotificationCategories =
       HavenNotificationCategory.values.toSet();
@@ -124,6 +148,10 @@ class HouseholdProvider extends ChangeNotifier {
   String? selectedPortraitId;
   Set<String> ownedTitleIds = {};
   String? selectedTitleId;
+  Set<String> eggRarityRevealedIds = {};
+  List<int> chronoshardReductions = [];
+  bool twinstarBroochEverObtained = false;
+  String? twinstarBroochDragonId;
   Set<String> discoveredForms = {};
   Set<String> prismaticForms = {};
   Set<String> unlockedAchievementIds = {};
@@ -135,6 +163,7 @@ class HouseholdProvider extends ChangeNotifier {
   int totalChestsOpened = 0;
   int totalPortraitChestsOpened = 0;
   int totalTitleChestsOpened = 0;
+  int totalMusicChestsOpened = 0;
   int totalAdventuresCompleted = 0;
   int totalShortAdventuresCompleted = 0;
   int totalGroupFourCompleted = 0;
@@ -165,7 +194,8 @@ class HouseholdProvider extends ChangeNotifier {
   Map<int, double> damagedTowerRepairFactors = {};
   Map<String, DateTime> returningVisitors = {};
   Map<String, DateTime> rareInteractionAt = {};
-  String lastReturningWeekKey = '';
+  String lastReturningDayKey = '';
+  DateTime? scheduledReturningAt;
   String? latestReturningEvent;
   String? returningSpecialAdventureId;
   DateTime? returningSpecialAvailableUntil;
@@ -177,7 +207,7 @@ class HouseholdProvider extends ChangeNotifier {
   List<HousePlacement> housePlacements = [];
   List<ActivityEntry> activities = [];
 
-  static const _schemaVersion = 40;
+  static const _schemaVersion = 43;
 
   static HouseholdProvider createShowcase() {
     final provider = HouseholdProvider(
@@ -395,7 +425,6 @@ class HouseholdProvider extends ChangeNotifier {
           'es',
           'pt',
           'it',
-          'zh',
           'ja'
         };
         final rawLanguage = stringFromJson(data['languageCode']);
@@ -433,6 +462,10 @@ class HouseholdProvider extends ChangeNotifier {
   void _initializeFresh() {
     enabledNotificationCategories = HavenNotificationCategory.values.toSet();
     HavenNotifications.configure(enabledNotificationCategories);
+    ownedMusicTrackIds = {'reverie'};
+    enabledMusicTrackIds = {'reverie'};
+    jukeboxShuffle = false;
+    jukeboxRepeat = true;
     final now = _clock();
     final seed = _random.nextInt(0x7fffffff);
     final sizeRoll = _random.nextDouble();
@@ -615,6 +648,7 @@ class HouseholdProvider extends ChangeNotifier {
     totalChestsOpened = 250;
     totalPortraitChestsOpened = 1;
     totalTitleChestsOpened = 1;
+    totalMusicChestsOpened = musicCatalog.length;
     totalAdventuresCompleted = 1000;
     totalShortAdventuresCompleted = 100;
     totalGroupFourCompleted = 10;
@@ -622,11 +656,18 @@ class HouseholdProvider extends ChangeNotifier {
     totalSinisterAdventuresCompleted = 5;
     chestInventory = {for (final tier in ChestTier.values) tier: 25};
     relicInventory = {for (final relic in MysticRelic.values) relic: 3};
+    relicInventory[MysticRelic.twinstarBrooch] = 1;
+    untradeableRelicInventory[MysticRelic.twinstarBrooch] = 1;
+    chronoshardReductions = [25, 50, 75];
+    twinstarBroochEverObtained = true;
+    twinstarBroochDragonId = pet.id;
     ownedPortraitIds =
         profilePortraitCatalog.map((portrait) => portrait.id).toSet();
     selectedPortraitId = profilePortraitCatalog.last.id;
     ownedTitleIds = accountTitleCatalog.map((title) => title.id).toSet();
     selectedTitleId = accountTitleCatalog.last.id;
+    ownedMusicTrackIds = musicCatalog.map((track) => track.id).toSet();
+    enabledMusicTrackIds = {...ownedMusicTrackIds};
     for (final dragon in dragons) {
       dragon
         ..lawAxisKnown = true
@@ -683,17 +724,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   void _restore(Map<String, dynamic> data) {
-    const supportedLanguages = {
-      'en',
-      'nl',
-      'de',
-      'fr',
-      'es',
-      'pt',
-      'it',
-      'zh',
-      'ja'
-    };
+    const supportedLanguages = {'en', 'nl', 'de', 'fr', 'es', 'pt', 'it', 'ja'};
     final storedLanguage = stringFromJson(data['languageCode']);
     languageCode =
         supportedLanguages.contains(storedLanguage) ? storedLanguage! : 'en';
@@ -706,6 +737,19 @@ class HouseholdProvider extends ChangeNotifier {
     // Rêverie is DragonHaven's sole soundtrack. Older saves can still contain
     // the retired "basic" preference, which deliberately migrates to classic.
     musicStyle = HavenMusicStyle.classic;
+    ownedMusicTrackIds = stringSetFromJson(data['ownedMusicTrackIds'])
+        .where(musicTracksById.containsKey)
+        .toSet();
+    if (ownedMusicTrackIds.isEmpty) ownedMusicTrackIds.add('reverie');
+    enabledMusicTrackIds = data.containsKey('enabledMusicTrackIds')
+        ? stringSetFromJson(data['enabledMusicTrackIds'])
+            .where(ownedMusicTrackIds.contains)
+            .toSet()
+        : {'reverie'};
+    jukeboxShuffle =
+        data['jukeboxShuffle'] is bool && data['jukeboxShuffle'] as bool;
+    jukeboxRepeat =
+        data['jukeboxRepeat'] is! bool || data['jukeboxRepeat'] as bool;
     soundEffectsEnabled = data['soundEffectsEnabled'] is! bool ||
         data['soundEffectsEnabled'] as bool;
     final storedNotificationCategories = data['enabledNotificationCategories'];
@@ -735,6 +779,14 @@ class HouseholdProvider extends ChangeNotifier {
         storedIncubatingEgg.isEmpty ? null : Pet.fromJson(storedIncubatingEgg);
     if (incubatingEgg?.isEgg != true) incubatingEgg = null;
     eggStash = mapsFromJson(data['eggStash']).map(DragonEgg.fromJson).toList();
+    final currentEggIds = {
+      if (pet.isEgg) pet.id,
+      if (incubatingEgg?.isEgg == true) incubatingEgg!.id,
+      for (final egg in eggStash) egg.id,
+    };
+    eggRarityRevealedIds = stringSetFromJson(data['eggRarityRevealedIds'])
+        .where(currentEggIds.contains)
+        .toSet();
     sanctuaryDragons = mapsFromJson(data['sanctuaryDragons'])
         .map(Pet.fromJson)
         .where((dragon) => !dragon.isEgg)
@@ -783,6 +835,33 @@ class HouseholdProvider extends ChangeNotifier {
           ),
         ),
     };
+    twinstarBroochEverObtained = data['twinstarBroochEverObtained'] == true ||
+        relicCount(MysticRelic.twinstarBrooch) > 0;
+    if (twinstarBroochEverObtained) {
+      relicInventory[MysticRelic.twinstarBrooch] = 1;
+      untradeableRelicInventory[MysticRelic.twinstarBrooch] = 1;
+      final equippedDragonId = stringFromJson(data['twinstarBroochDragonId']);
+      twinstarBroochDragonId = ownedDragons.any(
+        (dragon) => dragon.id == equippedDragonId,
+      )
+          ? equippedDragonId
+          : null;
+    } else {
+      relicInventory[MysticRelic.twinstarBrooch] = 0;
+      untradeableRelicInventory[MysticRelic.twinstarBrooch] = 0;
+      twinstarBroochDragonId = null;
+    }
+    final storedChronoshards = (data['chronoshardReductions'] is List
+            ? data['chronoshardReductions'] as List
+            : const [])
+        .whereType<num>()
+        .map((value) => value.toInt().clamp(10, 90))
+        .take(relicCount(MysticRelic.chronoshard))
+        .toList();
+    while (storedChronoshards.length < relicCount(MysticRelic.chronoshard)) {
+      storedChronoshards.add(10 + _random.nextInt(81));
+    }
+    chronoshardReductions = storedChronoshards;
     ownedPortraitIds = stringSetFromJson(data['ownedPortraitIds'])
         .where((id) => profilePortraitById(id) != null)
         .toSet();
@@ -835,6 +914,8 @@ class HouseholdProvider extends ChangeNotifier {
         nonNegativeIntFromJson(data['totalPortraitChestsOpened'], fallback: 0);
     totalTitleChestsOpened =
         nonNegativeIntFromJson(data['totalTitleChestsOpened'], fallback: 0);
+    totalMusicChestsOpened =
+        nonNegativeIntFromJson(data['totalMusicChestsOpened'], fallback: 0);
     totalAdventuresCompleted =
         nonNegativeIntFromJson(data['totalAdventuresCompleted'], fallback: 0);
     totalShortAdventuresCompleted = nonNegativeIntFromJson(
@@ -954,7 +1035,9 @@ class HouseholdProvider extends ChangeNotifier {
         if (DateTime.tryParse(entry.value.toString()) case final time?)
           entry.key: time,
     };
-    lastReturningWeekKey = stringFromJson(data['lastReturningWeekKey']) ?? '';
+    lastReturningDayKey = stringFromJson(data['lastReturningDayKey']) ?? '';
+    scheduledReturningAt =
+        DateTime.tryParse(stringFromJson(data['scheduledReturningAt']) ?? '');
     latestReturningEvent = stringFromJson(data['latestReturningEvent']);
     returningSpecialAdventureId =
         stringFromJson(data['returningSpecialAdventureId']);
@@ -1017,10 +1100,26 @@ class HouseholdProvider extends ChangeNotifier {
       untradeableRelicInventory[relic] ?? 0;
   int gameplayRelicCount(MysticRelic relic) =>
       max(0, relicCount(relic) - untradeableRelicCount(relic));
+  int reservedOnlineRelicCount(MysticRelic relic) =>
+      reservedOnlineTradeRelics.entries
+          .where((entry) =>
+              entry.key == relic.name || entry.key.startsWith('${relic.name}:'))
+          .fold(0, (total, entry) => total + entry.value);
   int usableRelicCount(MysticRelic relic) => max(
         0,
-        relicCount(relic) - (reservedOnlineTradeRelics[relic.name] ?? 0),
+        relicCount(relic) - reservedOnlineRelicCount(relic),
       );
+
+  bool isChronoshardReserved(int reductionPercent) {
+    final owned = chronoshardReductions
+        .where((value) => value == reductionPercent)
+        .length;
+    final reserved = reservedOnlineTradeRelics[
+            '${MysticRelic.chronoshard.name}:$reductionPercent'] ??
+        0;
+    return owned <= reserved;
+  }
+
   int get totalRelicCount => relicInventory.values.fold(0, (a, b) => a + b);
   ProfilePortrait? get selectedPortrait =>
       profilePortraitById(selectedPortraitId);
@@ -1045,6 +1144,49 @@ class HouseholdProvider extends ChangeNotifier {
   bool get hasEveryTitle => ownedTitleIds.length >= accountTitleCatalog.length;
   bool get titleChestCapacityReached =>
       titleCount + chestCount(ChestTier.title) >= accountTitleCatalog.length;
+  List<MusicTrack> get ownedMusicTracks => musicCatalog
+      .where((track) => ownedMusicTrackIds.contains(track.id))
+      .toList(growable: false);
+  int get musicTrackCount => ownedMusicTrackIds.length;
+  bool get hasEveryMusicTrack => musicTrackCount >= musicCatalog.length;
+  bool get musicChestCapacityReached =>
+      musicTrackCount + chestCount(ChestTier.music) >= musicCatalog.length;
+  int get remainingMusicTrackCount =>
+      max(0, musicCatalog.length - musicTrackCount);
+  List<String> get enabledMusicResourceIds => musicCatalog
+      .where((track) => enabledMusicTrackIds.contains(track.id))
+      .map((track) => track.rawResourceId)
+      .toList(growable: false);
+
+  Future<void> _syncJukeboxAudio() => HavenAudio.configureJukebox(
+        trackIds: enabledMusicResourceIds,
+        shuffle: jukeboxShuffle,
+        repeat: jukeboxRepeat,
+      );
+
+  Future<void> setMusicTrackEnabled(String trackId, bool enabled) async {
+    if (!ownedMusicTrackIds.contains(trackId)) return;
+    final changed = enabled
+        ? enabledMusicTrackIds.add(trackId)
+        : enabledMusicTrackIds.remove(trackId);
+    if (!changed) return;
+    await _syncJukeboxAudio();
+    await _notifyAndSave();
+  }
+
+  Future<void> setJukeboxShuffle(bool value) async {
+    if (jukeboxShuffle == value) return;
+    jukeboxShuffle = value;
+    await _syncJukeboxAudio();
+    await _notifyAndSave();
+  }
+
+  Future<void> setJukeboxRepeat(bool value) async {
+    if (jukeboxRepeat == value) return;
+    jukeboxRepeat = value;
+    await _syncJukeboxAudio();
+    await _notifyAndSave();
+  }
 
   Future<bool> selectProfilePortrait(String portraitId) async {
     if (!ownedPortraitIds.contains(portraitId) ||
@@ -1141,11 +1283,108 @@ class HouseholdProvider extends ChangeNotifier {
     return TitleChestPurchaseResult.purchased;
   }
 
+  Future<MusicChestPurchaseResult> purchaseMusicChest() async {
+    if (musicChestCapacityReached) {
+      return MusicChestPurchaseResult.collectionComplete;
+    }
+    if (pet.gems < musicChestGemPrice) {
+      return MusicChestPurchaseResult.insufficientGems;
+    }
+    pet.gems -= musicChestGemPrice;
+    chestInventory.update(
+      ChestTier.music,
+      (count) => count + 1,
+      ifAbsent: () => 1,
+    );
+    _addActivity(
+      message: 'A Music Chest was purchased.',
+      type: ActivityType.purchase,
+      code: ActivityCode.bonusFound,
+      subject: ChestTier.music.name,
+      gems: -musicChestGemPrice,
+    );
+    await _notifyAndSave();
+    return MusicChestPurchaseResult.purchased;
+  }
+
+  bool get hasTwinstarBrooch => relicCount(MysticRelic.twinstarBrooch) > 0;
+
+  bool isTwinstarEquippedOn(String dragonId) =>
+      hasTwinstarBrooch && twinstarBroochDragonId == dragonId;
+
+  int _grantDragonXp(Pet dragon, int baseXp) {
+    final normalized = baseXp.clamp(0, 100000000).toInt();
+    final granted =
+        isTwinstarEquippedOn(dragon.id) ? normalized * 2 : normalized;
+    dragon.xp += granted;
+    return granted;
+  }
+
+  Future<bool> equipTwinstarBrooch(String? dragonId) async {
+    if (!hasTwinstarBrooch) return false;
+    if (dragonId != null &&
+        !ownedDragons.any((dragon) => dragon.id == dragonId)) {
+      return false;
+    }
+    if (twinstarBroochDragonId == dragonId) return true;
+    twinstarBroochDragonId = dragonId;
+    _addActivity(
+      message: dragonId == null
+          ? 'The Twinstar Brooch was unequipped.'
+          : 'The Twinstar Brooch was equipped.',
+      type: ActivityType.discovery,
+      code: ActivityCode.bonusFound,
+      subject: '${MysticRelic.twinstarBrooch.name}:${dragonId ?? 'none'}',
+    );
+    await _notifyAndSave();
+    return true;
+  }
+
   bool isRelicKnownFor(MysticRelic relic, Pet dragon) => switch (relic) {
         MysticRelic.moralPrism => dragon.moralAxisKnown,
         MysticRelic.orderCompass => dragon.lawAxisKnown,
         MysticRelic.soulMirror => dragon.personalityKnown,
+        MysticRelic.twinstarBrooch => isTwinstarEquippedOn(dragon.id),
+        MysticRelic.astralLens ||
+        MysticRelic.chronoshard ||
+        MysticRelic.wayfinderSigil =>
+          false,
       };
+
+  void _grantRelic(
+    MysticRelic relic, {
+    bool untradeable = false,
+    int? chronoshardReduction,
+  }) {
+    if (relic == MysticRelic.twinstarBrooch) {
+      if (twinstarBroochEverObtained) return;
+      twinstarBroochEverObtained = true;
+      relicInventory[relic] = 1;
+      untradeableRelicInventory[relic] = 1;
+      return;
+    }
+    relicInventory.update(relic, (count) => count + 1, ifAbsent: () => 1);
+    if (untradeable || relic.isAlwaysUntradeable) {
+      untradeableRelicInventory.update(
+        relic,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
+    }
+    if (relic == MysticRelic.chronoshard) {
+      chronoshardReductions.add(
+        (chronoshardReduction ?? 10 + _random.nextInt(81)).clamp(10, 90),
+      );
+    }
+  }
+
+  void _consumeRelic(MysticRelic relic) {
+    if (!relic.isConsumable || relicCount(relic) <= 0) return;
+    relicInventory[relic] = relicCount(relic) - 1;
+    if (untradeableRelicCount(relic) > 0) {
+      untradeableRelicInventory[relic] = untradeableRelicCount(relic) - 1;
+    }
+  }
 
   Future<MysticRelicUseResult> useRelic(
     MysticRelic relic,
@@ -1162,10 +1401,8 @@ class HouseholdProvider extends ChangeNotifier {
     if (isRelicKnownFor(relic, dragon)) {
       return MysticRelicUseResult.alreadyKnown;
     }
-    relicInventory[relic] = relicCount(relic) - 1;
-    if (untradeableRelicCount(relic) > 0) {
-      untradeableRelicInventory[relic] = untradeableRelicCount(relic) - 1;
-    }
+    if (!relic.hasUseAnimation) return MysticRelicUseResult.alreadyKnown;
+    _consumeRelic(relic);
     switch (relic) {
       case MysticRelic.moralPrism:
         dragon.moralAxisKnown = true;
@@ -1176,6 +1413,11 @@ class HouseholdProvider extends ChangeNotifier {
       case MysticRelic.soulMirror:
         dragon.revealPersonality();
         break;
+      case MysticRelic.astralLens:
+      case MysticRelic.chronoshard:
+      case MysticRelic.wayfinderSigil:
+      case MysticRelic.twinstarBrooch:
+        return MysticRelicUseResult.alreadyKnown;
     }
     _addActivity(
       message:
@@ -1191,16 +1433,14 @@ class HouseholdProvider extends ChangeNotifier {
   Future<MysticRelicPurchaseResult> purchaseRelic(
     MysticRelic relic,
   ) async {
+    if (!relic.isShopAvailable) {
+      return MysticRelicPurchaseResult.notAvailable;
+    }
     if (pet.gems < relicShopGemPrice) {
       return MysticRelicPurchaseResult.insufficientGems;
     }
     pet.gems -= relicShopGemPrice;
-    relicInventory.update(relic, (count) => count + 1, ifAbsent: () => 1);
-    untradeableRelicInventory.update(
-      relic,
-      (count) => count + 1,
-      ifAbsent: () => 1,
-    );
+    _grantRelic(relic, untradeable: true);
     _addActivity(
       message: 'A ${relic.nameEn} was purchased for $relicShopGemPrice gems.',
       type: ActivityType.purchase,
@@ -1210,6 +1450,62 @@ class HouseholdProvider extends ChangeNotifier {
     );
     await _notifyAndSave();
     return MysticRelicPurchaseResult.purchased;
+  }
+
+  bool isEggRarityKnown(String eggId) => eggRarityRevealedIds.contains(eggId);
+
+  Future<AstralLensUseResult> useAstralLens(String eggId) async {
+    if (usableRelicCount(MysticRelic.astralLens) <= 0) {
+      return AstralLensUseResult.notOwned;
+    }
+    final exists =
+        nestEgg?.id == eggId || eggStash.any((egg) => egg.id == eggId);
+    if (!exists) return AstralLensUseResult.eggNotFound;
+    if (isEggRarityKnown(eggId)) return AstralLensUseResult.alreadyKnown;
+    _consumeRelic(MysticRelic.astralLens);
+    eggRarityRevealedIds.add(eggId);
+    _addActivity(
+      message: 'An Astral Lens revealed an egg rarity.',
+      type: ActivityType.discovery,
+      code: ActivityCode.bonusFound,
+      subject: '${MysticRelic.astralLens.name}:$eggId',
+    );
+    await _notifyAndSave();
+    return AstralLensUseResult.revealed;
+  }
+
+  Future<ChronoshardUseResult> useChronoshard(int reductionPercent) async {
+    final index = chronoshardReductions.indexOf(reductionPercent);
+    if (index < 0 ||
+        usableRelicCount(MysticRelic.chronoshard) <= 0 ||
+        isChronoshardReserved(reductionPercent)) {
+      return ChronoshardUseResult.notOwned;
+    }
+    final egg = nestEgg;
+    if (egg == null || !egg.isEgg) return ChronoshardUseResult.noEggInNest;
+    final now = _clock();
+    final hatchAt = egg.stageStartedAt.add(egg.incubationDuration);
+    final remaining = hatchAt.difference(now);
+    if (remaining > const Duration(seconds: 1)) {
+      final reductionMs =
+          (remaining.inMilliseconds * reductionPercent / 100).round();
+      final nextRemainingMs = max(1000, remaining.inMilliseconds - reductionMs);
+      egg.stageStartedAt = now
+          .add(Duration(milliseconds: nextRemainingMs))
+          .subtract(egg.incubationDuration);
+    }
+    chronoshardReductions.removeAt(index);
+    _consumeRelic(MysticRelic.chronoshard);
+    _addActivity(
+      message:
+          'A Chronoshard shortened the remaining incubation by $reductionPercent%.',
+      type: ActivityType.discovery,
+      code: ActivityCode.bonusFound,
+      subject: '${MysticRelic.chronoshard.name}:$reductionPercent',
+    );
+    await _rescheduleNestEggNotification();
+    await _notifyAndSave();
+    return ChronoshardUseResult.accelerated;
   }
 
   Pet? get nestEgg => pet.isEgg ? pet : incubatingEgg;
@@ -1222,7 +1518,7 @@ class HouseholdProvider extends ChangeNotifier {
       ChestTier.silver => 0.04,
       ChestTier.gold => 0.12,
       ChestTier.dragon || ChestTier.mythical || ChestTier.sinister => 1.0,
-      ChestTier.portrait || ChestTier.title => 0.0,
+      ChestTier.portrait || ChestTier.title || ChestTier.music => 0.0,
     };
     final pityEligible = tier == ChestTier.wooden ||
         tier == ChestTier.silver ||
@@ -1296,7 +1592,7 @@ class HouseholdProvider extends ChangeNotifier {
   bool isRoomUnlocked(String roomId) => unlockedRoomIds.contains(roomId);
 
   Future<void> setLanguage(String code) async {
-    const supported = {'en', 'nl', 'de', 'fr', 'es', 'pt', 'it', 'zh', 'ja'};
+    const supported = {'en', 'nl', 'de', 'fr', 'es', 'pt', 'it', 'ja'};
     final normalized = supported.contains(code) ? code : 'en';
     if (normalized == languageCode) return;
     languageCode = normalized;
@@ -1334,6 +1630,7 @@ class HouseholdProvider extends ChangeNotifier {
     if (tradeableChestCount(tier) <= 0) return null;
     if (tier == ChestTier.portrait) return _openPortraitChest();
     if (tier == ChestTier.title) return _openTitleChest();
+    if (tier == ChestTier.music) return _openMusicChest();
     chestInventory[tier] = chestCount(tier) - 1;
     final coins = switch (tier) {
       ChestTier.wooden => 20 + _random.nextInt(21),
@@ -1341,7 +1638,7 @@ class HouseholdProvider extends ChangeNotifier {
       ChestTier.gold => 90 + _random.nextInt(71),
       ChestTier.dragon => 180 + _random.nextInt(121),
       ChestTier.mythical || ChestTier.sinister => 400 + _random.nextInt(251),
-      ChestTier.portrait || ChestTier.title => 0,
+      ChestTier.portrait || ChestTier.title || ChestTier.music => 0,
     };
     final gems = switch (tier) {
       ChestTier.wooden => 0,
@@ -1351,7 +1648,7 @@ class HouseholdProvider extends ChangeNotifier {
       ChestTier.dragon =>
         _random.nextDouble() < .9 ? 4 + _random.nextInt(4) : 0,
       ChestTier.mythical || ChestTier.sinister => 8 + _random.nextInt(6),
-      ChestTier.portrait || ChestTier.title => 0,
+      ChestTier.portrait || ChestTier.title || ChestTier.music => 0,
     };
     final eggChance = eggDropChance(tier);
     final eggFound = _random.nextDouble() < eggChance;
@@ -1365,11 +1662,7 @@ class HouseholdProvider extends ChangeNotifier {
       eggStash.add(foundEgg);
     }
     if (relicFound != null) {
-      relicInventory.update(
-        relicFound,
-        (count) => count + 1,
-        ifAbsent: () => 1,
-      );
+      _grantRelic(relicFound);
     }
     _addActivity(
       message: '${tier.name} chest opened.',
@@ -1444,19 +1737,54 @@ class HouseholdProvider extends ChangeNotifier {
     );
   }
 
+  Future<ChestReward?> _openMusicChest() async {
+    final remaining = musicCatalog
+        .where((track) => !ownedMusicTrackIds.contains(track.id))
+        .toList(growable: false);
+    if (remaining.isEmpty) return null;
+    final track = remaining[_random.nextInt(remaining.length)];
+    chestInventory[ChestTier.music] = chestCount(ChestTier.music) - 1;
+    ownedMusicTrackIds.add(track.id);
+    enabledMusicTrackIds.add(track.id);
+    totalChestsOpened++;
+    totalMusicChestsOpened++;
+    _addActivity(
+      message: '${track.title} was added to the Jukebox.',
+      type: ActivityType.discovery,
+      code: ActivityCode.bonusFound,
+      subject: track.id,
+    );
+    await _syncJukeboxAudio();
+    await _notifyAndSave();
+    return ChestReward(
+      tier: ChestTier.music,
+      coins: 0,
+      gems: 0,
+      eggFound: false,
+      musicTrackFound: track,
+    );
+  }
+
   double relicDropChance(ChestTier tier) => switch (tier) {
         ChestTier.wooden || ChestTier.silver => 0.0,
-        ChestTier.gold => .015,
-        ChestTier.dragon => .04,
-        ChestTier.mythical => .09,
-        ChestTier.sinister => .06,
-        ChestTier.portrait || ChestTier.title => 0.0,
+        ChestTier.gold => .01,
+        ChestTier.dragon => .02,
+        ChestTier.mythical => .04,
+        ChestTier.sinister => 1.0,
+        ChestTier.portrait || ChestTier.title || ChestTier.music => 0.0,
       };
 
   MysticRelic? _rollRelicDrop(ChestTier tier) {
     final chance = relicDropChance(tier);
     if (_random.nextDouble() >= chance) return null;
-    return MysticRelic.values[_random.nextInt(MysticRelic.values.length)];
+    final eligible = MysticRelic.values
+        .where(
+          (relic) =>
+              relic != MysticRelic.twinstarBrooch ||
+              !twinstarBroochEverObtained,
+        )
+        .toList(growable: false);
+    return eligible[_random.nextInt(eligible.length)];
   }
 
   bool accelerateStarterEgg() {
@@ -1613,7 +1941,7 @@ class HouseholdProvider extends ChangeNotifier {
   Future<bool> buyStarlightTreat() async {
     if (pet.gems < 3 || pet.isEgg) return false;
     pet.gems -= 3;
-    pet.xp += 25;
+    _grantDragonXp(pet, 25);
     pet.joy = min(100, pet.joy + 12);
     pet.energy = min(100, pet.energy + 12);
     pet.comfort = min(100, pet.comfort + 12);
@@ -1863,7 +2191,7 @@ class HouseholdProvider extends ChangeNotifier {
         _evolveReadyDragons(_clock()) |
         _refreshAdventureRuns() |
         _expireReturningVisitors() |
-        _processWeeklyReturningDragon() |
+        _processDailyReturningDragon() |
         roamingAssignmentsChanged |
         roamIdleDragons();
     final achievementsChanged = _evaluateAchievements();
@@ -1909,7 +2237,7 @@ class HouseholdProvider extends ChangeNotifier {
           .80,
           .97
         ],
-      ChestTier.portrait || ChestTier.title => const [
+      ChestTier.portrait || ChestTier.title || ChestTier.music => const [
           .75,
           .95,
           .995,
@@ -2054,6 +2382,10 @@ class HouseholdProvider extends ChangeNotifier {
         'onboardingComplete': onboardingComplete,
         'musicEnabled': musicEnabled,
         'musicStyle': musicStyle.name,
+        'ownedMusicTrackIds': ownedMusicTrackIds.toList(),
+        'enabledMusicTrackIds': enabledMusicTrackIds.toList(),
+        'jukeboxShuffle': jukeboxShuffle,
+        'jukeboxRepeat': jukeboxRepeat,
         'soundEffectsEnabled': soundEffectsEnabled,
         'enabledNotificationCategories': enabledNotificationCategories
             .map((category) => category.name)
@@ -2078,6 +2410,10 @@ class HouseholdProvider extends ChangeNotifier {
           for (final entry in untradeableRelicInventory.entries)
             entry.key.name: entry.value
         },
+        'chronoshardReductions': chronoshardReductions,
+        'eggRarityRevealedIds': eggRarityRevealedIds.toList(),
+        'twinstarBroochEverObtained': twinstarBroochEverObtained,
+        'twinstarBroochDragonId': twinstarBroochDragonId,
         'ownedPortraitIds': ownedPortraitIds.toList(),
         'selectedPortraitId': selectedPortraitId,
         'ownedTitleIds': ownedTitleIds.toList(),
@@ -2094,6 +2430,7 @@ class HouseholdProvider extends ChangeNotifier {
         'totalChestsOpened': totalChestsOpened,
         'totalPortraitChestsOpened': totalPortraitChestsOpened,
         'totalTitleChestsOpened': totalTitleChestsOpened,
+        'totalMusicChestsOpened': totalMusicChestsOpened,
         'totalAdventuresCompleted': totalAdventuresCompleted,
         'totalShortAdventuresCompleted': totalShortAdventuresCompleted,
         'totalGroupFourCompleted': totalGroupFourCompleted,
@@ -2132,7 +2469,8 @@ class HouseholdProvider extends ChangeNotifier {
           for (final entry in rareInteractionAt.entries)
             entry.key: entry.value.toIso8601String(),
         },
-        'lastReturningWeekKey': lastReturningWeekKey,
+        'lastReturningDayKey': lastReturningDayKey,
+        'scheduledReturningAt': scheduledReturningAt?.toIso8601String(),
         'latestReturningEvent': latestReturningEvent,
         'returningSpecialAdventureId': returningSpecialAdventureId,
         'returningSpecialAvailableUntil':
@@ -2163,6 +2501,12 @@ class HouseholdProvider extends ChangeNotifier {
       _evaluateAchievements(addActivities: false);
       await _save();
       await _rescheduleNestEggNotification();
+      await _syncJukeboxAudio();
+      await HavenAudio.applyPreferences(
+        musicEnabled: musicEnabled,
+        soundEffectsEnabled: soundEffectsEnabled,
+        musicStyle: musicStyle,
+      );
       notifyListeners();
       return true;
     } on Object {

@@ -461,7 +461,7 @@ void main() {
       for (final relic in MysticRelic.values) relic.assetPath,
       'assets/images/relics/egg_crack_magic.png',
     };
-    expect(paths, hasLength(69));
+    expect(paths, hasLength(73));
     for (final path in paths) {
       final image = await _decode(path);
       expect(image.width / image.height, inInclusiveRange(.5, 2.0),
@@ -532,7 +532,8 @@ void main() {
           '$worstPortraits',
     );
     expect(encodedPortraits, hasLength(100));
-    for (final relic in MysticRelic.values) {
+    for (final relic
+        in MysticRelic.values.where((relic) => relic.hasUseAnimation)) {
       final encodedFrames = <String>{};
       for (var frame = 0; frame < 20; frame++) {
         final path = relic.animationFrameAsset(frame);

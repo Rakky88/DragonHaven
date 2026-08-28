@@ -53,6 +53,9 @@ abstract final class HavenAudio {
   static bool _effectsEnabled = true;
   static HavenMusicStyle _musicStyle = HavenMusicStyle.classic;
   static HavenMusicScene? _musicScene;
+  static List<String> _jukeboxTrackIds = const ['music_reverie'];
+  static bool _jukeboxShuffle = false;
+  static bool _jukeboxRepeat = true;
 
   static Future<void> applyPreferences({
     required bool musicEnabled,
@@ -68,11 +71,35 @@ abstract final class HavenAudio {
         'effects': soundEffectsEnabled,
         'style': _musicStyle.assetId,
         'scene': _musicScene?.assetId,
+        'tracks': _jukeboxTrackIds,
+        'shuffle': _jukeboxShuffle,
+        'repeat': _jukeboxRepeat,
       });
     } on MissingPluginException {
       // Widget tests and unsupported platforms intentionally have no bridge.
     } on PlatformException {
       // Audio must never block saving a player preference.
+    }
+  }
+
+  static Future<void> configureJukebox({
+    required Iterable<String> trackIds,
+    required bool shuffle,
+    required bool repeat,
+  }) async {
+    _jukeboxTrackIds = List.unmodifiable(trackIds);
+    _jukeboxShuffle = shuffle;
+    _jukeboxRepeat = repeat;
+    try {
+      await _channel.invokeMethod<void>('setJukebox', {
+        'tracks': _jukeboxTrackIds,
+        'shuffle': shuffle,
+        'repeat': repeat,
+      });
+    } on MissingPluginException {
+      // Widget tests and unsupported platforms intentionally have no bridge.
+    } on PlatformException {
+      // Audio must never block saving a jukebox preference.
     }
   }
 

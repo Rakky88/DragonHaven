@@ -1,5 +1,5 @@
 /// Additional fixed phrases for notification controls and social trade cues.
-/// Order: German, Spanish, French, Italian, Portuguese, Chinese, Japanese.
+/// Order: German, Spanish, French, Italian, Portuguese, Japanese.
 const notificationPhraseTranslations = <String, List<String>>{
   'Delete account': [
     'Konto loschen',
@@ -7,7 +7,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Supprimer le compte',
     'Elimina account',
     'Excluir conta',
-    '删除账户',
     'アカウントを削除'
   ],
   'Delete online account?': [
@@ -16,7 +15,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Supprimer le compte en ligne ?',
     'Eliminare l\'account online?',
     'Excluir a conta online?',
-    '删除在线账户？',
     'オンラインアカウントを削除しますか？'
   ],
   'This permanently deletes your online profile, friends, trades and cloud backup. Your current offline save stays on this device.':
@@ -26,7 +24,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Cela supprime definitivement ton profil, tes amis, tes echanges et ta sauvegarde cloud. Ta partie locale reste sur cet appareil.',
     'Elimina definitivamente profilo, amici, scambi e backup cloud. Il salvataggio locale resta sul dispositivo.',
     'Isso exclui permanentemente perfil, amigos, trocas e backup na nuvem. O save local permanece no dispositivo.',
-    '这会永久删除在线资料、好友、交易和云备份。本地存档仍保留在此设备上。',
     'オンラインプロフィール、フレンド、交換、クラウドバックアップを完全に削除します。端末のローカルセーブは残ります。'
   ],
   'Confirm password': [
@@ -35,7 +32,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Confirmer le mot de passe',
     'Conferma password',
     'Confirmar senha',
-    '确认密码',
     'パスワードを確認'
   ],
   'Delete permanently': [
@@ -44,7 +40,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Supprimer definitivement',
     'Elimina definitivamente',
     'Excluir permanentemente',
-    '永久删除',
     '完全に削除'
   ],
   'Online account deleted.': [
@@ -53,7 +48,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Compte en ligne supprime.',
     'Account online eliminato.',
     'Conta online excluida.',
-    '在线账户已删除。',
     'オンラインアカウントを削除しました。'
   ],
   'Account deletion failed. Check your password and connection.': [
@@ -62,7 +56,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'La suppression a echoue. Verifie le mot de passe et la connexion.',
     'Eliminazione non riuscita. Controlla password e connessione.',
     'Falha ao excluir a conta. Verifique a senha e a conexao.',
-    '账户删除失败。请检查密码和网络连接。',
     'アカウントを削除できませんでした。パスワードと接続を確認してください。'
   ],
   'New friend request': [
@@ -71,7 +64,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Nouvelle demande d\'ami',
     'Nuova richiesta di amicizia',
     'Novo pedido de amizade',
-    '新的好友请求',
     '新しいフレンド申請'
   ],
   '{name} wants to be friends.': [
@@ -80,7 +72,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     '{name} souhaite devenir ton ami.',
     '{name} vuole diventare tuo amico.',
     '{name} quer ser seu amigo.',
-    '{name} 想和你成为好友。',
     '{name}がフレンドになりたがっています。'
   ],
   'Friend request accepted': [
@@ -89,7 +80,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Demande d\'ami acceptee',
     'Richiesta di amicizia accettata',
     'Pedido de amizade aceito',
-    '好友请求已接受',
     'フレンド申請が承認されました'
   ],
   '{name} is now in your friends list.': [
@@ -98,7 +88,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     '{name} figure maintenant dans ta liste d\'amis.',
     '{name} e ora nella tua lista amici.',
     '{name} agora esta na sua lista de amigos.',
-    '{name} 现在在你的好友列表中。',
     '{name}がフレンドリストに加わりました。'
   ],
   'New trade offer': [
@@ -107,7 +96,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Nouvelle offre d\'echange',
     'Nuova offerta di scambio',
     'Nova oferta de troca',
-    '新的交易邀请',
     '新しい交換オファー'
   ],
   '{name} wants to trade an item with you.': [
@@ -116,7 +104,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     '{name} souhaite echanger un objet avec toi.',
     '{name} vuole scambiare un oggetto con te.',
     '{name} quer trocar um item com voce.',
-    '{name} 想和你交换物品。',
     '{name}がアイテムを交換したがっています。'
   ],
   'Return item offered': [
@@ -125,7 +112,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Objet de retour propose',
     'Oggetto di ritorno offerto',
     'Item de retorno oferecido',
-    '已提供回赠物品',
     'お返しのアイテムが提示されました'
   ],
   '{name} offered an item. Confirm the trade.': [
@@ -134,7 +120,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     '{name} a propose un objet. Confirme l\'echange.',
     '{name} ha offerto un oggetto. Conferma lo scambio.',
     '{name} ofereceu um item. Confirme a troca.',
-    '{name} 提供了一件物品。请确认交易。',
     '{name}がアイテムを提示しました。交換を確認してください。'
   ],
   'Your trade with {name} completed safely.': [
@@ -143,7 +128,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Ton echange avec {name} est termine en toute securite.',
     'Lo scambio con {name} e stato completato in sicurezza.',
     'Sua troca com {name} foi concluida com seguranca.',
-    '你与{name}的交易已安全完成。',
     '{name}との交換が安全に完了しました。'
   ],
   'Cloud backup': [
@@ -152,7 +136,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Sauvegarde cloud',
     'Backup cloud',
     'Backup na nuvem',
-    '云备份',
     'クラウドバックアップ'
   ],
   'Cloud backup revision': [
@@ -161,7 +144,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Revision de sauvegarde cloud',
     'Revisione backup cloud',
     'Revisao do backup na nuvem',
-    '云备份版本',
     'クラウドバックアップのリビジョン'
   ],
   'Keep a versioned copy of this device\'s progress online.': [
@@ -170,25 +152,15 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Conserve en ligne une copie versionnee de la progression de cet appareil.',
     'Conserva online una copia con versione dei progressi di questo dispositivo.',
     'Mantenha online uma copia com versao do progresso deste dispositivo.',
-    '在线保存此设备进度的版本化副本。',
     'この端末の進行状況を世代付きでオンライン保存します。'
   ],
-  'Back up': [
-    'Sichern',
-    'Guardar',
-    'Sauvegarder',
-    'Salva',
-    'Salvar',
-    '备份',
-    'バックアップ'
-  ],
+  'Back up': ['Sichern', 'Guardar', 'Sauvegarder', 'Salva', 'Salvar', 'バックアップ'],
   'Restore': [
     'Wiederherstellen',
     'Restaurar',
     'Restaurer',
     'Ripristina',
     'Restaurar',
-    '恢复',
     '復元'
   ],
   'Back up progress?': [
@@ -197,7 +169,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Sauvegarder la progression ?',
     'Salvare i progressi?',
     'Salvar o progresso?',
-    '备份进度？',
     '進行状況をバックアップしますか？'
   ],
   'This stores the current progress from this device in your online account. An older cloud backup will be replaced.':
@@ -207,7 +178,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Cela enregistre la progression actuelle de cet appareil dans ton compte. Une ancienne sauvegarde sera remplacee.',
     'Salva i progressi attuali di questo dispositivo nel tuo account. Un backup precedente verra sostituito.',
     'Isso salva o progresso atual deste dispositivo na sua conta. Um backup anterior sera substituido.',
-    '这会把此设备的当前进度保存到在线账户，并替换旧的云备份。',
     'この端末の現在の進行状況をオンラインアカウントに保存し、古いバックアップを置き換えます。'
   ],
   'Cloud backup saved.': [
@@ -216,7 +186,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Sauvegarde cloud enregistree.',
     'Backup cloud salvato.',
     'Backup na nuvem salvo.',
-    '云备份已保存。',
     'クラウドバックアップを保存しました。'
   ],
   'Cloud backup failed. Refresh and try again.': [
@@ -225,7 +194,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'La sauvegarde a echoue. Actualise puis reessaie.',
     'Backup non riuscito. Aggiorna e riprova.',
     'Falha no backup. Atualize e tente novamente.',
-    '云备份失败。请刷新后重试。',
     'クラウドバックアップに失敗しました。更新して再試行してください。'
   ],
   'Restore cloud progress?': [
@@ -234,7 +202,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Restaurer la progression cloud ?',
     'Ripristinare i progressi cloud?',
     'Restaurar progresso da nuvem?',
-    '恢复云端进度？',
     'クラウドの進行状況を復元しますか？'
   ],
   'Your current local progress will be replaced by the latest cloud backup. A local recovery copy is kept.':
@@ -244,7 +211,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Ta progression locale sera remplacee par la sauvegarde la plus recente. Une copie locale de recuperation est conservee.',
     'I progressi locali saranno sostituiti dal backup piu recente. Viene conservata una copia locale di recupero.',
     'Seu progresso local sera substituido pelo backup mais recente. Uma copia local de recuperacao sera mantida.',
-    '当前本地进度将被最新云备份替换，并保留本地恢复副本。',
     '現在のローカル進行状況は最新のクラウドバックアップに置き換わり、復旧用コピーは端末に残ります。'
   ],
   'Cloud progress restored.': [
@@ -253,7 +219,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Progression cloud restauree.',
     'Progressi cloud ripristinati.',
     'Progresso da nuvem restaurado.',
-    '云端进度已恢复。',
     'クラウドの進行状況を復元しました。'
   ],
   'No usable cloud backup was found.': [
@@ -262,7 +227,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Aucune sauvegarde cloud utilisable trouvee.',
     'Nessun backup cloud utilizzabile trovato.',
     'Nenhum backup utilizavel foi encontrado.',
-    '未找到可用的云备份。',
     '利用できるクラウドバックアップが見つかりませんでした。'
   ],
   'Three Trials are ready': [
@@ -271,7 +235,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Trois épreuves sont prêtes',
     'Tre prove sono pronte',
     'Três provas estão prontas',
-    '三项试炼已就绪',
     '3つの試練の準備ができました',
   ],
   'Your Trial board is full. Choose a dragon and chase a new high score.': [
@@ -280,7 +243,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Ton tableau d’épreuves est plein. Choisis un dragon et vise un nouveau record.',
     'La bacheca delle prove è piena. Scegli un drago e punta a un nuovo record.',
     'Seu painel de provas está cheio. Escolha um dragão e busque um novo recorde.',
-    '试炼面板已满。选择一条龙，挑战新的最高分。',
     '試練ボードが満杯です。ドラゴンを選び、新記録を目指しましょう。',
   ],
   'Notifications': [
@@ -290,7 +252,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Notifiche',
     'Notificações',
     '通知',
-    '通知',
   ],
   'Choose which reminders you receive': [
     'Wähle, welche Erinnerungen du erhältst',
@@ -298,7 +259,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Choisis les rappels que tu reçois',
     'Scegli quali promemoria ricevere',
     'Escolha quais lembretes receber',
-    '选择要接收的提醒',
     '受け取る通知を選択',
   ],
   'Music · Rêverie': [
@@ -307,17 +267,15 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Musique · Rêverie',
     'Musica · Rêverie',
     'Música · Rêverie',
-    '音乐 ·《梦幻曲》',
     '音楽 · 夢想',
   ],
-  'OPEN': ['ÖFFNEN', 'ABRIR', 'OUVRIR', 'APRI', 'ABRIR', '打开', '開く'],
+  'OPEN': ['ÖFFNEN', 'ABRIR', 'OUVRIR', 'APRI', 'ABRIR', '開く'],
   'TRADE': [
     'TAUSCH',
     'CAMBIO',
     'ÉCHANGE',
     'SCAMBIA',
     'TROCA',
-    '交换',
     '交換',
   ],
   'Trade needs your answer': [
@@ -326,7 +284,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'L’échange attend ta réponse',
     'Lo scambio attende la tua risposta',
     'A troca aguarda sua resposta',
-    '交易正在等待你的回复',
     '交換があなたの返答を待っています',
   ],
   'Open active trade': [
@@ -335,7 +292,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Ouvrir l’échange actif',
     'Apri lo scambio attivo',
     'Abrir troca ativa',
-    '打开进行中的交易',
     '進行中の交換を開く',
   ],
   'Your reserved exchange is ready to view.': [
@@ -344,7 +300,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Ton échange réservé est prêt à être consulté.',
     'Lo scambio riservato è pronto da visualizzare.',
     'Sua troca reservada está pronta para ser vista.',
-    '你预留的交易可以查看了。',
     '予約済みの交換を確認できます。',
   ],
   'Choose an egg, chest or relic for a safe exchange.': [
@@ -353,7 +308,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Choisis un œuf, un coffre ou une relique pour un échange sûr.',
     'Scegli un uovo, forziere o reliquia per uno scambio sicuro.',
     'Escolha um ovo, baú ou relíquia para uma troca segura.',
-    '选择龙蛋、宝箱或遗物进行安全交易。',
     '卵、宝箱、遺物から安全に交換する品を選びます。',
   ],
   'Choose what may call you back': [
@@ -362,7 +316,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Choisis ce qui peut te rappeler',
     'Scegli cosa può richiamarti',
     'Escolha o que pode chamar você de volta',
-    '选择哪些事件可以提醒你',
     '呼び戻してよい出来事を選択',
   ],
   'Everything is enabled by default. You remain in control of every reminder.':
@@ -372,7 +325,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Tout est activé par défaut. Tu gardes le contrôle de chaque rappel.',
     'Tutto è attivo per impostazione predefinita. Mantieni il controllo di ogni promemoria.',
     'Tudo vem ativado por padrão. Você controla cada lembrete.',
-    '所有提醒默认开启，你可以随时单独控制。',
     'すべて初期設定で有効です。各通知は自由に管理できます。',
   ],
   'Eggs ready to hatch': [
@@ -381,7 +333,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Œufs prêts à éclore',
     'Uova pronte a schiudersi',
     'Ovos prontos para chocar',
-    '龙蛋可孵化',
     '孵化できる卵',
   ],
   'When an egg in the Rooftop Nest is ready.': [
@@ -390,7 +341,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Lorsqu’un œuf du Nid du toit est prêt.',
     'Quando un uovo nel Nido sul tetto è pronto.',
     'Quando um ovo no Ninho do terraço estiver pronto.',
-    '当天台巢穴中的龙蛋准备孵化时。',
     '屋上の巣の卵が孵化できるようになったとき。',
   ],
   'Achievements': [
@@ -399,7 +349,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Succès',
     'Obiettivi',
     'Conquistas',
-    '成就',
     '実績',
   ],
   'When you unlock a new achievement.': [
@@ -408,7 +357,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Lorsque tu débloques un nouveau succès.',
     'Quando sblocchi un nuovo obiettivo.',
     'Quando você desbloquear uma nova conquista.',
-    '当你解锁新成就时。',
     '新しい実績を解除したとき。',
   ],
   'Dragon evolutions': [
@@ -417,7 +365,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Évolutions de dragons',
     'Evoluzioni dei draghi',
     'Evoluções de dragões',
-    '龙的进化',
     'ドラゴンの進化',
   ],
   'When one of your dragons reaches a new form.': [
@@ -426,7 +373,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Lorsqu’un de tes dragons atteint une nouvelle forme.',
     'Quando uno dei tuoi draghi raggiunge una nuova forma.',
     'Quando um dos seus dragões alcançar uma nova forma.',
-    '当你的龙进化为新形态时。',
     'ドラゴンが新しい姿に進化したとき。',
   ],
   'When another keeper sends you a request.': [
@@ -435,7 +381,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Lorsqu’un autre gardien t’envoie une demande.',
     'Quando un altro custode ti invia una richiesta.',
     'Quando outro guardião enviar uma solicitação.',
-    '当其他守护者向你发送申请时。',
     '他のキーパーから申請が届いたとき。',
   ],
   'Friend acceptances': [
@@ -444,7 +389,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Demandes acceptées',
     'Amicizie accettate',
     'Amizades aceitas',
-    '好友申请通过',
     'フレンド承認',
   ],
   'When your friend request is accepted.': [
@@ -453,7 +397,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Lorsque ta demande d’amitié est acceptée.',
     'Quando la tua richiesta di amicizia viene accettata.',
     'Quando sua solicitação de amizade for aceita.',
-    '当你的好友申请被接受时。',
     'フレンド申請が承認されたとき。',
   ],
   'Trade proposals': [
@@ -462,7 +405,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Propositions d’échange',
     'Proposte di scambio',
     'Propostas de troca',
-    '交易提议',
     '交換の提案',
   ],
   'When a friend starts a trade with you.': [
@@ -471,7 +413,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Lorsqu’un ami commence un échange avec toi.',
     'Quando un amico avvia uno scambio con te.',
     'Quando um amigo iniciar uma troca com você.',
-    '当好友向你发起交易时。',
     'フレンドが交換を始めたとき。',
   ],
   'Trade return items': [
@@ -480,7 +421,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Objets proposés en retour',
     'Oggetti offerti in cambio',
     'Itens oferecidos em troca',
-    '交易回赠物品',
     '交換相手の提示アイテム',
   ],
   'When the other keeper offers their item.': [
@@ -489,7 +429,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Lorsque l’autre gardien propose son objet.',
     'Quando l’altro custode offre il proprio oggetto.',
     'Quando o outro guardião oferecer seu item.',
-    '当另一位守护者提供物品时。',
     '相手のキーパーがアイテムを提示したとき。',
   ],
   'Completed trades': [
@@ -498,7 +437,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Échanges terminés',
     'Scambi completati',
     'Trocas concluídas',
-    '已完成交易',
     '完了した交換',
   ],
   'When a trade has safely completed.': [
@@ -507,7 +445,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Lorsqu’un échange est terminé en toute sécurité.',
     'Quando uno scambio si conclude in sicurezza.',
     'Quando uma troca for concluída com segurança.',
-    '当交易安全完成时。',
     '交換が安全に完了したとき。',
   ],
   'Three Trials available': [
@@ -516,7 +453,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Trois épreuves disponibles',
     'Tre prove disponibili',
     'Três provas disponíveis',
-    '三项试炼可用',
     '3つの試練が利用可能',
   ],
   'When your Trial board reaches 3/3.': [
@@ -525,7 +461,6 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Lorsque ton tableau d’épreuves atteint 3/3.',
     'Quando la bacheca delle prove raggiunge 3/3.',
     'Quando seu painel de provas chegar a 3/3.',
-    '当试炼面板达到 3/3 时。',
     '試練ボードが3/3になったとき。',
   ],
 };

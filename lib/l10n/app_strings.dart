@@ -31,7 +31,6 @@ class AppStrings {
     'it': 'Italiano',
     'nl': 'Nederlands',
     'pt': 'Português',
-    'zh': '中文',
     'ja': '日本語',
   };
 
@@ -190,7 +189,6 @@ class AppStrings {
         'es' || 'pt' => 'Nv. $level',
         'fr' => 'Niv. $level',
         'it' => 'Liv. $level',
-        'zh' => '$level 级',
         'ja' => 'Lv.$level',
         _ => 'Lv. $level',
       };
@@ -235,9 +233,6 @@ class AppStrings {
         ('nl', 'hour') => '${value}u',
         ('fr', 'day') => '${value}j',
         ('it', 'day') => '${value}g',
-        ('zh', 'day') => '$value天',
-        ('zh', 'hour') => '$value小时',
-        ('zh', 'minute') => '$value分钟',
         ('ja', 'day') => '$value日',
         ('ja', 'hour') => '$value時間',
         ('ja', 'minute') => '$value分',
@@ -316,6 +311,7 @@ class AppStrings {
         ChestTier.sinister => pick('Sinister Chest', 'Sinistere Kist'),
         ChestTier.portrait => pick('Portrait Chest', 'Portretkist'),
         ChestTier.title => pick('Title Chest', 'Titelkist'),
+        ChestTier.music => pick('Music Chest', 'Muziekkist'),
       };
 
   String accountTitle(AccountTitle title) => title.label(languageCode);
@@ -406,7 +402,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Aventura',
     'pt': 'Aventura',
     'it': 'Avventura',
-    'zh': '冒险',
     'ja': '冒険'
   },
   'tower': {
@@ -417,7 +412,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Torre del dragón',
     'pt': 'Torre do dragão',
     'it': 'Torre dei draghi',
-    'zh': '龙塔',
     'ja': 'ドラゴンタワー'
   },
   'friends': {
@@ -428,7 +422,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Amigos',
     'pt': 'Amigos',
     'it': 'Amici',
-    'zh': '好友',
     'ja': 'フレンド'
   },
   'inventory': {
@@ -439,7 +432,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Inventario',
     'pt': 'Inventário',
     'it': 'Inventario',
-    'zh': '库存',
     'ja': '所持品'
   },
   'shop': {
@@ -450,7 +442,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Tienda',
     'pt': 'Loja',
     'it': 'Negozio',
-    'zh': '商店',
     'ja': 'ショップ'
   },
   'account': {
@@ -461,7 +452,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Cuenta',
     'pt': 'Conta',
     'it': 'Account',
-    'zh': '账户信息',
     'ja': 'アカウント'
   },
   'language': {
@@ -472,7 +462,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Idioma',
     'pt': 'Idioma',
     'it': 'Lingua',
-    'zh': '语言',
     'ja': '言語'
   },
   'achievements': {
@@ -483,7 +472,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Logros',
     'pt': 'Conquistas',
     'it': 'Obiettivi',
-    'zh': '成就',
     'ja': '実績'
   },
   'more': {
@@ -494,7 +482,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Más opciones',
     'pt': 'Mais opções',
     'it': 'Altre opzioni',
-    'zh': '更多选项',
     'ja': 'その他'
   },
   'coins': {
@@ -505,7 +492,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'monedas',
     'pt': 'moedas',
     'it': 'monete',
-    'zh': '金币',
     'ja': 'コイン'
   },
   'gems': {
@@ -516,7 +502,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'gemas',
     'pt': 'gemas',
     'it': 'gemme',
-    'zh': '宝石',
     'ja': 'ジェム'
   },
   'music': {
@@ -527,7 +512,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Música',
     'pt': 'Música',
     'it': 'Musica',
-    'zh': '音乐',
     'ja': '音楽'
   },
   'music_style': {
@@ -538,7 +522,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Estilo musical',
     'pt': 'Estilo musical',
     'it': 'Stile musicale',
-    'zh': '\u97f3\u4e50\u98ce\u683c',
     'ja': '\u97f3\u697d\u30b9\u30bf\u30a4\u30eb'
   },
   'basic': {
@@ -549,7 +532,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'B\u00e1sico',
     'pt': 'B\u00e1sico',
     'it': 'Base',
-    'zh': '\u57fa\u7840',
     'ja': '\u30d9\u30fc\u30b7\u30c3\u30af'
   },
   'classic': {
@@ -560,7 +542,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Cl\u00e1sico',
     'pt': 'Cl\u00e1ssico',
     'it': 'Classica',
-    'zh': '\u53e4\u5178',
     'ja': '\u30af\u30e9\u30b7\u30c3\u30af'
   },
   'sound_effects': {
@@ -571,7 +552,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Efectos de sonido',
     'pt': 'Efeitos sonoros',
     'it': 'Effetti sonori',
-    'zh': '音效',
     'ja': '効果音'
   },
   'on': {
@@ -582,7 +562,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Sí',
     'pt': 'Ligado',
     'it': 'On',
-    'zh': '开',
     'ja': 'オン'
   },
   'off': {
@@ -593,7 +572,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'No',
     'pt': 'Desligado',
     'it': 'Off',
-    'zh': '关',
     'ja': 'オフ'
   },
   'save': {
@@ -604,7 +582,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Guardar',
     'pt': 'Salvar',
     'it': 'Salva',
-    'zh': '保存',
     'ja': '保存'
   },
   'cancel': {
@@ -615,7 +592,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Cancelar',
     'pt': 'Cancelar',
     'it': 'Annulla',
-    'zh': '取消',
     'ja': 'キャンセル'
   },
   'coming_online': {
@@ -626,7 +602,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Servicio en línea próximamente',
     'pt': 'Serviço online em breve',
     'it': 'Servizio online in arrivo',
-    'zh': '在线服务即将推出',
     'ja': 'オンライン機能は今後追加'
   },
   'achievement_unlocked': {
@@ -637,7 +612,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Logro desbloqueado',
     'pt': 'Conquista desbloqueada',
     'it': 'Obiettivo sbloccato',
-    'zh': '成就已解锁',
     'ja': '実績解除'
   },
   'tap_to_continue': {
@@ -648,7 +622,6 @@ const _coreTranslations = <String, Map<String, String>>{
     'es': 'Toca para continuar',
     'pt': 'Toque para continuar',
     'it': 'Tocca per continuare',
-    'zh': '点击继续',
     'ja': 'タップして続ける'
   },
 };
@@ -660,7 +633,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['Bonjour, petit !', 'Fais éclore ton Œuf de départ.'],
     'it': ['Ciao, piccolino!', 'Fai schiudere il tuo Uovo iniziale.'],
     'pt': ['Olá, pequenino!', 'Faça seu Ovo Inicial chocar.'],
-    'zh': ['你好，小家伙！', '孵化你的初始龙蛋。'],
     'ja': ['こんにちは、ちびちゃん！', '最初のドラゴンの卵を孵化させる。'],
   },
   'guided_tour': {
@@ -669,7 +641,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['Un peu moins perdu', 'Termine le tutoriel de DragonHaven.'],
     'it': ['Un po’ meno spaesato', 'Completa il tutorial di DragonHaven.'],
     'pt': ['Um pouco menos perdido', 'Conclua o tutorial de DragonHaven.'],
-    'zh': ['没那么迷路了', '完成 DragonHaven 教程。'],
     'ja': ['少し迷わなくなった', 'DragonHavenのチュートリアルを完了する。'],
   },
   'first_flight': {
@@ -678,7 +649,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['Premier vol', 'Termine ta première Aventure courte.'],
     'it': ['Primo volo', 'Completa la tua prima Avventura breve.'],
     'pt': ['Primeiro voo', 'Conclua sua primeira Aventura curta.'],
-    'zh': ['初次飞行', '完成第一次短途冒险。'],
     'ja': ['はじめての飛行', '最初のショート冒険を完了する。'],
   },
   'chest_expectations': {
@@ -687,7 +657,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['Coffre à grandes attentes', 'Ouvre ton premier coffre.'],
     'it': ['Grandi aspettative', 'Apri il tuo primo forziere.'],
     'pt': ['Grandes expectativas', 'Abra seu primeiro baú.'],
-    'zh': ['开箱有望', '打开你的第一个宝箱。'],
     'ja': ['箱への期待', '最初の宝箱を開ける。'],
   },
   'profile_picture_perfect': {
@@ -711,7 +680,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Retrato perfeito',
       'Abra seu primeiro Baú de retratos. Sua conta encontrou seu melhor ângulo.'
     ],
-    'zh': ['完美肖像', '首次打开肖像宝箱。你的账号找到了最好看的角度。'],
     'ja': ['完璧なプロフィール', 'ポートレート宝箱を初めて開ける。アカウントの決め顔が見つかった。'],
   },
   'highly_titled': {
@@ -735,7 +703,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Muito importante',
       'Abra seu primeiro Baú de títulos. Não deixe o título subir à cabeça.'
     ],
-    'zh': ['称号加身', '首次打开称号宝箱。可别让称号冲昏了头。'],
     'ja': ['肩書き持ち', '称号宝箱を初めて開ける。肩書きで偉くなりすぎないように。'],
   },
   'room_to_roost': {
@@ -750,7 +717,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Compra il primo piano aggiuntivo della Torre.'
     ],
     'pt': ['Espaço para o ninho', 'Compre o primeiro andar extra da Torre.'],
-    'zh': ['安巢之所', '购买第一层额外的龙塔楼层。'],
     'ja': ['巣ごもりの部屋', 'ドラゴンタワーの追加階を初めて購入する。'],
   },
   'feed_furniture': {
@@ -762,7 +728,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['Ne nourrissez pas les meubles', 'Place ton premier meuble.'],
     'it': ['Non dare da mangiare ai mobili', 'Posiziona il tuo primo mobile.'],
     'pt': ['Não alimente os móveis', 'Posicione seu primeiro móvel.'],
-    'zh': ['请勿投喂家具', '摆放你的第一件家具。'],
     'ja': ['家具にエサを与えないで', '最初の家具を配置する。'],
   },
   'book_wyrm': {
@@ -774,7 +739,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['Wyrm de bibliothèque', 'Découvre 5 familles de dragons communes.'],
     'it': ['Drago da biblioteca', 'Scopri 5 famiglie di draghi comuni.'],
     'pt': ['Dragão de biblioteca', 'Descubra 5 famílias de dragões comuns.'],
-    'zh': ['书中之龙', '发现 5 个普通龙族。'],
     'ja': ['本の虫ならぬ本の竜', 'コモンのドラゴン一族を5種発見する。'],
   },
   'growing_pains': {
@@ -786,7 +750,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Fai evolvere un cucciolo in giovane wyrm.'
     ],
     'pt': ['Dores do crescimento', 'Evolua um filhote para um jovem wyrm.'],
-    'zh': ['成长的烦恼', '让一只幼龙进化为少年龙。'],
     'ja': ['成長痛', '孵化した幼竜を若竜へ進化させる。'],
   },
   'not_picking_favorites': {
@@ -810,7 +773,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Sem favoritos, claro',
       'Mude seu dragão favorito pela primeira vez.'
     ],
-    'zh': ['绝对没有偏心', '第一次更换你最喜欢的龙。'],
     'ja': ['えこひいきではありません', 'お気に入りのドラゴンを初めて変更する。'],
   },
   'halfway_clouds': {
@@ -819,7 +781,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['À mi-chemin des nuages', 'Construis 10 étages de la Tour.'],
     'it': ['A metà strada dalle nuvole', 'Costruisci 10 piani della Torre.'],
     'pt': ['No meio do caminho até as nuvens', 'Construa 10 andares da Torre.'],
-    'zh': ['半途入云', '建造 10 层龙塔。'],
     'ja': ['雲まであと半分', 'ドラゴンタワーを10階まで建てる。'],
   },
   'ascension_day': {
@@ -831,7 +792,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     ],
     'it': ['Giorno dell’ascensione', 'Ottieni il tuo primo drago Asceso.'],
     'pt': ['Dia da ascensão', 'Evolua seu primeiro dragão Ascendido.'],
-    'zh': ['飞升之日', '让第一只龙进化为升华形态。'],
     'ja': ['昇華の日', '最初のドラゴンをアセンデッドへ進化させる。'],
   },
   'something_spectral': {
@@ -846,7 +806,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Algo espectral se aproxima',
       'Descubra seu primeiro dragão Espectral.'
     ],
-    'zh': ['幽光将至', '发现第一只幻彩龙。'],
     'ja': ['スペクトラルな何かが来る', '最初のスペクトラルドラゴンを発見する。'],
   },
   'well_read_scaled': {
@@ -855,7 +814,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['Bien lu, bien écailleux', 'Découvre les 20 familles communes.'],
     'it': ['Colto e ben squamato', 'Scopri 20 famiglie comuni.'],
     'pt': ['Bem lido, bem escamado', 'Descubra as 20 famílias comuns.'],
-    'zh': ['博览群龙', '发现 20 个普通龙族。'],
     'ja': ['読書家は鱗も立派', 'コモンのドラゴン一族を20種発見する。'],
   },
   'frequent_flyer': {
@@ -864,7 +822,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['Grand voyageur', 'Termine 50 Aventures.'],
     'it': ['Volo frequente', 'Completa 50 Avventure.'],
     'pt': ['Viajante frequente', 'Conclua 50 Aventuras.'],
-    'zh': ['飞行常客', '完成 50 次冒险。'],
     'ja': ['空の常連', '冒険を50回完了する。'],
   },
   'are_we_there_yet': {
@@ -873,7 +830,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['On est bientôt arrivés ?', 'Termine 1 000 Aventures.'],
     'it': ['Siamo arrivati?', 'Completa 1.000 Avventure.'],
     'pt': ['Já chegamos?', 'Conclua 1.000 Aventuras.'],
-    'zh': ['我们到了吗？', '完成 1,000 次冒险。'],
     'ja': ['もう着いた？', '冒険を1,000回完了する。'],
   },
   'full_party': {
@@ -894,7 +850,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Grupo completo, força total',
       'Conclua uma Aventura em grupo com 4 participantes.'
     ],
-    'zh': ['满员出发', '与 4 名参与者完成一次团队冒险。'],
     'ja': ['フルパーティー、全速前進', '4人でグループ冒険を完了する。'],
   },
   'triple_expertise': {
@@ -918,7 +873,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Mestre das três',
       'Alcance 300 de Poder, 300 de Arcano e 300 de Espírito com um dragão.'
     ],
-    'zh': ['三项全能大师', '让一只龙的力量、奥术和精神均达到 300。'],
     'ja': ['三つの達人', '1体のドラゴンで力・神秘・精神をすべて300にする。'],
   },
   'hidden_mastery': {
@@ -942,7 +896,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Perfeitamente equilibrado',
       'Evolua um dragão para sua forma secreta de Mastery.'
     ],
-    'zh': ['完美平衡', '让一只龙进化为隐藏的精通形态。'],
     'ja': ['完璧な均衡', 'ドラゴンを秘密のマスタリー形態へ進化させる。'],
   },
   'came_crawling_back': {
@@ -963,7 +916,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Olha quem voltou rastejando',
       'Receba a visita de um dragão libertado.'
     ],
-    'zh': ['看看谁爬回来了', '迎来一只已放归龙的拜访。'],
     'ja': ['這い戻ってきたのは誰？', '放したドラゴンの訪問を受ける。'],
   },
   'sky_ceiling': {
@@ -975,7 +927,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Raggiungi 20 piani della Torre.'
     ],
     'pt': ['O céu tem teto, afinal', 'Alcance 20 andares da Torre.'],
-    'zh': ['天空原来也有天花板', '将龙塔建到 20 层。'],
     'ja': ['空にも天井はあった', 'ドラゴンタワーを20階まで建てる。'],
   },
   'scale_every_tale': {
@@ -993,7 +944,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Uma escama para cada história',
       'Descubra as 42 famílias de dragões.'
     ],
-    'zh': ['一族一传奇', '发现 42 个龙族。'],
     'ja': ['物語ごとに一枚の鱗', 'ドラゴン一族を42種発見する。'],
   },
   'ghost_writer': {
@@ -1002,7 +952,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['Nègre spectral', 'Découvre les formes Spectrales de 10 familles.'],
     'it': ['Scrittore fantasma', 'Scopri forme Spettrali di 10 famiglie.'],
     'pt': ['Escritor fantasma', 'Descubra formas Espectrais de 10 famílias.'],
-    'zh': ['幽灵作家', '发现 10 个龙族的幻彩形态。'],
     'ja': ['ゴーストライター', '10一族のスペクトラル形態を発見する。'],
   },
   'myth_made_real': {
@@ -1017,7 +966,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     ],
     'it': ['Il mito diventa realtà', 'Ottieni un drago di famiglia Mitica.'],
     'pt': ['O mito se torna real', 'Obtenha um dragão de família Mítica.'],
-    'zh': ['神话成真', '获得一只神话族龙。'],
     'ja': ['神話が現実に', 'ミシカル一族のドラゴンを手に入れる。'],
   },
   'trial_might_s_plus': {
@@ -1026,7 +974,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['Un mur ? Quel mur ?', 'Obtiens le rang S+ dans Briseur de ruines.'],
     'it': ['Muro? Quale muro?', 'Ottieni il grado S+ in Spezzarovine.'],
     'pt': ['Muro? Que muro?', 'Alcance a classificação S+ em Quebra-ruínas.'],
-    'zh': ['墙？什么墙？', '在遗迹破坏者中获得 S+ 评级。'],
     'ja': ['壁？何の壁？', 'ルインブレイカーでS+ランクを獲得する。'],
   },
   'trial_spirit_s_plus': {
@@ -1035,7 +982,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['Vol cristallin', 'Obtiens le rang S+ dans Vol cavernicole.'],
     'it': ['Volo cristallino', 'Ottieni il grado S+ in Volo nella caverna.'],
     'pt': ['Voo cristalino', 'Alcance a classificação S+ em Voo na caverna.'],
-    'zh': ['水晶般的飞行', '在洞窟飞行中获得 S+ 评级。'],
     'ja': ['水晶のような飛行', '洞窟飛行でS+ランクを獲得する。'],
   },
   'trial_arcana_s_plus': {
@@ -1044,7 +990,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     'fr': ['Rune accomplie', 'Obtiens le rang S+ dans Tisseur de runes.'],
     'it': ['Runa compiuta', 'Ottieni il grado S+ in Tessirune.'],
     'pt': ['Runa concluída', 'Alcance a classificação S+ em Tecelão de runas.'],
-    'zh': ['符文已成', '在符文编织者中获得 S+ 评级。'],
     'ja': ['ルーン完了', 'ルーンウィーバーでS+ランクを獲得する。'],
   },
   'probably_fine': {
@@ -1068,7 +1013,6 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Provavelmente vai dar tudo certo',
       'Conclua uma Aventura especial sinistra.'
     ],
-    'zh': ['大概没事吧', '完成一次诡秘特殊冒险。'],
     'ja': ['たぶん大丈夫', '不吉なスペシャル冒険を完了する。'],
   },
 };

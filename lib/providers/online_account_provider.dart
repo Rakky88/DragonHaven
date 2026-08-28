@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../l10n/app_strings.dart';
+import '../models/mystic_relic.dart';
 import '../models/social.dart';
 import '../services/notification_service.dart';
 import '../services/social_repository.dart';
@@ -28,6 +29,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     Future<bool> Function(Map<String, dynamic> state)? applyCloudState,
     Future<String> Function()? deviceId,
     String Function()? languageCode,
+    Duration operationTimeout = const Duration(seconds: 30),
   })  : _repository = repository,
         _inventorySnapshot = inventorySnapshot,
         _profileSnapshot = profileSnapshot ?? _fallbackProfileSnapshot,
@@ -40,7 +42,8 @@ class OnlineAccountProvider extends ChangeNotifier {
         _gameStateSnapshot = gameStateSnapshot,
         _applyCloudState = applyCloudState,
         _deviceId = deviceId,
-        _languageCode = languageCode ?? _defaultLanguageCode;
+        _languageCode = languageCode ?? _defaultLanguageCode,
+        _operationTimeout = operationTimeout;
 
   final SocialRepository _repository;
   final OnlineInventorySnapshot Function() _inventorySnapshot;
@@ -58,6 +61,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   final Future<bool> Function(Map<String, dynamic> state)? _applyCloudState;
   final Future<String> Function()? _deviceId;
   final String Function() _languageCode;
+  final Duration _operationTimeout;
   StreamSubscription<bool>? _authSubscription;
   Timer? _refreshTimer;
   Timer? _authRecoveryTimer;
@@ -116,7 +120,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     }).length;
   }
 
-  Future<void> initialize() async {
+  Future<void> initialize({bool waitForFirstRefresh = true}) async {
     _authSubscription = _repository.authStateChanges.listen(
       (signedIn) {
         if (signedIn) {
@@ -135,7 +139,14 @@ class OnlineAccountProvider extends ChangeNotifier {
         });
       },
     );
-    if (isSignedIn) await refresh();
+    if (isSignedIn) {
+      final firstRefresh = refresh();
+      if (waitForFirstRefresh) {
+        await firstRefresh;
+      } else {
+        unawaited(firstRefresh);
+      }
+    }
     _ensureRefreshTimer();
   }
 
@@ -612,7 +623,14 @@ class OnlineAccountProvider extends ChangeNotifier {
         case TradeItemKind.chest:
           chests.update(item.key, (value) => value + 1, ifAbsent: () => 1);
         case TradeItemKind.relic:
-          relics.update(item.key, (value) => value + 1, ifAbsent: () => 1);
+          final reduction = item.key == MysticRelic.chronoshard.name
+              ? (item.data['reductionPercent'] as num?)?.toInt()
+              : null;
+          final reservationKey = reduction == null
+              ? item.key
+              : '${MysticRelic.chronoshard.name}:$reduction';
+          relics.update(reservationKey, (value) => value + 1,
+              ifAbsent: () => 1);
       }
     }
     await _synchronizeTradeReservations(eggs, chests, relics);
@@ -631,7 +649,10 @@ class OnlineAccountProvider extends ChangeNotifier {
     errorCode = null;
     _notify();
     try {
-      return await operation();
+      return await operation().timeout(
+        _operationTimeout,
+        onTimeout: () => throw const SocialException('online_timeout'),
+      );
     } on SocialException catch (error) {
       errorCode = error.code;
       return null;

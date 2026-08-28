@@ -31,6 +31,9 @@ void main() {
       'effects': true,
       'style': 'classic',
       'scene': null,
+      'tracks': ['music_reverie'],
+      'shuffle': false,
+      'repeat': true,
     });
     await HavenAudio.setMusicScene(HavenMusicScene.towerDay);
     await HavenAudio.setMusicScene(HavenMusicScene.towerDay);
@@ -48,6 +51,9 @@ void main() {
       'effects': true,
       'style': 'classic',
       'scene': 'tower_day',
+      'tracks': ['music_reverie'],
+      'shuffle': false,
+      'repeat': true,
     });
   });
 }

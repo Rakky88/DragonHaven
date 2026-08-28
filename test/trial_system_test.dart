@@ -160,6 +160,9 @@ void main() {
       );
     }
     expect(trialGradeForScore(TrialKind.runeweaver, 12), TrialGrade.s);
+    expect(trialGradeForScore(TrialKind.runeweaver, 14), TrialGrade.s);
+    expect(trialGradeForScore(TrialKind.runeweaver, 15), TrialGrade.sPlus);
+    expect(trialGradeForScore(TrialKind.runeweaver, 999), TrialGrade.sPlus);
 
     expect(
       trialRewardForGrade(TrialGrade.b, .84).chestTier,
