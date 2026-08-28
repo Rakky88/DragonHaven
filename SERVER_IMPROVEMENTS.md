@@ -1,4 +1,4 @@
-# DragonHaven serververbeteringen — v0.04.08
+# DragonHaven serververbeteringen — v0.04.09
 
 ## Wat is verbeterd
 
@@ -45,25 +45,47 @@ powershell -ExecutionPolicy Bypass -File .\tool\release_server_preflight.ps1 `
 
 Resultaat:
 
-- migraties: 23 lokaal en 23 remote;
+- migraties: 24 lokaal en 24 remote;
 - database lint: 0 fouten voor `extensions`, `private` en `public`;
 - Auth health: HTTP 200;
 - Auth settings: HTTP 200;
 - e-mailauth: geconfigureerd.
 
 Deze huidige productie-uitkomst is opnieuw bewezen door
-[release-gate 33198225157](https://github.com/Rakky88/DragonHaven/actions/runs/33198225157).
+[migratierun 33204827275](https://github.com/Rakky88/DragonHaven/actions/runs/33204827275)
+en [release-gate 33204987488](https://github.com/Rakky88/DragonHaven/actions/runs/33204987488).
 De release mag niet worden gepubliceerd wanneer deze preflight op een later
 moment een mismatch of fout meldt.
+
+### Vormspecifieke Expertise en Group Adventures
+
+Migratie `202608280024_variable_expertise_caps.sql` bewaakt dezelfde maxima als
+de client: 350 voor een normale Ascension-specialisatie, 350 op alle drie bij
+Mastery, en voor Infernal 350 standaard plus 400 op de specialisatie. De
+server valideert dit bij Group Adventure-draken, rewards en openbare favoriete-
+draakprofielen. De exacte 23→24-dry-run en nacontrole zijn groen uitgevoerd.
+
+### Automatische back-up en gratis monitoring
+
+- Betekenisvolle lokale voortgang wordt na een wijziging automatisch naar de
+  bestaande revision-locked cloudsave geschreven, in de voorgrond maximaal
+  eenmaal per vijftien minuten en met een directe veilige flush bij achtergrond.
+- De wekelijkse stagingworkflow herstelt zowel de actuele als een historische
+  cloudrevisie; [run 33205758376](https://github.com/Rakky88/DragonHaven/actions/runs/33205758376)
+  heeft de eerste volledige roundtrip bewezen.
+- De productie-Auth-healthcheck draait ieder uur, bewaart dertig dagen bewijs
+  en opent bij uitval één aan Rick toegewezen SEV-1-issue. De groene basis is
+  vastgelegd in [run 33205759992](https://github.com/Rakky88/DragonHaven/actions/runs/33205759992).
 
 ## Bewuste servergrenzen
 
 - De algemene offline economie is nog client-state. Een toekomstige
   storeversie met echte betalingen vereist server-authoritative economy-RPC's,
   idempotency keys en Google Play receiptvalidatie.
-- Back-ups hebben optimistische revisievergrendeling, maximaal vijf herstelbare
-  revisies gedurende dertig dagen en een expliciete conflictkeuze, maar nog geen
-  automatische merge van gelijktijdige apparaatwijzigingen.
+- Back-ups hebben optimistische revisievergrendeling, automatische uploads,
+  maximaal vijf herstelbare revisies gedurende dertig dagen en een expliciete
+  conflictkeuze, maar nog geen automatische merge van gelijktijdige
+  apparaatwijzigingen.
 - De app toont herstelbare fouten en timeouts; centrale error-rate-, latency- en
   capacity-alerting moet buiten de client worden ingericht.
 - Account-specifieke support hoort op Keeper ID/user UUID en serverlogs te
@@ -71,12 +93,14 @@ moment een mismatch of fout meldt.
 
 ## Aanbevolen volgende serverstappen
 
-1. Voeg dashboards en alerts toe voor Auth, RPC-latency, database-connecties en
-   trade/group-adventure foutpercentages.
+1. Koppel na ontvangst van `google-services.json` Firebase Crashlytics en
+   Performance en voeg daarna een veilige read-only applicatie-RPC aan de
+   bestaande healthcheck toe.
 2. Verplaats coin-, gem-, chest- en relicmutaties naar idempotente server-RPC's
    voordat echte aankopen worden geactiveerd.
-3. Plan de gebouwde restore-integriteitstest periodiek in en leg RPO/RTO plus
-   het beleid voor eventuele automatische back-ups vast.
+3. Controleer de eerste automatisch geplande zondagse restore-integriteitsrun
+   en daarna maandelijks het bewijs; RPO/RTO en automatische back-up zijn
+   inmiddels vastgelegd en gebouwd.
 4. Automatiseer de resterende staging-e-mailconfirmatie; Group Adventure
    starten, afronden en idempotent belonen is inmiddels volledig bewezen met
    begrensde, automatisch opgeruimde stagingfixtures.
@@ -198,8 +222,8 @@ bewijsartifact succesvol.
 Zie [DRAGONHAVEN_POST_AUDIT_PLAN.md](DRAGONHAVEN_POST_AUDIT_PLAN.md) en
 [INCIDENT_RUNBOOK.md](INCIDENT_RUNBOOK.md) voor eigenaarschap, vervolgfasen en
 incidentafhandeling. De wijzigingen staan op `main`, staging en productie en
-zijn uitgebracht als [v0.04.08](https://github.com/Rakky88/DragonHaven/releases/tag/v0.04.08).
-De productie-releasegate
-[33198225157](https://github.com/Rakky88/DragonHaven/actions/runs/33198225157)
-bewees opnieuw 23/23 migraties, lint/Auth, analyzer, 261 tests en de vaste
+zijn uitgebracht als [v0.04.09](https://github.com/Rakky88/DragonHaven/releases/tag/v0.04.09).
+De [productiegate 33204987488](https://github.com/Rakky88/DragonHaven/actions/runs/33204987488)
+en [taggate 33205588983](https://github.com/Rakky88/DragonHaven/actions/runs/33205588983)
+bewezen opnieuw 24/24 migraties, lint/Auth, analyzer, 270 tests en de vaste
 ondertekening van de Play-ready AAB.
