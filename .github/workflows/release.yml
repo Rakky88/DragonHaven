@@ -69,7 +69,7 @@ jobs:
         run: flutter pub get
 
       - name: Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v3
         with:
           version: 2.116.0
 
@@ -188,7 +188,7 @@ jobs:
           cat release/release-verification.md
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: DragonHaven-Play-Store
           path: release/

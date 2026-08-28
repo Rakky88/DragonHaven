@@ -59,8 +59,9 @@ moment een mismatch of fout meldt.
 - De algemene offline economie is nog client-state. Een toekomstige
   storeversie met echte betalingen vereist server-authoritative economy-RPC's,
   idempotency keys en Google Play receiptvalidatie.
-- Backups hebben revisies en herstelkopieën, maar nog geen automatische merge
-  van gelijktijdige apparaatwijzigingen.
+- Back-ups hebben optimistische revisievergrendeling, maximaal vijf herstelbare
+  revisies gedurende dertig dagen en een expliciete conflictkeuze, maar nog geen
+  automatische merge van gelijktijdige apparaatwijzigingen.
 - De app toont herstelbare fouten en timeouts; centrale error-rate-, latency- en
   capacity-alerting moet buiten de client worden ingericht.
 - Account-specifieke support hoort op Keeper ID/user UUID en serverlogs te
@@ -72,8 +73,8 @@ moment een mismatch of fout meldt.
    trade/group-adventure foutpercentages.
 2. Verplaats coin-, gem-, chest- en relicmutaties naar idempotente server-RPC's
    voordat echte aankopen worden geactiveerd.
-3. Voeg periodieke restore-tests van backups toe en definieer een expliciet
-   multi-device conflictbeleid.
+3. Plan de gebouwde restore-integriteitstest periodiek in en leg RPO/RTO plus
+   het beleid voor eventuele automatische back-ups vast.
 4. Breid de bestaande end-to-end stagingtests uit met geautomatiseerde
    e-mailconfirmatie en het starten, afronden en idempotent belonen van een
    Group Adventure, zonder een meerdaagse testactie achter te laten.
@@ -151,6 +152,36 @@ paste migratie 21 toe en bewees 21/21 parity, schema-lint/preflight, analyzer,
 bewees vervolgens dat importstatus en rapport-RPC coherent blijven. Een
 handmatig, gecontroleerd rollbackcommando blijft apart open; de herstelkopie is
 al beschikbaar, maar wordt bewust niet via de app uitvoerbaar gemaakt.
+
+### Herstelbare cloudrevisies en expliciete conflictafhandeling
+
+De volgende gratis, database-native back-upstap is daarna gebouwd:
+
+- iedere cloudsave heeft een willekeurig save-ID, parent revision, apparaat-ID,
+  clientversie, saveschema en servertijd;
+- de huidige plus vier vorige revisies blijven herstelbaar, waarbij oude
+  historie na dertig dagen fysiek wordt verwijderd door een dagelijkse
+  Supabase Cron-databasejob en ook tijdens nieuwe uploads wordt opgeschoond;
+- directe tabeltoegang blijft ingetrokken en uitsluitend ingelogde RPC's kunnen
+  eigen revisiemetadata of een eigen herstelkopie lezen;
+- een conflictvenster biedt cloud bekijken, voorlopig lokaal houden, na een
+  tweede bevestiging lokaal naar cloud vervangen, of cloud herstellen;
+- de vorige cloudkopie blijft na een bewuste vervanging als herstelbare revisie
+  bestaan en iedere restore houdt daarnaast een lokale recovery copy;
+- `tool/staging_auth_e2e.ps1` maakt twee opeenvolgende revisies, leest de vorige
+  op save-ID terug en bewijst opnieuw dat een stale write atomair wordt
+  geweigerd.
+
+Migraties 22 en 23 staan uitsluitend op staging. Productie blijft op 20
+migraties totdat een volgende release met verplichte productiepreflight en
+expliciete toestemming wordt uitgerold.
+
+[Stagingrun 33193296552](https://github.com/Rakky88/DragonHaven/actions/runs/33193296552)
+bewees vervolgens 23/23 migratiepariteit, foutloze database-lint/preflight,
+twee echte cloudrevisies, readback van de oudere save, atomair weigeren van een
+stale write, een groene analyzer, 259 tests en een nieuwe staging-APK. De
+databasejob is met de migratie geïnstalleerd; periodieke controle van de
+daadwerkelijke jobuitvoering en een geplande restore-oefening blijven open.
 
 Zie [DRAGONHAVEN_POST_AUDIT_PLAN.md](DRAGONHAVEN_POST_AUDIT_PLAN.md) en
 [INCIDENT_RUNBOOK.md](INCIDENT_RUNBOOK.md) voor eigenaarschap, vervolgfasen en

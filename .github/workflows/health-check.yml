@@ -21,7 +21,7 @@ jobs:
             -OutputPath health/public-health.json
 
       - name: Upload health evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: DragonHaven-public-health
           path: health/public-health.json

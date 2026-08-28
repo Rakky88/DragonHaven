@@ -95,11 +95,17 @@ gepauzeerd project moeten als incident worden behandeld. Zie de officiële
 - Een `cloud_save_conflict` betekent dat niets is overschreven.
 - Vergelijk lokale basisrevision met de remote revision uit het supportrapport
   en serverrecord.
+- Laat de speler via **Cloud bekijken** eerst datum, appversie en saveschema van
+  maximaal vijf herstelbare revisies controleren.
 - Adviseer **Restore cloud** alleen wanneer de speler de getoonde cloudkopie
   wil gebruiken. **Keep local for now** laat beide kanten ongewijzigd.
-- Forceer geen overschrijving totdat servergeschiedenis, bewaartermijn en een
-  expliciete hersteloptie zijn geïmplementeerd.
+- **Replace cloud** mag alleen na de tweede expliciete bevestiging. Controleer
+  daarna dat de nieuwe revision de vorige als parent heeft en dat de vorige
+  cloudkopie nog in de maximaal dertig dagen bewaarde geschiedenis staat.
 - Test restores eerst op staging en behoud altijd een lokale recovery copy.
+- Controleer bij retentieproblemen de Cron-job
+  `dragonhaven-cloud-save-history-cleanup`; geef de app nooit directe toegang
+  tot de afgeschermde historietabel.
 
 ### Eenmalige import van een bestaande save
 

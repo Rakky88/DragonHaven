@@ -113,7 +113,7 @@ jobs:
         run: flutter pub get
 
       - name: Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v3
         with:
           version: 2.116.0
 
@@ -230,7 +230,7 @@ jobs:
           cp build/app/outputs/flutter-apk/app-debug.apk staging/DragonHaven-staging.apk
 
       - name: Upload staging evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: DragonHaven-staging-verification
           path: staging/

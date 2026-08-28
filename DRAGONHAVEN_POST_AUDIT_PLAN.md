@@ -27,6 +27,30 @@ Dit plan is een levende checklist. Bewijs, besluiten en uitvoeringsdatums horen
 na iedere afgeronde stap in dit bestand te worden toegevoegd. Een toekomstige
 release blijft aparte, expliciete toestemming vereisen.
 
+## Actuele voortgang per onderdeel
+
+Deze tabel is het korte voortgangsoverzicht. De percentages zijn alleen een
+praktische richtwaarde voor de omvang van de mijlpaal; de checkboxes, tests en
+bewijslinks verderop bepalen of iets werkelijk klaar is. Bij iedere audittranche
+werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
+
+| Onderdeel | Voortgang | Aantoonbaar klaar | Nog door Codex | Nog door jou |
+| --- | ---: | --- | --- | --- |
+| Google Play-voorbereiding | circa 25% | Permanent package-ID, vaste signing-identiteit, versiecontrole en een ondertekende AAB zijn bewezen | Actuele Play-eisen opnieuw controleren; storeteksten, graphics, Data Safety-inventaris, appgrootte-analyse en rolloutchecklist maken | Play Console openen/verifiëren; app en Play App Signing aanmaken; testers, publieke support/privacy-URL's en storeverklaringen beheren |
+| Fase 0 — releasepipeline en secrets | circa 90% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.04.07 zijn groen | Gates per release onderhouden en CI-runtimewaarschuwingen tijdig bijwerken | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
+| Fase 1 — monitoring en incidenten | circa 55% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan | Externe crash/performance-SDK koppelen zodra config bestaat; publieke Auth- en read-only healthchecks plus testalerts automatiseren | Gratis monitoring/Firebase-project bezitten; ontvangers, uren, budget, regio, retentie en privacy/Data Safety kiezen; alleen clientconfig via secrets geven |
+| Fase 2 — staging en E2E | circa 70% | Afzonderlijke staging, migratiepariteit, account/login, back-up/conflict, Friends, trade en Group Adventure-wachtlobby zijn echt getest | E-mailbevestiging automatiseren; Group Adventure completion/reward-E2E bouwen; realistisch 100-user en daarna 1.000-user loadprofiel meten | Veilige stagingmailroute instellen; bevestigen dat testaccounts geen echte persoonsgegevens zijn; testbudget boven 1.000 gebruikers vooraf goedkeuren |
+| Fase 3 — back-up en multi-device | circa 80% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, metadata, oudere restore en veilige lokale vervanging zijn op staging bewezen | Periodieke integriteits-/restorecheck toevoegen; later server-owned velden van restores afschermen | Kiezen of back-up ook automatisch gebeurt; RPO/RTO, definitieve conflicttekst/samenvatting en eigenaar van periodieke restorecontrole bepalen |
+| Fase 4 — server-authoritative economie | circa 15% | Uitgeschakelde payment-providergrens en geauditeerde eenmalige save-import met limieten, hash, rapport en private herstelkopie bestaan | Wallet/ledger/itemtabellen, idempotente RPC's, serverrandomness, compatibiliteitsvenster en gefaseerde migratie van shops, chests, dragons en rewards bouwen | Migratievenster, spelerscommunicatie en gecontroleerd rollbackbeleid goedkeuren; compensatie- en storingsbeleid plus nooit-stil-afnemen-grenzen bevestigen |
+| Fase 5 — Google Play Billing | circa 5%, bewust uitgesteld | Product-ID-contract en uitgeschakelde nepimplementatie houden de architectuur upgradebaar zonder nu kosten te maken | Pas na fase 4 de Billing-SDK, servervalidatie, acknowledgement, refunds/retries en Play-tracktests bouwen | Pas later beslissen of verkoop wenselijk is; merchantprofiel, producten/prijzen/landen, service-identiteit, testers en beleid beheren |
+| Fase 6 — support en privacy | circa 20% | Accountverwijdering, veilige supportdiagnostiek en eerste incidentprocedures bestaan | Minimaal supportzoekpad, procedures, least-privilege logging en consistente retentie/verwijdertests bouwen | Publiek supportadres, verantwoordelijken/reactietijden, privacy- en verwijderpagina, wettelijke retentie en productietoegang beheren |
+| Fase 7 — capaciteit en rollout | circa 20% | Releasegate, serverpreflight, bewaard buildbewijs en dashboardontwerp bestaan | Eerst loadmetingen verzamelen; daarna query/indexverbeteringen, alarmgrenzen, compatibiliteitsgate en app/database-hotfixoefening bouwen | Capaciteit en budgetalerts op metingen kiezen; rolloutpercentages en pauze-/rollbackbevoegdheid per stap goedkeuren en bewaken |
+
+De eerstvolgende afhankelijkheden die alleen jij kunt wegnemen zijn daarmee
+zichtbaar zonder de lange checklist te lezen. Alles waarvoor geen externe
+accountactie of productbesluit nodig is, blijft bij Codex staan en wordt gratis
+of lokaal gebouwd waar dat verantwoord kan.
+
 ## Beoogd einddoel: eerst gratis naar Google Play
 
 Het concrete publicatiedoel is een officiële DragonHaven-release in de
@@ -390,8 +414,8 @@ accounts zou dat afhankelijk van de week een echte meerdaagse testactie starten.
 ### Samen klaar wanneer
 
 - [ ] De volledige flow herhaalbaar slaagt op een lege stagingdatabase.
-- [ ] Een migratie vanaf de vorige productieschemaversie ook slaagt.
-- [ ] Foutscenario's geen dubbele reward, item, trade of Group Adventure
+- [x] Een migratie vanaf de vorige productieschemaversie ook slaagt.
+- [x] Foutscenario's geen dubbele reward, item, trade of Group Adventure
   veroorzaken.
 - [ ] De afgesproken belastingdoelstelling binnen vastgelegde fout- en
   latencygrenzen blijft en productie nooit door de test wordt belast.
@@ -413,19 +437,31 @@ economie server-authoritative is.
 
 ### Codex
 
-- [ ] Breid back-ups uit met save-ID, parent revision, apparaat-ID,
+- [x] Breid back-ups uit met save-ID, parent revision, apparaat-ID,
   clientversie, schema-versie en servertijd.
-- [ ] Laat de server een verouderde `expectedRevision` atomair weigeren en
+- [x] Laat de server een verouderde `expectedRevision` atomair weigeren en
   retourneer een specifiek conflict in plaats van een algemene fout.
-- [ ] Bouw een conflictvenster met drie veilige acties: cloud bekijken,
+- [x] Bouw een conflictvenster met drie veilige acties: cloud bekijken,
   huidige lokale staat behouden/uploaden na bevestiging, of cloud herstellen.
-- [ ] Houd een beperkt aantal herstelbare serverrevisies bij volgens de gekozen
+- [x] Houd een beperkt aantal herstelbare serverrevisies bij volgens de gekozen
   bewaartermijn.
 - [ ] Splits later server-owned economievelden af zodat een oude save nooit
   valuta of items kan terugzetten of dupliceren.
-- [ ] Maak automatische integratietests met twee apparaten en overlappende
+- [x] Maak automatische integratietests met twee apparaten en overlappende
   uploads/restores.
 - [ ] Voeg een periodieke restore-test en controle op save-integriteit toe.
+
+Implementatiebewijs: migraties
+`202608280022_cloud_save_revision_history.sql` en
+`202608280023_fix_cloud_save_history_conflict_target.sql` bewaren de huidige
+plus vier vorige revisies, verwijderen eerdere revisies per account, verwijderen
+fysiek alle historie ouder dan dertig dagen via een dagelijkse databasejob en
+houden directe tabeltoegang gesloten. De app toont de revisiegeschiedenis met
+save-ID, parent revision, apparaat, appversie, saveschema en servertijd. Een
+oude revisie herstellen bewaart eerst lokaal herstel; expliciet **Cloud
+vervangen** vereist een tweede bevestiging en laat de vorige serverkopie in de
+herstelgeschiedenis staan. Unit/integratietests simuleren overlappende apparaten,
+stale writes, oudere restore en daarna veilig doorback-uppen.
 
 ### Jij
 
@@ -703,7 +739,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 
 - [ ] implementatie en relevante migraties zijn gereviewd;
 - [x] analyzer en alle bestaande plus nieuwe tests slagen voor de huidige
-  lokale bouwtranche (256/256 op 28-08-2026);
+  lokale bouwtranche (259/259 op 28-08-2026);
 - [x] negatieve, timeout-, retry- en replaypaden zijn getest voor de huidige
   online clientgrens; toekomstige server-economiecommando's krijgen opnieuw
   dezelfde verplichte scenario's;
@@ -730,15 +766,21 @@ Een taak of mijlpaal is pas gereed wanneer:
 5. **Afgerond door jou:** een afzonderlijk gratis Supabase-stagingproject en de
    GitHub Environment `staging` zijn ingericht.
 6. **Deels afgerond samen:** signup, handmatige bevestiging van twee accounts,
-   eerste login, accountbootstrap, cloud-back-up/restore/conflicttest, Friends,
-   trade en de Group Adventure-wachtlobbyfase zijn echt op staging bewezen. Het
-   starten/afronden en rewardpad wacht op een derde synthetisch account of een
-   veilige staging-only tijdregeling.
+   eerste login, accountbootstrap, vijfdelige cloudhistorie, oudere restore,
+   bewuste lokale vervanging, stale-conflicten, Friends, trade en de Group
+   Adventure-wachtlobbyfase zijn echt op staging bewezen. Het starten/afronden
+   en rewardpad wacht op een derde synthetisch account of een veilige
+   staging-only tijdregeling.
 7. **Samen:** beoordeel de meetresultaten en leg pas daarna grenzen voor
    capaciteit, alerts en publieke uitrol vast.
 8. **Afgerond door Codex:** v0.04.07 is met groene release-gate gepubliceerd;
    de daaropvolgende lokale tranche dekt de negatieve online herstelpaden en
    legt het veilige bestaande-save-importprotocol vast.
+9. **Afgerond door Codex op staging:** M3 bewaart de huidige plus vier vorige
+   cloudrevisies gedurende maximaal dertig dagen, toont metadata, ondersteunt
+   een expliciete oudere restore en bewaart de vorige cloudkopie bij bewuste
+   vervanging. Productie blijft bewust op migratie 20 totdat een volgende
+   release inclusief productiepreflight apart is toegestaan.
 
 ## Besluitenlog
 
@@ -772,6 +814,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 28-08-2026 | Importmigratie op staging | Codex | [Stagingrun 33188269327](https://github.com/Rakky88/DragonHaven/actions/runs/33188269327) | Migratie 21 toegepast; 21/21 parity, schema-lint/preflight, analyzer, 256 tests en staging-APK groen |
 | 28-08-2026 | Importstatus/rapport-E2E | Codex | [Stagingrun 33189927346](https://github.com/Rakky88/DragonHaven/actions/runs/33189927346) | Bevestigd account bewijst coherentie: niet geïmporteerd geeft nul auditrecords; geïmporteerd vereist exact één geldig versie-0/1-rapport |
 | 28-08-2026 | Gratis dashboardspecificatie | Codex | `OBSERVABILITY_BASELINE.md` | Privacyarme panelen, meetvelden, zeven-dagenbaseline, gratis startbronnen en later upgradepad vastgelegd; echte alerts wachten op eigenaar/projectkeuze |
+| 28-08-2026 | M3 herstelbare cloudhistorie | Codex | [Stagingrun 33193296552](https://github.com/Rakky88/DragonHaven/actions/runs/33193296552), migraties 22 en 23 | 23/23 migraties, database-lint/preflight, twee echte revisies, oude-save-readback, stale-writeweigering, analyzer, 259 tests, staging-APK en bewijsartifact groen; productie ongewijzigd op 20 migraties |
 
 ## Onderhoud van dit plan
 
