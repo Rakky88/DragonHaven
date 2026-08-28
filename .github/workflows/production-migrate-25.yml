@@ -1,0 +1,148 @@
+name: Production database migration 24 to 25
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type MIGRATE_PRODUCTION_24_TO_25'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  migrate-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Verify explicit migration scope
+        shell: pwsh
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          if ($env:CONFIRMATION -ne 'MIGRATE_PRODUCTION_24_TO_25') {
+            throw 'The required production confirmation is missing.'
+          }
+          'Production migration 24 -> 25 is explicitly confirmed.'
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Verify required secrets
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          foreach ($name in @('SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD')) {
+            if ([string]::IsNullOrWhiteSpace(
+              [Environment]::GetEnvironmentVariable($name)
+            )) {
+              throw "Missing production secret: $name."
+            }
+          }
+
+      - name: Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.116.0
+
+      - name: Verify exact starting state and dry run
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          $expectedRemote = '202608280024'
+          $expectedPending = @('202608280025')
+          supabase link `
+            --project-ref tnzathhutuwmohmjfrlo `
+            --password $env:SUPABASE_DB_PASSWORD
+          New-Item -ItemType Directory -Path production-migration -Force |
+            Out-Null
+
+          $migrationJson = supabase migration list `
+            --linked `
+            --output-format json
+          if ($LASTEXITCODE -ne 0) {
+            throw 'The production migration state could not be read.'
+          }
+          $migrationResult = ($migrationJson | Out-String) | ConvertFrom-Json
+          $remoteVersions = @(
+            $migrationResult.migrations |
+              ForEach-Object { [string]$_.remote } |
+              Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+              Sort-Object
+          )
+          if ($remoteVersions.Count -eq 0 -or
+              $remoteVersions[-1] -ne $expectedRemote) {
+            throw 'Production is not exactly at expected migration 24.'
+          }
+
+          $pendingLocal = @(
+            Get-ChildItem supabase/migrations -File -Filter '*.sql' |
+              ForEach-Object {
+                if ($_.BaseName -notmatch '^(\d+)_') {
+                  throw "Migration $($_.Name) has no valid version."
+                }
+                $Matches[1]
+              } |
+              Where-Object { [long]$_ -gt [long]$expectedRemote } |
+              Sort-Object
+          )
+          if (@(Compare-Object $expectedPending $pendingLocal).Count -ne 0) {
+            throw 'The local pending set is not exactly migration 25.'
+          }
+
+          ./tool/public_server_health_check.ps1 `
+            -Environment production `
+            -OutputPath production-migration/health-before.json
+          supabase db lint `
+            --linked `
+            --level error `
+            --fail-on error `
+            --output-format json |
+            Tee-Object -FilePath production-migration/lint-before.json
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Database lint before production migration failed.'
+          }
+          supabase db push --linked --include-all --dry-run |
+            Tee-Object -FilePath production-migration/dry-run.txt
+          if ($LASTEXITCODE -ne 0) {
+            throw 'The production migration dry run failed.'
+          }
+
+      - name: Apply migration 25 and verify
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          supabase db push --linked --include-all --yes |
+            Tee-Object -FilePath production-migration/apply.txt
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Production migration 25 was not fully applied.'
+          }
+          ./tool/release_server_preflight.ps1 |
+            Tee-Object -FilePath production-migration/preflight-after.txt
+          @(
+            'DragonHaven production migration evidence'
+            "Commit: $env:GITHUB_SHA"
+            'Project ref: tnzathhutuwmohmjfrlo'
+            'Previous migration: 202608280024'
+            'Applied migration: 202608280025'
+            'Migration parity, database lint and public Auth: passed'
+            'No credential values are included in this artifact.'
+          ) | Set-Content `
+            -LiteralPath production-migration/verification.txt `
+            -Encoding utf8
+
+      - name: Upload migration evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: DragonHaven-production-migration-24-to-25
+          path: production-migration/
+          if-no-files-found: warn
+          retention-days: 30

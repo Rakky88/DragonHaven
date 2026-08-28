@@ -150,7 +150,7 @@ void main() {
     expect(mastery.maximumTotalExpertise, 1050);
   });
 
-  test('Infernal dragons have 350 base and 400 specialist expertise', () {
+  test('Infernal dragons have 350 base and 400 Ascension maximums', () {
     final hatchling = Pet(
       sinister: true,
       stage: DragonStage.hatchling,
@@ -171,6 +171,18 @@ void main() {
     expect(specialist.trainingFor(TrainingFocus.arcana), 350);
     expect(specialist.trainingFor(TrainingFocus.spirit), 400);
     expect(specialist.maximumTotalExpertise, 1100);
+
+    final mastery = Pet(
+      sinister: true,
+      stage: DragonStage.ascended,
+      evolutionPath: 'mastery',
+      training: const {'might': 999, 'arcana': 999, 'spirit': 999},
+    );
+    expect(
+      TrainingFocus.values.map(mastery.trainingFor),
+      everyElement(400),
+    );
+    expect(mastery.maximumTotalExpertise, 1200);
   });
 
   test('equal expertises unlock the secret Mastery form', () {

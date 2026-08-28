@@ -117,6 +117,9 @@ class KeeperProfile {
   final int dragonCount;
   final List<String> discoveredForms;
   final List<String> prismaticForms;
+  int get discoveredDragonFormCount => discoveredForms.isEmpty
+      ? discoveredDragonCount
+      : discoveredForms.toSet().length;
   final int cavernFlightBest;
   final int ruinBreakerBest;
   final int runeweaverBest;
@@ -873,7 +876,7 @@ class OnlineInventorySnapshot {
           orElse: () => null,
         );
     return {
-      'discovered_dragon_count': discoveredLineageIds.length,
+      'discovered_dragon_count': discoveredForms.toSet().length,
       'dragon_count': dragons.length,
       'achievement_count': achievementCount,
       'discovered_forms': discoveredForms,

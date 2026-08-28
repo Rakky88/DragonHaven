@@ -20,6 +20,14 @@ void main() {
           .map((product) => product.amount),
       [50, 120, 320, 650, 1500, 3500],
     );
+    for (final currency in PurchaseCurrency.values) {
+      expect(
+        PurchaseCatalog.products
+            .where((product) => product.currency == currency)
+            .map((product) => product.plannedEuroPriceCents),
+        [100, 200, 500, 1000, 2000, 3000],
+      );
+    }
   });
 
   test('disabled provider never grants a client-side purchase', () async {

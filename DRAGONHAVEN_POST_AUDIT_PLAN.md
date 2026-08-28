@@ -7,8 +7,8 @@ Actuele openbare versie: **v0.04.09**
 
 Actuele productieserver: **24/24 migraties**
 
-Actuele lokale tranche: **v0.04.09 volledig uitgerold; eerstvolgende auditwerk
-kan zonder nieuwe release worden voorbereid**
+Actuele lokale tranche: **v0.04.10-releasecandidate; Infernal Mastery 400/400/400,
+Friends-vormtelling en migratie 25 gebouwd, nog niet uitgerold**
 
 Bronnen: [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md),
 [SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md),
@@ -861,7 +861,8 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 28-08-2026 | B5-monitoring | Firebase Spark met Crashlytics/Performance, Analytics uit; Rick ontvangt de eerste alerts; afgesproken providerretentie en 7/30 dagen voor support-/incidentbewijs | Gratis en privacyarm beginnen, later makkelijk uitbreidbaar | Healthalert mag worden geautomatiseerd; Firebase-SDK volgt zodra Rick het project/appconfig heeft gemaakt |
 | 28-08-2026 | B6-automatische back-up | Betekenisvolle voortgang maximaal iedere 15 minuten automatisch back-uppen en openstaande voortgang direct veilig flushen bij achtergrond; RPO 15 minuten online, self-service RTO 15 minuten, supportdoel 4 uur; wekelijkse stagingtest en maandelijkse controle door Rick | Voortgang beschermen zonder gameplay of free tier onnodig te belasten | Automatische trigger en wekelijkse restoreworkflow mogen worden gebouwd |
 | 28-08-2026 | Release 0.04.09 | Migratie 24 en een afzonderlijke nieuwe apprelease zijn expliciet toegestaan | Expertisegrenzen en aanvullende fixes client/server-consistent uitrollen | Productie staat op 24/24 en v0.04.09 is openbaar na groene staging-, migratie- en dubbele releasegates |
-| Nog te bepalen | Overige B3, B4 en B7 | Nog niet bevestigd | Beslissen vlak vóór de afhankelijke fase | Alleen de nog afhankelijke delen van M4–M6 wachten |
+| 28-08-2026 | B4-prijscontract | Zowel de zes coinpacks als de zes gempacks gebruiken later de europrijsladder €1, €2, €5, €10, €20 en €30 | Play-producten vooraf eenduidig voorbereiden zonder betalingen vroeg te activeren | Interne catalogus bewaart de basisprijzen; de live UI moet later altijd Google Plays gelokaliseerde prijs tonen |
+| Nog te bepalen | B3, B4-activering en B7 | Nog niet bevestigd | Beslissen vlak vóór de afhankelijke fase | Alleen de nog afhankelijke delen van M4–M6 wachten |
 
 ## Voortgangslog
 
@@ -898,6 +899,8 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 28-08-2026 | Productiemigratie 24 | Codex, na jouw toestemming | [Migratierun 33204827275](https://github.com/Rakky88/DragonHaven/actions/runs/33204827275) | Exacte beginstand 23, dry-run en database-lint groen; alleen migratie 24 toegepast en daarna 24/24 parity plus Auth opnieuw groen |
 | 28-08-2026 | Eerste monitoring- en restorebewijzen | Codex | [Healthrun 33205759992](https://github.com/Rakky88/DragonHaven/actions/runs/33205759992), [restorerun 33205758376](https://github.com/Rakky88/DragonHaven/actions/runs/33205758376) | Productiehealth HTTP-groen; actuele en historische staging-cloudsave succesvol hersteld; beide privacyarme bewijsartifacts dertig dagen bewaard |
 | 28-08-2026 | Openbare release v0.04.09 | Codex, na jouw toestemming | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.04.09), [productiegate 33204987488](https://github.com/Rakky88/DragonHaven/actions/runs/33204987488), [taggate 33205588983](https://github.com/Rakky88/DragonHaven/actions/runs/33205588983) | Ondertekende APK van 328.058.796 bytes gepubliceerd; SHA-256 `4b03399bb31545a80af04c3919d4a8e3795bb3d14a627f4cf11903dc704be31a`; beide productiepreflights, 270 tests en Play-ready AAB groen |
+| 28-08-2026 | Correcties voor v0.04.10 | Codex | `pet.dart`, `social.dart`, migratie 25 en begrensde workflow 24→25 | Infernal Mastery gebruikt 400 voor Might, Arcana en Spirit; Friends telt ontdekte normale vormen in plaats van families; lokale/stagingbewijzen volgen, productie en release wachten op aparte toestemming |
+| 28-08-2026 | Toekomstig Play-prijscontract | Jij + Codex | `purchase_provider.dart`, `purchase_provider_test.dart` | Voor coins en gems is €1/€2/€5/€10/€20/€30 per pakketpositie vastgelegd; provider blijft bewust uitgeschakeld tot fase 4 en het activeringsbesluit zijn afgerond |
 
 ## Onderhoud van dit plan
 

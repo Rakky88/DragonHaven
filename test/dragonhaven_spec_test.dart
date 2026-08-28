@@ -583,4 +583,40 @@ void main() {
     expect(workflow, contains('DragonHaven-production-migration-23-to-24'));
     expect(workflow, isNot(contains("tags:\n      - 'v*'")));
   });
+
+  test('Infernal Mastery 400 caps are enforced by migration 25', () {
+    final migration = File(
+      'supabase/migrations/202608280025_infernal_mastery_and_social_form_count.sql',
+    ).readAsStringSync();
+
+    expect(migration, contains('private.dragon_expertise_maximum'));
+    expect(migration, contains("p_evolution_path = 'mastery'"));
+    expect(migration, contains('p_evolution_path = p_focus'));
+    expect(migration, contains('then 400'));
+    expect(migration, contains('publish_social_showcase_v24'));
+    expect(migration, contains('cardinality(discovered_forms)'));
+    expect(migration, contains('between 0 and 300'));
+    expect(
+      migration,
+      contains(
+        'revoke all on function private.dragon_expertise_maximum',
+      ),
+    );
+  });
+
+  test('production migration 25 workflow is exact and separately confirmed',
+      () {
+    final workflow = File(
+      '.github/workflows/production-migrate-25.yml',
+    ).readAsStringSync();
+
+    expect(workflow, contains('MIGRATE_PRODUCTION_24_TO_25'));
+    expect(workflow, contains("'202608280024'"));
+    expect(workflow, contains("@('202608280025')"));
+    expect(workflow, contains('Compare-Object'));
+    expect(workflow, contains('db push --linked --include-all --dry-run'));
+    expect(workflow, contains('release_server_preflight.ps1'));
+    expect(workflow, contains('DragonHaven-production-migration-24-to-25'));
+    expect(workflow, isNot(contains("tags:\n      - 'v*'")));
+  });
 }

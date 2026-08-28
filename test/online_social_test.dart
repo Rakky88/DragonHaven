@@ -101,6 +101,33 @@ void main() {
     expect(glowColor.a, closeTo(.58, .0001));
   });
 
+  test('social discovery summaries count forms rather than families', () {
+    final game = HouseholdProvider(random: Random(30))
+      ..discoveredForms = {
+        'mossprout:hatchling',
+        'mossprout:wyrmling',
+        'stormwing:hatchling',
+      };
+    final snapshot = OnlineInventorySnapshot.fromGame(game);
+
+    expect(snapshot.discoveredLineageIds, hasLength(2));
+    expect(snapshot.toShowcaseJson()['discovered_dragon_count'], 3);
+    const serverProfile = KeeperProfile(
+      userId: 'friend',
+      keeperCode: 'DH-FORMS001',
+      displayName: 'Forms',
+      title: 'title_001',
+      portraitKey: 'portrait_001',
+      discoveredDragonCount: 1,
+      inventoryImported: true,
+      discoveredForms: [
+        'mossprout:hatchling',
+        'mossprout:wyrmling',
+      ],
+    );
+    expect(serverProfile.discoveredDragonFormCount, 2);
+  });
+
   test('server-authored friend and trade events become notifications once',
       () async {
     const channel = MethodChannel('nl.dragonhaven.app/notifications');
@@ -993,7 +1020,7 @@ void main() {
     await tester.tap(find.text('Friends').last);
     await tester.pump(const Duration(milliseconds: 350));
     expect(find.text('Lyra'), findsOneWidget);
-    expect(find.textContaining('12 dragons discovered'), findsOneWidget);
+    expect(find.textContaining('2 dragons discovered'), findsOneWidget);
     expect(find.text('0/3'), findsOneWidget);
     final friendPortrait = tester.widget<KeeperPortrait>(find.descendant(
       of: find.byKey(const Key('friend-friend-user')),

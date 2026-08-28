@@ -19,8 +19,7 @@ int dragonExpertiseMaximum({
 }) {
   if (sinister) {
     if (stage == DragonStage.ascended &&
-        evolutionPath != 'mastery' &&
-        evolutionPath == focus.name) {
+        (evolutionPath == 'mastery' || evolutionPath == focus.name)) {
       return infernalSpecialistExpertise;
     }
     return ascendedDragonExpertise;

@@ -514,7 +514,7 @@ class _FriendTile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(99),
                       ),
                       child: Text(
-                        '${friend.discoveredDragonCount} ${strings.pick('dragons discovered', 'draken ontdekt')}',
+                        '${friend.discoveredDragonFormCount} ${strings.pick('dragons discovered', 'draken ontdekt')}',
                         style: const TextStyle(
                           color: AppColors.twilight,
                           fontSize: 10,
