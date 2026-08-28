@@ -251,18 +251,27 @@ if (-not (Test-SuccessStatus $profile.StatusCode) -or $profileRows.Count -ne 1) 
 
 $importReport = Invoke-StagingRpc -Function 'get_my_legacy_import_report'
 $importReportRows = @($importReport.Body)
-if (-not (Test-SuccessStatus $importReport.StatusCode) -or
-    $importReportRows.Count -ne 1) {
+if (-not (Test-SuccessStatus $importReport.StatusCode)) {
     $failure = Get-SafeFailure -Body $importReport.Body -StatusCode $importReport.StatusCode
-    throw "Het privacyveilige import-auditrapport kon niet eenduidig worden geladen: $failure"
+    throw "Het privacyveilige import-auditrapport kon niet worden geladen: $failure"
 }
-$importVersion = [int](Get-PropertyValue -InputObject $importReportRows[0] -Name 'import_version')
-$sourceSchemaVersion = [int](Get-PropertyValue -InputObject $importReportRows[0] -Name 'source_schema_version')
-$importSummary = Get-PropertyValue -InputObject $importReportRows[0] -Name 'report'
-if ($importVersion -lt 0 -or $importVersion -gt 1 -or
-    $sourceSchemaVersion -lt 0 -or $sourceSchemaVersion -gt 1000 -or
-    $null -eq $importSummary) {
-    throw 'Het import-auditrapport bevat geen geldige versie of samenvatting.'
+$inventoryImported = [bool](Get-PropertyValue -InputObject $profileRows[0] -Name 'inventory_imported')
+$importAuditEvidence = 'Privacy-safe legacy import report: coherent empty state passed.'
+if ($inventoryImported) {
+    if ($importReportRows.Count -ne 1) {
+        throw 'Een geïmporteerd stagingaccount heeft niet exact één import-auditrapport.'
+    }
+    $importVersion = [int](Get-PropertyValue -InputObject $importReportRows[0] -Name 'import_version')
+    $sourceSchemaVersion = [int](Get-PropertyValue -InputObject $importReportRows[0] -Name 'source_schema_version')
+    $importSummary = Get-PropertyValue -InputObject $importReportRows[0] -Name 'report'
+    if ($importVersion -lt 0 -or $importVersion -gt 1 -or
+        $sourceSchemaVersion -lt 0 -or $sourceSchemaVersion -gt 1000 -or
+        $null -eq $importSummary) {
+        throw 'Het import-auditrapport bevat geen geldige versie of samenvatting.'
+    }
+    $importAuditEvidence = "Privacy-safe legacy import report: version $importVersion passed."
+} elseif ($importReportRows.Count -ne 0) {
+    throw 'Een nog niet geïmporteerd stagingaccount heeft onverwacht een import-auditrapport.'
 }
 
 $before = Invoke-StagingRpc -Function 'get_cloud_game_save'
@@ -345,7 +354,7 @@ Write-SafeEvidence -Lines @(
     'Password login and confirmed-email check: passed.'
     'Idempotent account bootstrap: passed.'
     'Profile read: passed.'
-    "Privacy-safe legacy import report: version $importVersion passed."
+    $importAuditEvidence
     "Cloud backup roundtrip: revision $expectedRevision -> $newRevision passed."
     'Stale cloud backup conflict protection: passed.'
     'Session logout: passed.'
