@@ -10,6 +10,7 @@ import 'models/social.dart';
 import 'providers/household_provider.dart';
 import 'providers/online_account_provider.dart';
 import 'screens/sprite_audit_screen.dart';
+import 'screens/special_event_audit_screen.dart';
 import 'services/audio_service.dart';
 import 'services/diagnostic_reporter.dart';
 import 'services/notification_service.dart';
@@ -24,6 +25,12 @@ Future<void> main() async {
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
   ));
+  const specialEventAudit =
+      bool.fromEnvironment('DRAGONHAVEN_SPECIAL_EVENT_AUDIT');
+  if (specialEventAudit) {
+    runApp(const SpecialEventAuditApp());
+    return;
+  }
   const spriteAudit = bool.fromEnvironment('DRAGONHAVEN_SPRITE_AUDIT');
   if (spriteAudit) {
     runApp(const SpriteAuditApp());
