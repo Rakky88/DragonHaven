@@ -275,7 +275,8 @@ bewaren de controle-uitkomst blijvend.
   volledige saves, e-mailadressen of zichtbare keepernamen.
 - [x] Voeg veilige request/correlation IDs toe aan Auth-, backup-, Friends-,
   Trade- en Group Adventure-paden.
-- [ ] Maak dashboards of dashboardspecificaties voor:
+- [x] Maak dashboards of dashboardspecificaties voor
+  (`OBSERVABILITY_BASELINE.md`):
   - Auth-foutpercentage, verificatie en loginlatency;
   - RPC-foutpercentage en p50/p95/p99-latency;
   - trade- en Group Adventure-fouten;
@@ -476,7 +477,8 @@ alleen het serverresultaat en bezit nooit een service-role key.
 - [ ] Rond het versieerbare eenmalige importpad af. Protocol/saveversie,
   validatie, plausibiliteitslimieten, privacyarme rapportage, SHA-256-bewijs,
   server-lock en een private herstelkopie van dertig dagen zijn gebouwd;
-  gecontroleerde rollbackuitvoering en stagingbewijs blijven open.
+  migratie en rapportcoherentie zijn op staging bewezen. Gecontroleerde
+  rollbackuitvoering blijft open.
 - [ ] Maak een compatibiliteitsvenster zodat oude clients geen ongeldige nieuwe
   mutaties kunnen doen.
 
@@ -766,7 +768,10 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 28-08-2026 | M2 tweepersoons sociale staging-E2E | Jij + Codex | [GitHub Actions-run 33182884493](https://github.com/Rakky88/DragonHaven/actions/runs/33182884493) | Friends, atomaire chest-trade en Group Adventure create/list/join/leave met veilige cleanup groen; analyzer, 252 tests, staging-APK en bewijsartifact groen; completion/rewardpad blijft open |
 | 28-08-2026 | Openbare release v0.04.07 | Codex | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.04.07), [gate 33185616650](https://github.com/Rakky88/DragonHaven/actions/runs/33185616650) | Ondertekende APK gepubliceerd; productiepreflight, analyzer, 252 tests, AAB-signing en hashbewijs groen |
 | 28-08-2026 | Negatieve online herstelpaden | Codex | `test/online_social_test.dart` | Verlopen sessie, timeout plus reconnect, dubbele tap, half afgemaakte Group Reward en trade-replay na save/herstart getest; volledige set 256/256 groen |
-| 28-08-2026 | Veilige bestaande-save-importbasis | Codex | `202608280021_audited_legacy_inventory_import.sql` | Versie, limieten, privacyarm rapport, SHA-256 en private 30-daagse herstelkopie gebouwd; staging en gecontroleerde rollbackuitvoering volgen |
+| 28-08-2026 | Veilige bestaande-save-importbasis | Codex | `202608280021_audited_legacy_inventory_import.sql` | Versie, limieten, privacyarm rapport, SHA-256 en private 30-daagse herstelkopie gebouwd; gecontroleerde rollbackuitvoering volgt |
+| 28-08-2026 | Importmigratie op staging | Codex | [Stagingrun 33188269327](https://github.com/Rakky88/DragonHaven/actions/runs/33188269327) | Migratie 21 toegepast; 21/21 parity, schema-lint/preflight, analyzer, 256 tests en staging-APK groen |
+| 28-08-2026 | Importstatus/rapport-E2E | Codex | [Stagingrun 33189927346](https://github.com/Rakky88/DragonHaven/actions/runs/33189927346) | Bevestigd account bewijst coherentie: niet geïmporteerd geeft nul auditrecords; geïmporteerd vereist exact één geldig versie-0/1-rapport |
+| 28-08-2026 | Gratis dashboardspecificatie | Codex | `OBSERVABILITY_BASELINE.md` | Privacyarme panelen, meetvelden, zeven-dagenbaseline, gratis startbronnen en later upgradepad vastgelegd; echte alerts wachten op eigenaar/projectkeuze |
 
 ## Onderhoud van dit plan
 

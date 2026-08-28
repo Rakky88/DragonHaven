@@ -143,7 +143,12 @@ gewerkt aan de auditpunten die geen betaalde dienst vereisen:
   een historisch auditrecord en worden nooit opnieuw geïmporteerd.
 
 Deze tranche is nog **niet** naar productie gemigreerd of als volgende appversie
-uitgebracht. Eerst volgt een geïsoleerde stagingmigratie en importtest. Een
+uitgebracht. Geïsoleerde
+[stagingrun 33188269327](https://github.com/Rakky88/DragonHaven/actions/runs/33188269327)
+paste migratie 21 toe en bewees 21/21 parity, schema-lint/preflight, analyzer,
+256 tests en een staging-APK. De bevestigde-accountflow in
+[run 33189927346](https://github.com/Rakky88/DragonHaven/actions/runs/33189927346)
+bewees vervolgens dat importstatus en rapport-RPC coherent blijven. Een
 handmatig, gecontroleerd rollbackcommando blijft apart open; de herstelkopie is
 al beschikbaar, maar wordt bewust niet via de app uitvoerbaar gemaakt.
 

@@ -39,6 +39,8 @@ releasepoorten staat in
 [DRAGONHAVEN_POST_AUDIT_PLAN.md](DRAGONHAVEN_POST_AUDIT_PLAN.md).
 De gratis eerste diagnose-, support- en incidentprocedure staat in
 [INCIDENT_RUNBOOK.md](INCIDENT_RUNBOOK.md).
+De privacyarme dashboardvelden, gratis meetbasis en later uitbreidbare
+alarmopzet staan in [OBSERVABILITY_BASELINE.md](OBSERVABILITY_BASELINE.md).
 
 ## Run and verify
 

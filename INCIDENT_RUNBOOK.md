@@ -28,6 +28,8 @@ databasewachtwoorden of volledige saves in een ticket of incidentlog.
   database-lint en e-mailauth op de gekoppelde server.
 - De Supabase Dashboard-logs en -metrics blijven de primaire bron voor
   serverspecifieke details zolang geen externe monitoring is gekoppeld.
+- De vaste dashboardvelden en gratis baselineprocedure staan in
+  [OBSERVABILITY_BASELINE.md](OBSERVABILITY_BASELINE.md).
 
 ## Bekend free-tiergedrag
 
