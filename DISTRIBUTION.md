@@ -119,6 +119,14 @@ de naam `staging` en plaats daar later rechtstreeks deze waarden:
 - `STAGING_SUPABASE_PROJECT_REF`
 - `STAGING_SUPABASE_ACCESS_TOKEN`
 - `STAGING_SUPABASE_DB_PASSWORD`
+- `STAGING_E2E_EMAIL`
+- `STAGING_E2E_PASSWORD`
+
+De laatste twee horen eveneens alleen in de GitHub Environment `staging`.
+`STAGING_E2E_EMAIL` is een afzonderlijke inbox of alias zonder echte
+spelersgegevens. `STAGING_E2E_PASSWORD` wordt willekeurig gegenereerd en wordt
+niet gedeeld, gelogd of als artifact opgeslagen. Roteer dit wachtwoord niet
+los: het hoort bij het blijvende staging-testaccount.
 
 Begin waar mogelijk met de gratis Supabase-tier. De workflow controleert
 migration parity, database-lint en Auth, voert Flutter-analyse en tests uit en
@@ -164,12 +172,27 @@ Zet ze daarna op de juiste plek in GitHub:
 2. Klik **New environment**, typ exact `staging` en klik **Configure
    environment**.
 3. Scroll naar **Environment secrets** en klik voor elke waarde op **Add
-   secret**. Gebruik exact de vijf namen hierboven.
-4. Controleer dat alle vijf namen zichtbaar zijn. De waarden zelf worden na
+   secret**. Gebruik exact de zeven namen hierboven.
+4. Controleer dat alle zeven namen zichtbaar zijn. De waarden zelf worden na
    opslaan terecht niet teruggetoond.
 5. Meld alleen dat project en secrets klaarstaan; deel geen waarden. Codex kan
    dan gecontroleerd de migraties installeren, Auth configureren en de eerste
    echte staging-E2E-run uitvoeren zonder productie te raken.
+
+De workflow heeft drie handmatige standen onder **Actions → Android staging
+verification → Run workflow → Optional confirmed-account staging check**:
+
+- `public-only`: alleen migraties, lint, publieke Auth-health, analyzer, tests
+  en de geïsoleerde staging-APK;
+- `request-confirmation`: dezelfde controles plus één signup- of
+  bevestigingsmailaanvraag. Gebruik dit alleen voor de eerste inrichting of
+  bewust herstel, vanwege de gratis e-maillimieten;
+- `confirmed-account`: logt afgeschermd in, controleert e-mailbevestiging en
+  accountbootstrap, bewaart en herstelt een staging-cloudback-up, bewijst dat
+  een verouderde revisie wordt geweigerd en trekt de testsessie weer in.
+
+Geen van deze standen accepteert de productieprojectreference. Het
+bewijsrapport bevat geen e-mailadres, wachtwoord, token of user-id.
 
 Een gratis Supabase-account staat momenteel twee actieve gratis projecten toe,
 waardoor productie plus staging in beginsel binnen de gratis limiet past. Een

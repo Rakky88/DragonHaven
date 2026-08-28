@@ -549,9 +549,11 @@ void main() {
       surfaceSize: const Size(390, 800),
     );
     await tester.tap(find.byKey(const Key('app-overflow-menu')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.byKey(const Key('app-menu-account')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
     final settingsButton = find.byKey(
       const Key('notification-settings-button'),
     );
@@ -564,7 +566,8 @@ void main() {
       ),
     );
     await tester.tap(settingsButton);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     for (final category in HavenNotificationCategory.values) {
       expect(find.byKey(Key('notification-${category.name}')), findsOneWidget);
@@ -577,9 +580,9 @@ void main() {
       find.byKey(const PageStorageKey('notification-settings-scroll')),
       const Offset(0, -650),
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 600));
     await tester.ensureVisible(tradeReturn);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(tradeReturn);
     await tester.pump();
     expect(
