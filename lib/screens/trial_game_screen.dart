@@ -374,12 +374,25 @@ class _TrialResultCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Text(
-                    '${completion.score} ${strings.pick('points', 'punten')}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
+                  TweenAnimationBuilder<double>(
+                    key: const Key('trial-result-score'),
+                    tween: Tween(begin: 0, end: 1),
+                    duration: const Duration(milliseconds: 760),
+                    curve: Curves.elasticOut,
+                    builder: (_, progress, child) => Transform.rotate(
+                      angle: (1 - progress) * -pi * 1.25,
+                      child: Transform.scale(
+                        scale: .18 + progress * .82,
+                        child: child,
+                      ),
+                    ),
+                    child: Text(
+                      '${completion.score} ${strings.pick('points', 'punten')}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                   if (completion.newDragonBest) ...[
@@ -533,6 +546,7 @@ class _CavernFlightGameState extends State<_CavernFlightGame>
   bool _started = false;
   bool _ended = false;
   bool _finishing = false;
+  bool _crashArcStarted = false;
   double _dragonY = .5;
   double _velocity = 0;
   double _elapsed = 0;
@@ -591,7 +605,7 @@ class _CavernFlightGameState extends State<_CavernFlightGame>
       _ended = true;
       unawaited(HavenAudio.play(HavenSound.uiConfirm));
       setState(() {});
-      _finishAfterCrash();
+      unawaited(_finishAfterCrash());
       return;
     }
     setState(() {});
@@ -625,7 +639,12 @@ class _CavernFlightGameState extends State<_CavernFlightGame>
   Future<void> _finishAfterCrash() async {
     if (_finishing) return;
     _finishing = true;
-    await Future<void>.delayed(const Duration(milliseconds: 760));
+    // Hold the exact collision frame long enough to register the mistake,
+    // then let the dragon arc upward and fall out before granting anything.
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    if (!mounted) return;
+    setState(() => _crashArcStarted = true);
+    await Future<void>.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
     await _finishTrial(
       context,
@@ -685,12 +704,37 @@ class _CavernFlightGameState extends State<_CavernFlightGame>
                 Positioned(
                   left: constraints.maxWidth * .24 - 48,
                   top: constraints.maxHeight * _dragonY - 48,
-                  child: _FlightDragonSprite(
-                    dragon: widget.dragon,
-                    elapsed: _elapsed,
-                    velocity: _velocity,
-                    flying: _started,
-                    crashed: _ended,
+                  child: Semantics(
+                    key: _crashArcStarted
+                        ? const Key('cavern-crash-arc-active')
+                        : _ended
+                            ? const Key('cavern-crash-freeze')
+                            : const Key('cavern-flight-dragon'),
+                    container: true,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: _crashArcStarted ? 1 : 0),
+                      duration: _crashArcStarted
+                          ? const Duration(milliseconds: 900)
+                          : Duration.zero,
+                      curve: Curves.easeInOutCubic,
+                      builder: (_, progress, child) => Transform.translate(
+                        offset: Offset(
+                          66 * progress,
+                          -72 * sin(pi * progress) + 132 * progress * progress,
+                        ),
+                        child: Transform.rotate(
+                          angle: progress * 1.05,
+                          child: child,
+                        ),
+                      ),
+                      child: _FlightDragonSprite(
+                        dragon: widget.dragon,
+                        elapsed: _elapsed,
+                        velocity: _velocity,
+                        flying: _started,
+                        crashed: _ended,
+                      ),
+                    ),
                   ),
                 ),
                 if (!_started)
@@ -994,6 +1038,7 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
   bool _locked = false;
   bool _ended = false;
   bool _impact = false;
+  bool _barFading = false;
   int _round = 0;
   int _score = 0;
   int _combo = 0;
@@ -1079,8 +1124,9 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
     _meter = 0;
     if (_misses >= 3 || _round >= 30) {
       _ended = true;
+      _barFading = true;
       setState(() {});
-      await Future<void>.delayed(const Duration(milliseconds: 350));
+      await Future<void>.delayed(const Duration(seconds: 1));
       if (!mounted) return;
       await _finishTrial(
         context,
@@ -1133,6 +1179,39 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
               bottom: 22,
               child: Column(
                 children: [
+                  AnimatedContainer(
+                    key: const Key('ruin-attempts-left'),
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 9,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _misses >= 2
+                          ? const Color(0xD69B263C)
+                          : const Color(0xD62A1A51),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: _misses >= 2
+                            ? const Color(0xFFFF9BAA)
+                            : const Color(0x88FFE08A),
+                      ),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black38, blurRadius: 12),
+                      ],
+                    ),
+                    child: Text(
+                      '${strings.pick('ATTEMPTS LEFT', 'KANSEN OVER')}: '
+                      '${max(0, 3 - _misses)}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 21,
+                        letterSpacing: .8,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 180),
                     child: Text(
@@ -1167,14 +1246,16 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  _PowerMeter(value: _meter),
+                  AnimatedOpacity(
+                    key: const Key('ruin-power-meter-fade'),
+                    opacity: _barFading ? 0 : 1,
+                    duration: const Duration(seconds: 1),
+                    curve: Curves.easeIn,
+                    child: _PowerMeter(value: _meter),
+                  ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      Text(
-                        '${strings.pick('Mistakes', 'Missers')}: $_misses/3',
-                        style: const TextStyle(color: Colors.white70),
-                      ),
                       const Spacer(),
                       Text(
                         _combo == 0
@@ -1326,6 +1407,7 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
   bool _echoUsed = false;
   int? _litRune;
   int? _echoRune;
+  int? _wrongRune;
   int _inputIndex = 0;
   int _rounds = 0;
 
@@ -1387,9 +1469,10 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
       _accepting = false;
       _ended = true;
       _litRune = rune;
+      _wrongRune = rune;
       unawaited(HavenAudio.play(HavenSound.uiConfirm));
       setState(() {});
-      await Future<void>.delayed(const Duration(milliseconds: 650));
+      await Future<void>.delayed(const Duration(seconds: 1));
       if (!mounted) return;
       await _finishTrial(
         context,
@@ -1487,6 +1570,7 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
                           runeKey: _runeKeys[rune],
                           lit: _litRune == rune,
                           echo: _echoRune == rune,
+                          error: _wrongRune == rune,
                           enabled: _accepting,
                           onTap: () => _tapRune(rune),
                         ),
@@ -1531,6 +1615,7 @@ class _RuneButton extends StatelessWidget {
     required this.runeKey,
     required this.lit,
     required this.echo,
+    required this.error,
     required this.enabled,
     required this.onTap,
   });
@@ -1538,19 +1623,39 @@ class _RuneButton extends StatelessWidget {
   final String runeKey;
   final bool lit;
   final bool echo;
+  final bool error;
   final bool enabled;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) => AnimatedScale(
-        scale: lit ? 1.13 : 1,
+        scale: error ? 1.18 : (lit ? 1.13 : 1),
         duration: const Duration(milliseconds: 130),
         child: InkWell(
           onTap: enabled ? onTap : null,
           borderRadius: BorderRadius.circular(99),
-          child: SizedBox(
+          child: AnimatedContainer(
+            key: error ? Key('rune-error-$runeKey') : null,
+            duration: const Duration(milliseconds: 120),
             width: 82,
             height: 82,
+            padding: EdgeInsets.all(error ? 3 : 0),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: error ? const Color(0xBBFF173D) : Colors.transparent,
+              border: error
+                  ? Border.all(color: const Color(0xFFFFD5DC), width: 3)
+                  : null,
+              boxShadow: error
+                  ? const [
+                      BoxShadow(
+                        color: Color(0xFFFF173D),
+                        blurRadius: 24,
+                        spreadRadius: 5,
+                      ),
+                    ]
+                  : null,
+            ),
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 145),
               switchInCurve: Curves.easeOutBack,
@@ -1561,11 +1666,22 @@ class _RuneButton extends StatelessWidget {
               child: Opacity(
                 key: ValueKey('$runeKey-$lit-$echo'),
                 opacity: echo && !lit ? .78 : 1,
-                child: Image.asset(
-                  'assets/images/ui/trials/rune_$runeKey${lit || echo ? '_lit' : ''}.png',
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
-                  semanticLabel: '$runeKey rune',
+                child: ColorFiltered(
+                  colorFilter: error
+                      ? const ColorFilter.mode(
+                          Color(0xFFFF284B),
+                          BlendMode.modulate,
+                        )
+                      : const ColorFilter.mode(
+                          Colors.transparent,
+                          BlendMode.dst,
+                        ),
+                  child: Image.asset(
+                    'assets/images/ui/trials/rune_$runeKey${lit || echo ? '_lit' : ''}.png',
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                    semanticLabel: '$runeKey rune',
+                  ),
                 ),
               ),
             ),

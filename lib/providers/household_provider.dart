@@ -1344,7 +1344,7 @@ class HouseholdProvider extends ChangeNotifier {
       ChestTier.portrait || ChestTier.title => 0,
     };
     final gems = switch (tier) {
-      ChestTier.wooden => _random.nextDouble() < .25 ? 1 : 0,
+      ChestTier.wooden => 0,
       ChestTier.silver =>
         _random.nextDouble() < .50 ? 1 + _random.nextInt(2) : 0,
       ChestTier.gold => _random.nextDouble() < .72 ? 2 + _random.nextInt(3) : 0,
@@ -1444,15 +1444,17 @@ class HouseholdProvider extends ChangeNotifier {
     );
   }
 
+  double relicDropChance(ChestTier tier) => switch (tier) {
+        ChestTier.wooden || ChestTier.silver => 0.0,
+        ChestTier.gold => .015,
+        ChestTier.dragon => .04,
+        ChestTier.mythical => .09,
+        ChestTier.sinister => .06,
+        ChestTier.portrait || ChestTier.title => 0.0,
+      };
+
   MysticRelic? _rollRelicDrop(ChestTier tier) {
-    final chance = switch (tier) {
-      ChestTier.wooden || ChestTier.silver => 0.0,
-      ChestTier.gold => .015,
-      ChestTier.dragon => .04,
-      ChestTier.mythical => .09,
-      ChestTier.sinister => .06,
-      ChestTier.portrait || ChestTier.title => 0.0,
-    };
+    final chance = relicDropChance(tier);
     if (_random.nextDouble() >= chance) return null;
     return MysticRelic.values[_random.nextInt(MysticRelic.values.length)];
   }

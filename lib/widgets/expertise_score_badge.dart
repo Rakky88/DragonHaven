@@ -11,6 +11,7 @@ class ExpertiseScoreBadge extends StatelessWidget {
     required this.focusLabel,
     required this.score,
     this.iconSize = 21,
+    this.expand = false,
   });
 
   static const maxAsset = 'assets/images/ui/ui_expertise_max.png';
@@ -20,12 +21,13 @@ class ExpertiseScoreBadge extends StatelessWidget {
   final String focusLabel;
   final int score;
   final double iconSize;
+  final bool expand;
 
   bool get isMaxed => score >= maxDragonExpertise;
 
   @override
   Widget build(BuildContext context) => Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           GameIconSprite(
@@ -41,6 +43,7 @@ class ExpertiseScoreBadge extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 3),
+          if (expand) const Spacer(),
           Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [

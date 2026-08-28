@@ -187,6 +187,15 @@ const trialPhraseTranslations = <String, List<String>>{
     '奈落 — ジャンプ！'
   ],
   'Mistakes': ['Fehler', 'Fallos', 'Erreurs', 'Errori', 'Erros', '失误', 'ミス'],
+  'ATTEMPTS LEFT': [
+    'VERSUCHE ÜBRIG',
+    'INTENTOS RESTANTES',
+    'ESSAIS RESTANTS',
+    'TENTATIVI RIMASTI',
+    'TENTATIVAS RESTANTES',
+    '剩余机会',
+    '残り回数'
+  ],
   'Combo': ['Kombo', 'Combo', 'Combo', 'Combo', 'Combo', '连击', 'コンボ'],
   'Tap for the perfect hit': [
     'Tippe für den perfekten Treffer',

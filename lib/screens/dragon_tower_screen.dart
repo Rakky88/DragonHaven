@@ -10,6 +10,7 @@ import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/dragon_trial_records.dart';
+import '../widgets/expertise_score_badge.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/haven_lighting.dart';
 import '../widgets/rooftop_egg_nest.dart';
@@ -494,12 +495,49 @@ class _TowerTopIconButton extends StatelessWidget {
       );
 }
 
-class _OwnedDragonsSheet extends StatelessWidget {
+enum _DragonCollectionView { gallery, compact }
+
+enum _DragonSortMode { name, acquiredAt, rarity }
+
+class _OwnedDragonsSheet extends StatefulWidget {
   const _OwnedDragonsSheet();
+
+  @override
+  State<_OwnedDragonsSheet> createState() => _OwnedDragonsSheetState();
+}
+
+class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
+  _DragonCollectionView _view = _DragonCollectionView.gallery;
+  _DragonSortMode _sortMode = _DragonSortMode.acquiredAt;
+
+  List<Pet> _sortedDragons(Iterable<Pet> source) {
+    final dragons = source.toList(growable: false);
+    dragons.sort((a, b) {
+      final comparison = switch (_sortMode) {
+        _DragonSortMode.name =>
+          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
+        _DragonSortMode.acquiredAt => b.acquiredAt.compareTo(a.acquiredAt),
+        _DragonSortMode.rarity =>
+          b.lineage.rarity.index.compareTo(a.lineage.rarity.index),
+      };
+      return comparison != 0
+          ? comparison
+          : a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase());
+    });
+    return dragons;
+  }
+
+  String _sortLabel(AppStrings strings) => switch (_sortMode) {
+        _DragonSortMode.name => strings.pick('Name', 'Naam'),
+        _DragonSortMode.acquiredAt => strings.pick('Received', 'Ontvangen'),
+        _DragonSortMode.rarity => strings.pick('Rarity', 'Zeldzaamheid'),
+      };
+
   @override
   Widget build(BuildContext context) {
     final game = context.watch<HouseholdProvider>();
     final strings = AppStrings.of(context);
+    final dragons = _sortedDragons(game.ownedDragons);
     return SafeArea(
       child: DraggableScrollableSheet(
         expand: false,
@@ -514,8 +552,103 @@ class _OwnedDragonsSheet extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(strings.pick('My dragons', 'Mijn draken'),
-                      style: Theme.of(context).textTheme.titleLarge),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          strings.pick('My dragons', 'Mijn draken'),
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      PopupMenuButton<_DragonSortMode>(
+                        key: const Key('owned-dragons-sort'),
+                        tooltip: strings.pick(
+                          'Change dragon order',
+                          'Volgorde van draken wijzigen',
+                        ),
+                        initialValue: _sortMode,
+                        onSelected: (value) =>
+                            setState(() => _sortMode = value),
+                        itemBuilder: (_) => [
+                          for (final mode in _DragonSortMode.values)
+                            PopupMenuItem(
+                              key: Key('owned-dragons-sort-${mode.name}'),
+                              value: mode,
+                              child: Row(
+                                children: [
+                                  Icon(switch (mode) {
+                                    _DragonSortMode.name =>
+                                      Icons.sort_by_alpha_rounded,
+                                    _DragonSortMode.acquiredAt =>
+                                      Icons.event_rounded,
+                                    _DragonSortMode.rarity =>
+                                      Icons.auto_awesome_rounded,
+                                  }),
+                                  const SizedBox(width: 9),
+                                  Text(switch (mode) {
+                                    _DragonSortMode.name =>
+                                      strings.pick('Name', 'Naam'),
+                                    _DragonSortMode.acquiredAt =>
+                                      strings.pick('Received', 'Ontvangen'),
+                                    _DragonSortMode.rarity =>
+                                      strings.pick('Rarity', 'Zeldzaamheid'),
+                                  }),
+                                ],
+                              ),
+                            ),
+                        ],
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1ECFB),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.swap_vert_rounded,
+                                  size: 18, color: AppColors.twilight),
+                              const SizedBox(width: 4),
+                              Text(
+                                _sortLabel(strings),
+                                style: const TextStyle(
+                                  color: AppColors.twilight,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      IconButton.filledTonal(
+                        key: const Key('owned-dragons-view-toggle'),
+                        tooltip: _view == _DragonCollectionView.gallery
+                            ? strings.pick(
+                                'Show compact list',
+                                'Compacte lijst tonen',
+                              )
+                            : strings.pick(
+                                'Show gallery',
+                                'Galerij tonen',
+                              ),
+                        onPressed: () => setState(() {
+                          _view = _view == _DragonCollectionView.gallery
+                              ? _DragonCollectionView.compact
+                              : _DragonCollectionView.gallery;
+                        }),
+                        icon: Icon(
+                          _view == _DragonCollectionView.gallery
+                              ? Icons.view_list_rounded
+                              : Icons.grid_view_rounded,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 7),
                   Container(
                     key: const Key('tower-roaming-capacity'),
@@ -547,26 +680,41 @@ class _OwnedDragonsSheet extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: GridView.builder(
-                key: const Key('owned-dragons-grid'),
-                controller: controller,
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
-                itemCount: game.ownedDragons.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount:
-                      MediaQuery.sizeOf(context).width >= 600 ? 3 : 2,
-                  childAspectRatio: .88,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                ),
-                itemBuilder: (context, index) {
-                  final dragon = game.ownedDragons[index];
-                  return _OwnedDragonGridCard(
-                    dragon: dragon,
-                    onTap: () => _showDragonDetails(context, dragon),
-                  );
-                },
-              ),
+              child: _view == _DragonCollectionView.gallery
+                  ? GridView.builder(
+                      key: const Key('owned-dragons-grid'),
+                      controller: controller,
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
+                      itemCount: dragons.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:
+                            MediaQuery.sizeOf(context).width >= 600 ? 3 : 2,
+                        childAspectRatio: .88,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                      ),
+                      itemBuilder: (context, index) {
+                        final dragon = dragons[index];
+                        return _OwnedDragonGridCard(
+                          dragon: dragon,
+                          onTap: () => _showDragonDetails(context, dragon),
+                        );
+                      },
+                    )
+                  : ListView.separated(
+                      key: const Key('owned-dragons-list'),
+                      controller: controller,
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
+                      itemCount: dragons.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 7),
+                      itemBuilder: (context, index) {
+                        final dragon = dragons[index];
+                        return _OwnedDragonListCard(
+                          dragon: dragon,
+                          onTap: () => _showDragonDetails(context, dragon),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -628,18 +776,23 @@ class _OwnedDragonsSheet extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 3),
-                _DragonDetailRow(
-                    icon: const GameIconSprite(GameIconKind.might, size: 27),
-                    label: strings.pick('Might', 'Kracht'),
-                    value: '${dragon.trainingFor(TrainingFocus.might)}'),
-                _DragonDetailRow(
-                    icon: const GameIconSprite(GameIconKind.arcana, size: 27),
-                    label: strings.pick('Arcana', 'Arcana'),
-                    value: '${dragon.trainingFor(TrainingFocus.arcana)}'),
-                _DragonDetailRow(
-                    icon: const GameIconSprite(GameIconKind.spirit, size: 27),
-                    label: strings.pick('Spirit', 'Geest'),
-                    value: '${dragon.trainingFor(TrainingFocus.spirit)}'),
+                for (final focus in TrainingFocus.values)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: ExpertiseScoreBadge(
+                      dragonId: dragon.id,
+                      focus: focus,
+                      focusLabel: switch (focus) {
+                        TrainingFocus.might => strings.pick('Might', 'Kracht'),
+                        TrainingFocus.arcana =>
+                          strings.pick('Arcana', 'Arcana'),
+                        TrainingFocus.spirit => strings.pick('Spirit', 'Geest'),
+                      },
+                      score: dragon.trainingFor(focus),
+                      iconSize: 27,
+                      expand: true,
+                    ),
+                  ),
                 const Divider(height: 13),
                 _DragonDetailRow(
                   label: strings.pick('Moral nature', 'Morele aard'),
@@ -964,14 +1117,113 @@ class _OwnedDragonGridCard extends StatelessWidget {
   }
 }
 
+class _OwnedDragonListCard extends StatelessWidget {
+  const _OwnedDragonListCard({required this.dragon, required this.onTap});
+
+  final Pet dragon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final received = MaterialLocalizations.of(context).formatShortDate(
+      dragon.acquiredAt,
+    );
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        key: Key('owned-dragon-list-${dragon.id}'),
+        onTap: onTap,
+        child: SizedBox(
+          height: 76,
+          child: Row(
+            children: [
+              SizedBox.square(
+                dimension: 72,
+                child: DragonArt(
+                  height: 66,
+                  animate: false,
+                  stageKey: dragon.stageKey,
+                  lineageId: dragon.lineageId,
+                  evolutionPath: dragon.activeEvolutionPath,
+                  prismatic: dragon.spectral,
+                  sinister: dragon.sinister,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            dragon.displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        if (dragon.favorite) ...[
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.favorite_rounded,
+                            color: Color(0xFFE05A78),
+                            size: 15,
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${strings.lineageName(dragon.lineage)} · '
+                      '${strings.lineageRarity(dragon.lineage)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.twilight,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${strings.petStage(dragon)} · '
+                      '${strings.pick('Received', 'Ontvangen')} $received',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Icon(Icons.chevron_right_rounded),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _DragonDetailRow extends StatelessWidget {
   const _DragonDetailRow({
     required this.label,
     required this.value,
-    this.icon,
   });
 
-  final Widget? icon;
   final String label;
   final String value;
 
@@ -979,10 +1231,6 @@ class _DragonDetailRow extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 5),
         child: Row(children: [
-          if (icon != null) ...[
-            SizedBox.square(dimension: 30, child: Center(child: icon)),
-            const SizedBox(width: 7),
-          ],
           Expanded(
             child: Text(label,
                 style: const TextStyle(color: AppColors.muted, fontSize: 12)),

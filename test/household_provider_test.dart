@@ -387,7 +387,8 @@ void main() {
     final reward = await game.openChest(ChestTier.wooden);
 
     expect(reward, isNotNull);
-    expect(game.pet.coins, beforeCoins + reward!.coins);
+    expect(reward!.gems, 0, reason: 'Wooden Chests must never contain gems.');
+    expect(game.pet.coins, beforeCoins + reward.coins);
     expect(game.pet.xp, beforeXp,
         reason: 'Adventure XP must never be part of a chest.');
     expect(game.totalChestsOpened, 1);
@@ -460,6 +461,18 @@ void main() {
       expect(reward?.relicFound, MysticRelic.moralPrism, reason: tier.name);
     }
     expect(game.relicCount(MysticRelic.moralPrism), 4);
+  });
+
+  test('every chest relic chance remains explicit and exact', () {
+    final game = HouseholdProvider(random: Random(204));
+    expect(game.relicDropChance(ChestTier.wooden), 0);
+    expect(game.relicDropChance(ChestTier.silver), 0);
+    expect(game.relicDropChance(ChestTier.gold), .015);
+    expect(game.relicDropChance(ChestTier.dragon), .04);
+    expect(game.relicDropChance(ChestTier.mythical), .09);
+    expect(game.relicDropChance(ChestTier.sinister), .06);
+    expect(game.relicDropChance(ChestTier.portrait), 0);
+    expect(game.relicDropChance(ChestTier.title), 0);
   });
 
   test('using each relic reveals only its secret and persists it', () async {

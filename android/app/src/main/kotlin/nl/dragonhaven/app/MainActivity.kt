@@ -223,15 +223,16 @@ class MainActivity : FlutterActivity() {
         "achievement" -> R.raw.achievement
         "adventure_return" -> R.raw.adventure_return
         "adventure_start" -> R.raw.adventure_start
-        // Higher chest tiers use distinct uplifting reveal cues instead of the
-        // older, downbeat impacts. Mythical receives the ascension flourish.
+        // Higher chest tiers use distinct reveals. Mythical has an original
+        // ascending orchestral flourish; Sinister has a low cavernous laugh.
         "chest_dragon" -> R.raw.hatch_reveal
         "chest_dragon_legacy" -> R.raw.chest_dragon
         "chest_gold" -> R.raw.chest_gold
-        "chest_mythical" -> R.raw.evolution_ascended
-        "chest_mythical_legacy" -> R.raw.chest_mythical
+        "chest_mythical" -> R.raw.chest_mythical
+        "chest_mythical_legacy" -> R.raw.chest_mythical_legacy
         "chest_silver" -> R.raw.chest_silver
         "chest_sinister" -> R.raw.chest_sinister
+        "chest_sinister_legacy" -> R.raw.chest_sinister_legacy
         "chest_wooden" -> R.raw.chest_wooden
         "evolution_ascended" -> R.raw.evolution_ascended
         "evolution_young" -> R.raw.evolution_young

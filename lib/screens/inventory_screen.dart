@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/chest.dart';
+import '../models/dragon_egg.dart';
 import '../models/mystic_relic.dart';
 import '../models/pet.dart';
 import '../models/shop_item.dart';
@@ -83,6 +84,7 @@ class InventoryScreen extends StatelessWidget {
 
 class _EggInventoryTab extends StatelessWidget {
   const _EggInventoryTab();
+
   @override
   Widget build(BuildContext context) {
     final game = context.watch<HouseholdProvider>();
@@ -94,95 +96,233 @@ class _EggInventoryTab extends StatelessWidget {
             'Nog geen Mysterious Eggs in je inventaris.'),
       );
     }
-    return ListView.builder(
-      key: const PageStorageKey('inventory-eggs-scroll'),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
-      itemCount: game.eggStash.length,
-      itemBuilder: (context, index) {
-        final egg = game.eggStash[index];
-        final reserved = game.isEggReservedForTrade(egg.id);
-        return Card(
-          margin: const EdgeInsets.only(bottom: 10),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 11),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  const SizedBox.square(
-                    dimension: 68,
-                    child: DragonArt(
-                      height: 68,
-                      animate: false,
-                      stageKey: 'moonEgg',
-                    ),
+    final eggs = [...game.eggStash]
+      ..sort((a, b) => b.acquiredAt.compareTo(a.acquiredAt));
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 13, 16, 8),
+          child: Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1ECFB),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  '${eggs.length} ${strings.pick(eggs.length == 1 ? 'egg' : 'eggs', eggs.length == 1 ? 'ei' : 'eieren')}',
+                  key: const Key('egg-inventory-count'),
+                  style: const TextStyle(
+                    color: AppColors.twilight,
+                    fontWeight: FontWeight.w900,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  strings.pick(
+                    'Tap an egg for its clue and actions.',
+                    'Tik op een ei voor de hint en acties.',
+                  ),
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: GridView.builder(
+            key: const PageStorageKey('inventory-eggs-scroll'),
+            padding: const EdgeInsets.fromLTRB(12, 3, 12, 32),
+            itemCount: eggs.length,
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 210,
+              childAspectRatio: .82,
+              mainAxisSpacing: 9,
+              crossAxisSpacing: 9,
+            ),
+            itemBuilder: (context, index) {
+              final egg = eggs[index];
+              final reserved = game.isEggReservedForTrade(egg.id);
+              return Card(
+                clipBehavior: Clip.antiAlias,
+                margin: EdgeInsets.zero,
+                child: InkWell(
+                  key: Key('inventory-egg-${egg.id}'),
+                  onTap: () => _showEggDetails(context, egg),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(9, 8, 9, 9),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Expanded(
+                          child: DragonArt(
+                            height: 86,
+                            animate: false,
+                            stageKey: 'moonEgg',
+                          ),
+                        ),
                         Text(
                           strings.pick('Mysterious Egg', 'Mysterieus Ei'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.w900),
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '${strings.pick('Incubation after nesting', 'Broedtijd na plaatsing')}: '
-                          '${strings.remainingDuration(egg.incubationDuration)}',
+                          strings.remainingDuration(egg.incubationDuration),
                           style: const TextStyle(
                             color: AppColors.twilight,
-                            fontWeight: FontWeight.w800,
                             fontSize: 11,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
-                        if (reserved)
-                          Text(
-                            strings.pick(
-                                'Reserved for trade', 'Gereserveerd voor ruil'),
-                            style: const TextStyle(
-                              color: AppColors.twilight,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 11,
-                            ),
+                        const SizedBox(height: 5),
+                        Text(
+                          game.eggHintForEgg(
+                            egg,
+                            locale: strings.languageCode,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 10.5,
+                            height: 1.2,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                        if (reserved) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.swap_horiz_rounded,
+                                  size: 14, color: AppColors.twilight),
+                              const SizedBox(width: 3),
+                              Flexible(
+                                child: Text(
+                                  strings.pick(
+                                    'Reserved for trade',
+                                    'Gereserveerd voor ruil',
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: AppColors.twilight,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                ]),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F0FC),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Text(
-                    game.eggHintForEgg(egg, locale: strings.languageCode),
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 12,
-                      height: 1.35,
-                      fontStyle: FontStyle.italic,
-                    ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showEggDetails(BuildContext context, DragonEgg egg) async {
+    final game = context.read<HouseholdProvider>();
+    final strings = AppStrings.of(context);
+    final reserved = game.isEggReservedForTrade(egg.id);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const DragonArt(
+                height: 126,
+                animate: false,
+                stageKey: 'moonEgg',
+              ),
+              Text(
+                strings.pick('Mysterious Egg', 'Mysterieus Ei'),
+                style: Theme.of(sheetContext).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F0FC),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Text(
+                  game.eggHintForEgg(egg, locale: strings.languageCode),
+                  key: Key('inventory-egg-clue-${egg.id}'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    height: 1.35,
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
-                const SizedBox(height: 9),
-                Row(children: [
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                dense: true,
+                leading: const Icon(Icons.schedule_rounded),
+                title: Text(strings.pick(
+                  'Incubation after nesting',
+                  'Broedtijd na plaatsing',
+                )),
+                trailing: Text(
+                  strings.remainingDuration(egg.incubationDuration),
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+              if (reserved)
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.swap_horiz_rounded),
+                  title: Text(strings.pick(
+                    'Reserved for trade',
+                    'Gereserveerd voor ruil',
+                  )),
+                ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
                   IconButton.outlined(
+                    key: Key('inventory-discard-egg-${egg.id}'),
                     tooltip: strings.pick('Discard egg', 'Ei wegdoen'),
-                    onPressed:
-                        reserved ? null : () => _discardEgg(context, egg.id),
+                    onPressed: reserved
+                        ? null
+                        : () async {
+                            Navigator.pop(sheetContext);
+                            await _discardEgg(context, egg.id);
+                          },
                     icon: const Icon(Icons.delete_outline_rounded),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: FilledButton(
+                    child: FilledButton.icon(
+                      key: Key('inventory-incubate-egg-${egg.id}'),
                       onPressed: game.hasEggInNest || reserved
                           ? null
                           : () async {
+                              Navigator.pop(sheetContext);
                               final ok = await game.activateEgg(egg.id);
                               if (context.mounted && ok) {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -195,15 +335,16 @@ class _EggInventoryTab extends StatelessWidget {
                                 );
                               }
                             },
-                      child: Text(strings.pick('Incubate', 'Broed uit')),
+                      icon: const Icon(Icons.egg_alt_rounded),
+                      label: Text(strings.pick('Incubate', 'Broed uit')),
                     ),
                   ),
-                ]),
-              ],
-            ),
+                ],
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 

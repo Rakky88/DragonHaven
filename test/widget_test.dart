@@ -925,6 +925,135 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('large egg inventories stay compact and open focused details',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 640));
+    tester.platformDispatcher.textScaleFactorTestValue = 1.2;
+    addTearDown(() {
+      tester.binding.setSurfaceSize(null);
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+    });
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false);
+    game.eggStash = List.generate(
+      12,
+      (index) => DragonEgg(
+        id: 'compact-egg-$index',
+        lineageId: dragonLineages[index % dragonLineages.length].id,
+        acquiredAt: DateTime.utc(2026, 8, index + 1),
+        hatchSeed: index + 1,
+        prismatic: false,
+        incubationMinutes: 60 + index * 6,
+      ),
+    );
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: game,
+        child: const MaterialApp(
+          home: Scaffold(body: InventoryScreen()),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('12 eggs'), findsOneWidget);
+    expect(find.byKey(const PageStorageKey('inventory-eggs-scroll')),
+        findsOneWidget);
+    final newest = find.byKey(const Key('inventory-egg-compact-egg-11'));
+    final nextNewest = find.byKey(const Key('inventory-egg-compact-egg-10'));
+    expect(newest, findsOneWidget);
+    expect(nextNewest, findsOneWidget);
+    expect(tester.getTopLeft(newest).dy,
+        closeTo(tester.getTopLeft(nextNewest).dy, 1));
+    expect(tester.getTopLeft(newest).dx,
+        isNot(closeTo(tester.getTopLeft(nextNewest).dx, 1)));
+
+    await tester.tap(newest);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byKey(const Key('inventory-egg-clue-compact-egg-11')),
+        findsOneWidget);
+    expect(find.byKey(const Key('inventory-incubate-egg-compact-egg-11')),
+        findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('My Dragons switches view, sorts, and marks max expertise',
+      (tester) async {
+    final game = await pumpGame(
+      tester,
+      onboarded: true,
+      hatched: true,
+      surfaceSize: const Size(320, 640),
+    );
+    for (final focus in TrainingFocus.values) {
+      game.pet.training[focus.name] = maxDragonExpertise;
+    }
+    final legendary = dragonLineages.firstWhere(
+      (lineage) => lineage.rarity == DragonRarity.legendary,
+    );
+    game.sanctuaryDragons = [
+      Pet(
+        id: 'sorted-alpha',
+        name: 'Alpha',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        lineageId: legendary.id,
+        acquiredAt: DateTime.utc(2025, 1, 1),
+      ),
+      Pet(
+        id: 'sorted-zephyr',
+        name: 'Zephyr',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        lineageId: dragonLineages.first.id,
+        acquiredAt: DateTime.utc(2024, 1, 1),
+      ),
+    ];
+    game.notifyListeners();
+    await tester.pump();
+
+    await tester.tap(find.text('Tower').last);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byKey(const Key('open-my-dragons')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(find.byKey(const Key('owned-dragons-grid')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('owned-dragons-view-toggle')));
+    await tester.pump();
+    expect(find.byKey(const Key('owned-dragons-list')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('owned-dragons-sort')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(
+      find.byKey(const Key('owned-dragons-sort-name')),
+    );
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(
+      tester
+          .getTopLeft(find.byKey(const Key('owned-dragon-list-sorted-alpha')))
+          .dy,
+      lessThan(tester
+          .getTopLeft(find.byKey(const Key('owned-dragon-list-sorted-zephyr')))
+          .dy),
+    );
+
+    await tester.tap(
+      find.byKey(Key('owned-dragon-list-${game.pet.id}')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    for (final focus in TrainingFocus.values) {
+      expect(
+        find.byKey(Key('expertise-max-${game.pet.id}-${focus.name}')),
+        findsOneWidget,
+      );
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
       'Portrait Chest reveals an enlarged portrait without equipping it',
       (tester) async {
@@ -1626,7 +1755,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.04.03'), findsOneWidget);
+    expect(find.text('v0.04.05'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

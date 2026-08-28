@@ -201,8 +201,10 @@ void main() {
       'chest_silver.ogg',
       'chest_gold.ogg',
       'chest_dragon.ogg',
-      'chest_mythical.ogg',
-      'chest_sinister.ogg',
+      'chest_mythical.wav',
+      'chest_mythical_legacy.ogg',
+      'chest_sinister.wav',
+      'chest_sinister_legacy.ogg',
       'hatch_build.ogg',
       'hatch_crack_1.ogg',
       'hatch_crack_2.ogg',
@@ -236,9 +238,25 @@ void main() {
     expect(File('${directory.path}/hatch_reveal.wav').lengthSync(),
         greaterThan(1000000),
         reason: 'The hatch reveal uses the full original cinematic fanfare.');
-    expect(nativeBridge, contains('"chest_dragon" -> R.raw.hatch_reveal'));
+    final mythical = File('${directory.path}/chest_mythical.wav');
+    final sinister = File('${directory.path}/chest_sinister.wav');
+    expect(mythical.lengthSync(), greaterThan(800000));
+    expect(sinister.lengthSync(), greaterThan(780000));
+    expect(mythical.readAsBytesSync().take(4), [82, 73, 70, 70]);
+    expect(sinister.readAsBytesSync().take(4), [82, 73, 70, 70]);
     expect(
-        nativeBridge, contains('"chest_mythical" -> R.raw.evolution_ascended'));
+      mythical.lengthSync(),
+      greaterThan(
+          File('${directory.path}/chest_mythical_legacy.ogg').lengthSync()),
+    );
+    expect(
+      sinister.lengthSync(),
+      greaterThan(
+          File('${directory.path}/chest_sinister_legacy.ogg').lengthSync()),
+    );
+    expect(nativeBridge, contains('"chest_dragon" -> R.raw.hatch_reveal'));
+    expect(nativeBridge, contains('"chest_mythical" -> R.raw.chest_mythical'));
+    expect(nativeBridge, contains('"chest_sinister" -> R.raw.chest_sinister'));
     expect(nativeBridge, contains('val resource = rawResourceId("reverie")'));
     expect(nativeBridge, isNot(contains('previousMusicStyle')));
   });

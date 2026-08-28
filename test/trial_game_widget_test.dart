@@ -88,7 +88,7 @@ void main() {
     await tester.tap(game);
     await tester.pump(const Duration(milliseconds: 48));
     expect(find.text('Tap for the perfect hit'), findsNothing);
-    expect(find.text('Mistakes: 0/3'), findsOneWidget);
+    expect(find.text('ATTEMPTS LEFT: 3'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -117,6 +117,7 @@ void main() {
       (tester) async {
     final (gameState, offer) = await pumpTrial(tester, TrialKind.ruinBreaker);
     final game = find.byKey(const Key('ruin-breaker-game'));
+    final startingXp = gameState.pet.xp;
 
     await tester.tap(game); // Start.
     await tester.pump();
@@ -125,11 +126,29 @@ void main() {
       await tester.pump(const Duration(milliseconds: 330));
       await tester.pump();
     }
-    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.text('ATTEMPTS LEFT: 0'), findsOneWidget);
+    expect(
+      tester
+          .widget<AnimatedOpacity>(
+            find.byKey(const Key('ruin-power-meter-fade')),
+          )
+          .opacity,
+      0,
+    );
+    expect(gameState.pet.xp, startingXp);
+    expect(
+        gameState.availableTrials.any((item) => item.id == offer.id), isTrue);
+    await tester.pump(const Duration(milliseconds: 999));
+    expect(gameState.pet.xp, startingXp,
+        reason: 'The reward waits for the full meter fade.');
+    expect(
+        gameState.availableTrials.any((item) => item.id == offer.id), isTrue);
+    await tester.pump(const Duration(milliseconds: 1));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byKey(const Key('trial-result-grade')), findsOneWidget);
+    expect(find.byKey(const Key('trial-result-score')), findsOneWidget);
     expect(find.byType(RotationTransition), findsWidgets);
     final grade = tester.widget<Image>(
       find.byKey(const Key('trial-result-grade')),
@@ -147,5 +166,98 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.tap(find.byKey(const Key('trial-result-continue')));
     await tester.pump(const Duration(milliseconds: 500));
+  });
+
+  testWidgets('wrong Arcana rune glows red for one second before reward',
+      (tester) async {
+    final (gameState, offer) = await pumpTrial(tester, TrialKind.runeweaver);
+    final startingXp = gameState.pet.xp;
+    const runeKeys = ['fire', 'water', 'moon', 'star', 'wind'];
+    final correct =
+        Random(offer.id.hashCode ^ gameState.pet.hatchSeed).nextInt(5);
+    final wrong = (correct + 1) % 5;
+
+    await tester.tap(find.byKey(const Key('runeweaver-game')));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.tap(find.byKey(Key('rune-$wrong')));
+    await tester.pump();
+    expect(find.byKey(Key('rune-error-${runeKeys[wrong]}')), findsOneWidget);
+    expect(gameState.pet.xp, startingXp);
+    expect(
+        gameState.availableTrials.any((item) => item.id == offer.id), isTrue);
+
+    await tester.pump(const Duration(milliseconds: 999));
+    expect(gameState.pet.xp, startingXp);
+    expect(
+        gameState.availableTrials.any((item) => item.id == offer.id), isTrue);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byKey(const Key('trial-result-score')), findsOneWidget);
+    expect(
+        gameState.availableTrials.any((item) => item.id == offer.id), isFalse);
+    expect(gameState.pet.xp, greaterThan(startingXp));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Spirit crash freezes then arcs before reward', (tester) async {
+    final (gameState, offer) = await pumpTrial(tester, TrialKind.cavernFlight);
+    final startingXp = gameState.pet.xp;
+    await tester.tap(find.byKey(const Key('cavern-flight-game')));
+    await tester.pump();
+
+    for (var frame = 0;
+        frame < 140 &&
+            find.byKey(const Key('cavern-crash-freeze')).evaluate().isEmpty;
+        frame++) {
+      await tester.pump(const Duration(milliseconds: 35));
+    }
+    expect(find.byKey(const Key('cavern-crash-freeze')), findsOneWidget);
+    expect(gameState.pet.xp, startingXp);
+    expect(
+        gameState.availableTrials.any((item) => item.id == offer.id), isTrue);
+
+    await tester.pump(const Duration(milliseconds: 249));
+    expect(find.byKey(const Key('cavern-crash-freeze')), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(find.byKey(const Key('cavern-crash-arc-active')), findsOneWidget);
+    expect(gameState.pet.xp, startingXp);
+    await tester.pump(const Duration(milliseconds: 899));
+    expect(gameState.pet.xp, startingXp);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byKey(const Key('trial-result-score')), findsOneWidget);
+    expect(
+        gameState.availableTrials.any((item) => item.id == offer.id), isFalse);
+    expect(gameState.pet.xp, greaterThan(startingXp));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('result transition remains usable with reduced motion',
+      (tester) async {
+    tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(
+      tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue,
+    );
+    final (gameState, offer) = await pumpTrial(tester, TrialKind.ruinBreaker);
+    final game = find.byKey(const Key('ruin-breaker-game'));
+
+    await tester.tap(game);
+    await tester.pump();
+    for (var miss = 0; miss < 3; miss++) {
+      await tester.tap(game);
+      await tester.pump(const Duration(milliseconds: 330));
+    }
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(find.byKey(const Key('trial-result-score')), findsOneWidget);
+    expect(find.byKey(const Key('trial-result-continue')), findsOneWidget);
+    expect(
+      gameState.availableTrials.any((item) => item.id == offer.id),
+      isFalse,
+    );
+    expect(tester.takeException(), isNull);
   });
 }

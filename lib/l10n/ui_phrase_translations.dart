@@ -6056,6 +6056,63 @@ const uiPhraseTranslations = <String, List<String>>{
     '当前头像概率',
     '現在の肖像確率'
   ],
+  'Tap an egg for its clue and actions.': [
+    'Tippe auf ein Ei, um seinen Hinweis und die Aktionen zu sehen.',
+    'Toca un huevo para ver su pista y sus acciones.',
+    'Touchez un œuf pour voir son indice et ses actions.',
+    'Tocca un uovo per vedere il suo indizio e le azioni.',
+    'Toque em um ovo para ver a pista e as ações.',
+    '点击蛋以查看线索和操作。',
+    '卵をタップするとヒントと操作が表示されます。'
+  ],
+  'egg': ['Ei', 'huevo', 'œuf', 'uovo', 'ovo', '枚蛋', '個の卵'],
+  'eggs': ['Eier', 'huevos', 'œufs', 'uova', 'ovos', '枚蛋', '個の卵'],
+  'Change dragon order': [
+    'Drachenreihenfolge ändern',
+    'Cambiar el orden de los dragones',
+    'Modifier l’ordre des dragons',
+    'Cambia l’ordine dei draghi',
+    'Alterar a ordem dos dragões',
+    '更改巨龙顺序',
+    'ドラゴンの並び順を変更'
+  ],
+  'Name': ['Name', 'Nombre', 'Nom', 'Nome', 'Nome', '名称', '名前'],
+  'Received': [
+    'Erhalten',
+    'Recibido',
+    'Reçu',
+    'Ricevuto',
+    'Recebido',
+    '获得日期',
+    '入手日'
+  ],
+  'Rarity': [
+    'Seltenheit',
+    'Rareza',
+    'Rareté',
+    'Rarità',
+    'Raridade',
+    '稀有度',
+    'レア度'
+  ],
+  'Show compact list': [
+    'Kompakte Liste anzeigen',
+    'Mostrar lista compacta',
+    'Afficher la liste compacte',
+    'Mostra elenco compatto',
+    'Mostrar lista compacta',
+    '显示紧凑列表',
+    'コンパクトリストを表示'
+  ],
+  'Show gallery': [
+    'Galerie anzeigen',
+    'Mostrar galería',
+    'Afficher la galerie',
+    'Mostra galleria',
+    'Mostrar galeria',
+    '显示图库',
+    'ギャラリーを表示'
+  ],
   'Tap the egg to shorten the wait by one second per tap. The final second always counts down normally.':
       [
     'Tippe auf das Ei, um die Wartezeit pro Tippen um eine Sekunde zu verkürzen. Die letzte Sekunde läuft immer normal ab.',
