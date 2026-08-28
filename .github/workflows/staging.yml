@@ -12,7 +12,7 @@ jobs:
     environment: staging
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Verify staging secret configuration
         shell: pwsh
@@ -57,7 +57,7 @@ jobs:
           'Stagingconfiguratie aanwezig; waarden worden niet gelogd.'
 
       - name: Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -74,7 +74,7 @@ jobs:
       - name: Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: 2.115.0
+          version: 2.116.0
 
       - name: Initialize and verify isolated staging server
         shell: pwsh

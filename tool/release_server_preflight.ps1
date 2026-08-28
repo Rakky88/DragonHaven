@@ -13,7 +13,7 @@ $migrationPath = Join-Path $repoRoot 'supabase\migrations'
 $projectRefPath = Join-Path $repoRoot 'supabase\.temp\project-ref'
 . (Join-Path $PSScriptRoot 'lib\public_auth_health.ps1')
 
-if (Test-Path -LiteralPath $SupabaseCli) {
+if (Test-Path -LiteralPath $SupabaseCli -PathType Leaf) {
     $resolvedCli = (Resolve-Path -LiteralPath $SupabaseCli).Path
 }
 else {
