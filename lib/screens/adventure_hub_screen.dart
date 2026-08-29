@@ -199,7 +199,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
 }
 
 class _TabCount extends StatelessWidget {
-  const _TabCount({required this.value, this.gold = false});
+  const _TabCount({super.key, required this.value, this.gold = false});
 
   final int value;
   final bool gold;
@@ -801,6 +801,7 @@ class _GroupAdventureSection extends StatelessWidget {
     final game = context.watch<HouseholdProvider>();
     final online = context.watch<OnlineAccountProvider>();
     final colors = _kindColors(AdventureKind.group);
+    final joinableLobbyCount = online.joinableGroupAdventures.length;
     final serverAdventureId = online.groupAdventureStatus?.adventureId;
     final effectiveAdventure = serverAdventureId == null
         ? adventure
@@ -834,6 +835,21 @@ class _GroupAdventureSection extends StatelessWidget {
                           fontWeight: FontWeight.w900,
                         ),
                       ),
+                      if (joinableLobbyCount > 0) ...[
+                        const SizedBox(width: 6),
+                        Semantics(
+                          label: strings.pick(
+                            '$joinableLobbyCount Group Adventures from friends are ready',
+                            '$joinableLobbyCount groepsavonturen van vrienden staan klaar',
+                          ),
+                          excludeSemantics: true,
+                          child: _TabCount(
+                            key: const Key('joinable-group-lobby-count'),
+                            value: joinableLobbyCount,
+                            gold: true,
+                          ),
+                        ),
+                      ],
                       const SizedBox(width: 4),
                       const _AdventureInfoButton(kind: AdventureKind.group),
                     ],

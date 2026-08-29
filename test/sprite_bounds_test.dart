@@ -145,7 +145,15 @@ void _expectTransparentCorners(
 }
 
 void _expectSingleSubject(
-    Uint8List rgba, int width, int x0, int y0, int x1, int y1, String label) {
+  Uint8List rgba,
+  int width,
+  int x0,
+  int y0,
+  int x1,
+  int y1,
+  String label, {
+  int expectedComponents = 1,
+}) {
   // Inspect every pixel in each four-pixel cell. Sampling only one point per
   // cell can incorrectly split narrow details, while a full-resolution flood
   // fill makes this complete asset audit unnecessarily slow.
@@ -205,7 +213,7 @@ void _expectSingleSubject(
     }
     if (pixels >= 4) significantComponents++;
   }
-  expect(significantComponents, 1,
+  expect(significantComponents, expectedComponents,
       reason: '$label contains a foreign sprite fragment');
 }
 
@@ -410,6 +418,9 @@ void main() {
         image.width,
         image.height,
         path,
+        // Its deliberately floating crown/halo is separate from the dragon
+        // now that the generated opaque white fill has been removed.
+        expectedComponents: lineage.id == 'cluckatrice' ? 2 : 1,
       );
       final sampledAlpha = _alphaCount(
         image.rgba,

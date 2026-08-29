@@ -936,6 +936,91 @@ void main() {
     online.dispose();
   });
 
+  testWidgets('Group Adventures shows the number of joinable friend lobbies',
+      (tester) async {
+    final game = HouseholdProvider(random: Random(250));
+    final owner = GroupAdventureParticipant(
+      keeper: const KeeperProfile(
+        userId: 'friend-user',
+        keeperCode: 'DH-1234ABCD',
+        displayName: 'Lyra',
+        title: 'title_321',
+        portraitKey: 'portrait_042',
+        discoveredDragonCount: 12,
+        inventoryImported: true,
+      ),
+      dragonId: 'friend-dragon',
+      dragonName: 'Nimbus',
+      lineageId: 'galeear',
+      stage: 'wyrmling',
+      level: 4,
+      might: 34,
+      arcana: 18,
+      spirit: 57,
+      evolutionPath: 'spirit',
+      prismatic: false,
+      sinister: false,
+      isOwner: true,
+    );
+    GroupAdventureLobby lobby(String id) => GroupAdventureLobby(
+          id: id,
+          slot: 1,
+          adventureId: 'group_1',
+          ownerId: owner.keeper.userId,
+          status: 'waiting',
+          requiredPlayers: 3,
+          focus: 'spirit',
+          startedAt: null,
+          endsAt: null,
+          isCurrentOffer: true,
+          isOwner: false,
+          isParticipant: false,
+          myDragonId: null,
+          rewardAcknowledged: false,
+          participants: [owner],
+        );
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..groupRows.addAll([lobby('joinable-1'), lobby('joinable-2')]);
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const MaterialApp(
+        home: Scaffold(body: AdventureHubScreen()),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final count = find.byKey(const Key('joinable-group-lobby-count'));
+    await tester.scrollUntilVisible(
+      count,
+      350,
+      scrollable: find.descendant(
+        of: find.byKey(
+          const PageStorageKey('available-adventures-scroll'),
+        ),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(count, findsOneWidget);
+    expect(
+        find.descendant(of: count, matching: find.text('2')), findsOneWidget);
+
+    repository.groupRows.clear();
+    await online.refresh();
+    await tester.pump();
+    expect(count, findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+  });
+
   testWidgets('Group Create uses the normal no-dragon message', (tester) async {
     final game = HouseholdProvider(random: Random(26));
     final repository = _FakeSocialRepository(inventoryImported: true)
