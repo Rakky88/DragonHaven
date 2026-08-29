@@ -195,7 +195,9 @@ class _ReviewSurface extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEDE7F6),
+                  // A saturated review color makes true alpha immediately
+                  // visible and exposes baked white, black or checkerboards.
+                  color: const Color(0xFF1976D2),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: const Color(0xFFC8B9E2)),
                 ),
