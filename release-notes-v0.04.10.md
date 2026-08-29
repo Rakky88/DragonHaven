@@ -23,8 +23,6 @@
 - Special Adventures zijn voortaan datagedreven en onbeperkt naast elkaar
   mogelijk. Elk event kan eigen data, beschikbaarheidsduur, herhaling, verhaal,
   rewards, kist, ei en draak hebben.
-- Group Adventures toont nu hoeveel lobby's van vrienden klaarstaan om aan deel
-  te nemen; de teller werkt zichzelf bij wanneer lobby's verschijnen of sluiten.
 - De Cluckatrice Mastery Ascension kijkt nu de gewenste kant op en de witte
   achtergrond rond zijn gouden kroon/halo is volledig transparant gemaakt.
 - De informatietekst verduidelijkt dat Special routes **tijdens** bepaalde
