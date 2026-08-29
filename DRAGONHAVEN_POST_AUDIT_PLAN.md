@@ -1,14 +1,14 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
-Laatst opgesteld: **28 augustus 2026**  
+Laatst bijgewerkt: **29 augustus 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.04.09**
+Actuele openbare versie: **v0.04.10**
 
-Actuele productieserver: **24/24 migraties**
+Actuele productieserver: **26/26 migraties**
 
-Actuele lokale tranche: **v0.04.10-releasecandidate; Infernal Mastery 400/400/400,
-Friends-vormtelling en migratie 25 gebouwd, nog niet uitgerold**
+Actuele lokale tranche: **v0.04.10 openbaar; broncode en migraties 25–26 zijn
+uitgerold, staging en productie zijn groen en het auditplan is bijgewerkt**
 
 Bronnen: [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md),
 [SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md),
@@ -40,7 +40,7 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | Onderdeel | Voortgang | Aantoonbaar klaar | Nog door Codex | Nog door jou |
 | --- | ---: | --- | --- | --- |
 | Google Play-voorbereiding | circa 25% | Permanent package-ID, vaste signing-identiteit, versiecontrole en een ondertekende AAB zijn bewezen | Actuele Play-eisen opnieuw controleren; storeteksten, graphics, Data Safety-inventaris, appgrootte-analyse en rolloutchecklist maken | Play Console openen/verifiëren; app en Play App Signing aanmaken; testers, publieke support/privacy-URL's en storeverklaringen beheren |
-| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.04.09 zijn groen; een apart begrensd productie-migratiepad en actuele CI-runtimes zijn bewezen | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
+| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.04.10 zijn groen; migraties 25–26 zijn via afzonderlijke begrensde productieflows uitgerold | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
 | Fase 1 — monitoring en incidenten | circa 72% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan; de productie-Auth-check draait elk uur, opent/sluit één toegewezen SEV-1-issue en is handmatig groen bewezen | Firebase Crashlytics/Performance koppelen zodra de Android-projectconfig bestaat; veilige read-only applicatiecheck toevoegen en testalert bewijzen | Gratis Firebase Spark-project maken, `nl.dragonhaven.app` registreren, Analytics uit laten en `google-services.json` veilig in de werkmap zetten; testalert ontvangen en privacy/Data Safety beoordelen |
 | Fase 2 — staging en E2E | circa 82% | Afzonderlijke staging, migratiepariteit, account/login, back-up/conflict, Friends, trade en volledige Group Adventure completion/reward/replay zijn echt getest | E-mailbevestiging automatiseren; realistisch 100-user en daarna 1.000-user loadprofiel meten | Veilige stagingmailroute instellen; bevestigen dat testaccounts geen echte persoonsgegevens zijn; testbudget boven 1.000 gebruikers vooraf goedkeuren |
 | Fase 3 — back-up en multi-device | circa 97% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, automatische 15-minutenback-up plus achtergrondflush en een echte staging-restoreroundtrip zijn bewezen | De eerste automatisch geplande zondagrun controleren; later server-owned velden van restores afschermen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
@@ -800,7 +800,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 
 - [ ] implementatie en relevante migraties zijn gereviewd;
 - [x] analyzer en alle bestaande plus nieuwe tests slagen voor de huidige
-  lokale bouwtranche (259/259 op 28-08-2026);
+  lokale bouwtranche (289/289 op 29-08-2026);
 - [x] negatieve, timeout-, retry- en replaypaden zijn getest voor de huidige
   online clientgrens; toekomstige server-economiecommando's krijgen opnieuw
   dezelfde verplichte scenario's;
@@ -848,6 +848,10 @@ Een taak of mijlpaal is pas gereed wanneer:
 11. **Nog door jou voor volledige Firebase-monitoring:** maak het Spark-project,
     registreer `nl.dragonhaven.app`, laat Analytics uit en zet de gedownloade
     Android-config volgens `FIREBASE_MONITORING_SETUP.md` in de werkmap.
+12. **Afgerond door Codex:** v0.04.10 is met 289/289 tests, een groene volledige
+    staging-E2E, twee begrensde productiemigraties en dubbele releasegate
+    gepubliceerd. Productie staat op 26/26 en de ondertekende APK/AAB gebruiken
+    nog steeds de vaste release-identiteit.
 
 ## Besluitenlog
 
@@ -862,6 +866,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 28-08-2026 | B6-automatische back-up | Betekenisvolle voortgang maximaal iedere 15 minuten automatisch back-uppen en openstaande voortgang direct veilig flushen bij achtergrond; RPO 15 minuten online, self-service RTO 15 minuten, supportdoel 4 uur; wekelijkse stagingtest en maandelijkse controle door Rick | Voortgang beschermen zonder gameplay of free tier onnodig te belasten | Automatische trigger en wekelijkse restoreworkflow mogen worden gebouwd |
 | 28-08-2026 | Release 0.04.09 | Migratie 24 en een afzonderlijke nieuwe apprelease zijn expliciet toegestaan | Expertisegrenzen en aanvullende fixes client/server-consistent uitrollen | Productie staat op 24/24 en v0.04.09 is openbaar na groene staging-, migratie- en dubbele releasegates |
 | 28-08-2026 | B4-prijscontract | Zowel de zes coinpacks als de zes gempacks gebruiken later de europrijsladder €1, €2, €5, €10, €20 en €30 | Play-producten vooraf eenduidig voorbereiden zonder betalingen vroeg te activeren | Interne catalogus bewaart de basisprijzen; de live UI moet later altijd Google Plays gelokaliseerde prijs tonen |
+| 29-08-2026 | Release 0.04.10 | Broncode, migraties 25–26, staging, productie en de nieuwe apprelease zijn expliciet toegestaan | Special Events, serverondersteuning en de nieuwste spelcorrecties als één gecontroleerde versie uitrollen | Productie staat op 26/26 en v0.04.10 is openbaar na groene staging-, migratie- en dubbele releasegates |
 | Nog te bepalen | B3, B4-activering en B7 | Nog niet bevestigd | Beslissen vlak vóór de afhankelijke fase | Alleen de nog afhankelijke delen van M4–M6 wachten |
 
 ## Voortgangslog
@@ -899,8 +904,13 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 28-08-2026 | Productiemigratie 24 | Codex, na jouw toestemming | [Migratierun 33204827275](https://github.com/Rakky88/DragonHaven/actions/runs/33204827275) | Exacte beginstand 23, dry-run en database-lint groen; alleen migratie 24 toegepast en daarna 24/24 parity plus Auth opnieuw groen |
 | 28-08-2026 | Eerste monitoring- en restorebewijzen | Codex | [Healthrun 33205759992](https://github.com/Rakky88/DragonHaven/actions/runs/33205759992), [restorerun 33205758376](https://github.com/Rakky88/DragonHaven/actions/runs/33205758376) | Productiehealth HTTP-groen; actuele en historische staging-cloudsave succesvol hersteld; beide privacyarme bewijsartifacts dertig dagen bewaard |
 | 28-08-2026 | Openbare release v0.04.09 | Codex, na jouw toestemming | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.04.09), [productiegate 33204987488](https://github.com/Rakky88/DragonHaven/actions/runs/33204987488), [taggate 33205588983](https://github.com/Rakky88/DragonHaven/actions/runs/33205588983) | Ondertekende APK van 328.058.796 bytes gepubliceerd; SHA-256 `4b03399bb31545a80af04c3919d4a8e3795bb3d14a627f4cf11903dc704be31a`; beide productiepreflights, 270 tests en Play-ready AAB groen |
-| 28-08-2026 | Correcties voor v0.04.10 | Codex | `pet.dart`, `social.dart`, migratie 25 en begrensde workflow 24→25 | Infernal Mastery gebruikt 400 voor Might, Arcana en Spirit; Friends telt ontdekte normale vormen in plaats van families; lokale/stagingbewijzen volgen, productie en release wachten op aparte toestemming |
+| 28-08-2026 | Correcties voor v0.04.10 | Codex | `pet.dart`, `social.dart`, migratie 25 en begrensde workflow 24→25 | Infernal Mastery gebruikt 400 voor Might, Arcana en Spirit; Friends telt ontdekte normale vormen in plaats van families; later via de v0.04.10-tranche bewezen en uitgerold |
 | 28-08-2026 | Toekomstig Play-prijscontract | Jij + Codex | `purchase_provider.dart`, `purchase_provider_test.dart` | Voor coins en gems is €1/€2/€5/€10/€20/€30 per pakketpositie vastgelegd; provider blijft bewust uitgeschakeld tot fase 4 en het activeringsbesluit zijn afgerond |
+| 29-08-2026 | Special Adventure-framework en Cluckatrice-event | Codex | `special_adventure_test.dart`, migratie 26, [stagingrun 33244546317](https://github.com/Rakky88/DragonHaven/actions/runs/33244546317) | Datagedreven terugkerende events, Special Chest/Egg, Cluckatrice, achievement, eventmelding, 21-uurs incubatie en serverondersteuning bewezen; volledige sociale en Group Adventure-E2E, analyzer en 289 tests groen |
+| 29-08-2026 | Automatisch uitkomen en veilige presentaties | Codex | `automatic_hatch_coordinator_test.dart`, `hatch_presentation_test.dart`, commit `581e9bd19c4e29b59b44f413d27a953a7d4bd157` | Eieren komen bij verstreken tijd automatisch uit; Tower toont de resterende tijd; hatch/evolutie/achievement wachten tot een actieve Trial inclusief rewards is afgerond; Cluckatrice-transparantie is opnieuw begrensd getest |
+| 29-08-2026 | Productiemigraties 25–26 | Codex, na jouw toestemming | [migratie 25](https://github.com/Rakky88/DragonHaven/actions/runs/33244862612), [migratie 26](https://github.com/Rakky88/DragonHaven/actions/runs/33244914831) | Iedere workflow controleerde de exacte beginstand, dry-run, database-lint, Auth en eindpariteit; productie staat gecontroleerd op 26/26 |
+| 29-08-2026 | Openbare release v0.04.10 | Codex, na jouw toestemming | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.04.10), [productiegate 33245012909](https://github.com/Rakky88/DragonHaven/actions/runs/33245012909), [taggate 33245410169](https://github.com/Rakky88/DragonHaven/actions/runs/33245410169) | Ondertekende APK van 335.020.376 bytes gepubliceerd; SHA-256 `2b821fd88daf1ee1143669f3b654019fd3b8fdf18889f9cbe678d98aa36e4497`; productiepreflights, 289 tests en Play-ready AAB groen |
+| 29-08-2026 | Post-release productiehealth | Codex | [Healthrun 33245762747](https://github.com/Rakky88/DragonHaven/actions/runs/33245762747) | Publieke productie-endpoints direct na v0.04.10 opnieuw groen; bewijsartifact geüpload en er stond geen open storingsalert |
 
 ## Onderhoud van dit plan
 
