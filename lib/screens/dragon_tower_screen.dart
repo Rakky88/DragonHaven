@@ -13,6 +13,7 @@ import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/dragon_trial_records.dart';
 import '../widgets/expertise_score_badge.dart';
+import '../widgets/compact_egg_hatch_time.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/haven_lighting.dart';
 import '../widgets/rooftop_egg_nest.dart';
@@ -254,7 +255,14 @@ class _TowerRoof extends StatelessWidget {
                       color: const Color(0xD91B1436),
                       borderRadius: BorderRadius.circular(99),
                     ),
-                    child: const GameIconSprite(GameIconKind.clock, size: 22),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const GameIconSprite(GameIconKind.clock, size: 19),
+                        const SizedBox(width: 5),
+                        CompactEggHatchTime(egg: game.nestEgg!),
+                      ],
+                    ),
                   ),
                 const Icon(Icons.chevron_right_rounded, color: Colors.white),
               ]),

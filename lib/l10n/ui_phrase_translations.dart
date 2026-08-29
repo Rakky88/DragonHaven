@@ -2944,6 +2944,14 @@ const uiPhraseTranslations = <String, List<String>>{
     'Toque no ovo uma vez para iniciar a eclosão',
     '卵を一度タップして孵化を始める'
   ],
+  'The egg is beginning to hatch': [
+    'Das Ei beginnt zu schlüpfen',
+    'El huevo está empezando a eclosionar',
+    'L’œuf commence à éclore',
+    'L’uovo sta iniziando a schiudersi',
+    'O ovo está começando a eclodir',
+    '卵が孵化し始めています'
+  ],
   'Something is moving inside...': [
     'Etwas bewegt sich darin...',
     'Algo se mueve dentro...',

@@ -297,6 +297,35 @@ void main() {
     }
   });
 
+  test('Cluckatrice ascensions keep enclosed body gaps transparent', () async {
+    const checks = <String, List<(int, int)>>{
+      'assets/images/dragons/cluckatrice_arcana_safe.webp': [
+        (338, 730),
+        (520, 740),
+      ],
+      'assets/images/dragons/cluckatrice_spirit_safe.webp': [
+        (340, 730),
+      ],
+    };
+    for (final entry in checks.entries) {
+      final image = await _decode(entry.key);
+      for (final (x, y) in entry.value) {
+        expect(
+          _alphaCount(
+            image.rgba,
+            image.width,
+            x - 6,
+            y - 6,
+            x + 7,
+            y + 7,
+          ),
+          lessThanOrEqualTo(24),
+          reason: '${entry.key} must use alpha around body gap ($x, $y)',
+        );
+      }
+    }
+  });
+
   test('all twelve currency pack sprites are distinct transparent assets',
       () async {
     final paths = <String>[

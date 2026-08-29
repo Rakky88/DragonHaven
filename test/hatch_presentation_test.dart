@@ -35,7 +35,7 @@ void main() {
     expect(callbacks, 1);
   });
 
-  testWidgets('hatch waits for one egg tap and closes cleanly after naming',
+  testWidgets('hatch starts automatically and closes cleanly after naming',
       (tester) async {
     final now = DateTime.utc(2026, 8, 22, 12);
     final game = HouseholdProvider(
@@ -70,13 +70,7 @@ void main() {
     expect(find.text('Tap the egg once to begin hatching'), findsNothing);
     expect(find.byKey(const Key('hatchling-reveal')), findsNothing);
 
-    await tester.pump(const Duration(seconds: 4));
-    expect(find.byKey(const Key('hatch-egg-tap')), findsOneWidget,
-        reason: 'The animation must not continue before the egg is tapped.');
-    expect(find.byKey(const Key('hatchling-reveal')), findsNothing);
-
-    await tester.tap(find.byKey(const Key('hatch-egg-tap')));
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.textContaining('CRACK'), findsNothing);
     expect(find.byKey(const Key('egg-crack-sprite')), findsOneWidget);
 

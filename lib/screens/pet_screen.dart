@@ -1201,16 +1201,22 @@ class _HatchDialogState extends State<_HatchDialog> {
   var phase = 0;
   var _crackingStarted = false;
   Timer? timer;
+  Timer? _automaticStartTimer;
 
   @override
   void initState() {
     super.initState();
     HavenAudio.setMusicScene(HavenMusicScene.reveal);
     HavenAudio.play(HavenSound.hatchBuild);
+    _automaticStartTimer = Timer(
+      const Duration(milliseconds: 450),
+      _beginCracking,
+    );
   }
 
   void _beginCracking() {
     if (_crackingStarted || !mounted) return;
+    _automaticStartTimer?.cancel();
     _crackingStarted = true;
     setState(() => phase = 1);
     HavenAudio.play(HavenSound.hatchCrackOne);
@@ -1250,6 +1256,7 @@ class _HatchDialogState extends State<_HatchDialog> {
 
   @override
   void dispose() {
+    _automaticStartTimer?.cancel();
     timer?.cancel();
     final hour = DateTime.now().hour;
     HavenAudio.setMusicScene(hour >= 21 || hour < 7
@@ -1297,8 +1304,8 @@ class _HatchDialogState extends State<_HatchDialog> {
                                     button: phase == 0,
                                     label: phase == 0
                                         ? strings.pick(
-                                            'Tap the egg once to begin hatching',
-                                            'Tik één keer op het ei om het uitkomen te starten')
+                                            'The egg is beginning to hatch',
+                                            'Het ei begint uit te komen')
                                         : null,
                                     child: GestureDetector(
                                       key: const Key('hatch-egg-tap'),

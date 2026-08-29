@@ -25,5 +25,15 @@
   rewards, kist, ei en draak hebben.
 - De Cluckatrice Mastery Ascension kijkt nu de gewenste kant op en de witte
   achtergrond rond zijn gouden kroon/halo is volledig transparant gemaakt.
+- Ook de witte achtergrondrestanten tussen staart en poten van de Cluckatrice
+  Arcana- en Spirit Ascensions zijn vervangen door echte transparantie.
 - De informatietekst verduidelijkt dat Special routes **tijdens** bepaalde
   events verschijnen.
+- Een ei in het Daknest komt nu vanzelf uit zodra de incubatietijd verstrijkt,
+  zonder dat de speler eerst naar het ei hoeft te navigeren of het ei hoeft aan
+  te tikken. De volledige uitkomstanimatie wordt direct vanuit de hoofdapp
+  gestart.
+- De uitgezoomde Tower toont naast het klokje van een bezet Daknest voortaan de
+  resterende incubatietijd in een compacte uren-minuten-secondenweergave.
+- Hatch-, evolutie- en achievementreveals wachten tijdens een actieve Trial tot
+  de Trialuitslag en rewards volledig zijn afgehandeld.

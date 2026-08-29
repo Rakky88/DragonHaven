@@ -82,10 +82,14 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       _notificationNavigation;
   Timer? _presentationRetry;
   Timer? _gameClock;
+  Timer? _nestHatchTimer;
+  String? _scheduledNestEggId;
+  DateTime? _scheduledNestHatchAt;
   int _adventureInitialTab = 0;
   int _adventureNavigationRevision = 0;
   bool _presentationBusy = false;
   bool _tutorialBusy = false;
+  bool _automaticHatchBusy = false;
 
   @override
   void initState() {
@@ -103,9 +107,11 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
         if (destination != null) _openNotificationDestination(destination);
       },
     );
-    _game.addListener(_schedulePresentations);
+    _game.addListener(_handleGameChanged);
+    _syncNestHatchTimer();
     _gameClock = Timer.periodic(const Duration(minutes: 1), (_) async {
       await _game.refreshForCurrentDate();
+      _syncNestHatchTimer();
       _schedulePresentations();
     });
     _lifecycle = AppLifecycleListener(
@@ -114,6 +120,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
         _setTowerAmbientMusic();
         await _game.refreshForCurrentDate();
         await _online.refresh();
+        _syncNestHatchTimer();
         _schedulePresentations();
       },
     );
@@ -122,6 +129,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       _setTowerAmbientMusic();
       await _game.refreshForCurrentDate();
       await _online.refresh();
+      _syncNestHatchTimer();
       _schedulePresentations();
       final destination = HavenNotifications.takePendingNavigation();
       if (destination != null) _openNotificationDestination(destination);
@@ -139,11 +147,71 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   void dispose() {
     _presentationRetry?.cancel();
     _gameClock?.cancel();
-    _game.removeListener(_schedulePresentations);
+    _nestHatchTimer?.cancel();
+    _game.removeListener(_handleGameChanged);
     _automaticCloudBackup.dispose();
     unawaited(_notificationNavigation.cancel());
     _lifecycle.dispose();
     super.dispose();
+  }
+
+  void _handleGameChanged() {
+    _syncNestHatchTimer();
+    _schedulePresentations();
+  }
+
+  void _syncNestHatchTimer() {
+    if (!mounted) return;
+    final egg = _game.nestEgg;
+    if (egg == null || !egg.isEgg) {
+      _nestHatchTimer?.cancel();
+      _nestHatchTimer = null;
+      _scheduledNestEggId = null;
+      _scheduledNestHatchAt = null;
+      return;
+    }
+
+    final hatchAt = egg.stageStartedAt.add(egg.incubationDuration);
+    if (_scheduledNestEggId == egg.id &&
+        _scheduledNestHatchAt == hatchAt &&
+        _nestHatchTimer?.isActive == true) {
+      return;
+    }
+
+    _nestHatchTimer?.cancel();
+    _scheduledNestEggId = egg.id;
+    _scheduledNestHatchAt = hatchAt;
+    final remaining = hatchAt.difference(_game.currentTime);
+    _nestHatchTimer = Timer(
+      remaining > Duration.zero ? remaining : Duration.zero,
+      () => unawaited(_hatchNestEggWhenReady(egg.id, hatchAt)),
+    );
+  }
+
+  Future<void> _hatchNestEggWhenReady(
+    String eggId,
+    DateTime expectedHatchAt,
+  ) async {
+    if (!mounted || _automaticHatchBusy) return;
+    final egg = _game.nestEgg;
+    if (egg?.id != eggId ||
+        egg!.stageStartedAt.add(egg.incubationDuration) != expectedHatchAt) {
+      _syncNestHatchTimer();
+      return;
+    }
+    if (expectedHatchAt.isAfter(_game.currentTime)) {
+      _syncNestHatchTimer();
+      return;
+    }
+
+    _automaticHatchBusy = true;
+    try {
+      await _game.hatchActiveDragon();
+    } finally {
+      _automaticHatchBusy = false;
+      _syncNestHatchTimer();
+      _schedulePresentations();
+    }
   }
 
   void _schedulePresentations() {
@@ -163,8 +231,10 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
 
   Future<void> _drainPresentations() async {
     if (!mounted || _presentationBusy) return;
-    if (ModalRoute.of(context)?.isCurrent != true &&
-        _game.nextPresentation?.type != GamePresentationType.evolution) {
+    // Trial rewards are applied before its result card is shown. Waiting until
+    // the shell route is current guarantees that hatch, evolution and
+    // achievement reveals cannot interrupt the game or its reward result.
+    if (ModalRoute.of(context)?.isCurrent != true) {
       _presentationRetry = Timer(
         const Duration(milliseconds: 450),
         _drainPresentations,
