@@ -43,6 +43,12 @@ class AppStrings {
     return translatedUiPhrase(english, languageCode) ?? english;
   }
 
+  String eggName({bool sinister = false, bool special = false}) => sinister
+      ? pick('Sinister Egg', 'Sinister Ei')
+      : special
+          ? pick('Special Egg', 'Speciaal Ei')
+          : pick('Mysterious Egg', 'Mysterieus Ei');
+
   String tr(String key) =>
       _coreTranslations[key]?[languageCode] ??
       _coreTranslations[key]?['en'] ??
@@ -208,8 +214,10 @@ class AppStrings {
           '${_durationPart(duration.inHours % 24, 'hour')}';
     }
     if (duration.inHours > 0) {
-      return '${_durationPart(duration.inHours, 'hour')} '
+      final base = '${_durationPart(duration.inHours, 'hour')} '
           '${_durationPart(duration.inMinutes % 60, 'minute')}';
+      final seconds = duration.inSeconds % 60;
+      return seconds == 0 ? base : '$base ${_durationPart(seconds, 'second')}';
     }
     return _durationPart(duration.inMinutes.clamp(1, 59), 'minute');
   }

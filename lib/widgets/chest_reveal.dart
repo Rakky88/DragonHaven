@@ -14,7 +14,8 @@ import 'profile_portrait_sprite.dart';
 Future<void> showChestReveal(
   BuildContext context,
   ChestTier tier, {
-  required Future<ChestReward?> Function() openChest,
+  int quantity = 1,
+  required Future<ChestRewardBundle?> Function() openChest,
   FutureOr<void> Function()? onOpen,
 }) =>
     showDialog<void>(
@@ -22,6 +23,7 @@ Future<void> showChestReveal(
       barrierDismissible: false,
       builder: (_) => _ChestReveal(
         tier: tier,
+        quantity: quantity,
         openChest: openChest,
         onOpen: onOpen,
       ),
@@ -30,11 +32,13 @@ Future<void> showChestReveal(
 class _ChestReveal extends StatefulWidget {
   const _ChestReveal({
     required this.tier,
+    required this.quantity,
     required this.openChest,
     this.onOpen,
   });
   final ChestTier tier;
-  final Future<ChestReward?> Function() openChest;
+  final int quantity;
+  final Future<ChestRewardBundle?> Function() openChest;
   final FutureOr<void> Function()? onOpen;
 
   @override
@@ -47,7 +51,7 @@ class _ChestRevealState extends State<_ChestReveal>
   bool _opening = false;
   bool _lidRevealed = false;
   bool _flash = false;
-  ChestReward? _reward;
+  ChestRewardBundle? _reward;
   late final AnimationController _float = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1450),
@@ -103,11 +107,88 @@ class _ChestRevealState extends State<_ChestReveal>
     if (_opened) Navigator.pop(context);
   }
 
+  List<Widget> _rewardWidgets(AppStrings strings) {
+    final bundle = _reward!;
+    if (bundle.openedCount == 1) {
+      final reward = bundle.rewards.single;
+      if (reward.portraitFound case final portrait?) {
+        return [_PortraitReward(portrait: portrait, strings: strings)];
+      }
+      if (reward.titleFound case final title?) {
+        return [_TitleReward(title: title, strings: strings)];
+      }
+      if (reward.musicTrackFound case final track?) {
+        return [_MusicReward(track: track, strings: strings)];
+      }
+    }
+
+    final relicCounts = <MysticRelic, int>{};
+    for (final relic in bundle.relics) {
+      relicCounts.update(relic, (count) => count + 1, ifAbsent: () => 1);
+    }
+    return [
+      if (bundle.coins > 0)
+        _Reward(
+          kind: GameIconKind.coin,
+          value: '+${bundle.coins}',
+          label: strings.tr('coins'),
+        ),
+      if (bundle.gems > 0)
+        _Reward(
+          kind: GameIconKind.gem,
+          value: '+${bundle.gems}',
+          label: strings.tr('gems'),
+        ),
+      if (bundle.mysteriousEggCount > 0)
+        _Reward(
+          kind: GameIconKind.mysteriousEgg,
+          value: '${bundle.mysteriousEggCount}',
+          label: strings.eggName(),
+        ),
+      if (bundle.sinisterEggCount > 0)
+        _Reward(
+          kind: GameIconKind.mysteriousEgg,
+          value: '${bundle.sinisterEggCount}',
+          label: strings.eggName(sinister: true),
+        ),
+      if (bundle.specialEggCount > 0)
+        _Reward(
+          kind: GameIconKind.mysteriousEgg,
+          value: '${bundle.specialEggCount}',
+          label: strings.eggName(special: true),
+        ),
+      for (final entry in relicCounts.entries)
+        _RelicReward(
+          relic: entry.key,
+          label: entry.value == 1
+              ? strings.relicName(entry.key)
+              : '${entry.value}× ${strings.relicName(entry.key)}',
+        ),
+      for (final portrait in bundle.portraits)
+        _BatchPortraitReward(portrait: portrait, strings: strings),
+      for (final title in bundle.titles)
+        _BatchTextReward(
+          icon: Icons.workspace_premium_rounded,
+          title: strings.accountTitle(title),
+          subtitle: strings.pick('New title', 'Nieuwe titel'),
+        ),
+      for (final track in bundle.musicTracks)
+        _BatchTextReward(
+          icon: Icons.library_music_rounded,
+          title: track.title,
+          subtitle: track.composer,
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final tier = widget.tier;
     final accent = Color(tier.colorValue);
+    final chestLabel = strings.chestLabel(tier);
+    final displayLabel =
+        widget.quantity == 1 ? chestLabel : '${widget.quantity}× $chestLabel';
     return PopScope(
       canPop: _opened,
       child: Dialog.fullscreen(
@@ -154,11 +235,11 @@ class _ChestRevealState extends State<_ChestReveal>
                             GameIconSprite(
                               GameIconKind.chest,
                               size: 42,
-                              semanticLabel: strings.chestLabel(tier),
+                              semanticLabel: displayLabel,
                             ),
                             const SizedBox(height: 9),
                             Text(
-                              strings.chestLabel(tier),
+                              displayLabel,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Colors.white,
@@ -170,16 +251,22 @@ class _ChestRevealState extends State<_ChestReveal>
                             const SizedBox(height: 5),
                             Text(
                               _opened
-                                  ? tier == ChestTier.portrait
-                                      ? strings.pick('Portrait revealed',
-                                          'Portret onthuld')
-                                      : tier == ChestTier.title
-                                          ? strings.pick(
-                                              'Title revealed',
-                                              'Titel onthuld',
-                                            )
-                                          : strings.pick('Treasure revealed',
-                                              'Schat onthuld')
+                                  ? widget.quantity > 1
+                                      ? strings.pick(
+                                          '${widget.quantity} treasures revealed',
+                                          '${widget.quantity} schatten onthuld',
+                                        )
+                                      : tier == ChestTier.portrait
+                                          ? strings.pick('Portrait revealed',
+                                              'Portret onthuld')
+                                          : tier == ChestTier.title
+                                              ? strings.pick(
+                                                  'Title revealed',
+                                                  'Titel onthuld',
+                                                )
+                                              : strings.pick(
+                                                  'Treasure revealed',
+                                                  'Schat onthuld')
                                   : _opening
                                       ? strings.pick('Ancient magic awakens',
                                           'Oude magie ontwaakt')
@@ -195,7 +282,7 @@ class _ChestRevealState extends State<_ChestReveal>
                               button: !_opening && !_opened,
                               label: _opening
                                   ? strings.pick('Chest opening', 'Kist opent')
-                                  : strings.chestLabel(tier),
+                                  : displayLabel,
                               child: GestureDetector(
                                 key: const Key('chest-reveal-tap-target'),
                                 onTap: _opening || _opened ? null : _open,
@@ -333,58 +420,7 @@ class _ChestRevealState extends State<_ChestReveal>
                                           spacing: 9,
                                           runSpacing: 9,
                                           children: [
-                                            if (_reward!.portraitFound
-                                                case final portrait?)
-                                              _PortraitReward(
-                                                portrait: portrait,
-                                                strings: strings,
-                                              )
-                                            else if (_reward!.titleFound
-                                                case final title?)
-                                              _TitleReward(
-                                                title: title,
-                                                strings: strings,
-                                              )
-                                            else if (_reward!.musicTrackFound
-                                                case final track?)
-                                              _MusicReward(
-                                                track: track,
-                                                strings: strings,
-                                              )
-                                            else ...[
-                                              _Reward(
-                                                kind: GameIconKind.coin,
-                                                value: '+${_reward!.coins}',
-                                                label: strings.tr('coins'),
-                                              ),
-                                              if (_reward!.gems > 0)
-                                                _Reward(
-                                                  kind: GameIconKind.gem,
-                                                  value: '+${_reward!.gems}',
-                                                  label: strings.tr('gems'),
-                                                ),
-                                              if (_reward!.eggFound)
-                                                _Reward(
-                                                  kind: GameIconKind
-                                                      .mysteriousEgg,
-                                                  value: '1',
-                                                  label: strings.pick(
-                                                    _reward!.specialEgg
-                                                        ? 'Special Egg'
-                                                        : 'Mysterious Egg',
-                                                    _reward!.specialEgg
-                                                        ? 'Speciaal Ei'
-                                                        : 'Mysterieus Ei',
-                                                  ),
-                                                ),
-                                              if (_reward!.relicFound
-                                                  case final relic?)
-                                                _RelicReward(
-                                                  relic: relic,
-                                                  label:
-                                                      strings.relicName(relic),
-                                                ),
-                                            ],
+                                            ..._rewardWidgets(strings),
                                           ],
                                         ),
                                         const SizedBox(height: 18),
@@ -491,6 +527,85 @@ class _RelicReward extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+          ),
+        ]),
+      );
+}
+
+class _BatchPortraitReward extends StatelessWidget {
+  const _BatchPortraitReward({required this.portrait, required this.strings});
+
+  final ProfilePortrait portrait;
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        constraints: const BoxConstraints(maxWidth: 190),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .94),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          ProfilePortraitSprite(portrait: portrait, size: 48),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              strings.portraitRarity(portrait.rarity),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+          ),
+        ]),
+      );
+}
+
+class _BatchTextReward extends StatelessWidget {
+  const _BatchTextReward({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        constraints: const BoxConstraints(maxWidth: 210),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .94),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, color: const Color(0xFF5C3C92), size: 30),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF6D657D),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
           ),
         ]),

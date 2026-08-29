@@ -45,6 +45,49 @@ class ChestReward {
   final MusicTrack? musicTrackFound;
 }
 
+class ChestRewardBundle {
+  ChestRewardBundle({
+    required this.tier,
+    required List<ChestReward> rewards,
+  }) : rewards = List.unmodifiable(rewards);
+
+  factory ChestRewardBundle.single(ChestReward reward) => ChestRewardBundle(
+        tier: reward.tier,
+        rewards: [reward],
+      );
+
+  final ChestTier tier;
+  final List<ChestReward> rewards;
+
+  int get openedCount => rewards.length;
+  int get coins => rewards.fold(0, (total, reward) => total + reward.coins);
+  int get gems => rewards.fold(0, (total, reward) => total + reward.gems);
+  int get mysteriousEggCount => rewards
+      .where((reward) =>
+          reward.eggFound && !reward.sinisterEgg && !reward.specialEgg)
+      .length;
+  int get sinisterEggCount =>
+      rewards.where((reward) => reward.sinisterEgg).length;
+  int get specialEggCount =>
+      rewards.where((reward) => reward.specialEgg).length;
+  List<MysticRelic> get relics => rewards
+      .map((reward) => reward.relicFound)
+      .whereType<MysticRelic>()
+      .toList(growable: false);
+  List<ProfilePortrait> get portraits => rewards
+      .map((reward) => reward.portraitFound)
+      .whereType<ProfilePortrait>()
+      .toList(growable: false);
+  List<AccountTitle> get titles => rewards
+      .map((reward) => reward.titleFound)
+      .whereType<AccountTitle>()
+      .toList(growable: false);
+  List<MusicTrack> get musicTracks => rewards
+      .map((reward) => reward.musicTrackFound)
+      .whereType<MusicTrack>()
+      .toList(growable: false);
+}
+
 extension ChestTierPresentation on ChestTier {
   bool get isTradeable =>
       this != ChestTier.portrait &&

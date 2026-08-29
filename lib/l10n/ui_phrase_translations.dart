@@ -44,6 +44,18 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
     ]);
   }
 
+  value = capture(RegExp(r'^(\d+) treasures revealed$'));
+  if (value != null) {
+    return _localized(languageCode, [
+      '$value Schätze enthüllt',
+      '$value tesoros revelados',
+      '$value trésors révélés',
+      '$value tesori rivelati',
+      '$value tesouros revelados',
+      '$value個の宝を公開',
+    ]);
+  }
+
   value = capture(RegExp(r'^(.+) already has a place in the house\.$'));
   if (value != null) {
     return _localized(languageCode, [
@@ -5473,6 +5485,46 @@ const uiPhraseTranslations = <String, List<String>>{
     'Quando diventa disponibile un’Avventura speciale.',
     'Quando uma Aventura especial fica disponível.',
     'スペシャルアドベンチャーが利用可能になった時。'
+  ],
+  'No Eggs in your inventory yet.': [
+    'Noch keine Eier in deinem Inventar.',
+    'Todavía no hay huevos en tu inventario.',
+    'Aucun œuf dans votre inventaire pour le moment.',
+    'Non ci sono ancora uova nel tuo inventario.',
+    'Ainda não há ovos no seu inventário.',
+    'インベントリにはまだ卵がありません。',
+  ],
+  'Open 10': [
+    '10 öffnen',
+    'Abrir 10',
+    'Ouvrir 10',
+    'Apri 10',
+    'Abrir 10',
+    '10個開ける',
+  ],
+  'No Eggs are waiting in your inventory.': [
+    'In deinem Inventar warten keine Eier.',
+    'No hay huevos esperando en tu inventario.',
+    'Aucun œuf n’attend dans votre inventaire.',
+    'Non ci sono uova in attesa nel tuo inventario.',
+    'Não há ovos esperando no seu inventário.',
+    'インベントリに待機中の卵はありません。',
+  ],
+  'Choose an Egg': [
+    'Wähle ein Ei',
+    'Elige un huevo',
+    'Choisir un œuf',
+    'Scegli un uovo',
+    'Escolha um ovo',
+    '卵を選ぶ',
+  ],
+  'New title': [
+    'Neuer Titel',
+    'Nuevo título',
+    'Nouveau titre',
+    'Nuovo titolo',
+    'Novo título',
+    '新しい称号',
   ],
   'A golden birthday wish for a beautiful woman whose kindness brightens the Haven.':
       [

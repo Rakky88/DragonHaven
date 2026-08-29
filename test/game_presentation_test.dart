@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:dragon_haven/models/achievement.dart';
+import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/game_presentation.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
@@ -95,9 +96,9 @@ void main() {
   test('showcase contains the complete collection without persistence', () {
     final game = HouseholdProvider.createShowcase();
     expect(game.showcaseMode, isTrue);
-    expect(game.ownedDragons, hasLength(43 * 10));
-    expect(game.discoveredForms, hasLength(43 * 5));
-    expect(game.prismaticForms, hasLength(43 * 5));
+    expect(game.ownedDragons, hasLength(dragonLineages.length * 10));
+    expect(game.discoveredForms, hasLength(dragonLineages.length * 5));
+    expect(game.prismaticForms, hasLength(dragonLineages.length * 5));
     expect(game.towerFloorRoomIds, hasLength(20));
     expect(game.ownedItemIds, hasLength(200));
     expect(game.unlockedAchievementIds, hasLength(achievementCatalog.length));

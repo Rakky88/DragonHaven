@@ -232,9 +232,11 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   Future<void> _drainPresentations() async {
     if (!mounted || _presentationBusy) return;
     // Trial rewards are applied before its result card is shown. Waiting until
-    // the shell route is current guarantees that hatch, evolution and
-    // achievement reveals cannot interrupt the game or its reward result.
-    if (ModalRoute.of(context)?.isCurrent != true) {
+    // that flow explicitly releases its presentation deferral guarantees that
+    // hatch, evolution and achievement reveals cannot interrupt the game or
+    // its reward result. Other app routes may safely receive a reveal, which
+    // lets a finished egg hatch automatically wherever its keeper currently is.
+    if (_game.presentationsDeferred) {
       _presentationRetry = Timer(
         const Duration(milliseconds: 450),
         _drainPresentations,

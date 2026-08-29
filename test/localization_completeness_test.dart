@@ -96,6 +96,7 @@ void main() {
       'Nova evolved into Ascended.',
       '4 players',
       '13 / 20 unlocked',
+      '10 treasures revealed',
       'You need 25 more coins.',
       'Your sanctuary reaches level 12 before this room can be built.',
       '7 / 12 roaming · maximum 3 per room',

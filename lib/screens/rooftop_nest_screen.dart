@@ -106,8 +106,8 @@ class _RooftopNestScreenState extends State<RooftopNestScreen> {
     if (game.eggStash.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(strings.pick(
-          'No Mysterious Eggs are waiting in your inventory.',
-          'Er wachten geen Mysterious Eggs in je inventaris.',
+          'No Eggs are waiting in your inventory.',
+          'Er wachten geen Eieren in je inventaris.',
         )),
       ));
       return;
@@ -129,8 +129,8 @@ class _RooftopNestScreenState extends State<RooftopNestScreen> {
               children: [
                 Text(
                   strings.pick(
-                    'Choose a Mysterious Egg',
-                    'Kies een Mysterieus Ei',
+                    'Choose an Egg',
+                    'Kies een Ei',
                   ),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
@@ -143,9 +143,10 @@ class _RooftopNestScreenState extends State<RooftopNestScreen> {
                         size: 54,
                       ),
                       title: Text(
-                        egg.isSpecialEgg
-                            ? strings.pick('Special Egg', 'Speciaal Ei')
-                            : strings.pick('Mysterious Egg', 'Mysterieus Ei'),
+                        strings.eggName(
+                          sinister: egg.isSinisterEgg,
+                          special: egg.isSpecialEgg,
+                        ),
                         style: const TextStyle(fontWeight: FontWeight.w900),
                       ),
                       subtitle: Text(

@@ -3,7 +3,7 @@ import 'dragon_lineage.dart';
 import 'pet.dart';
 
 class DragonEgg {
-  const DragonEgg({
+  DragonEgg({
     required this.id,
     required this.lineageId,
     required this.acquiredAt,
@@ -12,10 +12,12 @@ class DragonEgg {
     this.lawAxis = LawAxis.neutral,
     this.moralAxis = MoralAxis.neutral,
     this.sizeFactor = 1,
-    this.incubationMinutes = 1008,
+    int incubationMinutes = 1008,
+    int? incubationSeconds,
     this.sinister = false,
     this.xp = 0,
-  });
+  }) : incubationSeconds = (incubationSeconds ?? incubationMinutes * 60)
+            .clamp(60, 14 * 24 * 60 * 60);
 
   final String id;
   final String lineageId;
@@ -25,13 +27,15 @@ class DragonEgg {
   final LawAxis lawAxis;
   final MoralAxis moralAxis;
   final double sizeFactor;
-  final int incubationMinutes;
-  Duration get incubationDuration => Duration(minutes: incubationMinutes);
+  final int incubationSeconds;
+  int get incubationMinutes => (incubationSeconds + 59) ~/ 60;
+  Duration get incubationDuration => Duration(seconds: incubationSeconds);
   final bool sinister;
   final int xp;
 
   DragonLineage get lineage => dragonLineageById(lineageId);
-  bool get isSpecialEgg => lineage.secret;
+  bool get isSinisterEgg => lineageId == 'sinisterra';
+  bool get isSpecialEgg => lineage.secret && !isSinisterEgg;
 
   Pet activate(
           {required int coins, required int gems, DateTime? activatedAt}) =>
@@ -46,7 +50,7 @@ class DragonEgg {
         lawAxis: lawAxis,
         moralAxis: moralAxis,
         sizeFactor: sizeFactor,
-        incubationMinutes: incubationMinutes,
+        incubationSeconds: incubationSeconds,
         firstEgg: false,
         xp: xp,
         coins: coins,
@@ -64,6 +68,7 @@ class DragonEgg {
         'moralAxis': moralAxis.name,
         'sizeFactor': sizeFactor,
         'incubationMinutes': incubationMinutes,
+        'incubationSeconds': incubationSeconds,
         'sinister': sinister,
         'xp': xp,
       };
@@ -90,19 +95,23 @@ class DragonEgg {
       sizeFactor: ((json['sizeFactor'] as num?)?.toDouble() ?? 1)
           .clamp(.5, 1.5)
           .toDouble(),
-      incubationMinutes: _incubationMinutesFromJson(json),
+      incubationSeconds: _incubationSecondsFromJson(json),
       sinister: json['sinister'] is bool && json['sinister'] as bool,
       xp: nonNegativeIntFromJson(json['xp'], fallback: 0),
     );
   }
 
-  static int _incubationMinutesFromJson(Map<String, dynamic> json) {
+  static int _incubationSecondsFromJson(Map<String, dynamic> json) {
+    final savedSeconds = json['incubationSeconds'];
+    if (savedSeconds is num) {
+      return savedSeconds.toInt().clamp(60, 14 * 24 * 60 * 60);
+    }
     final savedMinutes = json['incubationMinutes'];
     if (savedMinutes is num) {
-      return savedMinutes.toInt().clamp(1, 14 * 24 * 60);
+      return (savedMinutes.toInt() * 60).clamp(60, 14 * 24 * 60 * 60);
     }
     final legacyHours =
         nonNegativeIntFromJson(json['incubationHours'], fallback: 168);
-    return (legacyHours * 6).clamp(1, 14 * 24 * 60);
+    return ((legacyHours * 6).clamp(1, 14 * 24 * 60)) * 60;
   }
 }

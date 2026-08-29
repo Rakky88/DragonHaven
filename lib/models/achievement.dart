@@ -286,8 +286,8 @@ const achievementCatalog = <AchievementDefinition>[
       badge: 'trial_arcana_s_plus'),
   AchievementDefinition(
       id: 'winner_chicken_dinner',
-      titleEn: 'Winner, winner, chicken dinner',
-      titleNl: 'Winner, winner, chicken dinner',
+      titleEn: 'Winner, Winner, Chicken Dinner',
+      titleNl: 'Winner, Winner, Chicken Dinner',
       descriptionEn: 'Hatch the secret Cluckatrice from a Special Egg.',
       descriptionNl: 'Laat de geheime Cluckatrice uit een Speciaal Ei komen.',
       target: 1,

@@ -148,15 +148,15 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
     if (game.eggStash.isEmpty) {
       return _EmptyState(
         kind: GameIconKind.inventoryEggs,
-        text: strings.pick('No Mysterious Eggs in your inventory yet.',
-            'Nog geen Mysterious Eggs in je inventaris.'),
+        text: strings.pick('No Eggs in your inventory yet.',
+            'Nog geen Eieren in je inventaris.'),
       );
     }
     final eggs = [...game.eggStash]..sort((a, b) {
         final comparison = switch (_sortMode) {
           _EggSortMode.acquiredAt => a.acquiredAt.compareTo(b.acquiredAt),
           _EggSortMode.hatchTime =>
-            a.incubationMinutes.compareTo(b.incubationMinutes),
+            a.incubationSeconds.compareTo(b.incubationSeconds),
         };
         final stable = comparison != 0 ? comparison : a.id.compareTo(b.id);
         return _sortDescending ? -stable : stable;
@@ -268,10 +268,10 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                                 ),
                               ),
                               Text(
-                                egg.isSpecialEgg
-                                    ? strings.pick('Special Egg', 'Speciaal Ei')
-                                    : strings.pick(
-                                        'Mysterious Egg', 'Mysterieus Ei'),
+                                strings.eggName(
+                                  sinister: egg.isSinisterEgg,
+                                  special: egg.isSpecialEgg,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -360,9 +360,10 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                           ),
                         ),
                         title: Text(
-                          egg.isSpecialEgg
-                              ? strings.pick('Special Egg', 'Speciaal Ei')
-                              : strings.pick('Mysterious Egg', 'Mysterieus Ei'),
+                          strings.eggName(
+                            sinister: egg.isSinisterEgg,
+                            special: egg.isSpecialEgg,
+                          ),
                           style: const TextStyle(fontWeight: FontWeight.w900),
                         ),
                         subtitle: Text(
@@ -402,9 +403,10 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                 stageKey: 'moonEgg',
               ),
               Text(
-                egg.isSpecialEgg
-                    ? strings.pick('Special Egg', 'Speciaal Ei')
-                    : strings.pick('Mysterious Egg', 'Mysterieus Ei'),
+                strings.eggName(
+                  sinister: egg.isSinisterEgg,
+                  special: egg.isSpecialEgg,
+                ),
                 style: Theme.of(sheetContext).textTheme.titleLarge,
               ),
               const SizedBox(height: 10),
@@ -497,7 +499,7 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                         ? null
                         : () async {
                             Navigator.pop(sheetContext);
-                            await _discardEgg(context, egg.id);
+                            await _discardEgg(context, egg);
                           },
                     icon: const Icon(Icons.delete_outline_rounded),
                   ),
@@ -534,14 +536,20 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
     );
   }
 
-  Future<void> _discardEgg(BuildContext context, String eggId) async {
+  Future<void> _discardEgg(BuildContext context, DragonEgg egg) async {
     final strings = AppStrings.of(context);
+    final eggName = strings.eggName(
+      sinister: egg.isSinisterEgg,
+      special: egg.isSpecialEgg,
+    );
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             scrollable: true,
             title: Text(strings.pick(
-                'Discard this Mysterious Egg?', 'Dit Mysterious Egg wegdoen?')),
+              'Discard this $eggName?',
+              'Dit $eggName wegdoen?',
+            )),
             content: Text(strings.pick(
                 'The hidden dragon inside will be lost permanently.',
                 'De verborgen draak binnenin gaat definitief verloren.')),
@@ -557,7 +565,7 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
         ) ??
         false;
     if (confirmed && context.mounted) {
-      await context.read<HouseholdProvider>().discardEgg(eggId);
+      await context.read<HouseholdProvider>().discardEgg(egg.id);
     }
   }
 }
@@ -628,18 +636,43 @@ class _ChestInventoryTab extends StatelessWidget {
                     ],
                   ),
                 ),
-                FilledButton(
-                  key: Key('inventory-open-chest-${tier.name}'),
-                  onPressed: game.tradeableChestCount(tier) > 0
-                      ? () => _openChest(context, tier)
-                      : null,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 13,
-                      vertical: 12,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FilledButton(
+                      key: Key('inventory-open-chest-${tier.name}'),
+                      onPressed: game.tradeableChestCount(tier) > 0
+                          ? () => _openChest(context, tier)
+                          : null,
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 13,
+                          vertical: 10,
+                        ),
+                      ),
+                      child: Text(strings.pick('Open', 'Openen')),
                     ),
-                  ),
-                  child: Text(strings.pick('Open', 'Openen')),
+                    if (game.chestCount(tier) >= 10) ...[
+                      const SizedBox(height: 5),
+                      OutlinedButton(
+                        key: Key('inventory-open-ten-chests-${tier.name}'),
+                        onPressed: game.openableChestCount(tier) >= 10
+                            ? () => _openChest(
+                                  context,
+                                  tier,
+                                  quantity: 10,
+                                )
+                            : null,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 9,
+                          ),
+                        ),
+                        child: Text(strings.pick('Open 10', 'Open er 10')),
+                      ),
+                    ],
+                  ],
                 ),
               ]),
             ),
@@ -648,7 +681,11 @@ class _ChestInventoryTab extends StatelessWidget {
     );
   }
 
-  Future<void> _openChest(BuildContext context, ChestTier tier) async {
+  Future<void> _openChest(
+    BuildContext context,
+    ChestTier tier, {
+    int quantity = 1,
+  }) async {
     final navigator = Navigator.of(context);
     final game = context.read<HouseholdProvider>();
     if (!navigator.mounted) return;
@@ -724,12 +761,26 @@ class _ChestInventoryTab extends StatelessWidget {
       );
       return;
     }
-    await showChestReveal(
-      navigator.context,
-      tier,
-      openChest: () => game.openChest(tier),
-      onOpen: () => HavenAudio.play(_soundForChest(tier)),
-    );
+    game.beginPresentationDeferral();
+    try {
+      await showChestReveal(
+        navigator.context,
+        tier,
+        quantity: quantity,
+        openChest: () async {
+          if (quantity > 1) {
+            return game.openChests(tier, count: quantity);
+          }
+          final reward = await game.openChest(tier);
+          return reward == null ? null : ChestRewardBundle.single(reward);
+        },
+        onOpen: () => HavenAudio.play(_soundForChest(tier)),
+      );
+    } finally {
+      // Let the chest route finish leaving before milestone cinematics start.
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      game.endPresentationDeferral();
+    }
   }
 }
 

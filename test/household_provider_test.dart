@@ -421,6 +421,69 @@ void main() {
     expect(await game.openChest(ChestTier.wooden), isNull);
   });
 
+  test('ten matching chests open as one bundle with ten independent rewards',
+      () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: Random(310),
+    )
+      ..pet = Pet(stage: DragonStage.hatchling, firstEgg: false)
+      ..chestInventory[ChestTier.wooden] = 12;
+    final beforeCoins = game.pet.coins;
+
+    final bundle = await game.openChests(ChestTier.wooden, count: 10);
+
+    expect(bundle, isNotNull);
+    expect(bundle!.openedCount, 10);
+    expect(bundle.rewards, hasLength(10));
+    expect(bundle.rewards.every((reward) => reward.tier == ChestTier.wooden),
+        isTrue);
+    expect(bundle.gems, 0);
+    expect(game.pet.coins, beforeCoins + bundle.coins);
+    expect(game.chestCount(ChestTier.wooden), 2);
+    expect(game.totalChestsOpened, 10);
+  });
+
+  test('a ten-chest batch never consumes chests reserved for an online trade',
+      () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: Random(311),
+    )
+      ..pet = Pet(stage: DragonStage.hatchling, firstEgg: false)
+      ..chestInventory[ChestTier.gold] = 12
+      ..reservedOnlineTradeChests[ChestTier.gold.name] = 3;
+
+    expect(game.openableChestCount(ChestTier.gold), 9);
+    expect(await game.openChests(ChestTier.gold, count: 10), isNull);
+    expect(game.chestCount(ChestTier.gold), 12);
+    expect(game.totalChestsOpened, 0);
+  });
+
+  test('ten Sinister Chests aggregate every Sinister Egg and relic roll',
+      () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: _ZeroRandom(),
+    )
+      ..pet = Pet(stage: DragonStage.hatchling, firstEgg: false)
+      ..chestInventory[ChestTier.sinister] = 10;
+
+    final bundle = await game.openChests(ChestTier.sinister, count: 10);
+
+    expect(bundle, isNotNull);
+    expect(bundle!.openedCount, 10);
+    expect(bundle.sinisterEggCount, 10);
+    expect(bundle.mysteriousEggCount, 0);
+    expect(bundle.relics, hasLength(10));
+    expect(game.eggStash, hasLength(10));
+    expect(game.eggStash.every((egg) => egg.isSinisterEgg), isTrue);
+    expect(game.chestCount(ChestTier.sinister), 0);
+  });
+
   test('egg pity triples common chest odds only while no egg is owned', () {
     final game = HouseholdProvider(
       initialize: false,
@@ -435,6 +498,8 @@ void main() {
     expect(game.eggDropChance(ChestTier.dragon), 1);
     expect(game.eggDropChance(ChestTier.mythical), 1);
     expect(game.eggDropChance(ChestTier.sinister), 1);
+    expect(game.sinisterEggDropChance(ChestTier.sinister), .5);
+    expect(game.sinisterEggDropChance(ChestTier.mythical), 0);
     expect(game.eggDropChance(ChestTier.portrait), 0);
 
     game.eggStash.add(DragonEgg(
@@ -461,6 +526,47 @@ void main() {
     );
     expect(game.eggPityActive, isFalse);
     expect(game.eggDropChance(ChestTier.gold), .12);
+  });
+
+  test('Sinister Chests replace the normal egg with Sinisterra half the time',
+      () async {
+    final sinisterGame = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: _ZeroRandom(),
+    )
+      ..pet = Pet(stage: DragonStage.hatchling, firstEgg: false)
+      ..chestInventory[ChestTier.sinister] = 1;
+
+    final sinisterReward = await sinisterGame.openChest(ChestTier.sinister);
+    final sinisterEgg = sinisterGame.eggStash.single;
+    expect(sinisterReward?.eggFound, isTrue);
+    expect(sinisterReward?.sinisterEgg, isTrue);
+    expect(sinisterEgg.isSinisterEgg, isTrue);
+    expect(sinisterEgg.lineageId, 'sinisterra');
+    expect(sinisterEgg.moralAxis, MoralAxis.evil);
+    expect(sinisterEgg.incubationDuration,
+        const Duration(hours: 6, minutes: 6, seconds: 6));
+    expect(sinisterEgg.incubationSeconds, 21966);
+    expect(sinisterEgg.incubationMinutes, 367,
+        reason: 'legacy minute snapshots must round up, never hatch early');
+    expect(
+      DragonEgg.fromJson(sinisterEgg.toJson()).incubationDuration,
+      const Duration(hours: 6, minutes: 6, seconds: 6),
+    );
+
+    final normalGame = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: _HighRandom(),
+    )
+      ..pet = Pet(stage: DragonStage.hatchling, firstEgg: false)
+      ..chestInventory[ChestTier.sinister] = 1;
+    final normalReward = await normalGame.openChest(ChestTier.sinister);
+    expect(normalReward?.eggFound, isTrue);
+    expect(normalReward?.sinisterEgg, isFalse);
+    expect(normalGame.eggStash.single.isSinisterEgg, isFalse);
+    expect(normalGame.eggStash.single.sinister, isFalse);
   });
 
   test('mystic relics only drop from Gold Chests and rarer tiers', () async {
@@ -730,6 +836,37 @@ void main() {
     expect(restored.enabledMusicTrackIds, isNot(contains('reverie')));
     expect(restored.jukeboxShuffle, isTrue);
     expect(restored.jukeboxRepeat, isFalse);
+  });
+
+  test('collection chest batches reveal ten distinct collection rewards',
+      () async {
+    for (final tier in const [
+      ChestTier.portrait,
+      ChestTier.title,
+      ChestTier.music,
+    ]) {
+      final game = HouseholdProvider(
+        initialize: false,
+        persistenceEnabled: false,
+        random: Random(860 + tier.index),
+      )
+        ..pet = Pet(stage: DragonStage.hatchling, firstEgg: false)
+        ..chestInventory[tier] = 10;
+
+      final bundle = await game.openChests(tier, count: 10);
+
+      expect(bundle, isNotNull, reason: tier.name);
+      expect(bundle!.openedCount, 10, reason: tier.name);
+      expect(game.chestCount(tier), 0, reason: tier.name);
+      final ids = switch (tier) {
+        ChestTier.portrait =>
+          bundle.portraits.map((portrait) => portrait.id).toSet(),
+        ChestTier.title => bundle.titles.map((title) => title.id).toSet(),
+        ChestTier.music => bundle.musicTracks.map((track) => track.id).toSet(),
+        _ => <String>{},
+      };
+      expect(ids, hasLength(10), reason: '${tier.name} must not duplicate');
+    }
   });
 
   test('Music Chest capacity counts unopened chests against all 80 tracks',
@@ -1542,6 +1679,17 @@ class _ZeroRandom implements Random {
 
   @override
   int nextInt(int max) => 0;
+}
+
+class _HighRandom implements Random {
+  @override
+  bool nextBool() => true;
+
+  @override
+  double nextDouble() => .75;
+
+  @override
+  int nextInt(int max) => max - 1;
 }
 
 class _DailyReturningRandom implements Random {

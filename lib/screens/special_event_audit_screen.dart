@@ -89,7 +89,7 @@ class SpecialEventAuditScreen extends StatelessWidget {
             Text('Achievement', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             const _AssetReviewCard(
-              label: 'Winner, winner, chicken dinner',
+              label: 'Winner, Winner, Chicken Dinner',
               asset: 'assets/images/achievements/winner_chicken_dinner.webp',
               compact: true,
             ),

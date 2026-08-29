@@ -543,15 +543,24 @@ Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
     ),
   );
   if (dragon == null || !context.mounted) return;
-  await Navigator.of(context).push<TrialCompletion>(
-    MaterialPageRoute(
-      fullscreenDialog: true,
-      builder: (_) => TrialGameScreen(
-        offerId: offer.id,
-        dragonId: dragon.id,
+  game.beginPresentationDeferral();
+  try {
+    await Navigator.of(context).push<TrialCompletion>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => TrialGameScreen(
+          offerId: offer.id,
+          dragonId: dragon.id,
+        ),
       ),
-    ),
-  );
+    );
+  } finally {
+    // Navigator.push completes at the start of the pop transition. Keep the
+    // cinematic queue deferred until the Trial route is fully off screen, so
+    // the result/reward flow cannot remain visible underneath a reveal.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    game.endPresentationDeferral();
+  }
 }
 
 class _TrialDragonPicker extends StatelessWidget {

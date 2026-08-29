@@ -983,6 +983,47 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('ten matching chests open through one combined reward reveal',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 720));
+    tester.platformDispatcher.textScaleFactorTestValue = 1.1;
+    addTearDown(() {
+      tester.binding.setSurfaceSize(null);
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+    });
+    final game = await pumpGame(tester, onboarded: true, hatched: true);
+    game.chestInventory[ChestTier.wooden] = 10;
+    game.notifyListeners();
+    await tester.pump();
+
+    await tester.tap(find.text('Inventory').last);
+    await tester.pumpAndSettle();
+    DefaultTabController.of(tester.element(find.byType(TabBarView)))
+        .animateTo(1);
+    await tester.pumpAndSettle();
+
+    final openTen = find.byKey(const Key('inventory-open-ten-chests-wooden'));
+    expect(openTen, findsOneWidget);
+    await tester.tap(openTen);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const Key('chest-reveal-tap-target')), findsOneWidget);
+    expect(game.chestCount(ChestTier.wooden), 10,
+        reason: 'Opening the batch preview must not consume any chest yet.');
+
+    await tester.tap(find.byKey(const Key('chest-reveal-tap-target')));
+    await tester.pump();
+    expect(game.chestCount(ChestTier.wooden), 0);
+    expect(game.totalChestsOpened, 10);
+    for (var frame = 0; frame < 28; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byKey(const Key('chest-rewards')), findsOneWidget);
+    expect(find.text('10 treasures revealed'), findsOneWidget);
+    await tester.tapAt(const Offset(30, 30));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('large egg inventories stay compact and open focused details',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(320, 640));
@@ -1818,7 +1859,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.04.10'), findsOneWidget);
+    expect(find.text('v0.04.11'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

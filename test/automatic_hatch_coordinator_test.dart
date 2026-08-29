@@ -108,6 +108,47 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('hatch reveal starts while a regular secondary route is open',
+      (tester) async {
+    var now = DateTime.utc(2026, 8, 30, 15);
+    final game = HouseholdProvider(
+      random: Random(60606),
+      clock: () => now,
+      persistenceEnabled: false,
+    )
+      ..accountName = 'Roaming Hatch Keeper'
+      ..onboardingComplete = true
+      ..tutorialCompleted = true
+      ..tutorialFullyViewed = true;
+    game.pet.stageStartedAt =
+        now.subtract(game.pet.incubationDuration - const Duration(seconds: 2));
+
+    await pumpApp(tester, game);
+    final navigator = Navigator.of(
+      tester.element(find.byType(DragonHavenShell)),
+    );
+    unawaited(navigator.push<void>(MaterialPageRoute(
+      builder: (_) => const Scaffold(
+        body: Center(child: Text('Regular secondary route')),
+      ),
+    )));
+    await tester.pumpAndSettle();
+    expect(find.text('Regular secondary route'), findsOneWidget);
+
+    now = now.add(const Duration(seconds: 3));
+    await tester.pump(const Duration(seconds: 2));
+    for (var attempt = 0;
+        attempt < 20 &&
+            find.byKey(const Key('hatch-egg-tap')).evaluate().isEmpty;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(game.pet.stage, DragonStage.hatchling);
+    expect(find.byKey(const Key('hatch-egg-tap')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('evolution reveal waits until an active Trial route has closed',
       (tester) async {
     final game = HouseholdProvider(
@@ -128,6 +169,7 @@ void main() {
     final navigator = Navigator.of(
       tester.element(find.byType(DragonHavenShell)),
     );
+    game.beginPresentationDeferral();
     unawaited(navigator.push<void>(MaterialPageRoute(
       builder: (_) => TrialGameScreen(
         offerId: offer.id,
@@ -146,6 +188,9 @@ void main() {
     expect(find.byKey(const Key('skip-evolution-animation')), findsNothing);
 
     navigator.pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    game.endPresentationDeferral();
     for (var attempt = 0;
         attempt < 20 &&
             find

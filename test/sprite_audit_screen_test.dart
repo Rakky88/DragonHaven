@@ -13,13 +13,13 @@ Future<void> pumpAudit(WidgetTester tester) async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('release repair review contains 81 forms in four runtime variants', () {
+  test('release repair review contains 85 forms in four runtime variants', () {
     expect(
         DragonArtwork.safeStandaloneForms.values
             .fold<int>(0, (count, forms) => count + forms.length),
-        81);
-    expect(releaseRepairAuditEntryIds(), hasLength(324));
-    expect(masteryAuditEntryIds(), hasLength(86));
+        85);
+    expect(releaseRepairAuditEntryIds(), hasLength(340));
+    expect(masteryAuditEntryIds(), hasLength(88));
   });
 
   testWidgets('sprite audit follows the requested four-pass family order',

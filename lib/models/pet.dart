@@ -118,7 +118,8 @@ class Pet {
     this.moralAxisKnown = false,
     this.personalityKnown = false,
     this.sizeFactor = 1,
-    this.incubationMinutes = 60,
+    int incubationMinutes = 60,
+    int? incubationSeconds,
     List<String>? personalityTraitIds,
     this.favorite = false,
     this.roamsTower = true,
@@ -137,6 +138,8 @@ class Pet {
     String? lineageId,
     this.evolutionPath,
   })  : id = id ?? 'dragon-${DateTime.now().microsecondsSinceEpoch}',
+        incubationSeconds = (incubationSeconds ?? incubationMinutes * 60)
+            .clamp(60, 14 * 24 * 60 * 60),
         acquiredAt = acquiredAt ?? DateTime.now(),
         stageStartedAt = stageStartedAt ?? acquiredAt ?? DateTime.now(),
         needsUpdatedAt = needsUpdatedAt ?? DateTime.now(),
@@ -174,7 +177,8 @@ class Pet {
   bool moralAxisKnown;
   bool personalityKnown;
   final double sizeFactor;
-  final int incubationMinutes;
+  final int incubationSeconds;
+  int get incubationMinutes => (incubationSeconds + 59) ~/ 60;
   final List<String> personalityTraitIds;
   bool favorite;
   bool roamsTower;
@@ -202,9 +206,14 @@ class Pet {
   DragonLineage get lineage => dragonLineageById(lineageId);
   bool get spectral => prismatic;
   bool get isEgg => stage == DragonStage.egg;
-  bool get isSpecialEgg => isEgg && lineage.secret;
+  bool get isSinisterEgg => isEgg && lineageId == 'sinisterra';
+  bool get isSpecialEgg => isEgg && lineage.secret && !isSinisterEgg;
   String get displayName => isEgg
-      ? (isSpecialEgg ? 'Special Egg' : 'Mysterious Egg')
+      ? (isSinisterEgg
+          ? 'Sinister Egg'
+          : isSpecialEgg
+              ? 'Special Egg'
+              : 'Mysterious Egg')
       : name.trim().isEmpty
           ? lineage.nameEn
           : name.trim();
@@ -314,7 +323,7 @@ class Pet {
   Duration ageAt(DateTime now) => now.isAfter(stageStartedAt)
       ? now.difference(stageStartedAt)
       : Duration.zero;
-  Duration get incubationDuration => Duration(minutes: incubationMinutes);
+  Duration get incubationDuration => Duration(seconds: incubationSeconds);
 
   bool canHatch(DateTime now) => isEgg && ageAt(now) >= incubationDuration;
   bool canEvolve(DateTime now) => switch (stage) {
@@ -422,6 +431,7 @@ class Pet {
         'personalityKnown': personalityKnown,
         'sizeFactor': sizeFactor,
         'incubationMinutes': incubationMinutes,
+        'incubationSeconds': incubationSeconds,
         'personalityTraitIds': personalityTraitIds,
         'favorite': favorite,
         'roamsTower': roamsTower,
@@ -500,7 +510,10 @@ class Pet {
       sizeFactor: ((json['sizeFactor'] as num?)?.toDouble() ?? 1)
           .clamp(.5, 1.5)
           .toDouble(),
-      incubationMinutes: _incubationMinutesFromJson(json, firstEgg: isFirstEgg),
+      incubationSeconds: _incubationSecondsFromJson(
+        json,
+        firstEgg: isFirstEgg,
+      ),
       personalityTraitIds: (json['personalityTraitIds'] as List?)
               ?.whereType<String>()
               .where(dragonPersonalityTraits.contains)
@@ -550,14 +563,18 @@ class Pet {
     );
   }
 
-  static int _incubationMinutesFromJson(
+  static int _incubationSecondsFromJson(
     Map<String, dynamic> json, {
     required bool firstEgg,
   }) {
-    if (firstEgg) return 60;
+    if (firstEgg) return 60 * 60;
+    final savedSeconds = json['incubationSeconds'];
+    if (savedSeconds is num) {
+      return savedSeconds.toInt().clamp(60, 14 * 24 * 60 * 60);
+    }
     final savedMinutes = json['incubationMinutes'];
     if (savedMinutes is num) {
-      return savedMinutes.toInt().clamp(1, 14 * 24 * 60);
+      return (savedMinutes.toInt() * 60).clamp(60, 14 * 24 * 60 * 60);
     }
 
     // Versions through v0.01.02 stored whole hours. Starter Eggs now take one
@@ -567,6 +584,6 @@ class Pet {
       json['incubationHours'],
       fallback: 24 * 7,
     );
-    return (legacyHours * 6).clamp(1, 14 * 24 * 60);
+    return ((legacyHours * 6).clamp(1, 14 * 24 * 60)) * 60;
   }
 }

@@ -184,10 +184,13 @@ class _EggCountdownState extends State<EggHatchCountdown>
     }
     _elapsedNotified = true;
     final strings = AppStrings.of(context);
+    final eggName = strings.eggName(
+      sinister: widget.pet.isSinisterEgg,
+      special: widget.pet.isSpecialEgg,
+    );
     unawaited(HavenNotifications.showEggReadyNow(
       id: 'egg-${widget.pet.id}',
-      title: strings.pick(
-          'Your Mysterious Egg is ready', 'Je Mysterieus Ei is klaar'),
+      title: strings.pick('Your $eggName is ready', 'Je $eggName is klaar'),
       body: strings.pick(
         'Something inside wants to hatch in the Rooftop Nest.',
         'Iets binnenin wil uitkomen in het Daknest.',
@@ -1510,9 +1513,10 @@ class _EggInventory extends StatelessWidget {
             child: ListTile(
                 leading: const Text('🥚', style: TextStyle(fontSize: 34)),
                 title: Text(
-                    egg.isSpecialEgg
-                        ? strings.pick('Special Egg', 'Speciaal Ei')
-                        : strings.pick('Mysterious Egg', 'Mysterieus Ei'),
+                    strings.eggName(
+                      sinister: egg.isSinisterEgg,
+                      special: egg.isSpecialEgg,
+                    ),
                     style: const TextStyle(fontWeight: FontWeight.w900)),
                 subtitle: Text(strings.pick(
                     'Acquired ${_date(egg.acquiredAt)} · identity fixed',

@@ -34,6 +34,7 @@ abstract final class DragonArtwork {
   // from a scaled 2x2 atlas at runtime.
   static const safeStandaloneForms = <String, Set<String>>{
     'cluckatrice': {'wyrmling', 'might', 'arcana', 'spirit'},
+    'sinisterra': {'wyrmling', 'might', 'arcana', 'spirit'},
     'auroracrown': {'wyrmling', 'might', 'arcana', 'spirit'},
     'bramblequill': {'wyrmling', 'might', 'arcana', 'spirit'},
     'cinderlynx': {'wyrmling', 'might', 'arcana', 'spirit'},

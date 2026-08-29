@@ -648,4 +648,28 @@ void main() {
         contains('supabase db push --linked --include-all --dry-run'));
     expect(workflow, contains('./tool/release_server_preflight.ps1'));
   });
+
+  test('exact egg incubation seconds survive authoritative sync and trades',
+      () {
+    final migration = File(
+      'supabase/migrations/202608300027_exact_egg_incubation_seconds.sql',
+    ).readAsStringSync();
+    expect(migration, contains('add column incubation_seconds integer'));
+    expect(migration, contains('incubation_minutes * 60'));
+    expect(migration, contains("'incubationSeconds'"));
+    expect(migration, contains("entry ->> 'incubation_seconds'"));
+    expect(migration, contains('synchronize_trade_inventory_v26'));
+    expect(migration, contains('import_legacy_inventory_v26'));
+    expect(migration, contains('between 60 and 1209600'));
+
+    final workflow =
+        File('.github/workflows/production-migrate-27.yml').readAsStringSync();
+    expect(workflow, contains('MIGRATE_PRODUCTION_26_TO_27'));
+    expect(workflow, contains("\$expectedRemote = '202608290026'"));
+    expect(workflow, contains("@('202608300027')"));
+    expect(workflow,
+        contains('supabase db push --linked --include-all --dry-run'));
+    expect(workflow, contains('./tool/release_server_preflight.ps1'));
+    expect(workflow, contains('DragonHaven-production-migration-26-to-27'));
+  });
 }

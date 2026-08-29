@@ -59,6 +59,11 @@ const _startFamily = String.fromEnvironment(
 const _masteryAuditOnly = bool.fromEnvironment(
   'DRAGONHAVEN_MASTERY_AUDIT_ONLY',
 );
+const _blueReviewBackground = bool.fromEnvironment(
+  'DRAGONHAVEN_SPRITE_AUDIT_BLUE_BACKGROUND',
+);
+const _auditArtBackground =
+    _blueReviewBackground ? Color(0xFF1976D2) : Color(0xFFF4F0FA);
 
 /// Every runtime rendering of the 81 source forms repaired for this release.
 /// Four variants are included per form: normal/spectral, each in color/black.
@@ -163,15 +168,20 @@ class _SpriteAuditScreenState extends State<SpriteAuditScreen> {
         _marked.addAll(releaseRepairAuditEntryIds());
       }
       _markedOnly = _startWithMarkedOnly && _marked.isNotEmpty;
+      final requestedPage = _startFamily.isEmpty
+          ? -1
+          : (_markedOnly ? _visiblePages : _allPages).indexWhere(
+              (auditPage) =>
+                  auditPage.lineage.id == _startFamily &&
+                  !auditPage.spectral &&
+                  !auditPage.silhouette,
+            );
       if (_markedOnly) {
-        final requestedPage = _startFamily.isEmpty
-            ? -1
-            : _visiblePages.indexWhere(
-                (auditPage) => auditPage.lineage.id == _startFamily,
-              );
         _pageIndex = math.max(0, requestedPage);
       } else {
-        _pageIndex = page.clamp(0, _allPages.length - 1);
+        _pageIndex = requestedPage >= 0
+            ? requestedPage
+            : page.clamp(0, _allPages.length - 1);
       }
       _ready = true;
     });
@@ -534,7 +544,7 @@ class _AuditFormCard extends StatelessWidget {
                           width: size,
                           height: size,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF4F0FA),
+                            color: _auditArtBackground,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: const Color(0xFFD4C8EA)),
                           ),
@@ -637,7 +647,7 @@ class _SpriteInspectionDialog extends StatelessWidget {
                           width: size,
                           height: size,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF4F0FA),
+                            color: _auditArtBackground,
                             borderRadius: BorderRadius.circular(28),
                             border: Border.all(
                               color: const Color(0xFFFFD86E),

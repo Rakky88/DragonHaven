@@ -28,6 +28,6 @@ void main() {
     expect(find.text('Special Chest'), findsOneWidget);
     expect(find.text('Closed'), findsOneWidget);
     expect(find.text('Opened'), findsOneWidget);
-    expect(find.text('Winner, winner, chicken dinner'), findsOneWidget);
+    expect(find.text('Winner, Winner, Chicken Dinner'), findsOneWidget);
   });
 }

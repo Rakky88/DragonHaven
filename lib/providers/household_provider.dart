@@ -97,7 +97,7 @@ enum RoomUnlockResult {
 }
 
 class HouseholdProvider extends ChangeNotifier {
-  static const saveSchemaVersion = 43;
+  static const saveSchemaVersion = 44;
 
   HouseholdProvider({
     Random? random,
@@ -117,6 +117,7 @@ class HouseholdProvider extends ChangeNotifier {
   Future<void> _saveQueue = Future<void>.value();
   Timer? _starterEggTapPersistenceTimer;
   int _localMutationRevision = 0;
+  int _presentationDeferralDepth = 0;
 
   String languageCode = 'en';
   String accountName = '';
@@ -136,6 +137,18 @@ class HouseholdProvider extends ChangeNotifier {
   bool showcaseMode = false;
 
   int get localMutationRevision => _localMutationRevision;
+  bool get presentationsDeferred => _presentationDeferralDepth > 0;
+
+  void beginPresentationDeferral() {
+    _presentationDeferralDepth++;
+  }
+
+  void endPresentationDeferral() {
+    if (_presentationDeferralDepth == 0) return;
+    _presentationDeferralDepth--;
+    if (_presentationDeferralDepth == 0) notifyListeners();
+  }
+
   late Pet pet;
   Pet? incubatingEgg;
   List<DragonEgg> eggStash = [];
@@ -1117,6 +1130,19 @@ class HouseholdProvider extends ChangeNotifier {
 
   int chestCount(ChestTier tier) => chestInventory[tier] ?? 0;
   int get totalChestCount => chestInventory.values.fold(0, (a, b) => a + b);
+  int openableChestCount(ChestTier tier) {
+    final available = tradeableChestCount(tier);
+    return switch (tier) {
+      ChestTier.portrait => min(available, remainingPortraitCount),
+      ChestTier.title => min(
+          available,
+          max(0, accountTitleCatalog.length - titleCount),
+        ),
+      ChestTier.music => min(available, remainingMusicTrackCount),
+      _ => available,
+    };
+  }
+
   int relicCount(MysticRelic relic) => relicInventory[relic] ?? 0;
   int untradeableRelicCount(MysticRelic relic) =>
       untradeableRelicInventory[relic] ?? 0;
@@ -1556,6 +1582,9 @@ class HouseholdProvider extends ChangeNotifier {
     return eggPityActive && pityEligible ? baseChance * 3 : baseChance;
   }
 
+  double sinisterEggDropChance(ChestTier tier) =>
+      tier == ChestTier.sinister ? .5 : 0;
+
   Pet? dragonById(String? id) {
     if (id == null) return null;
     if (pet.id == id) return pet;
@@ -1656,12 +1685,36 @@ class HouseholdProvider extends ChangeNotifier {
     await _notifyAndSave();
   }
 
-  Future<ChestReward?> openChest(ChestTier tier) async {
+  Future<ChestReward?> openChest(ChestTier tier) =>
+      _openChest(tier, persist: true);
+
+  Future<ChestRewardBundle?> openChests(
+    ChestTier tier, {
+    required int count,
+  }) async {
+    if (count <= 0 || openableChestCount(tier) < count) return null;
+    final rewards = <ChestReward>[];
+    for (var index = 0; index < count; index++) {
+      final reward = await _openChest(tier, persist: false);
+      if (reward == null) return null;
+      rewards.add(reward);
+    }
+    if (tier == ChestTier.music) await _syncJukeboxAudio();
+    await _notifyAndSave();
+    return ChestRewardBundle(tier: tier, rewards: rewards);
+  }
+
+  Future<ChestReward?> _openChest(
+    ChestTier tier, {
+    required bool persist,
+  }) async {
     if (tradeableChestCount(tier) <= 0) return null;
-    if (tier == ChestTier.portrait) return _openPortraitChest();
-    if (tier == ChestTier.title) return _openTitleChest();
-    if (tier == ChestTier.music) return _openMusicChest();
-    if (tier == ChestTier.special) return _openSpecialChest();
+    if (tier == ChestTier.portrait) {
+      return _openPortraitChest(persist: persist);
+    }
+    if (tier == ChestTier.title) return _openTitleChest(persist: persist);
+    if (tier == ChestTier.music) return _openMusicChest(persist: persist);
+    if (tier == ChestTier.special) return _openSpecialChest(persist: persist);
     chestInventory[tier] = chestCount(tier) - 1;
     final coins = switch (tier) {
       ChestTier.wooden => 20 + _random.nextInt(21),
@@ -1706,7 +1759,7 @@ class HouseholdProvider extends ChangeNotifier {
       gems: gems,
     );
     _evaluateAchievements();
-    await _notifyAndSave();
+    if (persist) await _notifyAndSave();
     return ChestReward(
         tier: tier,
         coins: coins,
@@ -1716,7 +1769,7 @@ class HouseholdProvider extends ChangeNotifier {
         relicFound: relicFound);
   }
 
-  Future<ChestReward?> _openSpecialChest() async {
+  Future<ChestReward?> _openSpecialChest({required bool persist}) async {
     chestInventory[ChestTier.special] = chestCount(ChestTier.special) - 1;
     eggStash.add(_createSpecialEgg());
     pet.coins += 269;
@@ -1731,7 +1784,7 @@ class HouseholdProvider extends ChangeNotifier {
       gems: 10,
     );
     _evaluateAchievements();
-    await _notifyAndSave();
+    if (persist) await _notifyAndSave();
     return const ChestReward(
       tier: ChestTier.special,
       coins: 269,
@@ -1741,7 +1794,7 @@ class HouseholdProvider extends ChangeNotifier {
     );
   }
 
-  Future<ChestReward?> _openPortraitChest() async {
+  Future<ChestReward?> _openPortraitChest({required bool persist}) async {
     final remaining = profilePortraitCatalog
         .where((portrait) => !ownedPortraitIds.contains(portrait.id))
         .toList(growable: false);
@@ -1758,7 +1811,7 @@ class HouseholdProvider extends ChangeNotifier {
       subject: ChestTier.portrait.name,
     );
     _evaluateAchievements();
-    await _notifyAndSave();
+    if (persist) await _notifyAndSave();
     return ChestReward(
       tier: ChestTier.portrait,
       coins: 0,
@@ -1768,7 +1821,7 @@ class HouseholdProvider extends ChangeNotifier {
     );
   }
 
-  Future<ChestReward?> _openTitleChest() async {
+  Future<ChestReward?> _openTitleChest({required bool persist}) async {
     final remaining = accountTitleCatalog
         .where((title) => !ownedTitleIds.contains(title.id))
         .toList(growable: false);
@@ -1785,7 +1838,7 @@ class HouseholdProvider extends ChangeNotifier {
       subject: ChestTier.title.name,
     );
     _evaluateAchievements();
-    await _notifyAndSave();
+    if (persist) await _notifyAndSave();
     return ChestReward(
       tier: ChestTier.title,
       coins: 0,
@@ -1795,7 +1848,7 @@ class HouseholdProvider extends ChangeNotifier {
     );
   }
 
-  Future<ChestReward?> _openMusicChest() async {
+  Future<ChestReward?> _openMusicChest({required bool persist}) async {
     final remaining = musicCatalog
         .where((track) => !ownedMusicTrackIds.contains(track.id))
         .toList(growable: false);
@@ -1812,8 +1865,10 @@ class HouseholdProvider extends ChangeNotifier {
       code: ActivityCode.bonusFound,
       subject: track.id,
     );
-    await _syncJukeboxAudio();
-    await _notifyAndSave();
+    if (persist) {
+      await _syncJukeboxAudio();
+      await _notifyAndSave();
+    }
     return ChestReward(
       tier: ChestTier.music,
       coins: 0,
@@ -2036,11 +2091,14 @@ class HouseholdProvider extends ChangeNotifier {
 
   Future<void> _scheduleEggReadyNotification(Pet egg) async {
     final strings = AppStrings(languageCode);
+    final eggName = strings.eggName(
+      sinister: egg.isSinisterEgg,
+      special: egg.isSpecialEgg,
+    );
     await HavenNotifications.eggReady(
       id: 'egg-${egg.id}',
       at: egg.stageStartedAt.add(egg.incubationDuration),
-      title: strings.pick(
-          'Your Mysterious Egg is ready', 'Je Mysterieus Ei is klaar'),
+      title: strings.pick('Your $eggName is ready', 'Je $eggName is klaar'),
       body: strings.pick(
         'Something inside wants to hatch in the Rooftop Nest.',
         'Iets binnenin wil uitkomen in het Daknest.',
@@ -2268,10 +2326,26 @@ class HouseholdProvider extends ChangeNotifier {
 
   DragonEgg _createEgg({required ChestTier sourceTier}) {
     final seed = _random.nextInt(0x7fffffff);
+    if (sourceTier == ChestTier.sinister &&
+        _random.nextDouble() < sinisterEggDropChance(sourceTier)) {
+      return DragonEgg(
+        id: _uuid.v4(),
+        lineageId: 'sinisterra',
+        acquiredAt: _clock(),
+        hatchSeed: seed,
+        prismatic: _random.nextInt(20) == 0,
+        lawAxis: LawAxis.values[_random.nextInt(LawAxis.values.length)],
+        moralAxis: MoralAxis.evil,
+        sizeFactor: _dragonSizeFromRoll(_random.nextDouble()),
+        incubationSeconds: const Duration(
+          hours: 6,
+          minutes: 6,
+          seconds: 6,
+        ).inSeconds,
+        sinister: true,
+      );
+    }
     final lineage = _rollEggLineage(sourceTier);
-    final sinister = sourceTier == ChestTier.sinister &&
-        lineage.rarity == DragonRarity.mythical &&
-        _random.nextBool();
     final sizeRoll = _random.nextDouble();
     return DragonEgg(
       id: _uuid.v4(),
@@ -2280,12 +2354,10 @@ class HouseholdProvider extends ChangeNotifier {
       hatchSeed: seed,
       prismatic: _random.nextInt(20) == 0,
       lawAxis: LawAxis.values[_random.nextInt(LawAxis.values.length)],
-      moralAxis: sinister
-          ? MoralAxis.evil
-          : MoralAxis.values[_random.nextInt(MoralAxis.values.length)],
+      moralAxis: MoralAxis.values[_random.nextInt(MoralAxis.values.length)],
       sizeFactor: _dragonSizeFromRoll(sizeRoll),
       incubationMinutes: (48 + _random.nextInt(289)) * 6,
-      sinister: sinister,
+      sinister: false,
     );
   }
 

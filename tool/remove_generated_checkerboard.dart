@@ -12,16 +12,33 @@ bool _looksLikeCheckerboard(Pixel pixel) {
 }
 
 Future<void> main(List<String> arguments) async {
-  if (arguments.length != 2) {
+  if (arguments.length < 2 || arguments.length > 3) {
     stderr.writeln(
       'Usage: dart run tool/remove_generated_checkerboard.dart '
-      '<input> <output.webp>',
+      '<input> <output.webp> [minimum-enclosed-component-pixels]',
     );
     exitCode = 64;
     return;
   }
-  final image = decodeImage(await File(arguments[0]).readAsBytes());
-  if (image == null) throw StateError('Could not decode ${arguments[0]}');
+  final decoded = decodeImage(await File(arguments[0]).readAsBytes());
+  if (decoded == null) throw StateError('Could not decode ${arguments[0]}');
+  final minimumEnclosedComponentPixels =
+      arguments.length == 3 ? int.parse(arguments[2]) : 2048;
+  if (minimumEnclosedComponentPixels < 1) {
+    throw ArgumentError.value(
+      minimumEnclosedComponentPixels,
+      'minimum-enclosed-component-pixels',
+    );
+  }
+  // Opaque generated PNGs commonly decode as RGB. Editing their alpha in
+  // place would then be silently discarded by the encoder, so normalize every
+  // source onto an RGBA canvas before extracting the checkerboard.
+  final image = Image(
+    width: decoded.width,
+    height: decoded.height,
+    numChannels: 4,
+  )..clear(ColorRgba8(0, 0, 0, 0));
+  compositeImage(image, decoded);
   var opaqueMinX = image.width;
   var opaqueMinY = image.height;
   for (final pixel in image) {
@@ -32,27 +49,13 @@ Future<void> main(List<String> arguments) async {
   if (opaqueMinX == image.width || opaqueMinY == image.height) {
     throw StateError('${arguments[0]} contains no opaque pixels.');
   }
-  final horizontalLightPhases = <bool>[
-    for (var x = 0; x < image.width; x++)
-      image.getPixel(x, opaqueMinY).r.toInt() >= 248,
-  ];
-  final verticalLightPhases = <bool>[
-    for (var y = 0; y < image.height; y++)
-      image.getPixel(opaqueMinX, y).r.toInt() >= 248,
-  ];
   bool isCheckerPixel(int x, int y) {
     final pixel = image.getPixel(x, y);
-    if (!_looksLikeCheckerboard(pixel)) return false;
-    // The source checker was scaled, so its cells alternate between 14 and 15
-    // pixels instead of having a stable integer period. The untouched top row
-    // and left column provide the exact horizontal/vertical phase at every
-    // coordinate. Combining their light/dark phase reconstructs the expected
-    // cell without guessing a period.
-    final horizontalLight = horizontalLightPhases[x];
-    final verticalLight = verticalLightPhases[y];
-    final expectedLight = horizontalLight == verticalLight;
-    final actualLight = pixel.r.toInt() >= 248;
-    return actualLight == expectedLight;
+    // Generated checker cells use several slightly different neutral values
+    // after image scaling and compression. Treat the whole connected neutral
+    // field as background rather than trying to reconstruct an exact phase;
+    // subject-colored edges stop the flood-fill naturally.
+    return _looksLikeCheckerboard(pixel);
   }
 
   final visited = Uint8List(image.width * image.height);
@@ -119,10 +122,12 @@ Future<void> main(List<String> arguments) async {
 
   // The generated checker can also be fully enclosed by legs, tails or wings,
   // so it cannot be reached by the edge flood-fill. Remove only large compact
-  // islands of the same neutral pixels. Tiny neutral highlights inside ivory
-  // feathers are intentionally preserved.
+  // islands of the same neutral pixels. The optional threshold lets a
+  // hand-audited asset remove smaller remnants while the conservative default
+  // continues to preserve neutral highlights in other generated artwork.
   var enclosedRemoved = 0;
-  final enclosedComponentSizes = <int>[];
+  final enclosedComponents =
+      <({int size, int minX, int minY, int maxX, int maxY})>[];
   final enclosedVisited = Uint8List(image.width * image.height);
   for (var y = 0; y < image.height; y++) {
     for (var x = 0; x < image.width; x++) {
@@ -131,6 +136,10 @@ Future<void> main(List<String> arguments) async {
         continue;
       }
       final component = <int>[];
+      var minX = image.width;
+      var minY = image.height;
+      var maxX = 0;
+      var maxY = 0;
       final componentQueue = Queue<int>()..add(start);
       enclosedVisited[start] = 1;
       while (componentQueue.isNotEmpty) {
@@ -138,6 +147,10 @@ Future<void> main(List<String> arguments) async {
         component.add(index);
         final currentX = index % image.width;
         final currentY = index ~/ image.width;
+        if (currentX < minX) minX = currentX;
+        if (currentY < minY) minY = currentY;
+        if (currentX > maxX) maxX = currentX;
+        if (currentY > maxY) maxY = currentY;
         for (final (dx, dy) in neighbors) {
           final nextX = currentX + dx;
           final nextY = currentY + dy;
@@ -154,8 +167,14 @@ Future<void> main(List<String> arguments) async {
           }
         }
       }
-      enclosedComponentSizes.add(component.length);
-      if (component.length >= 2048) {
+      enclosedComponents.add((
+        size: component.length,
+        minX: minX,
+        minY: minY,
+        maxX: maxX,
+        maxY: maxY,
+      ));
+      if (component.length >= minimumEnclosedComponentPixels) {
         for (final index in component) {
           image
               .getPixel(index % image.width, index ~/ image.width)
@@ -167,10 +186,16 @@ Future<void> main(List<String> arguments) async {
   }
 
   await File(arguments[1]).writeAsBytes(encodeWebP(image), flush: true);
-  enclosedComponentSizes.sort((a, b) => b.compareTo(a));
+  enclosedComponents.sort((a, b) => b.size.compareTo(a.size));
   stdout.writeln('Removed ${visited.where((value) => value != 0).length} '
       'connected and $enclosedRemoved enclosed checkerboard pixels from '
       '${arguments[0]}.');
-  stdout.writeln('Largest enclosed neutral components: '
-      '${enclosedComponentSizes.take(10).join(', ')}');
+  stdout.writeln('Largest enclosed neutral components:');
+  for (final component in enclosedComponents.take(20)) {
+    stdout.writeln(
+      '  ${component.size} px @ '
+      '(${component.minX},${component.minY})-'
+      '(${component.maxX},${component.maxY})',
+    );
+  }
 }

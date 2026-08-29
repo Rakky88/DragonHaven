@@ -297,6 +297,40 @@ void main() {
     }
   });
 
+  test('Sinisterra family sprites use genuine alpha and safe padding',
+      () async {
+    const paths = <String>[
+      'assets/images/dragons/sinisterra_hatchling.webp',
+      'assets/images/dragons/sinisterra_wyrmling_safe.webp',
+      'assets/images/dragons/sinisterra_might_safe.webp',
+      'assets/images/dragons/sinisterra_arcana_safe.webp',
+      'assets/images/dragons/sinisterra_spirit_safe.webp',
+      'assets/images/dragons/sinisterra_mastery.webp',
+      'assets/images/dragons/sinisterra_forms.webp',
+    ];
+    for (final path in paths) {
+      final image = await _decode(path);
+      var transparent = 0;
+      for (var offset = 3; offset < image.rgba.length; offset += 4) {
+        if (image.rgba[offset] < 8) transparent++;
+      }
+      expect(
+        transparent,
+        greaterThan(image.width * image.height ~/ 2),
+        reason: '$path must not retain an opaque generated checkerboard',
+      );
+      _expectContained(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        path,
+      );
+    }
+  });
+
   test('Cluckatrice ascensions keep enclosed body gaps transparent', () async {
     const checks = <String, List<(int, int)>>{
       'assets/images/dragons/cluckatrice_arcana_safe.webp': [
@@ -423,7 +457,7 @@ void main() {
     }
   });
 
-  test('all 42 Mastery Ascended sprites are complete standalone subjects',
+  test('all 44 Mastery Ascended sprites are complete standalone subjects',
       () async {
     for (final lineage in dragonLineages) {
       final path = DragonArtwork.masteryAsset(lineage.id);
