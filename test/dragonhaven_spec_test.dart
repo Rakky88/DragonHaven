@@ -314,6 +314,13 @@ void main() {
     expect(nativeBridge, contains('setAndAllowWhileIdle'));
     expect(nativeBridge, contains('onRequestPermissionsResult'));
     expect(nativeBridge, contains('notificationsWaitingForPermission'));
+    expect(nativeBridge,
+        contains('mayAutomaticallyRequestNotificationPermission'));
+    expect(nativeBridge,
+        contains('packageInfo.lastUpdateTime > packageInfo.firstInstallTime'));
+    expect(nativeBridge, contains('NOTIFICATION_PERMISSION_PROMPT_HANDLED'));
+    expect(nativeBridge, contains('!activityInForeground'));
+    expect(nativeBridge, contains('"openNotificationSettings"'));
     expect(nativeBridge, contains('private var musicEnabled = false'));
     expect(nativeBridge, contains('"takePendingNavigation"'));
     expect(nativeBridge, contains('override fun onNewIntent'));

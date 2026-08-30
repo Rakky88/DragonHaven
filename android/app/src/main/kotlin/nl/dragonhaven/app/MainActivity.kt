@@ -7,6 +7,7 @@ import android.Manifest
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -170,6 +171,19 @@ class MainActivity : FlutterActivity() {
                     val kind = intent?.getStringExtra(NOTIFICATION_KIND_EXTRA)
                     intent?.removeExtra(NOTIFICATION_KIND_EXTRA)
                     result.success(kind)
+                }
+                "permissionGranted" -> result.success(hasNotificationPermission())
+                "openNotificationSettings" -> {
+                    try {
+                        startActivity(
+                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                            },
+                        )
+                        result.success(true)
+                    } catch (_: Exception) {
+                        result.success(false)
+                    }
                 }
                 "schedule" -> {
                     val id = call.argument<String>("id")
@@ -381,12 +395,59 @@ class MainActivity : FlutterActivity() {
             android.content.pm.PackageManager.PERMISSION_GRANTED
 
     private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < 33 || notificationPermissionRequestPending) return
+        if (
+            Build.VERSION.SDK_INT < 33 ||
+            notificationPermissionRequestPending ||
+            !activityInForeground ||
+            !mayAutomaticallyRequestNotificationPermission()
+        ) return
         notificationPermissionRequestPending = true
-        requestPermissions(
-            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-            NOTIFICATION_PERMISSION_REQUEST,
-        )
+        notificationPreferences.edit()
+            .putBoolean(NOTIFICATION_PERMISSION_PROMPT_HANDLED, true)
+            .apply()
+        // Scheduling can happen while Flutter is still restoring the saved
+        // game. Wait until the Activity is fully resumed before showing the
+        // one-time Android prompt; some Android 15 devices otherwise push the
+        // app behind the launcher when PermissionController rejects it.
+        mainHandler.postDelayed({
+            if (!activityInForeground || isFinishing || isDestroyed) {
+                notificationPermissionRequestPending = false
+                return@postDelayed
+            }
+            requestPermissions(
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                NOTIFICATION_PERMISSION_REQUEST,
+            )
+        }, NOTIFICATION_PERMISSION_PROMPT_DELAY_MS)
+    }
+
+    private val notificationPreferences by lazy {
+        getSharedPreferences(NOTIFICATION_PERMISSION_PREFERENCES, MODE_PRIVATE)
+    }
+
+    private fun mayAutomaticallyRequestNotificationPermission(): Boolean {
+        if (notificationPreferences.getBoolean(
+                NOTIFICATION_PERMISSION_PROMPT_HANDLED,
+                false,
+            )
+        ) return false
+        if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+            notificationPreferences.edit()
+                .putBoolean(NOTIFICATION_PERMISSION_PROMPT_HANDLED, true)
+                .apply()
+            return false
+        }
+        // Older versions already asked automatically. On an upgraded install,
+        // treating a missing local marker as a fresh request made every cold
+        // start re-open PermissionController after the user had denied it.
+        val packageInfo = packageManager.getPackageInfo(packageName, 0)
+        if (packageInfo.lastUpdateTime > packageInfo.firstInstallTime) {
+            notificationPreferences.edit()
+                .putBoolean(NOTIFICATION_PERMISSION_PROMPT_HANDLED, true)
+                .apply()
+            return false
+        }
+        return true
     }
 
     private fun scheduleNotification(notification: ScheduledNotification) {
@@ -610,6 +671,9 @@ class MainActivity : FlutterActivity() {
     override fun onResume() {
         super.onResume()
         activityInForeground = true
+        if (notificationsWaitingForPermission.isNotEmpty()) {
+            requestNotificationPermissionIfNeeded()
+        }
         if (musicEnabled) {
             musicPlayer?.let { player ->
                 if (!player.isPlaying) player.start()
@@ -628,6 +692,11 @@ class MainActivity : FlutterActivity() {
         private const val CHANNEL = "nl.dragonhaven.app/platform"
         private const val AUDIO_CHANNEL = "nl.dragonhaven.app/audio"
         private const val NOTIFICATION_CHANNEL = "nl.dragonhaven.app/notifications"
+        private const val NOTIFICATION_PERMISSION_PREFERENCES =
+            "dragonhaven_notification_permission"
+        private const val NOTIFICATION_PERMISSION_PROMPT_HANDLED =
+            "post_notifications_prompt_handled"
+        private const val NOTIFICATION_PERMISSION_PROMPT_DELAY_MS = 750L
         private const val NOTIFICATION_PERMISSION_REQUEST = 781
         private const val MUSIC_VOLUME = 1.0f
         private const val DUCKED_VOLUME = 0.30f

@@ -6,8 +6,44 @@ import '../providers/household_provider.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 
-class NotificationSettingsScreen extends StatelessWidget {
+class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
+
+  @override
+  State<NotificationSettingsScreen> createState() =>
+      _NotificationSettingsScreenState();
+}
+
+class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
+    with WidgetsBindingObserver {
+  bool? _platformPermissionGranted;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refreshPlatformPermission();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refreshPlatformPermission();
+  }
+
+  Future<void> _refreshPlatformPermission() async {
+    final granted = await HavenNotifications.platformPermissionGranted();
+    if (mounted) setState(() => _platformPermissionGranted = granted);
+  }
+
+  Future<void> _openPlatformSettings() async {
+    await HavenNotifications.openPlatformNotificationSettings();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +113,39 @@ class NotificationSettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          if (_platformPermissionGranted == false) ...[
+            Card(
+              color: const Color(0xFFFFF3E2),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.notifications_off_rounded,
+                      color: Color(0xFF9B4A20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        strings.pick(
+                          'Android notifications are off for DragonHaven.',
+                          'Android-meldingen staan uit voor DragonHaven.',
+                        ),
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    TextButton(
+                      key: const Key('open-android-notification-settings'),
+                      onPressed: _openPlatformSettings,
+                      child: Text(
+                          strings.pick('Open settings', 'Open instellingen')),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           Card(
             clipBehavior: Clip.antiAlias,
             child: Column(

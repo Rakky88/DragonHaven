@@ -92,6 +92,27 @@ abstract final class HavenNotifications {
   static bool isEnabled(HavenNotificationCategory category) =>
       _enabled.contains(category);
 
+  static Future<bool> platformPermissionGranted() async {
+    try {
+      return await _channel.invokeMethod<bool>('permissionGranted') ?? true;
+    } on MissingPluginException {
+      return true;
+    } on PlatformException {
+      return true;
+    }
+  }
+
+  static Future<bool> openPlatformNotificationSettings() async {
+    try {
+      return await _channel.invokeMethod<bool>('openNotificationSettings') ??
+          false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   static Future<void> schedule({
     required String id,
     required DateTime at,

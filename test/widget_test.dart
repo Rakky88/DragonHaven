@@ -30,6 +30,7 @@ import 'package:dragon_haven/widgets/achievement_reveal.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
 import 'package:dragon_haven/widgets/game_icon_sprite.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -595,6 +596,59 @@ void main() {
       game.notificationEnabled(HavenNotificationCategory.tradeReturns),
       isFalse,
     );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('disabled Android notifications show an explicit settings path',
+      (tester) async {
+    const channel = MethodChannel('nl.dragonhaven.app/notifications');
+    var openedPlatformSettings = false;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      channel,
+      (call) async {
+        if (call.method == 'permissionGranted') return false;
+        if (call.method == 'openNotificationSettings') {
+          openedPlatformSettings = true;
+          return true;
+        }
+        return null;
+      },
+    );
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+
+    await pumpGame(tester, onboarded: true, hatched: true);
+    await tester.tap(find.byKey(const Key('app-overflow-menu')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byKey(const Key('app-menu-account')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    final settingsButton = find.byKey(
+      const Key('notification-settings-button'),
+    );
+    await tester.scrollUntilVisible(
+      settingsButton,
+      240,
+      scrollable: find.descendant(
+        of: find.byKey(const PageStorageKey('account-scroll')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.tap(settingsButton);
+    await tester.pumpAndSettle();
+
+    final platformSettings = find.byKey(
+      const Key('open-android-notification-settings'),
+    );
+    expect(platformSettings, findsOneWidget);
+    expect(
+      find.text('Android notifications are off for DragonHaven.'),
+      findsOneWidget,
+    );
+    await tester.tap(platformSettings);
+    await tester.pump();
+    expect(openedPlatformSettings, isTrue);
     expect(tester.takeException(), isNull);
   });
 
@@ -1870,7 +1924,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.04.12'), findsOneWidget);
+    expect(find.text('v0.04.13'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

@@ -367,6 +367,22 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Seu painel de provas está cheio. Escolha um dragão e busque um novo recorde.',
     '試練ボードが満杯です。ドラゴンを選び、新記録を目指しましょう。',
   ],
+  'Android notifications are off for DragonHaven.': [
+    'Android-Benachrichtigungen sind für DragonHaven deaktiviert.',
+    'Las notificaciones de Android están desactivadas para DragonHaven.',
+    'Les notifications Android sont désactivées pour DragonHaven.',
+    'Le notifiche Android sono disattivate per DragonHaven.',
+    'As notificações do Android estão desativadas para o DragonHaven.',
+    'DragonHavenのAndroid通知はオフになっています。',
+  ],
+  'Open settings': [
+    'Einstellungen öffnen',
+    'Abrir ajustes',
+    'Ouvrir les paramètres',
+    'Apri impostazioni',
+    'Abrir configurações',
+    '設定を開く',
+  ],
   'Notifications': [
     'Benachrichtigungen',
     'Notificaciones',
