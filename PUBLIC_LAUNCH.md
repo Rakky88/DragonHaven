@@ -1,8 +1,8 @@
 # DragonHaven openbaar lanceren
 
-Laatst gecontroleerd: **30 augustus 2026**
+Laatst gecontroleerd: **31 augustus 2026**
 
-Huidige openbare appversie bij deze controle: **v0.04.14**
+Huidige openbare appversie bij deze controle: **v0.04.15**
 Android package name: **`nl.dragonhaven.app`**
 
 Dit is de centrale, levende checklist voor een openbare lancering van
@@ -34,7 +34,7 @@ moeten daarna met het werkelijke gebruik meegroeien.
   gebouwd. Google Play gebruikt de AAB.
 - De releaseprocedure controleert vóór elke release de live Supabase-migraties,
   database-lint, Auth-health en e-mailconfiguratie.
-- Bij de v0.04.14-release waren alle 28 database-migraties gelijk, waren er
+- Bij de v0.04.15-release waren alle 28 database-migraties gelijk, waren er
   geen remote lintfouten en werkten de gecontroleerde Auth/e-mail-endpoints.
 - E-mailaccounts, verificatie, Friends, Trades, globale Group Adventures,
   profielsamenvattingen en cloudback-ups gebruiken Supabase.
@@ -50,9 +50,9 @@ moeten daarna met het werkelijke gebruik meegroeien.
 - Lokale save recovery en een handmatige, bevestigde cloudback-up bestaan.
 - De releaseworkflow bouwt aantoonbaar een Play-ready, vast ondertekende AAB
   plus verificatierapport. Release-gate
-  [33329828902](https://github.com/Rakky88/DragonHaven/actions/runs/33329828902)
-  was volledig groen voor v0.04.14 met 319 tests; de taggate
-  [33330282266](https://github.com/Rakky88/DragonHaven/actions/runs/33330282266)
+  [33339570035](https://github.com/Rakky88/DragonHaven/actions/runs/33339570035)
+  was volledig groen voor v0.04.15 met 329 tests; de taggate
+  [33340087680](https://github.com/Rakky88/DragonHaven/actions/runs/33340087680)
   herhaalde die controle vanaf de onveranderlijke releasetag.
 
 ## Wat nog geen productiegarantie heeft
@@ -99,9 +99,9 @@ een grote openbare lancering te zijn opgelost.
 | Productielanden en releasepad kiezen | Jij | Begin bij voorkeur met een kleine staged rollout. |
 | Betalingen voor digitale goederen | Jij opent merchant/betalingsprofiel; Codex implementeert billing | Alleen nodig als gems of andere digitale goederen voor echt geld worden verkocht. Gebruik dan Google Play Billing en server-side aankoopverificatie. |
 
-Let op: de openbare APK van v0.04.14 is **345.934.831 bytes** (ongeveer
-329,9 MiB), met SHA-256
-`f1f77ab4b40be9265e5cd650be888ad803eea161a6a7f0bf19803fcb3eeae49f`.
+Let op: de openbare APK van v0.04.15 is **355.843.461 bytes** (ongeveer
+339,4 MiB), met SHA-256
+`9ab67c4164f69c9a4211491cb4afa2c66b7c19123ec6a87ee854fcef802c4180`.
 Voor bereik en installatieconversie blijft verdere compressie
 en/of Play Asset Delivery sterk aan te raden.
 
