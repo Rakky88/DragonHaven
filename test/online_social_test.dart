@@ -10,6 +10,7 @@ import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/profile_portrait.dart';
 import 'package:dragon_haven/models/social.dart';
+import 'package:dragon_haven/models/supporter_pack.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/providers/online_account_provider.dart';
 import 'package:dragon_haven/screens/adventure_hub_screen.dart';
@@ -99,6 +100,30 @@ void main() {
     expect(glowColor.g, const Color(0xFF2A9CB8).g);
     expect(glowColor.b, const Color(0xFF2A9CB8).b);
     expect(glowColor.a, closeTo(.58, .0001));
+  });
+
+  testWidgets('keeper portraits render a selected vanity frame',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: KeeperPortrait(
+            portraitKey: 'portrait_042',
+            displayName: 'Framed Keeper',
+            frameKey: 'frame_supporter_founder',
+            radius: 31,
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.byKey(
+        const Key('keeper-portrait-frame-frame_supporter_founder'),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.getSize(find.byType(KeeperPortrait)), const Size.square(62));
   });
 
   test('social discovery summaries count forms rather than families', () {
@@ -531,12 +556,12 @@ void main() {
     online.dispose();
   });
 
-  test('offline name portrait and title are the only online profile source',
-      () async {
+  test('offline vanity choices are the only online profile source', () async {
     final game = HouseholdProvider(random: Random(17))
       ..accountName = 'Offline Lyra'
       ..selectedPortraitId = 'portrait_042'
-      ..selectedTitleId = 'title_321';
+      ..selectedTitleId = 'title_321'
+      ..selectedFrameId = supporterFrame.id;
     final repository = _FakeSocialRepository(inventoryImported: true);
     final online = OnlineAccountProvider(
       repository: repository,
@@ -550,9 +575,11 @@ void main() {
     expect(repository.updatedDisplayName, 'Offline Lyra');
     expect(repository.updatedPortraitKey, 'portrait_042');
     expect(repository.updatedTitle, 'title_321');
+    expect(repository.updatedFrameKey, supporterFrame.id);
     expect(online.profile?.displayName, 'Offline Lyra');
     expect(online.profile?.portraitKey, 'portrait_042');
     expect(online.profile?.title, 'title_321');
+    expect(online.profile?.frameKey, supporterFrame.id);
     online.dispose();
   });
 
@@ -1096,6 +1123,16 @@ void main() {
       matching: find.byType(KeeperPortrait),
     ));
     expect(friendPortrait.portraitKey, 'portrait_042');
+    expect(friendPortrait.frameKey, supporterFrame.id);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('friend-friend-user')),
+        matching: find.byKey(
+          const Key('keeper-portrait-frame-frame_supporter_founder'),
+        ),
+      ),
+      findsOneWidget,
+    );
     final friendTitle = accountTitleById('title_321')!.label('en');
     expect(find.text(friendTitle), findsOneWidget);
     expect(find.byKey(const Key('friend-trade-friend-user')), findsOneWidget);
@@ -1530,6 +1567,7 @@ class _FakeSocialRepository implements SocialRepository {
   String? updatedDisplayName;
   String? updatedTitle;
   String? updatedPortraitKey;
+  String? updatedFrameKey;
   int acknowledgeCount = 0;
   int acknowledgeGroupFailures = 0;
   int createTradeCount = 0;
@@ -1572,6 +1610,7 @@ class _FakeSocialRepository implements SocialRepository {
     displayName: 'Lyra',
     title: 'title_321',
     portraitKey: 'portrait_042',
+    frameKey: 'frame_supporter_founder',
     discoveredDragonCount: 12,
     achievementCount: 17,
     dragonCount: 7,
@@ -1607,6 +1646,7 @@ class _FakeSocialRepository implements SocialRepository {
         displayName: updatedDisplayName ?? 'Rick',
         title: updatedTitle ?? 'title_001',
         portraitKey: updatedPortraitKey ?? 'portrait_001',
+        frameKey: updatedFrameKey,
         discoveredDragonCount: 1,
         inventoryImported: _inventoryImported,
       );
@@ -1793,10 +1833,12 @@ class _FakeSocialRepository implements SocialRepository {
     required String displayName,
     required String title,
     required String portraitKey,
+    String? frameKey,
   }) async {
     updatedDisplayName = displayName;
     updatedTitle = title;
     updatedPortraitKey = portraitKey;
+    updatedFrameKey = frameKey;
   }
 
   @override

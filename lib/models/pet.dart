@@ -111,11 +111,11 @@ class Pet {
     this.stage = DragonStage.egg,
     this.firstEgg = true,
     this.prismatic = false,
-    this.sinister = false,
+    bool sinister = false,
     this.lawAxis = LawAxis.neutral,
-    this.moralAxis = MoralAxis.neutral,
+    MoralAxis moralAxis = MoralAxis.neutral,
     this.lawAxisKnown = false,
-    this.moralAxisKnown = false,
+    bool moralAxisKnown = false,
     this.personalityKnown = false,
     this.sizeFactor = 1,
     int incubationMinutes = 60,
@@ -138,6 +138,11 @@ class Pet {
     String? lineageId,
     this.evolutionPath,
   })  : id = id ?? 'dragon-${DateTime.now().microsecondsSinceEpoch}',
+        sinister = sinister || lineageId == 'sinisterra',
+        moralAxis =
+            sinister || lineageId == 'sinisterra' ? MoralAxis.evil : moralAxis,
+        moralAxisKnown =
+            sinister || lineageId == 'sinisterra' ? true : moralAxisKnown,
         incubationSeconds = (incubationSeconds ?? incubationMinutes * 60)
             .clamp(60, 14 * 24 * 60 * 60),
         acquiredAt = acquiredAt ?? DateTime.now(),
@@ -146,7 +151,7 @@ class Pet {
         training = _normalizedTraining(
           training,
           stage: stage,
-          sinister: sinister,
+          sinister: sinister || lineageId == 'sinisterra',
           evolutionPath: evolutionPath,
         ),
         trialHighScores = _normalizedTrialHighScores(trialHighScores),

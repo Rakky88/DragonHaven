@@ -18,6 +18,7 @@ import '../widgets/game_icon_sprite.dart';
 import '../widgets/haven_lighting.dart';
 import '../widgets/rooftop_egg_nest.dart';
 import 'draconomicon_screen.dart';
+import 'dragon_school_screen.dart';
 import 'house_screen.dart';
 import 'pet_screen.dart';
 import 'rooftop_nest_screen.dart';
@@ -92,6 +93,15 @@ class DragonTowerScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
+          IconButton(
+            key: const Key('reorder-tower-rooms'),
+            tooltip:
+                strings.pick('Change room order', 'Kamervolgorde wijzigen'),
+            visualDensity: VisualDensity.compact,
+            onPressed:
+                game.towerFloorCount < 2 ? null : () => _showRoomOrder(context),
+            icon: const Icon(Icons.swap_vert_rounded),
+          ),
           Text(
               '${game.towerFloorCount}/20 ${strings.pick('floors', 'verdiepingen')}',
               style: const TextStyle(
@@ -99,6 +109,8 @@ class DragonTowerScreen extends StatelessWidget {
         ]),
         const SizedBox(height: 12),
         const _TowerRoof(),
+        const SizedBox(height: 9),
+        const _DragonSchoolEntrance(),
         const SizedBox(height: 9),
         for (var index = game.towerFloorRoomIds.length - 1; index >= 0; index--)
           _TowerFloor(index: index, roomId: game.towerFloorRoomIds[index]),
@@ -185,6 +197,146 @@ class DragonTowerScreen extends StatelessWidget {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
+  Future<void> _showRoomOrder(BuildContext context) async {
+    final strings = AppStrings.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: FractionallySizedBox(
+          heightFactor: .82,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.pick('Arrange your Tower', 'Richt je Toren in'),
+                  style: Theme.of(sheetContext).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  strings.pick(
+                    'Drag the rooms into your preferred top-to-bottom order.',
+                    'Sleep de kamers naar de gewenste volgorde van boven naar beneden.',
+                  ),
+                  style: const TextStyle(color: AppColors.muted),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  key: const Key('fixed-rooftop-room'),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF4CF),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0x55D39B29)),
+                  ),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(11),
+                        child: Image.asset(
+                          houseRoomCatalog.first.backgroundAsset,
+                          width: 62,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              strings.pick('Rooftop Nest', 'Daknest'),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w900),
+                            ),
+                            Text(
+                              strings.pick(
+                                'Fixed at the top',
+                                'Blijft altijd bovenaan',
+                              ),
+                              style: const TextStyle(
+                                color: AppColors.muted,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.lock_rounded, color: Color(0xFF9A6A00)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 9),
+                Expanded(
+                  child: Consumer<HouseholdProvider>(
+                    builder: (context, game, _) {
+                      final rooms = game.towerFloorRoomIds.reversed.toList();
+                      return ReorderableListView.builder(
+                        key: const Key('tower-room-order-list'),
+                        buildDefaultDragHandles: false,
+                        itemCount: rooms.length,
+                        onReorderItem: (oldIndex, newIndex) async {
+                          await game.reorderTowerFloor(oldIndex, newIndex);
+                        },
+                        itemBuilder: (context, visualIndex) {
+                          final room = houseRoomById(rooms[visualIndex]) ??
+                              houseRoomCatalog[1];
+                          return Card(
+                            key: ValueKey(
+                                'tower-room-order-${room.id}-$visualIndex'),
+                            margin: const EdgeInsets.only(bottom: 7),
+                            clipBehavior: Clip.antiAlias,
+                            child: ListTile(
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(9),
+                                child: Image.asset(
+                                  room.backgroundAsset,
+                                  width: 56,
+                                  height: 45,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              title: Text(
+                                strings.roomName(room),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w900),
+                              ),
+                              subtitle: Text(
+                                strings.pick(
+                                  'Position ${visualIndex + 1} below the nest',
+                                  'Positie ${visualIndex + 1} onder het nest',
+                                ),
+                              ),
+                              trailing: ReorderableDragStartListener(
+                                index: visualIndex,
+                                child: Semantics(
+                                  label:
+                                      strings.pick('Drag room', 'Sleep kamer'),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: Icon(Icons.drag_handle_rounded),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _showOwnedDragons(BuildContext context) =>
       showModalBottomSheet<void>(
         context: context,
@@ -268,6 +420,123 @@ class _TowerRoof extends StatelessWidget {
               ]),
             ),
           ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _DragonSchoolEntrance extends StatelessWidget {
+  const _DragonSchoolEntrance();
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final game = context.watch<HouseholdProvider>();
+    final unlocked = game.dragonSchoolUnlocked;
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final cardHeight = 136.0 + (textScale - 1).clamp(0, 1.5) * 220;
+    return Semantics(
+      button: unlocked,
+      enabled: unlocked,
+      label: strings.pick('Dragon School', 'Drakenschool'),
+      child: InkWell(
+        key: const Key('dragon-school-entrance'),
+        onTap: unlocked
+            ? () => Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => const DragonSchoolScreen(),
+                ))
+            : null,
+        borderRadius: BorderRadius.circular(20),
+        child: Ink(
+          height: cardHeight,
+          decoration: BoxDecoration(
+            color: const Color(0xFF302454),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  'assets/images/ui/dragon_school.png',
+                  fit: BoxFit.cover,
+                  color: unlocked ? null : const Color(0x99605B67),
+                  colorBlendMode: unlocked ? null : BlendMode.saturation,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xEE211638), Color(0x44211638)],
+                  ),
+                  border: Border.all(
+                    color: unlocked ? AppColors.gold : Colors.white24,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 58,
+                      height: 58,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .13),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        unlocked ? Icons.school_rounded : Icons.lock_rounded,
+                        color: unlocked ? AppColors.gold : Colors.white70,
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            strings.pick('Dragon School', 'Drakenschool'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          Text(
+                            unlocked
+                                ? strings.pick(
+                                    '10 lessons · personal records',
+                                    '10 lessen · persoonlijke records',
+                                  )
+                                : strings.pick(
+                                    'Unlocks when your Tower has 5 floors',
+                                    'Ontgrendelt bij 5 Torenverdiepingen',
+                                  ),
+                            maxLines: textScale > 1.2 ? 4 : 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFFE5DAF3),
+                              fontSize: 11.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (unlocked)
+                      const Icon(Icons.chevron_right_rounded,
+                          color: Colors.white),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -149,6 +149,64 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('later nest egg reveals automatically away from the nest',
+      (tester) async {
+    var now = DateTime.utc(2026, 8, 30, 18);
+    final game = HouseholdProvider(
+      random: Random(61616),
+      clock: () => now,
+      persistenceEnabled: false,
+    )
+      ..accountName = 'Second Egg Keeper'
+      ..onboardingComplete = true
+      ..tutorialCompleted = true
+      ..tutorialFullyViewed = true;
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Ember'
+      ..favorite = true;
+    final laterEgg = Pet(
+      id: 'later-automatic-hatch-egg',
+      stage: DragonStage.egg,
+      firstEgg: false,
+      incubationMinutes: 60,
+      acquiredAt: now,
+      stageStartedAt: now,
+      needsUpdatedAt: now,
+      hatchSeed: 61616,
+    );
+    laterEgg.stageStartedAt = now.subtract(
+      laterEgg.incubationDuration - const Duration(seconds: 2),
+    );
+    game.incubatingEgg = laterEgg;
+
+    await pumpApp(tester, game);
+    final navigator = Navigator.of(
+      tester.element(find.byType(DragonHavenShell)),
+    );
+    unawaited(navigator.push<void>(MaterialPageRoute(
+      builder: (_) => const Scaffold(
+        body: Center(child: Text('Away from the rooftop nest')),
+      ),
+    )));
+    await tester.pumpAndSettle();
+
+    now = now.add(const Duration(seconds: 3));
+    await tester.pump(const Duration(seconds: 1));
+    for (var attempt = 0;
+        attempt < 20 &&
+            find.byKey(const Key('hatch-egg-tap')).evaluate().isEmpty;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(game.incubatingEgg, isNull);
+    expect(game.pet.id, laterEgg.id);
+    expect(game.pet.stage, DragonStage.hatchling);
+    expect(find.byKey(const Key('hatch-egg-tap')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('evolution reveal waits until an active Trial route has closed',
       (tester) async {
     final game = HouseholdProvider(

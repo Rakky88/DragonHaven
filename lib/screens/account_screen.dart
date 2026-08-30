@@ -6,6 +6,7 @@ import '../app_info.dart';
 import '../l10n/app_strings.dart';
 import '../models/account_title.dart';
 import '../models/profile_portrait.dart';
+import '../models/supporter_pack.dart';
 import '../providers/household_provider.dart';
 import '../providers/online_account_provider.dart';
 import 'notification_settings_screen.dart';
@@ -17,6 +18,8 @@ import '../widgets/profile_portrait_sprite.dart';
 
 enum _CloudConflictChoice { viewCloud, keepLocal, replaceCloud, restoreCloud }
 
+const _noFrameSelection = '__no_frame__';
+
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
 
@@ -25,6 +28,7 @@ class AccountScreen extends StatelessWidget {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
     final online = context.watch<OnlineAccountProvider>();
+    final selectedFrame = keeperFrameById(game.selectedFrameId);
     return Scaffold(
       appBar: AppBar(title: Text(strings.tr('account'))),
       body: ListView(
@@ -45,9 +49,11 @@ class AccountScreen extends StatelessWidget {
             child: ListTile(
               key: const Key('account-portrait-collection'),
               contentPadding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
-              leading: ProfilePortraitSprite(
-                portrait: game.selectedPortrait,
-                size: 64,
+              leading: KeeperPortrait(
+                portraitKey: game.selectedPortraitId ?? 'portrait_001',
+                displayName: game.accountName,
+                frameKey: game.selectedFrameId,
+                radius: 32,
               ),
               title: Text(
                 strings.pick('Account portrait', 'Accountportret'),
@@ -100,6 +106,62 @@ class AccountScreen extends StatelessWidget {
               onTap: () => _chooseTitle(context),
             ),
           ),
+          if (game.ownedBadgeIds.contains(supporterBadge.id)) ...[
+            const SizedBox(height: 10),
+            Card(
+              child: SwitchListTile(
+                key: const Key('account-supporter-badge'),
+                value: game.selectedBadgeId == supporterBadge.id,
+                onChanged: (enabled) =>
+                    game.selectKeeperBadge(enabled ? supporterBadge.id : null),
+                secondary: Image.asset(
+                  supporterBadge.assetPath,
+                  width: 54,
+                  height: 54,
+                  errorBuilder: (_, __, ___) =>
+                      const Icon(Icons.shield_rounded),
+                ),
+                title: Text(
+                  strings.pick(supporterBadge.nameEn, supporterBadge.nameNl),
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                subtitle: Text(strings.pick(
+                  'Show this badge on your Keeper identity.',
+                  'Toon deze badge bij je Keeper-identiteit.',
+                )),
+              ),
+            ),
+          ],
+          if (game.ownedFrameIds.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Card(
+              child: ListTile(
+                key: const Key('account-frame-collection'),
+                contentPadding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
+                leading: KeeperPortrait(
+                  portraitKey: game.selectedPortraitId ?? 'portrait_001',
+                  displayName: game.accountName,
+                  frameKey: game.selectedFrameId,
+                  radius: 32,
+                ),
+                title: Text(
+                  selectedFrame != null
+                      ? strings.pick(
+                          selectedFrame.nameEn,
+                          selectedFrame.nameNl,
+                        )
+                      : strings.pick('No portrait frame', 'Geen portretframe'),
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                subtitle: Text(strings.pick(
+                  '${game.ownedFrameIds.length} collected',
+                  '${game.ownedFrameIds.length} verzameld',
+                )),
+                trailing: const Icon(Icons.filter_frames_rounded),
+                onTap: () => _chooseFrame(context),
+              ),
+            ),
+          ],
           const SizedBox(height: 18),
           if (online.isSignedIn) ...[
             Text(strings.pick('Cloud backup', 'Cloudback-up'),
@@ -762,7 +824,7 @@ class AccountScreen extends StatelessWidget {
   Future<void> _choosePortrait(BuildContext context) async {
     final game = context.read<HouseholdProvider>();
     final strings = AppStrings.of(context);
-    final portraits = profilePortraitCatalog
+    final portraits = allProfilePortraits
         .where((portrait) => game.ownedPortraitIds.contains(portrait.id))
         .toList(growable: false);
     if (portraits.isEmpty) {
@@ -888,7 +950,7 @@ class AccountScreen extends StatelessWidget {
   Future<void> _chooseTitle(BuildContext context) async {
     final game = context.read<HouseholdProvider>();
     final strings = AppStrings.of(context);
-    final titles = accountTitleCatalog
+    final titles = allAccountTitles
         .where((title) => game.ownedTitleIds.contains(title.id))
         .toList(growable: false)
       ..sort(
@@ -982,6 +1044,117 @@ class AccountScreen extends StatelessWidget {
       }
     }
   }
+
+  Future<void> _chooseFrame(BuildContext context) async {
+    final game = context.read<HouseholdProvider>();
+    final strings = AppStrings.of(context);
+    final frames = allKeeperFrames
+        .where((frame) => game.ownedFrameIds.contains(frame.id))
+        .toList(growable: false);
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => FractionallySizedBox(
+        heightFactor: .72,
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        strings.pick(
+                          'Choose portrait frame',
+                          'Kies portretframe',
+                        ),
+                        style: Theme.of(sheetContext).textTheme.titleLarge,
+                      ),
+                    ),
+                    Text(
+                      '${frames.length}',
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  key: const Key('account-frame-list'),
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 24),
+                  itemCount: frames.length + 1,
+                  separatorBuilder: (_, __) => const SizedBox(height: 7),
+                  itemBuilder: (context, index) {
+                    final frame = index == 0 ? null : frames[index - 1];
+                    final active = frame?.id == game.selectedFrameId &&
+                        (frame != null || game.selectedFrameId == null);
+                    return Material(
+                      color: active
+                          ? AppColors.goldLight
+                          : const Color(0xFFF4F0FA),
+                      borderRadius: BorderRadius.circular(18),
+                      child: ListTile(
+                        key: Key(frame == null
+                            ? 'select-frame-none'
+                            : 'select-frame-${frame.id}'),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        leading: frame == null
+                            ? const SizedBox.square(
+                                dimension: 58,
+                                child: Icon(Icons.hide_image_rounded),
+                              )
+                            : KeeperPortrait(
+                                portraitKey:
+                                    game.selectedPortraitId ?? 'portrait_001',
+                                displayName: game.accountName,
+                                frameKey: frame.id,
+                                radius: 29,
+                              ),
+                        title: Text(
+                          frame == null
+                              ? strings.pick(
+                                  'No portrait frame',
+                                  'Geen portretframe',
+                                )
+                              : strings.pick(frame.nameEn, frame.nameNl),
+                          style: const TextStyle(fontWeight: FontWeight.w900),
+                        ),
+                        trailing: active
+                            ? const Icon(
+                                Icons.check_circle_rounded,
+                                color: AppColors.twilight,
+                              )
+                            : null,
+                        onTap: () => Navigator.pop(
+                          sheetContext,
+                          frame?.id ?? _noFrameSelection,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected == null || !context.mounted) return;
+    await context.read<HouseholdProvider>().selectKeeperFrame(
+          selected == _noFrameSelection ? null : selected,
+        );
+    if (context.mounted) {
+      final online = context.read<OnlineAccountProvider>();
+      if (online.isSignedIn) await online.synchronizeProfile();
+    }
+  }
 }
 
 class _AccountIdentityCard extends StatelessWidget {
@@ -1022,9 +1195,11 @@ class _AccountIdentityCard extends StatelessWidget {
                   key: const Key('account-current-portrait'),
                   borderRadius: BorderRadius.circular(50),
                   onTap: onChoosePortrait,
-                  child: ProfilePortraitSprite(
-                    portrait: game.selectedPortrait,
-                    size: 92,
+                  child: KeeperPortrait(
+                    portraitKey: game.selectedPortraitId ?? 'portrait_001',
+                    displayName: game.accountName,
+                    frameKey: game.selectedFrameId,
+                    radius: 46,
                   ),
                 ),
                 const SizedBox(width: 11),
@@ -1041,6 +1216,35 @@ class _AccountIdentityCard extends StatelessWidget {
                           fontWeight: FontWeight.w900,
                         ),
                       ),
+                      if (game.selectedBadgeId == supporterBadge.id) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Image.asset(
+                              supporterBadge.assetPath,
+                              width: 24,
+                              height: 24,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.shield_rounded,
+                                size: 20,
+                                color: AppColors.twilight,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                strings.pick('Founding Supporter',
+                                    'Oprichterssupporter'),
+                                style: const TextStyle(
+                                  color: Color(0xFF9A671C),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 3),
                       InkWell(
                         borderRadius: BorderRadius.circular(8),

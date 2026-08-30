@@ -25,8 +25,19 @@ enum HavenNotificationDestination {
   achievements,
 }
 
+enum HavenNotificationPermissionStatus {
+  granted,
+  notDetermined,
+  denied,
+}
+
 abstract final class HavenNotifications {
   static const _channel = MethodChannel('nl.dragonhaven.app/notifications');
+
+  /// Android alarms are deliberately delivered two minutes after the
+  /// gameplay boundary. This absorbs small device/server clock differences
+  /// and guarantees that a notification never announces a reward too early.
+  static const scheduledDeliveryDelay = Duration(minutes: 2);
   static final _navigationEvents =
       StreamController<HavenNotificationDestination>.broadcast();
   static Set<HavenNotificationCategory> _enabled =
@@ -102,6 +113,32 @@ abstract final class HavenNotifications {
     }
   }
 
+  static Future<HavenNotificationPermissionStatus>
+      platformPermissionStatus() async {
+    try {
+      final value = await _channel.invokeMethod<String>('permissionStatus');
+      return switch (value) {
+        'denied' => HavenNotificationPermissionStatus.denied,
+        'notDetermined' => HavenNotificationPermissionStatus.notDetermined,
+        _ => HavenNotificationPermissionStatus.granted,
+      };
+    } on MissingPluginException {
+      return HavenNotificationPermissionStatus.granted;
+    } on PlatformException {
+      return HavenNotificationPermissionStatus.granted;
+    }
+  }
+
+  static Future<bool> requestPlatformPermission() async {
+    try {
+      return await _channel.invokeMethod<bool>('requestPermission') ?? false;
+    } on MissingPluginException {
+      return true;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   static Future<bool> openPlatformNotificationSettings() async {
     try {
       return await _channel.invokeMethod<bool>('openNotificationSettings') ??
@@ -120,11 +157,12 @@ abstract final class HavenNotifications {
     required String body,
     String kind = 'event',
   }) async {
-    if (!at.isAfter(DateTime.now())) return;
+    final deliveryAt = at.add(scheduledDeliveryDelay);
+    if (!deliveryAt.isAfter(DateTime.now())) return;
     try {
       await _channel.invokeMethod<void>('schedule', {
         'id': id,
-        'at': at.millisecondsSinceEpoch,
+        'at': deliveryAt.millisecondsSinceEpoch,
         'title': title,
         'body': body,
         'kind': kind,

@@ -215,120 +215,79 @@ class _ChestRevealState extends State<_ChestReveal>
             child: Stack(
               children: [
                 Positioned(
-                  top: 48,
-                  left: -105,
-                  child: _GlowOrb(color: accent, size: 230),
+                  top: 76,
+                  left: -110,
+                  child: _GlowOrb(color: accent, size: 260),
                 ),
                 Positioned(
-                  right: -85,
-                  bottom: 24,
-                  child: _GlowOrb(color: accent, size: 210),
+                  right: -90,
+                  bottom: 38,
+                  child: _GlowOrb(color: accent, size: 230),
                 ),
                 SafeArea(
                   child: Center(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 360),
+                        constraints: const BoxConstraints(maxWidth: 440),
                         child: Container(
-                          key: const Key('chest-reveal-panel'),
-                          padding: const EdgeInsets.fromLTRB(14, 14, 14, 13),
-                          decoration: BoxDecoration(
-                            color: const Color(0xD91B1238),
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(
-                              color: accent.withValues(alpha: .52),
-                            ),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x66000000),
-                                blurRadius: 28,
-                                offset: Offset(0, 12),
-                              ),
-                            ],
-                          ),
+                          key: const Key('chest-fullscreen-reveal-content'),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: accent.withValues(alpha: .22),
-                                      border: Border.all(
-                                        color: accent.withValues(alpha: .48),
-                                      ),
-                                    ),
-                                    child: GameIconSprite(
-                                      GameIconKind.chest,
-                                      size: 34,
-                                      semanticLabel: displayLabel,
-                                    ),
+                              ...[
+                                GameIconSprite(
+                                  GameIconKind.chest,
+                                  size: 42,
+                                  semanticLabel: displayLabel,
+                                ),
+                                const SizedBox(height: 9),
+                                Text(
+                                  displayLabel,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 28,
+                                    letterSpacing: -.4,
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          displayLabel,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w900,
-                                            fontSize: 21,
-                                            letterSpacing: -.25,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          _opened
-                                              ? widget.quantity > 1
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  _opened
+                                      ? widget.quantity > 1
+                                          ? strings.pick(
+                                              '${widget.quantity} treasures revealed',
+                                              '${widget.quantity} schatten onthuld',
+                                            )
+                                          : tier == ChestTier.portrait
+                                              ? strings.pick(
+                                                  'Portrait revealed',
+                                                  'Portret onthuld')
+                                              : tier == ChestTier.title
                                                   ? strings.pick(
-                                                      '${widget.quantity} treasures revealed',
-                                                      '${widget.quantity} schatten onthuld',
-                                                    )
-                                                  : tier == ChestTier.portrait
+                                                      'Title revealed',
+                                                      'Titel onthuld')
+                                                  : tier == ChestTier.music
                                                       ? strings.pick(
-                                                          'Portrait revealed',
-                                                          'Portret onthuld')
-                                                      : tier == ChestTier.title
-                                                          ? strings.pick(
-                                                              'Title revealed',
-                                                              'Titel onthuld')
-                                                          : tier ==
-                                                                  ChestTier
-                                                                      .music
-                                                              ? strings.pick(
-                                                                  'Music revealed',
-                                                                  'Muziek onthuld')
-                                                              : strings.pick(
-                                                                  'Treasure revealed',
-                                                                  'Schat onthuld')
-                                              : _opening
-                                                  ? strings.pick(
-                                                      'Ancient magic awakens',
-                                                      'Oude magie ontwaakt')
-                                                  : strings.pick(
-                                                      'Sealed treasure',
-                                                      'Verzegelde schat'),
-                                          style: const TextStyle(
-                                            color: Color(0xFFC9C2E5),
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                                          'Music revealed',
+                                                          'Muziek onthuld')
+                                                      : strings.pick(
+                                                          'Treasure revealed',
+                                                          'Schat onthuld')
+                                      : _opening
+                                          ? strings.pick(
+                                              'Ancient magic awakens',
+                                              'Oude magie ontwaakt')
+                                          : strings.pick('Sealed treasure',
+                                              'Verzegelde schat'),
+                                  style: const TextStyle(
+                                    color: Color(0xFFC9C2E5),
+                                    fontWeight: FontWeight.w700,
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
+                                ),
+                              ],
+                              const SizedBox(height: 16),
                               Semantics(
                                 button: !_opening && !_opened,
                                 label: _opening
@@ -340,14 +299,14 @@ class _ChestRevealState extends State<_ChestReveal>
                                   onTap: _opening || _opened ? null : _open,
                                   child: SizedBox(
                                     width: double.infinity,
-                                    height: 210,
+                                    height: 300,
                                     child: RepaintBoundary(
                                       child: Stack(
                                         alignment: Alignment.center,
                                         children: [
                                           Container(
-                                            width: 198,
-                                            height: 198,
+                                            width: 286,
+                                            height: 286,
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
                                               border: Border.all(
@@ -355,15 +314,16 @@ class _ChestRevealState extends State<_ChestReveal>
                                                     alpha: .38),
                                               ),
                                               gradient: RadialGradient(colors: [
-                                                accent.withValues(alpha: .42),
-                                                accent.withValues(alpha: .10),
+                                                accent.withValues(alpha: .48),
+                                                accent.withValues(alpha: .12),
                                                 Colors.transparent,
                                               ]),
                                               boxShadow: [
                                                 BoxShadow(
                                                   color: accent.withValues(
-                                                      alpha: .25),
-                                                  blurRadius: 34,
+                                                      alpha: .32),
+                                                  blurRadius: 56,
+                                                  spreadRadius: 2,
                                                 ),
                                               ],
                                             ),
@@ -385,8 +345,8 @@ class _ChestRevealState extends State<_ChestReveal>
                                               ),
                                               child: Image.asset(
                                                 GameVfxAssets.chestBurst,
-                                                width: 224,
-                                                height: 224,
+                                                width: 305,
+                                                height: 305,
                                                 fit: BoxFit.contain,
                                                 cacheWidth: 512,
                                               ),
@@ -411,13 +371,13 @@ class _ChestRevealState extends State<_ChestReveal>
                                                   shake,
                                                   _lidRevealed
                                                       ? 0
-                                                      : -4 + _float.value * 8,
+                                                      : -5 + _float.value * 10,
                                                 ),
                                                 child: Transform.scale(
                                                   scale: _lidRevealed
-                                                      ? 1.03
+                                                      ? 1.05
                                                       : .96 +
-                                                          _float.value * .03,
+                                                          _float.value * .035,
                                                   child: child,
                                                 ),
                                               );
@@ -438,7 +398,7 @@ class _ChestRevealState extends State<_ChestReveal>
                                               ),
                                               child: SizedBox.square(
                                                 key: ValueKey(_lidRevealed),
-                                                dimension: 196,
+                                                dimension: 280,
                                                 child: Padding(
                                                   padding:
                                                       const EdgeInsets.all(6),
@@ -462,106 +422,42 @@ class _ChestRevealState extends State<_ChestReveal>
                                 ),
                               ),
                               AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 420),
+                                duration: const Duration(milliseconds: 480),
                                 transitionBuilder: (child, animation) =>
                                     FadeTransition(
                                   opacity: animation,
                                   child: ScaleTransition(
-                                    scale: Tween(begin: .9, end: 1.0)
+                                    scale: Tween(begin: .86, end: 1.0)
                                         .animate(animation),
                                     child: child,
                                   ),
                                 ),
                                 child: !_opened
-                                    ? Padding(
-                                        key: const Key('chest-opening'),
-                                        padding: const EdgeInsets.only(top: 4),
-                                        child: Text(
-                                          _opening
-                                              ? strings.pick(
-                                                  'Chest opening', 'Kist opent')
-                                              : strings.pick(
-                                                  'Tap the chest to open',
-                                                  'Tik op de kist om te openen'),
-                                          style: const TextStyle(
-                                            color: Color(0xFFC9C2E5),
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      )
-                                    : Container(
+                                    ? const SizedBox(
+                                        key: Key('chest-opening'), height: 72)
+                                    : Column(
                                         key: const Key('chest-rewards'),
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white
-                                              .withValues(alpha: .08),
-                                          borderRadius:
-                                              BorderRadius.circular(18),
-                                          border: Border.all(
-                                            color: Colors.white
-                                                .withValues(alpha: .12),
+                                        children: [
+                                          Wrap(
+                                            alignment: WrapAlignment.center,
+                                            spacing: 9,
+                                            runSpacing: 9,
+                                            children: _rewardWidgets(strings),
                                           ),
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Text(
-                                                strings.pick(
-                                                    'Rewards', 'Beloningen'),
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w900,
-                                                ),
-                                              ),
+                                          const SizedBox(height: 18),
+                                          Text(
+                                            strings.pick(
+                                              'Tap anywhere to return',
+                                              'Tik ergens om terug te gaan',
                                             ),
-                                            const SizedBox(height: 8),
-                                            ConstrainedBox(
-                                              constraints: BoxConstraints(
-                                                maxHeight: widget.quantity > 1
-                                                    ? 220
-                                                    : 330,
-                                              ),
-                                              child: SingleChildScrollView(
-                                                child: Wrap(
-                                                  alignment:
-                                                      WrapAlignment.center,
-                                                  spacing: 7,
-                                                  runSpacing: 7,
-                                                  children:
-                                                      _rewardWidgets(strings),
-                                                ),
-                                              ),
+                                            style: const TextStyle(
+                                              color: Color(0xFFC9C2E5),
+                                              fontWeight: FontWeight.w700,
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
                               ),
-                              const SizedBox(height: 11),
-                              if (_opened)
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: FilledButton.icon(
-                                    key: const Key('chest-reveal-continue'),
-                                    onPressed: _close,
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: accent,
-                                      foregroundColor: Colors.white,
-                                      minimumSize: const Size.fromHeight(44),
-                                    ),
-                                    icon: const Icon(
-                                        Icons.check_circle_outline_rounded),
-                                    label: Text(
-                                      strings.pick('Continue', 'Verder'),
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w900),
-                                    ),
-                                  ),
-                                )
-                              else
-                                const SizedBox(height: 44),
                             ],
                           ),
                         ),

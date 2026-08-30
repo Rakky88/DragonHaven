@@ -3,13 +3,24 @@ class AccountTitle {
     required this.id,
     required this.prefixIndex,
     required this.roleIndex,
+    this.labelEn,
+    this.labelNl,
+    this.supporterExclusive = false,
   });
 
   final String id;
   final int prefixIndex;
   final int roleIndex;
+  final String? labelEn;
+  final String? labelNl;
+  final bool supporterExclusive;
 
   String label(String languageCode) {
+    if (supporterExclusive) {
+      return languageCode == 'nl'
+          ? (labelNl ?? labelEn ?? id)
+          : (labelEn ?? labelNl ?? id);
+    }
     final words =
         _localizedTitleWords[languageCode] ?? _localizedTitleWords['en']!;
     return '${words.prefixes[prefixIndex]} ${words.roles[roleIndex]}';
@@ -445,8 +456,22 @@ final List<AccountTitle> accountTitleCatalog = List.unmodifiable(
   }),
 );
 
+const supporterAccountTitle = AccountTitle(
+  id: 'title_supporter_founder',
+  prefixIndex: 0,
+  roleIndex: 0,
+  labelEn: 'Founding Supporter',
+  labelNl: 'Oprichterssupporter',
+  supporterExclusive: true,
+);
+
+final List<AccountTitle> allAccountTitles = List.unmodifiable([
+  ...accountTitleCatalog,
+  supporterAccountTitle,
+]);
+
 final Map<String, AccountTitle> _accountTitlesById = Map.unmodifiable({
-  for (final title in accountTitleCatalog) title.id: title,
+  for (final title in allAccountTitles) title.id: title,
 });
 
 AccountTitle? accountTitleById(String? id) =>

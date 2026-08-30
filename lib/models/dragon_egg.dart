@@ -10,13 +10,16 @@ class DragonEgg {
     required this.hatchSeed,
     required this.prismatic,
     this.lawAxis = LawAxis.neutral,
-    this.moralAxis = MoralAxis.neutral,
+    MoralAxis moralAxis = MoralAxis.neutral,
     this.sizeFactor = 1,
     int incubationMinutes = 1008,
     int? incubationSeconds,
-    this.sinister = false,
+    bool sinister = false,
     this.xp = 0,
-  }) : incubationSeconds = (incubationSeconds ?? incubationMinutes * 60)
+  })  : moralAxis =
+            sinister || lineageId == 'sinisterra' ? MoralAxis.evil : moralAxis,
+        sinister = sinister || lineageId == 'sinisterra',
+        incubationSeconds = (incubationSeconds ?? incubationMinutes * 60)
             .clamp(60, 14 * 24 * 60 * 60);
 
   final String id;
@@ -49,6 +52,7 @@ class DragonEgg {
         sinister: sinister,
         lawAxis: lawAxis,
         moralAxis: moralAxis,
+        moralAxisKnown: isSinisterEgg,
         sizeFactor: sizeFactor,
         incubationSeconds: incubationSeconds,
         firstEgg: false,

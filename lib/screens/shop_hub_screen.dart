@@ -8,9 +8,12 @@ import '../models/mystic_relic.dart';
 import '../models/music_track.dart';
 import '../models/profile_portrait.dart';
 import '../models/shop_item.dart';
+import '../models/supporter_pack.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_icon_sprite.dart';
+import '../widgets/furniture_art.dart';
+import '../widgets/profile_portrait_sprite.dart';
 import '../widgets/ui_bits.dart';
 import 'shop_screen.dart';
 
@@ -28,7 +31,7 @@ class ShopHubScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return DefaultTabController(
-      length: 2,
+      length: 3,
       initialIndex: initialCurrencyTab,
       child: Column(
         children: [
@@ -45,6 +48,11 @@ class ShopHubScreen extends StatelessWidget {
                 icon: const GameIconSprite(GameIconKind.gem, size: 35),
                 text: strings.pick('Gems', 'Edelstenen'),
               ),
+              Tab(
+                key: const Key('shop-tab-packs'),
+                icon: const Icon(Icons.card_giftcard_rounded, size: 31),
+                text: strings.pick('Packs', 'Pakketten'),
+              ),
             ],
           ),
           Expanded(
@@ -58,6 +66,7 @@ class ShopHubScreen extends StatelessWidget {
                   currency: ItemCurrency.gems,
                   initialCategoryTab: initialCategoryTab,
                 ),
+                const _PacksShop(),
               ],
             ),
           ),
@@ -65,6 +74,286 @@ class ShopHubScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PacksShop extends StatelessWidget {
+  const _PacksShop();
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final game = context.watch<HouseholdProvider>();
+    return ListView(
+      key: const PageStorageKey('packs-shop-scroll'),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 34),
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.card_giftcard_rounded,
+                color: AppColors.twilight, size: 34),
+            const SizedBox(width: 9),
+            Text(
+              strings.pick('Packs', 'Pakketten'),
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          strings.pick(
+            'Special cosmetic collections. More packs can join this shop later.',
+            'Speciale cosmetische collecties. Later kunnen hier meer pakketten bijkomen.',
+          ),
+          style: const TextStyle(color: AppColors.muted, height: 1.3),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF211638), Color(0xFF694A97), Color(0xFFB1784B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: AppColors.gold),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x332A1E50),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Image.asset(
+                supporterBadge.assetPath,
+                width: 104,
+                height: 104,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.favorite_rounded,
+                  color: AppColors.gold,
+                  size: 88,
+                ),
+              ),
+              Text(
+                strings.pick(
+                    'Founding Supporter Pack', 'Oprichterssupporter-pakket'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                strings.pick(
+                  'A permanent collection of cosmetics made to thank the Keepers who help DragonHaven grow.',
+                  'Een permanente collectie cosmetica als dank aan de Keepers die DragonHaven helpen groeien.',
+                ),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFFE9DFF9), height: 1.3),
+              ),
+              const SizedBox(height: 13),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .13),
+                  borderRadius: BorderRadius.circular(99),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: Text(
+                  game.supporterPackOwned
+                      ? strings.pick('OWNED', 'IN BEZIT')
+                      : '€2,99',
+                  style: const TextStyle(
+                    color: AppColors.gold,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(strings.pick('Everything included', 'Alles inbegrepen'),
+            style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        _SupporterContentTile(
+          art: ProfilePortraitSprite(
+              portrait: supporterProfilePortrait, size: 64),
+          title: strings.pick(
+              'Exclusive supporter portrait', 'Exclusief supporterportret'),
+          body: strings.pick(
+            'Separate from Portrait Chests and never changes their odds.',
+            'Staat los van Portretkisten en verandert hun kansen nooit.',
+          ),
+        ),
+        _SupporterContentTile(
+          art: const Icon(Icons.workspace_premium_rounded,
+              color: AppColors.twilight, size: 46),
+          title: strings.pick(
+              '“Founding Supporter” title', 'Titel “Oprichterssupporter”'),
+          body: strings.pick(
+            'Separate from Title Chests and never changes their odds.',
+            'Staat los van Titelkisten en verandert hun kansen nooit.',
+          ),
+        ),
+        _SupporterContentTile(
+          art: Image.asset(supporterBadge.assetPath,
+              errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.shield_rounded, size: 46)),
+          title: strings.pick('Supporter badge', 'Supporterbadge'),
+          body: strings.pick(
+            'A new identity cosmetic that clearly marks your support.',
+            'Een nieuw identiteitsitem dat jouw steun duidelijk laat zien.',
+          ),
+        ),
+        _SupporterContentTile(
+          art: Image.asset(supporterFrame.assetPath,
+              errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.crop_square_rounded, size: 46)),
+          title: strings.pick(
+              'Supporter portrait frame', 'Supporter-portretlijst'),
+          body: strings.pick(
+            'An equipable profile frame created exclusively for this pack.',
+            'Een instelbare profiellijst, exclusief gemaakt voor dit pakket.',
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF7F2FF),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                strings.pick('Complete supporter furniture set',
+                    'Volledige supporter-meubelset'),
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 9),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: supporterFurnitureCatalog.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.05,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemBuilder: (context, index) {
+                  final item = supporterFurnitureCatalog[index];
+                  return Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0x33A87836)),
+                    ),
+                    child: Column(
+                      children: [
+                        Expanded(child: FurnitureArt(item: item)),
+                        Text(
+                          strings.itemName(item),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 10.5, fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            key: const Key('buy-supporter-pack'),
+            onPressed: game.supporterPackOwned
+                ? null
+                : () => showAppSnackBar(
+                      context,
+                      strings.pick(
+                        'The pack is ready for €2.99. Purchasing becomes available after the Google Play product and secure server verification are connected.',
+                        'Het pakket staat klaar voor €2,99. Kopen wordt beschikbaar zodra het Google Play-product en veilige servercontrole zijn aangesloten.',
+                      ),
+                    ),
+            icon: Icon(game.supporterPackOwned
+                ? Icons.check_circle_rounded
+                : Icons.lock_rounded),
+            label: Text(game.supporterPackOwned
+                ? strings.pick('Pack owned', 'Pakket in bezit')
+                : strings.pick('€2.99 · Google Play setup required',
+                    '€2,99 · Google Play-instelling nodig')),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          strings.pick(
+            'Cosmetic only: no gems, coins, power or gameplay advantage.',
+            'Alleen cosmetisch: geen gems, munten, kracht of spelvoordeel.',
+          ),
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.muted, fontSize: 11),
+        ),
+      ],
+    );
+  }
+}
+
+class _SupporterContentTile extends StatelessWidget {
+  const _SupporterContentTile({
+    required this.art,
+    required this.title,
+    required this.body,
+  });
+
+  final Widget art;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        margin: const EdgeInsets.only(bottom: 8),
+        elevation: 0,
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              SizedBox.square(dimension: 64, child: Center(child: art)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 2),
+                    Text(body,
+                        style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 11,
+                            height: 1.25)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 class _CurrencyShop extends StatelessWidget {
@@ -313,7 +602,8 @@ class _ChestShop extends StatelessWidget {
     final capacityReached = portraitChest
         ? game.portraitChestCapacityReached
         : game.titleChestCapacityReached;
-    final owned = portraitChest ? game.portraitCount : game.titleCount;
+    final owned =
+        portraitChest ? game.chestPortraitCount : game.chestTitleCount;
     final total = portraitChest
         ? profilePortraitCatalog.length
         : accountTitleCatalog.length;

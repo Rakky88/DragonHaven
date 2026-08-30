@@ -45,6 +45,7 @@ class MainActivity : FlutterActivity() {
     private var currentMusicTrack: String? = null
     private var fadeGeneration = 0
     private var notificationPermissionRequestPending = false
+    private var explicitNotificationPermissionResult: MethodChannel.Result? = null
     private var notificationChannel: MethodChannel? = null
     private val notificationsWaitingForPermission = linkedMapOf<String, ScheduledNotification>()
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -173,6 +174,8 @@ class MainActivity : FlutterActivity() {
                     result.success(kind)
                 }
                 "permissionGranted" -> result.success(hasNotificationPermission())
+                "permissionStatus" -> result.success(notificationPermissionStatus())
+                "requestPermission" -> requestNotificationPermissionExplicitly(result)
                 "openNotificationSettings" -> {
                     try {
                         startActivity(
@@ -389,10 +392,73 @@ class MainActivity : FlutterActivity() {
         else -> 0
     }
 
-    private fun hasNotificationPermission(): Boolean =
+    private fun hasRuntimeNotificationPermission(): Boolean =
         Build.VERSION.SDK_INT < 33 ||
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
             android.content.pm.PackageManager.PERMISSION_GRANTED
+
+    private fun hasNotificationPermission(): Boolean =
+        hasRuntimeNotificationPermission() &&
+            NotificationManagerCompat.from(this).areNotificationsEnabled()
+
+    private fun notificationPermissionStatus(): String {
+        if (hasNotificationPermission()) return "granted"
+        if (Build.VERSION.SDK_INT < 33 || hasRuntimeNotificationPermission()) {
+            return "denied"
+        }
+        if (notificationPreferences.getBoolean(
+                NOTIFICATION_PERMISSION_PROMPT_HANDLED,
+                false,
+            )
+        ) return "denied"
+        if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+            notificationPreferences.edit()
+                .putBoolean(NOTIFICATION_PERMISSION_PROMPT_HANDLED, true)
+                .apply()
+            return "denied"
+        }
+        val packageInfo = packageManager.getPackageInfo(packageName, 0)
+        if (packageInfo.lastUpdateTime > packageInfo.firstInstallTime) {
+            notificationPreferences.edit()
+                .putBoolean(NOTIFICATION_PERMISSION_PROMPT_HANDLED, true)
+                .apply()
+            return "denied"
+        }
+        return "notDetermined"
+    }
+
+    private fun requestNotificationPermissionExplicitly(result: MethodChannel.Result) {
+        if (hasNotificationPermission()) {
+            result.success(true)
+            return
+        }
+        // Android versions without the runtime permission, or users who kept
+        // the runtime grant but disabled notifications in system settings,
+        // must use the app-specific settings screen opened by Flutter.
+        if (Build.VERSION.SDK_INT < 33 || hasRuntimeNotificationPermission()) {
+            result.success(false)
+            return
+        }
+        if (!activityInForeground || notificationPermissionRequestPending) {
+            result.success(false)
+            return
+        }
+        notificationPermissionRequestPending = true
+        explicitNotificationPermissionResult = result
+        notificationPreferences.edit()
+            .putBoolean(NOTIFICATION_PERMISSION_PROMPT_HANDLED, true)
+            .apply()
+        try {
+            requestPermissions(
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                NOTIFICATION_PERMISSION_REQUEST,
+            )
+        } catch (_: Exception) {
+            notificationPermissionRequestPending = false
+            explicitNotificationPermissionResult = null
+            result.success(false)
+        }
+    }
 
     private fun requestNotificationPermissionIfNeeded() {
         if (
@@ -507,10 +573,13 @@ class MainActivity : FlutterActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode != NOTIFICATION_PERMISSION_REQUEST) return
         notificationPermissionRequestPending = false
-        if (hasNotificationPermission()) {
+        val granted = hasNotificationPermission()
+        if (granted) {
             notificationsWaitingForPermission.values.forEach(::scheduleNotification)
         }
         notificationsWaitingForPermission.clear()
+        explicitNotificationPermissionResult?.success(granted)
+        explicitNotificationPermissionResult = null
     }
 
     private fun playOneShot(id: String): Boolean {

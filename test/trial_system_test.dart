@@ -62,7 +62,7 @@ void main() {
     expect((scheduled.arguments as Map)['id'], 'trials-full');
     expect(
       (scheduled.arguments as Map)['at'],
-      DateTime(2036, 8, 26, 10, 15).millisecondsSinceEpoch,
+      DateTime(2036, 8, 26, 10, 17).millisecondsSinceEpoch,
     );
   });
 

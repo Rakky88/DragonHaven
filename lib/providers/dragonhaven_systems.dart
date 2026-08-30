@@ -363,10 +363,22 @@ extension DragonHavenSystems on HouseholdProvider {
   int get coins => pet.coins;
   int get gems => pet.gems;
   int get towerFloorCount => towerFloorRoomIds.length;
+  bool get dragonSchoolUnlocked => towerFloorCount >= 5;
   int get towerRoamingCapacity => towerFloorCount * maxDragonsPerTowerFloor;
   int get selectedRoamingDragonCount =>
       ownedDragons.where((dragon) => dragon.roamsTower).length;
   bool get hasSpectralCollection => prismaticForms.isNotEmpty;
+
+  Future<bool> recordDragonSchoolScore(String gameId, int score) async {
+    if (!dragonSchoolUnlocked || gameId.trim().isEmpty || score < 0) {
+      return false;
+    }
+    final oldScore = dragonSchoolRecords[gameId] ?? 0;
+    if (score <= oldScore) return false;
+    dragonSchoolRecords[gameId] = score.clamp(0, 1000000000);
+    await _notifyAndSave();
+    return true;
+  }
 
   bool roamIdleDragons() {
     final accessible = <int>[
@@ -887,6 +899,7 @@ extension DragonHavenSystems on HouseholdProvider {
       _grantRelic(relic);
     }
     trialOffers.removeAt(offerIndex);
+    _recordTrialStreakCompletion(_clock());
     _scheduleTrialsFullNotification();
     _evolveReadyDragons(_clock());
     _addActivity(
@@ -905,6 +918,93 @@ extension DragonHavenSystems on HouseholdProvider {
       newDragonBest: newBest,
       reward: reward,
     );
+  }
+
+  bool _normalizeTrialStreakForDate(DateTime now) {
+    final today = DateTime(now.year, now.month, now.day);
+    if (trialStreakRewardReady) {
+      if (trialStreakCarryDayKey.isEmpty) return false;
+      final carriedDay = DateTime.tryParse(trialStreakCarryDayKey);
+      final distance = carriedDay == null
+          ? 2
+          : today
+              .difference(
+                  DateTime(carriedDay.year, carriedDay.month, carriedDay.day))
+              .inDays;
+      if (distance >= 0 && distance <= 1) return false;
+      // The pending seven-day reward remains claimable, but a day missed
+      // behind it may not survive as the first day of the next streak.
+      trialStreakCarryDayKey = '';
+      return true;
+    }
+    if (trialStreakCount == 0) return false;
+    final lastDay = DateTime.tryParse(trialStreakLastDayKey);
+    if (lastDay == null) {
+      trialStreakCount = 0;
+      trialStreakLastDayKey = '';
+      return true;
+    }
+    final normalizedLast = DateTime(lastDay.year, lastDay.month, lastDay.day);
+    final distance = today.difference(normalizedLast).inDays;
+    if (distance <= 1 && distance >= 0) return false;
+    trialStreakCount = 0;
+    trialStreakLastDayKey = '';
+    return true;
+  }
+
+  void _recordTrialStreakCompletion(DateTime now) {
+    final dayKey = HouseholdProvider._dayKey(now);
+    _normalizeTrialStreakForDate(now);
+    if (trialStreakRewardReady) {
+      if (dayKey != trialStreakLastDayKey) {
+        // At most one day may wait behind an unclaimed seven-day reward. The
+        // latest completed day is retained so the next streak can continue.
+        trialStreakCarryDayKey = dayKey;
+      }
+      return;
+    }
+
+    if (dayKey == trialStreakLastDayKey) return;
+    final lastDay = DateTime.tryParse(trialStreakLastDayKey);
+    final today = DateTime(now.year, now.month, now.day);
+    final consecutive = lastDay != null &&
+        today
+                .difference(DateTime(lastDay.year, lastDay.month, lastDay.day))
+                .inDays ==
+            1;
+    trialStreakCount = consecutive ? trialStreakCount + 1 : 1;
+    trialStreakLastDayKey = dayKey;
+    if (trialStreakCount >= 7) {
+      trialStreakCount = 7;
+      trialStreakRewardReady = true;
+      trialStreakCarryDayKey = '';
+    }
+  }
+
+  Future<ChestTier?> claimTrialStreakReward() async {
+    if (!trialStreakRewardReady) return null;
+    _normalizeTrialStreakForDate(_clock());
+    final reward =
+        _random.nextDouble() < .05 ? ChestTier.mythical : ChestTier.dragon;
+    chestInventory.update(reward, (count) => count + 1, ifAbsent: () => 1);
+
+    trialStreakRewardReady = false;
+    if (trialStreakCarryDayKey.isNotEmpty) {
+      trialStreakCount = 1;
+      trialStreakLastDayKey = trialStreakCarryDayKey;
+    } else {
+      trialStreakCount = 0;
+      trialStreakLastDayKey = '';
+    }
+    trialStreakCarryDayKey = '';
+    _addActivity(
+      message: 'A seven-day Trial streak earned a ${reward.name} chest.',
+      type: ActivityType.milestone,
+      code: ActivityCode.bonusFound,
+      subject: reward.name,
+    );
+    await _notifyAndSave();
+    return reward;
   }
 
   void _addAdventureOptions({
@@ -1250,21 +1350,7 @@ extension DragonHavenSystems on HouseholdProvider {
     );
     dragon.activeAdventureId = run.id;
     adventureRuns.add(run);
-    final strings = AppStrings(languageCode);
-    await HavenNotifications.schedule(
-      id: 'adventure-${run.id}',
-      // Keep the OS alarm just beyond the authoritative gameplay boundary.
-      // This prevents sub-second clock/serialization rounding from announcing
-      // a return while the run still has a fraction of a second left.
-      at: adventureReturnNotificationAt(run.endsAt),
-      title: strings.pick('${dragon.displayName} has returned',
-          '${dragon.displayName} is teruggekeerd'),
-      body: strings.pick(
-        'An Adventure reward is ready in DragonHaven.',
-        'Er staat een Adventure-beloning klaar in DragonHaven.',
-      ),
-      kind: 'adventure_complete',
-    );
+    await _scheduleAdventureReturnNotification(run, dragon);
     adventureOptionIds[adventure.kind]?.remove(adventure.id);
     if (adventure.kind == AdventureKind.mini) {
       miniAdventureRefilledAt = now;
@@ -1277,6 +1363,39 @@ extension DragonHavenSystems on HouseholdProvider {
 
   DateTime adventureReturnNotificationAt(DateTime endsAt) =>
       endsAt.add(const Duration(seconds: 1));
+
+  Future<void> _scheduleAdventureReturnNotification(
+    AdventureRun run,
+    Pet dragon,
+  ) async {
+    final strings = AppStrings(languageCode);
+    await HavenNotifications.schedule(
+      id: 'adventure-${run.id}',
+      // Keep the logical boundary one second beyond completion. The shared
+      // notification service then applies its two-minute delivery margin.
+      at: adventureReturnNotificationAt(run.endsAt),
+      title: strings.pick('${dragon.displayName} has returned',
+          '${dragon.displayName} is teruggekeerd'),
+      body: strings.pick(
+        'An Adventure reward is ready in DragonHaven.',
+        'Er staat een Adventure-beloning klaar in DragonHaven.',
+      ),
+      kind: 'adventure_complete',
+    );
+  }
+
+  Future<void> _rescheduleAdventureReturnNotifications() async {
+    final now = _clock();
+    for (final run in adventureRuns.where(
+      (run) =>
+          run.status == AdventureRunStatus.running && run.endsAt.isAfter(now),
+    )) {
+      final dragon = dragonById(run.dragonId);
+      if (dragon != null) {
+        await _scheduleAdventureReturnNotification(run, dragon);
+      }
+    }
+  }
 
   Future<void> dismissAdventure(AdventureDefinition adventure) async {
     if ((adventure.kind != AdventureKind.mini &&
@@ -1462,6 +1581,58 @@ extension DragonHavenSystems on HouseholdProvider {
     _evaluateAchievements();
     await _notifyAndSave();
     return TowerBuildResult.built;
+  }
+
+  /// Reorders the visible Tower floors from top to bottom. The Rooftop Nest
+  /// is not part of [towerFloorRoomIds], so it can never be moved. Dragons,
+  /// visitors and floor damage follow the room they were attached to.
+  Future<bool> reorderTowerFloor(
+    int oldVisualIndex,
+    int newVisualIndex,
+  ) async {
+    final count = towerFloorRoomIds.length;
+    if (count < 2 ||
+        oldVisualIndex < 0 ||
+        oldVisualIndex >= count ||
+        newVisualIndex < 0 ||
+        newVisualIndex >= count ||
+        oldVisualIndex == newVisualIndex) {
+      return false;
+    }
+
+    final topToBottomOldIndices = List<int>.generate(
+      count,
+      (visualIndex) => count - visualIndex - 1,
+    );
+    final moved = topToBottomOldIndices.removeAt(oldVisualIndex);
+    topToBottomOldIndices.insert(newVisualIndex, moved);
+    final bottomToTopOldIndices = topToBottomOldIndices.reversed.toList();
+    final oldRooms = List<String>.of(towerFloorRoomIds);
+    towerFloorRoomIds = [
+      for (final oldIndex in bottomToTopOldIndices) oldRooms[oldIndex],
+    ];
+    final newIndexForOld = <int, int>{
+      for (var newIndex = 0;
+          newIndex < bottomToTopOldIndices.length;
+          newIndex++)
+        bottomToTopOldIndices[newIndex]: newIndex,
+    };
+
+    for (final dragon in {...ownedDragons, ...releasedDragons}) {
+      final nextFloor = newIndexForOld[dragon.currentFloorIndex];
+      if (nextFloor != null) dragon.currentFloorIndex = nextFloor;
+    }
+    damagedTowerFloors = {
+      for (final oldIndex in damagedTowerFloors)
+        if (newIndexForOld[oldIndex] case final newIndex?) newIndex,
+    };
+    damagedTowerRepairFactors = {
+      for (final entry in damagedTowerRepairFactors.entries)
+        if (newIndexForOld[entry.key] case final newIndex?)
+          newIndex: entry.value,
+    };
+    await _notifyAndSave();
+    return true;
   }
 
   int get nextTowerFloorPrice =>

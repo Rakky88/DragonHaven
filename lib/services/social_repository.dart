@@ -47,6 +47,7 @@ abstract interface class SocialRepository {
     required String displayName,
     required String title,
     required String portraitKey,
+    String? frameKey,
   });
   Future<void> importLegacyInventory(OnlineInventorySnapshot snapshot);
   Future<void> publishSocialShowcase(OnlineInventorySnapshot snapshot);
@@ -217,6 +218,7 @@ class DisabledSocialRepository implements SocialRepository {
     required String displayName,
     required String title,
     required String portraitKey,
+    String? frameKey,
   }) async =>
       _disabled();
   @override

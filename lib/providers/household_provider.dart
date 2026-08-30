@@ -19,6 +19,7 @@ import '../models/music_track.dart';
 import '../models/pet.dart';
 import '../models/profile_portrait.dart';
 import '../models/shop_item.dart';
+import '../models/supporter_pack.dart';
 import '../models/tower_interaction.dart';
 import '../models/trial.dart';
 import '../services/storage_service.dart';
@@ -97,7 +98,7 @@ enum RoomUnlockResult {
 }
 
 class HouseholdProvider extends ChangeNotifier {
-  static const saveSchemaVersion = 44;
+  static const saveSchemaVersion = 45;
 
   HouseholdProvider({
     Random? random,
@@ -166,6 +167,12 @@ class HouseholdProvider extends ChangeNotifier {
   String? selectedPortraitId;
   Set<String> ownedTitleIds = {};
   String? selectedTitleId;
+  bool supporterPackOwned = false;
+  Set<String> ownedBadgeIds = {};
+  String? selectedBadgeId;
+  Set<String> ownedFrameIds = {};
+  String? selectedFrameId;
+  Set<String> appliedVerifiedPurchaseIds = {};
   Set<String> eggRarityRevealedIds = {};
   List<int> chronoshardReductions = [];
   bool twinstarBroochEverObtained = false;
@@ -192,6 +199,11 @@ class HouseholdProvider extends ChangeNotifier {
   List<AdventureRun> adventureRuns = [];
   List<TrialOffer> trialOffers = [];
   DateTime? trialRefilledAt;
+  int trialStreakCount = 0;
+  String trialStreakLastDayKey = '';
+  bool trialStreakRewardReady = false;
+  String trialStreakCarryDayKey = '';
+  Map<String, int> dragonSchoolRecords = {};
   Set<String> appliedOnlineGroupRewardIds = {};
   Set<String> appliedOnlineTradeIds = {};
   Set<String> reservedOnlineTradeEggIds = {};
@@ -329,6 +341,8 @@ class HouseholdProvider extends ChangeNotifier {
         ),
       ]
       ..trialRefilledAt = now
+      ..trialStreakCount = 5
+      ..trialStreakLastDayKey = _dayKey(now)
       ..unlockedAchievementIds =
           achievementCatalog.map((achievement) => achievement.id).toSet()
       ..pendingPresentations = [];
@@ -455,7 +469,7 @@ class HouseholdProvider extends ChangeNotifier {
         await provider._save();
       }
     }
-    await provider._rescheduleNestEggNotification();
+    await provider._rescheduleTimedNotifications();
     return provider;
   }
 
@@ -919,6 +933,20 @@ class HouseholdProvider extends ChangeNotifier {
     } else {
       selectedTitleId ??= ownedTitleIds.first;
     }
+    supporterPackOwned = data['supporterPackOwned'] is bool &&
+        data['supporterPackOwned'] as bool;
+    ownedBadgeIds = stringSetFromJson(data['ownedBadgeIds'])
+      ..retainAll({supporterBadge.id});
+    selectedBadgeId = ownedBadgeIds.contains(data['selectedBadgeId'])
+        ? stringFromJson(data['selectedBadgeId'])
+        : null;
+    ownedFrameIds = stringSetFromJson(data['ownedFrameIds'])
+      ..retainAll({supporterFrame.id});
+    selectedFrameId = ownedFrameIds.contains(data['selectedFrameId'])
+        ? stringFromJson(data['selectedFrameId'])
+        : null;
+    appliedVerifiedPurchaseIds =
+        stringSetFromJson(data['appliedVerifiedPurchaseIds']).take(100).toSet();
     discoveredForms = stringSetFromJson(data['discoveredForms']);
     prismaticForms = stringSetFromJson(data['prismaticForms']);
     unlockedAchievementIds = stringSetFromJson(data['achievements']);
@@ -995,6 +1023,22 @@ class HouseholdProvider extends ChangeNotifier {
         .toList();
     trialRefilledAt =
         DateTime.tryParse(stringFromJson(data['trialRefilledAt']) ?? '');
+    trialStreakCount = nonNegativeIntFromJson(
+      data['trialStreakCount'],
+      fallback: 0,
+    ).clamp(0, 7);
+    trialStreakLastDayKey = stringFromJson(data['trialStreakLastDayKey']) ?? '';
+    trialStreakRewardReady = data['trialStreakRewardReady'] is bool &&
+        data['trialStreakRewardReady'] as bool;
+    trialStreakCarryDayKey =
+        stringFromJson(data['trialStreakCarryDayKey']) ?? '';
+    if (trialStreakRewardReady) trialStreakCount = 7;
+    if (trialStreakCount == 0) trialStreakLastDayKey = '';
+    dragonSchoolRecords = {
+      for (final entry in mapFromJson(data['dragonSchoolRecords']).entries)
+        if (entry.key.trim().isNotEmpty)
+          entry.key: nonNegativeIntFromJson(entry.value, fallback: 0),
+    };
     final rawAdventureOptions = mapFromJson(data['adventureOptionIds']);
     adventureOptionIds = {
       AdventureKind.mini: (rawAdventureOptions['mini'] as List?)
@@ -1110,6 +1154,15 @@ class HouseholdProvider extends ChangeNotifier {
       placementsByItem[placement.itemId] = placement;
     }
     housePlacements = placementsByItem.values.toList();
+    if (supporterPackOwned) {
+      ownedPortraitIds.add(supporterProfilePortrait.id);
+      ownedTitleIds.add(supporterAccountTitle.id);
+      ownedBadgeIds.add(supporterBadge.id);
+      ownedFrameIds.add(supporterFrame.id);
+      ownedItemIds.addAll(supporterFurnitureCatalog.map((item) => item.id));
+      selectedBadgeId ??= supporterBadge.id;
+      selectedFrameId ??= supporterFrame.id;
+    }
     if (housePlacements.isEmpty && equippedItemIds.isNotEmpty) {
       for (final itemId in equippedItemIds.values.toList()) {
         final item = shopItemById(itemId);
@@ -1136,7 +1189,7 @@ class HouseholdProvider extends ChangeNotifier {
       ChestTier.portrait => min(available, remainingPortraitCount),
       ChestTier.title => min(
           available,
-          max(0, accountTitleCatalog.length - titleCount),
+          max(0, accountTitleCatalog.length - chestTitleCount),
         ),
       ChestTier.music => min(available, remainingMusicTrackCount),
       _ => available,
@@ -1172,13 +1225,16 @@ class HouseholdProvider extends ChangeNotifier {
   ProfilePortrait? get selectedPortrait =>
       profilePortraitById(selectedPortraitId);
   int get portraitCount => ownedPortraitIds.length;
+  int get chestPortraitCount => profilePortraitCatalog
+      .where((portrait) => ownedPortraitIds.contains(portrait.id))
+      .length;
   bool get hasEveryPortrait =>
-      ownedPortraitIds.length >= profilePortraitCatalog.length;
+      chestPortraitCount >= profilePortraitCatalog.length;
   bool get portraitChestCapacityReached =>
-      portraitCount + chestCount(ChestTier.portrait) >=
+      chestPortraitCount + chestCount(ChestTier.portrait) >=
       profilePortraitCatalog.length;
   int get remainingPortraitCount =>
-      max(0, profilePortraitCatalog.length - portraitCount);
+      max(0, profilePortraitCatalog.length - chestPortraitCount);
   Map<PortraitRarity, int> get remainingPortraitsByRarity => {
         for (final rarity in PortraitRarity.values)
           rarity: profilePortraitCatalog
@@ -1189,9 +1245,13 @@ class HouseholdProvider extends ChangeNotifier {
       };
   AccountTitle? get selectedAccountTitle => accountTitleById(selectedTitleId);
   int get titleCount => ownedTitleIds.length;
-  bool get hasEveryTitle => ownedTitleIds.length >= accountTitleCatalog.length;
+  int get chestTitleCount => accountTitleCatalog
+      .where((title) => ownedTitleIds.contains(title.id))
+      .length;
+  bool get hasEveryTitle => chestTitleCount >= accountTitleCatalog.length;
   bool get titleChestCapacityReached =>
-      titleCount + chestCount(ChestTier.title) >= accountTitleCatalog.length;
+      chestTitleCount + chestCount(ChestTier.title) >=
+      accountTitleCatalog.length;
   List<MusicTrack> get ownedMusicTracks => musicCatalog
       .where((track) => ownedMusicTrackIds.contains(track.id))
       .toList(growable: false);
@@ -1255,17 +1315,86 @@ class HouseholdProvider extends ChangeNotifier {
     return true;
   }
 
+  Future<bool> selectKeeperBadge(String? badgeId) async {
+    if (badgeId != null && !ownedBadgeIds.contains(badgeId)) return false;
+    if (selectedBadgeId == badgeId) return false;
+    selectedBadgeId = badgeId;
+    await _notifyAndSave();
+    return true;
+  }
+
+  Future<bool> selectKeeperFrame(String? frameId) async {
+    if (frameId != null && !ownedFrameIds.contains(frameId)) return false;
+    if (selectedFrameId == frameId) return false;
+    selectedFrameId = frameId;
+    await _notifyAndSave();
+    return true;
+  }
+
+  /// Applies the pack only after a server-verified, idempotent purchase. Store
+  /// callbacks must never call this before receipt verification succeeds.
+  Future<bool> applyVerifiedSupporterPack(String serverTransactionId) async {
+    final transactionId = serverTransactionId.trim();
+    if (transactionId.isEmpty ||
+        appliedVerifiedPurchaseIds.contains(transactionId)) {
+      return false;
+    }
+    appliedVerifiedPurchaseIds.add(transactionId);
+    supporterPackOwned = true;
+    ownedPortraitIds.add(supporterProfilePortrait.id);
+    ownedTitleIds.add(supporterAccountTitle.id);
+    ownedBadgeIds.add(supporterBadge.id);
+    ownedFrameIds.add(supporterFrame.id);
+    ownedItemIds.addAll(supporterFurnitureCatalog.map((item) => item.id));
+    selectedPortraitId ??= supporterProfilePortrait.id;
+    selectedTitleId ??= supporterAccountTitle.id;
+    selectedBadgeId ??= supporterBadge.id;
+    selectedFrameId ??= supporterFrame.id;
+    _addActivity(
+      message: 'The Founding Supporter collection joined your Haven.',
+      type: ActivityType.milestone,
+      code: ActivityCode.bonusFound,
+      subject: supporterPackInternalProductId,
+    );
+    await _notifyAndSave();
+    return true;
+  }
+
   bool notificationEnabled(HavenNotificationCategory category) =>
       enabledNotificationCategories.contains(category);
 
-  Future<void> setNotificationEnabled(
+  Future<bool> synchronizeNotificationPermissionWithPlatform() async {
+    final status = await HavenNotifications.platformPermissionStatus();
+    if (status == HavenNotificationPermissionStatus.denied) {
+      await disableAllNotificationsForPlatform();
+      return false;
+    }
+    return status == HavenNotificationPermissionStatus.granted;
+  }
+
+  Future<void> disableAllNotificationsForPlatform() async {
+    final changed = enabledNotificationCategories.isNotEmpty;
+    enabledNotificationCategories.clear();
+    HavenNotifications.configure(enabledNotificationCategories);
+    await HavenNotifications.cancel('trials-full');
+    for (final egg in [pet, incubatingEgg].whereType<Pet>()) {
+      if (egg.isEgg) await HavenNotifications.cancel('egg-${egg.id}');
+    }
+    await cancelSpecialAdventureNotifications();
+    if (changed) await _notifyAndSave();
+  }
+
+  Future<bool> setNotificationEnabled(
     HavenNotificationCategory category,
     bool enabled,
   ) async {
+    if (enabled && !await HavenNotifications.platformPermissionGranted()) {
+      return false;
+    }
     final changed = enabled
         ? enabledNotificationCategories.add(category)
         : enabledNotificationCategories.remove(category);
-    if (!changed) return;
+    if (!changed) return true;
     HavenNotifications.configure(enabledNotificationCategories);
     if (!enabled) {
       if (category == HavenNotificationCategory.trialsFull) {
@@ -1285,6 +1414,7 @@ class HouseholdProvider extends ChangeNotifier {
       await refreshSpecialAdventureNotifications();
     }
     await _notifyAndSave();
+    return true;
   }
 
   Future<PortraitChestPurchaseResult> purchasePortraitChest() async {
@@ -2089,6 +2219,13 @@ class HouseholdProvider extends ChangeNotifier {
     await _scheduleEggReadyNotification(egg);
   }
 
+  Future<void> _rescheduleTimedNotifications() async {
+    await _rescheduleNestEggNotification();
+    _scheduleTrialsFullNotification();
+    await _rescheduleAdventureReturnNotifications();
+    await refreshSpecialAdventureNotifications();
+  }
+
   Future<void> _scheduleEggReadyNotification(Pet egg) async {
     final strings = AppStrings(languageCode);
     final eggName = strings.eggName(
@@ -2309,6 +2446,7 @@ class HouseholdProvider extends ChangeNotifier {
       trialRefilledAt?.toIso8601String() ?? '',
     ].join('|');
     final roamingAssignmentsChanged = _normalizeRoamingState();
+    final streakChanged = _normalizeTrialStreakForDate(_clock());
     final changed = specialNotificationsChanged |
         (adventureOptionsBefore != adventureOptionsAfter) |
         (trialsBefore != trialsAfter) |
@@ -2319,6 +2457,7 @@ class HouseholdProvider extends ChangeNotifier {
         _expireReturningVisitors() |
         _processDailyReturningDragon() |
         roamingAssignmentsChanged |
+        streakChanged |
         roamIdleDragons();
     final achievementsChanged = _evaluateAchievements();
     if (changed || achievementsChanged) await _notifyAndSave();
@@ -2571,6 +2710,12 @@ class HouseholdProvider extends ChangeNotifier {
         'selectedPortraitId': selectedPortraitId,
         'ownedTitleIds': ownedTitleIds.toList(),
         'selectedTitleId': selectedTitleId,
+        'supporterPackOwned': supporterPackOwned,
+        'ownedBadgeIds': ownedBadgeIds.toList(),
+        'selectedBadgeId': selectedBadgeId,
+        'ownedFrameIds': ownedFrameIds.toList(),
+        'selectedFrameId': selectedFrameId,
+        'appliedVerifiedPurchaseIds': appliedVerifiedPurchaseIds.toList(),
         'discoveredForms': discoveredForms.toList(),
         'prismaticForms': prismaticForms.toList(),
         'achievements': unlockedAchievementIds.toList(),
@@ -2593,6 +2738,11 @@ class HouseholdProvider extends ChangeNotifier {
         'adventureRuns': adventureRuns.map((run) => run.toJson()).toList(),
         'trialOffers': trialOffers.map((offer) => offer.toJson()).toList(),
         'trialRefilledAt': trialRefilledAt?.toIso8601String(),
+        'trialStreakCount': trialStreakCount,
+        'trialStreakLastDayKey': trialStreakLastDayKey,
+        'trialStreakRewardReady': trialStreakRewardReady,
+        'trialStreakCarryDayKey': trialStreakCarryDayKey,
+        'dragonSchoolRecords': dragonSchoolRecords,
         'appliedOnlineGroupRewardIds': appliedOnlineGroupRewardIds.toList(),
         'appliedOnlineTradeIds': appliedOnlineTradeIds.toList(),
         'reservedOnlineTradeEggIds': reservedOnlineTradeEggIds.toList(),
@@ -2657,7 +2807,7 @@ class HouseholdProvider extends ChangeNotifier {
       _registerOwnedDragonStages();
       _evaluateAchievements(addActivities: false);
       await _save();
-      await _rescheduleNestEggNotification();
+      await _rescheduleTimedNotifications();
       await _syncJukeboxAudio();
       await HavenAudio.applyPreferences(
         musicEnabled: musicEnabled,

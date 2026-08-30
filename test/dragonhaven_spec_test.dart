@@ -320,6 +320,9 @@ void main() {
         contains('packageInfo.lastUpdateTime > packageInfo.firstInstallTime'));
     expect(nativeBridge, contains('NOTIFICATION_PERMISSION_PROMPT_HANDLED'));
     expect(nativeBridge, contains('!activityInForeground'));
+    expect(nativeBridge, contains('"permissionStatus"'));
+    expect(nativeBridge, contains('"requestPermission"'));
+    expect(nativeBridge, contains('areNotificationsEnabled()'));
     expect(nativeBridge, contains('"openNotificationSettings"'));
     expect(nativeBridge, contains('private var musicEnabled = false'));
     expect(nativeBridge, contains('"takePendingNavigation"'));
@@ -445,6 +448,27 @@ void main() {
     expect(socialCounts, contains('achievement_count integer'));
     expect(socialCounts, contains('dragon_count integer'));
     expect(socialCounts, contains('publish_social_summary_counts'));
+  });
+
+  test('online supporter frames are synchronized without breaking old apps',
+      () {
+    final migration = File(
+      'supabase/migrations/202608300028_supporter_identity_cosmetics.sql',
+    ).readAsStringSync();
+
+    expect(migration, contains('frame_key text'));
+    expect(migration, contains("frame_key = 'frame_supporter_founder'"));
+    expect(
+      migration,
+      contains('update_my_profile(text, text, text, text)'),
+    );
+    expect(
+      migration,
+      contains('update_my_profile(text, text, text)'),
+      reason: 'already released clients keep their compatible RPC overload',
+    );
+    expect(migration, contains('p.frame_key'));
+    expect(migration, contains('from public.list_my_friends()'));
   });
 
   test('legacy save import is versioned, audited and rollback-prepared', () {

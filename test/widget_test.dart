@@ -549,6 +549,17 @@ void main() {
 
   testWidgets('notification settings expose every reason and save each toggle',
       (tester) async {
+    const channel = MethodChannel('nl.dragonhaven.app/notifications');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      channel,
+      (call) async => switch (call.method) {
+        'permissionStatus' => 'granted',
+        'permissionGranted' => true,
+        _ => null,
+      },
+    );
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
     final game = await pumpGame(
       tester,
       onboarded: true,
@@ -590,8 +601,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
     await tester.ensureVisible(tradeReturn);
     await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.widget<SwitchListTile>(tradeReturn).value, isTrue);
     await tester.tap(tradeReturn);
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(
       game.notificationEnabled(HavenNotificationCategory.tradeReturns),
       isFalse,
@@ -603,10 +615,16 @@ void main() {
       (tester) async {
     const channel = MethodChannel('nl.dragonhaven.app/notifications');
     var openedPlatformSettings = false;
+    var permissionRequests = 0;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       channel,
       (call) async {
+        if (call.method == 'permissionStatus') return 'denied';
         if (call.method == 'permissionGranted') return false;
+        if (call.method == 'requestPermission') {
+          permissionRequests++;
+          return false;
+        }
         if (call.method == 'openNotificationSettings') {
           openedPlatformSettings = true;
           return true;
@@ -617,7 +635,7 @@ void main() {
     addTearDown(() => tester.binding.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null));
 
-    await pumpGame(tester, onboarded: true, hatched: true);
+    final game = await pumpGame(tester, onboarded: true, hatched: true);
     await tester.tap(find.byKey(const Key('app-overflow-menu')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
@@ -646,9 +664,83 @@ void main() {
       find.text('Android notifications are off for DragonHaven.'),
       findsOneWidget,
     );
-    await tester.tap(platformSettings);
-    await tester.pump();
+    for (final category in HavenNotificationCategory.values) {
+      expect(game.notificationEnabled(category), isFalse);
+    }
+    final eggToggle = find.byKey(const Key('notification-eggReady'));
+    await tester.ensureVisible(eggToggle);
+    await tester.tap(eggToggle);
+    await tester.pumpAndSettle();
+    expect(permissionRequests, 1);
     expect(openedPlatformSettings, isTrue);
+    expect(
+      game.notificationEnabled(HavenNotificationCategory.eggReady),
+      isFalse,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('only the chosen notification turns on after Android grants it',
+      (tester) async {
+    const channel = MethodChannel('nl.dragonhaven.app/notifications');
+    var permissionStatus = 'denied';
+    var openedPlatformSettings = false;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      channel,
+      (call) async {
+        if (call.method == 'permissionStatus') return permissionStatus;
+        if (call.method == 'permissionGranted') {
+          return permissionStatus == 'granted';
+        }
+        if (call.method == 'requestPermission') {
+          permissionStatus = 'granted';
+          return true;
+        }
+        if (call.method == 'openNotificationSettings') {
+          openedPlatformSettings = true;
+          return true;
+        }
+        return null;
+      },
+    );
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+
+    final game = await pumpGame(tester, onboarded: true, hatched: true);
+    await tester.tap(find.byKey(const Key('app-overflow-menu')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byKey(const Key('app-menu-account')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    final settingsButton =
+        find.byKey(const Key('notification-settings-button'));
+    await tester.scrollUntilVisible(
+      settingsButton,
+      240,
+      scrollable: find.descendant(
+        of: find.byKey(const PageStorageKey('account-scroll')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.tap(settingsButton);
+    await tester.pumpAndSettle();
+
+    final eggToggle = find.byKey(const Key('notification-eggReady'));
+    await tester.ensureVisible(eggToggle);
+    await tester.tap(eggToggle);
+    await tester.pumpAndSettle();
+
+    expect(
+      game.notificationEnabled(HavenNotificationCategory.eggReady),
+      isTrue,
+    );
+    for (final category in HavenNotificationCategory.values.where(
+      (category) => category != HavenNotificationCategory.eggReady,
+    )) {
+      expect(game.notificationEnabled(category), isFalse);
+    }
+    expect(openedPlatformSettings, isFalse);
     expect(tester.takeException(), isNull);
   });
 
@@ -1013,17 +1105,22 @@ void main() {
         findsNothing);
 
     await tester.tap(find.text('Inventory').last);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(game.chestCount(ChestTier.wooden), 1);
-    DefaultTabController.of(tester.element(find.byType(TabBarView)))
-        .animateTo(1);
-    await tester.pumpAndSettle();
+    await tester.tap(find.text('Chests').last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     final openChest = find.byKey(const Key('inventory-open-chest-wooden'));
     expect(openChest, findsOneWidget);
     await tester.tap(openChest);
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.byKey(const Key('chest-reveal-tap-target')), findsOneWidget);
+    expect(find.byKey(const Key('chest-fullscreen-reveal-content')),
+        findsOneWidget);
+    expect(find.byKey(const Key('chest-reveal-panel')), findsNothing);
+    expect(find.byKey(const Key('chest-reveal-continue')), findsNothing);
     expect(find.byKey(const Key('chest-rewards')), findsNothing);
     expect(game.chestCount(ChestTier.wooden), 1,
         reason: 'Opening the preview must not consume the chest yet.');
@@ -1035,11 +1132,14 @@ void main() {
     }
     expect(game.chestCount(ChestTier.wooden), 0);
     expect(find.byKey(const Key('chest-rewards')), findsOneWidget);
+    expect(find.text('Tap anywhere to return'), findsOneWidget);
+    expect(find.byKey(const Key('chest-reveal-continue')), findsNothing);
     expect(find.text('Collect'), findsNothing);
     expect(find.text('Tap the chest'), findsNothing);
     expect(game.chestCount(ChestTier.wooden), 0);
     await tester.tapAt(const Offset(30, 30));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(tester.takeException(), isNull);
   });
 
@@ -1057,16 +1157,21 @@ void main() {
     await tester.pump();
 
     await tester.tap(find.text('Inventory').last);
-    await tester.pumpAndSettle();
-    DefaultTabController.of(tester.element(find.byType(TabBarView)))
-        .animateTo(1);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('Chests').last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     final openTen = find.byKey(const Key('inventory-open-ten-chests-wooden'));
     expect(openTen, findsOneWidget);
     await tester.tap(openTen);
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.byKey(const Key('chest-reveal-tap-target')), findsOneWidget);
+    expect(find.byKey(const Key('chest-fullscreen-reveal-content')),
+        findsOneWidget);
+    expect(find.byKey(const Key('chest-reveal-panel')), findsNothing);
+    expect(find.byKey(const Key('chest-reveal-continue')), findsNothing);
     expect(game.chestCount(ChestTier.wooden), 10,
         reason: 'Opening the batch preview must not consume any chest yet.');
 
@@ -1079,13 +1184,18 @@ void main() {
     }
     expect(find.byKey(const Key('chest-rewards')), findsOneWidget);
     expect(find.text('10 treasures revealed'), findsOneWidget);
-    expect(find.byKey(const Key('chest-reveal-continue')), findsOneWidget);
+    expect(find.text('Tap anywhere to return'), findsOneWidget);
+    expect(find.byKey(const Key('chest-reveal-continue')), findsNothing);
     expect(
-      tester.getSize(find.byKey(const Key('chest-reveal-panel'))).width,
-      lessThanOrEqualTo(360),
+      find.ancestor(
+        of: find.byKey(const Key('chest-fullscreen-reveal-content')),
+        matching: find.byType(SingleChildScrollView),
+      ),
+      findsOneWidget,
     );
     await tester.tapAt(const Offset(30, 30));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(tester.takeException(), isNull);
   });
 
@@ -1924,7 +2034,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.04.13'), findsOneWidget);
+    expect(find.text('v0.04.14'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

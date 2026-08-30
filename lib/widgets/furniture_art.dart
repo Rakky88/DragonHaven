@@ -14,6 +14,8 @@ class FurnitureArt extends StatelessWidget {
   final BoxFit fit;
 
   static String? assetForItem(String itemId) {
+    final configured = shopItemById(itemId)?.daySpriteAsset;
+    if (configured != null) return configured;
     final original = switch (itemId) {
       'moss_cushion' => 'assets/images/furniture_moss_cushion.webp',
       'cloud_basket' => 'assets/images/furniture_cloud_basket.webp',

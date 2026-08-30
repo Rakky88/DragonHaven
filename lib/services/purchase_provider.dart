@@ -1,25 +1,36 @@
+import '../models/supporter_pack.dart';
+
 enum PurchaseCurrency { coins, gems }
 
 class PurchaseProductDefinition {
   const PurchaseProductDefinition({
     required this.internalId,
-    required this.currency,
+    this.currency,
     required this.amount,
     required this.plannedEuroPriceCents,
+    this.nonConsumable = false,
   });
 
   /// Stable DragonHaven ID. A future store adapter maps this to the external
   /// Google Play product ID; they deliberately do not have to be identical.
   final String internalId;
-  final PurchaseCurrency currency;
+  final PurchaseCurrency? currency;
   final int amount;
 
   /// Intended base price for future Play Console setup and contract tests.
   /// The live UI must use Google Play's localized price, never this value.
   final int plannedEuroPriceCents;
+  final bool nonConsumable;
 }
 
 abstract final class PurchaseCatalog {
+  static const supporterPack = PurchaseProductDefinition(
+    internalId: supporterPackInternalProductId,
+    amount: 1,
+    plannedEuroPriceCents: supporterPackPlannedEuroPriceCents,
+    nonConsumable: true,
+  );
+
   static const products = <PurchaseProductDefinition>[
     PurchaseProductDefinition(
       internalId: 'coins_0500',
@@ -96,6 +107,7 @@ abstract final class PurchaseCatalog {
   ];
 
   static PurchaseProductDefinition? byInternalId(String internalId) {
+    if (internalId == supporterPack.internalId) return supporterPack;
     for (final product in products) {
       if (product.internalId == internalId) return product;
     }

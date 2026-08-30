@@ -60,6 +60,7 @@ Future<void> main() async {
                   : showcase
                       ? HouseholdProvider.createShowcase()
                       : await HouseholdProvider.loadFromStorage();
+  await game.synchronizeNotificationPermissionWithPlatform();
   if (evolutionDemo) await game.refreshForCurrentDate();
   if (showcase && lockedCodexAudit) {
     game.discoveredForms.clear();

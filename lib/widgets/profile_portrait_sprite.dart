@@ -27,7 +27,10 @@ class ProfilePortraitSprite extends StatelessWidget {
         child: selected == null
             ? GameIconSprite(GameIconKind.screenAccount, size: size)
             : Transform.scale(
-                scale: portraitFillScale,
+                // The Supporter portrait is delivered as a complete circular
+                // medallion and therefore must not use the overscan needed by
+                // the regular transparent portrait cut-outs.
+                scale: selected.supporterExclusive ? 1 : portraitFillScale,
                 child: Image.asset(
                   selected.assetPath,
                   fit: BoxFit.cover,

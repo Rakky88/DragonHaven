@@ -1373,20 +1373,18 @@ class _PowerMeter extends StatelessWidget {
                   ),
                 ),
                 Positioned(
-                  left: (width - 13) * value,
-                  top: 13,
-                  child: Container(
-                    width: 13,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Colors.white, Color(0xFFFFD96A)],
-                      ),
-                      borderRadius: BorderRadius.circular(7),
-                      border: Border.all(color: const Color(0xFF6B3F14)),
-                      boxShadow: const [
-                        BoxShadow(color: Color(0xAAFFE08A), blurRadius: 9),
-                      ],
+                  left: (width - 50) * value,
+                  top: 4,
+                  child: Semantics(
+                    label: 'Might timing marker',
+                    image: true,
+                    child: Image.asset(
+                      'assets/images/ui/trials/trial_might_marker.png',
+                      key: const Key('ruin-power-meter-marker'),
+                      width: 50,
+                      height: 54,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
                     ),
                   ),
                 ),

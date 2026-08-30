@@ -285,6 +285,8 @@ class _TrialsTab extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 12),
+        const _TrialStreakCard(),
         const SizedBox(height: 14),
         if (offers.isEmpty)
           const _EmptyTrials()
@@ -295,6 +297,191 @@ class _TrialsTab extends StatelessWidget {
           ],
       ],
     );
+  }
+}
+
+class _TrialStreakCard extends StatelessWidget {
+  const _TrialStreakCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final game = context.watch<HouseholdProvider>();
+    final filled = game.trialStreakCount.clamp(0, 7);
+    final waitingDay = game.trialStreakCarryDayKey.isNotEmpty;
+    return Container(
+      key: const Key('trial-streak-card'),
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFF8DD), Color(0xFFF2E9FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0x66D6A72E)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const GameIconSprite(GameIconKind.chest, size: 38),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.pick('Seven-day Trial constellation',
+                          'Zevendaagse Trial-constellatie'),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w900, fontSize: 15),
+                    ),
+                    Text(
+                      game.trialStreakRewardReady
+                          ? strings.pick(
+                              'Your constellation is complete!',
+                              'Je constellatie is compleet!',
+                            )
+                          : strings.pick(
+                              'Complete a Trial every day. Miss a day and it resets to zero.',
+                              'Voltooi elke dag een Trial. Mis je een dag, dan begint hij weer op nul.',
+                            ),
+                      style:
+                          const TextStyle(color: AppColors.muted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 13),
+          LayoutBuilder(
+            builder: (context, constraints) => Stack(
+              alignment: Alignment.center,
+              children: [
+                Positioned(
+                  left: 18,
+                  right: 18,
+                  child: Container(
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD8CAE8),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    for (var day = 1; day <= 7; day++)
+                      Semantics(
+                        label: strings.pick(
+                          'Day $day ${day <= filled ? 'complete' : 'empty'}',
+                          'Dag $day ${day <= filled ? 'voltooid' : 'leeg'}',
+                        ),
+                        child: AnimatedContainer(
+                          key: Key('trial-streak-day-$day'),
+                          duration: const Duration(milliseconds: 280),
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: day <= filled
+                                ? const LinearGradient(colors: [
+                                    Color(0xFFFFD65A),
+                                    Color(0xFFE79428),
+                                  ])
+                                : null,
+                            color:
+                                day <= filled ? null : const Color(0xFFF7F3FC),
+                            border: Border.all(
+                              color: day <= filled
+                                  ? const Color(0xFFA86812)
+                                  : const Color(0xFFB8A7CF),
+                              width: 2,
+                            ),
+                            boxShadow: day <= filled
+                                ? const [
+                                    BoxShadow(
+                                      color: Color(0x55E5A72D),
+                                      blurRadius: 8,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Icon(
+                            day <= filled
+                                ? Icons.auto_awesome_rounded
+                                : Icons.circle_outlined,
+                            size: 17,
+                            color: day <= filled
+                                ? const Color(0xFF56330B)
+                                : const Color(0xFFAD9CC4),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  strings.pick(
+                    'Reward: 95% Dragon Chest · 5% Mythical Chest',
+                    'Beloning: 95% Drakenkist · 5% Mythische Kist',
+                  ),
+                  style: const TextStyle(
+                    color: AppColors.twilight,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              if (game.trialStreakRewardReady)
+                FilledButton.icon(
+                  key: const Key('claim-trial-streak'),
+                  onPressed: () => _claim(context),
+                  icon: const Icon(Icons.redeem_rounded, size: 19),
+                  label: Text(strings.pick('Claim', 'Claim')),
+                ),
+            ],
+          ),
+          if (waitingDay) ...[
+            const SizedBox(height: 6),
+            Text(
+              strings.pick(
+                'Today\'s Trial is safely waiting as day 1 of your next streak.',
+                'De Trial van vandaag wacht veilig als dag 1 van je volgende streak.',
+              ),
+              style: const TextStyle(
+                color: Color(0xFF24735B),
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _claim(BuildContext context) async {
+    final strings = AppStrings.of(context);
+    final reward =
+        await context.read<HouseholdProvider>().claimTrialStreakReward();
+    if (!context.mounted || reward == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(strings.pick(
+        'Constellation claimed: ${strings.chestLabel(reward)}!',
+        'Constellatie geclaimd: ${strings.chestLabel(reward)}!',
+      )),
+    ));
   }
 }
 
@@ -1017,6 +1204,7 @@ class _JoinableGroupLobbyCard extends StatelessWidget {
               KeeperPortrait(
                 portraitKey: owner?.keeper.portraitKey ?? 'portrait_001',
                 displayName: owner?.keeper.displayName ?? 'Keeper',
+                frameKey: owner?.keeper.frameKey,
                 radius: 24,
               ),
               const SizedBox(width: 9),
@@ -1205,7 +1393,7 @@ void _showAdventureDetailsForGroup(
     showDragHandle: true,
     isScrollControlled: true,
     builder: (sheetContext) => SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const GameIconSprite(GameIconKind.adventureGroup, size: 110),
@@ -1217,7 +1405,14 @@ void _showAdventureDetailsForGroup(
               textAlign: TextAlign.center,
               style: const TextStyle(color: AppColors.muted)),
           const SizedBox(height: 14),
-          _GroupRequirementSummary(adventure: adventure),
+          _GroupRequirementsCard(adventure: adventure),
+          const SizedBox(height: 10),
+          _CompletedAdventureRewards(
+            key: const Key('group-offer-expected-rewards'),
+            definition: adventure,
+            groupChestRange: true,
+            approximate: true,
+          ),
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
@@ -1239,9 +1434,13 @@ void _showAdventureDetailsForGroup(
 }
 
 class _GroupRequirementSummary extends StatelessWidget {
-  const _GroupRequirementSummary({required this.adventure});
+  const _GroupRequirementSummary({
+    required this.adventure,
+    this.decorated = true,
+  });
 
   final AdventureDefinition adventure;
+  final bool decorated;
 
   @override
   Widget build(BuildContext context) {
@@ -1272,6 +1471,31 @@ class _GroupRequirementSummary extends StatelessWidget {
               '${strings.pick('combined', 'gecombineerde')} ${_focusName(strings, requirements.focus ?? adventure.focus)} ${requirements.combinedStat}'
         ),
     ];
+    final content = Wrap(
+      alignment: WrapAlignment.center,
+      runAlignment: WrapAlignment.center,
+      spacing: 12,
+      runSpacing: 7,
+      children: [
+        for (final detail in details)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              detail.icon,
+              const SizedBox(width: 4),
+              Text(
+                detail.label,
+                style: const TextStyle(
+                  color: AppColors.twilight,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+    if (!decorated) return content;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -1279,28 +1503,57 @@ class _GroupRequirementSummary extends StatelessWidget {
         color: const Color(0xFFE9FBF4),
         borderRadius: BorderRadius.circular(17),
       ),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        runAlignment: WrapAlignment.center,
-        spacing: 12,
-        runSpacing: 7,
+      child: content,
+    );
+  }
+}
+
+class _GroupRequirementsCard extends StatelessWidget {
+  const _GroupRequirementsCard({required this.adventure});
+
+  final AdventureDefinition adventure;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Container(
+      key: const Key('group-adventure-requirements'),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE9FBF4),
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: const Color(0x335F9F86)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final detail in details)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                detail.icon,
-                const SizedBox(width: 4),
-                Text(
-                  detail.label,
-                  style: const TextStyle(
-                    color: AppColors.twilight,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
+          Row(
+            children: [
+              const Icon(Icons.rule_rounded,
+                  color: Color(0xFF24735B), size: 20),
+              const SizedBox(width: 6),
+              Text(
+                strings.pick(
+                    'Requirements to start', 'Vereisten om te starten'),
+                style: const TextStyle(
+                  color: Color(0xFF24735B),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
                 ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            strings.pick(
+              'The group can only depart when every requirement below is met.',
+              'De groep kan pas vertrekken als aan alle onderstaande vereisten is voldaan.',
             ),
+            style: const TextStyle(color: AppColors.muted, fontSize: 11.5),
+          ),
+          const SizedBox(height: 8),
+          _GroupRequirementSummary(adventure: adventure, decorated: false),
         ],
       ),
     );
@@ -2176,15 +2429,14 @@ Future<void> _showGroupLobbyDetails(
                   style: const TextStyle(color: AppColors.muted),
                 ),
                 const SizedBox(height: 12),
-                _GroupRequirementSummary(adventure: definition),
-                if (ready) ...[
-                  const SizedBox(height: 12),
-                  _CompletedAdventureRewards(
-                    key: const Key('completed-group-detail-rewards'),
-                    definition: definition,
-                    groupChestRange: true,
-                  ),
-                ],
+                _GroupRequirementsCard(adventure: definition),
+                const SizedBox(height: 12),
+                _CompletedAdventureRewards(
+                  key: const Key('completed-group-detail-rewards'),
+                  definition: definition,
+                  groupChestRange: true,
+                  approximate: !ready,
+                ),
                 const SizedBox(height: 14),
                 Text(
                   '${strings.pick('Participants', 'Deelnemers')} '
@@ -2198,6 +2450,7 @@ Future<void> _showGroupLobbyDetails(
                       leading: KeeperPortrait(
                         portraitKey: participant.keeper.portraitKey,
                         displayName: participant.keeper.displayName,
+                        frameKey: participant.keeper.frameKey,
                         radius: 23,
                       ),
                       title: Text(participant.keeper.displayName,
@@ -2746,6 +2999,7 @@ class _CompletedAdventureRewards extends StatelessWidget {
     this.specialEvent,
     this.includeMusicChest = false,
     this.groupChestRange = false,
+    this.approximate = false,
   });
 
   final AdventureDefinition definition;
@@ -2753,6 +3007,7 @@ class _CompletedAdventureRewards extends StatelessWidget {
   final SpecialAdventureEventDefinition? specialEvent;
   final bool includeMusicChest;
   final bool groupChestRange;
+  final bool approximate;
 
   @override
   Widget build(BuildContext context) {
@@ -2770,7 +3025,9 @@ class _CompletedAdventureRewards extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            strings.pick('Rewards', 'Beloningen'),
+            approximate
+                ? strings.pick('Expected rewards', 'Verwachte beloningen')
+                : strings.pick('Rewards', 'Beloningen'),
             style: const TextStyle(
               color: AppColors.twilight,
               fontSize: 11,

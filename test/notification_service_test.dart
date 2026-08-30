@@ -57,6 +57,29 @@ void main() {
     expect(calls, isEmpty);
   });
 
+  test('Android permission status and explicit requests use distinct methods',
+      () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return switch (call.method) {
+        'permissionStatus' => 'denied',
+        'requestPermission' => false,
+        _ => null,
+      };
+    });
+
+    expect(
+      await HavenNotifications.platformPermissionStatus(),
+      HavenNotificationPermissionStatus.denied,
+    );
+    expect(await HavenNotifications.requestPlatformPermission(), isFalse);
+    expect(calls.map((call) => call.method), [
+      'permissionStatus',
+      'requestPermission',
+    ]);
+  });
+
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
@@ -115,7 +138,7 @@ void main() {
     });
   });
 
-  test('a full Trial board is scheduled for the exact refill boundary',
+  test('a full Trial board is scheduled two minutes after its refill boundary',
       () async {
     final at = DateTime(2036, 8, 26, 10, 45);
     await HavenNotifications.trialsFull(
@@ -128,7 +151,9 @@ void main() {
     expect(calls.single.method, 'schedule');
     expect(calls.single.arguments, {
       'id': 'trials-full',
-      'at': at.millisecondsSinceEpoch,
+      'at': at
+          .add(HavenNotifications.scheduledDeliveryDelay)
+          .millisecondsSinceEpoch,
       'title': 'Three Trials are ready',
       'body': 'Your Trial board is full.',
       'kind': 'trials_full',
@@ -149,7 +174,9 @@ void main() {
     expect(calls.single.method, 'schedule');
     expect(calls.single.arguments, {
       'id': 'special-adventure-birthday-2036',
-      'at': at.millisecondsSinceEpoch,
+      'at': at
+          .add(HavenNotifications.scheduledDeliveryDelay)
+          .millisecondsSinceEpoch,
       'title': 'A Special Adventure has appeared',
       'body': 'A Wish on Golden Wings is waiting.',
       'kind': 'special_adventure_available',
@@ -175,7 +202,7 @@ void main() {
     expect(calls, isEmpty);
   });
 
-  test('egg-ready notifications retain their hatch time and event kind',
+  test('egg-ready notifications use the two-minute safety delay and event kind',
       () async {
     final at = DateTime(2036, 8, 23, 12, 34, 56);
     await HavenNotifications.eggReady(
@@ -189,7 +216,9 @@ void main() {
     expect(calls.single.method, 'schedule');
     expect(calls.single.arguments, {
       'id': 'egg-fixed-037',
-      'at': at.millisecondsSinceEpoch,
+      'at': at
+          .add(HavenNotifications.scheduledDeliveryDelay)
+          .millisecondsSinceEpoch,
       'title': 'Your Mysterious Egg is ready',
       'body': 'Something inside wants to hatch in the Rooftop Nest.',
       'kind': 'egg',

@@ -14,6 +14,8 @@ import 'package:dragon_haven/models/music_track.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/profile_portrait.dart';
 import 'package:dragon_haven/models/shop_item.dart';
+import 'package:dragon_haven/models/supporter_pack.dart';
+import 'package:dragon_haven/models/trial.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/services/storage_service.dart';
 import 'package:dragon_haven/services/audio_service.dart';
@@ -1688,6 +1690,209 @@ void main() {
     expect(data.containsKey('tasks'), isFalse);
     expect(data.containsKey('completedQuestTotal'), isFalse);
     expect(raw.toLowerCase().contains('complete quest'), isFalse);
+  });
+
+  test('Tower room reorder keeps dragons and damage attached to rooms',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(900),
+      persistenceEnabled: false,
+    );
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..currentFloorIndex = 0
+      ..currentRoomId = 'hearth';
+    game.towerFloorRoomIds = ['hearth', 'crystal', 'garden'];
+    game.damagedTowerFloors = {1};
+    game.damagedTowerRepairFactors = {1: .4};
+
+    expect(await game.reorderTowerFloor(2, 0), isTrue);
+
+    expect(game.towerFloorRoomIds, ['crystal', 'garden', 'hearth']);
+    expect(game.pet.currentFloorIndex, 2);
+    expect(game.damagedTowerFloors, {0});
+    expect(game.damagedTowerRepairFactors[0], .4);
+    game.dispose();
+  });
+
+  test('Trial streak resets to zero after a missed day', () async {
+    var now = DateTime(2026, 8, 24, 12);
+    final game = HouseholdProvider(
+      random: Random(901),
+      clock: () => now,
+      persistenceEnabled: false,
+    );
+    game.pet.stage = DragonStage.hatchling;
+
+    Future<void> completeToday(String id) async {
+      game
+        ..trialOffers = [
+          TrialOffer(id: id, kind: TrialKind.ruinBreaker, appearedAt: now),
+        ]
+        ..trialRefilledAt = now;
+      expect(
+        await game.completeTrial(offerId: id, dragonId: game.pet.id, score: 1),
+        isNotNull,
+      );
+    }
+
+    await completeToday('day-one');
+    expect(game.trialStreakCount, 1);
+    now = now.add(const Duration(days: 2));
+    await game.refreshForCurrentDate();
+    expect(game.trialStreakCount, 0);
+    expect(game.trialStreakLastDayKey, isEmpty);
+
+    await completeToday('day-three');
+    expect(game.trialStreakCount, 1);
+    expect(game.trialStreakLastDayKey, '2026-08-26');
+    game.dispose();
+  });
+
+  test('full Trial streak carries at most one latest day after claim',
+      () async {
+    var now = DateTime(2026, 8, 20, 12);
+    final game = HouseholdProvider(
+      random: _ZeroRandom(),
+      clock: () => now,
+      persistenceEnabled: false,
+    );
+    game.pet.stage = DragonStage.hatchling;
+
+    Future<void> completeToday(String id) async {
+      game
+        ..trialOffers = [
+          TrialOffer(id: id, kind: TrialKind.ruinBreaker, appearedAt: now),
+        ]
+        ..trialRefilledAt = now;
+      await game.completeTrial(offerId: id, dragonId: game.pet.id, score: 1);
+    }
+
+    for (var day = 0; day < 7; day++) {
+      if (day > 0) now = now.add(const Duration(days: 1));
+      await completeToday('streak-$day');
+    }
+    expect(game.trialStreakRewardReady, isTrue);
+    expect(game.trialStreakCount, 7);
+
+    now = now.add(const Duration(days: 1));
+    await completeToday('waiting-eight');
+    now = now.add(const Duration(days: 1));
+    await completeToday('waiting-nine');
+    expect(game.trialStreakCarryDayKey, '2026-08-28');
+
+    expect(await game.claimTrialStreakReward(), ChestTier.mythical);
+    expect(game.trialStreakCount, 1);
+    expect(game.trialStreakLastDayKey, '2026-08-28');
+    expect(game.trialStreakRewardReady, isFalse);
+    game.dispose();
+  });
+
+  test('missed carried Trial day resets next streak to zero', () async {
+    var now = DateTime(2026, 8, 20, 12);
+    final game = HouseholdProvider(
+      random: _ZeroRandom(),
+      clock: () => now,
+      persistenceEnabled: false,
+    )
+      ..trialStreakCount = 7
+      ..trialStreakLastDayKey = '2026-08-20'
+      ..trialStreakRewardReady = true;
+
+    now = now.add(const Duration(days: 1));
+    game
+      ..trialOffers = [
+        TrialOffer(
+          id: 'carried-day',
+          kind: TrialKind.ruinBreaker,
+          appearedAt: now,
+        ),
+      ]
+      ..trialRefilledAt = now
+      ..pet.stage = DragonStage.hatchling;
+    await game.completeTrial(
+      offerId: 'carried-day',
+      dragonId: game.pet.id,
+      score: 1,
+    );
+    expect(game.trialStreakCarryDayKey, '2026-08-21');
+
+    now = now.add(const Duration(days: 2));
+    expect(await game.claimTrialStreakReward(), ChestTier.mythical);
+    expect(game.trialStreakCount, 0);
+    expect(game.trialStreakLastDayKey, isEmpty);
+    game.dispose();
+  });
+
+  test('Sinisterra is always Evil and its moral alignment is known', () {
+    final direct = Pet(
+      stage: DragonStage.hatchling,
+      lineageId: 'sinisterra',
+      moralAxis: MoralAxis.good,
+      moralAxisKnown: false,
+    );
+    final restored = Pet.fromJson({
+      'id': 'legacy-sinister',
+      'stage': 'hatchling',
+      'lineageId': 'sinisterra',
+      'moralAxis': 'neutral',
+      'moralAxisKnown': false,
+    });
+    final egg = DragonEgg(
+      id: 'sinister-egg',
+      lineageId: 'sinisterra',
+      acquiredAt: DateTime(2026),
+      hatchSeed: 5,
+      prismatic: false,
+      moralAxis: MoralAxis.good,
+    ).activate(coins: 0, gems: 0);
+
+    for (final dragon in [direct, restored, egg]) {
+      expect(dragon.sinister, isTrue);
+      expect(dragon.moralAxis, MoralAxis.evil);
+      expect(dragon.moralAxisKnown, isTrue);
+    }
+  });
+
+  test('Supporter cosmetics stay outside chest pools and grant idempotently',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(902),
+      persistenceEnabled: false,
+    );
+    final chestPortraitsBefore = game.chestPortraitCount;
+    final chestTitlesBefore = game.chestTitleCount;
+
+    expect(await game.applyVerifiedSupporterPack('verified-order-1'), isTrue);
+    expect(await game.applyVerifiedSupporterPack('verified-order-1'), isFalse);
+    expect(game.supporterPackOwned, isTrue);
+    expect(game.ownedPortraitIds, contains(supporterProfilePortrait.id));
+    expect(game.ownedTitleIds, contains(supporterAccountTitle.id));
+    expect(game.ownedBadgeIds, contains(supporterBadge.id));
+    expect(game.ownedFrameIds, contains(supporterFrame.id));
+    expect(game.ownedItemIds,
+        containsAll(supporterFurnitureCatalog.map((item) => item.id)));
+    expect(game.chestPortraitCount, chestPortraitsBefore);
+    expect(game.chestTitleCount, chestTitlesBefore);
+    game.dispose();
+  });
+
+  test('Dragon School unlocks at five floors and only stores higher records',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(903),
+      persistenceEnabled: false,
+    );
+    game.towerFloorRoomIds = List.filled(4, 'hearth');
+    expect(game.dragonSchoolUnlocked, isFalse);
+    expect(await game.recordDragonSchoolScore('runeRush', 5), isFalse);
+
+    game.towerFloorRoomIds = [...game.towerFloorRoomIds, 'crystal'];
+    expect(game.dragonSchoolUnlocked, isTrue);
+    expect(await game.recordDragonSchoolScore('runeRush', 5), isTrue);
+    expect(await game.recordDragonSchoolScore('runeRush', 3), isFalse);
+    expect(game.dragonSchoolRecords['runeRush'], 5);
+    game.dispose();
   });
 }
 

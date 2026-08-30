@@ -16,7 +16,9 @@ class NotificationSettingsScreen extends StatefulWidget {
 
 class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     with WidgetsBindingObserver {
-  bool? _platformPermissionGranted;
+  HavenNotificationPermissionStatus? _platformPermissionStatus;
+  HavenNotificationCategory? _pendingEnableCategory;
+  bool _permissionFlowBusy = false;
 
   @override
   void initState() {
@@ -33,16 +35,73 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _refreshPlatformPermission();
+    if (state == AppLifecycleState.resumed && !_permissionFlowBusy) {
+      _refreshPlatformPermission();
+    }
   }
 
   Future<void> _refreshPlatformPermission() async {
-    final granted = await HavenNotifications.platformPermissionGranted();
-    if (mounted) setState(() => _platformPermissionGranted = granted);
+    final status = await HavenNotifications.platformPermissionStatus();
+    if (!mounted) return;
+    final game = context.read<HouseholdProvider>();
+    if (status == HavenNotificationPermissionStatus.denied) {
+      await game.disableAllNotificationsForPlatform();
+    } else if (status == HavenNotificationPermissionStatus.granted) {
+      final category = _pendingEnableCategory;
+      if (category != null) {
+        if (await game.setNotificationEnabled(category, true)) {
+          _pendingEnableCategory = null;
+        }
+      }
+    }
+    if (mounted) setState(() => _platformPermissionStatus = status);
   }
 
   Future<void> _openPlatformSettings() async {
     await HavenNotifications.openPlatformNotificationSettings();
+  }
+
+  Future<void> _setCategory(
+    HavenNotificationCategory category,
+    bool enabled,
+  ) async {
+    if (_permissionFlowBusy) return;
+    final game = context.read<HouseholdProvider>();
+    if (!enabled) {
+      await game.setNotificationEnabled(category, false);
+      return;
+    }
+
+    var status = await HavenNotifications.platformPermissionStatus();
+    if (!mounted) return;
+    if (status == HavenNotificationPermissionStatus.granted) {
+      await game.setNotificationEnabled(category, true);
+      if (mounted) setState(() => _platformPermissionStatus = status);
+      return;
+    }
+
+    setState(() {
+      _permissionFlowBusy = true;
+      _pendingEnableCategory = category;
+    });
+    await game.disableAllNotificationsForPlatform();
+    final granted = await HavenNotifications.requestPlatformPermission();
+    if (!mounted) return;
+    status = granted
+        ? HavenNotificationPermissionStatus.granted
+        : HavenNotificationPermissionStatus.denied;
+    if (granted) {
+      await game.setNotificationEnabled(category, true);
+      _pendingEnableCategory = null;
+    } else {
+      await game.disableAllNotificationsForPlatform();
+    }
+    if (!mounted) return;
+    setState(() {
+      _platformPermissionStatus = status;
+      _permissionFlowBusy = false;
+    });
+    if (!granted) await _openPlatformSettings();
   }
 
   @override
@@ -113,7 +172,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             ),
           ),
           const SizedBox(height: 16),
-          if (_platformPermissionGranted == false) ...[
+          if (_platformPermissionStatus ==
+              HavenNotificationPermissionStatus.denied) ...[
             Card(
               color: const Color(0xFFFFF3E2),
               child: Padding(
@@ -155,13 +215,17 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                     index++) ...[
                   _NotificationToggle(
                     category: HavenNotificationCategory.values[index],
-                    enabled: game.notificationEnabled(
-                      HavenNotificationCategory.values[index],
-                    ),
-                    onChanged: (enabled) => game.setNotificationEnabled(
-                      HavenNotificationCategory.values[index],
-                      enabled,
-                    ),
+                    enabled: _platformPermissionStatus ==
+                            HavenNotificationPermissionStatus.granted &&
+                        game.notificationEnabled(
+                          HavenNotificationCategory.values[index],
+                        ),
+                    onChanged: _permissionFlowBusy
+                        ? null
+                        : (enabled) => _setCategory(
+                              HavenNotificationCategory.values[index],
+                              enabled,
+                            ),
                   ),
                   if (index < HavenNotificationCategory.values.length - 1)
                     const Divider(height: 1),
@@ -184,7 +248,7 @@ class _NotificationToggle extends StatelessWidget {
 
   final HavenNotificationCategory category;
   final bool enabled;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {

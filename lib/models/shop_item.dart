@@ -293,9 +293,73 @@ final List<ShopItem> shopCatalog = List<ShopItem>.unmodifiable([
       ),
 ]);
 
+const supporterFurnitureCatalog = <ShopItem>[
+  ShopItem(
+    id: 'supporter_dragon_throne',
+    name: 'Supporter dragon throne',
+    nameNl: 'Supporter-drakentroon',
+    description: 'A velvet-and-gold resting throne made for founding Keepers.',
+    descriptionNl:
+        'Een rusttroon van fluweel en goud voor oprichtende Keepers.',
+    slot: ItemSlot.bed,
+    price: 0,
+    rarity: ItemRarity.rare,
+    visualSeed: 1001,
+    daySpriteAsset: 'assets/images/supporter/supporter_throne.png',
+  ),
+  ShopItem(
+    id: 'supporter_star_tree',
+    name: 'Supporter star tree',
+    nameNl: 'Supporter-sterrenboom',
+    description: 'A living thank-you whose golden leaves never fade.',
+    descriptionNl:
+        'Een levend dankjewel waarvan de gouden bladeren nooit vervagen.',
+    slot: ItemSlot.plant,
+    price: 0,
+    rarity: ItemRarity.rare,
+    visualSeed: 1002,
+    daySpriteAsset: 'assets/images/supporter/supporter_star_tree.png',
+  ),
+  ShopItem(
+    id: 'supporter_founder_banner',
+    name: 'Supporter founder banner',
+    nameNl: 'Supporter-oprichtersvaandel',
+    description: 'The Haven crest framed in unmistakable supporter gold.',
+    descriptionNl: 'Het Havenwapen omlijst in onmiskenbaar supportergoud.',
+    slot: ItemSlot.wall,
+    price: 0,
+    rarity: ItemRarity.rare,
+    visualSeed: 1003,
+    daySpriteAsset: 'assets/images/supporter/supporter_banner.png',
+  ),
+  ShopItem(
+    id: 'supporter_aurora_beacon',
+    name: 'Supporter aurora beacon',
+    nameNl: 'Supporter-aurorabaken',
+    description: 'A tiny beacon that paints the room with celebratory light.',
+    descriptionNl:
+        'Een klein baken dat de kamer met feestelijk licht beschildert.',
+    slot: ItemSlot.light,
+    price: 0,
+    rarity: ItemRarity.rare,
+    visualSeed: 1004,
+    emitsLight: true,
+    lightType: FurnitureLightType.arcane,
+    nightActivation: FurnitureNightActivation.duskAndNight,
+    glowRadius: .25,
+    hasAmbientAnimation: true,
+    daySpriteAsset: 'assets/images/supporter/supporter_beacon.png',
+  ),
+];
+
+final List<ShopItem> allFurnitureCatalog = List.unmodifiable([
+  ...shopCatalog,
+  ...supporterFurnitureCatalog,
+]);
+
 final Map<String, ShopItem> _shopItemsById =
     Map<String, ShopItem>.unmodifiable({
-  for (final item in shopCatalog) item.id: item,
+  for (final item in allFurnitureCatalog) item.id: item,
 });
 
 ShopItem? shopItemById(String id) => _shopItemsById[id];

@@ -98,6 +98,7 @@ class FriendsScreen extends StatelessWidget {
                 leading: KeeperPortrait(
                   portraitKey: keeper.portraitKey,
                   displayName: keeper.displayName,
+                  frameKey: keeper.frameKey,
                 ),
                 title: Text(keeper.displayName),
                 subtitle: Text(keeper.keeperCode),
@@ -262,6 +263,7 @@ class _MyKeeperCard extends StatelessWidget {
             KeeperPortrait(
               portraitKey: profile.portraitKey,
               displayName: profile.displayName,
+              frameKey: profile.frameKey,
               radius: 29,
             ),
             const SizedBox(width: 12),
@@ -399,6 +401,7 @@ class _IncomingRequestCard extends StatelessWidget {
             leading: KeeperPortrait(
               portraitKey: request.keeper.portraitKey,
               displayName: request.keeper.displayName,
+              frameKey: request.keeper.frameKey,
             ),
             title: Text(request.keeper.displayName,
                 style: const TextStyle(fontWeight: FontWeight.w900)),
@@ -452,6 +455,7 @@ class _OutgoingRequestCard extends StatelessWidget {
         leading: KeeperPortrait(
           portraitKey: request.keeper.portraitKey,
           displayName: request.keeper.displayName,
+          frameKey: request.keeper.frameKey,
         ),
         title: Text(request.keeper.displayName,
             style: const TextStyle(fontWeight: FontWeight.w900)),
@@ -489,6 +493,7 @@ class _FriendTile extends StatelessWidget {
               KeeperPortrait(
                 portraitKey: friend.portraitKey,
                 displayName: friend.displayName,
+                frameKey: friend.frameKey,
                 radius: 29,
               ),
               const SizedBox(width: 10),
@@ -568,6 +573,7 @@ Future<void> _showFriendProfile(
               child: KeeperPortrait(
                 portraitKey: friend.portraitKey,
                 displayName: friend.displayName,
+                frameKey: friend.frameKey,
                 radius: 48,
               ),
             ),

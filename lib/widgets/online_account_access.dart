@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_strings.dart';
 import '../models/account_title.dart';
 import '../models/profile_portrait.dart';
+import '../models/supporter_pack.dart';
 import '../providers/online_account_provider.dart';
 import '../theme/app_theme.dart';
 import 'profile_portrait_sprite.dart';
@@ -15,59 +16,89 @@ class KeeperPortrait extends StatelessWidget {
     required this.portraitKey,
     required this.displayName,
     this.radius = 25,
+    this.frameKey,
   });
 
   final String portraitKey;
   final String displayName;
   final double radius;
+  final String? frameKey;
 
   @override
   Widget build(BuildContext context) {
     final portrait = profilePortraitById(portraitKey);
+    final frame = keeperFrameById(frameKey);
+    final diameter = radius * 2;
+    final portraitDiameter = frame == null ? diameter : diameter * .89;
+    late final Widget portraitBody;
     if (portrait != null) {
       final rarityColor = Color(portrait.rarity.colorValue);
       final frameWidth = radius >= 40 ? 3.0 : 2.2;
-      return Semantics(
-        image: true,
-        label: displayName,
-        child: SizedBox.square(
-          dimension: radius * 2,
-          child: Container(
-            padding: EdgeInsets.all(frameWidth),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-              border: Border.all(color: rarityColor, width: frameWidth),
-              boxShadow: portrait.rarity.hasGlow
-                  ? [
-                      BoxShadow(
-                        color: rarityColor.withValues(alpha: .58),
-                        blurRadius: radius * .34,
-                        spreadRadius: radius * .055,
-                      ),
-                    ]
-                  : const [],
-            ),
-            child: ProfilePortraitSprite(
-              portrait: portrait,
-              size: radius * 2 - frameWidth * 2,
-            ),
+      portraitBody = SizedBox.square(
+        dimension: portraitDiameter,
+        child: Container(
+          padding: EdgeInsets.all(frameWidth),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            border: Border.all(color: rarityColor, width: frameWidth),
+            boxShadow: portrait.rarity.hasGlow
+                ? [
+                    BoxShadow(
+                      color: rarityColor.withValues(alpha: .58),
+                      blurRadius: radius * .34,
+                      spreadRadius: radius * .055,
+                    ),
+                  ]
+                : const [],
+          ),
+          child: ProfilePortraitSprite(
+            portrait: portrait,
+            size: portraitDiameter - frameWidth * 2,
           ),
         ),
       );
+    } else {
+      final (color, icon) = switch (portraitKey) {
+        'ember' => (
+            const Color(0xFFE66B4E),
+            Icons.local_fire_department_rounded
+          ),
+        'forest' => (const Color(0xFF4A956C), Icons.park_rounded),
+        'tide' => (const Color(0xFF438CB8), Icons.water_rounded),
+        'storm' => (const Color(0xFF7568B5), Icons.bolt_rounded),
+        _ => (AppColors.twilight, Icons.nightlight_round),
+      };
+      portraitBody = CircleAvatar(
+        radius: portraitDiameter / 2,
+        backgroundColor: color.withValues(alpha: .14),
+        foregroundColor: color,
+        child: Icon(icon, size: radius * 1.05),
+      );
     }
-    final (color, icon) = switch (portraitKey) {
-      'ember' => (const Color(0xFFE66B4E), Icons.local_fire_department_rounded),
-      'forest' => (const Color(0xFF4A956C), Icons.park_rounded),
-      'tide' => (const Color(0xFF438CB8), Icons.water_rounded),
-      'storm' => (const Color(0xFF7568B5), Icons.bolt_rounded),
-      _ => (AppColors.twilight, Icons.nightlight_round),
-    };
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: color.withValues(alpha: .14),
-      foregroundColor: color,
-      child: Icon(icon, size: radius * 1.05),
+    return Semantics(
+      image: true,
+      label: displayName,
+      child: SizedBox.square(
+        dimension: diameter,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            portraitBody,
+            if (frame != null)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Image.asset(
+                    frame.assetPath,
+                    key: Key('keeper-portrait-frame-${frame.id}'),
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

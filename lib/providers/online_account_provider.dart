@@ -656,6 +656,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       'displayName': localProfile.displayName,
       'title': localProfile.titleId,
       'portrait': localProfile.portraitId,
+      'frame': localProfile.frameId,
     });
     final now = DateTime.now();
     final presenceExpired = _lastPresenceUpdate == null ||
@@ -665,6 +666,7 @@ class OnlineAccountProvider extends ChangeNotifier {
         displayName: localProfile.displayName,
         title: localProfile.titleId,
         portraitKey: localProfile.portraitId,
+        frameKey: localProfile.frameId,
       );
       _lastProfileFingerprint = profileFingerprint;
       _lastPresenceUpdate = now;

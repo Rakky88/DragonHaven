@@ -18,6 +18,7 @@ import 'screens/shop_hub_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/pet_screen.dart';
 import 'screens/inventory_screen.dart';
+import 'screens/keeper_journal_screen.dart';
 import 'services/audio_service.dart';
 import 'services/automatic_cloud_backup.dart';
 import 'services/notification_service.dart';
@@ -62,7 +63,7 @@ class DragonHavenGate extends StatelessWidget {
   }
 }
 
-enum _HavenMenuAction { account, language, achievements, tutorial }
+enum _HavenMenuAction { account, journal, language, achievements, tutorial }
 
 class DragonHavenShell extends StatefulWidget {
   const DragonHavenShell({super.key});
@@ -83,6 +84,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   Timer? _presentationRetry;
   Timer? _gameClock;
   Timer? _nestHatchTimer;
+  Timer? _nestHatchWatchdog;
   String? _scheduledNestEggId;
   DateTime? _scheduledNestHatchAt;
   int _adventureInitialTab = 0;
@@ -118,6 +120,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       onPause: () => unawaited(_automaticCloudBackup.tryWhenBackgrounded()),
       onResume: () async {
         _setTowerAmbientMusic();
+        await _game.synchronizeNotificationPermissionWithPlatform();
         await _game.refreshForCurrentDate();
         await _online.refreshIfStale();
         _syncNestHatchTimer();
@@ -148,6 +151,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     _presentationRetry?.cancel();
     _gameClock?.cancel();
     _nestHatchTimer?.cancel();
+    _nestHatchWatchdog?.cancel();
     _game.removeListener(_handleGameChanged);
     _automaticCloudBackup.dispose();
     unawaited(_notificationNavigation.cancel());
@@ -166,10 +170,31 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     if (egg == null || !egg.isEgg) {
       _nestHatchTimer?.cancel();
       _nestHatchTimer = null;
+      _nestHatchWatchdog?.cancel();
+      _nestHatchWatchdog = null;
       _scheduledNestEggId = null;
       _scheduledNestHatchAt = null;
       return;
     }
+
+    _nestHatchWatchdog ??= Timer.periodic(
+      const Duration(seconds: 1),
+      (_) {
+        if (!mounted || _automaticHatchBusy) return;
+        final currentEgg = _game.nestEgg;
+        if (currentEgg == null || !currentEgg.isEgg) {
+          _syncNestHatchTimer();
+          return;
+        }
+        final currentHatchAt =
+            currentEgg.stageStartedAt.add(currentEgg.incubationDuration);
+        if (!currentHatchAt.isAfter(_game.currentTime)) {
+          unawaited(
+            _hatchNestEggWhenReady(currentEgg.id, currentHatchAt),
+          );
+        }
+      },
+    );
 
     final hatchAt = egg.stageStartedAt.add(egg.incubationDuration);
     if (_scheduledNestEggId == egg.id &&
@@ -461,6 +486,14 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
             onSelected: _handleMenuAction,
             itemBuilder: (_) => [
               PopupMenuItem(
+                key: const Key('app-menu-journal'),
+                value: _HavenMenuAction.journal,
+                child: _MenuRow(
+                  icon: Icons.auto_stories_rounded,
+                  label: strings.pick('Keeper Journal', 'Keeperdagboek'),
+                ),
+              ),
+              PopupMenuItem(
                 key: const Key('app-menu-account'),
                 value: _HavenMenuAction.account,
                 child: _MenuRow(
@@ -582,6 +615,9 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
         }
         Navigator.of(context).push(
             MaterialPageRoute<void>(builder: (_) => const AccountScreen()));
+      case _HavenMenuAction.journal:
+        Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => const KeeperJournalScreen()));
       case _HavenMenuAction.language:
         _showLanguagePicker();
       case _HavenMenuAction.achievements:

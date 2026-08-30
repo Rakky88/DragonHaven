@@ -1,6 +1,7 @@
 import 'trial_phrase_translations.dart';
 import 'notification_phrase_translations.dart';
 import 'release_phrase_translations.dart';
+import 'feature_batch_phrase_translations.dart';
 
 /// Offline translations for complete, user-visible UI phrases.
 ///
@@ -18,8 +19,9 @@ const _languageIndex = <String, int>{
 
 String? translatedUiPhrase(String english, String languageCode) {
   final index = _languageIndex[languageCode];
-  final values =
-      uiPhraseTranslations[english] ?? trialPhraseTranslations[english];
+  final values = uiPhraseTranslations[english] ??
+      trialPhraseTranslations[english] ??
+      featureBatchPhraseTranslations[english];
   if (index == null) return null;
   if (values != null && values.length == 6) return values[index];
   return _translatedDynamicUiPhrase(english, languageCode);

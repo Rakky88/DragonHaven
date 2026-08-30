@@ -12,6 +12,7 @@ import 'package:dragon_haven/models/house.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/profile_portrait.dart';
 import 'package:dragon_haven/models/shop_item.dart';
+import 'package:dragon_haven/models/supporter_pack.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
 import 'package:dragon_haven/widgets/furniture_art.dart';
 import 'package:dragon_haven/widgets/game_icon_sprite.dart';
@@ -577,6 +578,30 @@ void main() {
       final image = await _decode(path);
       expect(image.width / image.height, inInclusiveRange(.5, 2.0),
           reason: '$path must keep a usable natural aspect ratio');
+      _expectContained(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        path,
+      );
+    }
+  });
+
+  test('Supporter Pack and Might marker sprites keep transparent safe bounds',
+      () async {
+    final paths = <String>{
+      supporterProfilePortrait.assetPath,
+      supporterBadge.assetPath,
+      supporterFrame.assetPath,
+      for (final item in supporterFurnitureCatalog) item.daySpriteAsset!,
+      'assets/images/ui/trials/trial_might_marker.png',
+    };
+    expect(paths, hasLength(8));
+    for (final path in paths) {
+      final image = await _decode(path);
       _expectContained(
         image.rgba,
         image.width,

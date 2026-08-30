@@ -18,13 +18,18 @@ class ProfilePortrait {
     required this.id,
     required this.number,
     required this.rarity,
+    this.assetPathOverride,
+    this.supporterExclusive = false,
   });
 
   final String id;
   final int number;
   final PortraitRarity rarity;
+  final String? assetPathOverride;
+  final bool supporterExclusive;
 
   String get assetPath =>
+      assetPathOverride ??
       'assets/images/portraits/portrait_${number.toString().padLeft(3, '0')}.webp';
 }
 
@@ -47,8 +52,21 @@ final List<ProfilePortrait> profilePortraitCatalog = List.unmodifiable(
   }),
 );
 
+const supporterProfilePortrait = ProfilePortrait(
+  id: 'portrait_supporter_founder',
+  number: 0,
+  rarity: PortraitRarity.legendary,
+  assetPathOverride: 'assets/images/supporter/supporter_portrait.png',
+  supporterExclusive: true,
+);
+
+final List<ProfilePortrait> allProfilePortraits = List.unmodifiable([
+  ...profilePortraitCatalog,
+  supporterProfilePortrait,
+]);
+
 final Map<String, ProfilePortrait> _profilePortraitsById = Map.unmodifiable({
-  for (final portrait in profilePortraitCatalog) portrait.id: portrait,
+  for (final portrait in allProfilePortraits) portrait.id: portrait,
 });
 
 ProfilePortrait? profilePortraitById(String? id) =>
