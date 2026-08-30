@@ -1240,6 +1240,10 @@ extension DragonHavenSystems on HouseholdProvider {
       startedAt: now,
       endsAt: now.add(duration),
       status: AdventureRunStatus.running,
+      // Roll once when the run is persisted, but keep the result hidden until
+      // completion. The completed card can then show an exact reward that
+      // cannot silently change after an app restart.
+      rewardTier: adventure.knownChest ?? _rollAdventureChest(adventure.kind),
       participantCount: participantCount,
       specialEventId: specialWindow?.event.id,
       specialEventKey: specialWindow?.key,
@@ -1379,7 +1383,8 @@ extension DragonHavenSystems on HouseholdProvider {
       if (run.status == AdventureRunStatus.running &&
           !run.endsAt.isAfter(now)) {
         final definition = AdventureCatalog.byId[run.adventureId];
-        final reward = definition?.knownChest ??
+        final reward = run.rewardTier ??
+            definition?.knownChest ??
             _rollAdventureChest(definition?.kind ?? AdventureKind.short);
         adventureRuns[index] = run.copyWith(
           status: AdventureRunStatus.rewardReady,

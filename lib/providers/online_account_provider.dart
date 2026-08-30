@@ -81,6 +81,9 @@ class OnlineAccountProvider extends ChangeNotifier {
   StreamSubscription<bool>? _authSubscription;
   Timer? _refreshTimer;
   Timer? _authRecoveryTimer;
+  Future<bool>? _refreshInFlight;
+  DateTime? _lastRefreshStartedAt;
+  bool _lastRefreshSucceeded = false;
   String? _lastProfileFingerprint;
   String? _lastTradeInventoryFingerprint;
   String? _lastShowcaseFingerprint;
@@ -261,13 +264,63 @@ class OnlineAccountProvider extends ChangeNotifier {
       }) ??
       false;
 
-  Future<bool> refresh() async =>
-      await _run('social.refresh', () async {
-        if (!isSignedIn) return false;
-        await _refreshData();
-        return true;
-      }) ??
-      false;
+  /// Performs an explicit online refresh.
+  ///
+  /// Multiple callers that arrive while the same refresh is running share one
+  /// request. This prevents rebuilds and lifecycle callbacks from creating a
+  /// queue of identical server calls.
+  Future<bool> refresh() {
+    final pending = _refreshInFlight;
+    if (pending != null) return pending;
+    final completer = Completer<bool>();
+    final sharedRequest = completer.future;
+    // Publish the shared future before _performRefresh can notify listeners.
+    // A listener that immediately asks for another refresh then receives this
+    // same request instead of starting a re-entrant operation.
+    _refreshInFlight = sharedRequest;
+    unawaited(() async {
+      try {
+        completer.complete(await _performRefresh());
+      } on Object catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      } finally {
+        if (identical(_refreshInFlight, sharedRequest)) {
+          _refreshInFlight = null;
+        }
+      }
+    }());
+    return sharedRequest;
+  }
+
+  /// Refreshes only when the latest automatic refresh is old enough.
+  ///
+  /// User-initiated refresh actions should call [refresh] so they remain
+  /// immediate. Screen initialization, navigation and app resume use this
+  /// guarded variant to avoid refresh storms.
+  Future<bool> refreshIfStale({
+    Duration minimumInterval = const Duration(seconds: 15),
+  }) {
+    final pending = _refreshInFlight;
+    if (pending != null) return pending;
+    final lastStartedAt = _lastRefreshStartedAt;
+    if (lastStartedAt != null &&
+        DateTime.now().difference(lastStartedAt) < minimumInterval) {
+      return Future.value(_lastRefreshSucceeded);
+    }
+    return refresh();
+  }
+
+  Future<bool> _performRefresh() async {
+    _lastRefreshStartedAt = DateTime.now();
+    final succeeded = await _run('social.refresh', () async {
+          if (!isSignedIn) return false;
+          await _refreshData();
+          return true;
+        }) ??
+        false;
+    _lastRefreshSucceeded = succeeded;
+    return succeeded;
+  }
 
   Future<bool> synchronizeProfile() => refresh();
 
@@ -784,7 +837,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   void _ensureRefreshTimer() {
     if (!isConfigured || !isSignedIn || _refreshTimer != null) return;
     _refreshTimer = Timer.periodic(const Duration(minutes: 2), (_) {
-      if (isSignedIn && !busy) unawaited(refresh());
+      if (isSignedIn && !busy) unawaited(refreshIfStale());
     });
   }
 
@@ -898,6 +951,8 @@ class OnlineAccountProvider extends ChangeNotifier {
     _lastTradeInventoryFingerprint = null;
     _lastShowcaseFingerprint = null;
     _lastPresenceUpdate = null;
+    _lastRefreshStartedAt = null;
+    _lastRefreshSucceeded = false;
     unawaited(_synchronizeGroupReservations(const {}));
     unawaited(_synchronizeTradeReservations(const {}, const {}, const {}));
   }

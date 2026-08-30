@@ -1039,6 +1039,27 @@ void main() {
     expect(await game.abortAdventure(run.id), isFalse);
   });
 
+  test('a solo Adventure keeps its hidden chest roll across a save', () async {
+    final game = HouseholdProvider(
+      random: Random(852),
+      persistenceEnabled: false,
+    );
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Ember';
+    final adventure = game.adventuresFor(AdventureKind.short).first;
+
+    expect(
+      await game.startAdventure(adventure, dragonId: game.pet.id),
+      AdventureStartResult.started,
+    );
+    final startedRun = game.adventureRuns.single;
+    expect(startedRun.rewardTier, isNotNull);
+
+    final restoredRun = AdventureRun.fromJson(startedRun.toJson());
+    expect(restoredRun.rewardTier, startedRun.rewardTier);
+  });
+
   test('Adventure return reminders never precede the claimable boundary', () {
     final game = HouseholdProvider(
       random: Random(851),

@@ -119,7 +119,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       onResume: () async {
         _setTowerAmbientMusic();
         await _game.refreshForCurrentDate();
-        await _online.refresh();
+        await _online.refreshIfStale();
         _syncNestHatchTimer();
         _schedulePresentations();
       },
@@ -128,7 +128,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       if (!mounted) return;
       _setTowerAmbientMusic();
       await _game.refreshForCurrentDate();
-      await _online.refresh();
+      await _online.refreshIfStale();
       _syncNestHatchTimer();
       _schedulePresentations();
       final destination = HavenNotifications.takePendingNavigation();
@@ -337,7 +337,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     });
     _setTowerAmbientMusic();
     if (index == 0) {
-      unawaited(_online.refresh());
+      unawaited(_online.refreshIfStale());
     }
   }
 

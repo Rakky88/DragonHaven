@@ -343,6 +343,12 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Ready to return'), findsOneWidget);
+    expect(
+      find.byKey(const Key('completed-adventure-rewards-live-countdown')),
+      findsOneWidget,
+    );
+    expect(find.text('+${adventure.xp} XP'), findsOneWidget);
+    expect(find.text('Wooden Chest'), findsOneWidget);
     final claim = find.byKey(const Key('claim-adventure-live-countdown'));
     expect(claim, findsOneWidget);
     await tester.tap(claim);
@@ -1019,6 +1025,11 @@ void main() {
     }
     expect(find.byKey(const Key('chest-rewards')), findsOneWidget);
     expect(find.text('10 treasures revealed'), findsOneWidget);
+    expect(find.byKey(const Key('chest-reveal-continue')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('chest-reveal-panel'))).width,
+      lessThanOrEqualTo(360),
+    );
     await tester.tapAt(const Offset(30, 30));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
@@ -1859,7 +1870,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.04.11'), findsOneWidget);
+    expect(find.text('v0.04.12'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

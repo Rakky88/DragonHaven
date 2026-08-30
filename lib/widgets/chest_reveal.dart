@@ -75,6 +75,7 @@ class _ChestRevealState extends State<_ChestReveal>
 
   Future<void> _open() async {
     if (_opening || _opened) return;
+    _float.stop();
     setState(() => _opening = true);
     final reward = await widget.openChest();
     if (!mounted) return;
@@ -214,230 +215,355 @@ class _ChestRevealState extends State<_ChestReveal>
             child: Stack(
               children: [
                 Positioned(
-                  top: 76,
-                  left: -110,
-                  child: _GlowOrb(color: accent, size: 260),
+                  top: 48,
+                  left: -105,
+                  child: _GlowOrb(color: accent, size: 230),
                 ),
                 Positioned(
-                  right: -90,
-                  bottom: 38,
-                  child: _GlowOrb(color: accent, size: 230),
+                  right: -85,
+                  bottom: 24,
+                  child: _GlowOrb(color: accent, size: 210),
                 ),
                 SafeArea(
                   child: Center(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+                      padding: const EdgeInsets.all(16),
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 440),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            GameIconSprite(
-                              GameIconKind.chest,
-                              size: 42,
-                              semanticLabel: displayLabel,
+                        constraints: const BoxConstraints(maxWidth: 360),
+                        child: Container(
+                          key: const Key('chest-reveal-panel'),
+                          padding: const EdgeInsets.fromLTRB(14, 14, 14, 13),
+                          decoration: BoxDecoration(
+                            color: const Color(0xD91B1238),
+                            borderRadius: BorderRadius.circular(28),
+                            border: Border.all(
+                              color: accent.withValues(alpha: .52),
                             ),
-                            const SizedBox(height: 9),
-                            Text(
-                              displayLabel,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 28,
-                                letterSpacing: -.4,
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x66000000),
+                                blurRadius: 28,
+                                offset: Offset(0, 12),
                               ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              _opened
-                                  ? widget.quantity > 1
-                                      ? strings.pick(
-                                          '${widget.quantity} treasures revealed',
-                                          '${widget.quantity} schatten onthuld',
-                                        )
-                                      : tier == ChestTier.portrait
-                                          ? strings.pick('Portrait revealed',
-                                              'Portret onthuld')
-                                          : tier == ChestTier.title
-                                              ? strings.pick(
-                                                  'Title revealed',
-                                                  'Titel onthuld',
-                                                )
-                                              : strings.pick(
-                                                  'Treasure revealed',
-                                                  'Schat onthuld')
-                                  : _opening
-                                      ? strings.pick('Ancient magic awakens',
-                                          'Oude magie ontwaakt')
-                                      : strings.pick('Sealed treasure',
-                                          'Verzegelde schat'),
-                              style: const TextStyle(
-                                color: Color(0xFFC9C2E5),
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Semantics(
-                              button: !_opening && !_opened,
-                              label: _opening
-                                  ? strings.pick('Chest opening', 'Kist opent')
-                                  : displayLabel,
-                              child: GestureDetector(
-                                key: const Key('chest-reveal-tap-target'),
-                                onTap: _opening || _opened ? null : _open,
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  height: 300,
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Container(
-                                        width: 286,
-                                        height: 286,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color:
-                                                accent.withValues(alpha: .42),
-                                          ),
-                                          gradient: RadialGradient(colors: [
-                                            accent.withValues(alpha: .48),
-                                            accent.withValues(alpha: .12),
-                                            Colors.transparent,
-                                          ]),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color:
-                                                  accent.withValues(alpha: .32),
-                                              blurRadius: 56,
-                                              spreadRadius: 2,
-                                            ),
-                                          ],
-                                        ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: accent.withValues(alpha: .22),
+                                      border: Border.all(
+                                        color: accent.withValues(alpha: .48),
                                       ),
-                                      if (_opening || _opened)
-                                        AnimatedBuilder(
-                                          animation: _openingMotion,
-                                          builder: (_, child) =>
-                                              Transform.scale(
-                                            scale: .35 +
-                                                _openingMotion.value * .95,
-                                            child: Opacity(
-                                              opacity:
-                                                  (_openingMotion.value * 1.2)
-                                                      .clamp(0, 1),
-                                              child: child,
-                                            ),
-                                          ),
-                                          child: Image.asset(
-                                            GameVfxAssets.chestBurst,
-                                            width: 305,
-                                            height: 305,
-                                            fit: BoxFit.contain,
-                                          ),
-                                        ),
-                                      AnimatedBuilder(
-                                        animation: Listenable.merge(
-                                            [_float, _openingMotion]),
-                                        builder: (_, child) {
-                                          final direction =
-                                              (_openingMotion.value * 18)
-                                                      .round()
-                                                      .isEven
-                                                  ? 1.0
-                                                  : -1.0;
-                                          final shake = _opening
-                                              ? (1 - _openingMotion.value) *
-                                                  4 *
-                                                  direction
-                                              : 0.0;
-                                          return Transform.translate(
-                                            offset: Offset(
-                                              shake,
-                                              _lidRevealed
-                                                  ? 0
-                                                  : -5 + _float.value * 10,
-                                            ),
-                                            child: Transform.scale(
-                                              scale: _lidRevealed
-                                                  ? 1.05
-                                                  : .96 + _float.value * .035,
-                                              child: child,
-                                            ),
-                                          );
-                                        },
-                                        child: AnimatedSwitcher(
-                                          duration:
-                                              const Duration(milliseconds: 700),
-                                          transitionBuilder:
-                                              (child, animation) =>
-                                                  FadeTransition(
-                                            opacity: animation,
-                                            child: ScaleTransition(
-                                                scale:
-                                                    Tween(begin: .82, end: 1.0)
-                                                        .animate(animation),
-                                                child: child),
-                                          ),
-                                          child: Padding(
-                                            key: ValueKey(_lidRevealed),
-                                            padding: const EdgeInsets.all(8),
-                                            child: Image.asset(
-                                              _lidRevealed
-                                                  ? tier.openedAssetPath
-                                                  : tier.assetPath,
-                                              fit: BoxFit.contain,
-                                              filterQuality: FilterQuality.high,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
+                                    child: GameIconSprite(
+                                      GameIconKind.chest,
+                                      size: 34,
+                                      semanticLabel: displayLabel,
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 480),
-                              transitionBuilder: (child, animation) =>
-                                  FadeTransition(
-                                opacity: animation,
-                                child: ScaleTransition(
-                                  scale: Tween(begin: .86, end: 1.0)
-                                      .animate(animation),
-                                  child: child,
-                                ),
-                              ),
-                              child: !_opened
-                                  ? const SizedBox(
-                                      key: Key('chest-opening'), height: 72)
-                                  : Column(
-                                      key: const Key('chest-rewards'),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Wrap(
-                                          alignment: WrapAlignment.center,
-                                          spacing: 9,
-                                          runSpacing: 9,
-                                          children: [
-                                            ..._rewardWidgets(strings),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 18),
                                         Text(
-                                          strings.pick(
-                                            'Tap anywhere to return',
-                                            'Tik ergens om terug te gaan',
+                                          displayLabel,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 21,
+                                            letterSpacing: -.25,
                                           ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _opened
+                                              ? widget.quantity > 1
+                                                  ? strings.pick(
+                                                      '${widget.quantity} treasures revealed',
+                                                      '${widget.quantity} schatten onthuld',
+                                                    )
+                                                  : tier == ChestTier.portrait
+                                                      ? strings.pick(
+                                                          'Portrait revealed',
+                                                          'Portret onthuld')
+                                                      : tier == ChestTier.title
+                                                          ? strings.pick(
+                                                              'Title revealed',
+                                                              'Titel onthuld')
+                                                          : tier ==
+                                                                  ChestTier
+                                                                      .music
+                                                              ? strings.pick(
+                                                                  'Music revealed',
+                                                                  'Muziek onthuld')
+                                                              : strings.pick(
+                                                                  'Treasure revealed',
+                                                                  'Schat onthuld')
+                                              : _opening
+                                                  ? strings.pick(
+                                                      'Ancient magic awakens',
+                                                      'Oude magie ontwaakt')
+                                                  : strings.pick(
+                                                      'Sealed treasure',
+                                                      'Verzegelde schat'),
                                           style: const TextStyle(
                                             color: Color(0xFFC9C2E5),
+                                            fontSize: 12,
                                             fontWeight: FontWeight.w700,
                                           ),
                                         ),
                                       ],
                                     ),
-                            ),
-                          ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Semantics(
+                                button: !_opening && !_opened,
+                                label: _opening
+                                    ? strings.pick(
+                                        'Chest opening', 'Kist opent')
+                                    : displayLabel,
+                                child: GestureDetector(
+                                  key: const Key('chest-reveal-tap-target'),
+                                  onTap: _opening || _opened ? null : _open,
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    height: 210,
+                                    child: RepaintBoundary(
+                                      child: Stack(
+                                        alignment: Alignment.center,
+                                        children: [
+                                          Container(
+                                            width: 198,
+                                            height: 198,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: accent.withValues(
+                                                    alpha: .38),
+                                              ),
+                                              gradient: RadialGradient(colors: [
+                                                accent.withValues(alpha: .42),
+                                                accent.withValues(alpha: .10),
+                                                Colors.transparent,
+                                              ]),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: accent.withValues(
+                                                      alpha: .25),
+                                                  blurRadius: 34,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          if (_opening || _opened)
+                                            AnimatedBuilder(
+                                              animation: _openingMotion,
+                                              builder: (_, child) =>
+                                                  Transform.scale(
+                                                scale: .35 +
+                                                    _openingMotion.value * .95,
+                                                child: Opacity(
+                                                  opacity:
+                                                      (_openingMotion.value *
+                                                              1.2)
+                                                          .clamp(0, 1),
+                                                  child: child,
+                                                ),
+                                              ),
+                                              child: Image.asset(
+                                                GameVfxAssets.chestBurst,
+                                                width: 224,
+                                                height: 224,
+                                                fit: BoxFit.contain,
+                                                cacheWidth: 512,
+                                              ),
+                                            ),
+                                          AnimatedBuilder(
+                                            animation: Listenable.merge(
+                                                [_float, _openingMotion]),
+                                            builder: (_, child) {
+                                              final direction =
+                                                  (_openingMotion.value * 18)
+                                                          .round()
+                                                          .isEven
+                                                      ? 1.0
+                                                      : -1.0;
+                                              final shake = _opening
+                                                  ? (1 - _openingMotion.value) *
+                                                      4 *
+                                                      direction
+                                                  : 0.0;
+                                              return Transform.translate(
+                                                offset: Offset(
+                                                  shake,
+                                                  _lidRevealed
+                                                      ? 0
+                                                      : -4 + _float.value * 8,
+                                                ),
+                                                child: Transform.scale(
+                                                  scale: _lidRevealed
+                                                      ? 1.03
+                                                      : .96 +
+                                                          _float.value * .03,
+                                                  child: child,
+                                                ),
+                                              );
+                                            },
+                                            child: AnimatedSwitcher(
+                                              duration: const Duration(
+                                                  milliseconds: 650),
+                                              transitionBuilder:
+                                                  (child, animation) =>
+                                                      FadeTransition(
+                                                opacity: animation,
+                                                child: ScaleTransition(
+                                                  scale: Tween(
+                                                          begin: .84, end: 1.0)
+                                                      .animate(animation),
+                                                  child: child,
+                                                ),
+                                              ),
+                                              child: SizedBox.square(
+                                                key: ValueKey(_lidRevealed),
+                                                dimension: 196,
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(6),
+                                                  child: Image.asset(
+                                                    _lidRevealed
+                                                        ? tier.openedAssetPath
+                                                        : tier.assetPath,
+                                                    fit: BoxFit.contain,
+                                                    filterQuality:
+                                                        FilterQuality.high,
+                                                    cacheWidth: 512,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 420),
+                                transitionBuilder: (child, animation) =>
+                                    FadeTransition(
+                                  opacity: animation,
+                                  child: ScaleTransition(
+                                    scale: Tween(begin: .9, end: 1.0)
+                                        .animate(animation),
+                                    child: child,
+                                  ),
+                                ),
+                                child: !_opened
+                                    ? Padding(
+                                        key: const Key('chest-opening'),
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          _opening
+                                              ? strings.pick(
+                                                  'Chest opening', 'Kist opent')
+                                              : strings.pick(
+                                                  'Tap the chest to open',
+                                                  'Tik op de kist om te openen'),
+                                          style: const TextStyle(
+                                            color: Color(0xFFC9C2E5),
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        key: const Key('chest-rewards'),
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white
+                                              .withValues(alpha: .08),
+                                          borderRadius:
+                                              BorderRadius.circular(18),
+                                          border: Border.all(
+                                            color: Colors.white
+                                                .withValues(alpha: .12),
+                                          ),
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                strings.pick(
+                                                    'Rewards', 'Beloningen'),
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w900,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            ConstrainedBox(
+                                              constraints: BoxConstraints(
+                                                maxHeight: widget.quantity > 1
+                                                    ? 220
+                                                    : 330,
+                                              ),
+                                              child: SingleChildScrollView(
+                                                child: Wrap(
+                                                  alignment:
+                                                      WrapAlignment.center,
+                                                  spacing: 7,
+                                                  runSpacing: 7,
+                                                  children:
+                                                      _rewardWidgets(strings),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                              ),
+                              const SizedBox(height: 11),
+                              if (_opened)
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButton.icon(
+                                    key: const Key('chest-reveal-continue'),
+                                    onPressed: _close,
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: accent,
+                                      foregroundColor: Colors.white,
+                                      minimumSize: const Size.fromHeight(44),
+                                    ),
+                                    icon: const Icon(
+                                        Icons.check_circle_outline_rounded),
+                                    label: Text(
+                                      strings.pick('Continue', 'Verder'),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w900),
+                                    ),
+                                  ),
+                                )
+                              else
+                                const SizedBox(height: 44),
+                            ],
+                          ),
                         ),
                       ),
                     ),

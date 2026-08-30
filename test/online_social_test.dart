@@ -224,6 +224,75 @@ void main() {
     online.dispose();
   });
 
+  test('automatic online refreshes are coalesced and rate limited', () async {
+    final game = HouseholdProvider(random: Random(309));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..ensureAccountGate = Completer<void>();
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+
+    final first = online.refreshIfStale(
+      minimumInterval: const Duration(hours: 1),
+    );
+    while (repository.ensureAccountCount == 0) {
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+    }
+    final duplicate = online.refreshIfStale(
+      minimumInterval: const Duration(hours: 1),
+    );
+    expect(identical(first, duplicate), isTrue);
+    expect(repository.ensureAccountCount, 1);
+
+    repository.ensureAccountGate!.complete();
+    expect(await first, isTrue);
+    expect(await duplicate, isTrue);
+    final snapshotCount = repository.snapshotLoadCount;
+
+    expect(
+      await online.refreshIfStale(
+        minimumInterval: const Duration(hours: 1),
+      ),
+      isTrue,
+    );
+    expect(repository.snapshotLoadCount, snapshotCount,
+        reason: 'a recent automatic refresh must not hit the server again');
+
+    expect(await online.refresh(), isTrue,
+        reason: 'manual refresh remains immediate');
+    expect(repository.snapshotLoadCount, greaterThan(snapshotCount));
+    online.dispose();
+  });
+
+  test('a refresh requested by a busy-state listener reuses the same request',
+      () async {
+    final game = HouseholdProvider(random: Random(310));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..ensureAccountGate = Completer<void>();
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    Future<bool>? reentrantRefresh;
+    online.addListener(() {
+      if (online.busy && reentrantRefresh == null) {
+        reentrantRefresh = online.refresh();
+      }
+    });
+
+    final first = online.refresh();
+    expect(reentrantRefresh, isNotNull);
+    expect(identical(first, reentrantRefresh), isTrue);
+    expect(repository.ensureAccountCount, 1);
+
+    repository.ensureAccountGate!.complete();
+    expect(await first, isTrue);
+    expect(await reentrantRefresh, isTrue);
+    expect(repository.ensureAccountCount, 1);
+    online.dispose();
+  });
+
   test('initial online refresh recovers from transient server failures',
       () async {
     final game = HouseholdProvider(random: Random(4));

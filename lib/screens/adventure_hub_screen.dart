@@ -49,11 +49,6 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
       initialIndex: widget.initialTab.clamp(0, 3),
       vsync: this,
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final online = context.read<OnlineAccountProvider>();
-      if (online.isSignedIn) unawaited(online.refresh());
-    });
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
         setState(() {});
@@ -2057,55 +2052,68 @@ class _ActiveGroupAdventureCard extends StatelessWidget {
         onTap: () => _showGroupLobbyDetails(context, lobby),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 10, 13, 10),
-          child: Row(children: [
-            Container(
-              width: 82,
-              height: 82,
-              decoration: BoxDecoration(
-                gradient:
-                    LinearGradient(colors: _kindColors(AdventureKind.group)),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child:
-                  const GameIconSprite(GameIconKind.adventureGroup, size: 74),
-            ),
-            const SizedBox(width: 11),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(strings.adventureTitle(definition),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w900)),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${myDragon?.dragonName ?? strings.pick('Your dragon', 'Jouw draak')} · '
-                    '${lobby.participants.length}/${lobby.requiredPlayers}',
-                    style:
-                        const TextStyle(color: AppColors.muted, fontSize: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Container(
+                  width: 82,
+                  height: 82,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                        colors: _kindColors(AdventureKind.group)),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  const SizedBox(height: 7),
-                  Text(status,
-                      style: TextStyle(
-                        color: ready
-                            ? const Color(0xFF24735B)
-                            : AppColors.twilight,
-                        fontWeight: FontWeight.w900,
-                      )),
-                ],
-              ),
-            ),
-            if (ready)
-              FilledButton.tonal(
-                key: Key('claim-group-${lobby.id}'),
-                onPressed: () => _claimGroupReward(context, lobby.id),
-                child: Text(strings.pick('Claim', 'Ophalen')),
-              )
-            else
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.twilight),
-          ]),
+                  child: const GameIconSprite(GameIconKind.adventureGroup,
+                      size: 74),
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(strings.adventureTitle(definition),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w900)),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${myDragon?.dragonName ?? strings.pick('Your dragon', 'Jouw draak')} · '
+                        '${lobby.participants.length}/${lobby.requiredPlayers}',
+                        style: const TextStyle(
+                            color: AppColors.muted, fontSize: 12),
+                      ),
+                      const SizedBox(height: 7),
+                      Text(status,
+                          style: TextStyle(
+                            color: ready
+                                ? const Color(0xFF24735B)
+                                : AppColors.twilight,
+                            fontWeight: FontWeight.w900,
+                          )),
+                    ],
+                  ),
+                ),
+                if (ready)
+                  FilledButton.tonal(
+                    key: Key('claim-group-${lobby.id}'),
+                    onPressed: () => _claimGroupReward(context, lobby.id),
+                    child: Text(strings.pick('Claim', 'Ophalen')),
+                  )
+                else
+                  const Icon(Icons.chevron_right_rounded,
+                      color: AppColors.twilight),
+              ]),
+              if (ready) ...[
+                const SizedBox(height: 10),
+                _CompletedAdventureRewards(
+                  key: Key('completed-group-rewards-${lobby.id}'),
+                  definition: definition,
+                  groupChestRange: true,
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -2169,6 +2177,14 @@ Future<void> _showGroupLobbyDetails(
                 ),
                 const SizedBox(height: 12),
                 _GroupRequirementSummary(adventure: definition),
+                if (ready) ...[
+                  const SizedBox(height: 12),
+                  _CompletedAdventureRewards(
+                    key: const Key('completed-group-detail-rewards'),
+                    definition: definition,
+                    groupChestRange: true,
+                  ),
+                ],
                 const SizedBox(height: 14),
                 Text(
                   '${strings.pick('Participants', 'Deelnemers')} '
@@ -2409,86 +2425,106 @@ class _ActiveAdventureCard extends StatelessWidget {
         );
     final ready = run.status == AdventureRunStatus.rewardReady;
     final abortable = !ready && definition.kind != AdventureKind.group;
+    final specialEvent = specialAdventureEventById(run.specialEventId);
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => _showRunDetails(context, run, definition, dragon),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 10, 13, 10),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 82,
-                height: 82,
-                decoration: BoxDecoration(
-                  gradient:
-                      LinearGradient(colors: _kindColors(definition.kind)),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: GameIconSprite(_kindIcon(definition.kind), size: 74),
-              ),
-              const SizedBox(width: 11),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(strings.adventureTitle(definition),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w900)),
-                    const SizedBox(height: 4),
-                    Text(
-                        dragon?.displayName ??
-                            strings.pick('Unknown dragon', 'Onbekende draak'),
-                        style: const TextStyle(
-                            color: AppColors.muted, fontSize: 12)),
-                    const SizedBox(height: 7),
-                    Row(children: [
-                      const GameIconSprite(GameIconKind.clock, size: 22),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          ready
-                              ? strings.pick(
-                                  'Ready to return', 'Klaar om terug te keren')
-                              : adventureRemainingLabel(
-                                  run.endsAt,
-                                  strings,
-                                  now: now,
-                                ),
-                          style: TextStyle(
-                            color: ready
-                                ? const Color(0xFF24735B)
-                                : AppColors.twilight,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                    ]),
-                  ],
-                ),
-              ),
-              if (ready)
-                FilledButton.tonal(
-                  key: Key('claim-adventure-${run.id}'),
-                  onPressed: () => _claimAdventure(context, run.id),
-                  child: Text(strings.pick('Claim', 'Ophalen')),
-                )
-              else if (abortable)
-                IconButton(
-                  key: Key('abort-adventure-${run.id}'),
-                  tooltip: strings.pick('Abort adventure', 'Avontuur afbreken'),
-                  onPressed: () => _confirmAbortAdventure(
-                    context,
-                    run,
-                    dragon?.displayName,
+              Row(
+                children: [
+                  Container(
+                    width: 82,
+                    height: 82,
+                    decoration: BoxDecoration(
+                      gradient:
+                          LinearGradient(colors: _kindColors(definition.kind)),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: GameIconSprite(_kindIcon(definition.kind), size: 74),
                   ),
-                  icon: const Icon(Icons.cancel_outlined,
-                      color: AppColors.twilight),
-                )
-              else
-                const Icon(Icons.chevron_right_rounded,
-                    color: AppColors.twilight),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(strings.adventureTitle(definition),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w900)),
+                        const SizedBox(height: 4),
+                        Text(
+                            dragon?.displayName ??
+                                strings.pick(
+                                    'Unknown dragon', 'Onbekende draak'),
+                            style: const TextStyle(
+                                color: AppColors.muted, fontSize: 12)),
+                        const SizedBox(height: 7),
+                        Row(children: [
+                          const GameIconSprite(GameIconKind.clock, size: 22),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              ready
+                                  ? strings.pick('Ready to return',
+                                      'Klaar om terug te keren')
+                                  : adventureRemainingLabel(
+                                      run.endsAt,
+                                      strings,
+                                      now: now,
+                                    ),
+                              style: TextStyle(
+                                color: ready
+                                    ? const Color(0xFF24735B)
+                                    : AppColors.twilight,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ]),
+                      ],
+                    ),
+                  ),
+                  if (ready)
+                    FilledButton.tonal(
+                      key: Key('claim-adventure-${run.id}'),
+                      onPressed: () => _claimAdventure(context, run.id),
+                      child: Text(strings.pick('Claim', 'Ophalen')),
+                    )
+                  else if (abortable)
+                    IconButton(
+                      key: Key('abort-adventure-${run.id}'),
+                      tooltip:
+                          strings.pick('Abort adventure', 'Avontuur afbreken'),
+                      onPressed: () => _confirmAbortAdventure(
+                        context,
+                        run,
+                        dragon?.displayName,
+                      ),
+                      icon: const Icon(Icons.cancel_outlined,
+                          color: AppColors.twilight),
+                    )
+                  else
+                    const Icon(Icons.chevron_right_rounded,
+                        color: AppColors.twilight),
+                ],
+              ),
+              if (ready) ...[
+                const SizedBox(height: 10),
+                _CompletedAdventureRewards(
+                  key: Key('completed-adventure-rewards-${run.id}'),
+                  definition: definition,
+                  chestTier: run.rewardTier ?? definition.knownChest,
+                  specialEvent: specialEvent,
+                  includeMusicChest: specialEvent?.rewards.musicChest == true &&
+                      !game.musicChestCapacityReached,
+                ),
+              ],
             ],
           ),
         ),
@@ -2508,6 +2544,7 @@ Future<void> _showRunDetails(
   final specialEvent = specialAdventureEventById(run.specialEventId);
   final ready = run.status == AdventureRunStatus.rewardReady;
   final abortable = !ready && definition.kind != AdventureKind.group;
+  final chestTier = run.rewardTier ?? definition.knownChest;
   await showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
@@ -2574,8 +2611,10 @@ Future<void> _showRunDetails(
               _DetailRow(
                   icon: const GameIconSprite(GameIconKind.chest, size: 34),
                   title: strings.pick('Treasure', 'Schat'),
-                  value:
-                      strings.pick('One sealed chest', 'Eén verzegelde kist')),
+                  value: ready && chestTier != null
+                      ? strings.chestLabel(chestTier)
+                      : strings.pick(
+                          'One sealed chest', 'Eén verzegelde kist')),
             if (specialEvent != null) ...[
               _DetailRow(
                 icon: Image.asset(ChestTier.special.assetPath,
@@ -2697,6 +2736,143 @@ Future<void> _confirmAbortAdventure(
       'Avontuur afgebroken. Je draak is weer beschikbaar.',
     )),
   ));
+}
+
+class _CompletedAdventureRewards extends StatelessWidget {
+  const _CompletedAdventureRewards({
+    super.key,
+    required this.definition,
+    this.chestTier,
+    this.specialEvent,
+    this.includeMusicChest = false,
+    this.groupChestRange = false,
+  });
+
+  final AdventureDefinition definition;
+  final ChestTier? chestTier;
+  final SpecialAdventureEventDefinition? specialEvent;
+  final bool includeMusicChest;
+  final bool groupChestRange;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final resolvedChest = chestTier ?? definition.knownChest;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F3FF),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: const Color(0x225B4B8A)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            strings.pick('Rewards', 'Beloningen'),
+            style: const TextStyle(
+              color: AppColors.twilight,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _AdventureRewardPill(
+                icon: const GameIconSprite(GameIconKind.experience, size: 24),
+                label: '+${definition.xp} XP',
+              ),
+              if (!definition.combinedExpertise && definition.statPoints > 0)
+                _AdventureRewardPill(
+                  icon: GameIconSprite(
+                    GameIconSprite.forTrainingFocus(definition.focus),
+                    size: 24,
+                  ),
+                  label:
+                      '+${definition.statPoints} ${_focusName(strings, definition.focus)}',
+                ),
+              if (resolvedChest != null)
+                _AdventureRewardPill(
+                  icon: Image.asset(
+                    resolvedChest.assetPath,
+                    width: 26,
+                    height: 26,
+                    cacheWidth: 96,
+                  ),
+                  label: strings.chestLabel(resolvedChest),
+                )
+              else if (groupChestRange)
+                _AdventureRewardPill(
+                  icon: const GameIconSprite(GameIconKind.chest, size: 24),
+                  label: strings.pick(
+                    '1 Gold, Dragon or Mythical Chest',
+                    '1 Gouden, Draken- of Mythische Kist',
+                  ),
+                ),
+              if (specialEvent?.rewards.randomRelicPool.isNotEmpty == true)
+                _AdventureRewardPill(
+                  icon: Image.asset(
+                    MysticRelic.moralPrism.assetPath,
+                    width: 25,
+                    height: 25,
+                    cacheWidth: 80,
+                  ),
+                  label: strings.pick('1 random relic', '1 willekeurige relic'),
+                ),
+              if (includeMusicChest)
+                _AdventureRewardPill(
+                  icon: Image.asset(
+                    ChestTier.music.assetPath,
+                    width: 26,
+                    height: 26,
+                    cacheWidth: 96,
+                  ),
+                  label: strings.chestLabel(ChestTier.music),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdventureRewardPill extends StatelessWidget {
+  const _AdventureRewardPill({required this.icon, required this.label});
+
+  final Widget icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.fromLTRB(7, 4, 9, 4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(99),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x125B4B8A),
+              blurRadius: 5,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            icon,
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+            ),
+          ],
+        ),
+      );
 }
 
 class _DetailRow extends StatelessWidget {
