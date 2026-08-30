@@ -10,6 +10,22 @@ enum TrainingFocus { might, arcana, spirit }
 const int maxDragonExpertise = 300;
 const int ascendedDragonExpertise = 350;
 const int infernalSpecialistExpertise = 400;
+const int dragonSchoolAttemptsPerLesson = 3;
+const int dragonSchoolLessonCount = 10;
+const int dragonSchoolMaximumAttempts =
+    dragonSchoolAttemptsPerLesson * dragonSchoolLessonCount;
+const Set<String> dragonSchoolLessonIds = {
+  'runeRush',
+  'crystalChase',
+  'emberReflex',
+  'sigilMemory',
+  'scaleOrder',
+  'shadowMatch',
+  'breathBalance',
+  'cloudWeave',
+  'safeHoard',
+  'constellationTrace',
+};
 
 int dragonExpertiseMaximum({
   required DragonStage stage,
@@ -58,6 +74,47 @@ Map<String, int> _normalizedTrialHighScores(Map<String, int>? values) => {
       for (final key in _trialKeys)
         key: (values?[key] ?? 0).clamp(0, 1000000000).toInt(),
     };
+
+Map<String, int> _normalizedSchoolScores(Map<String, int>? values) => {
+      for (final entry in (values ?? const <String, int>{}).entries)
+        if (dragonSchoolLessonIds.contains(entry.key))
+          entry.key: entry.value.clamp(0, 1000000000).toInt(),
+    };
+
+Map<String, int> _normalizedSchoolStars(Map<String, int>? values) => {
+      for (final entry in (values ?? const <String, int>{}).entries)
+        if (dragonSchoolLessonIds.contains(entry.key))
+          entry.key: entry.value.clamp(0, 3).toInt(),
+    };
+
+Map<String, int> _normalizedSchoolAttempts(Map<String, int>? values) => {
+      for (final entry in (values ?? const <String, int>{}).entries)
+        if (dragonSchoolLessonIds.contains(entry.key))
+          entry.key:
+              entry.value.clamp(0, dragonSchoolAttemptsPerLesson).toInt(),
+    };
+
+enum DragonSchoolOutcome {
+  inTraining,
+  dropout,
+  graduate,
+  honorsGraduate,
+  highHonors,
+  valedictorian,
+}
+
+extension DragonSchoolOutcomeRules on DragonSchoolOutcome {
+  bool get isFinal => this != DragonSchoolOutcome.inTraining;
+
+  bool get isPassing => switch (this) {
+        DragonSchoolOutcome.graduate ||
+        DragonSchoolOutcome.honorsGraduate ||
+        DragonSchoolOutcome.highHonors ||
+        DragonSchoolOutcome.valedictorian =>
+          true,
+        DragonSchoolOutcome.inTraining || DragonSchoolOutcome.dropout => false,
+      };
+}
 
 enum LawAxis { lawful, neutral, chaotic }
 
@@ -134,6 +191,10 @@ class Pet {
     DateTime? needsUpdatedAt,
     Map<String, int>? training,
     Map<String, int>? trialHighScores,
+    Map<String, int>? dragonSchoolRecords,
+    Map<String, int>? dragonSchoolStars,
+    Map<String, int>? dragonSchoolAttempts,
+    this.dragonSchoolMentorLessons = 0,
     int? hatchSeed,
     String? lineageId,
     this.evolutionPath,
@@ -155,6 +216,9 @@ class Pet {
           evolutionPath: evolutionPath,
         ),
         trialHighScores = _normalizedTrialHighScores(trialHighScores),
+        dragonSchoolRecords = _normalizedSchoolScores(dragonSchoolRecords),
+        dragonSchoolStars = _normalizedSchoolStars(dragonSchoolStars),
+        dragonSchoolAttempts = _normalizedSchoolAttempts(dragonSchoolAttempts),
         personalityTraitIds = personalityTraitIds ?? <String>[],
         hatchSeed = hatchSeed ??
             DateTime.now().microsecondsSinceEpoch.remainder(0x7fffffff),
@@ -198,6 +262,10 @@ class Pet {
   DateTime needsUpdatedAt;
   final Map<String, int> training;
   final Map<String, int> trialHighScores;
+  final Map<String, int> dragonSchoolRecords;
+  final Map<String, int> dragonSchoolStars;
+  final Map<String, int> dragonSchoolAttempts;
+  int dragonSchoolMentorLessons;
   final int hatchSeed;
   final String lineageId;
   String? evolutionPath;
@@ -290,6 +358,36 @@ class Pet {
   int get maximumTotalExpertise => TrainingFocus.values
       .fold(0, (total, focus) => total + expertiseMaximum(focus));
   int trialBest(String trialKey) => trialHighScores[trialKey] ?? 0;
+  int schoolBest(String lessonId) => dragonSchoolRecords[lessonId] ?? 0;
+  int schoolStars(String lessonId) => dragonSchoolStars[lessonId] ?? 0;
+  int schoolAttempts(String lessonId) => dragonSchoolAttempts[lessonId] ?? 0;
+  int get dragonSchoolStarTotal => dragonSchoolLessonIds.fold(
+      0, (total, id) => total + schoolStars(id).clamp(0, 3));
+  int get dragonSchoolAttemptTotal => dragonSchoolLessonIds
+      .fold(
+        0,
+        (total, id) =>
+            total + schoolAttempts(id).clamp(0, dragonSchoolAttemptsPerLesson),
+      )
+      .clamp(0, dragonSchoolMaximumAttempts);
+  bool get dragonSchoolComplete =>
+      dragonSchoolAttemptTotal >= dragonSchoolMaximumAttempts;
+  DragonSchoolOutcome get dragonSchoolOutcome {
+    if (!dragonSchoolComplete) return DragonSchoolOutcome.inTraining;
+    return switch (dragonSchoolStarTotal) {
+      >= 30 => DragonSchoolOutcome.valedictorian,
+      >= 27 => DragonSchoolOutcome.highHonors,
+      >= 21 => DragonSchoolOutcome.honorsGraduate,
+      >= 15 => DragonSchoolOutcome.graduate,
+      _ => DragonSchoolOutcome.dropout,
+    };
+  }
+
+  bool get dragonSchoolGraduated => dragonSchoolOutcome.isPassing;
+  bool get dragonSchoolDropout =>
+      dragonSchoolOutcome == DragonSchoolOutcome.dropout;
+  bool get dragonSchoolValedictorian =>
+      dragonSchoolOutcome == DragonSchoolOutcome.valedictorian;
 
   bool recordTrialScore(String trialKey, int score) {
     if (!_trialKeys.contains(trialKey) || score <= trialBest(trialKey)) {
@@ -451,6 +549,10 @@ class Pet {
         'needsUpdatedAt': needsUpdatedAt.toIso8601String(),
         'training': training,
         'trialHighScores': trialHighScores,
+        'dragonSchoolRecords': dragonSchoolRecords,
+        'dragonSchoolStars': dragonSchoolStars,
+        'dragonSchoolAttempts': dragonSchoolAttempts,
+        'dragonSchoolMentorLessons': dragonSchoolMentorLessons,
         'hatchSeed': hatchSeed,
         'lineageId': lineageId,
         'evolutionPath': evolutionPath,
@@ -565,6 +667,22 @@ class Pet {
         for (final entry in mapFromJson(json['trialHighScores']).entries)
           entry.key: nonNegativeIntFromJson(entry.value, fallback: 0),
       },
+      dragonSchoolRecords: {
+        for (final entry in mapFromJson(json['dragonSchoolRecords']).entries)
+          entry.key: nonNegativeIntFromJson(entry.value, fallback: 0),
+      },
+      dragonSchoolStars: {
+        for (final entry in mapFromJson(json['dragonSchoolStars']).entries)
+          entry.key: nonNegativeIntFromJson(entry.value, fallback: 0),
+      },
+      dragonSchoolAttempts: {
+        for (final entry in mapFromJson(json['dragonSchoolAttempts']).entries)
+          entry.key: nonNegativeIntFromJson(entry.value, fallback: 0),
+      },
+      dragonSchoolMentorLessons: nonNegativeIntFromJson(
+        json['dragonSchoolMentorLessons'],
+        fallback: 0,
+      ),
     );
   }
 

@@ -50,7 +50,11 @@ class ShopHubScreen extends StatelessWidget {
               ),
               Tab(
                 key: const Key('shop-tab-packs'),
-                icon: const Icon(Icons.card_giftcard_rounded, size: 31),
+                icon: Image.asset(
+                  'assets/images/ui/packs_icon.png',
+                  width: 38,
+                  height: 38,
+                ),
                 text: strings.pick('Packs', 'Pakketten'),
               ),
             ],
@@ -89,8 +93,11 @@ class _PacksShop extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.card_giftcard_rounded,
-                color: AppColors.twilight, size: 34),
+            Image.asset(
+              'assets/images/ui/packs_icon.png',
+              width: 42,
+              height: 42,
+            ),
             const SizedBox(width: 9),
             Text(
               strings.pick('Packs', 'Pakketten'),
@@ -157,32 +164,87 @@ class _PacksShop extends StatelessWidget {
                 style: const TextStyle(color: Color(0xFFE9DFF9), height: 1.3),
               ),
               const SizedBox(height: 13),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .13),
-                  borderRadius: BorderRadius.circular(99),
-                  border: Border.all(color: Colors.white24),
+              FilledButton.icon(
+                key: const Key('buy-supporter-pack'),
+                onPressed: game.supporterPackOwned
+                    ? null
+                    : () => showAppSnackBar(
+                          context,
+                          strings.pick(
+                            'The pack is ready for €2.99. Purchasing becomes available after the Google Play product and secure server verification are connected.',
+                            'Het pakket staat klaar voor €2,99. Kopen wordt beschikbaar zodra het Google Play-product en veilige servercontrole zijn aangesloten.',
+                          ),
+                        ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white.withValues(alpha: .14),
+                  disabledBackgroundColor: Colors.white.withValues(alpha: .10),
+                  foregroundColor: AppColors.gold,
+                  disabledForegroundColor: AppColors.gold,
+                  side: const BorderSide(color: Colors.white24),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
                 ),
-                child: Text(
+                icon: Icon(game.supporterPackOwned
+                    ? Icons.check_circle_rounded
+                    : Icons.shopping_bag_rounded),
+                label: Text(
                   game.supporterPackOwned
                       ? strings.pick('OWNED', 'IN BEZIT')
                       : '€2,99',
                   style: const TextStyle(
-                    color: AppColors.gold,
                     fontSize: 21,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
+              const SizedBox(height: 8),
+              Theme(
+                data: Theme.of(context).copyWith(
+                  dividerColor: Colors.transparent,
+                  splashColor: Colors.white10,
+                ),
+                child: ExpansionTile(
+                  key: const Key('supporter-pack-everything-included'),
+                  tilePadding: const EdgeInsets.symmetric(horizontal: 4),
+                  childrenPadding: const EdgeInsets.only(bottom: 4),
+                  iconColor: AppColors.gold,
+                  collapsedIconColor: AppColors.gold,
+                  title: Text(
+                    strings.pick('Everything included', 'Alles inbegrepen'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  children: const [_SupporterPackContents()],
+                ),
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 14),
-        Text(strings.pick('Everything included', 'Alles inbegrepen'),
-            style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
+        Text(
+          strings.pick(
+            'Cosmetic only: no gems, coins, power or gameplay advantage.',
+            'Alleen cosmetisch: geen gems, munten, kracht of spelvoordeel.',
+          ),
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.muted, fontSize: 11),
+        ),
+      ],
+    );
+  }
+}
+
+class _SupporterPackContents extends StatelessWidget {
+  const _SupporterPackContents();
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Column(
+      children: [
         _SupporterContentTile(
           art: ProfilePortraitSprite(
               portrait: supporterProfilePortrait, size: 64),
@@ -224,7 +286,6 @@ class _PacksShop extends StatelessWidget {
             'Een instelbare profiellijst, exclusief gemaakt voor dit pakket.',
           ),
         ),
-        const SizedBox(height: 4),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -241,6 +302,7 @@ class _PacksShop extends StatelessWidget {
               ),
               const SizedBox(height: 9),
               GridView.builder(
+                key: const PageStorageKey('supporter-furniture-grid'),
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: supporterFurnitureCatalog.length,
@@ -276,38 +338,6 @@ class _PacksShop extends StatelessWidget {
               ),
             ],
           ),
-        ),
-        const SizedBox(height: 14),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            key: const Key('buy-supporter-pack'),
-            onPressed: game.supporterPackOwned
-                ? null
-                : () => showAppSnackBar(
-                      context,
-                      strings.pick(
-                        'The pack is ready for €2.99. Purchasing becomes available after the Google Play product and secure server verification are connected.',
-                        'Het pakket staat klaar voor €2,99. Kopen wordt beschikbaar zodra het Google Play-product en veilige servercontrole zijn aangesloten.',
-                      ),
-                    ),
-            icon: Icon(game.supporterPackOwned
-                ? Icons.check_circle_rounded
-                : Icons.lock_rounded),
-            label: Text(game.supporterPackOwned
-                ? strings.pick('Pack owned', 'Pakket in bezit')
-                : strings.pick('€2.99 · Google Play setup required',
-                    '€2,99 · Google Play-instelling nodig')),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          strings.pick(
-            'Cosmetic only: no gems, coins, power or gameplay advantage.',
-            'Alleen cosmetisch: geen gems, munten, kracht of spelvoordeel.',
-          ),
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.muted, fontSize: 11),
         ),
       ],
     );

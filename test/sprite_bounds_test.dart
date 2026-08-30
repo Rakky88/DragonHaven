@@ -8,6 +8,7 @@ import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/achievement.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/day_phase.dart';
+import 'package:dragon_haven/models/dragon_school.dart';
 import 'package:dragon_haven/models/house.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/profile_portrait.dart';
@@ -258,6 +259,85 @@ void main() {
           greaterThan(100),
           reason: '$path is empty');
       _expectTransparentCorners(image.rgba, image.width, image.height, path);
+    }
+  });
+
+  test('Packs and Dragon School sprites have genuine alpha and safe padding',
+      () async {
+    const paths = <String>[
+      'assets/images/ui/packs_icon.png',
+      'assets/images/ui/trials/trial_constellation_node.png',
+      'assets/images/achievements/academy_graduate.png',
+      'assets/images/achievements/dragon_school_dropout.png',
+      'assets/images/achievements/dragon_school_valedictorian.png',
+      'assets/images/ui/dragon_school/dragon_school_icon.png',
+      'assets/images/ui/dragon_school/school_graduate.png',
+      'assets/images/ui/dragon_school/school_dropout.png',
+      'assets/images/ui/dragon_school/school_valedictorian.png',
+      'assets/images/ui/dragon_school/game_rune_rush.png',
+      'assets/images/ui/dragon_school/game_crystal_chase.png',
+      'assets/images/ui/dragon_school/game_ember_reflex.png',
+      'assets/images/ui/dragon_school/game_sigil_memory.png',
+      'assets/images/ui/dragon_school/game_scale_order.png',
+      'assets/images/ui/dragon_school/game_shadow_match.png',
+      'assets/images/ui/dragon_school/game_breath_balance.png',
+      'assets/images/ui/dragon_school/game_cloud_weave.png',
+      'assets/images/ui/dragon_school/game_safe_hoard.png',
+      'assets/images/ui/dragon_school/game_constellation_trace.png',
+      'assets/images/ui/dragon_school/piece_sigil_flame.png',
+      'assets/images/ui/dragon_school/piece_sigil_wave.png',
+      'assets/images/ui/dragon_school/piece_sigil_leaf.png',
+      'assets/images/ui/dragon_school/piece_sigil_moon.png',
+      'assets/images/ui/dragon_school/piece_sigil_lightning.png',
+      'assets/images/ui/dragon_school/piece_sigil_wind.png',
+      'assets/images/ui/dragon_school/piece_scale.png',
+      'assets/images/ui/dragon_school/piece_ember_dormant.png',
+      'assets/images/ui/dragon_school/piece_breath_gauge.png',
+      'assets/images/ui/dragon_school/piece_breath_orb.png',
+      'assets/images/ui/dragon_school/piece_cloud_gate.png',
+      'assets/images/ui/dragon_school/piece_safe_treasure.png',
+      'assets/images/ui/dragon_school/piece_cursed_chest.png',
+      'assets/images/ui/dragon_school/reaction_success.png',
+      'assets/images/ui/dragon_school/reaction_mistake.png',
+      'assets/images/ui/dragon_school/reaction_mentor_shield.png',
+    ];
+    for (final path in paths) {
+      final image = await _decode(path);
+      _expectTransparentCorners(image.rgba, image.width, image.height, path);
+      _expectContained(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        path,
+      );
+    }
+  });
+
+  test('every Dragon School lesson has its own full background', () async {
+    final paths = dragonSchoolGames
+        .map((definition) => definition.backgroundAsset)
+        .toSet();
+    expect(paths, hasLength(dragonSchoolGames.length));
+    for (final path in paths) {
+      final image = await _decode(path);
+      expect(image.width, 768, reason: '$path has the wrong width');
+      expect(image.height, 1152, reason: '$path has the wrong height');
+      expect(
+        _alphaCount(
+          image.rgba,
+          image.width,
+          0,
+          0,
+          image.width,
+          image.height,
+          step: 4,
+        ),
+        greaterThan(image.width * image.height ~/ 20),
+        reason: '$path should be a fully rendered lesson environment',
+      );
     }
   });
 

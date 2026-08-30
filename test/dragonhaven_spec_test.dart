@@ -80,7 +80,7 @@ void main() {
   });
 
   test('achievements have unique badges and use Common terminology', () {
-    expect(achievementCatalog, hasLength(30));
+    expect(achievementCatalog, hasLength(33));
     expect(
       achievementCatalog.map((achievement) => achievement.badge).toSet(),
       hasLength(achievementCatalog.length),

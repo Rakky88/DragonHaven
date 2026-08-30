@@ -380,6 +380,165 @@ extension DragonHavenSystems on HouseholdProvider {
     return true;
   }
 
+  Future<DragonSchoolLessonResult> completeDragonSchoolLesson({
+    required String gameId,
+    required int score,
+    required List<String> dragonIds,
+    String? mentorDragonId,
+  }) async {
+    final definition = dragonSchoolGameById(gameId);
+    final uniqueIds = dragonIds.toSet().toList(growable: false);
+    if (!dragonSchoolUnlocked ||
+        definition == null ||
+        score < 0 ||
+        uniqueIds.length != dragonIds.length ||
+        uniqueIds.length < definition.minimumDragons ||
+        uniqueIds.length > definition.maximumDragons) {
+      return const DragonSchoolLessonResult(
+        accepted: false,
+        keeperBestImproved: false,
+      );
+    }
+
+    final participants = <Pet>[];
+    for (final id in uniqueIds) {
+      final matches = ownedDragons.where((dragon) => dragon.id == id);
+      if (matches.isEmpty) {
+        return const DragonSchoolLessonResult(
+          accepted: false,
+          keeperBestImproved: false,
+        );
+      }
+      final dragon = matches.first;
+      if (dragon.isEgg ||
+          dragon.activeAdventureId != null ||
+          dragon.schoolAttempts(definition.id) >=
+              dragonSchoolAttemptsPerLesson) {
+        return const DragonSchoolLessonResult(
+          accepted: false,
+          keeperBestImproved: false,
+        );
+      }
+      participants.add(dragon);
+    }
+
+    Pet? mentor;
+    if (mentorDragonId != null) {
+      final matches = ownedDragons.where(
+        (dragon) =>
+            dragon.id == mentorDragonId &&
+            !uniqueIds.contains(dragon.id) &&
+            dragon.stage == DragonStage.ascended &&
+            dragon.activeAdventureId == null,
+      );
+      final hasYoungPupil = participants.any(
+        (dragon) =>
+            dragon.stage == DragonStage.hatchling ||
+            dragon.stage == DragonStage.wyrmling,
+      );
+      if (matches.isEmpty || !hasYoungPupil) {
+        return const DragonSchoolLessonResult(
+          accepted: false,
+          keeperBestImproved: false,
+        );
+      }
+      mentor = matches.first;
+    }
+
+    final oldKeeperBest = dragonSchoolRecords[definition.id] ?? 0;
+    final keeperBestImproved = score > oldKeeperBest;
+    if (keeperBestImproved) {
+      dragonSchoolRecords[definition.id] = score.clamp(0, 1000000000);
+    }
+
+    final newStarsByDragon = <String, int>{};
+    final xpByDragon = <String, int>{};
+    final graduatedDragonIds = <String>{};
+    final finalizedDragonIds = <String>{};
+    final attemptsByDragon = <String, int>{};
+    final earnedStars = definition.starsForScore(score);
+    for (final dragon in participants) {
+      final wasComplete = dragon.dragonSchoolComplete;
+      final nextAttempts = dragon.schoolAttempts(definition.id) + 1;
+      dragon.dragonSchoolAttempts[definition.id] = nextAttempts;
+      attemptsByDragon[dragon.id] = nextAttempts;
+      final previousStars = dragon.schoolStars(definition.id);
+      if (score > dragon.schoolBest(definition.id)) {
+        dragon.dragonSchoolRecords[definition.id] = score.clamp(0, 1000000000);
+      }
+      var grantedXp = 0;
+      var newStars = 0;
+      if (earnedStars > previousStars) {
+        newStars = earnedStars - previousStars;
+        dragon.dragonSchoolStars[definition.id] = earnedStars;
+        grantedXp = _grantDragonXp(dragon, newStars * 5);
+        newStarsByDragon[dragon.id] = newStars;
+        xpByDragon[dragon.id] = grantedXp;
+
+        for (var index = 0; index < newStars; index++) {
+          final focus = definition.focus ?? _lowestSchoolExpertise(dragon);
+          dragon.addTraining(focus, 1);
+        }
+      }
+
+      if (!wasComplete && dragon.dragonSchoolComplete) {
+        finalizedDragonIds.add(dragon.id);
+        if (dragon.dragonSchoolGraduated) graduatedDragonIds.add(dragon.id);
+        final outcome = dragon.dragonSchoolOutcome;
+        final message = switch (outcome) {
+          DragonSchoolOutcome.valedictorian =>
+            '${dragon.displayName} became Dragon School Valedictorian with 30 stars.',
+          DragonSchoolOutcome.dropout =>
+            '${dragon.displayName} finished all lessons as a Dragon School Dropout.',
+          _ =>
+            '${dragon.displayName} completed Dragon School as ${outcome.titleEn}.',
+        };
+        _addActivity(
+          message: message,
+          type: ActivityType.milestone,
+          code: ActivityCode.bonusFound,
+          subject: 'dragon-school-final:${outcome.name}:${dragon.id}',
+          xp: grantedXp,
+        );
+      } else if (newStars > 0) {
+        _addActivity(
+          message:
+              '${dragon.displayName} earned $newStars new Dragon School ${newStars == 1 ? 'star' : 'stars'}.',
+          type: ActivityType.milestone,
+          code: ActivityCode.bonusFound,
+          subject: 'dragon-school:${definition.id}:${dragon.id}',
+          xp: grantedXp,
+        );
+      }
+    }
+
+    if (mentor != null) {
+      mentor.dragonSchoolMentorLessons =
+          (mentor.dragonSchoolMentorLessons + 1).clamp(0, 1000000000);
+    }
+    _evaluateAchievements();
+    await _notifyAndSave();
+    return DragonSchoolLessonResult(
+      accepted: true,
+      keeperBestImproved: keeperBestImproved,
+      newStarsByDragon: newStarsByDragon,
+      xpByDragon: xpByDragon,
+      graduatedDragonIds: graduatedDragonIds,
+      finalizedDragonIds: finalizedDragonIds,
+      attemptsByDragon: attemptsByDragon,
+    );
+  }
+
+  TrainingFocus _lowestSchoolExpertise(Pet dragon) {
+    final values = TrainingFocus.values.toList(growable: false)
+      ..sort((a, b) {
+        final comparison =
+            dragon.trainingFor(a).compareTo(dragon.trainingFor(b));
+        return comparison != 0 ? comparison : a.index.compareTo(b.index);
+      });
+    return values.first;
+  }
+
   bool roamIdleDragons() {
     final accessible = <int>[
       for (var index = 0; index < towerFloorRoomIds.length; index++)
@@ -1692,6 +1851,10 @@ extension DragonHavenSystems on HouseholdProvider {
     final code = rawCode.trim();
     if (code.isEmpty || !RegExp(r'^[A-Z]+$').hasMatch(code)) {
       return 'invalid_format';
+    }
+    if (code == 'ISUPPORTRICK') {
+      if (supporterPackOwned) return 'already_redeemed';
+      return await _grantSupporterPackContents() ? 'redeemed' : 'inactive';
     }
     return 'inactive';
   }

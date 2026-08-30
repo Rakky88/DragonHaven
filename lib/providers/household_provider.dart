@@ -12,6 +12,7 @@ import '../models/activity_entry.dart';
 import '../models/chest.dart';
 import '../models/dragon_egg.dart';
 import '../models/dragon_lineage.dart';
+import '../models/dragon_school.dart';
 import '../models/game_presentation.dart';
 import '../models/house.dart';
 import '../models/mystic_relic.dart';
@@ -98,7 +99,7 @@ enum RoomUnlockResult {
 }
 
 class HouseholdProvider extends ChangeNotifier {
-  static const saveSchemaVersion = 45;
+  static const saveSchemaVersion = 47;
 
   HouseholdProvider({
     Random? random,
@@ -1336,10 +1337,16 @@ class HouseholdProvider extends ChangeNotifier {
   Future<bool> applyVerifiedSupporterPack(String serverTransactionId) async {
     final transactionId = serverTransactionId.trim();
     if (transactionId.isEmpty ||
-        appliedVerifiedPurchaseIds.contains(transactionId)) {
+        appliedVerifiedPurchaseIds.contains(transactionId) ||
+        supporterPackOwned) {
       return false;
     }
     appliedVerifiedPurchaseIds.add(transactionId);
+    return _grantSupporterPackContents();
+  }
+
+  Future<bool> _grantSupporterPackContents() async {
+    if (supporterPackOwned) return false;
     supporterPackOwned = true;
     ownedPortraitIds.add(supporterProfilePortrait.id);
     ownedTitleIds.add(supporterAccountTitle.id);
@@ -2296,6 +2303,14 @@ class HouseholdProvider extends ChangeNotifier {
         'probably_fine' => totalSinisterAdventuresCompleted,
         'winner_chicken_dinner' =>
           discoveredForms.contains('cluckatrice:hatchling') ? 1 : 0,
+        'academy_graduate' =>
+          ownedDragons.any((dragon) => dragon.dragonSchoolGraduated) ? 1 : 0,
+        'dragon_school_dropout' =>
+          ownedDragons.any((dragon) => dragon.dragonSchoolDropout) ? 1 : 0,
+        'dragon_school_valedictorian' =>
+          ownedDragons.any((dragon) => dragon.dragonSchoolValedictorian)
+              ? 1
+              : 0,
         _ => 0,
       };
 

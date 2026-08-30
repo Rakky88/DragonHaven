@@ -7,6 +7,7 @@ import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
+import 'package:dragon_haven/models/dragon_school.dart';
 import 'package:dragon_haven/models/game_presentation.dart';
 import 'package:dragon_haven/models/house.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
@@ -1101,9 +1102,9 @@ void main() {
     expect(game.pet.activeAdventureId, 'legacy-group-run');
   });
 
-  test('the achievement catalog has 29 unique humorous milestones', () {
-    expect(achievementCatalog, hasLength(30));
-    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(30));
+  test('the achievement catalog has 33 unique humorous milestones', () {
+    expect(achievementCatalog, hasLength(33));
+    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(33));
     expect(achievementCatalog.every((entry) => entry.target > 0), isTrue);
     expect(
         achievementCatalog.every((entry) =>
@@ -1892,6 +1893,239 @@ void main() {
     expect(await game.recordDragonSchoolScore('runeRush', 5), isTrue);
     expect(await game.recordDragonSchoolScore('runeRush', 3), isFalse);
     expect(game.dragonSchoolRecords['runeRush'], 5);
+    game.dispose();
+  });
+
+  test('ISUPPORTRICK grants the Supporter Pack once', () async {
+    final game = HouseholdProvider(
+      random: Random(904),
+      persistenceEnabled: false,
+    );
+
+    expect(await game.redeemCode('ISUPPORTRICK'), 'redeemed');
+    expect(game.supporterPackOwned, isTrue);
+    expect(game.ownedBadgeIds, contains(supporterBadge.id));
+    expect(await game.redeemCode('ISUPPORTRICK'), 'already_redeemed');
+    expect(await game.redeemCode('isupportrick'), 'invalid_format');
+    game.dispose();
+  });
+
+  test('Dragon School rewards only new stars and doubles equipped XP',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(905),
+      persistenceEnabled: false,
+    )
+      ..towerFloorRoomIds = List.filled(5, 'hearth')
+      ..pet.stage = DragonStage.hatchling
+      ..pet.firstEgg = false;
+    final dragon = game.pet;
+    final startingXp = dragon.xp;
+
+    final bronze = await game.completeDragonSchoolLesson(
+      gameId: 'runeRush',
+      score: 8,
+      dragonIds: [dragon.id],
+    );
+    expect(bronze.accepted, isTrue);
+    expect(bronze.newStarsByDragon[dragon.id], 1);
+    expect(dragon.xp, startingXp + 5);
+    expect(dragon.trainingFor(TrainingFocus.arcana), 1);
+
+    final repeat = await game.completeDragonSchoolLesson(
+      gameId: 'runeRush',
+      score: 8,
+      dragonIds: [dragon.id],
+    );
+    expect(repeat.totalNewStars, 0);
+    expect(dragon.xp, startingXp + 5);
+
+    game
+      ..relicInventory[MysticRelic.twinstarBrooch] = 1
+      ..twinstarBroochDragonId = dragon.id;
+    final gold = await game.completeDragonSchoolLesson(
+      gameId: 'runeRush',
+      score: 25,
+      dragonIds: [dragon.id],
+    );
+    expect(gold.newStarsByDragon[dragon.id], 2);
+    expect(gold.xpByDragon[dragon.id], 20);
+    expect(dragon.xp, startingXp + 25);
+    expect(dragon.trainingFor(TrainingFocus.arcana), 3);
+    expect(dragon.schoolAttempts('runeRush'), 3);
+
+    final blocked = await game.completeDragonSchoolLesson(
+      gameId: 'runeRush',
+      score: 100,
+      dragonIds: [dragon.id],
+    );
+    expect(blocked.accepted, isFalse);
+    expect(dragon.schoolAttempts('runeRush'), 3);
+    expect(dragon.schoolBest('runeRush'), 25);
+    game.dispose();
+  });
+
+  test('Dragon School team lessons validate availability and track mentors',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(906),
+      persistenceEnabled: false,
+    )
+      ..towerFloorRoomIds = List.filled(5, 'hearth')
+      ..pet.stage = DragonStage.hatchling
+      ..pet.firstEgg = false;
+    final pupil = Pet(
+      id: 'school-pupil',
+      stage: DragonStage.wyrmling,
+      firstEgg: false,
+    );
+    final mentor = Pet(
+      id: 'school-mentor',
+      stage: DragonStage.ascended,
+      firstEgg: false,
+      evolutionPath: 'might',
+    );
+    game.sanctuaryDragons.addAll([pupil, mentor]);
+
+    final result = await game.completeDragonSchoolLesson(
+      gameId: 'safeHoard',
+      score: 5,
+      dragonIds: [game.pet.id, pupil.id],
+      mentorDragonId: mentor.id,
+    );
+    expect(result.accepted, isTrue);
+    expect(result.newStarsByDragon.keys,
+        containsAll(<String>[game.pet.id, pupil.id]));
+    expect(mentor.dragonSchoolMentorLessons, 1);
+
+    pupil.activeAdventureId = 'away';
+    final rejected = await game.completeDragonSchoolLesson(
+      gameId: 'safeHoard',
+      score: 10,
+      dragonIds: [game.pet.id, pupil.id],
+      mentorDragonId: mentor.id,
+    );
+    expect(rejected.accepted, isFalse);
+    expect(mentor.dragonSchoolMentorLessons, 1);
+    game.dispose();
+  });
+
+  test('Dragon School report data survives Pet serialization', () {
+    final dragon = Pet(
+      stage: DragonStage.hatchling,
+      firstEgg: false,
+      dragonSchoolRecords: const {'runeRush': 24},
+      dragonSchoolStars: const {'runeRush': 2, 'safeHoard': 3},
+      dragonSchoolAttempts: const {'runeRush': 2, 'safeHoard': 3},
+      dragonSchoolMentorLessons: 7,
+    );
+    final restored = Pet.fromJson(dragon.toJson());
+
+    expect(restored.schoolBest('runeRush'), 24);
+    expect(restored.schoolStars('runeRush'), 2);
+    expect(restored.dragonSchoolStarTotal, 5);
+    expect(restored.schoolAttempts('runeRush'), 2);
+    expect(restored.schoolAttempts('safeHoard'), 3);
+    expect(restored.dragonSchoolAttemptTotal, 5);
+    expect(restored.dragonSchoolMentorLessons, 7);
+  });
+
+  test('Dragon School final outcomes and ranking use all thirty attempts', () {
+    expect(
+      dragonSchoolGames.map((lesson) => lesson.id).toSet(),
+      dragonSchoolLessonIds,
+    );
+    final attempts = {
+      for (final lesson in dragonSchoolGames)
+        lesson.id: dragonSchoolAttemptsPerLesson,
+    };
+    final dropout = Pet(
+      stage: DragonStage.hatchling,
+      firstEgg: false,
+      dragonSchoolAttempts: attempts,
+      dragonSchoolStars: {
+        for (final lesson in dragonSchoolGames) lesson.id: 1,
+      },
+    );
+    final graduate = Pet(
+      stage: DragonStage.hatchling,
+      firstEgg: false,
+      dragonSchoolAttempts: attempts,
+      dragonSchoolStars: {
+        for (var index = 0; index < dragonSchoolGames.length; index++)
+          dragonSchoolGames[index].id: index < 5 ? 2 : 1,
+      },
+    );
+    final valedictorian = Pet(
+      stage: DragonStage.hatchling,
+      firstEgg: false,
+      dragonSchoolAttempts: attempts,
+      dragonSchoolStars: {
+        for (final lesson in dragonSchoolGames) lesson.id: 3,
+      },
+      dragonSchoolRecords: {
+        for (final lesson in dragonSchoolGames) lesson.id: lesson.goldScore * 2,
+      },
+    );
+    final honors = Pet(
+      stage: DragonStage.hatchling,
+      firstEgg: false,
+      dragonSchoolAttempts: attempts,
+      dragonSchoolStars: {
+        for (var index = 0; index < dragonSchoolGames.length; index++)
+          dragonSchoolGames[index].id: index == 0 ? 3 : 2,
+      },
+    );
+    final highHonors = Pet(
+      stage: DragonStage.hatchling,
+      firstEgg: false,
+      dragonSchoolAttempts: attempts,
+      dragonSchoolStars: {
+        for (var index = 0; index < dragonSchoolGames.length; index++)
+          dragonSchoolGames[index].id: index < 7 ? 3 : 2,
+      },
+    );
+
+    expect(dropout.dragonSchoolOutcome, DragonSchoolOutcome.dropout);
+    expect(dropout.dragonSchoolGraduated, isFalse);
+    expect(graduate.dragonSchoolOutcome, DragonSchoolOutcome.graduate);
+    expect(graduate.dragonSchoolGraduated, isTrue);
+    expect(honors.dragonSchoolOutcome, DragonSchoolOutcome.honorsGraduate);
+    expect(highHonors.dragonSchoolOutcome, DragonSchoolOutcome.highHonors);
+    expect(
+        valedictorian.dragonSchoolOutcome, DragonSchoolOutcome.valedictorian);
+    expect(valedictorian.dragonSchoolValedictorian, isTrue);
+    expect(dragonSchoolAcademyScore(valedictorian),
+        dragonSchoolMaximumAcademyScore);
+  });
+
+  test('the thirtieth attempt finalizes a dropout and its achievement',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(907),
+      persistenceEnabled: false,
+    )
+      ..towerFloorRoomIds = List.filled(5, 'hearth')
+      ..pet.stage = DragonStage.hatchling
+      ..pet.firstEgg = false;
+    for (final lesson in dragonSchoolGames) {
+      game.pet.dragonSchoolAttempts[lesson.id] =
+          lesson.id == 'runeRush' ? 2 : dragonSchoolAttemptsPerLesson;
+      game.pet.dragonSchoolStars[lesson.id] = 1;
+    }
+
+    final result = await game.completeDragonSchoolLesson(
+      gameId: 'runeRush',
+      score: 0,
+      dragonIds: [game.pet.id],
+    );
+
+    expect(result.accepted, isTrue);
+    expect(result.finalizedDragonIds, contains(game.pet.id));
+    expect(result.graduatedDragonIds, isEmpty);
+    expect(game.pet.dragonSchoolOutcome, DragonSchoolOutcome.dropout);
+    expect(game.achievementProgress('dragon_school_dropout'), 1);
+    expect(game.achievementProgress('academy_graduate'), 0);
     game.dispose();
   });
 }

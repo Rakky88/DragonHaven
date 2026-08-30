@@ -39,31 +39,51 @@ void main() {
     ));
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.byKey(const Key('dragon-school-entrance')), findsOneWidget);
     await tester.tap(find.byKey(const Key('reorder-tower-rooms')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byKey(const Key('fixed-rooftop-room')), findsOneWidget);
     expect(find.byKey(const Key('tower-room-order-list')), findsOneWidget);
     Navigator.of(tester.element(find.byKey(const Key('fixed-rooftop-room'))))
         .pop();
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('dragon-school-entrance')),
+      450,
+      scrollable: find.descendant(
+        of: find.byKey(const PageStorageKey('dragon-tower-scroll')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.drag(
+      find.descendant(
+        of: find.byKey(const PageStorageKey('dragon-tower-scroll')),
+        matching: find.byType(Scrollable),
+      ),
+      const Offset(0, -140),
+    );
+    await tester.pump();
+    expect(find.byKey(const Key('dragon-school-entrance')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('dragon-school-entrance')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(DragonSchoolScreen), findsOneWidget);
     expect(find.byKey(const Key('dragon-school-games')), findsOneWidget);
     expect(dragonSchoolGames, hasLength(10));
     expect(
         find.byKey(const Key('dragon-school-game-runeRush')), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.byKey(const Key('dragon-school-game-starCompass')),
+      find.byKey(const Key('dragon-school-game-constellationTrace')),
       350,
       scrollable: find.descendant(
         of: find.byKey(const Key('dragon-school-games')),
         matching: find.byType(Scrollable),
       ),
     );
-    expect(find.byKey(const Key('dragon-school-game-starCompass')),
+    expect(find.byKey(const Key('dragon-school-game-constellationTrace')),
         findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -129,6 +149,73 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Dragon School enrolls a pupil and starts its visual lesson',
+      (tester) async {
+    final game = HouseholdProvider.createReleaseDemo()
+      ..towerFloorRoomIds = List.filled(5, 'hearth');
+    addTearDown(game.dispose);
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: const MaterialApp(home: DragonSchoolScreen()),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.byKey(const Key('dragon-school-game-runeRush')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(Key('school-pupil-${game.pet.id}')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('confirm-school-dragons')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    expect(find.byType(DragonSchoolGameScreen), findsOneWidget);
+    expect(find.byKey(const Key('school-session-runeRush')), findsOneWidget);
+    expect(find.byKey(const Key('school-background-runeRush')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('start-school-game')));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byKey(const Key('school-rune-rush-target')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('school-rune-rush-target')));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('1'), findsWidgets);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('every Dragon School lesson renders its sprite environment',
+      (tester) async {
+    final game = HouseholdProvider.createReleaseDemo()
+      ..towerFloorRoomIds = List.filled(5, 'hearth');
+    addTearDown(game.dispose);
+    final availableIds = game.ownedDragons.map((dragon) => dragon.id).toList();
+
+    for (final definition in dragonSchoolGames) {
+      await tester.pumpWidget(ChangeNotifierProvider.value(
+        value: game,
+        child: MaterialApp(
+          home: DragonSchoolGameScreen(
+            key: ValueKey(definition.id),
+            definition: definition,
+            dragonIds: availableIds.take(definition.minimumDragons).toList(),
+          ),
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(
+        find.byKey(Key('school-background-${definition.id}')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('start-school-game')));
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(tester.takeException(), isNull, reason: definition.id);
+    }
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Keeper Journal and Packs shop render their new collections',
       (tester) async {
     final game = HouseholdProvider.createReleaseDemo();
@@ -154,6 +241,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 700));
     expect(find.byKey(const Key('shop-tab-packs')), findsOneWidget);
     expect(find.textContaining('2,99'), findsOneWidget);
+    expect(find.byKey(const Key('buy-supporter-pack')), findsOneWidget);
+    await tester
+        .tap(find.byKey(const Key('supporter-pack-everything-included')));
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.text('Complete supporter furniture set'),
       350,
@@ -164,16 +255,6 @@ void main() {
           .first,
     );
     expect(find.byType(FurnitureArt), findsNWidgets(4));
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('buy-supporter-pack')),
-      350,
-      scrollable: find
-          .byWidgetPredicate((widget) =>
-              widget is Scrollable &&
-              widget.axisDirection == AxisDirection.down)
-          .first,
-    );
-    expect(find.byKey(const Key('buy-supporter-pack')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

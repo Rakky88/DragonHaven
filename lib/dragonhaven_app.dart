@@ -486,14 +486,6 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
             onSelected: _handleMenuAction,
             itemBuilder: (_) => [
               PopupMenuItem(
-                key: const Key('app-menu-journal'),
-                value: _HavenMenuAction.journal,
-                child: _MenuRow(
-                  icon: Icons.auto_stories_rounded,
-                  label: strings.pick('Keeper Journal', 'Keeperdagboek'),
-                ),
-              ),
-              PopupMenuItem(
                 key: const Key('app-menu-account'),
                 value: _HavenMenuAction.account,
                 child: _MenuRow(
@@ -515,6 +507,14 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                     label: strings.tr('achievements'),
                     trailing:
                         '${game.unlockedAchievementIds.length}/${achievementCatalog.length}'),
+              ),
+              PopupMenuItem(
+                key: const Key('app-menu-journal'),
+                value: _HavenMenuAction.journal,
+                child: _MenuRow(
+                  icon: Icons.auto_stories_rounded,
+                  label: strings.pick('Keeper Journal', 'Keeperdagboek'),
+                ),
               ),
               PopupMenuItem(
                 key: const Key('app-menu-tutorial'),

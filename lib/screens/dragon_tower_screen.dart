@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_strings.dart';
 import '../models/day_phase.dart';
 import '../models/dragon_lineage.dart';
+import '../models/dragon_school.dart';
 import '../models/house.dart';
 import '../models/mystic_relic.dart';
 import '../models/pet.dart';
@@ -110,8 +111,6 @@ class DragonTowerScreen extends StatelessWidget {
         const SizedBox(height: 12),
         const _TowerRoof(),
         const SizedBox(height: 9),
-        const _DragonSchoolEntrance(),
-        const SizedBox(height: 9),
         for (var index = game.towerFloorRoomIds.length - 1; index >= 0; index--)
           _TowerFloor(index: index, roomId: game.towerFloorRoomIds[index]),
         const SizedBox(height: 12),
@@ -138,6 +137,8 @@ class DragonTowerScreen extends StatelessWidget {
             ),
           ),
         ],
+        const SizedBox(height: 12),
+        const _DragonSchoolEntrance(),
       ],
     );
   }
@@ -489,11 +490,14 @@ class _DragonSchoolEntrance extends StatelessWidget {
                         color: Colors.white.withValues(alpha: .13),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        unlocked ? Icons.school_rounded : Icons.lock_rounded,
-                        color: unlocked ? AppColors.gold : Colors.white70,
-                        size: 32,
-                      ),
+                      child: unlocked
+                          ? Image.asset(
+                              'assets/images/ui/dragon_school/dragon_school_icon.png',
+                              width: 52,
+                              height: 52,
+                            )
+                          : const Icon(Icons.lock_rounded,
+                              color: Colors.white70, size: 32),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -512,8 +516,8 @@ class _DragonSchoolEntrance extends StatelessWidget {
                           Text(
                             unlocked
                                 ? strings.pick(
-                                    '10 lessons · personal records',
-                                    '10 lessen · persoonlijke records',
+                                    '10 lessons · dragons, stars and records',
+                                    '10 lessen · draken, sterren en records',
                                   )
                                 : strings.pick(
                                     'Unlocks when your Tower has 5 floors',
@@ -1313,6 +1317,10 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
             ),
             const SizedBox(height: 10),
             _DragonProgressCard(dragon: dragon),
+            if (dragon.dragonSchoolAttemptTotal > 0) ...[
+              const SizedBox(height: 10),
+              _DragonSchoolDiplomaCard(dragon: dragon),
+            ],
             const SizedBox(height: 10),
             DragonTrialRecords(
               cavernFlightBest: dragon.trialBest('cavernFlight'),
@@ -1475,6 +1483,127 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
             ),
           ]),
         ),
+      ),
+    );
+  }
+}
+
+class _DragonSchoolDiplomaCard extends StatelessWidget {
+  const _DragonSchoolDiplomaCard({required this.dragon});
+
+  final Pet dragon;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final outcome = dragon.dragonSchoolOutcome;
+    final complete = dragon.dragonSchoolComplete;
+    final graduated = outcome.isPassing;
+    return Container(
+      key: Key('dragon-school-diploma-${dragon.id}'),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(13, 11, 13, 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: graduated
+              ? const [Color(0xFFFFF4C7), Color(0xFFF0E4FF)]
+              : complete
+                  ? const [Color(0xFFFFEEE7), Color(0xFFF8F1F4)]
+                  : const [Color(0xFFF6F2FA), Color(0xFFFFFFFF)],
+        ),
+        borderRadius: BorderRadius.circular(19),
+        border: Border.all(
+          color: graduated
+              ? AppColors.gold
+              : complete
+                  ? const Color(0xFFB25434)
+                  : const Color(0xFFDCD2E8),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Image.asset(
+                outcome.badgeAsset,
+                width: 54,
+                height: 54,
+                opacity: AlwaysStoppedAnimation(complete ? 1 : .42),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      complete
+                          ? strings.pick(outcome.titleEn, outcome.titleNl)
+                          : strings.pick('Dragon School report card',
+                              'Drakenschoolrapport'),
+                      style: const TextStyle(
+                          color: AppColors.twilight,
+                          fontWeight: FontWeight.w900),
+                    ),
+                    Text(
+                      '${dragon.dragonSchoolStarTotal}/30 ${strings.pick('stars', 'sterren')} · '
+                      '${dragon.dragonSchoolAttemptTotal}/$dragonSchoolMaximumAttempts ${strings.pick('attempts', 'pogingen')} · '
+                      '${dragonSchoolAcademyScore(dragon)}/$dragonSchoolMaximumAcademyScore',
+                      style: const TextStyle(color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              if (complete)
+                Icon(
+                  graduated
+                      ? Icons.verified_rounded
+                      : Icons.history_edu_rounded,
+                  color: graduated
+                      ? const Color(0xFFD39A16)
+                      : const Color(0xFFB25434),
+                  size: 28,
+                ),
+            ],
+          ),
+          const SizedBox(height: 7),
+          Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: [
+              for (final lesson in dragonSchoolGames)
+                Tooltip(
+                  message: '${strings.pick(lesson.titleEn, lesson.titleNl)} · '
+                      '${dragon.schoolAttempts(lesson.id)}/$dragonSchoolAttemptsPerLesson',
+                  child: Container(
+                    width: 27,
+                    height: 27,
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .72),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Opacity(
+                      opacity: dragon.schoolStars(lesson.id) > 0 ? 1 : .22,
+                      child: Image.asset(lesson.iconAsset),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (dragon.dragonSchoolMentorLessons > 0) ...[
+            const SizedBox(height: 7),
+            Text(
+              strings.pick(
+                '${dragon.dragonSchoolMentorLessons} lessons taught as mentor',
+                '${dragon.dragonSchoolMentorLessons} lessen gegeven als mentor',
+              ),
+              style: const TextStyle(
+                  color: AppColors.twilight,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -1686,6 +1815,29 @@ class _OwnedDragonGridCard extends StatelessWidget {
                   ),
                 ),
               ),
+            if (dragon.dragonSchoolComplete)
+              Positioned(
+                left: 3,
+                bottom: 3,
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: Color(0x22000000), blurRadius: 5),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(3),
+                    child: Image.asset(
+                      dragon.dragonSchoolOutcome.badgeAsset,
+                      key: Key('dragon-school-status-${dragon.id}'),
+                      width: 25,
+                      height: 25,
+                    ),
+                  ),
+                ),
+              ),
           ]),
         ),
       ),
@@ -1766,6 +1918,15 @@ class _OwnedDragonListCard extends StatelessWidget {
                             key: Key('dragon-twinstar-list-${dragon.id}'),
                             width: 19,
                             height: 19,
+                          ),
+                        ],
+                        if (dragon.dragonSchoolComplete) ...[
+                          const SizedBox(width: 4),
+                          Image.asset(
+                            dragon.dragonSchoolOutcome.badgeAsset,
+                            key: Key('dragon-school-status-list-${dragon.id}'),
+                            width: 20,
+                            height: 20,
                           ),
                         ],
                       ],

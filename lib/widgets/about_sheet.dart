@@ -438,10 +438,18 @@ class _AboutSheetState extends State<_AboutSheet> {
     if (code == null || !mounted) return;
     final result = await context.read<HouseholdProvider>().redeemCode(code);
     if (!mounted) return;
-    final message = result == 'invalid_format'
-        ? strings.pick('Use only connected capital letters.',
-            'Gebruik alleen aaneengesloten hoofdletters.')
-        : strings.pick('This code is not active.', 'Deze code is niet actief.');
+    final message = switch (result) {
+      'invalid_format' => strings.pick('Use only connected capital letters.',
+          'Gebruik alleen aaneengesloten hoofdletters.'),
+      'redeemed' => strings.pick(
+          'Founding Supporter Pack unlocked. Thank you for supporting DragonHaven!',
+          'Oprichterssupporter-pakket ontgrendeld. Bedankt dat je DragonHaven steunt!'),
+      'already_redeemed' => strings.pick(
+          'You already own the Founding Supporter Pack.',
+          'Je bezit het Oprichterssupporter-pakket al.'),
+      _ =>
+        strings.pick('This code is not active.', 'Deze code is niet actief.'),
+    };
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
   }

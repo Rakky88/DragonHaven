@@ -304,4 +304,34 @@ const achievementCatalog = <AchievementDefinition>[
       category: AchievementCategory.master,
       secret: true,
       badge: 'sinister_secret'),
+  AchievementDefinition(
+      id: 'academy_graduate',
+      titleEn: 'Academy Graduate',
+      titleNl: 'Academie-afgestudeerde',
+      descriptionEn: 'Help one dragon successfully complete Dragon School.',
+      descriptionNl: 'Help één draak de Drakenschool succesvol afronden.',
+      target: 1,
+      category: AchievementCategory.master,
+      badge: 'academy_graduate'),
+  AchievementDefinition(
+      id: 'dragon_school_dropout',
+      titleEn: 'Dragon School Dropout',
+      titleNl: 'Drakenschooluitvaller',
+      descriptionEn:
+          'Finish all 30 official attempts without earning a diploma.',
+      descriptionNl:
+          'Rond alle 30 officiële pogingen af zonder een diploma te behalen.',
+      target: 1,
+      category: AchievementCategory.master,
+      badge: 'dragon_school_dropout'),
+  AchievementDefinition(
+      id: 'dragon_school_valedictorian',
+      titleEn: 'Valedictorian',
+      titleNl: 'Lichtingsbeste',
+      descriptionEn: 'Help one dragon finish Dragon School with all 30 stars.',
+      descriptionNl:
+          'Help één draak de Drakenschool met alle 30 sterren afronden.',
+      target: 1,
+      category: AchievementCategory.master,
+      badge: 'dragon_school_valedictorian'),
 ];

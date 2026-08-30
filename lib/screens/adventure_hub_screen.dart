@@ -308,17 +308,16 @@ class _TrialStreakCard extends StatelessWidget {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
     final filled = game.trialStreakCount.clamp(0, 7);
-    final waitingDay = game.trialStreakCarryDayKey.isNotEmpty;
     return Container(
       key: const Key('trial-streak-card'),
-      padding: const EdgeInsets.fromLTRB(14, 13, 14, 14),
+      padding: const EdgeInsets.fromLTRB(13, 10, 13, 11),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFFFF8DD), Color(0xFFF2E9FF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(19),
         border: Border.all(color: const Color(0x66D6A72E)),
       ),
       child: Column(
@@ -326,46 +325,51 @@ class _TrialStreakCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const GameIconSprite(GameIconKind.chest, size: 38),
-              const SizedBox(width: 8),
+              Image.asset(
+                'assets/images/ui/trials/trial_constellation_node.png',
+                width: 31,
+                height: 31,
+              ),
+              const SizedBox(width: 7),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      strings.pick('Seven-day Trial constellation',
-                          'Zevendaagse Trial-constellatie'),
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w900, fontSize: 15),
-                    ),
-                    Text(
-                      game.trialStreakRewardReady
-                          ? strings.pick(
-                              'Your constellation is complete!',
-                              'Je constellatie is compleet!',
-                            )
-                          : strings.pick(
-                              'Complete a Trial every day. Miss a day and it resets to zero.',
-                              'Voltooi elke dag een Trial. Mis je een dag, dan begint hij weer op nul.',
-                            ),
-                      style:
-                          const TextStyle(color: AppColors.muted, fontSize: 11),
-                    ),
-                  ],
+                child: Text(
+                  strings.pick('Seven-day Trial constellation',
+                      'Zevendaagse Trial-constellatie'),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w900, fontSize: 14.5),
                 ),
               ),
+              Text(
+                '$filled/7',
+                style: const TextStyle(
+                    color: AppColors.twilight, fontWeight: FontWeight.w900),
+              ),
+              if (game.trialStreakRewardReady) ...[
+                const SizedBox(width: 7),
+                SizedBox(
+                  height: 34,
+                  child: FilledButton(
+                    key: const Key('claim-trial-streak'),
+                    onPressed: () => _claim(context),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    child: Text(strings.pick('Claim', 'Claim')),
+                  ),
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: 13),
+          const SizedBox(height: 7),
           LayoutBuilder(
             builder: (context, constraints) => Stack(
               alignment: Alignment.center,
               children: [
                 Positioned(
-                  left: 18,
-                  right: 18,
+                  left: 14,
+                  right: 14,
                   child: Container(
-                    height: 3,
+                    height: 2,
                     decoration: BoxDecoration(
                       color: const Color(0xFFD8CAE8),
                       borderRadius: BorderRadius.circular(99),
@@ -381,44 +385,24 @@ class _TrialStreakCard extends StatelessWidget {
                           'Day $day ${day <= filled ? 'complete' : 'empty'}',
                           'Dag $day ${day <= filled ? 'voltooid' : 'leeg'}',
                         ),
-                        child: AnimatedContainer(
+                        child: AnimatedScale(
                           key: Key('trial-streak-day-$day'),
                           duration: const Duration(milliseconds: 280),
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: day <= filled
-                                ? const LinearGradient(colors: [
-                                    Color(0xFFFFD65A),
-                                    Color(0xFFE79428),
-                                  ])
-                                : null,
-                            color:
-                                day <= filled ? null : const Color(0xFFF7F3FC),
-                            border: Border.all(
-                              color: day <= filled
-                                  ? const Color(0xFFA86812)
-                                  : const Color(0xFFB8A7CF),
-                              width: 2,
+                          scale: day <= filled ? 1 : .84,
+                          child: Opacity(
+                            opacity: day <= filled ? 1 : .38,
+                            child: ColorFiltered(
+                              colorFilter: day <= filled
+                                  ? const ColorFilter.mode(
+                                      Colors.transparent, BlendMode.dst)
+                                  : const ColorFilter.mode(
+                                      Color(0xFF8D819C), BlendMode.saturation),
+                              child: Image.asset(
+                                'assets/images/ui/trials/trial_constellation_node.png',
+                                width: 29,
+                                height: 29,
+                              ),
                             ),
-                            boxShadow: day <= filled
-                                ? const [
-                                    BoxShadow(
-                                      color: Color(0x55E5A72D),
-                                      blurRadius: 8,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Icon(
-                            day <= filled
-                                ? Icons.auto_awesome_rounded
-                                : Icons.circle_outlined,
-                            size: 17,
-                            color: day <= filled
-                                ? const Color(0xFF56330B)
-                                : const Color(0xFFAD9CC4),
                           ),
                         ),
                       ),
@@ -427,45 +411,6 @@ class _TrialStreakCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  strings.pick(
-                    'Reward: 95% Dragon Chest · 5% Mythical Chest',
-                    'Beloning: 95% Drakenkist · 5% Mythische Kist',
-                  ),
-                  style: const TextStyle(
-                    color: AppColors.twilight,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              if (game.trialStreakRewardReady)
-                FilledButton.icon(
-                  key: const Key('claim-trial-streak'),
-                  onPressed: () => _claim(context),
-                  icon: const Icon(Icons.redeem_rounded, size: 19),
-                  label: Text(strings.pick('Claim', 'Claim')),
-                ),
-            ],
-          ),
-          if (waitingDay) ...[
-            const SizedBox(height: 6),
-            Text(
-              strings.pick(
-                'Today\'s Trial is safely waiting as day 1 of your next streak.',
-                'De Trial van vandaag wacht veilig als dag 1 van je volgende streak.',
-              ),
-              style: const TextStyle(
-                color: Color(0xFF24735B),
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
         ],
       ),
     );
