@@ -1,7 +1,7 @@
 # DragonHaven support- en privacyprocedures
 
 Laatst bijgewerkt: **31 augustus 2026**  
-Uitgangsversie: **v0.05.01 / productieschema 32 / lokaal kandidaat-schema 33**
+Uitgangsversie: **v0.05.01 / productieschema 32 / kandidaat-schema 33 op staging bewezen**
 
 ## Doel en grens
 
@@ -51,10 +51,11 @@ persoonsgegevens maximaal dertig dagen.
 7. Verwijder de supportexport uiterlijk na zeven dagen en privacyarm
    incidentbewijs uiterlijk na dertig dagen.
 
-Migratie 33 bouwt lokaal een least-privilege supportlookup met inzagelog. Tot
-deze RPC op staging is bewezen en later afzonderlijk voor productie is
-goedgekeurd, blijft directe productie-inzage een uitzonderlijke handeling met
-expliciete toestemming. De RPC accepteert uitsluitend een service-role caller,
+Migratie 33 bouwt een least-privilege supportlookup met inzagelog en is op het
+geïsoleerde stagingproject toegepast en door lint/preflight bewezen. Tot deze
+RPC later afzonderlijk voor productie is goedgekeurd, blijft directe
+productie-inzage een uitzonderlijke handeling met expliciete toestemming. De
+RPC accepteert uitsluitend een service-role caller,
 een vaste reden, operatoralias en casusnummer. Hij retourneert geen e-mail,
 display name, inventory, savebody, tegenpartij of itemdetails.
 
@@ -139,9 +140,9 @@ echt aankoopbedrag als potentieel incident onderzocht.
 | Conclave-invites | Tot `expires_at` (7 dagen) | Dezelfde vijfminuten-cleanup | Servermatig afgedwongen |
 | Huidige cloudsave | Tot vervanging of accountverwijdering | Self-service accountdelete/cascade | Nodig voor dienst |
 | Vorige cloudrevisies | Maximaal 4 vorige en maximaal 30 dagen | Dagelijkse cleanup plus accountdelete/cascade | Servermatig afgedwongen |
-| Private pre-import recovery | Maximaal 30 dagen | Accountdelete/cascade; kandidaat-migratie 33 voegt dagelijkse fysieke purge toe | Lokaal gebouwd; stagingbewijs en uitrol nog vereist |
+| Private pre-import recovery | Maximaal 30 dagen | Accountdelete/cascade; migratie 33 voegt dagelijkse fysieke purge toe | Op staging bewezen; productie-uitrol nog apart goedkeuren |
 | Privacyarm import-auditrapport | Tot accountverwijdering | Accountdelete/cascade | Nodig voor eenmaligheid en herstelbewijs |
-| Supportinzagelog | Maximaal 30 dagen; alleen hash van Keeper ID, interne UUID, operatoralias, casusnummer en vaste reden | Kandidaat-migratie 33: dagelijkse purge; accountdelete anonimiseert de doel-UUID | Lokaal gebouwd; geen e-mail, naam, save of inventory |
+| Supportinzagelog | Maximaal 30 dagen; alleen hash van Keeper ID, interne UUID, operatoralias, casusnummer en vaste reden | Migratie 33: dagelijkse purge; accountdelete anonimiseert de doel-UUID | Op staging bewezen; geen e-mail, naam, save of inventory |
 | Profiel, serverinventory en sociale relaties | Tot accountverwijdering | `delete_my_account()` en FK-cascades | Self-service aanwezig |
 | Sociale notificatie-inbox | Momenteel tot accountverwijdering; friend-message events volgen 24-uursmessagecleanup | Accountdelete; gedeeltelijke messagecleanup | **Open gat:** kies termijn voor acknowledged en oude unacknowledged events vóór migratie |
 | Conclave Chronicle | Zolang de Conclave bestaat; actor-ID wordt null bij accountdelete | Conclave-dissolve/cascades | Publieke groepshistorie; definitieve termijn en privacytekst nog kiezen |
@@ -154,7 +155,7 @@ echt aankoopbedrag als potentieel incident onderzocht.
   service-role of managementtokens.
 - Productie-managementtoegang blijft bij Rick en gecontroleerde technische
   werkzaamheden totdat rollen en een supporttool bestaan.
-- De lokale kandidaat-supportlookup retourneert alleen interne user UUID,
+- De op staging bewezen kandidaat-supportlookup retourneert alleen interne user UUID,
   accountstatus, saveversie, noodzakelijke timestamps en geaggregeerde
   back-up-/tradestatus. Geen e-mail, display name, inventory of savebody.
 - Iedere lookup vereist operatoralias, vaste reden en casusnummer en schrijft
@@ -170,11 +171,12 @@ echt aankoopbedrag als potentieel incident onderzocht.
 
 ### Door Codex
 
-- De lokale service-role-only supportlookup met append-only inzagelog uit
-  migratie 33 eerst op staging bewijzen en pas daarna afzonderlijk voor
-  productie laten goedkeuren.
-- De lokale dagelijkse fysieke purge voor verlopen private pre-import
-  recoverycopies uit migratie 33 op staging bewijzen.
+- De service-role-only supportlookup met append-only inzagelog uit migratie 33
+  pas na de privacyarme stagingtest afzonderlijk voor productie laten
+  goedkeuren.
+- De dagelijkse fysieke purge voor verlopen private pre-import recoverycopies
+  is op staging toegepast; vóór productie de testsupportcasus en het
+  productievenster afzonderlijk goedkeuren.
 - Na Ricks termijnkeuze acknowledged en oude unacknowledged sociale notificaties
   automatisch opruimen.
 - Een privacyarme testsupportmelding van Keeper ID via correlation ID doorlopen.

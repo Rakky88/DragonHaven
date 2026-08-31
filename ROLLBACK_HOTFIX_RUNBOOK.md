@@ -1,7 +1,7 @@
 # DragonHaven rollback- en hotfixrunbook
 
 Laatst bijgewerkt: **31 augustus 2026**  
-Uitgangsstand: **app v0.05.01, productie 32/32, lokaal kandidaat-schema 33**
+Uitgangsstand: **app v0.05.01, productie 32/32, kandidaat-schema 33 op staging bewezen**
 
 ## Doel en harde grens
 
