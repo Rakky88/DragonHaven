@@ -1,14 +1,14 @@
-# DragonHaven serververbeteringen — v0.04.09
+# DragonHaven serververbeteringen — v0.05.00
 
-## Releasecandidate v0.05.00 — gecontroleerde uitrol gestart
+## Productie v0.05.00 — gecontroleerde uitrol voltooid
 
-Productie staat tijdens de voorbereiding nog op migratie 29/29. Migraties
+Productie staat gecontroleerd op migratie 31/31. Migraties
 `202608310030_friend_messages_and_conclaves.sql` en
-`202608310031_fix_conclave_function_ambiguity.sql` plus een exact begrensde
-29→31-workflow zijn voorbereid; productie wordt pas gewijzigd nadat de
-uitgebreide staging-E2E en databasegates groen zijn. Migratie 31 corrigeert
-idempotent de twee kolomambiguïteiten die database-lint na de eerste geïsoleerde
-stagingtoepassing van migratie 30 vond.
+`202608310031_fix_conclave_function_ambiguity.sql` zijn pas na de uitgebreide
+staging-E2E, database-lint, dry-run en exacte 29→31-begrenzing naar productie
+gebracht. Migratie 31 corrigeert idempotent de twee kolomambiguïteiten die de
+eerste geïsoleerde stagingpoging na migratie 30 vond; productie is tijdens die
+correctieronde onaangeraakt gebleven.
 
 - Friend Messages zijn uitsluitend tussen bevestigde vrienden beschikbaar,
   hebben server-side opt-out en rate limits en bewaren berichten maximaal 24
@@ -22,14 +22,20 @@ stagingtoepassing van migratie 30 vond.
 - Met maximaal twintig dagelijkse bijdragen kan Aerie-fase 10 op zijn vroegst
   na 192 dagen worden bereikt; daarmee blijft de grootste vorm minimaal een
   half jaar verwijderd.
-- De lokale analyzer, 347 tests, sprite-alpha-audits en de ondertekende
-  v0.05.00-productie-APK zijn groen.
+- Analyzer, 347 tests, sprite-alpha-audits, compacte/reduced-motion
+  emulatorcontrole, de ondertekende v0.05.00-productie-APK en beide
+  Play-ready AAB/signinggates zijn groen.
 
 De stagingworkflow test naast de bestaande Friends-, trade- en volledige Group
 Adventure-flow nu ook Friend Messages (ongelezen, lezen en opt-out) en Conclaves
 (genormaliseerd unieke naam, join, Warden-rang, chat, Aerie-bijdrage en volledige
-cleanup). De gebruiker heeft staging, productiemigraties 30–31 en release v0.05.00
-op 31 augustus 2026 expliciet toegestaan.
+cleanup). [Stagingrun 33396777406](https://github.com/Rakky88/DragonHaven/actions/runs/33396777406),
+[productiemigratie 33397552524](https://github.com/Rakky88/DragonHaven/actions/runs/33397552524),
+[productiegate 33397872901](https://github.com/Rakky88/DragonHaven/actions/runs/33397872901),
+[taggate 33398718801](https://github.com/Rakky88/DragonHaven/actions/runs/33398718801)
+en [post-release healthcheck 33399531445](https://github.com/Rakky88/DragonHaven/actions/runs/33399531445)
+zijn groen. De onafhankelijke productiepreflight bewijst 31/31 migratiepariteit,
+0 database-lintfouten, Auth health/settings 200/200 en geconfigureerde e-mailauth.
 
 ## Wat is verbeterd
 
