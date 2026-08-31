@@ -954,7 +954,44 @@ void main() {
     expect(runner, contains('p99Ms'));
     expect(runner, contains('applicationContractVersion'));
     expect(runner, contains('discoverMigrationVersion'));
+    expect(runner, contains('repositoryMigrationVersion'));
+    expect(runner, contains("'serverMigrationVersionVerified': false"));
     expect(runner, contains('No e-mail, password, token, user id'));
     expect(runner, contains('serverMetricsCaptured'));
+  });
+
+  test('support privacy procedures match implemented retention boundaries', () {
+    final procedures = File('SUPPORT_PRIVACY_OPERATIONS.md').readAsStringSync();
+    final accountDeletion = File(
+      'supabase/migrations/202608260014_account_deletion.sql',
+    ).readAsStringSync();
+    final cloudHistory = File(
+      'supabase/migrations/202608280022_cloud_save_revision_history.sql',
+    ).readAsStringSync();
+    final importAudit = File(
+      'supabase/migrations/202608280021_audited_legacy_inventory_import.sql',
+    ).readAsStringSync();
+    final social = File(
+      'supabase/migrations/202608310030_friend_messages_and_conclaves.sql',
+    ).readAsStringSync();
+
+    expect(procedures, contains('Keeper ID'));
+    expect(procedures, contains('maximaal zeven dagen'));
+    expect(procedures, contains('maximaal dertig dagen'));
+    expect(procedures, contains('Sociale notificatie-inbox'));
+    expect(procedures, contains('Open gat'));
+    expect(procedures, contains('fysieke expiry-cleanup ontbreekt'));
+    expect(procedures, contains('Google Play-aankopen staan nog uit'));
+    expect(accountDeletion, contains('delete from auth.users'));
+    expect(cloudHistory, contains("interval '30 days'"));
+    expect(cloudHistory, contains('offset 4'));
+    expect(importAudit, contains("interval '30 days'"));
+    expect(
+      importAudit,
+      isNot(contains('purge_expired_legacy_inventory_import_backups')),
+      reason: 'the documented physical import-backup cleanup gap is still real',
+    );
+    expect(social, contains("interval '24 hours'"));
+    expect(social, contains('dragonhaven-ephemeral-social-cleanup'));
   });
 }

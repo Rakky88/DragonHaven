@@ -19,7 +19,8 @@ void main() {
     expect(plan['virtualUsers'], 100);
     expect(plan['appVersion'], 'v0.05.01');
     expect(plan['applicationContractVersion'], 1);
-    expect(plan['migrationVersion'], '202608310032');
+    expect(plan['repositoryMigrationVersion'], '202608310032');
+    expect(plan['serverMigrationVersionVerified'], isFalse);
     expect(plan['uniqueConfirmedSyntheticAccountsRequired'], 100);
     expect(plan['thinkTimeSeconds'], {'minimum': 8, 'maximum': 20});
     expect(

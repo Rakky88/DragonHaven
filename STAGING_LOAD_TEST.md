@@ -51,7 +51,8 @@ server-authoritative is.
 - E-mailadressen, wachtwoorden, tokens, user-id's, responsebody's en savedata
   worden niet gelogd of in artifacts geschreven.
 - Een run rapporteert alleen aantallen, veilige foutklassen, responsebytes en
-  p50/p95/p99/max-latency per operatie.
+  p50/p95/p99/max-latency per operatie. De nieuwste repositorymigratie wordt
+  genoemd, maar nooit ten onrechte als geverifieerde serverstand gepresenteerd.
 - De workflow heeft een twintigminuten-timeout en artifacts verlopen na dertig
   dagen.
 
@@ -100,10 +101,12 @@ apart kosten- en capaciteitsbesluit.
 1. `plan-100` maakt zonder secrets of netwerkbelasting een controleerbaar plan.
 2. `run-100` gebruikt de exacte bevestiging en schrijft
    `staging/load-report.json`.
-3. Noteer vlak vóór, tijdens en na de run in het Supabase Dashboard:
-   piekverbindingen, CPU, database/querylatency, provider-egress, rate limits en
-   eventuele query-/indexbevindingen. Clientcode kan die providerwaarden niet
-   betrouwbaar afleiden.
+3. Controleer eerst dat de laatste groene staging-verificatierun dezelfde
+   migratieversie heeft als `repositoryMigrationVersion`. Noteer vervolgens vlak
+   vóór, tijdens en na de loadrun in het Supabase Dashboard: piekverbindingen,
+   CPU, database/querylatency, provider-egress, rate limits en eventuele
+   query-/indexbevindingen. Clientcode kan die providerwaarden niet betrouwbaar
+   afleiden.
 4. Beoordeel p95/p99 en fouten. Bij meer dan 2% fouten stopt de vervolgpoort.
 5. Alleen na een groen rapport krijgt `run-1000` het workflow-run-ID van de
    100-user meting. De workflow downloadt en valideert dat artifact voordat een
