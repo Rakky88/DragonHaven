@@ -1032,4 +1032,25 @@ void main() {
     expect(runbook, contains('stagingrestore'));
     expect(runbook, contains('runbook zelf wijzigt geen server'));
   });
+
+  test('app size audit measures archives without reading player data', () {
+    final audit = File('APP_SIZE_AUDIT.md').readAsStringSync();
+    final tool =
+        File('tool/measure_android_artifact_size.ps1').readAsStringSync();
+
+    expect(audit, contains('361.758.898'));
+    expect(audit, contains('284,99 MiB'));
+    expect(audit, contains('images/dragons'));
+    expect(audit, contains('Play Console-groottetabel'));
+    expect(audit, contains('measure_android_artifact_size.ps1'));
+    expect(audit, contains('universele media maximaal 170 MiB'));
+    expect(audit, contains('niets gepubliceerd'));
+    expect(tool, contains('System.IO.Compression.ZipFile'));
+    expect(tool, contains('CompressedLength'));
+    expect(tool, contains('universalMediaCompressedBytes'));
+    expect(tool, contains("-notin @('.aab', '.apk')"));
+    expect(tool, isNot(contains('ReadAllBytes')));
+    expect(tool, isNot(contains('Expand-Archive')));
+    expect(tool, isNot(contains('SUPABASE_')));
+  });
 }

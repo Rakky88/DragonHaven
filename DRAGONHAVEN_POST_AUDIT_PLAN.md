@@ -21,7 +21,7 @@ AAB, taggate, permanente download en post-release healthcheck zijn groen.**
 
 Lokale auditaanvulling na deze release: **de gecontroleerde monitoringdrill, het
 begrensde staging-loadprofiel en kandidaat-migratie 33 voor least-privilege
-support/privacy zijn gebouwd. De Flutter-analyzer en alle 360 tests zijn groen.
+support/privacy zijn gebouwd. De Flutter-analyzer en alle 361 tests zijn groen.
 Geen van deze lokale auditcommits is al naar gedeelde `main`, staging of
 productie gebracht.**
 
@@ -54,7 +54,7 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 
 | Onderdeel | Voortgang | Aantoonbaar klaar | Nog door Codex | Nog door jou |
 | --- | ---: | --- | --- | --- |
-| Google Play-voorbereiding | circa 25% | Permanent package-ID, vaste signing-identiteit, versiecontrole en een ondertekende AAB zijn bewezen | Actuele Play-eisen opnieuw controleren; storeteksten, graphics, Data Safety-inventaris, appgrootte-analyse en rolloutchecklist maken | Play Console openen/verifiëren; app en Play App Signing aanmaken; testers, publieke support/privacy-URL's en storeverklaringen beheren |
+| Google Play-voorbereiding | circa 38% | Permanent package-ID, vaste signingidentiteit, versiecontrole en een ondertekende AAB zijn bewezen. De reproduceerbare appgrootteaudit meet een actuele AAB van 345,00 MiB en 284,99 MiB universele media en legt een gratis optimalisatiepad vast | Beeldpilot en batchoptimalisatie uitvoeren; actuele target-/Play-eisen, storeteksten, graphics, Data Safety-inventaris en rolloutchecklist afronden | Play Console openen/verifiëren; app en Play App Signing aanmaken; pilot visueel goedkeuren; testers, publieke support/privacy-URL's en storeverklaringen beheren |
 | Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.01 zijn groen; productie staat gecontroleerd op 32/32 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
 | Fase 1 — monitoring en incidenten | circa 90% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan. Auth én de read-only applicatiecheck draaien ieder uur; contract-/klokvalidatie, migratie 32, onafhankelijke productiepreflight en post-release health zijn groen. Een handmatig-only, secretvrij testalertcontract is lokaal gebouwd en getest | De drill na expliciete toestemming op `main` activeren, uitvoeren en het afleverbewijs vastleggen. Firebase Crashlytics/Performance koppelen zodra de Android-projectconfig bestaat | Gratis Firebase Spark-project maken, `nl.dragonhaven.app` registreren, Analytics uit laten en `google-services.json` veilig in de werkmap zetten; de GitHub-testmelding daadwerkelijk ontvangen en privacy/Data Safety beoordelen |
 | Fase 2 — staging en E2E | circa 89% | Afzonderlijke staging, migratiepariteit, account/login, back-up/conflict, Friends, Friend Messages, Conclaves, trade en volledige Group Adventure completion/reward/replay zijn echt getest. Het productie-geblokkeerde 100→1.000-loadprofiel met unieke accounts, think time, p50/p95/p99 en privacyarm bewijs is lokaal gebouwd | De workflow na expliciete `main`-toestemming activeren; daarna eerst plan-100 en pas met een bevestigde synthetische accountpool run-100 uitvoeren. E-mailbevestigingsautomatisering blijft afhankelijk van een veilige mailboxroute | Veilige stagingmailroute instellen; 100 unieke bevestigde synthetische accounts plus `STAGING_LOAD_CREDENTIALS_JSON` aanmaken en bevestigen dat zij geen echte persoonsgegevens bevatten. Meer dan 1.000 blijft apart goedkeuringsplichtig |
@@ -120,8 +120,12 @@ Alle technische keuzes in dit plan moeten daarom verenigbaar blijven met:
   Data Safety-inventaris als concept voorbereiden.
 - [ ] Privacy- en accountverwijderlinks technisch in app en website integreren
   zodra jij domein/hosting en definitieve teksten hebt gekozen.
-- [ ] Appgrootte, assets en dependencies analyseren en optimaliseren waar dit
-  zonder merkbaar kwaliteitsverlies kan.
+- [x] Appgrootte en assetgroepen reproduceerbaar analyseren. De actuele AAB is
+  345,00 MiB en bevat 284,99 MiB universele afbeeldingen/audio;
+  `APP_SIZE_AUDIT.md` en `tool/measure_android_artifact_size.ps1` leggen
+  bronmeting, actuele officiële Play-grenzen en budgetten vast.
+- [ ] De beeldpilot visueel controleren en daarna de grootste categorieën plus
+  audio optimaliseren zonder merkbaar kwaliteits-, alpha- of licentieverlies.
 - [ ] Problemen uit interne/gesloten tests oplossen en een staged-rollout- en
   rollbackchecklist opleveren.
 
@@ -1086,6 +1090,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 31-08-2026 | Fase 6 support- en privacyprocedure lokaal uitgewerkt | Codex | `SUPPORT_PRIVACY_OPERATIONS.md` en retentiecontract in `dragonhaven_spec_test.dart` | Minimale privacyarme intake en procedures voor accountverlies, e-mail, trade, cloudconflict, verwijdering, toekomstige refunds en misbruik zijn vastgelegd. De matrix koppelt 24-uurschat, vijf/30-dagen-cloudhistorie, logisch 30-dagen-importherstel, 7-dagen-supportexport en accountdelete-cascades aan de implementatie. Twee expliciete gaten zijn bewezen: duurzame sociale notificaties missen een algemene termijn en verlopen private importback-ups missen fysieke cleanup. Voor notification-/Chroniclebeleid volgt geen stille migratie zonder Ricks keuze; de importpurge kan technisch in een volgende migratietranche worden gebouwd. |
 | 31-08-2026 | Fase 6 least-privilege supportkandidaat lokaal gebouwd | Codex | migratie `202608310033_support_privacy_operations.sql`, `SUPPORT_PRIVACY_OPERATIONS.md` en `dragonhaven_spec_test.dart` | Een alleen voor `service_role` uitvoerbare Keeper-ID-lookup retourneert minimale account-, save-, back-up- en geaggregeerde tradestatus zonder e-mail, naam, savebody, inventory, tegenpartij of itemdetails. Iedere poging vereist een casusnummer, operatoralias en vaste reden en schrijft een 30-dagen-log met uitsluitend de gehashte Keeper ID; dezelfde dagelijkse cleanup verwijdert verlopen logs en private importherstelkopieën. Flutter-analyzer en alle 359 tests zijn groen. Staging, productie en openbare app zijn niet gewijzigd; sociale notification- en Chronicle-retentie wachten bewust op beleid. |
 | 31-08-2026 | Fase 7 app-/database-hotfixrunbook lokaal gebouwd | Codex | `ROLLBACK_HOTFIX_RUNBOOK.md` en runbookcontract in `dragonhaven_spec_test.dart` | De beslisroute gebruikt altijd een hogere appversie/`versionCode` of een nieuwe correctiemigratie, verandert toegepaste migraties en bestaande releases niet in-place en blokkeert op tests, staging, parity, lint, health, signing en ontbrekende toestemming. Destructieve migraties vereisen een apart herstelplan met bron, cutoff, hash, RPO/RTO, stagingrestore en afbreekcriteria; productie gebruikt nooit `db reset`. Flutter-analyzer en alle 360 tests zijn groen. De eerste staging-hotfixoefening blijft open en deze lokale tranche wijzigt geen externe omgeving. |
+| 31-08-2026 | Google Play-appgroottebaseline lokaal gemeten | Codex | `APP_SIZE_AUDIT.md`, `tool/measure_android_artifact_size.ps1` en appgroottecontract in `dragonhaven_spec_test.dart` | Een vers gebouwde v0.05.01-AAB meet 361.758.898 bytes/345,00 MiB; universele afbeeldingen en audio zijn samen 284,99 MiB. Dragons (118,98 MiB), UI (52,45 MiB), audio (34,43 MiB) en chests (24,32 MiB) zijn de eerste doelen. De meting leest alleen ZIP-entrymetadata en legt een gratis beeldpilot, batchvolgorde, audiogrens en Play Console-eindmeting vast. Flutter-analyzer en alle 361 tests zijn groen. De build is niet gepubliceerd; productie en openbare app zijn ongewijzigd. |
 
 ## Onderhoud van dit plan
 
