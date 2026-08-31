@@ -281,6 +281,148 @@ class SupabaseSocialRepository implements SocialRepository {
   }
 
   @override
+  Future<List<FriendMessage>> openFriendMessages(String friendId) async =>
+      (await _listRpc('open_friend_messages', params: {
+        'p_friend_id': friendId,
+      }))
+          .map(FriendMessage.fromJson)
+          .toList(growable: false);
+
+  @override
+  Future<void> sendFriendMessage(String friendId, String body) async {
+    await _rpc('send_friend_message', params: {
+      'p_friend_id': friendId,
+      'p_body': body,
+    });
+  }
+
+  @override
+  Future<void> setSocialPreferences({
+    required bool friendMessagesAllowed,
+    required bool shareAchievementsWithConclave,
+  }) async {
+    await _rpc('set_social_preferences', params: {
+      'p_friend_messages_allowed': friendMessagesAllowed,
+      'p_share_achievements_with_conclave': shareAchievementsWithConclave,
+    });
+  }
+
+  @override
+  Future<List<ConclaveSummary>> listConclaves() async =>
+      (await _listRpc('list_conclaves'))
+          .map(ConclaveSummary.fromJson)
+          .toList(growable: false);
+
+  @override
+  Future<ConclaveSnapshot?> loadConclaveSnapshot() async {
+    final result = await _rpc('get_my_conclave_snapshot');
+    if (result == null) return null;
+    if (result is Map) {
+      return ConclaveSnapshot.fromJson(Map<String, dynamic>.from(result));
+    }
+    throw const SocialException('invalid_online_snapshot');
+  }
+
+  @override
+  Future<void> createConclave({
+    required String name,
+    required String emblemKey,
+    required String description,
+    required String language,
+    required ConclaveVisibility visibility,
+    required int memberLimit,
+  }) async {
+    await _rpc('create_conclave', params: {
+      'p_name': name,
+      'p_emblem_key': emblemKey,
+      'p_description': description,
+      'p_language': language,
+      'p_visibility': visibility.name,
+      'p_member_limit': memberLimit,
+    });
+  }
+
+  @override
+  Future<void> requestOrJoinConclave(String conclaveId) async {
+    await _rpc('request_or_join_conclave', params: {
+      'p_conclave_id': conclaveId,
+    });
+  }
+
+  @override
+  Future<void> respondConclaveJoinRequest(String requestId, bool accept) async {
+    await _rpc('respond_conclave_join_request', params: {
+      'p_request_id': requestId,
+      'p_accept': accept,
+    });
+  }
+
+  @override
+  Future<void> inviteToConclave(String keeperCode) async {
+    await _rpc('invite_to_conclave', params: {
+      'p_keeper_code': keeperCode.trim().toUpperCase(),
+    });
+  }
+
+  @override
+  Future<void> respondConclaveInvite(String inviteId, bool accept) async {
+    await _rpc('respond_conclave_invite', params: {
+      'p_invite_id': inviteId,
+      'p_accept': accept,
+    });
+  }
+
+  @override
+  Future<void> contributeToConclave() async {
+    await _rpc('contribute_to_conclave');
+  }
+
+  @override
+  Future<void> sendConclaveMessage({
+    required String kind,
+    required String body,
+    Map<String, dynamic> payload = const {},
+  }) async {
+    await _rpc('send_conclave_message', params: {
+      'p_kind': kind,
+      'p_body': body,
+      'p_payload': payload,
+    });
+  }
+
+  @override
+  Future<void> synchronizeConclaveAchievements(
+      List<String> achievementIds) async {
+    await _rpc('synchronize_conclave_achievements', params: {
+      'p_achievement_ids': achievementIds,
+    });
+  }
+
+  @override
+  Future<void> leaveConclave() async => _rpc('leave_conclave');
+
+  @override
+  Future<void> setConclaveMemberRole(String userId, ConclaveRole role) async {
+    await _rpc('set_conclave_member_role', params: {
+      'p_user_id': userId,
+      'p_role': role.name,
+    });
+  }
+
+  @override
+  Future<void> transferConclave(String userId) async {
+    await _rpc('transfer_conclave', params: {'p_user_id': userId});
+  }
+
+  @override
+  Future<void> removeConclaveMember(String userId) async {
+    await _rpc('remove_conclave_member', params: {'p_user_id': userId});
+  }
+
+  @override
+  Future<void> dissolveConclave() async => _rpc('dissolve_conclave');
+
+  @override
   Future<GroupAdventureStatus> loadGroupAdventureStatus() async {
     final rows = await _listRpc('get_current_group_adventure_status');
     if (rows.isEmpty) throw const SocialException('group_offer_unavailable');

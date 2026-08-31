@@ -21,6 +21,7 @@ import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/services/storage_service.dart';
 import 'package:dragon_haven/services/audio_service.dart';
 import 'package:dragon_haven/services/notification_service.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -241,6 +242,56 @@ void main() {
       restored.notificationEnabled(HavenNotificationCategory.specialEvents),
       isFalse,
     );
+  });
+
+  test('an exact-alarm permission change reschedules pending game timers',
+      () async {
+    const channel = MethodChannel('nl.dragonhaven.app/notifications');
+    var exactAlarmGranted = false;
+    final scheduledIds = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      switch (call.method) {
+        case 'permissionStatus':
+          return 'granted';
+        case 'exactAlarmGranted':
+          return exactAlarmGranted;
+        case 'schedule':
+          scheduledIds.add((call.arguments as Map)['id'] as String);
+          return true;
+        default:
+          return true;
+      }
+    });
+    addTearDown(() => TestDefaultBinaryMessengerBinding
+        .instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+    final now = DateTime(2036, 8, 31, 12);
+    final game = HouseholdProvider(
+      random: Random(301),
+      clock: () => now,
+      persistenceEnabled: false,
+    )..trialOffers = [
+        TrialOffer(
+          id: 'remaining-one',
+          kind: TrialKind.ruinBreaker,
+          appearedAt: now,
+        ),
+        TrialOffer(
+          id: 'remaining-two',
+          kind: TrialKind.runeweaver,
+          appearedAt: now,
+        ),
+      ];
+    addTearDown(game.dispose);
+
+    await game.synchronizeNotificationPermissionWithPlatform();
+    expect(scheduledIds, isEmpty);
+    exactAlarmGranted = true;
+    await game.synchronizeNotificationPermissionWithPlatform();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(scheduledIds, contains('trials-full'));
   });
 
   test('existing saves inherit Special Event notifications as default on',
@@ -1063,7 +1114,7 @@ void main() {
     expect(restoredRun.rewardTier, startedRun.rewardTier);
   });
 
-  test('Adventure return reminders never precede the claimable boundary', () {
+  test('Adventure return reminders match the claimable boundary exactly', () {
     final game = HouseholdProvider(
       random: Random(851),
       persistenceEnabled: false,
@@ -1071,8 +1122,7 @@ void main() {
     final endsAt = DateTime.utc(2026, 8, 28, 12, 30, 0, 750);
     final reminderAt = game.adventureReturnNotificationAt(endsAt);
 
-    expect(reminderAt.isAfter(endsAt), isTrue);
-    expect(reminderAt.difference(endsAt), const Duration(seconds: 1));
+    expect(reminderAt, endsAt);
   });
 
   test('a Group Adventure cannot be aborted through the local safety API',

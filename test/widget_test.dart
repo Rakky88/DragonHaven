@@ -21,6 +21,7 @@ import 'package:dragon_haven/screens/adventure_hub_screen.dart';
 import 'package:dragon_haven/screens/draconomicon_screen.dart';
 import 'package:dragon_haven/screens/house_screen.dart';
 import 'package:dragon_haven/screens/inventory_screen.dart';
+import 'package:dragon_haven/screens/notification_settings_screen.dart';
 import 'package:dragon_haven/screens/shop_hub_screen.dart';
 import 'package:dragon_haven/services/social_repository.dart';
 import 'package:dragon_haven/services/audio_service.dart';
@@ -686,6 +687,42 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Android exact timing has a separate permission path',
+      (tester) async {
+    const channel = MethodChannel('nl.dragonhaven.app/notifications');
+    var openedExactAlarmSettings = false;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      channel,
+      (call) async => switch (call.method) {
+        'permissionStatus' => 'granted',
+        'permissionGranted' => true,
+        'exactAlarmGranted' => false,
+        'openExactAlarmSettings' => openedExactAlarmSettings = true,
+        _ => null,
+      },
+    );
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+    final game = HouseholdProvider(
+      random: Random(751),
+      persistenceEnabled: false,
+    );
+    addTearDown(game.dispose);
+
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: const MaterialApp(home: NotificationSettingsScreen()),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(
+        find.byKey(const Key('exact-alarm-permission-card')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('open-exact-alarm-settings')));
+    await tester.pump();
+    expect(openedExactAlarmSettings, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('only the chosen notification turns on after Android grants it',
       (tester) async {
     const channel = MethodChannel('nl.dragonhaven.app/notifications');
@@ -820,6 +857,46 @@ void main() {
         reason: item.id,
       );
     }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('placed Supporter furniture renders inside its Tower room',
+      (tester) async {
+    final game = HouseholdProvider(
+      random: Random(761),
+      persistenceEnabled: false,
+    );
+    await game.applyVerifiedSupporterPack('widget-supporter-placement');
+    expect(await game.selectRoom('hearth'), isTrue);
+    final throne = supporterFurnitureCatalog.first;
+    expect(
+      await game.placeHouseItem(
+        throne.id,
+        roomId: 'hearth',
+        x: .5,
+        y: .7,
+      ),
+      isTrue,
+    );
+
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: MaterialApp(
+        home: Scaffold(
+          body: HouseScreen(
+            active: true,
+            floorIndex: 0,
+            onOpenShop: () {},
+          ),
+        ),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(
+      find.byKey(Key('placed-furniture-${throne.id}')),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -2120,7 +2197,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.04.16'), findsOneWidget);
+    expect(find.text('v0.05.00'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

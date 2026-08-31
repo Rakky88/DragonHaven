@@ -14,6 +14,10 @@ import androidx.core.app.NotificationManagerCompat
 
 class DragonHavenNotificationReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        DragonHavenAlarmScheduler.markDelivered(
+            context,
+            intent.getStringExtra("scheduleId"),
+        )
         if (Build.VERSION.SDK_INT >= 33 &&
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             return

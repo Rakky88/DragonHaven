@@ -461,6 +461,8 @@ $friendshipCreated = $false
 $groupJoinResult = 'not-run'
 $groupCompletionResult = 'not-requested'
 $tradeResult = 'not-run'
+$friendMessageResult = 'not-run'
+$conclaveResult = 'not-run'
 
 function Remove-ActiveTrades {
     if ($null -eq $primary -or $null -eq $peer) { return }
@@ -540,6 +542,29 @@ function Remove-ExistingFriendship {
         -Operation 'Opruimen van herstelde stagingvriendschap' | Out-Null
 }
 
+function Remove-ExistingConclaves {
+    if ($null -eq $primary -or $null -eq $peer) { return }
+    foreach ($session in @($primary, $peer)) {
+        $snapshot = Invoke-RequiredRpc `
+            -Session $session `
+            -Function 'get_my_conclave_snapshot' `
+            -Operation 'Bestaande staging-Conclave controleren'
+        if ($null -eq $snapshot) { continue }
+        $role = [string](Get-PropertyValue -InputObject $snapshot -Name 'my_role')
+        if ($role -eq 'flightmaster') {
+            Invoke-RequiredRpc `
+                -Session $session `
+                -Function 'dissolve_conclave' `
+                -Operation 'Bestaande staging-Conclave opheffen' | Out-Null
+        } else {
+            Invoke-RequiredRpc `
+                -Session $session `
+                -Function 'leave_conclave' `
+                -Operation 'Bestaande staging-Conclave verlaten' | Out-Null
+        }
+    }
+}
+
 function Close-StagingSessions {
     foreach ($session in @($primary, $peer)) {
         if ($null -eq $session) { continue }
@@ -596,6 +621,7 @@ try {
 
     Remove-ActiveTrades
     Remove-WaitingGroupLobbies
+    Remove-ExistingConclaves
     Remove-ExistingFriendship
 
     $peerProfileRows = Get-Rows (Invoke-RequiredRpc `
@@ -646,6 +672,198 @@ try {
             throw 'De geaccepteerde stagingvriendschap was niet wederzijds zichtbaar.'
         }
     }
+
+    foreach ($session in @($primary, $peer)) {
+        Invoke-RequiredRpc `
+            -Session $session `
+            -Function 'set_social_preferences' `
+            -Parameters @{
+                p_friend_messages_allowed = $true
+                p_share_achievements_with_conclave = $false
+            } `
+            -Operation 'Staging-berichtvoorkeuren inschakelen' | Out-Null
+    }
+    $messageMarker = "staging-message-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
+    $friendMessageId = [string](Invoke-RequiredRpc `
+        -Session $primary `
+        -Function 'send_friend_message' `
+        -Parameters @{ p_friend_id = $peer.UserId; p_body = $messageMarker } `
+        -Operation 'Staging-vriendbericht versturen')
+    if ([string]::IsNullOrWhiteSpace($friendMessageId)) {
+        throw 'Het staging-vriendbericht leverde geen message-id op.'
+    }
+    $peerConversations = Get-Rows (Invoke-RequiredRpc `
+        -Session $peer `
+        -Function 'list_friend_conversations')
+    $peerConversation = $peerConversations | Where-Object {
+        [string](Get-PropertyValue -InputObject $_ -Name 'friend_id') -eq $primary.UserId
+    } | Select-Object -First 1
+    if ($null -eq $peerConversation -or
+        [long](Get-PropertyValue -InputObject $peerConversation -Name 'unread_count') -lt 1 -or
+        [string](Get-PropertyValue -InputObject $peerConversation -Name 'last_message') -ne $messageMarker) {
+        throw 'Het staging-vriendbericht was niet als ongelezen gesprek zichtbaar.'
+    }
+    $openedMessages = Get-Rows (Invoke-RequiredRpc `
+        -Session $peer `
+        -Function 'open_friend_messages' `
+        -Parameters @{ p_friend_id = $primary.UserId } `
+        -Operation 'Staging-vriendbericht openen')
+    $openedMessage = $openedMessages | Where-Object {
+        [string](Get-PropertyValue -InputObject $_ -Name 'message_id') -eq $friendMessageId
+    } | Select-Object -First 1
+    if ($null -eq $openedMessage -or
+        [string](Get-PropertyValue -InputObject $openedMessage -Name 'body') -ne $messageMarker -or
+        [string]::IsNullOrWhiteSpace([string](Get-PropertyValue -InputObject $openedMessage -Name 'read_at'))) {
+        throw 'Het staging-vriendbericht werd niet correct geopend en gelezen gemarkeerd.'
+    }
+    Invoke-RequiredRpc `
+        -Session $peer `
+        -Function 'set_social_preferences' `
+        -Parameters @{
+            p_friend_messages_allowed = $false
+            p_share_achievements_with_conclave = $false
+        } `
+        -Operation 'Staging-vriendberichten uitschakelen' | Out-Null
+    $blockedMessage = Invoke-StagingRpc `
+        -Session $primary `
+        -Function 'send_friend_message' `
+        -Parameters @{
+            p_friend_id = $peer.UserId
+            p_body = "blocked-$messageMarker"
+        }
+    if (Test-SuccessStatus $blockedMessage.StatusCode) {
+        throw 'Een staging-vriendbericht passeerde ten onrechte de opt-out.'
+    }
+    $blockedFailure = Get-SafeFailure `
+        -Body $blockedMessage.Body `
+        -StatusCode $blockedMessage.StatusCode
+    if ($blockedFailure -notmatch 'messages_disabled') {
+        throw 'De staging-vriendbericht-opt-out gaf niet de verwachte veilige foutcode.'
+    }
+    Invoke-RequiredRpc `
+        -Session $peer `
+        -Function 'set_social_preferences' `
+        -Parameters @{
+            p_friend_messages_allowed = $true
+            p_share_achievements_with_conclave = $false
+        } `
+        -Operation 'Staging-vriendberichten herstellen' | Out-Null
+    $friendMessageResult = 'send, unread projection, read acknowledgement and opt-out passed'
+
+    $conclaveName = "E2E-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
+    $conclaveId = [string](Invoke-RequiredRpc `
+        -Session $primary `
+        -Function 'create_conclave' `
+        -Parameters @{
+            p_name = $conclaveName
+            p_emblem_key = 'conclave_emblem_01'
+            p_description = 'Temporary staging verification'
+            p_language = 'en'
+            p_visibility = 'public'
+            p_member_limit = 4
+        } `
+        -Operation 'Staging-Conclave oprichten')
+    if ([string]::IsNullOrWhiteSpace($conclaveId)) {
+        throw 'De staging-Conclave leverde geen Conclave-id op.'
+    }
+    $duplicateConclave = Invoke-StagingRpc `
+        -Session $peer `
+        -Function 'create_conclave' `
+        -Parameters @{
+            p_name = "  $($conclaveName.ToLowerInvariant())  "
+            p_emblem_key = 'conclave_emblem_02'
+            p_description = ''
+            p_language = 'en'
+            p_visibility = 'public'
+            p_member_limit = 4
+        }
+    if (Test-SuccessStatus $duplicateConclave.StatusCode) {
+        throw 'Een dubbele staging-Conclave-naam werd ten onrechte geaccepteerd.'
+    }
+    $duplicateFailure = Get-SafeFailure `
+        -Body $duplicateConclave.Body `
+        -StatusCode $duplicateConclave.StatusCode
+    if ($duplicateFailure -notmatch 'conclave_name_taken') {
+        throw 'De dubbele staging-Conclave-naam gaf niet de verwachte veilige foutcode.'
+    }
+    $directory = Get-Rows (Invoke-RequiredRpc `
+        -Session $peer `
+        -Function 'list_conclaves')
+    $directoryEntry = $directory | Where-Object {
+        [string](Get-PropertyValue -InputObject $_ -Name 'conclave_id') -eq $conclaveId
+    } | Select-Object -First 1
+    if ($null -eq $directoryEntry -or
+        [string](Get-PropertyValue -InputObject $directoryEntry -Name 'name') -ne $conclaveName) {
+        throw 'De openbare staging-Conclave was niet correct vindbaar.'
+    }
+    $joinResult = [string](Invoke-RequiredRpc `
+        -Session $peer `
+        -Function 'request_or_join_conclave' `
+        -Parameters @{ p_conclave_id = $conclaveId } `
+        -Operation 'Staging-Conclave toetreden')
+    if ($joinResult -ne 'joined') {
+        throw 'De openbare staging-Conclave leverde niet het verwachte join-resultaat.'
+    }
+    Invoke-RequiredRpc `
+        -Session $primary `
+        -Function 'set_conclave_member_role' `
+        -Parameters @{ p_user_id = $peer.UserId; p_role = 'warden' } `
+        -Operation 'Staging-Conclave Warden toekennen' | Out-Null
+    $peerSnapshot = Invoke-RequiredRpc `
+        -Session $peer `
+        -Function 'get_my_conclave_snapshot' `
+        -Operation 'Staging-Conclave voor Warden laden'
+    $peerConclave = Get-PropertyValue -InputObject $peerSnapshot -Name 'conclave'
+    if ([string](Get-PropertyValue -InputObject $peerSnapshot -Name 'my_role') -ne 'warden' -or
+        [int](Get-PropertyValue -InputObject $peerConclave -Name 'member_count') -ne 2) {
+        throw 'De staging-Conclave-rang of ledentelling klopt niet.'
+    }
+    $conclaveMessageId = [string](Invoke-RequiredRpc `
+        -Session $peer `
+        -Function 'send_conclave_message' `
+        -Parameters @{
+            p_kind = 'text'
+            p_body = 'Temporary staging Conclave message'
+            p_payload = @{}
+        } `
+        -Operation 'Staging-Conclavebericht versturen')
+    $primarySnapshot = Invoke-RequiredRpc `
+        -Session $primary `
+        -Function 'get_my_conclave_snapshot' `
+        -Operation 'Staging-Conclavebericht laden'
+    $conclaveMessages = @(Get-PropertyValue -InputObject $primarySnapshot -Name 'messages')
+    if ($null -eq ($conclaveMessages | Where-Object {
+        [string](Get-PropertyValue -InputObject $_ -Name 'message_id') -eq $conclaveMessageId
+    } | Select-Object -First 1)) {
+        throw 'Het staging-Conclavebericht was niet zichtbaar voor de Flightmaster.'
+    }
+    $contributionRows = Get-Rows (Invoke-RequiredRpc `
+        -Session $primary `
+        -Function 'contribute_to_conclave' `
+        -Operation 'Staging-Aerie verzorgen')
+    if ($contributionRows.Count -ne 1 -or
+        [int](Get-PropertyValue -InputObject $contributionRows[0] -Name 'xp') -ne 10 -or
+        [int](Get-PropertyValue -InputObject $contributionRows[0] -Name 'aerie_stage') -ne 1) {
+        throw 'De staging-Aerie-bijdrage gaf niet exact de verwachte voortgang.'
+    }
+    Invoke-RequiredRpc `
+        -Session $peer `
+        -Function 'leave_conclave' `
+        -Operation 'Staging-Warden laten vertrekken' | Out-Null
+    Invoke-RequiredRpc `
+        -Session $primary `
+        -Function 'dissolve_conclave' `
+        -Operation 'Staging-Conclave gecontroleerd opheffen' | Out-Null
+    foreach ($session in @($primary, $peer)) {
+        $emptySnapshot = Invoke-RequiredRpc `
+            -Session $session `
+            -Function 'get_my_conclave_snapshot' `
+            -Operation 'Opgeruimde staging-Conclave controleren'
+        if ($null -ne $emptySnapshot) {
+            throw 'De tijdelijke staging-Conclave is niet volledig opgeruimd.'
+        }
+    }
+    $conclaveResult = 'normalized unique naming, join, role, chat, contribution and cleanup passed'
 
     $testInventory = @{
         eggs = @()
@@ -980,6 +1198,8 @@ try {
         'Result: two-account social flow passed.'
         'Two confirmed password logins and idempotent bootstraps: passed.'
         'Friend request, incoming projection, acceptance and mutual visibility: passed.'
+        "Friend Messages: $friendMessageResult."
+        "Conclave flow: $conclaveResult."
         "Trade flow: $tradeResult."
         'Trade inventory transfer invariant: passed.'
         "Group Adventure flow: $groupJoinResult."
@@ -1019,6 +1239,11 @@ try {
         }
     } catch {
         Write-Warning 'De tijdelijke sociale staginglobby kon niet worden verwijderd.'
+    }
+    try {
+        Remove-ExistingConclaves
+    } catch {
+        Write-Warning 'Niet alle tijdelijke staging-Conclaves konden automatisch worden opgeruimd.'
     }
     try {
         Remove-ActiveTrades

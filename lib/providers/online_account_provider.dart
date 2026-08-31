@@ -87,6 +87,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   String? _lastProfileFingerprint;
   String? _lastTradeInventoryFingerprint;
   String? _lastShowcaseFingerprint;
+  String? _lastConclaveAchievementFingerprint;
   DateTime? _lastPresenceUpdate;
   bool _operationInFlight = false;
   bool _disposed = false;
@@ -101,6 +102,11 @@ class OnlineAccountProvider extends ChangeNotifier {
   GroupAdventureStatus? groupAdventureStatus;
   List<TradeOffer> trades = const [];
   List<TradeInventoryItem> tradeInventory = const [];
+  List<FriendConversationSummary> friendConversations = const [];
+  bool friendMessagesAllowed = true;
+  bool shareAchievementsWithConclave = false;
+  ConclaveSnapshot? conclave;
+  List<ConclaveInvite> conclaveInvites = const [];
   CloudGameSave? cloudGameSave;
   CloudGameSave? cloudConflictSave;
   List<CloudGameSaveSummary> cloudSaveHistory = const [];
@@ -155,6 +161,15 @@ class OnlineAccountProvider extends ChangeNotifier {
       .where((trade) => trade.otherKeeper.userId == userId && trade.isActive)
       .toList(growable: false);
   int get completedTradesToday => completedTradesOn(DateTime.now());
+  int get unreadFriendMessageCount => friendConversations.fold(
+        0,
+        (total, conversation) => total + conversation.unreadCount,
+      );
+  FriendConversationSummary? conversationWith(String friendId) =>
+      friendConversations.cast<FriendConversationSummary?>().firstWhere(
+            (conversation) => conversation?.friendId == friendId,
+            orElse: () => null,
+          );
 
   int completedTradesOn(DateTime day) {
     final localDay = day.toLocal();
@@ -503,6 +518,201 @@ class OnlineAccountProvider extends ChangeNotifier {
       }) ??
       false;
 
+  Future<List<FriendMessage>?> openFriendMessages(
+    String friendId, {
+    bool background = false,
+  }) =>
+      _run('messages.open', () async {
+        final messages = await _repository.openFriendMessages(friendId);
+        final previous = conversationWith(friendId);
+        final last = messages.isEmpty ? null : messages.last;
+        friendConversations = [
+          for (final conversation in friendConversations)
+            if (conversation.friendId == friendId)
+              FriendConversationSummary(
+                friendId: friendId,
+                messagesAllowed: conversation.messagesAllowed,
+                unreadCount: 0,
+                lastMessage: last?.body ?? conversation.lastMessage,
+                lastMessageAt: last?.createdAt ?? conversation.lastMessageAt,
+                lastMessageFromMe: last == null
+                    ? conversation.lastMessageFromMe
+                    : last.senderId == currentUserId,
+              )
+            else
+              conversation,
+          if (previous == null && last != null)
+            FriendConversationSummary(
+              friendId: friendId,
+              messagesAllowed: true,
+              unreadCount: 0,
+              lastMessage: last.body,
+              lastMessageAt: last.createdAt,
+              lastMessageFromMe: last.senderId == currentUserId,
+            ),
+        ];
+        return messages;
+      }, background: background);
+
+  Future<bool> sendFriendMessage(String friendId, String body) async =>
+      await _run('messages.send', () async {
+        await _repository.sendFriendMessage(friendId, body.trim());
+        return true;
+      }) ??
+      false;
+
+  Future<bool> setFriendMessagesAllowed(bool allowed) =>
+      _setSocialPreferences(messagesAllowed: allowed);
+
+  Future<bool> setShareAchievementsWithConclave(bool share) =>
+      _setSocialPreferences(shareAchievements: share);
+
+  Future<bool> _setSocialPreferences({
+    bool? messagesAllowed,
+    bool? shareAchievements,
+  }) async =>
+      await _run('social.preferences', () async {
+        await _repository.setSocialPreferences(
+          friendMessagesAllowed: messagesAllowed ?? friendMessagesAllowed,
+          shareAchievementsWithConclave:
+              shareAchievements ?? shareAchievementsWithConclave,
+        );
+        _lastConclaveAchievementFingerprint = null;
+        await _refreshData();
+        return true;
+      }) ??
+      false;
+
+  Future<List<ConclaveSummary>?> loadConclaveDirectory() =>
+      _run('conclave.directory', _repository.listConclaves);
+
+  Future<bool> refreshConclave({bool background = false}) async =>
+      await _run('conclave.refresh', () async {
+        conclave = await _repository.loadConclaveSnapshot();
+        return true;
+      }, background: background) ??
+      false;
+
+  Future<bool> createConclave({
+    required String name,
+    required String emblemKey,
+    required String description,
+    required String language,
+    required ConclaveVisibility visibility,
+    required int memberLimit,
+  }) async =>
+      await _run('conclave.create', () async {
+        await _repository.createConclave(
+          name: name,
+          emblemKey: emblemKey,
+          description: description,
+          language: language,
+          visibility: visibility,
+          memberLimit: memberLimit,
+        );
+        await _refreshData();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> requestOrJoinConclave(String id) async =>
+      await _run('conclave.join', () async {
+        await _repository.requestOrJoinConclave(id);
+        await _refreshData();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> respondConclaveJoinRequest(String id, bool accept) async =>
+      await _run('conclave.respond_request', () async {
+        await _repository.respondConclaveJoinRequest(id, accept);
+        await _refreshData();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> inviteToConclave(String keeperCode) async =>
+      await _run('conclave.invite', () async {
+        await _repository.inviteToConclave(keeperCode);
+        noticeCode = 'conclave_invite_sent';
+        return true;
+      }) ??
+      false;
+
+  Future<bool> respondConclaveInvite(String id, bool accept) async =>
+      await _run('conclave.respond_invite', () async {
+        await _repository.respondConclaveInvite(id, accept);
+        await _refreshData();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> contributeToConclave() async =>
+      await _run('conclave.contribute', () async {
+        await _repository.contributeToConclave();
+        await _refreshData();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> sendConclaveMessage({
+    required String kind,
+    required String body,
+    Map<String, dynamic> payload = const {},
+  }) async =>
+      await _run('conclave.message', () async {
+        await _repository.sendConclaveMessage(
+          kind: kind,
+          body: body,
+          payload: payload,
+        );
+        await _refreshData();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> leaveConclave() async =>
+      await _run('conclave.leave', () async {
+        await _repository.leaveConclave();
+        _lastConclaveAchievementFingerprint = null;
+        await _refreshData();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> setConclaveMemberRole(String id, ConclaveRole role) async =>
+      await _run('conclave.role', () async {
+        await _repository.setConclaveMemberRole(id, role);
+        await _refreshData();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> transferConclave(String id) async =>
+      await _run('conclave.transfer', () async {
+        await _repository.transferConclave(id);
+        await _refreshData();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> removeConclaveMember(String id) async =>
+      await _run('conclave.remove_member', () async {
+        await _repository.removeConclaveMember(id);
+        await _refreshData();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> dissolveConclave() async =>
+      await _run('conclave.dissolve', () async {
+        await _repository.dissolveConclave();
+        _lastConclaveAchievementFingerprint = null;
+        await _refreshData();
+        return true;
+      }) ??
+      false;
+
   Future<bool> createGroupLobby(
     String adventureId,
     GroupDragonSubmission dragon,
@@ -624,6 +834,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     errorCode = null;
     noticeCode = null;
     supportCode = null;
+    _notify();
   }
 
   Future<void> _refreshData() async {
@@ -720,6 +931,26 @@ class OnlineAccountProvider extends ChangeNotifier {
         serverChanged = true;
       }
     }
+    final sortedAchievements = currentSnapshot.achievementIds.toList()..sort();
+    final achievementFingerprint = jsonEncode({
+      'conclave': onlineSnapshot.conclave?.conclave.id,
+      'share': onlineSnapshot.shareAchievementsWithConclave,
+      'achievements': sortedAchievements,
+    });
+    if (onlineSnapshot.conclave != null &&
+        onlineSnapshot.shareAchievementsWithConclave &&
+        _lastConclaveAchievementFingerprint != achievementFingerprint) {
+      final synchronized = await _runRefreshMaintenanceStep(
+        'social.refresh.conclave_achievements',
+        () => _repository.synchronizeConclaveAchievements(
+          sortedAchievements,
+        ),
+      );
+      if (synchronized) {
+        _lastConclaveAchievementFingerprint = achievementFingerprint;
+        serverChanged = true;
+      }
+    }
     if (serverChanged) {
       await _runRefreshMaintenanceStep(
         'social.refresh.snapshot_reload',
@@ -757,6 +988,11 @@ class OnlineAccountProvider extends ChangeNotifier {
     tradeInventory = snapshot.tradeInventory
         .where((entry) => entry.item.isTradeable)
         .toList(growable: false);
+    friendMessagesAllowed = snapshot.friendMessagesAllowed;
+    shareAchievementsWithConclave = snapshot.shareAchievementsWithConclave;
+    friendConversations = snapshot.friendConversations;
+    conclave = snapshot.conclave;
+    conclaveInvites = snapshot.conclaveInvites;
   }
 
   /// Online reads are the useful result of a refresh. Follow-up publication,
@@ -838,6 +1074,18 @@ class OnlineAccountProvider extends ChangeNotifier {
             body: withName(
               '{name} is now in your friends list.',
               '{name} staat nu in je vriendenlijst.',
+            ),
+          );
+        case 'friend_message':
+          await HavenNotifications.friendMessage(
+            id: notification.id,
+            title: withName(
+              'New message from {name}',
+              'Nieuw bericht van {name}',
+            ),
+            body: strings.pick(
+              'Open DragonHaven to read it.',
+              'Open DragonHaven om het te lezen.',
             ),
           );
         case 'trade_request':
@@ -1015,6 +1263,11 @@ class OnlineAccountProvider extends ChangeNotifier {
     groupAdventureStatus = null;
     trades = const [];
     tradeInventory = const [];
+    friendConversations = const [];
+    friendMessagesAllowed = true;
+    shareAchievementsWithConclave = false;
+    conclave = null;
+    conclaveInvites = const [];
     cloudGameSave = null;
     cloudConflictSave = null;
     cloudSaveHistory = const [];
@@ -1023,6 +1276,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     _lastProfileFingerprint = null;
     _lastTradeInventoryFingerprint = null;
     _lastShowcaseFingerprint = null;
+    _lastConclaveAchievementFingerprint = null;
     _lastPresenceUpdate = null;
     _lastRefreshStartedAt = null;
     _lastRefreshSucceeded = false;

@@ -120,6 +120,7 @@ class HouseholdProvider extends ChangeNotifier {
   Timer? _starterEggTapPersistenceTimer;
   int _localMutationRevision = 0;
   int _presentationDeferralDepth = 0;
+  bool? _lastExactAlarmPermissionGranted;
 
   String languageCode = 'en';
   String accountName = '';
@@ -806,12 +807,17 @@ class HouseholdProvider extends ChangeNotifier {
             .whereType<HavenNotificationCategory>()
             .toSet()
         : HavenNotificationCategory.values.toSet();
-    // Version 2 introduced Special Event notifications. Existing saves inherit
-    // the requested default-on setting once; afterwards an explicit opt-out is
-    // preserved because version 2 is saved alongside the category list.
-    if ((data['notificationSettingsVersion'] as num?)?.toInt() != 2) {
+    final notificationSettingsVersion =
+        (data['notificationSettingsVersion'] as num?)?.toInt() ?? 0;
+    // New categories inherit the requested default-on setting once. Later
+    // saves preserve an explicit opt-out through the version marker.
+    if (notificationSettingsVersion < 2) {
       enabledNotificationCategories
           .add(HavenNotificationCategory.specialEvents);
+    }
+    if (notificationSettingsVersion < 3) {
+      enabledNotificationCategories
+          .add(HavenNotificationCategory.friendMessages);
     }
     HavenNotifications.configure(enabledNotificationCategories);
     achievementsCompact = data['achievementsCompact'] is bool &&
@@ -1397,11 +1403,20 @@ class HouseholdProvider extends ChangeNotifier {
       enabledNotificationCategories.contains(category);
 
   Future<bool> synchronizeNotificationPermissionWithPlatform() async {
-    final status = await HavenNotifications.platformPermissionStatus();
+    final results = await Future.wait<Object>([
+      HavenNotifications.platformPermissionStatus(),
+      HavenNotifications.exactAlarmPermissionGranted(),
+    ]);
+    final status = results[0] as HavenNotificationPermissionStatus;
+    final exactAlarmGranted = results[1] as bool;
+    final exactAlarmChanged = _lastExactAlarmPermissionGranted != null &&
+        _lastExactAlarmPermissionGranted != exactAlarmGranted;
+    _lastExactAlarmPermissionGranted = exactAlarmGranted;
     if (status == HavenNotificationPermissionStatus.denied) {
       await disableAllNotificationsForPlatform();
       return false;
     }
+    if (exactAlarmChanged) await _rescheduleTimedNotifications();
     return status == HavenNotificationPermissionStatus.granted;
   }
 
@@ -2762,7 +2777,7 @@ class HouseholdProvider extends ChangeNotifier {
         'enabledNotificationCategories': enabledNotificationCategories
             .map((category) => category.name)
             .toList(),
-        'notificationSettingsVersion': 2,
+        'notificationSettingsVersion': 3,
         'achievementsCompact': achievementsCompact,
         'myDragonsViewMode': myDragonsViewMode,
         'myDragonsSortMode': myDragonsSortMode,

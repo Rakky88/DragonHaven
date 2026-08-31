@@ -212,6 +212,318 @@ class SocialNotification {
       );
 }
 
+class FriendConversationSummary {
+  const FriendConversationSummary({
+    required this.friendId,
+    required this.messagesAllowed,
+    required this.unreadCount,
+    this.lastMessage,
+    this.lastMessageAt,
+    this.lastMessageFromMe = false,
+  });
+
+  final String friendId;
+  final bool messagesAllowed;
+  final int unreadCount;
+  final String? lastMessage;
+  final DateTime? lastMessageAt;
+  final bool lastMessageFromMe;
+
+  factory FriendConversationSummary.fromJson(Map<String, dynamic> json) =>
+      FriendConversationSummary(
+        friendId: json['friend_id']?.toString() ?? '',
+        messagesAllowed: json['messages_allowed'] != false,
+        unreadCount: _int(json['unread_count']),
+        lastMessage: json['last_message']?.toString(),
+        lastMessageAt: DateTime.tryParse(
+          json['last_message_at']?.toString() ?? '',
+        ),
+        lastMessageFromMe: json['last_message_from_me'] == true,
+      );
+}
+
+class FriendMessage {
+  const FriendMessage({
+    required this.id,
+    required this.senderId,
+    required this.recipientId,
+    required this.body,
+    required this.createdAt,
+    this.readAt,
+  });
+
+  final String id;
+  final String senderId;
+  final String recipientId;
+  final String body;
+  final DateTime createdAt;
+  final DateTime? readAt;
+
+  factory FriendMessage.fromJson(Map<String, dynamic> json) => FriendMessage(
+        id: json['message_id']?.toString() ?? '',
+        senderId: json['sender_id']?.toString() ?? '',
+        recipientId: json['recipient_id']?.toString() ?? '',
+        body: json['body']?.toString() ?? '',
+        createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+        readAt: DateTime.tryParse(json['read_at']?.toString() ?? ''),
+      );
+}
+
+enum ConclaveVisibility { public, request, invite }
+
+enum ConclaveRole { flightmaster, warden, keeper }
+
+class ConclaveSummary {
+  static const int xpPerLevel = 850;
+
+  const ConclaveSummary({
+    required this.id,
+    required this.name,
+    required this.emblemKey,
+    required this.description,
+    required this.language,
+    required this.visibility,
+    required this.memberLimit,
+    required this.memberCount,
+    required this.level,
+    required this.xp,
+    required this.aerieStage,
+    this.requested = false,
+  });
+
+  final String id;
+  final String name;
+  final String emblemKey;
+  final String description;
+  final String language;
+  final ConclaveVisibility visibility;
+  final int memberLimit;
+  final int memberCount;
+  final int level;
+  final int xp;
+  final int aerieStage;
+  final bool requested;
+
+  int get xpIntoLevel => level >= 50 ? xpPerLevel : xp % xpPerLevel;
+
+  factory ConclaveSummary.fromJson(Map<String, dynamic> json) =>
+      ConclaveSummary(
+        id: json['conclave_id']?.toString() ?? '',
+        name: json['name']?.toString() ?? 'Conclave',
+        emblemKey: json['emblem_key']?.toString() ?? 'conclave_emblem_01',
+        description: json['description']?.toString() ?? '',
+        language: json['language']?.toString() ?? 'en',
+        visibility: ConclaveVisibility.values.firstWhere(
+          (value) => value.name == json['visibility']?.toString(),
+          orElse: () => ConclaveVisibility.public,
+        ),
+        memberLimit: _int(json['member_limit'], fallback: 20),
+        memberCount: _int(json['member_count']),
+        level: _int(json['level'], fallback: 1),
+        xp: _int(json['xp']),
+        aerieStage: _int(json['aerie_stage'], fallback: 1).clamp(1, 10),
+        requested: json['requested'] == true,
+      );
+}
+
+class ConclaveMember {
+  const ConclaveMember({
+    required this.userId,
+    required this.keeperCode,
+    required this.displayName,
+    required this.portraitKey,
+    required this.role,
+    required this.joinedAt,
+    required this.contributionStreak,
+    this.title = 'title_001',
+    this.frameKey,
+    this.badgeKey,
+  });
+
+  final String userId;
+  final String keeperCode;
+  final String displayName;
+  final String title;
+  final String portraitKey;
+  final String? frameKey;
+  final String? badgeKey;
+  final ConclaveRole role;
+  final DateTime joinedAt;
+  final int contributionStreak;
+
+  factory ConclaveMember.fromJson(Map<String, dynamic> json) => ConclaveMember(
+        userId: json['user_id']?.toString() ?? '',
+        keeperCode: json['keeper_code']?.toString() ?? '',
+        displayName: json['display_name']?.toString() ?? 'Keeper',
+        title: json['title']?.toString() ?? 'title_001',
+        portraitKey: json['portrait_key']?.toString() ?? 'portrait_001',
+        frameKey: json['frame_key']?.toString(),
+        badgeKey: json['badge_key']?.toString(),
+        role: ConclaveRole.values.firstWhere(
+          (value) => value.name == json['role']?.toString(),
+          orElse: () => ConclaveRole.keeper,
+        ),
+        joinedAt: DateTime.tryParse(json['joined_at']?.toString() ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+        contributionStreak: _int(json['contribution_streak']),
+      );
+}
+
+class ConclaveMessage {
+  const ConclaveMessage({
+    required this.id,
+    required this.senderId,
+    required this.senderName,
+    required this.senderPortraitKey,
+    required this.kind,
+    required this.body,
+    required this.payload,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String senderId;
+  final String senderName;
+  final String senderPortraitKey;
+  final String kind;
+  final String body;
+  final Map<String, dynamic> payload;
+  final DateTime createdAt;
+
+  factory ConclaveMessage.fromJson(Map<String, dynamic> json) =>
+      ConclaveMessage(
+        id: json['message_id']?.toString() ?? '',
+        senderId: json['sender_id']?.toString() ?? '',
+        senderName: json['sender_name']?.toString() ?? 'Keeper',
+        senderPortraitKey:
+            json['sender_portrait_key']?.toString() ?? 'portrait_001',
+        kind: json['kind']?.toString() ?? 'text',
+        body: json['body']?.toString() ?? '',
+        payload: _jsonMap(json['payload']),
+        createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      );
+}
+
+class ConclaveChronicleEntry {
+  const ConclaveChronicleEntry({
+    required this.id,
+    required this.kind,
+    required this.body,
+    required this.createdAt,
+    this.actorName,
+  });
+
+  final String id;
+  final String kind;
+  final String body;
+  final String? actorName;
+  final DateTime createdAt;
+
+  factory ConclaveChronicleEntry.fromJson(Map<String, dynamic> json) =>
+      ConclaveChronicleEntry(
+        id: json['entry_id']?.toString() ?? '',
+        kind: json['kind']?.toString() ?? '',
+        body: json['body']?.toString() ?? '',
+        actorName: json['actor_name']?.toString(),
+        createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      );
+}
+
+class ConclaveJoinRequest {
+  const ConclaveJoinRequest({
+    required this.id,
+    required this.userId,
+    required this.keeperCode,
+    required this.displayName,
+    required this.portraitKey,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String userId;
+  final String keeperCode;
+  final String displayName;
+  final String portraitKey;
+  final DateTime createdAt;
+
+  factory ConclaveJoinRequest.fromJson(Map<String, dynamic> json) =>
+      ConclaveJoinRequest(
+        id: json['request_id']?.toString() ?? '',
+        userId: json['user_id']?.toString() ?? '',
+        keeperCode: json['keeper_code']?.toString() ?? '',
+        displayName: json['display_name']?.toString() ?? 'Keeper',
+        portraitKey: json['portrait_key']?.toString() ?? 'portrait_001',
+        createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      );
+}
+
+class ConclaveInvite {
+  const ConclaveInvite({
+    required this.id,
+    required this.conclave,
+    required this.expiresAt,
+  });
+
+  final String id;
+  final ConclaveSummary conclave;
+  final DateTime expiresAt;
+
+  factory ConclaveInvite.fromJson(Map<String, dynamic> json) => ConclaveInvite(
+        id: json['invite_id']?.toString() ?? '',
+        conclave: ConclaveSummary.fromJson(json),
+        expiresAt: DateTime.tryParse(json['expires_at']?.toString() ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      );
+}
+
+class ConclaveSnapshot {
+  const ConclaveSnapshot({
+    required this.conclave,
+    required this.myRole,
+    required this.contributedToday,
+    required this.members,
+    required this.messages,
+    required this.chronicle,
+    required this.joinRequests,
+  });
+
+  final ConclaveSummary conclave;
+  final ConclaveRole myRole;
+  final bool contributedToday;
+  final List<ConclaveMember> members;
+  final List<ConclaveMessage> messages;
+  final List<ConclaveChronicleEntry> chronicle;
+  final List<ConclaveJoinRequest> joinRequests;
+
+  factory ConclaveSnapshot.fromJson(Map<String, dynamic> json) {
+    List<T> parse<T>(String key, T Function(Map<String, dynamic>) parser) {
+      final raw = json[key];
+      if (raw is! List) return const [];
+      return raw
+          .whereType<Map>()
+          .map((item) => parser(Map<String, dynamic>.from(item)))
+          .toList(growable: false);
+    }
+
+    return ConclaveSnapshot(
+      conclave: ConclaveSummary.fromJson(_jsonMap(json['conclave'])),
+      myRole: ConclaveRole.values.firstWhere(
+        (value) => value.name == json['my_role']?.toString(),
+        orElse: () => ConclaveRole.keeper,
+      ),
+      contributedToday: json['contributed_today'] == true,
+      members: parse('members', ConclaveMember.fromJson),
+      messages: parse('messages', ConclaveMessage.fromJson),
+      chronicle: parse('chronicle', ConclaveChronicleEntry.fromJson),
+      joinRequests: parse('join_requests', ConclaveJoinRequest.fromJson),
+    );
+  }
+}
+
 class SocialDashboard {
   const SocialDashboard({
     required this.profile,
@@ -237,6 +549,11 @@ class OnlineSocialSnapshot {
     required this.trades,
     required this.tradeInventory,
     required this.notifications,
+    this.friendMessagesAllowed = true,
+    this.shareAchievementsWithConclave = false,
+    this.friendConversations = const [],
+    this.conclave,
+    this.conclaveInvites = const [],
   });
 
   final KeeperProfile profile;
@@ -248,6 +565,11 @@ class OnlineSocialSnapshot {
   final List<TradeOffer> trades;
   final List<TradeInventoryItem> tradeInventory;
   final List<SocialNotification> notifications;
+  final bool friendMessagesAllowed;
+  final bool shareAchievementsWithConclave;
+  final List<FriendConversationSummary> friendConversations;
+  final ConclaveSnapshot? conclave;
+  final List<ConclaveInvite> conclaveInvites;
 
   factory OnlineSocialSnapshot.fromJson(Map<String, dynamic> json) {
     List<T> parseList<T>(
@@ -267,6 +589,8 @@ class OnlineSocialSnapshot {
     if (rawProfile is! Map || rawGroupStatus is! Map) {
       throw const FormatException('Online snapshot is incomplete.');
     }
+    final socialSettings = _jsonMap(json['social_settings']);
+    final rawConclave = json['conclave'];
     return OnlineSocialSnapshot(
       profile: KeeperProfile.fromJson(Map<String, dynamic>.from(rawProfile)),
       friends: parseList('friends', KeeperProfile.fromJson),
@@ -279,6 +603,15 @@ class OnlineSocialSnapshot {
       trades: parseList('trades', TradeOffer.fromJson),
       tradeInventory: parseList('trade_inventory', TradeInventoryItem.fromJson),
       notifications: parseList('notifications', SocialNotification.fromJson),
+      friendMessagesAllowed: socialSettings['friend_messages_allowed'] != false,
+      shareAchievementsWithConclave:
+          socialSettings['share_achievements_with_conclave'] == true,
+      friendConversations:
+          parseList('friend_conversations', FriendConversationSummary.fromJson),
+      conclave: rawConclave is Map
+          ? ConclaveSnapshot.fromJson(Map<String, dynamic>.from(rawConclave))
+          : null,
+      conclaveInvites: parseList('conclave_invites', ConclaveInvite.fromJson),
     );
   }
 }
@@ -745,6 +1078,7 @@ class OnlineInventorySnapshot {
     required this.discoveredForms,
     required this.prismaticForms,
     required this.achievementCount,
+    this.achievementIds = const [],
   });
 
   final int coins;
@@ -759,6 +1093,7 @@ class OnlineInventorySnapshot {
   final List<String> discoveredForms;
   final List<String> prismaticForms;
   final int achievementCount;
+  final List<String> achievementIds;
 
   factory OnlineInventorySnapshot.fromGame(HouseholdProvider game) {
     final dragons = [game.pet, ...game.sanctuaryDragons]
@@ -853,6 +1188,7 @@ class OnlineInventorySnapshot {
       discoveredForms: game.discoveredForms.toList(growable: false),
       prismaticForms: game.prismaticForms.toList(growable: false),
       achievementCount: game.unlockedAchievementIds.length,
+      achievementIds: game.unlockedAchievementIds.toList(growable: false),
     );
   }
 
@@ -921,3 +1257,6 @@ int _int(Object? value, {int fallback = 0}) =>
 List<String> _stringList(Object? value) => value is List
     ? value.map((entry) => entry.toString()).toList(growable: false)
     : const [];
+
+Map<String, dynamic> _jsonMap(Object? value) =>
+    value is Map ? Map<String, dynamic>.from(value) : const {};

@@ -658,11 +658,41 @@ void main() {
       for (final relic in MysticRelic.values) relic.assetPath,
       'assets/images/relics/egg_crack_magic.png',
     };
-    expect(paths, hasLength(73));
+    expect(paths, hasLength(74));
     for (final path in paths) {
       final image = await _decode(path);
       expect(image.width / image.height, inInclusiveRange(.5, 2.0),
           reason: '$path must keep a usable natural aspect ratio');
+      _expectContained(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        path,
+      );
+    }
+  });
+
+  test('Friend Messages and Conclave sprites have safe transparent bounds',
+      () async {
+    final paths = <String>[
+      'assets/images/ui/friends_message.png',
+      for (var index = 1; index <= 20; index++)
+        'assets/images/ui/conclave/conclave_emblem_${index.toString().padLeft(2, '0')}.png',
+      for (var stage = 1; stage <= 10; stage++)
+        'assets/images/ui/conclave/aerie_stage_${stage.toString().padLeft(2, '0')}.png',
+    ];
+    expect(paths, hasLength(31));
+    for (final path in paths) {
+      final image = await _decode(path);
+      _expectTransparentCorners(
+        image.rgba,
+        image.width,
+        image.height,
+        path,
+      );
       _expectContained(
         image.rgba,
         image.width,

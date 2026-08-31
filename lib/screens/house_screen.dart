@@ -932,9 +932,7 @@ class _PositionedFurniture extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final item = shopCatalog
-        .where((candidate) => candidate.id == placement.itemId)
-        .firstOrNull;
+    final item = shopItemById(placement.itemId);
     if (item == null) return const SizedBox.shrink();
     final baseSize = switch (item.slot) {
       ItemSlot.bed => const Size(92, 58),
@@ -945,6 +943,7 @@ class _PositionedFurniture extends StatelessWidget {
     final width = baseSize.width * placement.scale;
     final height = baseSize.height * placement.scale;
     return Positioned(
+      key: Key('placed-furniture-${item.id}'),
       left: placement.x * sceneSize.width - width / 2,
       top: placement.y * sceneSize.height - height / 2,
       width: width,

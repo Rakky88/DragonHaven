@@ -601,4 +601,28 @@ const notificationPhraseTranslations = <String, List<String>>{
     'Quando seu painel de provas chegar a 3/3.',
     '試練ボードが3/3になったとき。',
   ],
+  'Allow precise timing': [
+    'Genaue Zeitplanung erlauben',
+    'Permitir horarios precisos',
+    'Autoriser les horaires précis',
+    'Consenti orari precisi',
+    'Permitir horários precisos',
+    '正確な時刻を許可',
+  ],
+  'Android may delay timed reminders until Alarms & reminders is allowed.': [
+    'Android kann zeitgesteuerte Erinnerungen verzögern, bis Alarme & Erinnerungen erlaubt ist.',
+    'Android puede retrasar los recordatorios programados hasta que se permita Alarmas y recordatorios.',
+    'Android peut retarder les rappels programmés tant que Alarmes et rappels n’est pas autorisé.',
+    'Android può ritardare i promemoria programmati finché Sveglie e promemoria non è consentito.',
+    'O Android pode atrasar lembretes programados até que Alarmes e lembretes seja permitido.',
+    '「アラームとリマインダー」が許可されるまで、Androidが時刻指定の通知を遅らせる場合があります。',
+  ],
+  'Allow': [
+    'Erlauben',
+    'Permitir',
+    'Autoriser',
+    'Consenti',
+    'Permitir',
+    '許可',
+  ],
 };

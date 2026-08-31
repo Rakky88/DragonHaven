@@ -289,6 +289,59 @@ class AccountScreen extends StatelessWidget {
           Text(strings.pick('Preferences', 'Voorkeuren'),
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
+          if (online.isSignedIn) ...[
+            Card(
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    key: const Key('allow-friend-messages-switch'),
+                    secondary: const Icon(
+                      Icons.chat_bubble_rounded,
+                      color: AppColors.twilight,
+                    ),
+                    title: Text(
+                      strings.pick(
+                        'Allow friend messages',
+                        'Berichten van vrienden toestaan',
+                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    subtitle: Text(strings.pick(
+                      'Friends can send messages that remain available for 24 hours.',
+                      'Vrienden kunnen berichten sturen die 24 uur beschikbaar blijven.',
+                    )),
+                    value: online.friendMessagesAllowed,
+                    onChanged:
+                        online.busy ? null : online.setFriendMessagesAllowed,
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    key: const Key('share-achievements-conclave-switch'),
+                    secondary: const Icon(
+                      Icons.auto_awesome_rounded,
+                      color: AppColors.gold,
+                    ),
+                    title: Text(
+                      strings.pick(
+                        'Share achievements with Conclave',
+                        'Achievements delen met Conclave',
+                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    subtitle: Text(strings.pick(
+                      'Unlocked achievements appear in your Conclave chat and Chronicle.',
+                      'Vrijgespeelde achievements verschijnen in je Conclave-chat en Chronicle.',
+                    )),
+                    value: online.shareAchievementsWithConclave,
+                    onChanged: online.busy
+                        ? null
+                        : online.setShareAchievementsWithConclave,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
           Card(
             child: ListTile(
               key: const Key('notification-settings-button'),

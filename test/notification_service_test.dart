@@ -26,6 +26,7 @@ void main() {
       'trials_full': HavenNotificationDestination.adventureTrials,
       'friend_request': HavenNotificationDestination.friends,
       'friend_accepted': HavenNotificationDestination.friends,
+      'friend_message': HavenNotificationDestination.friends,
       'trade': HavenNotificationDestination.friends,
       'achievement': HavenNotificationDestination.achievements,
       'egg': HavenNotificationDestination.tower,
@@ -77,6 +78,25 @@ void main() {
     expect(calls.map((call) => call.method), [
       'permissionStatus',
       'requestPermission',
+    ]);
+  });
+
+  test('exact alarm access uses its own Android settings path', () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return switch (call.method) {
+        'exactAlarmGranted' => false,
+        'openExactAlarmSettings' => true,
+        _ => null,
+      };
+    });
+
+    expect(await HavenNotifications.exactAlarmPermissionGranted(), isFalse);
+    expect(await HavenNotifications.openExactAlarmSettings(), isTrue);
+    expect(calls.map((call) => call.method), [
+      'exactAlarmGranted',
+      'openExactAlarmSettings',
     ]);
   });
 
@@ -138,7 +158,38 @@ void main() {
     });
   });
 
-  test('a full Trial board is scheduled two minutes after its refill boundary',
+  test('friend messages use their own toggle and Friends deep link', () async {
+    await HavenNotifications.friendMessage(
+      id: 'message-42',
+      title: 'New message from Lyra',
+      body: 'Open DragonHaven to read it.',
+    );
+
+    expect(calls, hasLength(1));
+    expect(calls.single.method, 'showWhenBackground');
+    expect(calls.single.arguments, {
+      'id': 'friend-message-message-42',
+      'title': 'New message from Lyra',
+      'body': 'Open DragonHaven to read it.',
+      'kind': 'friend_message',
+    });
+
+    calls.clear();
+    HavenNotifications.configure(
+      HavenNotificationCategory.values
+          .where((category) =>
+              category != HavenNotificationCategory.friendMessages)
+          .toSet(),
+    );
+    await HavenNotifications.friendMessage(
+      id: 'muted-message',
+      title: 'New message',
+      body: 'Muted',
+    );
+    expect(calls, isEmpty);
+  });
+
+  test('a full Trial board is scheduled at its exact refill boundary',
       () async {
     final at = DateTime(2036, 8, 26, 10, 45);
     await HavenNotifications.trialsFull(
@@ -151,9 +202,7 @@ void main() {
     expect(calls.single.method, 'schedule');
     expect(calls.single.arguments, {
       'id': 'trials-full',
-      'at': at
-          .add(HavenNotifications.scheduledDeliveryDelay)
-          .millisecondsSinceEpoch,
+      'at': at.millisecondsSinceEpoch,
       'title': 'Three Trials are ready',
       'body': 'Your Trial board is full.',
       'kind': 'trials_full',
@@ -174,9 +223,7 @@ void main() {
     expect(calls.single.method, 'schedule');
     expect(calls.single.arguments, {
       'id': 'special-adventure-birthday-2036',
-      'at': at
-          .add(HavenNotifications.scheduledDeliveryDelay)
-          .millisecondsSinceEpoch,
+      'at': at.millisecondsSinceEpoch,
       'title': 'A Special Adventure has appeared',
       'body': 'A Wish on Golden Wings is waiting.',
       'kind': 'special_adventure_available',
@@ -202,7 +249,7 @@ void main() {
     expect(calls, isEmpty);
   });
 
-  test('egg-ready notifications use the two-minute safety delay and event kind',
+  test('egg-ready notifications use the exact hatch time and event kind',
       () async {
     final at = DateTime(2036, 8, 23, 12, 34, 56);
     await HavenNotifications.eggReady(
@@ -216,9 +263,7 @@ void main() {
     expect(calls.single.method, 'schedule');
     expect(calls.single.arguments, {
       'id': 'egg-fixed-037',
-      'at': at
-          .add(HavenNotifications.scheduledDeliveryDelay)
-          .millisecondsSinceEpoch,
+      'at': at.millisecondsSinceEpoch,
       'title': 'Your Mysterious Egg is ready',
       'body': 'Something inside wants to hatch in the Rooftop Nest.',
       'kind': 'egg',

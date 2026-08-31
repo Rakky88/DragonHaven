@@ -57,6 +57,43 @@ void main() {
     );
   });
 
+  testWidgets('Founding Supporter portrait matches regular portrait scale',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Row(
+            children: [
+              ProfilePortraitSprite(
+                key: const Key('regular-portrait'),
+                portrait: profilePortraitCatalog.first,
+              ),
+              const ProfilePortraitSprite(
+                key: Key('supporter-portrait'),
+                portrait: supporterProfilePortrait,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    double scaleFor(Key key) {
+      final transform = tester.widget<Transform>(
+        find.descendant(
+          of: find.byKey(key),
+          matching: find.byType(Transform),
+        ),
+      );
+      return transform.transform.storage.first;
+    }
+
+    expect(scaleFor(const Key('regular-portrait')),
+        ProfilePortraitSprite.portraitFillScale);
+    expect(scaleFor(const Key('supporter-portrait')),
+        ProfilePortraitSprite.portraitFillScale);
+  });
+
   testWidgets('friend portraits use the correct rarity frame and glow',
       (tester) async {
     const expectedColors = {
@@ -208,6 +245,13 @@ void main() {
           actorDisplayName: 'Miriam',
           createdAt: now,
         ),
+        SocialNotification(
+          id: 'notice-message',
+          kind: 'friend_message',
+          entityId: 'message-1',
+          actorDisplayName: 'Lyra',
+          createdAt: now,
+        ),
       ]);
     final online = OnlineAccountProvider(
       repository: repository,
@@ -216,16 +260,17 @@ void main() {
 
     await online.initialize();
 
-    expect(calls, hasLength(5));
+    expect(calls, hasLength(6));
     expect(
       calls.map((call) => (call.arguments as Map)['kind']),
       containsAll([
         'friend_request',
         'friend_accepted',
+        'friend_message',
         'trade',
       ]),
     );
-    expect(repository.acknowledgedNotificationIds, hasLength(5));
+    expect(repository.acknowledgedNotificationIds, hasLength(6));
     expect(repository.notificationRows, isEmpty);
     online.dispose();
   });
@@ -1138,6 +1183,13 @@ void main() {
       ..stage = DragonStage.hatchling
       ..name = 'Ember';
     final repository = _FakeSocialRepository(inventoryImported: true)
+      ..conversationRows.add(const FriendConversationSummary(
+        friendId: 'friend-user',
+        messagesAllowed: true,
+        unreadCount: 3,
+        lastMessage: 'See you in the Aerie!',
+        lastMessageFromMe: false,
+      ))
       ..tradeInventoryRows.add(const TradeInventoryItem(
         item: TradeItem(
           kind: TradeItemKind.chest,
@@ -1193,6 +1245,11 @@ void main() {
     final friendTitle = accountTitleById('title_321')!.label('en');
     expect(find.text(friendTitle), findsOneWidget);
     expect(find.byKey(const Key('friend-trade-friend-user')), findsOneWidget);
+    expect(find.byKey(const Key('friend-message-friend-user')), findsOneWidget);
+    expect(
+      find.byKey(const Key('friend-message-unread-friend-user')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('my-keeper-profile-card')));
     await tester.pump(const Duration(milliseconds: 500));
@@ -1616,6 +1673,9 @@ class _FakeSocialRepository implements SocialRepository {
     }
   }
 
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   bool _inventoryImported;
   int importCount = 0;
   int removeCount = 0;
@@ -1696,6 +1756,7 @@ class _FakeSocialRepository implements SocialRepository {
   final List<GroupAdventureLobby> groupRows = [];
   final List<TradeOffer> tradeRows = [];
   final List<TradeInventoryItem> tradeInventoryRows = [];
+  final List<FriendConversationSummary> conversationRows = [];
   GroupAdventureStatus groupStatus = const GroupAdventureStatus(
     slot: 1,
     adventureId: 'group_1',
@@ -1763,6 +1824,7 @@ class _FakeSocialRepository implements SocialRepository {
       trades: List.of(tradeRows),
       tradeInventory: List.of(tradeInventoryRows),
       notifications: List.of(notificationRows),
+      friendConversations: List.of(conversationRows),
     );
   }
 

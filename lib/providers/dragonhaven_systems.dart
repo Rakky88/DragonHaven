@@ -1546,8 +1546,7 @@ extension DragonHavenSystems on HouseholdProvider {
     return AdventureStartResult.started;
   }
 
-  DateTime adventureReturnNotificationAt(DateTime endsAt) =>
-      endsAt.add(const Duration(seconds: 1));
+  DateTime adventureReturnNotificationAt(DateTime endsAt) => endsAt;
 
   Future<void> _scheduleAdventureReturnNotification(
     AdventureRun run,
@@ -1556,8 +1555,6 @@ extension DragonHavenSystems on HouseholdProvider {
     final strings = AppStrings(languageCode);
     await HavenNotifications.schedule(
       id: 'adventure-${run.id}',
-      // Keep the logical boundary one second beyond completion. The shared
-      // notification service then applies its two-minute delivery margin.
       at: adventureReturnNotificationAt(run.endsAt),
       title: strings.pick('${dragon.displayName} has returned',
           '${dragon.displayName} is teruggekeerd'),

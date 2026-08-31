@@ -9,6 +9,7 @@ enum HavenNotificationCategory {
   evolutions,
   friendRequests,
   friendAcceptances,
+  friendMessages,
   tradeRequests,
   tradeReturns,
   tradeCompletions,
@@ -33,11 +34,6 @@ enum HavenNotificationPermissionStatus {
 
 abstract final class HavenNotifications {
   static const _channel = MethodChannel('nl.dragonhaven.app/notifications');
-
-  /// Android alarms are deliberately delivered two minutes after the
-  /// gameplay boundary. This absorbs small device/server clock differences
-  /// and guarantees that a notification never announces a reward too early.
-  static const scheduledDeliveryDelay = Duration(minutes: 2);
   static final _navigationEvents =
       StreamController<HavenNotificationDestination>.broadcast();
   static Set<HavenNotificationCategory> _enabled =
@@ -82,6 +78,7 @@ abstract final class HavenNotifications {
       'trials_full' => HavenNotificationDestination.adventureTrials,
       'friend_request' ||
       'friend_accepted' ||
+      'friend_message' ||
       'trade' =>
         HavenNotificationDestination.friends,
       'achievement' => HavenNotificationDestination.achievements,
@@ -150,6 +147,27 @@ abstract final class HavenNotifications {
     }
   }
 
+  static Future<bool> exactAlarmPermissionGranted() async {
+    try {
+      return await _channel.invokeMethod<bool>('exactAlarmGranted') ?? true;
+    } on MissingPluginException {
+      return true;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  static Future<bool> openExactAlarmSettings() async {
+    try {
+      return await _channel.invokeMethod<bool>('openExactAlarmSettings') ??
+          false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   static Future<void> schedule({
     required String id,
     required DateTime at,
@@ -157,12 +175,11 @@ abstract final class HavenNotifications {
     required String body,
     String kind = 'event',
   }) async {
-    final deliveryAt = at.add(scheduledDeliveryDelay);
-    if (!deliveryAt.isAfter(DateTime.now())) return;
+    if (!at.isAfter(DateTime.now())) return;
     try {
       await _channel.invokeMethod<void>('schedule', {
         'id': id,
-        'at': deliveryAt.millisecondsSinceEpoch,
+        'at': at.millisecondsSinceEpoch,
         'title': title,
         'body': body,
         'kind': kind,
@@ -274,6 +291,19 @@ abstract final class HavenNotifications {
         title: title,
         body: body,
         kind: 'friend_accepted',
+      );
+
+  static Future<void> friendMessage({
+    required String id,
+    required String title,
+    required String body,
+  }) =>
+      _showWhenBackground(
+        category: HavenNotificationCategory.friendMessages,
+        id: 'friend-message-$id',
+        title: title,
+        body: body,
+        kind: 'friend_message',
       );
 
   static Future<void> trialsFull({

@@ -14,6 +14,8 @@ import '../widgets/dragon_trial_records.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
 import 'draconomicon_screen.dart';
+import 'conclave_screen.dart';
+import 'friend_messages_screen.dart';
 
 class FriendsScreen extends StatelessWidget {
   const FriendsScreen({super.key});
@@ -90,6 +92,8 @@ class FriendsScreen extends StatelessWidget {
           )
         else
           for (final friend in sortedFriends) _FriendTile(friend: friend),
+        const SizedBox(height: 12),
+        _ConclaveEntry(online: online),
         if (online.blockedKeepers.isNotEmpty) ...[
           _SectionTitle(strings.pick('Blocked', 'Geblokkeerd')),
           for (final keeper in online.blockedKeepers)
@@ -476,8 +480,9 @@ class _FriendTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final activeTrades =
-        context.watch<OnlineAccountProvider>().tradesWith(friend.userId);
+    final online = context.watch<OnlineAccountProvider>();
+    final activeTrades = online.tradesWith(friend.userId);
+    final conversation = online.conversationWith(friend.userId);
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -536,6 +541,44 @@ class _FriendTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 5),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    key: Key('friend-message-${friend.userId}'),
+                    tooltip: strings.pick('Messages', 'Berichten'),
+                    onPressed: () => _openFriendMessages(context, friend),
+                    icon: const GameIconSprite(
+                      GameIconKind.friendsMessage,
+                      size: 34,
+                    ),
+                  ),
+                  if ((conversation?.unreadCount ?? 0) > 0)
+                    Positioned(
+                      right: 1,
+                      top: 0,
+                      child: Container(
+                        key: Key('friend-message-unread-${friend.userId}'),
+                        constraints: const BoxConstraints(minWidth: 18),
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent,
+                          borderRadius: BorderRadius.circular(99),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: Text(
+                          '${conversation!.unreadCount}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               _FriendTradeButton(
                 key: Key('friend-trade-${friend.userId}'),
                 activeCount: activeTrades.length,
@@ -553,6 +596,105 @@ class _FriendTile extends StatelessWidget {
     );
   }
 }
+
+class _ConclaveEntry extends StatelessWidget {
+  const _ConclaveEntry({required this.online});
+  final OnlineAccountProvider online;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final current = online.conclave?.conclave;
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        key: const Key('open-conclave'),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const ConclaveScreen()),
+        ),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFEEE7FF), Color(0xFFFFF1C8)],
+            ),
+          ),
+          child: Row(
+            children: [
+              Image.asset(
+                current == null
+                    ? aerieStageAsset(1)
+                    : aerieStageAsset(current.aerieStage),
+                width: 72,
+                height: 64,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.castle_rounded,
+                  color: AppColors.twilight,
+                  size: 48,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      current?.name ??
+                          strings.pick(
+                              'Join a Conclave', 'Word lid van een Conclave'),
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      current == null
+                          ? strings.pick(
+                              'Find Keepers and build an Aerie together.',
+                              'Vind Hoeders en bouw samen een Aerie.',
+                            )
+                          : '${strings.pick('Aerie stage', 'Aerie-fase')} ${current.aerieStage}/10 · ${strings.pick('Level', 'Level')} ${current.level}',
+                      style: const TextStyle(color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              if (online.conclaveInvites.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(right: 5),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    '${online.conclaveInvites.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _openFriendMessages(
+  BuildContext context,
+  KeeperProfile friend,
+) =>
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => FriendMessagesScreen(friend: friend),
+      ),
+    );
 
 Future<void> _showFriendProfile(
   BuildContext context,

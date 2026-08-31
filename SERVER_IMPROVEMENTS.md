@@ -1,5 +1,33 @@
 # DragonHaven serververbeteringen — v0.04.09
 
+## Releasecandidate v0.05.00 — gecontroleerde uitrol gestart
+
+Productie staat tijdens de voorbereiding nog op migratie 29/29. Migratie
+`202608310030_friend_messages_and_conclaves.sql` en een exact begrensde
+29→30-workflow zijn lokaal voorbereid; productie wordt pas gewijzigd nadat de
+uitgebreide staging-E2E en databasegates groen zijn.
+
+- Friend Messages zijn uitsluitend tussen bevestigde vrienden beschikbaar,
+  hebben server-side opt-out en rate limits en bewaren berichten maximaal 24
+  uur.
+- Conclaves ondersteunen 4–20 leden, afgeschermde rollen, aanvragen en
+  uitnodigingen, een tijdelijke chat, een Conclave Chronicle en tien groeiende
+  Aerie-fasen.
+- RLS, ingetrokken directe tabelrechten, afgeschermde RPC's en row locks vormen
+  de beveiligingsgrens. De dagelijkse Aerie-ledger voorkomt dat ledenwissels de
+  daglimiet omzeilen.
+- Met maximaal twintig dagelijkse bijdragen kan Aerie-fase 10 op zijn vroegst
+  na 192 dagen worden bereikt; daarmee blijft de grootste vorm minimaal een
+  half jaar verwijderd.
+- De lokale analyzer, 347 tests, sprite-alpha-audits en de ondertekende
+  v0.05.00-productie-APK zijn groen.
+
+De stagingworkflow test naast de bestaande Friends-, trade- en volledige Group
+Adventure-flow nu ook Friend Messages (ongelezen, lezen en opt-out) en Conclaves
+(genormaliseerd unieke naam, join, Warden-rang, chat, Aerie-bijdrage en volledige
+cleanup). De gebruiker heeft staging, productiemigratie 30 en release v0.05.00
+op 31 augustus 2026 expliciet toegestaan.
+
 ## Wat is verbeterd
 
 ### Online startup en nieuwe accounts

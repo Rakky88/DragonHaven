@@ -1,8 +1,6 @@
 package nl.dragonhaven.app
 
 import android.content.Intent
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.Manifest
 import android.os.Build
 import android.os.Handler
@@ -21,14 +19,6 @@ import androidx.core.app.NotificationManagerCompat
 import kotlin.random.Random
 
 class MainActivity : FlutterActivity() {
-    private data class ScheduledNotification(
-        val id: String,
-        val at: Long,
-        val title: String,
-        val body: String,
-        val kind: String,
-    )
-
     private var activityInForeground = false
     private var flutterAppInForeground = false
     // Stay silent until Flutter has loaded and sent the persisted preference.
@@ -48,7 +38,8 @@ class MainActivity : FlutterActivity() {
     private var notificationPermissionRequestPending = false
     private var explicitNotificationPermissionResult: MethodChannel.Result? = null
     private var notificationChannel: MethodChannel? = null
-    private val notificationsWaitingForPermission = linkedMapOf<String, ScheduledNotification>()
+    private val notificationsWaitingForPermission =
+        linkedMapOf<String, DragonHavenScheduledNotification>()
     private val mainHandler = Handler(Looper.getMainLooper())
     private val audioManager by lazy { getSystemService(AUDIO_SERVICE) as AudioManager }
     private val musicAttributes = AudioAttributes.Builder()
@@ -183,6 +174,7 @@ class MainActivity : FlutterActivity() {
                 "permissionGranted" -> result.success(hasNotificationPermission())
                 "permissionStatus" -> result.success(notificationPermissionStatus())
                 "requestPermission" -> requestNotificationPermissionExplicitly(result)
+                "exactAlarmGranted" -> result.success(hasExactAlarmPermission())
                 "openNotificationSettings" -> {
                     try {
                         startActivity(
@@ -195,6 +187,31 @@ class MainActivity : FlutterActivity() {
                         result.success(false)
                     }
                 }
+                "openExactAlarmSettings" -> {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || hasExactAlarmPermission()) {
+                        result.success(true)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        startActivity(
+                            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                data = Uri.parse("package:$packageName")
+                            },
+                        )
+                        result.success(true)
+                    } catch (_: Exception) {
+                        try {
+                            startActivity(
+                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.parse("package:$packageName")
+                                },
+                            )
+                            result.success(true)
+                        } catch (_: Exception) {
+                            result.success(false)
+                        }
+                    }
+                }
                 "schedule" -> {
                     val id = call.argument<String>("id")
                     val at = call.argument<Long>("at")
@@ -205,7 +222,8 @@ class MainActivity : FlutterActivity() {
                         result.error("invalid_notification", "Missing notification data.", null)
                         return@setMethodCallHandler
                     }
-                    val notification = ScheduledNotification(id, at, title, body, kind)
+                    val notification =
+                        DragonHavenScheduledNotification(id, at, title, body, kind)
                     // Always install a fallback alarm. If the runtime notification
                     // permission is granted from the prompt below, the same
                     // PendingIntent is immediately upgraded to the most precise
@@ -408,6 +426,9 @@ class MainActivity : FlutterActivity() {
         hasRuntimeNotificationPermission() &&
             NotificationManagerCompat.from(this).areNotificationsEnabled()
 
+    private fun hasExactAlarmPermission(): Boolean =
+        DragonHavenAlarmScheduler.exactAlarmAllowed(this)
+
     private fun notificationPermissionStatus(): String {
         if (hasNotificationPermission()) return "granted"
         if (Build.VERSION.SDK_INT < 33 || hasRuntimeNotificationPermission()) {
@@ -523,52 +544,12 @@ class MainActivity : FlutterActivity() {
         return true
     }
 
-    private fun scheduleNotification(notification: ScheduledNotification) {
-        val intent = Intent(this, DragonHavenNotificationReceiver::class.java).apply {
-            putExtra("title", notification.title)
-            putExtra("body", notification.body)
-            putExtra("kind", notification.kind)
-            putExtra("notificationId", notification.id.hashCode())
-        }
-        val pending = PendingIntent.getBroadcast(
-            this,
-            notification.id.hashCode(),
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        val alarm = getSystemService(ALARM_SERVICE) as AlarmManager
-        val exactAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-            alarm.canScheduleExactAlarms()
-        if (exactAllowed) {
-            try {
-                alarm.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    notification.at,
-                    pending,
-                )
-                return
-            } catch (_: SecurityException) {
-                // Device policy can still reject exact alarms; retain a safe
-                // inexact fallback instead of losing the hatch reminder.
-            }
-        }
-        alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, notification.at, pending)
-    }
+    private fun scheduleNotification(notification: DragonHavenScheduledNotification) =
+        DragonHavenAlarmScheduler.schedule(this, notification)
 
     private fun cancelNotification(id: String) {
         notificationsWaitingForPermission.remove(id)
-        val intent = Intent(this, DragonHavenNotificationReceiver::class.java)
-        val pending = PendingIntent.getBroadcast(
-            this,
-            id.hashCode(),
-            intent,
-            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
-        )
-        if (pending != null) {
-            val alarm = getSystemService(ALARM_SERVICE) as AlarmManager
-            alarm.cancel(pending)
-            pending.cancel()
-        }
+        DragonHavenAlarmScheduler.cancel(this, id)
         NotificationManagerCompat.from(this).cancel(id.hashCode())
     }
 

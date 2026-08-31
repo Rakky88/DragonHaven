@@ -57,6 +57,38 @@ abstract interface class SocialRepository {
   Future<void> removeFriend(String userId);
   Future<void> blockKeeper(String userId);
   Future<void> unblockKeeper(String userId);
+  Future<List<FriendMessage>> openFriendMessages(String friendId);
+  Future<void> sendFriendMessage(String friendId, String body);
+  Future<void> setSocialPreferences({
+    required bool friendMessagesAllowed,
+    required bool shareAchievementsWithConclave,
+  });
+  Future<List<ConclaveSummary>> listConclaves();
+  Future<ConclaveSnapshot?> loadConclaveSnapshot();
+  Future<void> createConclave({
+    required String name,
+    required String emblemKey,
+    required String description,
+    required String language,
+    required ConclaveVisibility visibility,
+    required int memberLimit,
+  });
+  Future<void> requestOrJoinConclave(String conclaveId);
+  Future<void> respondConclaveJoinRequest(String requestId, bool accept);
+  Future<void> inviteToConclave(String keeperCode);
+  Future<void> respondConclaveInvite(String inviteId, bool accept);
+  Future<void> contributeToConclave();
+  Future<void> sendConclaveMessage({
+    required String kind,
+    required String body,
+    Map<String, dynamic> payload = const {},
+  });
+  Future<void> synchronizeConclaveAchievements(List<String> achievementIds);
+  Future<void> leaveConclave();
+  Future<void> setConclaveMemberRole(String userId, ConclaveRole role);
+  Future<void> transferConclave(String userId);
+  Future<void> removeConclaveMember(String userId);
+  Future<void> dissolveConclave();
   Future<GroupAdventureStatus> loadGroupAdventureStatus();
   Future<List<GroupAdventureLobby>> loadGroupAdventures();
   Future<void> createGroupLobby(
@@ -170,6 +202,67 @@ class DisabledSocialRepository implements SocialRepository {
   Future<void> deleteMyAccount(String password) async => _disabled();
   @override
   Future<void> unblockKeeper(String userId) async => _disabled();
+  @override
+  Future<List<FriendMessage>> openFriendMessages(String friendId) async =>
+      _disabled();
+  @override
+  Future<void> sendFriendMessage(String friendId, String body) async =>
+      _disabled();
+  @override
+  Future<void> setSocialPreferences({
+    required bool friendMessagesAllowed,
+    required bool shareAchievementsWithConclave,
+  }) async =>
+      _disabled();
+  @override
+  Future<List<ConclaveSummary>> listConclaves() async => _disabled();
+  @override
+  Future<ConclaveSnapshot?> loadConclaveSnapshot() async => _disabled();
+  @override
+  Future<void> createConclave({
+    required String name,
+    required String emblemKey,
+    required String description,
+    required String language,
+    required ConclaveVisibility visibility,
+    required int memberLimit,
+  }) async =>
+      _disabled();
+  @override
+  Future<void> requestOrJoinConclave(String conclaveId) async => _disabled();
+  @override
+  Future<void> respondConclaveJoinRequest(
+          String requestId, bool accept) async =>
+      _disabled();
+  @override
+  Future<void> inviteToConclave(String keeperCode) async => _disabled();
+  @override
+  Future<void> respondConclaveInvite(String inviteId, bool accept) async =>
+      _disabled();
+  @override
+  Future<void> contributeToConclave() async => _disabled();
+  @override
+  Future<void> sendConclaveMessage({
+    required String kind,
+    required String body,
+    Map<String, dynamic> payload = const {},
+  }) async =>
+      _disabled();
+  @override
+  Future<void> synchronizeConclaveAchievements(
+          List<String> achievementIds) async =>
+      _disabled();
+  @override
+  Future<void> leaveConclave() async => _disabled();
+  @override
+  Future<void> setConclaveMemberRole(String userId, ConclaveRole role) async =>
+      _disabled();
+  @override
+  Future<void> transferConclave(String userId) async => _disabled();
+  @override
+  Future<void> removeConclaveMember(String userId) async => _disabled();
+  @override
+  Future<void> dissolveConclave() async => _disabled();
   @override
   Future<GroupAdventureStatus> loadGroupAdventureStatus() async => _disabled();
   @override

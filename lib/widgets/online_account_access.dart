@@ -466,6 +466,57 @@ String socialMessage(
     'keeper_blocked' => strings.pick('Keeper blocked.', 'Hoeder geblokkeerd.'),
     'keeper_unblocked' =>
       strings.pick('Keeper unblocked.', 'Blokkade opgeheven.'),
+    'messages_not_friends' => strings.pick(
+        'Messages are only available between friends.',
+        'Berichten zijn alleen beschikbaar tussen vrienden.'),
+    'messages_disabled' => strings.pick(
+        'This Keeper is not accepting messages.',
+        'Deze Hoeder accepteert geen berichten.'),
+    'message_invalid' => strings.pick(
+        'Write a message between 1 and 500 characters.',
+        'Schrijf een bericht van 1 tot en met 500 tekens.'),
+    'message_rate_limited' => strings.pick(
+        'You are sending messages too quickly. Try again soon.',
+        'Je verstuurt te snel berichten. Probeer het zo opnieuw.'),
+    'already_in_conclave' => strings.pick(
+        'You are already in a Conclave.', 'Je bent al lid van een Conclave.'),
+    'conclave_name_taken' => strings.pick(
+        'That Conclave name is already in use.',
+        'Die Conclave-naam is al in gebruik.'),
+    'conclave_name_immutable' => strings.pick(
+        'A Conclave name cannot be changed after it is founded.',
+        'Een Conclave-naam kan na de oprichting niet worden gewijzigd.'),
+    'conclave_not_found' => strings.pick('This Conclave could not be found.',
+        'Deze Conclave kon niet worden gevonden.'),
+    'conclave_full' =>
+      strings.pick('This Conclave is full.', 'Deze Conclave zit vol.'),
+    'conclave_invite_required' => strings.pick('This Conclave is invite only.',
+        'Deze Conclave is alleen op uitnodiging.'),
+    'conclave_permission_denied' => strings.pick(
+        'Your Conclave rank cannot do that.',
+        'Je Conclave-rang mag dit niet doen.'),
+    'conclave_already_contributed' => strings.pick(
+        'You already tended the Aerie today.',
+        'Je hebt de Aerie vandaag al verzorgd.'),
+    'conclave_daily_limit' => strings.pick(
+        'This Conclave has reached today\'s Aerie contribution limit.',
+        'Deze Conclave heeft de dagelijkse Aerie-limiet bereikt.'),
+    'conclave_request_not_found' => strings.pick(
+        'This join request is no longer available.',
+        'Dit deelnameverzoek is niet meer beschikbaar.'),
+    'conclave_invite_not_found' => strings.pick(
+        'This Conclave invitation is no longer available.',
+        'Deze Conclave-uitnodiging is niet meer beschikbaar.'),
+    'conclave_member_not_found' => strings.pick(
+        'This Keeper is no longer in the Conclave.',
+        'Deze Hoeder zit niet meer in de Conclave.'),
+    'not_in_conclave' => strings.pick(
+        'Join a Conclave first.', 'Word eerst lid van een Conclave.'),
+    'flightmaster_must_transfer_or_dissolve' => strings.pick(
+        'Transfer the Flightmaster rank or dissolve the Conclave first.',
+        'Draag eerst de Flightmaster-rang over of hef de Conclave op.'),
+    'conclave_invite_sent' => strings.pick(
+        'Conclave invitation sent.', 'Conclave-uitnodiging verstuurd.'),
     'group_lobby_created' => strings.pick(
         'Group created. Friends can now join.',
         'Groep gemaakt. Vrienden kunnen zich nu aanmelden.'),

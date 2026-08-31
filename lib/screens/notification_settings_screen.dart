@@ -17,6 +17,7 @@ class NotificationSettingsScreen extends StatefulWidget {
 class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     with WidgetsBindingObserver {
   HavenNotificationPermissionStatus? _platformPermissionStatus;
+  bool? _exactAlarmGranted;
   HavenNotificationCategory? _pendingEnableCategory;
   bool _permissionFlowBusy = false;
 
@@ -41,7 +42,12 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
   }
 
   Future<void> _refreshPlatformPermission() async {
-    final status = await HavenNotifications.platformPermissionStatus();
+    final results = await Future.wait<Object>([
+      HavenNotifications.platformPermissionStatus(),
+      HavenNotifications.exactAlarmPermissionGranted(),
+    ]);
+    final status = results[0] as HavenNotificationPermissionStatus;
+    final exactAlarmGranted = results[1] as bool;
     if (!mounted) return;
     final game = context.read<HouseholdProvider>();
     if (status == HavenNotificationPermissionStatus.denied) {
@@ -54,11 +60,20 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
         }
       }
     }
-    if (mounted) setState(() => _platformPermissionStatus = status);
+    if (mounted) {
+      setState(() {
+        _platformPermissionStatus = status;
+        _exactAlarmGranted = exactAlarmGranted;
+      });
+    }
   }
 
   Future<void> _openPlatformSettings() async {
     await HavenNotifications.openPlatformNotificationSettings();
+  }
+
+  Future<void> _openExactAlarmSettings() async {
+    await HavenNotifications.openExactAlarmSettings();
   }
 
   Future<void> _setCategory(
@@ -206,6 +221,57 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             ),
             const SizedBox(height: 12),
           ],
+          if (_platformPermissionStatus ==
+                  HavenNotificationPermissionStatus.granted &&
+              _exactAlarmGranted == false) ...[
+            Card(
+              key: const Key('exact-alarm-permission-card'),
+              color: const Color(0xFFFFF3E2),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.alarm_rounded,
+                      color: Color(0xFF9B4A20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            strings.pick(
+                              'Allow precise timing',
+                              'Sta precieze timing toe',
+                            ),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            strings.pick(
+                              'Android may delay timed reminders until Alarms & reminders is allowed.',
+                              'Android kan tijdgebonden meldingen vertragen totdat Alarmen en herinneringen is toegestaan.',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      key: const Key('open-exact-alarm-settings'),
+                      onPressed: _openExactAlarmSettings,
+                      child: Text(
+                        strings.pick('Allow', 'Toestaan'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           Card(
             clipBehavior: Clip.antiAlias,
             child: Column(
@@ -288,6 +354,13 @@ class _NotificationToggle extends StatelessWidget {
           'Geaccepteerde vriendschappen',
           'When your friend request is accepted.',
           'Wanneer jouw vriendschapsverzoek wordt geaccepteerd.',
+        ),
+      HavenNotificationCategory.friendMessages => (
+          Icons.chat_bubble_rounded,
+          'Friend messages',
+          'Berichten van vrienden',
+          'When a friend sends you a private message.',
+          'Wanneer een vriend je een privébericht stuurt.',
         ),
       HavenNotificationCategory.tradeRequests => (
           Icons.swap_horiz_rounded,

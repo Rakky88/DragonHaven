@@ -305,13 +305,31 @@ void main() {
     final receiver = File(
       'android/app/src/main/kotlin/nl/dragonhaven/app/DragonHavenNotificationReceiver.kt',
     ).readAsStringSync();
+    final alarmScheduler = File(
+      'android/app/src/main/kotlin/nl/dragonhaven/app/DragonHavenAlarmScheduler.kt',
+    ).readAsStringSync();
+    final rescheduleReceiver = File(
+      'android/app/src/main/kotlin/nl/dragonhaven/app/DragonHavenAlarmRescheduleReceiver.kt',
+    ).readAsStringSync();
     final nativeBridge = File(
       'android/app/src/main/kotlin/nl/dragonhaven/app/MainActivity.kt',
     ).readAsStringSync();
     expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
     expect(manifest, contains('android.permission.SCHEDULE_EXACT_ALARM'));
-    expect(nativeBridge, contains('setExactAndAllowWhileIdle'));
-    expect(nativeBridge, contains('setAndAllowWhileIdle'));
+    expect(manifest, contains('android.permission.RECEIVE_BOOT_COMPLETED'));
+    expect(manifest, contains('android.intent.action.BOOT_COMPLETED'));
+    expect(manifest, contains('android.intent.action.MY_PACKAGE_REPLACED'));
+    expect(manifest, contains('SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED'));
+    expect(alarmScheduler, contains('setExactAndAllowWhileIdle'));
+    expect(alarmScheduler, contains('setAndAllowWhileIdle'));
+    expect(alarmScheduler,
+        contains('notification.at <= System.currentTimeMillis()'));
+    expect(alarmScheduler, contains('reschedulePending'));
+    expect(rescheduleReceiver, contains('reschedulePending(context)'));
+    expect(nativeBridge, contains('hasExactAlarmPermission'));
+    expect(nativeBridge, contains('"exactAlarmGranted"'));
+    expect(nativeBridge, contains('"openExactAlarmSettings"'));
+    expect(nativeBridge, contains('ACTION_REQUEST_SCHEDULE_EXACT_ALARM'));
     expect(nativeBridge, contains('onRequestPermissionsResult'));
     expect(nativeBridge, contains('notificationsWaitingForPermission'));
     expect(nativeBridge,
@@ -726,5 +744,67 @@ void main() {
         contains('supabase db push --linked --include-all --dry-run'));
     expect(workflow, contains('./tool/release_server_preflight.ps1'));
     expect(workflow, contains('DragonHaven-production-migration-26-to-27'));
+  });
+
+  test('friend messages and Conclaves are private, bounded and durable', () {
+    final migration = File(
+      'supabase/migrations/202608310030_friend_messages_and_conclaves.sql',
+    ).readAsStringSync();
+    final ui = File('lib/screens/conclave_screen.dart').readAsStringSync();
+    final workflow = File(
+      '.github/workflows/production-migrate-30.yml',
+    ).readAsStringSync();
+
+    expect(migration, contains('private.are_friends'));
+    expect(migration, contains("interval '24 hours'"));
+    expect(migration, contains('dragonhaven-ephemeral-social-cleanup'));
+    expect(migration, contains('friend_messages_allowed boolean'));
+    expect(migration, contains("kind = 'friend_message'"));
+    expect(migration, contains('member_limit between 4 and 20'));
+    expect(migration, contains('level between 1 and 50'));
+    expect(
+      migration,
+      contains(
+        'create unique index conclaves_name_unique_idx on public.conclaves(lower(btrim(name)))',
+      ),
+    );
+    expect(migration, contains('values (btrim(p_name)'));
+    expect(migration, contains('private.prevent_conclave_name_change'));
+    expect(migration, contains('conclave_name_is_immutable'));
+    expect(migration, contains("raise exception 'conclave_name_immutable'"));
+    expect(migration, contains('conclave_daily_contributions'));
+    expect(migration, contains('contribution_on=today)>=20'));
+    expect(migration, contains('((c.xp+10)/850)'));
+    expect(migration, contains('private.reassign_departing_flightmaster'));
+    expect(migration, contains('enable row level security'));
+    expect(
+      migration,
+      contains('revoke all on table public.conclave_messages'),
+    );
+    expect(ui, isNot(contains('Flight Chronicle')));
+    expect(ui, isNot(contains('Share achievements with Flight')));
+    expect(workflow, contains('MIGRATE_PRODUCTION_29_TO_30'));
+    expect(workflow, contains("\$expectedRemote = '202608310029'"));
+    expect(workflow, contains("\$expectedPending = @('202608310030')"));
+    expect(workflow,
+        contains('supabase db push --linked --include-all --dry-run'));
+    expect(workflow, contains('./tool/release_server_preflight.ps1'));
+
+    expect(File('assets/images/ui/friends_message.png').existsSync(), isTrue);
+    for (var index = 1; index <= 20; index++) {
+      final suffix = index.toString().padLeft(2, '0');
+      expect(
+        File('assets/images/ui/conclave/conclave_emblem_$suffix.png')
+            .existsSync(),
+        isTrue,
+      );
+    }
+    for (var stage = 1; stage <= 10; stage++) {
+      final suffix = stage.toString().padLeft(2, '0');
+      expect(
+        File('assets/images/ui/conclave/aerie_stage_$suffix.png').existsSync(),
+        isTrue,
+      );
+    }
   });
 }
