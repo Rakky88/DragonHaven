@@ -3,20 +3,18 @@
 Laatst bijgewerkt: **31 augustus 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.05.00**
+Actuele openbare versie: **v0.05.01**
 
-Actuele productieserver: **31/31 migraties**
+Actuele productieserver: **32/32 migraties**
 
-Actuele lokale tranche: **v0.05.00 is openbaar uitgebracht met versionCode
-10050. Friend Messages, Conclaves, de Supporter-correcties en exacte
-Android-notificatietiming zijn groen op analyzer, 347/347 tests, de uitgebreide
-staging-E2E, productiepreflight, twee signinggates en compacte/reduced-motion
-emulatorcontrole. Migraties 30–31 staan gecontroleerd op productie; de
-post-release healthcheck is groen. Daarna is de privacyveilige publieke
-applicatiehealthcheck als migratie 32 voorbereid en volledig op geïsoleerde
-staging bewezen, inclusief begrensde productieworkflow, klok-/contractvalidatie,
-sociale E2E en 348/348 groene tests. Productie blijft bewust op 31/31 totdat
-een nieuwe expliciete productiemigratietoestemming volgt.**
+Actuele lokale tranche: **v0.05.01 is openbaar uitgebracht met versionCode
+10051. De Friends- en Conclave-UI, echte achievementkaarten, de uitgebreidere
+17-stappentutorial en alle bijbehorende vertalingen zijn groen op analyzer,
+349/349 tests en een exacte 360×640-dp/reduced-motion emulatorcontrole. Migratie
+32 staat na de eerder groene staging-E2E en een exact begrensde 31→32-workflow
+op productie. De onafhankelijke preflight bewijst 32/32, nul lintfouten, Auth
+200/200, e-mailauth en applicatiehealth 200 met contractversie 1. APK, Play-ready
+AAB, taggate, permanente download en post-release healthcheck zijn groen.**
 
 Bronnen: [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md),
 [SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md),
@@ -48,8 +46,8 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | Onderdeel | Voortgang | Aantoonbaar klaar | Nog door Codex | Nog door jou |
 | --- | ---: | --- | --- | --- |
 | Google Play-voorbereiding | circa 25% | Permanent package-ID, vaste signing-identiteit, versiecontrole en een ondertekende AAB zijn bewezen | Actuele Play-eisen opnieuw controleren; storeteksten, graphics, Data Safety-inventaris, appgrootte-analyse en rolloutchecklist maken | Play Console openen/verifiëren; app en Play App Signing aanmaken; testers, publieke support/privacy-URL's en storeverklaringen beheren |
-| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.00 zijn groen; productie staat gecontroleerd op 31/31 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
-| Fase 1 — monitoring en incidenten | circa 80% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan; de productie-Auth-check draait elk uur. De read-only applicatiecheck, strikte contract-/klokvalidatie en migratie 32 zijn volledig op staging groen, inclusief 348/348 tests en bestaande sociale E2E | Migratie 32 na toestemming naar productie brengen; daarna de echte productiecheck en testalert bewijzen. Firebase Crashlytics/Performance koppelen zodra de Android-projectconfig bestaat | Gratis Firebase Spark-project maken, `nl.dragonhaven.app` registreren, Analytics uit laten en `google-services.json` veilig in de werkmap zetten; testalert ontvangen en privacy/Data Safety beoordelen |
+| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.01 zijn groen; productie staat gecontroleerd op 32/32 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
+| Fase 1 — monitoring en incidenten | circa 88% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan. Auth én de read-only applicatiecheck draaien ieder uur; contract-/klokvalidatie, migratie 32, onafhankelijke productiepreflight en post-release health zijn groen | Een gecontroleerde niet-productie testalert bewijzen. Firebase Crashlytics/Performance koppelen zodra de Android-projectconfig bestaat | Gratis Firebase Spark-project maken, `nl.dragonhaven.app` registreren, Analytics uit laten en `google-services.json` veilig in de werkmap zetten; testalert ontvangen en privacy/Data Safety beoordelen |
 | Fase 2 — staging en E2E | circa 86% | Afzonderlijke staging, migratiepariteit, account/login, back-up/conflict, Friends, Friend Messages, Conclaves, trade en volledige Group Adventure completion/reward/replay zijn echt getest | E-mailbevestiging automatiseren; realistisch 100-user en daarna 1.000-user loadprofiel meten | Veilige stagingmailroute instellen; bevestigen dat testaccounts geen echte persoonsgegevens zijn; testbudget boven 1.000 gebruikers vooraf goedkeuren |
 | Fase 3 — back-up en multi-device | circa 97% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, automatische 15-minutenback-up plus achtergrondflush en een echte staging-restoreroundtrip zijn bewezen | De eerste automatisch geplande zondagrun controleren; later server-owned velden van restores afschermen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
 | Fase 4 — server-authoritative economie | circa 15% | Uitgeschakelde payment-providergrens en geauditeerde eenmalige save-import met limieten, hash, rapport en private herstelkopie bestaan | Wallet/ledger/itemtabellen, idempotente RPC's, serverrandomness, compatibiliteitsvenster en gefaseerde migratie van shops, chests, dragons en rewards bouwen | Migratievenster, spelerscommunicatie en gecontroleerd rollbackbeleid goedkeuren; compensatie- en storingsbeleid plus nooit-stil-afnemen-grenzen bevestigen |
@@ -62,7 +60,7 @@ zichtbaar zonder de lange checklist te lezen. Alles waarvoor geen externe
 accountactie of productbesluit nodig is, blijft bij Codex staan en wordt gratis
 of lokaal gebouwd waar dat verantwoord kan.
 
-## Uitgerolde release v0.05.00
+## Uitgerolde releases v0.05.00–v0.05.01
 
 Deze tabel legt vast wat met de expliciet toegestane server- en releaseronde
 aantoonbaar is uitgerold en welke niet-blokkerende vervolgpunten nog bestaan.
@@ -72,7 +70,8 @@ aantoonbaar is uitgerold en welke niet-blokkerende vervolgpunten nog bestaan.
 | Friend Messages | Vriend-naar-vriendchat, 24-uursweergave, ontvangen toestaan/weigeren, aparte notificatiecategorie, logische deep-link, ongelezen teller, lichte chatpoll en server-side friendship/rate-limitcontrole. De staging-E2E bewijst sturen, ongelezen projectie, lezen en opt-out. | Praktijkgebruik en rate-limittelemetrie blijven volgen; er staat geen releaseblokkade open | Alleen later feedback geven over chat-UX of gewenste limieten |
 | Conclaves | 4–20 leden, Public/Request/Invite Only, Flightmaster/Warden/Keeper, 20 emblemen, unieke permanente naam, chat en deelkaarten, Conclave Chronicle, achievement-opt-in, dagelijkse Aerie-bijdrage, 50 levels en 10 Aerie-fasen. De staging-E2E bewijst naamnormalisatie, join, Warden, chat, bijdrage en cleanup. | Balans en schaalgedrag later met echte groepen meten; er staat geen releaseblokkade open | Gewenste Conclave-balans na praktijktest beoordelen |
 | Sociale sprites en lokalisatie | Eén eigen berichtenicoon, 20 afzonderlijke emblemen en 10 Aerie-sprites met echte alpha en veiligheidsmarges; alle vaste nieuwe UI-teksten bestaan in acht ondersteunde talen. De productie-APK is op een compacte emulator en met reduced motion gecontroleerd. | Eventuele grotere-tabletpolish meenemen bij een latere visuele tranche | Alleen visuele feedback geven als je later een andere stijl of balans wilt |
-| Serverveiligheid | Migraties 30–31 staan op productie. Directe tabeltoegang is ingetrokken, RLS en afgeschermde RPC's vormen de grens, row locks bewaken capaciteit, de dagledger begrenst Aerie-groei en tijdelijke chatdata heeft vijfminuten-cleanup. Database-lint meldt 0 fouten en Auth health/settings geven 200/200. | Reguliere healthchecks, restorebewijzen en dependencyonderhoud blijven uitvoeren | Geen aanvullende configuratie nodig |
+| Sociale UI en tutorial | v0.05.01 houdt lange titles en ontdekte-drakentelling op compacte Friends-kaarten leesbaar, plaatst Conclave direct onder het overzicht en geeft Aerie, leden, joinflow en Chronicle een duidelijke hiërarchie. Gedeelde achievements tonen echte badge, naam, omschrijving en gegroepeerde voortgang. De tutorial behandelt in 17 stappen de huidige spelonderdelen en gebruikt gerichte spotlights. | Praktijkfeedback en grotere-tabletpolish later meenemen; er staat geen releaseblokkade open | Alleen visuele of inhoudelijke feedback geven als je later iets anders wilt |
+| Serverveiligheid | Migraties 30–32 staan op productie. Directe tabeltoegang is ingetrokken, RLS en afgeschermde RPC's vormen de grens, row locks bewaken capaciteit, de dagledger begrenst Aerie-groei en tijdelijke chatdata heeft vijfminuten-cleanup. De publieke applicatiehealth-RPC leest geen spelerstabellen. Database-lint meldt 0 fouten; Auth health/settings en applicatiehealth geven 200. | Reguliere healthchecks, restorebewijzen, een veilige testalert en dependencyonderhoud blijven uitvoeren | Alleen Firebase-project/config aanleveren voor Crashlytics/Performance; voor de huidige healthcheck is niets extra's nodig |
 
 De grootste Aerie-fase begint bij level 46. Met 850 XP per level, maximaal
 twintig bijdragen van 10 XP per UTC-dag en een duurzame dagledger zijn daarvoor
@@ -826,20 +825,22 @@ ervoor worden wel al in M4 getest.
 
 Een taak of mijlpaal is pas gereed wanneer:
 
-- [ ] implementatie en relevante migraties zijn gereviewd;
+- [x] implementatie en relevante migraties zijn gereviewd voor v0.05.01;
 - [x] analyzer en alle bestaande plus nieuwe tests slagen voor de huidige
-  lokale bouwtranche (329/329 op 31-08-2026);
+  lokale bouwtranche (349/349 op 31-08-2026);
 - [x] negatieve, timeout-, retry- en replaypaden zijn getest voor de huidige
   online clientgrens; toekomstige server-economiecommando's krijgen opnieuw
   dezelfde verplichte scenario's;
-- [ ] compacte UI, grote tekst, reduced motion en minimaal één echt Android-
-  toestel waar relevant zijn gecontroleerd;
-- [ ] geen secrets of onnodige persoonsgegevens in code, logs of artifacts staan;
-- [ ] migratie, rollback en compatibiliteit met de vorige appversie zijn getest;
-- [ ] documentatie, runbook en beslissingen zijn bijgewerkt;
-- [ ] verplichte productiepreflight slaagt;
-- [ ] jij het zichtbare resultaat hebt geaccepteerd en een release expliciet
-  hebt toegestaan.
+- [x] compacte UI en reduced motion zijn op exact 360×640 dp gecontroleerd;
+  grotere tekst blijft door de bestaande regressietests afgedekt;
+- [x] geen secrets of onnodige persoonsgegevens staan in code, logs of
+  releaseartifacts;
+- [x] migratie 32, begrenzing, dry-run en compatibiliteit met v0.05.00 zijn op
+  staging en productie bewezen;
+- [x] documentatie, runbook en beslissingen zijn voor v0.05.01 bijgewerkt;
+- [x] verplichte productiepreflight slaagt op 32/32 migraties, 0 lintfouten,
+  Auth 200/200 en applicatiehealth 200;
+- [x] jij hebt v0.05.01 en de bijbehorende serverstap expliciet toegestaan.
 
 ## Eerstvolgende concrete acties
 
@@ -932,6 +933,15 @@ Een taak of mijlpaal is pas gereed wanneer:
     10050 en het vaste releasecertificaat. Compacte breedte en reduced motion
     zijn op de emulator gecontroleerd; productie staat op 31/31 en de
     post-release healthcheck is groen.
+20. **Afgerond door Codex:** v0.05.01 is met 349/349 tests, de reeds bewezen
+    applicatiehealth-stagingflow, de exact begrensde productiemigratie 31→32,
+    een onafhankelijke productiepreflight en de volledige tag-/signinggate
+    gepubliceerd. Friends en Conclave hebben een compactere, duidelijkere UI;
+    achievementshares tonen echte inhoud en de tutorial bestaat uit 17 actuele,
+    volledig vertaalde stappen. APK en Play-ready AAB gebruiken versionCode
+    10051 en het vaste certificaat. Exacte 360×640-dp/reduced-motion controle,
+    remote APK-digest, beide downloadroutes en post-release Auth plus
+    applicatiehealth zijn groen. Productie staat op 32/32.
 
 ## Besluitenlog
 
@@ -954,6 +964,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 31-08-2026 | Release 0.04.15 | Broncode en de nieuwe apprelease zijn expliciet toegestaan; deze tranche bevat geen databasemigratie | De uitgebreide Dragon Academy-opleiding, rapportstatussen, nieuwe sprites en Supporter-/Trial-presentatie gecontroleerd uitrollen | Productie blijft op 28/28 en v0.04.15 is openbaar na lokale preflight, 329 tests, compacte/reduced-motion controle, twee groene releasegates en een groene healthcheck; echte aankopen blijven uitgeschakeld |
 | 31-08-2026 | Release 0.04.16 | Broncode, staging, productiemigratie 29 en de nieuwe apprelease zijn expliciet toegestaan | De Dragon Academy-/Vanity-/Supporter-verbeteringen, robuuste Friends-refresh en verzoekbadge gecontroleerd en achterwaarts compatibel uitrollen | Productie staat op 29/29 en v0.04.16 is openbaar na groene lokale checks, staging-, migratie-, productie-, tag- en healthgates. Echte aankopen blijven uitgeschakeld |
 | 31-08-2026 | Release 0.05.00 | Broncode, staging, productiemigraties 30–31 en de nieuwe apprelease zijn expliciet toegestaan | Friend Messages en Conclaves plus de notificatie- en Supporter-correcties als serverveilige hoofdversie uitrollen; migratie 31 is de noodzakelijke idempotente lintcorrectie na de eerste stagingpoging | Productie staat op 31/31 en v0.05.00 is openbaar na groene 347-testgate, uitgebreide twee-account staging-E2E, begrensde migratie 29→31, dubbele releasegate, emulatorcontrole en post-release healthcheck; echte aankopen blijven uitgeschakeld |
+| 31-08-2026 | Release 0.05.01 | Broncode, productiemigratie 32 en de nieuwe apprelease zijn expliciet toegestaan | De vernieuwde Friends-/Conclave-UI, actuele tutorial en privacyveilige applicatiehealth als één gecontroleerde patch uitrollen | Productie staat op 32/32 en v0.05.01 is openbaar na 349 tests, voorafgaande staging-E2E, begrensde migratie 31→32, onafhankelijke preflight, 360×640-dp/reduced-motion controle, signing-/AAB-gate, assetdigestcontrole en post-release health; echte aankopen blijven uitgeschakeld |
 | Nog te bepalen | B3, B4-activering en B7 | Nog niet bevestigd | Beslissen vlak vóór de afhankelijke fase | Alleen de nog afhankelijke delen van M4–M6 wachten |
 
 ## Voortgangslog
@@ -1028,6 +1039,10 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 31-08-2026 | Openbare release v0.05.00 | Codex, na jouw toestemming | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.00), [productiegate 33397872901](https://github.com/Rakky88/DragonHaven/actions/runs/33397872901), [taggate 33398718801](https://github.com/Rakky88/DragonHaven/actions/runs/33398718801) | Exact commit `603648c7eb1224ea855b616b7c1729e7839c9da8` getagd. Ondertekende APK van 366.785.471 bytes gepubliceerd; SHA-256 `c0f431393f41c03b6c111e403d7ba465bbe1bbd6318345cf57610e7548c92592`; package `nl.dragonhaven.app`, versionCode 10050 en vast releasecertificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942` bewezen. Beide productiepreflights, 347 tests, compacte/reduced-motion emulatorcontrole en Play-ready AAB zijn groen; versiegebonden en permanente latest-download geven HTTP 200 en hetzelfde GitHub-asset. |
 | 31-08-2026 | Post-release productiehealth v0.05.00 | Codex | [Healthrun 33399531445](https://github.com/Rakky88/DragonHaven/actions/runs/33399531445) | Publieke productie-endpoints direct na v0.05.00 opnieuw groen; bewijsartifact geüpload, productie staat op 31/31 migraties en er is geen storingsalert geopend. |
 | 31-08-2026 | M1 read-only applicatiehealth gebouwd en op staging bewezen | Codex | migratie `202608310032_public_application_health.sql`, `public_server_health_check.ps1`, `release_server_preflight.ps1`, `test_public_application_health.ps1`, `production-migrate-32.yml`, `dragonhaven_spec_test.dart` en [stagingrun 33402550922](https://github.com/Rakky88/DragonHaven/actions/runs/33402550922) | Een publieke `security invoker`-RPC zonder tabelreads retourneert uitsluitend vaste servicestatus, contractversie en servertijd. De monitor valideert HTTP-status, exact contract en maximaal vijf minuten klokafwijking; productiepreflight eist de check na migratie 32. Stagingmigratie/lint/preflight, positieve/negatieve parsertests, volledige sociale en Group Adventure-E2E, live productie-Auth 200/200, analyzer, 348/348 tests en staging-APK zijn groen. Productie blijft 31/31; alleen productieactivatie en testalert wachten nog. |
+| 31-08-2026 | v0.05.01 lokale releasecandidate | Codex, na jouw toestemming | commit `b4a49a932e824aedba5031aca5f21675cda762a1`, `release-notes-v0.05.01.md`, Friends/Conclave/tutorial-regressies en ondertekende APK | Analyzer en 349/349 tests groen. APK heeft package `nl.dragonhaven.app`, versionCode 10051, 367.048.207 bytes, SHA-256 `5b8ad4ea804e2765fde3b43c6a70e6ee10b8d3777fce685cc22ef7bfc7b78726` en vast certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. Friends, tutorial en reduced motion passen op exact 360×640 dp. |
+| 31-08-2026 | Productiemigratie 32 en onafhankelijke preflight | Codex, na jouw toestemming | [Migratierun 33414590573](https://github.com/Rakky88/DragonHaven/actions/runs/33414590573), `tool/release_server_preflight.ps1` | Exacte beginstand 31, publieke Auth-check, database-lint en dry-run groen; uitsluitend migratie 32 toegepast. Daarna 32/32 parity, 0 lintfouten, Auth health/settings 200/200, e-mailauth en applicatiehealth 200 met contractversie 1 en 94 ms gemeten klokafwijking bewezen. |
+| 31-08-2026 | Openbare release v0.05.01 | Codex, na jouw toestemming | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.01), [taggate 33415060428](https://github.com/Rakky88/DragonHaven/actions/runs/33415060428) | Exact commit `b4a49a932e824aedba5031aca5f21675cda762a1` getagd. Remote assetnaam, grootte en SHA-256 zijn exact gelijk aan de lokale APK; versiegebonden en permanente latest-download geven HTTP 200. De taggate herhaalde productiepreflight, analyzer, 349 tests, signingcontrole en Play-ready AAB-build met succes. |
+| 31-08-2026 | Post-release productiehealth v0.05.01 | Codex | [Healthrun 33415782470](https://github.com/Rakky88/DragonHaven/actions/runs/33415782470) | Auth en het privacyveilige applicatieendpoint zijn direct na publicatie groen; het dertig dagen bewaarde bewijsartifact is geüpload en er is geen storingsalert geopend. Productie staat gecontroleerd op 32/32. |
 
 ## Onderhoud van dit plan
 

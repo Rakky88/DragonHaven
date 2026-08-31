@@ -1,7 +1,7 @@
 # DragonHaven incident- en diagnoserunbook
 
 Laatst bijgewerkt: **31 augustus 2026**
-Uitgangsversie: **v0.05.00 / productieschema 31; applicatiehealth wacht op migratie 32**
+Uitgangsversie: **v0.05.01 / productieschema 32; applicatiehealth actief**
 
 ## Doel
 
@@ -21,7 +21,7 @@ databasewachtwoorden of volledige saves in een ticket of incidentlog.
   rapport met appversie, Keeper ID, user UUID, veilige foutcodes, supportcodes
   en timings. E-mail, wachtwoord, tokens, inventory en save-inhoud ontbreken.
 - `tool/public_server_health_check.ps1` meet de twee publieke Auth-endpoints en,
-  na migratie 32, de privacyveilige applicatie-RPC. Het JSON-rapport bevat
+  sinds migratie 32, de privacyveilige applicatie-RPC. Het JSON-rapport bevat
   alleen statussen, timings, contractversie en klokafwijking.
 - De GitHub-workflow **Public server health check** voert dezelfde check ieder
   uur en handmatig uit zonder private secrets en bewaart het artifact dertig
@@ -30,6 +30,9 @@ databasewachtwoorden of volledige saves in een ticket of incidentlog.
 - [Healthrun 33194121092](https://github.com/Rakky88/DragonHaven/actions/runs/33194121092)
   bewees op 28 augustus 2026 dat deze productiecheck en artifactopslag groen
   werken met de actuele CI-runtime.
+- [Healthrun 33415782470](https://github.com/Rakky88/DragonHaven/actions/runs/33415782470)
+  bewees direct na v0.05.01 dat zowel Auth als het applicatieendpoint groen
+  zijn, het bewijsartifact wordt bewaard en geen SEV-1-alert nodig was.
 - `tool/release_server_preflight.ps1` controleert daarnaast migration parity,
   database-lint en e-mailauth op de gekoppelde server.
 - De Supabase Dashboard-logs en -metrics blijven de primaire bron voor
@@ -88,7 +91,7 @@ gepauzeerd project moeten als incident worden behandeld. Zie de officiële
 ### Auth en nieuwe accounts
 
 - Controleer `/auth/v1/health` en `/auth/v1/settings` plus gemeten latency.
-- Controleer na migratie 32 ook
+- Controleer ook
   `/rest/v1/rpc/dragonhaven_public_health`: status `ok`, service
   `dragonhaven-online`, contractversie 1 en een veilige serverklok. De RPC leest
   bewust geen gebruikers- of gameplaydata.

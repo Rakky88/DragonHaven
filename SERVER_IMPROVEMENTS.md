@@ -1,8 +1,8 @@
-# DragonHaven serververbeteringen — v0.05.00
+# DragonHaven serververbeteringen — v0.05.01
 
-## Productie v0.05.00 — gecontroleerde uitrol voltooid
+## Productie v0.05.01 — gecontroleerde uitrol voltooid
 
-Productie staat gecontroleerd op migratie 31/31. Migraties
+Productie staat gecontroleerd op migratie 32/32. Migraties
 `202608310030_friend_messages_and_conclaves.sql` en
 `202608310031_fix_conclave_function_ambiguity.sql` zijn pas na de uitgebreide
 staging-E2E, database-lint, dry-run en exacte 29→31-begrenzing naar productie
@@ -26,18 +26,28 @@ correctieronde onaangeraakt gebleven.
   emulatorcontrole, de ondertekende v0.05.00-productie-APK en beide
   Play-ready AAB/signinggates zijn groen.
 
-De stagingworkflow test naast de bestaande Friends-, trade- en volledige Group
-Adventure-flow nu ook Friend Messages (ongelezen, lezen en opt-out) en Conclaves
-(genormaliseerd unieke naam, join, Warden-rang, chat, Aerie-bijdrage en volledige
-cleanup). [Stagingrun 33396777406](https://github.com/Rakky88/DragonHaven/actions/runs/33396777406),
+v0.05.01 voegt daar migratie
+`202608310032_public_application_health.sql` aan toe. De publieke, read-only
+`security invoker`-RPC leest geen speler-, account- of gameplaytabel en geeft
+alleen vaste servicestatus, contractversie en de databaseklok terug. De
+31→32-productieworkflow accepteerde uitsluitend de exact verwachte beginstand,
+lintte en dry-runde vóór toepassing en eiste daarna volledige parity, Auth én
+applicatiehealth. Analyzer, 349 tests, een exacte 360×640-dp/reduced-motion
+emulatorcontrole, de ondertekende v0.05.01-APK en Play-ready AAB zijn groen.
+
+Voor v0.05.00 testte de stagingworkflow naast de bestaande Friends-, trade- en
+volledige Group Adventure-flow ook Friend Messages (ongelezen, lezen en opt-out)
+en Conclaves (genormaliseerd unieke naam, join, Warden-rang, chat,
+Aerie-bijdrage en volledige cleanup).
+[Stagingrun 33396777406](https://github.com/Rakky88/DragonHaven/actions/runs/33396777406),
 [productiemigratie 33397552524](https://github.com/Rakky88/DragonHaven/actions/runs/33397552524),
 [productiegate 33397872901](https://github.com/Rakky88/DragonHaven/actions/runs/33397872901),
 [taggate 33398718801](https://github.com/Rakky88/DragonHaven/actions/runs/33398718801)
 en [post-release healthcheck 33399531445](https://github.com/Rakky88/DragonHaven/actions/runs/33399531445)
-zijn groen. De onafhankelijke productiepreflight bewijst 31/31 migratiepariteit,
+zijn groen. Die v0.05.00-preflight bewees 31/31 migratiepariteit,
 0 database-lintfouten, Auth health/settings 200/200 en geconfigureerde e-mailauth.
 
-## Volgende audittranche — applicatiehealth lokaal klaar
+## Applicatiehealth — op staging en productie bewezen
 
 Migratie `202608310032_public_application_health.sql` voegt een publieke,
 read-only `security invoker`-RPC toe die geen spelers-, account- of
@@ -48,15 +58,20 @@ Supabase-gateway → PostgREST → PostgreSQL-pad en een klokafwijking van maxim
 vijf minuten.
 
 De positieve en negatieve contracttests, PowerShell-parser, bestaande live
-Auth-check, analyzer en 348/348 Flutter-tests zijn groen. Ook
+Auth-check, analyzer en de toenmalige 348/348 Flutter-tests zijn groen. Ook
 [stagingrun 33402550922](https://github.com/Rakky88/DragonHaven/actions/runs/33402550922)
 is volledig geslaagd: migratie 32, database-lint/preflight, de nieuwe endpoint-
 en klokcontrole, volledige sociale en Group Adventure-E2E en staging-APK.
-De exact begrensde `production-migrate-32.yml` controleert productie op
-beginstand 31, lint en dry-run, past uitsluitend migratie 32 toe en eist daarna
-volledige preflight en applicatiehealth. Deze tranche staat nog niet op `main`
-of productie; productie blijft daarom veilig op 31/31 totdat daar opnieuw
-toestemming voor is.
+De exact begrensde `production-migrate-32.yml` controleerde productie op
+beginstand 31, lint en dry-run, paste uitsluitend migratie 32 toe en eiste
+daarna volledige preflight en applicatiehealth. Dit is groen bewezen in
+[productiemigratie 33414590573](https://github.com/Rakky88/DragonHaven/actions/runs/33414590573).
+De onafhankelijke preflight mat daarna 32/32 migraties, 0 lintfouten, Auth
+200/200, applicatiehealth 200, contractversie 1 en 94 ms klokafwijking. De
+[v0.05.01-taggate 33415060428](https://github.com/Rakky88/DragonHaven/actions/runs/33415060428)
+en [post-release healthcheck 33415782470](https://github.com/Rakky88/DragonHaven/actions/runs/33415782470)
+zijn eveneens groen; de uurlijkse monitor gebruikt nu standaard beide publieke
+healthpaden.
 
 ## Wat is verbeterd
 
@@ -94,7 +109,7 @@ beveiligingsgrens.
 
 De gekoppelde Supabase-projectreferentie is `tnzathhutuwmohmjfrlo`.
 
-Op 28 augustus 2026 is uitgevoerd:
+Op 31 augustus 2026 is voor v0.05.01 uitgevoerd:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tool\release_server_preflight.ps1 `
@@ -103,15 +118,18 @@ powershell -ExecutionPolicy Bypass -File .\tool\release_server_preflight.ps1 `
 
 Resultaat:
 
-- migraties: 24 lokaal en 24 remote;
+- migraties: 32 lokaal en 32 remote;
 - database lint: 0 fouten voor `extensions`, `private` en `public`;
 - Auth health: HTTP 200;
 - Auth settings: HTTP 200;
-- e-mailauth: geconfigureerd.
+- e-mailauth: geconfigureerd;
+- applicatiehealth: HTTP 200, service `dragonhaven-online`, contractversie 1;
+- databaseklokafwijking tijdens de onafhankelijke meting: 94 ms.
 
-Deze huidige productie-uitkomst is opnieuw bewezen door
-[migratierun 33204827275](https://github.com/Rakky88/DragonHaven/actions/runs/33204827275)
-en [release-gate 33204987488](https://github.com/Rakky88/DragonHaven/actions/runs/33204987488).
+Deze productie-uitkomst is onafhankelijk en via CI bewezen door
+[migratierun 33414590573](https://github.com/Rakky88/DragonHaven/actions/runs/33414590573),
+[release-gate 33415060428](https://github.com/Rakky88/DragonHaven/actions/runs/33415060428)
+en [healthrun 33415782470](https://github.com/Rakky88/DragonHaven/actions/runs/33415782470).
 De release mag niet worden gepubliceerd wanneer deze preflight op een later
 moment een mismatch of fout meldt.
 
@@ -152,8 +170,9 @@ draakprofielen. De exacte 23→24-dry-run en nacontrole zijn groen uitgevoerd.
 ## Aanbevolen volgende serverstappen
 
 1. Koppel na ontvangst van `google-services.json` Firebase Crashlytics en
-   Performance en voeg daarna een veilige read-only applicatie-RPC aan de
-   bestaande healthcheck toe.
+   Performance. De veilige read-only applicatie-RPC en uurlijkse gecombineerde
+   healthcheck zijn inmiddels actief; bewijs nog een gecontroleerde
+   niet-productie testalert.
 2. Verplaats coin-, gem-, chest- en relicmutaties naar idempotente server-RPC's
    voordat echte aankopen worden geactiveerd.
 3. Controleer de eerste automatisch geplande zondagse restore-integriteitsrun
