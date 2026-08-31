@@ -1012,4 +1012,24 @@ void main() {
     expect(supportOperations, isNot(contains('target_profile.display_name')));
     expect(supportOperations, isNot(contains('save.state')));
   });
+
+  test('rollback and hotfix runbook is forward-only and evidence-gated', () {
+    final runbook = File('ROLLBACK_HOTFIX_RUNBOOK.md').readAsStringSync();
+
+    expect(runbook, contains('app fix-forward'));
+    expect(runbook, contains('database fix-forward'));
+    expect(runbook, contains('expliciete toestemming'));
+    expect(runbook, contains('0.00.01'));
+    expect(runbook, contains('versionCode'));
+    expect(runbook, contains('nl.dragonhaven.app'));
+    expect(runbook, contains('tool/release_server_preflight.ps1'));
+    expect(runbook, contains('migration parity'));
+    expect(runbook, contains('signingfingerprint'));
+    expect(runbook, contains('migratie `N+1`'));
+    expect(runbook, contains('Productie gebruikt nooit `db reset`'));
+    expect(runbook, contains('algemene productie-maintenance-'));
+    expect(runbook, contains('maximaal dertig dagen'));
+    expect(runbook, contains('stagingrestore'));
+    expect(runbook, contains('runbook zelf wijzigt geen server'));
+  });
 }
