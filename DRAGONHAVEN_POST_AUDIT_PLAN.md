@@ -47,9 +47,9 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | --- | ---: | --- | --- | --- |
 | Google Play-voorbereiding | circa 25% | Permanent package-ID, vaste signing-identiteit, versiecontrole en een ondertekende AAB zijn bewezen | Actuele Play-eisen opnieuw controleren; storeteksten, graphics, Data Safety-inventaris, appgrootte-analyse en rolloutchecklist maken | Play Console openen/verifiëren; app en Play App Signing aanmaken; testers, publieke support/privacy-URL's en storeverklaringen beheren |
 | Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.01 zijn groen; productie staat gecontroleerd op 32/32 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
-| Fase 1 — monitoring en incidenten | circa 88% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan. Auth én de read-only applicatiecheck draaien ieder uur; contract-/klokvalidatie, migratie 32, onafhankelijke productiepreflight en post-release health zijn groen | Een gecontroleerde niet-productie testalert bewijzen. Firebase Crashlytics/Performance koppelen zodra de Android-projectconfig bestaat | Gratis Firebase Spark-project maken, `nl.dragonhaven.app` registreren, Analytics uit laten en `google-services.json` veilig in de werkmap zetten; testalert ontvangen en privacy/Data Safety beoordelen |
+| Fase 1 — monitoring en incidenten | circa 90% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan. Auth én de read-only applicatiecheck draaien ieder uur; contract-/klokvalidatie, migratie 32, onafhankelijke productiepreflight en post-release health zijn groen. Een handmatig-only, secretvrij testalertcontract is lokaal gebouwd en getest | De drill na expliciete toestemming op `main` activeren, uitvoeren en het afleverbewijs vastleggen. Firebase Crashlytics/Performance koppelen zodra de Android-projectconfig bestaat | Gratis Firebase Spark-project maken, `nl.dragonhaven.app` registreren, Analytics uit laten en `google-services.json` veilig in de werkmap zetten; de GitHub-testmelding daadwerkelijk ontvangen en privacy/Data Safety beoordelen |
 | Fase 2 — staging en E2E | circa 86% | Afzonderlijke staging, migratiepariteit, account/login, back-up/conflict, Friends, Friend Messages, Conclaves, trade en volledige Group Adventure completion/reward/replay zijn echt getest | E-mailbevestiging automatiseren; realistisch 100-user en daarna 1.000-user loadprofiel meten | Veilige stagingmailroute instellen; bevestigen dat testaccounts geen echte persoonsgegevens zijn; testbudget boven 1.000 gebruikers vooraf goedkeuren |
-| Fase 3 — back-up en multi-device | circa 97% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, automatische 15-minutenback-up plus achtergrondflush en een echte staging-restoreroundtrip zijn bewezen | De eerste automatisch geplande zondagrun controleren; later server-owned velden van restores afschermen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
+| Fase 3 — back-up en multi-device | circa 98% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, automatische 15-minutenback-up plus achtergrondflush zijn gebouwd. De eerste automatisch geplande zondagrestore is groen en rondde de actieve account/back-up/restorerondgang in circa 7,3 seconden af | Later server-owned economievelden van restores afschermen en na fase 4 het terugrol-/duplicatiecontract opnieuw bewijzen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
 | Fase 4 — server-authoritative economie | circa 15% | Uitgeschakelde payment-providergrens en geauditeerde eenmalige save-import met limieten, hash, rapport en private herstelkopie bestaan | Wallet/ledger/itemtabellen, idempotente RPC's, serverrandomness, compatibiliteitsvenster en gefaseerde migratie van shops, chests, dragons en rewards bouwen | Migratievenster, spelerscommunicatie en gecontroleerd rollbackbeleid goedkeuren; compensatie- en storingsbeleid plus nooit-stil-afnemen-grenzen bevestigen |
 | Fase 5 — Google Play Billing | circa 8%, bewust uitgesteld | Product-ID-contract voor valuta en het eenmalige Supporter Pack, idempotente lokale entitlementgrens en uitgeschakelde nepimplementatie houden de architectuur upgradebaar zonder nu kosten te maken | Pas na fase 4 de Billing-SDK, servervalidatie, acknowledgement, refunds/retries en Play-tracktests bouwen | Pas later beslissen wanneer verkoop actief mag worden; merchantprofiel, producten/prijzen/landen, service-identiteit, testers en beleid beheren |
 | Fase 6 — support en privacy | circa 20% | Accountverwijdering, veilige supportdiagnostiek en eerste incidentprocedures bestaan | Minimaal supportzoekpad, procedures, least-privilege logging en consistente retentie/verwijdertests bouwen | Publiek supportadres, verantwoordelijken/reactietijden, privacy- en verwijderpagina, wettelijke retentie en productietoegang beheren |
@@ -297,8 +297,11 @@ resterende keuzes is het aanbevolen startpunt:
 
 Bevestigd op 28 augustus 2026: automatische back-up met vijftienminutengrens,
 bovenstaande RPO/RTO en Rick als maandelijkse controle-eigenaar. De automatische
-trigger en wekelijkse stagingtest zijn gebouwd; de eerste geplande workflowrun
-moet na opname op `main` nog bewijs leveren.
+trigger en wekelijkse stagingtest zijn gebouwd. De eerste geplande zondagrun
+[`33305301266`](https://github.com/Rakky88/DragonHaven/actions/runs/33305301266)
+slaagde op 30 augustus 2026: de actieve bevestigde-account-, back-up- en
+restorerondgang duurde circa 7,3 seconden en het privacyarme bewijsartifact
+wordt dertig dagen bewaard.
 
 ## Prioriteiten en releasepoorten
 
@@ -386,10 +389,10 @@ bewaren de controle-uitkomst blijvend.
   - back-upsuccessen, revision conflicts en restore-uitkomsten;
   - actieve appversies en client/servercompatibiliteit.
 - [x] Voeg synthetische healthchecks toe voor publieke Auth.
-- [ ] Activeer de veilige, read-only applicatiecheck. Migratie 32, de
+- [x] Activeer de veilige, read-only applicatiecheck. Migratie 32, de
   privacyvrije RPC, parsertests, workflowintegratie en exact begrensde
-  productiemigratie zijn klaar en op staging bewezen; alleen productieactivatie
-  en de daaropvolgende testalert wachten nog.
+  productiemigratie zijn op staging en productie bewezen; de uurlijkse en
+  post-release controles zijn groen.
 - [x] Schrijf een incidentrunbook met ernstniveaus, triage, rollback,
   communicatie en controle na herstel.
 - [x] Voeg tests toe die bewijzen dat gevoelige data wordt geredigeerd.
@@ -412,7 +415,11 @@ bewaren de controle-uitkomst blijvend.
 - [ ] Een gecontroleerde stagingfout binnen de afgesproken tijd zichtbaar is
   met versie en correlation ID, zonder persoonsgegevens of secrets.
 - [ ] Een testalert aankomt bij de juiste ontvanger en het runbook naar de
-  oorzaak en herstelactie leidt.
+  oorzaak en herstelactie leidt. De handmatig-only workflow, exacte
+  bevestigingspoort, `[DRILL]`-scheiding, toegewezen ontvanger, versie/correlation
+  ID, runbooklink, automatische contractcontrole en privacyarm bewijs zijn lokaal
+  getest; alleen expliciete `main`-toestemming, de echte deliveryrun en menselijke
+  ontvangstbevestiging ontbreken nog.
 - [ ] Er gedurende minimaal één testperiode een bruikbare latency- en
   foutbaseline is vastgelegd voordat vaste alarmdrempels worden gekozen.
 
@@ -564,11 +571,12 @@ stale writes, oudere restore en daarna veilig doorback-uppen.
 
 ### Samen klaar wanneer
 
-- [ ] Twee apparaten nooit ongemerkt elkaars voortgang overschrijven.
+- [x] Twee apparaten nooit ongemerkt elkaars voortgang overschrijven.
 - [ ] Iedere restore een recovery copy achterlaat en server-owned waarde niet
   kan terugdraaien of verdubbelen.
-- [ ] Een echte stagingrestore volgens het runbook slaagt en de gemeten
-  hersteltijd is vastgelegd.
+- [x] Een echte stagingrestore volgens het runbook slaagt en de gemeten
+  hersteltijd is vastgelegd. De eerste automatisch geplande zondagrun
+  `33305301266` rondde de actieve rondgang in circa 7,3 seconden af.
 
 ## Fase 4 — server-authoritative economie
 
@@ -1038,11 +1046,13 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 31-08-2026 | Productiemigraties 30–31 en onafhankelijke preflight | Codex, na jouw toestemming | [Migratierun 33397552524](https://github.com/Rakky88/DragonHaven/actions/runs/33397552524), `tool/release_server_preflight.ps1` | Exacte beginstand 29, publieke healthcheck, database-lint en dry-run groen; uitsluitend migraties 30–31 toegepast. Daarna 31/31 parity, 0 database-lintfouten, Auth health/settings 200/200 en geconfigureerde e-mailauth op project `tnzathhutuwmohmjfrlo` bewezen. |
 | 31-08-2026 | Openbare release v0.05.00 | Codex, na jouw toestemming | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.00), [productiegate 33397872901](https://github.com/Rakky88/DragonHaven/actions/runs/33397872901), [taggate 33398718801](https://github.com/Rakky88/DragonHaven/actions/runs/33398718801) | Exact commit `603648c7eb1224ea855b616b7c1729e7839c9da8` getagd. Ondertekende APK van 366.785.471 bytes gepubliceerd; SHA-256 `c0f431393f41c03b6c111e403d7ba465bbe1bbd6318345cf57610e7548c92592`; package `nl.dragonhaven.app`, versionCode 10050 en vast releasecertificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942` bewezen. Beide productiepreflights, 347 tests, compacte/reduced-motion emulatorcontrole en Play-ready AAB zijn groen; versiegebonden en permanente latest-download geven HTTP 200 en hetzelfde GitHub-asset. |
 | 31-08-2026 | Post-release productiehealth v0.05.00 | Codex | [Healthrun 33399531445](https://github.com/Rakky88/DragonHaven/actions/runs/33399531445) | Publieke productie-endpoints direct na v0.05.00 opnieuw groen; bewijsartifact geüpload, productie staat op 31/31 migraties en er is geen storingsalert geopend. |
-| 31-08-2026 | M1 read-only applicatiehealth gebouwd en op staging bewezen | Codex | migratie `202608310032_public_application_health.sql`, `public_server_health_check.ps1`, `release_server_preflight.ps1`, `test_public_application_health.ps1`, `production-migrate-32.yml`, `dragonhaven_spec_test.dart` en [stagingrun 33402550922](https://github.com/Rakky88/DragonHaven/actions/runs/33402550922) | Een publieke `security invoker`-RPC zonder tabelreads retourneert uitsluitend vaste servicestatus, contractversie en servertijd. De monitor valideert HTTP-status, exact contract en maximaal vijf minuten klokafwijking; productiepreflight eist de check na migratie 32. Stagingmigratie/lint/preflight, positieve/negatieve parsertests, volledige sociale en Group Adventure-E2E, live productie-Auth 200/200, analyzer, 348/348 tests en staging-APK zijn groen. Productie blijft 31/31; alleen productieactivatie en testalert wachten nog. |
+| 31-08-2026 | M1 read-only applicatiehealth gebouwd en op staging bewezen | Codex | migratie `202608310032_public_application_health.sql`, `public_server_health_check.ps1`, `release_server_preflight.ps1`, `test_public_application_health.ps1`, `production-migrate-32.yml`, `dragonhaven_spec_test.dart` en [stagingrun 33402550922](https://github.com/Rakky88/DragonHaven/actions/runs/33402550922) | Een publieke `security invoker`-RPC zonder tabelreads retourneert uitsluitend vaste servicestatus, contractversie en servertijd. De monitor valideert HTTP-status, exact contract en maximaal vijf minuten klokafwijking; productiepreflight eist de check na migratie 32. Stagingmigratie/lint/preflight, positieve/negatieve parsertests, volledige sociale en Group Adventure-E2E, live productie-Auth 200/200, analyzer, 348/348 tests en staging-APK zijn groen. De latere migratierun `33414590573` activeerde dit veilig op productie; productie staat nu op 32/32 en alleen de gecontroleerde testalertdelivery blijft open. |
 | 31-08-2026 | v0.05.01 lokale releasecandidate | Codex, na jouw toestemming | commit `b4a49a932e824aedba5031aca5f21675cda762a1`, `release-notes-v0.05.01.md`, Friends/Conclave/tutorial-regressies en ondertekende APK | Analyzer en 349/349 tests groen. APK heeft package `nl.dragonhaven.app`, versionCode 10051, 367.048.207 bytes, SHA-256 `5b8ad4ea804e2765fde3b43c6a70e6ee10b8d3777fce685cc22ef7bfc7b78726` en vast certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. Friends, tutorial en reduced motion passen op exact 360×640 dp. |
 | 31-08-2026 | Productiemigratie 32 en onafhankelijke preflight | Codex, na jouw toestemming | [Migratierun 33414590573](https://github.com/Rakky88/DragonHaven/actions/runs/33414590573), `tool/release_server_preflight.ps1` | Exacte beginstand 31, publieke Auth-check, database-lint en dry-run groen; uitsluitend migratie 32 toegepast. Daarna 32/32 parity, 0 lintfouten, Auth health/settings 200/200, e-mailauth en applicatiehealth 200 met contractversie 1 en 94 ms gemeten klokafwijking bewezen. |
 | 31-08-2026 | Openbare release v0.05.01 | Codex, na jouw toestemming | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.01), [taggate 33415060428](https://github.com/Rakky88/DragonHaven/actions/runs/33415060428) | Exact commit `b4a49a932e824aedba5031aca5f21675cda762a1` getagd. Remote assetnaam, grootte en SHA-256 zijn exact gelijk aan de lokale APK; versiegebonden en permanente latest-download geven HTTP 200. De taggate herhaalde productiepreflight, analyzer, 349 tests, signingcontrole en Play-ready AAB-build met succes. |
 | 31-08-2026 | Post-release productiehealth v0.05.01 | Codex | [Healthrun 33415782470](https://github.com/Rakky88/DragonHaven/actions/runs/33415782470) | Auth en het privacyveilige applicatieendpoint zijn direct na publicatie groen; het dertig dagen bewaarde bewijsartifact is geüpload en er is geen storingsalert geopend. Productie staat gecontroleerd op 32/32. |
+| 31-08-2026 | Eerste automatisch geplande stagingrestore | Codex | [Restorerun 33305301266](https://github.com/Rakky88/DragonHaven/actions/runs/33305301266), artifact `DragonHaven-weekly-staging-restore-2` | De zondagtrigger draaide zonder handmatige dispatch, gebruikte uitsluitend het geïsoleerde stagingproject en voltooide bevestigde login, actuele/historische back-up en conflictbeveiliging. De actieve rondgang duurde circa 7,3 seconden, de volledige job circa 20,4 seconden en het privacyarme artifact wordt dertig dagen bewaard. |
+| 31-08-2026 | Gecontroleerde monitoring-alertdrill lokaal gereed | Codex | commit `881d6f5`, `.github/workflows/monitoring-alert-drill.yml`, `dragonhaven_spec_test.dart` | De workflow kan alleen handmatig met de exacte tekst `TEST_DRAGONHAVEN_MONITORING_ALERT` starten, gebruikt geen Supabase- of repositorysecrets, maakt een duidelijk niet-productie `[DRILL]`-issue met appversie, fictieve correlation ID, ontvanger en runbooklink, controleert het aflevercontract, bewaart privacyarm bewijs en sluit de testmelding. Analyzer en alle 350 tests zijn groen. Push naar gedeelde `main` en de echte deliveryrun wachten op afzonderlijke expliciete toestemming; productie en de openbare apprelease zijn niet gewijzigd. |
 
 ## Onderhoud van dit plan
 
