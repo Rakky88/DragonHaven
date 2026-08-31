@@ -30,6 +30,7 @@ import 'package:dragon_haven/widgets/achievement_badge_sprite.dart';
 import 'package:dragon_haven/widgets/achievement_reveal.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
 import 'package:dragon_haven/widgets/game_icon_sprite.dart';
+import 'package:dragon_haven/widgets/game_tutorial.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -1237,13 +1238,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
     expect(find.byKey(const Key('tutorial-step-0')), findsOneWidget);
-    for (var step = 1; step < 9; step++) {
+    for (var step = 1; step < dragonHavenTutorialStepCount; step++) {
       await tester.tap(find.byKey(const Key('next-tutorial-step')));
       await tester.pump(const Duration(milliseconds: 600));
       expect(find.byKey(Key('tutorial-step-$step')), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'tutorial step $step');
     }
-    expect(find.text('The three-dot menu'), findsOneWidget);
+    expect(find.text('Journal, achievements and help'), findsOneWidget);
     await tester.tap(find.byKey(const Key('next-tutorial-step')));
     for (var frame = 0; frame < 10; frame++) {
       await tester.pump(const Duration(milliseconds: 100));
@@ -1251,7 +1252,12 @@ void main() {
     expect(game.tutorialFullyViewed, isTrue);
     expect(game.unlockedAchievementIds, contains('guided_tour'));
     expect(
-        find.byKey(const Key('tutorial-step-8')).hitTestable(), findsNothing);
+        find
+            .byKey(
+              const Key('tutorial-step-${dragonHavenTutorialStepCount - 1}'),
+            )
+            .hitTestable(),
+        findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -2197,7 +2203,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.05.00'), findsOneWidget);
+    expect(find.text('v0.05.01'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);

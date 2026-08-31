@@ -59,6 +59,8 @@ class FriendsScreen extends StatelessWidget {
           ),
         if (online.profile case final profile?) _MyKeeperCard(profile: profile),
         _FriendsOverview(online: online),
+        const SizedBox(height: 12),
+        _ConclaveEntry(online: online),
         const SizedBox(height: 14),
         FilledButton.icon(
           key: const Key('add-friend-button'),
@@ -92,8 +94,6 @@ class FriendsScreen extends StatelessWidget {
           )
         else
           for (final friend in sortedFriends) _FriendTile(friend: friend),
-        const SizedBox(height: 12),
-        _ConclaveEntry(online: online),
         if (online.blockedKeepers.isNotEmpty) ...[
           _SectionTitle(strings.pick('Blocked', 'Geblokkeerd')),
           for (final keeper in online.blockedKeepers)
@@ -497,98 +497,211 @@ class _FriendTile extends StatelessWidget {
               colors: [Colors.white, Color(0xFFFFF8E8)],
             ),
           ),
-          child: Row(
+          child: Column(
             children: [
-              KeeperPortrait(
-                portraitKey: friend.portraitKey,
-                displayName: friend.displayName,
-                frameKey: friend.frameKey,
-                badgeKey: friend.badgeKey,
-                radius: 29,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(friend.displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w900, fontSize: 16)),
-                    Text(keeperTitleLabel(strings, friend.title),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: AppColors.muted)),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEDE8FF),
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: Text(
-                        '${friend.discoveredDragonFormCount} ${strings.pick('dragons discovered', 'draken ontdekt')}',
-                        style: const TextStyle(
-                          color: AppColors.twilight,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 5),
-              Stack(
-                clipBehavior: Clip.none,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(
-                    key: Key('friend-message-${friend.userId}'),
-                    tooltip: strings.pick('Messages', 'Berichten'),
-                    onPressed: () => _openFriendMessages(context, friend),
-                    icon: const GameIconSprite(
-                      GameIconKind.friendsMessage,
-                      size: 34,
+                  KeeperPortrait(
+                    portraitKey: friend.portraitKey,
+                    displayName: friend.displayName,
+                    frameKey: friend.frameKey,
+                    badgeKey: friend.badgeKey,
+                    radius: 29,
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 3, right: 3),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            friend.displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            keeperTitleLabel(strings, friend.title),
+                            key: Key('friend-title-${friend.userId}'),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              height: 1.18,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  if ((conversation?.unreadCount ?? 0) > 0)
-                    Positioned(
-                      right: 1,
-                      top: 0,
+                ],
+              ),
+              const SizedBox(height: 9),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
                       child: Container(
-                        key: Key('friend-message-unread-${friend.userId}'),
-                        constraints: const BoxConstraints(minWidth: 18),
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.redAccent,
-                          borderRadius: BorderRadius.circular(99),
-                          border: Border.all(color: Colors.white, width: 1.5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 5,
                         ),
-                        child: Text(
-                          '${conversation!.unreadCount}',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEDE8FF),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '${friend.discoveredDragonFormCount} ${strings.pick('dragons discovered', 'draken ontdekt')}',
+                            key: Key(
+                              'friend-dragons-discovered-${friend.userId}',
+                            ),
+                            maxLines: 1,
+                            softWrap: false,
+                            style: const TextStyle(
+                              color: AppColors.twilight,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                         ),
                       ),
                     ),
+                  ),
+                  const SizedBox(width: 7),
+                  _FriendMessageButton(
+                    key: Key('friend-message-${friend.userId}'),
+                    tooltip: strings.pick('Messages', 'Berichten'),
+                    unreadCount: conversation?.unreadCount ?? 0,
+                    unreadKey: Key('friend-message-unread-${friend.userId}'),
+                    onPressed: () => _openFriendMessages(context, friend),
+                  ),
+                  const SizedBox(width: 7),
+                  _FriendTradeButton(
+                    key: Key('friend-trade-${friend.userId}'),
+                    activeCount: activeTrades.length,
+                    tooltip: activeTrades.isEmpty
+                        ? strings.pick('Start trade', 'Ruil starten')
+                        : strings.pick('Open trade', 'Ruil openen'),
+                    onPressed: () => activeTrades.isEmpty
+                        ? _startTrade(context, friend)
+                        : _showTrade(context, activeTrades.first),
+                  ),
                 ],
               ),
-              _FriendTradeButton(
-                key: Key('friend-trade-${friend.userId}'),
-                activeCount: activeTrades.length,
-                tooltip: activeTrades.isEmpty
-                    ? strings.pick('Start trade', 'Ruil starten')
-                    : strings.pick('Open trade', 'Ruil openen'),
-                onPressed: () => activeTrades.isEmpty
-                    ? _startTrade(context, friend)
-                    : _showTrade(context, activeTrades.first),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FriendMessageButton extends StatelessWidget {
+  const _FriendMessageButton({
+    super.key,
+    required this.tooltip,
+    required this.unreadCount,
+    required this.unreadKey,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final int unreadCount;
+  final Key unreadKey;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Semantics(
+      button: true,
+      label: tooltip,
+      child: Tooltip(
+        message: tooltip,
+        child: Material(
+          color: Colors.transparent,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: onPressed,
+                child: Ink(
+                  width: 58,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFF1ECFF), Color(0xFFD8C9FF)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFF7654AE),
+                      width: 1.4,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x292D195F),
+                        blurRadius: 7,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const GameIconSprite(
+                        GameIconKind.friendsMessage,
+                        size: 34,
+                      ),
+                      Text(
+                        strings.pick('CHAT', 'CHAT'),
+                        style: const TextStyle(
+                          color: AppColors.twilight,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: -4,
+                  top: -5,
+                  child: Container(
+                    key: unreadKey,
+                    constraints: const BoxConstraints(minWidth: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent,
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: Text(
+                      '$unreadCount',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -607,44 +720,73 @@ class _ConclaveEntry extends StatelessWidget {
     final current = online.conclave?.conclave;
     return Card(
       clipBehavior: Clip.antiAlias,
+      elevation: 5,
+      shadowColor: const Color(0x40301B5B),
       child: InkWell(
         key: const Key('open-conclave'),
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(builder: (_) => const ConclaveScreen()),
         ),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+        child: Ink(
+          padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFFEEE7FF), Color(0xFFFFF1C8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF261642), Color(0xFF68449A)],
             ),
           ),
           child: Row(
             children: [
-              Image.asset(
-                current == null
-                    ? aerieStageAsset(1)
-                    : aerieStageAsset(current.aerieStage),
-                width: 72,
-                height: 64,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.castle_rounded,
-                  color: AppColors.twilight,
-                  size: 48,
+              Badge.count(
+                count: online.conclaveInvites.length,
+                isLabelVisible: online.conclaveInvites.isNotEmpty,
+                backgroundColor: Colors.redAccent,
+                child: Container(
+                  width: 76,
+                  height: 76,
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Image.asset(
+                    current == null
+                        ? aerieStageAsset(1)
+                        : aerieStageAsset(current.aerieStage),
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.castle_rounded,
+                      color: Color(0xFFFFD978),
+                      size: 48,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text(
+                      'CONCLAVE',
+                      style: TextStyle(
+                        color: Color(0xFFFFD978),
+                        fontSize: 10,
+                        letterSpacing: 1.3,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                     Text(
                       current?.name ??
                           strings.pick(
-                              'Join a Conclave', 'Word lid van een Conclave'),
+                              'Find your Conclave', 'Vind je Conclave'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 17,
+                        color: Colors.white,
+                        fontSize: 18,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -655,29 +797,31 @@ class _ConclaveEntry extends StatelessWidget {
                               'Vind Hoeders en bouw samen een Aerie.',
                             )
                           : '${strings.pick('Aerie stage', 'Aerie-fase')} ${current.aerieStage}/10 · ${strings.pick('Level', 'Level')} ${current.level}',
-                      style: const TextStyle(color: AppColors.muted),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFE8DFF6),
+                        fontSize: 11.5,
+                        height: 1.24,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
               ),
-              if (online.conclaveInvites.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(right: 5),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                  child: Text(
-                    '${online.conclaveInvites.length}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
+              const SizedBox(width: 4),
+              Container(
+                width: 34,
+                height: 34,
+                decoration: const BoxDecoration(
+                  color: Color(0x22FFFFFF),
+                  shape: BoxShape.circle,
                 ),
-              const Icon(Icons.chevron_right_rounded),
+                child: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.white,
+                ),
+              ),
             ],
           ),
         ),
@@ -1060,8 +1204,8 @@ class _FriendTradeButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             onTap: onPressed,
             child: Ink(
-              width: 64,
-              height: 68,
+              width: 58,
+              height: 60,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -1070,7 +1214,7 @@ class _FriendTradeButton extends StatelessWidget {
                       ? const [Color(0xFF5C3C99), Color(0xFF32205F)]
                       : const [Color(0xFFFFF4B3), Color(0xFFE7C763)],
                 ),
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: active
                       ? const Color(0xFFF3D77A)
@@ -1093,7 +1237,7 @@ class _FriendTradeButton extends StatelessWidget {
                     label: Text('$activeCount'),
                     child: const GameIconSprite(
                       GameIconKind.friendsTrade,
-                      size: 40,
+                      size: 34,
                     ),
                   ),
                   Text(

@@ -14,6 +14,7 @@ import 'package:dragon_haven/models/supporter_pack.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/providers/online_account_provider.dart';
 import 'package:dragon_haven/screens/adventure_hub_screen.dart';
+import 'package:dragon_haven/screens/conclave_screen.dart';
 import 'package:dragon_haven/services/diagnostic_reporter.dart';
 import 'package:dragon_haven/services/automatic_cloud_backup.dart';
 import 'package:dragon_haven/services/social_repository.dart';
@@ -1124,6 +1125,127 @@ void main() {
     online.dispose();
   });
 
+  testWidgets('Conclave renders achievement details in one compact batch',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final messages = <ConclaveMessage>[
+      for (final entry in const [
+        ('achievement-1', 'hello_little_one'),
+        ('achievement-2', 'guided_tour'),
+        ('achievement-3', 'first_flight'),
+        ('achievement-4', 'chest_expectations'),
+      ].indexed)
+        ConclaveMessage(
+          id: entry.$2.$1,
+          senderId: 'friend-user',
+          senderName: 'Visnet',
+          senderPortraitKey: 'portrait_042',
+          kind: 'achievement',
+          body: 'Achievement unlocked!',
+          payload: {'achievement_id': entry.$2.$2},
+          createdAt: DateTime.utc(2026, 8, 31, 14, 0, entry.$1),
+        ),
+    ];
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..conclaveSnapshot = ConclaveSnapshot(
+        conclave: const ConclaveSummary(
+          id: 'conclave-1',
+          name: 'The Test Aerie',
+          emblemKey: 'conclave_emblem_01',
+          description: '',
+          language: 'en',
+          visibility: ConclaveVisibility.public,
+          memberLimit: 20,
+          memberCount: 2,
+          level: 1,
+          xp: 0,
+          aerieStage: 1,
+        ),
+        myRole: ConclaveRole.keeper,
+        contributedToday: false,
+        members: [
+          ConclaveMember(
+            userId: 'friend-user',
+            keeperCode: 'DH-1234ABCD',
+            displayName: 'Visnet',
+            portraitKey: 'portrait_042',
+            role: ConclaveRole.keeper,
+            joinedAt: DateTime.utc(2026, 8, 30),
+            contributionStreak: 2,
+          ),
+        ],
+        messages: messages,
+        chronicle: [
+          ConclaveChronicleEntry(
+            id: 'chronicle-1',
+            kind: 'joined',
+            body: 'Visnet joined the Conclave.',
+            actorName: 'Visnet',
+            createdAt: DateTime.utc(2026, 8, 30),
+          ),
+          ConclaveChronicleEntry(
+            id: 'chronicle-2',
+            kind: 'level',
+            body: 'The Conclave reached level 2.',
+            actorName: 'The Test Aerie',
+            createdAt: DateTime.utc(2026, 8, 31),
+          ),
+        ],
+        joinRequests: const [],
+      );
+    final game = HouseholdProvider(random: Random(31));
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const MaterialApp(home: ConclaveScreen()),
+    ));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(
+      find.byKey(const Key('conclave-achievement-group-achievement-1')),
+      findsOneWidget,
+    );
+    expect(find.text('4 achievements shared'), findsOneWidget);
+    expect(find.text('Hello, Little One!'), findsOneWidget);
+    expect(find.text('A Little Less Lost'), findsOneWidget);
+    expect(find.text('First Flight'), findsOneWidget);
+    expect(find.text('Chest Expectations'), findsNothing);
+    expect(find.text('Achievement unlocked!'), findsNothing);
+    expect(find.text('Show 1 more'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const Key('toggle-conclave-achievement-batch')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Chest Expectations'), findsOneWidget);
+    expect(find.text('Show less'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Keepers'));
+    await tester.pumpAndSettle();
+    expect(find.text('Conclave Keepers'), findsOneWidget);
+    expect(find.text('Visnet'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Chronicle'));
+    await tester.pumpAndSettle();
+    expect(find.text('Visnet joined the Conclave.'), findsOneWidget);
+    expect(find.text('The Conclave reached level 2.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+  });
+
   testWidgets('Group Create uses the normal no-dragon message', (tester) async {
     final game = HouseholdProvider(random: Random(26));
     final repository = _FakeSocialRepository(inventoryImported: true)
@@ -1214,8 +1336,28 @@ void main() {
 
     await tester.tap(find.text('Friends').last);
     await tester.pump(const Duration(milliseconds: 350));
+    expect(
+      tester.getTopLeft(find.byKey(const Key('open-conclave'))).dy,
+      lessThan(
+          tester.getTopLeft(find.byKey(const Key('add-friend-button'))).dy),
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('friend-friend-user')),
+      260,
+      scrollable: find.descendant(
+        of: find.byKey(const PageStorageKey('friends-scroll')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 250));
     expect(find.text('Lyra'), findsOneWidget);
     expect(find.textContaining('2 dragons discovered'), findsOneWidget);
+    final discoveredCount = find.byKey(
+      const Key('friend-dragons-discovered-friend-user'),
+    );
+    final discoveredText = tester.widget<Text>(discoveredCount);
+    expect(discoveredText.maxLines, 1);
+    expect(discoveredText.softWrap, isFalse);
     expect(find.text('0/3'), findsOneWidget);
     final friendPortrait = tester.widget<KeeperPortrait>(find.descendant(
       of: find.byKey(const Key('friend-friend-user')),
@@ -1244,6 +1386,14 @@ void main() {
     );
     final friendTitle = accountTitleById('title_321')!.label('en');
     expect(find.text(friendTitle), findsOneWidget);
+    final friendTitleFinder = find.byKey(const Key('friend-title-friend-user'));
+    final friendTitleText = tester.widget<Text>(friendTitleFinder);
+    expect(friendTitleText.maxLines, 2);
+    expect(tester.getSize(friendTitleFinder).width, greaterThan(190));
+    expect(
+      tester.getTopLeft(find.byKey(const Key('friend-message-friend-user'))).dy,
+      greaterThan(tester.getTopLeft(friendTitleFinder).dy),
+    );
     expect(find.byKey(const Key('friend-trade-friend-user')), findsOneWidget);
     expect(find.byKey(const Key('friend-message-friend-user')), findsOneWidget);
     expect(
@@ -1705,6 +1855,7 @@ class _FakeSocialRepository implements SocialRepository {
   String? createGroupError;
   bool signedIn = true;
   CloudGameSave? cloudSave;
+  ConclaveSnapshot? conclaveSnapshot;
   final List<CloudGameSave> cloudSaveRevisions = [];
   String? deletedWithPassword;
 
@@ -1825,6 +1976,7 @@ class _FakeSocialRepository implements SocialRepository {
       tradeInventory: List.of(tradeInventoryRows),
       notifications: List.of(notificationRows),
       friendConversations: List.of(conversationRows),
+      conclave: conclaveSnapshot,
     );
   }
 

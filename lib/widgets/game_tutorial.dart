@@ -66,6 +66,7 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial> {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final steps = _steps(strings, widget.dragon.displayName);
+    assert(steps.length == dragonHavenTutorialStepCount);
     final step = steps[_stepIndex];
     final size = MediaQuery.sizeOf(context);
     final padding = MediaQuery.paddingOf(context);
@@ -94,7 +95,7 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial> {
           ),
           SafeArea(
             child: Align(
-              alignment: const Alignment(0, -.23),
+              alignment: _cardAlignmentFor(step.spotlight),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(18, 82, 18, 130),
                 child: ConstrainedBox(
@@ -283,96 +284,225 @@ class _TutorialStep {
   final _TutorialSpotlight spotlight;
 }
 
-enum _TutorialSpotlight { navigation, overflowMenu }
+enum _TutorialSpotlight {
+  navigation,
+  overflowMenu,
+  topContent,
+  middleContent,
+  lowerContent,
+  currencies,
+}
+
+const dragonHavenTutorialStepCount = 17;
 
 List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
       _TutorialStep(
         2,
         strings.pick('Welcome to DragonHaven', 'Welkom in DragonHaven'),
         '$dragonName ${strings.pick(
-          'will show you around. You can skip now and replay this tour later from the three-dot menu.',
-          'leidt je rond. Je kunt nu overslaan en deze rondleiding later opnieuw starten via het menu met de drie stippen.',
+          'will show you around. You can skip now and replay this complete tour later from the three-dot menu.',
+          'leidt je rond. Je kunt nu overslaan en deze complete rondleiding later opnieuw starten via het menu met de drie stippen.',
         )}',
+        spotlight: _TutorialSpotlight.topContent,
       ),
       _TutorialStep(
         0,
-        strings.pick('Online friends', 'Online vrienden'),
+        strings.pick('Friends and profiles', 'Vrienden en profielen'),
         strings.pick(
-          "Create an e-mail-verified online account, then add other keepers by their Keeper ID. Friends can open each other's public profile and see portraits, titles, favorite dragons, discovered forms and Trial records.",
-          'Maak een online account met e-mailverificatie en voeg daarna andere hoeders toe via hun Keeper ID. Vrienden kunnen elkaars openbare profiel openen en portraits, titles, favoriete draken, ontdekte vormen en Trial-records bekijken.',
+          "Create a verified online account and add Keepers by their Keeper ID. A friend's profile shows vanity, favorite dragon, discovered forms, achievements and Trial records.",
+          'Maak een geverifieerd online account en voeg Hoeders toe via hun Keeper-ID. Een vriendenprofiel toont vanity, favoriete draak, ontdekte vormen, achievements en Trial-records.',
         ),
       ),
       _TutorialStep(
         0,
-        strings.pick('Trade and travel together', 'Samen ruilen en reizen'),
+        strings.pick('Messages and safe trades', 'Berichten en veilig ruilen'),
         strings.pick(
-          'From a friend you can offer a protected one-to-one Trade: eggs, chests and Relics stay reserved until it completes or expires. Logged-in friends can also enroll dragons together in asynchronous Group Adventures.',
-          'Bij een vriend kun je een beveiligde één-op-één Trade aanbieden: eieren, kisten en Relieken blijven gereserveerd totdat de ruil voltooid is of verloopt. Ingelogde vrienden kunnen hun draken ook samen inschrijven voor asynchrone Group Adventures.',
+          'Use CHAT on a friend card for private messages from the last 24 hours. Trade offers reserve eligible eggs, chests and Relics until the exchange completes or expires.',
+          'Gebruik CHAT op een vriendenkaart voor privéberichten van de laatste 24 uur. Ruilaanbiedingen reserveren geschikte eieren, kisten en Relieken totdat de ruil voltooid is of verloopt.',
+        ),
+        spotlight: _TutorialSpotlight.middleContent,
+      ),
+      _TutorialStep(
+        0,
+        strings.pick('Your Conclave', 'Jouw Conclave'),
+        strings.pick(
+          'Conclave is directly below the Friends overview. Join or found one, chat with up to 20 Keepers, tend the shared Aerie, share achievements and follow its Chronicle.',
+          'Conclave staat direct onder het vriendenoverzicht. Word lid of sticht er één, chat met maximaal 20 Hoeders, verzorg de gedeelde Aerie, deel achievements en volg de Chronicle.',
+        ),
+        spotlight: _TutorialSpotlight.middleContent,
+      ),
+      _TutorialStep(
+        1,
+        strings.pick('Adventures', 'Avonturen'),
+        strings.pick(
+          'Mini, Short and Long Adventures take progressively longer. Matching Expertise reduces their duration. Completed cards list rewards; a solo active Adventure can be aborted without rewards.',
+          'Mini-, Short- en Long Adventures duren steeds langer. Bijpassende Expertise verkort de duur. Afgeronde kaarten tonen beloningen; een actief solo-avontuur kan zonder beloning worden afgebroken.',
         ),
       ),
       _TutorialStep(
         1,
-        strings.tr('adventure'),
         strings.pick(
-          "Mini Adventures take minutes, Short Adventures hours and Long Adventures days. A dragon's matching Expertise shortens the timer. Group Adventures need 2–4 logged-in friends and begin automatically when their requirements are met.",
-          'Mini Adventures duren minuten, Short Adventures uren en Long Adventures dagen. De bijpassende Expertise van een draak verkort de timer. Group Adventures vereisen 2–4 ingelogde vrienden en beginnen automatisch zodra aan de vereisten is voldaan.',
+            'Group and Special Adventures', 'Group- en Special Adventures'),
+        strings.pick(
+          'Group Adventures show their combined Expertise requirement before joining. Special Adventures appear during events, show guaranteed rewards and remain finishable when started in time.',
+          'Group Adventures tonen vóór deelname hun vereiste gecombineerde Expertise. Special Adventures verschijnen tijdens events, tonen gegarandeerde beloningen en blijven afmaakbaar als je op tijd begon.',
         ),
+        spotlight: _TutorialSpotlight.topContent,
       ),
       _TutorialStep(
         1,
-        strings.pick('Trials', 'Trials'),
+        strings.pick('Trials and constellation', 'Trials en constellatie'),
         strings.pick(
-          'Trials are skill-based minigames and refill every 15 minutes, up to three waiting. Cavern Flight trains Spirit, Ruin Breaker trains Might and Runeweaver trains Arcana; your performance sets the rank, rewards and personal high score.',
-          'Trials zijn minigames gebaseerd op vaardigheid en worden elke 15 minuten aangevuld, tot maximaal drie klaarstaan. Cavern Flight traint Spirit, Ruin Breaker traint Might en Runeweaver traint Arcana; je prestatie bepaalt de rank, beloningen en persoonlijke highscore.',
+          'Trials refill every 15 minutes, up to three waiting. Might, Arcana and Spirit each have a skill game. Play daily for the seven-day constellation; missing a day resets it.',
+          'Trials vullen iedere 15 minuten aan, tot maximaal drie klaarstaan. Might, Arcana en Spirit hebben elk een vaardigheidsspel. Speel dagelijks voor de zevendaagse constellatie; een gemiste dag zet hem terug.',
         ),
+        spotlight: _TutorialSpotlight.lowerContent,
       ),
       _TutorialStep(
         2,
-        strings.tr('tower'),
+        strings.pick('Evolution and Expertise', 'Evolutie en Expertise'),
         strings.pick(
-          'Use the two large sprites at the top right: My Dragons opens your complete dragon collection, while the Draconomicon shows every discovered dragon form. Below them you can build, visit and decorate Tower floors.',
-          'Gebruik de twee grote sprites rechtsboven: My Dragons opent je volledige drakenverzameling en het Draconomicon toont iedere ontdekte drakenvorm. Daaronder kun je Torenverdiepingen bouwen, bezoeken en inrichten.',
+          'Train Expertise through Adventures, Trials and Academy lessons. Evolution choices raise different Expertise maximums; MAX always follows the correct dragon, form and Ascension cap.',
+          'Train Expertise via Adventures, Trials en Academy-lessen. Evolutiekeuzes verhogen verschillende Expertise-maxima; MAX volgt altijd de juiste draak, vorm en Ascension-limiet.',
+        ),
+        spotlight: _TutorialSpotlight.topContent,
+      ),
+      _TutorialStep(
+        2,
+        strings.pick('Dragons and Draconomicon', 'Draken en Draconomicon'),
+        strings.pick(
+          'My Dragons has grid and compact list views, reversible sorting and combined filters for form, rarity and spectral dragons. The Draconomicon tracks every family and evolved form.',
+          'My Dragons heeft raster- en compacte lijstweergaven, omkeerbaar sorteren en combineerbare filters voor vorm, rarity en spectral draken. Het Draconomicon houdt iedere familie en evolutievorm bij.',
+        ),
+        spotlight: _TutorialSpotlight.topContent,
+      ),
+      _TutorialStep(
+        2,
+        strings.pick('Nest, rooms and Tower', 'Nest, kamers en Toren'),
+        strings.pick(
+          'Incubate an egg in the Rooftop Nest and watch its timer from the Tower. Starter Eggs can be tapped to speed up. Build, decorate and reorder every room except the Rooftop Nest.',
+          'Incubeer een ei in het Daknest en bekijk de timer vanuit de Toren. Starter Eggs kun je aantikken om te versnellen. Bouw, decoreer en herschik iedere kamer behalve het Daknest.',
+        ),
+        spotlight: _TutorialSpotlight.middleContent,
+      ),
+      _TutorialStep(
+        2,
+        strings.pick('Dragon Academy', 'Dragon Academy'),
+        strings.pick(
+          'The Academy unlocks with Tower level 5 at the bottom. Choose available students, earn lesson stars and Expertise, use mentors and graduate early after passing every subject.',
+          'De Academy ontgrendelt bij Torenlevel 5 onderaan. Kies beschikbare leerlingen, verdien lessterren en Expertise, gebruik mentoren en studeer vroeg af na een voldoende voor ieder vak.',
+        ),
+        spotlight: _TutorialSpotlight.lowerContent,
+      ),
+      _TutorialStep(
+        3,
+        strings.pick('Organize Inventory', 'Inventory organiseren'),
+        strings.pick(
+          'Eggs and furniture have saved grid/list views, sorting and filters. Egg rows show hatch time; chests use a fixed rarity order. Trade-reserved items stay unavailable.',
+          'Eieren en furniture hebben opgeslagen raster-/lijstweergaven, sortering en filters. Ei-rijen tonen uitbroedtijd; kisten gebruiken een vaste rarity-volgorde. Gereserveerde ruilitems blijven onbruikbaar.',
         ),
       ),
       _TutorialStep(
         3,
-        strings.tr('inventory'),
+        strings.pick('Chests and Relics', 'Kisten en Relieken'),
         strings.pick(
-          'Eggs, unopened chests, furniture and Relics are stored here. Open chests, start an egg incubation or inspect what you own; items reserved for a Trade cannot be used until released.',
-          'Hier worden eieren, ongeopende kisten, meubels en Relieken bewaard. Open kisten, start de incubatie van een ei of bekijk wat je bezit; voor een Trade gereserveerde items kun je pas weer gebruiken wanneer ze zijn vrijgegeven.',
+          'Open one chest full-screen, or ten together when possible. Relics show whether they are consumable, tradeable or equipable; an equipped XP Relic can move between dragons.',
+          'Open één kist schermvullend, of tien tegelijk wanneer mogelijk. Relieken tonen of ze verbruikbaar, ruilbaar of uitrustbaar zijn; een uitgeruste XP-Relic kan tussen draken wisselen.',
         ),
+        spotlight: _TutorialSpotlight.middleContent,
       ),
       _TutorialStep(
         4,
-        strings.tr('shop'),
+        strings.pick('Shops and currencies', 'Shops en valuta'),
         strings.pick(
-          'Buy furniture for your Tower with coins or gems. Title Chests cost coins and unlock account titles; Portrait Chests cost gems and unlock profile portraits. Open both from Inventory.',
-          'Koop met munten of edelstenen meubels voor je Toren. Title Chests kosten munten en ontgrendelen account-titles; Portrait Chests kosten edelstenen en ontgrendelen profielportraits. Je opent beide vanuit Inventory.',
+          'Browse separate Coin, Gem and Packs shops. Furniture, Relics and collection chests show their currency clearly. Optional store bundles never replace normal gameplay.',
+          'Bekijk aparte Coin-, Gem- en Packs-shops. Furniture, Relieken en verzamelkisten tonen hun valuta duidelijk. Optionele winkelbundels vervangen nooit de normale gameplay.',
         ),
+        spotlight: _TutorialSpotlight.currencies,
+      ),
+      _TutorialStep(
+        4,
+        strings.pick(
+            'Music and supporter vanity', 'Muziek en supporter-vanity'),
+        strings.pick(
+          'Music Chests always unlock a missing song. The Jukebox controls songs, order, Shuffle and Repeat. Packs can add separate portraits, titles, badges, frames and furniture.',
+          'Music Chests ontgrendelen altijd een ontbrekend lied. De Jukebox beheert liedjes, volgorde, Shuffle en Repeat. Packs kunnen aparte portraits, titles, badges, frames en furniture toevoegen.',
+        ),
+        spotlight: _TutorialSpotlight.topContent,
       ),
       _TutorialStep(
         2,
-        strings.pick('The three-dot menu', 'Het menu met drie stippen'),
+        strings.pick('Account, audio and notifications',
+            'Account, audio en notificaties'),
         strings.pick(
-          'Tap the three dots at the top right for Account info, where you can change your portrait and title and manage Notifications and Audio. The same menu opens Language, Achievements and this Tutorial again.',
-          'Tik rechtsboven op de drie stippen voor Account info, waar je jouw portrait en title kunt wijzigen en Notifications en Audio kunt beheren. Via hetzelfde menu open je Language, Achievements en deze Tutorial opnieuw.',
+          'Account Info manages vanity, messages, audio and Jukebox. Notification types require device permission and open the right destination. Cloud backups and restore history protect online progress.',
+          'Account Info beheert vanity, berichten, audio en Jukebox. Notificatietypen vereisen apparaatmachtiging en openen de juiste plek. Cloudback-ups en herstelgeschiedenis beschermen online voortgang.',
+        ),
+        spotlight: _TutorialSpotlight.overflowMenu,
+      ),
+      _TutorialStep(
+        2,
+        strings.pick(
+            'Journal, achievements and help', 'Dagboek, achievements en hulp'),
+        strings.pick(
+          'The three-dot menu also opens Language, Achievements, the Keeper Journal and this Tutorial. The Journal records milestones; secret achievements reveal themselves only when earned.',
+          'Het menu met drie stippen opent ook Language, Achievements, het Keeperdagboek en deze Tutorial. Het dagboek bewaart mijlpalen; geheime achievements onthullen zich pas wanneer je ze verdient.',
         ),
         spotlight: _TutorialSpotlight.overflowMenu,
       ),
     ];
 
 Rect _targetFor(_TutorialStep step, Size size, EdgeInsets padding) {
-  if (step.spotlight == _TutorialSpotlight.overflowMenu) {
-    return Rect.fromLTWH(size.width - 68, padding.top + 5, 62, 60);
-  }
-  final segmentWidth = size.width / 5;
-  return Rect.fromLTWH(
-    segmentWidth * step.tabIndex + 6,
-    size.height - padding.bottom - 83,
-    segmentWidth - 12,
-    77,
-  );
+  return switch (step.spotlight) {
+    _TutorialSpotlight.overflowMenu =>
+      Rect.fromLTWH(size.width - 68, padding.top + 5, 62, 60),
+    _TutorialSpotlight.topContent => Rect.fromLTWH(
+        12,
+        padding.top + 72,
+        size.width - 24,
+        size.height * .21,
+      ),
+    _TutorialSpotlight.middleContent => Rect.fromLTWH(
+        12,
+        padding.top + size.height * .28,
+        size.width - 24,
+        size.height * .24,
+      ),
+    _TutorialSpotlight.lowerContent => Rect.fromLTWH(
+        12,
+        size.height - padding.bottom - 292,
+        size.width - 24,
+        190,
+      ),
+    _TutorialSpotlight.currencies => Rect.fromLTWH(
+        size.width - 245,
+        padding.top + 5,
+        178,
+        60,
+      ),
+    _TutorialSpotlight.navigation => () {
+        final segmentWidth = size.width / 5;
+        return Rect.fromLTWH(
+          segmentWidth * step.tabIndex + 6,
+          size.height - padding.bottom - 83,
+          segmentWidth - 12,
+          77,
+        );
+      }(),
+  };
 }
+
+Alignment _cardAlignmentFor(_TutorialSpotlight spotlight) =>
+    switch (spotlight) {
+      _TutorialSpotlight.navigation ||
+      _TutorialSpotlight.lowerContent =>
+        const Alignment(0, -.6),
+      _TutorialSpotlight.topContent ||
+      _TutorialSpotlight.middleContent ||
+      _TutorialSpotlight.overflowMenu ||
+      _TutorialSpotlight.currencies =>
+        const Alignment(0, .66),
+    };
 
 class _TutorialSpotlightPainter extends CustomPainter {
   const _TutorialSpotlightPainter({required this.target, required this.scale});
