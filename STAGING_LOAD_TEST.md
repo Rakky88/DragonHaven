@@ -1,7 +1,7 @@
 # DragonHaven staging-loadtest
 
 Laatst bijgewerkt: **31 augustus 2026**  
-Uitgangsversie: **v0.05.01 / productieschema 32**
+Uitgangsversie: **v0.05.01 / productieschema 32 / lokaal kandidaat-schema 33**
 
 ## Doel en huidige status
 

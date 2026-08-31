@@ -7,6 +7,9 @@ Actuele openbare versie: **v0.05.01**
 
 Actuele productieserver: **32/32 migraties**
 
+Actuele lokale serverkandidaat: **33 migraties; migratie 33 is nog niet op
+staging of productie toegepast.**
+
 Actuele lokale tranche: **v0.05.01 is openbaar uitgebracht met versionCode
 10051. De Friends- en Conclave-UI, echte achievementkaarten, de uitgebreidere
 17-stappentutorial en alle bijbehorende vertalingen zijn groen op analyzer,
@@ -15,6 +18,12 @@ Actuele lokale tranche: **v0.05.01 is openbaar uitgebracht met versionCode
 op productie. De onafhankelijke preflight bewijst 32/32, nul lintfouten, Auth
 200/200, e-mailauth en applicatiehealth 200 met contractversie 1. APK, Play-ready
 AAB, taggate, permanente download en post-release healthcheck zijn groen.**
+
+Lokale auditaanvulling na deze release: **de gecontroleerde monitoringdrill, het
+begrensde staging-loadprofiel en kandidaat-migratie 33 voor least-privilege
+support/privacy zijn gebouwd. De Flutter-analyzer en alle 359 tests zijn groen.
+Geen van deze lokale auditcommits is al naar gedeelde `main`, staging of
+productie gebracht.**
 
 Bronnen: [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md),
 [SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md),
@@ -52,7 +61,7 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | Fase 3 — back-up en multi-device | circa 98% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, automatische 15-minutenback-up plus achtergrondflush zijn gebouwd. De eerste automatisch geplande zondagrestore is groen en rondde de actieve account/back-up/restorerondgang in circa 7,3 seconden af | Later server-owned economievelden van restores afschermen en na fase 4 het terugrol-/duplicatiecontract opnieuw bewijzen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
 | Fase 4 — server-authoritative economie | circa 15% | Uitgeschakelde payment-providergrens en geauditeerde eenmalige save-import met limieten, hash, rapport en private herstelkopie bestaan | Wallet/ledger/itemtabellen, idempotente RPC's, serverrandomness, compatibiliteitsvenster en gefaseerde migratie van shops, chests, dragons en rewards bouwen | Migratievenster, spelerscommunicatie en gecontroleerd rollbackbeleid goedkeuren; compensatie- en storingsbeleid plus nooit-stil-afnemen-grenzen bevestigen |
 | Fase 5 — Google Play Billing | circa 8%, bewust uitgesteld | Product-ID-contract voor valuta en het eenmalige Supporter Pack, idempotente lokale entitlementgrens en uitgeschakelde nepimplementatie houden de architectuur upgradebaar zonder nu kosten te maken | Pas na fase 4 de Billing-SDK, servervalidatie, acknowledgement, refunds/retries en Play-tracktests bouwen | Pas later beslissen wanneer verkoop actief mag worden; merchantprofiel, producten/prijzen/landen, service-identiteit, testers en beleid beheren |
-| Fase 6 — support en privacy | circa 32% | Accountverwijdering, veilige supportdiagnostiek en incidentrunbook bestaan. `SUPPORT_PRIVACY_OPERATIONS.md` legt minimale intake, verloren account, e-mail, trade, back-upconflict, verwijdering, toekomstige refund en misbruik plus de actuele bewaarmatrix vast | Service-role-only supportlookup met append-only inzagelog op staging bouwen; na beleid akkoord notification-/Chronicle-retentie migreren en verwijder-E2E uitbreiden | Publiek supportadres, verantwoordelijken/reactietijden, privacy- en verwijderpagina en productietoegang beheren; termijnen voor sociale notificaties en Conclave Chronicle kiezen |
+| Fase 6 — support en privacy | circa 52% | Accountverwijdering, veilige supportdiagnostiek en incidentrunbook bestaan. De lokale kandidaat-migratie 33 voegt een service-role-only supportlookup, 30-dagen-inzagelog zonder namen/e-mail/save en dagelijkse fysieke importback-upcleanup toe; contracttests zijn groen | Migratie 33 eerst op staging bewijzen; daarna de testsupportflow oefenen. Na beleid akkoord notification-/Chronicle-retentie migreren en verwijder-E2E uitbreiden | Publiek supportadres, verantwoordelijken/reactietijden, privacy- en verwijderpagina en productietoegang beheren; termijnen voor sociale notificaties en Conclave Chronicle kiezen |
 | Fase 7 — capaciteit en rollout | circa 24% | Releasegate, serverpreflight, bewaard buildbewijs en dashboardontwerp bestaan. Een begrensde staging-loadrunner koppelt ieder rapport aan app-/contractversie en de repositorymigratie en rapporteert clientlatency/fouten/response-egress zonder de serverstand onbewezen gelijk te stellen | Eerst stagingpariteit, het 100-user bewijs plus Supabase-dashboardmetingen verzamelen; daarna pas 1.000 meten en query/indexverbeteringen, alarmgrenzen, compatibiliteitsgate en app/database-hotfixoefening bouwen | De synthetische accountpool mogelijk maken; capaciteit en budgetalerts op metingen kiezen; rolloutpercentages en pauze-/rollbackbevoegdheid per stap goedkeuren en bewaken |
 
 De eerstvolgende afhankelijkheden die alleen jij kunt wegnemen zijn daarmee
@@ -753,23 +762,27 @@ geen betaalprovider nodig voor normaal spel of tests.
 
 ### Codex
 
-- [ ] Bouw een minimaal supportzoekpad op Keeper ID naar interne user UUID,
-  accountstatus, appversie en relevante correlation IDs; gebruik nooit alleen
-  de zichtbare keepernaam.
+- [x] Bouw een minimaal supportzoekpad op Keeper ID naar interne user UUID,
+  accountstatus, save-/clientversie en geaggregeerde back-up-/tradestatus;
+  gebruik nooit alleen de zichtbare keepernaam. Kandidaat-migratie 33 doet dit
+  zonder e-mail, naam, savebody of inventory. Correlation IDs blijven bewust
+  afkomstig uit de privacyarme clientexport omdat de server ze niet bewaart.
 - [x] Maak een veilige diagnostiekexport waarin tokens, e-mail en volledige
   inventory standaard ontbreken.
 - [x] Documenteer procedures voor verloren account, niet ontvangen e-mail,
   mislukte trade, back-upconflict, verwijdering, refund en vermoed misbruik in
   `SUPPORT_PRIVACY_OPERATIONS.md`, inclusief minimale intake, verboden data,
   beslisgrenzen en huidig/toekomstig aankoopgedrag.
-- [ ] Voeg least-privilege rollen en logging van supportinzage toe zodra een
-  supporttool wordt gebouwd.
+- [x] Voeg least-privilege rollen en logging van supportinzage toe zodra een
+  supporttool wordt gebouwd. Kandidaat-migratie 33 staat alleen `service_role`
+  toe, vereist casusnummer/operatoralias/vaste reden en bewaart dertig dagen een
+  append-only log met gehashte Keeper ID; stagingbewijs blijft nog open.
 - [ ] Stem verwijdering/retentie af tussen Auth, profiel, saves, auditlogs,
   monitoring en aankoopadministratie. De huidige bewaarmatrix is vastgelegd:
-  chat-, cloud- en accountdeletepaden zijn aantoonbaar; private importback-ups
-  hebben wel een 30-dagen-`expires_at` maar nog geen fysieke purge. Daarnaast
-  vereisen acknowledged/oude unacknowledged sociale notificaties, Conclave
-  Chronicle en toekomstige aankoopadministratie nog beleid en/of migratie.
+  chat-, cloud- en accountdeletepaden zijn aantoonbaar. Kandidaat-migratie 33
+  sluit lokaal de ontbrekende fysieke purge van 30-dagen-importback-ups.
+  Acknowledged/oude unacknowledged sociale notificaties, Conclave Chronicle en
+  toekomstige aankoopadministratie vereisen nog beleid en/of migratie.
 
 ### Jij
 
@@ -1068,6 +1081,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 31-08-2026 | Gecontroleerde monitoring-alertdrill lokaal gereed | Codex | commit `881d6f5`, `.github/workflows/monitoring-alert-drill.yml`, `dragonhaven_spec_test.dart` | De workflow kan alleen handmatig met de exacte tekst `TEST_DRAGONHAVEN_MONITORING_ALERT` starten, gebruikt geen Supabase- of repositorysecrets, maakt een duidelijk niet-productie `[DRILL]`-issue met appversie, fictieve correlation ID, ontvanger en runbooklink, controleert het aflevercontract, bewaart privacyarm bewijs en sluit de testmelding. Analyzer en alle 350 tests zijn groen. Push naar gedeelde `main` en de echte deliveryrun wachten op afzonderlijke expliciete toestemming; productie en de openbare apprelease zijn niet gewijzigd. |
 | 31-08-2026 | Begrensd staging-loadprofiel lokaal gereed | Codex | `tool/staging_load_profile.dart`, `.github/workflows/staging-load.yml`, `test/staging_load_profile_test.dart`, `STAGING_LOAD_TEST.md` en `dragonhaven_spec_test.dart` | Alleen handmatige 100- en 1.000-user stappen zijn toegestaan; productie wordt dubbel geweigerd en 1.000 vereist eerst een groen 100-user artifact met maximaal 2% fouten. Iedere VU vereist een uniek bevestigd synthetisch account en gebruikt realistische ramp-up/think time. Rapporten bevatten app-/contract-/migratieversie, aantallen, veilige foutklassen, responsebytes en p50/p95/p99/max, nooit credentials, identities, responsebody of savedata. Planmodus, analyzer en alle 358 tests zijn groen; echte stagingload wacht op `main`, de synthetische accountpool en afzonderlijke runbevestiging. |
 | 31-08-2026 | Fase 6 support- en privacyprocedure lokaal uitgewerkt | Codex | `SUPPORT_PRIVACY_OPERATIONS.md` en retentiecontract in `dragonhaven_spec_test.dart` | Minimale privacyarme intake en procedures voor accountverlies, e-mail, trade, cloudconflict, verwijdering, toekomstige refunds en misbruik zijn vastgelegd. De matrix koppelt 24-uurschat, vijf/30-dagen-cloudhistorie, logisch 30-dagen-importherstel, 7-dagen-supportexport en accountdelete-cascades aan de implementatie. Twee expliciete gaten zijn bewezen: duurzame sociale notificaties missen een algemene termijn en verlopen private importback-ups missen fysieke cleanup. Voor notification-/Chroniclebeleid volgt geen stille migratie zonder Ricks keuze; de importpurge kan technisch in een volgende migratietranche worden gebouwd. |
+| 31-08-2026 | Fase 6 least-privilege supportkandidaat lokaal gebouwd | Codex | migratie `202608310033_support_privacy_operations.sql`, `SUPPORT_PRIVACY_OPERATIONS.md` en `dragonhaven_spec_test.dart` | Een alleen voor `service_role` uitvoerbare Keeper-ID-lookup retourneert minimale account-, save-, back-up- en geaggregeerde tradestatus zonder e-mail, naam, savebody, inventory, tegenpartij of itemdetails. Iedere poging vereist een casusnummer, operatoralias en vaste reden en schrijft een 30-dagen-log met uitsluitend de gehashte Keeper ID; dezelfde dagelijkse cleanup verwijdert verlopen logs en private importherstelkopieën. Flutter-analyzer en alle 359 tests zijn groen. Staging, productie en openbare app zijn niet gewijzigd; sociale notification- en Chronicle-retentie wachten bewust op beleid. |
 
 ## Onderhoud van dit plan
 

@@ -974,24 +974,42 @@ void main() {
     final social = File(
       'supabase/migrations/202608310030_friend_messages_and_conclaves.sql',
     ).readAsStringSync();
+    final supportOperations = File(
+      'supabase/migrations/202608310033_support_privacy_operations.sql',
+    ).readAsStringSync();
 
     expect(procedures, contains('Keeper ID'));
     expect(procedures, contains('maximaal zeven dagen'));
     expect(procedures, contains('maximaal dertig dagen'));
     expect(procedures, contains('Sociale notificatie-inbox'));
     expect(procedures, contains('Open gat'));
-    expect(procedures, contains('fysieke expiry-cleanup ontbreekt'));
+    expect(procedures, contains('kandidaat-schema 33'));
+    expect(procedures, contains('SHA-256-hash'));
     expect(procedures, contains('Google Play-aankopen staan nog uit'));
     expect(accountDeletion, contains('delete from auth.users'));
     expect(cloudHistory, contains("interval '30 days'"));
     expect(cloudHistory, contains('offset 4'));
     expect(importAudit, contains("interval '30 days'"));
-    expect(
-      importAudit,
-      isNot(contains('purge_expired_legacy_inventory_import_backups')),
-      reason: 'the documented physical import-backup cleanup gap is still real',
-    );
+    expect(importAudit, contains('legacy_inventory_import_backups'));
     expect(social, contains("interval '24 hours'"));
     expect(social, contains('dragonhaven-ephemeral-social-cleanup'));
+    expect(supportOperations, contains('private.support_access_log'));
+    expect(supportOperations, contains('support_lookup_keeper'));
+    expect(supportOperations,
+        contains("auth.role() is distinct from 'service_role'"));
+    expect(supportOperations, contains('to service_role'));
+    expect(supportOperations,
+        contains('from public, anon, authenticated, service_role'));
+    expect(supportOperations, contains("interval '30 days'"));
+    expect(supportOperations, contains('keeper_code_sha256'));
+    expect(supportOperations, contains('extensions.digest'));
+    expect(supportOperations, contains('correlation_ids_available'));
+    expect(
+        supportOperations, contains('purge_expired_support_privacy_records'));
+    expect(supportOperations, contains('legacy_inventory_import_backups'));
+    expect(supportOperations, contains('dragonhaven-support-privacy-cleanup'));
+    expect(supportOperations, isNot(contains('account.email,')));
+    expect(supportOperations, isNot(contains('target_profile.display_name')));
+    expect(supportOperations, isNot(contains('save.state')));
   });
 }
