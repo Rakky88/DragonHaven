@@ -59,7 +59,7 @@ RPC accepteert uitsluitend een service-role caller,
 een vaste reden, operatoralias en casusnummer. Hij retourneert geen e-mail,
 display name, inventory, savebody, tegenpartij of itemdetails.
 
-De lokaal gebouwde `staging-support-privacy.yml` maakt deze grens toetsbaar
+De op `main` actieve `staging-support-privacy.yml` maakt deze grens toetsbaar
 zonder een service-role key als repositorysecret toe te voegen. Na exacte
 handmatige bevestiging controleert de stagingflow dat een gewone ingelogde
 sessie wordt geweigerd, bootst hij de service-role-context alleen binnen de
@@ -67,8 +67,11 @@ afgeschermde managementquery na, valideert hij de minimale response en het
 30-dagen-inzagelog, en verwijdert hij een speciaal aangemaakte verlopen
 testsentinel via de echte cleanupfunctie. Het bewijsbestand bevat uitsluitend
 booleans, termijnmetadata en een UTC-tijdstip; geen Keeper ID, UUID, e-mail,
-token, wachtwoord of responsebody. De workflow is nog niet naar `main` gepusht
-of live op staging uitgevoerd.
+token, wachtwoord of responsebody. Run
+[`33438895977`](https://github.com/Rakky88/DragonHaven/actions/runs/33438895977)
+bewees dit contract op staging. Het artefact was 413 bytes en vermeldde expliciet
+dat productie niet was gericht en identifiers/credentials niet waren
+opgenomen. De parallelle volledige staginggate `33438894645` was eveneens groen.
 
 ## Procedures per veelvoorkomend verzoek
 
@@ -183,22 +186,22 @@ echt aankoopbedrag als potentieel incident onderzocht.
 ### Door Codex
 
 - De service-role-only supportlookup met append-only inzagelog uit migratie 33
-  via de lokaal gebouwde production-blocked workflow op staging testen en pas
-  daarna afzonderlijk voor productie laten goedkeuren.
+  is via de production-blocked workflow op staging bewezen; pas na de volledige
+  operationele casusoefening afzonderlijk voor productie laten goedkeuren.
 - De dagelijkse fysieke purge voor verlopen private pre-import recoverycopies
   is op staging toegepast; vóór productie de testsupportcasus en het
   productievenster afzonderlijk goedkeuren.
 - Na Ricks termijnkeuze acknowledged en oude unacknowledged sociale notificaties
   automatisch opruimen.
-- De lokaal gebouwde privacyarme testsupportmelding na expliciete push- en
-  stagingtoestemming uitvoeren en het bewijs registreren.
+- Een aangeleverde privacyarme correlation ID uit de clientexport aan dezelfde
+  staging-supportcasus koppelen en de volledige onderzoeksroute oefenen zonder
+  die identifier in een lang bewaard artefact op te nemen.
 - Verwijder-/retentie-E2E herhalen nadat server-owned economie en Billing bestaan.
 
 ### Door Rick
 
-- Expliciet toestemming geven om de testsupportworkflow naar `main` te pushen
-  en uitsluitend op staging uit te voeren; hiervoor zijn geen nieuwe secrets of
-  betaalde diensten nodig.
+- Later afzonderlijk toestemming geven voor productie-uitrol van migratie 33;
+  stagingbewijs geeft nooit automatisch productietoestemming.
 - Publiek supportadres, verantwoordelijke personen en haalbare reactietijden
   kiezen.
 - Definitieve privacyverklaring, accountverwijderpagina en Data Safety-invoer
