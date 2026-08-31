@@ -1,0 +1,155 @@
+name: Staging load profile
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: Create a plan or run an approved staging load stage
+        required: true
+        default: plan-100
+        type: choice
+        options:
+          - plan-100
+          - run-100
+          - run-1000
+      confirmation:
+        description: For a run, type RUN_DRAGONHAVEN_STAGING_LOAD_100 or _1000
+        required: false
+        type: string
+      baseline_run_id:
+        description: Successful 100-user workflow run ID; required for run-1000
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: dragonhaven-staging-load
+  cancel-in-progress: false
+
+jobs:
+  staging-load:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Derive and validate the bounded stage
+        id: profile
+        shell: pwsh
+        env:
+          REQUESTED_STAGE: ${{ inputs.stage }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          BASELINE_RUN_ID: ${{ inputs.baseline_run_id }}
+        run: |
+          $isExecution = $env:REQUESTED_STAGE.StartsWith('run-')
+          $virtualUsers = if ($env:REQUESTED_STAGE.EndsWith('1000')) { 1000 } else { 100 }
+          if ($isExecution) {
+            $expected = "RUN_DRAGONHAVEN_STAGING_LOAD_$virtualUsers"
+            if ($env:CONFIRMATION -cne $expected) {
+              throw "Exact confirmation $expected is required."
+            }
+          }
+          if ($virtualUsers -eq 1000 -and
+              $env:BASELINE_RUN_ID -notmatch '^\d+$') {
+            throw 'run-1000 requires the workflow run ID of a successful 100-user baseline.'
+          }
+          "virtual-users=$virtualUsers" >> $env:GITHUB_OUTPUT
+          "execute=$($isExecution.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          'The bounded load-stage request is valid; no secret was accessed.'
+
+      - name: Verify isolated staging execution configuration
+        if: ${{ steps.profile.outputs.execute == 'true' }}
+        shell: pwsh
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_LOAD_CREDENTIALS_JSON: ${{ secrets.STAGING_LOAD_CREDENTIALS_JSON }}
+        run: |
+          $productionRef = 'tnzathhutuwmohmjfrlo'
+          if ($env:STAGING_SUPABASE_PROJECT_REF -eq $productionRef -or
+              $env:STAGING_SUPABASE_URL.TrimEnd('/') -eq "https://$productionRef.supabase.co") {
+            throw 'Production is a forbidden load-test target.'
+          }
+          if ([string]::IsNullOrWhiteSpace($env:STAGING_LOAD_CREDENTIALS_JSON)) {
+            throw 'The protected synthetic credential pool is missing.'
+          }
+          if ($env:STAGING_SUPABASE_URL.TrimEnd('/') -ne
+              "https://$($env:STAGING_SUPABASE_PROJECT_REF).supabase.co") {
+            throw 'The staging URL and project reference do not match.'
+          }
+          if (-not $env:STAGING_SUPABASE_PUBLISHABLE_KEY.StartsWith('sb_publishable_')) {
+            throw 'A staging publishable key is required.'
+          }
+          'The execution target is isolated staging; no credential value was logged.'
+
+      - name: Flutter stable for the dependency-free Dart runner
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Create privacy-safe load plan
+        shell: pwsh
+        env:
+          VIRTUAL_USERS: ${{ steps.profile.outputs.virtual-users }}
+        run: |
+          dart run tool/staging_load_profile.dart `
+            --plan-only `
+            --virtual-users=$env:VIRTUAL_USERS `
+            --duration-seconds=180 `
+            --ramp-up-seconds=60 `
+            --output=staging/load-plan.json
+
+      - name: Download successful 100-user baseline for the 1000-user gate
+        if: ${{ inputs.stage == 'run-1000' }}
+        uses: actions/download-artifact@v6
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.baseline_run_id }}
+          name: DragonHaven-staging-load-100
+          path: baseline
+
+      - name: Execute realistic authenticated staging load
+        if: ${{ steps.profile.outputs.execute == 'true' }}
+        shell: pwsh
+        env:
+          VIRTUAL_USERS: ${{ steps.profile.outputs.virtual-users }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_LOAD_CREDENTIALS_JSON: ${{ secrets.STAGING_LOAD_CREDENTIALS_JSON }}
+        run: |
+          $arguments = @(
+            'run', 'tool/staging_load_profile.dart',
+            '--execute',
+            "--virtual-users=$env:VIRTUAL_USERS",
+            '--duration-seconds=180',
+            '--ramp-up-seconds=60',
+            "--confirmation=$env:CONFIRMATION",
+            '--synthetic-accounts-confirmed',
+            '--output=staging/load-report.json'
+          )
+          if ($env:VIRTUAL_USERS -eq '1000') {
+            $arguments += '--baseline=baseline/load-report.json'
+          }
+          & dart @arguments
+          if ($LASTEXITCODE -ne 0) {
+            throw "The staging load runner failed safely with exit code $LASTEXITCODE."
+          }
+
+      - name: Upload privacy-safe load evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: DragonHaven-staging-load-${{ steps.profile.outputs.virtual-users }}
+          path: staging/
+          if-no-files-found: error
+          retention-days: 30

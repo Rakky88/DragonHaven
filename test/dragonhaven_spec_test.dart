@@ -920,4 +920,41 @@ void main() {
     expect(workflow, isNot(contains(r'${{ secrets.')));
     expect(workflow, isNot(contains('SEV-1:')));
   });
+
+  test('staging load workflow is bounded, sequential and production-safe', () {
+    final workflow =
+        File('.github/workflows/staging-load.yml').readAsStringSync();
+    final runner = File('tool/staging_load_profile.dart').readAsStringSync();
+
+    for (final source in <String>[workflow, runner]) {
+      expect(source, contains('tnzathhutuwmohmjfrlo'));
+      expect(source, contains('Production is a forbidden load-test target'));
+      expect(source, isNot(contains('service_role')));
+      expect(source, isNot(contains('SUPABASE_SERVICE_ROLE')));
+    }
+    expect(workflow, contains('workflow_dispatch:'));
+    expect(workflow, isNot(contains('schedule:')));
+    expect(workflow, contains('plan-100'));
+    expect(workflow, contains('run-100'));
+    expect(workflow, contains('run-1000'));
+    expect(workflow, isNot(contains('run-5000')));
+    expect(workflow, contains('RUN_DRAGONHAVEN_STAGING_LOAD_'));
+    expect(workflow, contains('no secret was accessed'));
+    expect(
+        workflow, contains('Verify isolated staging execution configuration'));
+    expect(workflow, contains('STAGING_LOAD_CREDENTIALS_JSON'));
+    expect(workflow, contains('baseline_run_id'));
+    expect(workflow, contains('DragonHaven-staging-load-100'));
+    expect(workflow, contains('retention-days: 30'));
+    expect(runner, contains("virtualUsers != 100 && virtualUsers != 1000"));
+    expect(runner, contains('uniqueConfirmedSyntheticAccountsRequired'));
+    expect(runner, contains('thinkTimeSeconds'));
+    expect(runner, contains('get_online_snapshot'));
+    expect(runner, contains('p95Ms'));
+    expect(runner, contains('p99Ms'));
+    expect(runner, contains('applicationContractVersion'));
+    expect(runner, contains('discoverMigrationVersion'));
+    expect(runner, contains('No e-mail, password, token, user id'));
+    expect(runner, contains('serverMetricsCaptured'));
+  });
 }
