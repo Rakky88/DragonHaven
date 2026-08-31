@@ -2,10 +2,13 @@
 
 ## Releasecandidate v0.05.00 — gecontroleerde uitrol gestart
 
-Productie staat tijdens de voorbereiding nog op migratie 29/29. Migratie
-`202608310030_friend_messages_and_conclaves.sql` en een exact begrensde
-29→30-workflow zijn lokaal voorbereid; productie wordt pas gewijzigd nadat de
-uitgebreide staging-E2E en databasegates groen zijn.
+Productie staat tijdens de voorbereiding nog op migratie 29/29. Migraties
+`202608310030_friend_messages_and_conclaves.sql` en
+`202608310031_fix_conclave_function_ambiguity.sql` plus een exact begrensde
+29→31-workflow zijn voorbereid; productie wordt pas gewijzigd nadat de
+uitgebreide staging-E2E en databasegates groen zijn. Migratie 31 corrigeert
+idempotent de twee kolomambiguïteiten die database-lint na de eerste geïsoleerde
+stagingtoepassing van migratie 30 vond.
 
 - Friend Messages zijn uitsluitend tussen bevestigde vrienden beschikbaar,
   hebben server-side opt-out en rate limits en bewaren berichten maximaal 24
@@ -25,7 +28,7 @@ uitgebreide staging-E2E en databasegates groen zijn.
 De stagingworkflow test naast de bestaande Friends-, trade- en volledige Group
 Adventure-flow nu ook Friend Messages (ongelezen, lezen en opt-out) en Conclaves
 (genormaliseerd unieke naam, join, Warden-rang, chat, Aerie-bijdrage en volledige
-cleanup). De gebruiker heeft staging, productiemigratie 30 en release v0.05.00
+cleanup). De gebruiker heeft staging, productiemigraties 30–31 en release v0.05.00
 op 31 augustus 2026 expliciet toegestaan.
 
 ## Wat is verbeterd

@@ -15,6 +15,7 @@
   clock or time-zone changes. Expired alarms are not delivered late.
 - The Founding Supporter furniture now appears correctly after placement, and
   its portrait uses the same visual scale as other portraits.
-- Supabase migration 30 adds the private messaging and Conclave server model,
-  locked-down RPC access, rate limits, role guards and automatic ephemeral-chat
-  cleanup while preserving existing Friends, trades and Group Adventures.
+- Supabase migrations 30–31 add the private messaging and Conclave server
+  model, locked-down RPC access, rate limits, role guards and automatic
+  ephemeral-chat cleanup while preserving existing Friends, trades and Group
+  Adventures.

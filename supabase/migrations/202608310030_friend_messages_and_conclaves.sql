@@ -261,8 +261,10 @@ begin
     raise exception 'messages_not_friends';
   end if;
   perform private.cleanup_ephemeral_social_content();
-  update public.friend_messages set read_at = now()
-  where sender_id = p_friend_id and recipient_id = auth.uid() and read_at is null;
+  update public.friend_messages as target set read_at = now()
+  where target.sender_id = p_friend_id
+    and target.recipient_id = auth.uid()
+    and target.read_at is null;
   update public.social_notifications set acknowledged_at = now()
   where user_id = auth.uid() and actor_id = p_friend_id
     and kind = 'friend_message' and acknowledged_at is null;
@@ -415,9 +417,12 @@ begin
   if exists(select 1 from public.conclave_daily_contributions d where d.conclave_id=member.conclave_id and d.contribution_on=today and d.user_id=auth.uid()) then raise exception 'conclave_already_contributed'; end if;
   if (select count(*) from public.conclave_daily_contributions d where d.conclave_id=member.conclave_id and d.contribution_on=today)>=20 then raise exception 'conclave_daily_limit'; end if;
   insert into public.conclave_daily_contributions(conclave_id,contribution_on,user_id) values(member.conclave_id,today,auth.uid());
-  update public.conclave_members set contribution_streak=case
-      when last_contribution_on=today-1 then contribution_streak+1 else 1 end,
-    last_contribution_on=today where conclave_id=member.conclave_id and user_id=auth.uid();
+  update public.conclave_members as target set contribution_streak=case
+      when target.last_contribution_on=today-1
+        then target.contribution_streak+1 else 1 end,
+    last_contribution_on=today
+    where target.conclave_id=member.conclave_id
+      and target.user_id=auth.uid();
   update public.conclaves c set xp=c.xp+10,
     level=least(50,1+((c.xp+10)/850)),updated_at=now() where c.id=member.conclave_id returning c.level into new_level;
   if new_level>old_level then insert into public.conclave_chronicle(conclave_id,actor_id,kind,body)

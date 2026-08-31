@@ -752,7 +752,7 @@ void main() {
     ).readAsStringSync();
     final ui = File('lib/screens/conclave_screen.dart').readAsStringSync();
     final workflow = File(
-      '.github/workflows/production-migrate-30.yml',
+      '.github/workflows/production-migrate-31.yml',
     ).readAsStringSync();
 
     expect(migration, contains('private.are_friends'));
@@ -783,12 +783,23 @@ void main() {
     );
     expect(ui, isNot(contains('Flight Chronicle')));
     expect(ui, isNot(contains('Share achievements with Flight')));
-    expect(workflow, contains('MIGRATE_PRODUCTION_29_TO_30'));
+    final correctiveMigration = File(
+      'supabase/migrations/202608310031_fix_conclave_function_ambiguity.sql',
+    ).readAsStringSync();
+    expect(workflow, contains('MIGRATE_PRODUCTION_29_TO_31'));
     expect(workflow, contains("\$expectedRemote = '202608310029'"));
-    expect(workflow, contains("\$expectedPending = @('202608310030')"));
+    expect(
+      workflow,
+      contains("\$expectedPending = @('202608310030', '202608310031')"),
+    );
     expect(workflow,
         contains('supabase db push --linked --include-all --dry-run'));
     expect(workflow, contains('./tool/release_server_preflight.ps1'));
+    expect(correctiveMigration, contains('target.sender_id = p_friend_id'));
+    expect(
+      correctiveMigration,
+      contains('target.contribution_streak+1'),
+    );
 
     expect(File('assets/images/ui/friends_message.png').existsSync(), isTrue);
     for (var index = 1; index <= 20; index++) {
