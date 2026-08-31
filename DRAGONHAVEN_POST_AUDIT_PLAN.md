@@ -3,13 +3,13 @@
 Laatst bijgewerkt: **31 augustus 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.04.15**
+Actuele openbare versie: **v0.04.16**
 
-Actuele productieserver: **28/28 migraties**
+Actuele productieserver: **29/29 migraties**
 
-Actuele lokale tranche: **v0.04.16 releasecandidate; lokale analyzer en
-339/339 tests zijn groen. Productie blijft op 28/28 migraties totdat de
-afzonderlijke staging- en migratie-29-gates groen zijn.**
+Actuele lokale tranche: **v0.04.16 openbaar; productie staat op 29/29
+migraties en staging, onafhankelijke productiepreflight, beide releasegates
+plus de post-release healthcheck zijn groen.**
 
 Bronnen: [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md),
 [SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md),
@@ -41,7 +41,7 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | Onderdeel | Voortgang | Aantoonbaar klaar | Nog door Codex | Nog door jou |
 | --- | ---: | --- | --- | --- |
 | Google Play-voorbereiding | circa 25% | Permanent package-ID, vaste signing-identiteit, versiecontrole en een ondertekende AAB zijn bewezen | Actuele Play-eisen opnieuw controleren; storeteksten, graphics, Data Safety-inventaris, appgrootte-analyse en rolloutchecklist maken | Play Console openen/verifiëren; app en Play App Signing aanmaken; testers, publieke support/privacy-URL's en storeverklaringen beheren |
-| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.04.15 zijn groen; productie staat gecontroleerd op 28/28 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
+| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.04.16 zijn groen; productie staat gecontroleerd op 29/29 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
 | Fase 1 — monitoring en incidenten | circa 72% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan; de productie-Auth-check draait elk uur, opent/sluit één toegewezen SEV-1-issue en is handmatig groen bewezen | Firebase Crashlytics/Performance koppelen zodra de Android-projectconfig bestaat; veilige read-only applicatiecheck toevoegen en testalert bewijzen | Gratis Firebase Spark-project maken, `nl.dragonhaven.app` registreren, Analytics uit laten en `google-services.json` veilig in de werkmap zetten; testalert ontvangen en privacy/Data Safety beoordelen |
 | Fase 2 — staging en E2E | circa 82% | Afzonderlijke staging, migratiepariteit, account/login, back-up/conflict, Friends, trade en volledige Group Adventure completion/reward/replay zijn echt getest | E-mailbevestiging automatiseren; realistisch 100-user en daarna 1.000-user loadprofiel meten | Veilige stagingmailroute instellen; bevestigen dat testaccounts geen echte persoonsgegevens zijn; testbudget boven 1.000 gebruikers vooraf goedkeuren |
 | Fase 3 — back-up en multi-device | circa 97% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, automatische 15-minutenback-up plus achtergrondflush en een echte staging-restoreroundtrip zijn bewezen | De eerste automatisch geplande zondagrun controleren; later server-owned velden van restores afschermen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
@@ -889,6 +889,13 @@ Een taak of mijlpaal is pas gereed wanneer:
     schoolvoortgang migreert via saveschema 47; er was geen databasemigratie
     nodig en productie blijft op 28/28. Compacte breedte en reduced motion zijn
     op de emulator gecontroleerd; de post-release healthcheck is groen.
+18. **Afgerond door Codex:** v0.04.16 is met 339/339 tests, volledige staging,
+    productiemigratie 29, een onafhankelijke productiepreflight en twee
+    signinggates gepubliceerd. De release bevat de Dragon Academy-,
+    foregroundmuziek-, blijvende weergave-, badge/Vanity-, Supporter-,
+    Music Chest-, Packs-, Friends-refresh- en verzoekbadgeverbeteringen.
+    Migratie 29 houdt oudere profiel-RPC's beschikbaar; productie staat op
+    29/29 en de post-release healthcheck is groen.
 
 ## Besluitenlog
 
@@ -909,7 +916,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 30-08-2026 | Release 0.04.13 | Broncode en de nieuwe apprelease zijn expliciet toegestaan; deze tranche bevat geen databasemigratie | Voorkomen dat een eerder geweigerde Android-notificatieprompt tijdens koude starts de app naar de achtergrond stuurt en als terugkerende storing aanvoelt | Productie blijft op 27/27 en v0.04.13 is openbaar na fysieke toestelcontrole, emulatorregressie, twee groene releasegates en een groene post-release healthcheck |
 | 30-08-2026 | Release 0.04.14 | Broncode, staging, productiemigratie 28 en de nieuwe apprelease zijn expliciet toegestaan | De featuretranche met progression, Dragon Academy en Supporter Vanity gecontroleerd en servercompatibel uitrollen | Productie staat op 28/28 en v0.04.14 is openbaar na groene staging-, migratie-, productie-, tag- en healthgates; echte aankopen blijven uitgeschakeld |
 | 31-08-2026 | Release 0.04.15 | Broncode en de nieuwe apprelease zijn expliciet toegestaan; deze tranche bevat geen databasemigratie | De uitgebreide Dragon Academy-opleiding, rapportstatussen, nieuwe sprites en Supporter-/Trial-presentatie gecontroleerd uitrollen | Productie blijft op 28/28 en v0.04.15 is openbaar na lokale preflight, 329 tests, compacte/reduced-motion controle, twee groene releasegates en een groene healthcheck; echte aankopen blijven uitgeschakeld |
-| 31-08-2026 | Release 0.04.16 | Broncode, staging, productiemigratie 29 en de nieuwe apprelease zijn expliciet toegestaan | De Dragon Academy-/Vanity-/Supporter-verbeteringen, robuuste Friends-refresh en verzoekbadge gecontroleerd en achterwaarts compatibel uitrollen | Eerst lokale checks en staging; daarna uitsluitend migratie 29, onafhankelijke productiepreflight, ondertekende releasegates en post-release healthcheck. Echte aankopen blijven uitgeschakeld |
+| 31-08-2026 | Release 0.04.16 | Broncode, staging, productiemigratie 29 en de nieuwe apprelease zijn expliciet toegestaan | De Dragon Academy-/Vanity-/Supporter-verbeteringen, robuuste Friends-refresh en verzoekbadge gecontroleerd en achterwaarts compatibel uitrollen | Productie staat op 29/29 en v0.04.16 is openbaar na groene lokale checks, staging-, migratie-, productie-, tag- en healthgates. Echte aankopen blijven uitgeschakeld |
 | Nog te bepalen | B3, B4-activering en B7 | Nog niet bevestigd | Beslissen vlak vóór de afhankelijke fase | Alleen de nog afhankelijke delen van M4–M6 wachten |
 
 ## Voortgangslog
@@ -971,7 +978,11 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 31-08-2026 | Openbare release v0.04.15 | Codex, na jouw toestemming | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.04.15), [productiegate 33339570035](https://github.com/Rakky88/DragonHaven/actions/runs/33339570035), [taggate 33340087680](https://github.com/Rakky88/DragonHaven/actions/runs/33340087680) | Ondertekende APK van 355.843.461 bytes gepubliceerd; SHA-256 `9ab67c4164f69c9a4211491cb4afa2c66b7c19123ec6a87ee854fcef802c4180`; package `nl.dragonhaven.app`, versionCode 10048 en vast releasecertificaat bewezen; beide productiepreflights, 329 tests, compacte/reduced-motion UI-controle en Play-ready AAB groen; geen databasemigratie, productie blijft 28/28 |
 | 31-08-2026 | Post-release productiehealth v0.04.15 | Codex | [Healthrun 33340431353](https://github.com/Rakky88/DragonHaven/actions/runs/33340431353) | Publieke productie-endpoints direct na v0.04.15 opnieuw groen; bewijsartifact geüpload, productie staat op 28/28 migraties en er staat geen open storingsalert |
 
-| 31-08-2026 | Releasecandidate v0.04.16 | Codex | saveschema 48, migratie 29, `audio_service_test.dart`, `household_provider_test.dart`, `new_feature_batch_widget_test.dart`, `online_social_test.dart`, `widget_test.dart` | Dragon Academy-naamgeving en vervroegd afstuderen, gecentreerde Sigil Memory/Shadow Match, uitsluitend voorgrondmuziek, herstelde Trial-constellatie, blijvende My Dragons/Eggs-weergavevoorkeuren, uitbreidbare online badges, plaatsbare Supporter-furniture, een onderscheidende geopende Music Chest, een stabiele heropenbare Packs-pagina en een live rode teller voor inkomende verzoeken op de Friends-tab gebouwd. De Friends-refresh bewaart nu een geldige server-snapshot voordat niet-kritieke inventaris-, showcase-, reserverings- en notificatieonderhoudstaken draaien; een enkele onderhoudsfout kan daardoor niet langer het profiel en de vriendenlijst leegtrekken en krijgt een eigen privacyarme diagnose-operatie. De productiecheck voor Qnosick bewees een bereikbaar account, geldige snapshot en werkend notificatie-acknowledgement zonder gegevens te wijzigen. Analyzer en 339/339 tests zijn groen. Releasebesluit is vastgelegd; staging, migratie 29, productie- en releasegates volgen nog. Productie blijft tot die gates 28/28. |
+| 31-08-2026 | v0.04.16 featuretranche | Codex | commit `89fee10510b0076c2f68adab730877e7ffd69695`, saveschema 48, migratie 29, `audio_service_test.dart`, `household_provider_test.dart`, `new_feature_batch_widget_test.dart`, `online_social_test.dart`, `widget_test.dart` | Dragon Academy-naamgeving en vervroegd afstuderen, gecentreerde Sigil Memory/Shadow Match, uitsluitend voorgrondmuziek, herstelde Trial-constellatie, blijvende My Dragons/Eggs-weergavevoorkeuren, uitbreidbare online badges, plaatsbare Supporter-furniture, een onderscheidende geopende Music Chest, een stabiele heropenbare Packs-pagina en een live rode teller voor inkomende verzoeken op de Friends-tab gebouwd. De Friends-refresh bewaart nu een geldige server-snapshot voordat niet-kritieke onderhoudstaken draaien; een onderhoudsfout kan daardoor niet langer het profiel en de vriendenlijst leegtrekken en krijgt een eigen privacyarme diagnose-operatie. De productiecheck voor Qnosick bewees een bereikbaar account, geldige snapshot en werkend notificatie-acknowledgement zonder gegevens te wijzigen. Analyzer en 339/339 tests zijn groen. |
+| 31-08-2026 | v0.04.16 releasecandidate op staging | Codex | [Stagingrun 33376878533](https://github.com/Rakky88/DragonHaven/actions/runs/33376878533) | Migratie 29, databasepreflight, volledige twee-account social- en Group Adventure-E2E, analyzer, 339 tests, geïsoleerde staging-APK en bewijsartifact groen |
+| 31-08-2026 | Productiemigratie 29 en onafhankelijke preflight | Codex, na jouw toestemming | [Migratierun 33377566011](https://github.com/Rakky88/DragonHaven/actions/runs/33377566011), `tool/release_server_preflight.ps1` | Exacte beginstand 28, publieke healthcheck, database-lint en dry-run groen; uitsluitend migratie 29 toegepast. Daarna 29/29 parity, 0 database-lintfouten en Auth health/settings 200/200 op project `tnzathhutuwmohmjfrlo` bewezen. Oudere profiel-RPC's blijven beschikbaar |
+| 31-08-2026 | Openbare release v0.04.16 | Codex, na jouw toestemming | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.04.16), [productiegate 33377773908](https://github.com/Rakky88/DragonHaven/actions/runs/33377773908), [taggate 33378504659](https://github.com/Rakky88/DragonHaven/actions/runs/33378504659) | Ondertekende APK van 358.433.995 bytes gepubliceerd; SHA-256 `fe94f1d5b33cea84acfe045d6ee8c3269c53575162925e2e4ee89a54206388bf`; package `nl.dragonhaven.app`, versionCode 10049 en vast releasecertificaat bewezen; beide productiepreflights, 339 tests en Play-ready AAB groen; GitHubs versiegebonden en permanente latest-download wijzen naar hetzelfde asset |
+| 31-08-2026 | Post-release productiehealth v0.04.16 | Codex | [Healthrun 33379163158](https://github.com/Rakky88/DragonHaven/actions/runs/33379163158) | Publieke productie-endpoints direct na v0.04.16 opnieuw groen; bewijsartifact geüpload, productie staat op 29/29 migraties en er staat geen open storingsalert |
 
 ## Onderhoud van dit plan
 
