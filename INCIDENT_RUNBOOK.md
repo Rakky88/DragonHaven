@@ -1,7 +1,7 @@
 # DragonHaven incident- en diagnoserunbook
 
-Laatst bijgewerkt: **28 augustus 2026**  
-Uitgangsversie: **v0.04.09 / productieschema 24**
+Laatst bijgewerkt: **31 augustus 2026**
+Uitgangsversie: **v0.05.00 / productieschema 31; applicatiehealth wacht op migratie 32**
 
 ## Doel
 
@@ -20,8 +20,9 @@ databasewachtwoorden of volledige saves in een ticket of incidentlog.
 - **Account Info → Copy support diagnostics** kopieert een bewust beperkt JSON-
   rapport met appversie, Keeper ID, user UUID, veilige foutcodes, supportcodes
   en timings. E-mail, wachtwoord, tokens, inventory en save-inhoud ontbreken.
-- `tool/public_server_health_check.ps1` meet de twee publieke Auth-endpoints en
-  kan een JSON-rapport bewaren.
+- `tool/public_server_health_check.ps1` meet de twee publieke Auth-endpoints en,
+  na migratie 32, de privacyveilige applicatie-RPC. Het JSON-rapport bevat
+  alleen statussen, timings, contractversie en klokafwijking.
 - De GitHub-workflow **Public server health check** voert dezelfde check ieder
   uur en handmatig uit zonder private secrets en bewaart het artifact dertig
   dagen. Een mislukking opent één aan `Rakky88` toegewezen SEV-1-issue; een
@@ -87,6 +88,10 @@ gepauzeerd project moeten als incident worden behandeld. Zie de officiële
 ### Auth en nieuwe accounts
 
 - Controleer `/auth/v1/health` en `/auth/v1/settings` plus gemeten latency.
+- Controleer na migratie 32 ook
+  `/rest/v1/rpc/dragonhaven_public_health`: status `ok`, service
+  `dragonhaven-online`, contractversie 1 en een veilige serverklok. De RPC leest
+  bewust geen gebruikers- of gameplaydata.
 - Controleer projectstatus en of een Free-project is gepauzeerd.
 - Controleer signup-/loginfouten, rate limits, e-mailbevestiging en
   bezorgproblemen in het relevante tijdvenster.
@@ -191,6 +196,7 @@ Gemelde appversie(s):
 Getroffen functies/aantal spelers:
 Supportcode(s):
 Publieke healthstatus en latency (eerste/herhaling):
+Publieke applicatiestatus, contract en klokafwijking:
 Supabase-projectstatus:
 Recente release/migratie/configuratiewijziging:
 Waarschijnlijke oorzaak:

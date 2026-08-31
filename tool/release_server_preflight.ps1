@@ -117,6 +117,17 @@ try {
     if ($settings.Content -notmatch '"email"') {
         throw 'The public Supabase Auth settings do not expose e-mail authentication.'
     }
+    $applicationResponse = Invoke-DragonHavenPublicRequest `
+        -BaseUrl $baseUrl `
+        -Path '/rest/v1/rpc/dragonhaven_public_health' `
+        -PublishableKey $publicKey `
+        -Method POST `
+        -JsonBody '{}'
+    if ($applicationResponse.Status -ne 200) {
+        throw 'The public DragonHaven application endpoint is not healthy.'
+    }
+    $application = ConvertFrom-DragonHavenApplicationHealth `
+        -Content $applicationResponse.Content
 
     [pscustomobject]@{
         ProjectRef = $ExpectedProjectRef.Trim()
@@ -127,6 +138,12 @@ try {
         AuthSettingsStatus = $settings.Status
         AuthSettingsDurationMs = $settings.DurationMs
         EmailAuthConfigured = $true
+        ApplicationHealthStatus = $applicationResponse.Status
+        ApplicationHealthDurationMs = $applicationResponse.DurationMs
+        ApplicationService = $application.Service
+        ApplicationContractVersion = $application.ContractVersion
+        ApplicationServerTimeUtc = $application.ServerTimeUtc
+        ApplicationClockSkewMs = $application.ClockSkewMs
     }
 }
 finally {

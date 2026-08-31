@@ -818,4 +818,80 @@ void main() {
       );
     }
   });
+
+  test('public application health is read-only, private-data-free and gated',
+      () {
+    final migration = File(
+      'supabase/migrations/202608310032_public_application_health.sql',
+    ).readAsStringSync();
+    final publicCheck =
+        File('tool/public_server_health_check.ps1').readAsStringSync();
+    final preflight =
+        File('tool/release_server_preflight.ps1').readAsStringSync();
+    final helper = File('tool/lib/public_auth_health.ps1').readAsStringSync();
+    final parserTest =
+        File('tool/test_public_application_health.ps1').readAsStringSync();
+    final healthWorkflow =
+        File('.github/workflows/health-check.yml').readAsStringSync();
+    final migrationWorkflow = File(
+      '.github/workflows/production-migrate-32.yml',
+    ).readAsStringSync();
+
+    expect(migration, contains('dragonhaven_public_health'));
+    expect(migration, contains("'status', 'ok'"));
+    expect(migration, contains("'service', 'dragonhaven-online'"));
+    expect(migration, contains("'contract_version', 1"));
+    expect(migration, contains('security invoker'));
+    expect(migration, contains("set search_path = ''"));
+    expect(
+      migration,
+      contains(
+        'revoke all on function public.dragonhaven_public_health() from public',
+      ),
+    );
+    expect(
+      migration,
+      contains(
+        'grant execute on function public.dragonhaven_public_health() to anon, authenticated',
+      ),
+    );
+    expect(migration, isNot(contains('security definer')));
+    expect(migration, isNot(contains('from public.')));
+    expect(migration, isNot(contains('auth.uid')));
+
+    for (final script in [publicCheck, preflight]) {
+      expect(script, contains('/rest/v1/rpc/dragonhaven_public_health'));
+      expect(script, contains('ConvertFrom-DragonHavenApplicationHealth'));
+      expect(script, contains('ApplicationHealthStatus'));
+      expect(script, contains('ApplicationContractVersion'));
+      expect(script, contains('ApplicationClockSkewMs'));
+    }
+    expect(helper, contains("[ValidateSet('GET', 'POST')]"));
+    expect(helper, contains('MaximumClockSkewSeconds'));
+    expect(
+        helper, contains("[string]\$payload.service -ne 'dragonhaven-online'"));
+    expect(parserTest, contains('invalidContractRejected'));
+    expect(parserTest, contains('staleClockRejected'));
+    expect(parserTest, contains('arrayRejected'));
+    expect(healthWorkflow,
+        contains('Check public production Auth and application endpoints'));
+    expect(healthWorkflow, isNot(contains('-SkipApplicationHealth')),
+        reason:
+            'the scheduled production monitor must never bypass app health');
+    expect(preflight, isNot(contains('SkipApplicationHealth')),
+        reason: 'release preflight must always require application health');
+    expect(
+      File('.github/workflows/staging.yml').readAsStringSync(),
+      contains('./tool/test_public_application_health.ps1'),
+    );
+
+    expect(migrationWorkflow, contains('MIGRATE_PRODUCTION_31_TO_32'));
+    expect(migrationWorkflow, contains("\$expectedRemote = '202608310031'"));
+    expect(
+        migrationWorkflow, contains("\$expectedPending = @('202608310032')"));
+    expect(migrationWorkflow, contains('-SkipApplicationHealth'));
+    expect(migrationWorkflow, contains('./tool/release_server_preflight.ps1'));
+    expect(migrationWorkflow,
+        contains('DragonHaven-production-migration-31-to-32'));
+  });
 }

@@ -4,6 +4,7 @@ param(
     [string]$PublishableKey = '',
     [string]$Environment = 'production',
     [string]$OutputPath = '',
+    [switch]$SkipApplicationHealth,
     [int]$TimeoutSeconds = 60
 )
 
@@ -68,6 +69,23 @@ if ($settings.Content -notmatch '"email"') {
     throw 'Public Auth settings do not expose e-mail authentication.'
 }
 
+$application = $null
+$applicationResponse = $null
+if (-not $SkipApplicationHealth) {
+    $applicationResponse = Invoke-DragonHavenPublicRequest `
+        -BaseUrl $BaseUrl `
+        -Path '/rest/v1/rpc/dragonhaven_public_health' `
+        -PublishableKey $PublishableKey `
+        -Method POST `
+        -JsonBody '{}' `
+        -TimeoutSeconds $TimeoutSeconds
+    if ($applicationResponse.Status -ne 200) {
+        throw 'The public application health endpoint is unhealthy.'
+    }
+    $application = ConvertFrom-DragonHavenApplicationHealth `
+        -Content $applicationResponse.Content
+}
+
 $report = [ordered]@{
     CheckedAtUtc = [DateTime]::UtcNow.ToString('o')
     Environment = $Environment
@@ -77,6 +95,15 @@ $report = [ordered]@{
     AuthSettingsStatus = $settings.Status
     AuthSettingsDurationMs = $settings.DurationMs
     EmailAuthConfigured = $true
+    ApplicationHealthChecked = -not $SkipApplicationHealth
+}
+if ($null -ne $application) {
+    $report.ApplicationHealthStatus = $applicationResponse.Status
+    $report.ApplicationHealthDurationMs = $applicationResponse.DurationMs
+    $report.ApplicationService = $application.Service
+    $report.ApplicationContractVersion = $application.ContractVersion
+    $report.ApplicationServerTimeUtc = $application.ServerTimeUtc
+    $report.ApplicationClockSkewMs = $application.ClockSkewMs
 }
 
 if (-not [string]::IsNullOrWhiteSpace($OutputPath)) {

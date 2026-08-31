@@ -21,7 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Check public production endpoints
+      - name: Check public production Auth and application endpoints
         shell: pwsh
         run: |
           ./tool/public_server_health_check.ps1 `

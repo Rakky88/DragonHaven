@@ -122,6 +122,10 @@ jobs:
         with:
           version: 2.116.0
 
+      - name: Test public application health contract parser
+        shell: pwsh
+        run: ./tool/test_public_application_health.ps1
+
       - name: Initialize and verify isolated staging server
         shell: pwsh
         env:

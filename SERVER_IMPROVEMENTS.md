@@ -37,6 +37,25 @@ en [post-release healthcheck 33399531445](https://github.com/Rakky88/DragonHaven
 zijn groen. De onafhankelijke productiepreflight bewijst 31/31 migratiepariteit,
 0 database-lintfouten, Auth health/settings 200/200 en geconfigureerde e-mailauth.
 
+## Volgende audittranche — applicatiehealth lokaal klaar
+
+Migratie `202608310032_public_application_health.sql` voegt een publieke,
+read-only `security invoker`-RPC toe die geen spelers-, account- of
+gameplaytabel leest. Hij retourneert uitsluitend een vaste servicestatus,
+contractversie en servertijd. De uurlijkse monitor en verplichte releasepreflight
+controleren daarmee na activering niet alleen Auth, maar ook het echte
+Supabase-gateway → PostgREST → PostgreSQL-pad en een klokafwijking van maximaal
+vijf minuten.
+
+De positieve en negatieve contracttests, PowerShell-parser, bestaande live
+Auth-check, analyzer en 348/348 Flutter-tests zijn lokaal groen. De stagingflow
+zal migratie 32 plus de nieuwe endpointcheck automatisch bewijzen. De exact
+begrensde `production-migrate-32.yml` controleert productie op beginstand 31,
+lint en dry-run, past uitsluitend migratie 32 toe en eist daarna volledige
+preflight en applicatiehealth. Deze tranche is nog niet naar `main` of productie
+uitgerold; productie blijft daarom veilig op 31/31 totdat daar opnieuw
+toestemming voor is.
+
 ## Wat is verbeterd
 
 ### Online startup en nieuwe accounts

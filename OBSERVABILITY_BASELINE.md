@@ -1,6 +1,6 @@
 # DragonHaven observability- en dashboardspecificatie
 
-Laatst bijgewerkt: **28 augustus 2026**
+Laatst bijgewerkt: **31 augustus 2026**
 
 ## Doel en gratis startpunt
 
@@ -22,6 +22,7 @@ technische installatie- of correlation-ID.
 | --- | --- | --- | --- |
 | Auth health | `public_server_health_check.ps1` | status en responstijd per run | iedere release en melding |
 | Auth settings | dezelfde healthcheck | status, responstijd en e-mailauth aan/uit | iedere release |
+| Applicatiehealth | dezelfde healthcheck na migratie 32 | PostgREST/database-status, responstijd, vast contract en veilige klokafwijking; nooit accountdata | iedere release en melding |
 | Signup/loginfouten | Supabase Auth logs/metrics | percentage per vaste foutcode | dagelijks tijdens testuitrol |
 | Loginlatency | Supabase/clientdiagnostiek | p50/p95/p99 per omgeving | na minimaal zeven representatieve dagen |
 | E-mailbevestiging | Auth/e-mailprovider | aanvragen, bezorgd, bevestigd, geweigerd | dagelijks tijdens onboardingtest |
