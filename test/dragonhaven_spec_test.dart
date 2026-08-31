@@ -1013,6 +1013,51 @@ void main() {
     expect(supportOperations, isNot(contains('save.state')));
   });
 
+  test(
+      'staging support privacy verification is explicit isolated and privacy-safe',
+      () {
+    final workflow = File(
+      '.github/workflows/staging-support-privacy.yml',
+    ).readAsStringSync();
+    final runner = File(
+      'tool/staging_support_privacy_e2e.ps1',
+    ).readAsStringSync();
+
+    expect(workflow, contains('workflow_dispatch:'));
+    expect(workflow, contains('TEST_DRAGONHAVEN_STAGING_SUPPORT_PRIVACY'));
+    expect(workflow, contains('environment: staging'));
+    expect(workflow, contains('timeout-minutes: 10'));
+    expect(workflow, contains('STAGING_SUPABASE_ACCESS_TOKEN'));
+    expect(workflow, contains('STAGING_E2E_EMAIL'));
+    expect(workflow, contains('STAGING_E2E_PASSWORD'));
+    expect(workflow, contains('if-no-files-found: error'));
+    expect(workflow, contains('retention-days: 30'));
+    expect(workflow, isNot(contains('SUPABASE_SERVICE_ROLE_KEY')));
+    expect(workflow, isNot(contains('schedule:')));
+
+    expect(runner, contains('#requires -Version 7.0'));
+    expect(runner, contains('tnzathhutuwmohmjfrlo'));
+    expect(runner, contains('mag nooit het productieproject gebruiken'));
+    expect(runner, contains('202608310033_support_privacy_operations.sql'));
+    expect(runner, contains('supabase_migrations.schema_migrations'));
+    expect(runner, contains('request.jwt.claim.role'));
+    expect(runner, contains('support_lookup_keeper'));
+    expect(runner, contains('support_access_log'));
+    expect(runner, contains('purge_expired_support_privacy_records'));
+    expect(runner, contains('authenticated_access_denied='));
+    expect(runner, contains('privacy_safe_response_verified='));
+    expect(runner, contains('access_log_retention_days=30'));
+    expect(runner, contains('expired_cleanup_verified='));
+    expect(runner, contains('raw_identifiers_recorded=false'));
+    expect(runner, contains('credentials_recorded=false'));
+    expect(runner, contains(r'$accessToken = $null'));
+    expect(runner, contains(r'$ManagementAccessToken = $null'));
+    expect(runner, contains(r'$Password = $null'));
+    expect(runner, isNot(contains(r'Write-Output $accessToken')));
+    expect(runner, isNot(contains(r'Write-Host $keeperCode')));
+    expect(runner, isNot(contains(r'Write-Host $safeUserId')));
+  });
+
   test('rollback and hotfix runbook is forward-only and evidence-gated', () {
     final runbook = File('ROLLBACK_HOTFIX_RUNBOOK.md').readAsStringSync();
 

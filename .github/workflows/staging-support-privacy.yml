@@ -1,0 +1,92 @@
+name: Staging support privacy verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type TEST_DRAGONHAVEN_STAGING_SUPPORT_PRIVACY to run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dragonhaven-staging-support-privacy
+  cancel-in-progress: false
+
+jobs:
+  verify-support-privacy:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Require explicit staging-only confirmation
+        shell: pwsh
+        env:
+          DRILL_CONFIRMATION: ${{ inputs.confirmation }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+        run: |
+          if ($env:DRILL_CONFIRMATION -cne 'TEST_DRAGONHAVEN_STAGING_SUPPORT_PRIVACY') {
+            throw 'Refusing to run the staging support privacy verification without the exact confirmation.'
+          }
+          if ([string]::IsNullOrWhiteSpace($env:STAGING_SUPABASE_URL) -or
+              [string]::IsNullOrWhiteSpace($env:STAGING_SUPABASE_PROJECT_REF)) {
+            throw 'De stagingprojectconfiguratie ontbreekt.'
+          }
+          if ($env:STAGING_SUPABASE_PROJECT_REF -eq 'tnzathhutuwmohmjfrlo' -or
+              $env:STAGING_SUPABASE_URL.TrimEnd('/') -eq 'https://tnzathhutuwmohmjfrlo.supabase.co') {
+            throw 'Deze workflow mag nooit productie gebruiken.'
+          }
+          if ($env:STAGING_SUPABASE_URL.TrimEnd('/') -ne
+              "https://$($env:STAGING_SUPABASE_PROJECT_REF).supabase.co") {
+            throw 'De staging-URL en projectreference horen niet bij elkaar.'
+          }
+
+      - name: Verify staging support privacy contract
+        shell: pwsh
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+        run: |
+          $required = @(
+            'STAGING_SUPABASE_URL',
+            'STAGING_SUPABASE_PUBLISHABLE_KEY',
+            'STAGING_SUPABASE_PROJECT_REF',
+            'STAGING_SUPABASE_ACCESS_TOKEN',
+            'STAGING_E2E_EMAIL',
+            'STAGING_E2E_PASSWORD'
+          )
+          $missing = @(
+            foreach ($name in $required) {
+              if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+                $name
+              }
+            }
+          )
+          if ($missing.Count -gt 0) {
+            throw "Ontbrekende afgeschermde stagingconfiguratie: $($missing -join ', ')."
+          }
+          ./tool/staging_support_privacy_e2e.ps1 `
+            -SupabaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Email $env:STAGING_E2E_EMAIL `
+            -Password $env:STAGING_E2E_PASSWORD `
+            -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
+
+      - name: Upload privacy-safe verification evidence
+        uses: actions/upload-artifact@v6
+        with:
+          name: DragonHaven-staging-support-privacy
+          path: staging/support-privacy-e2e.txt
+          if-no-files-found: error
+          retention-days: 30

@@ -59,6 +59,17 @@ RPC accepteert uitsluitend een service-role caller,
 een vaste reden, operatoralias en casusnummer. Hij retourneert geen e-mail,
 display name, inventory, savebody, tegenpartij of itemdetails.
 
+De lokaal gebouwde `staging-support-privacy.yml` maakt deze grens toetsbaar
+zonder een service-role key als repositorysecret toe te voegen. Na exacte
+handmatige bevestiging controleert de stagingflow dat een gewone ingelogde
+sessie wordt geweigerd, bootst hij de service-role-context alleen binnen de
+afgeschermde managementquery na, valideert hij de minimale response en het
+30-dagen-inzagelog, en verwijdert hij een speciaal aangemaakte verlopen
+testsentinel via de echte cleanupfunctie. Het bewijsbestand bevat uitsluitend
+booleans, termijnmetadata en een UTC-tijdstip; geen Keeper ID, UUID, e-mail,
+token, wachtwoord of responsebody. De workflow is nog niet naar `main` gepusht
+of live op staging uitgevoerd.
+
 ## Procedures per veelvoorkomend verzoek
 
 ### Verloren account of nieuw toestel
@@ -172,18 +183,22 @@ echt aankoopbedrag als potentieel incident onderzocht.
 ### Door Codex
 
 - De service-role-only supportlookup met append-only inzagelog uit migratie 33
-  pas na de privacyarme stagingtest afzonderlijk voor productie laten
-  goedkeuren.
+  via de lokaal gebouwde production-blocked workflow op staging testen en pas
+  daarna afzonderlijk voor productie laten goedkeuren.
 - De dagelijkse fysieke purge voor verlopen private pre-import recoverycopies
   is op staging toegepast; vóór productie de testsupportcasus en het
   productievenster afzonderlijk goedkeuren.
 - Na Ricks termijnkeuze acknowledged en oude unacknowledged sociale notificaties
   automatisch opruimen.
-- Een privacyarme testsupportmelding van Keeper ID via correlation ID doorlopen.
+- De lokaal gebouwde privacyarme testsupportmelding na expliciete push- en
+  stagingtoestemming uitvoeren en het bewijs registreren.
 - Verwijder-/retentie-E2E herhalen nadat server-owned economie en Billing bestaan.
 
 ### Door Rick
 
+- Expliciet toestemming geven om de testsupportworkflow naar `main` te pushen
+  en uitsluitend op staging uit te voeren; hiervoor zijn geen nieuwe secrets of
+  betaalde diensten nodig.
 - Publiek supportadres, verantwoordelijke personen en haalbare reactietijden
   kiezen.
 - Definitieve privacyverklaring, accountverwijderpagina en Data Safety-invoer
