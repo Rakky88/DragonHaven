@@ -48,12 +48,14 @@ Supabase-gateway → PostgREST → PostgreSQL-pad en een klokafwijking van maxim
 vijf minuten.
 
 De positieve en negatieve contracttests, PowerShell-parser, bestaande live
-Auth-check, analyzer en 348/348 Flutter-tests zijn lokaal groen. De stagingflow
-zal migratie 32 plus de nieuwe endpointcheck automatisch bewijzen. De exact
-begrensde `production-migrate-32.yml` controleert productie op beginstand 31,
-lint en dry-run, past uitsluitend migratie 32 toe en eist daarna volledige
-preflight en applicatiehealth. Deze tranche is nog niet naar `main` of productie
-uitgerold; productie blijft daarom veilig op 31/31 totdat daar opnieuw
+Auth-check, analyzer en 348/348 Flutter-tests zijn groen. Ook
+[stagingrun 33402550922](https://github.com/Rakky88/DragonHaven/actions/runs/33402550922)
+is volledig geslaagd: migratie 32, database-lint/preflight, de nieuwe endpoint-
+en klokcontrole, volledige sociale en Group Adventure-E2E en staging-APK.
+De exact begrensde `production-migrate-32.yml` controleert productie op
+beginstand 31, lint en dry-run, past uitsluitend migratie 32 toe en eist daarna
+volledige preflight en applicatiehealth. Deze tranche staat nog niet op `main`
+of productie; productie blijft daarom veilig op 31/31 totdat daar opnieuw
 toestemming voor is.
 
 ## Wat is verbeterd
