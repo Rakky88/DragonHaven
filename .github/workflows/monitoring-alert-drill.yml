@@ -1,0 +1,144 @@
+name: Controlled monitoring alert delivery drill
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type TEST_DRAGONHAVEN_MONITORING_ALERT to run the drill
+        required: true
+        type: string
+      close_after_verification:
+        description: Close the test issue after its delivery contract is verified
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: dragonhaven-monitoring-alert-drill
+  cancel-in-progress: false
+
+jobs:
+  alert-delivery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Require explicit test confirmation
+        shell: pwsh
+        env:
+          DRILL_CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          if ($env:DRILL_CONFIRMATION -cne 'TEST_DRAGONHAVEN_MONITORING_ALERT') {
+            throw 'Refusing to create a monitoring drill alert without the exact confirmation.'
+          }
+
+      - name: Deliver, verify and record the controlled test alert
+        id: drill
+        uses: actions/github-script@v8
+        env:
+          CLOSE_AFTER_VERIFICATION: ${{ inputs.close_after_verification }}
+        with:
+          script: |
+            const fs = require('fs');
+
+            const appInfo = fs.readFileSync('lib/app_info.dart', 'utf8');
+            const versionMatch = appInfo.match(/defaultValue:\s*'([^']+)'/);
+            if (!versionMatch) {
+              core.setFailed('Could not derive the app version from lib/app_info.dart.');
+              return;
+            }
+
+            const appVersion = `v${versionMatch[1]}`;
+            const correlationId = `DH-DRILL-${context.runId}-${context.runAttempt}`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const runbookUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/blob/${context.sha}/INCIDENT_RUNBOOK.md`;
+            const title = `[DRILL] DragonHaven monitoring delivery test ${context.runId}`;
+            const body = [
+              '# Controlled monitoring alert drill',
+              '',
+              '> This is a TEST alert. Production health is not failing and no player action is required.',
+              '',
+              `- App version: **${appVersion}**`,
+              `- Correlation ID: \`${correlationId}\``,
+              `- Workflow evidence: ${runUrl}`,
+              `- Response procedure: [INCIDENT_RUNBOOK.md](${runbookUrl})`,
+              '',
+              'Expected response: identify this as a drill, verify the correlation ID and follow the runbook without changing production.',
+              '',
+              'No credentials, secrets, player data, save data or device identifiers are included.',
+            ].join('\n');
+
+            const { data: created } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              assignees: ['Rakky88'],
+            });
+
+            const { data: delivered } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: created.number,
+            });
+            const assignees = delivered.assignees.map((entry) => entry.login);
+            if (delivered.title !== title ||
+                !delivered.body.includes(appVersion) ||
+                !delivered.body.includes(correlationId) ||
+                !delivered.body.includes('INCIDENT_RUNBOOK.md') ||
+                !assignees.includes('Rakky88')) {
+              core.setFailed('The delivered drill issue does not match the safe alert contract.');
+              return;
+            }
+
+            fs.mkdirSync('monitoring', { recursive: true });
+            fs.writeFileSync(
+              'monitoring/alert-delivery-drill.json',
+              JSON.stringify({
+                kind: 'controlled-monitoring-alert-drill',
+                productionIncident: false,
+                appVersion,
+                correlationId,
+                receiver: 'Rakky88',
+                issueNumber: delivered.number,
+                issueUrl: delivered.html_url,
+                runUrl,
+                verifiedAtUtc: new Date().toISOString(),
+              }, null, 2),
+              'utf8',
+            );
+
+            if (process.env.CLOSE_AFTER_VERIFICATION === 'true') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: delivered.number,
+                body: `Delivery contract verified by correlation ID \`${correlationId}\`. This test alert is now closed; no production recovery was needed.`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: delivered.number,
+                state: 'closed',
+                state_reason: 'completed',
+              });
+            }
+
+            core.setOutput('issue-number', delivered.number);
+            core.setOutput('issue-url', delivered.html_url);
+            core.setOutput('correlation-id', correlationId);
+
+      - name: Upload privacy-safe delivery evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: DragonHaven-monitoring-alert-drill-${{ github.run_number }}
+          path: monitoring/alert-delivery-drill.json
+          if-no-files-found: warn
+          retention-days: 30

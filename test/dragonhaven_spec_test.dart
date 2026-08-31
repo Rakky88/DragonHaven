@@ -894,4 +894,30 @@ void main() {
     expect(migrationWorkflow,
         contains('DragonHaven-production-migration-31-to-32'));
   });
+
+  test('monitoring alert drill is explicit, isolated and privacy-safe', () {
+    final workflow = File(
+      '.github/workflows/monitoring-alert-drill.yml',
+    ).readAsStringSync();
+
+    expect(workflow, contains('workflow_dispatch:'));
+    expect(workflow, contains('TEST_DRAGONHAVEN_MONITORING_ALERT'));
+    expect(workflow, contains('issues: write'));
+    expect(workflow, contains('[DRILL] DragonHaven monitoring delivery test'));
+    expect(workflow, contains('This is a TEST alert'));
+    expect(workflow, contains('Production health is not failing'));
+    expect(workflow, contains('lib/app_info.dart'));
+    expect(workflow, contains(r'DH-DRILL-${context.runId}'));
+    expect(workflow, contains("assignees: ['Rakky88']"));
+    expect(workflow, contains('INCIDENT_RUNBOOK.md'));
+    expect(workflow, contains('No credentials, secrets, player data'));
+    expect(workflow, contains("state: 'closed'"));
+    expect(workflow, contains('alert-delivery-drill.json'));
+    expect(workflow, contains('retention-days: 30'));
+    expect(workflow, isNot(contains('schedule:')));
+    expect(workflow, isNot(contains('pull_request:')));
+    expect(workflow, isNot(contains('SUPABASE_')));
+    expect(workflow, isNot(contains(r'${{ secrets.')));
+    expect(workflow, isNot(contains('SEV-1:')));
+  });
 }
