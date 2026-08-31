@@ -40,6 +40,18 @@ const supporterFrame = KeeperFrameDefinition(
   assetPath: 'assets/images/supporter/supporter_frame.png',
 );
 
+const allKeeperBadges = <KeeperBadgeDefinition>[
+  supporterBadge,
+];
+
+KeeperBadgeDefinition? keeperBadgeById(String? id) {
+  if (id == null) return null;
+  for (final badge in allKeeperBadges) {
+    if (badge.id == id) return badge;
+  }
+  return null;
+}
+
 const allKeeperFrames = <KeeperFrameDefinition>[
   supporterFrame,
 ];

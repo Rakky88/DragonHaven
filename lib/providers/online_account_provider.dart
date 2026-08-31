@@ -657,6 +657,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       'title': localProfile.titleId,
       'portrait': localProfile.portraitId,
       'frame': localProfile.frameId,
+      'badge': localProfile.badgeId,
     });
     final now = DateTime.now();
     final presenceExpired = _lastPresenceUpdate == null ||
@@ -667,20 +668,23 @@ class OnlineAccountProvider extends ChangeNotifier {
         title: localProfile.titleId,
         portraitKey: localProfile.portraitId,
         frameKey: localProfile.frameId,
+        badgeKey: localProfile.badgeId,
       );
       _lastProfileFingerprint = profileFingerprint;
       _lastPresenceUpdate = now;
     }
     var serverChanged = false;
     var onlineSnapshot = await _repository.loadOnlineSnapshot();
-    var ownProfile = onlineSnapshot.profile;
-    if (!ownProfile.inventoryImported) {
+    _applyOnlineSnapshot(onlineSnapshot);
+    if (!onlineSnapshot.profile.inventoryImported) {
       await _repository.importLegacyInventory(snapshot);
       serverChanged = true;
     }
     final pendingTrades = onlineSnapshot.trades;
-    trades = pendingTrades;
-    await _synchronizeLocalTradeReservations();
+    await _runRefreshMaintenanceStep(
+      'social.refresh.trade_reservations',
+      _synchronizeLocalTradeReservations,
+    );
     for (final trade in pendingTrades.where(
       (trade) => trade.isCompleted && !trade.myAcknowledged,
     )) {
@@ -696,36 +700,103 @@ class OnlineAccountProvider extends ChangeNotifier {
     final currentSnapshot = _inventorySnapshot();
     final tradeInventoryFingerprint = jsonEncode(currentSnapshot.toTradeJson());
     if (_lastTradeInventoryFingerprint != tradeInventoryFingerprint) {
-      await _repository.synchronizeTradeInventory(currentSnapshot);
-      _lastTradeInventoryFingerprint = tradeInventoryFingerprint;
-      serverChanged = true;
+      final synchronized = await _runRefreshMaintenanceStep(
+        'social.refresh.trade_inventory',
+        () => _repository.synchronizeTradeInventory(currentSnapshot),
+      );
+      if (synchronized) {
+        _lastTradeInventoryFingerprint = tradeInventoryFingerprint;
+        serverChanged = true;
+      }
     }
     final showcaseFingerprint = jsonEncode(currentSnapshot.toShowcaseJson());
     if (_lastShowcaseFingerprint != showcaseFingerprint) {
-      await _repository.publishSocialShowcase(currentSnapshot);
-      _lastShowcaseFingerprint = showcaseFingerprint;
-      serverChanged = true;
+      final published = await _runRefreshMaintenanceStep(
+        'social.refresh.showcase',
+        () => _repository.publishSocialShowcase(currentSnapshot),
+      );
+      if (published) {
+        _lastShowcaseFingerprint = showcaseFingerprint;
+        serverChanged = true;
+      }
     }
     if (serverChanged) {
-      onlineSnapshot = await _repository.loadOnlineSnapshot();
-      ownProfile = onlineSnapshot.profile;
+      await _runRefreshMaintenanceStep(
+        'social.refresh.snapshot_reload',
+        () async {
+          onlineSnapshot = await _repository.loadOnlineSnapshot();
+        },
+      );
     }
-    profile = ownProfile;
-    friends = onlineSnapshot.friends;
-    requests = onlineSnapshot.requests;
-    blockedKeepers = onlineSnapshot.blockedKeepers;
-    groupAdventureStatus = onlineSnapshot.groupAdventureStatus;
-    groupLobbies = onlineSnapshot.groupLobbies;
-    trades = onlineSnapshot.trades;
-    tradeInventory = onlineSnapshot.tradeInventory
+    _applyOnlineSnapshot(onlineSnapshot);
+    await _runRefreshMaintenanceStep(
+      'social.refresh.group_reservations',
+      () => _synchronizeGroupReservations({
+        for (final lobby in myGroupAdventures)
+          if (lobby.myDragonId case final dragonId?) dragonId: lobby.id,
+      }),
+    );
+    await _runRefreshMaintenanceStep(
+      'social.refresh.trade_reservations',
+      _synchronizeLocalTradeReservations,
+    );
+    await _runRefreshMaintenanceStep(
+      'social.refresh.notifications',
+      () => _deliverSocialNotifications(onlineSnapshot.notifications),
+    );
+  }
+
+  void _applyOnlineSnapshot(OnlineSocialSnapshot snapshot) {
+    profile = snapshot.profile;
+    friends = snapshot.friends;
+    requests = snapshot.requests;
+    blockedKeepers = snapshot.blockedKeepers;
+    groupAdventureStatus = snapshot.groupAdventureStatus;
+    groupLobbies = snapshot.groupLobbies;
+    trades = snapshot.trades;
+    tradeInventory = snapshot.tradeInventory
         .where((entry) => entry.item.isTradeable)
         .toList(growable: false);
-    await _synchronizeGroupReservations({
-      for (final lobby in myGroupAdventures)
-        if (lobby.myDragonId case final dragonId?) dragonId: lobby.id,
-    });
-    await _synchronizeLocalTradeReservations();
-    await _deliverSocialNotifications(onlineSnapshot.notifications);
+  }
+
+  /// Online reads are the useful result of a refresh. Follow-up publication,
+  /// reservation persistence and notification delivery are maintenance work:
+  /// a malformed local item or a platform notification failure must never
+  /// discard an already valid friends snapshot. Failed maintenance remains
+  /// retryable because its fingerprint is only stored after success.
+  Future<bool> _runRefreshMaintenanceStep(
+    String operationName,
+    Future<void> Function() operation,
+  ) async {
+    final correlationId = DiagnosticIds.create();
+    final startedAt = DateTime.now();
+    final stopwatch = Stopwatch()..start();
+    try {
+      await operation();
+      return true;
+    } on SocialException catch (error) {
+      stopwatch.stop();
+      _diagnostics.record(DiagnosticEvent(
+        operation: operationName,
+        correlationId: correlationId,
+        outcome: DiagnosticOutcome.failure,
+        startedAt: startedAt,
+        duration: stopwatch.elapsed,
+        errorCode: error.code,
+      ));
+      return false;
+    } on Object {
+      stopwatch.stop();
+      _diagnostics.record(DiagnosticEvent(
+        operation: operationName,
+        correlationId: correlationId,
+        outcome: DiagnosticOutcome.failure,
+        startedAt: startedAt,
+        duration: stopwatch.elapsed,
+        errorCode: 'online_unexpected_error',
+      ));
+      return false;
+    }
   }
 
   bool _retryableRefreshCode(String code) => !const {

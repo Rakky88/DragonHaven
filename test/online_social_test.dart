@@ -18,6 +18,7 @@ import 'package:dragon_haven/services/diagnostic_reporter.dart';
 import 'package:dragon_haven/services/automatic_cloud_backup.dart';
 import 'package:dragon_haven/services/social_repository.dart';
 import 'package:dragon_haven/widgets/online_account_access.dart';
+import 'package:dragon_haven/widgets/profile_portrait_sprite.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -124,6 +125,9 @@ void main() {
       findsOneWidget,
     );
     expect(tester.getSize(find.byType(KeeperPortrait)), const Size.square(62));
+    final portraitSprite = tester
+        .widget<ProfilePortraitSprite>(find.byType(ProfilePortraitSprite));
+    expect(portraitSprite.size, closeTo(35.28, .01));
   });
 
   test('social discovery summaries count forms rather than families', () {
@@ -334,6 +338,46 @@ void main() {
         reason: 'three attempts plus the post-sync authoritative reload');
     expect(online.profile, isNotNull);
     expect(online.errorCode, isNull);
+    online.dispose();
+  });
+
+  test('maintenance failure cannot hide a valid friends snapshot', () async {
+    final game = HouseholdProvider(random: Random(407));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..tradeInventorySyncError = 'invalid_inventory'
+      ..showcasePublishError = 'invalid_profile'
+      ..notificationAcknowledgeError = 'temporary_server_failure'
+      ..notificationRows.add(SocialNotification(
+        id: 'notice-qnosick-regression',
+        kind: 'friend_request',
+        entityId: 'request-qnosick-regression',
+        actorDisplayName: 'Keeper',
+        createdAt: DateTime.utc(2026, 8, 31),
+      ));
+    final diagnostics = BufferedDiagnosticReporter();
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+      diagnostics: diagnostics,
+    );
+
+    await online.initialize();
+
+    expect(online.errorCode, isNull);
+    expect(online.friends, hasLength(1));
+    expect(online.profile?.keeperCode, 'DH-AABBCCDD');
+    expect(
+      diagnostics.recentEvents
+          .where((event) => event.outcome == DiagnosticOutcome.failure)
+          .map((event) => event.operation),
+      containsAll(<String>[
+        'social.refresh.trade_inventory',
+        'social.refresh.showcase',
+        'social.refresh.notifications',
+      ]),
+    );
+    expect(diagnostics.recentEvents.last.operation, 'social.refresh');
+    expect(diagnostics.recentEvents.last.outcome, DiagnosticOutcome.success);
     online.dispose();
   });
 
@@ -561,7 +605,8 @@ void main() {
       ..accountName = 'Offline Lyra'
       ..selectedPortraitId = 'portrait_042'
       ..selectedTitleId = 'title_321'
-      ..selectedFrameId = supporterFrame.id;
+      ..selectedFrameId = supporterFrame.id
+      ..selectedBadgeId = supporterBadge.id;
     final repository = _FakeSocialRepository(inventoryImported: true);
     final online = OnlineAccountProvider(
       repository: repository,
@@ -576,10 +621,12 @@ void main() {
     expect(repository.updatedPortraitKey, 'portrait_042');
     expect(repository.updatedTitle, 'title_321');
     expect(repository.updatedFrameKey, supporterFrame.id);
+    expect(repository.updatedBadgeKey, supporterBadge.id);
     expect(online.profile?.displayName, 'Offline Lyra');
     expect(online.profile?.portraitKey, 'portrait_042');
     expect(online.profile?.title, 'title_321');
     expect(online.profile?.frameKey, supporterFrame.id);
+    expect(online.profile?.badgeKey, supporterBadge.id);
     online.dispose();
   });
 
@@ -1124,11 +1171,21 @@ void main() {
     ));
     expect(friendPortrait.portraitKey, 'portrait_042');
     expect(friendPortrait.frameKey, supporterFrame.id);
+    expect(friendPortrait.badgeKey, supporterBadge.id);
     expect(
       find.descendant(
         of: find.byKey(const Key('friend-friend-user')),
         matching: find.byKey(
           const Key('keeper-portrait-frame-frame_supporter_founder'),
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('friend-friend-user')),
+        matching: find.byKey(
+          const Key('keeper-portrait-badge-badge_supporter_founder'),
         ),
       ),
       findsOneWidget,
@@ -1568,6 +1625,7 @@ class _FakeSocialRepository implements SocialRepository {
   String? updatedTitle;
   String? updatedPortraitKey;
   String? updatedFrameKey;
+  String? updatedBadgeKey;
   int acknowledgeCount = 0;
   int acknowledgeGroupFailures = 0;
   int createTradeCount = 0;
@@ -1576,6 +1634,9 @@ class _FakeSocialRepository implements SocialRepository {
   int ensureAccountCount = 0;
   int snapshotLoadCount = 0;
   int transientSnapshotFailures = 0;
+  String? tradeInventorySyncError;
+  String? showcasePublishError;
+  String? notificationAcknowledgeError;
   Completer<void>? ensureAccountGate;
   Completer<void>? createTradeGate;
   String? ensureAccountError;
@@ -1611,6 +1672,7 @@ class _FakeSocialRepository implements SocialRepository {
     title: 'title_321',
     portraitKey: 'portrait_042',
     frameKey: 'frame_supporter_founder',
+    badgeKey: 'badge_supporter_founder',
     discoveredDragonCount: 12,
     achievementCount: 17,
     dragonCount: 7,
@@ -1647,6 +1709,7 @@ class _FakeSocialRepository implements SocialRepository {
         title: updatedTitle ?? 'title_001',
         portraitKey: updatedPortraitKey ?? 'portrait_001',
         frameKey: updatedFrameKey,
+        badgeKey: updatedBadgeKey,
         discoveredDragonCount: 1,
         inventoryImported: _inventoryImported,
       );
@@ -1672,7 +1735,9 @@ class _FakeSocialRepository implements SocialRepository {
   }
 
   @override
-  Future<void> publishSocialShowcase(OnlineInventorySnapshot snapshot) async {}
+  Future<void> publishSocialShowcase(OnlineInventorySnapshot snapshot) async {
+    if (showcasePublishError case final code?) throw SocialException(code);
+  }
 
   @override
   Future<List<KeeperProfile>> loadBlockedKeepers() async =>
@@ -1769,6 +1834,9 @@ class _FakeSocialRepository implements SocialRepository {
   @override
   Future<void> acknowledgeSocialNotifications(
       List<String> notificationIds) async {
+    if (notificationAcknowledgeError case final code?) {
+      throw SocialException(code);
+    }
     acknowledgedNotificationIds.addAll(notificationIds);
     notificationRows.removeWhere(
       (notification) => notificationIds.contains(notification.id),
@@ -1834,11 +1902,13 @@ class _FakeSocialRepository implements SocialRepository {
     required String title,
     required String portraitKey,
     String? frameKey,
+    String? badgeKey,
   }) async {
     updatedDisplayName = displayName;
     updatedTitle = title;
     updatedPortraitKey = portraitKey;
     updatedFrameKey = frameKey;
+    updatedBadgeKey = badgeKey;
   }
 
   @override
@@ -1875,7 +1945,10 @@ class _FakeSocialRepository implements SocialRepository {
 
   @override
   Future<void> synchronizeTradeInventory(
-      OnlineInventorySnapshot snapshot) async {}
+      OnlineInventorySnapshot snapshot) async {
+    if (tradeInventorySyncError case final code?) throw SocialException(code);
+  }
+
   @override
   Future<List<TradeInventoryItem>> loadTradeInventory() async =>
       List.of(tradeInventoryRows);

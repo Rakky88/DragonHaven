@@ -30,4 +30,5 @@ Thumbs.db
 !pubspec.lock
 # Local full-resolution artwork backups; runtime WebP assets are versioned.
 artwork_sources/
+.artifacts/
 .tools/

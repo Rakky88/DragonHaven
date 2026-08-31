@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -440,7 +442,7 @@ class _DragonSchoolEntrance extends StatelessWidget {
     return Semantics(
       button: unlocked,
       enabled: unlocked,
-      label: strings.pick('Dragon School', 'Drakenschool'),
+      label: strings.pick('Dragon Academy', 'Drakenacademie'),
       child: InkWell(
         key: const Key('dragon-school-entrance'),
         onTap: unlocked
@@ -506,7 +508,7 @@ class _DragonSchoolEntrance extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            strings.pick('Dragon School', 'Drakenschool'),
+                            strings.pick('Dragon Academy', 'Drakenacademie'),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 19,
@@ -796,6 +798,24 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
   final Set<String> _formFilters = {};
   final Set<String> _rarityFilters = {};
   bool _spectralOnly = false;
+  bool _preferencesLoaded = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_preferencesLoaded) return;
+    final game = context.read<HouseholdProvider>();
+    _view = _DragonCollectionView.values.firstWhere(
+      (value) => value.name == game.myDragonsViewMode,
+      orElse: () => _DragonCollectionView.gallery,
+    );
+    _sortMode = _DragonSortMode.values.firstWhere(
+      (value) => value.name == game.myDragonsSortMode,
+      orElse: () => _DragonSortMode.acquiredAt,
+    );
+    _sortDescending = game.myDragonsSortDescending;
+    _preferencesLoaded = true;
+  }
 
   String _formKey(Pet dragon) => switch (dragon.stage) {
         DragonStage.hatchling => 'hatchling',
@@ -853,6 +873,16 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
         _sortDescending = value != _DragonSortMode.name;
       }
     });
+    _saveCollectionPreferences();
+  }
+
+  void _saveCollectionPreferences() {
+    unawaited(
+        context.read<HouseholdProvider>().setMyDragonsCollectionPreferences(
+              viewMode: _view.name,
+              sortMode: _sortMode.name,
+              descending: _sortDescending,
+            ));
   }
 
   String _formLabel(AppStrings strings, String key) => switch (key) {
@@ -999,11 +1029,14 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                                 'Show gallery',
                                 'Galerij tonen',
                               ),
-                        onPressed: () => setState(() {
-                          _view = _view == _DragonCollectionView.gallery
-                              ? _DragonCollectionView.compact
-                              : _DragonCollectionView.gallery;
-                        }),
+                        onPressed: () {
+                          setState(() {
+                            _view = _view == _DragonCollectionView.gallery
+                                ? _DragonCollectionView.compact
+                                : _DragonCollectionView.gallery;
+                          });
+                          _saveCollectionPreferences();
+                        },
                         icon: Icon(
                           _view == _DragonCollectionView.gallery
                               ? Icons.view_list_rounded
@@ -1538,8 +1571,8 @@ class _DragonSchoolDiplomaCard extends StatelessWidget {
                     Text(
                       complete
                           ? strings.pick(outcome.titleEn, outcome.titleNl)
-                          : strings.pick('Dragon School report card',
-                              'Drakenschoolrapport'),
+                          : strings.pick('Dragon Academy report card',
+                              'Drakenacademierapport'),
                       style: const TextStyle(
                           color: AppColors.twilight,
                           fontWeight: FontWeight.w900),

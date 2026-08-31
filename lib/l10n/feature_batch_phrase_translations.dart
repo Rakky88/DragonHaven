@@ -1,8 +1,67 @@
 /// Translations for the Tower ordering, Trial streak, Keeper Journal,
-/// Dragon School and Supporter Pack feature batch.
+/// Dragon Academy and Supporter Pack feature batch.
 ///
 /// Values are ordered German, Spanish, French, Italian, Portuguese, Japanese.
 const featureBatchPhraseTranslations = <String, List<String>>{
+  'No keeper badge': [
+    'Kein Keeper-Abzeichen',
+    'Sin insignia de Guardián',
+    'Aucun badge de Gardien',
+    'Nessun distintivo del Custode',
+    'Sem emblema de Guardião',
+    'キーパーのバッジなし',
+  ],
+  'Choose keeper badge': [
+    'Keeper-Abzeichen wählen',
+    'Elegir insignia de Guardián',
+    'Choisir le badge de Gardien',
+    'Scegli il distintivo del Custode',
+    'Escolher emblema de Guardião',
+    'キーパーのバッジを選ぶ',
+  ],
+  'Every pupil gets up to three official attempts per lesson. Once every lesson is passed at least once, a pupil with 15 stars may graduate early.':
+      [
+    'Jeder Schüler hat pro Lektion bis zu drei offizielle Versuche. Sobald jede Lektion mindestens einmal absolviert wurde, kann ein Schüler mit 15 Sternen vorzeitig abschließen.',
+    'Cada alumno tiene hasta tres intentos oficiales por lección. Cuando haya realizado cada lección al menos una vez, podrá graduarse antes con 15 estrellas.',
+    'Chaque élève dispose de trois tentatives officielles maximum par leçon. Après avoir suivi chaque leçon au moins une fois, il peut obtenir son diplôme plus tôt avec 15 étoiles.',
+    'Ogni allievo ha fino a tre tentativi ufficiali per lezione. Dopo aver svolto ogni lezione almeno una volta, può diplomarsi in anticipo con 15 stelle.',
+    'Cada aluno tem até três tentativas oficiais por aula. Depois de fazer cada aula ao menos uma vez, pode se formar mais cedo com 15 estrelas.',
+    '各レッスンの公式挑戦は最大3回です。全レッスンに1回以上挑戦し、星を15個獲得すれば早期卒業できます。',
+  ],
+  '15 stars: Graduate · 21: Honors · 27: High Honors · 30: Valedictorian. Early graduation requires one attempt in every lesson. Dropout is decided only after all 30 attempts.':
+      [
+    '15 Sterne: Abschluss · 21: mit Auszeichnung · 27: mit höchster Auszeichnung · 30: Jahrgangsbester. Für den vorzeitigen Abschluss ist ein Versuch in jeder Lektion nötig. Ein Abbruch wird erst nach allen 30 Versuchen festgestellt.',
+    '15 estrellas: Graduado · 21: Honores · 27: Altos honores · 30: Mejor de la promoción. La graduación anticipada exige un intento en cada lección. El abandono solo se decide tras los 30 intentos.',
+    '15 étoiles : Diplômé · 21 : Mention · 27 : Haute distinction · 30 : Major de promotion. Le diplôme anticipé exige une tentative dans chaque leçon. L’abandon n’est décidé qu’après les 30 tentatives.',
+    '15 stelle: Diplomato · 21: Lode · 27: Massimi onori · 30: Migliore del corso. Il diploma anticipato richiede un tentativo in ogni lezione. Il ritiro viene deciso solo dopo tutti i 30 tentativi.',
+    '15 estrelas: Formado · 21: Honras · 27: Altas honras · 30: Melhor da turma. A formatura antecipada exige uma tentativa em cada aula. A desistência só é decidida após as 30 tentativas.',
+    '星15個：卒業・21個：優等・27個：最優等・30個：首席。早期卒業には全レッスンで1回の挑戦が必要です。中退は30回すべての挑戦後にのみ決まります。',
+  ],
+  'Graduate now': [
+    'Jetzt abschließen',
+    'Graduarse ahora',
+    'Obtenir le diplôme',
+    'Diplomati ora',
+    'Formar-se agora',
+    '今すぐ卒業',
+  ],
+  'The current report becomes final. Unused lesson attempts cannot be played afterwards.':
+      [
+    'Das aktuelle Zeugnis wird endgültig. Ungenutzte Lektionsversuche können danach nicht mehr gespielt werden.',
+    'El informe actual será definitivo. Los intentos de lección no usados ya no podrán jugarse.',
+    'Le bulletin actuel devient définitif. Les tentatives de leçon inutilisées ne pourront plus être jouées.',
+    'La pagella attuale diventa definitiva. I tentativi di lezione inutilizzati non potranno più essere giocati.',
+    'O boletim atual se torna definitivo. As tentativas de aula não usadas não poderão mais ser jogadas.',
+    '現在の成績表が最終結果になります。未使用のレッスン挑戦はその後プレイできません。',
+  ],
+  'Keep training': [
+    'Weiter trainieren',
+    'Seguir entrenando',
+    'Continuer l’entraînement',
+    'Continua ad allenarti',
+    'Continuar treinando',
+    '訓練を続ける',
+  ],
   'No portrait frame': [
     'Kein Porträtrahmen',
     'Sin marco de retrato',
@@ -139,13 +198,13 @@ const featureBatchPhraseTranslations = <String, List<String>>{
     'Recompensas previstas',
     '予想報酬',
   ],
-  'Dragon School': [
-    'Drachenschule',
-    'Escuela de Dragones',
-    'École des Dragons',
-    'Scuola dei Draghi',
-    'Escola de Dragões',
-    'ドラゴンスクール',
+  'Dragon Academy': [
+    'Drachenakademie',
+    'Academia de Dragones',
+    'Académie des Dragons',
+    'Accademia dei Draghi',
+    'Academia de Dragões',
+    'ドラゴンアカデミー',
   ],
   'Practice makes legends': [
     'Übung macht Legenden',
@@ -620,21 +679,21 @@ const featureBatchPhraseTranslations = <String, List<String>>{
     '10 lições · dragões, estrelas e recordes',
     '10レッスン・ドラゴン、スター、記録',
   ],
-  'Dragon School Diploma': [
-    'Drachenschul-Diplom',
-    'Diploma de la Escuela de Dragones',
-    'Diplôme de l’École des dragons',
-    'Diploma della Scuola dei Draghi',
-    'Diploma da Escola de Dragões',
-    'ドラゴンスクール卒業証書',
+  'Dragon Academy Diploma': [
+    'Drachenakademie-Diplom',
+    'Diploma de la Academia de Dragones',
+    'Diplôme de l’Académie des dragons',
+    'Diploma dell’Accademia dei Draghi',
+    'Diploma da Academia de Dragões',
+    'ドラゴンアカデミー卒業証書',
   ],
-  'Dragon School report card': [
-    'Drachenschul-Zeugnis',
-    'Boletín de la Escuela de Dragones',
-    'Bulletin de l’École des dragons',
-    'Pagella della Scuola dei Draghi',
-    'Boletim da Escola de Dragões',
-    'ドラゴンスクール成績表',
+  'Dragon Academy report card': [
+    'Drachenakademie-Zeugnis',
+    'Boletín de la Academia de Dragones',
+    'Bulletin de l’Académie des dragons',
+    'Pagella dell’Accademia dei Draghi',
+    'Boletim da Academia de Dragões',
+    'ドラゴンアカデミー成績表',
   ],
   'stars': [
     'Sterne',
@@ -702,13 +761,13 @@ const featureBatchPhraseTranslations = <String, List<String>>{
     '挑戦'
   ],
   'Student': ['Schüler', 'Estudiante', 'Élève', 'Studente', 'Aluno', '生徒'],
-  'Dragon School Dropout': [
-    'Drachenschulabbrecher',
-    'Desertor de la Escuela de Dragones',
+  'Dragon Academy Dropout': [
+    'Drachenakademie-Abbrecher',
+    'Desertor de la Academia de Dragones',
     'Dragon décrocheur',
-    'Drago che ha lasciato la scuola',
-    'Desistente da Escola de Dragões',
-    'ドラゴンスクール中退',
+    'Drago che ha lasciato l’accademia',
+    'Desistente da Academia de Dragões',
+    'ドラゴンアカデミー中退',
   ],
   'Graduate': [
     'Absolvent',

@@ -35,6 +35,7 @@ void main() {
       'shuffle': false,
       'repeat': true,
     });
+    await HavenAudio.setAppInForeground(true);
     await HavenAudio.setMusicScene(HavenMusicScene.towerDay);
     await HavenAudio.setMusicScene(HavenMusicScene.towerDay);
 
@@ -55,5 +56,29 @@ void main() {
       'shuffle': false,
       'repeat': true,
     });
+    await HavenAudio.setAppInForeground(false);
+  });
+
+  test('music scenes stay silent while the app is in the background', () async {
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('nl.dragonhaven.app/audio'),
+      (call) async {
+        calls.add(call);
+        return true;
+      },
+    );
+    addTearDown(() => TestDefaultBinaryMessengerBinding
+        .instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('nl.dragonhaven.app/audio'), null));
+
+    await HavenAudio.setAppInForeground(false);
+    await HavenAudio.setMusicScene(HavenMusicScene.room);
+
+    expect(calls.where((call) => call.method == 'setMusicScene'), isEmpty);
+    expect(calls.last.method, 'setAppForeground');
+    expect(calls.last.arguments, {'foreground': false});
   });
 }

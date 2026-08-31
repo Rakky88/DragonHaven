@@ -17,19 +17,22 @@ class KeeperPortrait extends StatelessWidget {
     required this.displayName,
     this.radius = 25,
     this.frameKey,
+    this.badgeKey,
   });
 
   final String portraitKey;
   final String displayName;
   final double radius;
   final String? frameKey;
+  final String? badgeKey;
 
   @override
   Widget build(BuildContext context) {
     final portrait = profilePortraitById(portraitKey);
     final frame = keeperFrameById(frameKey);
+    final badge = keeperBadgeById(badgeKey);
     final diameter = radius * 2;
-    final portraitDiameter = frame == null ? diameter : diameter * .89;
+    final portraitDiameter = frame == null ? diameter : diameter * .64;
     late final Widget portraitBody;
     if (portrait != null) {
       final rarityColor = Color(portrait.rarity.colorValue);
@@ -82,6 +85,7 @@ class KeeperPortrait extends StatelessWidget {
       child: SizedBox.square(
         dimension: diameter,
         child: Stack(
+          clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
             portraitBody,
@@ -93,6 +97,36 @@ class KeeperPortrait extends StatelessWidget {
                     key: Key('keeper-portrait-frame-${frame.id}'),
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+            if (badge != null)
+              Positioned(
+                right: -radius * .08,
+                bottom: -radius * .08,
+                child: Container(
+                  width: radius * .82,
+                  height: radius * .82,
+                  padding: EdgeInsets.all(radius * .055),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFE2C669),
+                      width: radius >= 40 ? 2 : 1.2,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x332A1E50), blurRadius: 4),
+                    ],
+                  ),
+                  child: Image.asset(
+                    badge.assetPath,
+                    key: Key('keeper-portrait-badge-${badge.id}'),
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.shield_rounded,
+                      color: AppColors.twilight,
+                    ),
                   ),
                 ),
               ),

@@ -129,6 +129,24 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
   _EggInventoryView _view = _EggInventoryView.tiles;
   _EggSortMode _sortMode = _EggSortMode.acquiredAt;
   bool _sortDescending = true;
+  bool _preferencesLoaded = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_preferencesLoaded) return;
+    final game = context.read<HouseholdProvider>();
+    _view = _EggInventoryView.values.firstWhere(
+      (value) => value.name == game.eggInventoryViewMode,
+      orElse: () => _EggInventoryView.tiles,
+    );
+    _sortMode = _EggSortMode.values.firstWhere(
+      (value) => value.name == game.eggInventorySortMode,
+      orElse: () => _EggSortMode.acquiredAt,
+    );
+    _sortDescending = game.eggInventorySortDescending;
+    _preferencesLoaded = true;
+  }
 
   void _selectSort(_EggSortMode mode) {
     setState(() {
@@ -139,6 +157,16 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
         _sortDescending = mode == _EggSortMode.acquiredAt;
       }
     });
+    _saveCollectionPreferences();
+  }
+
+  void _saveCollectionPreferences() {
+    unawaited(
+        context.read<HouseholdProvider>().setEggInventoryCollectionPreferences(
+              viewMode: _view.name,
+              sortMode: _sortMode.name,
+              descending: _sortDescending,
+            ));
   }
 
   @override
@@ -221,11 +249,14 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                     tooltip: _view == _EggInventoryView.tiles
                         ? strings.pick('Show list', 'Lijst tonen')
                         : strings.pick('Show tiles', 'Tegels tonen'),
-                    onPressed: () => setState(() {
-                      _view = _view == _EggInventoryView.tiles
-                          ? _EggInventoryView.list
-                          : _EggInventoryView.tiles;
-                    }),
+                    onPressed: () {
+                      setState(() {
+                        _view = _view == _EggInventoryView.tiles
+                            ? _EggInventoryView.list
+                            : _EggInventoryView.tiles;
+                      });
+                      _saveCollectionPreferences();
+                    },
                     icon: Icon(_view == _EggInventoryView.tiles
                         ? Icons.view_list_rounded
                         : Icons.grid_view_rounded),

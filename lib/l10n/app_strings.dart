@@ -1050,33 +1050,33 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
   'academy_graduate': {
     'de': [
       'Akademie-Absolvent',
-      'Hilf einem Drachen, die Drachenschule erfolgreich abzuschließen.'
+      'Hilf einem Drachen, die Drachenakademie erfolgreich abzuschließen.'
     ],
     'es': [
       'Graduado de la academia',
-      'Ayuda a un dragón a completar con éxito la Escuela de Dragones.'
+      'Ayuda a un dragón a completar con éxito la Academia de Dragones.'
     ],
     'fr': [
       'Diplômé de l’académie',
-      'Aide un dragon à terminer l’École des dragons avec succès.'
+      'Aide un dragon à terminer l’Académie des dragons avec succès.'
     ],
     'it': [
       'Diplomato dell’accademia',
-      'Aiuta un drago a completare con successo la Scuola dei Draghi.'
+      'Aiuta un drago a completare con successo l’Accademia dei Draghi.'
     ],
     'pt': [
       'Formado na academia',
-      'Ajude um dragão a concluir a Escola de Dragões com sucesso.'
+      'Ajude um dragão a concluir a Academia de Dragões com sucesso.'
     ],
-    'ja': ['アカデミー卒業生', 'ドラゴン1頭がドラゴンスクールを無事に修了するのを助ける。'],
+    'ja': ['アカデミー卒業生', 'ドラゴン1頭がドラゴンアカデミーを無事に修了するのを助ける。'],
   },
   'dragon_school_dropout': {
     'de': [
-      'Drachenschulabbrecher',
+      'Drachenakademie-Abbrecher',
       'Schließe alle 30 offiziellen Versuche ab, ohne ein Diplom zu erhalten.'
     ],
     'es': [
-      'Desertor de la Escuela de Dragones',
+      'Desertor de la Academia de Dragones',
       'Completa los 30 intentos oficiales sin obtener un diploma.'
     ],
     'fr': [
@@ -1084,36 +1084,36 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
       'Termine les 30 tentatives officielles sans obtenir de diplôme.'
     ],
     'it': [
-      'Drago che ha lasciato la scuola',
+      'Drago che ha lasciato l’accademia',
       'Completa tutti i 30 tentativi ufficiali senza ottenere un diploma.'
     ],
     'pt': [
-      'Desistente da Escola de Dragões',
+      'Desistente da Academia de Dragões',
       'Conclua as 30 tentativas oficiais sem obter um diploma.'
     ],
-    'ja': ['ドラゴンスクール中退', '卒業証書を得ずに公式30回の挑戦をすべて終える。'],
+    'ja': ['ドラゴンアカデミー中退', '卒業証書を得ずに公式30回の挑戦をすべて終える。'],
   },
   'dragon_school_valedictorian': {
     'de': [
       'Jahrgangsbester',
-      'Hilf einem Drachen, die Drachenschule mit allen 30 Sternen abzuschließen.'
+      'Hilf einem Drachen, die Drachenakademie mit allen 30 Sternen abzuschließen.'
     ],
     'es': [
       'Mejor estudiante de la promoción',
-      'Ayuda a un dragón a terminar la Escuela de Dragones con las 30 estrellas.'
+      'Ayuda a un dragón a terminar la Academia de Dragones con las 30 estrellas.'
     ],
     'fr': [
       'Major de promotion',
-      'Aide un dragon à terminer l’École des dragons avec les 30 étoiles.'
+      'Aide un dragon à terminer l’Académie des dragons avec les 30 étoiles.'
     ],
     'it': [
       'Migliore del corso',
-      'Aiuta un drago a finire la Scuola dei Draghi con tutte le 30 stelle.'
+      'Aiuta un drago a finire l’Accademia dei Draghi con tutte le 30 stelle.'
     ],
     'pt': [
       'Melhor da turma',
-      'Ajude um dragão a terminar a Escola de Dragões com todas as 30 estrelas.'
+      'Ajude um dragão a terminar a Academia de Dragões com todas as 30 estrelas.'
     ],
-    'ja': ['首席卒業生', 'ドラゴン1頭が30個すべての星を獲得してドラゴンスクールを修了するのを助ける。'],
+    'ja': ['首席卒業生', 'ドラゴン1頭が30個すべての星を獲得してドラゴンアカデミーを修了するのを助ける。'],
   },
 };

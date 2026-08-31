@@ -41,7 +41,7 @@ De voorgestelde productbelofte is:
 | 10 | Sanctuary Biomes | Geeft volgroeide collecties een tweede gezellige verblijfplaats | Groot | **P2** |
 | 11 | Blueprint Sharing | Laat spelers kamers delen zonder furniture weg te geven | Groot | **P2** |
 | 12 | Adventure Postcards | Maakt Adventures ook visueel verzamelbaar | Middel | **P2** |
-| 13 | Dragon School | Voegt rustige trainingsactiviteiten en nieuwe minigames toe | Groot | **P2** |
+| 13 | Dragon Academy | Voegt rustige trainingsactiviteiten en nieuwe minigames toe | Groot | **P2** |
 | 14 | Furniture Workshop | Geeft cosmetische kleur- en materiaalvarianten | Groot | **P2** |
 | 15 | Community Constellations | Coöperatieve wereldwijde doelen zonder leaderboarddruk | Groot | **P3** |
 | 16 | Keeper Journal | Maakt de persoonlijke geschiedenis van de save zichtbaar | Middel | **P2** |
@@ -207,7 +207,7 @@ dragon, locatie en één zin uit het avontuur.
   worden gebruikt.
 - Dubbele kaarten hoeven niet te bestaan: ontdekt is ontdekt.
 
-### 13. Dragon School
+### 13. Dragon Academy
 
 Een roterende selectie rustige oefeningen naast de huidige Might, Arcana en
 Spirit Trials.
@@ -370,7 +370,7 @@ een betaalde collectie vereisen om de gewone 100%-status te halen.
 
 1. Haven Atlas.
 2. Sanctuary Biomes.
-3. Dragon School.
+3. Dragon Academy.
 4. Furniture Workshop.
 5. Dream Portals en Talent Festivals.
 

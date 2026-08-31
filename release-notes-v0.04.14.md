@@ -5,7 +5,7 @@
 - Trials hebben een zichtbare zevendaagse streak met een Dragon Chest en 5%
   kans op een Mythical Chest. Een gemiste dag zet de streak terug naar nul.
 - De nieuwe Keeper Journal verzamelt voortgang op één overzichtelijke plek en
-  Dragon School biedt vanaf vijf Tower-verdiepingen tien korte oefengames met
+  Dragon Academy biedt vanaf vijf Tower-verdiepingen tien korte oefengames met
   persoonlijke records.
 - Friend Adventures tonen vereisten en verwachte beloningen nu in duidelijke,
   gescheiden onderdelen.

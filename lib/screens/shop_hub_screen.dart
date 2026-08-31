@@ -80,15 +80,22 @@ class ShopHubScreen extends StatelessWidget {
   }
 }
 
-class _PacksShop extends StatelessWidget {
+class _PacksShop extends StatefulWidget {
   const _PacksShop();
+
+  @override
+  State<_PacksShop> createState() => _PacksShopState();
+}
+
+class _PacksShopState extends State<_PacksShop> {
+  bool _contentsExpanded = false;
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
     return ListView(
-      key: const PageStorageKey('packs-shop-scroll'),
+      key: const Key('packs-shop-scroll'),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 34),
       children: [
         Row(
@@ -198,28 +205,44 @@ class _PacksShop extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Theme(
-                data: Theme.of(context).copyWith(
-                  dividerColor: Colors.transparent,
-                  splashColor: Colors.white10,
-                ),
-                child: ExpansionTile(
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
                   key: const Key('supporter-pack-everything-included'),
-                  tilePadding: const EdgeInsets.symmetric(horizontal: 4),
-                  childrenPadding: const EdgeInsets.only(bottom: 4),
-                  iconColor: AppColors.gold,
-                  collapsedIconColor: AppColors.gold,
-                  title: Text(
-                    strings.pick('Everything included', 'Alles inbegrepen'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
+                  onTap: () => setState(
+                    () => _contentsExpanded = !_contentsExpanded,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            strings.pick(
+                                'Everything included', 'Alles inbegrepen'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        AnimatedRotation(
+                          turns: _contentsExpanded ? .5 : 0,
+                          duration: const Duration(milliseconds: 180),
+                          child: const Icon(
+                            Icons.expand_more_rounded,
+                            color: AppColors.gold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  children: const [_SupporterPackContents()],
                 ),
               ),
+              if (_contentsExpanded) const _SupporterPackContents(),
             ],
           ),
         ),
@@ -244,6 +267,7 @@ class _SupporterPackContents extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return Column(
+      key: const Key('supporter-pack-contents'),
       children: [
         _SupporterContentTile(
           art: ProfilePortraitSprite(
@@ -301,38 +325,43 @@ class _SupporterPackContents extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 9),
-              GridView.builder(
-                key: const PageStorageKey('supporter-furniture-grid'),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: supporterFurnitureCatalog.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 1.05,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                ),
-                itemBuilder: (context, index) {
-                  final item = supporterFurnitureCatalog[index];
-                  return Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0x33A87836)),
-                    ),
-                    child: Column(
-                      children: [
-                        Expanded(child: FurnitureArt(item: item)),
-                        Text(
-                          strings.itemName(item),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 10.5, fontWeight: FontWeight.w800),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final itemWidth = (constraints.maxWidth - 8) / 2;
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final item in supporterFurnitureCatalog)
+                        SizedBox(
+                          width: itemWidth,
+                          height: itemWidth / 1.05,
+                          child: Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0x33A87836),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Expanded(child: FurnitureArt(item: item)),
+                                Text(
+                                  strings.itemName(item),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
+                    ],
                   );
                 },
               ),

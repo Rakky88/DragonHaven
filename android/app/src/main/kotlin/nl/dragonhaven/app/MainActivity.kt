@@ -30,6 +30,7 @@ class MainActivity : FlutterActivity() {
     )
 
     private var activityInForeground = false
+    private var flutterAppInForeground = false
     // Stay silent until Flutter has loaded and sent the persisted preference.
     private var musicEnabled = false
     private var effectsEnabled = true
@@ -61,12 +62,7 @@ class MainActivity : FlutterActivity() {
     private val audioFocusListener = AudioManager.OnAudioFocusChangeListener { change ->
         when (change) {
             AudioManager.AUDIOFOCUS_GAIN -> {
-                if (musicEnabled) {
-                    musicPlayer?.let { player ->
-                        if (!player.isPlaying) player.start()
-                        fadeMusic(player, MUSIC_VOLUME)
-                    } ?: startNextMusic()
-                }
+                if (canPlayMusic()) resumeOrStartMusic()
             }
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK ->
                 musicPlayer?.let { fadeMusic(it, DUCKED_VOLUME) }
@@ -128,9 +124,11 @@ class MainActivity : FlutterActivity() {
                     }
                     if (!musicEnabled) {
                         fadeOutAndStopMusic()
-                    } else if (musicPlayer == null) {
+                    } else if (canPlayMusic() && musicPlayer == null) {
                         if (!wasMusicEnabled) jukeboxFinished = false
                         startNextMusic()
+                    } else if (!canPlayMusic()) {
+                        pauseMusicForBackground()
                     }
                     result.success(true)
                 }
@@ -149,14 +147,23 @@ class MainActivity : FlutterActivity() {
                 "setMusicScene" -> {
                     val id = call.argument<String>("id")
                     musicScene = id
-                    if (id != null && musicPlayer != null) {
-                        musicPlayer?.let { player ->
-                            if (!player.isPlaying) player.start()
-                            player.setVolume(MUSIC_VOLUME, MUSIC_VOLUME)
-                        }
+                    if (id == null) {
+                        result.success(false)
+                    } else if (!canPlayMusic()) {
+                        pauseMusicForBackground()
                         result.success(true)
                     } else {
-                        result.success(id != null && startNextMusic())
+                        result.success(resumeOrStartMusic())
+                    }
+                }
+                "setAppForeground" -> {
+                    flutterAppInForeground =
+                        call.argument<Boolean>("foreground") ?: false
+                    if (canPlayMusic()) {
+                        result.success(resumeOrStartMusic())
+                    } else {
+                        pauseMusicForBackground()
+                        result.success(true)
                     }
                 }
                 else -> result.notImplemented()
@@ -622,7 +629,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun startNextMusic(): Boolean {
-        if (!musicEnabled || jukeboxTracks.isEmpty() || jukeboxFinished) return false
+        if (!canPlayMusic() || jukeboxTracks.isEmpty() || jukeboxFinished) return false
         if (jukeboxQueue.isEmpty()) {
             if (jukeboxCycleStarted && !jukeboxRepeat) {
                 jukeboxFinished = true
@@ -638,7 +645,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun startMusic(trackId: String): Boolean {
-        if (!musicEnabled) return false
+        if (!canPlayMusic()) return false
         val resource = rawResourceId(trackId)
         if (resource == 0) return false
         if (!requestMusicFocus()) return false
@@ -663,6 +670,26 @@ class MainActivity : FlutterActivity() {
         }
         if (musicPlayer == null) currentMusicTrack = null
         return musicPlayer != null
+    }
+
+    private fun canPlayMusic(): Boolean =
+        musicEnabled && activityInForeground && flutterAppInForeground
+
+    private fun resumeOrStartMusic(): Boolean {
+        if (!canPlayMusic()) return false
+        val player = musicPlayer ?: return startNextMusic()
+        if (!requestMusicFocus()) return false
+        if (!player.isPlaying) player.start()
+        fadeMusic(player, MUSIC_VOLUME)
+        return true
+    }
+
+    private fun pauseMusicForBackground() {
+        fadeGeneration++
+        musicPlayer?.let { player ->
+            if (player.isPlaying) player.pause()
+        }
+        abandonMusicFocus()
     }
 
     private fun requestMusicFocus(): Boolean {
@@ -723,6 +750,10 @@ class MainActivity : FlutterActivity() {
 
     private fun stopMusic() {
         releaseMusicPlayer()
+        abandonMusicFocus()
+    }
+
+    private fun abandonMusicFocus() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             audioFocusRequest?.let(audioManager::abandonAudioFocusRequest)
         } else {
@@ -733,7 +764,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onPause() {
         activityInForeground = false
-        musicPlayer?.pause()
+        pauseMusicForBackground()
         super.onPause()
     }
 
@@ -743,12 +774,7 @@ class MainActivity : FlutterActivity() {
         if (notificationsWaitingForPermission.isNotEmpty()) {
             requestNotificationPermissionIfNeeded()
         }
-        if (musicEnabled) {
-            musicPlayer?.let { player ->
-                if (!player.isPlaying) player.start()
-                player.setVolume(MUSIC_VOLUME, MUSIC_VOLUME)
-            } ?: startNextMusic()
-        }
+        if (canPlayMusic()) resumeOrStartMusic()
     }
 
     override fun onDestroy() {

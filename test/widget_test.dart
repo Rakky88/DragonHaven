@@ -61,6 +61,8 @@ void main() {
     bool onboarded = false,
     bool hatched = false,
     Size surfaceSize = const Size(430, 900),
+    SocialRepository? socialRepository,
+    void Function(OnlineAccountProvider online)? onOnlineCreated,
   }) async {
     await tester.binding.setSurfaceSize(surfaceSize);
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -78,11 +80,15 @@ void main() {
       game.unlockedAchievementIds.add('not_picking_favorites');
     }
     final online = OnlineAccountProvider(
-      repository: const DisabledSocialRepository(),
+      repository: socialRepository ?? const DisabledSocialRepository(),
       inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
     );
     await online.initialize();
-    addTearDown(online.dispose);
+    if (onOnlineCreated == null) {
+      addTearDown(online.dispose);
+    } else {
+      onOnlineCreated(online);
+    }
     await tester.pumpWidget(MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: game),
@@ -773,6 +779,50 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Supporter furniture is available while decorating the Tower',
+      (tester) async {
+    final game = HouseholdProvider(
+      random: Random(76),
+      persistenceEnabled: false,
+    );
+    await game.applyVerifiedSupporterPack('widget-supporter-order');
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: MaterialApp(
+        home: Scaffold(
+          body: HouseScreen(
+            active: true,
+            floorIndex: 0,
+            onOpenShop: () {},
+          ),
+        ),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.drag(
+      find.byKey(const PageStorageKey('house-scroll')),
+      const Offset(0, -520),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('tower-decorate-button')));
+    await tester.pumpAndSettle();
+    await tester.drag(
+      find.byKey(const PageStorageKey('house-scroll')),
+      const Offset(0, -280),
+    );
+    await tester.pumpAndSettle();
+
+    for (final item in supporterFurnitureCatalog) {
+      expect(
+        find.byKey(Key('tower-furniture-${item.id}')),
+        findsOneWidget,
+        reason: item.id,
+      );
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('long screens scroll cleanly with large text on a small phone',
       (tester) async {
     tester.platformDispatcher.textScaleFactorTestValue = 1.35;
@@ -1021,6 +1071,42 @@ void main() {
       expect((size.width - size.height).abs(), lessThan(.01));
     }
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Friends navigation shows incoming request count in a red badge',
+      (tester) async {
+    late OnlineAccountProvider online;
+    await pumpGame(
+      tester,
+      onboarded: true,
+      hatched: true,
+      socialRepository: _PendingFriendRequestRepository(requestCount: 3),
+      onOnlineCreated: (value) => online = value,
+    );
+
+    final badgeFinder =
+        find.byKey(const Key('friends-request-badge-unselected'));
+    expect(badgeFinder, findsOneWidget);
+    expect(
+      find.byKey(const Key('friends-request-count-unselected')),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<Text>(
+            find.byKey(const Key('friends-request-count-unselected')),
+          )
+          .data,
+      '3',
+    );
+    expect(
+      tester.widget<Badge>(badgeFinder).backgroundColor,
+      const Color(0xFFD92D3A),
+    );
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
   });
 
   testWidgets('the My Dragons shortcut tooltip localizes', (tester) async {
@@ -2034,7 +2120,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.04.15'), findsOneWidget);
+    expect(find.text('v0.04.16'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);
@@ -2076,4 +2162,90 @@ void main() {
     expect(find.byKey(const Key('about-drag-handle')), findsNothing);
     expect(tester.takeException(), isNull);
   });
+}
+
+class _PendingFriendRequestRepository extends DisabledSocialRepository {
+  _PendingFriendRequestRepository({required this.requestCount});
+
+  final int requestCount;
+
+  static const _profile = KeeperProfile(
+    userId: 'request-owner',
+    keeperCode: 'DH-REQUEST1',
+    displayName: 'Keeper',
+    title: 'title_001',
+    portraitKey: 'portrait_001',
+    discoveredDragonCount: 0,
+    inventoryImported: true,
+  );
+
+  static const _requester = KeeperProfile(
+    userId: 'request-sender',
+    keeperCode: 'DH-REQUEST2',
+    displayName: 'Friend',
+    title: 'title_001',
+    portraitKey: 'portrait_001',
+    discoveredDragonCount: 1,
+    inventoryImported: true,
+  );
+
+  @override
+  bool get isConfigured => true;
+
+  @override
+  bool get isSignedIn => true;
+
+  @override
+  bool get isEmailVerified => true;
+
+  @override
+  String? get currentUserId => _profile.userId;
+
+  @override
+  Future<void> ensureAccount() async {}
+
+  @override
+  Future<void> updateProfile({
+    required String displayName,
+    required String title,
+    required String portraitKey,
+    String? frameKey,
+    String? badgeKey,
+  }) async {}
+
+  @override
+  Future<OnlineSocialSnapshot> loadOnlineSnapshot() async =>
+      OnlineSocialSnapshot(
+        profile: _profile,
+        friends: const [],
+        requests: [
+          for (var index = 0; index < requestCount; index++)
+            FriendshipRequest(
+              id: 'request-$index',
+              direction: FriendRequestDirection.incoming,
+              keeper: _requester,
+              createdAt: DateTime.utc(2026, 8, 31),
+            ),
+        ],
+        blockedKeepers: const [],
+        groupAdventureStatus: const GroupAdventureStatus(
+          slot: 1,
+          adventureId: 'group_1',
+          alreadyCompleted: false,
+        ),
+        groupLobbies: const [],
+        trades: const [],
+        tradeInventory: const [],
+        notifications: const [],
+      );
+
+  @override
+  Future<void> synchronizeTradeInventory(
+    OnlineInventorySnapshot snapshot,
+  ) async {}
+
+  @override
+  Future<void> publishSocialShowcase(
+    OnlineInventorySnapshot snapshot,
+  ) async {}
 }

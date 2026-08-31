@@ -412,6 +412,7 @@ extension DragonHavenSystems on HouseholdProvider {
       final dragon = matches.first;
       if (dragon.isEgg ||
           dragon.activeAdventureId != null ||
+          dragon.dragonSchoolComplete ||
           dragon.schoolAttempts(definition.id) >=
               dragonSchoolAttemptsPerLesson) {
         return const DragonSchoolLessonResult(
@@ -487,11 +488,11 @@ extension DragonHavenSystems on HouseholdProvider {
         final outcome = dragon.dragonSchoolOutcome;
         final message = switch (outcome) {
           DragonSchoolOutcome.valedictorian =>
-            '${dragon.displayName} became Dragon School Valedictorian with 30 stars.',
+            '${dragon.displayName} became Dragon Academy Valedictorian with 30 stars.',
           DragonSchoolOutcome.dropout =>
-            '${dragon.displayName} finished all lessons as a Dragon School Dropout.',
+            '${dragon.displayName} finished all lessons as a Dragon Academy Dropout.',
           _ =>
-            '${dragon.displayName} completed Dragon School as ${outcome.titleEn}.',
+            '${dragon.displayName} completed Dragon Academy as ${outcome.titleEn}.',
         };
         _addActivity(
           message: message,
@@ -503,7 +504,7 @@ extension DragonHavenSystems on HouseholdProvider {
       } else if (newStars > 0) {
         _addActivity(
           message:
-              '${dragon.displayName} earned $newStars new Dragon School ${newStars == 1 ? 'star' : 'stars'}.',
+              '${dragon.displayName} earned $newStars new Dragon Academy ${newStars == 1 ? 'star' : 'stars'}.',
           type: ActivityType.milestone,
           code: ActivityCode.bonusFound,
           subject: 'dragon-school:${definition.id}:${dragon.id}',
@@ -527,6 +528,31 @@ extension DragonHavenSystems on HouseholdProvider {
       finalizedDragonIds: finalizedDragonIds,
       attemptsByDragon: attemptsByDragon,
     );
+  }
+
+  Future<bool> graduateDragonFromAcademy(String dragonId) async {
+    final matches = ownedDragons.where((dragon) => dragon.id == dragonId);
+    if (matches.isEmpty) return false;
+    final dragon = matches.first;
+    if (!dragon.canGraduateDragonSchoolEarly) return false;
+
+    dragon.dragonSchoolFinalizedEarly = true;
+    final outcome = dragon.dragonSchoolOutcome;
+    final message = switch (outcome) {
+      DragonSchoolOutcome.valedictorian =>
+        '${dragon.displayName} became Dragon Academy Valedictorian with 30 stars.',
+      _ =>
+        '${dragon.displayName} graduated early from Dragon Academy as ${outcome.titleEn}.',
+    };
+    _addActivity(
+      message: message,
+      type: ActivityType.milestone,
+      code: ActivityCode.bonusFound,
+      subject: 'dragon-school-final:${outcome.name}:${dragon.id}',
+    );
+    _evaluateAchievements();
+    await _notifyAndSave();
+    return true;
   }
 
   TrainingFocus _lowestSchoolExpertise(Pet dragon) {

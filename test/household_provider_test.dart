@@ -1873,12 +1873,26 @@ void main() {
     expect(game.ownedFrameIds, contains(supporterFrame.id));
     expect(game.ownedItemIds,
         containsAll(supporterFurnitureCatalog.map((item) => item.id)));
+    final throne = supporterFurnitureCatalog.first;
+    expect(
+      await game.placeHouseItem(
+        throne.id,
+        roomId: 'hearth',
+        x: .5,
+        y: .7,
+      ),
+      isTrue,
+    );
+    expect(
+      game.placementsForRoom('hearth').map((placement) => placement.itemId),
+      contains(throne.id),
+    );
     expect(game.chestPortraitCount, chestPortraitsBefore);
     expect(game.chestTitleCount, chestTitlesBefore);
     game.dispose();
   });
 
-  test('Dragon School unlocks at five floors and only stores higher records',
+  test('Dragon Academy unlocks at five floors and only stores higher records',
       () async {
     final game = HouseholdProvider(
       random: Random(903),
@@ -1910,7 +1924,7 @@ void main() {
     game.dispose();
   });
 
-  test('Dragon School rewards only new stars and doubles equipped XP',
+  test('Dragon Academy rewards only new stars and doubles equipped XP',
       () async {
     final game = HouseholdProvider(
       random: Random(905),
@@ -1965,7 +1979,7 @@ void main() {
     game.dispose();
   });
 
-  test('Dragon School team lessons validate availability and track mentors',
+  test('Dragon Academy team lessons validate availability and track mentors',
       () async {
     final game = HouseholdProvider(
       random: Random(906),
@@ -2010,13 +2024,14 @@ void main() {
     game.dispose();
   });
 
-  test('Dragon School report data survives Pet serialization', () {
+  test('Dragon Academy report data survives Pet serialization', () {
     final dragon = Pet(
       stage: DragonStage.hatchling,
       firstEgg: false,
       dragonSchoolRecords: const {'runeRush': 24},
       dragonSchoolStars: const {'runeRush': 2, 'safeHoard': 3},
       dragonSchoolAttempts: const {'runeRush': 2, 'safeHoard': 3},
+      dragonSchoolFinalizedEarly: true,
       dragonSchoolMentorLessons: 7,
     );
     final restored = Pet.fromJson(dragon.toJson());
@@ -2027,10 +2042,101 @@ void main() {
     expect(restored.schoolAttempts('runeRush'), 2);
     expect(restored.schoolAttempts('safeHoard'), 3);
     expect(restored.dragonSchoolAttemptTotal, 5);
+    expect(restored.dragonSchoolFinalizedEarly, isTrue);
     expect(restored.dragonSchoolMentorLessons, 7);
   });
 
-  test('Dragon School final outcomes and ranking use all thirty attempts', () {
+  test(
+      'Dragon Academy permits passing early graduation after every lesson once',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(907),
+      persistenceEnabled: false,
+    )
+      ..towerFloorRoomIds = List.filled(5, 'hearth')
+      ..pet.stage = DragonStage.hatchling
+      ..pet.firstEgg = false;
+    final dragon = game.pet;
+    final teammate = Pet(
+      id: 'academy-teammate',
+      stage: DragonStage.hatchling,
+      firstEgg: false,
+    );
+    game.sanctuaryDragons.add(teammate);
+
+    for (var index = 0; index < dragonSchoolGames.length; index++) {
+      final lesson = dragonSchoolGames[index];
+      final score = index < 5 ? lesson.silverScore : lesson.bronzeScore;
+      final result = await game.completeDragonSchoolLesson(
+        gameId: lesson.id,
+        score: score,
+        dragonIds: [
+          dragon.id,
+          if (lesson.minimumDragons > 1) teammate.id,
+        ],
+      );
+      expect(result.accepted, isTrue, reason: lesson.id);
+    }
+
+    expect(dragon.dragonSchoolAttemptTotal, dragonSchoolLessonCount);
+    expect(dragon.dragonSchoolStarTotal, 15);
+    expect(dragon.canGraduateDragonSchoolEarly, isTrue);
+    expect(dragon.dragonSchoolComplete, isFalse);
+    expect(await game.graduateDragonFromAcademy(dragon.id), isTrue);
+    expect(dragon.dragonSchoolComplete, isTrue);
+    expect(dragon.dragonSchoolGraduated, isTrue);
+    expect(dragon.dragonSchoolOutcome, DragonSchoolOutcome.graduate);
+    expect(await game.graduateDragonFromAcademy(dragon.id), isFalse);
+
+    final blocked = await game.completeDragonSchoolLesson(
+      gameId: dragonSchoolGames.first.id,
+      score: dragonSchoolGames.first.goldScore,
+      dragonIds: [dragon.id],
+    );
+    expect(blocked.accepted, isFalse);
+    game.dispose();
+  });
+
+  test('collection view and order preferences are included in saved state',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(908),
+      persistenceEnabled: false,
+    );
+    await game.setMyDragonsCollectionPreferences(
+      viewMode: 'compact',
+      sortMode: 'rarity',
+      descending: false,
+    );
+    await game.setEggInventoryCollectionPreferences(
+      viewMode: 'list',
+      sortMode: 'hatchTime',
+      descending: false,
+    );
+
+    final state = game.exportState();
+    expect(state['myDragonsViewMode'], 'compact');
+    expect(state['myDragonsSortMode'], 'rarity');
+    expect(state['myDragonsSortDescending'], isFalse);
+    expect(state['eggInventoryViewMode'], 'list');
+    expect(state['eggInventorySortMode'], 'hatchTime');
+    expect(state['eggInventorySortDescending'], isFalse);
+    final restored = HouseholdProvider(
+      random: Random(909),
+      persistenceEnabled: false,
+    );
+    expect(await restored.restoreCloudState(state), isTrue);
+    expect(restored.myDragonsViewMode, 'compact');
+    expect(restored.myDragonsSortMode, 'rarity');
+    expect(restored.myDragonsSortDescending, isFalse);
+    expect(restored.eggInventoryViewMode, 'list');
+    expect(restored.eggInventorySortMode, 'hatchTime');
+    expect(restored.eggInventorySortDescending, isFalse);
+    restored.dispose();
+    game.dispose();
+  });
+
+  test('Dragon Academy final outcomes and ranking use all thirty attempts', () {
     expect(
       dragonSchoolGames.map((lesson) => lesson.id).toSet(),
       dragonSchoolLessonIds,

@@ -22,7 +22,7 @@ import 'package:provider/provider.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('Tower exposes fixed Rooftop ordering and the level-five School',
+  testWidgets('Tower exposes fixed Rooftop ordering and the level-five Academy',
       (tester) async {
     final game = HouseholdProvider.createReleaseDemo()
       ..towerFloorRoomIds = [
@@ -146,10 +146,22 @@ void main() {
     for (var day = 1; day <= 7; day++) {
       expect(find.byKey(Key('trial-streak-day-$day')), findsOneWidget);
     }
+    final constellationSprites = find.descendant(
+      of: find.byKey(const Key('trial-streak-card')),
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Image &&
+            widget.image is AssetImage &&
+            (widget.image as AssetImage).assetName.endsWith(
+                  'trial_constellation_node.png',
+                ),
+      ),
+    );
+    expect(constellationSprites, findsNWidgets(7));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Dragon School enrolls a pupil and starts its visual lesson',
+  testWidgets('Dragon Academy enrolls a pupil and starts its visual lesson',
       (tester) async {
     final game = HouseholdProvider.createReleaseDemo()
       ..towerFloorRoomIds = List.filled(5, 'hearth');
@@ -183,7 +195,41 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('every Dragon School lesson renders its sprite environment',
+  testWidgets('Dragon Academy offers passing pupils early graduation',
+      (tester) async {
+    final game = HouseholdProvider(
+      random: Random(934),
+      persistenceEnabled: false,
+    )
+      ..towerFloorRoomIds = List.filled(5, 'hearth')
+      ..pet.stage = DragonStage.hatchling
+      ..pet.firstEgg = false;
+    for (var index = 0; index < dragonSchoolGames.length; index++) {
+      final lesson = dragonSchoolGames[index];
+      game.pet.dragonSchoolAttempts[lesson.id] = 1;
+      game.pet.dragonSchoolStars[lesson.id] = index < 5 ? 2 : 1;
+    }
+    addTearDown(game.dispose);
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: const MaterialApp(home: DragonSchoolScreen()),
+    ));
+    await tester.pump();
+
+    final graduateButton = find.byKey(Key('graduate-academy-${game.pet.id}'));
+    expect(graduateButton, findsOneWidget);
+    await tester.tap(graduateButton);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.widgetWithText(FilledButton, 'Graduate'));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(game.pet.dragonSchoolComplete, isTrue);
+    expect(game.pet.dragonSchoolAttemptTotal, dragonSchoolLessonCount);
+    expect(graduateButton, findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('every Dragon Academy lesson renders its sprite environment',
       (tester) async {
     final game = HouseholdProvider.createReleaseDemo()
       ..towerFloorRoomIds = List.filled(5, 'hearth');
@@ -208,6 +254,14 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('start-school-game')));
       await tester.pump(const Duration(milliseconds: 120));
+      if (definition.kind == DragonSchoolGameKind.sigilMemory) {
+        expect(find.byKey(const Key('school-sigil-preview')), findsOneWidget);
+        await tester.pump(const Duration(milliseconds: 850));
+        expect(find.byKey(const Key('school-sigil-grid')), findsOneWidget);
+      }
+      if (definition.kind == DragonSchoolGameKind.shadowMatch) {
+        expect(find.byKey(const Key('school-shadow-grid')), findsOneWidget);
+      }
       expect(tester.takeException(), isNull, reason: definition.id);
     }
 
@@ -255,6 +309,81 @@ void main() {
           .first,
     );
     expect(find.byType(FurnitureArt), findsNWidgets(4));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'owned Supporter Pack stays finite after leaving and reopening Packs',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final game = HouseholdProvider(
+      random: Random(940),
+      persistenceEnabled: false,
+    );
+    await game.applyVerifiedSupporterPack('packs-revisit-regression');
+    addTearDown(game.dispose);
+    final bucket = PageStorageBucket();
+
+    Widget buildApp({required bool showShop}) => ChangeNotifierProvider.value(
+          value: game,
+          child: MaterialApp(
+            home: PageStorage(
+              bucket: bucket,
+              child: Scaffold(
+                body: showShop
+                    ? const ShopHubScreen(initialCurrencyTab: 2)
+                    : const SizedBox.shrink(),
+              ),
+            ),
+          ),
+        );
+
+    Finder packsScrollable() => find.descendant(
+          of: find.byKey(const Key('packs-shop-scroll')),
+          matching: find.byType(Scrollable),
+        );
+
+    await tester.pumpWidget(buildApp(showShop: true));
+    await tester.pumpAndSettle();
+    expect(find.text('OWNED'), findsOneWidget);
+    await tester
+        .tap(find.byKey(const Key('supporter-pack-everything-included')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Complete supporter furniture set'),
+      300,
+      scrollable: packsScrollable(),
+    );
+    var position = tester.state<ScrollableState>(packsScrollable()).position;
+    expect(position.maxScrollExtent.isFinite, isTrue);
+    expect(position.maxScrollExtent, lessThan(2500));
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pump();
+
+    await tester.pumpWidget(buildApp(showShop: false));
+    await tester.pump();
+    await tester.pumpWidget(buildApp(showShop: true));
+    await tester.pumpAndSettle();
+
+    expect(find.text('OWNED'), findsOneWidget);
+    expect(find.byKey(const Key('supporter-pack-contents')), findsNothing);
+    position = tester.state<ScrollableState>(packsScrollable()).position;
+    expect(position.pixels, 0);
+    expect(position.maxScrollExtent.isFinite, isTrue);
+
+    await tester
+        .tap(find.byKey(const Key('supporter-pack-everything-included')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Complete supporter furniture set'),
+      300,
+      scrollable: packsScrollable(),
+    );
+    expect(find.byType(FurnitureArt), findsNWidgets(4));
+    position = tester.state<ScrollableState>(packsScrollable()).position;
+    expect(position.maxScrollExtent.isFinite, isTrue);
+    expect(position.maxScrollExtent, lessThan(2500));
     expect(tester.takeException(), isNull);
   });
 
@@ -309,6 +438,54 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(game.selectedFrameId, supporterFrame.id);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Account Vanity can select and remove a keeper badge',
+      (tester) async {
+    final game = HouseholdProvider(
+      random: Random(942),
+      persistenceEnabled: false,
+    )
+      ..ownedBadgeIds.add(supporterBadge.id)
+      ..selectedBadgeId = supporterBadge.id;
+    final online = OnlineAccountProvider(
+      repository: const DisabledSocialRepository(),
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    addTearDown(game.dispose);
+    addTearDown(online.dispose);
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const MaterialApp(home: AccountScreen()),
+    ));
+    await tester.pump();
+
+    expect(find.byKey(const Key('account-badge-collection')), findsOneWidget);
+    expect(
+      find.byKey(
+        const Key('keeper-portrait-badge-badge_supporter_founder'),
+      ),
+      findsWidgets,
+    );
+
+    await tester.tap(find.byKey(const Key('account-badge-collection')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('account-badge-list')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('select-badge-none')));
+    await tester.pumpAndSettle();
+    expect(game.selectedBadgeId, isNull);
+
+    await tester.tap(find.byKey(const Key('account-badge-collection')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(Key('select-badge-${supporterBadge.id}')),
+    );
+    await tester.pumpAndSettle();
+    expect(game.selectedBadgeId, supporterBadge.id);
     expect(tester.takeException(), isNull);
   });
 }

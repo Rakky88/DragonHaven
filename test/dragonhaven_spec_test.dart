@@ -325,6 +325,10 @@ void main() {
     expect(nativeBridge, contains('areNotificationsEnabled()'));
     expect(nativeBridge, contains('"openNotificationSettings"'));
     expect(nativeBridge, contains('private var musicEnabled = false'));
+    expect(
+        nativeBridge, contains('private var flutterAppInForeground = false'));
+    expect(nativeBridge, contains('private fun canPlayMusic()'));
+    expect(nativeBridge, contains('"setAppForeground"'));
     expect(nativeBridge, contains('"takePendingNavigation"'));
     expect(nativeBridge, contains('override fun onNewIntent'));
     expect(nativeBridge, contains('"notificationTap"'));
@@ -468,6 +472,26 @@ void main() {
       reason: 'already released clients keep their compatible RPC overload',
     );
     expect(migration, contains('p.frame_key'));
+    expect(migration, contains('from public.list_my_friends()'));
+  });
+
+  test('online keeper badges are synchronized without breaking old apps', () {
+    final migration = File(
+      'supabase/migrations/202608310029_keeper_badge_profiles.sql',
+    ).readAsStringSync();
+
+    expect(migration, contains('badge_key text'));
+    expect(migration, contains("badge_key = 'badge_supporter_founder'"));
+    expect(
+      migration,
+      contains('update_my_profile(text, text, text, text, text)'),
+    );
+    expect(
+      migration,
+      isNot(contains('drop function public.update_my_profile')),
+      reason: 'released RPC overloads remain in place and preserve badge_key',
+    );
+    expect(migration, contains('p.badge_key'));
     expect(migration, contains('from public.list_my_friends()'));
   });
 

@@ -30,7 +30,7 @@ class DragonSchoolScreen extends StatelessWidget {
     final game = context.watch<HouseholdProvider>();
     return Scaffold(
       appBar:
-          AppBar(title: Text(strings.pick('Dragon School', 'Drakenschool'))),
+          AppBar(title: Text(strings.pick('Dragon Academy', 'Drakenacademie'))),
       body: ListView(
         key: const Key('dragon-school-games'),
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 32),
@@ -69,6 +69,7 @@ class DragonSchoolScreen extends StatelessWidget {
       });
     final eligible = present.where(
       (dragon) =>
+          !dragon.dragonSchoolComplete &&
           dragon.schoolAttempts(definition.id) < dragonSchoolAttemptsPerLesson,
     );
     if (eligible.length < definition.minimumDragons) {
@@ -176,8 +177,8 @@ class _SchoolHero extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   strings.pick(
-                    'Every pupil gets three official attempts per lesson. Their best results decide the final diploma and ranking.',
-                    'Iedere leerling krijgt drie officiële pogingen per les. De beste resultaten bepalen het einddiploma en de ranglijst.',
+                    'Every pupil gets up to three official attempts per lesson. Once every lesson is passed at least once, a pupil with 15 stars may graduate early.',
+                    'Iedere leerling krijgt maximaal drie officiële pogingen per les. Zodra elk vak minimaal één keer is gedaan, mag een leerling met 15 sterren vervroegd afstuderen.',
                   ),
                   style:
                       const TextStyle(color: Color(0xFFE9DFF9), fontSize: 11.5),
@@ -265,6 +266,11 @@ class _AcademyStandings extends StatelessWidget {
                   _AcademyStandingRow(
                     rank: index + 1,
                     dragon: dragons[index],
+                    onGraduate: () => _confirmEarlyGraduation(
+                      context,
+                      game,
+                      dragons[index],
+                    ),
                   ),
                 Padding(
                   padding: const EdgeInsets.only(top: 5),
@@ -272,8 +278,8 @@ class _AcademyStandings extends StatelessWidget {
                     children: [
                       Text(
                         strings.pick(
-                          '15 stars: Graduate · 21: Honors · 27: High Honors · 30: Valedictorian. Below 15 becomes Dropout.',
-                          '15 sterren: Afgestudeerd · 21: Onderscheiding · 27: Grote onderscheiding · 30: Lichtingsbeste. Onder 15 wordt Uitvaller.',
+                          '15 stars: Graduate · 21: Honors · 27: High Honors · 30: Valedictorian. Early graduation requires one attempt in every lesson. Dropout is decided only after all 30 attempts.',
+                          '15 sterren: Afgestudeerd · 21: Onderscheiding · 27: Grote onderscheiding · 30: Lichtingsbeste. Vervroegd afstuderen vereist één poging in elk vak. Uitval wordt pas na alle 30 pogingen bepaald.',
                         ),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
@@ -304,10 +310,15 @@ class _AcademyStandings extends StatelessWidget {
 }
 
 class _AcademyStandingRow extends StatelessWidget {
-  const _AcademyStandingRow({required this.rank, required this.dragon});
+  const _AcademyStandingRow({
+    required this.rank,
+    required this.dragon,
+    required this.onGraduate,
+  });
 
   final int rank;
   final Pet dragon;
+  final VoidCallback onGraduate;
 
   @override
   Widget build(BuildContext context) {
@@ -374,12 +385,67 @@ class _AcademyStandingRow extends StatelessWidget {
                 '${dragon.dragonSchoolStarTotal}/30 ★',
                 style: const TextStyle(color: AppColors.muted, fontSize: 9.5),
               ),
+              if (dragon.canGraduateDragonSchoolEarly)
+                TextButton(
+                  key: Key('graduate-academy-${dragon.id}'),
+                  onPressed: onGraduate,
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(0, 28),
+                    padding: const EdgeInsets.symmetric(horizontal: 7),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  child: Text(
+                    strings.pick('Graduate now', 'Nu afstuderen'),
+                    style: const TextStyle(fontSize: 9.5),
+                  ),
+                ),
             ],
           ),
         ],
       ),
     );
   }
+}
+
+Future<void> _confirmEarlyGraduation(
+  BuildContext context,
+  HouseholdProvider game,
+  Pet dragon,
+) async {
+  final strings = AppStrings.of(context);
+  final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(strings.pick(
+            'Graduate ${dragon.displayName}?',
+            '${dragon.displayName} laten afstuderen?',
+          )),
+          content: Text(strings.pick(
+            'The current report becomes final. Unused lesson attempts cannot be played afterwards.',
+            'Het huidige rapport wordt definitief. Ongebruikte pogingen kunnen daarna niet meer worden gespeeld.',
+          )),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(strings.pick('Keep training', 'Verder trainen')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(strings.pick('Graduate', 'Afstuderen')),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+  if (!confirmed || !context.mounted) return;
+  final graduated = await game.graduateDragonFromAcademy(dragon.id);
+  if (!context.mounted || !graduated) return;
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Text(strings.pick(
+      '${dragon.displayName} has graduated from Dragon Academy.',
+      '${dragon.displayName} is afgestudeerd aan de Drakenacademie.',
+    )),
+  ));
 }
 
 class _HeroPill extends StatelessWidget {
@@ -539,8 +605,9 @@ class _EnrollmentSheetState extends State<_EnrollmentSheet> {
     super.initState();
     _selectedIds.addAll(widget.availableDragons
         .where((dragon) =>
+            !dragon.dragonSchoolComplete &&
             dragon.schoolAttempts(widget.definition.id) <
-            dragonSchoolAttemptsPerLesson)
+                dragonSchoolAttemptsPerLesson)
         .take(widget.definition.minimumDragons)
         .map((dragon) => dragon.id));
   }
@@ -565,8 +632,9 @@ class _EnrollmentSheetState extends State<_EnrollmentSheet> {
     final canStart = _selectedIds.length >= widget.definition.minimumDragons &&
         _selectedIds.length <= widget.definition.maximumDragons &&
         selectedDragons.every((dragon) =>
+            !dragon.dragonSchoolComplete &&
             dragon.schoolAttempts(widget.definition.id) <
-            dragonSchoolAttemptsPerLesson);
+                dragonSchoolAttemptsPerLesson);
 
     return SafeArea(
       child: FractionallySizedBox(
@@ -618,8 +686,9 @@ class _EnrollmentSheetState extends State<_EnrollmentSheet> {
                       dragon: dragon,
                       definition: widget.definition,
                       selected: _selectedIds.contains(dragon.id),
-                      onTap: dragon.schoolAttempts(widget.definition.id) >=
-                              dragonSchoolAttemptsPerLesson
+                      onTap: dragon.dragonSchoolComplete ||
+                              dragon.schoolAttempts(widget.definition.id) >=
+                                  dragonSchoolAttemptsPerLesson
                           ? null
                           : () => _toggleDragon(dragon.id),
                     ),
@@ -794,6 +863,7 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
   Duration _remaining = _lessonDuration;
   int _score = 0;
   int _target = 0;
+  int _shadowDifference = 0;
   int _expected = 1;
   List<int> _order = [1, 2, 3, 4, 5, 6];
   List<int> _constellationOrder = [0, 1, 2, 3, 4, 5];
@@ -835,8 +905,9 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
     final participants = _participants(game);
     if (participants.length != widget.dragonIds.length ||
         participants.any((dragon) =>
+            dragon.dragonSchoolComplete ||
             dragon.schoolAttempts(widget.definition.id) >=
-            dragonSchoolAttemptsPerLesson)) {
+                dragonSchoolAttemptsPerLesson)) {
       final strings = AppStrings.of(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(strings.pick(
@@ -854,6 +925,7 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
     _endsAt = DateTime.now().add(_lessonDuration);
     _target =
         _random.nextInt(kind == DragonSchoolGameKind.crystalChase ? 9 : 6);
+    _shadowDifference = _random.nextInt(4);
     _expected = kind == DragonSchoolGameKind.constellationTrace ? 0 : 1;
     _order = [1, 2, 3, 4, 5, 6]..shuffle(_random);
     _constellationOrder = [0, 1, 2, 3, 4, 5]..shuffle(_random);
@@ -1003,7 +1075,10 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
         }
       case DragonSchoolGameKind.shadowMatch:
         index == _target ? _correct(2) : _mistake();
-        setState(() => _target = _random.nextInt(6));
+        setState(() {
+          _target = _differentTarget(_target, 6);
+          _shadowDifference = _random.nextInt(4);
+        });
       case DragonSchoolGameKind.breathBalance:
         (_phase - .5).abs() < .12 ? _correct(2) : _mistake();
       case DragonSchoolGameKind.cloudWeave:
@@ -1224,8 +1299,9 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
         .where((dragon) => _result!.finalizedDragonIds.contains(dragon.id))
         .toList(growable: false);
     final canReplay = participants.every((dragon) =>
+        !dragon.dragonSchoolComplete &&
         dragon.schoolAttempts(widget.definition.id) <
-        dragonSchoolAttemptsPerLesson);
+            dragonSchoolAttemptsPerLesson);
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -1428,18 +1504,28 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
               ),
               const SizedBox(height: 10),
               Expanded(
-                child: _choiceGrid(
-                  6,
-                  (index) => AnimatedOpacity(
-                    duration: const Duration(milliseconds: 180),
-                    opacity: _memoryVisible && index != _target ? .08 : 1,
-                    child: Image.asset(
-                      _sigilAssets[index],
-                      width: 64,
-                      height: 64,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 210),
+                  child: _memoryVisible
+                      ? Center(
+                          key: const Key('school-sigil-preview'),
+                          child: Image.asset(
+                            _sigilAssets[_target],
+                            width: 116,
+                            height: 116,
+                            fit: BoxFit.contain,
+                          ),
+                        )
+                      : _centeredChoiceGrid(
+                          key: const Key('school-sigil-grid'),
+                          count: 6,
+                          child: (index) => Image.asset(
+                            _sigilAssets[index],
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -1475,23 +1561,10 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
               ),
             ],
           ),
-        DragonSchoolGameKind.shadowMatch => _choiceGrid(
-            6,
-            (index) => Transform.flip(
-              flipX: index == _target,
-              child: ColorFiltered(
-                colorFilter:
-                    const ColorFilter.mode(Color(0xFF443858), BlendMode.srcIn),
-                child: participants.isEmpty
-                    ? Image.asset(widget.definition.iconAsset)
-                    : _DragonImage(
-                        dragon: participants.first,
-                        height: 65,
-                        animate: false,
-                        silhouette: true,
-                      ),
-              ),
-            ),
+        DragonSchoolGameKind.shadowMatch => _centeredChoiceGrid(
+            key: const Key('school-shadow-grid'),
+            count: 6,
+            child: (index) => _shadowChoice(participants, index),
           ),
         DragonSchoolGameKind.breathBalance => _timingGame(strings),
         DragonSchoolGameKind.cloudWeave => _cloudWeave(strings, participants),
@@ -1537,6 +1610,54 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
           ),
         ),
       );
+
+  Widget _centeredChoiceGrid({
+    required Key key,
+    required int count,
+    required Widget Function(int) child,
+  }) =>
+      Center(
+        child: ConstrainedBox(
+          key: key,
+          constraints: const BoxConstraints(maxWidth: 320, maxHeight: 244),
+          child: _choiceGrid(count, child),
+        ),
+      );
+
+  Widget _shadowChoice(List<Pet> participants, int index) {
+    Widget shadow = ColorFiltered(
+      colorFilter: const ColorFilter.mode(Color(0xFF170D28), BlendMode.srcIn),
+      child: participants.isEmpty
+          ? Image.asset(widget.definition.iconAsset)
+          : _DragonImage(
+              dragon: participants.first,
+              height: 65,
+              animate: false,
+              silhouette: true,
+            ),
+    );
+    if (index == _target) {
+      shadow = switch (_shadowDifference) {
+        0 => Transform.flip(flipX: true, child: shadow),
+        1 => Transform.scale(scale: .82, child: shadow),
+        2 => Transform.rotate(angle: .13, child: shadow),
+        _ => Transform.translate(
+            offset: const Offset(5, -3),
+            child: Transform.scale(scaleX: .88, scaleY: 1.03, child: shadow),
+          ),
+      };
+    }
+    return Container(
+      margin: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .48),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0x889D88BE)),
+      ),
+      child: shadow,
+    );
+  }
 
   Widget _timingGame(AppStrings strings) => Column(
         mainAxisAlignment: MainAxisAlignment.center,

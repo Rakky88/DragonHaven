@@ -57,6 +57,7 @@ abstract final class HavenAudio {
   static List<String> _jukeboxTrackIds = const ['music_reverie'];
   static bool _jukeboxShuffle = false;
   static bool _jukeboxRepeat = true;
+  static bool _appInForeground = false;
 
   static Future<void> applyPreferences({
     required bool musicEnabled,
@@ -117,13 +118,26 @@ abstract final class HavenAudio {
 
   static Future<void> setMusicScene(HavenMusicScene scene) async {
     _musicScene = scene;
-    if (!_musicEnabled) return;
+    if (!_musicEnabled || !_appInForeground) return;
     try {
       await _channel.invokeMethod<void>('setMusicScene', {'id': scene.assetId});
     } on MissingPluginException {
       // See applyPreferences.
     } on PlatformException {
       // A device audio failure must not interrupt gameplay.
+    }
+  }
+
+  static Future<void> setAppInForeground(bool foreground) async {
+    _appInForeground = foreground;
+    try {
+      await _channel.invokeMethod<void>('setAppForeground', {
+        'foreground': foreground,
+      });
+    } on MissingPluginException {
+      // Widget tests and unsupported platforms intentionally have no bridge.
+    } on PlatformException {
+      // Lifecycle audio failures must never interrupt the app.
     }
   }
 }

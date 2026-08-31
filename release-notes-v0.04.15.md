@@ -1,6 +1,6 @@
 # DragonHaven v0.04.15
 
-- Dragon School is now a full dragon-focused progression system. Every lesson
+- Dragon Academy is now a full dragon-focused progression system. Every lesson
   starts by choosing one or more available pupils, while Ascended dragons can
   accompany younger pupils as optional mentors.
 - All ten school games now have their own illustrated background, icon and
@@ -11,11 +11,11 @@
   Honors Graduate, High Honors or Valedictorian.
 - A normalized Academy ranking fairly compares results from all ten different
   games. School attempts, stars, status and Academy Score are saved per dragon
-  and shown in Dragon School, My Dragons and the detailed report card.
+  and shown in Dragon Academy, My Dragons and the detailed report card.
 - First-time school stars grant XP and matching expertise. Team pupils share
   the result, the Twinstar Brooch consistently doubles earned XP and mentors
   can absorb one mistake.
-- Dragon School Dropout and Valedictorian have their own achievements,
+- Dragon Academy Dropout and Valedictorian have their own achievements,
   transparent illustrated badges, Keeper Journal entries and visible dragon
   status icons.
 - The Founding Supporter Pack presentation has a new Packs sprite, expandable

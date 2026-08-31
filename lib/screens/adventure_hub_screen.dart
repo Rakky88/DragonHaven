@@ -325,12 +325,6 @@ class _TrialStreakCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Image.asset(
-                'assets/images/ui/trials/trial_constellation_node.png',
-                width: 31,
-                height: 31,
-              ),
-              const SizedBox(width: 7),
               Expanded(
                 child: Text(
                   strings.pick('Seven-day Trial constellation',
@@ -390,18 +384,11 @@ class _TrialStreakCard extends StatelessWidget {
                           duration: const Duration(milliseconds: 280),
                           scale: day <= filled ? 1 : .84,
                           child: Opacity(
-                            opacity: day <= filled ? 1 : .38,
-                            child: ColorFiltered(
-                              colorFilter: day <= filled
-                                  ? const ColorFilter.mode(
-                                      Colors.transparent, BlendMode.dst)
-                                  : const ColorFilter.mode(
-                                      Color(0xFF8D819C), BlendMode.saturation),
-                              child: Image.asset(
-                                'assets/images/ui/trials/trial_constellation_node.png',
-                                width: 29,
-                                height: 29,
-                              ),
+                            opacity: day <= filled ? 1 : .3,
+                            child: Image.asset(
+                              'assets/images/ui/trials/trial_constellation_node.png',
+                              width: 29,
+                              height: 29,
                             ),
                           ),
                         ),
@@ -1150,6 +1137,7 @@ class _JoinableGroupLobbyCard extends StatelessWidget {
                 portraitKey: owner?.keeper.portraitKey ?? 'portrait_001',
                 displayName: owner?.keeper.displayName ?? 'Keeper',
                 frameKey: owner?.keeper.frameKey,
+                badgeKey: owner?.keeper.badgeKey,
                 radius: 24,
               ),
               const SizedBox(width: 9),
@@ -2396,6 +2384,7 @@ Future<void> _showGroupLobbyDetails(
                         portraitKey: participant.keeper.portraitKey,
                         displayName: participant.keeper.displayName,
                         frameKey: participant.keeper.frameKey,
+                        badgeKey: participant.keeper.badgeKey,
                         radius: 23,
                       ),
                       title: Text(participant.keeper.displayName,

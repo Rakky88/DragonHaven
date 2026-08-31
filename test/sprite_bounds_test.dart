@@ -262,7 +262,7 @@ void main() {
     }
   });
 
-  test('Packs and Dragon School sprites have genuine alpha and safe padding',
+  test('Packs and Dragon Academy sprites have genuine alpha and safe padding',
       () async {
     const paths = <String>[
       'assets/images/ui/packs_icon.png',
@@ -316,7 +316,7 @@ void main() {
     }
   });
 
-  test('every Dragon School lesson has its own full background', () async {
+  test('every Dragon Academy lesson has its own full background', () async {
     final paths = dragonSchoolGames
         .map((definition) => definition.backgroundAsset)
         .toSet();
@@ -615,6 +615,11 @@ void main() {
   test(
       'all standalone furniture and chest sprites have safe transparent bounds',
       () async {
+    expect(
+      ChestTier.music.openedAssetPath,
+      isNot(ChestTier.portrait.openedAssetPath),
+      reason: 'Music and Portrait Chests need distinct open artwork',
+    );
     final paths = <String>{
       for (final item in shopCatalog)
         if (FurnitureArt.assetForItem(item.id) case final path?) path,
@@ -623,7 +628,7 @@ void main() {
         tier.openedAssetPath,
       ],
     };
-    expect(paths, hasLength(216));
+    expect(paths, hasLength(217));
     for (final path in paths) {
       final image = await _decode(path);
       _expectContained(

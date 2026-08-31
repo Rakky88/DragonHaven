@@ -12,12 +12,14 @@ class OnlineProfileSnapshot {
     required this.titleId,
     required this.portraitId,
     this.frameId,
+    this.badgeId,
   });
 
   final String displayName;
   final String titleId;
   final String portraitId;
   final String? frameId;
+  final String? badgeId;
 
   factory OnlineProfileSnapshot.fromGame(HouseholdProvider game) =>
       OnlineProfileSnapshot(
@@ -27,6 +29,7 @@ class OnlineProfileSnapshot {
         titleId: game.selectedTitleId ?? 'title_001',
         portraitId: game.selectedPortraitId ?? 'portrait_001',
         frameId: game.selectedFrameId,
+        badgeId: game.selectedBadgeId,
       );
 }
 
@@ -98,6 +101,7 @@ class KeeperProfile {
     required this.title,
     required this.portraitKey,
     this.frameKey,
+    this.badgeKey,
     required this.discoveredDragonCount,
     required this.inventoryImported,
     this.achievementCount = 0,
@@ -116,6 +120,7 @@ class KeeperProfile {
   final String title;
   final String portraitKey;
   final String? frameKey;
+  final String? badgeKey;
   final int discoveredDragonCount;
   final bool inventoryImported;
   final int achievementCount;
@@ -139,6 +144,7 @@ class KeeperProfile {
       title: json['title']?.toString() ?? 'Dragon Keeper',
       portraitKey: json['portrait_key']?.toString() ?? 'moon',
       frameKey: json['frame_key']?.toString(),
+      badgeKey: json['badge_key']?.toString(),
       discoveredDragonCount: _int(json['discovered_dragon_count']),
       inventoryImported: json['inventory_imported'] == true,
       achievementCount: _int(json['achievement_count']),

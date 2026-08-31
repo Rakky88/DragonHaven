@@ -117,8 +117,15 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       _schedulePresentations();
     });
     _lifecycle = AppLifecycleListener(
-      onPause: () => unawaited(_automaticCloudBackup.tryWhenBackgrounded()),
+      onInactive: () => unawaited(HavenAudio.setAppInForeground(false)),
+      onHide: () => unawaited(HavenAudio.setAppInForeground(false)),
+      onPause: () {
+        unawaited(HavenAudio.setAppInForeground(false));
+        unawaited(_automaticCloudBackup.tryWhenBackgrounded());
+      },
+      onDetach: () => unawaited(HavenAudio.setAppInForeground(false)),
       onResume: () async {
+        await HavenAudio.setAppInForeground(true);
         _setTowerAmbientMusic();
         await _game.synchronizeNotificationPermissionWithPlatform();
         await _game.refreshForCurrentDate();
@@ -129,6 +136,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     );
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      await HavenAudio.setAppInForeground(true);
       _setTowerAmbientMusic();
       await _game.refreshForCurrentDate();
       await _online.refreshIfStale();
@@ -148,6 +156,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
 
   @override
   void dispose() {
+    unawaited(HavenAudio.setAppInForeground(false));
     _presentationRetry?.cancel();
     _gameClock?.cancel();
     _nestHatchTimer?.cancel();
@@ -405,6 +414,10 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
+    final pendingFriendRequestCount =
+        context.select<OnlineAccountProvider, int>(
+      (online) => online.incomingRequests.length,
+    );
     final eggOnly = game.pet.isEgg;
     final screens = <Widget>[
       const FriendsScreen(),
@@ -548,13 +561,14 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
               onDestinationSelected: _selectIndex,
               destinations: [
                 NavigationDestination(
-                  icon: const GameIconSprite(
-                    GameIconKind.navFriends,
+                  icon: _FriendsNavigationIcon(
                     size: 34,
+                    pendingRequestCount: pendingFriendRequestCount,
                   ),
-                  selectedIcon: const GameIconSprite(
-                    GameIconKind.navFriends,
+                  selectedIcon: _FriendsNavigationIcon(
                     size: 42,
+                    pendingRequestCount: pendingFriendRequestCount,
+                    selected: true,
                   ),
                   label: strings.tr('friends'),
                 ),
@@ -687,6 +701,51 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
           );
         },
       );
+}
+
+class _FriendsNavigationIcon extends StatelessWidget {
+  const _FriendsNavigationIcon({
+    required this.size,
+    required this.pendingRequestCount,
+    this.selected = false,
+  });
+
+  final double size;
+  final int pendingRequestCount;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final sprite = GameIconSprite(GameIconKind.navFriends, size: size);
+    if (pendingRequestCount <= 0) return sprite;
+    final displayCount =
+        pendingRequestCount > 99 ? '99+' : pendingRequestCount.toString();
+    final stateKey = selected ? 'selected' : 'unselected';
+    return Semantics(
+      label: pendingRequestCount == 1
+          ? '1 pending friend request'
+          : '$pendingRequestCount pending friend requests',
+      child: Badge(
+        key: Key('friends-request-badge-$stateKey'),
+        alignment: Alignment.topRight,
+        offset: const Offset(6, -3),
+        backgroundColor: const Color(0xFFD92D3A),
+        textColor: Colors.white,
+        largeSize: 18,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        label: Text(
+          displayCount,
+          key: Key('friends-request-count-$stateKey'),
+          style: const TextStyle(
+            fontSize: 9,
+            height: 1,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        child: sprite,
+      ),
+    );
+  }
 }
 
 class _DragonHavenBrandTitle extends StatelessWidget {

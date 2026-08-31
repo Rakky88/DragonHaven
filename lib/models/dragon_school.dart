@@ -5,7 +5,7 @@ const int dragonSchoolMaximumAcademyScore = 1200;
 extension DragonSchoolOutcomePresentation on DragonSchoolOutcome {
   String get titleEn => switch (this) {
         DragonSchoolOutcome.inTraining => 'Student',
-        DragonSchoolOutcome.dropout => 'Dragon School Dropout',
+        DragonSchoolOutcome.dropout => 'Dragon Academy Dropout',
         DragonSchoolOutcome.graduate => 'Graduate',
         DragonSchoolOutcome.honorsGraduate => 'Honors Graduate',
         DragonSchoolOutcome.highHonors => 'High Honors',
@@ -14,7 +14,7 @@ extension DragonSchoolOutcomePresentation on DragonSchoolOutcome {
 
   String get titleNl => switch (this) {
         DragonSchoolOutcome.inTraining => 'Leerling',
-        DragonSchoolOutcome.dropout => 'Drakenschooluitvaller',
+        DragonSchoolOutcome.dropout => 'Drakenacademie-uitvaller',
         DragonSchoolOutcome.graduate => 'Afgestudeerd',
         DragonSchoolOutcome.honorsGraduate => 'Met onderscheiding',
         DragonSchoolOutcome.highHonors => 'Met grote onderscheiding',

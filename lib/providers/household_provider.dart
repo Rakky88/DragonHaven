@@ -99,7 +99,7 @@ enum RoomUnlockResult {
 }
 
 class HouseholdProvider extends ChangeNotifier {
-  static const saveSchemaVersion = 47;
+  static const saveSchemaVersion = 48;
 
   HouseholdProvider({
     Random? random,
@@ -134,6 +134,12 @@ class HouseholdProvider extends ChangeNotifier {
   Set<HavenNotificationCategory> enabledNotificationCategories =
       HavenNotificationCategory.values.toSet();
   bool achievementsCompact = false;
+  String myDragonsViewMode = 'gallery';
+  String myDragonsSortMode = 'acquiredAt';
+  bool myDragonsSortDescending = true;
+  String eggInventoryViewMode = 'tiles';
+  String eggInventorySortMode = 'acquiredAt';
+  bool eggInventorySortDescending = true;
   bool tutorialCompleted = false;
   bool tutorialFullyViewed = false;
   bool showcaseMode = false;
@@ -810,6 +816,26 @@ class HouseholdProvider extends ChangeNotifier {
     HavenNotifications.configure(enabledNotificationCategories);
     achievementsCompact = data['achievementsCompact'] is bool &&
         data['achievementsCompact'] as bool;
+    myDragonsViewMode = const {'gallery', 'compact'}
+            .contains(stringFromJson(data['myDragonsViewMode']))
+        ? stringFromJson(data['myDragonsViewMode'])!
+        : 'gallery';
+    myDragonsSortMode = const {'name', 'acquiredAt', 'rarity'}
+            .contains(stringFromJson(data['myDragonsSortMode']))
+        ? stringFromJson(data['myDragonsSortMode'])!
+        : 'acquiredAt';
+    myDragonsSortDescending = data['myDragonsSortDescending'] is! bool ||
+        data['myDragonsSortDescending'] as bool;
+    eggInventoryViewMode = const {'tiles', 'list'}
+            .contains(stringFromJson(data['eggInventoryViewMode']))
+        ? stringFromJson(data['eggInventoryViewMode'])!
+        : 'tiles';
+    eggInventorySortMode = const {'acquiredAt', 'hatchTime'}
+            .contains(stringFromJson(data['eggInventorySortMode']))
+        ? stringFromJson(data['eggInventorySortMode'])!
+        : 'acquiredAt';
+    eggInventorySortDescending = data['eggInventorySortDescending'] is! bool ||
+        data['eggInventorySortDescending'] as bool;
     pet = Pet.fromJson(mapFromJson(data['pet']));
     tutorialCompleted = data['tutorialCompleted'] is bool
         ? data['tutorialCompleted'] as bool
@@ -937,7 +963,7 @@ class HouseholdProvider extends ChangeNotifier {
     supporterPackOwned = data['supporterPackOwned'] is bool &&
         data['supporterPackOwned'] as bool;
     ownedBadgeIds = stringSetFromJson(data['ownedBadgeIds'])
-      ..retainAll({supporterBadge.id});
+      ..retainAll(allKeeperBadges.map((badge) => badge.id));
     selectedBadgeId = ownedBadgeIds.contains(data['selectedBadgeId'])
         ? stringFromJson(data['selectedBadgeId'])
         : null;
@@ -1798,6 +1824,46 @@ class HouseholdProvider extends ChangeNotifier {
   Future<void> setAchievementsCompact(bool value) async {
     if (achievementsCompact == value) return;
     achievementsCompact = value;
+    await _notifyAndSave();
+  }
+
+  Future<void> setMyDragonsCollectionPreferences({
+    required String viewMode,
+    required String sortMode,
+    required bool descending,
+  }) async {
+    if (!const {'gallery', 'compact'}.contains(viewMode) ||
+        !const {'name', 'acquiredAt', 'rarity'}.contains(sortMode)) {
+      return;
+    }
+    if (myDragonsViewMode == viewMode &&
+        myDragonsSortMode == sortMode &&
+        myDragonsSortDescending == descending) {
+      return;
+    }
+    myDragonsViewMode = viewMode;
+    myDragonsSortMode = sortMode;
+    myDragonsSortDescending = descending;
+    await _notifyAndSave();
+  }
+
+  Future<void> setEggInventoryCollectionPreferences({
+    required String viewMode,
+    required String sortMode,
+    required bool descending,
+  }) async {
+    if (!const {'tiles', 'list'}.contains(viewMode) ||
+        !const {'acquiredAt', 'hatchTime'}.contains(sortMode)) {
+      return;
+    }
+    if (eggInventoryViewMode == viewMode &&
+        eggInventorySortMode == sortMode &&
+        eggInventorySortDescending == descending) {
+      return;
+    }
+    eggInventoryViewMode = viewMode;
+    eggInventorySortMode = sortMode;
+    eggInventorySortDescending = descending;
     await _notifyAndSave();
   }
 
@@ -2698,6 +2764,12 @@ class HouseholdProvider extends ChangeNotifier {
             .toList(),
         'notificationSettingsVersion': 2,
         'achievementsCompact': achievementsCompact,
+        'myDragonsViewMode': myDragonsViewMode,
+        'myDragonsSortMode': myDragonsSortMode,
+        'myDragonsSortDescending': myDragonsSortDescending,
+        'eggInventoryViewMode': eggInventoryViewMode,
+        'eggInventorySortMode': eggInventorySortMode,
+        'eggInventorySortDescending': eggInventorySortDescending,
         'tutorialCompleted': tutorialCompleted,
         'tutorialFullyViewed': tutorialFullyViewed,
         'pet': pet.toJson(),

@@ -194,6 +194,7 @@ class Pet {
     Map<String, int>? dragonSchoolRecords,
     Map<String, int>? dragonSchoolStars,
     Map<String, int>? dragonSchoolAttempts,
+    this.dragonSchoolFinalizedEarly = false,
     this.dragonSchoolMentorLessons = 0,
     int? hatchSeed,
     String? lineageId,
@@ -265,6 +266,7 @@ class Pet {
   final Map<String, int> dragonSchoolRecords;
   final Map<String, int> dragonSchoolStars;
   final Map<String, int> dragonSchoolAttempts;
+  bool dragonSchoolFinalizedEarly;
   int dragonSchoolMentorLessons;
   final int hatchSeed;
   final String lineageId;
@@ -370,8 +372,16 @@ class Pet {
             total + schoolAttempts(id).clamp(0, dragonSchoolAttemptsPerLesson),
       )
       .clamp(0, dragonSchoolMaximumAttempts);
+  bool get hasAttemptedEveryDragonSchoolLesson =>
+      dragonSchoolLessonIds.every((lessonId) => schoolAttempts(lessonId) > 0);
+  bool get dragonSchoolEarlyGraduationRequirementsMet =>
+      hasAttemptedEveryDragonSchoolLesson && dragonSchoolStarTotal >= 15;
   bool get dragonSchoolComplete =>
-      dragonSchoolAttemptTotal >= dragonSchoolMaximumAttempts;
+      dragonSchoolAttemptTotal >= dragonSchoolMaximumAttempts ||
+      (dragonSchoolFinalizedEarly &&
+          dragonSchoolEarlyGraduationRequirementsMet);
+  bool get canGraduateDragonSchoolEarly =>
+      !dragonSchoolComplete && dragonSchoolEarlyGraduationRequirementsMet;
   DragonSchoolOutcome get dragonSchoolOutcome {
     if (!dragonSchoolComplete) return DragonSchoolOutcome.inTraining;
     return switch (dragonSchoolStarTotal) {
@@ -552,6 +562,7 @@ class Pet {
         'dragonSchoolRecords': dragonSchoolRecords,
         'dragonSchoolStars': dragonSchoolStars,
         'dragonSchoolAttempts': dragonSchoolAttempts,
+        'dragonSchoolFinalizedEarly': dragonSchoolFinalizedEarly,
         'dragonSchoolMentorLessons': dragonSchoolMentorLessons,
         'hatchSeed': hatchSeed,
         'lineageId': lineageId,
@@ -679,6 +690,8 @@ class Pet {
         for (final entry in mapFromJson(json['dragonSchoolAttempts']).entries)
           entry.key: nonNegativeIntFromJson(entry.value, fallback: 0),
       },
+      dragonSchoolFinalizedEarly: json['dragonSchoolFinalizedEarly'] is bool &&
+          json['dragonSchoolFinalizedEarly'] as bool,
       dragonSchoolMentorLessons: nonNegativeIntFromJson(
         json['dragonSchoolMentorLessons'],
         fallback: 0,

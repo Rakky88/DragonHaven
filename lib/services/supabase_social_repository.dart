@@ -221,12 +221,14 @@ class SupabaseSocialRepository implements SocialRepository {
     required String title,
     required String portraitKey,
     String? frameKey,
+    String? badgeKey,
   }) async {
     await _rpc('update_my_profile', params: {
       'p_display_name': displayName.trim(),
       'p_title': title.trim(),
       'p_portrait_key': portraitKey,
       'p_frame_key': frameKey,
+      'p_badge_key': badgeKey,
     });
   }
 

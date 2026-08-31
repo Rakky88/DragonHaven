@@ -1,4 +1,4 @@
-# Dragon School and Packs imagegen sources
+# Dragon Academy and Packs imagegen sources
 
 Generated on 2026-08-30 with the built-in Codex image-generation tool. All
 assets were requested as centered, transparent-background DragonHaven mobile

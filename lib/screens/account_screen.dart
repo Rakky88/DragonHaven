@@ -19,6 +19,7 @@ import '../widgets/profile_portrait_sprite.dart';
 enum _CloudConflictChoice { viewCloud, keepLocal, replaceCloud, restoreCloud }
 
 const _noFrameSelection = '__no_frame__';
+const _noBadgeSelection = '__no_badge__';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -29,6 +30,7 @@ class AccountScreen extends StatelessWidget {
     final game = context.watch<HouseholdProvider>();
     final online = context.watch<OnlineAccountProvider>();
     final selectedFrame = keeperFrameById(game.selectedFrameId);
+    final selectedBadge = keeperBadgeById(game.selectedBadgeId);
     return Scaffold(
       appBar: AppBar(title: Text(strings.tr('account'))),
       body: ListView(
@@ -53,6 +55,7 @@ class AccountScreen extends StatelessWidget {
                 portraitKey: game.selectedPortraitId ?? 'portrait_001',
                 displayName: game.accountName,
                 frameKey: game.selectedFrameId,
+                badgeKey: game.selectedBadgeId,
                 radius: 32,
               ),
               title: Text(
@@ -106,29 +109,39 @@ class AccountScreen extends StatelessWidget {
               onTap: () => _chooseTitle(context),
             ),
           ),
-          if (game.ownedBadgeIds.contains(supporterBadge.id)) ...[
+          if (game.ownedBadgeIds.isNotEmpty) ...[
             const SizedBox(height: 10),
             Card(
-              child: SwitchListTile(
-                key: const Key('account-supporter-badge'),
-                value: game.selectedBadgeId == supporterBadge.id,
-                onChanged: (enabled) =>
-                    game.selectKeeperBadge(enabled ? supporterBadge.id : null),
-                secondary: Image.asset(
-                  supporterBadge.assetPath,
-                  width: 54,
-                  height: 54,
-                  errorBuilder: (_, __, ___) =>
-                      const Icon(Icons.shield_rounded),
-                ),
+              child: ListTile(
+                key: const Key('account-badge-collection'),
+                contentPadding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
+                leading: selectedBadge == null
+                    ? const SizedBox.square(
+                        dimension: 54,
+                        child: Icon(Icons.shield_outlined, size: 34),
+                      )
+                    : Image.asset(
+                        selectedBadge.assetPath,
+                        width: 54,
+                        height: 54,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.shield_rounded),
+                      ),
                 title: Text(
-                  strings.pick(supporterBadge.nameEn, supporterBadge.nameNl),
+                  selectedBadge == null
+                      ? strings.pick('No keeper badge', 'Geen Keeper-badge')
+                      : strings.pick(
+                          selectedBadge.nameEn,
+                          selectedBadge.nameNl,
+                        ),
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
                 subtitle: Text(strings.pick(
-                  'Show this badge on your Keeper identity.',
-                  'Toon deze badge bij je Keeper-identiteit.',
+                  '${game.ownedBadgeIds.length} collected',
+                  '${game.ownedBadgeIds.length} verzameld',
                 )),
+                trailing: const Icon(Icons.verified_rounded),
+                onTap: () => _chooseBadge(context),
               ),
             ),
           ],
@@ -1155,6 +1168,116 @@ class AccountScreen extends StatelessWidget {
       if (online.isSignedIn) await online.synchronizeProfile();
     }
   }
+
+  Future<void> _chooseBadge(BuildContext context) async {
+    final game = context.read<HouseholdProvider>();
+    final strings = AppStrings.of(context);
+    final badges = allKeeperBadges
+        .where((badge) => game.ownedBadgeIds.contains(badge.id))
+        .toList(growable: false);
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => FractionallySizedBox(
+        heightFactor: .68,
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        strings.pick(
+                          'Choose keeper badge',
+                          'Kies Keeper-badge',
+                        ),
+                        style: Theme.of(sheetContext).textTheme.titleLarge,
+                      ),
+                    ),
+                    Text(
+                      '${badges.length}',
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  key: const Key('account-badge-list'),
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 24),
+                  itemCount: badges.length + 1,
+                  separatorBuilder: (_, __) => const SizedBox(height: 7),
+                  itemBuilder: (context, index) {
+                    final badge = index == 0 ? null : badges[index - 1];
+                    final active = badge?.id == game.selectedBadgeId &&
+                        (badge != null || game.selectedBadgeId == null);
+                    return Material(
+                      color: active
+                          ? AppColors.goldLight
+                          : const Color(0xFFF4F0FA),
+                      borderRadius: BorderRadius.circular(18),
+                      child: ListTile(
+                        key: Key(badge == null
+                            ? 'select-badge-none'
+                            : 'select-badge-${badge.id}'),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        leading: badge == null
+                            ? const SizedBox.square(
+                                dimension: 54,
+                                child: Icon(Icons.shield_outlined),
+                              )
+                            : Image.asset(
+                                badge.assetPath,
+                                width: 54,
+                                height: 54,
+                                fit: BoxFit.contain,
+                              ),
+                        title: Text(
+                          badge == null
+                              ? strings.pick(
+                                  'No keeper badge',
+                                  'Geen Keeper-badge',
+                                )
+                              : strings.pick(badge.nameEn, badge.nameNl),
+                          style: const TextStyle(fontWeight: FontWeight.w900),
+                        ),
+                        trailing: active
+                            ? const Icon(
+                                Icons.check_circle_rounded,
+                                color: AppColors.twilight,
+                              )
+                            : null,
+                        onTap: () => Navigator.pop(
+                          sheetContext,
+                          badge?.id ?? _noBadgeSelection,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected == null || !context.mounted) return;
+    await context.read<HouseholdProvider>().selectKeeperBadge(
+          selected == _noBadgeSelection ? null : selected,
+        );
+    if (context.mounted) {
+      final online = context.read<OnlineAccountProvider>();
+      if (online.isSignedIn) await online.synchronizeProfile();
+    }
+  }
 }
 
 class _AccountIdentityCard extends StatelessWidget {
@@ -1199,6 +1322,7 @@ class _AccountIdentityCard extends StatelessWidget {
                     portraitKey: game.selectedPortraitId ?? 'portrait_001',
                     displayName: game.accountName,
                     frameKey: game.selectedFrameId,
+                    badgeKey: game.selectedBadgeId,
                     radius: 46,
                   ),
                 ),
@@ -1216,12 +1340,13 @@ class _AccountIdentityCard extends StatelessWidget {
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      if (game.selectedBadgeId == supporterBadge.id) ...[
+                      if (keeperBadgeById(game.selectedBadgeId)
+                          case final selectedBadge?) ...[
                         const SizedBox(height: 4),
                         Row(
                           children: [
                             Image.asset(
-                              supporterBadge.assetPath,
+                              selectedBadge.assetPath,
                               width: 24,
                               height: 24,
                               errorBuilder: (_, __, ___) => const Icon(
@@ -1233,8 +1358,10 @@ class _AccountIdentityCard extends StatelessWidget {
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                strings.pick('Founding Supporter',
-                                    'Oprichterssupporter'),
+                                strings.pick(
+                                  selectedBadge.nameEn,
+                                  selectedBadge.nameNl,
+                                ),
                                 style: const TextStyle(
                                   color: Color(0xFF9A671C),
                                   fontSize: 10.5,

@@ -141,7 +141,7 @@ class _HouseScreenState extends State<HouseScreen> {
         if (mounted) _checkRareInteraction(room.id, widget.floorIndex);
       });
     }
-    final ownedItems = shopCatalog
+    final ownedItems = allFurnitureCatalog
         .where((item) => household.ownedItemIds.contains(item.id))
         .toList();
 
@@ -319,6 +319,7 @@ class _HouseActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final editButton = _RoomActionButton(
+      key: const Key('tower-decorate-button'),
       onPressed: onToggleEdit,
       kind: GameIconKind.roomDecorate,
       filled: true,
@@ -353,6 +354,7 @@ class _HouseActions extends StatelessWidget {
 
 class _RoomActionButton extends StatelessWidget {
   const _RoomActionButton({
+    super.key,
     required this.onPressed,
     required this.kind,
     required this.label,
@@ -1150,6 +1152,7 @@ class _InventoryPanel extends StatelessWidget {
                       .firstOrNull;
                   final selected = selectedItemId == item.id;
                   return InkWell(
+                    key: Key('tower-furniture-${item.id}'),
                     onTap: () => onSelect(item.id),
                     borderRadius: BorderRadius.circular(16),
                     child: AnimatedContainer(

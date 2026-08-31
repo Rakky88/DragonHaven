@@ -132,7 +132,7 @@ extension ChestTierPresentation on ChestTier {
         ChestTier.portrait ||
         ChestTier.title =>
           'assets/images/chests/open/chest_portrait_open.webp',
-        ChestTier.music => 'assets/images/chests/open/chest_portrait_open.webp',
+        ChestTier.music => 'assets/images/chests/open/chest_music_open.png',
         ChestTier.special =>
           'assets/images/chests/open/chest_special_open.webp',
         _ => 'assets/images/chests/open/chest_${name}_open.png',
