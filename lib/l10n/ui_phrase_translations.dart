@@ -5522,6 +5522,14 @@ const uiPhraseTranslations = <String, List<String>>{
     'Eventos especiais',
     'スペシャルイベント'
   ],
+  'Available for': [
+    'Verfügbar für',
+    'Disponible durante',
+    'Disponible pendant',
+    'Disponibile per',
+    'Disponível por',
+    '残り時間'
+  ],
   'When a Special Adventure becomes available.': [
     'Wenn ein Spezialabenteuer verfügbar wird.',
     'Cuando una Aventura especial esté disponible.',

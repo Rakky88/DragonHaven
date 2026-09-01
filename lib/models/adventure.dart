@@ -221,12 +221,14 @@ class SpecialAdventureRewardBundle {
     required this.xp,
     this.randomRelicPool = const [],
     this.musicChest = false,
+    this.expertiseRewards = const {},
   });
 
   final ChestTier chestTier;
   final int xp;
   final List<MysticRelic> randomRelicPool;
   final bool musicChest;
+  final Map<TrainingFocus, int> expertiseRewards;
 }
 
 class SpecialAdventureEventDefinition {
@@ -240,6 +242,7 @@ class SpecialAdventureEventDefinition {
     required this.rewards,
     required this.storyEn,
     required this.storyNl,
+    this.showStoryInDetails = true,
     this.initialHour = 0,
     this.recursYearlyFrom,
     this.recurrenceMonth,
@@ -263,6 +266,7 @@ class SpecialAdventureEventDefinition {
   final SpecialAdventureRewardBundle rewards;
   final String storyEn;
   final String storyNl;
+  final bool showStoryInDetails;
 }
 
 abstract final class AdventureCatalog {
@@ -511,11 +515,17 @@ const specialAdventureEventCatalog = <SpecialAdventureEventDefinition>[
         MysticRelic.astralLens,
       ],
       musicChest: true,
+      expertiseRewards: {
+        TrainingFocus.might: 25,
+        TrainingFocus.spirit: 25,
+        TrainingFocus.arcana: 25,
+      },
     ),
     storyEn:
         'A golden birthday wish for a beautiful woman whose kindness brightens the Haven.',
     storyNl:
         'Een gouden verjaardagswens voor een mooie vrouw wier warmte de Haven laat stralen.',
+    showStoryInDetails: false,
   ),
 ];
 

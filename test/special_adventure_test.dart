@@ -13,8 +13,9 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   test('birthday relic surprise includes all four configured relics', () {
+    final rewards = specialAdventureEventCatalog.single.rewards;
     expect(
-      specialAdventureEventCatalog.single.rewards.randomRelicPool,
+      rewards.randomRelicPool,
       containsAll(<MysticRelic>[
         MysticRelic.moralPrism,
         MysticRelic.orderCompass,
@@ -23,9 +24,14 @@ void main() {
       ]),
     );
     expect(
-      specialAdventureEventCatalog.single.rewards.randomRelicPool,
+      rewards.randomRelicPool,
       hasLength(4),
     );
+    expect(rewards.expertiseRewards, const {
+      TrainingFocus.might: 25,
+      TrainingFocus.spirit: 25,
+      TrainingFocus.arcana: 25,
+    });
   });
 
   test('launch and yearly birthday windows use Europe/Amsterdam boundaries',
@@ -82,6 +88,11 @@ void main() {
       clock: () => now,
     );
     game.pet.stage = DragonStage.hatchling;
+    game.pet.training.addAll({
+      TrainingFocus.might.name: 40,
+      TrainingFocus.spirit.name: 50,
+      TrainingFocus.arcana.name: 60,
+    });
     final adventure = game.adventuresFor(AdventureKind.special).single;
     await game.startAdventure(adventure, dragonId: game.pet.id);
     now = game.adventureRuns.single.endsAt;
@@ -91,6 +102,9 @@ void main() {
     expect(game.chestCount(ChestTier.special), 1);
     expect(game.chestCount(ChestTier.music), 1);
     expect(game.totalRelicCount, 1);
+    expect(game.pet.trainingFor(TrainingFocus.might), 65);
+    expect(game.pet.trainingFor(TrainingFocus.spirit), 75);
+    expect(game.pet.trainingFor(TrainingFocus.arcana), 85);
 
     final coinsBefore = game.pet.coins;
     final gemsBefore = game.pet.gems;

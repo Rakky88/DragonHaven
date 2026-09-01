@@ -1621,6 +1621,9 @@ extension DragonHavenSystems on HouseholdProvider {
     chestInventory.update(tier, (value) => value + 1, ifAbsent: () => 1);
     final event = specialAdventureEventById(run.specialEventId);
     if (event != null) {
+      for (final reward in event.rewards.expertiseRewards.entries) {
+        dragon.addTraining(reward.key, reward.value);
+      }
       final relics = event.rewards.randomRelicPool;
       if (relics.isNotEmpty) {
         _grantRelic(relics[_random.nextInt(relics.length)]);

@@ -417,7 +417,10 @@ void main() {
   });
 
   test('Special Adventures only appear from an active special source', () {
-    final game = HouseholdProvider(random: Random(13));
+    final game = HouseholdProvider(
+      random: Random(13),
+      clock: () => DateTime.utc(2026, 8, 23, 12),
+    );
     expect(game.adventuresFor(AdventureKind.special), isEmpty);
     expect(game.adventuresFor(AdventureKind.group), hasLength(1));
   });

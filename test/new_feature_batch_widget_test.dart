@@ -161,6 +161,91 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Special Event counts down and keeps its sealed rewards concise',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var now = DateTime.utc(2026, 8, 31, 22);
+    final game = HouseholdProvider(
+      random: Random(269),
+      clock: () => now,
+      persistenceEnabled: false,
+    )
+      ..onboardingComplete = true
+      ..pet.stage = DragonStage.hatchling;
+    final online = OnlineAccountProvider(
+      repository: const DisabledSocialRepository(),
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    addTearDown(game.dispose);
+    addTearDown(online.dispose);
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const MaterialApp(home: Scaffold(body: AdventureHubScreen())),
+    ));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.takeException(), isNull);
+
+    final adventure = game.adventuresFor(AdventureKind.special).single;
+    final card = find.byKey(Key('adventure-card-${adventure.id}'));
+    final list = find.byKey(
+      const PageStorageKey('available-adventures-scroll'),
+    );
+    for (var attempt = 0; attempt < 12 && card.evaluate().isEmpty; attempt++) {
+      await tester.drag(list, const Offset(0, -420));
+      await tester.pump();
+    }
+    expect(card, findsOneWidget);
+    expect(tester.takeException(), isNull);
+    final compactCountdown = find.byKey(
+      const Key('special-event-availability-countdown-compact'),
+    );
+    expect(compactCountdown, findsOneWidget);
+    final countdownText = find.descendant(
+      of: compactCountdown,
+      matching: find.byType(Text),
+    );
+    final beforeTick = tester
+        .widgetList<Text>(countdownText)
+        .map((text) => text.data)
+        .whereType<String>()
+        .join(' ');
+    now = now.add(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    final afterTick = tester
+        .widgetList<Text>(countdownText)
+        .map((text) => text.data)
+        .whereType<String>()
+        .join(' ');
+    expect(afterTick, isNot(beforeTick));
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(card);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(
+      find.byKey(const Key('special-event-availability-countdown-detail')),
+      findsOneWidget,
+    );
+    final event = specialAdventureEventCatalog.single;
+    expect(find.text(event.storyEn), findsNothing);
+    expect(find.text(adventure.descriptionEn), findsNothing);
+    expect(find.text('+25 Might'), findsOneWidget);
+    expect(find.text('+25 Spirit'), findsOneWidget);
+    expect(find.text('+25 Arcana'), findsOneWidget);
+    expect(find.text('1 Special Chest'), findsOneWidget);
+    expect(find.text('1 random relic'), findsOneWidget);
+    expect(find.text('1 Music Chest'), findsOneWidget);
+    expect(find.textContaining('269 coins'), findsNothing);
+    expect(find.textContaining('event dragon'), findsNothing);
+    expect(find.textContaining('rolled only'), findsNothing);
+    expect(find.textContaining('surprise until'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Dragon Academy enrolls a pupil and starts its visual lesson',
       (tester) async {
     final game = HouseholdProvider.createReleaseDemo()

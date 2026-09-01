@@ -839,6 +839,9 @@ class _AdventureSection extends StatelessWidget {
     final strings = AppStrings.of(context);
     final game = context.read<HouseholdProvider>();
     final colors = _kindColors(kind);
+    final specialWindow = kind == AdventureKind.special
+        ? specialAdventureWindowsAt(now).firstOrNull
+        : null;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.fromLTRB(10, 9, 10, 2),
@@ -893,6 +896,16 @@ class _AdventureSection extends StatelessWidget {
               ],
             ],
           ),
+          if (specialWindow != null) ...[
+            const SizedBox(height: 5),
+            Align(
+              alignment: Alignment.centerRight,
+              child: _SpecialEventAvailabilityCountdown(
+                endsAt: specialWindow.endsAt,
+                compact: true,
+              ),
+            ),
+          ],
           const SizedBox(height: 5),
           if (adventures.isEmpty)
             Padding(
@@ -949,12 +962,16 @@ class _GroupAdventureSection extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        _kindTitle(strings, AdventureKind.group),
-                        style: const TextStyle(
-                          color: AppColors.ink,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
+                      Flexible(
+                        child: Text(
+                          _kindTitle(strings, AdventureKind.group),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.ink,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -1493,6 +1510,122 @@ class _GroupRequirementsCard extends StatelessWidget {
   }
 }
 
+class _SpecialEventAvailabilityCountdown extends StatefulWidget {
+  const _SpecialEventAvailabilityCountdown({
+    required this.endsAt,
+    required this.compact,
+  });
+
+  final DateTime endsAt;
+  final bool compact;
+
+  @override
+  State<_SpecialEventAvailabilityCountdown> createState() =>
+      _SpecialEventAvailabilityCountdownState();
+}
+
+class _SpecialEventAvailabilityCountdownState
+    extends State<_SpecialEventAvailabilityCountdown> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {});
+      if (!widget.endsAt
+          .isAfter(context.read<HouseholdProvider>().currentTime)) {
+        _timer?.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final rawRemaining =
+        widget.endsAt.difference(context.read<HouseholdProvider>().currentTime);
+    final remaining = rawRemaining.isNegative ? Duration.zero : rawRemaining;
+    final countdown = _formatRefreshCountdown(remaining, includeDays: true);
+    return Semantics(
+      label: '${strings.pick('Available for', 'Beschikbaar voor')} $countdown',
+      child: Container(
+        key: Key(
+          'special-event-availability-countdown-'
+          '${widget.compact ? 'compact' : 'detail'}',
+        ),
+        width: widget.compact ? null : double.infinity,
+        padding: EdgeInsets.fromLTRB(
+          widget.compact ? 7 : 12,
+          widget.compact ? 5 : 8,
+          widget.compact ? 9 : 12,
+          widget.compact ? 5 : 8,
+        ),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFD873), Color(0xFFEAA55D)],
+          ),
+          borderRadius: BorderRadius.circular(widget.compact ? 99 : 16),
+          border: Border.all(color: const Color(0x55A96A20)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x24795225),
+              blurRadius: 7,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: widget.compact ? MainAxisSize.min : MainAxisSize.max,
+          mainAxisAlignment: widget.compact
+              ? MainAxisAlignment.start
+              : MainAxisAlignment.center,
+          children: [
+            GameIconSprite(
+              GameIconKind.clock,
+              size: widget.compact ? 19 : 25,
+            ),
+            SizedBox(width: widget.compact ? 4 : 7),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.pick('Available for', 'Beschikbaar voor'),
+                  style: TextStyle(
+                    color: const Color(0xFF5E3A19),
+                    fontSize: widget.compact ? 7.5 : 10,
+                    fontWeight: FontWeight.w800,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  countdown,
+                  style: TextStyle(
+                    color: const Color(0xFF38230F),
+                    fontSize: widget.compact ? 10 : 13,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _AdventureRefreshCountdown extends StatelessWidget {
   const _AdventureRefreshCountdown({
     required this.kind,
@@ -1700,6 +1833,11 @@ class _AdventureCard extends StatelessWidget {
     final strings = AppStrings.of(context);
     final game = context.read<HouseholdProvider>();
     final specialEvent = specialAdventureEventForAdventure(definition.id);
+    final specialWindow = specialEvent == null
+        ? null
+        : specialAdventureWindowsAt(game.currentTime)
+            .where((window) => window.event.id == specialEvent.id)
+            .firstOrNull;
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -1718,7 +1856,7 @@ class _AdventureCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: Theme.of(sheetContext).textTheme.titleLarge,
             ),
-            if (specialEvent != null) ...[
+            if (specialEvent?.showStoryInDetails == true) ...[
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
@@ -1728,7 +1866,7 @@ class _AdventureCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Text(
-                  strings.pick(specialEvent.storyEn, specialEvent.storyNl),
+                  strings.pick(specialEvent!.storyEn, specialEvent.storyNl),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Color(0xFF795225),
@@ -1738,12 +1876,21 @@ class _AdventureCard extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 6),
-            Text(
-              strings.adventureDescription(definition),
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted, height: 1.35),
-            ),
+            if (specialWindow != null) ...[
+              const SizedBox(height: 12),
+              _SpecialEventAvailabilityCountdown(
+                endsAt: specialWindow.endsAt,
+                compact: false,
+              ),
+            ],
+            if (specialEvent == null) ...[
+              const SizedBox(height: 6),
+              Text(
+                strings.adventureDescription(definition),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.muted, height: 1.35),
+              ),
+            ],
             const SizedBox(height: 15),
             _DetailRow(
               icon: const GameIconSprite(GameIconKind.clock, size: 34),
@@ -1776,6 +1923,17 @@ class _AdventureCard extends StatelessWidget {
                   'Might + Arcana + Spirit: elk gecombineerd punt haalt 1 uur van de reis af (minimum 1 dag).',
                 ),
               ),
+            if (specialEvent != null)
+              for (final reward
+                  in specialEvent.rewards.expertiseRewards.entries)
+                _DetailRow(
+                  icon: GameIconSprite(
+                    GameIconSprite.forTrainingFocus(reward.key),
+                    size: 34,
+                  ),
+                  title: strings.pick('Training reward', 'Trainingsbeloning'),
+                  value: '+${reward.value} ${_focusName(strings, reward.key)}',
+                ),
             if (specialEvent == null)
               _DetailRow(
                 icon: const GameIconSprite(GameIconKind.chest, size: 34),
@@ -1791,10 +1949,7 @@ class _AdventureCard extends StatelessWidget {
                 ),
                 title: strings.pick(
                     'Guaranteed Special Chest', 'Gegarandeerde Speciale Kist'),
-                value: strings.pick(
-                  '269 coins, 10 gems and a Special Egg with an event dragon.',
-                  '269 coins, 10 gems en een Speciaal Ei met een eventdraak.',
-                ),
+                value: '1 ${strings.chestLabel(ChestTier.special)}',
               ),
               _DetailRow(
                 icon: Image.asset(
@@ -1803,10 +1958,7 @@ class _AdventureCard extends StatelessWidget {
                   height: 36,
                 ),
                 title: strings.pick('Guaranteed relic', 'Gegarandeerde relic'),
-                value: strings.pick(
-                  '1 random relic; which one remains a surprise until you claim it.',
-                  '1 willekeurige relic; welke het is blijft een verrassing tot je hem ophaalt.',
-                ),
+                value: strings.pick('1 random relic', '1 willekeurige relic'),
               ),
               if (specialEvent.rewards.musicChest &&
                   !game.musicChestCapacityReached)
@@ -1818,10 +1970,7 @@ class _AdventureCard extends StatelessWidget {
                   ),
                   title: strings.pick(
                       'Guaranteed Music Chest', 'Gegarandeerde Muziekkist'),
-                  value: strings.pick(
-                    '1 Music Chest, rolled only when you open it.',
-                    '1 Muziekkist, pas gerolld wanneer je hem opent.',
-                  ),
+                  value: '1 ${strings.chestLabel(ChestTier.music)}',
                 ),
             ],
             if (definition.kind == AdventureKind.group)
@@ -2747,10 +2896,12 @@ Future<void> _showRunDetails(
             Text(strings.adventureTitle(definition),
                 textAlign: TextAlign.center,
                 style: Theme.of(sheetContext).textTheme.titleLarge),
-            const SizedBox(height: 5),
-            Text(strings.adventureDescription(definition),
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.muted)),
+            if (specialEvent == null) ...[
+              const SizedBox(height: 5),
+              Text(strings.adventureDescription(definition),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.muted)),
+            ],
             const SizedBox(height: 16),
             _DetailRow(
                 icon: dragon == null
@@ -2794,6 +2945,17 @@ Future<void> _showRunDetails(
                   title: strings.pick('Training reward', 'Trainingsbeloning'),
                   value:
                       '+${definition.statPoints} ${_focusName(strings, definition.focus)}'),
+            if (specialEvent != null)
+              for (final reward
+                  in specialEvent.rewards.expertiseRewards.entries)
+                _DetailRow(
+                  icon: GameIconSprite(
+                    GameIconSprite.forTrainingFocus(reward.key),
+                    size: 34,
+                  ),
+                  title: strings.pick('Training reward', 'Trainingsbeloning'),
+                  value: '+${reward.value} ${_focusName(strings, reward.key)}',
+                ),
             if (specialEvent == null)
               _DetailRow(
                   icon: const GameIconSprite(GameIconKind.chest, size: 34),
@@ -2808,19 +2970,13 @@ Future<void> _showRunDetails(
                     width: 38, height: 38),
                 title: strings.pick(
                     'Guaranteed Special Chest', 'Gegarandeerde Speciale Kist'),
-                value: strings.pick(
-                  '269 coins, 10 gems and a Special Egg with an event dragon.',
-                  '269 coins, 10 gems en een Speciaal Ei met een eventdraak.',
-                ),
+                value: '1 ${strings.chestLabel(ChestTier.special)}',
               ),
               _DetailRow(
                 icon: Image.asset(MysticRelic.moralPrism.assetPath,
                     width: 36, height: 36),
                 title: strings.pick('Guaranteed relic', 'Gegarandeerde relic'),
-                value: strings.pick(
-                  '1 random relic; the exact relic is still a surprise.',
-                  '1 willekeurige relic; de exacte relic blijft nog een verrassing.',
-                ),
+                value: strings.pick('1 random relic', '1 willekeurige relic'),
               ),
               if (specialEvent.rewards.musicChest &&
                   !game.musicChestCapacityReached)
@@ -2829,10 +2985,7 @@ Future<void> _showRunDetails(
                       width: 38, height: 38),
                   title: strings.pick(
                       'Guaranteed Music Chest', 'Gegarandeerde Muziekkist'),
-                  value: strings.pick(
-                    '1 Music Chest, rolled when it is opened.',
-                    '1 Muziekkist, gerolld wanneer hij wordt geopend.',
-                  ),
+                  value: '1 ${strings.chestLabel(ChestTier.music)}',
                 ),
             ],
             const SizedBox(height: 14),
@@ -2986,6 +3139,17 @@ class _CompletedAdventureRewards extends StatelessWidget {
                   label:
                       '+${definition.statPoints} ${_focusName(strings, definition.focus)}',
                 ),
+              if (specialEvent != null)
+                for (final reward
+                    in specialEvent!.rewards.expertiseRewards.entries)
+                  _AdventureRewardPill(
+                    icon: GameIconSprite(
+                      GameIconSprite.forTrainingFocus(reward.key),
+                      size: 24,
+                    ),
+                    label:
+                        '+${reward.value} ${_focusName(strings, reward.key)}',
+                  ),
               if (resolvedChest != null)
                 _AdventureRewardPill(
                   icon: Image.asset(
