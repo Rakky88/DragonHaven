@@ -141,16 +141,27 @@ void main() {
     expect(glowColor.a, closeTo(.58, .0001));
   });
 
-  testWidgets('keeper portraits render a selected vanity frame',
+  testWidgets('vanity frames grow around a full-size keeper portrait',
       (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: KeeperPortrait(
-            portraitKey: 'portrait_042',
-            displayName: 'Framed Keeper',
-            frameKey: 'frame_supporter_founder',
-            radius: 31,
+          body: Row(
+            children: [
+              KeeperPortrait(
+                key: Key('unframed-keeper'),
+                portraitKey: 'portrait_042',
+                displayName: 'Unframed Keeper',
+                radius: 31,
+              ),
+              KeeperPortrait(
+                key: Key('framed-keeper'),
+                portraitKey: 'portrait_042',
+                displayName: 'Framed Keeper',
+                frameKey: 'frame_supporter_founder',
+                radius: 31,
+              ),
+            ],
           ),
         ),
       ),
@@ -162,10 +173,20 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(tester.getSize(find.byType(KeeperPortrait)), const Size.square(62));
-    final portraitSprite = tester
-        .widget<ProfilePortraitSprite>(find.byType(ProfilePortraitSprite));
-    expect(portraitSprite.size, closeTo(35.28, .01));
+    expect(
+      tester.getSize(find.byKey(const Key('unframed-keeper'))),
+      const Size.square(62),
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('framed-keeper'))),
+      const Size.square(62 / KeeperPortrait.framePortraitRatio),
+    );
+    final portraitSprites = tester
+        .widgetList<ProfilePortraitSprite>(find.byType(ProfilePortraitSprite))
+        .toList();
+    expect(portraitSprites, hasLength(2));
+    expect(portraitSprites[0].size, closeTo(57.6, .01));
+    expect(portraitSprites[1].size, portraitSprites[0].size);
   });
 
   test('social discovery summaries count forms rather than families', () {
@@ -1415,17 +1436,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text(friendTitle), findsWidgets);
+    expect(find.byKey(const Key('start-trade-button')), findsOneWidget);
     expect(find.text('Achievements'), findsOneWidget);
     expect(find.text('17'), findsOneWidget);
-    expect(find.text('Nimbus'), findsOneWidget);
-    expect(find.textContaining('Level 4'), findsOneWidget);
-    expect(find.text('Might'), findsOneWidget);
-    expect(find.text('Arcana'), findsOneWidget);
-    expect(find.text('Spirit'), findsOneWidget);
-    expect(find.byKey(const Key('account-trial-records')), findsOneWidget);
-    expect(find.byKey(const Key('dragon-trial-records')), findsOneWidget);
-    expect(find.text('Cavern Flight'), findsNothing);
-    expect(find.byKey(const Key('start-trade-button')), findsOneWidget);
     final friendCodex = find.byKey(const Key('friend-draconomicon-button'));
     await tester.ensureVisible(friendCodex);
     await tester.pump(const Duration(milliseconds: 250));
@@ -1444,6 +1457,23 @@ void main() {
     Navigator.of(tester.element(find.text("Lyra's Draconomicon"))).pop();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
+    await tester.scrollUntilVisible(
+      find.text('Nimbus'),
+      180,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('friend-profile-friend-user')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('Nimbus'), findsOneWidget);
+    expect(find.textContaining('Level 4'), findsOneWidget);
+    expect(find.text('Might'), findsOneWidget);
+    expect(find.text('Arcana'), findsOneWidget);
+    expect(find.text('Spirit'), findsOneWidget);
+    expect(find.byKey(const Key('account-trial-records')), findsOneWidget);
+    expect(find.byKey(const Key('dragon-trial-records')), findsOneWidget);
+    expect(find.text('Cavern Flight'), findsNothing);
     await tester.fling(
       find.byKey(const Key('friend-profile-friend-user')),
       const Offset(0, 700),
@@ -1468,6 +1498,12 @@ void main() {
     await tester.tap(find.byKey(const Key('toggle-account-trial-records')));
     await tester.pump(const Duration(milliseconds: 250));
     expect(find.text('Cavern Flight'), findsOneWidget);
+    await tester.fling(
+      find.byKey(const Key('friend-profile-friend-user')),
+      const Offset(0, -700),
+      1800,
+    );
+    await tester.pump(const Duration(milliseconds: 500));
     final dragonRecordsToggle =
         find.byKey(const Key('toggle-dragon-trial-records'));
     await tester.ensureVisible(dragonRecordsToggle);

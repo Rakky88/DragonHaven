@@ -26,13 +26,20 @@ class KeeperPortrait extends StatelessWidget {
   final String? frameKey;
   final String? badgeKey;
 
+  /// The transparent centre of the vanity frame occupies this share of the
+  /// complete frame asset. Keep the portrait at its requested size and grow
+  /// the framed composition around it, rather than shrinking the portrait.
+  static const framePortraitRatio = .64;
+
   @override
   Widget build(BuildContext context) {
     final portrait = profilePortraitById(portraitKey);
     final frame = keeperFrameById(frameKey);
     final badge = keeperBadgeById(badgeKey);
     final diameter = radius * 2;
-    final portraitDiameter = frame == null ? diameter : diameter * .64;
+    final compositionDiameter =
+        frame == null ? diameter : diameter / framePortraitRatio;
+    final portraitDiameter = diameter;
     late final Widget portraitBody;
     if (portrait != null) {
       final rarityColor = Color(portrait.rarity.colorValue);
@@ -83,7 +90,7 @@ class KeeperPortrait extends StatelessWidget {
       image: true,
       label: displayName,
       child: SizedBox.square(
-        dimension: diameter,
+        dimension: compositionDiameter,
         child: Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.center,

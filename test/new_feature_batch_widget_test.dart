@@ -503,6 +503,10 @@ void main() {
       findsWidgets,
     );
 
+    await tester.ensureVisible(
+      find.byKey(const Key('account-frame-collection')),
+    );
+    await tester.pump();
     await tester.tap(find.byKey(const Key('account-frame-collection')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('account-frame-list')), findsOneWidget);
@@ -516,6 +520,10 @@ void main() {
       findsNothing,
     );
 
+    await tester.ensureVisible(
+      find.byKey(const Key('account-frame-collection')),
+    );
+    await tester.pump();
     await tester.tap(find.byKey(const Key('account-frame-collection')));
     await tester.pumpAndSettle();
     await tester.tap(
