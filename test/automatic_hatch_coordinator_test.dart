@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:dragon_haven/dragonhaven_app.dart';
+import 'package:dragon_haven/models/achievement.dart';
+import 'package:dragon_haven/models/dragon_school.dart';
 import 'package:dragon_haven/models/game_presentation.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/social.dart';
@@ -105,6 +107,71 @@ void main() {
       tester.widget<Text>(timer).data,
       matches(RegExp(r'^02:0[45]:[0-5][0-9]$')),
     );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a finalized Academy dropout reaches the achievement reveal',
+      (tester) async {
+    final game = HouseholdProvider(
+      random: Random(709),
+      persistenceEnabled: false,
+    )
+      ..accountName = 'Academy Keeper'
+      ..onboardingComplete = true
+      ..tutorialCompleted = true
+      ..tutorialFullyViewed = false
+      ..towerFloorRoomIds = List.filled(5, 'hearth')
+      ..pet.stage = DragonStage.hatchling
+      ..pet.firstEgg = false
+      ..unlockedAchievementIds = achievementCatalog
+          .map((achievement) => achievement.id)
+          .where((id) => id != 'dragon_school_dropout')
+          .toSet();
+    for (final lesson in dragonSchoolGames) {
+      game.pet.dragonSchoolAttempts[lesson.id] =
+          lesson.id == 'runeRush' ? 2 : dragonSchoolAttemptsPerLesson;
+      game.pet.dragonSchoolStars[lesson.id] = 1;
+    }
+
+    await pumpApp(tester, game);
+    expect(game.pet.dragonSchoolComplete, isFalse);
+    expect(
+      game.unlockedAchievementIds,
+      isNot(contains('dragon_school_dropout')),
+    );
+    expect(game.pendingPresentations, isEmpty);
+    game.beginPresentationDeferral();
+    await game.completeDragonSchoolLesson(
+      gameId: 'runeRush',
+      score: 0,
+      dragonIds: [game.pet.id],
+    );
+    expect(game.presentationsDeferred, isTrue);
+    expect(
+      game.pendingPresentations.where(
+        (presentation) => presentation.achievementId == 'dragon_school_dropout',
+      ),
+      hasLength(1),
+    );
+    const revealKey = Key('achievement-reveal-dragon_school_dropout');
+    expect(find.byKey(revealKey), findsNothing);
+
+    game.endPresentationDeferral();
+    expect(game.presentationsDeferred, isFalse);
+    for (var attempt = 0;
+        attempt < 15 && find.byKey(revealKey).evaluate().isEmpty;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(
+      game.pendingPresentations.where(
+        (presentation) => presentation.achievementId == 'dragon_school_dropout',
+      ),
+      hasLength(1),
+    );
+    expect(find.byKey(revealKey), findsOneWidget);
+    expect(find.text('Dragon Academy Dropout'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

@@ -314,6 +314,64 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+      'Dragon Academy holds a dropout reveal until the final report is visible',
+      (tester) async {
+    final game = HouseholdProvider(
+      random: Random(935),
+      persistenceEnabled: false,
+    )
+      ..towerFloorRoomIds = List.filled(5, 'hearth')
+      ..pet.stage = DragonStage.hatchling
+      ..pet.firstEgg = false;
+    for (final lesson in dragonSchoolGames) {
+      game.pet.dragonSchoolAttempts[lesson.id] =
+          lesson.id == 'runeRush' ? 2 : dragonSchoolAttemptsPerLesson;
+      game.pet.dragonSchoolStars[lesson.id] = 1;
+    }
+    addTearDown(game.dispose);
+
+    bool? deferredWhenDropoutQueued;
+    game.addListener(() {
+      if (game.pendingPresentations.any(
+        (presentation) => presentation.achievementId == 'dragon_school_dropout',
+      )) {
+        deferredWhenDropoutQueued ??= game.presentationsDeferred;
+      }
+    });
+
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: MaterialApp(
+        home: DragonSchoolGameScreen(
+          definition: dragonSchoolGames.firstWhere(
+            (lesson) => lesson.id == 'runeRush',
+          ),
+          dragonIds: [game.pet.id],
+          lessonDuration: Duration.zero,
+        ),
+      ),
+    ));
+    await tester.tap(find.byKey(const Key('start-school-game')));
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump();
+
+    expect(game.pet.dragonSchoolOutcome, DragonSchoolOutcome.dropout);
+    expect(deferredWhenDropoutQueued, isTrue);
+    expect(game.presentationsDeferred, isTrue);
+    expect(find.text('Lesson complete'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(game.presentationsDeferred, isFalse);
+    expect(
+      game.pendingPresentations.where(
+        (presentation) => presentation.achievementId == 'dragon_school_dropout',
+      ),
+      hasLength(1),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('every Dragon Academy lesson renders its sprite environment',
       (tester) async {
     final game = HouseholdProvider.createReleaseDemo()

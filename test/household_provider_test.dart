@@ -1425,6 +1425,50 @@ void main() {
         isNot(contains('not_picking_favorites')));
   });
 
+  test('legacy Academy dropouts receive their missed reveal once', () async {
+    final attempts = {
+      for (final lesson in dragonSchoolGames)
+        lesson.id: dragonSchoolAttemptsPerLesson,
+    };
+    await StorageService.save({
+      'schemaVersion': 48,
+      'pet': Pet(
+        id: 'legacy-academy-dropout',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        dragonSchoolAttempts: attempts,
+        dragonSchoolStars: {
+          for (final lesson in dragonSchoolGames) lesson.id: 1,
+        },
+      ).toJson(),
+      'achievements': ['dragon_school_dropout'],
+      'pendingPresentations': <Map<String, dynamic>>[],
+    });
+
+    final restored = await HouseholdProvider.loadFromStorage();
+
+    expect(restored.pet.dragonSchoolOutcome, DragonSchoolOutcome.dropout);
+    expect(
+      restored.pendingPresentations.where(
+        (presentation) => presentation.achievementId == 'dragon_school_dropout',
+      ),
+      hasLength(1),
+    );
+    expect(
+      restored.exportState()['schemaVersion'],
+      HouseholdProvider.saveSchemaVersion,
+    );
+
+    await restored.completePresentation('achievement-dragon_school_dropout');
+    final reloaded = await HouseholdProvider.loadFromStorage();
+    expect(
+      reloaded.pendingPresentations.where(
+        (presentation) => presentation.achievementId == 'dragon_school_dropout',
+      ),
+      isEmpty,
+    );
+  });
+
   test('loading an older save rebuilds discoveries for every owned dragon',
       () async {
     final normalLineage = dragonLineages.first.id;
@@ -2333,6 +2377,12 @@ void main() {
     expect(game.pet.dragonSchoolOutcome, DragonSchoolOutcome.dropout);
     expect(game.achievementProgress('dragon_school_dropout'), 1);
     expect(game.achievementProgress('academy_graduate'), 0);
+    expect(
+      game.pendingPresentations.where(
+        (presentation) => presentation.achievementId == 'dragon_school_dropout',
+      ),
+      hasLength(1),
+    );
     game.dispose();
   });
 }

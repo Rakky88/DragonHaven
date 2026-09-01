@@ -99,7 +99,7 @@ enum RoomUnlockResult {
 }
 
 class HouseholdProvider extends ChangeNotifier {
-  static const saveSchemaVersion = 48;
+  static const saveSchemaVersion = 49;
 
   HouseholdProvider({
     Random? random,
@@ -1046,6 +1046,21 @@ class HouseholdProvider extends ChangeNotifier {
     );
     if (restoredSchema < 32 && favoriteChanges == 0) {
       unlockedAchievementIds.remove('not_picking_favorites');
+    }
+    if (restoredSchema < 49 &&
+        unlockedAchievementIds.contains('dragon_school_dropout') &&
+        !pendingPresentations.any(
+          (presentation) =>
+              presentation.achievementId == 'dragon_school_dropout',
+        )) {
+      final replayAt = _clock();
+      _queuePresentation(GamePresentation(
+        id: 'achievement-dragon_school_dropout',
+        type: GamePresentationType.achievement,
+        achievementId: 'dragon_school_dropout',
+        createdAt: replayAt,
+        sortAt: replayAt,
+      ));
     }
     adventureRuns = mapsFromJson(data['adventureRuns'])
         .map(AdventureRun.fromJson)

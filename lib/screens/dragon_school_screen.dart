@@ -843,24 +843,25 @@ class DragonSchoolGameScreen extends StatefulWidget {
     required this.definition,
     required this.dragonIds,
     this.mentorDragonId,
+    this.lessonDuration = const Duration(seconds: 20),
   });
 
   final DragonSchoolGameDefinition definition;
   final List<String> dragonIds;
   final String? mentorDragonId;
+  final Duration lessonDuration;
 
   @override
   State<DragonSchoolGameScreen> createState() => _DragonSchoolGameScreenState();
 }
 
 class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
-  static const _lessonDuration = Duration(seconds: 20);
   final _random = Random();
   Timer? _ticker;
   Timer? _challengeTimer;
   Timer? _reactionTimer;
   DateTime? _endsAt;
-  Duration _remaining = _lessonDuration;
+  late Duration _remaining;
   int _score = 0;
   int _target = 0;
   int _shadowDifference = 0;
@@ -880,6 +881,12 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
   DragonSchoolLessonResult? _result;
 
   DragonSchoolGameKind get kind => widget.definition.kind;
+
+  @override
+  void initState() {
+    super.initState();
+    _remaining = widget.lessonDuration;
+  }
 
   @override
   void dispose() {
@@ -921,8 +928,8 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
     _challengeTimer?.cancel();
     _reactionTimer?.cancel();
     _score = 0;
-    _remaining = _lessonDuration;
-    _endsAt = DateTime.now().add(_lessonDuration);
+    _remaining = widget.lessonDuration;
+    _endsAt = DateTime.now().add(widget.lessonDuration);
     _target =
         _random.nextInt(kind == DragonSchoolGameKind.crystalChase ? 9 : 6);
     _shadowDifference = _random.nextInt(4);
@@ -966,18 +973,29 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
     _ticker?.cancel();
     _challengeTimer?.cancel();
     if (mounted) setState(() {});
-    final result =
-        await context.read<HouseholdProvider>().completeDragonSchoolLesson(
-              gameId: widget.definition.id,
-              score: _score,
-              dragonIds: widget.dragonIds,
-              mentorDragonId: widget.mentorDragonId,
-            );
-    if (!mounted) return;
-    setState(() {
-      _result = result;
-      _saving = false;
-    });
+    final game = context.read<HouseholdProvider>();
+    game.beginPresentationDeferral();
+    try {
+      final result = await game.completeDragonSchoolLesson(
+        gameId: widget.definition.id,
+        score: _score,
+        dragonIds: widget.dragonIds,
+        mentorDragonId: widget.mentorDragonId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _result = result;
+        _saving = false;
+      });
+
+      // Academy completion can unlock a graduation or dropout achievement.
+      // Give the final report a full frame before the global presentation
+      // coordinator is allowed to place its reveal above this route.
+      await WidgetsBinding.instance.endOfFrame;
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+    } finally {
+      game.endPresentationDeferral();
+    }
   }
 
   void _scheduleReflexCue() {
