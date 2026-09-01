@@ -712,6 +712,33 @@ void main() {
     online.dispose();
   });
 
+  test('an explicit empty frame and badge selection syncs online as empty',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(171),
+      persistenceEnabled: false,
+    );
+    await game.applyVerifiedSupporterPack('online-empty-vanity');
+    await game.selectKeeperFrame(null);
+    await game.selectKeeperBadge(null);
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+      profileSnapshot: () => OnlineProfileSnapshot.fromGame(game),
+    );
+
+    await online.initialize();
+
+    expect(repository.updateProfileCount, 1);
+    expect(repository.updatedFrameKey, isNull);
+    expect(repository.updatedBadgeKey, isNull);
+    expect(online.profile?.frameKey, isNull);
+    expect(online.profile?.badgeKey, isNull);
+    online.dispose();
+    game.dispose();
+  });
+
   test('cosmetic chests never enter trade payloads or trade commands',
       () async {
     final game = HouseholdProvider(random: Random(18))
@@ -1887,6 +1914,7 @@ class _FakeSocialRepository implements SocialRepository {
   String? updatedPortraitKey;
   String? updatedFrameKey;
   String? updatedBadgeKey;
+  int updateProfileCount = 0;
   int acknowledgeCount = 0;
   int acknowledgeGroupFailures = 0;
   int createTradeCount = 0;
@@ -2169,6 +2197,7 @@ class _FakeSocialRepository implements SocialRepository {
     String? frameKey,
     String? badgeKey,
   }) async {
+    updateProfileCount++;
     updatedDisplayName = displayName;
     updatedTitle = title;
     updatedPortraitKey = portraitKey;

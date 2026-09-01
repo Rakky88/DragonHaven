@@ -1963,6 +1963,54 @@ void main() {
     game.dispose();
   });
 
+  test('unequipped Supporter frame and badge persist across every restore',
+      () async {
+    final game = HouseholdProvider(random: Random(903));
+    expect(
+      await game.applyVerifiedSupporterPack('vanity-persistence-order'),
+      isTrue,
+    );
+    expect(game.selectedFrameId, supporterFrame.id);
+    expect(game.selectedBadgeId, supporterBadge.id);
+
+    expect(await game.selectKeeperFrame(null), isTrue);
+    expect(await game.selectKeeperBadge(null), isTrue);
+    final exported = game.exportState();
+    expect(exported, containsPair('selectedFrameId', null));
+    expect(exported, containsPair('selectedBadgeId', null));
+
+    final restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.supporterPackOwned, isTrue);
+    expect(restored.ownedFrameIds, contains(supporterFrame.id));
+    expect(restored.ownedBadgeIds, contains(supporterBadge.id));
+    expect(restored.selectedFrameId, isNull);
+    expect(restored.selectedBadgeId, isNull);
+
+    final cloudTarget = HouseholdProvider(
+      random: Random(904),
+      persistenceEnabled: false,
+    );
+    expect(await cloudTarget.restoreCloudState(exported), isTrue);
+    expect(cloudTarget.selectedFrameId, isNull);
+    expect(cloudTarget.selectedBadgeId, isNull);
+
+    final legacyState = Map<String, dynamic>.from(exported)
+      ..remove('selectedFrameId')
+      ..remove('selectedBadgeId');
+    final legacyTarget = HouseholdProvider(
+      random: Random(905),
+      persistenceEnabled: false,
+    );
+    expect(await legacyTarget.restoreCloudState(legacyState), isTrue);
+    expect(legacyTarget.selectedFrameId, supporterFrame.id);
+    expect(legacyTarget.selectedBadgeId, supporterBadge.id);
+
+    game.dispose();
+    restored.dispose();
+    cloudTarget.dispose();
+    legacyTarget.dispose();
+  });
+
   test('ISUPPORTRICK grants the Supporter Pack once', () async {
     final game = HouseholdProvider(
       random: Random(904),

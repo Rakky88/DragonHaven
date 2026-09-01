@@ -53,9 +53,12 @@ vanityframe groeit nu om het portret heen: het portret en zijn rarityring behoud
 dezelfde diameter als zonder frame, terwijl het volledige frame zichtbaar meer
 ruimte krijgt in Account, Friends en alle gedeelde sociale weergaven. De badge
 wordt daar nu als losse transparante sprite getoond, zonder witte cirkel, rand of
-houderschaduw. Analyzer en alle 363 tests zijn groen. Er is geen appversie
-verhoogd, geen migratie toegevoegd en productie/openbare release zijn niet
-gewijzigd.**
+houderschaduw. Een bewuste keuze voor geen frame en/of geen badge blijft nu als
+expliciete lege keuze bewaard na lokale herstart, cloudrestore en online
+profielsynchronisatie; alleen oude saves waarin de keuzevelden volledig ontbreken
+krijgen nog de compatibele supporterstandaard. Analyzer en alle 365 tests zijn
+groen. Er is geen appversie verhoogd, geen migratie toegevoegd en
+productie/openbare release zijn niet gewijzigd.**
 
 Bronnen: [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md),
 [SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md),
@@ -1201,6 +1204,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 31-08-2026 | Auditstatus en eigenaarschap geconsolideerd | Codex | `DRAGONHAVEN_POST_AUDIT_PLAN.md`, stagingruns `33438894645` en `33438895977`, supportbewijsartifact `9775464818` | Alle fasen tonen nu naast het gewogen percentage ook aantoonbaar afgerond werk, resterend werk, eigenaar, eerstvolgende overdracht en een strenge checklisttelling. Verouderde uitspraken over de alertdrill en importpurge zijn gecorrigeerd. Momentopname: Codex 30/66, Rick 13/49, samen/startvoorwaarden 8/32; totaal 51/147 afgerond en 96 open. Productie blijft 32/32 en de openbare release v0.05.01. |
 | 01-09-2026 | Special Event-afteller, beknopte verrassingsbeloningen en expertiseclaim lokaal gebouwd | Codex | `adventure.dart`, `dragonhaven_systems.dart`, `adventure_hub_screen.dart`, `special_adventure_test.dart`, `new_feature_batch_widget_test.dart`, `household_provider_test.dart` | De actieve eventwindow voedt een live dagen/uren/minuten/seconden-teller op kaart en detail. Het kippenevent toont geen dubbele verhaaltekst of Special Chest-inhoud meer; relic/Music Chest hebben geen roll-/verrassingsuitleg. De configureerbare rewardbundle en claim geven elk +25 Might, Spirit en Arcana binnen de expertisegrens en tonen die op beschikbare, actieve en voltooide Adventures. Exact 360×640 dp is overflowvrij, analyzer meldt nul problemen en alle 363 tests slagen. Geen versie-, server-, migratie- of releasewijziging. |
 | 01-09-2026 | Vanityframe behoudt volledige portretmaat en badge heeft geen houder | Codex | `online_account_access.dart`, `online_social_test.dart`, `new_feature_batch_widget_test.dart` | De gedeelde KeeperPortrait-compositie verkleint een ingelijst portret niet langer tot 64%. De gevraagde portret- en rarityringdiameter blijft gelijk aan de uitvoering zonder frame; het frame krijgt buitenom zijn eigen grotere canvas. De geselecteerde badge wordt rechtstreeks als transparante sprite getoond zonder witte cirkel, rand of houderschaduw. Account-keuze, Friends-kaart, vriendenprofiel, Draconomicon-, trialrecord- en tradeflow zijn regressiegetest. Analyzer meldt nul problemen en alle 363 tests slagen. Geen versie-, server-, migratie- of releasewijziging. |
+| 01-09-2026 | Uitgeschakelde vanitykeuze blijft opgeslagen | Codex | `household_provider.dart`, `household_provider_test.dart`, `online_social_test.dart` | De restorelaag onderscheidt nu een expliciet opgeslagen `null` (bewust geen frame/badge) van een legacy save waarin het keuzeveld ontbreekt. Lokaal herstarten, cloudrestore en online profielpush behouden de lege keuze; bezit van de supporter-items blijft intact en oude saves krijgen nog veilig de historische standaardselectie. Analyzer meldt nul problemen en alle 365 tests slagen. Geen schema-, server-, migratie-, versie- of releasewijziging. |
 
 ## Onderhoud van dit plan
 

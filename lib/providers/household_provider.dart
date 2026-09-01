@@ -968,11 +968,13 @@ class HouseholdProvider extends ChangeNotifier {
     }
     supporterPackOwned = data['supporterPackOwned'] is bool &&
         data['supporterPackOwned'] as bool;
+    final hasStoredBadgeSelection = data.containsKey('selectedBadgeId');
     ownedBadgeIds = stringSetFromJson(data['ownedBadgeIds'])
       ..retainAll(allKeeperBadges.map((badge) => badge.id));
     selectedBadgeId = ownedBadgeIds.contains(data['selectedBadgeId'])
         ? stringFromJson(data['selectedBadgeId'])
         : null;
+    final hasStoredFrameSelection = data.containsKey('selectedFrameId');
     ownedFrameIds = stringSetFromJson(data['ownedFrameIds'])
       ..retainAll({supporterFrame.id});
     selectedFrameId = ownedFrameIds.contains(data['selectedFrameId'])
@@ -1193,8 +1195,8 @@ class HouseholdProvider extends ChangeNotifier {
       ownedBadgeIds.add(supporterBadge.id);
       ownedFrameIds.add(supporterFrame.id);
       ownedItemIds.addAll(supporterFurnitureCatalog.map((item) => item.id));
-      selectedBadgeId ??= supporterBadge.id;
-      selectedFrameId ??= supporterFrame.id;
+      if (!hasStoredBadgeSelection) selectedBadgeId = supporterBadge.id;
+      if (!hasStoredFrameSelection) selectedFrameId = supporterFrame.id;
     }
     if (housePlacements.isEmpty && equippedItemIds.isNotEmpty) {
       for (final itemId in equippedItemIds.values.toList()) {
