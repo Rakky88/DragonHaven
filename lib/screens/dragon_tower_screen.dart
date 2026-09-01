@@ -13,6 +13,7 @@ import '../models/pet.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ascension_requirements.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/dragon_trial_records.dart';
 import '../widgets/expertise_score_badge.dart';
@@ -1733,23 +1734,18 @@ class _DragonProgressCard extends StatelessWidget {
         else ...[
           Text(
             '${strings.pick('Next evolution', 'Volgende evolutie')}: '
-            '$nextStageName · ${strings.pick('Level', 'Niveau')} '
-            '${dragon.nextEvolutionLevel} · ${dragon.nextEvolutionXp} XP',
+            '$nextStageName${dragon.stage == DragonStage.wyrmling ? '' : ' · ${strings.pick('Level', 'Niveau')} ${dragon.nextEvolutionLevel} · ${dragon.nextEvolutionXp} XP'}',
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w900,
             ),
           ),
           if (dragon.stage == DragonStage.wyrmling) ...[
-            const SizedBox(height: 5),
-            Text(
-              '${strings.pick('Expertises required', 'Expertises vereist')}: '
-              '${dragon.totalTraining}/300',
-              style: const TextStyle(
-                color: Color(0xFFD8CFF1),
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
+            const SizedBox(height: 9),
+            AscensionRequirements(
+              dragon: dragon,
+              onDark: true,
+              compact: true,
             ),
           ],
         ],

@@ -4222,6 +4222,38 @@ const uiPhraseTranslations = <String, List<String>>{
     'Especialidades necessárias',
     '必要な専門技能'
   ],
+  'Ascension requirements': [
+    'Ascension-Voraussetzungen',
+    'Requisitos de Ascensión',
+    'Conditions d’Ascension',
+    'Requisiti per l’Ascensione',
+    'Requisitos de Ascensão',
+    'アセンションの条件'
+  ],
+  'Complete both requirements before Ascension.': [
+    'Erfülle vor der Ascension beide Voraussetzungen.',
+    'Completa ambos requisitos antes de la Ascensión.',
+    'Remplissez les deux conditions avant l’Ascension.',
+    'Completa entrambi i requisiti prima dell’Ascensione.',
+    'Cumpra os dois requisitos antes da Ascensão.',
+    'アセンションの前に両方の条件を達成しましょう。'
+  ],
+  'Level & XP': [
+    'Level & EP',
+    'Nivel y XP',
+    'Niveau et XP',
+    'Livello ed XP',
+    'Nível e XP',
+    'レベル & XP'
+  ],
+  'Minimum total Expertise': [
+    'Erforderliche Gesamtexpertise',
+    'Pericia total mínima',
+    'Expertise totale minimale',
+    'Competenza totale minima',
+    'Especialidade total mínima',
+    '必要な合計専門技能'
+  ],
   'Skip evolution animation': [
     'Evolutionsanimation überspringen',
     'Omitir animación de evolución',

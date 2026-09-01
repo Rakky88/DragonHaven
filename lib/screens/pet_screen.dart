@@ -13,6 +13,7 @@ import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ascension_requirements.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/dragon_trial_records.dart';
 import '../widgets/game_icon_sprite.dart';
@@ -765,24 +766,21 @@ class _EvolutionPanel extends StatelessWidget {
                         fontWeight: FontWeight.w900, fontSize: 17)))
           ]),
           const SizedBox(height: 11),
-          LinearProgressIndicator(
-              value: (pet.xp / target).clamp(0, 1),
-              minHeight: 9,
-              borderRadius: BorderRadius.circular(99),
-              backgroundColor: AppColors.mist),
-          const SizedBox(height: 8),
-          Text('${pet.xp}/$target XP',
-              style: const TextStyle(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12)),
           if (pet.stage == DragonStage.wyrmling)
-            Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: Text(
-                    '${strings.pick('Expertises', 'Expertises')}: ${pet.totalTraining}/${maxDragonExpertise * TrainingFocus.values.length} · ${pet.leadingPath == 'unknown' ? strings.pick('path undecided', 'pad onbeslist') : pet.leadingPath}',
-                    style:
-                        const TextStyle(color: AppColors.muted, fontSize: 12))),
+            AscensionRequirements(dragon: pet)
+          else ...[
+            LinearProgressIndicator(
+                value: (pet.xp / target).clamp(0, 1),
+                minHeight: 9,
+                borderRadius: BorderRadius.circular(99),
+                backgroundColor: AppColors.mist),
+            const SizedBox(height: 8),
+            Text('${pet.xp}/$target XP',
+                style: const TextStyle(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12)),
+          ],
         ]),
       ),
     );

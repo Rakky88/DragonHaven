@@ -215,6 +215,29 @@ void main() {
     expect(dragon.canEvolve(start), isFalse);
   });
 
+  test('Ascension requires its named XP and total Expertise thresholds', () {
+    final missingXp = Pet(
+      stage: DragonStage.wyrmling,
+      xp: Pet.ascendedXp - 1,
+      training: const {'might': 100, 'arcana': 100, 'spirit': 100},
+    );
+    final missingExpertise = Pet(
+      stage: DragonStage.wyrmling,
+      xp: Pet.ascendedXp,
+      training: const {'might': 99, 'arcana': 100, 'spirit': 100},
+    );
+    final ready = Pet(
+      stage: DragonStage.wyrmling,
+      xp: Pet.ascendedXp,
+      training: const {'might': 100, 'arcana': 100, 'spirit': 100},
+    );
+
+    expect(Pet.ascensionExpertiseRequirement, 300);
+    expect(missingXp.canEvolve(start), isFalse);
+    expect(missingExpertise.canEvolve(start), isFalse);
+    expect(ready.canEvolve(start), isTrue);
+  });
+
   test('a spectral Mastery dragon keeps both forms after serialization', () {
     final dragon = Pet(
       stage: DragonStage.wyrmling,

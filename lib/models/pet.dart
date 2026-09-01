@@ -277,6 +277,7 @@ class Pet {
   // Evolution milestones line up with the first XP of their advertised level.
   static const wyrmlingXp = 350; // Level 3.
   static const ascendedXp = 1950; // Level 7.
+  static const ascensionExpertiseRequirement = 300;
 
   DragonLineage get lineage => dragonLineageById(lineageId);
   bool get spectral => prismatic;
@@ -441,7 +442,8 @@ class Pet {
   bool canHatch(DateTime now) => isEgg && ageAt(now) >= incubationDuration;
   bool canEvolve(DateTime now) => switch (stage) {
         DragonStage.hatchling => xp >= wyrmlingXp,
-        DragonStage.wyrmling => xp >= ascendedXp && totalTraining >= 300,
+        DragonStage.wyrmling =>
+          xp >= ascendedXp && totalTraining >= ascensionExpertiseRequirement,
         _ => false,
       };
 
