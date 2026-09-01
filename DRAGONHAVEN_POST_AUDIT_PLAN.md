@@ -3,111 +3,37 @@
 Laatst bijgewerkt: **1 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.05.01**
+Actuele openbare versie: **v0.05.02**
 
-Actuele productieserver: **32/32 migraties**
+Actuele productieserver: **33/33 migraties**
 
-Actuele serverkandidaat: **33 migraties; migratie 33 is op het geïsoleerde
-stagingproject bewezen en nog niet op productie toegepast.**
+Actuele serverkandidaat: **geen afzonderlijke kandidaat; lokaal, staging en
+productie staan gelijk op migratie 33.**
 
-Actuele uitgebrachte tranche: **v0.05.01 is openbaar uitgebracht met versionCode
-10051. De Friends- en Conclave-UI, echte achievementkaarten, de uitgebreidere
-17-stappentutorial en alle bijbehorende vertalingen zijn groen op analyzer,
-349/349 tests en een exacte 360×640-dp/reduced-motion emulatorcontrole. Migratie
-32 staat na de eerder groene staging-E2E en een exact begrensde 31→32-workflow
-op productie. De onafhankelijke preflight bewijst 32/32, nul lintfouten, Auth
-200/200, e-mailauth en applicatiehealth 200 met contractversie 1. APK, Play-ready
-AAB, taggate, permanente download en post-release healthcheck zijn groen.**
+Actuele uitgebrachte tranche: **v0.05.02 is openbaar uitgebracht met versionCode
+10052. De release bevat de Special Event-afteller en beknopte beloningen,
+herstelde vanitykeuzes en -compositie, de gerepareerde Frostfable-wyrmling,
+betrouwbare Dragon Academy Dropout-reveals, exact 10% Spectral-kans tijdens
+Golden Hour en de natuurlijke Conclave-scroll plus retrybare 15-secondenpoll voor
+privéberichten. Analyzer en alle 375 tests zijn groen; de ondertekende APK is op
+exact 360×640 dp en met reduced motion gecontroleerd.**
 
-Auditaanvulling na deze release: **de gecontroleerde monitoringdrill, het
-begrensde staging-loadprofiel en migratie 33 voor least-privilege
-support/privacy staan op gedeelde `main`. Stagingrun
-[`33435243659`](https://github.com/Rakky88/DragonHaven/actions/runs/33435243659)
-bewees migratie 33, preflight, de volledige sociale E2E, analyzer, tests en
-staging-APK. Monitoringdrill
-[`33435265676`](https://github.com/Rakky88/DragonHaven/actions/runs/33435265676)
-leverde en sloot testissue
-[#1](https://github.com/Rakky88/DragonHaven/issues/1) correct af. Productie blijft
-32/32 en de openbare release blijft v0.05.01.**
+Server- en releasebewijs: **de exact begrensde
+[migratierun 33562064314](https://github.com/Rakky88/DragonHaven/actions/runs/33562064314)
+accepteerde uitsluitend beginstand 32 en migratie 33. Dry-run, apply, 33/33
+pariteit, nul lintfouten, Auth 200/200 en applicatiehealth 200 zijn groen. De
+[release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.02) wijst naar
+commit `c0707ca1e36ea0189203f8eff056f389987fa96d`; remote APK-naam, grootte en
+SHA-256 zijn exact gelijk aan lokaal en beide downloadroutes geven HTTP 200. De
+[taggate 33562491443](https://github.com/Rakky88/DragonHaven/actions/runs/33562491443)
+herhaalde serverpreflight, analyzer, 375 tests, signing en de Play-ready AAB-build.
+De [post-release healthrun 33563056104](https://github.com/Rakky88/DragonHaven/actions/runs/33563056104)
+is eveneens groen en heeft dertig dagen bewijs opgeslagen.**
 
-Nieuwste audittranche: **de handmatige, streng staging-only testsupportflow staat
-op `main` en is groen uitgevoerd in
-[run 33438895977](https://github.com/Rakky88/DragonHaven/actions/runs/33438895977).
-Zonder blijvende service-role secret is bewezen dat een gewone appgebruiker
-wordt geweigerd, de beheerlookup alleen minimale velden retourneert, het
-30-dagen-inzagelog klopt en een verlopen testsentinel fysiek wordt opgeruimd.
-Het gecontroleerde bewijs bevat geen Keeper ID, UUID, e-mail, token of
-wachtwoord. De volledige parallelle
-[staginggate 33438894645](https://github.com/Rakky88/DragonHaven/actions/runs/33438894645)
-is eveneens groen. Productie en de openbare release zijn onaangeraakt.**
-
-Actuele onuitgebrachte gameplaytranche: **Special Events tonen nu live hoe lang
-ze nog beschikbaar zijn. Het kippenevent verbergt zijn dubbele verhaaltekst en
-alle inhoudsspoilers van de Special Chest; relic en Music Chest gebruiken alleen
-hun compacte beloningsnaam. De claim kent daadwerkelijk +25 Might, +25 Spirit en
-+25 Arcana toe met respect voor de dynamische maxima. De beschikbare, actieve en
-voltooide beloningsweergaven blijven onderling consistent. Een tijdens de exacte
-360×640-dp-test gevonden bestaande Group Adventure-kop is eveneens responsief
-gemaakt en een systeemdatumafhankelijke eventtest is vastgezet. Een geselecteerd
-vanityframe groeit nu om het portret heen: het portret en zijn rarityring behouden
-dezelfde diameter als zonder frame, terwijl het volledige frame zichtbaar meer
-ruimte krijgt in Account, Friends en alle gedeelde sociale weergaven. De badge
-wordt daar nu als losse transparante sprite getoond, zonder witte cirkel, rand of
-houderschaduw. Een bewuste keuze voor geen frame en/of geen badge blijft nu als
-expliciete lege keuze bewaard na lokale herstart, cloudrestore en online
-profielsynchronisatie; alleen oude saves waarin de keuzevelden volledig ontbreken
-krijgen nog de compatibele supporterstandaard. Analyzer en alle 365 tests zijn
-groen. Er is geen appversie verhoogd, geen migratie toegevoegd en
-productie/openbare release zijn niet gewijzigd.**
-
-Actuele onuitgebrachte spritecorrectie: **de Frostfable-wyrmling is vanaf zijn
-bestaande vorm gericht met de ingebouwde imagegen-route hersteld. De onbedoelde
-transparante verticale opening door hals en borst is vervangen door doorlopende
-ivoorwitte ijsschubben. De bestaande assetpipeline heeft het resultaat vervolgens
-op een 1024×1024 transparant canvas met ruime veiligheidsmarges geplaatst. Echte
-alpha, vier buitenmarges, vijf hals-/borstpunten, alle geselecteerde drakenvormen
-en de volledige regressiesuite zijn gecontroleerd. Analyzer en alle 366 tests zijn
-groen. Er is geen appversie verhoogd, geen server- of migratiewijziging gedaan en
-productie/openbare release zijn niet gewijzigd.**
-
-Actuele onuitgebrachte Academycorrectie: **de laatste officiële Academy-poging
-houdt de algemene presentatiequeue nu vast totdat het eindrapport zichtbaar en
-stabiel is. Daarna wordt een nieuwe Dropout- of afstudeer-achievement pas boven
-het rapport afgespeeld. De saveversie is lokaal van 48 naar 49 verhoogd: een
-bestaande versie-48-save waarin `Dragon Academy Dropout` al ontgrendeld was maar
-geen reveal meer klaarstond, krijgt die presentatie eenmalig opnieuw ingepland.
-Na afhandeling wordt zij bij een volgende herstart niet nogmaals toegevoegd.
-Provider-, scherm-, coordinator- en migratieregressies bewijzen zowel de queue als
-de echte full-screen achievementanimatie. Analyzer meldt nul problemen en alle
-369 tests slagen. Er is geen appversie verhoogd, geen Supabase-/servermigratie
-toegevoegd en productie/openbare release zijn niet gewijzigd.**
-
-Actuele onuitgebrachte Golden Hour-correctie: **wanneer een Spectral-geschikt ei
-tijdens Golden Hour uitkomt, is de totale Spectral-kans exact verdubbeld van 5%
-naar 10%. Golden Hour loopt volgens de bestaande lokale dagfase van 17:00
-inclusief tot 19:00 exclusief. De extra worp vindt uitsluitend in het echte
-uitbroedpad plaats, kan een reeds Spectral ei nooit terugzetten en verandert
-geen familie, rarity, assen, incubatietijd of andere egg-eigenschappen. Special
-Eggs die bewust geen Spectral-variant hebben blijven uitgesloten. Analyzer meldt
-nul problemen en alle 373 tests slagen. Er is geen appversie verhoogd, geen
-server- of migratiewijziging gedaan en productie/openbare release zijn niet
-gewijzigd.**
-
-Actuele onuitgebrachte chatcorrectie: **de Conclave-chat gebruikt niet langer
-een omgekeerde scroll-as. Oudste berichten staan boven, nieuwste onder; de chat
-volgt nieuwe berichten alleen wanneer de speler al onderaan zit en toont anders
-een gelokaliseerde knop naar het nieuwste bericht. Privéberichtmeldingen hebben
-naast de twee-minuten-socialrefresh nu een lichte 15-seconden-inboxpoll, worden
-bij app-resume zonder stale-delay opgehaald en mogen ook zichtbaar worden als
-DragonHaven op een ander scherm vooraan staat. Een door Android geweigerde of
-tijdelijk mislukte weergave wordt niet langer op de server afgevinkt, zodat een
-volgende poll opnieuw probeert; gelijktijdige refreshes worden per notification
-gededupliceerd. Analyzer meldt nul problemen, de lokalisatiecontrole is groen en
-alle 375 tests slagen. Volledig betrouwbare bezorging nadat Android het appproces
-heeft beëindigd blijft terecht afhankelijk van de nog open Firebase/FCM-koppeling
-uit fase 1; zonder pushprovider kan clientpolling een beëindigde app niet wekken.
-Er is geen appversie verhoogd, geen server- of migratiewijziging gedaan en
-productie/openbare release zijn niet gewijzigd.**
+Open meldingsgrens: **privéberichten worden nu merkbaar sneller en retrybaar
+opgehaald zolang het appproces leeft en direct bij resume. Gegarandeerde bezorging
+nadat Android het proces volledig heeft beëindigd blijft onderdeel van fase 1 en
+vereist de nog niet aangeleverde Firebase/FCM-projectconfig.**
 
 Bronnen: [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md),
 [SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md),
@@ -139,13 +65,13 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | Onderdeel | Voortgang | Aantoonbaar klaar | Nog door Codex | Nog door jou |
 | --- | ---: | --- | --- | --- |
 | Google Play-voorbereiding | circa 38% | Permanent package-ID, vaste signingidentiteit, versiecontrole en een ondertekende AAB zijn bewezen. De reproduceerbare appgrootteaudit meet een actuele AAB van 345,00 MiB en 284,99 MiB universele media en legt een gratis optimalisatiepad vast | Beeldpilot en batchoptimalisatie uitvoeren; actuele target-/Play-eisen, storeteksten, graphics, Data Safety-inventaris en rolloutchecklist afronden | Play Console openen/verifiëren; app en Play App Signing aanmaken; pilot visueel goedkeuren; testers, publieke support/privacy-URL's en storeverklaringen beheren |
-| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.01 zijn groen; productie staat gecontroleerd op 32/32 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren; mogelijk blootgestelde ontwikkelcredentials roteren |
+| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.02 zijn groen; productie staat gecontroleerd op 33/33 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren en mogelijk blootgestelde ontwikkelcredentials roteren |
 | Fase 1 — monitoring en incidenten | circa 94% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan. Auth én de read-only applicatiecheck draaien ieder uur; contract-/klokvalidatie, migratie 32, onafhankelijke productiepreflight en post-release health zijn groen. De handmatige, secretvrije monitoringdrill leverde testissue #1 af, verifieerde het contract, bewaarde bewijs en sloot de melding. Privéberichtmeldingen pollen retrybaar zolang het appproces leeft | Firebase Crashlytics/Performance en FCM koppelen zodra de Android-projectconfig bestaat; daarna één gecontroleerde stagingfout, een latency-/foutbaseline en terminated-app privéberichtbezorging E2E bewijzen | Gratis Firebase Spark-project maken, `nl.dragonhaven.app` registreren, Analytics uit laten en `google-services.json` veilig in de werkmap zetten; privacy/Data Safety en het gebruik van FCM beoordelen |
-| Fase 2 — staging en E2E | circa 91% | Afzonderlijke staging, migratiepariteit tot en met kandidaat 33, account/login, back-up/conflict, Friends, Friend Messages, Conclaves, trade en volledige Group Adventure completion/reward/replay zijn echt getest. Het productie-geblokkeerde 100→1.000-loadprofiel met unieke accounts, think time, p50/p95/p99 en privacyarm bewijs staat op `main` | Eerst plan-100 en pas met een bevestigde synthetische accountpool en afzonderlijke runtoestemming run-100 uitvoeren. E-mailbevestigingsautomatisering blijft afhankelijk van een veilige mailboxroute | Veilige stagingmailroute instellen; 100 unieke bevestigde synthetische accounts plus `STAGING_LOAD_CREDENTIALS_JSON` aanmaken en bevestigen dat zij geen echte persoonsgegevens bevatten. Meer dan 1.000 blijft apart goedkeuringsplichtig |
+| Fase 2 — staging en E2E | circa 91% | Afzonderlijke staging en productie staan op migratie 33; account/login, back-up/conflict, Friends, Friend Messages, Conclaves, trade en volledige Group Adventure completion/reward/replay zijn echt getest. Het productie-geblokkeerde 100→1.000-loadprofiel met unieke accounts, think time, p50/p95/p99 en privacyarm bewijs staat op `main` | Eerst plan-100 en pas met een bevestigde synthetische accountpool en afzonderlijke runtoestemming run-100 uitvoeren. E-mailbevestigingsautomatisering blijft afhankelijk van een veilige mailboxroute | Veilige stagingmailroute instellen; 100 unieke bevestigde synthetische accounts plus `STAGING_LOAD_CREDENTIALS_JSON` aanmaken en bevestigen dat zij geen echte persoonsgegevens bevatten. Meer dan 1.000 blijft apart goedkeuringsplichtig |
 | Fase 3 — back-up en multi-device | circa 98% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, automatische 15-minutenback-up plus achtergrondflush zijn gebouwd. De eerste automatisch geplande zondagrestore is groen en rondde de actieve account/back-up/restorerondgang in circa 7,3 seconden af | Later server-owned economievelden van restores afschermen en na fase 4 het terugrol-/duplicatiecontract opnieuw bewijzen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
 | Fase 4 — server-authoritative economie | circa 15% | Uitgeschakelde payment-providergrens en geauditeerde eenmalige save-import met limieten, hash, rapport en private herstelkopie bestaan | Wallet/ledger/itemtabellen, idempotente RPC's, serverrandomness, compatibiliteitsvenster en gefaseerde migratie van shops, chests, dragons en rewards bouwen | Migratievenster, spelerscommunicatie en gecontroleerd rollbackbeleid goedkeuren; compensatie- en storingsbeleid plus nooit-stil-afnemen-grenzen bevestigen |
 | Fase 5 — Google Play Billing | circa 8%, bewust uitgesteld | Product-ID-contract voor valuta en het eenmalige Supporter Pack, idempotente lokale entitlementgrens en uitgeschakelde nepimplementatie houden de architectuur upgradebaar zonder nu kosten te maken | Pas na fase 4 de Billing-SDK, servervalidatie, acknowledgement, refunds/retries en Play-tracktests bouwen | Pas later beslissen wanneer verkoop actief mag worden; merchantprofiel, producten/prijzen/landen, service-identiteit, testers en beleid beheren |
-| Fase 6 — support en privacy | circa 66% | Accountverwijdering, veilige supportdiagnostiek en incidentrunbook bestaan. Migratie 33 met service-role-only supportlookup, 30-dagen-inzagelog zonder namen/e-mail/save en dagelijkse fysieke importback-upcleanup is op staging toegepast. De production-blocked testsupportworkflow bewees clientweigering, minimale response, inzagelog/retentie en cleanup; volledige CI/E2E is groen | De operationele koppeling van een aangeleverde privacyarme correlation ID aan dezelfde supportcasus oefenen. Na beleid akkoord notification-/Chronicle-retentie migreren en verwijder-E2E uitbreiden; productie-uitrol blijft apart goedkeuringsplichtig | Publiek supportadres, verantwoordelijken/reactietijden, privacy- en verwijderpagina en productietoegang beheren; termijnen voor sociale notificaties en Conclave Chronicle kiezen; later productie-uitrol van migratie 33 apart toestaan |
+| Fase 6 — support en privacy | circa 68% | Accountverwijdering, veilige supportdiagnostiek en incidentrunbook bestaan. Migratie 33 met service-role-only supportlookup, 30-dagen-inzagelog zonder namen/e-mail/save en dagelijkse fysieke importback-upcleanup is na volledige staging-E2E begrensd op productie toegepast. De testsupportworkflow bewees clientweigering, minimale response, inzagelog/retentie en cleanup | De operationele koppeling van een aangeleverde privacyarme correlation ID aan dezelfde supportcasus oefenen. Na beleid akkoord notification-/Chronicle-retentie migreren en verwijder-E2E uitbreiden | Publiek supportadres, verantwoordelijken/reactietijden, privacy- en verwijderpagina en productietoegang beheren; termijnen voor sociale notificaties en Conclave Chronicle kiezen |
 | Fase 7 — capaciteit en rollout | circa 34% | Releasegate, serverpreflight, bewaard buildbewijs en dashboardontwerp bestaan. Het begrensde staging-loadprofiel en `ROLLBACK_HOTFIX_RUNBOOK.md` leggen production-blocks, app-/database-fix-forward, destructieve herstelgrenzen en privacyarm bewijs vast | Eerst stagingpariteit, het 100-user bewijs plus Supabase-dashboardmetingen verzamelen; daarna pas 1.000 meten en query/indexverbeteringen, alarmgrenzen, compatibiliteitsgate en een echte staging-hotfixoefening bouwen | De synthetische accountpool mogelijk maken; capaciteit en budgetalerts op metingen kiezen; rolloutpercentages en pauze-/rollbackbevoegdheid per stap goedkeuren en bewaken |
 
 ### Meetbare checkliststand en eigenaarschap
@@ -180,7 +106,7 @@ zichtbaar zonder de lange checklist te lezen. Alles waarvoor geen externe
 accountactie of productbesluit nodig is, blijft bij Codex staan en wordt gratis
 of lokaal gebouwd waar dat verantwoord kan.
 
-## Uitgerolde releases v0.05.00–v0.05.01
+## Uitgerolde releases v0.05.00–v0.05.02
 
 Deze tabel legt vast wat met de expliciet toegestane server- en releaseronde
 aantoonbaar is uitgerold en welke niet-blokkerende vervolgpunten nog bestaan.
@@ -883,7 +809,7 @@ geen betaalprovider nodig voor normaal spel of tests.
 
 - [x] Bouw een minimaal supportzoekpad op Keeper ID naar interne user UUID,
   accountstatus, save-/clientversie en geaggregeerde back-up-/tradestatus;
-  gebruik nooit alleen de zichtbare keepernaam. Kandidaat-migratie 33 doet dit
+  gebruik nooit alleen de zichtbare keepernaam. Productiemigratie 33 doet dit
   zonder e-mail, naam, savebody of inventory. Correlation IDs blijven bewust
   afkomstig uit de privacyarme clientexport omdat de server ze niet bewaart.
 - [x] Maak een veilige diagnostiekexport waarin tokens, e-mail en volledige
@@ -893,10 +819,10 @@ geen betaalprovider nodig voor normaal spel of tests.
   `SUPPORT_PRIVACY_OPERATIONS.md`, inclusief minimale intake, verboden data,
   beslisgrenzen en huidig/toekomstig aankoopgedrag.
 - [x] Voeg least-privilege rollen en logging van supportinzage toe zodra een
-  supporttool wordt gebouwd. Kandidaat-migratie 33 staat alleen `service_role`
+  supporttool wordt gebouwd. Productiemigratie 33 staat alleen `service_role`
   toe, vereist casusnummer/operatoralias/vaste reden en bewaart dertig dagen een
   append-only log met gehashte Keeper ID; apply, lint en preflight zijn op
-  staging bewezen in run 33435243659.
+  staging bewezen in run 33435243659 en op productie in run 33562064314.
 - [x] Bouw een handmatige staging-only testsupportflow met exacte
   bevestigingstekst, dubbele productieblokkade, een normale-clientweigering,
   minimale-responsecontrole, 30-dagen-logcontrole, tijdelijke cleanup-sentinel
@@ -907,7 +833,7 @@ geen betaalprovider nodig voor normaal spel of tests.
 - [ ] Stem verwijdering/retentie af tussen Auth, profiel, saves, auditlogs,
   monitoring en aankoopadministratie. De huidige bewaarmatrix is vastgelegd:
   chat-, cloud- en accountdeletepaden zijn aantoonbaar. Migratie 33 sluit op
-  staging de ontbrekende fysieke purge van 30-dagen-importback-ups.
+  productie de ontbrekende fysieke purge van 30-dagen-importback-ups.
   Acknowledged/oude unacknowledged sociale notificaties, Conclave Chronicle en
   toekomstige aankoopadministratie vereisen nog beleid en/of migratie.
 
@@ -1140,6 +1066,14 @@ Een taak of mijlpaal is pas gereed wanneer:
     10051 en het vaste certificaat. Exacte 360×640-dp/reduced-motion controle,
     remote APK-digest, beide downloadroutes en post-release Auth plus
     applicatiehealth zijn groen. Productie staat op 32/32.
+21. **Afgerond door Codex:** v0.05.02 is met 375/375 tests, een exact begrensde
+    productiemigratie 32→33, onafhankelijke 33/33-preflight en volledige
+    tag-/signinggate gepubliceerd. De release bevat de Special Event-, Vanity-,
+    Frostfable-, Academy-, Golden Hour-, Conclave-scroll- en
+    privéberichtverbeteringen. APK en Play-ready AAB gebruiken versionCode 10052
+    en het vaste certificaat. Exacte 360×640-dp/reduced-motion controle, remote
+    APK-digest, beide downloadroutes en post-release Auth plus applicatiehealth
+    zijn groen. Productie staat op 33/33.
 
 ## Besluitenlog
 
@@ -1163,6 +1097,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 31-08-2026 | Release 0.04.16 | Broncode, staging, productiemigratie 29 en de nieuwe apprelease zijn expliciet toegestaan | De Dragon Academy-/Vanity-/Supporter-verbeteringen, robuuste Friends-refresh en verzoekbadge gecontroleerd en achterwaarts compatibel uitrollen | Productie staat op 29/29 en v0.04.16 is openbaar na groene lokale checks, staging-, migratie-, productie-, tag- en healthgates. Echte aankopen blijven uitgeschakeld |
 | 31-08-2026 | Release 0.05.00 | Broncode, staging, productiemigraties 30–31 en de nieuwe apprelease zijn expliciet toegestaan | Friend Messages en Conclaves plus de notificatie- en Supporter-correcties als serverveilige hoofdversie uitrollen; migratie 31 is de noodzakelijke idempotente lintcorrectie na de eerste stagingpoging | Productie staat op 31/31 en v0.05.00 is openbaar na groene 347-testgate, uitgebreide twee-account staging-E2E, begrensde migratie 29→31, dubbele releasegate, emulatorcontrole en post-release healthcheck; echte aankopen blijven uitgeschakeld |
 | 31-08-2026 | Release 0.05.01 | Broncode, productiemigratie 32 en de nieuwe apprelease zijn expliciet toegestaan | De vernieuwde Friends-/Conclave-UI, actuele tutorial en privacyveilige applicatiehealth als één gecontroleerde patch uitrollen | Productie staat op 32/32 en v0.05.01 is openbaar na 349 tests, voorafgaande staging-E2E, begrensde migratie 31→32, onafhankelijke preflight, 360×640-dp/reduced-motion controle, signing-/AAB-gate, assetdigestcontrole en post-release health; echte aankopen blijven uitgeschakeld |
+| 01-09-2026 | Release 0.05.02 | Broncode, productiemigratie 33 en de nieuwe apprelease zijn expliciet toegestaan | De sinds v0.05.01 gebouwde gameplay-, sprite-, vanity-, Academy-, Golden Hour-, Conclave- en berichtcorrecties gecontroleerd uitrollen en de al op staging bewezen support/privacygrens activeren | Productie staat op 33/33 en v0.05.02 is openbaar na 375 tests, begrensde migratie 32→33, onafhankelijke preflight, 360×640-dp/reduced-motion controle, signing-/AAB-gate, assetdigestcontrole en post-release health; echte aankopen blijven uitgeschakeld |
 | Nog te bepalen | B3, B4-activering en B7 | Nog niet bevestigd | Beslissen vlak vóór de afhankelijke fase | Alleen de nog afhankelijke delen van M4–M6 wachten |
 
 ## Voortgangslog
@@ -1258,6 +1193,9 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 01-09-2026 | Gemiste Dragon Academy Dropout-reveal hersteld | Codex | `dragon_school_screen.dart`, `household_provider.dart`, `automatic_hatch_coordinator_test.dart`, `new_feature_batch_widget_test.dart`, `household_provider_test.dart` | Academy-results houden de presentatiequeue vast tot het eindrapport zichtbaar is; daarna bereikt de Dropout-presentatie aantoonbaar de echte full-screen achievementreveal. Saveschema 49 plant voor bestaande versie-48-Dropouts zonder pending reveal één herstelpresentatie in en voegt die na afhandeling en herstart niet opnieuw toe. Analyzer meldt nul problemen en alle 369 tests slagen. Geen appversie-, Supabase-, productie- of openbare releasewijziging. |
 | 01-09-2026 | Golden Hour verdubbelt de Spectral-uitbroedkans | Codex | `day_phase.dart`, `pet.dart`, `household_provider.dart`, `dragonhaven_spec_test.dart`, `household_provider_test.dart` | De bestaande 1-op-20 basisworp krijgt voor een nog niet-Spectral, geschikt ei tijdens 17:00–19:00 lokale tijd een conditionele 1-op-19 bonusworp. Daarmee is de gecombineerde kans exact 1-op-10; buiten Golden Hour blijft zij 1-op-20. Tests bewaken beide tijdgrenzen, het echte hatchpad en de uitsluiting van Special Eggs zonder Spectral-variant. Analyzer meldt nul problemen en alle 373 tests slagen. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
 | 01-09-2026 | Conclave-scroll en privéberichtmelding betrouwbaarder gemaakt | Codex | `conclave_screen.dart`, `online_account_provider.dart`, `notification_service.dart`, `dragonhaven_app.dart`, `social_phrase_translations.dart`, `notification_service_test.dart`, `online_social_test.dart` | De chat gebruikt een normale scroll-as, veilige bottom-follow en een volledig gelokaliseerde knop naar de nieuwste berichten. De notificatie-inbox wordt lichtgewicht iedere 15 seconden gepolld en direct bij resume ververst. Alleen een door Android geaccepteerde privéberichtmelding wordt acknowledged; mislukte delivery blijft retryable en concurrente refreshes dupliceren haar niet. Analyzer meldt nul problemen en alle 375 tests slagen. Echte terminated-app push blijft open onder fase 1 en vereist Firebase/FCM-config van Rick; geen versie-, server-, migratie-, productie- of openbare releasewijziging. |
+| 01-09-2026 | v0.05.02 lokale releasecandidate | Codex, na jouw toestemming | commit `c0707ca1e36ea0189203f8eff056f389987fa96d`, `release-notes-v0.05.02.md`, `production-migrate-33.yml` en ondertekende APK | App- en zichtbare versie staan op v0.05.02 met versionCode 10052. Analyzer en 375/375 tests zijn groen. APK heeft package `nl.dragonhaven.app`, 367.052.619 bytes, SHA-256 `f657521a4e9b13ebca1c837a547616b19d395ce0f29265f68b2954753bde5e83` en vast certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`; 360×640 dp en reduced motion zijn op de emulator gecontroleerd. |
+| 01-09-2026 | Productiemigratie 33 en onafhankelijke preflight | Codex, na jouw expliciete toestemming | [Migratierun 33562064314](https://github.com/Rakky88/DragonHaven/actions/runs/33562064314), `production-migrate-33.yml`, `release_server_preflight.ps1` | Exacte beginstand 32, publieke healthcheck, database-lint en dry-run waren groen; uitsluitend migratie 33 is toegepast. Daarna bewijzen workflow en onafhankelijke lokale preflight 33/33 parity, nul lintfouten, Auth health/settings 200/200, e-mailauth en applicatiehealth 200 met contractversie 1 en 76 ms gemeten klokafwijking. |
+| 01-09-2026 | Openbare release en post-release health v0.05.02 | Codex, na jouw toestemming | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.02), [taggate 33562491443](https://github.com/Rakky88/DragonHaven/actions/runs/33562491443), [healthrun 33563056104](https://github.com/Rakky88/DragonHaven/actions/runs/33563056104) | Exact commit `c0707ca1e36ea0189203f8eff056f389987fa96d` is getagd. Remote assetnaam, 367.052.619 bytes en SHA-256 zijn gelijk aan lokaal; versiegebonden en permanente latest-download geven HTTP 200. De taggate herhaalde preflight, analyzer, 375 tests, vaste signing en Play-ready AAB. De post-releasecheck bevestigde Auth en applicatiehealth en bewaarde dertig dagen bewijs zonder storingsalert. |
 
 ## Onderhoud van dit plan
 
