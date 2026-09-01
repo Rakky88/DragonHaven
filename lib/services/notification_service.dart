@@ -293,18 +293,31 @@ abstract final class HavenNotifications {
         kind: 'friend_accepted',
       );
 
-  static Future<void> friendMessage({
+  static Future<bool> friendMessage({
     required String id,
     required String title,
     required String body,
-  }) =>
-      _showWhenBackground(
-        category: HavenNotificationCategory.friendMessages,
-        id: 'friend-message-$id',
-        title: title,
-        body: body,
-        kind: 'friend_message',
-      );
+  }) async {
+    if (!isEnabled(HavenNotificationCategory.friendMessages)) return true;
+    try {
+      // A private message is useful even while another part of DragonHaven is
+      // open. The conversation RPC acknowledges messages that are already on
+      // screen, so this does not notify for a chat the player is reading.
+      return await _channel.invokeMethod<bool>('showNow', {
+            'id': 'friend-message-$id',
+            'title': title,
+            'body': body,
+            'kind': 'friend_message',
+          }) ??
+          false;
+    } on MissingPluginException {
+      // Tests and unsupported platforms intentionally have no native bridge.
+      return true;
+    } on PlatformException {
+      // Keep the server event unacknowledged so a later poll can retry it.
+      return false;
+    }
+  }
 
   static Future<void> trialsFull({
     required DateTime at,

@@ -159,14 +159,16 @@ void main() {
   });
 
   test('friend messages use their own toggle and Friends deep link', () async {
-    await HavenNotifications.friendMessage(
-      id: 'message-42',
-      title: 'New message from Lyra',
-      body: 'Open DragonHaven to read it.',
-    );
+    expect(
+        await HavenNotifications.friendMessage(
+          id: 'message-42',
+          title: 'New message from Lyra',
+          body: 'Open DragonHaven to read it.',
+        ),
+        isTrue);
 
     expect(calls, hasLength(1));
-    expect(calls.single.method, 'showWhenBackground');
+    expect(calls.single.method, 'showNow');
     expect(calls.single.arguments, {
       'id': 'friend-message-message-42',
       'title': 'New message from Lyra',
@@ -181,12 +183,33 @@ void main() {
               category != HavenNotificationCategory.friendMessages)
           .toSet(),
     );
-    await HavenNotifications.friendMessage(
-      id: 'muted-message',
-      title: 'New message',
-      body: 'Muted',
+    expect(
+      await HavenNotifications.friendMessage(
+        id: 'muted-message',
+        title: 'New message',
+        body: 'Muted',
+      ),
+      isTrue,
     );
     expect(calls, isEmpty);
+  });
+
+  test('an undelivered friend message remains retryable', () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return false;
+    });
+
+    expect(
+      await HavenNotifications.friendMessage(
+        id: 'retry-message',
+        title: 'New message',
+        body: 'Please retry this notification.',
+      ),
+      isFalse,
+    );
+    expect(calls.single.method, 'showNow');
   });
 
   test('a full Trial board is scheduled at its exact refill boundary',

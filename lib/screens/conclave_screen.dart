@@ -826,10 +826,16 @@ class _ConclaveChat extends StatefulWidget {
 
 class _ConclaveChatState extends State<_ConclaveChat> {
   final _controller = TextEditingController();
+  final _scrollController = ScrollController();
+  String? _latestMessageId;
+  bool _nearBottom = true;
+  bool _scrollScheduled = false;
+  bool _automaticScroll = false;
 
   @override
   void dispose() {
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -841,7 +847,47 @@ class _ConclaveChatState extends State<_ConclaveChat> {
               kind: 'text',
               body: body,
             );
-    if (sent) _controller.clear();
+    if (sent) {
+      _controller.clear();
+      _nearBottom = true;
+      _scrollToBottom();
+    }
+  }
+
+  void _scrollToBottom({bool animate = true}) {
+    if (_scrollScheduled) return;
+    _scrollScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollScheduled = false;
+      if (!mounted || !_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if (!animate) {
+        _scrollController.jumpTo(target);
+        return;
+      }
+      _automaticScroll = true;
+      unawaited(
+        _scrollController
+            .animateTo(
+              target,
+              duration: const Duration(milliseconds: 240),
+              curve: Curves.easeOutCubic,
+            )
+            .whenComplete(() => _automaticScroll = false),
+      );
+    });
+  }
+
+  bool _trackScroll(ScrollNotification notification) {
+    if (_automaticScroll || notification.metrics.axis != Axis.vertical) {
+      return false;
+    }
+    final nextNearBottom =
+        notification.metrics.maxScrollExtent - notification.metrics.pixels < 72;
+    if (nextNearBottom != _nearBottom && mounted) {
+      setState(() => _nearBottom = nextNearBottom);
+    }
+    return false;
   }
 
   @override
@@ -850,6 +896,15 @@ class _ConclaveChatState extends State<_ConclaveChat> {
     final online = context.watch<OnlineAccountProvider>();
     final latest = online.conclave ?? widget.snapshot;
     final messageGroups = _groupConclaveMessages(latest.messages);
+    final latestMessageId =
+        messageGroups.isEmpty ? null : messageGroups.last.messages.last.id;
+    if (latestMessageId != _latestMessageId) {
+      final followNewest = _latestMessageId == null || _nearBottom;
+      _latestMessageId = latestMessageId;
+      if (followNewest) {
+        _scrollToBottom(animate: messageGroups.length > 1);
+      }
+    }
     return Column(
       children: [
         Padding(
@@ -896,17 +951,45 @@ class _ConclaveChatState extends State<_ConclaveChat> {
                     'Begin het eerste gesprek met je mede-Hoeders.',
                   ),
                 )
-              : ListView.builder(
-                  reverse: true,
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                  itemCount: messageGroups.length,
-                  itemBuilder: (context, index) {
-                    final group = messageGroups.reversed.elementAt(index);
-                    return _ConclaveMessageTile(
-                      key: ValueKey(group.messages.first.id),
-                      messages: group.messages,
-                    );
-                  },
+              : Stack(
+                  children: [
+                    NotificationListener<ScrollNotification>(
+                      onNotification: _trackScroll,
+                      child: Scrollbar(
+                        controller: _scrollController,
+                        child: ListView.builder(
+                          key: const Key('conclave-chat-list'),
+                          controller: _scrollController,
+                          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                          itemCount: messageGroups.length,
+                          itemBuilder: (context, index) {
+                            final group = messageGroups[index];
+                            return _ConclaveMessageTile(
+                              key: ValueKey(group.messages.first.id),
+                              messages: group.messages,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    if (!_nearBottom)
+                      Positioned(
+                        right: 14,
+                        bottom: 10,
+                        child: IconButton.filledTonal(
+                          key: const Key('conclave-scroll-to-newest'),
+                          tooltip: strings.pick(
+                            'Newest messages',
+                            'Nieuwste berichten',
+                          ),
+                          onPressed: () {
+                            setState(() => _nearBottom = true);
+                            _scrollToBottom();
+                          },
+                          icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                        ),
+                      ),
+                  ],
                 ),
         ),
         SafeArea(

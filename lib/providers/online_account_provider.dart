@@ -80,8 +80,11 @@ class OnlineAccountProvider extends ChangeNotifier {
   final Duration _operationTimeout;
   StreamSubscription<bool>? _authSubscription;
   Timer? _refreshTimer;
+  Timer? _notificationPollTimer;
   Timer? _authRecoveryTimer;
   Future<bool>? _refreshInFlight;
+  bool _notificationPollInFlight = false;
+  final Set<String> _notificationDeliveryInFlight = <String>{};
   DateTime? _lastRefreshStartedAt;
   bool _lastRefreshSucceeded = false;
   String? _lastProfileFingerprint;
@@ -186,6 +189,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     _authSubscription = _repository.authStateChanges.listen(
       (signedIn) {
         if (signedIn) {
+          _ensureRefreshTimer();
           unawaited(refresh());
         } else {
           _clearAccountData();
@@ -1046,86 +1050,119 @@ class OnlineAccountProvider extends ChangeNotifier {
   Future<void> _deliverSocialNotifications(
       List<SocialNotification> notifications) async {
     if (notifications.isEmpty) return;
+    final claimed = notifications
+        .where((notification) =>
+            _notificationDeliveryInFlight.add(notification.id))
+        .toList(growable: false);
+    if (claimed.isEmpty) return;
     final strings = AppStrings(_languageCode());
-    for (final notification in notifications) {
-      final name = notification.actorDisplayName;
-      String withName(String english, String dutch) =>
-          strings.pick(english, dutch).replaceAll('{name}', name);
-      switch (notification.kind) {
-        case 'friend_request':
-          await HavenNotifications.friendRequest(
-            id: notification.id,
-            title: strings.pick(
-              'New friend request',
-              'Nieuw vriendschapsverzoek',
-            ),
-            body: withName(
-              '{name} wants to be friends.',
-              '{name} wil vrienden worden.',
-            ),
-          );
-        case 'friend_accepted':
-          await HavenNotifications.friendAccepted(
-            id: notification.id,
-            title: strings.pick(
-              'Friend request accepted',
-              'Vriendschapsverzoek geaccepteerd',
-            ),
-            body: withName(
-              '{name} is now in your friends list.',
-              '{name} staat nu in je vriendenlijst.',
-            ),
-          );
-        case 'friend_message':
-          await HavenNotifications.friendMessage(
-            id: notification.id,
-            title: withName(
-              'New message from {name}',
-              'Nieuw bericht van {name}',
-            ),
-            body: strings.pick(
-              'Open DragonHaven to read it.',
-              'Open DragonHaven om het te lezen.',
-            ),
-          );
-        case 'trade_request':
-          await HavenNotifications.tradeUpdate(
-            id: notification.id,
-            title: strings.pick('New trade offer', 'Nieuw ruilvoorstel'),
-            body: withName(
-              '{name} wants to trade an item with you.',
-              '{name} wil een item met je ruilen.',
-            ),
-            category: HavenNotificationCategory.tradeRequests,
-          );
-        case 'trade_return':
-          await HavenNotifications.tradeUpdate(
-            id: notification.id,
-            title: strings.pick(
-              'Return item offered',
-              'Tegenaanbod ontvangen',
-            ),
-            body: withName(
-              '{name} offered an item. Confirm the trade.',
-              '{name} heeft een item aangeboden. Bevestig de ruil.',
-            ),
-            category: HavenNotificationCategory.tradeReturns,
-          );
-        case 'trade_completed':
-          await HavenNotifications.tradeUpdate(
-            id: notification.id,
-            title: strings.pick('Trade completed', 'Ruil afgerond'),
-            body: withName(
-              'Your trade with {name} completed safely.',
-              'Je ruil met {name} is veilig afgerond.',
-            ),
-            category: HavenNotificationCategory.tradeCompletions,
-          );
+    final acknowledgedIds = <String>[];
+    try {
+      for (final notification in claimed) {
+        final name = notification.actorDisplayName;
+        var handled = true;
+        String withName(String english, String dutch) =>
+            strings.pick(english, dutch).replaceAll('{name}', name);
+        switch (notification.kind) {
+          case 'friend_request':
+            await HavenNotifications.friendRequest(
+              id: notification.id,
+              title: strings.pick(
+                'New friend request',
+                'Nieuw vriendschapsverzoek',
+              ),
+              body: withName(
+                '{name} wants to be friends.',
+                '{name} wil vrienden worden.',
+              ),
+            );
+          case 'friend_accepted':
+            await HavenNotifications.friendAccepted(
+              id: notification.id,
+              title: strings.pick(
+                'Friend request accepted',
+                'Vriendschapsverzoek geaccepteerd',
+              ),
+              body: withName(
+                '{name} is now in your friends list.',
+                '{name} staat nu in je vriendenlijst.',
+              ),
+            );
+          case 'friend_message':
+            handled = await HavenNotifications.friendMessage(
+              id: notification.id,
+              title: withName(
+                'New message from {name}',
+                'Nieuw bericht van {name}',
+              ),
+              body: strings.pick(
+                'Open DragonHaven to read it.',
+                'Open DragonHaven om het te lezen.',
+              ),
+            );
+          case 'trade_request':
+            await HavenNotifications.tradeUpdate(
+              id: notification.id,
+              title: strings.pick('New trade offer', 'Nieuw ruilvoorstel'),
+              body: withName(
+                '{name} wants to trade an item with you.',
+                '{name} wil een item met je ruilen.',
+              ),
+              category: HavenNotificationCategory.tradeRequests,
+            );
+          case 'trade_return':
+            await HavenNotifications.tradeUpdate(
+              id: notification.id,
+              title: strings.pick(
+                'Return item offered',
+                'Tegenaanbod ontvangen',
+              ),
+              body: withName(
+                '{name} offered an item. Confirm the trade.',
+                '{name} heeft een item aangeboden. Bevestig de ruil.',
+              ),
+              category: HavenNotificationCategory.tradeReturns,
+            );
+          case 'trade_completed':
+            await HavenNotifications.tradeUpdate(
+              id: notification.id,
+              title: strings.pick('Trade completed', 'Ruil afgerond'),
+              body: withName(
+                'Your trade with {name} completed safely.',
+                'Je ruil met {name} is veilig afgerond.',
+              ),
+              category: HavenNotificationCategory.tradeCompletions,
+            );
+        }
+        if (handled) acknowledgedIds.add(notification.id);
       }
+      await _repository.acknowledgeSocialNotifications(acknowledgedIds);
+    } finally {
+      _notificationDeliveryInFlight
+          .removeAll(claimed.map((notification) => notification.id));
     }
-    await _repository.acknowledgeSocialNotifications(
-      notifications.map((notification) => notification.id).toList(),
-    );
+  }
+
+  @visibleForTesting
+  Future<void> pollSocialNotifications() async {
+    if (!isConfigured ||
+        !isSignedIn ||
+        _notificationPollInFlight ||
+        _disposed) {
+      return;
+    }
+    _notificationPollInFlight = true;
+    try {
+      await _runRefreshMaintenanceStep(
+        'social.notifications.poll',
+        () async {
+          final notifications = await _repository.loadSocialNotifications();
+          await _deliverSocialNotifications(notifications);
+        },
+      );
+    } finally {
+      _notificationPollInFlight = false;
+    }
   }
 
   Future<void> _synchronizeLocalTradeReservations() async {
@@ -1156,9 +1193,12 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   void _ensureRefreshTimer() {
-    if (!isConfigured || !isSignedIn || _refreshTimer != null) return;
-    _refreshTimer = Timer.periodic(const Duration(minutes: 2), (_) {
+    if (!isConfigured || !isSignedIn) return;
+    _refreshTimer ??= Timer.periodic(const Duration(minutes: 2), (_) {
       if (isSignedIn && !busy) unawaited(refreshIfStale());
+    });
+    _notificationPollTimer ??= Timer.periodic(const Duration(seconds: 15), (_) {
+      if (isSignedIn) unawaited(pollSocialNotifications());
     });
   }
 
@@ -1255,6 +1295,10 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   void _clearAccountData() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+    _notificationPollTimer?.cancel();
+    _notificationPollTimer = null;
     profile = null;
     friends = const [];
     requests = const [];
@@ -1280,6 +1324,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     _lastPresenceUpdate = null;
     _lastRefreshStartedAt = null;
     _lastRefreshSucceeded = false;
+    _notificationDeliveryInFlight.clear();
     unawaited(_synchronizeGroupReservations(const {}));
     unawaited(_synchronizeTradeReservations(const {}, const {}, const {}));
   }
@@ -1293,6 +1338,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     _disposed = true;
     _authSubscription?.cancel();
     _refreshTimer?.cancel();
+    _notificationPollTimer?.cancel();
     _authRecoveryTimer?.cancel();
     _repository.dispose();
     super.dispose();

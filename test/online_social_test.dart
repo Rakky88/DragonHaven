@@ -312,6 +312,49 @@ void main() {
     online.dispose();
   });
 
+  test('private message polling retries before acknowledging failed delivery',
+      () async {
+    const channel = MethodChannel('nl.dragonhaven.app/notifications');
+    var allowDelivery = false;
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return call.method == 'showNow' ? allowDelivery : true;
+    });
+    addTearDown(() => TestDefaultBinaryMessengerBinding
+        .instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+    final game = HouseholdProvider(random: Random(311));
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+    calls.clear();
+    repository.notificationRows.add(SocialNotification(
+      id: 'notice-message-retry',
+      kind: 'friend_message',
+      entityId: 'message-retry',
+      actorDisplayName: 'Lyra',
+      createdAt: DateTime.utc(2026, 9, 1),
+    ));
+
+    await online.pollSocialNotifications();
+    expect(calls.single.method, 'showNow');
+    expect(repository.acknowledgedNotificationIds, isEmpty);
+    expect(repository.notificationRows, hasLength(1));
+
+    allowDelivery = true;
+    calls.clear();
+    await online.pollSocialNotifications();
+    expect(calls.single.method, 'showNow');
+    expect(repository.acknowledgedNotificationIds, ['notice-message-retry']);
+    expect(repository.notificationRows, isEmpty);
+    online.dispose();
+  });
+
   test('first online refresh imports the legacy inventory exactly once',
       () async {
     final game = HouseholdProvider(random: Random(3));
@@ -1284,6 +1327,11 @@ void main() {
     expect(find.text('Chest Expectations'), findsNothing);
     expect(find.text('Achievement unlocked!'), findsNothing);
     expect(find.text('Show 1 more'), findsOneWidget);
+    final chatList = tester.widget<ListView>(
+      find.byKey(const Key('conclave-chat-list')),
+    );
+    expect(chatList.reverse, isFalse);
+    expect(chatList.controller, isNotNull);
 
     await tester.tap(
       find.byKey(const Key('toggle-conclave-achievement-batch')),

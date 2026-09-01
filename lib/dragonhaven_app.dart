@@ -129,7 +129,9 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
         _setTowerAmbientMusic();
         await _game.synchronizeNotificationPermissionWithPlatform();
         await _game.refreshForCurrentDate();
-        await _online.refreshIfStale();
+        // Resuming is a delivery boundary: never let the normal stale-window
+        // postpone a private message that arrived while the app was hidden.
+        await _online.refresh();
         _syncNestHatchTimer();
         _schedulePresentations();
       },

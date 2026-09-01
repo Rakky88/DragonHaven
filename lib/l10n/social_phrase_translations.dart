@@ -167,6 +167,14 @@ const socialPhraseTranslations = <String, List<String>>{
     'Nova mensagem de {name}',
     '{name}から新しいメッセージ'
   ],
+  'Newest messages': [
+    'Neueste Nachrichten',
+    'Mensajes más recientes',
+    'Messages les plus récents',
+    'Messaggi più recenti',
+    'Mensagens mais recentes',
+    '最新のメッセージ'
+  ],
   'Invitations': [
     'Einladungen',
     'Invitaciones',
