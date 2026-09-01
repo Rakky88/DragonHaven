@@ -194,6 +194,29 @@ void main() {
     }
   }, timeout: const Timeout(Duration(minutes: 8)));
 
+  test('Frostfable wyrmling keeps continuous scales through neck and chest',
+      () {
+    final sprite = img.decodeImage(
+      File(
+        DragonArtwork.safeStandaloneFormAsset('frostfable', 'wyrmling'),
+      ).readAsBytesSync(),
+    );
+    expect(sprite, isNotNull);
+    for (final point in const [
+      (650, 455),
+      (656, 505),
+      (663, 555),
+      (670, 605),
+      (675, 655),
+    ]) {
+      expect(
+        sprite!.getPixel(point.$1, point.$2).a,
+        greaterThan(32),
+        reason: 'unexpected transparent chest pixel at $point',
+      );
+    }
+  });
+
   test(
       'Seraphscale uses complete standalone artwork where replacement was needed',
       () {
