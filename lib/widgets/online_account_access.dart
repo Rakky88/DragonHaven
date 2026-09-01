@@ -111,21 +111,9 @@ class KeeperPortrait extends StatelessWidget {
               Positioned(
                 right: -radius * .08,
                 bottom: -radius * .08,
-                child: Container(
-                  width: radius * .82,
-                  height: radius * .82,
-                  padding: EdgeInsets.all(radius * .055),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(0xFFE2C669),
-                      width: radius >= 40 ? 2 : 1.2,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(color: Color(0x332A1E50), blurRadius: 4),
-                    ],
-                  ),
+                child: SizedBox.square(
+                  key: Key('keeper-portrait-badge-anchor-${badge.id}'),
+                  dimension: radius * .82,
                   child: Image.asset(
                     badge.assetPath,
                     key: Key('keeper-portrait-badge-${badge.id}'),

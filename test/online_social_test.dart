@@ -141,7 +141,7 @@ void main() {
     expect(glowColor.a, closeTo(.58, .0001));
   });
 
-  testWidgets('vanity frames grow around a full-size keeper portrait',
+  testWidgets('vanity frames grow and badges render without a holder',
       (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
@@ -159,6 +159,7 @@ void main() {
                 portraitKey: 'portrait_042',
                 displayName: 'Framed Keeper',
                 frameKey: 'frame_supporter_founder',
+                badgeKey: 'badge_supporter_founder',
                 radius: 31,
               ),
             ],
@@ -187,6 +188,20 @@ void main() {
     expect(portraitSprites, hasLength(2));
     expect(portraitSprites[0].size, closeTo(57.6, .01));
     expect(portraitSprites[1].size, portraitSprites[0].size);
+    final badgeAnchor = tester.widget<SizedBox>(find.byKey(
+      const Key(
+        'keeper-portrait-badge-anchor-badge_supporter_founder',
+      ),
+    ));
+    expect(badgeAnchor.child, isA<Image>());
+    expect(
+      tester.getSize(find.byKey(
+        const Key(
+          'keeper-portrait-badge-anchor-badge_supporter_founder',
+        ),
+      )),
+      const Size.square(31 * .82),
+    );
   });
 
   test('social discovery summaries count forms rather than families', () {
