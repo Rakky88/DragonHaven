@@ -985,6 +985,9 @@ void main() {
     final supportOperations = File(
       'supabase/migrations/202608310033_support_privacy_operations.sql',
     ).readAsStringSync();
+    final productionMigration = File(
+      '.github/workflows/production-migrate-33.yml',
+    ).readAsStringSync();
 
     expect(procedures, contains('Keeper ID'));
     expect(procedures, contains('maximaal zeven dagen'));
@@ -1019,6 +1022,21 @@ void main() {
     expect(supportOperations, isNot(contains('account.email,')));
     expect(supportOperations, isNot(contains('target_profile.display_name')));
     expect(supportOperations, isNot(contains('save.state')));
+    expect(productionMigration, contains('MIGRATE_PRODUCTION_32_TO_33'));
+    expect(
+      productionMigration,
+      contains("\$expectedRemote = '202608310032'"),
+    );
+    expect(
+      productionMigration,
+      contains("\$expectedPending = @('202608310033')"),
+    );
+    expect(productionMigration, contains('public_server_health_check.ps1'));
+    expect(productionMigration, contains('release_server_preflight.ps1'));
+    expect(
+      productionMigration,
+      contains('DragonHaven-production-migration-32-to-33'),
+    );
   });
 
   test(
