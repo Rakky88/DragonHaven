@@ -365,6 +365,14 @@ void main() {
     expect(havenDayPhaseAt(day.copyWith(hour: 23)), HavenDayPhase.night);
   });
 
+  test('Golden Hour doubles the Spectral hatch chance', () {
+    final day = DateTime(2026, 8, 21);
+    expect(spectralEggHatchChanceAt(day.copyWith(hour: 16, minute: 59)), .05);
+    expect(spectralEggHatchChanceAt(day.copyWith(hour: 17)), .10);
+    expect(spectralEggHatchChanceAt(day.copyWith(hour: 18, minute: 59)), .10);
+    expect(spectralEggHatchChanceAt(day.copyWith(hour: 19)), .05);
+  });
+
   test('dragon time moods are staggered and suppressible', () {
     final night = DateTime(2026, 8, 21, 23);
     final moods = {

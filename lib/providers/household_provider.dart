@@ -10,6 +10,7 @@ import '../models/achievement.dart';
 import '../models/adventure.dart';
 import '../models/activity_entry.dart';
 import '../models/chest.dart';
+import '../models/day_phase.dart';
 import '../models/dragon_egg.dart';
 import '../models/dragon_lineage.dart';
 import '../models/dragon_school.dart';
@@ -518,7 +519,7 @@ class HouseholdProvider extends ChangeNotifier {
       id: _uuid.v4(),
       hatchSeed: seed,
       lineageId: starterLineages[seed.remainder(starterLineages.length)].id,
-      prismatic: _random.nextInt(20) == 0,
+      prismatic: _random.nextInt(spectralEggBaseRollSides) == 0,
       lawAxis: LawAxis.values[_random.nextInt(LawAxis.values.length)],
       moralAxis: MoralAxis.values[_random.nextInt(MoralAxis.values.length)],
       sizeFactor: _dragonSizeFromRoll(sizeRoll),
@@ -2180,6 +2181,7 @@ class HouseholdProvider extends ChangeNotifier {
     _starterEggTapPersistenceTimer?.cancel();
     _starterEggTapPersistenceTimer = null;
     unawaited(HavenNotifications.cancel('egg-${egg.id}'));
+    _applyGoldenHourSpectralBonus(egg, now);
     egg.hatch(now);
     if (!identical(egg, pet)) {
       final previousActiveDragon = pet;
@@ -2209,6 +2211,21 @@ class HouseholdProvider extends ChangeNotifier {
     _evaluateAchievements();
     await _notifyAndSave();
     return true;
+  }
+
+  void _applyGoldenHourSpectralBonus(Pet egg, DateTime hatchedAt) {
+    if (egg.prismatic ||
+        egg.isSpecialEgg ||
+        havenDayPhaseAt(hatchedAt) != HavenDayPhase.goldenHour) {
+      return;
+    }
+
+    // Eggs already receive a 1/20 Spectral roll when they are created. An
+    // extra 1/19 roll for the remaining 19/20 during Golden Hour makes the
+    // combined chance exactly 1/10: 1/20 + (19/20 * 1/19).
+    if (_random.nextInt(goldenHourSpectralBonusRollSides) == 0) {
+      egg.prismatic = true;
+    }
   }
 
   Future<bool> nameActiveDragon(String value) => nameDragon(pet.id, value);
@@ -2585,7 +2602,7 @@ class HouseholdProvider extends ChangeNotifier {
         lineageId: 'sinisterra',
         acquiredAt: _clock(),
         hatchSeed: seed,
-        prismatic: _random.nextInt(20) == 0,
+        prismatic: _random.nextInt(spectralEggBaseRollSides) == 0,
         lawAxis: LawAxis.values[_random.nextInt(LawAxis.values.length)],
         moralAxis: MoralAxis.evil,
         sizeFactor: _dragonSizeFromRoll(_random.nextDouble()),
@@ -2604,7 +2621,7 @@ class HouseholdProvider extends ChangeNotifier {
       lineageId: lineage.id,
       acquiredAt: _clock(),
       hatchSeed: seed,
-      prismatic: _random.nextInt(20) == 0,
+      prismatic: _random.nextInt(spectralEggBaseRollSides) == 0,
       lawAxis: LawAxis.values[_random.nextInt(LawAxis.values.length)],
       moralAxis: MoralAxis.values[_random.nextInt(MoralAxis.values.length)],
       sizeFactor: _dragonSizeFromRoll(sizeRoll),

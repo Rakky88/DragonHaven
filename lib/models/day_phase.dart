@@ -2,6 +2,12 @@ enum HavenDayPhase { deepNight, dawn, morning, day, goldenHour, dusk, night }
 
 enum DragonTimeMood { active, restful, asleep, waking }
 
+const spectralEggBaseRollSides = 20;
+const goldenHourSpectralBonusRollSides = spectralEggBaseRollSides - 1;
+
+double spectralEggHatchChanceAt(DateTime local) =>
+    havenDayPhaseAt(local) == HavenDayPhase.goldenHour ? .10 : .05;
+
 class HavenLightingState {
   const HavenLightingState({
     required this.from,

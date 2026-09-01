@@ -1062,6 +1062,75 @@ void main() {
     expect(game.sanctuaryDragons.single.name, 'Nimbus');
   });
 
+  test('Golden Hour can turn an eligible normal egg Spectral as it hatches',
+      () async {
+    final now = DateTime(2026, 8, 21, 18);
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: _ZeroRandom(),
+      clock: () => now,
+    )..pet = Pet(
+        id: 'golden-hour-egg',
+        lineageId: 'quietstar',
+        stage: DragonStage.egg,
+        firstEgg: false,
+        prismatic: false,
+        acquiredAt: now.subtract(const Duration(hours: 2)),
+        stageStartedAt: now.subtract(const Duration(hours: 2)),
+        incubationMinutes: 60,
+      );
+
+    expect(await game.hatchActiveDragon(), isTrue);
+    expect(game.pet.spectral, isTrue);
+  });
+
+  test('the Golden Hour Spectral bonus is not rolled outside Golden Hour',
+      () async {
+    final now = DateTime(2026, 8, 21, 16, 59);
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: _ZeroRandom(),
+      clock: () => now,
+    )..pet = Pet(
+        id: 'daytime-egg',
+        lineageId: 'quietstar',
+        stage: DragonStage.egg,
+        firstEgg: false,
+        prismatic: false,
+        acquiredAt: now.subtract(const Duration(hours: 2)),
+        stageStartedAt: now.subtract(const Duration(hours: 2)),
+        incubationMinutes: 60,
+      );
+
+    expect(await game.hatchActiveDragon(), isTrue);
+    expect(game.pet.spectral, isFalse);
+  });
+
+  test('a Special Egg keeps its deliberately fixed Spectral eligibility',
+      () async {
+    final now = DateTime(2026, 8, 21, 18);
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: _ZeroRandom(),
+      clock: () => now,
+    )..pet = Pet(
+        id: 'golden-hour-special-egg',
+        lineageId: 'cluckatrice',
+        stage: DragonStage.egg,
+        firstEgg: false,
+        prismatic: false,
+        acquiredAt: now.subtract(const Duration(days: 1)),
+        stageStartedAt: now.subtract(const Duration(days: 1)),
+        incubationMinutes: 21 * 60,
+      );
+
+    expect(await game.hatchActiveDragon(), isTrue);
+    expect(game.pet.spectral, isFalse);
+  });
+
   test('aborting a solo Adventure gives nothing and frees only its dragon',
       () async {
     final game = HouseholdProvider(

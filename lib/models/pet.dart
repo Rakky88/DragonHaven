@@ -239,7 +239,7 @@ class Pet {
   int gems;
   DragonStage stage;
   bool firstEgg;
-  final bool prismatic;
+  bool prismatic;
   final bool sinister;
   final LawAxis lawAxis;
   final MoralAxis moralAxis;

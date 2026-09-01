@@ -82,6 +82,17 @@ de echte full-screen achievementanimatie. Analyzer meldt nul problemen en alle
 369 tests slagen. Er is geen appversie verhoogd, geen Supabase-/servermigratie
 toegevoegd en productie/openbare release zijn niet gewijzigd.**
 
+Actuele onuitgebrachte Golden Hour-correctie: **wanneer een Spectral-geschikt ei
+tijdens Golden Hour uitkomt, is de totale Spectral-kans exact verdubbeld van 5%
+naar 10%. Golden Hour loopt volgens de bestaande lokale dagfase van 17:00
+inclusief tot 19:00 exclusief. De extra worp vindt uitsluitend in het echte
+uitbroedpad plaats, kan een reeds Spectral ei nooit terugzetten en verandert
+geen familie, rarity, assen, incubatietijd of andere egg-eigenschappen. Special
+Eggs die bewust geen Spectral-variant hebben blijven uitgesloten. Analyzer meldt
+nul problemen en alle 373 tests slagen. Er is geen appversie verhoogd, geen
+server- of migratiewijziging gedaan en productie/openbare release zijn niet
+gewijzigd.**
+
 Bronnen: [DRAGONHAVEN_AUDIT_2026-08-28.md](DRAGONHAVEN_AUDIT_2026-08-28.md),
 [SERVER_IMPROVEMENTS.md](SERVER_IMPROVEMENTS.md),
 [DISTRIBUTION.md](DISTRIBUTION.md) en [PUBLIC_LAUNCH.md](PUBLIC_LAUNCH.md)
@@ -1229,6 +1240,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 01-09-2026 | Uitgeschakelde vanitykeuze blijft opgeslagen | Codex | `household_provider.dart`, `household_provider_test.dart`, `online_social_test.dart` | De restorelaag onderscheidt nu een expliciet opgeslagen `null` (bewust geen frame/badge) van een legacy save waarin het keuzeveld ontbreekt. Lokaal herstarten, cloudrestore en online profielpush behouden de lege keuze; bezit van de supporter-items blijft intact en oude saves krijgen nog veilig de historische standaardselectie. Analyzer meldt nul problemen en alle 365 tests slagen. Geen schema-, server-, migratie-, versie- of releasewijziging. |
 | 01-09-2026 | Frostfable-wyrmling borst en alfaveiligheid hersteld | Codex | `frostfable_wyrmling_safe.webp`, `prepare_transparent_sprite.dart`, `audit_sprite_alpha.dart`, `selected_sprite_safety_test.dart` | De transparante breuk door de borst is via de ingebouwde imagegen-editroute gereconstrueerd als doorlopende ivoorwitte ijsschubben. De bestaande assetpipeline leverde een 1024px transparante WebP met minimaal 117px technische marge; een nieuwe test bewaakt vijf punten langs hals en borst naast de bestaande bronmarge- en renderpasses. Analyzer meldt nul problemen en alle 366 tests slagen. Geen codecontract-, server-, migratie-, versie- of releasewijziging. |
 | 01-09-2026 | Gemiste Dragon Academy Dropout-reveal hersteld | Codex | `dragon_school_screen.dart`, `household_provider.dart`, `automatic_hatch_coordinator_test.dart`, `new_feature_batch_widget_test.dart`, `household_provider_test.dart` | Academy-results houden de presentatiequeue vast tot het eindrapport zichtbaar is; daarna bereikt de Dropout-presentatie aantoonbaar de echte full-screen achievementreveal. Saveschema 49 plant voor bestaande versie-48-Dropouts zonder pending reveal één herstelpresentatie in en voegt die na afhandeling en herstart niet opnieuw toe. Analyzer meldt nul problemen en alle 369 tests slagen. Geen appversie-, Supabase-, productie- of openbare releasewijziging. |
+| 01-09-2026 | Golden Hour verdubbelt de Spectral-uitbroedkans | Codex | `day_phase.dart`, `pet.dart`, `household_provider.dart`, `dragonhaven_spec_test.dart`, `household_provider_test.dart` | De bestaande 1-op-20 basisworp krijgt voor een nog niet-Spectral, geschikt ei tijdens 17:00–19:00 lokale tijd een conditionele 1-op-19 bonusworp. Daarmee is de gecombineerde kans exact 1-op-10; buiten Golden Hour blijft zij 1-op-20. Tests bewaken beide tijdgrenzen, het echte hatchpad en de uitsluiting van Special Eggs zonder Spectral-variant. Analyzer meldt nul problemen en alle 373 tests slagen. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
 
 ## Onderhoud van dit plan
 
