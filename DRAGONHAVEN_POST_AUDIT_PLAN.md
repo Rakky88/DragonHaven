@@ -3,10 +3,7 @@
 Laatst bijgewerkt: **2 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.05.05; de Android-releasegate stopte veilig na
-404 geslaagde tests op één platformafhankelijke documentatiefingerprint. De
-openbare APK zelf was vooraf lokaal volledig gevalideerd, maar v0.05.06 wordt
-de eerstvolgende volledig groen doorgelopen release.**
+Actuele openbare versie: **v0.05.06**
 
 Actuele productieserver: **36/36 migraties**
 
@@ -15,55 +12,37 @@ Actuele serverkandidaat: **geen. Migratie 34 (Dragon chat-emotes), migratie 35
 productie toegepast. Beide omgevingen staan op 36/36; nieuwe serverwijzigingen
 vereisen opnieuw een migratie en de begrensde staging-/productiegates.**
 
-Actuele uitgebrachte tranche: **v0.05.05 is openbaar uitgebracht met versionCode
-10055 en bevat de Android-only deel-/updatekaart, compacte Conclave-chatcomposer
-en levende referentiedocumentatie. De verplichte productieserverpreflight was
-groen op 36/36 migraties. De tag-workflow vond daarna één Windows/Linux-verschil
-in de nieuwe documentatiefingerprint en stopte vóór signing; 404 overige tests
-slaagden en er werd geen serverstatus gewijzigd. De bestaande release blijft
-ongewijzigd als historische build.**
+Actuele uitgebrachte tranche: **v0.05.06 is openbaar uitgebracht met versionCode
+10056. De release bevat de Android-only deel-/updatekaart zonder iPhoneknop, de
+compacte Conclave-chatcomposer en levende Special-content-/random-roll-
+documentatie. De documentatiegate normaliseert CRLF/LF en is daardoor gelijk op
+Windows en Linux. Productiepreflight, analyzer, alle 406 tests, vaste signing,
+Play Store-AAB en post-release health zijn groen.**
 
-Actuele lokale tranche na v0.05.05: **Android-hotfixcandidate v0.05.06 staat
-klaar met versionCode 10056. De Conclave-chatcomposer gebruikt één compacte
-invoerpill met uitgelijnde deel-/emoteacties, een losse verzendknop en een smalle,
-volledig vertaalde hint op compacte schermen. De deel-/updatekaart toont bewust
-alleen de permanente Android-link en heet `Update`; er staat geen onbruikbare
-iPhone-knop in de app. Daarnaast bevat de tranche een levende Engelstalige
-catalogus van alle Special Events, Special Adventures, chests en eggs en een
-bronvingerafdrukgate voor die catalogus en `RANDOM_REWARDS_AND_ODDS.md`. De
-iOS/Xcode-basis blijft uitsluitend als niet-geactiveerde toekomstvoorbereiding
-in de broncode staan. De bronvingerafdruk normaliseert nu CRLF/LF en heeft een
-regressietest die beide checkoutvormen vergelijkt. Analyzer en 406/406 tests zijn
-groen. De ondertekende APK heeft package `nl.dragonhaven.app`, versionCode 10056,
-versie 0.05.06, 383.331.062 bytes, SHA-256
-`cced52519b96b961b9bcce4adf707d6eab150a3e06f591f3469a5386333ee04c` en
-het verwachte vaste releasecertificaat. Installatie over de bestaande app,
-opstarten, de zichtbare versie en de Android-only deel-/updatekaart zijn op de
-emulator gecontroleerd. De onafhankelijke productiepreflight bewijst opnieuw
-36/36 migraties, nul lintfouten en HTTP 200 voor Auth-settings, Auth-health en
-applicatiehealth. Er is geen servermigratie nodig; alleen publicatie- en
-post-releasebewijs resten.**
+Actuele lokale tranche na v0.05.06: **geen open releasecandidate. De lokale bron
+staat gelijk aan de openbare functionele commit, aangevuld met uitsluitend deze
+definitieve auditbewijsupdate. De iOS/Xcode-basis blijft niet-geactiveerde
+toekomstvoorbereiding; distributie en de zichtbare app zijn Android-only.**
 
-Server- en releasebewijs: **de eerste stagingrun
-[33629616836](https://github.com/Rakky88/DragonHaven/actions/runs/33629616836)
-paste 34–35 toe en stopte veilig op een ambigue PL/pgSQL-kolom; de voorwaartse
-migratie 36 corrigeerde dit zonder toegepaste historie te wijzigen. De volledige
+Server- en releasebewijs: **de volledige
 [stagingrun 33630222018](https://github.com/Rakky88/DragonHaven/actions/runs/33630222018)
-bewees daarna 36/36, nul lintfouten, sociale/ranking/Group Adventure-E2E,
-analyzer, tests en APK. De exact begrensde
+en begrensde
 [productiemigratie 33631028441](https://github.com/Rakky88/DragonHaven/actions/runs/33631028441)
-accepteerde uitsluitend beginstand 33 en migraties 34–36 en bewees na apply
-opnieuw 36/36, Auth en applicatiehealth. De
-[release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.04) wijst naar
-commit `6ccdd865bc510bc0b18b77b1954ecafaf4f33434`; de APK is 383.298.234 bytes met
-SHA-256 `9e9a9b8d0befb1280070dfa53a34045e7f485c37541b81dc1f6f711e9ea436ad`.
-De release bevat exact één `DragonHaven.apk`; remote grootte/digest en zowel de
-versiegebonden als permanente latest-download geven HTTP 200. De
-[taggate 33636356574](https://github.com/Rakky88/DragonHaven/actions/runs/33636356574)
-herhaalde productiepreflight, analyzer, 402 tests, vaste signing en de Play-ready
-AAB. De [post-release healthrun 33637454654](https://github.com/Rakky88/DragonHaven/actions/runs/33637454654)
-is groen, heeft dertig dagen bewijs opgeslagen en opende geen storingsalert.
-Productie en staging blijven zonder nieuwe migratie op 36/36.**
+brachten staging en productie veilig op 36/36 met nul lintfouten. De historische
+v0.05.05-[taggate 33648597144](https://github.com/Rakky88/DragonHaven/actions/runs/33648597144)
+stopte vóór signing op het nu gecorrigeerde regeleindeverschil. De actuele
+[release v0.05.06](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.06)
+wijst naar commit `9ce79d36468cb3992de5b8361d582c0a2f9d28dd` en bevat exact één
+`DragonHaven.apk` van 383.331.062 bytes met SHA-256
+`cced52519b96b961b9bcce4adf707d6eab150a3e06f591f3469a5386333ee04c`.
+Remote grootte/digest zijn gelijk aan lokaal en de versiegebonden en permanente
+latest-download geven HTTP 200. De
+[taggate 33650746606](https://github.com/Rakky88/DragonHaven/actions/runs/33650746606)
+herhaalde productiepreflight, analyzer, 406 tests, vaste signing, Play-ready AAB
+en artifactcontrole volledig groen. De
+[post-release healthrun 33651528845](https://github.com/Rakky88/DragonHaven/actions/runs/33651528845)
+bevestigde Auth en applicatiehealth, bewaarde bewijs en opende geen
+storingsalert. Productie en staging blijven zonder nieuwe migratie op 36/36.**
 
 Open meldingsgrens: **privéberichten worden nu merkbaar sneller en retrybaar
 opgehaald zolang het appproces leeft en direct bij resume. Gegarandeerde bezorging
@@ -1256,7 +1235,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 02-09-2026 | Conclave-chatcomposer compact en rustig herontworpen | Codex | `conclave_screen.dart`, `social_phrase_translations.dart` en `online_social_test.dart` | De dubbele afgeronde houder en drie brede standaardknoppen zijn vervangen door één lichte invoerpill met compacte deel- en emoteacties en een losse ronde verzendknop. Op minder dan 350 dp gebruikt de composer de korte hint “Message…”/“Bericht…”; alle zes overige talen hebben dezelfde compacte vertaling. De sendknop is visueel uitgeschakeld zolang het bericht leeg is. Een 320×800-widgetpass bewaakt eenregelige hint, 48–52 dp hoogte, actielijn en actieve/inactieve sendstatus. Analyzer, lokalisatiepoort en alle sociale regressietests zijn groen; samen met de overige groene volledige run zijn 407/407 tests gedekt. Geen appversie-, server-, migratie-, productie- of releasewijziging. |
 | 02-09-2026 | v0.05.05 Android-only releasecandidate bewezen | Codex, na jouw toestemming | `release-notes-v0.05.05.md`, 405 tests, ondertekende `DragonHaven.apk`, emulatorcontrole en `release_server_preflight.ps1` | De iPhoneknop is uit de app verwijderd; About toont alleen de permanente Android-link en `Update`. Appversie/versionCode zijn 0.05.05/10055. APK-grootte is 383.331.062 bytes, SHA-256 `1e60b2c8b5527ebae051dcc296f245956eb031de45b66c6730f87421cb2694e6` en het vaste releasecertificaat komt exact overeen. Installatie over de bestaande app, splash, hoofdscherm, versie en Android-only About-kaart zijn op emulator bewezen. Analyzer en 405/405 tests zijn groen. Productie blijft zonder nieuwe migratie op 36/36, nul lintfouten en gezonde Auth-/applicatie-endpoints. |
 | 02-09-2026 | v0.05.05 openbaar; taggate stopte vóór signing | Codex | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.05) en [taggate 33648597144](https://github.com/Rakky88/DragonHaven/actions/runs/33648597144) | Release en APK wijzen naar commit `5600e183f177af99b0a492ca57335e36c5f1bee8`; remote assetnaam, grootte en SHA-256 zijn exact gelijk aan lokaal en beide downloadroutes geven HTTP 200. De productieserverpreflight en analyzer waren groen. De Linux-runner liet 404 tests slagen en stopte veilig op één platformafhankelijke CRLF/LF-documentatiefingerprint, vóór signing en zonder servermutatie. De gepubliceerde release blijft onveranderd als historisch bewijs; correctie volgt uitsluitend met een hoger versienummer. |
-| 02-09-2026 | v0.05.06 platformonafhankelijke Android-hotfix bewezen | Codex, na jouw toestemming | `release-notes-v0.05.06.md`, `reference_documentation_guard.dart`, 406 tests, ondertekende `DragonHaven.apk`, emulatorcontrole en `release_server_preflight.ps1` | De bronfingerprint normaliseert regeleinden vóór hashing en een regressietest bewijst gelijke LF/CRLF-uitkomsten. Appversie/versionCode zijn 0.05.06/10056. APK-grootte is 383.331.062 bytes, SHA-256 `cced52519b96b961b9bcce4adf707d6eab150a3e06f591f3469a5386333ee04c` en het vaste certificaat komt exact overeen. De APK is over de bestaande app geïnstalleerd; hoofdscherm, v0.05.06 en uitsluitend de Android-knoppen `Copy download link` en `Update` zijn visueel bewezen. Analyzer en 406/406 tests zijn groen. Productie blijft zonder nieuwe migratie op 36/36, nul lintfouten en HTTP 200 voor Auth en applicatiehealth. Publicatie- en post-releasebewijs resten. |
+| 02-09-2026 | v0.05.06 Android-hotfix openbaar en volledig groen | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.06), [taggate 33650746606](https://github.com/Rakky88/DragonHaven/actions/runs/33650746606), [healthrun 33651528845](https://github.com/Rakky88/DragonHaven/actions/runs/33651528845), `release-notes-v0.05.06.md` en `reference_documentation_guard.dart` | De bronfingerprint normaliseert regeleinden vóór hashing en een regressietest bewijst gelijke LF/CRLF-uitkomsten. Appversie/versionCode zijn 0.05.06/10056. De APK is 383.331.062 bytes met SHA-256 `cced52519b96b961b9bcce4adf707d6eab150a3e06f591f3469a5386333ee04c`; remote asset en beide HTTP 200-downloadroutes zijn bewezen. Emulatorcontrole toont v0.05.06 en uitsluitend `Copy download link` en `Update`. De taggate herhaalde productiepreflight, analyzer, 406 tests, vaste signing, Play-ready AAB en artifactcontrole groen. De healthrun bevestigde Auth/applicatiehealth zonder storingsalert; productie bleef 36/36. |
 
 ## Onderhoud van dit plan
 
