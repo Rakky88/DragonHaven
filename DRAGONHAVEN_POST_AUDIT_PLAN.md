@@ -3,7 +3,7 @@
 Laatst bijgewerkt: **2 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.05.07**
+Actuele openbare versie: **v0.05.08**
 
 Actuele productieserver: **36/36 migraties**
 
@@ -12,43 +12,35 @@ Actuele serverkandidaat: **geen. Migratie 34 (Dragon chat-emotes), migratie 35
 productie toegepast. Beide omgevingen staan op 36/36; nieuwe serverwijzigingen
 vereisen opnieuw een migratie en de begrensde staging-/productiegates.**
 
-Actuele uitgebrachte tranche: **v0.05.07 is openbaar uitgebracht met versionCode
-10057. Trial-eindscores gebruiken de relevante Expertise-multiplier; het lege
-Rooftop Nest deelt de opgeslagen tegel-/lijstweergave en omkeerbare sortering
-met Inventory; Emberbun Spirit is transparant, rechtsgericht en heet Everwarm
-Hearthkeeper. Productiepreflight, analyzer, alle 408 tests, vaste signing,
-Play Store-AAB, remote assetcontrole en post-release health zijn groen. Deze
-release bevat geen servermigratie.**
+Actuele uitgebrachte tranche: **v0.05.08 is openbaar uitgebracht met versionCode
+10058. Trial-eindscores zijn weer rechtstreeks de ingeleverde minigamescore voor
+rang, reward, records en rankings; Expertise behoudt alleen de bestaande subtiele
+spelhulp. De gerepareerde Emberbun Spirit-, Starforged Arcana- en Frostfable
+Wyrmling-sprites worden ook voor Spectral gebruikt via runtime kleurfilter en
+aura. Productiepreflight, analyzer, alle 407 tests, vaste signing, Play Store-AAB,
+remote assetcontrole en post-release health zijn groen. Deze release bevat geen
+servermigratie.**
 
-Actuele lokale tranche na v0.05.07: **v0.05.08 is als ondertekende Android-
-releasecandidate bewezen met versionCode 10058. De Expertise-scoremultiplier is
-volledig verwijderd uit Trial-score, rang, reward, records, rankings,
-draakkiezer en resultaatskaart; Expertise behoudt uitsluitend de bestaande
-subtiele spelhulp per Trial. Spectral-vormen gebruiken bij Emberbun Spirit,
-Starforged Arcana en Frostfable Wyrmling rechtstreeks dezelfde gerepareerde
-transparante bron-sprite met een runtime kleurfilter en aura. Analyzer,
-referentiedocumentatiegates en alle 407 regressietests zijn groen. De release-APK
-is op de emulator gecontroleerd en heeft package `nl.dragonhaven.app`, versie
-0.05.08, versionCode 10058, 384.170.857 bytes en SHA-256
-`29af64061bffb2a4c56db5223d6c6cf4aa5b2a11f074c75ca03689b91fda685a`.
-Productiepreflight is groen; er is geen servermigratie en productie en staging
-blijven op 36/36 migraties. Publicatie volgt pas na commit- en remotegates.**
+Actuele lokale tranche na v0.05.08: **geen afzonderlijke niet-uitgebrachte
+app- of servertranche. De auditadministratie van de afgeronde release wordt met
+deze documentatiecommit bijgewerkt; productie en staging blijven op 36/36
+migraties.**
 
 Server- en releasebewijs: **de volledige
 [stagingrun 33630222018](https://github.com/Rakky88/DragonHaven/actions/runs/33630222018)
 en begrensde
 [productiemigratie 33631028441](https://github.com/Rakky88/DragonHaven/actions/runs/33631028441)
 brachten staging en productie veilig op 36/36 met nul lintfouten. De actuele
-[release v0.05.07](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.07)
-wijst exact naar commit `2944fd1d521a665acf7b19289d61a3549dd2e928` en bevat één
+[release v0.05.08](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.08)
+wijst exact naar commit `1b6e941add5121ef8a700c31da79949a72613d41` en bevat één
 `DragonHaven.apk` van 384.170.857 bytes met SHA-256
-`def7b0b6595ad68f9e5316b3be2e1b5a44f8fb407aeb378bfba4ef5e30b1c871`.
+`29af64061bffb2a4c56db5223d6c6cf4aa5b2a11f074c75ca03689b91fda685a`.
 Remote grootte en digest zijn gelijk aan lokaal; de versiegebonden en permanente
 latest-download geven HTTP 200. De
-[taggate 33658910426](https://github.com/Rakky88/DragonHaven/actions/runs/33658910426)
-herhaalde productiepreflight, analyzer, 408 tests, vaste signing, Play-ready AAB
+[taggate 33682174544](https://github.com/Rakky88/DragonHaven/actions/runs/33682174544)
+herhaalde productiepreflight, analyzer, 407 tests, vaste signing, Play-ready AAB
 en artifactcontrole volledig groen. De
-[post-release healthrun 33659821612](https://github.com/Rakky88/DragonHaven/actions/runs/33659821612)
+[post-release healthrun 33682959208](https://github.com/Rakky88/DragonHaven/actions/runs/33682959208)
 bevestigde Auth en applicatiehealth, uploadde bewijs, sloot een eventueel hersteld
 alert en opende geen storingsalert. Productie en staging blijven zonder nieuwe
 migratie op 36/36.**
@@ -1251,6 +1243,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 02-09-2026 | v0.05.07 openbaar en volledig groen | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.07), [taggate 33658910426](https://github.com/Rakky88/DragonHaven/actions/runs/33658910426) en [healthrun 33659821612](https://github.com/Rakky88/DragonHaven/actions/runs/33659821612) | Exact commit `2944fd1d521a665acf7b19289d61a3549dd2e928` is getagd. Remote `DragonHaven.apk` heeft exact de lokale grootte van 384.170.857 bytes en SHA-256 `def7b0b6595ad68f9e5316b3be2e1b5a44f8fb407aeb378bfba4ef5e30b1c871`; de versiegebonden en permanente latest-download geven HTTP 200. De taggate herhaalde productiepreflight, analyzer, 408 tests, vaste signing, Play-ready AAB en artifactupload groen. De losse healthrun bevestigde Auth en applicatiehealth, uploadde bewijs en opende geen storingsalert. Productie en staging bleven ongewijzigd op 36/36. |
 | 02-09-2026 | Trial-multiplier lokaal verwijderd en Spectral-reparaties bewezen | Codex | `trial.dart`, `dragonhaven_systems.dart`, `adventure_hub_screen.dart`, `trial_game_screen.dart`, Trial-regressies, `selected_sprite_safety_test.dart` en beide levende referentiedocumenten | De ingeleverde minigamescore is weer rechtstreeks de eindscore voor rang, reward, dragon/account-best en online rankings; de multiplier-UI en -modelvelden zijn verwijderd. Een regressie met bestaande Expertise bewijst dat score 250 exact 250 blijft. Emberbun Spirit, Starforged Arcana en Frostfable Wyrmling gebruiken voor Spectral dezelfde herstelde standalone sprite; de runtime voegt alleen kleurfilter en aura toe. Alle 87 geselecteerde vormen zijn vijfmaal in normaal/Spectral en kleur/silhouet gerenderd, specifieke Frostfable-/Starforged-alphacontroles slagen, analyzer meldt nul problemen en alle 407 tests zijn groen. Geen versie-, server-, migratie-, productie- of openbare releasewijziging. |
 | 02-09-2026 | v0.05.08 lokale releasecandidate bewezen | Codex, na jouw toestemming | `release-notes-v0.05.08.md`, 407 tests, ondertekende `DragonHaven.apk`, emulatorcontrole en `release_server_preflight.ps1` | App- en zichtbare versie staan op v0.05.08 met versionCode 10058. APK heeft package `nl.dragonhaven.app`, 384.170.857 bytes, SHA-256 `29af64061bffb2a4c56db5223d6c6cf4aa5b2a11f074c75ca03689b91fda685a` en het vaste certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. De echte release-APK is over de bestaande emulator-app geïnstalleerd; Tower, About v0.05.08 en de Trial-pagina zonder multiplier zijn visueel gecontroleerd. Analyzer, referentiedocumentatiegates en 407/407 tests zijn groen. Productie en staging blijven zonder nieuwe migratie op 36/36, met nul lintfouten en gezonde Auth-/applicatiehealth. |
+| 02-09-2026 | v0.05.08 openbaar en volledig groen | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.08), [taggate 33682174544](https://github.com/Rakky88/DragonHaven/actions/runs/33682174544) en [healthrun 33682959208](https://github.com/Rakky88/DragonHaven/actions/runs/33682959208) | Exact commit `1b6e941add5121ef8a700c31da79949a72613d41` is getagd. Remote `DragonHaven.apk` heeft exact de lokale grootte van 384.170.857 bytes en SHA-256 `29af64061bffb2a4c56db5223d6c6cf4aa5b2a11f074c75ca03689b91fda685a`; de versiegebonden en permanente latest-download geven HTTP 200 en v0.05.08 is Latest. De taggate herhaalde productiepreflight, analyzer, 407 tests, vaste signing, Play-ready AAB en artifactupload groen. De losse healthrun bevestigde Auth en applicatiehealth, uploadde bewijs, sloot een eventueel hersteld alert en opende geen storingsalert. Productie en staging bleven ongewijzigd op 36/36. |
 
 ## Onderhoud van dit plan
 
