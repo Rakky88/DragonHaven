@@ -58,7 +58,12 @@ abstract interface class SocialRepository {
   Future<void> blockKeeper(String userId);
   Future<void> unblockKeeper(String userId);
   Future<List<FriendMessage>> openFriendMessages(String friendId);
-  Future<void> sendFriendMessage(String friendId, String body);
+  Future<void> sendFriendMessage(
+    String friendId,
+    String body, {
+    String kind = 'text',
+    Map<String, dynamic> payload = const {},
+  });
   Future<void> setSocialPreferences({
     required bool friendMessagesAllowed,
     required bool shareAchievementsWithConclave,
@@ -206,7 +211,12 @@ class DisabledSocialRepository implements SocialRepository {
   Future<List<FriendMessage>> openFriendMessages(String friendId) async =>
       _disabled();
   @override
-  Future<void> sendFriendMessage(String friendId, String body) async =>
+  Future<void> sendFriendMessage(
+    String friendId,
+    String body, {
+    String kind = 'text',
+    Map<String, dynamic> payload = const {},
+  }) async =>
       _disabled();
   @override
   Future<void> setSocialPreferences({

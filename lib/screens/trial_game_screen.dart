@@ -7,12 +7,14 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/pet.dart';
+import '../models/dragon_emote.dart';
 import '../models/mystic_relic.dart';
 import '../models/trial.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/dragon_emote_picker.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/trial_icon_sprite.dart';
 
@@ -445,6 +447,11 @@ class _TrialResultCard extends StatelessWidget {
                             relic: relic,
                             label: strings.relicName(relic),
                           ),
+                        if (reward.emote case final emote?)
+                          _EmoteRewardLine(
+                            emote: emote,
+                            label: emote.label(strings.languageCode),
+                          ),
                       ],
                     ),
                   ),
@@ -519,6 +526,34 @@ class _RelicRewardLine extends StatelessWidget {
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _EmoteRewardLine extends StatelessWidget {
+  const _EmoteRewardLine({required this.emote, required this.label});
+
+  final DragonEmoteDefinition emote;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        key: Key('trial-emote-reward-${emote.id}'),
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          children: [
+            DragonEmoteSprite(emote: emote, size: 34),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                '+1 $label',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],

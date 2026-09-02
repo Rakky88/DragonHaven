@@ -44,6 +44,73 @@ const socialPhraseTranslations = <String, List<String>>{
     'お世話連続日数'
   ],
   'Chat': ['Chat', 'Chat', 'Discussion', 'Chat', 'Chat', 'チャット'],
+  'Dragon emotes': [
+    'Drachen-Emotes',
+    'Emotes de dragón',
+    'Émotes de dragon',
+    'Emote drago',
+    'Emotes de dragão',
+    'ドラゴンエモート'
+  ],
+  'Dragon emote packs': [
+    'Drachen-Emote-Pakete',
+    'Packs de emotes de dragón',
+    'Packs d’émotes de dragon',
+    'Pacchetti di emote drago',
+    'Pacotes de emotes de dragão',
+    'ドラゴンエモートパック'
+  ],
+  'Each pack contains ten exclusive chat emotes that cannot drop from chests or Trials.':
+      [
+    'Jedes Paket enthält zehn exklusive Chat-Emotes, die nicht aus Truhen oder Prüfungen stammen.',
+    'Cada pack contiene diez emotes de chat exclusivos que no aparecen en cofres ni Pruebas.',
+    'Chaque pack contient dix émotes de chat exclusives, introuvables dans les coffres ou les Épreuves.',
+    'Ogni pacchetto contiene dieci emote chat esclusive che non si trovano nei forzieri o nelle Prove.',
+    'Cada pacote contém dez emotes de chat exclusivos que não aparecem em baús nem Provas.',
+    '各パックには、宝箱や試練からは入手できない限定チャットエモートが10個入っています。'
+  ],
+  'This pack is ready for €1.99. Purchasing becomes available after its Google Play product and secure server verification are connected.':
+      [
+    'Dieses Paket ist für 1,99 € vorbereitet. Der Kauf wird verfügbar, sobald das Google-Play-Produkt und die sichere Serverprüfung verbunden sind.',
+    'Este pack está preparado por 1,99 €. La compra estará disponible cuando se conecten el producto de Google Play y la verificación segura del servidor.',
+    'Ce pack est prêt au prix de 1,99 €. L’achat sera disponible une fois le produit Google Play et la vérification sécurisée du serveur connectés.',
+    'Questo pacchetto è pronto al prezzo di 1,99 €. L’acquisto sarà disponibile dopo il collegamento del prodotto Google Play e della verifica sicura del server.',
+    'Este pacote está preparado por € 1,99. A compra ficará disponível quando o produto Google Play e a verificação segura do servidor estiverem conectados.',
+    'このパックは1.99ユーロで準備済みです。Google Play商品と安全なサーバー検証の接続後に購入できます。'
+  ],
+  '10 emotes': [
+    '10 Emotes',
+    '10 emotes',
+    '10 émotes',
+    '10 emote',
+    '10 emotes',
+    'エモート10個'
+  ],
+  'New chat emote': [
+    'Neues Chat-Emote',
+    'Nuevo emote de chat',
+    'Nouvelle émote de chat',
+    'Nuova emote chat',
+    'Novo emote de chat',
+    '新しいチャットエモート'
+  ],
+  'Unlocked emotes can be used without limits.': [
+    'Freigeschaltete Emotes können unbegrenzt verwendet werden.',
+    'Los emotes desbloqueados se pueden usar sin límites.',
+    'Les émotes débloquées peuvent être utilisées sans limite.',
+    'Le emote sbloccate possono essere usate senza limiti.',
+    'Emotes desbloqueados podem ser usados sem limites.',
+    'アンロックしたエモートは何度でも使えます。'
+  ],
+  'Find emotes in chests, win them with S+ Trial scores, or collect an emote pack.':
+      [
+    'Finde Emotes in Truhen, gewinne sie mit S+-Wertungen in Prüfungen oder sammle ein Emote-Paket.',
+    'Encuentra emotes en cofres, gánalos con puntuaciones S+ en Pruebas o consigue un pack de emotes.',
+    'Trouvez des émotes dans les coffres, gagnez-les avec un score S+ aux Épreuves ou obtenez un pack d’émotes.',
+    'Trova emote nei forzieri, vincile con valutazioni S+ nelle Prove oppure ottieni un pacchetto di emote.',
+    'Encontre emotes em baús, ganhe-os com notas S+ nas Provas ou obtenha um pacote de emotes.',
+    '宝箱から見つけるか、試練でS+を獲得するか、エモートパックを入手しましょう。'
+  ],
   'Chronicle': ['Chronik', 'Crónica', 'Chronique', 'Cronaca', 'Crônica', '年代記'],
   'Conclave': [
     'Konklave',

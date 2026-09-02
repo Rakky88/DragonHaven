@@ -289,11 +289,20 @@ class SupabaseSocialRepository implements SocialRepository {
           .toList(growable: false);
 
   @override
-  Future<void> sendFriendMessage(String friendId, String body) async {
-    await _rpc('send_friend_message', params: {
-      'p_friend_id': friendId,
-      'p_body': body,
-    });
+  Future<void> sendFriendMessage(
+    String friendId,
+    String body, {
+    String kind = 'text',
+    Map<String, dynamic> payload = const {},
+  }) async {
+    await _rpc(
+        kind == 'text' ? 'send_friend_message' : 'send_friend_chat_message',
+        params: {
+          'p_friend_id': friendId,
+          'p_body': body,
+          if (kind != 'text') 'p_kind': kind,
+          if (kind != 'text') 'p_payload': payload,
+        });
   }
 
   @override

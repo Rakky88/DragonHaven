@@ -6,6 +6,7 @@ import 'package:dragon_haven/models/account_title.dart';
 import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
+import 'package:dragon_haven/models/dragon_emote.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/dragon_school.dart';
 import 'package:dragon_haven/models/game_presentation.dart';
@@ -476,6 +477,64 @@ void main() {
     expect(game.totalChestsOpened, 1);
     expect(game.chestCount(ChestTier.wooden), 0);
     expect(await game.openChest(ChestTier.wooden), isNull);
+  });
+
+  test('chest emotes are rare collection rewards without duplicates', () async {
+    final game = HouseholdProvider(
+      random: _ZeroRandom(),
+      persistenceEnabled: false,
+    )..chestInventory[ChestTier.wooden] = 2;
+
+    final first = await game.openChest(ChestTier.wooden);
+    final second = await game.openChest(ChestTier.wooden);
+
+    expect(first?.emoteFound, isNotNull);
+    expect(second?.emoteFound, isNotNull);
+    expect(first!.emoteFound!.id, isNot(second!.emoteFound!.id));
+    expect(game.ownedDragonEmoteIds, hasLength(2));
+
+    game.ownedDragonEmoteIds.addAll(
+      dragonEmotesForSource(DragonEmoteSource.chest).map((emote) => emote.id),
+    );
+    game.chestInventory[ChestTier.wooden] = 1;
+    final exhausted = await game.openChest(ChestTier.wooden);
+    expect(exhausted?.emoteFound, isNull);
+    expect(
+      game.ownedDragonEmoteIds.where((id) => id.startsWith('chest_')),
+      hasLength(25),
+    );
+  });
+
+  test('verified emote packs grant ten permanent exclusive emotes once',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(304),
+      persistenceEnabled: false,
+    );
+    final pack = dragonEmotePacks.first;
+
+    expect(
+      await game.applyVerifiedDragonEmotePack(
+        internalProductId: pack.internalProductId,
+        serverTransactionId: 'verified-emote-pack-1',
+      ),
+      isTrue,
+    );
+    expect(game.ownsDragonEmotePack(pack.id), isTrue);
+    expect(game.ownedDragonEmoteIds, containsAll(pack.emotes.map((e) => e.id)));
+    expect(pack.emotes, hasLength(10));
+    expect(
+      await game.applyVerifiedDragonEmotePack(
+        internalProductId: pack.internalProductId,
+        serverTransactionId: 'verified-emote-pack-2',
+      ),
+      isFalse,
+    );
+    expect(game.exportState()['ownedDragonEmotePackIds'], contains(pack.id));
+    expect(
+      game.exportState()['ownedDragonEmoteIds'],
+      containsAll(pack.emotes.map((emote) => emote.id)),
+    );
   });
 
   test('ten matching chests open as one bundle with ten independent rewards',

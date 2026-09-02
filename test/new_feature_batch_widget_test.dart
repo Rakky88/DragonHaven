@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/dragon_school.dart';
+import 'package:dragon_haven/models/dragon_emote.dart';
 import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/supporter_pack.dart';
@@ -455,6 +456,61 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Packs shop presents three exclusive ten-emote collections',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final game = HouseholdProvider(
+      random: Random(944),
+      persistenceEnabled: false,
+    );
+    final ownedPack = dragonEmotePacks.first;
+    await game.applyVerifiedDragonEmotePack(
+      internalProductId: ownedPack.internalProductId,
+      serverTransactionId: 'widget-emote-pack',
+    );
+    addTearDown(game.dispose);
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: const MaterialApp(
+        home: Scaffold(body: ShopHubScreen(initialCurrencyTab: 2)),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final scrollable = find.descendant(
+      of: find.byKey(const Key('packs-shop-scroll')),
+      matching: find.byType(Scrollable),
+    );
+    expect(dragonEmotePacks, hasLength(3));
+    for (final pack in dragonEmotePacks) {
+      await tester.scrollUntilVisible(
+        find.byKey(Key('dragon-emote-pack-${pack.id}')),
+        300,
+        scrollable: scrollable,
+      );
+      expect(
+        find.byKey(Key('buy-dragon-emote-pack-${pack.id}')),
+        findsOneWidget,
+      );
+      expect(pack.emotes, hasLength(10));
+    }
+
+    await tester.ensureVisible(
+      find.byKey(Key('expand-dragon-emote-pack-${ownedPack.id}')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(Key('expand-dragon-emote-pack-${ownedPack.id}')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(Key('dragon-emote-pack-grid-${ownedPack.id}')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
       'owned Supporter Pack stays finite after leaving and reopening Packs',
       (tester) async {
@@ -500,7 +556,7 @@ void main() {
     );
     var position = tester.state<ScrollableState>(packsScrollable()).position;
     expect(position.maxScrollExtent.isFinite, isTrue);
-    expect(position.maxScrollExtent, lessThan(2500));
+    expect(position.maxScrollExtent, lessThan(4000));
     position.jumpTo(position.maxScrollExtent);
     await tester.pump();
 
@@ -526,7 +582,7 @@ void main() {
     expect(find.byType(FurnitureArt), findsNWidgets(4));
     position = tester.state<ScrollableState>(packsScrollable()).position;
     expect(position.maxScrollExtent.isFinite, isTrue);
-    expect(position.maxScrollExtent, lessThan(2500));
+    expect(position.maxScrollExtent, lessThan(4000));
     expect(tester.takeException(), isNull);
   });
 

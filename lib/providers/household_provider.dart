@@ -12,6 +12,7 @@ import '../models/activity_entry.dart';
 import '../models/chest.dart';
 import '../models/day_phase.dart';
 import '../models/dragon_egg.dart';
+import '../models/dragon_emote.dart';
 import '../models/dragon_lineage.dart';
 import '../models/dragon_school.dart';
 import '../models/game_presentation.dart';
@@ -100,7 +101,7 @@ enum RoomUnlockResult {
 }
 
 class HouseholdProvider extends ChangeNotifier {
-  static const saveSchemaVersion = 49;
+  static const saveSchemaVersion = 50;
 
   HouseholdProvider({
     Random? random,
@@ -182,6 +183,8 @@ class HouseholdProvider extends ChangeNotifier {
   Set<String> ownedFrameIds = {};
   String? selectedFrameId;
   Set<String> appliedVerifiedPurchaseIds = {};
+  Set<String> ownedDragonEmoteIds = {};
+  Set<String> ownedDragonEmotePackIds = {};
   Set<String> eggRarityRevealedIds = {};
   List<int> chronoshardReductions = [];
   bool twinstarBroochEverObtained = false;
@@ -983,6 +986,17 @@ class HouseholdProvider extends ChangeNotifier {
         : null;
     appliedVerifiedPurchaseIds =
         stringSetFromJson(data['appliedVerifiedPurchaseIds']).take(100).toSet();
+    ownedDragonEmoteIds = stringSetFromJson(data['ownedDragonEmoteIds'])
+        .where(dragonEmotesById.containsKey)
+        .toSet();
+    ownedDragonEmotePackIds = stringSetFromJson(data['ownedDragonEmotePackIds'])
+        .where((id) => dragonEmotePackById(id) != null)
+        .toSet();
+    for (final packId in ownedDragonEmotePackIds) {
+      ownedDragonEmoteIds.addAll(
+        dragonEmotePackById(packId)!.emotes.map((emote) => emote.id),
+      );
+    }
     discoveredForms = stringSetFromJson(data['discoveredForms']);
     prismaticForms = stringSetFromJson(data['prismaticForms']);
     unlockedAchievementIds = stringSetFromJson(data['achievements']);
@@ -1393,6 +1407,32 @@ class HouseholdProvider extends ChangeNotifier {
     }
     appliedVerifiedPurchaseIds.add(transactionId);
     return _grantSupporterPackContents();
+  }
+
+  /// Applies a cosmetic emote pack only after server-side store verification.
+  Future<bool> applyVerifiedDragonEmotePack({
+    required String internalProductId,
+    required String serverTransactionId,
+  }) async {
+    final pack = dragonEmotePackById(internalProductId);
+    final transactionId = serverTransactionId.trim();
+    if (pack == null ||
+        transactionId.isEmpty ||
+        appliedVerifiedPurchaseIds.contains(transactionId) ||
+        ownedDragonEmotePackIds.contains(pack.id)) {
+      return false;
+    }
+    appliedVerifiedPurchaseIds.add(transactionId);
+    ownedDragonEmotePackIds.add(pack.id);
+    ownedDragonEmoteIds.addAll(pack.emotes.map((emote) => emote.id));
+    _addActivity(
+      message: '${pack.nameEn} joined your dragon emote collection.',
+      type: ActivityType.purchase,
+      code: ActivityCode.itemPurchased,
+      subject: pack.internalProductId,
+    );
+    await _notifyAndSave();
+    return true;
   }
 
   Future<bool> _grantSupporterPackContents() async {
@@ -1924,6 +1964,39 @@ class HouseholdProvider extends ChangeNotifier {
   Future<ChestReward?> openChest(ChestTier tier) =>
       _openChest(tier, persist: true);
 
+  List<DragonEmoteDefinition> get ownedDragonEmotes => allDragonEmotes
+      .where((emote) => ownedDragonEmoteIds.contains(emote.id))
+      .toList(growable: false);
+
+  bool ownsDragonEmote(String emoteId) => ownedDragonEmoteIds.contains(emoteId);
+
+  bool ownsDragonEmotePack(String packId) =>
+      ownedDragonEmotePackIds.contains(packId);
+
+  DragonEmoteDefinition? _rollUniqueDragonEmote(
+    DragonEmoteSource source,
+    double chance,
+  ) {
+    final remaining = dragonEmotesForSource(source)
+        .where((emote) => !ownedDragonEmoteIds.contains(emote.id))
+        .toList(growable: false);
+    if (remaining.isEmpty || _random.nextDouble() >= chance) return null;
+    final emote = remaining[_random.nextInt(remaining.length)];
+    ownedDragonEmoteIds.add(emote.id);
+    return emote;
+  }
+
+  double _chestEmoteDropChance(ChestTier tier) => switch (tier) {
+        ChestTier.wooden => .005,
+        ChestTier.silver => .01,
+        ChestTier.gold => .02,
+        ChestTier.dragon => .04,
+        ChestTier.mythical => .08,
+        ChestTier.sinister => .12,
+        ChestTier.special => .10,
+        ChestTier.portrait || ChestTier.title || ChestTier.music => 0,
+      };
+
   Future<ChestRewardBundle?> openChests(
     ChestTier tier, {
     required int count,
@@ -1975,6 +2048,10 @@ class HouseholdProvider extends ChangeNotifier {
     final eggChance = eggDropChance(tier);
     final eggFound = _random.nextDouble() < eggChance;
     final relicFound = _rollRelicDrop(tier);
+    final emoteFound = _rollUniqueDragonEmote(
+      DragonEmoteSource.chest,
+      _chestEmoteDropChance(tier),
+    );
     DragonEgg? foundEgg;
     pet.coins += coins;
     pet.gems += gems;
@@ -2002,7 +2079,8 @@ class HouseholdProvider extends ChangeNotifier {
         gems: gems,
         eggFound: eggFound,
         sinisterEgg: foundEgg?.sinister ?? false,
-        relicFound: relicFound);
+        relicFound: relicFound,
+        emoteFound: emoteFound);
   }
 
   Future<ChestReward?> _openSpecialChest({required bool persist}) async {
@@ -2011,6 +2089,10 @@ class HouseholdProvider extends ChangeNotifier {
     pet.coins += 269;
     pet.gems += 10;
     totalChestsOpened++;
+    final emoteFound = _rollUniqueDragonEmote(
+      DragonEmoteSource.chest,
+      _chestEmoteDropChance(ChestTier.special),
+    );
     _addActivity(
       message: 'A Special Chest revealed a one-of-a-kind egg.',
       type: ActivityType.discovery,
@@ -2021,12 +2103,13 @@ class HouseholdProvider extends ChangeNotifier {
     );
     _evaluateAchievements();
     if (persist) await _notifyAndSave();
-    return const ChestReward(
+    return ChestReward(
       tier: ChestTier.special,
       coins: 269,
       gems: 10,
       eggFound: true,
       specialEgg: true,
+      emoteFound: emoteFound,
     );
   }
 
@@ -2852,6 +2935,8 @@ class HouseholdProvider extends ChangeNotifier {
         'ownedFrameIds': ownedFrameIds.toList(),
         'selectedFrameId': selectedFrameId,
         'appliedVerifiedPurchaseIds': appliedVerifiedPurchaseIds.toList(),
+        'ownedDragonEmoteIds': ownedDragonEmoteIds.toList(),
+        'ownedDragonEmotePackIds': ownedDragonEmotePackIds.toList(),
         'discoveredForms': discoveredForms.toList(),
         'prismaticForms': prismaticForms.toList(),
         'achievements': unlockedAchievementIds.toList(),

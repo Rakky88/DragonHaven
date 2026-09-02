@@ -1,4 +1,5 @@
 import '../models/supporter_pack.dart';
+import '../models/dragon_emote.dart';
 
 enum PurchaseCurrency { coins, gems }
 
@@ -30,6 +31,27 @@ abstract final class PurchaseCatalog {
     plannedEuroPriceCents: supporterPackPlannedEuroPriceCents,
     nonConsumable: true,
   );
+
+  static const emotePackProducts = <PurchaseProductDefinition>[
+    PurchaseProductDefinition(
+      internalId: 'emote_pack_cozy_199',
+      amount: 1,
+      plannedEuroPriceCents: dragonEmotePackPriceCents,
+      nonConsumable: true,
+    ),
+    PurchaseProductDefinition(
+      internalId: 'emote_pack_infernal_199',
+      amount: 1,
+      plannedEuroPriceCents: dragonEmotePackPriceCents,
+      nonConsumable: true,
+    ),
+    PurchaseProductDefinition(
+      internalId: 'emote_pack_celestial_199',
+      amount: 1,
+      plannedEuroPriceCents: dragonEmotePackPriceCents,
+      nonConsumable: true,
+    ),
+  ];
 
   static const products = <PurchaseProductDefinition>[
     PurchaseProductDefinition(
@@ -108,6 +130,9 @@ abstract final class PurchaseCatalog {
 
   static PurchaseProductDefinition? byInternalId(String internalId) {
     if (internalId == supporterPack.internalId) return supporterPack;
+    for (final product in emotePackProducts) {
+      if (product.internalId == internalId) return product;
+    }
     for (final product in products) {
       if (product.internalId == internalId) return product;
     }

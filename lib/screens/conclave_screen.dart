@@ -5,11 +5,13 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/achievement.dart';
+import '../models/dragon_emote.dart';
 import '../models/social.dart';
 import '../providers/household_provider.dart';
 import '../providers/online_account_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/online_account_access.dart';
+import '../widgets/dragon_emote_picker.dart';
 
 String conclaveEmblemAsset(String key) => 'assets/images/ui/conclave/$key.png';
 
@@ -854,6 +856,21 @@ class _ConclaveChatState extends State<_ConclaveChat> {
     }
   }
 
+  Future<void> _sendEmote() async {
+    final game = context.read<HouseholdProvider>();
+    final emote = await showDragonEmotePicker(context, game.ownedDragonEmotes);
+    if (!mounted || emote == null || !game.ownsDragonEmote(emote.id)) return;
+    final sent =
+        await context.read<OnlineAccountProvider>().sendConclaveMessage(
+      kind: 'emote',
+      body: emote.label(game.languageCode),
+      payload: {'emote_id': emote.id},
+    );
+    if (!mounted || !sent) return;
+    _nearBottom = true;
+    _scrollToBottom();
+  }
+
   void _scrollToBottom({bool animate = true}) {
     if (_scrollScheduled) return;
     _scrollScheduled = true;
@@ -1019,6 +1036,12 @@ class _ConclaveChatState extends State<_ConclaveChat> {
                     onPressed: online.busy ? null : () => _share(context),
                     icon: const Icon(Icons.add_circle_rounded),
                   ),
+                  IconButton(
+                    key: const Key('conclave-emote-picker'),
+                    tooltip: strings.pick('Dragon emotes', 'Drakenemotes'),
+                    onPressed: online.busy ? null : _sendEmote,
+                    icon: const Icon(Icons.emoji_emotions_rounded),
+                  ),
                   Expanded(
                     child: TextField(
                       key: const Key('conclave-message-field'),
@@ -1149,6 +1172,12 @@ class _ConclaveMessageTile extends StatelessWidget {
     if (messages.every((candidate) => candidate.kind == 'achievement')) {
       return _ConclaveAchievementMessageTile(messages: messages);
     }
+    final emote = message.kind == 'emote'
+        ? dragonEmoteById(message.payload['emote_id']?.toString())
+        : null;
+    if (emote != null) {
+      return _ConclaveEmoteMessageTile(message: message, emote: emote);
+    }
     final mine =
         message.senderId == context.read<OnlineAccountProvider>().currentUserId;
     final icon = switch (message.kind) {
@@ -1197,6 +1226,66 @@ class _ConclaveMessageTile extends StatelessWidget {
                       'M ${message.payload['might'] ?? 0} · A ${message.payload['arcana'] ?? 0} · S ${message.payload['spirit'] ?? 0}',
                       style: const TextStyle(fontWeight: FontWeight.w900),
                     ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ConclaveEmoteMessageTile extends StatelessWidget {
+  const _ConclaveEmoteMessageTile({
+    required this.message,
+    required this.emote,
+  });
+
+  final ConclaveMessage message;
+  final DragonEmoteDefinition emote;
+
+  @override
+  Widget build(BuildContext context) {
+    final mine =
+        message.senderId == context.read<OnlineAccountProvider>().currentUserId;
+    return Align(
+      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        key: Key('conclave-emote-${message.id}'),
+        constraints: const BoxConstraints(maxWidth: 210),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.fromLTRB(9, 8, 9, 7),
+        decoration: BoxDecoration(
+          color: mine ? const Color(0xFFE8DFFF) : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE1D8EA)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            KeeperPortrait(
+              portraitKey: message.senderPortraitKey,
+              displayName: message.senderName,
+              radius: 16,
+            ),
+            const SizedBox(width: 7),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message.senderName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.twilight,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11,
+                    ),
+                  ),
+                  DragonEmoteSprite(emote: emote, size: 112),
                 ],
               ),
             ),
@@ -2151,7 +2240,7 @@ class _ConclaveTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Tab(
-        height: 52,
+        height: 42,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -2159,9 +2248,9 @@ class _ConclaveTab extends StatelessWidget {
               count: badgeCount,
               isLabelVisible: badgeCount > 0,
               backgroundColor: Colors.redAccent,
-              child: Icon(icon, size: 20),
+              child: Icon(icon, size: 18),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 1),
             FittedBox(fit: BoxFit.scaleDown, child: Text(label)),
           ],
         ),
@@ -2173,9 +2262,9 @@ class _TabHeaderDelegate extends SliverPersistentHeaderDelegate {
   final TabBar tabBar;
 
   @override
-  double get minExtent => 64;
+  double get minExtent => 62;
   @override
-  double get maxExtent => 64;
+  double get maxExtent => 62;
   @override
   Widget build(
     BuildContext context,

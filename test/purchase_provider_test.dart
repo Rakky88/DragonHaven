@@ -39,4 +39,22 @@ void main() {
     expect(result.serverTransactionId, isNull);
     expect(result.safeErrorCode, 'purchases_not_configured');
   });
+
+  test('dragon emote packs are three distinct non-consumable €1.99 products',
+      () {
+    expect(PurchaseCatalog.emotePackProducts, hasLength(3));
+    expect(
+      PurchaseCatalog.emotePackProducts
+          .map((product) => product.internalId)
+          .toSet(),
+      hasLength(3),
+    );
+    for (final product in PurchaseCatalog.emotePackProducts) {
+      expect(product.currency, isNull);
+      expect(product.amount, 1);
+      expect(product.plannedEuroPriceCents, 199);
+      expect(product.nonConsumable, isTrue);
+      expect(PurchaseCatalog.byInternalId(product.internalId), same(product));
+    }
+  });
 }

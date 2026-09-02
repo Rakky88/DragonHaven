@@ -6,6 +6,7 @@ import 'package:dragon_haven/models/achievement.dart';
 import 'package:dragon_haven/models/account_title.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/day_phase.dart';
+import 'package:dragon_haven/models/dragon_emote.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/music_track.dart';
 import 'package:dragon_haven/models/pet.dart';
@@ -825,6 +826,72 @@ void main() {
         isTrue,
       );
     }
+  });
+
+  test('dragon chat emotes stay unique, collectible and server typed', () {
+    expect(allDragonEmotes, hasLength(80));
+    expect(allDragonEmotes.map((emote) => emote.id).toSet(), hasLength(80));
+    expect(
+      allDragonEmotes.map((emote) => emote.assetPath).toSet(),
+      hasLength(80),
+    );
+    expect(
+      allDragonEmotes.where((emote) => emote.source == DragonEmoteSource.chest),
+      hasLength(25),
+    );
+    expect(
+      allDragonEmotes.where((emote) => emote.source == DragonEmoteSource.trial),
+      hasLength(25),
+    );
+    expect(dragonEmotePacks, hasLength(3));
+    expect(dragonEmotePackPriceCents, 199);
+    expect(
+      dragonEmotePacks.every(
+        (pack) => pack.source.isPack && pack.emotes.length == 10,
+      ),
+      isTrue,
+    );
+    expect(
+      dragonEmotePacks
+          .expand((pack) => pack.emotes)
+          .map((emote) => emote.id)
+          .toSet(),
+      hasLength(30),
+    );
+
+    final migration = File(
+      'supabase/migrations/202609020034_dragon_chat_emotes.sql',
+    ).readAsStringSync();
+    expect(migration, contains("kind in ('text', 'emote')"));
+    expect(migration, contains("'achievement','dragon','trial','emote'"));
+    expect(migration, contains('send_friend_chat_message'));
+    expect(migration, contains("latest.kind = 'emote'"));
+    expect(migration, contains("p_kind <> 'emote'"));
+    expect(migration, contains("p_kind = 'emote'"));
+    expect(migration, contains("p_payload->>'emote_id'"));
+    expect(migration, contains('message_rate_limited'));
+    expect(migration, contains('cleanup_ephemeral_social_content'));
+    expect(
+      migration,
+      contains(
+        'grant execute on function public.send_friend_chat_message(uuid,text,text,jsonb)',
+      ),
+    );
+    final productionMigration = File(
+      '.github/workflows/production-migrate-34.yml',
+    ).readAsStringSync();
+    expect(productionMigration, contains('MIGRATE_PRODUCTION_33_TO_34'));
+    expect(
+      productionMigration,
+      contains("\$expectedRemote = '202608310033'"),
+    );
+    expect(
+      productionMigration,
+      contains("\$expectedPending = @('202609020034')"),
+    );
+    expect(productionMigration,
+        contains('db push --linked --include-all --dry-run'));
+    expect(productionMigration, contains('release_server_preflight.ps1'));
   });
 
   test('public application health is read-only, private-data-free and gated',

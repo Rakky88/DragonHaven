@@ -5,9 +5,12 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/social.dart';
+import '../models/dragon_emote.dart';
+import '../providers/household_provider.dart';
 import '../providers/online_account_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/online_account_access.dart';
+import '../widgets/dragon_emote_picker.dart';
 
 class FriendMessagesScreen extends StatefulWidget {
   const FriendMessagesScreen({super.key, required this.friend});
@@ -67,6 +70,20 @@ class _FriendMessagesScreenState extends State<FriendMessagesScreen> {
         .sendFriendMessage(widget.friend.userId, body);
     if (!mounted || !sent) return;
     _controller.clear();
+    await _load();
+  }
+
+  Future<void> _sendEmote() async {
+    final game = context.read<HouseholdProvider>();
+    final emote = await showDragonEmotePicker(context, game.ownedDragonEmotes);
+    if (!mounted || emote == null || !game.ownsDragonEmote(emote.id)) return;
+    final sent = await context.read<OnlineAccountProvider>().sendFriendMessage(
+      widget.friend.userId,
+      emote.label(game.languageCode),
+      kind: 'emote',
+      payload: {'emote_id': emote.id},
+    );
+    if (!mounted || !sent) return;
     await _load();
   }
 
@@ -167,6 +184,15 @@ class _FriendMessagesScreenState extends State<FriendMessagesScreen> {
                   ? Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
+                        IconButton(
+                          key: const Key('friend-message-emote-picker'),
+                          tooltip: strings.pick(
+                            'Dragon emotes',
+                            'Drakenemotes',
+                          ),
+                          onPressed: online.busy ? null : _sendEmote,
+                          icon: const Icon(Icons.emoji_emotions_rounded),
+                        ),
                         Expanded(
                           child: TextField(
                             key: const Key('friend-message-field'),
@@ -231,49 +257,61 @@ class _MessageBubble extends StatelessWidget {
   final bool mine;
 
   @override
-  Widget build(BuildContext context) => Align(
-        alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 320),
-          margin: const EdgeInsets.only(bottom: 7),
-          padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
-          decoration: BoxDecoration(
-            color: mine ? AppColors.twilight : Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(19),
-              topRight: const Radius.circular(19),
-              bottomLeft: Radius.circular(mine ? 19 : 5),
-              bottomRight: Radius.circular(mine ? 5 : 19),
-            ),
-            boxShadow: const [
-              BoxShadow(color: Color(0x18000000), blurRadius: 8),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  message.body,
-                  style: TextStyle(
-                    color: mine ? Colors.white : AppColors.ink,
-                    height: 1.3,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                TimeOfDay.fromDateTime(message.createdAt.toLocal())
-                    .format(context),
-                style: TextStyle(
-                  color: mine ? Colors.white70 : AppColors.muted,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
+  Widget build(BuildContext context) {
+    final emote = message.kind == 'emote'
+        ? dragonEmoteById(message.payload['emote_id']?.toString())
+        : null;
+    return Align(
+      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 320),
+        margin: const EdgeInsets.only(bottom: 7),
+        padding: EdgeInsets.fromLTRB(
+          emote == null ? 14 : 8,
+          emote == null ? 10 : 6,
+          emote == null ? 14 : 8,
+          8,
         ),
-      );
+        decoration: BoxDecoration(
+          color: mine ? AppColors.twilight : Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(19),
+            topRight: const Radius.circular(19),
+            bottomLeft: Radius.circular(mine ? 19 : 5),
+            bottomRight: Radius.circular(mine ? 5 : 19),
+          ),
+          boxShadow: const [
+            BoxShadow(color: Color(0x18000000), blurRadius: 8),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: emote == null
+                  ? Text(
+                      message.body,
+                      style: TextStyle(
+                        color: mine ? Colors.white : AppColors.ink,
+                        height: 1.3,
+                      ),
+                    )
+                  : DragonEmoteSprite(emote: emote, size: 116),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              TimeOfDay.fromDateTime(message.createdAt.toLocal())
+                  .format(context),
+              style: TextStyle(
+                color: mine ? Colors.white70 : AppColors.muted,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

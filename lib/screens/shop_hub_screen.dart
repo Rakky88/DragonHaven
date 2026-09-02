@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_strings.dart';
 import '../models/account_title.dart';
 import '../models/chest.dart';
+import '../models/dragon_emote.dart';
 import '../models/mystic_relic.dart';
 import '../models/music_track.dart';
 import '../models/profile_portrait.dart';
@@ -12,6 +13,7 @@ import '../models/supporter_pack.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_icon_sprite.dart';
+import '../widgets/dragon_emote_picker.dart';
 import '../widgets/furniture_art.dart';
 import '../widgets/profile_portrait_sprite.dart';
 import '../widgets/ui_bits.dart';
@@ -89,6 +91,7 @@ class _PacksShop extends StatefulWidget {
 
 class _PacksShopState extends State<_PacksShop> {
   bool _contentsExpanded = false;
+  String? _expandedEmotePackId;
 
   @override
   Widget build(BuildContext context) {
@@ -255,9 +258,230 @@ class _PacksShopState extends State<_PacksShop> {
           textAlign: TextAlign.center,
           style: const TextStyle(color: AppColors.muted, fontSize: 11),
         ),
+        const SizedBox(height: 18),
+        Text(
+          strings.pick('Dragon emote packs', 'Drakenemotepakketten'),
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          strings.pick(
+            'Each pack contains ten exclusive chat emotes that cannot drop from chests or Trials.',
+            'Elk pakket bevat tien exclusieve chatemotes die niet uit kisten of Trials kunnen komen.',
+          ),
+          style: const TextStyle(color: AppColors.muted, height: 1.3),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var index = 0; index < dragonEmotePacks.length; index++) ...[
+              if (index > 0) const SizedBox(width: 7),
+              Expanded(
+                child: _DragonEmotePackCard(
+                  pack: dragonEmotePacks[index],
+                  expanded: _expandedEmotePackId == dragonEmotePacks[index].id,
+                  onExpand: () => setState(() {
+                    final id = dragonEmotePacks[index].id;
+                    _expandedEmotePackId =
+                        _expandedEmotePackId == id ? null : id;
+                  }),
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (_expandedEmotePackId != null) ...[
+          const SizedBox(height: 8),
+          _DragonEmotePackGrid(
+            pack: dragonEmotePacks.firstWhere(
+              (pack) => pack.id == _expandedEmotePackId,
+            ),
+          ),
+        ],
       ],
     );
   }
+}
+
+class _DragonEmotePackCard extends StatelessWidget {
+  const _DragonEmotePackCard({
+    required this.pack,
+    required this.expanded,
+    required this.onExpand,
+  });
+
+  final DragonEmotePackDefinition pack;
+  final bool expanded;
+  final VoidCallback onExpand;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final game = context.watch<HouseholdProvider>();
+    final owned = game.ownsDragonEmotePack(pack.id);
+    final colors = switch (pack.source) {
+      DragonEmoteSource.cozyPack => const [
+          Color(0xFFF8B8C8),
+          Color(0xFF8A5CB5)
+        ],
+      DragonEmoteSource.infernalPack => const [
+          Color(0xFF421127),
+          Color(0xFFC44734)
+        ],
+      DragonEmoteSource.celestialPack => const [
+          Color(0xFF182F66),
+          Color(0xFF7752B8)
+        ],
+      _ => const [Color(0xFF392465), Color(0xFF694A97)],
+    };
+    return Container(
+      key: Key('dragon-emote-pack-${pack.id}'),
+      height: 190,
+      padding: const EdgeInsets.fromLTRB(7, 9, 7, 7),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: colors),
+        borderRadius: BorderRadius.circular(19),
+        border: Border.all(color: Colors.white24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x222A1E50),
+            blurRadius: 14,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          DragonEmoteSprite(emote: pack.emotes.first, size: 58),
+          const SizedBox(height: 2),
+          SizedBox(
+            height: 34,
+            child: Center(
+              child: Text(
+                pack.name(strings.languageCode),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  height: 1.05,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            height: 35,
+            child: FilledButton(
+              key: Key('buy-dragon-emote-pack-${pack.id}'),
+              onPressed: owned
+                  ? null
+                  : () => showAppSnackBar(
+                        context,
+                        strings.pick(
+                          'This pack is ready for €1.99. Purchasing becomes available after its Google Play product and secure server verification are connected.',
+                          'Dit pakket staat klaar voor €1,99. Kopen wordt beschikbaar zodra het Google Play-product en veilige servercontrole zijn aangesloten.',
+                        ),
+                      ),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.white.withValues(alpha: .15),
+                disabledBackgroundColor: Colors.white.withValues(alpha: .10),
+                foregroundColor: Colors.white,
+                disabledForegroundColor: const Color(0xFFE9DFF9),
+                side: const BorderSide(color: Colors.white24),
+              ),
+              child: Text(
+                owned ? strings.pick('OWNED', 'IN BEZIT') : '€1,99',
+                maxLines: 1,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+          InkWell(
+            key: Key('expand-dragon-emote-pack-${pack.id}'),
+            onTap: onExpand,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 6, bottom: 3),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        strings.pick('10 emotes', '10 emotes'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: expanded ? .5 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: const Icon(
+                      Icons.expand_more_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DragonEmotePackGrid extends StatelessWidget {
+  const _DragonEmotePackGrid({required this.pack});
+
+  final DragonEmotePackDefinition pack;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0E8F8),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: GridView.builder(
+          key: Key('dragon-emote-pack-grid-${pack.id}'),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5,
+            crossAxisSpacing: 5,
+            mainAxisSpacing: 5,
+          ),
+          itemCount: pack.emotes.length,
+          itemBuilder: (context, index) => DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: DragonEmoteSprite(
+                emote: pack.emotes[index],
+                size: 58,
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 class _SupporterPackContents extends StatelessWidget {

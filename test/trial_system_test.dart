@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:dragon_haven/models/chest.dart';
+import 'package:dragon_haven/models/dragon_emote.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/trial.dart';
@@ -232,6 +233,57 @@ void main() {
         ChestTier.mythical);
   });
 
+  test('only S+ Trials can win unique Trial emotes', () async {
+    final now = DateTime(2026, 9, 2, 12);
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: _ZeroRandom(),
+      clock: () => now,
+    )
+      ..pet = Pet(
+        id: 'emote-trial-dragon',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+      )
+      ..trialRefilledAt = now
+      ..trialOffers = [
+        for (var index = 0; index < 3; index++)
+          TrialOffer(
+            id: 'emote-offer-$index',
+            kind: TrialKind.runeweaver,
+            appearedAt: now,
+          ),
+      ];
+
+    final first = await game.completeTrial(
+      offerId: 'emote-offer-0',
+      dragonId: game.pet.id,
+      score: 15,
+    );
+    final second = await game.completeTrial(
+      offerId: 'emote-offer-1',
+      dragonId: game.pet.id,
+      score: 15,
+    );
+    final sRank = await game.completeTrial(
+      offerId: 'emote-offer-2',
+      dragonId: game.pet.id,
+      score: 14,
+    );
+
+    expect(first?.reward.emote, isNotNull);
+    expect(second?.reward.emote, isNotNull);
+    expect(first!.reward.emote!.id, isNot(second!.reward.emote!.id));
+    expect(sRank?.reward.emote, isNull);
+    expect(
+      game.ownedDragonEmoteIds.every(
+        (id) => dragonEmoteById(id)?.source == DragonEmoteSource.trial,
+      ),
+      isTrue,
+    );
+  });
+
   test('each Trial S+ rank unlocks its dedicated achievement', () async {
     final now = DateTime(2026, 8, 26, 10);
     final game = HouseholdProvider(random: Random(47), clock: () => now)
@@ -396,4 +448,15 @@ void main() {
     expect(profile.dragonCount, 7);
     expect(profile.favoriteDragon?.runeweaverBest, 7);
   });
+}
+
+class _ZeroRandom implements Random {
+  @override
+  bool nextBool() => false;
+
+  @override
+  double nextDouble() => 0;
+
+  @override
+  int nextInt(int max) => 0;
 }

@@ -8,6 +8,7 @@ import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/achievement.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/day_phase.dart';
+import 'package:dragon_haven/models/dragon_emote.dart';
 import 'package:dragon_haven/models/dragon_school.dart';
 import 'package:dragon_haven/models/house.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
@@ -221,6 +222,35 @@ void _expectSingleSubject(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('all 80 dragon chat emotes are transparent contained app sprites',
+      () async {
+    expect(allDragonEmotes, hasLength(80));
+    expect(
+      allDragonEmotes.map((emote) => emote.assetPath).toSet(),
+      hasLength(80),
+    );
+    for (final emote in allDragonEmotes) {
+      final image = await _decode(emote.assetPath);
+      expect(image.width, 384, reason: emote.assetPath);
+      expect(image.height, 384, reason: emote.assetPath);
+      _expectTransparentCorners(
+        image.rgba,
+        image.width,
+        image.height,
+        emote.assetPath,
+      );
+      _expectContained(
+        image.rgba,
+        image.width,
+        0,
+        0,
+        image.width,
+        image.height,
+        emote.assetPath,
+      );
+    }
+  });
 
   test('all achievement badges are square, non-empty and safely contained',
       () async {

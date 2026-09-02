@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:dragon_haven/dragonhaven_app.dart';
 import 'package:dragon_haven/models/account_title.dart';
 import 'package:dragon_haven/models/chest.dart';
+import 'package:dragon_haven/models/dragon_emote.dart';
 import 'package:dragon_haven/models/game_presentation.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
@@ -15,6 +16,7 @@ import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/providers/online_account_provider.dart';
 import 'package:dragon_haven/screens/adventure_hub_screen.dart';
 import 'package:dragon_haven/screens/conclave_screen.dart';
+import 'package:dragon_haven/screens/friend_messages_screen.dart';
 import 'package:dragon_haven/services/diagnostic_reporter.dart';
 import 'package:dragon_haven/services/automatic_cloud_backup.dart';
 import 'package:dragon_haven/services/social_repository.dart';
@@ -1420,6 +1422,85 @@ void main() {
     online.dispose();
   });
 
+  testWidgets('owned dragon emotes send in private and Conclave chat',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final emote = dragonEmotesForSource(DragonEmoteSource.chest).first;
+    final game = HouseholdProvider(
+      random: Random(311),
+      persistenceEnabled: false,
+    )..ownedDragonEmoteIds.add(emote.id);
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..conclaveSnapshot = ConclaveSnapshot(
+        conclave: const ConclaveSummary(
+          id: 'emote-conclave',
+          name: 'Emoji Aerie',
+          emblemKey: 'conclave_emblem_01',
+          description: '',
+          language: 'en',
+          visibility: ConclaveVisibility.public,
+          memberLimit: 20,
+          memberCount: 1,
+          level: 1,
+          xp: 0,
+          aerieStage: 1,
+        ),
+        myRole: ConclaveRole.flightmaster,
+        contributedToday: false,
+        members: const [],
+        messages: const [],
+        chronicle: const [],
+        joinRequests: const [],
+      );
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    addTearDown(game.dispose);
+    await online.initialize();
+
+    Widget app(Widget home) => MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: game),
+            ChangeNotifierProvider.value(value: online),
+          ],
+          child: MaterialApp(home: home),
+        );
+
+    await tester.pumpWidget(app(const FriendMessagesScreen(
+      friend: _FakeSocialRepository._friend,
+    )));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.byKey(const Key('friend-message-emote-picker')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('dragon-emote-picker-grid')), findsOneWidget);
+    expect(find.byKey(Key('pick-dragon-emote-${emote.id}')), findsOneWidget);
+    await tester.tap(find.byKey(Key('pick-dragon-emote-${emote.id}')));
+    await tester.pumpAndSettle();
+    expect(repository.sentFriendKind, 'emote');
+    expect(repository.sentFriendPayload, {'emote_id': emote.id});
+    expect(
+      find.byKey(Key('dragon-emote-sprite-${emote.id}')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull, reason: 'private emote chat');
+
+    await tester.pumpWidget(app(const ConclaveScreen()));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.takeException(), isNull, reason: 'Conclave chat');
+    await tester.tap(find.byKey(const Key('conclave-emote-picker')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'Conclave emote picker');
+    await tester.tap(find.byKey(Key('pick-dragon-emote-${emote.id}')));
+    await tester.pumpAndSettle();
+    expect(repository.sentConclaveKind, 'emote');
+    expect(repository.sentConclavePayload, {'emote_id': emote.id});
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+  });
+
   testWidgets('Group Create uses the normal no-dragon message', (tester) async {
     final game = HouseholdProvider(random: Random(26));
     final repository = _FakeSocialRepository(inventoryImported: true)
@@ -2098,6 +2179,11 @@ class _FakeSocialRepository implements SocialRepository {
   final List<TradeOffer> tradeRows = [];
   final List<TradeInventoryItem> tradeInventoryRows = [];
   final List<FriendConversationSummary> conversationRows = [];
+  final List<FriendMessage> friendMessageRows = [];
+  String? sentFriendKind;
+  Map<String, dynamic>? sentFriendPayload;
+  String? sentConclaveKind;
+  Map<String, dynamic>? sentConclavePayload;
   GroupAdventureStatus groupStatus = const GroupAdventureStatus(
     slot: 1,
     adventureId: 'group_1',
@@ -2168,6 +2254,40 @@ class _FakeSocialRepository implements SocialRepository {
       friendConversations: List.of(conversationRows),
       conclave: conclaveSnapshot,
     );
+  }
+
+  @override
+  Future<List<FriendMessage>> openFriendMessages(String friendId) async =>
+      List.of(friendMessageRows);
+
+  @override
+  Future<void> sendFriendMessage(
+    String friendId,
+    String body, {
+    String kind = 'text',
+    Map<String, dynamic> payload = const {},
+  }) async {
+    sentFriendKind = kind;
+    sentFriendPayload = Map.of(payload);
+    friendMessageRows.add(FriendMessage(
+      id: 'sent-friend-${friendMessageRows.length}',
+      senderId: 'my-user',
+      recipientId: friendId,
+      body: body,
+      kind: kind,
+      payload: Map.of(payload),
+      createdAt: DateTime.utc(2026, 9, 2, 12),
+    ));
+  }
+
+  @override
+  Future<void> sendConclaveMessage({
+    required String kind,
+    required String body,
+    Map<String, dynamic> payload = const {},
+  }) async {
+    sentConclaveKind = kind;
+    sentConclavePayload = Map.of(payload);
   }
 
   @override

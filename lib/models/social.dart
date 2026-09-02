@@ -250,6 +250,8 @@ class FriendMessage {
     required this.body,
     required this.createdAt,
     this.readAt,
+    this.kind = 'text',
+    this.payload = const {},
   });
 
   final String id;
@@ -258,6 +260,8 @@ class FriendMessage {
   final String body;
   final DateTime createdAt;
   final DateTime? readAt;
+  final String kind;
+  final Map<String, dynamic> payload;
 
   factory FriendMessage.fromJson(Map<String, dynamic> json) => FriendMessage(
         id: json['message_id']?.toString() ?? '',
@@ -267,6 +271,8 @@ class FriendMessage {
         createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
             DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
         readAt: DateTime.tryParse(json['read_at']?.toString() ?? ''),
+        kind: json['kind']?.toString() ?? 'text',
+        payload: _jsonMap(json['payload']),
       );
 }
 

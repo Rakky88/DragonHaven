@@ -1,6 +1,7 @@
 import 'chest.dart';
 import 'pet.dart';
 import 'mystic_relic.dart';
+import 'dragon_emote.dart';
 
 enum TrialKind { cavernFlight, ruinBreaker, runeweaver }
 
@@ -93,6 +94,7 @@ class TrialReward {
     required this.statPoints,
     this.chestTier,
     this.relic,
+    this.emote,
   });
 
   final TrialGrade grade;
@@ -101,6 +103,7 @@ class TrialReward {
   final int statPoints;
   final ChestTier? chestTier;
   final MysticRelic? relic;
+  final DragonEmoteDefinition? emote;
 }
 
 class TrialCompletion {

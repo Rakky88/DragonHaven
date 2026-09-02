@@ -84,6 +84,11 @@ flutter:
     - assets/images/ui/dragon_school/
     - assets/images/ui/conclave/
     - assets/images/supporter/
+    - assets/images/emotes/chest/
+    - assets/images/emotes/trial/
+    - assets/images/emotes/cozy/
+    - assets/images/emotes/infernal/
+    - assets/images/emotes/celestial/
     - assets/images/ui/evolution_frames/
     - assets/images/shop/
 

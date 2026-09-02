@@ -558,9 +558,19 @@ class OnlineAccountProvider extends ChangeNotifier {
         return messages;
       }, background: background);
 
-  Future<bool> sendFriendMessage(String friendId, String body) async =>
+  Future<bool> sendFriendMessage(
+    String friendId,
+    String body, {
+    String kind = 'text',
+    Map<String, dynamic> payload = const {},
+  }) async =>
       await _run('messages.send', () async {
-        await _repository.sendFriendMessage(friendId, body.trim());
+        await _repository.sendFriendMessage(
+          friendId,
+          body.trim(),
+          kind: kind,
+          payload: payload,
+        );
         return true;
       }) ??
       false;

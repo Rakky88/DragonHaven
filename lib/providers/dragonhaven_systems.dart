@@ -1060,6 +1060,9 @@ extension DragonHavenSystems on HouseholdProvider {
       earnedRelic = alternatives[_random.nextInt(alternatives.length)];
     }
     final newBest = dragon.recordTrialScore(offer.kind.name, score);
+    final earnedEmote = grade == TrialGrade.sPlus
+        ? _rollUniqueDragonEmote(DragonEmoteSource.trial, .10)
+        : null;
     pet.coins += rolledReward.coins;
     final grantedXp = _grantDragonXp(dragon, rolledReward.xp);
     final reward = TrialReward(
@@ -1069,6 +1072,7 @@ extension DragonHavenSystems on HouseholdProvider {
       statPoints: rolledReward.statPoints,
       chestTier: rolledReward.chestTier,
       relic: earnedRelic,
+      emote: earnedEmote,
     );
     dragon.addTraining(offer.definition.focus, reward.statPoints);
     final chestTier = reward.chestTier;

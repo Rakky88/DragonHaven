@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 import '../models/account_title.dart';
 import '../models/chest.dart';
+import '../models/dragon_emote.dart';
 import '../models/mystic_relic.dart';
 import '../models/music_track.dart';
 import '../models/profile_portrait.dart';
 import 'game_icon_sprite.dart';
+import 'dragon_emote_picker.dart';
 import 'profile_portrait_sprite.dart';
 
 Future<void> showChestReveal(
@@ -179,6 +181,8 @@ class _ChestRevealState extends State<_ChestReveal>
           title: track.title,
           subtitle: track.composer,
         ),
+      for (final emote in bundle.emotes)
+        _EmoteReward(emote: emote, strings: strings),
     ];
   }
 
@@ -552,6 +556,56 @@ class _RelicReward extends StatelessWidget {
             ),
           ),
         ]),
+      );
+}
+
+class _EmoteReward extends StatelessWidget {
+  const _EmoteReward({required this.emote, required this.strings});
+
+  final DragonEmoteDefinition emote;
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        key: Key('chest-emote-reward-${emote.id}'),
+        constraints: const BoxConstraints(maxWidth: 210),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFE9DEFF), Color(0xFFFFF2C7)],
+          ),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: const Color(0x66FFE08A)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DragonEmoteSprite(emote: emote, size: 48),
+            const SizedBox(width: 7),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    emote.label(strings.languageCode),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  Text(
+                    strings.pick('New chat emote', 'Nieuwe chatemote'),
+                    style: const TextStyle(
+                      color: Color(0xFF6D657D),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       );
 }
 

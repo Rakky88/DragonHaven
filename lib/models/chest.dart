@@ -2,6 +2,7 @@ import 'mystic_relic.dart';
 import 'profile_portrait.dart';
 import 'account_title.dart';
 import 'music_track.dart';
+import 'dragon_emote.dart';
 
 const portraitChestGemPrice = 100;
 const titleChestCoinPrice = 100;
@@ -32,6 +33,7 @@ class ChestReward {
     this.portraitFound,
     this.titleFound,
     this.musicTrackFound,
+    this.emoteFound,
   });
   final ChestTier tier;
   final int coins;
@@ -43,6 +45,7 @@ class ChestReward {
   final ProfilePortrait? portraitFound;
   final AccountTitle? titleFound;
   final MusicTrack? musicTrackFound;
+  final DragonEmoteDefinition? emoteFound;
 }
 
 class ChestRewardBundle {
@@ -85,6 +88,10 @@ class ChestRewardBundle {
   List<MusicTrack> get musicTracks => rewards
       .map((reward) => reward.musicTrackFound)
       .whereType<MusicTrack>()
+      .toList(growable: false);
+  List<DragonEmoteDefinition> get emotes => rewards
+      .map((reward) => reward.emoteFound)
+      .whereType<DragonEmoteDefinition>()
       .toList(growable: false);
 }
 
