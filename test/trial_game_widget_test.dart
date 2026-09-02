@@ -152,6 +152,11 @@ void main() {
 
     expect(find.byKey(const Key('trial-result-grade')), findsOneWidget);
     expect(find.byKey(const Key('trial-result-score')), findsOneWidget);
+    expect(
+      find.byKey(const Key('trial-result-expertise-multiplier')),
+      findsOneWidget,
+    );
+    expect(find.textContaining('×1.300'), findsOneWidget);
     expect(find.byType(RotationTransition), findsWidgets);
     final grade = tester.widget<Image>(
       find.byKey(const Key('trial-result-grade')),

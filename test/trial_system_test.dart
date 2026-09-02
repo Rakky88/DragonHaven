@@ -77,6 +77,7 @@ void main() {
         firstEgg: false,
         coins: 10,
         xp: 0,
+        training: const {'spirit': 5},
       );
     game.availableTrials;
     game
@@ -94,15 +95,19 @@ void main() {
     final result = await game.completeTrial(
       offerId: offer.id,
       dragonId: game.pet.id,
-      score: 250,
+      score: 249,
     );
 
+    expect(result?.baseScore, 249);
+    expect(result?.score, 250);
+    expect(result?.expertise, 5);
+    expect(result?.expertiseMultiplier, closeTo(1.005, .000001));
     expect(result?.reward.grade, TrialGrade.c);
     expect(result?.reward.chestTier, ChestTier.wooden);
     expect(result?.newDragonBest, isTrue);
     expect(game.pet.coins, 10);
     expect(game.pet.xp, 20);
-    expect(game.pet.trainingFor(TrainingFocus.spirit), 2);
+    expect(game.pet.trainingFor(TrainingFocus.spirit), 7);
     expect(game.pet.trialBest(TrialKind.cavernFlight.name), 250);
     expect(game.accountTrialBest(TrialKind.cavernFlight), 250);
     expect(game.chestCount(ChestTier.wooden), 1);
@@ -201,6 +206,17 @@ void main() {
       ).relic,
       isNull,
     );
+  });
+
+  test('Trial expertise uses an exact three-decimal score multiplier', () {
+    expect(trialExpertiseMultiplier(0), 1);
+    expect(trialExpertiseMultiplier(5), closeTo(1.005, .000001));
+    expect(trialExpertiseMultiplier(300), closeTo(1.300, .000001));
+    expect(trialExpertiseMultiplier(400), closeTo(1.400, .000001));
+    expect(trialScoreWithExpertise(1000, 5), 1005);
+    expect(trialScoreWithExpertise(100, 5), 101);
+    expect(trialScoreWithExpertise(249, 5), 250);
+    expect(trialScoreWithExpertise(1000, -5), 1000);
   });
 
   test('Trial rewards match every grade table without coins', () {

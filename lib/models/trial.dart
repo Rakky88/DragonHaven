@@ -109,15 +109,30 @@ class TrialReward {
 class TrialCompletion {
   const TrialCompletion({
     required this.kind,
+    required this.baseScore,
     required this.score,
+    required this.expertise,
     required this.newDragonBest,
     required this.reward,
   });
 
   final TrialKind kind;
+  final int baseScore;
   final int score;
+  final int expertise;
   final bool newDragonBest;
   final TrialReward reward;
+
+  double get expertiseMultiplier => trialExpertiseMultiplier(expertise);
+}
+
+double trialExpertiseMultiplier(int expertise) =>
+    (1000 + (expertise < 0 ? 0 : expertise)) / 1000;
+
+int trialScoreWithExpertise(int score, int expertise) {
+  if (score <= 0) return score < 0 ? 0 : score;
+  final safeExpertise = expertise < 0 ? 0 : expertise;
+  return (score * (1000 + safeExpertise) + 500) ~/ 1000;
 }
 
 TrialGrade trialGradeForScore(TrialKind kind, int score) {

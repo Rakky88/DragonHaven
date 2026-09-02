@@ -397,6 +397,19 @@ class _TrialResultCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${completion.baseScore} ×'
+                    '${completion.expertiseMultiplier.toStringAsFixed(3)} · '
+                    '${_focusLabel(strings, trialDefinitions[completion.kind]!.focus)}',
+                    key: const Key('trial-result-expertise-multiplier'),
+                    style: const TextStyle(
+                      color: Color(0xFFFFE08A),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
                   if (completion.newDragonBest) ...[
                     const SizedBox(height: 6),
                     Text(
