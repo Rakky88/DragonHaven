@@ -115,7 +115,7 @@ class KeeperPortrait extends StatelessWidget {
                   ),
                 if (badge != null)
                   Positioned(
-                    right: badgeInset,
+                    left: badgeInset,
                     bottom: badgeInset,
                     child: SizedBox.square(
                       key: Key('keeper-portrait-badge-anchor-${badge.id}'),

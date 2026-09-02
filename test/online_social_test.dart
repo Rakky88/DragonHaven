@@ -219,7 +219,7 @@ void main() {
       ),
     ));
     expect(
-      framedBounds.right - badgeBounds.right,
+      badgeBounds.left - framedBounds.left,
       closeTo(31 * .18, .01),
     );
     expect(
@@ -227,6 +227,16 @@ void main() {
       closeTo(31 * .18, .01),
     );
     expect(badgeBounds.overlaps(framedPortraitBounds), isTrue);
+    expect(
+      badgeBounds.left,
+      lessThan(framedPortraitBounds.left),
+      reason: 'part of the badge must cover the selected frame',
+    );
+    expect(
+      badgeBounds.right,
+      greaterThan(framedPortraitBounds.left),
+      reason: 'part of the badge must cover the portrait',
+    );
   });
 
   testWidgets('portrait and vanity frame stay round under tight layout',
