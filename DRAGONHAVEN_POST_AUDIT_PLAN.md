@@ -3,7 +3,7 @@
 Laatst bijgewerkt: **2 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.05.03**
+Actuele openbare versie: **v0.05.04**
 
 Actuele productieserver: **36/36 migraties**
 
@@ -12,15 +12,14 @@ Actuele serverkandidaat: **geen. Migratie 34 (Dragon chat-emotes), migratie 35
 productie toegepast. Beide omgevingen staan op 36/36; nieuwe serverwijzigingen
 vereisen opnieuw een migratie en de begrensde staging-/productiegates.**
 
-Actuele uitgebrachte tranche: **v0.05.03 is openbaar uitgebracht met versionCode
-10053. De release bevat Dragon chat-emotes, World-/Friends-/Conclave-ranglijsten
-per Trial, duidelijkere Ascension-vereisten, de uitgebreidere tutorial en
-Draconomicon, stabiele kamerspritediepte, verfijnde Vanity-/Conclave-layouts,
-Conclave-uitnodigingen en verzendtijden, de Adventure-completionbadge en de
-gerepareerde Supernova Sovereign. Analyzer en alle 402 tests zijn groen; de
-ondertekende APK is op de Android-emulator gestart en visueel gecontroleerd.**
+Actuele uitgebrachte tranche: **v0.05.04 is openbaar uitgebracht met versionCode
+10054. De release houdt prijzen van alle drie Dragon Emote Packs volledig
+zichtbaar op compacte schermen en plaatst de live beschikbaarheidsafteller van
+een Special Adventure in de eigen witte kaart, direct links van Start. Analyzer
+en alle 402 tests zijn groen; de ondertekende APK is op de Android-emulator met
+reduced motion gestart en beide gewijzigde schermen zijn visueel gecontroleerd.**
 
-Actuele lokale tranche na v0.05.03: **er staat geen onuitgebrachte game- of
+Actuele lokale tranche na v0.05.04: **er staat geen onuitgebrachte game- of
 serverkandidaat klaar. Het bijgewerkte releasebewijs staat in dit document; de
 auditchecklisttellingen en resterende eigenaars blijven ongewijzigd.**
 
@@ -34,14 +33,16 @@ analyzer, tests en APK. De exact begrensde
 [productiemigratie 33631028441](https://github.com/Rakky88/DragonHaven/actions/runs/33631028441)
 accepteerde uitsluitend beginstand 33 en migraties 34–36 en bewees na apply
 opnieuw 36/36, Auth en applicatiehealth. De
-[release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.03) wijst naar
-commit `8192514a7ca590e6cc50681867c8f98df82ee1fa`; de APK is 383.298.234 bytes met
-SHA-256 `1afcf367b2ece76e64d6b1dfa0b031d80d3d617611a2f3eb918467043d8a588c`.
-Remote assetmetadata en beide HTTP-200-downloadroutes zijn exact gelijk. De
-[taggate 33631376907](https://github.com/Rakky88/DragonHaven/actions/runs/33631376907)
-herhaalde productiepreflight, analyzer, 402 tests, signing en de Play-ready AAB.
-De [post-release healthrun 33632227689](https://github.com/Rakky88/DragonHaven/actions/runs/33632227689)
-is groen, heeft dertig dagen bewijs opgeslagen en opende geen storingsalert.**
+[release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.04) wijst naar
+commit `6ccdd865bc510bc0b18b77b1954ecafaf4f33434`; de APK is 383.298.234 bytes met
+SHA-256 `9e9a9b8d0befb1280070dfa53a34045e7f485c37541b81dc1f6f711e9ea436ad`.
+De release bevat exact één `DragonHaven.apk`; remote grootte/digest en zowel de
+versiegebonden als permanente latest-download geven HTTP 200. De
+[taggate 33636356574](https://github.com/Rakky88/DragonHaven/actions/runs/33636356574)
+herhaalde productiepreflight, analyzer, 402 tests, vaste signing en de Play-ready
+AAB. De [post-release healthrun 33637454654](https://github.com/Rakky88/DragonHaven/actions/runs/33637454654)
+is groen, heeft dertig dagen bewijs opgeslagen en opende geen storingsalert.
+Productie en staging blijven zonder nieuwe migratie op 36/36.**
 
 Open meldingsgrens: **privéberichten worden nu merkbaar sneller en retrybaar
 opgehaald zolang het appproces leeft en direct bij resume. Gegarandeerde bezorging
@@ -78,7 +79,7 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | Onderdeel | Voortgang | Aantoonbaar klaar | Nog door Codex | Nog door jou |
 | --- | ---: | --- | --- | --- |
 | Google Play-voorbereiding | circa 38% | Permanent package-ID, vaste signingidentiteit, versiecontrole en een ondertekende AAB zijn bewezen. De reproduceerbare appgrootteaudit meet een actuele AAB van 345,00 MiB en 284,99 MiB universele media en legt een gratis optimalisatiepad vast | Beeldpilot en batchoptimalisatie uitvoeren; actuele target-/Play-eisen, storeteksten, graphics, Data Safety-inventaris en rolloutchecklist afronden | Play Console openen/verifiëren; app en Play App Signing aanmaken; pilot visueel goedkeuren; testers, publieke support/privacy-URL's en storeverklaringen beheren |
-| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.03 zijn groen; productie staat gecontroleerd op 36/36 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren en mogelijk blootgestelde ontwikkelcredentials roteren |
+| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.04 zijn groen; productie staat gecontroleerd op 36/36 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren en mogelijk blootgestelde ontwikkelcredentials roteren |
 | Fase 1 — monitoring en incidenten | circa 94% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan. Auth én de read-only applicatiecheck draaien ieder uur; contract-/klokvalidatie, migratie 32, onafhankelijke productiepreflight en post-release health zijn groen. De handmatige, secretvrije monitoringdrill leverde testissue #1 af, verifieerde het contract, bewaarde bewijs en sloot de melding. Privéberichtmeldingen pollen retrybaar zolang het appproces leeft | Firebase Crashlytics/Performance en FCM koppelen zodra de Android-projectconfig bestaat; daarna één gecontroleerde stagingfout, een latency-/foutbaseline en terminated-app privéberichtbezorging E2E bewijzen | Gratis Firebase Spark-project maken, `nl.dragonhaven.app` registreren, Analytics uit laten en `google-services.json` veilig in de werkmap zetten; privacy/Data Safety en het gebruik van FCM beoordelen |
 | Fase 2 — staging en E2E | circa 91% | Afzonderlijke staging en productie staan op migratie 36; account/login, back-up/conflict, Friends, Friend Messages/emotes, Conclaves, trade, Trial-ranglijsten en volledige Group Adventure completion/reward/replay zijn echt getest. Het productie-geblokkeerde 100→1.000-loadprofiel met unieke accounts, think time, p50/p95/p99 en privacyarm bewijs staat op `main` | Eerst plan-100 en pas met een bevestigde synthetische accountpool en afzonderlijke runtoestemming run-100 uitvoeren. E-mailbevestigingsautomatisering blijft afhankelijk van een veilige mailboxroute | Veilige stagingmailroute instellen; 100 unieke bevestigde synthetische accounts plus `STAGING_LOAD_CREDENTIALS_JSON` aanmaken en bevestigen dat zij geen echte persoonsgegevens bevatten. Meer dan 1.000 blijft apart goedkeuringsplichtig |
 | Fase 3 — back-up en multi-device | circa 98% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, automatische 15-minutenback-up plus achtergrondflush zijn gebouwd. De eerste automatisch geplande zondagrestore is groen en rondde de actieve account/back-up/restorerondgang in circa 7,3 seconden af | Later server-owned economievelden van restores afschermen en na fase 4 het terugrol-/duplicatiecontract opnieuw bewijzen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
@@ -119,7 +120,7 @@ zichtbaar zonder de lange checklist te lezen. Alles waarvoor geen externe
 accountactie of productbesluit nodig is, blijft bij Codex staan en wordt gratis
 of lokaal gebouwd waar dat verantwoord kan.
 
-## Uitgerolde releases v0.05.00–v0.05.03
+## Uitgerolde releases v0.05.00–v0.05.04
 
 Deze tabel legt vast wat met de expliciet toegestane server- en releaseronde
 aantoonbaar is uitgerold en welke niet-blokkerende vervolgpunten nog bestaan.
@@ -1226,6 +1227,8 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 02-09-2026 | Migraties 34–36 op staging bewezen | Codex | gestopte [lintgate 33629616836](https://github.com/Rakky88/DragonHaven/actions/runs/33629616836), migratie `202609020036_qualify_friend_message_notification.sql` en groene [stagingrun 33630222018](https://github.com/Rakky88/DragonHaven/actions/runs/33630222018) | De eerste run paste 34–35 toe en stopte veilig op de ambigue `kind`-verwijzing in `open_friend_messages`. Bestaande migraties zijn niet herschreven: migratie 36 kwalificeert de kolommen voorwaarts. De herstart bewees 36/36 parity, nul lintfouten, serverpreflight, Friend Messages/emotes, Conclaves, Friends/trade, Trial-ranglijsten, volledige Group Adventure completion/reward/replay, analyzer, tests, geïsoleerde staging-APK en bewijsupload. Productie bleef tot de aparte migratiegate op 33/33. |
 | 02-09-2026 | Productiemigraties 34–36 en onafhankelijke preflight | Codex, na jouw toestemming | [migratierun 33631028441](https://github.com/Rakky88/DragonHaven/actions/runs/33631028441), `production-migrate-36.yml` en `release_server_preflight.ps1` | De workflow accepteerde uitsluitend exacte beginstand 33 en lokale pending-set 34–36. Publieke health, database-lint en dry-run waren groen vóór apply; daarna bewees zij 36/36 parity, nul lintfouten, Auth en applicatiehealth en uploadde zij dertig dagen privacyarm bewijs. |
 | 02-09-2026 | Openbare release en post-release health v0.05.03 | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.03), [taggate 33631376907](https://github.com/Rakky88/DragonHaven/actions/runs/33631376907) en [healthrun 33632227689](https://github.com/Rakky88/DragonHaven/actions/runs/33632227689) | Exact commit `8192514a7ca590e6cc50681867c8f98df82ee1fa` is getagd. Remote `DragonHaven.apk`, grootte en SHA-256 zijn exact gelijk aan lokaal; versiegebonden en permanente latest-download geven HTTP 200. De taggate herhaalde productiepreflight, analyzer, 402 tests, vaste signing en Play-ready AAB. De losse healthrun bevestigde Auth en applicatiehealth, bewaarde bewijs en opende geen storingsalert. |
+| 02-09-2026 | v0.05.04 lokale releasecandidate en visuele controle | Codex, na jouw toestemming | commit `6ccdd865bc510bc0b18b77b1954ecafaf4f33434`, `release-notes-v0.05.04.md`, compacte widgettests en ondertekende APK | App- en zichtbare versie staan op v0.05.04 met versionCode 10054. Analyzer en 402/402 tests zijn groen. APK heeft package `nl.dragonhaven.app`, 383.298.234 bytes, SHA-256 `9e9a9b8d0befb1280070dfa53a34045e7f485c37541b81dc1f6f711e9ea436ad` en het vaste releasecertificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. De echte release-APK toont op de emulator met reduced motion drie volledige emoteprijzen en de Special Adventure-afteller in de kaart links van Start. De onafhankelijke lokale productiepreflight bewees 36/36, nul lintfouten en groene Auth-/applicatiehealth; er was geen nieuwe migratie. |
+| 02-09-2026 | Openbare release en post-release health v0.05.04 | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.04), [taggate 33636356574](https://github.com/Rakky88/DragonHaven/actions/runs/33636356574) en [healthrun 33637454654](https://github.com/Rakky88/DragonHaven/actions/runs/33637454654) | Exact commit `6ccdd865bc510bc0b18b77b1954ecafaf4f33434` is getagd. Na bewezen bytegelijke cleanup bevat de release exact één stabiele `DragonHaven.apk`; remote grootte en SHA-256 zijn gelijk aan lokaal en beide openbare downloadroutes geven HTTP 200. De taggate herhaalde productiepreflight, analyzer, 402 tests, vaste signing en Play-ready AAB. De losse healthrun bevestigde Auth en applicatiehealth, bewaarde dertig dagen bewijs, opende geen storingsalert en laat productie/staging ongewijzigd op 36/36. |
 
 ## Onderhoud van dit plan
 
