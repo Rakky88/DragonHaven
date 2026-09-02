@@ -20,7 +20,7 @@ Golden Hour en de natuurlijke Conclave-scroll plus retrybare 15-secondenpoll voo
 privéberichten. Analyzer en alle 375 tests zijn groen; de ondertekende APK is op
 exact 360×640 dp en met reduced motion gecontroleerd.**
 
-Actuele lokale tranche na v0.05.02: **de tranche telt elf commits. Tien daarvan
+Actuele lokale tranche na v0.05.02: **de tranche telt twaalf commits. Tien daarvan
 verbeteren Ascension-uitleg, tutorial, Draconomicon, kamerspritediepte,
 Vanity-weergave, Conclave-keepers/chat, random-rewarddocumentatie en
 Adventure-badges. Commit `0e7ccc7` voegt
@@ -1213,6 +1213,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 
 | 02-09-2026 | Lokale post-v0.05.02 featuretranche opgebouwd | Codex | commits `3f5b015` t/m `65c65bc`, gerichte widget-/modeltests en `RANDOM_REWARDS_AND_ODDS.md` | Ascension-vereisten zijn duidelijker, tutorial/Draconomicon/kamerdiepte en Vanity zijn gecorrigeerd, Conclave-keepers en -chat zijn verfijnd, alle random rolls zijn gedocumenteerd en voltooide Adventures hebben een navigatiebadge. Dragon-emotes gebruiken lokale migratie 34. Niets is naar staging of productie gebracht; openbare versie blijft v0.05.02 en productie 33/33. |
 | 02-09-2026 | Gescope Trial-ranglijsten lokaal gereed | Codex | commit `0e7ccc7`, migratie `202609020035_trial_rankings.sql`, `production-migrate-35.yml`, `trial_rankings_sheet.dart`, uitgebreide `staging_social_e2e.ps1` en drie groene gerichte tests | Trials bieden World en Friends per Grotvlucht, Ruïnebreker en Runenwever; Conclave Keepers biedt dezelfde vergelijking voor alle leden. De top 100 plus de eigen wereldpositie gebruikt alleen gepubliceerde scores en retourneert geen user-id, Keeper-ID of e-mail. Dart-analyse en PowerShell-parser zijn groen en de UI past op 360×640 dp. Nog door Codex na toestemming: migraties 34–35 op staging bewijzen, volledige gate draaien en pas bij afzonderlijke releasepermissie productie/release uitvoeren. Nog door Rick: alleen die externe toestemming wanneer gewenst. |
+| 02-09-2026 | Keeper-badge linksonder over frame en portret geplaatst | Codex | commit `c0cf64f`, `online_account_access.dart` en gerichte compositietest in `online_social_test.dart` | De gedeelde KeeperPortrait tekent de badge voortaan linksonder bovenop de compositie. Met een geselecteerd frame kruist de badge aantoonbaar de portretgrens, zodat hij deels over het frame en deels over het portret ligt. Analyzer en de gerichte widgettest zijn groen; geen server-, migratie-, versie- of releasewijziging. |
 
 ## Onderhoud van dit plan
 
