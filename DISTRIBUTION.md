@@ -3,7 +3,12 @@
 Voor de complete Google Play/App Store-checklist, verantwoordelijkheden,
 productiebeveiliging en kostenramingen: [PUBLIC_LAUNCH.md](PUBLIC_LAUNCH.md).
 
-De update- en kopieerknoppen in **About DragonHaven** gebruiken de nieuwste openbare GitHub Release. Android vraagt altijd zelf om bevestiging voordat een APK wordt geïnstalleerd.
+De updatekaart in **About DragonHaven** deelt uitsluitend de permanente
+Android-downloadlink. **Update** opent de nieuwste openbare GitHub Release en
+Android vraagt altijd zelf om bevestiging voordat de APK wordt geïnstalleerd.
+De iPhone-knop is bewust niet zichtbaar zolang DragonHaven alleen voor Android
+wordt uitgebracht. De voorbereide, maar niet geactiveerde iOS-basis staat in
+[IOS_RELEASE.md](IOS_RELEASE.md).
 
 ## Updatecompatibiliteit
 
@@ -230,6 +235,16 @@ Permanente directe Android-download:
 ```text
 https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk
 ```
+
+Een toekomstige TestFlight-link kan tijdens een iOS-build worden ingesteld met:
+
+```text
+--dart-define=DRAGONHAVEN_IOS_DOWNLOAD_URL=https://testflight.apple.com/join/...
+```
+
+De huidige Android-only app toont geen iPhoneactie. Een GitHub-hosted IPA is
+geen betrouwbare installatie- of updateroute voor normale iPhones; activering
+wacht daarom op een later besluit over TestFlight.
 
 Een release-tag gebruikt dezelfde weergaveversie als About, bijvoorbeeld `v0.00.09`, en bevat een asset met exact de naam `DragonHaven.apk`.
 

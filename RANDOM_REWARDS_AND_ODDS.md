@@ -4,9 +4,16 @@ Last verified: 2 September 2026
 
 Ruleset: app version `v0.05.04`
 
-Source baseline: commit `6d28e76`
+Source baseline: commit `e3befdf`
+
+<!-- reference-source-fingerprint: 852aec7df9244e98 -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
+
+The ownership, schedule, lifecycle, and relationship between events, chests,
+and eggs are documented separately in
+[SPECIAL_EVENTS_CHESTS_AND_EGGS.md](SPECIAL_EVENTS_CHESTS_AND_EGGS.md). The
+tables below remain the authoritative reference for their random odds.
 
 ## Reading the tables
 
@@ -31,7 +38,7 @@ Every integer inside a coin or gem range is equally likely.
 | Dragon | 180–300 | 10% none; 22.5% each for 4, 5, 6, or 7 | 100% | 2% | 4% | — |
 | Mythical | 400–650 | 8–13, uniform | 100% | 4% | 8% | — |
 | Sinister | 400–650 | 8–13, uniform | 100%; then 50% Sinister Egg and 50% ordinary Mysterious Egg | 100% | 12% | — |
-| Special | Exactly 269 | Exactly 10 | 100% Special Egg | None from the chest itself | 10% | — |
+| Special (current Golden Wings recipe) | Exactly 269 | Exactly 10 | 100% Golden Wings Special Egg | None from the chest itself | 10% | — |
 | Portrait | None | None | None | None | None | One uniformly selected unowned standard portrait |
 | Title | None | None | None | None | None | One uniformly selected unowned standard title |
 | Music | None | None | None | None | None | One uniformly selected unowned music track |
@@ -40,7 +47,7 @@ Notes:
 
 - A Dragon, Mythical, or Sinister Chest always creates an egg. For a Sinister Chest, the 50/50 egg-type roll happens after that guaranteed egg result.
 - An ordinary egg from a Sinister Chest uses the same lineage-rarity curve as an egg from a Mythical Chest.
-- A Special Chest always contains its Special Egg, 269 coins, and 10 gems. The chest-emote roll is the only random content inside that chest.
+- The currently implemented Golden Wings Special Chest contains its configured Special Egg, 269 coins, and 10 gems. The chest-emote roll is its only random content. Future Special Chests are event-specific and may use different recipes; they must receive stable definitions rather than silently changing this one.
 - Portrait, Title, and Music Chests cannot be opened after their relevant collection is complete.
 - Their supporter-exclusive counterparts are not in these chest pools.
 
@@ -172,7 +179,7 @@ The complete pool is:
 | Starter Egg | One of the 20 Common standard families, uniform | Exactly 1 hour before tap acceleration | 5% base; 10% total if hatched during Golden Hour | Law, moral alignment, size, personality seed |
 | Mysterious Egg | One standard non-secret family, using the source-chest rarity curve | Uniformly 4h48m–33h36m in six-minute steps | 5% base; 10% total if hatched during Golden Hour | Law, moral alignment, size, personality seed |
 | Sinister Egg | Always Sinisterra | Exactly 6h06m06s | 5% base; 10% total if hatched during Golden Hour | Law and size are random; moral alignment is always Evil and immediately known |
-| Special Egg | Always Cluckatrice | Exactly 21 hours | Always 0% | Law, moral alignment, size, personality seed |
+| Golden Wings Special Egg | Always Cluckatrice | Exactly 21 hours | Always 0% | Law, moral alignment, size, personality seed |
 
 The family, rarity, alignments, size, initial Spectral roll, hatch duration, and personality seed are fixed when the egg is created. Opening the nest or restarting the app does not reroll them. An Astral Lens reveals the already-fixed rarity; it does not change it.
 
@@ -211,7 +218,7 @@ The next table combines the chest's egg chance with its egg-rarity curve. These 
 | Dragon | 0% | 25% | 30% | 25% | 15% | 4.5% | 0.5% | 0% |
 | Mythical | 0% | 10% | 20% | 25% | 25% | 17% | 3% | 0% |
 | Sinister | 0% | 5% | 10% | 12.5% | 12.5% | 8.5% | 1.5% | 50% Sinisterra |
-| Special | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 100% Cluckatrice |
+| Golden Wings Special | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 100% Cluckatrice |
 
 When egg pity is active, only the first three rows change:
 
@@ -232,7 +239,7 @@ When egg pity is active, only the first three rows change:
 | Legendary | 2 | Starforged, Leviathanecho |
 | Mythical | 1 | Everwyrm |
 
-Sinisterra and Cluckatrice are secret Mythical families and are not part of any ordinary Mysterious Egg or Starter Egg pool.
+Sinisterra and Cluckatrice are the currently implemented secret Mythical families and are not part of any ordinary Mysterious Egg or Starter Egg pool. Cluckatrice belongs specifically to the Golden Wings Special Egg; a future Special Egg may deliberately contain another configured family or pool.
 
 ### 2.4 Per-family chance inside one Mysterious Egg
 
@@ -267,7 +274,7 @@ Normal, Starter, and Sinister Eggs receive a `1/20 = 5%` Spectral roll when crea
 
 `1/20 + (19/20 × 1/19) = 1/10 = 10%`
 
-Golden Hour is 17:00 inclusive through 19:00 exclusive in local device time. Special Eggs are explicitly excluded and can never become Spectral through this system.
+Golden Hour is 17:00 inclusive through 19:00 exclusive in local device time. The current Golden Wings Special Egg is explicitly excluded and can never become Spectral through this system. Any future event egg needs its own documented Spectral rule.
 
 ### 2.7 Alignment, size, and personality
 
@@ -311,7 +318,7 @@ Incompatible pairs are Sleepy/Restless, Shy/Show-Off, Neat Freak/Messy, and Nigh
 | Long | 75% Gold; 23% Dragon; 2% Mythical |
 | Group | 70% Gold; 25% Dragon; 5% Mythical |
 | Generic Special | A fixed, visible chest defined by that route; no chest-tier roll |
-| A Wish on Golden Wings | 100% Special Chest |
+| A Wish on Golden Wings | 100% Golden Wings Special Chest |
 
 For a normal solo Adventure, the chest tier is rolled once when the Adventure starts, stored in the save, and kept hidden until completion. Reloading cannot reroll it.
 
@@ -321,7 +328,7 @@ Opening the awarded chest later performs all of that chest's normal content roll
 
 ### 3.2 A Wish on Golden Wings event reward
 
-Completing the birthday Special Adventure guarantees:
+Completing the birthday Special Adventure guarantees the event-specific reward bundle below. This is not a universal reward table for future Special Events:
 
 - one Special Chest;
 - 500 base XP;
@@ -547,10 +554,11 @@ The active implementation was cross-checked against:
 - `lib/models/day_phase.dart` — base and Golden Hour Spectral odds.
 - `lib/models/trial.dart` — grade thresholds and Trial reward tables.
 - `lib/models/adventure.dart` — Adventure chest curves and Special Adventure reward definitions.
+- `SPECIAL_EVENTS_CHESTS_AND_EGGS.md` — event/chest/egg ownership and lifecycle catalog; exact random odds remain authoritative in this document.
 - `lib/models/profile_portrait.dart`, `lib/models/account_title.dart`, and `lib/models/music_track.dart` — collection pools.
 - `lib/models/dragon_emote.dart` — collectible emote pools.
 - `lib/screens/trial_game_screen.dart` and `lib/screens/dragon_school_screen.dart` — random challenge layouts.
 - `android/app/src/main/kotlin/nl/dragonhaven/app/MainActivity.kt` — native jukebox shuffle.
 - `supabase/migrations/202608240007_group_adventure_duration_rules.sql` — authoritative Group Adventure chest roll.
 
-When any of these source tables change, this document must be updated in the same change or release.
+When any of these source tables change, this document must be reviewed and updated in the same change. Run `dart run tool/reference_documentation_guard.dart --update` only after that review; the corresponding test rejects stale source fingerprints.

@@ -10,14 +10,14 @@ void main() {
       virtualUsers: 100,
       durationSeconds: 180,
       rampUpSeconds: 60,
-      appVersion: 'v0.05.04',
+      appVersion: 'v0.05.05',
       migrationVersion: '202608310032',
     );
 
     expect(plan['environment'], 'staging');
     expect(plan['productionTarget'], isFalse);
     expect(plan['virtualUsers'], 100);
-    expect(plan['appVersion'], 'v0.05.04');
+    expect(plan['appVersion'], 'v0.05.05');
     expect(plan['applicationContractVersion'], 1);
     expect(plan['repositoryMigrationVersion'], '202608310032');
     expect(plan['serverMigrationVersionVerified'], isFalse);
@@ -160,7 +160,7 @@ void main() {
   });
 
   test('repository versions are derived without runtime credentials', () {
-    expect(discoverAppVersion(), 'v0.05.04');
+    expect(discoverAppVersion(), 'v0.05.05');
     expect(discoverMigrationVersion(), '202609020036');
   });
 }

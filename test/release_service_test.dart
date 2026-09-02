@@ -6,8 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('About and update checks share the same release version', () {
-    expect(AppInfo.version, '0.05.04');
-    expect(AppInfo.displayVersion, 'v0.05.04');
+    expect(AppInfo.version, '0.05.05');
+    expect(AppInfo.displayVersion, 'v0.05.05');
     expect(ReleaseConfig.installedVersion, AppInfo.version);
   });
 
@@ -75,17 +75,38 @@ void main() {
     expect(release('v0.05.02').isNewerThanInstalled, isFalse);
     expect(release('v0.05.03').isNewerThanInstalled, isFalse);
     expect(release('v0.05.04').isNewerThanInstalled, isFalse);
-    expect(release('v0.05.05').isNewerThanInstalled, isTrue);
+    expect(release('v0.05.05').isNewerThanInstalled, isFalse);
+    expect(release('v0.05.06').isNewerThanInstalled, isTrue);
     expect(release('v0.00.00').isNewerThanInstalled, isFalse);
   });
 
   test('the copy button uses one permanent latest APK link', () {
     expect(ReleaseConfig.owner, 'Rakky88');
-    expect(ReleaseConfig.installedVersion, '0.05.04');
+    expect(ReleaseConfig.installedVersion, '0.05.05');
     expect(
       ReleaseConfig.downloadUrl,
       'https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk',
     );
+  });
+
+  test('iOS scaffold keeps the permanent app identity and platform bridge', () {
+    final project =
+        File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();
+    final appDelegate = File('ios/Runner/AppDelegate.swift').readAsStringSync();
+    final buildScript = File('tool/build_ios_release.sh').readAsStringSync();
+
+    expect(
+        project, contains('PRODUCT_BUNDLE_IDENTIFIER = nl.dragonhaven.app;'));
+    expect(
+      project,
+      contains(
+        'PRODUCT_BUNDLE_IDENTIFIER = nl.dragonhaven.app.RunnerTests;',
+      ),
+    );
+    expect(appDelegate, contains('nl.dragonhaven.app/platform'));
+    expect(appDelegate, contains('UIApplication.shared.open'));
+    expect(buildScript, contains('flutter build ipa'));
+    expect(buildScript, contains('DRAGONHAVEN_IOS_DOWNLOAD_URL'));
   });
 
   test('the support button uses the shared focused Ko-fi link', () {

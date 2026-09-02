@@ -1121,6 +1121,14 @@ const uiPhraseTranslations = <String, List<String>>{
     'Link de download do Android copiado.',
     'Androidのダウンロードリンクをコピーしました。'
   ],
+  'Update': [
+    'Aktualisieren',
+    'Actualizar',
+    'Mettre à jour',
+    'Aggiorna',
+    'Atualizar',
+    '更新'
+  ],
   'Arcana is currently leading.': [
     'Arcana liegt derzeit vorn.',
     'Arcana está en cabeza.',

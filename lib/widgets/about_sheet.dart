@@ -53,7 +53,7 @@ class _AboutSheetState extends State<_AboutSheet> {
     }
   }
 
-  Future<void> _downloadOrUpdate() async {
+  Future<void> _update() async {
     setState(() => _releaseBusy = true);
     try {
       await PlatformActions.openUrl(ReleaseConfig.downloadUrl);
@@ -239,7 +239,7 @@ class _AboutSheetState extends State<_AboutSheet> {
                   const SizedBox(height: 8),
                   FilledButton.icon(
                     key: const Key('about-download-update'),
-                    onPressed: _releaseBusy ? null : _downloadOrUpdate,
+                    onPressed: _releaseBusy ? null : _update,
                     icon: _releaseBusy
                         ? const SizedBox(
                             width: 18,
@@ -248,8 +248,7 @@ class _AboutSheetState extends State<_AboutSheet> {
                                 strokeWidth: 2.2, color: Colors.white),
                           )
                         : const Icon(Icons.system_update_alt_rounded, size: 19),
-                    label: Text(strings.pick(
-                        'Download or update', 'Downloaden of updaten')),
+                    label: Text(strings.pick('Update', 'Updaten')),
                   ),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 180),

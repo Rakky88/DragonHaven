@@ -375,6 +375,14 @@ const socialPhraseTranslations = <String, List<String>>{
     'Mensagem para o Conclave…',
     'コンクレイヴにメッセージ…'
   ],
+  'Message…': [
+    'Nachricht…',
+    'Mensaje…',
+    'Message…',
+    'Messaggio…',
+    'Mensagem…',
+    'メッセージ…'
+  ],
   'Messages': [
     'Nachrichten',
     'Mensajes',

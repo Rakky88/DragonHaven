@@ -78,8 +78,10 @@ een grote openbare lancering te zijn opgelost.
   gekoppeld.
 - Er is nog geen reproduceerbare loadtest uitgevoerd tegen een aparte
   stagingomgeving.
-- Er is geen iOS-project in deze Windows-workspace. Een iOS-release vraagt een
-  Mac, Apple-account, signing/provisioning en afzonderlijke storecontrole.
+- De iOS-projectbasis en vaste bundle ID bestaan als toekomstvoorbereiding. De
+  Android-app toont bewust geen iPhone-deel- of updateknop. Een ondertekende
+  iOS-build is vanuit deze Windows-workspace niet mogelijk en vraagt later een
+  Mac, Apple-account, signing/provisioning en afzonderlijke TestFlightcontrole.
 
 ## Verplichte checklist voor Google Play
 
@@ -337,15 +339,18 @@ en laat belasting-/consumentenregels beoordelen voordat betalingen live gaan.
 - [ ] kostenalerts en maandbudget instellen
 - [ ] support, privacyverzoeken en incidentrespons opschalen
 
-## iOS later
+## iOS-traject
 
-Een iOS-release is een apart traject. Nodig zijn minimaal:
+De Flutter/Xcode-projectbasis bestaat onder `ios/`, gebruikt bundle ID
+`nl.dragonhaven.app` en heeft een Mac-buildscript. Deze voorbereiding is niet
+geactiveerd in de Android-only deel- en updatekaart. Voor een echte iOS-release
+zijn later minimaal nodig:
 
 - Apple Developer Program-lidmaatschap;
 - toegang tot macOS/Xcode en een iPhone voor echte toesteltests;
 - iOS bundle ID, signing certificates en provisioning;
 - Apple pushconfiguratie;
-- App Store Connect listing, privacylabels en review;
+- App Store Connect/TestFlight-inrichting en bètareview;
 - StoreKit plus server-side verificatie als digitale aankopen worden verkocht.
 
 De Flutter-code is grotendeels herbruikbaar, maar plugins, notificaties,

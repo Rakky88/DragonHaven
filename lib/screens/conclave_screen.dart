@@ -831,12 +831,27 @@ class _ConclaveChatState extends State<_ConclaveChat> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   String? _latestMessageId;
+  bool _hasDraft = false;
   bool _nearBottom = true;
   bool _scrollScheduled = false;
   bool _automaticScroll = false;
 
   @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_handleDraftChanged);
+  }
+
+  void _handleDraftChanged() {
+    final hasDraft = _controller.text.trim().isNotEmpty;
+    if (hasDraft != _hasDraft && mounted) {
+      setState(() => _hasDraft = hasDraft);
+    }
+  }
+
+  @override
   void dispose() {
+    _controller.removeListener(_handleDraftChanged);
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -1017,67 +1032,121 @@ class _ConclaveChatState extends State<_ConclaveChat> {
         SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 7, 10, 9),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: .94),
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: const Color(0xFFDCCFE9)),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x1A2E1B50),
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  IconButton(
-                    key: const Key('share-to-conclave-button'),
-                    tooltip: strings.pick('Share', 'Delen'),
-                    onPressed: online.busy ? null : () => _share(context),
-                    icon: const Icon(Icons.add_circle_rounded),
-                  ),
-                  IconButton(
-                    key: const Key('conclave-emote-picker'),
-                    tooltip: strings.pick('Dragon emotes', 'Drakenemotes'),
-                    onPressed: online.busy ? null : _sendEmote,
-                    icon: const Icon(Icons.emoji_emotions_rounded),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      key: const Key('conclave-message-field'),
-                      controller: _controller,
-                      maxLength: 500,
-                      minLines: 1,
-                      maxLines: 4,
-                      decoration: InputDecoration(
-                        hintText: strings.pick(
-                          'Message the Conclave…',
-                          'Bericht aan de Conclave…',
+            padding: const EdgeInsets.fromLTRB(12, 7, 12, 10),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 350;
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Container(
+                        key: const Key('conclave-message-composer-field'),
+                        constraints: const BoxConstraints(minHeight: 48),
+                        padding: const EdgeInsets.fromLTRB(4, 3, 5, 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF5F1FA),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: const Color(0xFFDDD2E9)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x102E1B50),
+                              blurRadius: 8,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
                         ),
-                        counterText: '',
-                        filled: true,
-                        fillColor: const Color(0xFFF2EDF7),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(22),
-                          borderSide: BorderSide.none,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            _ConclaveComposerAction(
+                              key: const Key('share-to-conclave-button'),
+                              tooltip: strings.pick('Share', 'Delen'),
+                              icon: Icons.add_rounded,
+                              onPressed:
+                                  online.busy ? null : () => _share(context),
+                            ),
+                            _ConclaveComposerAction(
+                              key: const Key('conclave-emote-picker'),
+                              tooltip: strings.pick(
+                                'Dragon emotes',
+                                'Drakenemotes',
+                              ),
+                              icon: Icons.emoji_emotions_rounded,
+                              onPressed: online.busy ? null : _sendEmote,
+                            ),
+                            Expanded(
+                              child: TextField(
+                                key: const Key('conclave-message-field'),
+                                controller: _controller,
+                                enabled: !online.busy,
+                                maxLength: 500,
+                                minLines: 1,
+                                maxLines: 4,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
+                                style: const TextStyle(
+                                  color: AppColors.ink,
+                                  fontSize: 14,
+                                  height: 1.25,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: compact
+                                      ? strings.pick('Message…', 'Bericht…')
+                                      : strings.pick(
+                                          'Message the Conclave…',
+                                          'Bericht aan de Conclave…',
+                                        ),
+                                  hintStyle: const TextStyle(
+                                    color: AppColors.muted,
+                                    fontSize: 13,
+                                  ),
+                                  counterText: '',
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 12,
+                                  ),
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                ),
+                                onSubmitted: (_) => _send(),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      onSubmitted: (_) => _send(),
                     ),
-                  ),
-                  const SizedBox(width: 7),
-                  IconButton.filled(
-                    key: const Key('send-conclave-message'),
-                    onPressed: online.busy ? null : _send,
-                    icon: const Icon(Icons.send_rounded),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x242E1B50),
+                            blurRadius: 9,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: SizedBox.square(
+                        dimension: 46,
+                        child: IconButton.filled(
+                          key: const Key('send-conclave-message'),
+                          tooltip: strings.pick('Send', 'Versturen'),
+                          onPressed: online.busy || !_hasDraft ? null : _send,
+                          style: IconButton.styleFrom(
+                            disabledBackgroundColor: const Color(0xFFE4DDEC),
+                            disabledForegroundColor: const Color(0xFF988EAA),
+                          ),
+                          icon: const Icon(Icons.send_rounded, size: 21),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -1252,6 +1321,35 @@ class _ConclaveMessageTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ConclaveComposerAction extends StatelessWidget {
+  const _ConclaveComposerAction({
+    super.key,
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) => SizedBox.square(
+        dimension: 36,
+        child: IconButton(
+          tooltip: tooltip,
+          onPressed: onPressed,
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          style: IconButton.styleFrom(
+            foregroundColor: AppColors.twilight,
+            disabledForegroundColor: const Color(0xFFAAA1B7),
+          ),
+          icon: Icon(icon, size: 20),
+        ),
+      );
 }
 
 class _ConclaveEmoteMessageTile extends StatelessWidget {

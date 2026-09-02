@@ -1803,7 +1803,7 @@ void main() {
 
   testWidgets('owned dragon emotes send in private and Conclave chat',
       (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 900));
+    await tester.binding.setSurfaceSize(const Size(320, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final emote = dragonEmotesForSource(DragonEmoteSource.chest).first;
     final game = HouseholdProvider(
@@ -1868,6 +1868,26 @@ void main() {
     await tester.pumpWidget(app(const ConclaveScreen()));
     await tester.pump(const Duration(milliseconds: 400));
     expect(tester.takeException(), isNull, reason: 'Conclave chat');
+    expect(find.text('Message…'), findsOneWidget);
+    final composer = find.byKey(
+      const Key('conclave-message-composer-field'),
+    );
+    expect(tester.getSize(composer).height, inInclusiveRange(48, 52));
+    expect(
+      tester.getCenter(find.byKey(const Key('share-to-conclave-button'))).dy,
+      closeTo(
+        tester.getCenter(find.byKey(const Key('conclave-emote-picker'))).dy,
+        .1,
+      ),
+    );
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byKey(const Key('send-conclave-message')),
+          )
+          .onPressed,
+      isNull,
+    );
     await tester.tap(find.byKey(const Key('conclave-emote-picker')));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull, reason: 'Conclave emote picker');
@@ -1876,6 +1896,19 @@ void main() {
     expect(repository.sentConclaveKind, 'emote');
     expect(repository.sentConclavePayload, {'emote_id': emote.id});
     expect(tester.takeException(), isNull);
+    await tester.enterText(
+      find.byKey(const Key('conclave-message-field')),
+      'Hello',
+    );
+    await tester.pump();
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byKey(const Key('send-conclave-message')),
+          )
+          .onPressed,
+      isNotNull,
+    );
     await tester.pumpWidget(const SizedBox.shrink());
     online.dispose();
   });

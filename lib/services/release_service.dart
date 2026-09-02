@@ -16,6 +16,7 @@ abstract final class ReleaseConfig {
   static String get repositoryUrl => 'https://github.com/$owner/$repository';
   static String get releasesUrl => '$repositoryUrl/releases/latest';
   static String get downloadUrl => '$releasesUrl/download/DragonHaven.apk';
+
   // Opens Rick Groot's focused Ko-fi tip panel.
   static const kofiUrl =
       'https://ko-fi.com/rgroot88/?hidefeed=true&widget=true&embed=true';
