@@ -1546,6 +1546,15 @@ class _ConclaveMembers extends StatelessWidget {
   const _ConclaveMembers({required this.snapshot});
   final ConclaveSnapshot snapshot;
 
+  bool _canInviteFriend(
+    OnlineAccountProvider online,
+    ConclaveMember member,
+  ) =>
+      member.userId != online.currentUserId &&
+      member.keeperCode.trim().isNotEmpty &&
+      !online.friends.any((friend) => friend.userId == member.userId) &&
+      !online.requests.any((request) => request.keeper.userId == member.userId);
+
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
@@ -1695,9 +1704,22 @@ class _ConclaveMembers extends StatelessWidget {
                   ),
                 ],
               ),
-              trailing: canModerate && member.userId != online.currentUserId
+              trailing: (canModerate &&
+                          member.userId != online.currentUserId) ||
+                      _canInviteFriend(online, member)
                   ? IconButton(
-                      onPressed: () => _memberActions(context, member),
+                      key: Key('conclave-member-actions-${member.userId}'),
+                      tooltip: strings.pick('Keeper actions', 'Hoederacties'),
+                      onPressed: online.busy
+                          ? null
+                          : () => _memberActions(
+                                context,
+                                member,
+                                canManageMember: canModerate &&
+                                    member.userId != online.currentUserId,
+                                canInviteFriend:
+                                    _canInviteFriend(online, member),
+                              ),
                       icon: const Icon(Icons.more_vert_rounded),
                     )
                   : null,
@@ -1751,7 +1773,11 @@ class _ConclaveMembers extends StatelessWidget {
   }
 
   Future<void> _memberActions(
-      BuildContext context, ConclaveMember member) async {
+    BuildContext context,
+    ConclaveMember member, {
+    required bool canManageMember,
+    required bool canInviteFriend,
+  }) async {
     final strings = AppStrings.of(context);
     final choice = await showModalBottomSheet<String>(
       context: context,
@@ -1760,7 +1786,16 @@ class _ConclaveMembers extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (snapshot.myRole == ConclaveRole.flightmaster) ...[
+            if (canInviteFriend)
+              ListTile(
+                key: Key('invite-conclave-member-${member.userId}'),
+                leading: const Icon(Icons.person_add_alt_1_rounded),
+                title: Text(
+                    strings.pick('Invite as friend', 'Uitnodigen als vriend')),
+                onTap: () => Navigator.pop(context, 'friend'),
+              ),
+            if (canManageMember &&
+                snapshot.myRole == ConclaveRole.flightmaster) ...[
               ListTile(
                 leading: const Icon(Icons.shield_rounded),
                 title: Text(member.role == ConclaveRole.warden
@@ -1775,13 +1810,14 @@ class _ConclaveMembers extends StatelessWidget {
                 onTap: () => Navigator.pop(context, 'transfer'),
               ),
             ],
-            ListTile(
-              leading: const Icon(Icons.person_remove_rounded,
-                  color: Colors.redAccent),
-              title: Text(strings.pick(
-                  'Remove from Conclave', 'Uit Conclave verwijderen')),
-              onTap: () => Navigator.pop(context, 'remove'),
-            ),
+            if (canManageMember)
+              ListTile(
+                leading: const Icon(Icons.person_remove_rounded,
+                    color: Colors.redAccent),
+                title: Text(strings.pick(
+                    'Remove from Conclave', 'Uit Conclave verwijderen')),
+                onTap: () => Navigator.pop(context, 'remove'),
+              ),
           ],
         ),
       ),
@@ -1789,6 +1825,8 @@ class _ConclaveMembers extends StatelessWidget {
     if (!context.mounted) return;
     final online = context.read<OnlineAccountProvider>();
     switch (choice) {
+      case 'friend':
+        await online.sendFriendRequest(member.keeperCode);
       case 'role':
         await online.setConclaveMemberRole(
           member.userId,

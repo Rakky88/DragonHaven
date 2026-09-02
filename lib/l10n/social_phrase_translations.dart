@@ -251,6 +251,14 @@ const socialPhraseTranslations = <String, List<String>>{
     '招待'
   ],
   'Invite': ['Einladen', 'Invitar', 'Inviter', 'Invita', 'Convidar', '招待'],
+  'Invite as friend': [
+    'Als Freund einladen',
+    'Invitar como amigo',
+    'Inviter comme ami',
+    'Invita come amico',
+    'Convidar como amigo',
+    '友達として招待'
+  ],
   'Invite by Keeper ID': [
     'Über Hüter-ID einladen',
     'Invitar por ID de Guardián',
@@ -274,6 +282,14 @@ const socialPhraseTranslations = <String, List<String>>{
     'Solo su invito',
     'Somente por convite',
     '招待制'
+  ],
+  'Keeper actions': [
+    'Hüteraktionen',
+    'Acciones del Guardián',
+    'Actions du Gardien',
+    'Azioni del Custode',
+    'Ações do Guardião',
+    'キーパーの操作'
   ],
   'Join': ['Beitreten', 'Unirse', 'Rejoindre', 'Unisciti', 'Entrar', '参加'],
   'Join a Conclave': [

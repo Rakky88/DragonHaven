@@ -1410,6 +1410,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Conclave Keepers'), findsOneWidget);
     expect(find.text('Visnet'), findsOneWidget);
+    expect(
+      find.byKey(const Key('conclave-member-actions-friend-user')),
+      findsNothing,
+    );
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.text('Chronicle'));
@@ -1497,6 +1501,82 @@ void main() {
     expect(repository.sentConclaveKind, 'emote');
     expect(repository.sentConclavePayload, {'emote_id': emote.id});
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+  });
+
+  testWidgets('Conclave keepers can invite a member who is not a friend',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _FakeSocialRepository(
+      inventoryImported: true,
+      includeFriend: false,
+    )..conclaveSnapshot = ConclaveSnapshot(
+        conclave: const ConclaveSummary(
+          id: 'friend-invite-conclave',
+          name: 'Friendship Aerie',
+          emblemKey: 'conclave_emblem_01',
+          description: '',
+          language: 'en',
+          visibility: ConclaveVisibility.public,
+          memberLimit: 20,
+          memberCount: 2,
+          level: 1,
+          xp: 0,
+          aerieStage: 1,
+        ),
+        myRole: ConclaveRole.keeper,
+        contributedToday: false,
+        members: [
+          ConclaveMember(
+            userId: 'friend-user',
+            keeperCode: 'DH-1234ABCD',
+            displayName: 'Visnet',
+            portraitKey: 'portrait_042',
+            role: ConclaveRole.keeper,
+            joinedAt: DateTime.utc(2026, 9, 2),
+            contributionStreak: 1,
+          ),
+        ],
+        messages: const [],
+        chronicle: const [],
+        joinRequests: const [],
+      );
+    final game = HouseholdProvider(random: Random(312));
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const MaterialApp(home: ConclaveScreen()),
+    ));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('Keepers'));
+    await tester.pumpAndSettle();
+
+    final memberActions =
+        find.byKey(const Key('conclave-member-actions-friend-user'));
+    expect(memberActions, findsOneWidget);
+    await tester.tap(memberActions);
+    await tester.pumpAndSettle();
+    expect(find.text('Invite as friend'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const Key('invite-conclave-member-friend-user')),
+    );
+    await tester.pumpAndSettle();
+    expect(repository.sentFriendRequestKeeperCode, 'DH-1234ABCD');
+    expect(online.outgoingRequests, hasLength(1));
+    expect(memberActions, findsNothing);
+    expect(tester.takeException(), isNull);
+
     await tester.pumpWidget(const SizedBox.shrink());
     online.dispose();
   });
@@ -2182,6 +2262,7 @@ class _FakeSocialRepository implements SocialRepository {
   final List<FriendMessage> friendMessageRows = [];
   String? sentFriendKind;
   Map<String, dynamic>? sentFriendPayload;
+  String? sentFriendRequestKeeperCode;
   String? sentConclaveKind;
   Map<String, dynamic>? sentConclavePayload;
   GroupAdventureStatus groupStatus = const GroupAdventureStatus(
@@ -2394,7 +2475,27 @@ class _FakeSocialRepository implements SocialRepository {
   }
 
   @override
-  Future<void> sendFriendRequest(String keeperCode) async {}
+  Future<void> sendFriendRequest(String keeperCode) async {
+    sentFriendRequestKeeperCode = keeperCode;
+    final keeper = keeperCode == _friend.keeperCode
+        ? _friend
+        : KeeperProfile(
+            userId: 'requested-user',
+            keeperCode: keeperCode,
+            displayName: 'Requested Keeper',
+            title: 'title_001',
+            portraitKey: 'portrait_001',
+            discoveredDragonCount: 0,
+            inventoryImported: true,
+          );
+    requestRows.add(FriendshipRequest(
+      id: 'request-${requestRows.length + 1}',
+      direction: FriendRequestDirection.outgoing,
+      keeper: keeper,
+      createdAt: DateTime.utc(2026, 9, 2),
+    ));
+  }
+
   @override
   Future<void> unblockKeeper(String userId) async {}
   @override
