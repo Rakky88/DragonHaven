@@ -305,4 +305,87 @@ const trialPhraseTranslations = <String, List<String>>{
     'Lembre-se das runas e desperte o portal selado.',
     'ルーンを覚えて封印された門を目覚めさせよう。'
   ],
+  'Trial Rankings': [
+    'Prüfungsranglisten',
+    'Clasificaciones de pruebas',
+    'Classements des épreuves',
+    'Classifiche delle prove',
+    'Classificações das provas',
+    '試練ランキング'
+  ],
+  'View Trial Rankings': [
+    'Prüfungsranglisten anzeigen',
+    'Ver clasificaciones de pruebas',
+    'Voir les classements des épreuves',
+    'Vedi classifiche delle prove',
+    'Ver classificações das provas',
+    '試練ランキングを見る'
+  ],
+  'Conclave Trial Rankings': [
+    'Konklave-Prüfungsranglisten',
+    'Clasificaciones de pruebas del Cónclave',
+    'Classements des épreuves du Conclave',
+    'Classifiche delle prove del Conclave',
+    'Classificações das provas do Conclave',
+    'コンクレーブ試練ランキング'
+  ],
+  'World': ['Welt', 'Mundo', 'Monde', 'Mondo', 'Mundo', '世界'],
+  'Friends': ['Freunde', 'Amigos', 'Amis', 'Amici', 'Amigos', 'フレンド'],
+  'The strongest published Keeper records worldwide.': [
+    'Die stärksten veröffentlichten Hüterrekorde weltweit.',
+    'Los mejores récords publicados de Guardianes de todo el mundo.',
+    'Les meilleurs records de Gardiens publiés dans le monde.',
+    'I migliori record pubblicati dei Custodi nel mondo.',
+    'Os melhores recordes publicados de Guardiões do mundo.',
+    '世界中で公開されたキーパーの最高記録です。'
+  ],
+  'Compare your best score with your friends.': [
+    'Vergleiche deinen Bestwert mit deinen Freunden.',
+    'Compara tu mejor puntuación con tus amigos.',
+    'Comparez votre meilleur score à celui de vos amis.',
+    'Confronta il tuo record con quello degli amici.',
+    'Compare sua melhor pontuação com a de seus amigos.',
+    '自己ベストをフレンドと比較します。'
+  ],
+  'Every scored Keeper in your Conclave.': [
+    'Jeder Hüter mit einem Ergebnis in deiner Konklave.',
+    'Todos los Guardianes con puntuación de tu Cónclave.',
+    'Chaque Gardien ayant un score dans votre Conclave.',
+    'Ogni Custode con un punteggio nel tuo Conclave.',
+    'Todos os Guardiões com pontuação no seu Conclave.',
+    'コンクレーブ内で記録を持つ全キーパーです。'
+  ],
+  'Rankings could not be loaded': [
+    'Ranglisten konnten nicht geladen werden',
+    'No se pudieron cargar las clasificaciones',
+    'Impossible de charger les classements',
+    'Impossibile caricare le classifiche',
+    'Não foi possível carregar as classificações',
+    'ランキングを読み込めませんでした'
+  ],
+  'Try again': [
+    'Erneut versuchen',
+    'Intentar de nuevo',
+    'Réessayer',
+    'Riprova',
+    'Tentar novamente',
+    'もう一度試す'
+  ],
+  'No scores yet': [
+    'Noch keine Ergebnisse',
+    'Aún no hay puntuaciones',
+    'Aucun score pour le moment',
+    'Ancora nessun punteggio',
+    'Ainda não há pontuações',
+    'まだ記録がありません'
+  ],
+  'Complete this Trial to place the first score in this ranking.': [
+    'Schließe diese Prüfung ab, um den ersten Wert in dieser Rangliste zu erzielen.',
+    'Completa esta prueba para registrar la primera puntuación de la clasificación.',
+    'Terminez cette épreuve pour inscrire le premier score du classement.',
+    'Completa questa prova per registrare il primo punteggio in classifica.',
+    'Conclua esta prova para registrar a primeira pontuação da classificação.',
+    'この試練を完了して、ランキングに最初の記録を残しましょう。'
+  ],
+  'You': ['Du', 'Tú', 'Vous', 'Tu', 'Você', 'あなた'],
 };

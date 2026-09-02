@@ -39,6 +39,11 @@ abstract interface class SocialRepository {
     required String clientVersion,
   });
   Future<List<KeeperProfile>> loadFriends();
+  Future<List<TrialRankingEntry>> loadTrialRankings({
+    required String trialKey,
+    required TrialRankingScope scope,
+    int limit = 100,
+  });
   Future<List<FriendshipRequest>> loadRequests();
   Future<List<SocialNotification>> loadSocialNotifications();
   Future<void> acknowledgeSocialNotifications(List<String> notificationIds);
@@ -142,6 +147,13 @@ class DisabledSocialRepository implements SocialRepository {
   Future<List<KeeperProfile>> loadBlockedKeepers() async => _disabled();
   @override
   Future<List<KeeperProfile>> loadFriends() async => _disabled();
+  @override
+  Future<List<TrialRankingEntry>> loadTrialRankings({
+    required String trialKey,
+    required TrialRankingScope scope,
+    int limit = 100,
+  }) async =>
+      _disabled();
   @override
   Future<KeeperProfile> loadMyProfile() async => _disabled();
   @override

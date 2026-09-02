@@ -6,6 +6,45 @@ import 'pet.dart';
 
 enum FriendRequestDirection { incoming, outgoing }
 
+enum TrialRankingScope { world, friends, conclave }
+
+class TrialRankingEntry {
+  const TrialRankingEntry({
+    required this.position,
+    required this.entryKey,
+    required this.displayName,
+    required this.title,
+    required this.portraitKey,
+    required this.score,
+    required this.isCurrentUser,
+    this.frameKey,
+    this.badgeKey,
+  });
+
+  final int position;
+  final String entryKey;
+  final String displayName;
+  final String title;
+  final String portraitKey;
+  final String? frameKey;
+  final String? badgeKey;
+  final int score;
+  final bool isCurrentUser;
+
+  factory TrialRankingEntry.fromJson(Map<String, dynamic> json) =>
+      TrialRankingEntry(
+        position: _int(json['ranking_position']),
+        entryKey: json['entry_key']?.toString() ?? '',
+        displayName: json['display_name']?.toString() ?? 'Keeper',
+        title: json['title']?.toString() ?? 'title_001',
+        portraitKey: json['portrait_key']?.toString() ?? 'portrait_001',
+        frameKey: json['frame_key']?.toString(),
+        badgeKey: json['badge_key']?.toString(),
+        score: _int(json['score']),
+        isCurrentUser: json['is_current_user'] == true,
+      );
+}
+
 class OnlineProfileSnapshot {
   const OnlineProfileSnapshot({
     required this.displayName,

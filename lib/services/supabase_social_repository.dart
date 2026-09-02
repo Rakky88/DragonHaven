@@ -189,6 +189,20 @@ class SupabaseSocialRepository implements SocialRepository {
           .toList(growable: false);
 
   @override
+  Future<List<TrialRankingEntry>> loadTrialRankings({
+    required String trialKey,
+    required TrialRankingScope scope,
+    int limit = 100,
+  }) async =>
+      (await _listRpc('get_trial_rankings', params: {
+        'p_trial_key': trialKey,
+        'p_scope': scope.name,
+        'p_limit': limit.clamp(1, 100),
+      }))
+          .map(TrialRankingEntry.fromJson)
+          .toList(growable: false);
+
+  @override
   Future<List<FriendshipRequest>> loadRequests() async =>
       (await _listRpc('list_friend_requests'))
           .map(FriendshipRequest.fromJson)

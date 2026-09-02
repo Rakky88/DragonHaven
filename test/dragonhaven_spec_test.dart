@@ -1171,6 +1171,60 @@ void main() {
     expect(runbook, contains('runbook zelf wijzigt geen server'));
   });
 
+  test('Trial rankings are scoped, bounded and privacy-safe', () {
+    final migration = File(
+      'supabase/migrations/202609020035_trial_rankings.sql',
+    ).readAsStringSync();
+    final returnedColumns = migration.substring(
+      migration.indexOf('returns table ('),
+      migration.indexOf('language plpgsql'),
+    );
+
+    expect(migration, contains('public.get_trial_rankings'));
+    expect(
+        migration, contains("p_scope not in ('world', 'friends', 'conclave')"));
+    expect(migration, contains("p_scope = 'friends'"));
+    expect(migration, contains("p_scope = 'conclave'"));
+    expect(migration, contains("blocked.status = 'blocked'"));
+    expect(migration, contains('rank() over (order by candidates.score desc)'));
+    expect(migration, contains('least(100, greatest(1'));
+    expect(migration, contains('security definer'));
+    expect(migration, contains("set search_path = ''"));
+    expect(migration, contains('to authenticated'));
+    expect(migration, contains('from public, anon'));
+    expect(returnedColumns, contains('entry_key text'));
+    expect(returnedColumns, isNot(contains('user_id')));
+    expect(returnedColumns, isNot(contains('keeper_code')));
+    expect(returnedColumns, isNot(contains('email')));
+
+    final stagingE2e = File('tool/staging_social_e2e.ps1').readAsStringSync();
+    expect(stagingE2e, contains("-Function 'get_trial_rankings'"));
+    expect(stagingE2e, contains("p_scope = 'world'"));
+    expect(stagingE2e, contains("p_scope = 'friends'"));
+    expect(stagingE2e, contains("p_scope = 'conclave'"));
+    expect(stagingE2e, contains(r"$propertyNames -contains 'user_id'"));
+
+    final productionMigration = File(
+      '.github/workflows/production-migrate-35.yml',
+    ).readAsStringSync();
+    expect(productionMigration, contains('MIGRATE_PRODUCTION_33_TO_35'));
+    expect(
+      productionMigration,
+      contains("\$expectedRemote = '202608310033'"),
+    );
+    expect(
+      productionMigration,
+      contains(
+        "\$expectedPending = @('202609020034', '202609020035')",
+      ),
+    );
+    expect(
+      productionMigration,
+      contains('db push --linked --include-all --dry-run'),
+    );
+    expect(productionMigration, contains('release_server_preflight.ps1'));
+  });
+
   test('app size audit measures archives without reading player data', () {
     final audit = File('APP_SIZE_AUDIT.md').readAsStringSync();
     final tool =

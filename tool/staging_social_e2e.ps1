@@ -463,6 +463,7 @@ $groupCompletionResult = 'not-requested'
 $tradeResult = 'not-run'
 $friendMessageResult = 'not-run'
 $conclaveResult = 'not-run'
+$trialRankingsResult = 'not-run'
 
 function Remove-ActiveTrades {
     if ($null -eq $primary -or $null -eq $peer) { return }
@@ -673,6 +674,78 @@ try {
         }
     }
 
+    foreach ($fixture in @(
+        [pscustomobject]@{
+            Session = $primary
+            Cavern = 43210
+            Ruin = 32100
+            Rune = 18
+        },
+        [pscustomobject]@{
+            Session = $peer
+            Cavern = 32100
+            Ruin = 43210
+            Rune = 17
+        }
+    )) {
+        Invoke-RequiredRpc `
+            -Session $fixture.Session `
+            -Function 'publish_social_showcase' `
+            -Parameters @{
+                p_showcase = @{
+                    discovered_forms = @()
+                    prismatic_forms = @()
+                    trial_high_scores = @{
+                        cavernFlight = $fixture.Cavern
+                        ruinBreaker = $fixture.Ruin
+                        runeweaver = $fixture.Rune
+                    }
+                }
+            } `
+            -Operation 'Staging-Trialrecords publiceren' | Out-Null
+    }
+    $worldRankings = Get-Rows (Invoke-RequiredRpc `
+        -Session $primary `
+        -Function 'get_trial_rankings' `
+        -Parameters @{
+            p_trial_key = 'cavernFlight'
+            p_scope = 'world'
+            p_limit = 100
+        } `
+        -Operation 'Staging-wereldranglijst laden')
+    $myWorldRanking = $worldRankings | Where-Object {
+        [string](Get-PropertyValue -InputObject $_ -Name 'display_name') -eq 'Staging Alpha' -and
+        [int](Get-PropertyValue -InputObject $_ -Name 'score') -eq 43210 -and
+        [bool](Get-PropertyValue -InputObject $_ -Name 'is_current_user')
+    } | Select-Object -First 1
+    if ($null -eq $myWorldRanking) {
+        throw 'De staging-wereldranglijst bevatte het eigen gepubliceerde Trialrecord niet.'
+    }
+    foreach ($row in $worldRankings) {
+        $propertyNames = @($row.PSObject.Properties.Name)
+        if ($propertyNames -contains 'user_id' -or
+            $propertyNames -contains 'keeper_code' -or
+            $propertyNames -contains 'email') {
+            throw 'De staging-wereldranglijst lekte een interne accountidentifier.'
+        }
+    }
+    $friendRankings = Get-Rows (Invoke-RequiredRpc `
+        -Session $primary `
+        -Function 'get_trial_rankings' `
+        -Parameters @{
+            p_trial_key = 'cavernFlight'
+            p_scope = 'friends'
+            p_limit = 100
+        } `
+        -Operation 'Staging-vriendenranglijst laden')
+    if ($friendRankings.Count -ne 2 -or
+        [string](Get-PropertyValue -InputObject $friendRankings[0] -Name 'display_name') -ne 'Staging Alpha' -or
+        [int](Get-PropertyValue -InputObject $friendRankings[0] -Name 'ranking_position') -ne 1 -or
+        [string](Get-PropertyValue -InputObject $friendRankings[1] -Name 'display_name') -ne 'Staging Beta' -or
+        [int](Get-PropertyValue -InputObject $friendRankings[1] -Name 'ranking_position') -ne 2) {
+        throw 'De staging-vriendenranglijst was niet volledig of correct geordend.'
+    }
+
     foreach ($session in @($primary, $peer)) {
         Invoke-RequiredRpc `
             -Session $session `
@@ -818,6 +891,23 @@ try {
         [int](Get-PropertyValue -InputObject $peerConclave -Name 'member_count') -ne 2) {
         throw 'De staging-Conclave-rang of ledentelling klopt niet.'
     }
+    $conclaveRankings = Get-Rows (Invoke-RequiredRpc `
+        -Session $peer `
+        -Function 'get_trial_rankings' `
+        -Parameters @{
+            p_trial_key = 'ruinBreaker'
+            p_scope = 'conclave'
+            p_limit = 100
+        } `
+        -Operation 'Staging-Conclave-Trialranglijst laden')
+    if ($conclaveRankings.Count -ne 2 -or
+        [string](Get-PropertyValue -InputObject $conclaveRankings[0] -Name 'display_name') -ne 'Staging Beta' -or
+        [int](Get-PropertyValue -InputObject $conclaveRankings[0] -Name 'ranking_position') -ne 1 -or
+        [string](Get-PropertyValue -InputObject $conclaveRankings[1] -Name 'display_name') -ne 'Staging Alpha' -or
+        [int](Get-PropertyValue -InputObject $conclaveRankings[1] -Name 'ranking_position') -ne 2) {
+        throw 'De staging-Conclave-Trialranglijst was niet volledig of correct geordend.'
+    }
+    $trialRankingsResult = 'world privacy, Friends scope and Conclave scope passed'
     $conclaveMessageId = [string](Invoke-RequiredRpc `
         -Session $peer `
         -Function 'send_conclave_message' `
@@ -1200,6 +1290,7 @@ try {
         'Friend request, incoming projection, acceptance and mutual visibility: passed.'
         "Friend Messages: $friendMessageResult."
         "Conclave flow: $conclaveResult."
+        "Trial rankings: $trialRankingsResult."
         "Trade flow: $tradeResult."
         'Trade inventory transfer invariant: passed.'
         "Group Adventure flow: $groupJoinResult."

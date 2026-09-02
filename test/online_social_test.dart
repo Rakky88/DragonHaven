@@ -1296,6 +1296,167 @@ void main() {
     online.dispose();
   });
 
+  testWidgets('Trial rankings switch between world, friends and Trial types',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..trialRankingRows['world:cavernFlight'] = const [
+        TrialRankingEntry(
+          position: 1,
+          entryKey: 'world-1',
+          displayName: 'Sky Keeper',
+          title: 'title_001',
+          portraitKey: 'portrait_001',
+          score: 2800,
+          isCurrentUser: false,
+        ),
+      ]
+      ..trialRankingRows['friends:cavernFlight'] = const [
+        TrialRankingEntry(
+          position: 1,
+          entryKey: 'friend-1',
+          displayName: 'Lyra',
+          title: 'title_321',
+          portraitKey: 'portrait_042',
+          score: 211,
+          isCurrentUser: false,
+        ),
+      ]
+      ..trialRankingRows['friends:ruinBreaker'] = const [
+        TrialRankingEntry(
+          position: 1,
+          entryKey: 'friend-might-1',
+          displayName: 'Lyra',
+          title: 'title_321',
+          portraitKey: 'portrait_042',
+          score: 1200,
+          isCurrentUser: false,
+        ),
+      ];
+    final game = HouseholdProvider(random: Random(315));
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const MaterialApp(
+        home: Scaffold(body: AdventureHubScreen(initialTab: 1)),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byKey(const Key('open-trial-rankings')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('trial-rankings-sheet')), findsOneWidget);
+    expect(find.text('Sky Keeper'), findsOneWidget);
+    expect(find.text('2800'), findsOneWidget);
+    expect(
+      repository.trialRankingRequests,
+      contains(('cavernFlight', TrialRankingScope.world)),
+    );
+
+    await tester.tap(find.descendant(
+      of: find.byKey(const Key('trial-ranking-scope-selector')),
+      matching: find.text('Friends'),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Lyra'), findsOneWidget);
+    expect(find.text('211'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const Key('trial-ranking-kind-ruinBreaker')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('1200'), findsOneWidget);
+    expect(
+      repository.trialRankingRequests,
+      contains(('ruinBreaker', TrialRankingScope.friends)),
+    );
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+  });
+
+  testWidgets('Conclave Keepers opens rankings for every member',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..conclaveSnapshot = ConclaveSnapshot(
+        conclave: const ConclaveSummary(
+          id: 'ranked-conclave',
+          name: 'Ranked Aerie',
+          emblemKey: 'conclave_emblem_01',
+          description: '',
+          language: 'en',
+          visibility: ConclaveVisibility.public,
+          memberLimit: 20,
+          memberCount: 2,
+          level: 1,
+          xp: 0,
+          aerieStage: 1,
+        ),
+        myRole: ConclaveRole.keeper,
+        contributedToday: false,
+        members: const [],
+        messages: const [],
+        chronicle: const [],
+        joinRequests: const [],
+      )
+      ..trialRankingRows['conclave:cavernFlight'] = const [
+        TrialRankingEntry(
+          position: 1,
+          entryKey: 'conclave-1',
+          displayName: 'Aerie Ace',
+          title: 'title_001',
+          portraitKey: 'portrait_001',
+          score: 1490,
+          isCurrentUser: false,
+        ),
+      ];
+    final game = HouseholdProvider(random: Random(316));
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const MaterialApp(home: ConclaveScreen()),
+    ));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Keepers'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('open-conclave-trial-rankings')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('trial-rankings-sheet')), findsOneWidget);
+    expect(find.text('Aerie Ace'), findsOneWidget);
+    expect(find.text('1490'), findsOneWidget);
+    expect(
+      repository.trialRankingRequests,
+      contains(('cavernFlight', TrialRankingScope.conclave)),
+    );
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+  });
+
   testWidgets('Conclave chat shows local send times for every message type',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 900));
@@ -2454,6 +2615,8 @@ class _FakeSocialRepository implements SocialRepository {
   final List<TradeInventoryItem> tradeInventoryRows = [];
   final List<FriendConversationSummary> conversationRows = [];
   final List<FriendMessage> friendMessageRows = [];
+  final Map<String, List<TrialRankingEntry>> trialRankingRows = {};
+  final List<(String, TrialRankingScope)> trialRankingRequests = [];
   String? sentFriendKind;
   Map<String, dynamic>? sentFriendPayload;
   String? sentFriendRequestKeeperCode;
@@ -2507,6 +2670,16 @@ class _FakeSocialRepository implements SocialRepository {
       List.of(blockedRows);
   @override
   Future<List<KeeperProfile>> loadFriends() async => List.of(friendRows);
+  @override
+  Future<List<TrialRankingEntry>> loadTrialRankings({
+    required String trialKey,
+    required TrialRankingScope scope,
+    int limit = 100,
+  }) async {
+    trialRankingRequests.add((trialKey, scope));
+    return List.of(trialRankingRows['${scope.name}:$trialKey'] ?? const []);
+  }
+
   @override
   Future<KeeperProfile> loadMyProfile() async => _profile;
   @override

@@ -19,6 +19,7 @@ import '../widgets/dragon_art.dart';
 import '../widgets/expertise_score_badge.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/trial_icon_sprite.dart';
+import '../widgets/trial_rankings_sheet.dart';
 import '../widgets/online_account_access.dart';
 import '../widgets/ui_bits.dart';
 
@@ -286,7 +287,33 @@ class _TrialsTab extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            key: const Key('open-trial-rankings'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.twilightDark,
+              backgroundColor: const Color(0xFFFFF8DD),
+              side: const BorderSide(color: Color(0xFFD6A72E)),
+              padding: const EdgeInsets.symmetric(vertical: 11),
+            ),
+            onPressed: () => showTrialRankingsSheet(
+              context,
+              scopes: const [
+                TrialRankingScope.world,
+                TrialRankingScope.friends,
+              ],
+              initialScope: TrialRankingScope.world,
+            ),
+            icon: const Icon(Icons.leaderboard_rounded, size: 21),
+            label: Text(
+              strings.pick('View Trial Rankings', 'Bekijk Trial-ranglijsten'),
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
         const _TrialStreakCard(),
         const SizedBox(height: 14),
         if (offers.isEmpty)

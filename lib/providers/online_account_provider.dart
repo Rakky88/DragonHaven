@@ -600,6 +600,18 @@ class OnlineAccountProvider extends ChangeNotifier {
   Future<List<ConclaveSummary>?> loadConclaveDirectory() =>
       _run('conclave.directory', _repository.listConclaves);
 
+  Future<List<TrialRankingEntry>?> loadTrialRankings({
+    required String trialKey,
+    required TrialRankingScope scope,
+  }) =>
+      _run(
+        'trial.rankings.${scope.name}',
+        () => _repository.loadTrialRankings(
+          trialKey: trialKey,
+          scope: scope,
+        ),
+      );
+
   Future<bool> refreshConclave({bool background = false}) async =>
       await _run('conclave.refresh', () async {
         conclave = await _repository.loadConclaveSnapshot();
