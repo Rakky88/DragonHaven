@@ -1692,79 +1692,7 @@ class _ConclaveMembers extends StatelessWidget {
         _Title(
             '${strings.pick('Keepers', 'Hoeders')} (${snapshot.members.length})'),
         for (final member in snapshot.members)
-          Card.outlined(
-            margin: const EdgeInsets.only(bottom: 8),
-            color: Colors.white.withValues(alpha: .92),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: BorderSide(
-                color: member.userId == online.currentUserId
-                    ? const Color(0xFFBFA5E7)
-                    : const Color(0xFFE0D8E8),
-              ),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.fromLTRB(12, 6, 7, 6),
-              leading: KeeperPortrait(
-                portraitKey: member.portraitKey,
-                displayName: member.displayName,
-                frameKey: member.frameKey,
-                badgeKey: member.badgeKey,
-              ),
-              title: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      member.displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                  _MemberRoleChip(
-                    role: member.role,
-                    label: _roleLabel(strings, member.role),
-                  ),
-                ],
-              ),
-              subtitle: Row(
-                children: [
-                  const Icon(
-                    Icons.local_fire_department_rounded,
-                    color: Color(0xFFE4913B),
-                    size: 15,
-                  ),
-                  const SizedBox(width: 3),
-                  Flexible(
-                    child: Text(
-                      '${strings.pick('care streak', 'verzorgreeks')} ${member.contributionStreak}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              trailing: (canModerate &&
-                          member.userId != online.currentUserId) ||
-                      _canInviteFriend(online, member)
-                  ? IconButton(
-                      key: Key('conclave-member-actions-${member.userId}'),
-                      tooltip: strings.pick('Keeper actions', 'Hoederacties'),
-                      onPressed: online.busy
-                          ? null
-                          : () => _memberActions(
-                                context,
-                                member,
-                                canManageMember: canModerate &&
-                                    member.userId != online.currentUserId,
-                                canInviteFriend:
-                                    _canInviteFriend(online, member),
-                              ),
-                      icon: const Icon(Icons.more_vert_rounded),
-                    )
-                  : null,
-            ),
-          ),
+          _buildMemberCard(context, strings, online, member, canModerate),
         const SizedBox(height: 12),
         if (snapshot.myRole == ConclaveRole.flightmaster)
           OutlinedButton.icon(
@@ -1781,6 +1709,34 @@ class _ConclaveMembers extends StatelessWidget {
             label: Text(strings.pick('Leave Conclave', 'Conclave verlaten')),
           ),
       ],
+    );
+  }
+
+  Widget _buildMemberCard(
+    BuildContext context,
+    AppStrings strings,
+    OnlineAccountProvider online,
+    ConclaveMember member,
+    bool canModerate,
+  ) {
+    final canManageMember =
+        canModerate && member.userId != online.currentUserId;
+    final canInviteFriend = _canInviteFriend(online, member);
+    return _ConclaveMemberCard(
+      member: member,
+      isCurrentKeeper: member.userId == online.currentUserId,
+      roleLabel: _roleLabel(strings, member.role),
+      streakLabel: strings.pick('care streak', 'verzorgreeks'),
+      actionsTooltip: strings.pick('Keeper actions', 'Hoederacties'),
+      onActions: canManageMember || canInviteFriend
+          ? () => _memberActions(
+                context,
+                member,
+                canManageMember: canManageMember,
+                canInviteFriend: canInviteFriend,
+              )
+          : null,
+      actionsEnabled: !online.busy,
     );
   }
 
@@ -1910,6 +1866,141 @@ class _ConclaveMembers extends StatelessWidget {
       await context.read<OnlineAccountProvider>().dissolveConclave();
     }
   }
+}
+
+class _ConclaveMemberCard extends StatelessWidget {
+  const _ConclaveMemberCard({
+    required this.member,
+    required this.isCurrentKeeper,
+    required this.roleLabel,
+    required this.streakLabel,
+    required this.actionsTooltip,
+    required this.onActions,
+    required this.actionsEnabled,
+  });
+
+  static const double avatarSlotSize = 86;
+  static const double portraitRadius = 27;
+
+  final ConclaveMember member;
+  final bool isCurrentKeeper;
+  final String roleLabel;
+  final String streakLabel;
+  final String actionsTooltip;
+  final VoidCallback? onActions;
+  final bool actionsEnabled;
+
+  @override
+  Widget build(BuildContext context) => Card.outlined(
+        key: Key('conclave-member-${member.userId}'),
+        margin: const EdgeInsets.only(bottom: 8),
+        color: Colors.white.withValues(alpha: .92),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: isCurrentKeeper
+                ? const Color(0xFFBFA5E7)
+                : const Color(0xFFE0D8E8),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 9, 6, 9),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox.square(
+                key: Key('conclave-member-avatar-slot-${member.userId}'),
+                dimension: avatarSlotSize,
+                child: Center(
+                  child: KeeperPortrait(
+                    portraitKey: member.portraitKey,
+                    displayName: member.displayName,
+                    radius: portraitRadius,
+                    frameKey: member.frameKey,
+                    badgeKey: member.badgeKey,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      member.displayName,
+                      key: Key('conclave-member-name-${member.userId}'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Wrap(
+                      spacing: 7,
+                      runSpacing: 5,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _MemberRoleChip(
+                          role: member.role,
+                          label: roleLabel,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF2D8),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.local_fire_department_rounded,
+                                color: Color(0xFFE4913B),
+                                size: 14,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                '$streakLabel ${member.contributionStreak}',
+                                style: const TextStyle(
+                                  color: Color(0xFF78552D),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (onActions != null) ...[
+                const SizedBox(width: 3),
+                SizedBox.square(
+                  dimension: 40,
+                  child: IconButton(
+                    key: Key('conclave-member-actions-${member.userId}'),
+                    tooltip: actionsTooltip,
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: actionsEnabled ? onActions : null,
+                    icon: const Icon(Icons.more_vert_rounded),
+                  ),
+                ),
+              ] else
+                const SizedBox(width: 4),
+            ],
+          ),
+        ),
+      );
 }
 
 class _ConclaveEmptyState extends StatelessWidget {
@@ -2287,7 +2378,6 @@ class _MemberRoleChip extends StatelessWidget {
       ConclaveRole.keeper => const Color(0xFF4E8C78),
     };
     return Container(
-      margin: const EdgeInsets.only(left: 6),
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: .12),
@@ -2297,7 +2387,7 @@ class _MemberRoleChip extends StatelessWidget {
         label,
         style: TextStyle(
           color: color,
-          fontSize: 8.5,
+          fontSize: 10,
           fontWeight: FontWeight.w900,
         ),
       ),

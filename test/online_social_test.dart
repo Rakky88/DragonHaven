@@ -1518,6 +1518,108 @@ void main() {
     online.dispose();
   });
 
+  testWidgets(
+      'Conclave Keeper rows keep vanity portraits aligned and fully sized',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..conclaveSnapshot = ConclaveSnapshot(
+        conclave: const ConclaveSummary(
+          id: 'vanity-conclave',
+          name: 'Vanity Aerie',
+          emblemKey: 'conclave_emblem_01',
+          description: '',
+          language: 'en',
+          visibility: ConclaveVisibility.public,
+          memberLimit: 20,
+          memberCount: 2,
+          level: 1,
+          xp: 0,
+          aerieStage: 1,
+        ),
+        myRole: ConclaveRole.keeper,
+        contributedToday: false,
+        members: [
+          ConclaveMember(
+            userId: 'framed-user',
+            keeperCode: 'DH-FRAMED1',
+            displayName: 'Framed Keeper',
+            portraitKey: 'portrait_042',
+            frameKey: 'frame_supporter_founder',
+            badgeKey: 'badge_supporter_founder',
+            role: ConclaveRole.keeper,
+            joinedAt: DateTime.utc(2026, 9, 2),
+            contributionStreak: 12,
+          ),
+          ConclaveMember(
+            userId: 'plain-user',
+            keeperCode: 'DH-PLAIN001',
+            displayName: 'Plain Keeper',
+            portraitKey: 'portrait_042',
+            role: ConclaveRole.warden,
+            joinedAt: DateTime.utc(2026, 9, 2),
+            contributionStreak: 2,
+          ),
+        ],
+        messages: const [],
+        chronicle: const [],
+        joinRequests: const [],
+      );
+    final game = HouseholdProvider(random: Random(314));
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const MaterialApp(home: ConclaveScreen()),
+    ));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('Keepers'));
+    await tester.pumpAndSettle();
+
+    final framedCard = find.byKey(const Key('conclave-member-framed-user'));
+    final plainCard = find.byKey(const Key('conclave-member-plain-user'));
+    final framedSlot =
+        find.byKey(const Key('conclave-member-avatar-slot-framed-user'));
+    final plainSlot =
+        find.byKey(const Key('conclave-member-avatar-slot-plain-user'));
+    final framedName =
+        find.byKey(const Key('conclave-member-name-framed-user'));
+    final plainName = find.byKey(const Key('conclave-member-name-plain-user'));
+
+    expect(tester.getSize(framedSlot), const Size.square(86));
+    expect(tester.getSize(plainSlot), const Size.square(86));
+    expect(tester.getSize(framedCard).height,
+        closeTo(tester.getSize(plainCard).height, .01));
+    expect(tester.getTopLeft(framedSlot).dx,
+        closeTo(tester.getTopLeft(plainSlot).dx, .01));
+    expect(tester.getTopLeft(framedName).dx,
+        closeTo(tester.getTopLeft(plainName).dx, .01));
+
+    final frame = find.byKey(
+      const Key('keeper-portrait-frame-frame_supporter_founder'),
+    );
+    expect(frame, findsOneWidget);
+    expect(tester.getSize(frame).width, greaterThan(80));
+    final frameBounds = tester.getRect(frame);
+    final slotBounds = tester.getRect(framedSlot);
+    expect(frameBounds.left, greaterThanOrEqualTo(slotBounds.left));
+    expect(frameBounds.top, greaterThanOrEqualTo(slotBounds.top));
+    expect(frameBounds.right, lessThanOrEqualTo(slotBounds.right));
+    expect(frameBounds.bottom, lessThanOrEqualTo(slotBounds.bottom));
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+  });
+
   testWidgets('owned dragon emotes send in private and Conclave chat',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 900));
