@@ -1296,6 +1296,98 @@ void main() {
     online.dispose();
   });
 
+  testWidgets('Conclave chat shows local send times for every message type',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final emote = dragonEmotesForSource(DragonEmoteSource.chest).first;
+    final sentAt = <String, DateTime>{
+      'text-time': DateTime(2026, 9, 2, 9, 5),
+      'emote-time': DateTime(2026, 9, 2, 10, 6),
+      'achievement-time': DateTime(2026, 9, 2, 11, 7),
+    };
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..conclaveSnapshot = ConclaveSnapshot(
+        conclave: const ConclaveSummary(
+          id: 'message-time-conclave',
+          name: 'Clockwork Aerie',
+          emblemKey: 'conclave_emblem_01',
+          description: '',
+          language: 'en',
+          visibility: ConclaveVisibility.public,
+          memberLimit: 20,
+          memberCount: 2,
+          level: 1,
+          xp: 0,
+          aerieStage: 1,
+        ),
+        myRole: ConclaveRole.keeper,
+        contributedToday: false,
+        members: const [],
+        messages: [
+          ConclaveMessage(
+            id: 'text-time',
+            senderId: 'friend-user',
+            senderName: 'Visnet',
+            senderPortraitKey: 'portrait_042',
+            kind: 'text',
+            body: 'Good morning!',
+            payload: const {},
+            createdAt: sentAt['text-time']!,
+          ),
+          ConclaveMessage(
+            id: 'emote-time',
+            senderId: 'friend-user',
+            senderName: 'Visnet',
+            senderPortraitKey: 'portrait_042',
+            kind: 'emote',
+            body: emote.nameEn,
+            payload: {'emote_id': emote.id},
+            createdAt: sentAt['emote-time']!,
+          ),
+          ConclaveMessage(
+            id: 'achievement-time',
+            senderId: 'friend-user',
+            senderName: 'Visnet',
+            senderPortraitKey: 'portrait_042',
+            kind: 'achievement',
+            body: 'Achievement unlocked!',
+            payload: const {'achievement_id': 'hello_little_one'},
+            createdAt: sentAt['achievement-time']!,
+          ),
+        ],
+        chronicle: const [],
+        joinRequests: const [],
+      );
+    final game = HouseholdProvider(random: Random(313));
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const MaterialApp(home: ConclaveScreen()),
+    ));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    for (final entry in sentAt.entries) {
+      final finder = find.byKey(Key('conclave-message-time-${entry.key}'));
+      expect(finder, findsOneWidget);
+      final expected =
+          TimeOfDay.fromDateTime(entry.value).format(tester.element(finder));
+      expect(tester.widget<Text>(finder).data, expected);
+    }
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+  });
+
   testWidgets('Conclave renders achievement details in one compact batch',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 900));

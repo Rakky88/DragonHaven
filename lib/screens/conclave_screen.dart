@@ -1215,11 +1215,24 @@ class _ConclaveMessageTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(message.senderName,
-                      style: const TextStyle(
-                          color: AppColors.twilight,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 12)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          message.senderName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.twilight,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _ConclaveMessageTime(message: message),
+                    ],
+                  ),
                   Text(message.body, style: const TextStyle(height: 1.28)),
                   if (message.kind == 'trial')
                     Text(
@@ -1275,15 +1288,23 @@ class _ConclaveEmoteMessageTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    message.senderName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.twilight,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 11,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          message.senderName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.twilight,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      _ConclaveMessageTime(message: message),
+                    ],
                   ),
                   DragonEmoteSprite(emote: emote, size: 112),
                 ],
@@ -1500,11 +1521,30 @@ class _ConclaveAchievementRow extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(width: 7),
+            _ConclaveMessageTime(message: message),
           ],
         ),
       ),
     );
   }
+}
+
+class _ConclaveMessageTime extends StatelessWidget {
+  const _ConclaveMessageTime({required this.message});
+
+  final ConclaveMessage message;
+
+  @override
+  Widget build(BuildContext context) => Text(
+        TimeOfDay.fromDateTime(message.createdAt.toLocal()).format(context),
+        key: Key('conclave-message-time-${message.id}'),
+        style: const TextStyle(
+          color: AppColors.muted,
+          fontSize: 9.5,
+          fontWeight: FontWeight.w700,
+        ),
+      );
 }
 
 class _ConclaveAchievementBadge extends StatelessWidget {
