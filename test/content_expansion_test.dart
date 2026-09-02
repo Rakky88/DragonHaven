@@ -22,7 +22,7 @@ void main() {
     }
     expect(adultNames, hasLength(176));
     expect(DragonArtwork.logicalFormCount, 265);
-    expect(DragonArtwork.allAssetPaths, hasLength(226));
+    expect(DragonArtwork.allAssetPaths, hasLength(227));
   });
 
   test('all dragon artwork files exist', () {

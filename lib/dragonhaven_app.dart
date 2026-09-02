@@ -559,10 +559,12 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       bottomNavigationBar: eggOnly
           ? null
           : NavigationBar(
+              key: const Key('tutorial-primary-navigation'),
               selectedIndex: _index,
               onDestinationSelected: _selectIndex,
               destinations: [
                 NavigationDestination(
+                  key: const Key('tutorial-nav-friends'),
                   icon: _FriendsNavigationIcon(
                     size: 34,
                     pendingRequestCount: pendingFriendRequestCount,
@@ -575,6 +577,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                   label: strings.tr('friends'),
                 ),
                 NavigationDestination(
+                  key: const Key('tutorial-nav-adventure'),
                   icon: const GameIconSprite(
                     GameIconKind.navAdventure,
                     size: 34,
@@ -586,6 +589,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                   label: strings.tr('adventure'),
                 ),
                 NavigationDestination(
+                  key: const Key('tutorial-nav-tower'),
                   icon: const GameIconSprite(
                     GameIconKind.navTower,
                     size: 34,
@@ -597,6 +601,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                   label: strings.pick('Tower', 'Toren'),
                 ),
                 NavigationDestination(
+                  key: const Key('tutorial-nav-inventory'),
                   icon: const GameIconSprite(
                     GameIconKind.navInventory,
                     size: 34,
@@ -608,6 +613,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                   label: strings.tr('inventory'),
                 ),
                 NavigationDestination(
+                  key: const Key('tutorial-nav-shop'),
                   icon: const GameIconSprite(
                     GameIconKind.navShop,
                     size: 34,

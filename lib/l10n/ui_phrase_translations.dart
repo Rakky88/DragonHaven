@@ -2127,6 +2127,7 @@ const uiPhraseTranslations = <String, List<String>>{
     'Especial',
     'スペシャル'
   ],
+  'Dragons': ['Drachen', 'Dragones', 'Dragons', 'Draghi', 'Dragões', 'ドラゴン'],
   'Spectral': [
     'Spektral',
     'Espectral',

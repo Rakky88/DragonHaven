@@ -31,7 +31,7 @@ const _selectedForms = <String, List<String>>{
   'quietstar': ['might', 'spirit'],
   'rainbowruff': ['spirit'],
   'runehopper': ['might', 'arcana', 'spirit'],
-  'starforged': ['wyrmling', 'might'],
+  'starforged': ['wyrmling', 'might', 'arcana'],
   'sunmuzzle': ['wyrmling', 'might', 'arcana', 'spirit'],
   'temporalark': ['might'],
   'tidescale': ['might', 'spirit'],
@@ -51,7 +51,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets(
-      'all 85 selected source forms retain a safety margin in five complete passes',
+      'all 86 selected source forms retain a safety margin in five complete passes',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(180, 180));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -128,7 +128,7 @@ void main() {
     }
   }, timeout: const Timeout(Duration(minutes: 12)));
 
-  test('all 85 selected source forms resolve to standalone safe artwork', () {
+  test('all 86 selected source forms resolve to standalone safe artwork', () {
     var count = 0;
     for (final selection in _selectedForms.entries) {
       for (final form in selection.value) {
@@ -145,10 +145,10 @@ void main() {
         count++;
       }
     }
-    expect(count, 85);
+    expect(count, 86);
   });
 
-  test('all 85 standalone sprites keep every opaque pixel inside the safe area',
+  test('all 86 standalone sprites keep every opaque pixel inside the safe area',
       () {
     for (var pass = 1; pass <= 5; pass++) {
       for (final selection in _selectedForms.entries) {
@@ -213,6 +213,30 @@ void main() {
         sprite!.getPixel(point.$1, point.$2).a,
         greaterThan(32),
         reason: 'unexpected transparent chest pixel at $point',
+      );
+    }
+  });
+
+  test('Supernova Sovereign has transparent negative space between its legs',
+      () {
+    final sprite = img.decodeImage(
+      File(
+        DragonArtwork.safeStandaloneFormAsset('starforged', 'arcana'),
+      ).readAsBytesSync(),
+    );
+    expect(sprite, isNotNull);
+    for (final point in const [(354, 413), (360, 420)]) {
+      expect(
+        sprite!.getPixel(point.$1, point.$2).a,
+        lessThanOrEqualTo(8),
+        reason: 'white background remnant at $point',
+      );
+    }
+    for (final point in const [(344, 420), (377, 421)]) {
+      expect(
+        sprite!.getPixel(point.$1, point.$2).a,
+        greaterThan(24),
+        reason: 'dragon outline was damaged at $point',
       );
     }
   });

@@ -440,6 +440,17 @@ class _HouseRoomScene extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final size = Size(constraints.maxWidth, constraints.maxHeight);
+            final dragonPositions = <Offset>[
+              for (var index = 0; index < dragons.length; index++)
+                dragons[index].id == activeDragonId
+                    ? dragonPosition
+                    : _idlePosition(
+                        dragons[index], index, wanderStep, dragons.length),
+            ];
+            final dragonPaintOrder = roomDragonDepthOrder(
+              dragonPositions,
+              stableIds: [for (final dragon in dragons) dragon.id],
+            );
             return GestureDetector(
               key: const Key('house-room-scene'),
               behavior: HitTestBehavior.opaque,
@@ -486,14 +497,14 @@ class _HouseRoomScene extends StatelessWidget {
                         editable: editMode,
                         onTap: () => onSelectItem(placement.itemId),
                       ),
-                    for (var index = 0; index < dragons.length; index++)
+                    // A Stack paints later children in front. Sorting by each
+                    // dragon's ground anchor keeps walkers at the top of the
+                    // room behind dragons standing lower in the scene.
+                    for (final index in dragonPaintOrder)
                       _RoomDragon(
                         dragon: dragons[index],
                         sceneSize: size,
-                        position: dragons[index].id == activeDragonId
-                            ? dragonPosition
-                            : _idlePosition(dragons[index], index, wanderStep,
-                                dragons.length),
+                        position: dragonPositions[index],
                         roomDragonCount: dragons.length,
                         moveDuration: dragons[index].id == activeDragonId
                             ? dragonMoveDuration
@@ -557,6 +568,28 @@ class _HouseRoomScene extends StatelessWidget {
           },
         ),
       );
+}
+
+/// Returns back-to-front paint indices for room actors.
+///
+/// [Offset.dy] is the virtual ground contact point, so a smaller value is
+/// farther into the room. Horizontal position and id only stabilize ties and
+/// prevent overlapping dragons from flickering between frames.
+List<int> roomDragonDepthOrder(
+  List<Offset> positions, {
+  List<String>? stableIds,
+}) {
+  assert(stableIds == null || stableIds.length == positions.length);
+  final indices = List<int>.generate(positions.length, (index) => index);
+  indices.sort((left, right) {
+    final depth = positions[left].dy.compareTo(positions[right].dy);
+    if (depth != 0) return depth;
+    final horizontal = positions[left].dx.compareTo(positions[right].dx);
+    if (horizontal != 0) return horizontal;
+    if (stableIds != null) return stableIds[left].compareTo(stableIds[right]);
+    return left.compareTo(right);
+  });
+  return indices;
 }
 
 class _RoomPhaseAtmosphere extends StatelessWidget {

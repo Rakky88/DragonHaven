@@ -1202,6 +1202,59 @@ void main() {
 
   testWidgets('starter tutorial can be skipped and replayed to completion',
       (tester) async {
+    void expectTargetAndCardSeparated(int step) {
+      final target = tester.getRect(
+        find.byKey(const Key('tutorial-target-outline')),
+      );
+      final card = tester.getRect(
+        find.byKey(const Key('tutorial-card-region')),
+      );
+      final guide = tester.getRect(
+        find.byKey(const Key('tutorial-dragon-guide')),
+      );
+      expect(target.overlaps(card), isFalse,
+          reason:
+              'tutorial card overlaps its target at step $step: target=$target, card=$card');
+      expect(target.overlaps(guide), isFalse,
+          reason:
+              'tutorial guide overlaps its target at step $step: target=$target, guide=$guide');
+    }
+
+    const targetKeys = <Key>[
+      Key('tutorial-tower-actions'),
+      Key('tutorial-friends-header'),
+      Key('tutorial-friends-overview'),
+      Key('open-conclave'),
+      Key('tutorial-adventure-header'),
+      Key('tutorial-adventure-section-group'),
+      Key('adventure-tab-trials'),
+      Key('open-my-dragons'),
+      Key('tutorial-tower-actions'),
+      Key('tutorial-rooftop-header'),
+      Key('tutorial-dragon-school-title'),
+      Key('tutorial-inventory-tabs'),
+      Key('inventory-tab-chests'),
+      Key('shop-currency-tabs'),
+      Key('shop-tab-packs'),
+      Key('app-overflow-menu'),
+      Key('app-overflow-menu'),
+    ];
+    void expectRealTargetMeasured(int step) {
+      final intended = find.byKey(targetKeys[step]);
+      if (intended.evaluate().length != 1) return;
+      final spotlight = tester.getRect(
+        find.byKey(const Key('tutorial-target-outline')),
+      );
+      expect(spotlight.contains(tester.getCenter(intended)), isTrue,
+          reason: 'tutorial step $step did not follow its real widget');
+    }
+
+    Future<void> settleTutorialStep() async {
+      for (var frame = 0; frame < 8; frame++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
     final game = await pumpGame(tester, onboarded: true, hatched: true);
     game
       ..tutorialCompleted = false
@@ -1210,15 +1263,28 @@ void main() {
     game.notifyListeners();
 
     await tester.pump(const Duration(milliseconds: 350));
-    await tester.pump(const Duration(milliseconds: 400));
+    await settleTutorialStep();
     expect(find.byKey(const Key('tutorial-step-0')), findsOneWidget);
     expect(find.byKey(const Key('tutorial-dragon-guide')), findsOneWidget);
     expect(find.text('Welcome to DragonHaven'), findsOneWidget);
+    expectTargetAndCardSeparated(0);
+    expectRealTargetMeasured(0);
 
     await tester.tap(find.byKey(const Key('next-tutorial-step')));
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump();
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.byKey(const Key('next-tutorial-step')),
+          )
+          .onPressed,
+      isNull,
+    );
+    await settleTutorialStep();
     expect(find.byKey(const PageStorageKey('friends-scroll')), findsOneWidget);
     expect(find.text('Friends'), findsWidgets);
+    expectTargetAndCardSeparated(1);
+    expectRealTargetMeasured(1);
 
     await tester.tap(find.byKey(const Key('skip-tutorial')));
     for (var frame = 0; frame < 10; frame++) {
@@ -1236,12 +1302,25 @@ void main() {
     await tester.pump();
     await tester.tap(find.byKey(const Key('app-menu-tutorial')));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 700));
+    await settleTutorialStep();
     expect(find.byKey(const Key('tutorial-step-0')), findsOneWidget);
+    expectTargetAndCardSeparated(0);
+    expectRealTargetMeasured(0);
     for (var step = 1; step < dragonHavenTutorialStepCount; step++) {
       await tester.tap(find.byKey(const Key('next-tutorial-step')));
-      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump();
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const Key('next-tutorial-step')),
+            )
+            .onPressed,
+        isNull,
+      );
+      await settleTutorialStep();
       expect(find.byKey(Key('tutorial-step-$step')), findsOneWidget);
+      expectTargetAndCardSeparated(step);
+      expectRealTargetMeasured(step);
       expect(tester.takeException(), isNull, reason: 'tutorial step $step');
     }
     expect(find.text('Journal, achievements and help'), findsOneWidget);
@@ -1259,6 +1338,117 @@ void main() {
             .hitTestable(),
         findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('tutorial restores a previously scrolled page to its real target',
+      (tester) async {
+    final game = await pumpGame(
+      tester,
+      onboarded: true,
+      hatched: true,
+      surfaceSize: const Size(390, 620),
+    );
+    final towerScroll = find.descendant(
+      of: find.byKey(const PageStorageKey('dragon-tower-scroll')),
+      matching: find.byType(Scrollable),
+    );
+    final position = tester.state<ScrollableState>(towerScroll).position;
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pump();
+    expect(position.pixels, greaterThan(0));
+
+    game
+      ..tutorialCompleted = false
+      ..tutorialFullyViewed = false
+      ..unlockedAchievementIds.add('hello_little_one');
+    game.notifyListeners();
+    await tester.pump(const Duration(milliseconds: 350));
+    for (var frame = 0; frame < 12; frame++) {
+      await tester.pump(const Duration(milliseconds: 150));
+    }
+
+    expect(find.byKey(const Key('tutorial-step-0')), findsOneWidget);
+    final currentPosition = tester
+        .state<ScrollableState>(
+          find.descendant(
+            of: find.byKey(const PageStorageKey('dragon-tower-scroll')),
+            matching: find.byType(Scrollable),
+          ),
+        )
+        .position;
+    expect(currentPosition.pixels, closeTo(0, 1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'tutorial stays anchored on compact large-text portrait and landscape',
+      (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.35;
+    addTearDown(
+      tester.platformDispatcher.clearTextScaleFactorTestValue,
+    );
+    final game = await pumpGame(
+      tester,
+      onboarded: true,
+      hatched: true,
+      surfaceSize: const Size(360, 640),
+    );
+    await game.setLanguage('de');
+    game
+      ..tutorialCompleted = false
+      ..tutorialFullyViewed = false
+      ..unlockedAchievementIds.add('hello_little_one');
+    game.notifyListeners();
+
+    Future<void> settleStep() async {
+      for (var frame = 0; frame < 16; frame++) {
+        await tester.pump(const Duration(milliseconds: 100));
+        final next = find.byKey(const Key('next-tutorial-step'));
+        final target = find.byKey(const Key('tutorial-target-outline'));
+        if (next.evaluate().isNotEmpty && target.evaluate().isNotEmpty) {
+          final button = tester.widget<FilledButton>(next);
+          if (button.onPressed != null) return;
+        }
+      }
+      fail('tutorial target did not settle within 1.6 seconds');
+    }
+
+    await tester.pump(const Duration(milliseconds: 350));
+    await settleStep();
+    for (var step = 0; step < dragonHavenTutorialStepCount; step++) {
+      expect(find.byKey(Key('tutorial-step-$step')), findsOneWidget);
+      final target = tester.getRect(
+        find.byKey(const Key('tutorial-target-outline')),
+      );
+      final cardRegion = tester.getRect(
+        find.byKey(const Key('tutorial-card-region')),
+      );
+      final nextButton = find.byKey(const Key('next-tutorial-step'));
+      expect(target.overlaps(cardRegion), isFalse,
+          reason:
+              'compact tutorial overlap at step $step: target=$target, card=$cardRegion');
+      expect(cardRegion.contains(tester.getCenter(nextButton)), isTrue,
+          reason: 'tutorial footer escaped at step $step');
+      expect(nextButton.hitTestable(), findsOneWidget,
+          reason: 'tutorial next button is not usable at step $step');
+      final exception = tester.takeException();
+      expect(
+        exception,
+        isNull,
+        reason:
+            'compact tutorial exception at step $step${exception is FlutterError ? ': ${exception.toStringDeep()}' : ''}',
+      );
+      if (step == dragonHavenTutorialStepCount - 1) break;
+
+      await tester.tap(nextButton);
+      await tester.pump();
+      if (step == 7) {
+        await tester.binding.setSurfaceSize(const Size(640, 360));
+      } else if (step == 11) {
+        await tester.binding.setSurfaceSize(const Size(360, 640));
+      }
+      await settleStep();
+    }
   });
 
   testWidgets('earned chests appear and open only from Inventory',

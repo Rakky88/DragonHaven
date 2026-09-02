@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:image/image.dart';
 
+import 'clean_starforged_arcana_gap.dart';
+
 const selectedForms = <String, List<String>>{
   'auroracrown': ['wyrmling', 'might', 'arcana', 'spirit'],
   'bramblequill': ['wyrmling', 'might', 'arcana', 'spirit'],
@@ -25,7 +27,7 @@ const selectedForms = <String, List<String>>{
   'quietstar': ['might', 'spirit'],
   'rainbowruff': ['spirit'],
   'runehopper': ['might', 'arcana', 'spirit'],
-  'starforged': ['wyrmling', 'might'],
+  'starforged': ['wyrmling', 'might', 'arcana'],
   'sunmuzzle': ['wyrmling', 'might', 'arcana', 'spirit'],
   'temporalark': ['might'],
   'tidescale': ['might', 'spirit'],
@@ -42,9 +44,18 @@ const _cells = <String, (int, int)>{
   'spirit': (1, 1),
 };
 
-Future<void> main() async {
+Future<void> main(List<String> arguments) async {
+  if (arguments.length > 2) {
+    throw ArgumentError(
+      'Usage: dart run tool/extract_selected_dragon_sprites.dart '
+      '[lineage] [form]',
+    );
+  }
+  final lineageFilter = arguments.firstOrNull;
+  final formFilter = arguments.length > 1 ? arguments[1] : null;
   var written = 0;
   for (final family in selectedForms.entries) {
+    if (lineageFilter != null && family.key != lineageFilter) continue;
     final atlasPath = 'assets/images/dragons/${family.key}_forms.webp';
     final atlas = decodeImage(await File(atlasPath).readAsBytes());
     if (atlas == null) throw StateError('Cannot decode $atlasPath');
@@ -59,6 +70,7 @@ Future<void> main() async {
         (cellWidth > cellHeight ? cellWidth : cellHeight) + padding * 2;
 
     for (final form in family.value) {
+      if (formFilter != null && form != formFilter) continue;
       final cell = _cells[form]!;
       final source = copyCrop(
         atlas,
@@ -78,6 +90,9 @@ Future<void> main() async {
         dstX: (canvasSize - cellWidth) ~/ 2,
         dstY: (canvasSize - cellHeight) ~/ 2,
       );
+      if (family.key == 'starforged' && form == 'arcana') {
+        cleanStarforgedArcanaGap(canvas);
+      }
 
       final output = File(
         'assets/images/dragons/${family.key}_${form}_safe.webp',

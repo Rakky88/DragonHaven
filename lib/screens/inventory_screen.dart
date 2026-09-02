@@ -31,6 +31,7 @@ class InventoryScreen extends StatelessWidget {
       initialIndex: initialTab,
       child: Column(children: [
         TabBar(
+          key: const Key('tutorial-inventory-tabs'),
           isScrollable: true,
           tabAlignment: TabAlignment.center,
           tabs: [
@@ -1973,43 +1974,50 @@ class _EmptyState extends StatelessWidget {
   final GameIconKind kind;
   final String text;
   @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          child: Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(maxWidth: 390),
-            padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.white, Color(0xFFF0EAFF)],
-              ),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: AppColors.mist),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x145B4B8A),
-                  blurRadius: 24,
-                  offset: Offset(0, 10),
-                ),
-              ],
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: (constraints.maxHeight - 48).clamp(0, double.infinity),
             ),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              GameIconSprite(kind, size: 116),
-              const SizedBox(height: 12),
-              Text(
-                text,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 15,
-                  height: 1.35,
-                  fontWeight: FontWeight.w700,
+            child: Center(
+              child: Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(maxWidth: 390),
+                padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.white, Color(0xFFF0EAFF)],
+                  ),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: AppColors.mist),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x145B4B8A),
+                      blurRadius: 24,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
                 ),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  GameIconSprite(kind, size: 116),
+                  const SizedBox(height: 12),
+                  Text(
+                    text,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 15,
+                      height: 1.35,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ]),
               ),
-            ]),
+            ),
           ),
         ),
       );

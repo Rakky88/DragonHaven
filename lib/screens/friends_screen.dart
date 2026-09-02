@@ -180,6 +180,7 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(bottom: 18),
         child: Container(
+          key: const Key('tutorial-friends-header'),
           padding: const EdgeInsets.fromLTRB(14, 13, 16, 14),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -313,6 +314,7 @@ class _FriendsOverview extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return Padding(
+      key: const Key('tutorial-friends-overview'),
       padding: const EdgeInsets.only(top: 10),
       child: Row(
         children: [

@@ -47,6 +47,7 @@ class DragonTowerScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 34),
       children: [
         Row(
+          key: const Key('tutorial-tower-actions'),
           children: [
             Expanded(
               child: FittedBox(
@@ -388,7 +389,7 @@ class _TowerRoof extends StatelessWidget {
               left: 14,
               right: 14,
               top: 13,
-              child: Row(children: [
+              child: Row(key: const Key('tutorial-rooftop-header'), children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -510,6 +511,7 @@ class _DragonSchoolEntrance extends StatelessWidget {
                         children: [
                           Text(
                             strings.pick('Dragon Academy', 'Drakenacademie'),
+                            key: const Key('tutorial-dragon-school-title'),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 19,

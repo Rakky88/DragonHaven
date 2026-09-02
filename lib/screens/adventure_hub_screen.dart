@@ -96,6 +96,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
     return Column(
       children: [
         Padding(
+          key: const Key('tutorial-adventure-header'),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Row(
             children: [
@@ -843,6 +844,7 @@ class _AdventureSection extends StatelessWidget {
         ? specialAdventureWindowsAt(now).firstOrNull
         : null;
     return Container(
+      key: Key('tutorial-adventure-section-${kind.name}'),
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.fromLTRB(10, 9, 10, 2),
       decoration: BoxDecoration(

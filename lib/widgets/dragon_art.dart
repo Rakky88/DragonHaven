@@ -57,7 +57,7 @@ abstract final class DragonArtwork {
     'quietstar': {'might', 'spirit'},
     'rainbowruff': {'spirit'},
     'runehopper': {'might', 'arcana', 'spirit'},
-    'starforged': {'wyrmling', 'might'},
+    'starforged': {'wyrmling', 'might', 'arcana'},
     'sunmuzzle': {'wyrmling', 'might', 'arcana', 'spirit'},
     'temporalark': {'might'},
     'tidescale': {'might', 'spirit'},
