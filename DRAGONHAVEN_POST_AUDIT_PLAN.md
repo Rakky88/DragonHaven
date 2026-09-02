@@ -1,14 +1,16 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
-Laatst bijgewerkt: **1 september 2026**
+Laatst bijgewerkt: **2 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
 Actuele openbare versie: **v0.05.02**
 
 Actuele productieserver: **33/33 migraties**
 
-Actuele serverkandidaat: **geen afzonderlijke kandidaat; lokaal, staging en
-productie staan gelijk op migratie 33.**
+Actuele serverkandidaat: **migraties 34 (Dragon chat-emotes) en 35
+(Trial-ranglijsten) staan uitsluitend lokaal klaar. Staging en productie staan
+nog op migratie 33; toepassen vereist opnieuw een expliciete toestemming en de
+begrensde staging-/productiegates.**
 
 Actuele uitgebrachte tranche: **v0.05.02 is openbaar uitgebracht met versionCode
 10052. De release bevat de Special Event-afteller en beknopte beloningen,
@@ -17,6 +19,18 @@ betrouwbare Dragon Academy Dropout-reveals, exact 10% Spectral-kans tijdens
 Golden Hour en de natuurlijke Conclave-scroll plus retrybare 15-secondenpoll voor
 privéberichten. Analyzer en alle 375 tests zijn groen; de ondertekende APK is op
 exact 360×640 dp en met reduced motion gecontroleerd.**
+
+Actuele lokale tranche na v0.05.02: **de tranche telt elf commits. Tien daarvan
+verbeteren Ascension-uitleg, tutorial, Draconomicon, kamerspritediepte,
+Vanity-weergave, Conclave-keepers/chat, random-rewarddocumentatie en
+Adventure-badges. Commit `0e7ccc7` voegt
+World-/Friends-/Conclave-ranglijsten per Trial toe met
+een privacyarme top-100-RPC, compacte 360×640-dp UI, vertalingen, twee
+widgettests, een servercontracttest en uitgebreide staging-E2E. Migraties 34 en
+35, de stagingrun, productiemigratie en een openbare release zijn nog niet
+uitgevoerd. Codex heeft de lokale bouw en tests afgerond; Rick hoeft pas opnieuw
+toestemming te geven wanneer deze tranche extern uitgerold mag worden. De
+auditchecklisttellingen wijzigen hierdoor niet.**
 
 Server- en releasebewijs: **de exact begrensde
 [migratierun 33562064314](https://github.com/Rakky88/DragonHaven/actions/runs/33562064314)
@@ -1196,6 +1210,9 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 01-09-2026 | v0.05.02 lokale releasecandidate | Codex, na jouw toestemming | commit `c0707ca1e36ea0189203f8eff056f389987fa96d`, `release-notes-v0.05.02.md`, `production-migrate-33.yml` en ondertekende APK | App- en zichtbare versie staan op v0.05.02 met versionCode 10052. Analyzer en 375/375 tests zijn groen. APK heeft package `nl.dragonhaven.app`, 367.052.619 bytes, SHA-256 `f657521a4e9b13ebca1c837a547616b19d395ce0f29265f68b2954753bde5e83` en vast certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`; 360×640 dp en reduced motion zijn op de emulator gecontroleerd. |
 | 01-09-2026 | Productiemigratie 33 en onafhankelijke preflight | Codex, na jouw expliciete toestemming | [Migratierun 33562064314](https://github.com/Rakky88/DragonHaven/actions/runs/33562064314), `production-migrate-33.yml`, `release_server_preflight.ps1` | Exacte beginstand 32, publieke healthcheck, database-lint en dry-run waren groen; uitsluitend migratie 33 is toegepast. Daarna bewijzen workflow en onafhankelijke lokale preflight 33/33 parity, nul lintfouten, Auth health/settings 200/200, e-mailauth en applicatiehealth 200 met contractversie 1 en 76 ms gemeten klokafwijking. |
 | 01-09-2026 | Openbare release en post-release health v0.05.02 | Codex, na jouw toestemming | [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.02), [taggate 33562491443](https://github.com/Rakky88/DragonHaven/actions/runs/33562491443), [healthrun 33563056104](https://github.com/Rakky88/DragonHaven/actions/runs/33563056104) | Exact commit `c0707ca1e36ea0189203f8eff056f389987fa96d` is getagd. Remote assetnaam, 367.052.619 bytes en SHA-256 zijn gelijk aan lokaal; versiegebonden en permanente latest-download geven HTTP 200. De taggate herhaalde preflight, analyzer, 375 tests, vaste signing en Play-ready AAB. De post-releasecheck bevestigde Auth en applicatiehealth en bewaarde dertig dagen bewijs zonder storingsalert. |
+
+| 02-09-2026 | Lokale post-v0.05.02 featuretranche opgebouwd | Codex | commits `3f5b015` t/m `65c65bc`, gerichte widget-/modeltests en `RANDOM_REWARDS_AND_ODDS.md` | Ascension-vereisten zijn duidelijker, tutorial/Draconomicon/kamerdiepte en Vanity zijn gecorrigeerd, Conclave-keepers en -chat zijn verfijnd, alle random rolls zijn gedocumenteerd en voltooide Adventures hebben een navigatiebadge. Dragon-emotes gebruiken lokale migratie 34. Niets is naar staging of productie gebracht; openbare versie blijft v0.05.02 en productie 33/33. |
+| 02-09-2026 | Gescope Trial-ranglijsten lokaal gereed | Codex | commit `0e7ccc7`, migratie `202609020035_trial_rankings.sql`, `production-migrate-35.yml`, `trial_rankings_sheet.dart`, uitgebreide `staging_social_e2e.ps1` en drie groene gerichte tests | Trials bieden World en Friends per Grotvlucht, Ruïnebreker en Runenwever; Conclave Keepers biedt dezelfde vergelijking voor alle leden. De top 100 plus de eigen wereldpositie gebruikt alleen gepubliceerde scores en retourneert geen user-id, Keeper-ID of e-mail. Dart-analyse en PowerShell-parser zijn groen en de UI past op 360×640 dp. Nog door Codex na toestemming: migraties 34–35 op staging bewijzen, volledige gate draaien en pas bij afzonderlijke releasepermissie productie/release uitvoeren. Nog door Rick: alleen die externe toestemming wanneer gewenst. |
 
 ## Onderhoud van dit plan
 
