@@ -6,7 +6,7 @@ Ruleset: app version `v0.05.04`
 
 Source baseline: commit `e3befdf`
 
-<!-- reference-source-fingerprint: 852aec7df9244e98 -->
+<!-- reference-source-fingerprint: 7523169a975ce1ee -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 

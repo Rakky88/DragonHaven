@@ -6,7 +6,7 @@ Ruleset: app version `v0.05.04`
 
 Source baseline: commit `e3befdf`
 
-<!-- reference-source-fingerprint: e91cd54f883b0499 -->
+<!-- reference-source-fingerprint: 8bdfb366589b87af -->
 
 This is the living content catalog for every implemented Special Event,
 Special Adventure family, chest type, and egg type in DragonHaven. It records

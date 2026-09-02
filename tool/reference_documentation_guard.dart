@@ -84,7 +84,12 @@ String calculateReferenceFingerprint(
       hash = ((hash ^ BigInt.from(byte)) * _fnvPrime) & _uint64Mask;
     }
     hash = ((hash ^ BigInt.zero) * _fnvPrime) & _uint64Mask;
-    for (final byte in file.readAsBytesSync()) {
+    // Git can materialize text files with CRLF on Windows and LF on Linux.
+    // Hash the normalized repository content so a documentation marker made
+    // on one release workstation remains valid on every CI runner.
+    final normalizedContents =
+        file.readAsStringSync().replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    for (final byte in utf8.encode(normalizedContents)) {
       hash = ((hash ^ BigInt.from(byte)) * _fnvPrime) & _uint64Mask;
     }
     hash = ((hash ^ BigInt.from(0xff)) * _fnvPrime) & _uint64Mask;

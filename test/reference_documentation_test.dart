@@ -7,6 +7,24 @@ import 'package:flutter_test/flutter_test.dart';
 import '../tool/reference_documentation_guard.dart';
 
 void main() {
+  test('reference fingerprints are identical for LF and CRLF checkouts', () {
+    final root = Directory.systemTemp.createTempSync('dragonhaven-reference-');
+    addTearDown(() => root.deleteSync(recursive: true));
+    final source = File('${root.path}${Platform.pathSeparator}lib'
+        '${Platform.pathSeparator}sample.dart')
+      ..parent.createSync(recursive: true);
+    const spec = ReferenceDocumentSpec(
+      documentPath: 'REFERENCE.md',
+      sourcePaths: ['lib/sample.dart'],
+    );
+
+    source.writeAsStringSync('first line\nsecond line\n');
+    final lfFingerprint = calculateReferenceFingerprint(spec, root: root);
+    source.writeAsStringSync('first line\r\nsecond line\r\n');
+
+    expect(calculateReferenceFingerprint(spec, root: root), lfFingerprint);
+  });
+
   test('living reference documents match their implementation sources', () {
     expect(
       verifyReferenceDocuments(),

@@ -2473,7 +2473,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.05.05'), findsOneWidget);
+    expect(find.text('v0.05.06'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-copy-iphone-link')), findsNothing);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);
