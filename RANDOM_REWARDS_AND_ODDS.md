@@ -2,7 +2,7 @@
 
 Last verified: 2 September 2026
 
-Ruleset: app version `v0.05.03`
+Ruleset: app version `v0.05.04`
 
 Source baseline: commit `6d28e76`
 

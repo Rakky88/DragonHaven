@@ -205,6 +205,19 @@ void main() {
       const Key('special-event-availability-countdown-compact'),
     );
     expect(compactCountdown, findsOneWidget);
+    expect(
+      find.descendant(of: card, matching: compactCountdown),
+      findsOneWidget,
+    );
+    final startButton = find.descendant(
+      of: card,
+      matching: find.byKey(const Key('start-adventure-button')),
+    );
+    expect(startButton, findsOneWidget);
+    expect(
+      tester.getRect(compactCountdown).right,
+      lessThanOrEqualTo(tester.getRect(startButton).left),
+    );
     final countdownText = find.descendant(
       of: compactCountdown,
       matching: find.byType(Text),
@@ -508,6 +521,55 @@ void main() {
       find.byKey(Key('dragon-emote-pack-grid-${ownedPack.id}')),
       findsOneWidget,
     );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('dragon emote pack prices fit compact phone cards',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final game = HouseholdProvider(
+      random: Random(945),
+      persistenceEnabled: false,
+    );
+    addTearDown(game.dispose);
+
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: game,
+      child: const MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(
+            size: Size(320, 760),
+            textScaler: TextScaler.linear(1.25),
+          ),
+          child: Scaffold(body: ShopHubScreen(initialCurrencyTab: 2)),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final scrollable = find.descendant(
+      of: find.byKey(const Key('packs-shop-scroll')),
+      matching: find.byType(Scrollable),
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(
+        Key('dragon-emote-pack-price-${dragonEmotePacks.first.id}'),
+      ),
+      300,
+      scrollable: scrollable,
+    );
+
+    for (final pack in dragonEmotePacks) {
+      final button = find.byKey(Key('buy-dragon-emote-pack-${pack.id}'));
+      final price = find.byKey(Key('dragon-emote-pack-price-${pack.id}'));
+      expect(button, findsOneWidget);
+      expect(price, findsOneWidget);
+      final buttonRect = tester.getRect(button);
+      final priceRect = tester.getRect(price);
+      expect(buttonRect.contains(priceRect.topLeft), isTrue);
+      expect(buttonRect.contains(priceRect.bottomRight), isTrue);
+    }
     expect(tester.takeException(), isNull);
   });
 

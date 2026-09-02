@@ -867,9 +867,6 @@ class _AdventureSection extends StatelessWidget {
     final strings = AppStrings.of(context);
     final game = context.read<HouseholdProvider>();
     final colors = _kindColors(kind);
-    final specialWindow = kind == AdventureKind.special
-        ? specialAdventureWindowsAt(now).firstOrNull
-        : null;
     return Container(
       key: Key('tutorial-adventure-section-${kind.name}'),
       margin: const EdgeInsets.only(bottom: 12),
@@ -925,16 +922,6 @@ class _AdventureSection extends StatelessWidget {
               ],
             ],
           ),
-          if (specialWindow != null) ...[
-            const SizedBox(height: 5),
-            Align(
-              alignment: Alignment.centerRight,
-              child: _SpecialEventAvailabilityCountdown(
-                endsAt: specialWindow.endsAt,
-                compact: true,
-              ),
-            ),
-          ],
           const SizedBox(height: 5),
           if (adventures.isEmpty)
             Padding(
@@ -1590,7 +1577,7 @@ class _SpecialEventAvailabilityCountdownState
           'special-event-availability-countdown-'
           '${widget.compact ? 'compact' : 'detail'}',
         ),
-        width: widget.compact ? null : double.infinity,
+        width: widget.compact ? 94 : double.infinity,
         padding: EdgeInsets.fromLTRB(
           widget.compact ? 7 : 12,
           widget.compact ? 5 : 8,
@@ -1612,7 +1599,7 @@ class _SpecialEventAvailabilityCountdownState
           ],
         ),
         child: Row(
-          mainAxisSize: widget.compact ? MainAxisSize.min : MainAxisSize.max,
+          mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: widget.compact
               ? MainAxisAlignment.start
               : MainAxisAlignment.center,
@@ -1622,37 +1609,71 @@ class _SpecialEventAvailabilityCountdownState
               size: widget.compact ? 19 : 25,
             ),
             SizedBox(width: widget.compact ? 4 : 7),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  strings.pick('Available for', 'Beschikbaar voor'),
-                  style: TextStyle(
-                    color: const Color(0xFF5E3A19),
-                    fontSize: widget.compact ? 7.5 : 10,
-                    fontWeight: FontWeight.w800,
-                    height: 1,
+            if (widget.compact)
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: _SpecialEventCountdownText(
+                    label: strings.pick('Available for', 'Beschikbaar voor'),
+                    countdown: countdown,
+                    compact: true,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  countdown,
-                  style: TextStyle(
-                    color: const Color(0xFF38230F),
-                    fontSize: widget.compact ? 10 : 13,
-                    fontWeight: FontWeight.w900,
-                    height: 1,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ],
-            ),
+              )
+            else
+              _SpecialEventCountdownText(
+                label: strings.pick('Available for', 'Beschikbaar voor'),
+                countdown: countdown,
+                compact: false,
+              ),
           ],
         ),
       ),
     );
   }
+}
+
+class _SpecialEventCountdownText extends StatelessWidget {
+  const _SpecialEventCountdownText({
+    required this.label,
+    required this.countdown,
+    required this.compact,
+  });
+
+  final String label;
+  final String countdown;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            style: TextStyle(
+              color: const Color(0xFF5E3A19),
+              fontSize: compact ? 7.5 : 10,
+              fontWeight: FontWeight.w800,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            countdown,
+            maxLines: 1,
+            style: TextStyle(
+              color: const Color(0xFF38230F),
+              fontSize: compact ? 10 : 13,
+              fontWeight: FontWeight.w900,
+              height: 1,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      );
 }
 
 class _AdventureRefreshCountdown extends StatelessWidget {
@@ -1730,6 +1751,14 @@ class _AdventureCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
+    final specialEvent = adventure.kind == AdventureKind.special
+        ? specialAdventureEventForAdventure(adventure.id)
+        : null;
+    final specialWindow = specialEvent == null
+        ? null
+        : specialAdventureWindowsAt(game.currentTime)
+            .where((window) => window.event.id == specialEvent.id)
+            .firstOrNull;
     return SizedBox(
       key: Key('adventure-card-${adventure.id}'),
       height: 82,
@@ -1816,6 +1845,13 @@ class _AdventureCard extends StatelessWidget {
                   icon: const Icon(Icons.close_rounded,
                       size: 19, color: AppColors.muted),
                 ),
+              if (specialWindow != null) ...[
+                const SizedBox(width: 4),
+                _SpecialEventAvailabilityCountdown(
+                  endsAt: specialWindow.endsAt,
+                  compact: true,
+                ),
+              ],
               const SizedBox(width: 2),
               _AdventureStartButton(onPressed: () => _start(context)),
             ]),

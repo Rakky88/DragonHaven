@@ -393,13 +393,22 @@ class _DragonEmotePackCard extends StatelessWidget {
                 foregroundColor: Colors.white,
                 disabledForegroundColor: const Color(0xFFE9DFF9),
                 side: const BorderSide(color: Colors.white24),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
               ),
-              child: Text(
-                owned ? strings.pick('OWNED', 'IN BEZIT') : '€1,99',
-                maxLines: 1,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  owned ? strings.pick('OWNED', 'IN BEZIT') : '€1,99',
+                  key: Key('dragon-emote-pack-price-${pack.id}'),
+                  maxLines: 1,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    height: 1,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ),
