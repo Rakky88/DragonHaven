@@ -3,7 +3,7 @@
 Laatst bijgewerkt: **2 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.05.06**
+Actuele openbare versie: **v0.05.07**
 
 Actuele productieserver: **36/36 migraties**
 
@@ -12,46 +12,36 @@ Actuele serverkandidaat: **geen. Migratie 34 (Dragon chat-emotes), migratie 35
 productie toegepast. Beide omgevingen staan op 36/36; nieuwe serverwijzigingen
 vereisen opnieuw een migratie en de begrensde staging-/productiegates.**
 
-Actuele uitgebrachte tranche: **v0.05.06 is openbaar uitgebracht met versionCode
-10056. De release bevat de Android-only deel-/updatekaart zonder iPhoneknop, de
-compacte Conclave-chatcomposer en levende Special-content-/random-roll-
-documentatie. De documentatiegate normaliseert CRLF/LF en is daardoor gelijk op
-Windows en Linux. Productiepreflight, analyzer, alle 406 tests, vaste signing,
-Play Store-AAB en post-release health zijn groen.**
+Actuele uitgebrachte tranche: **v0.05.07 is openbaar uitgebracht met versionCode
+10057. Trial-eindscores gebruiken de relevante Expertise-multiplier; het lege
+Rooftop Nest deelt de opgeslagen tegel-/lijstweergave en omkeerbare sortering
+met Inventory; Emberbun Spirit is transparant, rechtsgericht en heet Everwarm
+Hearthkeeper. Productiepreflight, analyzer, alle 408 tests, vaste signing,
+Play Store-AAB, remote assetcontrole en post-release health zijn groen. Deze
+release bevat geen servermigratie.**
 
-Actuele lokale tranche na v0.05.06: **v0.05.07 is als ondertekende Android-
-releasecandidate gereed met versionCode 10057. De kandidaat bevat de
-vakgebonden Trial-scoremultiplier, de gedeelde lege-nestcollectie met opgeslagen
-tegel-/lijstweergave en omkeerbare sortering, en de transparante rechtsgerichte
-Emberbun Spirit met de naam Everwarm Hearthkeeper. Analyzer en 408/408 tests
-zijn groen. De echte productie-APK heeft package `nl.dragonhaven.app`, het vaste
-releasecertificaat, 384.170.857 bytes en SHA-256
-`def7b0b6595ad68f9e5316b3be2e1b5a44f8fb407aeb378bfba4ef5e30b1c871`.
-Installatie over de bestaande app, Tower, leeg-nestgedrag en de zichtbare versie
-v0.05.07 zijn op de emulator gecontroleerd. De onafhankelijke preflight bewijst
-36/36 migraties, nul lintfouten en gezonde Auth- en applicatie-endpoints; deze
-release bevat geen nieuwe servermigratie. Publicatie en de externe tag-/
-healthgates volgen binnen de gegeven releasetoestemming.**
+Actuele lokale tranche na v0.05.07: **geen aparte lokale tranche. Broncode,
+openbare Android-release en auditstatus zijn gelijkgetrokken op v0.05.07.
+Productie en staging blijven op 36/36 migraties.**
 
 Server- en releasebewijs: **de volledige
 [stagingrun 33630222018](https://github.com/Rakky88/DragonHaven/actions/runs/33630222018)
 en begrensde
 [productiemigratie 33631028441](https://github.com/Rakky88/DragonHaven/actions/runs/33631028441)
-brachten staging en productie veilig op 36/36 met nul lintfouten. De historische
-v0.05.05-[taggate 33648597144](https://github.com/Rakky88/DragonHaven/actions/runs/33648597144)
-stopte vóór signing op het nu gecorrigeerde regeleindeverschil. De actuele
-[release v0.05.06](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.06)
-wijst naar commit `9ce79d36468cb3992de5b8361d582c0a2f9d28dd` en bevat exact één
-`DragonHaven.apk` van 383.331.062 bytes met SHA-256
-`cced52519b96b961b9bcce4adf707d6eab150a3e06f591f3469a5386333ee04c`.
-Remote grootte/digest zijn gelijk aan lokaal en de versiegebonden en permanente
+brachten staging en productie veilig op 36/36 met nul lintfouten. De actuele
+[release v0.05.07](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.07)
+wijst exact naar commit `2944fd1d521a665acf7b19289d61a3549dd2e928` en bevat één
+`DragonHaven.apk` van 384.170.857 bytes met SHA-256
+`def7b0b6595ad68f9e5316b3be2e1b5a44f8fb407aeb378bfba4ef5e30b1c871`.
+Remote grootte en digest zijn gelijk aan lokaal; de versiegebonden en permanente
 latest-download geven HTTP 200. De
-[taggate 33650746606](https://github.com/Rakky88/DragonHaven/actions/runs/33650746606)
-herhaalde productiepreflight, analyzer, 406 tests, vaste signing, Play-ready AAB
+[taggate 33658910426](https://github.com/Rakky88/DragonHaven/actions/runs/33658910426)
+herhaalde productiepreflight, analyzer, 408 tests, vaste signing, Play-ready AAB
 en artifactcontrole volledig groen. De
-[post-release healthrun 33651528845](https://github.com/Rakky88/DragonHaven/actions/runs/33651528845)
-bevestigde Auth en applicatiehealth, bewaarde bewijs en opende geen
-storingsalert. Productie en staging blijven zonder nieuwe migratie op 36/36.**
+[post-release healthrun 33659821612](https://github.com/Rakky88/DragonHaven/actions/runs/33659821612)
+bevestigde Auth en applicatiehealth, uploadde bewijs, sloot een eventueel hersteld
+alert en opende geen storingsalert. Productie en staging blijven zonder nieuwe
+migratie op 36/36.**
 
 Open meldingsgrens: **privéberichten worden nu merkbaar sneller en retrybaar
 opgehaald zolang het appproces leeft en direct bij resume. Gegarandeerde bezorging
@@ -1248,6 +1238,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 02-09-2026 | Trial-scoremultiplier door relevante expertise lokaal gereed | Codex | `trial.dart`, `dragonhaven_systems.dart`, `trial_game_screen.dart`, `adventure_hub_screen.dart`, drie regressietestbestanden en `RANDOM_REWARDS_AND_ODDS.md` | Iedere Trial gebruikt exact één vak: Spirit voor Cavern Flight, Might voor Ruin Breaker en Arcana voor Runeweaver. De formule is `round half up(ruwe score × (1 + expertise/1000))`; 5 expertise is dus ×1,005 en 300 expertise ×1,300. De eindscore stuurt rang, reward, dragon/account-best en online rankings. De draakkiezer toont de multiplier vooraf en de resultaatskaart toont ruwe score × multiplier onder het eindtotaal. Relevante expertise wordt vóór de reward vastgelegd, zodat nieuw verdiende punten pas een volgende run helpen. Analyzer, 69 gerichte tests en alle 407 regressietests zijn groen; bewaakte referentiedocumentatie is gesynchroniseerd. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
 | 02-09-2026 | Lege-nestcollectie en Emberbun Spirit lokaal vernieuwd | Codex | `egg_collection_preferences.dart`, `rooftop_nest_screen.dart`, `inventory_screen.dart`, `emberbun_spirit_safe.webp`, `dragon_lineage.dart`, `dragon_art.dart`, `remove_generator_checkerboard.dart`, `AGENTS.md` en regressietests | Tikken op een leeg nest opent nu een compacte tegel- of lijstweergave. Beide tonen per ei de echte broedtijd en vage hint; ontvangen datum en broedtijd gebruiken exact dezelfde opgeslagen, opnieuw aanklikbare omkeersortering als Inventory. De dubbele naam Everwarm Hearthheart is vervangen door Everwarm Hearthkeeper (Nederlands: Eeuwarm Haardhoeder). De opnieuw gerenderde losse Spirit-sprite heeft echte alpha, veilige 1024px-marges en kop plus lichaamsas naar rechts; de ingebakken generatorchecker is technisch verwijderd en op blauw gecontroleerd. De verplichte rechtsrichting is vastgelegd voor alle toekomstige draakrenders. Analyzer, gerichte nest-/content-/spritechecks en alle 408 regressietests zijn groen; beide bewaakte gameplayreferenties zijn na inhoudelijke controle gesynchroniseerd. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
 | 02-09-2026 | v0.05.07 lokale releasecandidate bewezen | Codex, na jouw toestemming | `release-notes-v0.05.07.md`, 408 tests, ondertekende `DragonHaven.apk`, emulatorcontrole en `release_server_preflight.ps1` | App- en zichtbare versie staan op v0.05.07 met versionCode 10057. APK heeft package `nl.dragonhaven.app`, 384.170.857 bytes, SHA-256 `def7b0b6595ad68f9e5316b3be2e1b5a44f8fb407aeb378bfba4ef5e30b1c871` en het vaste certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. De echte release-APK is over de bestaande app geïnstalleerd; Tower, de lege-nestterugval en About v0.05.07 zijn visueel gecontroleerd. Analyzer en 408/408 tests zijn groen. Productie en staging blijven zonder nieuwe migratie op 36/36, met nul lintfouten en gezonde Auth-/applicatiehealth. |
+| 02-09-2026 | v0.05.07 openbaar en volledig groen | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.07), [taggate 33658910426](https://github.com/Rakky88/DragonHaven/actions/runs/33658910426) en [healthrun 33659821612](https://github.com/Rakky88/DragonHaven/actions/runs/33659821612) | Exact commit `2944fd1d521a665acf7b19289d61a3549dd2e928` is getagd. Remote `DragonHaven.apk` heeft exact de lokale grootte van 384.170.857 bytes en SHA-256 `def7b0b6595ad68f9e5316b3be2e1b5a44f8fb407aeb378bfba4ef5e30b1c871`; de versiegebonden en permanente latest-download geven HTTP 200. De taggate herhaalde productiepreflight, analyzer, 408 tests, vaste signing, Play-ready AAB en artifactupload groen. De losse healthrun bevestigde Auth en applicatiehealth, uploadde bewijs en opende geen storingsalert. Productie en staging bleven ongewijzigd op 36/36. |
 
 ## Onderhoud van dit plan
 
