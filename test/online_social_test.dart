@@ -202,6 +202,69 @@ void main() {
       )),
       const Size.square(31 * .82),
     );
+    final framedBounds = tester.getRect(
+      find.byKey(const Key('framed-keeper')),
+    );
+    final framedPortraitBounds = tester.getRect(
+      find.descendant(
+        of: find.byKey(const Key('framed-keeper')),
+        matching: find.byType(ProfilePortraitSprite),
+      ),
+    );
+    final badgeBounds = tester.getRect(find.byKey(
+      const Key(
+        'keeper-portrait-badge-anchor-badge_supporter_founder',
+      ),
+    ));
+    expect(
+      framedBounds.right - badgeBounds.right,
+      closeTo(31 * .18, .01),
+    );
+    expect(
+      framedBounds.bottom - badgeBounds.bottom,
+      closeTo(31 * .18, .01),
+    );
+    expect(badgeBounds.overlaps(framedPortraitBounds), isTrue);
+  });
+
+  testWidgets('portrait and vanity frame stay round under tight layout',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 74,
+              height: 58,
+              child: KeeperPortrait(
+                key: Key('tight-framed-keeper'),
+                portraitKey: 'portrait_042',
+                displayName: 'Tight Keeper',
+                frameKey: 'frame_supporter_founder',
+                badgeKey: 'badge_supporter_founder',
+                radius: 31,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final portraitBounds = tester.getRect(find.descendant(
+      of: find.byKey(const Key('tight-framed-keeper')),
+      matching: find.byType(ProfilePortraitSprite),
+    ));
+    final frameBounds = tester.getRect(find.byKey(
+      const Key('keeper-portrait-frame-frame_supporter_founder'),
+    ));
+    expect(
+      (portraitBounds.width - portraitBounds.height).abs(),
+      lessThan(.01),
+    );
+    expect(
+      (frameBounds.width - frameBounds.height).abs(),
+      lessThan(.01),
+    );
   });
 
   test('social discovery summaries count forms rather than families', () {

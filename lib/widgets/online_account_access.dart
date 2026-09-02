@@ -40,6 +40,7 @@ class KeeperPortrait extends StatelessWidget {
     final compositionDiameter =
         frame == null ? diameter : diameter / framePortraitRatio;
     final portraitDiameter = diameter;
+    final badgeInset = radius * (frame == null ? .04 : .18);
     late final Widget portraitBody;
     if (portrait != null) {
       final rarityColor = Color(portrait.rarity.colorValue);
@@ -91,41 +92,48 @@ class KeeperPortrait extends StatelessWidget {
       label: displayName,
       child: SizedBox.square(
         dimension: compositionDiameter,
-        child: Stack(
-          clipBehavior: Clip.none,
+        child: FittedBox(
+          fit: BoxFit.contain,
           alignment: Alignment.center,
-          children: [
-            portraitBody,
-            if (frame != null)
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: Image.asset(
-                    frame.assetPath,
-                    key: Key('keeper-portrait-frame-${frame.id}'),
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                ),
-              ),
-            if (badge != null)
-              Positioned(
-                right: -radius * .08,
-                bottom: -radius * .08,
-                child: SizedBox.square(
-                  key: Key('keeper-portrait-badge-anchor-${badge.id}'),
-                  dimension: radius * .82,
-                  child: Image.asset(
-                    badge.assetPath,
-                    key: Key('keeper-portrait-badge-${badge.id}'),
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const Icon(
-                      Icons.shield_rounded,
-                      color: AppColors.twilight,
+          child: SizedBox.square(
+            dimension: compositionDiameter,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                portraitBody,
+                if (frame != null)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Image.asset(
+                        frame.assetPath,
+                        key: Key('keeper-portrait-frame-${frame.id}'),
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
                     ),
                   ),
-                ),
-              ),
-          ],
+                if (badge != null)
+                  Positioned(
+                    right: badgeInset,
+                    bottom: badgeInset,
+                    child: SizedBox.square(
+                      key: Key('keeper-portrait-badge-anchor-${badge.id}'),
+                      dimension: radius * .82,
+                      child: Image.asset(
+                        badge.assetPath,
+                        key: Key('keeper-portrait-badge-${badge.id}'),
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.shield_rounded,
+                          color: AppColors.twilight,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
