@@ -943,15 +943,19 @@ class _ConclaveChatState extends State<_ConclaveChat> {
                     size: 14,
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    strings.pick(
-                      'Messages stay for 24 hours',
-                      'Berichten blijven 24 uur',
-                    ),
-                    style: const TextStyle(
-                      color: AppColors.twilight,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
+                  Flexible(
+                    child: Text(
+                      strings.pick(
+                        'Messages stay for 24 hours',
+                        'Berichten blijven 24 uur',
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.twilight,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ],
@@ -1602,6 +1606,7 @@ class _ConclaveMembers extends StatelessWidget {
     final online = context.watch<OnlineAccountProvider>();
     final canModerate = snapshot.myRole != ConclaveRole.keeper;
     return ListView(
+      key: const Key('conclave-members-list'),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 32),
       children: [
         Container(
@@ -1993,12 +1998,16 @@ class _ConclaveMemberCard extends StatelessWidget {
                                 size: 14,
                               ),
                               const SizedBox(width: 3),
-                              Text(
-                                '$streakLabel ${member.contributionStreak}',
-                                style: const TextStyle(
-                                  color: Color(0xFF78552D),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
+                              Flexible(
+                                child: Text(
+                                  '$streakLabel ${member.contributionStreak}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFF78552D),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
                               ),
                             ],
@@ -2042,49 +2051,111 @@ class _ConclaveEmptyState extends StatelessWidget {
   final String body;
 
   @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 330),
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 22),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Colors.white, Color(0xFFFFF4D3)],
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxHeight < 220;
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(compact ? 8 : 24),
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 330),
+                padding: EdgeInsets.fromLTRB(
+                  compact ? 14 : 24,
+                  compact ? 12 : 24,
+                  compact ? 14 : 24,
+                  compact ? 12 : 22,
+                ),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Colors.white, Color(0xFFFFF4D3)],
+                  ),
+                  borderRadius: BorderRadius.circular(26),
+                  border: Border.all(color: const Color(0xFFE2D6B4)),
+                ),
+                child: compact
+                    ? Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 22,
+                            backgroundColor: const Color(0xFFFFE39A),
+                            child: Icon(
+                              icon,
+                              color: AppColors.twilight,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 11),
+                          Expanded(
+                            child: _ConclaveEmptyCopy(
+                              title: title,
+                              body: body,
+                              compact: true,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundColor: const Color(0xFFFFE39A),
+                            child: Icon(
+                              icon,
+                              color: AppColors.twilight,
+                              size: 32,
+                            ),
+                          ),
+                          const SizedBox(height: 13),
+                          _ConclaveEmptyCopy(title: title, body: body),
+                        ],
+                      ),
               ),
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(color: const Color(0xFFE2D6B4)),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: const Color(0xFFFFE39A),
-                  child: Icon(icon, color: AppColors.twilight, size: 32),
-                ),
-                const SizedBox(height: 13),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  body,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    height: 1.35,
-                  ),
-                ),
-              ],
+          );
+        },
+      );
+}
+
+class _ConclaveEmptyCopy extends StatelessWidget {
+  const _ConclaveEmptyCopy({
+    required this.title,
+    required this.body,
+    this.compact = false,
+  });
+
+  final String title;
+  final String body;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment:
+            compact ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            maxLines: compact ? 1 : null,
+            overflow: compact ? TextOverflow.ellipsis : null,
+            textAlign: compact ? TextAlign.start : TextAlign.center,
+            style: TextStyle(
+              fontSize: compact ? 15 : 18,
+              fontWeight: FontWeight.w900,
             ),
           ),
-        ),
+          const SizedBox(height: 5),
+          Text(
+            body,
+            maxLines: compact ? 2 : null,
+            overflow: compact ? TextOverflow.ellipsis : null,
+            textAlign: compact ? TextAlign.start : TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.muted,
+              height: 1.35,
+            ),
+          ),
+        ],
       );
 }
 

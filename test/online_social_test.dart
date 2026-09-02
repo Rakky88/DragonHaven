@@ -1449,6 +1449,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('Keepers'));
     await tester.pumpAndSettle();
+
     await tester.tap(
       find.byKey(const Key('open-conclave-trial-rankings')),
     );
@@ -1753,6 +1754,15 @@ void main() {
     ));
     await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.text('Keepers'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('conclave-member-avatar-slot-plain-user')),
+      120,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('conclave-members-list')),
+        matching: find.byType(Scrollable),
+      ),
+    );
     await tester.pumpAndSettle();
 
     final framedCard = find.byKey(const Key('conclave-member-framed-user'));
