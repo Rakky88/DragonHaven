@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'l10n/app_strings.dart';
 import 'models/achievement.dart';
+import 'models/adventure.dart';
 import 'models/game_presentation.dart';
 import 'providers/household_provider.dart';
 import 'providers/online_account_provider.dart';
@@ -83,10 +84,12 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       _notificationNavigation;
   Timer? _presentationRetry;
   Timer? _gameClock;
+  Timer? _adventureCompletionBadgeTimer;
   Timer? _nestHatchTimer;
   Timer? _nestHatchWatchdog;
   String? _scheduledNestEggId;
   DateTime? _scheduledNestHatchAt;
+  DateTime? _scheduledAdventureCompletionAt;
   int _adventureInitialTab = 0;
   int _adventureNavigationRevision = 0;
   bool _presentationBusy = false;
@@ -110,7 +113,9 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       },
     );
     _game.addListener(_handleGameChanged);
+    _online.addListener(_handleOnlineChanged);
     _syncNestHatchTimer();
+    _syncAdventureCompletionBadgeTimer();
     _gameClock = Timer.periodic(const Duration(minutes: 1), (_) async {
       await _game.refreshForCurrentDate();
       _syncNestHatchTimer();
@@ -161,9 +166,11 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     unawaited(HavenAudio.setAppInForeground(false));
     _presentationRetry?.cancel();
     _gameClock?.cancel();
+    _adventureCompletionBadgeTimer?.cancel();
     _nestHatchTimer?.cancel();
     _nestHatchWatchdog?.cancel();
     _game.removeListener(_handleGameChanged);
+    _online.removeListener(_handleOnlineChanged);
     _automaticCloudBackup.dispose();
     unawaited(_notificationNavigation.cancel());
     _lifecycle.dispose();
@@ -172,7 +179,50 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
 
   void _handleGameChanged() {
     _syncNestHatchTimer();
+    _syncAdventureCompletionBadgeTimer();
     _schedulePresentations();
+  }
+
+  void _handleOnlineChanged() => _syncAdventureCompletionBadgeTimer();
+
+  void _syncAdventureCompletionBadgeTimer() {
+    if (!mounted) return;
+    final now = _game.currentTime;
+    DateTime? nextCompletion;
+    void consider(DateTime? candidate) {
+      if (candidate == null || !candidate.isAfter(now)) return;
+      if (nextCompletion == null || candidate.isBefore(nextCompletion!)) {
+        nextCompletion = candidate;
+      }
+    }
+
+    for (final run in _game.adventureRuns) {
+      if (run.status == AdventureRunStatus.running) consider(run.endsAt);
+    }
+    if (_online.isSignedIn) {
+      for (final lobby in _online.myGroupAdventures) {
+        if (!lobby.isWaiting && !lobby.isRewardReady) consider(lobby.endsAt);
+      }
+    }
+    if (_scheduledAdventureCompletionAt == nextCompletion) return;
+    _adventureCompletionBadgeTimer?.cancel();
+    _adventureCompletionBadgeTimer = null;
+    _scheduledAdventureCompletionAt = nextCompletion;
+    if (nextCompletion == null) return;
+    final delay =
+        nextCompletion!.difference(now) + const Duration(milliseconds: 100);
+    _adventureCompletionBadgeTimer = Timer(delay, () {
+      _adventureCompletionBadgeTimer = null;
+      _scheduledAdventureCompletionAt = null;
+      unawaited(_refreshAdventureCompletionBadge());
+    });
+  }
+
+  Future<void> _refreshAdventureCompletionBadge() async {
+    await _game.refreshForCurrentDate();
+    if (!mounted) return;
+    setState(() {});
+    _syncAdventureCompletionBadgeTimer();
   }
 
   void _syncNestHatchTimer() {
@@ -420,6 +470,20 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
         context.select<OnlineAccountProvider, int>(
       (online) => online.incomingRequests.length,
     );
+    final completedLocalAdventureCount = game.activeAdventureRuns
+        .where((run) => run.status == AdventureRunStatus.rewardReady)
+        .length;
+    final now = game.currentTime;
+    final completedGroupAdventureCount =
+        context.select<OnlineAccountProvider, int>(
+      (online) => online.isSignedIn
+          ? online.myGroupAdventures
+              .where((lobby) => lobby.rewardReadyAt(now))
+              .length
+          : 0,
+    );
+    final completedAdventureCount =
+        completedLocalAdventureCount + completedGroupAdventureCount;
     final eggOnly = game.pet.isEgg;
     final screens = <Widget>[
       const FriendsScreen(),
@@ -578,13 +642,14 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                 ),
                 NavigationDestination(
                   key: const Key('tutorial-nav-adventure'),
-                  icon: const GameIconSprite(
-                    GameIconKind.navAdventure,
+                  icon: _AdventureNavigationIcon(
                     size: 34,
+                    completedCount: completedAdventureCount,
                   ),
-                  selectedIcon: const GameIconSprite(
-                    GameIconKind.navAdventure,
+                  selectedIcon: _AdventureNavigationIcon(
                     size: 42,
+                    completedCount: completedAdventureCount,
+                    selected: true,
                   ),
                   label: strings.tr('adventure'),
                 ),
@@ -744,6 +809,50 @@ class _FriendsNavigationIcon extends StatelessWidget {
         label: Text(
           displayCount,
           key: Key('friends-request-count-$stateKey'),
+          style: const TextStyle(
+            fontSize: 9,
+            height: 1,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        child: sprite,
+      ),
+    );
+  }
+}
+
+class _AdventureNavigationIcon extends StatelessWidget {
+  const _AdventureNavigationIcon({
+    required this.size,
+    required this.completedCount,
+    this.selected = false,
+  });
+
+  final double size;
+  final int completedCount;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final sprite = GameIconSprite(GameIconKind.navAdventure, size: size);
+    if (completedCount <= 0) return sprite;
+    final displayCount = completedCount > 99 ? '99+' : '$completedCount';
+    final stateKey = selected ? 'selected' : 'unselected';
+    return Semantics(
+      label: completedCount == 1
+          ? '1 completed Adventure ready to claim'
+          : '$completedCount completed Adventures ready to claim',
+      child: Badge(
+        key: Key('adventure-completed-badge-$stateKey'),
+        alignment: Alignment.topRight,
+        offset: const Offset(6, -3),
+        backgroundColor: AppColors.gold,
+        textColor: AppColors.ink,
+        largeSize: 18,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        label: Text(
+          displayCount,
+          key: Key('adventure-completed-count-$stateKey'),
           style: const TextStyle(
             fontSize: 9,
             height: 1,

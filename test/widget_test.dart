@@ -1187,6 +1187,86 @@ void main() {
     online.dispose();
   });
 
+  testWidgets('Adventure navigation shows completed count in a yellow badge',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.utc(2026, 9, 2, 14);
+    final game = HouseholdProvider(
+      random: Random(315),
+      clock: () => now,
+      persistenceEnabled: false,
+    )
+      ..accountName = 'Rick'
+      ..onboardingComplete = true;
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Ember'
+      ..favorite = true;
+    final adventures = game.adventuresFor(AdventureKind.mini).take(2).toList();
+    game.adventureRuns = [
+      for (final entry in adventures.indexed)
+        AdventureRun(
+          id: 'completed-nav-${entry.$1}',
+          adventureId: entry.$2.id,
+          dragonId: game.pet.id,
+          startedAt: now.subtract(const Duration(minutes: 5)),
+          endsAt: now.subtract(const Duration(minutes: 1)),
+          status: AdventureRunStatus.rewardReady,
+          rewardTier: ChestTier.wooden,
+        ),
+    ];
+    final online = OnlineAccountProvider(
+      repository: const DisabledSocialRepository(),
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    addTearDown(online.dispose);
+    await online.initialize();
+
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const DragonHavenApp(),
+    ));
+    await tester.pump(const Duration(milliseconds: 450));
+
+    final unselectedBadge =
+        find.byKey(const Key('adventure-completed-badge-unselected'));
+    expect(unselectedBadge, findsOneWidget);
+    expect(
+      tester.widget<Badge>(unselectedBadge).backgroundColor,
+      const Color(0xFFF4C95D),
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(
+            const Key('adventure-completed-count-unselected'),
+          ))
+          .data,
+      '2',
+    );
+
+    await tester.tap(find.text('Adventure').last);
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(
+      find.byKey(const Key('adventure-completed-badge-selected')),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(
+            const Key('adventure-completed-count-selected'),
+          ))
+          .data,
+      '2',
+    );
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('the My Dragons shortcut tooltip localizes', (tester) async {
     final game = await pumpGame(tester, onboarded: true, hatched: true);
     await game.setLanguage('de');

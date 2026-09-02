@@ -84,13 +84,13 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
             .where((run) => run.status == AdventureRunStatus.running)
             .length +
         groupRuns
-            .where((lobby) => !_groupAdventureReady(lobby, game.currentTime))
+            .where((lobby) => !lobby.rewardReadyAt(game.currentTime))
             .length;
     final completedCount = localRuns
             .where((run) => run.status == AdventureRunStatus.rewardReady)
             .length +
         groupRuns
-            .where((lobby) => _groupAdventureReady(lobby, game.currentTime))
+            .where((lobby) => lobby.rewardReadyAt(game.currentTime))
             .length;
     final trialCount = game.availableTrials.length;
     return Column(
@@ -2243,7 +2243,7 @@ class _ActiveAdventures extends StatelessWidget {
         .toList(growable: false);
     final groupRuns = online.isSignedIn
         ? online.myGroupAdventures
-            .where((lobby) => !_groupAdventureReady(lobby, now))
+            .where((lobby) => !lobby.rewardReadyAt(now))
             .toList(growable: false)
         : const <GroupAdventureLobby>[];
     if (runs.isEmpty && groupRuns.isEmpty) {
@@ -2304,7 +2304,7 @@ class _CompletedAdventures extends StatelessWidget {
         .toList(growable: false);
     final groupRuns = online.isSignedIn
         ? online.myGroupAdventures
-            .where((lobby) => _groupAdventureReady(lobby, now))
+            .where((lobby) => lobby.rewardReadyAt(now))
             .toList(growable: false)
         : const <GroupAdventureLobby>[];
     if (runs.isEmpty && groupRuns.isEmpty) {
@@ -2352,10 +2352,6 @@ class _CompletedAdventures extends StatelessWidget {
     );
   }
 }
-
-bool _groupAdventureReady(GroupAdventureLobby lobby, DateTime now) =>
-    lobby.isRewardReady ||
-    (lobby.endsAt?.isAfter(now) == false && !lobby.isWaiting);
 
 class _ActiveGroupAdventureCard extends StatelessWidget {
   const _ActiveGroupAdventureCard({required this.lobby, required this.now});

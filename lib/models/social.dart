@@ -837,6 +837,8 @@ class GroupAdventureLobby {
   bool get isWaiting => status == 'waiting';
   bool get isRunning => status == 'running';
   bool get isRewardReady => status == 'completed';
+  bool rewardReadyAt(DateTime now) =>
+      isRewardReady || (endsAt?.isAfter(now) == false && !isWaiting);
   GroupAdventureParticipant? get owner => participants
       .cast<GroupAdventureParticipant?>()
       .firstWhere((participant) => participant?.isOwner == true,
