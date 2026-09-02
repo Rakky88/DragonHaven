@@ -21,6 +21,42 @@ enum _CloudConflictChoice { viewCloud, keepLocal, replaceCloud, restoreCloud }
 const _noFrameSelection = '__no_frame__';
 const _noBadgeSelection = '__no_badge__';
 
+class _VanityPortraitThumbnail extends StatelessWidget {
+  const _VanityPortraitThumbnail({
+    super.key,
+    required this.portraitKey,
+    required this.displayName,
+    this.frameKey,
+    this.badgeKey,
+  });
+
+  final String portraitKey;
+  final String displayName;
+  final String? frameKey;
+  final String? badgeKey;
+
+  @override
+  Widget build(BuildContext context) {
+    // ListTile may give its leading widget slightly less height than width.
+    // FittedBox keeps the complete portrait composition uniformly scaled, so
+    // its circular artwork can never be stretched into an oval.
+    return SizedBox.square(
+      dimension: 58,
+      child: FittedBox(
+        fit: BoxFit.contain,
+        alignment: Alignment.center,
+        child: KeeperPortrait(
+          portraitKey: portraitKey,
+          displayName: displayName,
+          frameKey: frameKey,
+          badgeKey: badgeKey,
+          radius: 32,
+        ),
+      ),
+    );
+  }
+}
+
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
 
@@ -51,12 +87,12 @@ class AccountScreen extends StatelessWidget {
             child: ListTile(
               key: const Key('account-portrait-collection'),
               contentPadding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
-              leading: KeeperPortrait(
+              leading: _VanityPortraitThumbnail(
+                key: const Key('account-portrait-thumbnail'),
                 portraitKey: game.selectedPortraitId ?? 'portrait_001',
                 displayName: game.accountName,
                 frameKey: game.selectedFrameId,
                 badgeKey: game.selectedBadgeId,
-                radius: 32,
               ),
               title: Text(
                 strings.pick('Account portrait', 'Accountportret'),
@@ -151,11 +187,11 @@ class AccountScreen extends StatelessWidget {
               child: ListTile(
                 key: const Key('account-frame-collection'),
                 contentPadding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
-                leading: KeeperPortrait(
+                leading: _VanityPortraitThumbnail(
+                  key: const Key('account-frame-thumbnail'),
                   portraitKey: game.selectedPortraitId ?? 'portrait_001',
                   displayName: game.accountName,
                   frameKey: game.selectedFrameId,
-                  radius: 32,
                 ),
                 title: Text(
                   selectedFrame != null

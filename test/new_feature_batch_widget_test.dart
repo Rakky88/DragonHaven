@@ -592,6 +592,61 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Account Vanity portrait thumbnails stay circular',
+      (tester) async {
+    final game = HouseholdProvider(
+      random: Random(943),
+      persistenceEnabled: false,
+    )
+      ..ownedFrameIds.add(supporterFrame.id)
+      ..selectedFrameId = null;
+    final online = OnlineAccountProvider(
+      repository: const DisabledSocialRepository(),
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    addTearDown(game.dispose);
+    addTearDown(online.dispose);
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(
+          size: Size(360, 640),
+          textScaler: TextScaler.linear(1.2),
+        ),
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: game),
+            ChangeNotifierProvider.value(value: online),
+          ],
+          child: const MaterialApp(home: AccountScreen()),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    void expectCircularPortrait(Key key) {
+      final thumbnail = find.byKey(key);
+      expect(thumbnail, findsOneWidget);
+      final portraitClip = find.descendant(
+        of: thumbnail,
+        matching: find.byType(ClipOval),
+      );
+      expect(portraitClip, findsOneWidget);
+      final portraitBounds = tester.getRect(portraitClip);
+      expect(
+        (portraitBounds.width - portraitBounds.height).abs(),
+        lessThan(0.01),
+      );
+    }
+
+    expectCircularPortrait(const Key('account-portrait-thumbnail'));
+    await tester.ensureVisible(
+      find.byKey(const Key('account-frame-thumbnail')),
+    );
+    await tester.pump();
+    expectCircularPortrait(const Key('account-frame-thumbnail'));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Account Vanity can select and remove a keeper badge',
       (tester) async {
     final game = HouseholdProvider(
