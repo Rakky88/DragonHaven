@@ -483,10 +483,8 @@ void main() {
     );
     expect(
       find.byKey(const Key('trial-score-multiplier-trial-widget-dragon')),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(find.text('×1.300'), findsOneWidget);
-
     final dragonChoice =
         find.byKey(const Key('trial-dragon-trial-widget-dragon'));
     await tester.ensureVisible(dragonChoice);

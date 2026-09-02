@@ -1044,13 +1044,7 @@ extension DragonHavenSystems on HouseholdProvider {
         );
     if (dragon == null) return null;
     final offer = trialOffers[offerIndex];
-    final focus = offer.definition.focus;
-    final relevantExpertise = dragon
-        .trainingFor(focus)
-        .clamp(0, dragon.expertiseMaximum(focus))
-        .toInt();
-    final finalScore = trialScoreWithExpertise(score, relevantExpertise);
-    final grade = trialGradeForScore(offer.kind, finalScore);
+    final grade = trialGradeForScore(offer.kind, score);
     final rolledReward = trialRewardForGrade(
       grade,
       _random.nextDouble(),
@@ -1065,7 +1059,7 @@ extension DragonHavenSystems on HouseholdProvider {
           .toList(growable: false);
       earnedRelic = alternatives[_random.nextInt(alternatives.length)];
     }
-    final newBest = dragon.recordTrialScore(offer.kind.name, finalScore);
+    final newBest = dragon.recordTrialScore(offer.kind.name, score);
     final earnedEmote = grade == TrialGrade.sPlus
         ? _rollUniqueDragonEmote(DragonEmoteSource.trial, .10)
         : null;
@@ -1109,9 +1103,7 @@ extension DragonHavenSystems on HouseholdProvider {
     await _notifyAndSave();
     return TrialCompletion(
       kind: offer.kind,
-      baseScore: score,
-      score: finalScore,
-      expertise: relevantExpertise,
+      score: score,
       newDragonBest: newBest,
       reward: reward,
     );

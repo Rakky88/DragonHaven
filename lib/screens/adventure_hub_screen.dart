@@ -791,20 +791,11 @@ class _TrialDragonPicker extends StatelessWidget {
                           ),
                         ],
                       ),
-                      trailing: Column(
+                      trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          TrialIconSprite(kind: offer.kind, size: 30),
-                          Text(
-                            '×${trialExpertiseMultiplier(dragon.trainingFor(focus)).toStringAsFixed(3)}',
-                            key: Key('trial-score-multiplier-${dragon.id}'),
-                            style: const TextStyle(
-                              color: AppColors.twilight,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
-                              fontFeatures: [FontFeature.tabularFigures()],
-                            ),
-                          ),
+                          TrialIconSprite(kind: offer.kind, size: 34),
+                          const Icon(Icons.chevron_right_rounded),
                         ],
                       ),
                     ),

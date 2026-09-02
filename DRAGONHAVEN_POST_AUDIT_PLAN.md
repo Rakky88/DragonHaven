@@ -20,9 +20,17 @@ Hearthkeeper. Productiepreflight, analyzer, alle 408 tests, vaste signing,
 Play Store-AAB, remote assetcontrole en post-release health zijn groen. Deze
 release bevat geen servermigratie.**
 
-Actuele lokale tranche na v0.05.07: **geen aparte lokale tranche. Broncode,
-openbare Android-release en auditstatus zijn gelijkgetrokken op v0.05.07.
-Productie en staging blijven op 36/36 migraties.**
+Actuele lokale tranche na v0.05.07: **de Expertise-scoremultiplier uit v0.05.07
+is volledig verwijderd uit Trial-score, rang, reward, records, rankings,
+draakkiezer en resultaatskaart. Expertise behoudt uitsluitend de bestaande
+subtiele spelhulp per Trial. Spectral-vormen gebruiken bij Emberbun Spirit,
+Starforged Arcana en Frostfable Wyrmling rechtstreeks dezelfde gerepareerde
+transparante bron-sprite met een runtime kleurfilter en aura; er bestaan voor
+deze vormen dus geen verouderde aparte Spectral-bestanden. De vier-varianten-
+spriteaudit en alle 407 regressietests zijn groen, evenals de analyzer en beide
+referentiedocumentatiegates. Er is nog geen nieuwe appversie, servermigratie of
+openbare release voor deze lokale correctie. Productie en staging blijven op
+36/36 migraties.**
 
 Server- en releasebewijs: **de volledige
 [stagingrun 33630222018](https://github.com/Rakky88/DragonHaven/actions/runs/33630222018)
@@ -1239,6 +1247,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 02-09-2026 | Lege-nestcollectie en Emberbun Spirit lokaal vernieuwd | Codex | `egg_collection_preferences.dart`, `rooftop_nest_screen.dart`, `inventory_screen.dart`, `emberbun_spirit_safe.webp`, `dragon_lineage.dart`, `dragon_art.dart`, `remove_generator_checkerboard.dart`, `AGENTS.md` en regressietests | Tikken op een leeg nest opent nu een compacte tegel- of lijstweergave. Beide tonen per ei de echte broedtijd en vage hint; ontvangen datum en broedtijd gebruiken exact dezelfde opgeslagen, opnieuw aanklikbare omkeersortering als Inventory. De dubbele naam Everwarm Hearthheart is vervangen door Everwarm Hearthkeeper (Nederlands: Eeuwarm Haardhoeder). De opnieuw gerenderde losse Spirit-sprite heeft echte alpha, veilige 1024px-marges en kop plus lichaamsas naar rechts; de ingebakken generatorchecker is technisch verwijderd en op blauw gecontroleerd. De verplichte rechtsrichting is vastgelegd voor alle toekomstige draakrenders. Analyzer, gerichte nest-/content-/spritechecks en alle 408 regressietests zijn groen; beide bewaakte gameplayreferenties zijn na inhoudelijke controle gesynchroniseerd. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
 | 02-09-2026 | v0.05.07 lokale releasecandidate bewezen | Codex, na jouw toestemming | `release-notes-v0.05.07.md`, 408 tests, ondertekende `DragonHaven.apk`, emulatorcontrole en `release_server_preflight.ps1` | App- en zichtbare versie staan op v0.05.07 met versionCode 10057. APK heeft package `nl.dragonhaven.app`, 384.170.857 bytes, SHA-256 `def7b0b6595ad68f9e5316b3be2e1b5a44f8fb407aeb378bfba4ef5e30b1c871` en het vaste certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. De echte release-APK is over de bestaande app geïnstalleerd; Tower, de lege-nestterugval en About v0.05.07 zijn visueel gecontroleerd. Analyzer en 408/408 tests zijn groen. Productie en staging blijven zonder nieuwe migratie op 36/36, met nul lintfouten en gezonde Auth-/applicatiehealth. |
 | 02-09-2026 | v0.05.07 openbaar en volledig groen | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.07), [taggate 33658910426](https://github.com/Rakky88/DragonHaven/actions/runs/33658910426) en [healthrun 33659821612](https://github.com/Rakky88/DragonHaven/actions/runs/33659821612) | Exact commit `2944fd1d521a665acf7b19289d61a3549dd2e928` is getagd. Remote `DragonHaven.apk` heeft exact de lokale grootte van 384.170.857 bytes en SHA-256 `def7b0b6595ad68f9e5316b3be2e1b5a44f8fb407aeb378bfba4ef5e30b1c871`; de versiegebonden en permanente latest-download geven HTTP 200. De taggate herhaalde productiepreflight, analyzer, 408 tests, vaste signing, Play-ready AAB en artifactupload groen. De losse healthrun bevestigde Auth en applicatiehealth, uploadde bewijs en opende geen storingsalert. Productie en staging bleven ongewijzigd op 36/36. |
+| 02-09-2026 | Trial-multiplier lokaal verwijderd en Spectral-reparaties bewezen | Codex | `trial.dart`, `dragonhaven_systems.dart`, `adventure_hub_screen.dart`, `trial_game_screen.dart`, Trial-regressies, `selected_sprite_safety_test.dart` en beide levende referentiedocumenten | De ingeleverde minigamescore is weer rechtstreeks de eindscore voor rang, reward, dragon/account-best en online rankings; de multiplier-UI en -modelvelden zijn verwijderd. Een regressie met bestaande Expertise bewijst dat score 250 exact 250 blijft. Emberbun Spirit, Starforged Arcana en Frostfable Wyrmling gebruiken voor Spectral dezelfde herstelde standalone sprite; de runtime voegt alleen kleurfilter en aura toe. Alle 87 geselecteerde vormen zijn vijfmaal in normaal/Spectral en kleur/silhouet gerenderd, specifieke Frostfable-/Starforged-alphacontroles slagen, analyzer meldt nul problemen en alle 407 tests zijn groen. Geen versie-, server-, migratie-, productie- of openbare releasewijziging. |
 
 ## Onderhoud van dit plan
 

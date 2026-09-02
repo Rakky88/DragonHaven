@@ -6,7 +6,7 @@ Ruleset: app version `v0.05.04`
 
 Source baseline: commit `e3befdf`
 
-<!-- reference-source-fingerprint: 9541b17d32e1af45 -->
+<!-- reference-source-fingerprint: 29aa607659025f16 -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
@@ -357,20 +357,6 @@ Normal timed Mini, Short, and Long offer rotations are deterministic from the ti
 Whenever an empty Trial slot refills, the offered Trial is selected uniformly from Cavern Flight, Ruin Breaker, and Runeweaver. Each has a `1/3` chance per refilled slot. Duplicate Trial kinds may occupy multiple slots.
 
 ### 4.2 Trial reward by grade
-
-Before the grade and its reward are determined, the raw minigame score receives
-one expertise multiplier from the selected dragon:
-
-`final score = round half up(raw score × (1 + relevant expertise / 1000))`
-
-- Cavern Flight uses Spirit;
-- Ruin Breaker uses Might; and
-- Runeweaver uses Arcana.
-
-For example, 5 relevant expertise gives `×1.005`, while 300 gives `×1.300`.
-The final whole-number score—not the raw score—is used for the grade, reward,
-dragon/account personal bests, and Trial rankings. Expertise earned by that
-completion is granted afterwards and therefore cannot increase the same run.
 
 XP and expertise are fixed by grade. The chest is the random part shown here.
 
