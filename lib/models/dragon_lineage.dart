@@ -156,8 +156,8 @@ const dragonLineages = <DragonLineage>[
     earthFormNl: 'Magma-ovenrug',
     stormFormEn: 'Wildfire Skydancer',
     stormFormNl: 'Wildvuurhemeldanser',
-    bondFormEn: 'Everwarm Hearthheart',
-    bondFormNl: 'Eeuwarm Haardhart',
+    bondFormEn: 'Everwarm Hearthkeeper',
+    bondFormNl: 'Eeuwarm Haardhoeder',
   ),
   DragonLineage(
     id: 'copperflame',

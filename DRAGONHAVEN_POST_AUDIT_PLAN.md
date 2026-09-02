@@ -21,12 +21,13 @@ Play Store-AAB en post-release health zijn groen.**
 
 Actuele lokale tranche na v0.05.06: **Trial-eindscores krijgen lokaal één
 vakgebonden expertisebonus: `round half up(ruwe score × (1 + expertise/1000))`.
-Cavern Flight gebruikt Spirit, Ruin Breaker Might en Runeweaver Arcana. De
-verhoogde gehele score bepaalt rang, reward, persoonlijke records en rankings;
-pas daarna verdiende expertise telt niet met terugwerkende kracht mee. De
-multiplier staat bij de draakkeuze en als berekening onder de resultaatscore.
-Analyzer en 407/407 tests zijn groen. Er is geen versie-, server-, migratie-,
-productie- of openbare releasewijziging.**
+Daarnaast gebruikt het lege Rooftop Nest nu dezelfde opgeslagen tegel-/lijst-
+en omkeerbare ontvangen-/broedtijdsortering als Inventory, met broedtijd en hint
+in beide nestweergaven. De Emberbun Spirit is als losse transparante,
+rechtsgerichte sprite vervangen en heet voortaan Everwarm Hearthkeeper
+(Eeuwarm Haardhoeder). De verplichte rechtsrichting voor kop én romp staat als
+blijvende assetregel in `AGENTS.md`. Analyzer en 408/408 tests zijn groen. Er is
+geen versie-, server-, migratie-, productie- of openbare releasewijziging.**
 
 Server- en releasebewijs: **de volledige
 [stagingrun 33630222018](https://github.com/Rakky88/DragonHaven/actions/runs/33630222018)
@@ -1241,6 +1242,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 02-09-2026 | v0.05.05 openbaar; taggate stopte vóór signing | Codex | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.05) en [taggate 33648597144](https://github.com/Rakky88/DragonHaven/actions/runs/33648597144) | Release en APK wijzen naar commit `5600e183f177af99b0a492ca57335e36c5f1bee8`; remote assetnaam, grootte en SHA-256 zijn exact gelijk aan lokaal en beide downloadroutes geven HTTP 200. De productieserverpreflight en analyzer waren groen. De Linux-runner liet 404 tests slagen en stopte veilig op één platformafhankelijke CRLF/LF-documentatiefingerprint, vóór signing en zonder servermutatie. De gepubliceerde release blijft onveranderd als historisch bewijs; correctie volgt uitsluitend met een hoger versienummer. |
 | 02-09-2026 | v0.05.06 Android-hotfix openbaar en volledig groen | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.06), [taggate 33650746606](https://github.com/Rakky88/DragonHaven/actions/runs/33650746606), [healthrun 33651528845](https://github.com/Rakky88/DragonHaven/actions/runs/33651528845), `release-notes-v0.05.06.md` en `reference_documentation_guard.dart` | De bronfingerprint normaliseert regeleinden vóór hashing en een regressietest bewijst gelijke LF/CRLF-uitkomsten. Appversie/versionCode zijn 0.05.06/10056. De APK is 383.331.062 bytes met SHA-256 `cced52519b96b961b9bcce4adf707d6eab150a3e06f591f3469a5386333ee04c`; remote asset en beide HTTP 200-downloadroutes zijn bewezen. Emulatorcontrole toont v0.05.06 en uitsluitend `Copy download link` en `Update`. De taggate herhaalde productiepreflight, analyzer, 406 tests, vaste signing, Play-ready AAB en artifactcontrole groen. De healthrun bevestigde Auth/applicatiehealth zonder storingsalert; productie bleef 36/36. |
 | 02-09-2026 | Trial-scoremultiplier door relevante expertise lokaal gereed | Codex | `trial.dart`, `dragonhaven_systems.dart`, `trial_game_screen.dart`, `adventure_hub_screen.dart`, drie regressietestbestanden en `RANDOM_REWARDS_AND_ODDS.md` | Iedere Trial gebruikt exact één vak: Spirit voor Cavern Flight, Might voor Ruin Breaker en Arcana voor Runeweaver. De formule is `round half up(ruwe score × (1 + expertise/1000))`; 5 expertise is dus ×1,005 en 300 expertise ×1,300. De eindscore stuurt rang, reward, dragon/account-best en online rankings. De draakkiezer toont de multiplier vooraf en de resultaatskaart toont ruwe score × multiplier onder het eindtotaal. Relevante expertise wordt vóór de reward vastgelegd, zodat nieuw verdiende punten pas een volgende run helpen. Analyzer, 69 gerichte tests en alle 407 regressietests zijn groen; bewaakte referentiedocumentatie is gesynchroniseerd. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
+| 02-09-2026 | Lege-nestcollectie en Emberbun Spirit lokaal vernieuwd | Codex | `egg_collection_preferences.dart`, `rooftop_nest_screen.dart`, `inventory_screen.dart`, `emberbun_spirit_safe.webp`, `dragon_lineage.dart`, `dragon_art.dart`, `remove_generator_checkerboard.dart`, `AGENTS.md` en regressietests | Tikken op een leeg nest opent nu een compacte tegel- of lijstweergave. Beide tonen per ei de echte broedtijd en vage hint; ontvangen datum en broedtijd gebruiken exact dezelfde opgeslagen, opnieuw aanklikbare omkeersortering als Inventory. De dubbele naam Everwarm Hearthheart is vervangen door Everwarm Hearthkeeper (Nederlands: Eeuwarm Haardhoeder). De opnieuw gerenderde losse Spirit-sprite heeft echte alpha, veilige 1024px-marges en kop plus lichaamsas naar rechts; de ingebakken generatorchecker is technisch verwijderd en op blauw gecontroleerd. De verplichte rechtsrichting is vastgelegd voor alle toekomstige draakrenders. Analyzer, gerichte nest-/content-/spritechecks en alle 408 regressietests zijn groen; beide bewaakte gameplayreferenties zijn na inhoudelijke controle gesynchroniseerd. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
 
 ## Onderhoud van dit plan
 

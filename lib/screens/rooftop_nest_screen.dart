@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/day_phase.dart';
 import '../models/dragon_egg.dart';
+import '../models/egg_collection_preferences.dart';
 import '../models/pet.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/haven_lighting.dart';
 import '../widgets/rooftop_egg_nest.dart';
@@ -117,50 +121,12 @@ class _RooftopNestScreenState extends State<RooftopNestScreen> {
       showDragHandle: true,
       isScrollControlled: true,
       builder: (sheetContext) {
-        final height = (game.eggStash.length * 112.0 + 92)
-            .clamp(230.0, MediaQuery.sizeOf(sheetContext).height * .72)
-            .toDouble();
         return SafeArea(
           child: SizedBox(
-            height: height,
-            child: ListView(
-              key: const Key('nest-egg-picker'),
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
-              children: [
-                Text(
-                  strings.pick(
-                    'Choose an Egg',
-                    'Kies een Ei',
-                  ),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                for (final egg in game.eggStash)
-                  Card(
-                    child: ListTile(
-                      leading: const GameIconSprite(
-                        GameIconKind.mysteriousEgg,
-                        size: 54,
-                      ),
-                      title: Text(
-                        strings.eggName(
-                          sinister: egg.isSinisterEgg,
-                          special: egg.isSpecialEgg,
-                        ),
-                        style: const TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      subtitle: Text(
-                        strings.pick(
-                          'Hatch time: ${strings.remainingDuration(egg.incubationDuration)}\nIts identity is already safely hidden inside.',
-                          'Broedtijd: ${strings.remainingDuration(egg.incubationDuration)}\nZijn identiteit zit al veilig binnenin verborgen.',
-                        ),
-                        key: Key('nest-egg-hatch-time-${egg.id}'),
-                      ),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => Navigator.pop(sheetContext, egg),
-                    ),
-                  ),
-              ],
+            height: MediaQuery.sizeOf(sheetContext).height * .78,
+            child: _NestEggPicker(
+              game: game,
+              strings: strings,
             ),
           ),
         );
@@ -192,6 +158,362 @@ class _RooftopNestScreenState extends State<RooftopNestScreen> {
   ) async {
     final hatched = await game.hatchActiveDragon();
     if (hatched && context.mounted) Navigator.pop(context);
+  }
+}
+
+class _NestEggPicker extends StatefulWidget {
+  const _NestEggPicker({required this.game, required this.strings});
+
+  final HouseholdProvider game;
+  final AppStrings strings;
+
+  @override
+  State<_NestEggPicker> createState() => _NestEggPickerState();
+}
+
+class _NestEggPickerState extends State<_NestEggPicker> {
+  late EggCollectionView _view;
+  late EggCollectionSortMode _sortMode;
+  late bool _sortDescending;
+
+  @override
+  void initState() {
+    super.initState();
+    _view = EggCollectionView.values.firstWhere(
+      (value) => value.name == widget.game.eggInventoryViewMode,
+      orElse: () => EggCollectionView.tiles,
+    );
+    _sortMode = EggCollectionSortMode.values.firstWhere(
+      (value) => value.name == widget.game.eggInventorySortMode,
+      orElse: () => EggCollectionSortMode.acquiredAt,
+    );
+    _sortDescending = widget.game.eggInventorySortDescending;
+  }
+
+  void _selectSort(EggCollectionSortMode mode) {
+    setState(() {
+      if (_sortMode == mode) {
+        _sortDescending = !_sortDescending;
+      } else {
+        _sortMode = mode;
+        _sortDescending = mode == EggCollectionSortMode.acquiredAt;
+      }
+    });
+    _savePreferences();
+  }
+
+  void _toggleView() {
+    setState(() {
+      _view = _view == EggCollectionView.tiles
+          ? EggCollectionView.list
+          : EggCollectionView.tiles;
+    });
+    _savePreferences();
+  }
+
+  void _savePreferences() {
+    unawaited(widget.game.setEggInventoryCollectionPreferences(
+      viewMode: _view.name,
+      sortMode: _sortMode.name,
+      descending: _sortDescending,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final eggs = sortedDragonEggs(
+      widget.game.eggStash,
+      sortMode: _sortMode,
+      descending: _sortDescending,
+    );
+    return Column(
+      key: const Key('nest-egg-picker'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 12, 9),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.strings.pick('Choose an Egg', 'Kies een Ei'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    Text(
+                      '${eggs.length} ${widget.strings.pick(eggs.length == 1 ? 'egg' : 'eggs', eggs.length == 1 ? 'ei' : 'eieren')}',
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuButton<EggCollectionSortMode>(
+                key: const Key('nest-egg-sort'),
+                initialValue: _sortMode,
+                onSelected: _selectSort,
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    key: const Key('nest-egg-sort-acquiredAt'),
+                    value: EggCollectionSortMode.acquiredAt,
+                    child: Text(widget.strings.pick('Received', 'Ontvangen')),
+                  ),
+                  PopupMenuItem(
+                    key: const Key('nest-egg-sort-hatchTime'),
+                    value: EggCollectionSortMode.hatchTime,
+                    child: Text(widget.strings.pick('Hatch time', 'Broedtijd')),
+                  ),
+                ],
+                child: _NestPickerControl(
+                  icon: _sortDescending
+                      ? Icons.arrow_downward_rounded
+                      : Icons.arrow_upward_rounded,
+                  label: _sortMode == EggCollectionSortMode.acquiredAt
+                      ? widget.strings.pick('Received', 'Ontvangen')
+                      : widget.strings.pick('Hatch time', 'Broedtijd'),
+                ),
+              ),
+              const SizedBox(width: 6),
+              IconButton.filledTonal(
+                key: const Key('nest-egg-view-toggle'),
+                tooltip: _view == EggCollectionView.tiles
+                    ? widget.strings.pick('Show list', 'Lijst tonen')
+                    : widget.strings.pick('Show tiles', 'Tegels tonen'),
+                onPressed: _toggleView,
+                icon: Icon(_view == EggCollectionView.tiles
+                    ? Icons.view_list_rounded
+                    : Icons.grid_view_rounded),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _view == EggCollectionView.tiles
+              ? GridView.builder(
+                  key: const PageStorageKey('nest-eggs-grid-scroll'),
+                  padding: const EdgeInsets.fromLTRB(12, 3, 12, 24),
+                  itemCount: eggs.length,
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 210,
+                    childAspectRatio: .72,
+                    mainAxisSpacing: 9,
+                    crossAxisSpacing: 9,
+                  ),
+                  itemBuilder: (context, index) => _NestEggGridTile(
+                    egg: eggs[index],
+                    game: widget.game,
+                    strings: widget.strings,
+                  ),
+                )
+              : ListView.separated(
+                  key: const PageStorageKey('nest-eggs-list-scroll'),
+                  padding: const EdgeInsets.fromLTRB(12, 3, 12, 24),
+                  itemCount: eggs.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 7),
+                  itemBuilder: (context, index) => _NestEggListTile(
+                    egg: eggs[index],
+                    game: widget.game,
+                    strings: widget.strings,
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NestPickerControl extends StatelessWidget {
+  const _NestPickerControl({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1ECFB),
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: AppColors.twilight),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.twilight,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _NestEggGridTile extends StatelessWidget {
+  const _NestEggGridTile({
+    required this.egg,
+    required this.game,
+    required this.strings,
+  });
+
+  final DragonEgg egg;
+  final HouseholdProvider game;
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        clipBehavior: Clip.antiAlias,
+        margin: EdgeInsets.zero,
+        child: InkWell(
+          key: Key('nest-egg-grid-${egg.id}'),
+          onTap: () => Navigator.pop(context, egg),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(9, 8, 9, 9),
+            child: Column(
+              children: [
+                const Expanded(
+                  child: DragonArt(
+                    height: 88,
+                    animate: false,
+                    stageKey: 'moonEgg',
+                  ),
+                ),
+                Text(
+                  strings.eggName(
+                    sinister: egg.isSinisterEgg,
+                    special: egg.isSpecialEgg,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  strings.pick(
+                    'Hatch time: ${strings.remainingDuration(egg.incubationDuration)}',
+                    'Broedtijd: ${strings.remainingDuration(egg.incubationDuration)}',
+                  ),
+                  key: Key('nest-egg-hatch-time-${egg.id}'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.twilight,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  game.eggHintForEgg(egg, locale: strings.languageCode),
+                  key: Key('nest-egg-hint-${egg.id}'),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 10.5,
+                    height: 1.2,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class _NestEggListTile extends StatelessWidget {
+  const _NestEggListTile({
+    required this.egg,
+    required this.game,
+    required this.strings,
+  });
+
+  final DragonEgg egg;
+  final HouseholdProvider game;
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) {
+    final received =
+        MaterialLocalizations.of(context).formatShortDate(egg.acquiredAt);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        key: Key('nest-egg-list-${egg.id}'),
+        onTap: () => Navigator.pop(context, egg),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 9, 8, 9),
+          child: Row(
+            children: [
+              const SizedBox.square(
+                dimension: 62,
+                child: DragonArt(
+                  height: 58,
+                  animate: false,
+                  stageKey: 'moonEgg',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.eggName(
+                        sinister: egg.isSinisterEgg,
+                        special: egg.isSpecialEgg,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      strings.pick(
+                        'Hatch time: ${strings.remainingDuration(egg.incubationDuration)} · Received $received',
+                        'Broedtijd: ${strings.remainingDuration(egg.incubationDuration)} · Ontvangen $received',
+                      ),
+                      key: Key('nest-egg-hatch-time-${egg.id}'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.twilight,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      game.eggHintForEgg(egg, locale: strings.languageCode),
+                      key: Key('nest-egg-hint-${egg.id}'),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 11,
+                        height: 1.2,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

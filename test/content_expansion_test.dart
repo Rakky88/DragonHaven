@@ -22,7 +22,10 @@ void main() {
     }
     expect(adultNames, hasLength(176));
     expect(DragonArtwork.logicalFormCount, 265);
-    expect(DragonArtwork.allAssetPaths, hasLength(227));
+    expect(DragonArtwork.allAssetPaths, hasLength(228));
+    final emberbun = dragonLineageById('emberbun');
+    expect(emberbun.formName('spirit', false), 'Everwarm Hearthkeeper');
+    expect(emberbun.formName('spirit', true), 'Eeuwarm Haardhoeder');
   });
 
   test('all dragon artwork files exist', () {

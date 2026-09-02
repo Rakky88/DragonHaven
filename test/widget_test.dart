@@ -8,6 +8,7 @@ import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/dragon_lineage.dart';
+import 'package:dragon_haven/models/egg_collection_preferences.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/profile_portrait.dart';
@@ -2207,6 +2208,100 @@ void main() {
     final roofEggNestSize = tester.getSize(roofEggNest);
     expect(roofEggNestSize.width, closeTo(148, .1));
     expect(roofEggNestSize.height, closeTo(148 / (960 / 700), .1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'the empty nest reuses egg grid, list, hints, hatch time, and ordering',
+      (tester) async {
+    final game = await pumpGame(
+      tester,
+      onboarded: true,
+      hatched: true,
+      surfaceSize: const Size(320, 640),
+    );
+    game.eggStash = [
+      DragonEgg(
+        id: 'nest-newer-slow',
+        lineageId: standardDragonLineages.first.id,
+        acquiredAt: DateTime.utc(2026, 8, 2),
+        hatchSeed: 601,
+        prismatic: false,
+        incubationMinutes: 300,
+      ),
+      DragonEgg(
+        id: 'nest-older-fast',
+        lineageId: standardDragonLineages.last.id,
+        acquiredAt: DateTime.utc(2026, 8, 1),
+        hatchSeed: 602,
+        prismatic: false,
+        incubationMinutes: 60,
+      ),
+    ];
+    game.notifyListeners();
+    await tester.pump();
+
+    final towerRoof = find.byKey(const Key('tower-roof'));
+    await tester.ensureVisible(towerRoof);
+    await tester.tap(towerRoof);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('rooftop-nest-scene')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final newerGrid = find.byKey(const Key('nest-egg-grid-nest-newer-slow'));
+    final olderGrid = find.byKey(const Key('nest-egg-grid-nest-older-fast'));
+    expect(newerGrid, findsOneWidget);
+    expect(olderGrid, findsOneWidget);
+    expect(
+      tester.getTopLeft(newerGrid).dx,
+      lessThan(tester.getTopLeft(olderGrid).dx),
+    );
+    for (final id in const ['nest-newer-slow', 'nest-older-fast']) {
+      expect(find.byKey(Key('nest-egg-hatch-time-$id')), findsOneWidget);
+      expect(find.byKey(Key('nest-egg-hint-$id')), findsOneWidget);
+    }
+
+    await tester.tap(find.byKey(const Key('nest-egg-view-toggle')));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(game.eggInventoryViewMode, 'list');
+    final newerList = find.byKey(const Key('nest-egg-list-nest-newer-slow'));
+    final olderList = find.byKey(const Key('nest-egg-list-nest-older-fast'));
+    expect(newerList, findsOneWidget);
+    expect(olderList, findsOneWidget);
+    expect(
+      tester.getTopLeft(newerList).dy,
+      lessThan(tester.getTopLeft(olderList).dy),
+    );
+    for (final id in const ['nest-newer-slow', 'nest-older-fast']) {
+      expect(find.byKey(Key('nest-egg-hatch-time-$id')), findsOneWidget);
+      expect(find.byKey(Key('nest-egg-hint-$id')), findsOneWidget);
+    }
+
+    tester
+        .widget<PopupMenuButton<EggCollectionSortMode>>(
+          find.byKey(const Key('nest-egg-sort')),
+        )
+        .onSelected!(EggCollectionSortMode.hatchTime);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(game.eggInventorySortMode, 'hatchTime');
+    expect(game.eggInventorySortDescending, isFalse);
+    expect(
+      tester.getTopLeft(olderList).dy,
+      lessThan(tester.getTopLeft(newerList).dy),
+    );
+
+    tester
+        .widget<PopupMenuButton<EggCollectionSortMode>>(
+          find.byKey(const Key('nest-egg-sort')),
+        )
+        .onSelected!(EggCollectionSortMode.hatchTime);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(game.eggInventorySortDescending, isTrue);
+    expect(
+      tester.getTopLeft(newerList).dy,
+      lessThan(tester.getTopLeft(olderList).dy),
+    );
     expect(tester.takeException(), isNull);
   });
 

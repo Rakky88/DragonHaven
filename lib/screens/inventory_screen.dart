@@ -7,6 +7,7 @@ import '../l10n/app_strings.dart';
 import '../models/adventure.dart';
 import '../models/chest.dart';
 import '../models/dragon_egg.dart';
+import '../models/egg_collection_preferences.dart';
 import '../models/mystic_relic.dart';
 import '../models/pet.dart';
 import '../models/shop_item.dart';
@@ -115,10 +116,6 @@ class _InventoryControlChip extends StatelessWidget {
       );
 }
 
-enum _EggInventoryView { tiles, list }
-
-enum _EggSortMode { acquiredAt, hatchTime }
-
 class _EggInventoryTab extends StatefulWidget {
   const _EggInventoryTab();
 
@@ -127,8 +124,8 @@ class _EggInventoryTab extends StatefulWidget {
 }
 
 class _EggInventoryTabState extends State<_EggInventoryTab> {
-  _EggInventoryView _view = _EggInventoryView.tiles;
-  _EggSortMode _sortMode = _EggSortMode.acquiredAt;
+  EggCollectionView _view = EggCollectionView.tiles;
+  EggCollectionSortMode _sortMode = EggCollectionSortMode.acquiredAt;
   bool _sortDescending = true;
   bool _preferencesLoaded = false;
 
@@ -137,25 +134,25 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
     super.didChangeDependencies();
     if (_preferencesLoaded) return;
     final game = context.read<HouseholdProvider>();
-    _view = _EggInventoryView.values.firstWhere(
+    _view = EggCollectionView.values.firstWhere(
       (value) => value.name == game.eggInventoryViewMode,
-      orElse: () => _EggInventoryView.tiles,
+      orElse: () => EggCollectionView.tiles,
     );
-    _sortMode = _EggSortMode.values.firstWhere(
+    _sortMode = EggCollectionSortMode.values.firstWhere(
       (value) => value.name == game.eggInventorySortMode,
-      orElse: () => _EggSortMode.acquiredAt,
+      orElse: () => EggCollectionSortMode.acquiredAt,
     );
     _sortDescending = game.eggInventorySortDescending;
     _preferencesLoaded = true;
   }
 
-  void _selectSort(_EggSortMode mode) {
+  void _selectSort(EggCollectionSortMode mode) {
     setState(() {
       if (_sortMode == mode) {
         _sortDescending = !_sortDescending;
       } else {
         _sortMode = mode;
-        _sortDescending = mode == _EggSortMode.acquiredAt;
+        _sortDescending = mode == EggCollectionSortMode.acquiredAt;
       }
     });
     _saveCollectionPreferences();
@@ -181,15 +178,11 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
             'Nog geen Eieren in je inventaris.'),
       );
     }
-    final eggs = [...game.eggStash]..sort((a, b) {
-        final comparison = switch (_sortMode) {
-          _EggSortMode.acquiredAt => a.acquiredAt.compareTo(b.acquiredAt),
-          _EggSortMode.hatchTime =>
-            a.incubationSeconds.compareTo(b.incubationSeconds),
-        };
-        final stable = comparison != 0 ? comparison : a.id.compareTo(b.id);
-        return _sortDescending ? -stable : stable;
-      });
+    final eggs = sortedDragonEggs(
+      game.eggStash,
+      sortMode: _sortMode,
+      descending: _sortDescending,
+    );
     return Column(
       children: [
         Padding(
@@ -219,19 +212,19 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  PopupMenuButton<_EggSortMode>(
+                  PopupMenuButton<EggCollectionSortMode>(
                     key: const Key('egg-inventory-sort'),
                     initialValue: _sortMode,
                     onSelected: _selectSort,
                     itemBuilder: (_) => [
                       PopupMenuItem(
                         key: const Key('egg-sort-acquiredAt'),
-                        value: _EggSortMode.acquiredAt,
+                        value: EggCollectionSortMode.acquiredAt,
                         child: Text(strings.pick('Received', 'Ontvangen')),
                       ),
                       PopupMenuItem(
                         key: const Key('egg-sort-hatchTime'),
-                        value: _EggSortMode.hatchTime,
+                        value: EggCollectionSortMode.hatchTime,
                         child: Text(strings.pick('Hatch time', 'Broedtijd')),
                       ),
                     ],
@@ -239,7 +232,7 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                       icon: _sortDescending
                           ? Icons.arrow_downward_rounded
                           : Icons.arrow_upward_rounded,
-                      label: _sortMode == _EggSortMode.acquiredAt
+                      label: _sortMode == EggCollectionSortMode.acquiredAt
                           ? strings.pick('Received', 'Ontvangen')
                           : strings.pick('Hatch time', 'Broedtijd'),
                     ),
@@ -247,18 +240,18 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                   const SizedBox(width: 7),
                   IconButton.filledTonal(
                     key: const Key('egg-inventory-view-toggle'),
-                    tooltip: _view == _EggInventoryView.tiles
+                    tooltip: _view == EggCollectionView.tiles
                         ? strings.pick('Show list', 'Lijst tonen')
                         : strings.pick('Show tiles', 'Tegels tonen'),
                     onPressed: () {
                       setState(() {
-                        _view = _view == _EggInventoryView.tiles
-                            ? _EggInventoryView.list
-                            : _EggInventoryView.tiles;
+                        _view = _view == EggCollectionView.tiles
+                            ? EggCollectionView.list
+                            : EggCollectionView.tiles;
                       });
                       _saveCollectionPreferences();
                     },
-                    icon: Icon(_view == _EggInventoryView.tiles
+                    icon: Icon(_view == EggCollectionView.tiles
                         ? Icons.view_list_rounded
                         : Icons.grid_view_rounded),
                   ),
@@ -268,7 +261,7 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
           ),
         ),
         Expanded(
-          child: _view == _EggInventoryView.tiles
+          child: _view == EggCollectionView.tiles
               ? GridView.builder(
                   key: const PageStorageKey('inventory-eggs-scroll'),
                   padding: const EdgeInsets.fromLTRB(12, 3, 12, 32),

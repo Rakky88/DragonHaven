@@ -65,7 +65,7 @@ const _blueReviewBackground = bool.fromEnvironment(
 const _auditArtBackground =
     _blueReviewBackground ? Color(0xFF1976D2) : Color(0xFFF4F0FA);
 
-/// Every runtime rendering of the 81 source forms repaired for this release.
+/// Every runtime rendering of the 87 source forms repaired for this release.
 /// Four variants are included per form: normal/spectral, each in color/black.
 Set<String> releaseRepairAuditEntryIds() {
   final entries = <String>{};

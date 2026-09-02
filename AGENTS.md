@@ -23,3 +23,12 @@ fingerprint without first checking that the player-facing tables and content
 relationships still match the implementation. When randomness is introduced
 in a new source file, add that file to the appropriate source list in
 `tool/reference_documentation_guard.dart`.
+
+# Dragon sprite direction requirement
+
+Every newly generated or regenerated DragonHaven dragon sprite must show both
+the head/snout and the torso/body axis pointing toward screen-right. This
+applies to Hatchlings, Wyrmlings, every ascended form, Mastery forms and
+Spectral variants. Do not accept a front-facing or left-facing render. Keep the
+entire body inside generous transparent padding and verify that no matte or
+background remnants remain before adding the asset to the game.
