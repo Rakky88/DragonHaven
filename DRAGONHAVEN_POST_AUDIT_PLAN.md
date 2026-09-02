@@ -19,15 +19,19 @@ documentatie. De documentatiegate normaliseert CRLF/LF en is daardoor gelijk op
 Windows en Linux. Productiepreflight, analyzer, alle 406 tests, vaste signing,
 Play Store-AAB en post-release health zijn groen.**
 
-Actuele lokale tranche na v0.05.06: **Trial-eindscores krijgen lokaal één
-vakgebonden expertisebonus: `round half up(ruwe score × (1 + expertise/1000))`.
-Daarnaast gebruikt het lege Rooftop Nest nu dezelfde opgeslagen tegel-/lijst-
-en omkeerbare ontvangen-/broedtijdsortering als Inventory, met broedtijd en hint
-in beide nestweergaven. De Emberbun Spirit is als losse transparante,
-rechtsgerichte sprite vervangen en heet voortaan Everwarm Hearthkeeper
-(Eeuwarm Haardhoeder). De verplichte rechtsrichting voor kop én romp staat als
-blijvende assetregel in `AGENTS.md`. Analyzer en 408/408 tests zijn groen. Er is
-geen versie-, server-, migratie-, productie- of openbare releasewijziging.**
+Actuele lokale tranche na v0.05.06: **v0.05.07 is als ondertekende Android-
+releasecandidate gereed met versionCode 10057. De kandidaat bevat de
+vakgebonden Trial-scoremultiplier, de gedeelde lege-nestcollectie met opgeslagen
+tegel-/lijstweergave en omkeerbare sortering, en de transparante rechtsgerichte
+Emberbun Spirit met de naam Everwarm Hearthkeeper. Analyzer en 408/408 tests
+zijn groen. De echte productie-APK heeft package `nl.dragonhaven.app`, het vaste
+releasecertificaat, 384.170.857 bytes en SHA-256
+`def7b0b6595ad68f9e5316b3be2e1b5a44f8fb407aeb378bfba4ef5e30b1c871`.
+Installatie over de bestaande app, Tower, leeg-nestgedrag en de zichtbare versie
+v0.05.07 zijn op de emulator gecontroleerd. De onafhankelijke preflight bewijst
+36/36 migraties, nul lintfouten en gezonde Auth- en applicatie-endpoints; deze
+release bevat geen nieuwe servermigratie. Publicatie en de externe tag-/
+healthgates volgen binnen de gegeven releasetoestemming.**
 
 Server- en releasebewijs: **de volledige
 [stagingrun 33630222018](https://github.com/Rakky88/DragonHaven/actions/runs/33630222018)
@@ -1243,6 +1247,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 02-09-2026 | v0.05.06 Android-hotfix openbaar en volledig groen | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.06), [taggate 33650746606](https://github.com/Rakky88/DragonHaven/actions/runs/33650746606), [healthrun 33651528845](https://github.com/Rakky88/DragonHaven/actions/runs/33651528845), `release-notes-v0.05.06.md` en `reference_documentation_guard.dart` | De bronfingerprint normaliseert regeleinden vóór hashing en een regressietest bewijst gelijke LF/CRLF-uitkomsten. Appversie/versionCode zijn 0.05.06/10056. De APK is 383.331.062 bytes met SHA-256 `cced52519b96b961b9bcce4adf707d6eab150a3e06f591f3469a5386333ee04c`; remote asset en beide HTTP 200-downloadroutes zijn bewezen. Emulatorcontrole toont v0.05.06 en uitsluitend `Copy download link` en `Update`. De taggate herhaalde productiepreflight, analyzer, 406 tests, vaste signing, Play-ready AAB en artifactcontrole groen. De healthrun bevestigde Auth/applicatiehealth zonder storingsalert; productie bleef 36/36. |
 | 02-09-2026 | Trial-scoremultiplier door relevante expertise lokaal gereed | Codex | `trial.dart`, `dragonhaven_systems.dart`, `trial_game_screen.dart`, `adventure_hub_screen.dart`, drie regressietestbestanden en `RANDOM_REWARDS_AND_ODDS.md` | Iedere Trial gebruikt exact één vak: Spirit voor Cavern Flight, Might voor Ruin Breaker en Arcana voor Runeweaver. De formule is `round half up(ruwe score × (1 + expertise/1000))`; 5 expertise is dus ×1,005 en 300 expertise ×1,300. De eindscore stuurt rang, reward, dragon/account-best en online rankings. De draakkiezer toont de multiplier vooraf en de resultaatskaart toont ruwe score × multiplier onder het eindtotaal. Relevante expertise wordt vóór de reward vastgelegd, zodat nieuw verdiende punten pas een volgende run helpen. Analyzer, 69 gerichte tests en alle 407 regressietests zijn groen; bewaakte referentiedocumentatie is gesynchroniseerd. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
 | 02-09-2026 | Lege-nestcollectie en Emberbun Spirit lokaal vernieuwd | Codex | `egg_collection_preferences.dart`, `rooftop_nest_screen.dart`, `inventory_screen.dart`, `emberbun_spirit_safe.webp`, `dragon_lineage.dart`, `dragon_art.dart`, `remove_generator_checkerboard.dart`, `AGENTS.md` en regressietests | Tikken op een leeg nest opent nu een compacte tegel- of lijstweergave. Beide tonen per ei de echte broedtijd en vage hint; ontvangen datum en broedtijd gebruiken exact dezelfde opgeslagen, opnieuw aanklikbare omkeersortering als Inventory. De dubbele naam Everwarm Hearthheart is vervangen door Everwarm Hearthkeeper (Nederlands: Eeuwarm Haardhoeder). De opnieuw gerenderde losse Spirit-sprite heeft echte alpha, veilige 1024px-marges en kop plus lichaamsas naar rechts; de ingebakken generatorchecker is technisch verwijderd en op blauw gecontroleerd. De verplichte rechtsrichting is vastgelegd voor alle toekomstige draakrenders. Analyzer, gerichte nest-/content-/spritechecks en alle 408 regressietests zijn groen; beide bewaakte gameplayreferenties zijn na inhoudelijke controle gesynchroniseerd. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
+| 02-09-2026 | v0.05.07 lokale releasecandidate bewezen | Codex, na jouw toestemming | `release-notes-v0.05.07.md`, 408 tests, ondertekende `DragonHaven.apk`, emulatorcontrole en `release_server_preflight.ps1` | App- en zichtbare versie staan op v0.05.07 met versionCode 10057. APK heeft package `nl.dragonhaven.app`, 384.170.857 bytes, SHA-256 `def7b0b6595ad68f9e5316b3be2e1b5a44f8fb407aeb378bfba4ef5e30b1c871` en het vaste certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. De echte release-APK is over de bestaande app geïnstalleerd; Tower, de lege-nestterugval en About v0.05.07 zijn visueel gecontroleerd. Analyzer en 408/408 tests zijn groen. Productie en staging blijven zonder nieuwe migratie op 36/36, met nul lintfouten en gezonde Auth-/applicatiehealth. |
 
 ## Onderhoud van dit plan
 
