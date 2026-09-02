@@ -1205,24 +1205,32 @@ void main() {
     expect(stagingE2e, contains(r"$propertyNames -contains 'user_id'"));
 
     final productionMigration = File(
-      '.github/workflows/production-migrate-35.yml',
+      '.github/workflows/production-migrate-36.yml',
     ).readAsStringSync();
-    expect(productionMigration, contains('MIGRATE_PRODUCTION_33_TO_35'));
+    expect(
+      productionMigration,
+      contains('MIGRATE_PRODUCTION_33_TO_36'),
+    );
     expect(
       productionMigration,
       contains("\$expectedRemote = '202608310033'"),
     );
-    expect(
-      productionMigration,
-      contains(
-        "\$expectedPending = @('202609020034', '202609020035')",
-      ),
-    );
+    expect(productionMigration, contains("'202609020034'"));
+    expect(productionMigration, contains("'202609020035'"));
+    expect(productionMigration, contains("'202609020036'"));
     expect(
       productionMigration,
       contains('db push --linked --include-all --dry-run'),
     );
     expect(productionMigration, contains('release_server_preflight.ps1'));
+
+    final lintFix = File(
+      'supabase/migrations/'
+      '202609020036_qualify_friend_message_notification.sql',
+    ).readAsStringSync();
+    expect(lintFix, contains('target_notification.kind'));
+    expect(lintFix, contains('target_notification.acknowledged_at'));
+    expect(lintFix, isNot(contains("\n+    and kind = 'friend_message'")));
   });
 
   test('app size audit measures archives without reading player data', () {
