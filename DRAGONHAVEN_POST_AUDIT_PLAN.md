@@ -21,10 +21,13 @@ aura. Productiepreflight, analyzer, alle 407 tests, vaste signing, Play Store-AA
 remote assetcontrole en post-release health zijn groen. Deze release bevat geen
 servermigratie.**
 
-Actuele lokale tranche na v0.05.08: **geen afzonderlijke niet-uitgebrachte
-app- of servertranche. De auditadministratie van de afgeronde release wordt met
-deze documentatiecommit bijgewerkt; productie en staging blijven op 36/36
-migraties.**
+Actuele lokale tranche na v0.05.08: **de voortgangskaart van een Wyrmling toont
+level en XP niet langer dubbel. Het hoofdgedeelte bevat één huidige level-/XP-
+balk en noemt bij de volgende evolutie alleen het vereiste doellevel; het compacte
+Ascension-gedeelte toont uitsluitend de aanvullende totale-Expertise-eis. Het
+losse Ascension-paneel blijft beide onafhankelijke vereisten tonen. Analyzer en
+alle 409 regressietests zijn groen. Er is geen nieuwe appversie, servermigratie
+of openbare release; productie en staging blijven op 36/36 migraties.**
 
 Server- en releasebewijs: **de volledige
 [stagingrun 33630222018](https://github.com/Rakky88/DragonHaven/actions/runs/33630222018)
@@ -1244,6 +1247,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 02-09-2026 | Trial-multiplier lokaal verwijderd en Spectral-reparaties bewezen | Codex | `trial.dart`, `dragonhaven_systems.dart`, `adventure_hub_screen.dart`, `trial_game_screen.dart`, Trial-regressies, `selected_sprite_safety_test.dart` en beide levende referentiedocumenten | De ingeleverde minigamescore is weer rechtstreeks de eindscore voor rang, reward, dragon/account-best en online rankings; de multiplier-UI en -modelvelden zijn verwijderd. Een regressie met bestaande Expertise bewijst dat score 250 exact 250 blijft. Emberbun Spirit, Starforged Arcana en Frostfable Wyrmling gebruiken voor Spectral dezelfde herstelde standalone sprite; de runtime voegt alleen kleurfilter en aura toe. Alle 87 geselecteerde vormen zijn vijfmaal in normaal/Spectral en kleur/silhouet gerenderd, specifieke Frostfable-/Starforged-alphacontroles slagen, analyzer meldt nul problemen en alle 407 tests zijn groen. Geen versie-, server-, migratie-, productie- of openbare releasewijziging. |
 | 02-09-2026 | v0.05.08 lokale releasecandidate bewezen | Codex, na jouw toestemming | `release-notes-v0.05.08.md`, 407 tests, ondertekende `DragonHaven.apk`, emulatorcontrole en `release_server_preflight.ps1` | App- en zichtbare versie staan op v0.05.08 met versionCode 10058. APK heeft package `nl.dragonhaven.app`, 384.170.857 bytes, SHA-256 `29af64061bffb2a4c56db5223d6c6cf4aa5b2a11f074c75ca03689b91fda685a` en het vaste certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. De echte release-APK is over de bestaande emulator-app geïnstalleerd; Tower, About v0.05.08 en de Trial-pagina zonder multiplier zijn visueel gecontroleerd. Analyzer, referentiedocumentatiegates en 407/407 tests zijn groen. Productie en staging blijven zonder nieuwe migratie op 36/36, met nul lintfouten en gezonde Auth-/applicatiehealth. |
 | 02-09-2026 | v0.05.08 openbaar en volledig groen | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.08), [taggate 33682174544](https://github.com/Rakky88/DragonHaven/actions/runs/33682174544) en [healthrun 33682959208](https://github.com/Rakky88/DragonHaven/actions/runs/33682959208) | Exact commit `1b6e941add5121ef8a700c31da79949a72613d41` is getagd. Remote `DragonHaven.apk` heeft exact de lokale grootte van 384.170.857 bytes en SHA-256 `29af64061bffb2a4c56db5223d6c6cf4aa5b2a11f074c75ca03689b91fda685a`; de versiegebonden en permanente latest-download geven HTTP 200 en v0.05.08 is Latest. De taggate herhaalde productiepreflight, analyzer, 407 tests, vaste signing, Play-ready AAB en artifactupload groen. De losse healthrun bevestigde Auth en applicatiehealth, uploadde bewijs, sloot een eventueel hersteld alert en opende geen storingsalert. Productie en staging bleven ongewijzigd op 36/36. |
+| 03-09-2026 | Wyrmling-level- en Ascension-informatie ontdubbeld | Codex | `dragon_tower_screen.dart`, `ascension_requirements.dart` en twee widgetregressies | De My Dragons-detailkaart toont huidig level, totale XP en voortgang naar het volgende level ieder nog maar één keer. De evolutieregel noemt compact `Ascended · Level 7`; daaronder staat alleen de aanvullende totale-Expertise-eis met status en voortgangsbalk. Het herbruikbare losse Ascension-paneel behoudt bewust beide gates. Een componenttest en een volledige My Dragons-integratietest bewaken dat actuele XP en de levelgate niet opnieuw in het compacte blok verschijnen. Analyzer en 409/409 tests zijn groen. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
 
 ## Onderhoud van dit plan
 

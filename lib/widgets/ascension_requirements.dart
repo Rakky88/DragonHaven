@@ -12,11 +12,13 @@ class AscensionRequirements extends StatelessWidget {
     required this.dragon,
     this.onDark = false,
     this.compact = false,
+    this.includeLevelRequirement = true,
   });
 
   final Pet dragon;
   final bool onDark;
   final bool compact;
+  final bool includeLevelRequirement;
 
   @override
   Widget build(BuildContext context) {
@@ -73,34 +75,37 @@ class AscensionRequirements extends StatelessWidget {
               if (levelReady && expertiseReady) _ReadyPill(onDark: onDark),
             ],
           ),
-          SizedBox(height: compact ? 3 : 5),
-          Text(
-            strings.pick(
-              'Complete both requirements before Ascension.',
-              'Voltooi beide vereisten voor Ascension.',
+          if (includeLevelRequirement) ...[
+            SizedBox(height: compact ? 3 : 5),
+            Text(
+              strings.pick(
+                'Complete both requirements before Ascension.',
+                'Voltooi beide vereisten voor Ascension.',
+              ),
+              style: TextStyle(
+                color: muted,
+                fontSize: compact ? 10.5 : 11.5,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            style: TextStyle(
-              color: muted,
-              fontSize: compact ? 10.5 : 11.5,
-              fontWeight: FontWeight.w600,
+            SizedBox(height: compact ? 9 : 12),
+            _RequirementProgress(
+              key: const Key('ascension-level-requirement'),
+              statusKey: const Key('ascension-level-status'),
+              title: strings.pick('Level & XP', 'Niveau & XP'),
+              value:
+                  '${strings.pick('Level', 'Niveau')} ${dragon.level}/$targetLevel'
+                  ' · ${dragon.xp}/${Pet.ascendedXp} XP',
+              progress: dragon.xp / Pet.ascendedXp,
+              complete: levelReady,
+              foreground: foreground,
+              muted: muted,
+              track: track,
+              compact: compact,
             ),
-          ),
-          SizedBox(height: compact ? 9 : 12),
-          _RequirementProgress(
-            key: const Key('ascension-level-requirement'),
-            statusKey: const Key('ascension-level-status'),
-            title: strings.pick('Level & XP', 'Niveau & XP'),
-            value:
-                '${strings.pick('Level', 'Niveau')} ${dragon.level}/$targetLevel'
-                ' · ${dragon.xp}/${Pet.ascendedXp} XP',
-            progress: dragon.xp / Pet.ascendedXp,
-            complete: levelReady,
-            foreground: foreground,
-            muted: muted,
-            track: track,
-            compact: compact,
-          ),
-          SizedBox(height: compact ? 9 : 12),
+            SizedBox(height: compact ? 9 : 12),
+          ] else
+            SizedBox(height: compact ? 7 : 10),
           _RequirementProgress(
             key: const Key('ascension-expertise-requirement'),
             statusKey: const Key('ascension-expertise-status'),

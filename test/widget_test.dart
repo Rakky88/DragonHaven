@@ -66,6 +66,7 @@ void main() {
     Size surfaceSize = const Size(430, 900),
     SocialRepository? socialRepository,
     void Function(OnlineAccountProvider online)? onOnlineCreated,
+    void Function(HouseholdProvider game)? configureGame,
   }) async {
     await tester.binding.setSurfaceSize(surfaceSize);
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -82,6 +83,7 @@ void main() {
         ..favorite = true;
       game.unlockedAchievementIds.add('not_picking_favorites');
     }
+    configureGame?.call(game);
     final online = OnlineAccountProvider(
       repository: socialRepository ?? const DisabledSocialRepository(),
       inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
@@ -1152,6 +1154,44 @@ void main() {
       final size = tester.getSize(tile);
       expect((size.width - size.height).abs(), lessThan(.01));
     }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('wyrmling detail shows level progress only once', (tester) async {
+    final game = await pumpGame(
+      tester,
+      onboarded: true,
+      hatched: true,
+      configureGame: (game) {
+        game.pet
+          ..stage = DragonStage.wyrmling
+          ..xp = 1639;
+        game.pet.training
+          ..['might'] = 56
+          ..['arcana'] = 19
+          ..['spirit'] = 87;
+      },
+    );
+
+    await tester.tap(find.text('Tower').last);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.byKey(const Key('open-my-dragons')));
+    await tester.pump(const Duration(milliseconds: 700));
+    final ownedDragon = find.byKey(Key('owned-dragon-${game.pet.id}'));
+    tester.widget<InkWell>(ownedDragon).onTap!();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Level 6'), findsOneWidget);
+    expect(find.text('1639 XP'), findsOneWidget);
+    expect(find.text('189 / 500 XP to next level'), findsOneWidget);
+    expect(find.text('Next evolution: Ascended · Level 7'), findsOneWidget);
+    expect(find.byKey(const Key('dragon-level-progress')), findsOneWidget);
+    expect(find.byKey(const Key('ascension-level-requirement')), findsNothing);
+    expect(find.text('Level & XP'), findsNothing);
+    expect(find.textContaining('1639/1950 XP'), findsNothing);
+    expect(find.byKey(const Key('ascension-expertise-requirement')),
+        findsOneWidget);
+    expect(find.text('162/300'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

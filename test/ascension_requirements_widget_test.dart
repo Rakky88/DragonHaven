@@ -10,6 +10,7 @@ void main() {
     Pet dragon, {
     bool onDark = false,
     bool compact = false,
+    bool includeLevelRequirement = true,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -22,6 +23,7 @@ void main() {
                 dragon: dragon,
                 onDark: onDark,
                 compact: compact,
+                includeLevelRequirement: includeLevelRequirement,
               ),
             ),
           ),
@@ -71,6 +73,35 @@ void main() {
     expect(find.byIcon(Icons.check_rounded), findsOneWidget);
     expect(find.byIcon(Icons.lock_clock_rounded), findsOneWidget);
     expect(find.byKey(const Key('ascension-ready')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('omits level details when the parent already shows them',
+      (tester) async {
+    final dragon = Pet(
+      stage: DragonStage.wyrmling,
+      xp: Pet.ascendedXp - 1,
+      training: const {'might': 100, 'arcana': 40, 'spirit': 22},
+    );
+
+    await pumpRequirements(
+      tester,
+      dragon,
+      onDark: true,
+      compact: true,
+      includeLevelRequirement: false,
+    );
+
+    expect(find.text('Ascension requirements'), findsOneWidget);
+    expect(find.text('Complete both requirements before Ascension.'),
+        findsNothing);
+    expect(find.text('Level & XP'), findsNothing);
+    expect(
+        find.textContaining('${dragon.xp}/${Pet.ascendedXp} XP'), findsNothing);
+    expect(find.byKey(const Key('ascension-level-requirement')), findsNothing);
+    expect(find.byKey(const Key('ascension-expertise-requirement')),
+        findsOneWidget);
+    expect(find.text('162/300'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

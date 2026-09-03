@@ -1736,7 +1736,9 @@ class _DragonProgressCard extends StatelessWidget {
         else ...[
           Text(
             '${strings.pick('Next evolution', 'Volgende evolutie')}: '
-            '$nextStageName${dragon.stage == DragonStage.wyrmling ? '' : ' · ${strings.pick('Level', 'Niveau')} ${dragon.nextEvolutionLevel} · ${dragon.nextEvolutionXp} XP'}',
+            '$nextStageName · ${strings.pick('Level', 'Niveau')} '
+            '${dragon.nextEvolutionLevel}'
+            '${dragon.stage == DragonStage.wyrmling ? '' : ' · ${dragon.nextEvolutionXp} XP'}',
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w900,
@@ -1748,6 +1750,7 @@ class _DragonProgressCard extends StatelessWidget {
               dragon: dragon,
               onDark: true,
               compact: true,
+              includeLevelRequirement: false,
             ),
           ],
         ],
