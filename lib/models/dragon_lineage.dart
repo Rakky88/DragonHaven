@@ -11,7 +11,15 @@ enum DragonTrait {
   rainbowRuff,
 }
 
-enum DragonRarity { common, uncommon, rare, veryRare, legendary, mythical }
+enum DragonRarity {
+  common,
+  uncommon,
+  rare,
+  veryRare,
+  legendary,
+  mythical,
+  specialEvent,
+}
 
 class DragonLineage {
   const DragonLineage({
@@ -75,6 +83,8 @@ class DragonLineage {
         DragonRarity.veryRare => isDutch ? 'Zeer zeldzaam' : 'Very Rare',
         DragonRarity.legendary => isDutch ? 'Legendarisch' : 'Legendary',
         DragonRarity.mythical => isDutch ? 'Mythisch' : 'Mythical',
+        DragonRarity.specialEvent =>
+          isDutch ? 'Speciaal evenement' : 'Special Event',
       };
 }
 
@@ -852,7 +862,7 @@ const dragonLineages = <DragonLineage>[
     stormFormNl: 'Dageraadsveer',
     bondFormEn: 'Hearthflock Herald',
     bondFormNl: 'Haardverenheraut',
-    rarity: DragonRarity.mythical,
+    rarity: DragonRarity.specialEvent,
     primaryRoomId: 'garden',
     secondaryRoomIds: ['hearth', 'sunforge'],
     secret: true,

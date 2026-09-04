@@ -1,12 +1,12 @@
 # DragonHaven Random Rewards and Odds
 
-Last verified: 2 September 2026
+Last verified: 4 September 2026
 
-Ruleset: app version `v0.05.04`
+Ruleset: app version `v0.05.09`
 
-Source baseline: commit `e3befdf`
+Source baseline: release `v0.05.09`
 
-<!-- reference-source-fingerprint: 29aa607659025f16 -->
+<!-- reference-source-fingerprint: 5490f25fb0ce3a6a -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
@@ -239,7 +239,7 @@ When egg pity is active, only the first three rows change:
 | Legendary | 2 | Starforged, Leviathanecho |
 | Mythical | 1 | Everwyrm |
 
-Sinisterra and Cluckatrice are the currently implemented secret Mythical families and are not part of any ordinary Mysterious Egg or Starter Egg pool. Cluckatrice belongs specifically to the Golden Wings Special Egg; a future Special Egg may deliberately contain another configured family or pool.
+Sinisterra is the currently implemented secret Mythical family. Cluckatrice has the separate Special Event type, does not count toward the Mythical-dragon achievement, and belongs specifically to the Golden Wings Special Egg. Neither family is part of an ordinary Mysterious Egg or Starter Egg pool; a future Special Egg may deliberately contain another configured family or pool.
 
 ### 2.4 Per-family chance inside one Mysterious Egg
 

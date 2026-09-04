@@ -629,6 +629,7 @@ Color _codexRarityColor(DragonRarity rarity) => switch (rarity) {
       DragonRarity.veryRare => const Color(0xFF7951C9),
       DragonRarity.legendary => const Color(0xFFD39424),
       DragonRarity.mythical => const Color(0xFFC13D89),
+      DragonRarity.specialEvent => const Color(0xFFE06B32),
     };
 
 class _FormTile extends StatelessWidget {

@@ -218,28 +218,26 @@ void main() {
     }
   });
 
-  test('Supernova Sovereign has transparent negative space between its legs',
-      () {
+  test('Supernova Sovereign keeps transparent lower-body negative space', () {
     final sprite = img.decodeImage(
       File(
         DragonArtwork.safeStandaloneFormAsset('starforged', 'arcana'),
       ).readAsBytesSync(),
     );
     expect(sprite, isNotNull);
-    for (final point in const [(354, 413), (360, 420)]) {
-      expect(
-        sprite!.getPixel(point.$1, point.$2).a,
-        lessThanOrEqualTo(8),
-        reason: 'white background remnant at $point',
-      );
+    var transparentPixels = 0;
+    var visiblePixels = 0;
+    for (var y = 600; y <= 760; y++) {
+      for (var x = 480; x <= 800; x++) {
+        if (sprite!.getPixel(x, y).a <= 8) {
+          transparentPixels++;
+        } else {
+          visiblePixels++;
+        }
+      }
     }
-    for (final point in const [(344, 420), (377, 421)]) {
-      expect(
-        sprite!.getPixel(point.$1, point.$2).a,
-        greaterThan(24),
-        reason: 'dragon outline was damaged at $point',
-      );
-    }
+    expect(transparentPixels, greaterThan(12000));
+    expect(visiblePixels, greaterThan(12000));
   });
 
   test(

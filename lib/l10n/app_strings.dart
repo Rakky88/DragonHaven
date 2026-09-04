@@ -172,6 +172,8 @@ class AppStrings {
         DragonRarity.veryRare => pick('Very Rare', 'Zeer zeldzaam'),
         DragonRarity.legendary => pick('Legendary', 'Legendarisch'),
         DragonRarity.mythical => pick('Mythical', 'Mythisch'),
+        DragonRarity.specialEvent =>
+          pick('Special Event', 'Speciaal evenement'),
       };
 
   String dragonFormName(Pet pet) => pet.stageKey == 'moonEgg'

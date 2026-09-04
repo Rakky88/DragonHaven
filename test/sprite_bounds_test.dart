@@ -445,8 +445,8 @@ void main() {
   test('Cluckatrice ascensions keep enclosed body gaps transparent', () async {
     const checks = <String, List<(int, int)>>{
       'assets/images/dragons/cluckatrice_arcana_safe.webp': [
-        (338, 730),
-        (520, 740),
+        (380, 780),
+        (520, 780),
       ],
       'assets/images/dragons/cluckatrice_spirit_safe.webp': [
         (340, 730),
@@ -520,7 +520,18 @@ void main() {
           image.rgba, image.width, 0, 0, image.width, image.height, path);
       if (path != DragonArtwork.eggAsset) {
         _expectSingleSubject(
-            image.rgba, image.width, 0, 0, image.width, image.height, path);
+          image.rgba,
+          image.width,
+          0,
+          0,
+          image.width,
+          image.height,
+          path,
+          // Meteorhide deliberately casts a separate fire orb and spark.
+          // Both are part of this Hatchling illustration, not atlas bleed.
+          expectedComponents:
+              path.endsWith('meteorhide_hatchling.webp') ? 3 : 1,
+        );
       }
     }
   });
@@ -592,9 +603,9 @@ void main() {
         image.width,
         image.height,
         path,
-        // Its deliberately floating crown/halo is separate from the dragon
-        // now that the generated opaque white fill has been removed.
-        expectedComponents: lineage.id == 'cluckatrice' ? 2 : 1,
+        // Cluckatrice's halo now meets its crest without an opaque matte, so
+        // every Mastery render is one coherent alpha-connected subject.
+        expectedComponents: 1,
       );
       final sampledAlpha = _alphaCount(
         image.rgba,

@@ -78,6 +78,16 @@ void main() {
     expect(count(DragonRarity.veryRare), 3);
     expect(count(DragonRarity.legendary), 2);
     expect(count(DragonRarity.mythical), 1);
+    expect(count(DragonRarity.specialEvent), 0);
+  });
+
+  test('Cluckatrice has its own Special Event type', () {
+    final cluckatrice =
+        dragonLineages.singleWhere((lineage) => lineage.id == 'cluckatrice');
+
+    expect(cluckatrice.rarity, DragonRarity.specialEvent);
+    expect(cluckatrice.rarityName(false), 'Special Event');
+    expect(cluckatrice.rarityName(true), 'Speciaal evenement');
   });
 
   test('achievements have unique badges and use Common terminology', () {

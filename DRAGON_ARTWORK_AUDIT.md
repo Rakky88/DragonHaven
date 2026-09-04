@@ -1,17 +1,20 @@
 # DragonHaven — artwork audit
 
-Date: 22 August 2026
-App version: v0.00.11
+Date: 4 September 2026
+App version: v0.05.09
 
 ## Dragon assets
 
-The runtime contains 216 independently illustrated logical dragon appearances
-in 87 transparent WebP files:
+The runtime contains 265 logical dragon appearances across 245 runtime asset
+paths:
 
 - one shared Mysterious Egg;
-- 42 regular Hatchlings and 42 regular 2×2 form atlases;
-- 168 regular atlas frames: Wyrmling, Might, Arcana and Spirit per family;
-- one secret Sinister Hatchling and four dedicated Sinister form frames.
+- 42 standard families plus the secret Sinisterra and Special Event
+  Cluckatrice families;
+- 44 standalone Hatchlings and 44 standalone Mastery forms;
+- 176 Wyrmling, Might, Arcana and Spirit appearances; and
+- 104 individually reviewed standalone intermediate forms, with the remaining
+  intermediate appearances cropped from their dedicated 2×2 family atlases.
 
 `DragonArt` crops the requested frame directly. It only adds presentation
 effects for silhouettes and Spectral variants; it never constructs a later
@@ -21,12 +24,13 @@ form by attaching shapes to a younger image.
 
 `test/sprite_bounds_test.dart` decodes every runtime asset and verifies:
 
-- the egg, all 42 Hatchlings and the Sinister Hatchling are non-empty and keep
-  a transparent safety border;
+- the egg and all 44 Hatchlings are non-empty and keep a transparent safety
+  border;
 - every regular and Sinister Wyrmling/Ascended frame stays inside its atlas
   quadrant without bleeding into a neighbouring frame;
-- all 215 non-egg dragon appearances contain one coherent illustrated subject,
-  without a foreign dragon or neighbouring atlas fragment;
+- all 264 non-egg dragon appearances contain one coherent illustrated subject,
+  without a foreign dragon or neighbouring atlas fragment; intentional
+  detached spell effects are explicitly documented by the test;
 - all 24 furniture atlases contain eight separated source sprites;
 - all 192 generated furniture forms are also exported as proportional,
   individually trimmed runtime WebPs; together with the eight original items,
@@ -52,9 +56,11 @@ each individual frame. `tool/clean_dragon_sprites.py` performs a two-phase
 subject extraction for every Hatchling and evolution frame: it first isolates
 the intended dragon from its source cell, removes edge-connected neutral matte,
 then removes any newly disconnected neighbouring subject before recentering the
-result inside a transparent safety gutter. The five generated runtime contact
-sheets cover all 215 non-egg appearances and were visually inspected after the
-automated audit.
+result inside a transparent safety gutter. The generated review screens cover
+the selected normal and Spectral variants on a saturated blue background. The
+latest three review rounds were inspected in the Android emulator, followed by
+repeated alpha, edge, safe-padding and subject-component audits of every changed
+runtime sprite.
 
 `tool/build_furniture_sprites.py` reproduces the empty
 cushion import, removes only edge-connected generator background artifacts,

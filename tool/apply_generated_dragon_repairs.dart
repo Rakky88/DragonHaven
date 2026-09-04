@@ -43,32 +43,32 @@ const _selectedForms = <String, List<String>>{
   'bramblequill': ['wyrmling', 'might', 'arcana', 'spirit'],
   'cinderlynx': ['wyrmling', 'might', 'arcana', 'spirit'],
   'clockskip': ['might', 'spirit'],
-  'coraloracle': ['wyrmling', 'might'],
+  'coraloracle': ['wyrmling', 'might', 'arcana'],
   'crystalwhisk': ['might'],
-  'dreammoth': ['arcana'],
+  'dreammoth': ['arcana', 'spirit'],
   'dustglimmer': ['arcana', 'spirit'],
   'echofern': ['wyrmling', 'might', 'arcana'],
-  'eclipseantler': ['wyrmling', 'might'],
-  'everwyrm': ['wyrmling', 'might', 'spirit'],
+  'eclipseantler': ['wyrmling', 'might', 'arcana'],
+  'everwyrm': ['wyrmling', 'might', 'arcana', 'spirit'],
   'frostfable': ['wyrmling', 'might', 'arcana'],
   'harmonytail': ['spirit'],
   'ironwhistle': ['wyrmling', 'might', 'arcana'],
-  'leviathanecho': ['wyrmling', 'might', 'spirit'],
-  'meteorhide': ['wyrmling', 'might'],
+  'leviathanecho': ['wyrmling', 'might', 'arcana', 'spirit'],
+  'meteorhide': ['wyrmling', 'might', 'arcana', 'spirit'],
   'mistmantle': ['wyrmling', 'might', 'arcana', 'spirit'],
-  'opalchimera': ['wyrmling', 'might', 'spirit'],
+  'opalchimera': ['wyrmling', 'might', 'arcana', 'spirit'],
   'petaldrift': ['wyrmling', 'might', 'arcana', 'spirit'],
   'quietstar': ['might', 'spirit'],
   'rainbowruff': ['spirit'],
   'runehopper': ['might', 'arcana', 'spirit'],
-  'starforged': ['wyrmling', 'might'],
+  'starforged': ['wyrmling', 'might', 'arcana', 'spirit'],
   'sunmuzzle': ['wyrmling', 'might', 'arcana', 'spirit'],
-  'temporalark': ['might'],
+  'temporalark': ['wyrmling', 'might', 'arcana', 'spirit'],
   'tidescale': ['might', 'spirit'],
-  'twinflare': ['spirit'],
+  'twinflare': ['might', 'spirit'],
   'velvetvolt': ['wyrmling', 'might', 'arcana', 'spirit'],
   'voidbloom': ['wyrmling', 'might', 'arcana', 'spirit'],
-  'worldroot': ['wyrmling', 'might'],
+  'worldroot': ['wyrmling', 'might', 'arcana'],
 };
 
 const _cells = <String, (int, int)>{
@@ -78,7 +78,15 @@ const _cells = <String, (int, int)>{
   'spirit': (1, 1),
 };
 
-Future<void> main() async {
+Future<void> main(List<String> arguments) async {
+  if (arguments.length > 1) {
+    throw ArgumentError(
+      'Usage: dart run tool/apply_generated_dragon_repairs.dart '
+      '[output-directory]',
+    );
+  }
+  final outputDirectory = arguments.firstOrNull ?? 'assets/images/dragons';
+  Directory(outputDirectory).createSync(recursive: true);
   var written = 0;
   for (final family in _selectedForms.entries) {
     final sourcePath = '$_generatedDirectory\\${_atlases[family.key]}';
@@ -103,7 +111,6 @@ Future<void> main() async {
       )..clear(ColorRgba8(0, 0, 0, 0));
       compositeImage(cell, rgbCell);
       _removeGeneratedCheckerboard(cell);
-      _restoreTinyOpaqueDetails(cell);
       _removeSmallForegroundIslands(cell);
       final bounds = _opaqueBounds(cell);
       if (bounds == null) {
@@ -138,7 +145,7 @@ Future<void> main() async {
         dstY: (canvasSize - rendered.height) ~/ 2,
       );
       final output = File(
-        'assets/images/dragons/${family.key}_${form}_safe.webp',
+        '$outputDirectory/${family.key}_${form}_safe.webp',
       );
       await output.writeAsBytes(encodeWebP(canvas), flush: true);
       written++;
@@ -184,41 +191,6 @@ void _removeSmallForegroundIslands(Image image) {
   for (final component in components.skip(1)) {
     for (final index in component) {
       image.getPixel(index % width, index ~/ width).a = 0;
-    }
-  }
-}
-
-void _restoreTinyOpaqueDetails(Image image) {
-  final width = image.width;
-  final height = image.height;
-  final transparent = List<bool>.filled(width * height, false);
-  for (var y = 0; y < height; y++) {
-    for (var x = 0; x < width; x++) {
-      transparent[y * width + x] = image.getPixel(x, y).a <= 8;
-    }
-  }
-  final visited = List<bool>.filled(transparent.length, false);
-  final stack = <int>[];
-  for (var start = 0; start < transparent.length; start++) {
-    if (!transparent[start] || visited[start]) continue;
-    final component = <int>[];
-    var touchesEdge = false;
-    visited[start] = true;
-    stack.add(start);
-    while (stack.isNotEmpty) {
-      final index = stack.removeLast();
-      component.add(index);
-      final x = index % width;
-      final y = index ~/ width;
-      touchesEdge |= x == 0 || y == 0 || x == width - 1 || y == height - 1;
-      if (x > 0) _visit(index - 1, transparent, visited, stack);
-      if (x + 1 < width) _visit(index + 1, transparent, visited, stack);
-      if (y > 0) _visit(index - width, transparent, visited, stack);
-      if (y + 1 < height) _visit(index + width, transparent, visited, stack);
-    }
-    if (touchesEdge || component.length > 1200) continue;
-    for (final index in component) {
-      image.getPixel(index % width, index ~/ width).a = 255;
     }
   }
 }

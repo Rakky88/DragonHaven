@@ -1190,6 +1190,21 @@ void main() {
     expect(game.pet.spectral, isFalse);
   });
 
+  test('Cluckatrice does not unlock the Mythical dragon achievement', () {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+    )..pet = Pet(
+        id: 'special-event-cluckatrice',
+        lineageId: 'cluckatrice',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+      );
+
+    expect(game.pet.lineage.rarity, DragonRarity.specialEvent);
+    expect(game.achievementProgress('myth_made_real'), 0);
+  });
+
   test('aborting a solo Adventure gives nothing and frees only its dragon',
       () async {
     final game = HouseholdProvider(

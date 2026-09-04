@@ -1,12 +1,12 @@
 # DragonHaven Special Events, Chests, and Eggs
 
-Last verified: 2 September 2026
+Last verified: 4 September 2026
 
-Ruleset: app version `v0.05.04`
+Ruleset: app version `v0.05.09`
 
-Source baseline: commit `e3befdf`
+Source baseline: release `v0.05.09`
 
-<!-- reference-source-fingerprint: 8d109de120ea37a1 -->
+<!-- reference-source-fingerprint: 6916c5d2e3e0c20d -->
 
 This is the living content catalog for every implemented Special Event,
 Special Adventure family, chest type, and egg type in DragonHaven. It records
@@ -117,7 +117,7 @@ do not reveal its contents to the player before it is opened.
 |---|---|
 | Egg type | Special Egg |
 | Possible family | Cluckatrice only |
-| Family rarity | Secret Mythical |
+| Family type | Special Event |
 | Incubation | Exactly 21 hours |
 | Spectral chance | 0%; this egg is excluded from both the creation roll and Golden Hour bonus |
 | Fixed at creation | Law alignment, moral alignment, size, and personality seed |
@@ -191,8 +191,9 @@ screen, restarting, backing up, restoring, or applying a revealing relic does
 not reroll the family, rarity, alignment, size, Spectral state, duration, or
 personality seed. Starter tapping only changes remaining time.
 
-Sinisterra and Cluckatrice are secret Mythical families and are excluded from
-ordinary Starter and Mysterious Egg family pools.
+Sinisterra is a secret Mythical family. Cluckatrice has the separate Special
+Event type and therefore cannot unlock the Mythical-dragon achievement. Both
+families are excluded from ordinary Starter and Mysterious Egg family pools.
 
 ## 6. Lifecycle and persistence rules
 
