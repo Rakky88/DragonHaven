@@ -277,6 +277,12 @@ void main() {
     );
     expect(contractDrillWorkflow, contains('environment: staging'));
     expect(contractDrillWorkflow, contains('release_server_preflight.ps1'));
+    expect(
+      contractDrillWorkflow.indexOf(
+        'New-Item -ItemType Directory -Path staging -Force',
+      ),
+      lessThan(contractDrillWorkflow.indexOf('release_server_preflight.ps1')),
+    );
     expect(contractDrillWorkflow, contains('staging_economy_foundation_e2e'));
     expect(contractDrillWorkflow, isNot(contains('supabase db push')));
     expect(contractDrillWorkflow, isNot(contains('-Environment production')));

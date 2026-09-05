@@ -85,6 +85,7 @@ jobs:
           supabase link `
             --project-ref $env:STAGING_SUPABASE_PROJECT_REF `
             --password $env:SUPABASE_DB_PASSWORD
+          New-Item -ItemType Directory -Path staging -Force | Out-Null
           ./tool/release_server_preflight.ps1 `
             -ExpectedProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
             -ExpectedUrl $env:STAGING_SUPABASE_URL `
