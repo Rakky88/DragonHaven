@@ -1,0 +1,195 @@
+name: Staging economy foundation migration 37
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type APPLY_DRAGONHAVEN_STAGING_ECONOMY_37 to run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dragonhaven-staging-economy-foundation
+  cancel-in-progress: false
+
+jobs:
+  migrate-and-verify:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Require exact staging-only scope
+        shell: pwsh
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          STAGING_SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+        run: |
+          if ($env:CONFIRMATION -cne 'APPLY_DRAGONHAVEN_STAGING_ECONOMY_37') {
+            throw 'The exact staging economy confirmation is missing.'
+          }
+          $required = @(
+            'STAGING_SUPABASE_URL',
+            'STAGING_SUPABASE_PUBLISHABLE_KEY',
+            'STAGING_SUPABASE_PROJECT_REF',
+            'STAGING_SUPABASE_ACCESS_TOKEN',
+            'STAGING_SUPABASE_DB_PASSWORD',
+            'STAGING_E2E_EMAIL',
+            'STAGING_E2E_PASSWORD'
+          )
+          foreach ($name in $required) {
+            if ([string]::IsNullOrWhiteSpace(
+                [Environment]::GetEnvironmentVariable($name))) {
+              throw "Missing protected staging configuration: $name."
+            }
+          }
+          $projectRef = $env:STAGING_SUPABASE_PROJECT_REF.Trim()
+          $baseUrl = $env:STAGING_SUPABASE_URL.TrimEnd('/')
+          if ($projectRef -eq 'tnzathhutuwmohmjfrlo' -or
+              $baseUrl -eq 'https://tnzathhutuwmohmjfrlo.supabase.co') {
+            throw 'This workflow must never target production.'
+          }
+          if ($projectRef -notmatch '^[a-z0-9]{20}$' -or
+              $baseUrl -ne "https://$projectRef.supabase.co") {
+            throw 'The staging URL and project reference do not match.'
+          }
+          if (-not $env:STAGING_SUPABASE_PUBLISHABLE_KEY.StartsWith('sb_publishable_')) {
+            throw 'The staging publishable key is invalid.'
+          }
+
+      - name: Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.116.0
+
+      - name: Verify exact starting state and dry run
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+        run: |
+          $expectedRemote = '202609020036'
+          $expectedPending = @('202609050037')
+          supabase link `
+            --project-ref $env:STAGING_SUPABASE_PROJECT_REF `
+            --password $env:SUPABASE_DB_PASSWORD
+          New-Item -ItemType Directory -Path staging -Force | Out-Null
+
+          $migrationJson = supabase migration list `
+            --linked `
+            --output-format json
+          if ($LASTEXITCODE -ne 0) {
+            throw 'The staging migration state could not be read.'
+          }
+          $migrationResult = ($migrationJson | Out-String) | ConvertFrom-Json
+          $remoteVersions = @(
+            $migrationResult.migrations |
+              ForEach-Object { [string]$_.remote } |
+              Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+              Sort-Object
+          )
+          if ($remoteVersions.Count -eq 0 -or
+              $remoteVersions[-1] -ne $expectedRemote) {
+            throw 'Staging is not exactly at expected migration 36.'
+          }
+          $pendingLocal = @(
+            Get-ChildItem supabase/migrations -File -Filter '*.sql' |
+              ForEach-Object {
+                if ($_.BaseName -notmatch '^(\d+)_') {
+                  throw "Migration $($_.Name) has no valid version."
+                }
+                $Matches[1]
+              } |
+              Where-Object { [long]$_ -gt [long]$expectedRemote } |
+              Sort-Object
+          )
+          if (@(Compare-Object $expectedPending $pendingLocal).Count -ne 0) {
+            throw 'The local pending set is not exactly migration 37.'
+          }
+
+          ./tool/public_server_health_check.ps1 `
+            -BaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Environment staging `
+            -OutputPath staging/health-before.json
+          supabase db lint `
+            --linked `
+            --level error `
+            --fail-on error `
+            --output-format json |
+            Tee-Object -FilePath staging/economy-lint-before.json
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Database lint before migration 37 failed.'
+          }
+          supabase db push --linked --include-all --dry-run |
+            Tee-Object -FilePath staging/economy-migration-dry-run.txt
+          if ($LASTEXITCODE -ne 0) {
+            throw 'The staging migration 37 dry run failed.'
+          }
+
+      - name: Apply only migration 37 and verify dormant contract
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase db push --linked --include-all --yes |
+            Tee-Object -FilePath staging/economy-migration-apply.txt
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Staging migration 37 was not applied.'
+          }
+          ./tool/release_server_preflight.ps1 `
+            -ExpectedProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ExpectedUrl $env:STAGING_SUPABASE_URL `
+            -ExpectedPublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY |
+            Tee-Object -FilePath staging/economy-preflight-after.txt
+          ./tool/staging_economy_foundation_e2e.ps1 `
+            -SupabaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Email $env:STAGING_E2E_EMAIL `
+            -Password $env:STAGING_E2E_PASSWORD `
+            -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
+          supabase db lint `
+            --linked `
+            --level error `
+            --fail-on error `
+            --output-format json |
+            Tee-Object -FilePath staging/economy-lint-after.json
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Database lint after migration 37 failed.'
+          }
+          ./tool/public_server_health_check.ps1 `
+            -BaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Environment staging `
+            -OutputPath staging/health-after.json
+
+      - name: Upload privacy-safe staging evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: DragonHaven-staging-economy-foundation-37
+          path: staging/
+          if-no-files-found: warn
+          retention-days: 30
