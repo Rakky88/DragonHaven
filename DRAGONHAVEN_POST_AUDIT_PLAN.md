@@ -3,7 +3,7 @@
 Laatst bijgewerkt: **5 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.05.09**
+Actuele openbare versie: **v0.05.10**
 
 Actuele productieserver: **36/36 migraties**
 
@@ -12,43 +12,34 @@ Actuele serverkandidaat: **geen. Migratie 34 (Dragon chat-emotes), migratie 35
 productie toegepast. Beide omgevingen staan op 36/36; nieuwe serverwijzigingen
 vereisen opnieuw een migratie en de begrensde staging-/productiegates.**
 
-Actuele uitgebrachte tranche: **v0.05.09 is openbaar uitgebracht met versionCode
-10059. De Wyrmling-evolutiekaart toont level en XP niet langer dubbel, 104
-tussenvormen gebruiken individueel gereviewde standalone sprites en Cluckatrice
-heeft nu het eigen type Special Event zonder de Mythical-achievement te activeren.
-Productiepreflight, analyzer, alle 411 tests, vaste signing, Play Store-AAB,
+Actuele uitgebrachte tranche: **v0.05.10 is openbaar uitgebracht met versionCode
+10060. Long Adventures gebruiken 15 minuten korting per passend Expertise-punt,
+de Trial-constellatie telt ook rond claimen strikt maximaal één bijdrage per
+lokale kalenderdag en vijf draaksprites hebben hun definitief goedgekeurde
+uitvoering. De ontdubbelde Wyrmling-levelkaart blijft regressiebewaakt.
+Productiepreflight, analyzer, alle 412 tests, vaste signing, Play Store-AAB,
 remote assetcontrole en post-release health zijn groen. Deze release bevat geen
 servermigratie.**
 
-Actuele lokale tranche na v0.05.09: **v0.05.10 is als ondertekende Android-
-releasecandidate gereed met versionCode 10060. Long Adventures trekken nu per
-passend Expertise-punt 15 minuten af in plaats van 1 uur, met behoud van de
-minimumduur van 1 dag. De Trial-constellatie bewaart los van haar zichtbare
-streak de laatst gespeelde kalenderdag, zodat claimen nooit een tweede bijdrage
-op dezelfde dag mogelijk maakt, ook niet na herstart. Vijf opnieuw beoordeelde
-draaksprites hebben de definitief goedgekeurde transparante uitvoering. De al
-ontdubbelde Wyrmling-levelkaart blijft door regressietests bewaakt. Analyzer en
-alle 412 tests zijn groen. De APK heeft package `nl.dragonhaven.app`, is
-404.899.023 bytes groot, heeft SHA-256
-`05cca29724fb22d1573ed7d34c5db140811f02273a43e9dfb33432ebea1d64de` en het
-vaste releasecertificaat. De productiepreflight bevestigt 36/36 migraties, nul
-lintfouten en gezonde Auth-/applicatie-endpoints. Er is geen servermigratie.**
+Actuele lokale tranche na v0.05.10: **geen afzonderlijke niet-uitgebrachte app-
+of servertranche. De definitieve auditadministratie van v0.05.10 wordt met deze
+documentatiecommit bijgewerkt; productie en staging blijven op 36/36 migraties.**
 
 Server- en releasebewijs: **de volledige
 [stagingrun 33630222018](https://github.com/Rakky88/DragonHaven/actions/runs/33630222018)
 en begrensde
 [productiemigratie 33631028441](https://github.com/Rakky88/DragonHaven/actions/runs/33631028441)
 brachten staging en productie veilig op 36/36 met nul lintfouten. De actuele
-[release v0.05.09](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.09)
-wijst exact naar commit `ca9afac5f541b7e9f192a0ebe63278dc70467f0e` en bevat één
-`DragonHaven.apk` van 404.664.007 bytes met SHA-256
-`a30ee7c438c74f39f3c332cbcd2a070952489d53fef9f5cb6d13e02e9baada24`.
+[release v0.05.10](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.10)
+wijst exact naar commit `cdbeaa6a4427e69e92f4f7aaf2fe96a249c8d0ee` en bevat één
+`DragonHaven.apk` van 404.899.023 bytes met SHA-256
+`05cca29724fb22d1573ed7d34c5db140811f02273a43e9dfb33432ebea1d64de`.
 Remote grootte en digest zijn gelijk aan lokaal; de versiegebonden en permanente
 latest-download geven HTTP 200. De
-[taggate 33846472807](https://github.com/Rakky88/DragonHaven/actions/runs/33846472807)
-herhaalde productiepreflight, analyzer, 411 tests, vaste signing, Play-ready AAB
+[taggate 33952489143](https://github.com/Rakky88/DragonHaven/actions/runs/33952489143)
+herhaalde productiepreflight, analyzer, 412 tests, vaste signing, Play-ready AAB
 en artifactcontrole volledig groen. De
-[post-release healthrun 33847137918](https://github.com/Rakky88/DragonHaven/actions/runs/33847137918)
+[post-release healthrun 33952879963](https://github.com/Rakky88/DragonHaven/actions/runs/33952879963)
 bevestigde Auth en applicatiehealth, uploadde bewijs, sloot een eventueel hersteld
 alert en opende geen storingsalert. Productie en staging blijven zonder nieuwe
 migratie op 36/36.**
@@ -1256,6 +1247,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 04-09-2026 | v0.05.09 lokale releasecandidate bewezen | Codex, na jouw toestemming | `release-notes-v0.05.09.md`, `DRAGON_ARTWORK_AUDIT.md`, bewaakte gameplayreferenties, 411 tests, ondertekende `DragonHaven.apk` en `release_server_preflight.ps1` | App- en zichtbare versie staan op v0.05.09 met versionCode 10059. De Wyrmling-evolutiekaart is ontdubbeld, Cluckatrice is een afzonderlijk Special Event-type en 104 tussenvormen gebruiken gereviewde standalone art. De APK heeft package `nl.dragonhaven.app`, 404.664.007 bytes, SHA-256 `a30ee7c438c74f39f3c332cbcd2a070952489d53fef9f5cb6d13e02e9baada24` en het vaste certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. Analyzer, 411/411 tests, spritegates, documentgates en emulatorupdate zijn groen. Productie blijft ongewijzigd op 36/36 migraties met nul lintfouten en gezonde Auth-/applicatiehealth. |
 | 04-09-2026 | v0.05.09 openbaar en volledig groen | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.09), [taggate 33846472807](https://github.com/Rakky88/DragonHaven/actions/runs/33846472807) en [healthrun 33847137918](https://github.com/Rakky88/DragonHaven/actions/runs/33847137918) | Exact commit `ca9afac5f541b7e9f192a0ebe63278dc70467f0e` is getagd. Remote `DragonHaven.apk` heeft exact de lokale grootte van 404.664.007 bytes en SHA-256 `a30ee7c438c74f39f3c332cbcd2a070952489d53fef9f5cb6d13e02e9baada24`; de versiegebonden en permanente latest-download geven HTTP 200 en v0.05.09 is Latest. De taggate herhaalde productiepreflight, analyzer, 411 tests, vaste signing, Play-ready AAB en artifactupload groen. De losse healthrun bevestigde Auth en applicatiehealth, uploadde bewijs, sloot een eventueel hersteld alert en opende geen storingsalert. Productie en staging bleven ongewijzigd op 36/36. |
 | 05-09-2026 | v0.05.10 lokale releasecandidate bewezen | Codex, na jouw toestemming | `release-notes-v0.05.10.md`, vijf definitief goedgekeurde draaksprites, Long Adventure- en Trial-streakregressies, 412 tests, ondertekende `DragonHaven.apk` en `release_server_preflight.ps1` | App- en zichtbare versie staan op v0.05.10 met versionCode 10060. Long Adventures gebruiken 15 minuten reductie per passend Expertise-punt en de Trial-constellatie telt strikt maximaal één dagbijdrage per lokale kalenderdag, ook na claimen en herstart. De Wyrmling-levelkaart blijft ontdubbeld. APK heeft package `nl.dragonhaven.app`, 404.899.023 bytes, SHA-256 `05cca29724fb22d1573ed7d34c5db140811f02273a43e9dfb33432ebea1d64de` en vast certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. De echte release-APK is als update gestart op de emulator en toont v0.05.10. Analyzer, 412/412 tests, sprite- en documentgates zijn groen. Productie blijft ongewijzigd op 36/36 migraties met nul lintfouten en gezonde Auth-/applicatiehealth. |
+| 05-09-2026 | v0.05.10 openbaar en volledig groen | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.10), [taggate 33952489143](https://github.com/Rakky88/DragonHaven/actions/runs/33952489143) en [healthrun 33952879963](https://github.com/Rakky88/DragonHaven/actions/runs/33952879963) | Exact commit `cdbeaa6a4427e69e92f4f7aaf2fe96a249c8d0ee` is getagd en v0.05.10 is Latest. Remote `DragonHaven.apk` heeft exact de lokale grootte van 404.899.023 bytes en SHA-256 `05cca29724fb22d1573ed7d34c5db140811f02273a43e9dfb33432ebea1d64de`; releasepagina, versiegebonden APK en permanente latest-download geven HTTP 200. De taggate herhaalde productiepreflight, analyzer, 412 tests, vaste signing, Play-ready AAB en artifactupload groen. De losse healthrun bevestigde Auth en applicatiehealth, uploadde bewijs, sloot een eventueel hersteld alert en opende geen storingsalert. Productie en staging bleven ongewijzigd op 36/36. |
 
 ## Onderhoud van dit plan
 
