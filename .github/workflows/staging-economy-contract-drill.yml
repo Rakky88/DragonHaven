@@ -1,0 +1,131 @@
+name: Staging economy contract drill
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type TEST_DRAGONHAVEN_STAGING_ECONOMY_CONTRACT to run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dragonhaven-staging-economy-contract-drill
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Require exact staging-only scope
+        shell: pwsh
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          STAGING_SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+        run: |
+          if ($env:CONFIRMATION -cne 'TEST_DRAGONHAVEN_STAGING_ECONOMY_CONTRACT') {
+            throw 'The exact staging contract-drill confirmation is missing.'
+          }
+          $required = @(
+            'STAGING_SUPABASE_URL',
+            'STAGING_SUPABASE_PUBLISHABLE_KEY',
+            'STAGING_SUPABASE_PROJECT_REF',
+            'STAGING_SUPABASE_ACCESS_TOKEN',
+            'STAGING_SUPABASE_DB_PASSWORD',
+            'STAGING_E2E_EMAIL',
+            'STAGING_E2E_PASSWORD'
+          )
+          foreach ($name in $required) {
+            if ([string]::IsNullOrWhiteSpace(
+                [Environment]::GetEnvironmentVariable($name))) {
+              throw "Missing protected staging configuration: $name."
+            }
+          }
+          $projectRef = $env:STAGING_SUPABASE_PROJECT_REF.Trim()
+          $baseUrl = $env:STAGING_SUPABASE_URL.TrimEnd('/')
+          if ($projectRef -eq 'tnzathhutuwmohmjfrlo' -or
+              $baseUrl -eq 'https://tnzathhutuwmohmjfrlo.supabase.co') {
+            throw 'This workflow must never target production.'
+          }
+          if ($projectRef -notmatch '^[a-z0-9]{20}$' -or
+              $baseUrl -ne "https://$projectRef.supabase.co") {
+            throw 'The staging URL and project reference do not match.'
+          }
+
+      - name: Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.116.0
+
+      - name: Verify exact schema and run rollback-only contract drill
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase link `
+            --project-ref $env:STAGING_SUPABASE_PROJECT_REF `
+            --password $env:SUPABASE_DB_PASSWORD
+          ./tool/release_server_preflight.ps1 `
+            -ExpectedProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ExpectedUrl $env:STAGING_SUPABASE_URL `
+            -ExpectedPublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY |
+            Tee-Object -FilePath staging/economy-contract-preflight.txt
+          if ((Get-ChildItem supabase/migrations -File -Filter '*.sql').Count -ne 38) {
+            throw 'The repository is not at the expected 38 migrations.'
+          }
+          ./tool/public_server_health_check.ps1 `
+            -BaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Environment staging `
+            -OutputPath staging/economy-contract-health-before.json
+          ./tool/staging_economy_foundation_e2e.ps1 `
+            -SupabaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Email $env:STAGING_E2E_EMAIL `
+            -Password $env:STAGING_E2E_PASSWORD `
+            -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
+            -EvidencePath staging/economy-contract-drill.txt
+          supabase db lint `
+            --linked `
+            --level error `
+            --fail-on error `
+            --output-format json |
+            Tee-Object -FilePath staging/economy-contract-lint.json
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Database lint after the rollback-only drill failed.'
+          }
+          ./tool/public_server_health_check.ps1 `
+            -BaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Environment staging `
+            -OutputPath staging/economy-contract-health-after.json
+
+      - name: Upload privacy-safe staging evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: DragonHaven-staging-economy-contract-drill
+          path: staging/
+          if-no-files-found: warn
+          retention-days: 30

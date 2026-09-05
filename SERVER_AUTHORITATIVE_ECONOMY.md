@@ -1,7 +1,7 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **5 September 2026**
-Candidate schema: **migrations 37–38 — dormant; 37 is on staging, forward fix 38 pending**
+Candidate schema: **migrations 37–38 — dormant and verified on staging, not production**
 Current public app: **v0.05.11**
 
 ## Purpose and current boundary
@@ -125,9 +125,9 @@ cannot be restored, duplicated or overwritten by an old save.
 ## Safe rollout sequence
 
 1. **Local candidate:** static contract tests, formatting and full Flutter suite.
-2. **Staging schema:** apply migration 37 only after explicit permission; prove
-   migration parity, database lint, RLS/revokes, read-only contract and dormant
-   defaults with dedicated E2E tests.
+2. **Staging schema — passed:** migrations 37–38 have exact parity on isolated
+   staging. Run `33981322674` proved database lint, RLS/revokes, read-only
+   contract, dormant defaults, rejected mutations and healthy public endpoints.
 3. **Shadow implementation:** add one harmless economy path behind a disabled
    app feature flag; compare results without mutating player value.
 4. **Representative migration:** convert copies of real-shaped but synthetic
@@ -166,8 +166,9 @@ path depends on migration 37.
 - approve every staging apply, production migration and eventual cutover
   separately.
 
-Migration 37 changed only the isolated staging schema; the global mutation
+Migrations 37–38 changed only the isolated staging schema; the global mutation
 switch remains disabled and every keeper remains on `legacy_client`. Migration
-38 is the pending forward-only timestamp correction. No production project,
-public release, balance, inventory or other player value is changed by this
-staging foundation work.
+38 is the applied forward-only timestamp correction after the first staging run
+correctly exposed migration 37's ambiguous clock-variable lint finding. No
+production project, public release, balance, inventory or other player value is
+changed by this staging foundation work.

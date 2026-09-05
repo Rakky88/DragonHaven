@@ -16,6 +16,9 @@ void main() {
   final stagingE2e = File(
     'tool/staging_economy_foundation_e2e.ps1',
   ).readAsStringSync();
+  final contractDrillWorkflow = File(
+    '.github/workflows/staging-economy-contract-drill.yml',
+  ).readAsStringSync();
 
   test('migration 37 is dormant and preserves all existing economy tables', () {
     expect(
@@ -255,9 +258,31 @@ void main() {
     expect(stagingE2e, contains('timestamp_fix_active'));
     expect(stagingE2e, contains('economy_mutations_disabled'));
     expect(stagingE2e, contains('no_probe_was_persisted'));
+    expect(stagingE2e, contains('pg_temp.run_economy_contract_drill'));
+    expect(stagingE2e, contains('economy_client_upgrade_required'));
+    expect(stagingE2e, contains('economy_idempotency_conflict'));
+    expect(stagingE2e, contains('economy_rate_limited'));
+    expect(stagingE2e, contains('economy_contract_drill_rollback'));
+    expect(stagingE2e, contains('transaction_rollback_verified=true'));
     expect(stagingE2e, contains('raw_identifiers_recorded=false'));
     expect(stagingE2e, contains('credentials_recorded=false'));
     expect(stagingE2e, isNot(contains('Write-Host \$normalizedEmail')));
     expect(stagingE2e, isNot(contains('Set-Content -Value \$accessToken')));
+  });
+
+  test('contract drill workflow cannot migrate or target production', () {
+    expect(
+      contractDrillWorkflow,
+      contains('TEST_DRAGONHAVEN_STAGING_ECONOMY_CONTRACT'),
+    );
+    expect(contractDrillWorkflow, contains('environment: staging'));
+    expect(contractDrillWorkflow, contains('release_server_preflight.ps1'));
+    expect(contractDrillWorkflow, contains('staging_economy_foundation_e2e'));
+    expect(contractDrillWorkflow, isNot(contains('supabase db push')));
+    expect(contractDrillWorkflow, isNot(contains('-Environment production')));
+    expect(
+      contractDrillWorkflow,
+      contains("\$projectRef -eq 'tnzathhutuwmohmjfrlo'"),
+    );
   });
 }

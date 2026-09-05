@@ -358,6 +358,216 @@ if (-not (ConvertTo-StrictBoolean `
 }
 $disabledMutationRejected = $true
 
+# Exercise the mutation contract inside a deliberately rolled-back PostgreSQL
+# subtransaction. This proves the behavior without leaving a request, rate
+# bucket, authority change, or enabled feature switch behind on staging.
+$contractDrillRow = Assert-SingleRow `
+    -Rows (Invoke-StagingManagementQuery `
+        -ReadOnly $false `
+        -Operation 'Rolled-back economy contract drill' `
+        -Query @"
+create or replace function pg_temp.run_economy_contract_drill(p_user_id uuid)
+returns table (
+  old_client_rejected boolean,
+  first_request_started boolean,
+  replay_returned_same_result boolean,
+  conflicting_payload_rejected boolean,
+  rate_limit_rejected boolean,
+  rollback_verified boolean
+)
+language plpgsql
+set search_path = ''
+as `$drill`$
+declare
+  v_request_id uuid := gen_random_uuid();
+  v_rate_request_id uuid := gen_random_uuid();
+  v_rate_rejected_id uuid := gen_random_uuid();
+  v_first jsonb;
+  v_replay jsonb;
+  v_original_contract jsonb;
+  v_original_authority jsonb;
+  v_original_contract_bucket jsonb;
+  v_original_rate_bucket jsonb;
+  v_after_contract jsonb;
+  v_after_authority jsonb;
+  v_after_contract_bucket jsonb;
+  v_after_rate_bucket jsonb;
+begin
+  select to_jsonb(contract_row) into v_original_contract
+  from (
+    select protocol_version, minimum_client_build, mutations_enabled
+    from private.economy_contract where singleton = true
+  ) contract_row;
+  select to_jsonb(authority_row) into v_original_authority
+  from (
+    select authority_mode, protocol_version, activated_at
+    from public.player_economy_authority where user_id = p_user_id
+  ) authority_row;
+  select to_jsonb(bucket_row) into v_original_contract_bucket
+  from (
+    select request_count, reset_at, updated_at
+    from private.economy_rate_limit_buckets
+    where owner_id = p_user_id and operation = 'audit.contract_drill'
+  ) bucket_row;
+  select to_jsonb(bucket_row) into v_original_rate_bucket
+  from (
+    select request_count, reset_at, updated_at
+    from private.economy_rate_limit_buckets
+    where owner_id = p_user_id and operation = 'audit.rate_drill'
+  ) bucket_row;
+
+  begin
+    update private.economy_contract
+    set mutations_enabled = true
+    where singleton = true;
+    update public.player_economy_authority
+    set authority_mode = 'server', protocol_version = 1,
+        activated_at = clock_timestamp()
+    where user_id = p_user_id;
+    if not found then
+      raise exception 'economy_drill_keeper_missing';
+    end if;
+    perform set_config('request.jwt.claim.sub', p_user_id::text, true);
+    perform set_config('request.jwt.claim.role', 'authenticated', true);
+
+    old_client_rejected := false;
+    begin
+      perform private.begin_economy_mutation(
+        gen_random_uuid(), 'audit.old_client', 1, 10060,
+        '{"probe":"old-client"}'::jsonb
+      );
+    exception when others then
+      if sqlerrm <> 'economy_client_upgrade_required' then
+        raise;
+      end if;
+      old_client_rejected := true;
+    end;
+
+    v_first := private.begin_economy_mutation(
+      v_request_id, 'audit.contract_drill', 1, 10061,
+      '{"probe":"same"}'::jsonb, 5, 60
+    );
+    first_request_started :=
+      not (v_first->>'replayed')::boolean
+      and v_first->>'status' = 'processing';
+    if not first_request_started then
+      raise exception 'economy_drill_first_request_failed';
+    end if;
+    perform private.complete_economy_mutation(
+      p_user_id, v_request_id, '{"verified":true}'::jsonb
+    );
+    v_replay := private.begin_economy_mutation(
+      v_request_id, 'audit.contract_drill', 1, 10061,
+      '{"probe":"same"}'::jsonb, 5, 60
+    );
+    replay_returned_same_result :=
+      (v_replay->>'replayed')::boolean
+      and v_replay->>'status' = 'succeeded'
+      and v_replay->'response' = '{"verified":true}'::jsonb;
+    if not replay_returned_same_result then
+      raise exception 'economy_drill_replay_failed';
+    end if;
+
+    conflicting_payload_rejected := false;
+    begin
+      perform private.begin_economy_mutation(
+        v_request_id, 'audit.contract_drill', 1, 10061,
+        '{"probe":"different"}'::jsonb, 5, 60
+      );
+    exception when others then
+      if sqlerrm <> 'economy_idempotency_conflict' then
+        raise;
+      end if;
+      conflicting_payload_rejected := true;
+    end;
+
+    perform private.begin_economy_mutation(
+      v_rate_request_id, 'audit.rate_drill', 1, 10061,
+      '{"attempt":1}'::jsonb, 1, 60
+    );
+    rate_limit_rejected := false;
+    begin
+      perform private.begin_economy_mutation(
+        v_rate_rejected_id, 'audit.rate_drill', 1, 10061,
+        '{"attempt":2}'::jsonb, 1, 60
+      );
+    exception when others then
+      if sqlerrm <> 'economy_rate_limited' then
+        raise;
+      end if;
+      rate_limit_rejected := true;
+    end;
+
+    if not old_client_rejected or not conflicting_payload_rejected
+      or not rate_limit_rejected then
+      raise exception 'economy_drill_assertion_failed';
+    end if;
+    raise exception 'economy_contract_drill_rollback';
+  exception when others then
+    if sqlerrm <> 'economy_contract_drill_rollback' then
+      raise;
+    end if;
+  end;
+
+  select to_jsonb(contract_row) into v_after_contract
+  from (
+    select protocol_version, minimum_client_build, mutations_enabled
+    from private.economy_contract where singleton = true
+  ) contract_row;
+  select to_jsonb(authority_row) into v_after_authority
+  from (
+    select authority_mode, protocol_version, activated_at
+    from public.player_economy_authority where user_id = p_user_id
+  ) authority_row;
+  select to_jsonb(bucket_row) into v_after_contract_bucket
+  from (
+    select request_count, reset_at, updated_at
+    from private.economy_rate_limit_buckets
+    where owner_id = p_user_id and operation = 'audit.contract_drill'
+  ) bucket_row;
+  select to_jsonb(bucket_row) into v_after_rate_bucket
+  from (
+    select request_count, reset_at, updated_at
+    from private.economy_rate_limit_buckets
+    where owner_id = p_user_id and operation = 'audit.rate_drill'
+  ) bucket_row;
+
+  rollback_verified :=
+    v_after_contract is not distinct from v_original_contract
+    and v_after_authority is not distinct from v_original_authority
+    and v_after_contract_bucket is not distinct from v_original_contract_bucket
+    and v_after_rate_bucket is not distinct from v_original_rate_bucket
+    and not exists (
+      select 1 from public.economy_mutation_requests
+      where owner_id = p_user_id
+        and request_id in (v_request_id, v_rate_request_id, v_rate_rejected_id)
+    );
+  if not rollback_verified then
+    raise exception 'economy_contract_drill_left_state_behind';
+  end if;
+  return next;
+end;
+`$drill`$;
+select *
+from pg_temp.run_economy_contract_drill('$($parsedUserId.ToString())'::uuid);
+"@) `
+    -Operation 'Rolled-back economy contract drill'
+
+foreach ($flag in @(
+    'old_client_rejected',
+    'first_request_started',
+    'replay_returned_same_result',
+    'conflicting_payload_rejected',
+    'rate_limit_rejected',
+    'rollback_verified'
+)) {
+    if (-not (ConvertTo-StrictBoolean `
+            -Value (Get-PropertyValue -InputObject $contractDrillRow -Name $flag) `
+            -Name $flag)) {
+        throw "The rolled-back economy contract drill failed on $flag."
+    }
+}
+
 $evidenceDirectory = Split-Path -Parent $EvidencePath
 New-Item -ItemType Directory -Path $evidenceDirectory -Force | Out-Null
 @(
@@ -372,6 +582,12 @@ New-Item -ItemType Directory -Path $evidenceDirectory -Force | Out-Null
     "anonymous_access_denied=$($anonymousAccessDenied.ToString().ToLowerInvariant())"
     "authenticated_contract_verified=$($authenticatedContractVerified.ToString().ToLowerInvariant())"
     "disabled_mutation_rejected=$($disabledMutationRejected.ToString().ToLowerInvariant())"
+    'old_client_rejected=true'
+    'first_request_started=true'
+    'idempotent_replay_verified=true'
+    'conflicting_payload_rejected=true'
+    'rate_limit_rejected=true'
+    'transaction_rollback_verified=true'
     'valuable_table_rls_verified=true'
     'direct_client_table_access_absent=true'
     'append_only_trigger_verified=true'
