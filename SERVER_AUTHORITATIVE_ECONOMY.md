@@ -126,8 +126,10 @@ cannot be restored, duplicated or overwritten by an old save.
 
 1. **Local candidate:** static contract tests, formatting and full Flutter suite.
 2. **Staging schema — passed:** migrations 37–38 have exact parity on isolated
-   staging. Run `33981322674` proved database lint, RLS/revokes, read-only
-   contract, dormant defaults, rejected mutations and healthy public endpoints.
+   staging. Runs `33981322674` and `33981974136` proved database lint,
+   RLS/revokes, the read-only contract, dormant defaults, idempotent replay,
+   payload-conflict and old-client rejection, rate limiting, transactional
+   rollback and healthy public endpoints.
 3. **Shadow implementation:** add one harmless economy path behind a disabled
    app feature flag; compare results without mutating player value.
 4. **Representative migration:** convert copies of real-shaped but synthetic
@@ -152,8 +154,9 @@ path depends on migration 37.
 - implement concrete wallet/shop/chest RPCs around this private foundation;
 - move all randomness and collection-cap checks for those paths to PostgreSQL;
 - filter server-owned fields out of save restore/import after cutover;
-- add staging E2E for replays, conflicting payloads, rate limiting, rollback and
-  old-client rejection;
+- add timeout/reconnect and double-submit E2E around the first concrete mutation
+  RPC; foundation-level replay, conflicting payload, rate-limit, rollback and
+  old-client rejection are already proven on staging;
 - later extend the same pattern to eggs, dragons, progression and daily claims.
 
 ### Rick
