@@ -1,7 +1,7 @@
 # DragonHaven — artwork audit
 
-Date: 4 September 2026
-App version: v0.05.09
+Date: 5 September 2026
+App version: v0.05.10
 
 ## Dragon assets
 
@@ -58,9 +58,10 @@ the intended dragon from its source cell, removes edge-connected neutral matte,
 then removes any newly disconnected neighbouring subject before recentering the
 result inside a transparent safety gutter. The generated review screens cover
 the selected normal and Spectral variants on a saturated blue background. The
-latest three review rounds were inspected in the Android emulator, followed by
-repeated alpha, edge, safe-padding and subject-component audits of every changed
-runtime sprite.
+latest review rounds were inspected in the Android emulator. Cinderlynx Arcana,
+Eclipseantler Arcana, Everwyrm Might, Everwyrm Spirit and Sunmuzzle Arcana then
+received their final approved repairs, followed by repeated alpha, edge,
+safe-padding and subject-component audits of every changed runtime sprite.
 
 `tool/build_furniture_sprites.py` reproduces the empty
 cushion import, removes only edge-connected generator background artifacts,

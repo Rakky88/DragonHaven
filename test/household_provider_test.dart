@@ -2029,6 +2029,47 @@ void main() {
     game.dispose();
   });
 
+  test('claiming a full Trial streak cannot credit the same day twice',
+      () async {
+    var now = DateTime(2026, 8, 20, 12);
+    final game = HouseholdProvider(
+      random: _ZeroRandom(),
+      clock: () => now,
+      persistenceEnabled: false,
+    );
+    game.pet.stage = DragonStage.hatchling;
+
+    Future<void> completeToday(String id) async {
+      game
+        ..trialOffers = [
+          TrialOffer(id: id, kind: TrialKind.ruinBreaker, appearedAt: now),
+        ]
+        ..trialRefilledAt = now;
+      expect(
+        await game.completeTrial(offerId: id, dragonId: game.pet.id, score: 1),
+        isNotNull,
+      );
+    }
+
+    for (var day = 0; day < 7; day++) {
+      if (day > 0) now = now.add(const Duration(days: 1));
+      await completeToday('streak-$day');
+    }
+    expect(game.trialStreakRewardReady, isTrue);
+    expect(game.trialStreakLastCompletionDayKey, '2026-08-26');
+
+    expect(await game.claimTrialStreakReward(), ChestTier.mythical);
+    expect(game.trialStreakCount, 0);
+    await completeToday('same-day-after-claim');
+    expect(game.trialStreakCount, 0);
+
+    now = now.add(const Duration(days: 1));
+    await completeToday('next-day');
+    expect(game.trialStreakCount, 1);
+    expect(game.trialStreakLastDayKey, '2026-08-27');
+    game.dispose();
+  });
+
   test('missed carried Trial day resets next streak to zero', () async {
     var now = DateTime(2026, 8, 20, 12);
     final game = HouseholdProvider(

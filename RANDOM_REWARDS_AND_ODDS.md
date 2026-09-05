@@ -1,12 +1,12 @@
 # DragonHaven Random Rewards and Odds
 
-Last verified: 4 September 2026
+Last verified: 5 September 2026
 
-Ruleset: app version `v0.05.09`
+Ruleset: app version `v0.05.10`
 
-Source baseline: release `v0.05.09`
+Source baseline: release `v0.05.10`
 
-<!-- reference-source-fingerprint: 5490f25fb0ce3a6a -->
+<!-- reference-source-fingerprint: c0ca916409c5a83c -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
@@ -389,6 +389,12 @@ Claiming a completed seven-day streak gives:
 
 The awarded chest is unopened and later uses its normal content rolls.
 
+Only the first completed Trial on a local calendar day can advance the
+constellation. Claiming a completed constellation does not make that same day
+eligible again. A Trial completed on a later day while the reward is still
+waiting can become the first day of the next streak, but at most one day is
+carried forward.
+
 ## 5. Released-dragon daily return system
 
 If there are no released dragons, no daily roll is made.
@@ -536,6 +542,8 @@ When Shuffle is enabled, the selected music tracks are randomly shuffled into a 
 - Dragon emote packs always contain their ten specified exclusive emotes.
 - The Founding Supporter Pack has fixed contents.
 - Standard Adventure offer rotations are deterministic by time slot.
+- A Long Adventure loses exactly 15 minutes per point of its matching
+  Expertise, while retaining its one-day minimum duration.
 - Group Adventure selection is deterministic from the shared server slot.
 - Dragon Academy star rewards, graduation, valedictorian, and dropout outcomes are score-based.
 - Moral Prism, Order Compass, Soul Mirror, and Astral Lens reveal fixed properties and never reroll them.

@@ -43,13 +43,14 @@ void main() {
     );
   });
 
-  test('long expertise removes hours with a one-day minimum', () {
+  test('long expertise removes 15 minutes per point with a one-day minimum',
+      () {
     expect(
       expertiseAdjustedAdventureDuration(
         adventure(AdventureKind.long, const Duration(days: 3)),
         [dragon(24)],
       ),
-      const Duration(days: 2),
+      const Duration(days: 2, hours: 18),
     );
     expect(
       expertiseAdjustedAdventureDuration(

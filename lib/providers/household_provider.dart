@@ -213,6 +213,7 @@ class HouseholdProvider extends ChangeNotifier {
   DateTime? trialRefilledAt;
   int trialStreakCount = 0;
   String trialStreakLastDayKey = '';
+  String trialStreakLastCompletionDayKey = '';
   bool trialStreakRewardReady = false;
   String trialStreakCarryDayKey = '';
   Map<String, int> dragonSchoolRecords = {};
@@ -1097,6 +1098,13 @@ class HouseholdProvider extends ChangeNotifier {
         data['trialStreakRewardReady'] as bool;
     trialStreakCarryDayKey =
         stringFromJson(data['trialStreakCarryDayKey']) ?? '';
+    trialStreakLastCompletionDayKey =
+        stringFromJson(data['trialStreakLastCompletionDayKey']) ?? '';
+    if (trialStreakLastCompletionDayKey.isEmpty) {
+      trialStreakLastCompletionDayKey = trialStreakCarryDayKey.isNotEmpty
+          ? trialStreakCarryDayKey
+          : trialStreakLastDayKey;
+    }
     if (trialStreakRewardReady) trialStreakCount = 7;
     if (trialStreakCount == 0) trialStreakLastDayKey = '';
     dragonSchoolRecords = {
@@ -2961,6 +2969,7 @@ class HouseholdProvider extends ChangeNotifier {
         'trialRefilledAt': trialRefilledAt?.toIso8601String(),
         'trialStreakCount': trialStreakCount,
         'trialStreakLastDayKey': trialStreakLastDayKey,
+        'trialStreakLastCompletionDayKey': trialStreakLastCompletionDayKey,
         'trialStreakRewardReady': trialStreakRewardReady,
         'trialStreakCarryDayKey': trialStreakCarryDayKey,
         'dragonSchoolRecords': dragonSchoolRecords,

@@ -1144,6 +1144,8 @@ extension DragonHavenSystems on HouseholdProvider {
   void _recordTrialStreakCompletion(DateTime now) {
     final dayKey = HouseholdProvider._dayKey(now);
     _normalizeTrialStreakForDate(now);
+    if (dayKey == trialStreakLastCompletionDayKey) return;
+    trialStreakLastCompletionDayKey = dayKey;
     if (trialStreakRewardReady) {
       if (dayKey != trialStreakLastDayKey) {
         // At most one day may wait behind an unclaimed seven-day reward. The

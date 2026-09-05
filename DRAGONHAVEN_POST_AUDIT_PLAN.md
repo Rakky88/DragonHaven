@@ -1,6 +1,6 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
-Laatst bijgewerkt: **4 september 2026**
+Laatst bijgewerkt: **5 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
 Actuele openbare versie: **v0.05.09**
@@ -20,9 +20,19 @@ Productiepreflight, analyzer, alle 411 tests, vaste signing, Play Store-AAB,
 remote assetcontrole en post-release health zijn groen. Deze release bevat geen
 servermigratie.**
 
-Actuele lokale tranche na v0.05.09: **geen afzonderlijke niet-uitgebrachte app-
-of servertranche. De definitieve auditadministratie van v0.05.09 wordt met deze
-documentatiecommit bijgewerkt; productie en staging blijven op 36/36 migraties.**
+Actuele lokale tranche na v0.05.09: **v0.05.10 is als ondertekende Android-
+releasecandidate gereed met versionCode 10060. Long Adventures trekken nu per
+passend Expertise-punt 15 minuten af in plaats van 1 uur, met behoud van de
+minimumduur van 1 dag. De Trial-constellatie bewaart los van haar zichtbare
+streak de laatst gespeelde kalenderdag, zodat claimen nooit een tweede bijdrage
+op dezelfde dag mogelijk maakt, ook niet na herstart. Vijf opnieuw beoordeelde
+draaksprites hebben de definitief goedgekeurde transparante uitvoering. De al
+ontdubbelde Wyrmling-levelkaart blijft door regressietests bewaakt. Analyzer en
+alle 412 tests zijn groen. De APK heeft package `nl.dragonhaven.app`, is
+404.899.023 bytes groot, heeft SHA-256
+`05cca29724fb22d1573ed7d34c5db140811f02273a43e9dfb33432ebea1d64de` en het
+vaste releasecertificaat. De productiepreflight bevestigt 36/36 migraties, nul
+lintfouten en gezonde Auth-/applicatie-endpoints. Er is geen servermigratie.**
 
 Server- en releasebewijs: **de volledige
 [stagingrun 33630222018](https://github.com/Rakky88/DragonHaven/actions/runs/33630222018)
@@ -1245,6 +1255,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 03-09-2026 | Wyrmling-level- en Ascension-informatie ontdubbeld | Codex | `dragon_tower_screen.dart`, `ascension_requirements.dart` en twee widgetregressies | De My Dragons-detailkaart toont huidig level, totale XP en voortgang naar het volgende level ieder nog maar één keer. De evolutieregel noemt compact `Ascended · Level 7`; daaronder staat alleen de aanvullende totale-Expertise-eis met status en voortgangsbalk. Het herbruikbare losse Ascension-paneel behoudt bewust beide gates. Een componenttest en een volledige My Dragons-integratietest bewaken dat actuele XP en de levelgate niet opnieuw in het compacte blok verschijnen. Analyzer en 409/409 tests zijn groen. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
 | 04-09-2026 | v0.05.09 lokale releasecandidate bewezen | Codex, na jouw toestemming | `release-notes-v0.05.09.md`, `DRAGON_ARTWORK_AUDIT.md`, bewaakte gameplayreferenties, 411 tests, ondertekende `DragonHaven.apk` en `release_server_preflight.ps1` | App- en zichtbare versie staan op v0.05.09 met versionCode 10059. De Wyrmling-evolutiekaart is ontdubbeld, Cluckatrice is een afzonderlijk Special Event-type en 104 tussenvormen gebruiken gereviewde standalone art. De APK heeft package `nl.dragonhaven.app`, 404.664.007 bytes, SHA-256 `a30ee7c438c74f39f3c332cbcd2a070952489d53fef9f5cb6d13e02e9baada24` en het vaste certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. Analyzer, 411/411 tests, spritegates, documentgates en emulatorupdate zijn groen. Productie blijft ongewijzigd op 36/36 migraties met nul lintfouten en gezonde Auth-/applicatiehealth. |
 | 04-09-2026 | v0.05.09 openbaar en volledig groen | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.09), [taggate 33846472807](https://github.com/Rakky88/DragonHaven/actions/runs/33846472807) en [healthrun 33847137918](https://github.com/Rakky88/DragonHaven/actions/runs/33847137918) | Exact commit `ca9afac5f541b7e9f192a0ebe63278dc70467f0e` is getagd. Remote `DragonHaven.apk` heeft exact de lokale grootte van 404.664.007 bytes en SHA-256 `a30ee7c438c74f39f3c332cbcd2a070952489d53fef9f5cb6d13e02e9baada24`; de versiegebonden en permanente latest-download geven HTTP 200 en v0.05.09 is Latest. De taggate herhaalde productiepreflight, analyzer, 411 tests, vaste signing, Play-ready AAB en artifactupload groen. De losse healthrun bevestigde Auth en applicatiehealth, uploadde bewijs, sloot een eventueel hersteld alert en opende geen storingsalert. Productie en staging bleven ongewijzigd op 36/36. |
+| 05-09-2026 | v0.05.10 lokale releasecandidate bewezen | Codex, na jouw toestemming | `release-notes-v0.05.10.md`, vijf definitief goedgekeurde draaksprites, Long Adventure- en Trial-streakregressies, 412 tests, ondertekende `DragonHaven.apk` en `release_server_preflight.ps1` | App- en zichtbare versie staan op v0.05.10 met versionCode 10060. Long Adventures gebruiken 15 minuten reductie per passend Expertise-punt en de Trial-constellatie telt strikt maximaal één dagbijdrage per lokale kalenderdag, ook na claimen en herstart. De Wyrmling-levelkaart blijft ontdubbeld. APK heeft package `nl.dragonhaven.app`, 404.899.023 bytes, SHA-256 `05cca29724fb22d1573ed7d34c5db140811f02273a43e9dfb33432ebea1d64de` en vast certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. De echte release-APK is als update gestart op de emulator en toont v0.05.10. Analyzer, 412/412 tests, sprite- en documentgates zijn groen. Productie blijft ongewijzigd op 36/36 migraties met nul lintfouten en gezonde Auth-/applicatiehealth. |
 
 ## Onderhoud van dit plan
 

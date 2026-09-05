@@ -1,12 +1,12 @@
 # DragonHaven Special Events, Chests, and Eggs
 
-Last verified: 4 September 2026
+Last verified: 5 September 2026
 
-Ruleset: app version `v0.05.09`
+Ruleset: app version `v0.05.10`
 
-Source baseline: release `v0.05.09`
+Source baseline: release `v0.05.10`
 
-<!-- reference-source-fingerprint: 6916c5d2e3e0c20d -->
+<!-- reference-source-fingerprint: 0acf70d3b595a2e7 -->
 
 This is the living content catalog for every implemented Special Event,
 Special Adventure family, chest type, and egg type in DragonHaven. It records

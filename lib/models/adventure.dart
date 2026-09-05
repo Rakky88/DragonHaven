@@ -120,7 +120,7 @@ Duration expertiseAdjustedAdventureDuration(
   final reduction = switch (adventure.kind) {
     AdventureKind.mini => Duration(seconds: singleDragonExpertise),
     AdventureKind.short => Duration(minutes: singleDragonExpertise),
-    AdventureKind.long => Duration(hours: singleDragonExpertise),
+    AdventureKind.long => Duration(minutes: singleDragonExpertise * 15),
     AdventureKind.group => Duration(hours: averageGroupExpertise),
     AdventureKind.special => adventure.combinedExpertise
         ? Duration(hours: combinedExpertise)
