@@ -1881,14 +1881,19 @@ extension DragonHavenSystems on HouseholdProvider {
 
   Future<String> redeemCode(String rawCode) async {
     final code = rawCode.trim();
-    if (code.isEmpty || !RegExp(r'^[A-Z]+$').hasMatch(code)) {
+    if (code.isEmpty || !RegExp(r'^[A-Z0-9]+$').hasMatch(code)) {
       return 'invalid_format';
     }
-    if (code == 'ISUPPORTRICK') {
-      if (supporterPackOwned) return 'already_redeemed';
-      return await _grantSupporterPackContents() ? 'redeemed' : 'inactive';
+    final definition = redeemCodeDefinition(code);
+    if (definition == null) return 'inactive';
+    switch (definition.rewardType) {
+      case RedeemRewardType.dragonEmotePack:
+        final pack = dragonEmotePackById(definition.rewardId);
+        if (pack == null) return 'inactive';
+        return await _grantDragonEmotePackContents(pack)
+            ? 'redeemed_emote_pack'
+            : 'already_redeemed';
     }
-    return 'inactive';
   }
 
   String eggHint({bool? isDutch, String? locale}) {

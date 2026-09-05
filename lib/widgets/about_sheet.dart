@@ -419,7 +419,7 @@ class _AboutSheetState extends State<_AboutSheet> {
           autofocus: true,
           textCapitalization: TextCapitalization.characters,
           inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp('[A-Z]')),
+            FilteringTextInputFormatter.allow(RegExp('[A-Z0-9]')),
           ],
           decoration: const InputDecoration(hintText: 'DRAGONCODE'),
         ),
@@ -438,14 +438,15 @@ class _AboutSheetState extends State<_AboutSheet> {
     final result = await context.read<HouseholdProvider>().redeemCode(code);
     if (!mounted) return;
     final message = switch (result) {
-      'invalid_format' => strings.pick('Use only connected capital letters.',
-          'Gebruik alleen aaneengesloten hoofdletters.'),
-      'redeemed' => strings.pick(
-          'Founding Supporter Pack unlocked. Thank you for supporting DragonHaven!',
-          'Oprichterssupporter-pakket ontgrendeld. Bedankt dat je DragonHaven steunt!'),
+      'invalid_format' => strings.pick(
+          'Use only connected capital letters and numbers.',
+          'Gebruik alleen aaneengesloten hoofdletters en cijfers.'),
+      'redeemed_emote_pack' => strings.pick(
+          'Dragon emote pack unlocked. Its ten emotes are ready to use!',
+          'Drakenemotepakket ontgrendeld. De tien emotes zijn klaar voor gebruik!'),
       'already_redeemed' => strings.pick(
-          'You already own the Founding Supporter Pack.',
-          'Je bezit het Oprichterssupporter-pakket al.'),
+          'You already own this Dragon emote pack.',
+          'Je bezit dit drakenemotepakket al.'),
       _ =>
         strings.pick('This code is not active.', 'Deze code is niet actief.'),
     };

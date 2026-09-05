@@ -55,9 +55,18 @@ const randomRewardsReference = ReferenceDocumentSpec(
   ],
 );
 
+const redeemCodesReference = ReferenceDocumentSpec(
+  documentPath: 'REDEEM_CODES.md',
+  sourcePaths: [
+    'lib/models/dragon_emote.dart',
+    'lib/models/redeem_code.dart',
+  ],
+);
+
 const referenceDocuments = [
   specialContentReference,
   randomRewardsReference,
+  redeemCodesReference,
 ];
 
 const _markerPrefix = '<!-- reference-source-fingerprint: ';

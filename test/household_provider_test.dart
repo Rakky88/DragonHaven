@@ -501,7 +501,7 @@ void main() {
     expect(exhausted?.emoteFound, isNull);
     expect(
       game.ownedDragonEmoteIds.where((id) => id.startsWith('chest_')),
-      hasLength(25),
+      hasLength(55),
     );
   });
 
@@ -2239,17 +2239,33 @@ void main() {
     legacyTarget.dispose();
   });
 
-  test('ISUPPORTRICK grants the Supporter Pack once', () async {
+  test('redeem codes grant each Dragon emote pack once', () async {
     final game = HouseholdProvider(
       random: Random(904),
       persistenceEnabled: false,
     );
 
-    expect(await game.redeemCode('ISUPPORTRICK'), 'redeemed');
-    expect(game.supporterPackOwned, isTrue);
-    expect(game.ownedBadgeIds, contains(supporterBadge.id));
-    expect(await game.redeemCode('ISUPPORTRICK'), 'already_redeemed');
-    expect(await game.redeemCode('isupportrick'), 'invalid_format');
+    const codesByPackId = {
+      'EMOTEPACK1': 'cozy_hatchlings',
+      'EMOTEPACK2': 'infernal_reactions',
+      'EMOTEPACK3': 'celestial_court',
+    };
+    for (final entry in codesByPackId.entries) {
+      final pack = dragonEmotePackById(entry.value)!;
+      expect(await game.redeemCode(entry.key), 'redeemed_emote_pack');
+      expect(game.ownsDragonEmotePack(pack.id), isTrue);
+      expect(
+        game.ownedDragonEmoteIds,
+        containsAll(pack.emotes.map((emote) => emote.id)),
+      );
+      expect(await game.redeemCode(entry.key), 'already_redeemed');
+    }
+    expect(game.ownedDragonEmotePackIds, hasLength(3));
+    expect(game.ownedDragonEmoteIds, hasLength(30));
+    expect(await game.redeemCode('ISUPPORTRICK'), 'inactive');
+    expect(game.supporterPackOwned, isFalse);
+    expect(await game.redeemCode('emotepack1'), 'invalid_format');
+    expect(await game.redeemCode('EMOTEPACK4'), 'inactive');
     game.dispose();
   });
 

@@ -21,6 +21,7 @@ import '../models/mystic_relic.dart';
 import '../models/music_track.dart';
 import '../models/pet.dart';
 import '../models/profile_portrait.dart';
+import '../models/redeem_code.dart';
 import '../models/shop_item.dart';
 import '../models/supporter_pack.dart';
 import '../models/tower_interaction.dart';
@@ -1431,6 +1432,13 @@ class HouseholdProvider extends ChangeNotifier {
       return false;
     }
     appliedVerifiedPurchaseIds.add(transactionId);
+    return _grantDragonEmotePackContents(pack);
+  }
+
+  Future<bool> _grantDragonEmotePackContents(
+    DragonEmotePackDefinition pack,
+  ) async {
+    if (ownedDragonEmotePackIds.contains(pack.id)) return false;
     ownedDragonEmotePackIds.add(pack.id);
     ownedDragonEmoteIds.addAll(pack.emotes.map((emote) => emote.id));
     _addActivity(

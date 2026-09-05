@@ -223,12 +223,12 @@ void _expectSingleSubject(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('all 80 dragon chat emotes are transparent contained app sprites',
+  test('all 140 dragon chat emotes are transparent contained app sprites',
       () async {
-    expect(allDragonEmotes, hasLength(80));
+    expect(allDragonEmotes, hasLength(140));
     expect(
       allDragonEmotes.map((emote) => emote.assetPath).toSet(),
-      hasLength(80),
+      hasLength(140),
     );
     for (final emote in allDragonEmotes) {
       final image = await _decode(emote.assetPath);

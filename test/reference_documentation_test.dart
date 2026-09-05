@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/chest.dart';
+import 'package:dragon_haven/models/dragon_emote.dart';
+import 'package:dragon_haven/models/redeem_code.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../tool/reference_documentation_guard.dart';
@@ -52,6 +54,68 @@ void main() {
       'Special Egg',
     ]) {
       expect(contents, contains(eggName));
+    }
+  });
+
+  test('redeem-code reference lists every active code and exact reward', () {
+    final contents = File(redeemCodesReference.documentPath).readAsStringSync();
+    expect(redeemCodeCatalog, isNotEmpty);
+    expect(
+      redeemCodeCatalog.map((definition) => definition.code).toSet(),
+      hasLength(redeemCodeCatalog.length),
+    );
+    final documentedRewardsByCode = <String, String>{
+      for (final match in RegExp(
+        r'^\| `([A-Z0-9]+)` \| \*\*[^*]+\*\* \| `([^`]+)` \|',
+        multiLine: true,
+      ).allMatches(contents))
+        match.group(1)!: match.group(2)!,
+    };
+    expect(
+      documentedRewardsByCode,
+      {
+        for (final definition in redeemCodeCatalog)
+          definition.code: definition.rewardId,
+      },
+      reason: 'The Active codes table must contain exactly the live catalog.',
+    );
+
+    for (final definition in redeemCodeCatalog) {
+      expect(contents, contains('`${definition.code}`'));
+      expect(contents, contains('`${definition.rewardId}`'));
+      switch (definition.rewardType) {
+        case RedeemRewardType.dragonEmotePack:
+          final pack = dragonEmotePackById(definition.rewardId);
+          expect(pack, isNotNull, reason: definition.code);
+          expect(contents, contains(pack!.nameEn));
+          expect(pack.emotes, hasLength(10), reason: definition.code);
+          for (final emote in pack.emotes) {
+            expect(contents, contains(emote.nameEn), reason: definition.code);
+          }
+      }
+    }
+  });
+
+  test('public release notes never expose redeem codes', () {
+    final releaseNotes = Directory.current.listSync().whereType<File>().where(
+        (file) => RegExp(r'release-notes-.*\.md$', caseSensitive: false)
+            .hasMatch(file.path));
+
+    for (final notesFile in releaseNotes) {
+      final contents = notesFile.readAsStringSync();
+      expect(
+        contents,
+        isNot(matches(
+            RegExp(r'redeem(?:able|ption)?[ -]?codes?', caseSensitive: false))),
+        reason: '${notesFile.path} must not announce redeem codes.',
+      );
+      for (final definition in redeemCodeCatalog) {
+        expect(
+          contents,
+          isNot(contains(definition.code)),
+          reason: '${notesFile.path} exposes ${definition.code}.',
+        );
+      }
     }
   });
 }

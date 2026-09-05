@@ -2,11 +2,11 @@
 
 Last verified: 5 September 2026
 
-Ruleset: app version `v0.05.10`
+Ruleset: app version `v0.05.11`
 
-Source baseline: release `v0.05.10`
+Source baseline: release `v0.05.11`
 
-<!-- reference-source-fingerprint: c0ca916409c5a83c -->
+<!-- reference-source-fingerprint: 40646d772886d4bd -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
@@ -90,17 +90,17 @@ The Twinstar Brooch is unique and always untradeable. Other gameplay-dropped rel
 
 ### 1.4 Collectible emotes from chests
 
-A successful chest-emote roll selects uniformly from the chest emotes the player does not yet own. Duplicates are impossible. If all 25 are owned, the effective drop chance is 0%.
+A successful chest-emote roll selects uniformly from the chest emotes the player does not yet own. Duplicates are impossible. If all 55 are owned, the effective drop chance is 0%.
 
 The initial chance for one specific emote is:
 
-`chest drop chance / 25`
+`chest drop chance / 55`
 
 As the collection shrinks, the chance of each remaining emote increases, while the total chest-emote drop chance remains unchanged.
 
-The 25 possible chest emotes are:
+The 55 possible chest emotes are:
 
-Treasure Hello; Coin Eyes; Sleepy Hoard; Egg Surprise; Lucky Gem; Chest Peek; Gem Tears; Golden Laugh; Map Confused; Key Found; Mimic Shock; Coin Rain; Tiny Hoard; Pearl Proud; Treasure Sleep; Locked Out; Crown Try; Dusty Sneeze; Potion Find; Silver Bell; Scroll Wow; Ruby Blush; Sapphire Cool; Jackpot; Dragon Detective.
+Treasure Hello; Coin Eyes; Sleepy Hoard; Egg Surprise; Lucky Gem; Chest Peek; Gem Tears; Golden Laugh; Map Confused; Key Found; Mimic Shock; Coin Rain; Tiny Hoard; Pearl Proud; Treasure Sleep; Locked Out; Crown Try; Dusty Sneeze; Potion Find; Silver Bell; Scroll Wow; Ruby Blush; Sapphire Cool; Jackpot; Dragon Detective; Adored; Treasure Nerves; Tiny Terror; Hoard Fury; Empty-Chest Sulk; Gem Envy; Coin Guilt; Coin Spill Blush; Shy Peek; Doubtful Coin; Tarnished Disgust; Keyhole Curiosity; Relic Awe; Wishing Coin; Lock Relief; Gem Gratitude; Lonely Hoard; Nest Longing; Precious Guard; Gem Gift; Coin Mischief; Lock Impatience; Treasure Overload; Hoard Contentment; Chest Boredom; Misty Eyes; One Little Tear; Treasure Tears of Joy; Empty-Hoard Heartbreak; Treasure Bawl.
 
 ### 1.5 Portrait Chest
 
@@ -374,11 +374,11 @@ Every S+ completion also independently performs:
 - a 1% relic roll; and
 - a 10% unique Trial-emote roll.
 
-The relic uses the same seven-relic pool and one-time Twinstar Brooch rule described in section 1.3. The emote is selected uniformly from the 25 unowned Trial emotes. If all Trial emotes are owned, the effective emote chance becomes 0%.
+The relic uses the same seven-relic pool and one-time Twinstar Brooch rule described in section 1.3. The emote is selected uniformly from the 55 unowned Trial emotes. If all Trial emotes are owned, the effective emote chance becomes 0%.
 
-The 25 Trial emotes are:
+The 55 Trial emotes are:
 
-S+ Crown; Perfect Smash; Cavern Soar; Rune Genius; Deep Focus; Victory Roar; Close Call; Speed Blur; Combo Fire; Trial Dizzy; Still Trying; Might Flex; Spirit Wings; Arcana Orbit; New Record; One More Try; Target Lock; Flawless; Training Time; Medal Bite; Power Up; Team Cheer; Trial Zen; Ready!; Champion.
+S+ Crown; Perfect Smash; Cavern Soar; Rune Genius; Deep Focus; Victory Roar; Close Call; Speed Blur; Combo Fire; Trial Dizzy; Still Trying; Might Flex; Spirit Wings; Arcana Orbit; New Record; One More Try; Target Lock; Flawless; Training Time; Medal Bite; Power Up; Team Cheer; Trial Zen; Ready!; Champion; Baffled Runes; Trial Tears; Brave Start; Gentle Recovery; Competitive Spark; Missed and Sad; You Can Do It; Pure Euphoria; Fully Spent; Fearless Charge; Finish-Line Relief; Rune Frustration; Humble Victory; Too Confident; Playful Challenge; Proud Tears; Graceful Defeat; Score Shock; Second Wind; Mad at Myself; Inner Calm; Stage Fright; Rune Startle; Not Giving Up; Awkward Stumble; Holding It Together; Frustrated Tears; Spent Tears; Victory Weep; Trial Meltdown.
 
 ### 4.3 Seven-day Trial constellation
 

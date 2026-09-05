@@ -2502,6 +2502,30 @@ const uiPhraseTranslations = <String, List<String>>{
     'Use apenas letras maiúsculas juntas.',
     '大文字だけを続けて入力してください。'
   ],
+  'Use only connected capital letters and numbers.': [
+    'Verwende nur zusammenhängende Großbuchstaben und Zahlen.',
+    'Usa solo letras mayúsculas y números seguidos.',
+    'Utilisez uniquement des lettres majuscules et des chiffres sans espace.',
+    'Usa solo lettere maiuscole e numeri consecutivi.',
+    'Use apenas letras maiúsculas e números juntos.',
+    '大文字と数字だけを続けて入力してください。'
+  ],
+  'Dragon emote pack unlocked. Its ten emotes are ready to use!': [
+    'Drachen-Emote-Paket freigeschaltet. Seine zehn Emotes sind einsatzbereit!',
+    '¡Paquete de emotes de dragón desbloqueado! Sus diez emotes están listos para usar.',
+    'Pack d’emotes de dragon déverrouillé. Ses dix emotes sont prêts à être utilisés !',
+    'Pacchetto di emote drago sbloccato. Le sue dieci emote sono pronte all’uso!',
+    'Pacote de emotes de dragão desbloqueado. Os dez emotes estão prontos para usar!',
+    'ドラゴン絵文字パックをアンロックしました。10種類すべて使用できます！'
+  ],
+  'You already own this Dragon emote pack.': [
+    'Du besitzt dieses Drachen-Emote-Paket bereits.',
+    'Ya tienes este paquete de emotes de dragón.',
+    'Vous possédez déjà ce pack d’emotes de dragon.',
+    'Possiedi già questo pacchetto di emote drago.',
+    'Você já possui este pacote de emotes de dragão.',
+    'このドラゴン絵文字パックはすでに所有しています。'
+  ],
   'Version': ['Version', 'Versión', 'Version', 'Versione', 'Versão', 'バージョン'],
   'Visit towers, lend a friendly dragon and trade eggs, chests or furniture.': [
     'Besuche Türme, leihe einen freundlichen Drachen aus und tausche Eier, Truhen oder Möbel.',

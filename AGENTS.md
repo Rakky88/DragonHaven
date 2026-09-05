@@ -24,6 +24,19 @@ relationships still match the implementation. When randomness is introduced
 in a new source file, add that file to the appropriate source list in
 `tool/reference_documentation_guard.dart`.
 
+# Living redeem-code reference requirement
+
+Adding, removing, redirecting, or changing the reward of any redeem code must
+update `REDEEM_CODES.md` in the same change. The active-code catalog belongs in
+`lib/models/redeem_code.dart`; do not hide additional production codes in UI or
+provider files. If a referenced reward changes, review the exact contents in
+the redeem-code document as well. Run the same documentation guard update,
+verification, and reference-documentation test described above.
+
+Redeem codes are private operational data and must never be included in public
+release notes. Before publishing, verify that every `release-notes-*.md` file
+is free of active code values and of language that announces redeem codes.
+
 # Dragon sprite direction requirement
 
 Every newly generated or regenerated DragonHaven dragon sprite must show both
