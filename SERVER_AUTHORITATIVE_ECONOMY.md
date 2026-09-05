@@ -1,7 +1,7 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **5 September 2026**
-Candidate schema: **migration 37 — dormant, not applied to staging or production**
+Candidate schema: **migrations 37–38 — dormant; 37 is on staging, forward fix 38 pending**
 Current public app: **v0.05.11**
 
 ## Purpose and current boundary
@@ -166,5 +166,8 @@ path depends on migration 37.
 - approve every staging apply, production migration and eventual cutover
   separately.
 
-No staging project, production project, public release or player data is changed
-by this document or the local migration candidate.
+Migration 37 changed only the isolated staging schema; the global mutation
+switch remains disabled and every keeper remains on `legacy_client`. Migration
+38 is the pending forward-only timestamp correction. No production project,
+public release, balance, inventory or other player value is changed by this
+staging foundation work.

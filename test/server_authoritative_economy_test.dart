@@ -6,6 +6,9 @@ void main() {
   final migration = File(
     'supabase/migrations/202609050037_economy_authority_foundation.sql',
   ).readAsStringSync();
+  final timestampFix = File(
+    'supabase/migrations/202609050038_economy_rate_limit_timestamp_fix.sql',
+  ).readAsStringSync();
   final contract = File('SERVER_AUTHORITATIVE_ECONOMY.md').readAsStringSync();
   final stagingWorkflow = File(
     '.github/workflows/staging-economy-foundation.yml',
@@ -176,8 +179,7 @@ void main() {
     expect(projection, isNot(contains('display_name')));
   });
 
-  test('design remains free-first Play-upgradeable and explicitly unshipped',
-      () {
+  test('design remains free-first Play-upgradeable and production dormant', () {
     expect(contract, contains('free-first'));
     expect(contract, contains('Google Play purchase'));
     expect(contract, contains('without storing card details'));
@@ -185,8 +187,10 @@ void main() {
     expect(contract, contains('shadow'));
     expect(contract, contains('server'));
     expect(contract, contains('Database rollback is fix-forward'));
-    expect(contract, contains('No staging project, production project'));
-    expect(contract, contains('not applied to staging or production'));
+    expect(contract, contains('production project'));
+    expect(contract, contains('public release'));
+    expect(contract, contains('global mutation'));
+    expect(contract, contains('switch remains disabled'));
     for (final forbidden in const [
       'email address',
       'payment card data',
@@ -198,16 +202,16 @@ void main() {
     expect(contract, contains('full account/profile deletion'));
   });
 
-  test('staging gate accepts exactly migration 37 and hard-blocks production',
+  test('staging recovery accepts exact 37 to 38 and hard-blocks production',
       () {
     expect(
       stagingWorkflow,
-      contains('APPLY_DRAGONHAVEN_STAGING_ECONOMY_37'),
+      contains('APPLY_DRAGONHAVEN_STAGING_ECONOMY_37_38'),
     );
-    expect(stagingWorkflow, contains("\$expectedRemote = '202609020036'"));
+    expect(stagingWorkflow, contains("\$expectedRemote = '202609050037'"));
     expect(
       stagingWorkflow,
-      contains("\$expectedPending = @('202609050037')"),
+      contains("\$expectedPending = @('202609050038')"),
     );
     expect(
       stagingWorkflow,
@@ -226,14 +230,29 @@ void main() {
     );
   });
 
+  test('migration 38 fixes the ambiguous rate-limit timestamp forward', () {
+    expect(timestampFix, contains('v_now timestamptz := clock_timestamp()'));
+    expect(
+      timestampFix,
+      contains('v_now + make_interval(secs => p_window_seconds)'),
+    );
+    expect(timestampFix, contains('bucket.reset_at <= v_now'));
+    expect(timestampFix, isNot(contains('current_time + make_interval')));
+    expect(timestampFix, contains('revoke all on function'));
+    expect(timestampFix, isNot(contains('drop ')));
+    expect(timestampFix, isNot(contains('delete from')));
+  });
+
   test('staging E2E proves dormant access and stores privacy-safe evidence',
       () {
     expect(stagingE2e,
         contains("\$productionProjectRef = 'tnzathhutuwmohmjfrlo'"));
     expect(stagingE2e, contains('migration_37_applied'));
+    expect(stagingE2e, contains('migration_38_applied'));
     expect(stagingE2e, contains('all_valuable_tables_have_rls'));
     expect(stagingE2e, contains('direct_client_table_access_absent'));
     expect(stagingE2e, contains('append_only_trigger_enabled'));
+    expect(stagingE2e, contains('timestamp_fix_active'));
     expect(stagingE2e, contains('economy_mutations_disabled'));
     expect(stagingE2e, contains('no_probe_was_persisted'));
     expect(stagingE2e, contains('raw_identifiers_recorded=false'));

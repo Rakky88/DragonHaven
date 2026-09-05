@@ -63,6 +63,9 @@ if ($EvidencePath -notmatch '^staging[\\/][a-zA-Z0-9._-]+$') {
 if (-not (Test-Path -LiteralPath 'supabase/migrations/202609050037_economy_authority_foundation.sql')) {
     throw 'Repository migration 37 is missing.'
 }
+if (-not (Test-Path -LiteralPath 'supabase/migrations/202609050038_economy_rate_limit_timestamp_fix.sql')) {
+    throw 'Repository forward fix migration 38 is missing.'
+}
 
 function Get-PropertyValue {
     param(
@@ -248,6 +251,10 @@ select
     select 1 from supabase_migrations.schema_migrations
     where version = '202609050037'
   ) as migration_37_applied,
+  exists (
+    select 1 from supabase_migrations.schema_migrations
+    where version = '202609050038'
+  ) as migration_38_applied,
   (
     select count(*) = 6
     from pg_class c
@@ -286,6 +293,11 @@ select
       and t.tgname = 'economy_ledger_entries_reject_change'
       and not t.tgisinternal and t.tgenabled = 'O'
   ) as append_only_trigger_enabled,
+  position(
+    'v_now + make_interval' in pg_get_functiondef(
+      'private.consume_economy_rate_limit(uuid,text,integer,integer)'::regprocedure
+    )
+  ) > 0 as timestamp_fix_active,
   not has_function_privilege('anon', 'public.get_my_economy_contract()', 'execute')
     and has_function_privilege('authenticated', 'public.get_my_economy_contract()', 'execute')
     as rpc_grants_are_scoped;
@@ -294,11 +306,13 @@ select
 
 foreach ($flag in @(
     'migration_37_applied',
+    'migration_38_applied',
     'all_valuable_tables_have_rls',
     'direct_client_table_access_absent',
     'global_mutations_disabled',
     'keeper_remains_legacy',
     'append_only_trigger_enabled',
+    'timestamp_fix_active',
     'rpc_grants_are_scoped'
 )) {
     if (-not (ConvertTo-StrictBoolean `
@@ -353,12 +367,15 @@ New-Item -ItemType Directory -Path $evidenceDirectory -Force | Out-Null
     'production_targeted=false'
     'repository_migration_37_present=true'
     'remote_migration_37_applied=true'
+    'repository_migration_38_present=true'
+    'remote_migration_38_applied=true'
     "anonymous_access_denied=$($anonymousAccessDenied.ToString().ToLowerInvariant())"
     "authenticated_contract_verified=$($authenticatedContractVerified.ToString().ToLowerInvariant())"
     "disabled_mutation_rejected=$($disabledMutationRejected.ToString().ToLowerInvariant())"
     'valuable_table_rls_verified=true'
     'direct_client_table_access_absent=true'
     'append_only_trigger_verified=true'
+    'rate_limit_timestamp_fix_verified=true'
     'raw_identifiers_recorded=false'
     'credentials_recorded=false'
 ) | Set-Content -LiteralPath $EvidencePath -Encoding utf8
