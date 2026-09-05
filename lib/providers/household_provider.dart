@@ -3032,14 +3032,28 @@ class HouseholdProvider extends ChangeNotifier {
         'activities': activities.map((entry) => entry.toJson()).toList(),
       };
 
-  Future<bool> restoreCloudState(Map<String, dynamic> state) async {
+  Future<bool> restoreCloudState(
+    Map<String, dynamic> state, {
+    bool preserveServerOwnedWalletAndChests = false,
+  }) async {
     final candidate = HouseholdProvider(
       initialize: false,
       persistenceEnabled: false,
     );
     try {
       await _restoreStoredState(candidate, state);
+      final preservedCoins = pet.coins;
+      final preservedGems = pet.gems;
+      final preservedChests = Map<ChestTier, int>.from(chestInventory);
       _restore(state);
+      if (preserveServerOwnedWalletAndChests) {
+        // Once an account is cut over, a cloud save is only a presentation and
+        // offline-state backup. It may never overwrite authoritative balances
+        // or chest ownership with an older device snapshot.
+        pet.coins = preservedCoins;
+        pet.gems = preservedGems;
+        chestInventory = preservedChests;
+      }
       _evolveReadyDragons(_clock());
       pet.applyTimeDecay(_clock());
       _registerOwnedDragonStages();

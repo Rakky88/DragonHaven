@@ -20,7 +20,9 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$ManagementAccessToken,
 
-    [string]$EvidencePath = 'staging/economy-foundation-e2e.txt'
+    [string]$EvidencePath = 'staging/economy-foundation-e2e.txt',
+
+    [switch]$VerifyVanityPurchase
 )
 
 Set-StrictMode -Version Latest
@@ -322,6 +324,332 @@ foreach ($flag in @(
     }
 }
 
+$vanityPurchaseVerified = $false
+$vanityReplayVerified = $false
+$vanityConflictVerified = $false
+$vanityInsufficientFundsVerified = $false
+$vanityCapacityVerified = $false
+$vanityLedgerVerified = $false
+$vanityRollbackVerified = $false
+if ($VerifyVanityPurchase) {
+    if (-not (Test-Path -LiteralPath 'supabase/migrations/202609050039_dormant_vanity_chest_purchase.sql')) {
+        throw 'Repository migration 39 is missing.'
+    }
+    $vanitySchemaRow = Assert-SingleRow `
+        -Rows (Invoke-StagingManagementQuery `
+            -Operation 'Vanity purchase schema verification' `
+            -Query @"
+select
+  exists (
+    select 1 from supabase_migrations.schema_migrations
+    where version = '202609050039'
+  ) as migration_39_applied,
+  not has_function_privilege(
+    'anon', 'public.purchase_vanity_chest(uuid,text,integer,integer)', 'execute'
+  ) and has_function_privilege(
+    'authenticated',
+    'public.purchase_vanity_chest(uuid,text,integer,integer)', 'execute'
+  ) as vanity_rpc_grants_are_scoped;
+"@) `
+        -Operation 'Vanity purchase schema verification'
+    foreach ($flag in @('migration_39_applied', 'vanity_rpc_grants_are_scoped')) {
+        if (-not (ConvertTo-StrictBoolean `
+                -Value (Get-PropertyValue $vanitySchemaRow $flag) `
+                -Name $flag)) {
+            throw "The vanity purchase schema failed on $flag."
+        }
+    }
+
+    $vanityDrillRow = Assert-SingleRow `
+        -Rows (Invoke-StagingManagementQuery `
+            -ReadOnly $false `
+            -Operation 'Rolled-back vanity purchase drill' `
+            -Query @"
+create or replace function pg_temp.run_vanity_purchase_drill(p_user_id uuid)
+returns table (
+  purchase_verified boolean,
+  replay_verified boolean,
+  conflict_verified boolean,
+  insufficient_funds_verified boolean,
+  capacity_verified boolean,
+  ledger_verified boolean,
+  rollback_verified boolean
+)
+language plpgsql
+set search_path = ''
+as `$vanity_drill`$
+declare
+  v_purchase_request uuid := gen_random_uuid();
+  v_insufficient_request uuid := gen_random_uuid();
+  v_capacity_request uuid := gen_random_uuid();
+  v_marker text := gen_random_uuid()::text;
+  v_original_contract jsonb;
+  v_original_authority jsonb;
+  v_original_wallet jsonb;
+  v_original_rate_bucket jsonb;
+  v_after_contract jsonb;
+  v_after_authority jsonb;
+  v_after_wallet jsonb;
+  v_after_rate_bucket jsonb;
+  v_purchase jsonb;
+  v_replay jsonb;
+  v_insufficient jsonb;
+  v_insufficient_replay jsonb;
+  v_capacity jsonb;
+  v_chest_id uuid;
+  v_before_capacity integer;
+  v_music_chests_before integer;
+  v_portrait_capacity_ready integer;
+begin
+  select to_jsonb(contract_row) into v_original_contract
+  from (
+    select protocol_version, minimum_client_build, mutations_enabled
+    from private.economy_contract where singleton = true
+  ) contract_row;
+  select to_jsonb(authority_row) into v_original_authority
+  from (
+    select authority_mode, protocol_version, server_revision, activated_at
+    from public.player_economy_authority where user_id = p_user_id
+  ) authority_row;
+  select to_jsonb(wallet_row) into v_original_wallet
+  from (
+    select coins, gems, revision, updated_at
+    from public.player_wallets where user_id = p_user_id
+  ) wallet_row;
+  select to_jsonb(bucket_row) into v_original_rate_bucket
+  from (
+    select request_count, reset_at, updated_at
+    from private.economy_rate_limit_buckets
+    where owner_id = p_user_id
+      and operation = 'shop.purchase_vanity_chest'
+  ) bucket_row;
+
+  begin
+    update private.economy_contract
+    set mutations_enabled = true
+    where singleton = true;
+    update public.player_economy_authority
+    set authority_mode = 'server', protocol_version = 1,
+        activated_at = clock_timestamp()
+    where user_id = p_user_id;
+    update public.player_wallets
+    set coins = 1000, gems = 1000, revision = revision + 1,
+        updated_at = clock_timestamp()
+    where user_id = p_user_id;
+    if not found then
+      raise exception 'economy_drill_wallet_missing';
+    end if;
+    perform set_config('request.jwt.claim.sub', p_user_id::text, true);
+    perform set_config('request.jwt.claim.role', 'authenticated', true);
+
+    v_purchase := public.purchase_vanity_chest(
+      v_purchase_request, 'title', 1, 10061
+    );
+    v_chest_id := (v_purchase->>'chest_instance_id')::uuid;
+    purchase_verified :=
+      v_purchase->>'outcome' = 'purchased'
+      and v_purchase->>'tier' = 'title'
+      and (v_purchase->>'price')::integer = 100
+      and (v_purchase->>'coins')::bigint = 900
+      and exists (
+        select 1 from public.player_chest_instances
+        where id = v_chest_id and owner_id = p_user_id
+          and tier = 'title' and state = 'owned' and not tradeable
+      );
+    if not purchase_verified then
+      raise exception 'vanity_purchase_failed';
+    end if;
+    ledger_verified := (
+      select count(*) = 2
+      from public.economy_ledger_entries
+      where owner_id = p_user_id and request_id = v_purchase_request
+    );
+    if not ledger_verified then
+      raise exception 'vanity_purchase_ledger_failed';
+    end if;
+
+    v_replay := public.purchase_vanity_chest(
+      v_purchase_request, 'title', 1, 10061
+    );
+    replay_verified := v_replay = v_purchase
+      and (select count(*) = 1 from public.player_chest_instances
+           where id = v_chest_id)
+      and (select count(*) = 2 from public.economy_ledger_entries
+           where owner_id = p_user_id and request_id = v_purchase_request)
+      and (select coins = 900 from public.player_wallets
+           where user_id = p_user_id);
+    if not replay_verified then
+      raise exception 'vanity_purchase_replay_failed';
+    end if;
+
+    conflict_verified := false;
+    begin
+      perform public.purchase_vanity_chest(
+        v_purchase_request, 'portrait', 1, 10061
+      );
+    exception when others then
+      if sqlerrm <> 'economy_idempotency_conflict' then
+        raise;
+      end if;
+      conflict_verified := true;
+    end;
+
+    update public.player_wallets set gems = 0 where user_id = p_user_id;
+    select count(*)::integer into v_music_chests_before
+    from public.player_chest_instances
+    where owner_id = p_user_id and tier = 'music' and state <> 'opened';
+    v_insufficient := public.purchase_vanity_chest(
+      v_insufficient_request, 'music', 1, 10061
+    );
+    v_insufficient_replay := public.purchase_vanity_chest(
+      v_insufficient_request, 'music', 1, 10061
+    );
+    insufficient_funds_verified :=
+      v_insufficient->>'outcome' = 'insufficient_funds'
+      and v_insufficient_replay = v_insufficient
+      and (select count(*) = v_music_chests_before
+           from public.player_chest_instances
+           where owner_id = p_user_id and tier = 'music'
+             and state <> 'opened')
+      and not exists (
+        select 1 from public.economy_ledger_entries
+        where owner_id = p_user_id and request_id = v_insufficient_request
+      );
+    if not insufficient_funds_verified then
+      raise exception 'vanity_insufficient_funds_failed';
+    end if;
+
+    select
+      (select count(*) from public.player_item_instances
+       where owner_id = p_user_id and item_kind = 'portrait'
+         and state <> 'consumed')
+      +
+      (select count(*) from public.player_chest_instances
+       where owner_id = p_user_id and tier = 'portrait'
+         and state <> 'opened')
+    into v_before_capacity;
+    if v_before_capacity < 100 then
+      insert into public.player_item_instances(
+        owner_id, item_kind, catalog_id, state, tradeable,
+        source_type, source_reference
+      )
+      select p_user_id, 'portrait',
+        'audit.' || v_marker || '.' || series::text,
+        'owned', false, 'system', 'vanity-drill-' || v_marker
+      from generate_series(1, 100 - v_before_capacity) series;
+    end if;
+    select
+      (select count(*) from public.player_item_instances
+       where owner_id = p_user_id and item_kind = 'portrait'
+         and state <> 'consumed')
+      +
+      (select count(*) from public.player_chest_instances
+       where owner_id = p_user_id and tier = 'portrait'
+         and state <> 'opened')
+    into v_portrait_capacity_ready;
+    v_capacity := public.purchase_vanity_chest(
+      v_capacity_request, 'portrait', 1, 10061
+    );
+    capacity_verified :=
+      v_capacity->>'outcome' = 'collection_complete'
+      and v_portrait_capacity_ready >= 100
+      and (select
+        (select count(*) from public.player_item_instances
+         where owner_id = p_user_id and item_kind = 'portrait'
+           and state <> 'consumed')
+        +
+        (select count(*) from public.player_chest_instances
+         where owner_id = p_user_id and tier = 'portrait'
+           and state <> 'opened')
+      ) = v_portrait_capacity_ready
+      and not exists (
+        select 1 from public.economy_ledger_entries
+        where owner_id = p_user_id and request_id = v_capacity_request
+      );
+    if not capacity_verified or not conflict_verified then
+      raise exception 'vanity_capacity_or_conflict_failed';
+    end if;
+
+    raise exception 'vanity_purchase_drill_rollback';
+  exception when others then
+    if sqlerrm <> 'vanity_purchase_drill_rollback' then
+      raise;
+    end if;
+  end;
+
+  select to_jsonb(contract_row) into v_after_contract
+  from (
+    select protocol_version, minimum_client_build, mutations_enabled
+    from private.economy_contract where singleton = true
+  ) contract_row;
+  select to_jsonb(authority_row) into v_after_authority
+  from (
+    select authority_mode, protocol_version, server_revision, activated_at
+    from public.player_economy_authority where user_id = p_user_id
+  ) authority_row;
+  select to_jsonb(wallet_row) into v_after_wallet
+  from (
+    select coins, gems, revision, updated_at
+    from public.player_wallets where user_id = p_user_id
+  ) wallet_row;
+  select to_jsonb(bucket_row) into v_after_rate_bucket
+  from (
+    select request_count, reset_at, updated_at
+    from private.economy_rate_limit_buckets
+    where owner_id = p_user_id
+      and operation = 'shop.purchase_vanity_chest'
+  ) bucket_row;
+  rollback_verified :=
+    v_after_contract is not distinct from v_original_contract
+    and v_after_authority is not distinct from v_original_authority
+    and v_after_wallet is not distinct from v_original_wallet
+    and v_after_rate_bucket is not distinct from v_original_rate_bucket
+    and not exists (
+      select 1 from public.economy_mutation_requests
+      where owner_id = p_user_id
+        and request_id in (
+          v_purchase_request, v_insufficient_request, v_capacity_request
+        )
+    )
+    and not exists (
+      select 1 from public.player_item_instances
+      where owner_id = p_user_id
+        and source_reference = 'vanity-drill-' || v_marker
+    );
+  if not rollback_verified then
+    raise exception 'vanity_purchase_drill_left_state_behind';
+  end if;
+  return next;
+end;
+`$vanity_drill`$;
+select *
+from pg_temp.run_vanity_purchase_drill('$($parsedUserId.ToString())'::uuid);
+"@) `
+        -Operation 'Rolled-back vanity purchase drill'
+    foreach ($flag in @(
+        'purchase_verified',
+        'replay_verified',
+        'conflict_verified',
+        'insufficient_funds_verified',
+        'capacity_verified',
+        'ledger_verified',
+        'rollback_verified'
+    )) {
+        if (-not (ConvertTo-StrictBoolean `
+                -Value (Get-PropertyValue $vanityDrillRow $flag) `
+                -Name $flag)) {
+            throw "The rolled-back vanity purchase drill failed on $flag."
+        }
+    }
+    $vanityPurchaseVerified = $true
+    $vanityReplayVerified = $true
+    $vanityConflictVerified = $true
+    $vanityInsufficientFundsVerified = $true
+    $vanityCapacityVerified = $true
+    $vanityLedgerVerified = $true
+    $vanityRollbackVerified = $true
+}
+
 $disabledMutationRow = Assert-SingleRow `
     -Rows (Invoke-StagingManagementQuery `
         -ReadOnly $false `
@@ -588,6 +916,13 @@ New-Item -ItemType Directory -Path $evidenceDirectory -Force | Out-Null
     'conflicting_payload_rejected=true'
     'rate_limit_rejected=true'
     'transaction_rollback_verified=true'
+    "vanity_purchase_verified=$($vanityPurchaseVerified.ToString().ToLowerInvariant())"
+    "vanity_replay_verified=$($vanityReplayVerified.ToString().ToLowerInvariant())"
+    "vanity_conflict_verified=$($vanityConflictVerified.ToString().ToLowerInvariant())"
+    "vanity_insufficient_funds_verified=$($vanityInsufficientFundsVerified.ToString().ToLowerInvariant())"
+    "vanity_capacity_verified=$($vanityCapacityVerified.ToString().ToLowerInvariant())"
+    "vanity_ledger_verified=$($vanityLedgerVerified.ToString().ToLowerInvariant())"
+    "vanity_rollback_verified=$($vanityRollbackVerified.ToString().ToLowerInvariant())"
     'valuable_table_rls_verified=true'
     'direct_client_table_access_absent=true'
     'append_only_trigger_verified=true'

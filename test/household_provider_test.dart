@@ -2239,6 +2239,43 @@ void main() {
     legacyTarget.dispose();
   });
 
+  test('server-owned wallet and chests cannot be overwritten by cloud restore',
+      () async {
+    final cloudSource = HouseholdProvider(
+      random: Random(906),
+      persistenceEnabled: false,
+    )
+      ..accountName = 'Older cloud presentation'
+      ..pet.coins = 9999
+      ..pet.gems = 999
+      ..chestInventory[ChestTier.title] = 8;
+    final target = HouseholdProvider(
+      random: Random(907),
+      persistenceEnabled: false,
+    )
+      ..accountName = 'Current local presentation'
+      ..pet.coins = 321
+      ..pet.gems = 45
+      ..chestInventory[ChestTier.title] = 2
+      ..chestInventory[ChestTier.music] = 1;
+
+    expect(
+      await target.restoreCloudState(
+        cloudSource.exportState(),
+        preserveServerOwnedWalletAndChests: true,
+      ),
+      isTrue,
+    );
+    expect(target.accountName, 'Older cloud presentation');
+    expect(target.pet.coins, 321);
+    expect(target.pet.gems, 45);
+    expect(target.chestCount(ChestTier.title), 2);
+    expect(target.chestCount(ChestTier.music), 1);
+
+    cloudSource.dispose();
+    target.dispose();
+  });
+
   test('redeem codes grant each Dragon emote pack once', () async {
     final game = HouseholdProvider(
       random: Random(904),

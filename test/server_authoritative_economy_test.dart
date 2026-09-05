@@ -9,6 +9,9 @@ void main() {
   final timestampFix = File(
     'supabase/migrations/202609050038_economy_rate_limit_timestamp_fix.sql',
   ).readAsStringSync();
+  final vanityPurchase = File(
+    'supabase/migrations/202609050039_dormant_vanity_chest_purchase.sql',
+  ).readAsStringSync();
   final contract = File('SERVER_AUTHORITATIVE_ECONOMY.md').readAsStringSync();
   final stagingWorkflow = File(
     '.github/workflows/staging-economy-foundation.yml',
@@ -18,6 +21,9 @@ void main() {
   ).readAsStringSync();
   final contractDrillWorkflow = File(
     '.github/workflows/staging-economy-contract-drill.yml',
+  ).readAsStringSync();
+  final vanityWorkflow = File(
+    '.github/workflows/staging-vanity-chest-purchase.yml',
   ).readAsStringSync();
 
   test('migration 37 is dormant and preserves all existing economy tables', () {
@@ -290,5 +296,102 @@ void main() {
       contractDrillWorkflow,
       contains("\$projectRef -eq 'tnzathhutuwmohmjfrlo'"),
     );
+  });
+
+  test('first concrete purchase stays gated and uses the request contract', () {
+    expect(vanityPurchase, contains('public.purchase_vanity_chest'));
+    expect(
+      vanityPurchase.indexOf('private.assert_economy_client'),
+      lessThan(vanityPurchase.indexOf('private.begin_economy_mutation')),
+    );
+    expect(vanityPurchase, contains("'shop.purchase_vanity_chest'"));
+    expect(vanityPurchase, contains("v_begin->>'replayed'"));
+    expect(vanityPurchase, contains("v_begin->'response'"));
+    expect(vanityPurchase, contains('economy_request_state_invalid'));
+    expect(vanityPurchase, contains('for update'));
+    expect(vanityPurchase, contains('private.complete_economy_mutation'));
+    expect(vanityPurchase, isNot(contains('mutations_enabled = true')));
+    expect(vanityPurchase, isNot(contains("authority_mode = 'server'")));
+  });
+
+  test('vanity purchase prices caps and non-tradeability match the app', () {
+    expect(
+      vanityPurchase,
+      contains("('portrait'::text, 'gems'::text, 100, 'portrait'::text, 100)"),
+    );
+    expect(
+      vanityPurchase,
+      contains("('title'::text, 'coins'::text, 100, 'title'::text, 500)"),
+    );
+    expect(
+      vanityPurchase,
+      contains("('music'::text, 'gems'::text, 250, 'music'::text, 80)"),
+    );
+    expect(vanityPurchase,
+        contains("v_collected + v_unopened >= v_collection_cap"));
+    expect(vanityPurchase, contains("'collection_complete'"));
+    expect(vanityPurchase, contains("'insufficient_funds'"));
+    expect(
+      vanityPurchase,
+      contains("v_owner_id, v_tier, 'owned', false, 'shop'"),
+    );
+  });
+
+  test('purchase atomically updates wallet chest ledger and revisions', () {
+    expect(vanityPurchase, contains('update public.player_wallets'));
+    expect(vanityPurchase, contains('revision = revision + 1'));
+    expect(
+        vanityPurchase, contains('insert into public.player_chest_instances'));
+    expect(vanityPurchase, contains('private.append_economy_ledger_entry'));
+    expect(vanityPurchase, contains("'debit'"));
+    expect(vanityPurchase, contains("'grant'"));
+    expect(vanityPurchase, contains('server_revision = server_revision + 1'));
+    expect(vanityPurchase, contains("'wallet_revision', v_wallet.revision"));
+    expect(vanityPurchase, contains("'server_revision', v_server_revision"));
+    expect(vanityPurchase, isNot(contains('random()')));
+    expect(vanityPurchase, isNot(contains('delete from')));
+  });
+
+  test('new purchase RPC exposes execution only to authenticated clients', () {
+    expect(
+      vanityPurchase,
+      contains(
+        'revoke all on function public.purchase_vanity_chest(\n'
+        '  uuid, text, integer, integer\n'
+        ') from public, anon;',
+      ),
+    );
+    expect(
+      vanityPurchase,
+      contains(
+        'grant execute on function public.purchase_vanity_chest(\n'
+        '  uuid, text, integer, integer\n'
+        ') to authenticated;',
+      ),
+    );
+  });
+
+  test('vanity staging gate is exact rollback-tested and production-blocked',
+      () {
+    expect(
+      vanityWorkflow,
+      contains('APPLY_DRAGONHAVEN_STAGING_VANITY_CHEST_39'),
+    );
+    expect(vanityWorkflow, contains("\$expectedRemote = '202609050038'"));
+    expect(
+      vanityWorkflow,
+      contains("\$expectedPending = @('202609050039')"),
+    );
+    expect(vanityWorkflow,
+        contains('supabase db push --linked --include-all --dry-run'));
+    expect(vanityWorkflow, contains('-VerifyVanityPurchase'));
+    expect(vanityWorkflow, contains('environment: staging'));
+    expect(vanityWorkflow, isNot(contains('-Environment production')));
+    expect(vanityWorkflow, contains("\$projectRef -eq 'tnzathhutuwmohmjfrlo'"));
+    expect(stagingE2e, contains('pg_temp.run_vanity_purchase_drill'));
+    expect(stagingE2e, contains('vanity_purchase_drill_rollback'));
+    expect(stagingE2e, contains('vanity_replay_verified='));
+    expect(stagingE2e, contains('vanity_ledger_verified='));
+    expect(stagingE2e, contains('vanity_rollback_verified='));
   });
 }

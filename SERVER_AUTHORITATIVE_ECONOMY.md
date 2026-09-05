@@ -1,7 +1,7 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **5 September 2026**
-Candidate schema: **migrations 37–38 — dormant and verified on staging, not production**
+Candidate schema: **migrations 37–38 verified dormant on staging; migration 39 local only**
 Current public app: **v0.05.11**
 
 ## Purpose and current boundary
@@ -13,9 +13,11 @@ not yet allowed to become the source of truth for purchases or ordinary reward
 claims.
 
 Migration 37 builds the missing transaction boundary without switching it on.
-It adds no paid product, changes no current balance and exposes no new mutating
-RPC to the app. Every keeper remains in `legacy_client` mode and the global
-`mutations_enabled` switch starts as `false`.
+Local migration 39 adds the first concrete, idempotent vanity-chest purchase
+RPC, but it is still unreachable because every keeper remains in
+`legacy_client` mode, the app feature flag is `false` and the global
+`mutations_enabled` switch starts as `false`. Neither migration adds a live paid
+product or changes a current balance.
 
 This is deliberately free-first: it uses PostgreSQL and Supabase capabilities
 already present in the project. The same ledger can later distinguish earned
@@ -130,8 +132,10 @@ cannot be restored, duplicated or overwritten by an old save.
    RLS/revokes, the read-only contract, dormant defaults, idempotent replay,
    payload-conflict and old-client rejection, rate limiting, transactional
    rollback and healthy public endpoints.
-3. **Shadow implementation:** add one harmless economy path behind a disabled
-   app feature flag; compare results without mutating player value.
+3. **First dormant mutation — local candidate:** migration 39 and the unused
+   client boundary buy capped Portrait, Title or Music Chests with one atomic
+   wallet/chest/ledger transaction. Local tests prove request reuse after a
+   timeout, concurrent double-submit behavior and cloud-restore shielding.
 4. **Representative migration:** convert copies of real-shaped but synthetic
    saves, verify totals and hashes, then prove a forward-only rollback exercise.
 5. **Small server cohort:** enable `server` per selected staging keeper, never
@@ -151,7 +155,9 @@ path depends on migration 37.
 
 ### Codex
 
-- implement concrete wallet/shop/chest RPCs around this private foundation;
+- prove local migration 39 and its concrete vanity-chest purchase RPC on
+  isolated staging, still with every production feature flag disabled;
+- extend the same atomic pattern to chest opening and the remaining shops;
 - move all randomness and collection-cap checks for those paths to PostgreSQL;
 - filter server-owned fields out of save restore/import after cutover;
 - add timeout/reconnect and double-submit E2E around the first concrete mutation
@@ -169,7 +175,8 @@ path depends on migration 37.
 - approve every staging apply, production migration and eventual cutover
   separately.
 
-Migrations 37–38 changed only the isolated staging schema; the global mutation
+Migrations 37–38 changed only the isolated staging schema; local migration 39
+has not been pushed or applied. The global mutation
 switch remains disabled and every keeper remains on `legacy_client`. Migration
 38 is the applied forward-only timestamp correction after the first staging run
 correctly exposed migration 37's ambiguous clock-variable lint finding. No
