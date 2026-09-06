@@ -10,7 +10,6 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
-import android.media.audiofx.LoudnessEnhancer
 import android.net.Uri
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -25,7 +24,7 @@ class MainActivity : FlutterActivity() {
     private var musicEnabled = false
     private var effectsEnabled = true
     private var musicPlayer: MediaPlayer? = null
-    private var musicEnhancer: LoudnessEnhancer? = null
+    private var currentMusicVolume = 0f
     private var musicScene: String? = null
     private var jukeboxTracks = listOf("music_reverie")
     private var jukeboxQueue = mutableListOf<String>()
@@ -635,7 +634,7 @@ class MainActivity : FlutterActivity() {
         musicPlayer = MediaPlayer.create(this, resource, musicAttributes, 0)?.apply {
             isLooping = false
             setVolume(0f, 0f)
-            attachMusicEnhancer(this)
+            currentMusicVolume = 0f
             setOnCompletionListener { completed ->
                 if (musicPlayer !== completed) return@setOnCompletionListener
                 releaseMusicPlayer()
@@ -693,12 +692,19 @@ class MainActivity : FlutterActivity() {
         onComplete: (() -> Unit)? = null,
     ) {
         val generation = ++fadeGeneration
-        val start = if (target == 0f) MUSIC_VOLUME else 0f
+        // Always continue from the volume that is actually playing. Android
+        // can deliver several focus/lifecycle callbacks close together (for
+        // example while opening and closing the notification shade). Starting
+        // every new fade at 0 made those harmless callbacks sound like sudden
+        // dips followed by loud surges.
+        val clampedTarget = target.coerceIn(0f, MUSIC_VOLUME)
+        val start = currentMusicVolume
         repeat(FADE_STEPS) { index ->
             mainHandler.postDelayed({
                 if (generation != fadeGeneration || musicPlayer !== player) return@postDelayed
                 val progress = (index + 1).toFloat() / FADE_STEPS
-                val volume = start + (target - start) * progress
+                val volume = start + (clampedTarget - start) * progress
+                currentMusicVolume = volume
                 player.setVolume(volume, volume)
                 if (index == FADE_STEPS - 1) onComplete?.invoke()
             }, FADE_DURATION_MS * (index + 1) / FADE_STEPS)
@@ -712,21 +718,10 @@ class MainActivity : FlutterActivity() {
 
     private fun releaseMusicPlayer() {
         fadeGeneration++
-        musicEnhancer?.runCatching { release() }
-        musicEnhancer = null
         musicPlayer?.release()
         musicPlayer = null
+        currentMusicVolume = 0f
         currentMusicTrack = null
-    }
-
-    private fun attachMusicEnhancer(player: MediaPlayer) {
-        musicEnhancer?.runCatching { release() }
-        musicEnhancer = runCatching {
-            LoudnessEnhancer(player.audioSessionId).apply {
-                setTargetGain(MUSIC_GAIN_MILLIBELS)
-                enabled = true
-            }
-        }.getOrNull()
     }
 
     private fun stopMusic() {
@@ -776,7 +771,6 @@ class MainActivity : FlutterActivity() {
         private const val NOTIFICATION_PERMISSION_REQUEST = 781
         private const val MUSIC_VOLUME = 1.0f
         private const val DUCKED_VOLUME = 0.30f
-        private const val MUSIC_GAIN_MILLIBELS = 1200
         private const val EFFECTS_VOLUME = 0.72f
         private const val FADE_STEPS = 10
         private const val FADE_DURATION_MS = 320L

@@ -122,7 +122,11 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       _schedulePresentations();
     });
     _lifecycle = AppLifecycleListener(
-      onInactive: () => unawaited(HavenAudio.setAppInForeground(false)),
+      // Android reports `inactive` while a system overlay such as the
+      // notification shade is open. The Activity is still visible then, so
+      // pausing here makes the jukebox cut out during an ordinary swipe.
+      // `onHide`, `onPause`, and the native Activity lifecycle remain the
+      // authoritative boundaries for genuinely leaving DragonHaven.
       onHide: () => unawaited(HavenAudio.setAppInForeground(false)),
       onPause: () {
         unawaited(HavenAudio.setAppInForeground(false));
