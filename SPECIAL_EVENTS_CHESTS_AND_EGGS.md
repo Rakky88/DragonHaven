@@ -140,9 +140,9 @@ requirement, or gameplay rule; only explicitly recorded fields apply.
 |---|---|---|---|
 | Halloween | Gloamgourd | Charcoal harvest design with pumpkin light, vine horns, witchfire, and guardian wisps; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
 | Christmas | Hollyfrost | White-and-evergreen winter design with golden antlers, holly, frost crystal, and lantern light; six forms exist | Sprites and complete event contract approved; implementation has not started |
-| New Year's Day | Dawnchime | Indigo-and-dawn design with chimes, firework fins, turning-year rings, and sunrise ribbons; six forms exist | Sprites approved; detailed event proposal awaits owner decisions |
-| Valentine's Day | Rosevow | Rose-quartz vow design with petal wings, thorn-gold armor, and a warm heart gem; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
-| Pridefest | Spectrumplume | Pearl-and-prism festival design with a full-spectrum feather mantle and aurora ribbons; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
+| New Year's Day | Dawnchime | Indigo-and-dawn design with chimes, firework fins, turning-year rings, and sunrise ribbons; six forms exist | Sprites and complete event contract approved; implementation has not started |
+| Valentine's Day | Rosevow | Rose-quartz vow design with petal wings, thorn-gold armor, and a warm heart gem; six forms exist | Sprites and exactly-two-keeper Adventure confirmed; detailed event proposal awaits owner decisions |
+| Pridefest | Spectrumplume | Pearl-and-prism festival design with a full-spectrum feather mantle and aurora ribbons; six forms exist | Sprites approved; detailed event proposal awaits owner decisions |
 
 The current art package and review instructions live in
 [`future_event_art/dragon_families/README.md`](future_event_art/dragon_families/README.md).
@@ -186,16 +186,37 @@ decisions must be recorded before the corresponding event is implemented.
 - **Christmas / Hollyfrost:** material event choices are resolved in
   `NEW_EVENTS_PLAN.md`; its data, UI, assets, server contract, tests, and release
   remain to be implemented.
-- **New Year's Day / Dawnchime:** which timezone owns the year boundary;
-  approve the proposed 31 December–2 January window and handling of the
-  displayed year in recurring copy, plus the proposed Adventure, chest, egg,
-  Trial, ranking, music, preview, and identity rules in `NEW_EVENTS_PLAN.md`.
+- **New Year's Day / Dawnchime:** material event choices are resolved in
+  `NEW_EVENTS_PLAN.md`; its data, UI, assets, server contract, tests, and release
+  remain to be implemented.
 - **Valentine's Day / Rosevow:** exact window and recurrence; whether the story
-  focuses on romance, friendship, or both; whether participation is solo or
-  cooperative.
+  focuses on romance, friendship, or both. The Special Adventure must use
+  exactly two keepers; all detailed pairing, reward, chest, egg, Trial, preview,
+  music, and ranking proposals await approval in `NEW_EVENTS_PLAN.md`.
 - **Pridefest / Spectrumplume:** the exact named occasion and calendar window
   (there is no assumed universal Pridefest date), recurrence, story tone, and
-  any community/cooperative focus.
+  whether to add the proposed decorative worldwide Haven Spectrum meter. All
+  proposed Adventure, reward, chest, egg, Trial, preview, music, and ranking
+  fields await approval in `NEW_EVENTS_PLAN.md`.
+
+#### Planned event-specific chest and egg definitions
+
+These definitions remain outside the live catalog until their events are
+implemented. `Confirmed` means the owner has approved the content contract, not
+that the item currently exists in a released build.
+
+| Event | Adventure | Special Chest and fixed secret contents | Special Egg | Incubation and outcome | Status |
+|---|---|---|---|---|---|
+| Christmas | The Starlight Sleigh | Starlight Gift Chest: 250 coins, 12 gems, one Starlit Evergreen Egg | Starlit Evergreen Egg | 25 hours; 100% Hollyfrost | Confirmed |
+| New Year's Day | The Bell Beyond Midnight | Firstlight Celebration Chest: 365 coins, 12 gems, one Turning-Year Egg | Turning-Year Egg | 24 hours; 100% Dawnchime | Confirmed |
+| Valentine's Day | The Rosebound Crossing | Twinheart Keepsake Chest: 214 coins, 14 gems, one Rosebound Egg, separately for both keepers | Rosebound Egg | 14 hours; 100% Rosevow | Proposed |
+| Pridefest | The Aurora We Weave | Radiant Festival Chest: 300 coins, 15 gems, one Truecolor Egg | Truecolor Egg | 18 hours; 100% Spectrumplume | Proposed |
+
+All four planned chests and eggs are non-tradeable, have immutable event/version
+provenance, use fixed rather than random contents, conceal chest contents until
+opening, and propose or confirm 5% base Spectral odds rising to 10% when the egg
+hatches during Golden Hour. Their complete contracts live in
+`NEW_EVENTS_PLAN.md`.
 
 ### 2.3 Event-only Trial program (one per event confirmed; not implemented)
 
@@ -203,7 +224,8 @@ Each future event will have one temporary Trial that exists only while that
 event occurrence is active. When one event is active, its Trial joins the three
 standard Trial kinds as a fourth eligible refill result; the Trial board itself
 still shows at most three offers. Equal 25% weighting is confirmed for
-Halloween and Christmas; the other events still need their exact refill weight.
+Halloween, Christmas, and New Year; Valentine and Pridefest propose the same
+weight and still need owner approval.
 The individual game names and mechanics below remain design proposals unless
 their event section says otherwise. They intentionally use
 three distinct simple actions so Might, Spirit, and Arcana all matter without
@@ -235,7 +257,7 @@ Recommended common game rules:
 
 #### Event Trial rewards
 
-Halloween and Christmas event-Trial completions reuse the normal Trial grade table:
+Halloween, Christmas, and New Year event-Trial completions reuse the normal Trial grade table:
 the existing XP amount, chest roll, S+ relic roll, and S+ ordinary Trial-emote
 roll remain unchanged on every completed offer. The normal expertise amount is
 **split** across Might, Spirit, and Arcana instead of being granted three times:
@@ -263,17 +285,18 @@ The detailed New Year proposal adopts both rules but still requires approval.
 
 #### Temporary worldwide leaderboard
 
-The confirmed core Halloween and Christmas competition model is:
+The confirmed core Halloween, Christmas, and New Year competition model is:
 
 1. Only registered, e-mail-verified online keepers can submit ranked runs.
-   Christmas offline completion still grants its normal reward but cannot enter
-   the ranking; Halloween's exact offline behavior remains undecided.
+   Christmas and New Year offline completion still grant normal rewards but
+   cannot enter the ranking; Halloween's exact offline behavior remains
+   undecided.
 2. There is no separate practice mode or event attempt allowance. Every event
    Trial offer that appears through the normal refill system can be played once,
    grants its normal reward, and may improve the submitted best score.
-3. Only a keeper's highest verified score appears. For Christmas, tie-breakers
-   are higher accuracy, then shorter run time, then the earlier submission;
-   Halloween has not yet confirmed these tie-breakers.
+3. Only a keeper's highest verified score appears. For Christmas and New Year,
+   tie-breakers are higher accuracy, then shorter run time, then the earlier
+   submission; Halloween has not yet confirmed these tie-breakers.
 4. The board is live only during that event occurrence. At the exact close it
    becomes read-only, freezes the winners, grants prizes exactly once, and
    remains visible for five complete days with a results-expiry countdown.
@@ -294,8 +317,8 @@ Recommended podium rewards for every event occurrence:
 This requires three podium emotes per event (15 total). Suggested themes
 are Gloamgourd lantern reactions, Hollyfrost festive reactions, Dawnchime
 firework reactions, Rosevow heart reactions, and Spectrumplume radiant parade
-reactions. Christmas uses a visible win count instead of duplicate emotes;
-repeat handling remains TBD for the other events.
+reactions. Christmas and New Year use a visible win count instead of duplicate
+emotes; repeat handling remains TBD for the other events.
 
 Ranked attempts and prize delivery must be server-authoritative. The server
 should issue the occurrence ID, deterministic seed, nonce, and attempt token;
@@ -307,18 +330,18 @@ is not sufficient for a worldwide rewarded ranking.
 #### Decisions needed before implementation
 
 - approve or rename each of the five Trial concepts;
-- confirm equal weighting for New Year, Valentine's Day, and Pridefest when
-  their active Trial joins the refill pool;
-- decide whether New Year, Valentine's Day, and Pridefest adopt the balanced
-  expertise split and Christmas capped-point overflow rule;
+- confirm equal weighting for Valentine's Day and Pridefest when their active
+  Trial joins the refill pool;
+- decide whether Valentine's Day and Pridefest adopt the balanced expertise
+  split and Christmas/New Year capped-point overflow rule;
 - approve timer/failure behavior and final score/grade thresholds for every
   event after prototypes, without assuming a shared three-error rule;
 - confirm the proposed top-three chests and whether each podium place gets a
   distinct event emote;
 - choose repeat podium-emote handling for every event that does not adopt the
   confirmed Christmas win-count rule;
-- confirm whether New Year, Valentine's Day, and Pridefest also retain their
-  frozen top three in the Seasonal Chronicle after five days; and
+- confirm whether Valentine's Day and Pridefest also retain their frozen top
+  three in the Seasonal Chronicle after five days; and
 - define moderation/disqualification behavior for invalid ranked submissions.
 
 When one concept is selected for implementation, resolve its own fields only.

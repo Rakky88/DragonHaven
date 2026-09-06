@@ -468,23 +468,23 @@ alpha, crop, scale, contrast, memory, and emulator checks before release.
 | Event concept | New Year's Day | Confirmed |
 | Dragon family | Dawnchime; all six sprites approved | Confirmed |
 | Event Trial | One unique New Year Trial | Confirmed |
-| Trial concept | Midnight Chime: read a sigil, guide its firework, burst it on the midnight bell | Proposed |
-| Trial rotation | Fourth eligible kind with equal 25% refill chance while the event is active | Proposed |
-| Event display name | When the New Dawn Rings / Wanneer de Nieuwe Dageraad Klinkt | Proposed |
-| Stable event ID | `new_year_first_dawn` | Codex proposal |
-| Event story | Dawnchime must recover the final scattered chimes so the first sunrise can cross the Haven | Proposed |
-| First window | 31 December 2026 18:00 through 2 January 2027 00:00 | Proposed |
-| Timezone/recurrence | Europe/Amsterdam wall time; annually across the same year boundary | Proposed |
-| Special Adventure | The Bell Beyond Midnight / De Klok Voorbij Middernacht | Proposed |
-| Adventure duration | 72 hours before reduction | Proposed |
-| Completion after close | Adventure and already-started Trial may finish after close; neither can start after close | Proposed |
-| Adventure limit | Once per account per occurrence | Proposed |
-| Participation | Solo with one available owned dragon; no form/rarity minimum | Proposed |
-| Expertise reduction | Combined Might + Spirit + Arcana, 15 minutes per point, minimum 24 hours | Proposed |
-| Direct rewards | 700 XP, +10 Might, +10 Spirit, +10 Arcana, one Firstlight Celebration Chest | Proposed |
-| Advance disclosure | Show XP, expertise, and Special Chest; keep chest contents secret | Proposed |
+| Trial concept | Midnight Chime: read a sigil, guide its firework, burst it on the midnight bell | Confirmed |
+| Trial rotation | Fourth eligible kind with equal 25% refill chance while the event is active | Confirmed |
+| Event display name | When the New Dawn Rings / Wanneer de Nieuwe Dageraad Klinkt | Confirmed |
+| Stable event ID | `new_year_first_dawn` | Confirmed implementation ID |
+| Event story | Dawnchime must recover the final scattered chimes so the first sunrise can cross the Haven | Confirmed |
+| First window | 31 December 2026 18:00 through 2 January 2027 00:00 | Confirmed |
+| Timezone/recurrence | Europe/Amsterdam wall time; annually across the same year boundary | Confirmed |
+| Special Adventure | The Bell Beyond Midnight / De Klok Voorbij Middernacht | Confirmed |
+| Adventure duration | 72 hours before reduction | Confirmed |
+| Completion after close | Adventure and already-started Trial may finish after close; neither can start after close | Confirmed |
+| Adventure limit | Once per account per occurrence | Confirmed |
+| Participation | Solo with one available owned dragon; no form/rarity minimum | Confirmed |
+| Expertise reduction | Combined Might + Spirit + Arcana, 15 minutes per point, minimum 24 hours | Confirmed |
+| Direct rewards | 700 XP, +10 Might, +10 Spirit, +10 Arcana, one Firstlight Celebration Chest | Confirmed |
+| Advance disclosure | Show XP, expertise, and Special Chest; keep chest contents secret | Confirmed |
 
-### 6.1 Story and presentation proposal
+### 6.1 Story and presentation contract
 
 **Short event story:**
 
@@ -499,11 +499,11 @@ connect the Adventure, Trial, chest, egg, and ranking. The event card has a live
 availability countdown. Its detail page separates requirements, visible
 rewards, the Special Adventure, the event Trial, and the temporary ranking.
 
-The proposed access rule has no Tower-level, rarity, family, or alignment gate.
+The confirmed access rule has no Tower-level, rarity, family, or alignment gate.
 One notification is sent when the event opens, controlled by the existing
 Special Events notification toggle and deep-linked to this event.
 
-### 6.2 Special Adventure proposal
+### 6.2 Special Adventure contract
 
 **The Bell Beyond Midnight** is a solo, once-per-occurrence journey for one
 available dragon. Its 72-hour base duration is reduced by the participating
@@ -511,7 +511,7 @@ dragon's combined Might, Spirit, and Arcana at 15 minutes per point, never below
 24 hours. Starting is restricted to the active event window; once started, the
 Adventure remains safely finishable afterward.
 
-Proposed direct rewards are:
+Confirmed direct rewards are:
 
 - 700 XP for the participating dragon;
 - +10 Might, +10 Spirit, and +10 Arcana; and
@@ -520,7 +520,7 @@ Proposed direct rewards are:
 The XP, expertise, and presence of the Special Chest are visible before start.
 The chest contents are not shown.
 
-### 6.3 Midnight Chime Trial proposal
+### 6.3 Midnight Chime Trial contract
 
 **Midnight Chime** is a timed approximately 75-second sequence with three short
 actions per round:
@@ -545,39 +545,39 @@ an already-started run can finish afterward. It counts toward the Seven-day
 Trial Constellation, still subject to the global maximum of one day per local
 calendar date.
 
-The proposed expertise distribution and capped-point overflow reuse the now
+The confirmed expertise distribution and capped-point overflow reuse the
 confirmed Christmas rule: preserve the ordinary grade's total expertise,
 allocate its balanced split across all three areas, reroute capped points to an
 eligible area, and discard a point only when all three areas are capped.
 
-### 6.4 New Year chest and egg proposal
+### 6.4 New Year chest and egg contract
 
-| Field | Proposed value | Status |
+| Field | Confirmed value | Status |
 |---|---|---|
-| Chest definition ID | `new_year_firstlight_chest_v1` | Codex proposal |
-| Chest name | Firstlight Celebration Chest / Eerstelicht-feestkist | Proposed |
-| Chest contents | 365 coins, 12 gems, one Turning-Year Egg | Proposed |
-| Randomness | Fixed contents | Proposed |
-| Tradeability | Never tradeable | Proposed |
-| Player disclosure | Show only that a Special Chest is awarded; keep all contents secret until opening | Proposed |
+| Chest definition ID | `new_year_firstlight_chest_v1` | Confirmed implementation ID |
+| Chest name | Firstlight Celebration Chest / Eerstelicht-feestkist | Confirmed |
+| Chest contents | 365 coins, 12 gems, one Turning-Year Egg | Confirmed |
+| Randomness | Fixed contents | Confirmed |
+| Tradeability | Never tradeable | Confirmed |
+| Player disclosure | Show only that a Special Chest is awarded; keep all contents secret until opening | Confirmed |
 | Chest presentation | Own closed/open sprites and a layered bell, firework, and dawn-burst opening sound | Needed; Codex |
-| Egg definition ID | `new_year_turning_year_egg_v1` | Codex proposal |
-| Egg name | Turning-Year Egg / Jaarwende-ei | Proposed |
-| Egg outcome | Dawnchime only, 100% | Proposed |
-| Family type | Special; never counts for an ordinary rarity achievement | Proposed |
-| Incubation | Exactly 24 hours | Proposed |
-| Speed-up | No special tap acceleration; ordinary eligible incubation effects still apply | Proposed |
-| Spectral | 5% normally; 10% when hatching during Golden Hour | Proposed |
-| Moral nature | Always Neutral and immediately known, reflecting balance between the old and new year | Proposed |
-| Order/personality | Normal random identity rules; personality initially hidden | Proposed |
-| Tradeability | Never tradeable | Proposed |
-| Hatch achievement | First Light, First Flight | Proposed |
+| Egg definition ID | `new_year_turning_year_egg_v1` | Confirmed implementation ID |
+| Egg name | Turning-Year Egg / Jaarwende-ei | Confirmed |
+| Egg outcome | Dawnchime only, 100% | Confirmed |
+| Family type | Special; never counts for an ordinary rarity achievement | Confirmed |
+| Incubation | Exactly 24 hours | Confirmed |
+| Speed-up | No special tap acceleration; ordinary eligible incubation effects still apply | Confirmed |
+| Spectral | 5% normally; 10% when hatching during Golden Hour | Confirmed |
+| Moral nature | Always Neutral and immediately known, reflecting balance between the old and new year | Confirmed |
+| Order/personality | Normal random identity rules; personality initially hidden | Confirmed |
+| Tradeability | Never tradeable | Confirmed |
+| Hatch achievement | First Light, First Flight | Confirmed |
 
 Dawnchime otherwise uses normal evolution levels, expertise requirements and
 caps. Its six already approved forms remain classified as Special and outside
 ordinary rarity-achievement progress.
 
-### 6.5 Ranking proposal
+### 6.5 Ranking contract
 
 The New Year ranking reuses the Christmas safety and fairness rules: registered
 and e-mail-verified accounts, server-issued attempt tokens, rewarded offline
@@ -597,20 +597,20 @@ A later annual occurrence begins with an empty ranking.
 An already-owned podium emote receives a visible podium-win count instead of a
 duplicate; its chest reward is still granted.
 
-### 6.6 Outside-season preview proposal
+### 6.6 Outside-season preview contract
 
-Proposed redeem code: `NEWYEARSEVENT`, inactive until implementation. The
-recommended contract matches Christmas:
+Confirmed future redeem code: `NEWYEARSEVENT`, inactive until implementation.
+Its contract matches Christmas:
 
 - only Keeper ID `DH-17792DC5` can use it;
 - it opens a reusable personal 48-hour preview after the previous preview ends;
 - production rewards are simulated and cannot change permanent inventory;
 - scores use a separate test ranking;
-- staging may grant persistent staging rewards for complete reward and
+- staging grants persistent staging-only rewards for complete reward and
   idempotency verification; and
 - the UI and diagnostic export label the occurrence as `TEST EVENT`.
 
-### 6.7 Music, sound, and art proposal
+### 6.7 Music, sound, and art contract
 
 The event receives one temporary New Year background track that is automatically
 enabled on first event entry when global music is enabled, remains switchable in
@@ -622,42 +622,297 @@ Lang Syne**, kept separate from any permanently owned Jukebox recording.
 New assets still needed are the event banner/card, first-dawn sky, great bell,
 firework rings and trails, Trial UI pieces and reactions, closed/open chest,
 egg, three podium emotes, and bell/firework/chest/success/error sounds. Existing
-approved Dawnchime family sprites are reused. Whether the owner wants a separate
-emulator review of these non-dragon assets remains undecided.
+approved Dawnchime family sprites are reused. The blanket approval is recorded
+as permission for Codex's repeated visual checks without a separate owner review
+of the non-dragon New Year assets.
 
-## 7. Valentine's Day event intake
+## 7. Valentine's Day event proposal
+
+### 7.1 Current event card
 
 | Field | Current value | Status |
 |---|---|---|
 | Event concept | Valentine's Day | Confirmed |
 | Dragon family | Rosevow; all six sprites approved | Confirmed |
-| Event Trial | One unique Valentine's Trial | Confirmed |
-| Trial concept | Rosevow Relay: match heart sigils, trace safe path, break thorn lock | Proposed |
-| Trial rotation | Fourth eligible kind while the Valentine's event is active | Confirmed program rule |
-| Display name/story and romance/friendship tone | Not supplied yet | TBD |
-| Schedule/timezone/recurrence | Not supplied yet | TBD |
-| Solo/cooperative Adventure and requirements | Not supplied yet | TBD |
-| Duration, reduction and direct rewards | Not supplied yet | TBD |
-| Special Chest/Egg and Rosevow gameplay rules | Not supplied yet | TBD |
-| Ranking and outside-season preview | Not supplied yet | TBD |
-| New visual/audio assets | Defined after content choices | TBD |
+| Event Trial | One unique solo Valentine's Trial | Confirmed |
+| Trial concept | Rosevow Relay: match heart sigils, trace their ribbon, break the thorn lock | Proposed |
+| Trial rotation | Fourth eligible kind with equal 25% refill chance while active | Proposed |
+| Event display name | Where Two Heartlights Meet / Waar Twee Hartlichten Samenkomen | Proposed |
+| Stable event ID | `valentine_two_heartlights` | Codex proposal |
+| Event story | Rosevow needs two keepers to reunite the separated halves of the Heartbloom Bridge | Proposed |
+| First window | 13 February 2027 00:00 through 15 February 2027 00:00 | Proposed |
+| Timezone/recurrence | Europe/Amsterdam wall time; annually | Proposed |
+| Special Adventure | The Rosebound Crossing / De Rozengebonden Oversteek | Proposed |
+| Adventure duration | 96 hours before reduction | Proposed |
+| Completion after close | Adventure and already-started Trial may finish after close; neither can start after close | Proposed |
+| Adventure limit | Once per keeper per occurrence; one active Valentine party per keeper | Proposed |
+| Participation | Exactly two registered keepers, each contributing one available owned dragon | User requires two people; detailed pairing rules proposed |
+| Expertise reduction | Combined Might + Spirit + Arcana of both dragons, 15 minutes per point, minimum 24 hours | Proposed |
+| Direct reward per keeper | 650 XP and +8 Might/+8 Spirit/+8 Arcana for that keeper's dragon, plus one Twinheart Keepsake Chest | Proposed |
+| Advance disclosure | Show both participants, requirements, XP, expertise, and chest; keep chest contents secret | Proposed |
 
-## 8. Pridefest event intake
+### 7.2 Story, pairing, and presentation proposal
+
+**Short event story:**
+
+> Once each year, the Heartbloom Bridge opens between two distant towers. This
+> time its twin lights have drifted apart. Rosevow calls on two keepers to carry
+> one light each, trust the same path, and bind the bridge together before its
+> final petals fall.
+
+The story celebrates affection, friendship, and chosen bonds rather than
+requiring the two keepers to describe their real relationship. The UI is warm
+and romantic—rose quartz, candle gold, petal ribbons, and paired heartlights—
+while remaining comfortable for friends or family playing together.
+
+The recommended party contract is:
+
+- exactly two registered keepers with one available dragon each;
+- the partner can be invited from Friends, a Conclave, or by Keeper ID;
+- friendship is not required, but there is no anonymous random matchmaking;
+- each keeper can accept only one Valentine party per occurrence;
+- no completion is consumed and no dragon is reserved until both keepers accept
+  and the creator explicitly starts the Adventure;
+- after start, both dragons remain away until the shared timer completes;
+- completion and rewards are server-authoritative and independently claimable,
+  so one absent partner cannot prevent the other from receiving rewards; and
+- the ordinary no-abort rule for Group Adventures remains in effect after start.
+
+The event detail page shows both portraits, frames, badges, dragon sprites,
+combined expertise, calculated duration, and clear readiness states. It also
+has an availability countdown and distinct Requirements, Rewards, Adventure,
+solo Trial, and Ranking sections.
+
+### 7.3 Special Adventure proposal
+
+**The Rosebound Crossing** has a 96-hour base duration. The six participating
+expertise values—Might, Spirit, and Arcana from both dragons—reduce it by 15
+minutes per point, never below 24 hours. It can only start while the event is
+active and remains finishable afterward.
+
+Each keeper receives separately:
+
+- 650 XP for their own participating dragon;
+- +8 Might, +8 Spirit, and +8 Arcana for that dragon; and
+- one non-tradeable **Twinheart Keepsake Chest**.
+
+A Keeper Journal entry may remember the partner's display name and Keeper ID at
+completion. The proposed optional social milestone is a shared, non-tradeable
+**Heartbound Pair** badge on first completion together; whether this badge is
+included and how it behaves for repeat pairings still needs owner approval.
+
+### 7.4 Rosevow Relay Trial proposal
+
+The Valentine Trial remains a solo activity using one available dragon. A run
+lasts approximately 75 seconds:
+
+1. Arcana finds the two matching heart sigils among visually distinct decoys.
+2. Spirit traces the glowing ribbon connecting them without touching thorn
+   branches.
+3. Might breaks the final thorn clasp when its rose-gold center brightens.
+
+Correct rounds grow a capped **Heartlight Chain**. A mistake resets the chain
+and costs time; it does not consume one of three arbitrary lives. Arcana extends
+the symbol preview slightly, Spirit adds path tolerance, and Might widens the
+timing center slightly. Assistance is capped and never multiplies ranking score.
+
+Rosevow Relay joins the three normal Trial kinds with an equal 25% refill chance
+during the event. Every offered run grants ordinary Trial rewards, there is no
+separate attempt cap or practice mode, and the best validated score ranks. It
+counts toward the Seven-day Trial Constellation once per local day. Starts are
+limited to the event window; an already-started run may finish afterward.
+
+### 7.5 Valentine chest, egg, and dragon proposal
+
+| Field | Proposed value | Status |
+|---|---|---|
+| Chest definition ID | `valentine_twinheart_chest_v1` | Codex proposal |
+| Chest name | Twinheart Keepsake Chest / Tweeharten-aandenkenkist | Proposed |
+| Chest contents | 214 coins, 14 gems, one Rosebound Egg | Proposed |
+| Randomness | Fixed contents | Proposed |
+| Tradeability | Never tradeable | Proposed |
+| Player disclosure | Reveal nothing beyond “Special Chest” until opening | Proposed |
+| Chest presentation | Own closed/open sprites and layered heartbeat, petals, harp, and magical-unlock sound | Needed; Codex |
+| Egg definition ID | `valentine_rosebound_egg_v1` | Codex proposal |
+| Egg name | Rosebound Egg / Rozenband-ei | Proposed |
+| Egg outcome | Rosevow only, 100% | Proposed |
+| Family type | Special; never counts for an ordinary rarity achievement | Proposed |
+| Incubation | Exactly 14 hours | Proposed |
+| Speed-up | No special tap acceleration; ordinary eligible incubation effects apply | Proposed |
+| Spectral | 5% normally; 10% when hatching during Golden Hour | Proposed |
+| Moral nature | Always Good and immediately known | Proposed |
+| Order/personality | Normal random identity rules; personality initially hidden | Proposed |
+| Tradeability | Never tradeable | Proposed |
+| Hatch achievement | Two Hearts, One Flight | Proposed |
+
+Rosevow otherwise uses normal evolution levels, expertise requirements, and
+caps. Both keepers receive their own egg and independently unlock the hatch
+achievement when it hatches.
+
+### 7.6 Valentine ranking proposal
+
+The solo Trial ranking adopts the Christmas/New Year rules: verified accounts,
+online-validated ranking attempts, rewarded offline completion without ranking,
+best score, accuracy/time/earliest-submission tie-breakers, five-day full result
+visibility, then a permanent top three in the Seasonal Chronicle.
+
+| Place | Chest | Unique Rosevow emote |
+|---:|---|---|
+| 1 | Mythical Chest | **Crowned in Roses** — Rosevow beneath a radiant heart-petal crown |
+| 2 | Dragon Chest | **Silver Heartglow** — Rosevow holding two silver heartlights together |
+| 3 | Gold Chest | **Blushing Bloom** — Rosevow shyly surrounded by bronze-pink petals |
+
+Repeat winners retain the chest and add one to the owned emote's visible podium
+win count.
+
+### 7.7 Valentine preview, music, and assets proposal
+
+Proposed code: `VALENTINEEVENT`, restricted to `DH-17792DC5`, reusable after a
+48-hour preview expires, with simulated production rewards, isolated test
+ranking, and persistent staging-only test rewards. The event sends one opening
+notification through the Special Events toggle.
+
+The temporary event track is automatically enabled when global music is on,
+remains switchable, and disappears after the event/preview. Codex sources a
+commercial-use recording explicitly released as CC0/Public Domain; the proposed
+direction is **Salut d'Amour**. New art includes the event banner, bridge,
+heartlights, Trial background and pieces, chest, egg, optional badge, and three
+podium emotes, plus matching petal/heart/chest/gameplay sounds.
+
+## 8. Pridefest event proposal
+
+### 8.1 Current event card
 
 | Field | Current value | Status |
 |---|---|---|
 | Event concept | Pridefest | Confirmed |
 | Dragon family | Spectrumplume; all six sprites approved | Confirmed |
-| Event Trial | One unique Pridefest Trial | Confirmed |
-| Trial concept | Prismatic Parade: remember colors, guide beam, crack crystal on beat | Proposed |
-| Trial rotation | Fourth eligible kind while the Pridefest event is active | Confirmed program rule |
-| Exact named occasion and inclusive story | Not supplied yet | TBD |
-| Schedule/timezone/recurrence | No universal date may be assumed | TBD |
-| Adventure, participation, requirements and duration | Not supplied yet | TBD |
-| Expertise reduction and direct rewards | Not supplied yet | TBD |
-| Special Chest/Egg and Spectrumplume gameplay rules | Not supplied yet | TBD |
-| Ranking and outside-season preview | Not supplied yet | TBD |
-| New visual/audio assets | Defined after content choices | TBD |
+| Event Trial | One unique solo Pridefest Trial | Confirmed |
+| Trial concept | Prismatic Parade: read color-shapes, guide their light, crack the dull crystal on beat | Proposed |
+| Trial rotation | Fourth eligible kind with equal 25% refill chance while active | Proposed |
+| Event display name | The Haven of Every Color / De Haven van Iedere Kleur | Proposed |
+| Stable event ID | `pride_every_color` | Codex proposal |
+| Event story | Spectrumplume relights the Prism Beacon so every keeper and dragon can show their true colors | Proposed |
+| First window | 1 June 2027 00:00 through 8 June 2027 00:00 | Proposed |
+| Timezone/recurrence | Europe/Amsterdam wall time; annually | Proposed |
+| Special Adventure | The Aurora We Weave / De Aurora die Wij Weven | Proposed |
+| Adventure duration | 84 hours before reduction | Proposed |
+| Completion after close | Adventure and already-started Trial may finish after close; neither can start after close | Proposed |
+| Adventure limit | Once per keeper per occurrence | Proposed |
+| Participation | Solo with one available owned dragon; no form/rarity/alignment gate | Proposed |
+| Expertise reduction | Combined Might + Spirit + Arcana, 15 minutes per point, minimum 24 hours | Proposed |
+| Direct rewards | 700 XP, +10 Might/+10 Spirit/+10 Arcana, one Radiant Festival Chest, and unique True Colors title | Proposed |
+| Advance disclosure | Show XP, expertise, chest, and title; keep chest contents secret | Proposed |
+
+### 8.2 Story, presentation, and optional community layer
+
+**Short event story:**
+
+> The Prism Beacon once welcomed every color into the Haven, but its light has
+> scattered into lonely strands. Spectrumplume invites every keeper and dragon
+> to bring their own light—not to make the colors the same, but to let them shine
+> together across one boundless sky.
+
+The visual language is joyful, magical, and explicitly inclusive without using
+color alone to communicate gameplay state. Every colored rune also has a shape,
+pattern, label, and accessible contrast treatment.
+
+The recommended Adventure is solo so nobody needs a partner or Conclave to earn
+the event dragon. An optional **Haven Spectrum** display can count worldwide
+Adventure completions and gradually illuminate seven decorative ribbons on the
+event page. It is celebratory only: no personal reward, ranking, or dragon is
+gated behind community participation. The owner still needs to decide whether
+to include this server-backed visual meter.
+
+### 8.3 Special Adventure proposal
+
+**The Aurora We Weave** has an 84-hour base duration. The dragon's combined
+Might, Spirit, and Arcana reduce it by 15 minutes per point, never below 24
+hours. It is once per occurrence, can only start during the active week, and
+remains finishable afterward.
+
+The proposed visible direct rewards are:
+
+- 700 XP for the participating dragon;
+- +10 Might, +10 Spirit, and +10 Arcana;
+- one non-tradeable **Radiant Festival Chest**; and
+- the unique, non-tradeable **True Colors** account title on first completion.
+
+On later yearly completions the title is not duplicated and has no currency
+fallback; the annual XP, expertise, and chest remain available.
+
+### 8.4 Prismatic Parade Trial proposal
+
+The solo approximately 75-second Trial repeats three actions:
+
+1. Arcana remembers a two-part recipe identified by both color and symbol.
+2. Spirit guides its light ribbon through matching patterned parade hoops.
+3. Might cracks a gray crystal exactly on the musical beat, releasing its color.
+
+Correct rounds grow a capped **Radiance Chain**. Errors reset the chain and cost
+time but do not use a fixed three-life rule. Arcana slightly extends recipe
+visibility, Spirit slightly improves hoop tolerance, and Might slightly widens
+the beat window. Assistance remains capped and never multiplies submitted score.
+
+Prismatic Parade has a 25% refill chance beside the three ordinary Trials while
+active. Every offer grants normal Trial rewards, there is no attempt cap or
+practice mode, and the best verified score ranks. It counts toward the Seven-day
+Trial Constellation under its one-day limit. A run can only start during the
+event, but an already-started run can finish afterward.
+
+### 8.5 Pride chest, egg, and dragon proposal
+
+| Field | Proposed value | Status |
+|---|---|---|
+| Chest definition ID | `pride_radiant_festival_chest_v1` | Codex proposal |
+| Chest name | Radiant Festival Chest / Stralende Festivalkist | Proposed |
+| Chest contents | 300 coins, 15 gems, one Truecolor Egg | Proposed |
+| Randomness | Fixed contents | Proposed |
+| Tradeability | Never tradeable | Proposed |
+| Player disclosure | Reveal nothing beyond “Special Chest” until opening | Proposed |
+| Chest presentation | Own closed/open sprites and layered prism, crowd, chime, and radiant-burst sound | Needed; Codex |
+| Egg definition ID | `pride_truecolor_egg_v1` | Codex proposal |
+| Egg name | Truecolor Egg / Warekleuren-ei | Proposed |
+| Egg outcome | Spectrumplume only, 100% | Proposed |
+| Family type | Special; never counts for an ordinary rarity achievement | Proposed |
+| Incubation | Exactly 18 hours | Proposed |
+| Speed-up | No special tap acceleration; ordinary eligible incubation effects apply | Proposed |
+| Spectral | 5% normally; 10% when hatching during Golden Hour | Proposed |
+| Moral nature | Always Good and immediately known | Proposed |
+| Order/personality | Normal random identity rules; personality initially hidden | Proposed |
+| Tradeability | Never tradeable | Proposed |
+| Hatch achievement | Every Color Takes Flight | Proposed |
+
+Spectrumplume otherwise uses normal evolution levels, expertise requirements,
+and caps.
+
+### 8.6 Pride ranking proposal
+
+The ranking adopts the Christmas/New Year rules, including rewarded offline
+completion without ranking, registered/verified eligibility, server validation,
+best score, shared tie-breakers, five-day results, Seasonal Chronicle, and the
+repeat-win counter.
+
+| Place | Chest | Unique Spectrumplume emote |
+|---:|---|---|
+| 1 | Mythical Chest | **Crowned in Every Color** — Spectrumplume beneath a brilliant prismatic crown |
+| 2 | Dragon Chest | **Silver Aurora Salute** — Spectrumplume sweeping a silver-rainbow ribbon skyward |
+| 3 | Gold Chest | **Bronze Rainbow Cheer** — Spectrumplume celebrating inside a warm bronze prism |
+
+### 8.7 Pride preview, music, and assets proposal
+
+Proposed code: `PRIDEFESTEVENT`, restricted to `DH-17792DC5`, reusable after its
+48-hour preview expires, with simulated production rewards, isolated test
+ranking, and persistent staging-only test rewards. One opening notification is
+sent through the Special Events toggle.
+
+The temporary event track is enabled when global music is on, remains
+individually switchable, and disappears afterward. Rather than forcing a
+classical association, Codex sources a joyful modern instrumental explicitly
+released as CC0/Public Domain for commercial use. New assets include the banner,
+Prism Beacon, aurora, seven optional community ribbons, accessible patterned
+Trial parts, chest, egg, title presentation, podium emotes, and layered festival,
+crystal, success, error, chest, and ambience sounds.
 
 ## 9. Implementation roadmap per event
 
@@ -753,37 +1008,76 @@ layout, and a game-specific ending mechanic through tests and playtesting. This
 does not authorize changing the schedule, rewards, odds, availability, ranking
 contract, or preview safety model.
 
-## 14. Current owner decisions still required for New Year
+## 14. New Year owner decisions
 
-1. Approve or replace the proposed display name, story, stable ID, Adventure
-   name, and Dutch names.
-2. Confirm the first window (31 December 2026 18:00 through 2 January 2027
+All proposed New Year choices were approved together on 6 September 2026. The
+approval includes the event contract, names, dates, rewards, Dawnchime identity,
+Trial, ranking, preview, temporary music, notification, and Codex-only repeated
+visual checks for the new non-dragon assets.
+
+## 15. Current owner decisions still required for Valentine
+
+1. Approve or replace **Where Two Heartlights Meet**, **The Rosebound Crossing**,
+   their Dutch names, stable ID, inclusive bond-focused story, and presentation.
+2. Confirm the first window (13 February 2027 00:00 through 15 February 2027
    00:00), Europe/Amsterdam timezone, and annual recurrence.
-3. Confirm solo participation, one available dragon, once per occurrence,
-   72-hour base duration, 15 minutes per combined expertise point, and 24-hour
+3. Confirm exactly two registered keepers with one dragon each; invitations from
+   Friends, Conclave, or Keeper ID; no friendship requirement and no anonymous
+   matchmaking.
+4. Confirm once per keeper per occurrence, reservation only after both accept
+   and the creator starts, no abort after start, and independently claimable
+   rewards even if the partner is absent.
+5. Approve a 96-hour base duration, both dragons' combined expertise at 15
+   minutes per point, and a 24-hour minimum.
+6. Approve 650 XP, +8 to all three expertises, and one chest **per keeper and
+   participating dragon**.
+7. Decide whether first shared completion also grants the unique Heartbound Pair
+   badge and stores a partner-specific Keeper Journal entry.
+8. Confirm the secret fixed chest contents (214 coins, 14 gems, Rosebound Egg),
+   non-tradeability, and event-specific art/audio.
+9. Confirm the 14-hour Rosevow-only egg, normal eligible incubation effects,
+   5%/10% Golden Hour Spectral rules, always-Good known nature, random Order and
+   personality, and **Two Hearts, One Flight** achievement.
+10. Approve the timed Rosevow Relay loop and adoption of all shared refill,
+    reward, constellation, offline/ranking, tie-breaker, retention, podium, and
+    repeat-win rules.
+11. Approve the three named Rosevow podium emotes and associated Mythical,
+    Dragon, and Gold Chest rewards.
+12. Approve `VALENTINEEVENT`, the owner-only reusable 48-hour preview, simulated
+    production rewards, isolated test board, persistent staging fixtures, one
+    notification, and Codex-sourced verified CC0/Public Domain Salut d'Amour
+    direction.
+13. Choose owner emulator review or Codex-only repeated visual review for the
+    new non-dragon Valentine assets.
+
+## 16. Current owner decisions still required for Pridefest
+
+1. Approve or replace **The Haven of Every Color**, **The Aurora We Weave**,
+   their Dutch names, stable ID, story, and inclusive presentation.
+2. Confirm the first window (1 June 2027 00:00 through 8 June 2027 00:00),
+   Europe/Amsterdam timezone, and annual recurrence.
+3. Confirm solo participation, one available dragon, once per occurrence, an
+   84-hour base duration, 15 minutes per combined expertise point, and 24-hour
    minimum.
-4. Approve the direct 700 XP, +10 to each expertise, and one Firstlight
-   Celebration Chest reward.
-5. Confirm the fixed secret chest contents: 365 coins, 12 gems, and one
-   Turning-Year Egg; both chest and egg non-tradeable.
-6. Confirm the 24-hour Dawnchime-only egg, normal eligible incubation effects,
-   5%/10% Golden Hour Spectral rules, and **First Light, First Flight** hatch
-   achievement.
-7. Approve always Neutral and immediately known for Dawnchime, with random Order
-   and initially hidden random personality, or choose another identity rule.
-8. Approve the 75-second Midnight Chime loop, timer ending, mistake penalties,
-   equal 25% refill weighting, no attempt cap/practice mode, and ordinary Trial
-   rewards.
-9. Confirm that the Christmas constellation, offline/ranking, eligibility,
-   tie-breaker, five-day results, Seasonal Chronicle, podium, and repeat-win
-   rules also apply to New Year.
-10. Approve `NEWYEARSEVENT`, Keeper ID `DH-17792DC5`, reusable 48-hour preview,
-    simulated production rewards, separate test ranking, and persistent staging
-    fixtures.
-11. Confirm one opening notification and authorize Codex to source a verified
-    CC0/Public Domain New Year track in the proposed Auld Lang Syne direction.
-12. Decide whether the newly created non-dragon New Year assets require a
-    separate emulator approval round or may use Codex's repeated visual checks.
+4. Approve 700 XP, +10 to every expertise, one Radiant Festival Chest, and the
+   unique True Colors title; on repeat years the title has no fallback reward.
+5. Decide whether to build the decorative worldwide Haven Spectrum completion
+   meter, with no reward or progression gated behind it.
+6. Confirm the fixed secret chest contents (300 coins, 15 gems, Truecolor Egg),
+   non-tradeability, and event-specific art/audio.
+7. Confirm the 18-hour Spectrumplume-only egg, normal eligible incubation
+   effects, 5%/10% Golden Hour Spectral rules, always-Good known nature, random
+   Order and personality, and **Every Color Takes Flight** achievement.
+8. Approve the timed, shape-and-color-accessible Prismatic Parade loop and all
+   shared Trial, constellation, ranking, result-retention, and repeat-win rules.
+9. Approve the three named Spectrumplume podium emotes and associated Mythical,
+   Dragon, and Gold Chest rewards.
+10. Approve `PRIDEFESTEVENT`, the owner-only reusable 48-hour preview, simulated
+    production rewards, isolated test board, persistent staging fixtures, one
+    notification, and a Codex-sourced verified CC0/Public Domain modern festival
+    instrumental.
+11. Choose owner emulator review or Codex-only repeated visual review for the
+    new non-dragon Pridefest assets.
 
 No production migration, public release, paid service, or live server mutation
 is authorized by this planning document.
