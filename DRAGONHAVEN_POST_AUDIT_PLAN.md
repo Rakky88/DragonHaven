@@ -3,7 +3,7 @@
 Laatst bijgewerkt: **6 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.05.11**
+Actuele openbare versie: **v0.05.12**
 
 Actuele productieserver: **36/36 releasebranchmigraties; ongewijzigd en gezond**
 
@@ -13,39 +13,35 @@ kandidaat. Ze zijn bewust niet opgenomen in de v0.05.12-releasebranch en niet
 op productie toegepast. De openbare app blijft daardoor exact compatibel met
 de gezonde productieomgeving op migratie 36.**
 
-Actuele uitgebrachte tranche: **v0.05.11 is openbaar uitgebracht met versionCode
-10061. Chest en Trial S+ bevatten ieder 55 unieke winbare emotes, waaronder per
-pool vijf huilreacties; samen met de 30 packemotes bevat de app 140 chat-emotes.
-Productiepreflight, analyzer, alle 414 tests, vaste signing, Play Store-AAB,
-remote assetcontrole en post-release health zijn groen. Deze release bevatte
-geen servermigratie.**
+Actuele uitgebrachte tranche: **v0.05.12 is openbaar uitgebracht met versionCode
+10062. De Trial-constellatie telt alleen echte completion en maximaal één dag
+per kalenderdag; Android-muziek blijft stabiel rond het notificatiescherm,
+tabletcompatibiliteit is expliciet en geregistreerde keepers krijgen een
+wegdrukbare updatepopup met directe updateactie. Productiepreflight, analyzer,
+alle 424 tests, vaste signing, Play Store-AAB, remote assetcontrole en
+post-release health zijn groen. Deze release bevatte geen servermigratie.**
 
-Actuele lokale releasetranche: **v0.05.12 met versionCode 10062 bevat uitsluitend
-de appveilige wijzigingen sinds v0.05.11: echte Trial-completion als bron voor
-maximaal één constellatiedag per kalenderdag, stabiele Android-muziek rond het
-notificatiescherm, expliciete tabletcompatibiliteit en een wegdrukbare
-opstartmelding met directe updateactie voor geregistreerde keepers. Alle actieve
-redeemcodes blijven gedeactiveerd. De auditmigraties 37–39 zijn bewust buiten
-deze releasebranch gehouden; productie blijft op 36. Analyzer en alle 424 tests
-zijn groen. De productiepreflight bewijst 36/36, nul lintfouten en HTTP 200 voor
-Auth en applicatiehealth. De ondertekende APK heeft package
-`nl.dragonhaven.app`, versionCode 10062, het vaste certificaat en de hieronder
-vastgelegde hash en grootte.**
+Actuele lokale releasetranche: **de serverveilige v0.05.12-releasebranch is
+gelijk aan de openbare apprelease. Alle actieve redeemcodes blijven
+gedeactiveerd. De auditmigraties 37–39 blijven bewust buiten de openbare
+releasegeschiedenis; productie blijft op 36. Vervolgwerk aan de audit gebeurt
+afzonderlijk en vereist opnieuw de passende staging-, migratie- en
+releasegoedkeuring voordat het productie of de openbare app kan raken.**
 
 Server- en releasebewijs: **de actuele
-[release v0.05.11](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.11)
-wijst exact naar commit `95881fb02d74b1fa10694578e8e0e2a09ce94208` en bevat één
-`DragonHaven.apk` van 416.935.961 bytes met SHA-256
-`e2d78232df3851215fb74f5f54407215443652e07bcd176fd930bcc3d61cf8e2`.
+[release v0.05.12](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.12)
+wijst exact naar commit `dae1311645f9c5567f62a85bc7a9e96984fe78cf` en bevat één
+`DragonHaven.apk` van 417.034.473 bytes met SHA-256
+`5c5d12610e0603c8032096791c5a31a7cacc363f9273bbee2a1b8cbd2b5722bb`.
 Remote grootte en digest zijn gelijk aan lokaal; de versiegebonden en permanente
 latest-download geven HTTP 200. De
-[taggate 33967651302](https://github.com/Rakky88/DragonHaven/actions/runs/33967651302)
-herhaalde productiepreflight, analyzer, 414 tests, vaste signing, Play-ready AAB
+[taggate 34048559020](https://github.com/Rakky88/DragonHaven/actions/runs/34048559020)
+herhaalde productiepreflight, analyzer, 424 tests, vaste signing, Play-ready AAB
 en artifactcontrole volledig groen. De
-[post-release healthrun 33968083818](https://github.com/Rakky88/DragonHaven/actions/runs/33968083818)
+[post-release healthrun 34049045726](https://github.com/Rakky88/DragonHaven/actions/runs/34049045726)
 bevestigde Auth en applicatiehealth zonder storingsalert. Productie staat op
-36/36 voor deze releasebranch; staging bewaart afzonderlijk het dormante
-auditfundament tot en met migratie 38.**
+36/36 voor deze releasebranch; auditmigraties 37–39 bleven volledig buiten deze
+release en buiten productie.**
 
 Open meldingsgrens: **privéberichten worden nu merkbaar sneller en retrybaar
 opgehaald zolang het appproces leeft en direct bij resume. Gegarandeerde bezorging
@@ -1262,6 +1258,8 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 06-09-2026 | Trial-constellatiedagen aan echte completion gekoppeld | Codex | saveschema 51, `trialStreakCreditedDayKeys`, streaknormalisatie en drie nieuwe providerregressies | Iedere gevulde dag heeft nu een opgeslagen dagbewijs dat uitsluitend in `completeTrial` ontstaat. Alleen datumverversing gedurende acht dagen blijft 0/7; meerdere Trials op dezelfde lokale kalenderdag blijven 1/7. Bij het laden verwijdert de migratie aantoonbaar een vooruitgeschoven dag wanneer `trialStreakLastDayKey` geen overeenkomende laatst voltooide Trial heeft, terwijl geldige bestaande streaks behouden blijven. Analyzer, 111 gerichte provider-/widgettests en alle 439/439 tests zijn groen. De bewaakte kans- en Special-contentdocumenten zijn na inhoudelijke controle opnieuw gesynchroniseerd; odds en eventinhoud veranderden niet. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
 | 06-09-2026 | Alle bestaande redeemcodes gedeactiveerd | Codex | lege `redeemCodeCatalog`, `REDEEM_CODES.md` en catalogus-/documentatieregressies | De redemption-infrastructuur blijft beschikbaar voor toekomstige campagnes, maar de actieve catalogus bevat nul codes. Alle eerder uitgegeven codes geven voortaan dezelfde inactieve uitkomst en kunnen geen pack of emote meer verlenen; al rechtmatig verkregen items worden niet afgenomen. Het Engelstalige levende naslagwerk vermeldt expliciet dat er geen actieve codes zijn en de bronfingerprint is bijgewerkt. Analyzer, 102 gerichte tests en alle 439/439 tests zijn groen. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
 | 06-09-2026 | v0.05.12 lokale, serverveilige releasecandidate bewezen | Codex, na jouw toestemming | `release-notes-v0.05.12.md`, versie-/updaterregressies, 424 tests, ondertekende `DragonHaven.apk`/AAB en `release_server_preflight.ps1` | App- en zichtbare versie staan op v0.05.12 met versionCode 10062. De release bevat de echte Trial-completiongate, stabiele Android-muziek rond de notification shade, tabletcompatibiliteit en een wegdrukbare updatepopup voor geregistreerde keepers. APK heeft package `nl.dragonhaven.app`, 417.034.473 bytes, SHA-256 `5c5d12610e0603c8032096791c5a31a7cacc363f9273bbee2a1b8cbd2b5722bb` en het vaste certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. De Play-ready AAB heeft 411.742.905 bytes, SHA-256 `ebd3bd217adaa90311820f15b00d20ed5a0c5934d0bd8866ed80e1d30631950d` en hetzelfde certificaat. Analyzer, documentgates en 424/424 tests zijn groen. De verplichte productiepreflight bewijst 36/36 releasebranchmigraties, nul lintfouten en HTTP 200 voor Auth, instellingen en applicatiehealth. Auditmigraties 37–39 zijn doelbewust niet meegetagd of op productie toegepast. |
+
+| 06-09-2026 | v0.05.12 openbaar en volledig groen | Codex, na jouw toestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.12), [taggate 34048559020](https://github.com/Rakky88/DragonHaven/actions/runs/34048559020) en [healthrun 34049045726](https://github.com/Rakky88/DragonHaven/actions/runs/34049045726) | Exact commit `dae1311645f9c5567f62a85bc7a9e96984fe78cf` is getagd en v0.05.12 is Latest. Remote `DragonHaven.apk` heeft exact de lokale grootte van 417.034.473 bytes en SHA-256 `5c5d12610e0603c8032096791c5a31a7cacc363f9273bbee2a1b8cbd2b5722bb`; releasepagina, versiegebonden APK en permanente latest-download geven HTTP 200. De taggate herhaalde productiepreflight, analyzer, 424 tests, vaste signing, Play-ready AAB en artifactupload groen. De losse healthrun bevestigde Auth en applicatiehealth, uploadde bewijs, sloot een eventueel hersteld alert en opende geen storingsalert. Productie bleef ongewijzigd op 36/36; auditmigraties 37–39 bleven buiten deze release en buiten productie. |
 
 ## Onderhoud van dit plan
 
