@@ -219,26 +219,179 @@ All new visual assets require the same transparent-background, safe-margin,
 orientation, in-game-scale, blue-background, and owner-review process already
 used for the dragon sprites.
 
-## 5. Christmas event intake
+## 5. Christmas event
+
+### 5.1 Current event card
 
 | Field | Current value | Status |
 |---|---|---|
 | Event concept | Christmas | Confirmed |
-| Dragon family | Hollyfrost; all six sprites approved | Confirmed |
+| Dragon family | Hollyfrost | Confirmed |
+| Dragon sprites | All six forms approved on 6 September 2026 | Confirmed |
 | Event Trial | One unique Christmas Trial | Confirmed |
-| Trial concept | Hollyfrost Giftforge: remember recipe, time the forge stamp, guide gift to sleigh | Proposed |
-| Trial rotation | Fourth eligible kind while the Christmas event is active | Confirmed program rule |
-| Display name/story | Not supplied yet | TBD |
-| Schedule/timezone/recurrence | Not supplied yet | TBD |
-| Special Adventure and requirements | Not supplied yet | TBD |
-| Adventure duration/expertise reduction | Not supplied yet | TBD |
-| Direct rewards and visibility | Not supplied yet | TBD |
-| Special Chest | Yes/no, definition, contents, trade and presentation unknown | TBD |
-| Special Egg | Delivery, incubation, Spectral and trade rules unknown | TBD |
-| Hollyfrost gameplay rules | Family type, alignment, evolution, caps and achievement unknown | TBD |
-| Ranking attempts/prizes/duplicates | Shared proposal awaits approval | TBD |
-| Outside-season preview | Code, scope, duration and reward behavior unknown | TBD |
-| New visual/audio assets | Defined after content choices | TBD |
+| Trial rotation | Joins the three standard kinds as the fourth eligible refill kind while active | Confirmed program rule |
+| Trial name | Hollyfrost Giftforge | Proposed |
+| Event display name | A Star for the Winter Hearth / Een Ster voor de Winterhaard | Proposed |
+| Stable event ID | `christmas_winter_hearth` | Proposed |
+| Event story | Restore a lost sleigh of starlight so Hollyfrost can carry warmth to every room in the Haven | Proposed |
+| First schedule | 18 December 2026 00:00 through 28 December 2026 00:00 | Proposed |
+| Timezone | Europe/Amsterdam wall time | Proposed |
+| Recurrence | Annually on the same local dates/times | Proposed |
+| Special Adventure | The Starlight Sleigh / De Sterrenlichtslee | Proposed; owner must confirm whether the event has an Adventure at all |
+| Adventure duration | 96 hours before reduction | Proposed |
+| Completion after close | Allowed if started during the active window | Proposed |
+| Adventure limit | Once per account per occurrence | Proposed |
+| Participation | One available owned dragon; no form/rarity minimum | Proposed |
+| Expertise reduction | Combined Might + Spirit + Arcana, 15 minutes per point, minimum 18 hours | Proposed |
+| Direct rewards | 600 XP, +12 Might, +12 Spirit, +12 Arcana, one Starlight Gift Chest | Proposed |
+| Advance disclosure | Show XP, expertise, and Special Chest; keep chest contents secret | Proposed |
+
+### 5.2 Story and player presentation proposal
+
+**Short event story:**
+
+> As the longest nights settle over the Haven, the Starlight Sleigh loses its
+> guiding star. Hollyfrost gathers every spark of warmth it can find, but needs
+> one brave dragon to carry the light home before the winter hearths grow dim.
+
+The event card should feel warm rather than purely icy: evergreen, gold,
+candlelight, soft snow, and a distant guiding star. The card shows its own live
+availability countdown. The detail page separates requirements, approximate
+rewards, the Special Adventure, the event Trial, and the temporary ranking.
+Chest contents remain hidden until opening.
+
+Recommended notification behavior is one notification at event opening, using
+the existing Special Events account toggle and a deep link directly to the
+Christmas event. No extra Christmas-morning notification is sent unless the
+owner explicitly requests it.
+
+### 5.3 Christmas Trial proposal
+
+**Hollyfrost Giftforge** uses a repeating three-step workshop round:
+
+1. Arcana briefly reveals a small recipe of two or three gift sigils.
+2. Might stamps the gift when a moving forge meter reaches its golden zone.
+3. Spirit guides the finished gift into the matching sleigh compartment while
+   avoiding rolling snowballs and drifting frost.
+
+Correct rounds build a capped **Starlight Chain** and gradually speed up. The
+proposed failure rule is three mistakes. A wrong recipe, badly timed stamp, or
+collision each consumes one warm hearth light. When all three lights are gone,
+the forge gently freezes, the score arrives with the normal Trial result
+animation, and rewards are granted at that moment.
+
+Expertise assistance remains deliberately small:
+
+- Arcana keeps the recipe visible slightly longer;
+- Might makes the golden forge zone slightly wider; and
+- Spirit improves steering and collision tolerance slightly.
+
+The submitted score is the achieved gameplay score and is never multiplied by
+expertise. Exact assistance caps, round values, combo cap, acceleration, and
+D/C/B/A/S/S+ thresholds are determined through prototype playtesting.
+
+The Trial uses the shared four-kind refill contract: while Christmas is active,
+each newly filled Trial slot can choose Cavern Flight, Ruin Breaker,
+Runeweaver, or Hollyfrost Giftforge. Equal weighting would give each 25%.
+
+### 5.4 Christmas chest and egg proposal
+
+| Field | Proposed value | Status |
+|---|---|---|
+| Chest definition ID | `christmas_starlight_gift_chest_v1` | Proposed |
+| Player-facing chest name | Starlight Gift Chest / Sterrenlichtgeschenkkist | Proposed |
+| Chest contents | 250 coins, 12 gems, one Starlit Evergreen Egg | Proposed |
+| Randomness | Fixed contents | Proposed |
+| Roll timing | No content roll; identity is fixed when granted | Proposed |
+| Tradeability | Never tradeable | Proposed |
+| Multi-open | Not relevant with one obtainable chest per occurrence; retained version still supports safe inventory display | Proposed |
+| Player disclosure | Show only that a Special Chest is awarded; do not reveal contents before opening | Proposed |
+| Chest art/audio | New closed/open gift-chest sprites and warm magical bell/unwrap opening sound | Needed; Codex |
+| Egg definition ID | `christmas_starlit_evergreen_egg_v1` | Proposed |
+| Player-facing egg name | Starlit Evergreen Egg / Sterrenlicht-dennenei | Proposed |
+| Egg outcome | Hollyfrost only, 100% | Proposed |
+| Family type | Special Event; never counts for a rarity achievement | Proposed |
+| Incubation | Exactly 25 hours | Proposed |
+| Speed-up | No special tap acceleration; normal incubation rules and eligible relics apply | Proposed |
+| Spectral | 5% normally; 10% when hatching during Golden Hour | Proposed |
+| Moral nature | Always Good and immediately known | Proposed |
+| Order nature | Normal random identity rule | Proposed |
+| Personality | Normal random identity rule; initially hidden | Proposed |
+| Egg tradeability | Never tradeable | Proposed |
+| Acquisition | One guaranteed egg through this event's one chest per occurrence | Proposed |
+| Hint | Warmth glows beneath evergreen frost while a distant bell answers from inside | Proposed |
+| Hatch achievement | A Star in Every Hearth | Proposed |
+| Journal/Draconomicon | Record the event hatch, Special Event family, and every evolved form normally | Proposed |
+
+Hollyfrost uses the ordinary non-Infernal evolution levels, expertise caps, and
+form rules unless the owner requests a Christmas-specific difference. Its
+Special Event classification keeps it outside Common–Infernal rarity
+achievements and ordinary egg pools.
+
+### 5.5 Christmas Trial rewards and ranking proposal
+
+An official Hollyfrost Giftforge run reuses the normal Trial grade reward table.
+XP, chest odds, the S+ relic roll, and the S+ ordinary Trial-emote roll remain
+unchanged. The normal total expertise reward is distributed across Might,
+Spirit, and Arcana using the shared balanced split in section 3.
+
+The proposed ranking rules are the shared rules from section 3: three official
+ranked/rewarded attempts per account per Christmas occurrence, unlimited
+non-rewarded practice, best verified score, and results frozen for five days
+after the event closes.
+
+Proposed Christmas podium cosmetics:
+
+| Place | Chest | Unique Hollyfrost emote |
+|---:|---|---|
+| 1 | Mythical Chest | **Crowned by Starlight** — jubilant Hollyfrost beneath a golden star crown |
+| 2 | Dragon Chest | **Giftwrapped Joy** — Hollyfrost happily tangled in a silver ribbon |
+| 3 | Gold Chest | **Snowy Cheer** — Hollyfrost giving a proud bronze-bell salute |
+
+All three are permanent, non-tradeable chat emotes. A repeated podium result
+never creates a duplicate; the proposed replacement is a visible podium-win
+count on the owned emote while the normal chest prize is still granted.
+
+### 5.6 Outside-season Christmas preview proposal
+
+Recommended redeem code: `CHRISTMASEVENT`. It remains planned and inactive
+until the Christmas event is implemented and the active catalog plus
+`REDEEM_CODES.md` are updated together.
+
+The preview follows the Halloween safety model:
+
+- only server-authorized Keeper IDs can redeem it;
+- redemption outside the season starts a personal 48-hour Christmas preview;
+- it enables the event UI, Adventure, chest/egg flow, Giftforge practice, and
+  the four-kind Trial rotation for that tester;
+- preview scores never enter the real Christmas worldwide ranking;
+- production preview rewards are simulated by default, while staging can grant
+  persistent staging rewards to test idempotency and save compatibility;
+- the UI and diagnostic export clearly identify `TEST EVENT`; and
+- the server can disable or re-enable the code without publishing a new app.
+
+The owner must still provide the authorized Keeper ID(s) and approve preview
+duration, reuse, production reward isolation, and whether an isolated preview
+ranking is useful.
+
+### 5.7 Christmas assets still needed
+
+- event banner, event card treatment, guiding star, sleigh, and winter-hearth
+  presentation;
+- Hollyfrost Giftforge Trial icon and warm workshop background;
+- recipe sigils, forge meter, stamp, gift variants, sleigh compartments,
+  snowballs, frost obstacles, three hearth lights, combo, hit/miss, and result
+  sprites/animations;
+- closed and opened Starlight Gift Chest;
+- Starlit Evergreen Egg and nest presentation;
+- three Hollyfrost podium emotes if rankings are approved;
+- warm magical chest-opening sound, bell/forge/game feedback effects; and
+- optional Christmas background music only if explicitly requested and sourced
+  from a verified usable recording.
+
+All new visual assets use transparent backgrounds where appropriate, safe
+margins, consistent in-game scale, and blue-background owner review before
+release.
 
 ## 6. New Year's Day event intake
 
@@ -375,6 +528,32 @@ Every event needs automated and emulator coverage for:
 10. Approve all exact Adventure/chest/egg/dragon rewards and rules.
 11. Decide whether the event needs its own background music or only effects.
 12. Visually approve the new non-dragon event assets after they are created.
+
+## 13. Current owner decisions still required for Christmas
+
+1. Approve or replace the proposed event and Adventure names, story, dates,
+   timezone, recurrence, duration, participation, repeat limit, and expertise
+   reduction in section 5.1.
+2. Confirm whether Christmas includes the proposed Special Adventure,
+   Starlight Gift Chest, and Starlit Evergreen Egg.
+3. Approve the exact direct rewards and the fixed chest contents.
+4. Approve a 25-hour incubation, 5%/10% Spectral rule, always-Good moral nature,
+   normal Order/personality rules, and non-tradeability.
+5. Approve **A Star in Every Hearth** as the hatch achievement.
+6. Approve or rename **Hollyfrost Giftforge** and its recipe, forge-timing, and
+   sleigh-guidance mechanics.
+7. Confirm equal 25% Trial refill weighting during the Christmas event.
+8. Choose the event-close behavior for an unstarted Giftforge offer and a run
+   already in progress.
+9. Approve three official ranked attempts, normal rewards for every official
+   attempt, the balanced expertise split, and capped-point overflow behavior.
+10. Approve the top-three chests, three proposed Hollyfrost emotes, repeat-win
+    counter, and five-day frozen results period.
+11. Confirm `CHRISTMASEVENT`, provide authorized Keeper ID(s), and approve its
+    preview duration, reuse, reward isolation, and preview-ranking behavior.
+12. Decide whether Christmas receives its own background music or only new
+    ambient/game/chest sound effects.
+13. Visually approve the new non-dragon Christmas assets after creation.
 
 No production migration, public release, paid service, or live server mutation
 is authorized by this planning document.
