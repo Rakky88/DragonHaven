@@ -2,11 +2,11 @@
 
 Last verified: 6 September 2026
 
-Ruleset: app version `v0.05.11`
+Ruleset: app version `v0.05.12`
 
-Source baseline: release `v0.05.11`
+Source baseline: release `v0.05.12`
 
-<!-- reference-source-fingerprint: 4744962bf5f05f32 -->
+<!-- reference-source-fingerprint: 62ecf96ea5109a3f -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 

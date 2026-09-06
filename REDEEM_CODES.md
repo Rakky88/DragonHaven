@@ -2,9 +2,9 @@
 
 Last verified: 6 September 2026
 
-Ruleset: app version `v0.05.11`
+Ruleset: app version `v0.05.12`
 
-Source baseline: development after release `v0.05.11`
+Source baseline: release `v0.05.12`
 
 <!-- reference-source-fingerprint: 85a0007b03ccc207 -->
 
