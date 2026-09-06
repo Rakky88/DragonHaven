@@ -11,6 +11,7 @@ import 'providers/household_provider.dart';
 import 'providers/online_account_provider.dart';
 import 'screens/sprite_audit_screen.dart';
 import 'screens/special_event_audit_screen.dart';
+import 'screens/event_dragon_sprite_review_screen.dart';
 import 'services/audio_service.dart';
 import 'services/diagnostic_reporter.dart';
 import 'services/notification_service.dart';
@@ -29,6 +30,12 @@ Future<void> main() async {
       bool.fromEnvironment('DRAGONHAVEN_SPECIAL_EVENT_AUDIT');
   if (specialEventAudit) {
     runApp(const SpecialEventAuditApp());
+    return;
+  }
+  const eventDragonReview =
+      bool.fromEnvironment('DRAGONHAVEN_EVENT_DRAGON_REVIEW');
+  if (eventDragonReview) {
+    runApp(const EventDragonSpriteReviewApp());
     return;
   }
   const spriteAudit = bool.fromEnvironment('DRAGONHAVEN_SPRITE_AUDIT');
