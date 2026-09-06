@@ -1,12 +1,12 @@
 # DragonHaven Redeem Codes
 
-Last verified: 5 September 2026
+Last verified: 6 September 2026
 
 Ruleset: app version `v0.05.11`
 
-Source baseline: release `v0.05.11`
+Source baseline: development after release `v0.05.11`
 
-<!-- reference-source-fingerprint: 15baf7c8b3ac99e4 -->
+<!-- reference-source-fingerprint: 85a0007b03ccc207 -->
 
 This living reference lists every redeem code currently accepted by the game
 and the complete permanent reward granted by that code. Codes not listed here
@@ -15,61 +15,14 @@ are inactive.
 ## Redemption rules
 
 - Codes are case-sensitive and use connected capital letters and numbers.
-- Each current code unlocks one complete Dragon emote pack exactly as if that
-  pack had been purchased in the Shop.
-- A redeemed pack permanently unlocks all ten of its emotes for unlimited use
-  in personal Friend Messages and Conclave chat.
-- Packs and emotes never duplicate. Entering a code for a pack already owned
-  does not grant another copy or a substitute reward.
+- Only codes present in the active catalog can grant a reward.
+- Removing a code makes it inactive in the next app build; it does not remove
+  rewards that a keeper legitimately received earlier.
+- Inactive and unknown well-formed codes return the same inactive result.
 
 ## Active codes
 
-| Code | Reward | Internal reward ID | Exact result |
-|---|---|---|---|
-| `EMOTEPACK1` | **Cozy Hatchlings** | `cozy_hatchlings` | The complete ten-emote Cozy Hatchlings pack |
-| `EMOTEPACK2` | **Infernal Reactions** | `infernal_reactions` | The complete ten-emote Infernal Reactions pack |
-| `EMOTEPACK3` | **Celestial Court** | `celestial_court` | The complete ten-emote Celestial Court pack |
-
-## Exact pack contents
-
-### `EMOTEPACK1` — Cozy Hatchlings
-
-- Heart Hug
-- Dragon Cocoa
-- Blanket Burrito
-- Sweet Dreams
-- For You
-- Shy Wave
-- Picnic Snack
-- Dragon Cuddle
-- Happy Tears
-- Good Night
-
-### `EMOTEPACK2` — Infernal Reactions
-
-- Evil Laugh
-- Infernal Rage
-- Dragon Facepalm
-- Suspicious
-- Skull Grin
-- Set It Ablaze
-- Absolutely Not
-- Choose Chaos
-- Infernal Shock
-- Smug
-
-### `EMOTEPACK3` — Celestial Court
-
-- Royal Wave
-- Celestial Applause
-- Star Sparkle
-- Moon Dream
-- Star Eyes
-- Courtly Bow
-- Celestial Celebration
-- Ancient Wisdom
-- Guardian Salute
-- Moon Magic
+There are currently no active redeem codes.
 
 ## Maintenance contract
 

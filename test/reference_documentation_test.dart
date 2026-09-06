@@ -59,7 +59,6 @@ void main() {
 
   test('redeem-code reference lists every active code and exact reward', () {
     final contents = File(redeemCodesReference.documentPath).readAsStringSync();
-    expect(redeemCodeCatalog, isNotEmpty);
     expect(
       redeemCodeCatalog.map((definition) => definition.code).toSet(),
       hasLength(redeemCodeCatalog.length),
@@ -79,6 +78,9 @@ void main() {
       },
       reason: 'The Active codes table must contain exactly the live catalog.',
     );
+    if (redeemCodeCatalog.isEmpty) {
+      expect(contents, contains('There are currently no active redeem codes.'));
+    }
 
     for (final definition in redeemCodeCatalog) {
       expect(contents, contains('`${definition.code}`'));

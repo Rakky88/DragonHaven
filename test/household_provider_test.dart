@@ -15,6 +15,7 @@ import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/music_track.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/profile_portrait.dart';
+import 'package:dragon_haven/models/redeem_code.dart';
 import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/models/supporter_pack.dart';
 import 'package:dragon_haven/models/trial.dart';
@@ -2318,33 +2319,19 @@ void main() {
     legacyTarget.dispose();
   });
 
-  test('redeem codes grant each Dragon emote pack once', () async {
+  test('no redeem codes are currently active', () async {
     final game = HouseholdProvider(
       random: Random(904),
       persistenceEnabled: false,
     );
 
-    const codesByPackId = {
-      'EMOTEPACK1': 'cozy_hatchlings',
-      'EMOTEPACK2': 'infernal_reactions',
-      'EMOTEPACK3': 'celestial_court',
-    };
-    for (final entry in codesByPackId.entries) {
-      final pack = dragonEmotePackById(entry.value)!;
-      expect(await game.redeemCode(entry.key), 'redeemed_emote_pack');
-      expect(game.ownsDragonEmotePack(pack.id), isTrue);
-      expect(
-        game.ownedDragonEmoteIds,
-        containsAll(pack.emotes.map((emote) => emote.id)),
-      );
-      expect(await game.redeemCode(entry.key), 'already_redeemed');
-    }
-    expect(game.ownedDragonEmotePackIds, hasLength(3));
-    expect(game.ownedDragonEmoteIds, hasLength(30));
-    expect(await game.redeemCode('ISUPPORTRICK'), 'inactive');
-    expect(game.supporterPackOwned, isFalse);
-    expect(await game.redeemCode('emotepack1'), 'invalid_format');
-    expect(await game.redeemCode('EMOTEPACK4'), 'inactive');
+    expect(redeemCodeCatalog, isEmpty);
+    expect(await game.redeemCode('EMOTEPACK1'), 'inactive');
+    expect(await game.redeemCode('EMOTEPACK2'), 'inactive');
+    expect(await game.redeemCode('EMOTEPACK3'), 'inactive');
+    expect(await game.redeemCode('bad code'), 'invalid_format');
+    expect(game.ownedDragonEmotePackIds, isEmpty);
+    expect(game.ownedDragonEmoteIds, isEmpty);
     game.dispose();
   });
 
