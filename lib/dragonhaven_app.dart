@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+import 'app_info.dart';
 import 'l10n/app_strings.dart';
 import 'models/achievement.dart';
 import 'models/adventure.dart';
@@ -23,6 +24,8 @@ import 'screens/keeper_journal_screen.dart';
 import 'services/audio_service.dart';
 import 'services/automatic_cloud_backup.dart';
 import 'services/notification_service.dart';
+import 'services/platform_actions.dart';
+import 'services/release_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/about_sheet.dart';
 import 'widgets/game_icon_sprite.dart';
@@ -64,10 +67,22 @@ class DragonHavenGate extends StatelessWidget {
   }
 }
 
+typedef LatestReleaseLoader = Future<LatestRelease> Function();
+typedef ExternalUrlOpener = Future<void> Function(String url);
+
 enum _HavenMenuAction { account, journal, language, achievements, tutorial }
 
 class DragonHavenShell extends StatefulWidget {
-  const DragonHavenShell({super.key});
+  const DragonHavenShell({
+    super.key,
+    this.latestReleaseLoader,
+    this.externalUrlOpener,
+  });
+
+  /// Test seams are nullable so the normal const app uses the production
+  /// GitHub release service and native Android URL bridge.
+  final LatestReleaseLoader? latestReleaseLoader;
+  final ExternalUrlOpener? externalUrlOpener;
 
   @override
   State<DragonHavenShell> createState() => _DragonHavenShellState();
@@ -87,6 +102,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   Timer? _adventureCompletionBadgeTimer;
   Timer? _nestHatchTimer;
   Timer? _nestHatchWatchdog;
+  Timer? _updatePromptRetry;
   String? _scheduledNestEggId;
   DateTime? _scheduledNestHatchAt;
   DateTime? _scheduledAdventureCompletionAt;
@@ -95,6 +111,9 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   bool _presentationBusy = false;
   bool _tutorialBusy = false;
   bool _automaticHatchBusy = false;
+  bool _startupUpdateCheckStarted = false;
+  bool _updatePromptVisible = false;
+  LatestRelease? _pendingUpdate;
 
   @override
   void initState() {
@@ -145,12 +164,14 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
         _schedulePresentations();
       },
     );
+    _maybeStartUpdateCheck();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await HavenAudio.setAppInForeground(true);
       _setTowerAmbientMusic();
       await _game.refreshForCurrentDate();
       await _online.refreshIfStale();
+      _maybeStartUpdateCheck();
       _syncNestHatchTimer();
       _schedulePresentations();
       final destination = HavenNotifications.takePendingNavigation();
@@ -173,6 +194,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     _adventureCompletionBadgeTimer?.cancel();
     _nestHatchTimer?.cancel();
     _nestHatchWatchdog?.cancel();
+    _updatePromptRetry?.cancel();
     _game.removeListener(_handleGameChanged);
     _online.removeListener(_handleOnlineChanged);
     _automaticCloudBackup.dispose();
@@ -187,7 +209,149 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     _schedulePresentations();
   }
 
-  void _handleOnlineChanged() => _syncAdventureCompletionBadgeTimer();
+  void _handleOnlineChanged() {
+    _syncAdventureCompletionBadgeTimer();
+    _maybeStartUpdateCheck();
+  }
+
+  void _maybeStartUpdateCheck() {
+    if (!mounted || _startupUpdateCheckStarted || !_online.isSignedIn) return;
+    _startupUpdateCheckStarted = true;
+    unawaited(_checkForStartupUpdate());
+  }
+
+  Future<void> _checkForStartupUpdate() async {
+    try {
+      final release =
+          await (widget.latestReleaseLoader ?? ReleaseService.fetchLatest)();
+      if (!mounted || !_online.isSignedIn || !release.isNewerThanInstalled) {
+        return;
+      }
+      _pendingUpdate = release;
+      _scheduleUpdatePrompt();
+    } catch (_) {
+      // An update check must never delay or block opening the game. The About
+      // sheet remains available for a manual retry after a network failure.
+    }
+  }
+
+  void _scheduleUpdatePrompt() {
+    _updatePromptRetry?.cancel();
+    if (!mounted || _pendingUpdate == null || !_online.isSignedIn) return;
+    _updatePromptRetry = Timer(const Duration(milliseconds: 450), () {
+      if (!mounted || _pendingUpdate == null || !_online.isSignedIn) return;
+      final anotherPresentationOwnsTheScreen = _presentationBusy ||
+          _tutorialBusy ||
+          _game.presentationsDeferred ||
+          _game.nextPresentation != null ||
+          _game.shouldStartTutorial ||
+          ModalRoute.of(context)?.isCurrent != true;
+      if (anotherPresentationOwnsTheScreen) {
+        _scheduleUpdatePrompt();
+        return;
+      }
+      unawaited(_showUpdatePrompt());
+    });
+  }
+
+  Future<void> _showUpdatePrompt() async {
+    final release = _pendingUpdate;
+    if (!mounted || release == null || _updatePromptVisible) return;
+    _pendingUpdate = null;
+    _updatePromptVisible = true;
+    final strings = AppStrings.of(context);
+    final updateNow = await showDialog<bool>(
+          context: context,
+          barrierDismissible: true,
+          builder: (dialogContext) => AlertDialog(
+            key: const Key('startup-update-dialog'),
+            icon: const Icon(
+              Icons.system_update_alt_rounded,
+              color: AppColors.twilight,
+              size: 38,
+            ),
+            title: Text(
+              strings.pick('Update available', 'Update beschikbaar'),
+              textAlign: TextAlign.center,
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  strings.pick(
+                    'A newer version of DragonHaven is ready.',
+                    'Er staat een nieuwere versie van DragonHaven klaar.',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                _UpdateVersionRow(
+                  label: strings.pick(
+                    'Installed version',
+                    'Geïnstalleerde versie',
+                  ),
+                  value: AppInfo.displayVersion,
+                ),
+                const SizedBox(height: 8),
+                _UpdateVersionRow(
+                  label: strings.pick('Latest version', 'Nieuwste versie'),
+                  value: 'v${release.version}',
+                  highlighted: true,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                key: const Key('startup-update-later'),
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(strings.pick('Later', 'Later')),
+              ),
+              FilledButton.icon(
+                key: const Key('startup-update-now'),
+                onPressed: () => Navigator.pop(dialogContext, true),
+                icon: const Icon(Icons.download_rounded),
+                label: Text(strings.pick('Update', 'Updaten')),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    _updatePromptVisible = false;
+    if (!mounted || !updateNow) return;
+    await _openUpdate(release);
+  }
+
+  Future<void> _openUpdate(LatestRelease release) async {
+    try {
+      await (widget.externalUrlOpener ?? PlatformActions.openUrl)(
+        release.downloadUrl,
+      );
+    } catch (_) {
+      var copied = false;
+      try {
+        await PlatformActions.copyText(release.downloadUrl);
+        copied = true;
+      } catch (_) {
+        // The message below also covers the uncommon clipboard failure.
+      }
+      if (!mounted) return;
+      final strings = AppStrings.of(context);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(copied
+              ? strings.pick(
+                  'The download could not be opened. The link was copied instead.',
+                  'De download kon niet worden geopend. De link is daarom gekopieerd.',
+                )
+              : strings.pick(
+                  'The download link could not be opened or copied.',
+                  'De downloadlink kon niet worden geopend of gekopieerd.',
+                )),
+        ));
+    }
+  }
 
   void _syncAdventureCompletionBadgeTimer() {
     if (!mounted) return;
@@ -867,6 +1031,51 @@ class _AdventureNavigationIcon extends StatelessWidget {
       ),
     );
   }
+}
+
+class _UpdateVersionRow extends StatelessWidget {
+  const _UpdateVersionRow({
+    required this.label,
+    required this.value,
+    this.highlighted = false,
+  });
+
+  final String label;
+  final String value;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: highlighted ? AppColors.goldLight : AppColors.mist,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: highlighted ? AppColors.gold : AppColors.mist,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              value,
+              style: TextStyle(
+                color: highlighted ? AppColors.twilightDark : AppColors.ink,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 class _DragonHavenBrandTitle extends StatelessWidget {
