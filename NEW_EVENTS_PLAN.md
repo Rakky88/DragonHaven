@@ -234,7 +234,8 @@ used for the dragon sprites.
 | Event display name | A Star for the Winter Hearth / Een Ster voor de Winterhaard | Proposed |
 | Stable event ID | `christmas_winter_hearth` | Proposed |
 | Event story | Restore a lost sleigh of starlight so Hollyfrost can carry warmth to every room in the Haven | Proposed |
-| First schedule | 18 December 2026 00:00 through 28 December 2026 00:00 | Proposed |
+| Calendar window | 25 December 00:00 through 27 December 00:00, covering only 25 and 26 December | Confirmed |
+| First scheduled year | 2026 | Proposed |
 | Timezone | Europe/Amsterdam wall time | Proposed |
 | Recurrence | Annually on the same local dates/times | Proposed |
 | Special Adventure | The Starlight Sleigh / De Sterrenlichtslee | Proposed; owner must confirm whether the event has an Adventure at all |
@@ -293,6 +294,10 @@ D/C/B/A/S/S+ thresholds are determined through prototype playtesting.
 The Trial uses the shared four-kind refill contract: while Christmas is active,
 each newly filled Trial slot can choose Cavern Flight, Ruin Breaker,
 Runeweaver, or Hollyfrost Giftforge. Equal weighting would give each 25%.
+Hollyfrost Giftforge enters the pool at 25 December 00:00 and leaves it at
+27 December 00:00; it is therefore seasonally available only on 25 and
+26 December. An explicitly authorized personal preview occurrence is the only
+outside-season exception.
 
 ### 5.4 Christmas chest and egg proposal
 
@@ -531,9 +536,10 @@ Every event needs automated and emulator coverage for:
 
 ## 13. Current owner decisions still required for Christmas
 
-1. Approve or replace the proposed event and Adventure names, story, dates,
-   timezone, recurrence, duration, participation, repeat limit, and expertise
-   reduction in section 5.1.
+1. Approve or replace the proposed event and Adventure names, story, first
+   scheduled year, timezone, recurrence, duration, participation, repeat limit,
+   and expertise reduction in section 5.1. The 25–26 December calendar window
+   is already confirmed.
 2. Confirm whether Christmas includes the proposed Special Adventure,
    Starlight Gift Chest, and Starlit Evergreen Egg.
 3. Approve the exact direct rewards and the fixed chest contents.
