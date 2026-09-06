@@ -102,7 +102,7 @@ enum RoomUnlockResult {
 }
 
 class HouseholdProvider extends ChangeNotifier {
-  static const saveSchemaVersion = 50;
+  static const saveSchemaVersion = 51;
 
   HouseholdProvider({
     Random? random,
@@ -215,6 +215,7 @@ class HouseholdProvider extends ChangeNotifier {
   int trialStreakCount = 0;
   String trialStreakLastDayKey = '';
   String trialStreakLastCompletionDayKey = '';
+  Set<String> trialStreakCreditedDayKeys = {};
   bool trialStreakRewardReady = false;
   String trialStreakCarryDayKey = '';
   Map<String, int> dragonSchoolRecords = {};
@@ -357,6 +358,11 @@ class HouseholdProvider extends ChangeNotifier {
       ..trialRefilledAt = now
       ..trialStreakCount = 5
       ..trialStreakLastDayKey = _dayKey(now)
+      ..trialStreakLastCompletionDayKey = _dayKey(now)
+      ..trialStreakCreditedDayKeys = {
+        for (var offset = 0; offset < 5; offset++)
+          _dayKey(now.subtract(Duration(days: offset))),
+      }
       ..unlockedAchievementIds =
           achievementCatalog.map((achievement) => achievement.id).toSet()
       ..pendingPresentations = [];
@@ -1101,6 +1107,9 @@ class HouseholdProvider extends ChangeNotifier {
         stringFromJson(data['trialStreakCarryDayKey']) ?? '';
     trialStreakLastCompletionDayKey =
         stringFromJson(data['trialStreakLastCompletionDayKey']) ?? '';
+    trialStreakCreditedDayKeys =
+        stringSetFromJson(data['trialStreakCreditedDayKeys']);
+    final hadStoredCompletionDay = trialStreakLastCompletionDayKey.isNotEmpty;
     if (trialStreakLastCompletionDayKey.isEmpty) {
       trialStreakLastCompletionDayKey = trialStreakCarryDayKey.isNotEmpty
           ? trialStreakCarryDayKey
@@ -1108,6 +1117,12 @@ class HouseholdProvider extends ChangeNotifier {
     }
     if (trialStreakRewardReady) trialStreakCount = 7;
     if (trialStreakCount == 0) trialStreakLastDayKey = '';
+    if (restoredSchema < 51) {
+      _migrateLegacyTrialStreakCredits(
+        hadStoredCompletionDay: hadStoredCompletionDay,
+      );
+    }
+    _reconcileTrialStreakCredits();
     dragonSchoolRecords = {
       for (final entry in mapFromJson(data['dragonSchoolRecords']).entries)
         if (entry.key.trim().isNotEmpty)
@@ -2978,6 +2993,7 @@ class HouseholdProvider extends ChangeNotifier {
         'trialStreakCount': trialStreakCount,
         'trialStreakLastDayKey': trialStreakLastDayKey,
         'trialStreakLastCompletionDayKey': trialStreakLastCompletionDayKey,
+        'trialStreakCreditedDayKeys': trialStreakCreditedDayKeys.toList(),
         'trialStreakRewardReady': trialStreakRewardReady,
         'trialStreakCarryDayKey': trialStreakCarryDayKey,
         'dragonSchoolRecords': dragonSchoolRecords,
