@@ -89,16 +89,18 @@ Every event Trial should:
 | Rule | Proposed behavior | Status |
 |---|---|---|
 | Eligibility | Registered and e-mail-verified accounts | Proposed |
-| Official attempts | Three per keeper per event occurrence | Proposed |
-| Practice | Unlimited; no rewards and no ranking submission | Proposed |
-| Counted score | Best verified score for that occurrence | Proposed |
+| Ranked access | Every event-Trial offer that appears in the normal refill rotation can be played once; no per-event attempt cap | Confirmed for Halloween and Christmas |
+| Practice | No separate unlimited practice mode | Confirmed for Halloween and Christmas |
+| Per-run reward | Every completed event-Trial offer grants its normal grade reward | Confirmed for Halloween and Christmas |
+| Counted score | Best verified score for that occurrence | Confirmed for Halloween and Christmas |
 | Tie-breakers | Accuracy, then shortest run time, then earliest submission | Proposed |
 | Closing | Freeze at the exact event end and grant prizes exactly once | Confirmed intent; technical rule proposed |
-| Results visibility | Read-only for five complete days after event close | Confirmed |
-| Next recurrence | New occurrence ID and empty ranking | Confirmed |
-| First place | Mythical Chest plus gold event podium emote | Proposed |
-| Second place | Dragon Chest plus silver event podium emote | Proposed |
-| Third place | Gold Chest plus bronze event podium emote | Proposed |
+| Results visibility | Full ranking is read-only for five complete days after event close | Confirmed |
+| Permanent archive | After five days, retain only the top three in the Seasonal Chronicle | Confirmed for Halloween and Christmas |
+| Next recurrence | New occurrence ID and empty live ranking | Confirmed |
+| First place | Mythical Chest plus gold event podium emote | Confirmed for Halloween and Christmas |
+| Second place | Dragon Chest plus silver event podium emote | Confirmed for Halloween and Christmas |
+| Third place | Gold Chest plus bronze event podium emote | Confirmed for Halloween and Christmas |
 | Repeat cosmetic | Keep chest; show a win count on the already owned emote | Proposed |
 
 Ranked attempts require a server-issued occurrence ID, deterministic seed,
@@ -130,7 +132,7 @@ idempotent and recoverable after an interrupted sync.
 | Completion after close | Allowed if started during the active window | Proposed |
 | Adventure limit | Once per account per occurrence | Proposed |
 | Participation | One available owned dragon; no form/rarity minimum | Proposed |
-| Expertise reduction | Combined Might + Spirit + Arcana, 15 minutes per point, minimum 12 hours | Proposed |
+| Expertise reduction | Combined Might + Spirit + Arcana, 15 minutes per point, minimum 24 hours | Minimum confirmed; remaining values proposed |
 | Direct rewards | 500 XP, +13 Might, +13 Spirit, +13 Arcana, one Witchlight Chest | Proposed |
 | Advance disclosure | Show XP, expertise, and chest; keep chest contents secret | Proposed |
 
@@ -142,11 +144,17 @@ idempotent and recoverable after an interrupted sync.
 2. Spirit guides its witchlight into the protected lantern.
 3. Might breaks the approaching curse at the bright timing point.
 
-Correct rounds build a capped combo and increase speed. The proposed failure
-rule is three mistakes. Arcana slightly extends rune visibility, Spirit slightly
+Correct rounds build a capped combo and increase speed. Every new run starts
+with three available mistakes; the third mistake ends that run. Arcana slightly
+extends rune visibility, Spirit slightly
 improves steering/collision tolerance, and Might slightly widens the strike
 window. Exact assistance caps, scoring formula, grade thresholds, and final
 failure timing will be established through prototype playtesting.
+
+There is no separate practice mode and no per-event attempt allowance. Every
+Witchlight Ward offer produced by the ordinary Trial refill system can be
+played once, grants its normal Trial reward, and can improve the keeper's best
+verified event score.
 
 ### 4.3 Halloween chest and egg proposal
 
@@ -160,7 +168,7 @@ failure timing will be established through prototype playtesting.
 | Chest art/audio | New closed/open sprites and Halloween opening sound | Needed; Codex |
 | Egg definition | Witchlight Egg, versioned and event-bound | Proposed |
 | Egg outcome | Gloamgourd only, 100% | Proposed |
-| Family type | Special Event; never counts for a rarity achievement | Proposed |
+| Family type | Special; never counts for a rarity achievement | Proposed |
 | Incubation | 13h13m13s | Proposed |
 | Spectral | 5% normally; 10% when hatching during Golden Hour | Proposed |
 | Alignment/personality | Normal random identity rules; personality initially hidden | Proposed |
@@ -191,12 +199,12 @@ tester entitlement. The owner must still decide:
 
 | Missing decision | Recommended value | Owner answer |
 |---|---|---|
-| Authorized account(s) | Owner's confirmed Keeper ID plus staging test accounts | TBD |
-| Preview duration per activation | 48 hours | TBD |
-| Redemption reuse | Reusable for authorized testers after the previous preview expires | TBD |
-| Production preview rewards | Simulate and display rewards, but do not alter permanent production inventory | TBD |
+| Authorized account(s) | `DH-17792DC5` only | Confirmed |
+| Preview duration per activation | 48 hours | Confirmed |
+| Redemption reuse | Reusable after the previous preview expires | Confirmed |
+| Production preview rewards | Simulate and display rewards, but do not alter permanent production inventory | Proposed; Halloween still needs confirmation |
 | Staging preview rewards | Grant real staging rewards to test persistence and idempotency | TBD |
-| Preview ranking | Isolated test board or ranking-disabled; never live seasonal | TBD |
+| Preview ranking | Isolated test board or ranking-disabled; never live seasonal | TBD for Halloween |
 | Code retirement | Keep while event QA is needed; server can disable without an app release | TBD |
 
 If the owner instead wants permanent production rewards from the preview, the
@@ -230,22 +238,22 @@ used for the dragon sprites.
 | Dragon sprites | All six forms approved on 6 September 2026 | Confirmed |
 | Event Trial | One unique Christmas Trial | Confirmed |
 | Trial rotation | Joins the three standard kinds as the fourth eligible refill kind while active | Confirmed program rule |
-| Trial name | Hollyfrost Giftforge | Proposed |
-| Event display name | A Star for the Winter Hearth / Een Ster voor de Winterhaard | Proposed |
-| Stable event ID | `christmas_winter_hearth` | Proposed |
-| Event story | Restore a lost sleigh of starlight so Hollyfrost can carry warmth to every room in the Haven | Proposed |
+| Trial name | Hollyfrost Giftforge | Confirmed |
+| Event display name | A Star for the Winter Hearth / Een Ster voor de Winterhaard | Confirmed |
+| Stable event ID | `christmas_winter_hearth` | Codex implementation choice |
+| Event story | Restore a lost sleigh of starlight so Hollyfrost can carry warmth to every room in the Haven | Confirmed |
 | Calendar window | 25 December 00:00 through 27 December 00:00, covering only 25 and 26 December | Confirmed |
-| First scheduled year | 2026 | Proposed |
-| Timezone | Europe/Amsterdam wall time | Proposed |
-| Recurrence | Annually on the same local dates/times | Proposed |
-| Special Adventure | The Starlight Sleigh / De Sterrenlichtslee | Proposed; owner must confirm whether the event has an Adventure at all |
-| Adventure duration | 96 hours before reduction | Proposed |
-| Completion after close | Allowed if started during the active window | Proposed |
-| Adventure limit | Once per account per occurrence | Proposed |
-| Participation | One available owned dragon; no form/rarity minimum | Proposed |
-| Expertise reduction | Combined Might + Spirit + Arcana, 15 minutes per point, minimum 18 hours | Proposed |
-| Direct rewards | 600 XP, +12 Might, +12 Spirit, +12 Arcana, one Starlight Gift Chest | Proposed |
-| Advance disclosure | Show XP, expertise, and Special Chest; keep chest contents secret | Proposed |
+| First scheduled year | 2026 | Confirmed |
+| Timezone | Europe/Amsterdam wall time | Confirmed |
+| Recurrence | Annually on the same local dates/times | Confirmed |
+| Special Adventure | The Starlight Sleigh / De Sterrenlichtslee | Confirmed |
+| Adventure duration | 96 hours before reduction | Confirmed |
+| Completion after close | Allowed if started during the active window | Confirmed |
+| Adventure limit | Once per account per occurrence | Confirmed |
+| Participation | One available owned dragon; no form/rarity minimum | Confirmed |
+| Expertise reduction | Combined Might + Spirit + Arcana, 15 minutes per point, minimum 24 hours | Confirmed |
+| Direct rewards | 600 XP, +12 Might, +12 Spirit, +12 Arcana, one Starlight Gift Chest | Confirmed |
+| Advance disclosure | Show XP, expertise, and Special Chest; keep chest contents secret | Confirmed |
 
 ### 5.2 Story and player presentation proposal
 
@@ -275,9 +283,9 @@ owner explicitly requests it.
 3. Spirit guides the finished gift into the matching sleigh compartment while
    avoiding rolling snowballs and drifting frost.
 
-Correct rounds build a capped **Starlight Chain** and gradually speed up. The
-proposed failure rule is three mistakes. A wrong recipe, badly timed stamp, or
-collision each consumes one warm hearth light. When all three lights are gone,
+Correct rounds build a capped **Starlight Chain** and gradually speed up. Every
+new run starts with three available mistakes. A wrong recipe, badly timed
+stamp, or collision each consumes one warm hearth light. When all three lights are gone,
 the forge gently freezes, the score arrives with the normal Trial result
 animation, and rewards are granted at that moment.
 
@@ -299,38 +307,43 @@ Hollyfrost Giftforge enters the pool at 25 December 00:00 and leaves it at
 26 December. An explicitly authorized personal preview occurrence is the only
 outside-season exception.
 
+There is no practice mode or separate attempt allowance. Every Giftforge offer
+that appears through the normal Trial refill system can be played once. Every
+completed run grants its normal grade reward and can improve the keeper's best
+verified Christmas score.
+
 ### 5.4 Christmas chest and egg proposal
 
 | Field | Proposed value | Status |
 |---|---|---|
-| Chest definition ID | `christmas_starlight_gift_chest_v1` | Proposed |
-| Player-facing chest name | Starlight Gift Chest / Sterrenlichtgeschenkkist | Proposed |
-| Chest contents | 250 coins, 12 gems, one Starlit Evergreen Egg | Proposed |
-| Randomness | Fixed contents | Proposed |
-| Roll timing | No content roll; identity is fixed when granted | Proposed |
-| Tradeability | Never tradeable | Proposed |
-| Multi-open | Not relevant with one obtainable chest per occurrence; retained version still supports safe inventory display | Proposed |
-| Player disclosure | Show only that a Special Chest is awarded; do not reveal contents before opening | Proposed |
+| Chest definition ID | `christmas_starlight_gift_chest_v1` | Codex implementation choice |
+| Player-facing chest name | Starlight Gift Chest / Sterrenlichtgeschenkkist | Confirmed |
+| Chest contents | 250 coins, 12 gems, one Starlit Evergreen Egg | Confirmed |
+| Randomness | Fixed contents | Confirmed |
+| Roll timing | No content roll; identity is fixed when granted | Confirmed |
+| Tradeability | Never tradeable | Confirmed |
+| Multi-open | Not relevant with one obtainable chest per occurrence; retained version still supports safe inventory display | Confirmed by acquisition limit |
+| Player disclosure | Show only that a Special Chest is awarded; do not reveal contents before opening | Confirmed |
 | Chest art/audio | New closed/open gift-chest sprites and warm magical bell/unwrap opening sound | Needed; Codex |
-| Egg definition ID | `christmas_starlit_evergreen_egg_v1` | Proposed |
-| Player-facing egg name | Starlit Evergreen Egg / Sterrenlicht-dennenei | Proposed |
-| Egg outcome | Hollyfrost only, 100% | Proposed |
-| Family type | Special Event; never counts for a rarity achievement | Proposed |
-| Incubation | Exactly 25 hours | Proposed |
-| Speed-up | No special tap acceleration; normal incubation rules and eligible relics apply | Proposed |
-| Spectral | 5% normally; 10% when hatching during Golden Hour | Proposed |
-| Moral nature | Always Good and immediately known | Proposed |
-| Order nature | Normal random identity rule | Proposed |
-| Personality | Normal random identity rule; initially hidden | Proposed |
-| Egg tradeability | Never tradeable | Proposed |
-| Acquisition | One guaranteed egg through this event's one chest per occurrence | Proposed |
-| Hint | Warmth glows beneath evergreen frost while a distant bell answers from inside | Proposed |
-| Hatch achievement | A Star in Every Hearth | Proposed |
-| Journal/Draconomicon | Record the event hatch, Special Event family, and every evolved form normally | Proposed |
+| Egg definition ID | `christmas_starlit_evergreen_egg_v1` | Codex implementation choice |
+| Player-facing egg name | Starlit Evergreen Egg / Sterrenlicht-dennenei | Confirmed |
+| Egg outcome | Hollyfrost only, 100% | Confirmed |
+| Family type | Special; never counts for a rarity achievement | Confirmed |
+| Incubation | Exactly 25 hours | Confirmed |
+| Speed-up | No special tap acceleration; normal incubation rules and eligible relics apply | Confirmed |
+| Spectral | 5% normally; 10% when hatching during Golden Hour | Confirmed |
+| Moral nature | Always Good and immediately known | Confirmed |
+| Order nature | Normal random identity rule | Confirmed |
+| Personality | Normal random identity rule; initially hidden | Confirmed |
+| Egg tradeability | Never tradeable | Confirmed |
+| Acquisition | One guaranteed egg through this event's one chest per occurrence | Confirmed |
+| Hint | Warmth glows beneath evergreen frost while a distant bell answers from inside | Codex copy; owner may revise |
+| Hatch achievement | A Star in Every Hearth | Confirmed |
+| Journal/Draconomicon | Record the event hatch, Special family, and every evolved form normally | Confirmed |
 
 Hollyfrost uses the ordinary non-Infernal evolution levels, expertise caps, and
 form rules unless the owner requests a Christmas-specific difference. Its
-Special Event classification keeps it outside Common–Infernal rarity
+Special classification keeps it outside Common–Infernal rarity
 achievements and ordinary egg pools.
 
 ### 5.5 Christmas Trial rewards and ranking proposal
@@ -340,12 +353,13 @@ XP, chest odds, the S+ relic roll, and the S+ ordinary Trial-emote roll remain
 unchanged. The normal total expertise reward is distributed across Might,
 Spirit, and Arcana using the shared balanced split in section 3.
 
-The proposed ranking rules are the shared rules from section 3: three official
-ranked/rewarded attempts per account per Christmas occurrence, unlimited
-non-rewarded practice, best verified score, and results frozen for five days
-after the event closes.
+Every randomly refilled Giftforge offer is an official rewarded run. There is
+no per-occurrence attempt limit and no separate practice mode. The best
+verified score counts; the complete final ranking remains visible for five
+days, after which only its top three are retained permanently in the Seasonal
+Chronicle.
 
-Proposed Christmas podium cosmetics:
+Confirmed Christmas podium rewards:
 
 | Place | Chest | Unique Hollyfrost emote |
 |---:|---|---|
@@ -359,25 +373,26 @@ count on the owned emote while the normal chest prize is still granted.
 
 ### 5.6 Outside-season Christmas preview proposal
 
-Recommended redeem code: `CHRISTMASEVENT`. It remains planned and inactive
+Confirmed redeem code: `CHRISTMASEVENT`. It remains planned and inactive
 until the Christmas event is implemented and the active catalog plus
 `REDEEM_CODES.md` are updated together.
 
 The preview follows the Halloween safety model:
 
-- only server-authorized Keeper IDs can redeem it;
+- only Keeper ID `DH-17792DC5` can redeem it;
 - redemption outside the season starts a personal 48-hour Christmas preview;
-- it enables the event UI, Adventure, chest/egg flow, Giftforge practice, and
+- it can be redeemed again after the previous 48-hour preview has expired;
+- it enables the event UI, Adventure, simulated chest/egg flow, Giftforge, and
   the four-kind Trial rotation for that tester;
-- preview scores never enter the real Christmas worldwide ranking;
-- production preview rewards are simulated by default, while staging can grant
-  persistent staging rewards to test idempotency and save compatibility;
+- preview scores enter a separate test ranking and never the real Christmas
+  worldwide ranking;
+- production preview rewards are simulated and never alter permanent inventory;
+- staging may use an explicit test fixture to verify persistent reward grants
+  and idempotency without changing the production preview contract;
 - the UI and diagnostic export clearly identify `TEST EVENT`; and
 - the server can disable or re-enable the code without publishing a new app.
 
-The owner must still provide the authorized Keeper ID(s) and approve preview
-duration, reuse, production reward isolation, and whether an isolated preview
-ranking is useful.
+These preview rules are confirmed for the owner account.
 
 ### 5.7 Christmas assets still needed
 
@@ -390,13 +405,32 @@ ranking is useful.
 - closed and opened Starlight Gift Chest;
 - Starlit Evergreen Egg and nest presentation;
 - three Hollyfrost podium emotes if rankings are approved;
-- warm magical chest-opening sound, bell/forge/game feedback effects; and
-- optional Christmas background music only if explicitly requested and sourced
-  from a verified usable recording.
+- warm magical chest-opening sound plus bell, forge, and gameplay feedback
+  effects; and
+- one Christmas background track from an explicitly verified CC0/Public Domain
+  recording source.
 
 All new visual assets use transparent backgrounds where appropriate, safe
-margins, consistent in-game scale, and blue-background owner review before
-release.
+margins, and consistent in-game scale. The owner has waived a separate visual
+review for these non-dragon Christmas assets; Codex must still perform repeated
+alpha, crop, scale, contrast, memory, and emulator checks before release.
+
+### 5.8 Temporary Christmas music contract
+
+- The event has one dedicated Christmas background track in addition to its
+  new bell, forge, chest, success, error, combo, and result effects.
+- The recording must be explicitly verified as CC0/Public Domain for commercial
+  app distribution; public-domain composition status alone is insufficient.
+- The track becomes temporarily available in the Jukebox when an account enters
+  or signs in during an active Christmas occurrence or its authorized preview.
+- It is event access, not permanent collection ownership, cannot drop from a
+  Music Chest, and does not change Music Chest completion counts or odds.
+- At 27 December 00:00—or when a personal preview expires—the track disappears
+  from the selectable Jukebox catalog and active playback transitions cleanly
+  to the next selected owned track or silence.
+- The selected/toggle state of permanent tracks remains untouched.
+- Whether this temporary track is enabled automatically on first event entry or
+  merely becomes selectable is still TBD.
 
 ## 6. New Year's Day event intake
 
@@ -521,45 +555,44 @@ Every event needs automated and emulator coverage for:
 2. Confirm equal 25% Trial refill weighting.
 3. Choose the event-close behavior for an unstarted offer and a run already in
    progress.
-4. Approve three official ranked attempts and whether all three grant rewards.
-5. Approve the balanced expertise split and capped-point overflow behavior.
-6. Approve the podium rewards, repeat-emote handling, and whether any result is
-   permanently recorded after the five-day display.
-7. Provide the Keeper ID(s) allowed to use `HALLOWEENEVENT`.
-8. Approve preview duration, reuse, inventory/reward isolation, and test-ranking
-   behavior.
-9. Confirm whether the Halloween event includes the proposed Special Adventure,
+4. Approve the balanced expertise split and capped-point overflow behavior.
+5. Approve the podium rewards and repeat-emote handling. The five-day full
+   result display followed by a permanent top-three Seasonal Chronicle entry is
+   already confirmed.
+6. Decide Halloween's production preview reward mode, preview ranking mode, and
+   whether staging previews grant persistent staging rewards. Keeper ID
+   `DH-17792DC5` and reusable 48-hour access are already confirmed.
+7. Confirm whether the Halloween event includes the proposed Special Adventure,
    Special Chest, and Special Egg.
-10. Approve all exact Adventure/chest/egg/dragon rewards and rules.
-11. Decide whether the event needs its own background music or only effects.
-12. Visually approve the new non-dragon event assets after they are created.
+8. Approve all exact Adventure/chest/egg/dragon rewards and rules. The minimum
+   reduced Adventure duration is already confirmed as 24 hours.
+9. Decide whether the event needs its own background music or only effects.
+10. Visually approve the new non-dragon event assets after they are created.
 
 ## 13. Current owner decisions still required for Christmas
 
-1. Approve or replace the proposed event and Adventure names, story, first
-   scheduled year, timezone, recurrence, duration, participation, repeat limit,
-   and expertise reduction in section 5.1. The 25–26 December calendar window
-   is already confirmed.
-2. Confirm whether Christmas includes the proposed Special Adventure,
-   Starlight Gift Chest, and Starlit Evergreen Egg.
-3. Approve the exact direct rewards and the fixed chest contents.
-4. Approve a 25-hour incubation, 5%/10% Spectral rule, always-Good moral nature,
-   normal Order/personality rules, and non-tradeability.
-5. Approve **A Star in Every Hearth** as the hatch achievement.
-6. Approve or rename **Hollyfrost Giftforge** and its recipe, forge-timing, and
-   sleigh-guidance mechanics.
-7. Confirm equal 25% Trial refill weighting during the Christmas event.
-8. Choose the event-close behavior for an unstarted Giftforge offer and a run
+1. Choose the event-close behavior for an unstarted Giftforge offer and a run
    already in progress.
-9. Approve three official ranked attempts, normal rewards for every official
-   attempt, the balanced expertise split, and capped-point overflow behavior.
-10. Approve the top-three chests, three proposed Hollyfrost emotes, repeat-win
-    counter, and five-day frozen results period.
-11. Confirm `CHRISTMASEVENT`, provide authorized Keeper ID(s), and approve its
-    preview duration, reuse, reward isolation, and preview-ranking behavior.
-12. Decide whether Christmas receives its own background music or only new
-    ambient/game/chest sound effects.
-13. Visually approve the new non-dragon Christmas assets after creation.
+2. Approve the exact balanced expertise distribution and define what happens
+   when one or more expertises have reached their cap.
+3. Confirm whether a Christmas Trial counts toward the Seven-day Trial
+   Constellation like an ordinary Trial.
+4. Decide whether an offline event Trial remains playable/rewarded without a
+   ranked submission, or whether event Trials require an online attempt token.
+5. Approve registered/e-mail-verified ranking eligibility and the proposed
+   accuracy, time, then earliest-submission tie-breakers.
+6. Approve the repeat-win counter for an already owned podium emote.
+7. Confirm that "permanent Chronicle" means a global **Seasonal Chronicle**
+   containing the occurrence, top three keepers, scores, and podium cosmetics,
+   while the rest of the ranking disappears after five days.
+8. Decide whether the temporary Christmas track is automatically enabled on
+   first event entry or only becomes selectable in the Jukebox.
+9. Choose the Christmas track or authorize Codex to source a fitting verified
+   CC0/Public Domain recording, with **O Christmas Tree** as the recommended
+   composition.
+10. Decide whether staging previews grant persistent staging rewards. Production
+    simulation, `CHRISTMASEVENT`, Keeper ID `DH-17792DC5`, a reusable 48-hour
+    preview, and a separate test ranking are already confirmed.
 
 No production migration, public release, paid service, or live server mutation
 is authorized by this planning document.

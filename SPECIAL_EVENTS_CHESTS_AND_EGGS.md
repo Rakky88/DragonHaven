@@ -6,7 +6,7 @@ Ruleset: app version `v0.05.11`
 
 Source baseline: release `v0.05.11`
 
-<!-- reference-source-fingerprint: b8fc53e558d7224f -->
+<!-- reference-source-fingerprint: 97cdcd946af4b344 -->
 
 This is the living content catalog for every implemented Special Event,
 Special Adventure family, chest type, and egg type in DragonHaven. It records
@@ -117,7 +117,7 @@ do not reveal its contents to the player before it is opened.
 |---|---|
 | Egg type | Special Egg |
 | Possible family | Cluckatrice only |
-| Family type | Special Event |
+| Family type | Special |
 | Incubation | Exactly 21 hours |
 | Spectral chance | 0%; this egg is excluded from both the creation roll and Golden Hour bonus |
 | Fixed at creation | Law alignment, moral alignment, size, and personality seed |
@@ -200,9 +200,10 @@ decisions must be recorded before the corresponding event is implemented.
 Each future event will have one temporary Trial that exists only while that
 event occurrence is active. When one event is active, its Trial joins the three
 standard Trial kinds as a fourth eligible refill result; the Trial board itself
-still shows at most three offers. Equal weighting would make every eligible
-kind 25%, but that exact weight still awaits owner confirmation. The individual
-game names and mechanics below remain design proposals. They intentionally use
+still shows at most three offers. Equal 25% weighting is confirmed for
+Halloween and Christmas; the other events still need their exact refill weight.
+The individual game names and mechanics below remain design proposals unless
+their event section says otherwise. They intentionally use
 three distinct simple actions so Might, Spirit, and Arcana all matter without
 applying an expertise multiplier to the submitted score.
 
@@ -218,9 +219,9 @@ Recommended common game rules:
 
 - one available owned dragon participates and remains visible/reactive;
 - each run lasts about 60–90 seconds and gradually accelerates;
-- correct three-action sequences build a capped combo; errors break the combo
-  instead of immediately ending the run, with the exact life/error limit still
-  TBD;
+- correct three-action sequences build a capped combo; Halloween and Christmas
+  begin every run with three available mistakes, while the other events still
+  need their life/error rules;
 - the three expertise benefits are deliberately small and capped so developed
   dragons feel useful without making a low-expertise score meaningless;
 - the leaderboard receives the actual achieved score, never a post-game
@@ -230,12 +231,12 @@ Recommended common game rules:
 - controls remain one-thumb friendly, color-blind distinguishable, reduced-
   motion compatible, and deterministic from a server-issued ranked seed.
 
-#### Proposed normal Trial rewards
+#### Event Trial rewards
 
-An official event-Trial completion should reuse the normal Trial grade table:
+Halloween and Christmas event-Trial completions reuse the normal Trial grade table:
 the existing XP amount, chest roll, S+ relic roll, and S+ ordinary Trial-emote
-roll remain unchanged. The normal expertise amount is **split** across Might,
-Spirit, and Arcana instead of being granted three times:
+roll remain unchanged on every completed offer. The normal expertise amount is
+**split** across Might, Spirit, and Arcana instead of being granted three times:
 
 | Grade | Total expertise | Proposed balanced split |
 |---|---:|---|
@@ -250,24 +251,23 @@ Ties between equally low expertise values need a stable rotation so the same
 stat is not always favored. Existing expertise caps still apply; any point that
 cannot be placed needs a decided overflow rule before implementation.
 
-#### Proposed temporary worldwide leaderboard
+#### Temporary worldwide leaderboard
 
-The recommended competition model is:
+The confirmed Halloween and Christmas competition model is:
 
 1. Only registered, e-mail-verified online keepers can submit ranked runs.
-   Everyone can still use an offline practice mode without rewards or ranking.
-2. Each keeper receives **three official ranked/rewarded attempts per event
-   occurrence**. Practice is unlimited, but can never submit a score or grant a
-   reward. This avoids a leaderboard decided mainly by grinding. A one-per-day
-   model with accumulated unused attempts remains an alternative if longer
-   events should encourage daily play.
+   The exact offline completion behavior still needs owner approval.
+2. There is no separate practice mode or event attempt allowance. Every event
+   Trial offer that appears through the normal refill system can be played once,
+   grants its normal reward, and may improve the submitted best score.
 3. Only a keeper's highest verified score appears. Tie-breakers are higher
    accuracy, then shorter run time, then the earlier submission.
 4. The board is live only during that event occurrence. At the exact close it
    becomes read-only, freezes the winners, grants prizes exactly once, and
    remains visible for five complete days with a results-expiry countdown.
-5. After those five days the occurrence disappears from the active ranking UI.
-   A future recurrence gets a new occurrence ID and a completely empty board.
+5. After those five days the full occurrence disappears from the active ranking
+   UI, but its top three remain in the permanent Seasonal Chronicle. A future
+   recurrence gets a new occurrence ID and a completely empty live board.
 6. The screen shows the top entries, the keeper's own rank even when outside
    the visible top group, and a distinct podium presentation for places 1–3.
 
@@ -295,19 +295,17 @@ is not sufficient for a worldwide rewarded ranking.
 #### Decisions needed before implementation
 
 - approve or rename each of the five Trial concepts;
-- confirm equal weighting when the active event Trial joins the refill pool;
-- choose three total ranked attempts per occurrence versus accumulated daily
-  attempts;
-- decide whether every official attempt grants normal rewards or only the best
-  completed official attempt;
+- confirm equal weighting for New Year, Valentine's Day, and Pridefest when
+  their active Trial joins the refill pool;
 - approve the balanced expertise split and define capped-point overflow;
-- choose error/life rules and final score/grade thresholds after prototypes;
+- choose error/life rules for New Year, Valentine's Day, and Pridefest and final
+  score/grade thresholds for every event after prototypes;
 - confirm the proposed top-three chests and whether each podium place gets a
   distinct event emote;
 - choose the duplicate reward for a keeper who wins the same podium emote in a
   later recurrence;
-- decide whether the frozen top three should also be recorded permanently in a
-  Chronicle after the five-day public results window; and
+- confirm whether New Year, Valentine's Day, and Pridefest also retain their
+  frozen top three in the Seasonal Chronicle after five days; and
 - define moderation/disqualification behavior for invalid ranked submissions.
 
 When one concept is selected for implementation, resolve its own fields only.
@@ -379,7 +377,7 @@ not reroll the family, rarity, alignment, size, Spectral state, duration, or
 personality seed. Starter tapping only changes remaining time.
 
 Sinisterra is a secret Mythical family. Cluckatrice has the separate Special
-Event type and therefore cannot unlock the Mythical-dragon achievement. Both
+type and therefore cannot unlock the Mythical-dragon achievement. Both
 families are excluded from ordinary Starter and Mysterious Egg family pools.
 
 ## 6. Lifecycle and persistence rules

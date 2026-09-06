@@ -83,8 +83,7 @@ class DragonLineage {
         DragonRarity.veryRare => isDutch ? 'Zeer zeldzaam' : 'Very Rare',
         DragonRarity.legendary => isDutch ? 'Legendarisch' : 'Legendary',
         DragonRarity.mythical => isDutch ? 'Mythisch' : 'Mythical',
-        DragonRarity.specialEvent =>
-          isDutch ? 'Speciaal evenement' : 'Special Event',
+        DragonRarity.specialEvent => isDutch ? 'Speciaal' : 'Special',
       };
 }
 
