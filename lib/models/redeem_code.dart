@@ -12,23 +12,9 @@ class RedeemCodeDefinition {
   final String rewardId;
 }
 
-const redeemCodeCatalog = <RedeemCodeDefinition>[
-  RedeemCodeDefinition(
-    code: 'EMOTEPACK1',
-    rewardType: RedeemRewardType.dragonEmotePack,
-    rewardId: 'cozy_hatchlings',
-  ),
-  RedeemCodeDefinition(
-    code: 'EMOTEPACK2',
-    rewardType: RedeemRewardType.dragonEmotePack,
-    rewardId: 'infernal_reactions',
-  ),
-  RedeemCodeDefinition(
-    code: 'EMOTEPACK3',
-    rewardType: RedeemRewardType.dragonEmotePack,
-    rewardId: 'celestial_court',
-  ),
-];
+// Keep the redemption infrastructure available for future campaigns, while an
+// empty catalog makes every previously distributed code inactive.
+const redeemCodeCatalog = <RedeemCodeDefinition>[];
 
 final redeemCodesByCode = <String, RedeemCodeDefinition>{
   for (final definition in redeemCodeCatalog) definition.code: definition,
