@@ -137,11 +137,11 @@ recurrence, reward, chest, egg, requirement, or gameplay rule.
 
 | Event concept | Dragon family | What is already decided | Current status |
 |---|---|---|---|
-| Halloween | Gloamgourd | Charcoal harvest design with pumpkin light, vine horns, witchfire, and guardian wisps; six forms exist | Sprite review in progress; all event/gameplay fields below are TBD |
-| Christmas | Hollyfrost | White-and-evergreen winter design with golden antlers, holly, frost crystal, and lantern light; six forms exist | Sprite review in progress; all event/gameplay fields below are TBD |
-| New Year's Day | Dawnchime | Indigo-and-dawn design with chimes, firework fins, turning-year rings, and sunrise ribbons; six forms exist | Sprite review in progress; all event/gameplay fields below are TBD |
-| Valentine's Day | Rosevow | Rose-quartz vow design with petal wings, thorn-gold armor, and a warm heart gem; six forms exist | Sprite review in progress; all event/gameplay fields below are TBD |
-| Pridefest | Spectrumplume | Pearl-and-prism festival design with a full-spectrum feather mantle and aurora ribbons; six forms exist | Sprite review in progress; all event/gameplay fields below are TBD |
+| Halloween | Gloamgourd | Charcoal harvest design with pumpkin light, vine horns, witchfire, and guardian wisps; six forms exist | All six sprites visually approved on 6 September 2026; all event/gameplay fields below are TBD |
+| Christmas | Hollyfrost | White-and-evergreen winter design with golden antlers, holly, frost crystal, and lantern light; six forms exist | All six sprites visually approved on 6 September 2026; all event/gameplay fields below are TBD |
+| New Year's Day | Dawnchime | Indigo-and-dawn design with chimes, firework fins, turning-year rings, and sunrise ribbons; six forms exist | All six sprites visually approved on 6 September 2026; all event/gameplay fields below are TBD |
+| Valentine's Day | Rosevow | Rose-quartz vow design with petal wings, thorn-gold armor, and a warm heart gem; six forms exist | All six sprites visually approved on 6 September 2026; all event/gameplay fields below are TBD |
+| Pridefest | Spectrumplume | Pearl-and-prism festival design with a full-spectrum feather mantle and aurora ribbons; six forms exist | All six sprites visually approved on 6 September 2026; all event/gameplay fields below are TBD |
 
 The current art package and review instructions live in
 [`future_event_art/dragon_families/README.md`](future_event_art/dragon_families/README.md).

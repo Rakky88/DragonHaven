@@ -9,6 +9,8 @@ safe transparent padding. Every head and body axis points toward screen-right.
 The fixed review order is Hatchling, Wyrmling, Might, Arcana, Spirit and
 Mastery.
 
+All 30 sprites were visually approved by the owner on 6 September 2026.
+
 | Event idea | Family | Visual identity |
 | --- | --- | --- |
 | Halloween | Gloamgourd | Charcoal harvest dragon with pumpkin light, vine horns, witchfire and guardian wisps |
