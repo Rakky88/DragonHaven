@@ -170,6 +170,7 @@ be recorded before the corresponding event is implemented.
 | Dragon rules | Family type/rarity, alignment restrictions, personality visibility, starting stats, evolution requirements, expertise caps, names, Draconomicon behavior, and whether any form grants existing rarity achievements |
 | Spectral behavior | Whether the egg/family can be Spectral, its base chance, and whether Golden Hour or another event modifier applies |
 | Milestones | Hatch/event achievements, journal entries, titles, badges, follow-up rewards, and duplicate/fallback behavior |
+| Event-only Trial | Whether the proposed Trial is approved; its final name, rules, grade thresholds, attempt allowance, standard reward behavior, expertise split, and leaderboard/prize rules |
 | Presentation | Event card and detail copy, countdown placement, completed-state UI, localization, accessibility, and reduced-motion treatment |
 | Notifications | Availability notification timing, deep link destination, account toggle/default, and recurrence rescheduling |
 | Operations | Whether new persisted definition IDs, migrations, server validation, backup/import compatibility, trade support, monitoring, or staging fixtures are required |
@@ -191,6 +192,117 @@ be recorded before the corresponding event is implemented.
 - **Pridefest / Spectrumplume:** the exact named occasion and calendar window
   (there is no assumed universal Pridefest date), recurrence, story tone, and
   any community/cooperative focus.
+
+### 2.3 Proposed event-only Trials (not approved or implemented)
+
+Each future event can have one temporary Trial that exists only while that
+event occurrence is active. These are design proposals, not current gameplay
+contracts. They intentionally use three distinct simple actions so Might,
+Spirit, and Arcana all matter without applying an expertise multiplier to the
+submitted score.
+
+| Event | Proposed Trial | Simple game loop | Might contribution | Spirit contribution | Arcana contribution |
+|---|---|---|---|---|---|
+| Halloween | **Witchlight Ward** | Protect a lantern through short repeating rounds: identify the safe rune, guide its wisp into the lantern, then strike the curse at the right moment | Makes the strike timing zone slightly wider | Gives slightly more steering control and a smaller wisp collision area | Keeps the safe rune visible slightly longer |
+| Christmas | **Hollyfrost Giftforge** | Memorize a tiny gift recipe, stamp it when the forge meter reaches gold, then drag it into the matching sleigh slot while avoiding snowballs | Makes the golden stamping zone slightly wider | Improves drag control and softens obstacle collisions | Extends recipe preview time slightly |
+| New Year's Day | **Midnight Chime** | Build one firework at a time: select its shown sigil, launch through a curved ring path, then tap on the midnight chime to burst it | Makes the final chime window slightly wider | Improves launch steering and ring tolerance | Extends sigil visibility slightly |
+| Valentine's Day | **Rosevow Relay** | Find two matching heart sigils, trace a safe path between them, then break the thorn lock at its bright point | Makes the thorn-break timing zone slightly wider | Makes path tracing slightly more forgiving | Extends the matching-symbol preview slightly |
+| Pridefest | **Prismatic Parade** | Read a two-color light recipe, steer the beam through matching festival hoops, then crack the final dull crystal on the beat | Makes the crystal timing zone slightly wider | Improves beam steering and hoop tolerance | Extends the color-recipe preview slightly |
+
+Recommended common game rules:
+
+- one available owned dragon participates and remains visible/reactive;
+- each run lasts about 60–90 seconds and gradually accelerates;
+- correct three-action sequences build a capped combo; errors break the combo
+  instead of immediately ending the run, with the exact life/error limit still
+  TBD;
+- the three expertise benefits are deliberately small and capped so developed
+  dragons feel useful without making a low-expertise score meaningless;
+- the leaderboard receives the actual achieved score, never a post-game
+  expertise multiplier;
+- each event receives its own tuned D/C/B/A/S/S+ thresholds after playtesting;
+  and
+- controls remain one-thumb friendly, color-blind distinguishable, reduced-
+  motion compatible, and deterministic from a server-issued ranked seed.
+
+#### Proposed normal Trial rewards
+
+An official event-Trial completion should reuse the normal Trial grade table:
+the existing XP amount, chest roll, S+ relic roll, and S+ ordinary Trial-emote
+roll remain unchanged. The normal expertise amount is **split** across Might,
+Spirit, and Arcana instead of being granted three times:
+
+| Grade | Total expertise | Proposed balanced split |
+|---|---:|---|
+| D | 1 | +1 to the participant's lowest expertise |
+| C | 2 | +1 to each of the two lowest expertises |
+| B | 3 | +1 Might, +1 Spirit, +1 Arcana |
+| A | 4 | +2 to the lowest expertise and +1 to the other two |
+| S | 5 | +2 to the two lowest expertises and +1 to the highest |
+| S+ | 7 | +3 to the lowest expertise and +2 to the other two |
+
+Ties between equally low expertise values need a stable rotation so the same
+stat is not always favored. Existing expertise caps still apply; any point that
+cannot be placed needs a decided overflow rule before implementation.
+
+#### Proposed temporary worldwide leaderboard
+
+The recommended competition model is:
+
+1. Only registered, e-mail-verified online keepers can submit ranked runs.
+   Everyone can still use an offline practice mode without rewards or ranking.
+2. Each keeper receives **three official ranked/rewarded attempts per event
+   occurrence**. Practice is unlimited, but can never submit a score or grant a
+   reward. This avoids a leaderboard decided mainly by grinding. A one-per-day
+   model with accumulated unused attempts remains an alternative if longer
+   events should encourage daily play.
+3. Only a keeper's highest verified score appears. Tie-breakers are higher
+   accuracy, then shorter run time, then the earlier submission.
+4. The board is live only during that event occurrence. At the exact close it
+   becomes read-only, freezes the winners, grants prizes exactly once, and
+   remains visible for five complete days with a results-expiry countdown.
+5. After those five days the occurrence disappears from the active ranking UI.
+   A future recurrence gets a new occurrence ID and a completely empty board.
+6. The screen shows the top entries, the keeper's own rank even when outside
+   the visible top group, and a distinct podium presentation for places 1–3.
+
+Recommended podium rewards for every event occurrence:
+
+| Place | Chest | Cosmetic |
+|---:|---|---|
+| 1 | Mythical Chest | Event-specific gold/champion dragon emote |
+| 2 | Dragon Chest | Event-specific silver/runner-up dragon emote |
+| 3 | Gold Chest | Event-specific bronze/third-place dragon emote |
+
+This would require three podium emotes per event (15 total). Suggested themes
+are Gloamgourd lantern reactions, Hollyfrost festive reactions, Dawnchime
+firework reactions, Rosevow heart reactions, and Spectrumplume radiant parade
+reactions. Whether repeat winners receive no duplicate cosmetic, a replacement,
+or a year-specific variant is still TBD.
+
+Ranked attempts and prize delivery must be server-authoritative. The server
+should issue the occurrence ID, deterministic seed, nonce, and attempt token;
+validate a compact action log against plausible timing and the seeded game;
+rate-limit submissions; reject replayed/expired tokens; freeze standings in a
+transaction; and create idempotent prize grants. A client-reported score alone
+is not sufficient for a worldwide rewarded ranking.
+
+#### Decisions needed before implementation
+
+- approve or rename each of the five Trial concepts;
+- choose three total ranked attempts per occurrence versus accumulated daily
+  attempts;
+- decide whether every official attempt grants normal rewards or only the best
+  completed official attempt;
+- approve the balanced expertise split and define capped-point overflow;
+- choose error/life rules and final score/grade thresholds after prototypes;
+- confirm the proposed top-three chests and whether each podium place gets a
+  distinct event emote;
+- choose the duplicate reward for a keeper who wins the same podium emote in a
+  later recurrence;
+- decide whether the frozen top three should also be recorded permanently in a
+  Chronicle after the five-day public results window; and
+- define moderation/disqualification behavior for invalid ranked submissions.
 
 When one concept is selected for implementation, resolve its own fields only.
 Do not copy Golden Wings values or another future concept's choices merely to
