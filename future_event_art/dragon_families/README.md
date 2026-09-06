@@ -26,3 +26,7 @@ None of these concepts currently defines a schedule, egg, chest, reward,
 rarity or drop chance. When one becomes a real Special Adventure, use the
 DragonHaven Special Adventure skill and update the living event and randomness
 references as applicable.
+
+The canonical event catalog and the complete list of unresolved decisions for
+these concepts are maintained in
+[`SPECIAL_EVENTS_CHESTS_AND_EGGS.md`](../../SPECIAL_EVENTS_CHESTS_AND_EGGS.md#22-future-event-concepts-art-only-not-scheduled).

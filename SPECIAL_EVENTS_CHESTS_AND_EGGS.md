@@ -1,6 +1,6 @@
 # DragonHaven Special Events, Chests, and Eggs
 
-Last verified: 5 September 2026
+Last verified: 6 September 2026
 
 Ruleset: app version `v0.05.11`
 
@@ -126,6 +126,75 @@ do not reveal its contents to the player before it is opened.
 The Cluckatrice family contains Hatchling, Wyrmling, Might, Spirit, Arcana, and
 Mastery forms. The egg uses the special egg hint/presentation so it remains
 recognizable as event content without revealing its dragon early.
+
+### 2.2 Future event concepts (art only; not scheduled)
+
+The concepts below are **not implemented Special Events** and are not entries
+in `specialAdventureEventCatalog`. Their artwork is kept outside Flutter's
+shipping asset tree, so it cannot appear in gameplay or increase the current
+download size. A holiday name must never be treated as an implied date,
+recurrence, reward, chest, egg, requirement, or gameplay rule.
+
+| Event concept | Dragon family | What is already decided | Current status |
+|---|---|---|---|
+| Halloween | Gloamgourd | Charcoal harvest design with pumpkin light, vine horns, witchfire, and guardian wisps; six forms exist | Sprite review in progress; all event/gameplay fields below are TBD |
+| Christmas | Hollyfrost | White-and-evergreen winter design with golden antlers, holly, frost crystal, and lantern light; six forms exist | Sprite review in progress; all event/gameplay fields below are TBD |
+| New Year's Day | Dawnchime | Indigo-and-dawn design with chimes, firework fins, turning-year rings, and sunrise ribbons; six forms exist | Sprite review in progress; all event/gameplay fields below are TBD |
+| Valentine's Day | Rosevow | Rose-quartz vow design with petal wings, thorn-gold armor, and a warm heart gem; six forms exist | Sprite review in progress; all event/gameplay fields below are TBD |
+| Pridefest | Spectrumplume | Pearl-and-prism festival design with a full-spectrum feather mantle and aurora ribbons; six forms exist | Sprite review in progress; all event/gameplay fields below are TBD |
+
+The current art package and review instructions live in
+[`future_event_art/dragon_families/README.md`](future_event_art/dragon_families/README.md).
+
+#### Information still required for each future event
+
+Every field in this table is unresolved independently for Halloween,
+Christmas, New Year's Day, Valentine's Day, and Pridefest. These decisions must
+be recorded before the corresponding event is implemented.
+
+| Decision area | Information still needed |
+|---|---|
+| Identity | Stable event ID, Adventure ID, player-facing title, theme/occasion, and short story |
+| Availability | Exact first start and end date **including year**, wall-clock times, timezone, and whether the event recurs |
+| Recurrence | If recurring: cadence, first recurrence, timezone, and handling for leap years or other calendar edge cases |
+| Start/completion rules | Whether a run started before closing remains finishable; attempts per occurrence; whether parallel copies are allowed |
+| Adventure duration | Base journey length, minimum final duration, discount cap, and rounding behavior |
+| Participation | Solo or Group Adventure; minimum/maximum dragon and keeper count |
+| Dragon requirements | Allowed forms, rarities, families, alignments, levels, ownership/availability rules, and required individual or combined expertise |
+| Expertise reduction | Which of Might, Spirit, and Arcana shorten the journey and the exact reduction per point |
+| Direct rewards | Every guaranteed or random currency, XP, expertise, relic, chest, egg, Music Chest, furniture, vanity, emote, achievement, or other reward, including quantities and exact odds |
+| Reward visibility | Which rewards are shown before starting, which remain secret, and the exact player-facing wording |
+| Special Chest | Whether the event awards one at all; if yes, its stable definition/version, name, contents/odds, quantity, tradeability, duplicate and multi-open rules, reveal policy, sprite, and opening audio |
+| Egg delivery | Whether the event family comes from a direct egg reward, a Special Chest, another source, or is not awarded by this event |
+| Special Egg | If used: stable definition/version, name, exact family pool and odds, incubation duration, speed-up rules, tradeability, acquisition limit, hint, and reveal behavior |
+| Dragon rules | Family type/rarity, alignment restrictions, personality visibility, starting stats, evolution requirements, expertise caps, names, Draconomicon behavior, and whether any form grants existing rarity achievements |
+| Spectral behavior | Whether the egg/family can be Spectral, its base chance, and whether Golden Hour or another event modifier applies |
+| Milestones | Hatch/event achievements, journal entries, titles, badges, follow-up rewards, and duplicate/fallback behavior |
+| Presentation | Event card and detail copy, countdown placement, completed-state UI, localization, accessibility, and reduced-motion treatment |
+| Notifications | Availability notification timing, deep link destination, account toggle/default, and recurrence rescheduling |
+| Operations | Whether new persisted definition IDs, migrations, server validation, backup/import compatibility, trade support, monitoring, or staging fixtures are required |
+
+#### Event-specific open choices
+
+- **Halloween / Gloamgourd:** exact Halloween window and recurrence; playful,
+  mysterious, or genuinely sinister tone; whether Sinister mechanics or chests
+  are involved (they are not implied by the artwork).
+- **Christmas / Hollyfrost:** exact winter/Christmas window and recurrence;
+  whether the story is explicitly Christmas-themed or broader winter-themed;
+  regional/timezone presentation.
+- **New Year's Day / Dawnchime:** which timezone owns the year boundary;
+  whether availability spans New Year's Eve, New Year's Day, or both; handling
+  of the displayed year in recurring copy.
+- **Valentine's Day / Rosevow:** exact window and recurrence; whether the story
+  focuses on romance, friendship, or both; whether participation is solo or
+  cooperative.
+- **Pridefest / Spectrumplume:** the exact named occasion and calendar window
+  (there is no assumed universal Pridefest date), recurrence, story tone, and
+  any community/cooperative focus.
+
+When one concept is selected for implementation, resolve its own fields only.
+Do not copy Golden Wings values or another future concept's choices merely to
+fill a blank.
 
 ## 3. Other Special Adventures
 
