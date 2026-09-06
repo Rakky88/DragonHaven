@@ -127,19 +127,20 @@ The Cluckatrice family contains Hatchling, Wyrmling, Might, Spirit, Arcana, and
 Mastery forms. The egg uses the special egg hint/presentation so it remains
 recognizable as event content without revealing its dragon early.
 
-### 2.2 Future event concepts (art only; not scheduled)
+### 2.2 Future event concepts (planned; not implemented)
 
 The concepts below are **not implemented Special Events** and are not entries
-in `specialAdventureEventCatalog`. Their artwork is kept outside Flutter's
-shipping asset tree, so it cannot appear in gameplay or increase the current
-download size. A holiday name must never be treated as an implied date,
-recurrence, reward, chest, egg, requirement, or gameplay rule.
+in `specialAdventureEventCatalog`. Some now have an approved or proposed design,
+but their artwork remains outside Flutter's shipping asset tree, so it cannot
+appear in gameplay or increase the current download size. A holiday name must
+never be treated as an implied date, recurrence, reward, chest, egg,
+requirement, or gameplay rule; only explicitly recorded fields apply.
 
 | Event concept | Dragon family | What is already decided | Current status |
 |---|---|---|---|
 | Halloween | Gloamgourd | Charcoal harvest design with pumpkin light, vine horns, witchfire, and guardian wisps; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
-| Christmas | Hollyfrost | White-and-evergreen winter design with golden antlers, holly, frost crystal, and lantern light; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
-| New Year's Day | Dawnchime | Indigo-and-dawn design with chimes, firework fins, turning-year rings, and sunrise ribbons; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
+| Christmas | Hollyfrost | White-and-evergreen winter design with golden antlers, holly, frost crystal, and lantern light; six forms exist | Sprites and complete event contract approved; implementation has not started |
+| New Year's Day | Dawnchime | Indigo-and-dawn design with chimes, firework fins, turning-year rings, and sunrise ribbons; six forms exist | Sprites approved; detailed event proposal awaits owner decisions |
 | Valentine's Day | Rosevow | Rose-quartz vow design with petal wings, thorn-gold armor, and a warm heart gem; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
 | Pridefest | Spectrumplume | Pearl-and-prism festival design with a full-spectrum feather mantle and aurora ribbons; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
 
@@ -182,12 +183,13 @@ decisions must be recorded before the corresponding event is implemented.
 - **Halloween / Gloamgourd:** exact Halloween window and recurrence; playful,
   mysterious, or genuinely sinister tone; whether Sinister mechanics or chests
   are involved (they are not implied by the artwork).
-- **Christmas / Hollyfrost:** exact winter/Christmas window and recurrence;
-  whether the story is explicitly Christmas-themed or broader winter-themed;
-  regional/timezone presentation.
+- **Christmas / Hollyfrost:** material event choices are resolved in
+  `NEW_EVENTS_PLAN.md`; its data, UI, assets, server contract, tests, and release
+  remain to be implemented.
 - **New Year's Day / Dawnchime:** which timezone owns the year boundary;
-  whether availability spans New Year's Eve, New Year's Day, or both; handling
-  of the displayed year in recurring copy.
+  approve the proposed 31 December–2 January window and handling of the
+  displayed year in recurring copy, plus the proposed Adventure, chest, egg,
+  Trial, ranking, music, preview, and identity rules in `NEW_EVENTS_PLAN.md`.
 - **Valentine's Day / Rosevow:** exact window and recurrence; whether the story
   focuses on romance, friendship, or both; whether participation is solo or
   cooperative.
@@ -219,9 +221,9 @@ Recommended common game rules:
 
 - one available owned dragon participates and remains visible/reactive;
 - each run lasts about 60–90 seconds and gradually accelerates;
-- correct three-action sequences build a capped combo; Halloween and Christmas
-  begin every run with three available mistakes, while the other events still
-  need their life/error rules;
+- correct three-action sequences build a capped combo; there is no shared
+  three-error/life rule, and each game receives only a timer or failure mechanic
+  that genuinely belongs to its own loop;
 - the three expertise benefits are deliberately small and capped so developed
   dragons feel useful without making a low-expertise score meaningless;
 - the leaderboard receives the actual achieved score, never a post-game
@@ -248,20 +250,30 @@ roll remain unchanged on every completed offer. The normal expertise amount is
 | S+ | 7 | +3 to the lowest expertise and +2 to the other two |
 
 Ties between equally low expertise values need a stable rotation so the same
-stat is not always favored. Existing expertise caps still apply; any point that
-cannot be placed needs a decided overflow rule before implementation.
+stat is not always favored. Existing expertise caps still apply. Christmas
+reroutes a blocked point to another eligible expertise and discards it only if
+all three are capped; the other event Trials still need to adopt or replace this
+rule.
+
+A completed Christmas event Trial counts toward the Seven-day Trial
+Constellation, subject to the existing maximum of one filled day per local
+calendar date. It can only be started on 25 or 26 December. A genuinely started
+run can finish after the event boundary, while an unstarted offer is removed.
+The detailed New Year proposal adopts both rules but still requires approval.
 
 #### Temporary worldwide leaderboard
 
-The confirmed Halloween and Christmas competition model is:
+The confirmed core Halloween and Christmas competition model is:
 
 1. Only registered, e-mail-verified online keepers can submit ranked runs.
-   The exact offline completion behavior still needs owner approval.
+   Christmas offline completion still grants its normal reward but cannot enter
+   the ranking; Halloween's exact offline behavior remains undecided.
 2. There is no separate practice mode or event attempt allowance. Every event
    Trial offer that appears through the normal refill system can be played once,
    grants its normal reward, and may improve the submitted best score.
-3. Only a keeper's highest verified score appears. Tie-breakers are higher
-   accuracy, then shorter run time, then the earlier submission.
+3. Only a keeper's highest verified score appears. For Christmas, tie-breakers
+   are higher accuracy, then shorter run time, then the earlier submission;
+   Halloween has not yet confirmed these tie-breakers.
 4. The board is live only during that event occurrence. At the exact close it
    becomes read-only, freezes the winners, grants prizes exactly once, and
    remains visible for five complete days with a results-expiry countdown.
@@ -279,11 +291,11 @@ Recommended podium rewards for every event occurrence:
 | 2 | Dragon Chest | Event-specific silver/runner-up dragon emote |
 | 3 | Gold Chest | Event-specific bronze/third-place dragon emote |
 
-This would require three podium emotes per event (15 total). Suggested themes
+This requires three podium emotes per event (15 total). Suggested themes
 are Gloamgourd lantern reactions, Hollyfrost festive reactions, Dawnchime
 firework reactions, Rosevow heart reactions, and Spectrumplume radiant parade
-reactions. Whether repeat winners receive no duplicate cosmetic, a replacement,
-or a year-specific variant is still TBD.
+reactions. Christmas uses a visible win count instead of duplicate emotes;
+repeat handling remains TBD for the other events.
 
 Ranked attempts and prize delivery must be server-authoritative. The server
 should issue the occurrence ID, deterministic seed, nonce, and attempt token;
@@ -297,13 +309,14 @@ is not sufficient for a worldwide rewarded ranking.
 - approve or rename each of the five Trial concepts;
 - confirm equal weighting for New Year, Valentine's Day, and Pridefest when
   their active Trial joins the refill pool;
-- approve the balanced expertise split and define capped-point overflow;
-- choose error/life rules for New Year, Valentine's Day, and Pridefest and final
-  score/grade thresholds for every event after prototypes;
+- decide whether New Year, Valentine's Day, and Pridefest adopt the balanced
+  expertise split and Christmas capped-point overflow rule;
+- approve timer/failure behavior and final score/grade thresholds for every
+  event after prototypes, without assuming a shared three-error rule;
 - confirm the proposed top-three chests and whether each podium place gets a
   distinct event emote;
-- choose the duplicate reward for a keeper who wins the same podium emote in a
-  later recurrence;
+- choose repeat podium-emote handling for every event that does not adopt the
+  confirmed Christmas win-count rule;
 - confirm whether New Year, Valentine's Day, and Pridefest also retain their
   frozen top three in the Seasonal Chronicle after five days; and
 - define moderation/disqualification behavior for invalid ranked submissions.

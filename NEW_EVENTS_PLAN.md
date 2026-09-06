@@ -44,8 +44,9 @@ must never be disclosed in public release notes.
 
 ### Trial rotation contract
 
-The initial design uses equal selection among the eligible kinds. With one
-active event this means a newly refilled slot has:
+The approved Halloween/Christmas design and proposed New Year design use equal
+selection among the eligible kinds. With one active event this means a newly
+refilled slot has:
 
 | Trial kind | Proposed refill chance |
 |---|---:|
@@ -55,11 +56,11 @@ active event this means a newly refilled slot has:
 | Active event Trial | 25% |
 
 The refill is selected independently for each empty slot, so duplicate kinds
-remain possible just as they are today. Event Trial offers must persist across
-an ordinary app restart, but must not remain playable indefinitely after the
-event closes. The exact close-boundary grace rule is still TBD; the recommended
-rule is that an already started 60–90 second run may finish, while an unstarted
-offer is removed and its slot returns to the normal three-kind pool.
+remain possible just as they are today. Event Trial offers persist across an
+ordinary app restart. For Christmas, an offer can only transition into a
+started run on 25 or 26 December; an unstarted offer is removed at event close,
+while a run genuinely started before that boundary remains finishable afterward.
+New Year currently proposes the same boundary contract.
 
 If event windows ever overlap, every active event Trial would technically add
 another eligible kind. Before overlapping schedules are released, the owner
@@ -80,34 +81,45 @@ Every event Trial should:
   that event explicitly overrides them;
 - split the existing total expertise reward across Might, Spirit, and Arcana
   instead of tripling it;
+- count a completed event Trial toward the Seven-day Trial Constellation under
+  the existing maximum of one filled day per local calendar date;
 - support touch, compact screens, tablets, text scaling, reduced motion,
   foreground/background transitions, and deterministic testing; and
 - use server-authoritative official attempts for rewarded worldwide rankings.
+
+There is no shared three-errors-or-lives rule. Each Trial prototype gets only a
+timer or failure mechanic that genuinely belongs to that game's loop.
 
 ### Temporary worldwide ranking proposal
 
 | Rule | Proposed behavior | Status |
 |---|---|---|
-| Eligibility | Registered and e-mail-verified accounts | Proposed |
+| Eligibility | Registered and e-mail-verified accounts | Confirmed for Christmas; proposed shared default |
 | Ranked access | Every event-Trial offer that appears in the normal refill rotation can be played once; no per-event attempt cap | Confirmed for Halloween and Christmas |
 | Practice | No separate unlimited practice mode | Confirmed for Halloween and Christmas |
 | Per-run reward | Every completed event-Trial offer grants its normal grade reward | Confirmed for Halloween and Christmas |
 | Counted score | Best verified score for that occurrence | Confirmed for Halloween and Christmas |
-| Tie-breakers | Accuracy, then shortest run time, then earliest submission | Proposed |
-| Closing | Freeze at the exact event end and grant prizes exactly once | Confirmed intent; technical rule proposed |
+| Tie-breakers | Accuracy, then shortest run time, then earliest submission | Confirmed for Christmas; proposed shared default |
+| Closing | Stop new starts at event end, allow an already-started run to finish, then freeze and grant prizes exactly once | Confirmed for Christmas; proposed shared default |
 | Results visibility | Full ranking is read-only for five complete days after event close | Confirmed |
 | Permanent archive | After five days, retain only the top three in the Seasonal Chronicle | Confirmed for Halloween and Christmas |
 | Next recurrence | New occurrence ID and empty live ranking | Confirmed |
 | First place | Mythical Chest plus gold event podium emote | Confirmed for Halloween and Christmas |
 | Second place | Dragon Chest plus silver event podium emote | Confirmed for Halloween and Christmas |
 | Third place | Gold Chest plus bronze event podium emote | Confirmed for Halloween and Christmas |
-| Repeat cosmetic | Keep chest; show a win count on the already owned emote | Proposed |
+| Repeat cosmetic | Keep chest; show a win count on the already owned emote | Confirmed for Christmas; proposed shared default |
 
 Ranked attempts require a server-issued occurrence ID, deterministic seed,
 nonce, short-lived attempt token, and a compact action log that the server can
 validate. Submission replay, expired tokens, impossible timing, impossible
 scores, and excessive submission rates must be rejected. Prize grants must be
 idempotent and recoverable after an interrupted sync.
+
+For Christmas, a completed offline run still receives its normal local reward,
+but only a run started with a valid server attempt token can enter the worldwide
+ranking. Expertise points follow the grade table's existing total and balanced
+split; a point blocked by one capped expertise moves to the next eligible area
+and is discarded only when all three are capped.
 
 ## 4. Halloween event
 
@@ -144,12 +156,13 @@ idempotent and recoverable after an interrupted sync.
 2. Spirit guides its witchlight into the protected lantern.
 3. Might breaks the approaching curse at the bright timing point.
 
-Correct rounds build a capped combo and increase speed. Every new run starts
-with three available mistakes; the third mistake ends that run. Arcana slightly
-extends rune visibility, Spirit slightly
-improves steering/collision tolerance, and Might slightly widens the strike
-window. Exact assistance caps, scoring formula, grade thresholds, and final
-failure timing will be established through prototype playtesting.
+Correct rounds build a capped combo and increase speed. There is no inherited
+three-mistake rule: the prototype determines whether Witchlight Ward ends on a
+timer, a game-specific failure state, or another mechanic that actually belongs
+to this game. Arcana slightly extends rune visibility, Spirit slightly improves
+steering/collision tolerance, and Might slightly widens the strike window.
+Exact assistance caps, scoring formula, grade thresholds, and final failure
+timing will be established through prototype playtesting.
 
 There is no separate practice mode and no per-event attempt allowance. Every
 Witchlight Ward offer produced by the ordinary Trial refill system can be
@@ -269,7 +282,7 @@ availability countdown. The detail page separates requirements, approximate
 rewards, the Special Adventure, the event Trial, and the temporary ranking.
 Chest contents remain hidden until opening.
 
-Recommended notification behavior is one notification at event opening, using
+Confirmed notification behavior is one notification at event opening, using
 the existing Special Events account toggle and a deep link directly to the
 Christmas event. No extra Christmas-morning notification is sent unless the
 owner explicitly requests it.
@@ -283,11 +296,12 @@ owner explicitly requests it.
 3. Spirit guides the finished gift into the matching sleigh compartment while
    avoiding rolling snowballs and drifting frost.
 
-Correct rounds build a capped **Starlight Chain** and gradually speed up. Every
-new run starts with three available mistakes. A wrong recipe, badly timed
-stamp, or collision each consumes one warm hearth light. When all three lights are gone,
-the forge gently freezes, the score arrives with the normal Trial result
-animation, and rewards are granted at that moment.
+Correct rounds build a capped **Starlight Chain** and gradually speed up. There
+is no precommitted three-mistake rule. Wrong recipes, badly timed stamps, and
+collisions reset or reduce the chain; prototype playtesting determines whether
+Giftforge also needs a thematic failure condition or simply ends on its normal
+run timer. The score then arrives with the normal Trial result animation and
+rewards are granted at that moment.
 
 Expertise assistance remains deliberately small:
 
@@ -296,12 +310,13 @@ Expertise assistance remains deliberately small:
 - Spirit improves steering and collision tolerance slightly.
 
 The submitted score is the achieved gameplay score and is never multiplied by
-expertise. Exact assistance caps, round values, combo cap, acceleration, and
-D/C/B/A/S/S+ thresholds are determined through prototype playtesting.
+expertise. Exact assistance caps, round values, combo cap, acceleration,
+game-specific ending behavior, and D/C/B/A/S/S+ thresholds are determined
+through prototype playtesting.
 
 The Trial uses the shared four-kind refill contract: while Christmas is active,
 each newly filled Trial slot can choose Cavern Flight, Ruin Breaker,
-Runeweaver, or Hollyfrost Giftforge. Equal weighting would give each 25%.
+Runeweaver, or Hollyfrost Giftforge, each with a 25% refill chance.
 Hollyfrost Giftforge enters the pool at 25 December 00:00 and leaves it at
 27 December 00:00; it is therefore seasonally available only on 25 and
 26 December. An explicitly authorized personal preview occurrence is the only
@@ -310,7 +325,11 @@ outside-season exception.
 There is no practice mode or separate attempt allowance. Every Giftforge offer
 that appears through the normal Trial refill system can be played once. Every
 completed run grants its normal grade reward and can improve the keeper's best
-verified Christmas score.
+verified Christmas score. The offer can only be started on 25 or 26 December;
+if its run has genuinely started before 27 December 00:00, it may be completed
+after that boundary. An unstarted offer is removed. A completed Giftforge run
+counts toward the Seven-day Trial Constellation under the normal one-day-per-
+local-date limit.
 
 ### 5.4 Christmas chest and egg proposal
 
@@ -351,13 +370,18 @@ achievements and ordinary egg pools.
 An official Hollyfrost Giftforge run reuses the normal Trial grade reward table.
 XP, chest odds, the S+ relic roll, and the S+ ordinary Trial-emote roll remain
 unchanged. The normal total expertise reward is distributed across Might,
-Spirit, and Arcana using the shared balanced split in section 3.
+Spirit, and Arcana using the shared balanced split in section 3. Points blocked
+by an expertise cap move to another eligible expertise and are discarded only
+when all three are capped.
 
 Every randomly refilled Giftforge offer is an official rewarded run. There is
 no per-occurrence attempt limit and no separate practice mode. The best
-verified score counts; the complete final ranking remains visible for five
-days, after which only its top three are retained permanently in the Seasonal
-Chronicle.
+online-validated score counts. Offline completion still grants the normal
+reward but cannot submit a ranked score. Only registered, e-mail-verified
+accounts enter the board. Ties resolve by accuracy, then shorter run duration,
+then earliest submission. The complete final ranking remains visible for five
+days, after which only the occurrence, top-three keepers, their scores, places,
+and podium cosmetics are retained permanently in the Seasonal Chronicle.
 
 Confirmed Christmas podium rewards:
 
@@ -368,8 +392,8 @@ Confirmed Christmas podium rewards:
 | 3 | Gold Chest | **Snowy Cheer** — Hollyfrost giving a proud bronze-bell salute |
 
 All three are permanent, non-tradeable chat emotes. A repeated podium result
-never creates a duplicate; the proposed replacement is a visible podium-win
-count on the owned emote while the normal chest prize is still granted.
+never creates a duplicate; it increases a visible podium-win count on the owned
+emote while the normal chest prize is still granted.
 
 ### 5.6 Outside-season Christmas preview proposal
 
@@ -387,8 +411,9 @@ The preview follows the Halloween safety model:
 - preview scores enter a separate test ranking and never the real Christmas
   worldwide ranking;
 - production preview rewards are simulated and never alter permanent inventory;
-- staging may use an explicit test fixture to verify persistent reward grants
-  and idempotency without changing the production preview contract;
+- staging uses an explicit test fixture with persistent staging-only rewards to
+  verify reward grants and idempotency without changing the production preview
+  contract;
 - the UI and diagnostic export clearly identify `TEST EVENT`; and
 - the server can disable or re-enable the code without publishing a new app.
 
@@ -400,7 +425,7 @@ These preview rules are confirmed for the owner account.
   presentation;
 - Hollyfrost Giftforge Trial icon and warm workshop background;
 - recipe sigils, forge meter, stamp, gift variants, sleigh compartments,
-  snowballs, frost obstacles, three hearth lights, combo, hit/miss, and result
+  snowballs, frost obstacles, hearth-light accents, combo, hit/miss, and result
   sprites/animations;
 - closed and opened Starlight Gift Chest;
 - Starlit Evergreen Egg and nest presentation;
@@ -429,25 +454,176 @@ alpha, crop, scale, contrast, memory, and emulator checks before release.
   from the selectable Jukebox catalog and active playback transitions cleanly
   to the next selected owned track or silence.
 - The selected/toggle state of permanent tracks remains untouched.
-- Whether this temporary track is enabled automatically on first event entry or
-  merely becomes selectable is still TBD.
+- It is automatically enabled on first event entry when global music is on,
+  remains individually switchable in the Jukebox, and never forces global music
+  on.
+- Codex selects and verifies the exact recording. The preferred composition is
+  **O Christmas Tree**; both the composition and specific recording must satisfy
+  the stated commercial-use public-domain/CC0 requirement before inclusion.
 
-## 6. New Year's Day event intake
+## 6. New Year's Day event proposal
 
 | Field | Current value | Status |
 |---|---|---|
 | Event concept | New Year's Day | Confirmed |
 | Dragon family | Dawnchime; all six sprites approved | Confirmed |
 | Event Trial | One unique New Year Trial | Confirmed |
-| Trial concept | Midnight Chime: choose sigil, guide firework, burst on the chime | Proposed |
-| Trial rotation | Fourth eligible kind while the New Year event is active | Confirmed program rule |
-| Display name/story | Not supplied yet | TBD |
-| Schedule/timezone/recurrence | Must explicitly define which timezone owns the year boundary | TBD |
-| Adventure, requirements, duration and reduction | Not supplied yet | TBD |
-| Direct rewards, chest and egg | Not supplied yet | TBD |
-| Dawnchime gameplay rules and achievement | Not supplied yet | TBD |
-| Ranking and outside-season preview | Not supplied yet | TBD |
-| New visual/audio assets | Defined after content choices | TBD |
+| Trial concept | Midnight Chime: read a sigil, guide its firework, burst it on the midnight bell | Proposed |
+| Trial rotation | Fourth eligible kind with equal 25% refill chance while the event is active | Proposed |
+| Event display name | When the New Dawn Rings / Wanneer de Nieuwe Dageraad Klinkt | Proposed |
+| Stable event ID | `new_year_first_dawn` | Codex proposal |
+| Event story | Dawnchime must recover the final scattered chimes so the first sunrise can cross the Haven | Proposed |
+| First window | 31 December 2026 18:00 through 2 January 2027 00:00 | Proposed |
+| Timezone/recurrence | Europe/Amsterdam wall time; annually across the same year boundary | Proposed |
+| Special Adventure | The Bell Beyond Midnight / De Klok Voorbij Middernacht | Proposed |
+| Adventure duration | 72 hours before reduction | Proposed |
+| Completion after close | Adventure and already-started Trial may finish after close; neither can start after close | Proposed |
+| Adventure limit | Once per account per occurrence | Proposed |
+| Participation | Solo with one available owned dragon; no form/rarity minimum | Proposed |
+| Expertise reduction | Combined Might + Spirit + Arcana, 15 minutes per point, minimum 24 hours | Proposed |
+| Direct rewards | 700 XP, +10 Might, +10 Spirit, +10 Arcana, one Firstlight Celebration Chest | Proposed |
+| Advance disclosure | Show XP, expertise, and Special Chest; keep chest contents secret | Proposed |
+
+### 6.1 Story and presentation proposal
+
+**Short event story:**
+
+> On the last night of the year, the Haven's great sky-bell falls silent and
+> the first sunrise loses its path. Dawnchime gathers its scattered notes across
+> the darkened towers, searching for the one clear chime that can call a new dawn
+> home.
+
+The presentation moves from indigo midnight through gold and coral sunrise.
+Firework trails, turning-year rings, hanging chimes, and the first ray of dawn
+connect the Adventure, Trial, chest, egg, and ranking. The event card has a live
+availability countdown. Its detail page separates requirements, visible
+rewards, the Special Adventure, the event Trial, and the temporary ranking.
+
+The proposed access rule has no Tower-level, rarity, family, or alignment gate.
+One notification is sent when the event opens, controlled by the existing
+Special Events notification toggle and deep-linked to this event.
+
+### 6.2 Special Adventure proposal
+
+**The Bell Beyond Midnight** is a solo, once-per-occurrence journey for one
+available dragon. Its 72-hour base duration is reduced by the participating
+dragon's combined Might, Spirit, and Arcana at 15 minutes per point, never below
+24 hours. Starting is restricted to the active event window; once started, the
+Adventure remains safely finishable afterward.
+
+Proposed direct rewards are:
+
+- 700 XP for the participating dragon;
+- +10 Might, +10 Spirit, and +10 Arcana; and
+- one non-tradeable **Firstlight Celebration Chest**.
+
+The XP, expertise, and presence of the Special Chest are visible before start.
+The chest contents are not shown.
+
+### 6.3 Midnight Chime Trial proposal
+
+**Midnight Chime** is a timed approximately 75-second sequence with three short
+actions per round:
+
+1. Arcana remembers and selects the briefly shown constellation sigil.
+2. Spirit guides the matching firework through curved, moving sky rings.
+3. Might strikes the great bell in its bright timing zone so the firework bursts
+   exactly on the chime.
+
+Correct rounds build a capped **Dawn Chorus** combo and gradually increase the
+pace. A mistake breaks the combo and costs time, but there is no arbitrary
+three-error limit and no separate practice mode. The run ends when its timer
+expires. Arcana slightly lengthens the sigil preview, Spirit slightly widens the
+safe ring path, and Might slightly widens the bell timing zone. These benefits
+are capped and never multiply the submitted score.
+
+During the active event, Midnight Chime joins the three ordinary Trial kinds as
+a fourth equally weighted refill result. Every refilled offer can be played
+once, grants the normal Trial grade reward, and can improve the keeper's best
+verified event score. An offer may only be started while the event is active;
+an already-started run can finish afterward. It counts toward the Seven-day
+Trial Constellation, still subject to the global maximum of one day per local
+calendar date.
+
+The proposed expertise distribution and capped-point overflow reuse the now
+confirmed Christmas rule: preserve the ordinary grade's total expertise,
+allocate its balanced split across all three areas, reroute capped points to an
+eligible area, and discard a point only when all three areas are capped.
+
+### 6.4 New Year chest and egg proposal
+
+| Field | Proposed value | Status |
+|---|---|---|
+| Chest definition ID | `new_year_firstlight_chest_v1` | Codex proposal |
+| Chest name | Firstlight Celebration Chest / Eerstelicht-feestkist | Proposed |
+| Chest contents | 365 coins, 12 gems, one Turning-Year Egg | Proposed |
+| Randomness | Fixed contents | Proposed |
+| Tradeability | Never tradeable | Proposed |
+| Player disclosure | Show only that a Special Chest is awarded; keep all contents secret until opening | Proposed |
+| Chest presentation | Own closed/open sprites and a layered bell, firework, and dawn-burst opening sound | Needed; Codex |
+| Egg definition ID | `new_year_turning_year_egg_v1` | Codex proposal |
+| Egg name | Turning-Year Egg / Jaarwende-ei | Proposed |
+| Egg outcome | Dawnchime only, 100% | Proposed |
+| Family type | Special; never counts for an ordinary rarity achievement | Proposed |
+| Incubation | Exactly 24 hours | Proposed |
+| Speed-up | No special tap acceleration; ordinary eligible incubation effects still apply | Proposed |
+| Spectral | 5% normally; 10% when hatching during Golden Hour | Proposed |
+| Moral nature | Always Neutral and immediately known, reflecting balance between the old and new year | Proposed |
+| Order/personality | Normal random identity rules; personality initially hidden | Proposed |
+| Tradeability | Never tradeable | Proposed |
+| Hatch achievement | First Light, First Flight | Proposed |
+
+Dawnchime otherwise uses normal evolution levels, expertise requirements and
+caps. Its six already approved forms remain classified as Special and outside
+ordinary rarity-achievement progress.
+
+### 6.5 Ranking proposal
+
+The New Year ranking reuses the Christmas safety and fairness rules: registered
+and e-mail-verified accounts, server-issued attempt tokens, rewarded offline
+completion but ranking only for online validated runs, best verified score,
+then accuracy, shorter duration, and earliest submission as tie-breakers.
+
+The complete ranking freezes at event close and remains visible for five days.
+Afterward only the top three are retained permanently in the Seasonal Chronicle.
+A later annual occurrence begins with an empty ranking.
+
+| Place | Chest | Unique Dawnchime emote |
+|---:|---|---|
+| 1 | Mythical Chest | **Crowned at Midnight** — Dawnchime beneath a crown of golden fireworks |
+| 2 | Dragon Chest | **Silver Spark Salute** — Dawnchime ringing a bright silver sky-bell |
+| 3 | Gold Chest | **Bronze Dawn Cheer** — Dawnchime greeting the sunrise with a bronze chime |
+
+An already-owned podium emote receives a visible podium-win count instead of a
+duplicate; its chest reward is still granted.
+
+### 6.6 Outside-season preview proposal
+
+Proposed redeem code: `NEWYEARSEVENT`, inactive until implementation. The
+recommended contract matches Christmas:
+
+- only Keeper ID `DH-17792DC5` can use it;
+- it opens a reusable personal 48-hour preview after the previous preview ends;
+- production rewards are simulated and cannot change permanent inventory;
+- scores use a separate test ranking;
+- staging may grant persistent staging rewards for complete reward and
+  idempotency verification; and
+- the UI and diagnostic export label the occurrence as `TEST EVENT`.
+
+### 6.7 Music, sound, and art proposal
+
+The event receives one temporary New Year background track that is automatically
+enabled on first event entry when global music is enabled, remains switchable in
+the Jukebox, and disappears cleanly after the event or personal preview. Codex
+will source an explicitly CC0/Public Domain commercial-use recording; the
+recommended musical direction is a distinct festive-bell arrangement of **Auld
+Lang Syne**, kept separate from any permanently owned Jukebox recording.
+
+New assets still needed are the event banner/card, first-dawn sky, great bell,
+firework rings and trails, Trial UI pieces and reactions, closed/open chest,
+egg, three podium emotes, and bell/firework/chest/success/error sounds. Existing
+approved Dawnchime family sprites are reused. Whether the owner wants a separate
+emulator review of these non-dragon assets remains undecided.
 
 ## 7. Valentine's Day event intake
 
@@ -569,30 +745,45 @@ Every event needs automated and emulator coverage for:
 9. Decide whether the event needs its own background music or only effects.
 10. Visually approve the new non-dragon event assets after they are created.
 
-## 13. Current owner decisions still required for Christmas
+## 13. Christmas owner decisions
 
-1. Choose the event-close behavior for an unstarted Giftforge offer and a run
-   already in progress.
-2. Approve the exact balanced expertise distribution and define what happens
-   when one or more expertises have reached their cap.
-3. Confirm whether a Christmas Trial counts toward the Seven-day Trial
-   Constellation like an ordinary Trial.
-4. Decide whether an offline event Trial remains playable/rewarded without a
-   ranked submission, or whether event Trials require an online attempt token.
-5. Approve registered/e-mail-verified ranking eligibility and the proposed
-   accuracy, time, then earliest-submission tie-breakers.
-6. Approve the repeat-win counter for an already owned podium emote.
-7. Confirm that "permanent Chronicle" means a global **Seasonal Chronicle**
-   containing the occurrence, top three keepers, scores, and podium cosmetics,
-   while the rest of the ranking disappears after five days.
-8. Decide whether the temporary Christmas track is automatically enabled on
-   first event entry or only becomes selectable in the Jukebox.
-9. Choose the Christmas track or authorize Codex to source a fitting verified
-   CC0/Public Domain recording, with **O Christmas Tree** as the recommended
-   composition.
-10. Decide whether staging previews grant persistent staging rewards. Production
-    simulation, `CHRISTMASEVENT`, Keeper ID `DH-17792DC5`, a reusable 48-hour
-    preview, and a separate test ranking are already confirmed.
+All material Christmas content choices are resolved. Codex may tune only
+implementation-level timing, thresholds, accessibility behavior, responsive
+layout, and a game-specific ending mechanic through tests and playtesting. This
+does not authorize changing the schedule, rewards, odds, availability, ranking
+contract, or preview safety model.
+
+## 14. Current owner decisions still required for New Year
+
+1. Approve or replace the proposed display name, story, stable ID, Adventure
+   name, and Dutch names.
+2. Confirm the first window (31 December 2026 18:00 through 2 January 2027
+   00:00), Europe/Amsterdam timezone, and annual recurrence.
+3. Confirm solo participation, one available dragon, once per occurrence,
+   72-hour base duration, 15 minutes per combined expertise point, and 24-hour
+   minimum.
+4. Approve the direct 700 XP, +10 to each expertise, and one Firstlight
+   Celebration Chest reward.
+5. Confirm the fixed secret chest contents: 365 coins, 12 gems, and one
+   Turning-Year Egg; both chest and egg non-tradeable.
+6. Confirm the 24-hour Dawnchime-only egg, normal eligible incubation effects,
+   5%/10% Golden Hour Spectral rules, and **First Light, First Flight** hatch
+   achievement.
+7. Approve always Neutral and immediately known for Dawnchime, with random Order
+   and initially hidden random personality, or choose another identity rule.
+8. Approve the 75-second Midnight Chime loop, timer ending, mistake penalties,
+   equal 25% refill weighting, no attempt cap/practice mode, and ordinary Trial
+   rewards.
+9. Confirm that the Christmas constellation, offline/ranking, eligibility,
+   tie-breaker, five-day results, Seasonal Chronicle, podium, and repeat-win
+   rules also apply to New Year.
+10. Approve `NEWYEARSEVENT`, Keeper ID `DH-17792DC5`, reusable 48-hour preview,
+    simulated production rewards, separate test ranking, and persistent staging
+    fixtures.
+11. Confirm one opening notification and authorize Codex to source a verified
+    CC0/Public Domain New Year track in the proposed Auld Lang Syne direction.
+12. Decide whether the newly created non-dragon New Year assets require a
+    separate emulator approval round or may use Codex's repeated visual checks.
 
 No production migration, public release, paid service, or live server mutation
 is authorized by this planning document.
