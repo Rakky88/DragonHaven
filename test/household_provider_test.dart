@@ -1990,6 +1990,85 @@ void main() {
     game.dispose();
   });
 
+  test('calendar refresh alone never earns Trial constellation days', () async {
+    var now = DateTime(2026, 9, 1, 12);
+    final game = HouseholdProvider(
+      random: Random(902),
+      clock: () => now,
+      persistenceEnabled: false,
+    );
+
+    for (var day = 0; day < 8; day++) {
+      await game.refreshForCurrentDate();
+      expect(game.trialStreakCount, 0);
+      expect(game.trialStreakCreditedDayKeys, isEmpty);
+      now = now.add(const Duration(days: 1));
+    }
+    game.dispose();
+  });
+
+  test('multiple completed Trials earn at most one constellation day',
+      () async {
+    final now = DateTime(2026, 9, 1, 12);
+    final game = HouseholdProvider(
+      random: Random(903),
+      clock: () => now,
+      persistenceEnabled: false,
+    )..pet.stage = DragonStage.hatchling;
+
+    for (final id in ['first-today', 'second-today']) {
+      game
+        ..trialOffers = [
+          TrialOffer(id: id, kind: TrialKind.ruinBreaker, appearedAt: now),
+        ]
+        ..trialRefilledAt = now;
+      expect(
+        await game.completeTrial(
+          offerId: id,
+          dragonId: game.pet.id,
+          score: 1,
+        ),
+        isNotNull,
+      );
+    }
+
+    expect(game.trialStreakCount, 1);
+    expect(game.trialStreakLastCompletionDayKey, '2026-09-01');
+    expect(game.trialStreakCreditedDayKeys, {'2026-09-01'});
+    game.dispose();
+  });
+
+  test('save migration removes constellation days without Trial evidence',
+      () async {
+    final now = DateTime(2026, 9, 6, 12);
+    final source = HouseholdProvider(
+      random: Random(904),
+      clock: () => now,
+      persistenceEnabled: false,
+    );
+    final legacyState = source.exportState()
+      ..['schemaVersion'] = 50
+      ..['trialStreakCount'] = 4
+      ..['trialStreakLastDayKey'] = '2026-09-06'
+      ..['trialStreakLastCompletionDayKey'] = '2026-09-05'
+      ..remove('trialStreakCreditedDayKeys');
+    final restored = HouseholdProvider(
+      random: Random(905),
+      clock: () => now,
+      persistenceEnabled: false,
+    );
+
+    expect(await restored.restoreCloudState(legacyState), isTrue);
+    expect(restored.trialStreakCount, 3);
+    expect(restored.trialStreakLastDayKey, '2026-09-05');
+    expect(
+      restored.trialStreakCreditedDayKeys,
+      {'2026-09-03', '2026-09-04', '2026-09-05'},
+    );
+    source.dispose();
+    restored.dispose();
+  });
+
   test('full Trial streak carries at most one latest day after claim',
       () async {
     var now = DateTime(2026, 8, 20, 12);

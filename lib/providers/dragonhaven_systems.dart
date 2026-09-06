@@ -1110,6 +1110,7 @@ extension DragonHavenSystems on HouseholdProvider {
   }
 
   bool _normalizeTrialStreakForDate(DateTime now) {
+    _reconcileTrialStreakCredits();
     final today = DateTime(now.year, now.month, now.day);
     if (trialStreakRewardReady) {
       if (trialStreakCarryDayKey.isEmpty) return false;
@@ -1123,6 +1124,7 @@ extension DragonHavenSystems on HouseholdProvider {
       if (distance >= 0 && distance <= 1) return false;
       // The pending seven-day reward remains claimable, but a day missed
       // behind it may not survive as the first day of the next streak.
+      trialStreakCreditedDayKeys.remove(trialStreakCarryDayKey);
       trialStreakCarryDayKey = '';
       return true;
     }
@@ -1131,6 +1133,7 @@ extension DragonHavenSystems on HouseholdProvider {
     if (lastDay == null) {
       trialStreakCount = 0;
       trialStreakLastDayKey = '';
+      trialStreakCreditedDayKeys.clear();
       return true;
     }
     final normalizedLast = DateTime(lastDay.year, lastDay.month, lastDay.day);
@@ -1138,18 +1141,24 @@ extension DragonHavenSystems on HouseholdProvider {
     if (distance <= 1 && distance >= 0) return false;
     trialStreakCount = 0;
     trialStreakLastDayKey = '';
+    trialStreakCreditedDayKeys.clear();
     return true;
   }
 
   void _recordTrialStreakCompletion(DateTime now) {
     final dayKey = HouseholdProvider._dayKey(now);
     _normalizeTrialStreakForDate(now);
-    if (dayKey == trialStreakLastCompletionDayKey) return;
+    if (dayKey == trialStreakLastCompletionDayKey ||
+        trialStreakCreditedDayKeys.contains(dayKey)) {
+      return;
+    }
     trialStreakLastCompletionDayKey = dayKey;
     if (trialStreakRewardReady) {
       if (dayKey != trialStreakLastDayKey) {
         // At most one day may wait behind an unclaimed seven-day reward. The
         // latest completed day is retained so the next streak can continue.
+        trialStreakCreditedDayKeys.remove(trialStreakCarryDayKey);
+        trialStreakCreditedDayKeys.add(dayKey);
         trialStreakCarryDayKey = dayKey;
       }
       return;
@@ -1163,6 +1172,8 @@ extension DragonHavenSystems on HouseholdProvider {
                 .difference(DateTime(lastDay.year, lastDay.month, lastDay.day))
                 .inDays ==
             1;
+    if (!consecutive) trialStreakCreditedDayKeys.clear();
+    trialStreakCreditedDayKeys.add(dayKey);
     trialStreakCount = consecutive ? trialStreakCount + 1 : 1;
     trialStreakLastDayKey = dayKey;
     if (trialStreakCount >= 7) {
@@ -1183,9 +1194,11 @@ extension DragonHavenSystems on HouseholdProvider {
     if (trialStreakCarryDayKey.isNotEmpty) {
       trialStreakCount = 1;
       trialStreakLastDayKey = trialStreakCarryDayKey;
+      trialStreakCreditedDayKeys = {trialStreakCarryDayKey};
     } else {
       trialStreakCount = 0;
       trialStreakLastDayKey = '';
+      trialStreakCreditedDayKeys.clear();
     }
     trialStreakCarryDayKey = '';
     _addActivity(
@@ -1196,6 +1209,100 @@ extension DragonHavenSystems on HouseholdProvider {
     );
     await _notifyAndSave();
     return reward;
+  }
+
+  void _migrateLegacyTrialStreakCredits({
+    required bool hadStoredCompletionDay,
+  }) {
+    if (!trialStreakRewardReady &&
+        trialStreakCount > 0 &&
+        hadStoredCompletionDay &&
+        trialStreakLastCompletionDayKey != trialStreakLastDayKey) {
+      final creditedThrough =
+          DateTime.tryParse(trialStreakLastCompletionDayKey);
+      final countedThrough = DateTime.tryParse(trialStreakLastDayKey);
+      if (creditedThrough != null && countedThrough != null) {
+        final unverifiedDays = DateTime(
+          countedThrough.year,
+          countedThrough.month,
+          countedThrough.day,
+        )
+            .difference(DateTime(
+              creditedThrough.year,
+              creditedThrough.month,
+              creditedThrough.day,
+            ))
+            .inDays;
+        if (unverifiedDays > 0) {
+          trialStreakCount = max(0, trialStreakCount - unverifiedDays);
+          trialStreakLastDayKey = trialStreakCount == 0
+              ? ''
+              : HouseholdProvider._dayKey(creditedThrough);
+        }
+      }
+    }
+
+    final endingDay = DateTime.tryParse(trialStreakLastDayKey);
+    if (endingDay != null && trialStreakCount > 0) {
+      for (var offset = 0; offset < trialStreakCount; offset++) {
+        trialStreakCreditedDayKeys.add(
+          HouseholdProvider._dayKey(
+            DateTime(endingDay.year, endingDay.month, endingDay.day)
+                .subtract(Duration(days: offset)),
+          ),
+        );
+      }
+    }
+    if (trialStreakCarryDayKey.isNotEmpty) {
+      trialStreakCreditedDayKeys.add(trialStreakCarryDayKey);
+    }
+  }
+
+  void _reconcileTrialStreakCredits() {
+    trialStreakCreditedDayKeys = trialStreakCreditedDayKeys.where((key) {
+      final parsed = DateTime.tryParse(key);
+      return parsed != null && HouseholdProvider._dayKey(parsed) == key;
+    }).toSet();
+
+    if (trialStreakRewardReady) {
+      trialStreakCount = 7;
+      if (trialStreakCarryDayKey.isNotEmpty &&
+          !trialStreakCreditedDayKeys.contains(trialStreakCarryDayKey)) {
+        trialStreakCarryDayKey = '';
+      }
+      return;
+    }
+    trialStreakCarryDayKey = '';
+    if (trialStreakCount <= 0) {
+      trialStreakCount = 0;
+      trialStreakLastDayKey = '';
+      trialStreakCreditedDayKeys.clear();
+      return;
+    }
+
+    final endingDay = DateTime.tryParse(trialStreakLastDayKey);
+    if (endingDay == null ||
+        !trialStreakCreditedDayKeys.contains(trialStreakLastDayKey)) {
+      trialStreakCount = 0;
+      trialStreakLastDayKey = '';
+      trialStreakCreditedDayKeys.clear();
+      return;
+    }
+
+    var verifiedCount = 0;
+    final verifiedKeys = <String>{};
+    while (verifiedCount < trialStreakCount) {
+      final key = HouseholdProvider._dayKey(
+        DateTime(endingDay.year, endingDay.month, endingDay.day)
+            .subtract(Duration(days: verifiedCount)),
+      );
+      if (!trialStreakCreditedDayKeys.contains(key)) break;
+      verifiedKeys.add(key);
+      verifiedCount++;
+    }
+    trialStreakCount = verifiedCount;
+    trialStreakCreditedDayKeys = verifiedKeys;
+    if (verifiedCount == 0) trialStreakLastDayKey = '';
   }
 
   void _addAdventureOptions({
