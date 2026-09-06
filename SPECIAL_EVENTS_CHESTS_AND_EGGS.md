@@ -137,20 +137,22 @@ recurrence, reward, chest, egg, requirement, or gameplay rule.
 
 | Event concept | Dragon family | What is already decided | Current status |
 |---|---|---|---|
-| Halloween | Gloamgourd | Charcoal harvest design with pumpkin light, vine horns, witchfire, and guardian wisps; six forms exist | All six sprites visually approved on 6 September 2026; all event/gameplay fields below are TBD |
-| Christmas | Hollyfrost | White-and-evergreen winter design with golden antlers, holly, frost crystal, and lantern light; six forms exist | All six sprites visually approved on 6 September 2026; all event/gameplay fields below are TBD |
-| New Year's Day | Dawnchime | Indigo-and-dawn design with chimes, firework fins, turning-year rings, and sunrise ribbons; six forms exist | All six sprites visually approved on 6 September 2026; all event/gameplay fields below are TBD |
-| Valentine's Day | Rosevow | Rose-quartz vow design with petal wings, thorn-gold armor, and a warm heart gem; six forms exist | All six sprites visually approved on 6 September 2026; all event/gameplay fields below are TBD |
-| Pridefest | Spectrumplume | Pearl-and-prism festival design with a full-spectrum feather mantle and aurora ribbons; six forms exist | All six sprites visually approved on 6 September 2026; all event/gameplay fields below are TBD |
+| Halloween | Gloamgourd | Charcoal harvest design with pumpkin light, vine horns, witchfire, and guardian wisps; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
+| Christmas | Hollyfrost | White-and-evergreen winter design with golden antlers, holly, frost crystal, and lantern light; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
+| New Year's Day | Dawnchime | Indigo-and-dawn design with chimes, firework fins, turning-year rings, and sunrise ribbons; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
+| Valentine's Day | Rosevow | Rose-quartz vow design with petal wings, thorn-gold armor, and a warm heart gem; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
+| Pridefest | Spectrumplume | Pearl-and-prism festival design with a full-spectrum feather mantle and aurora ribbons; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
 
 The current art package and review instructions live in
 [`future_event_art/dragon_families/README.md`](future_event_art/dragon_families/README.md).
+The implementation roadmap and fill-in sheets for all five concepts live in
+[`NEW_EVENTS_PLAN.md`](NEW_EVENTS_PLAN.md).
 
 #### Information still required for each future event
 
-Every field in this table is unresolved independently for Halloween,
-Christmas, New Year's Day, Valentine's Day, and Pridefest. These decisions must
-be recorded before the corresponding event is implemented.
+Every field not already marked confirmed remains independently configurable for
+Halloween, Christmas, New Year's Day, Valentine's Day, and Pridefest. These
+decisions must be recorded before the corresponding event is implemented.
 
 | Decision area | Information still needed |
 |---|---|
@@ -170,7 +172,7 @@ be recorded before the corresponding event is implemented.
 | Dragon rules | Family type/rarity, alignment restrictions, personality visibility, starting stats, evolution requirements, expertise caps, names, Draconomicon behavior, and whether any form grants existing rarity achievements |
 | Spectral behavior | Whether the egg/family can be Spectral, its base chance, and whether Golden Hour or another event modifier applies |
 | Milestones | Hatch/event achievements, journal entries, titles, badges, follow-up rewards, and duplicate/fallback behavior |
-| Event-only Trial | Whether the proposed Trial is approved; its final name, rules, grade thresholds, attempt allowance, standard reward behavior, expertise split, and leaderboard/prize rules |
+| Event-only Trial | One unique Trial is confirmed per event; its final name, rules, grade thresholds, refill weight, attempt allowance, standard reward behavior, expertise split, and leaderboard/prize rules remain to be resolved |
 | Presentation | Event card and detail copy, countdown placement, completed-state UI, localization, accessibility, and reduced-motion treatment |
 | Notifications | Availability notification timing, deep link destination, account toggle/default, and recurrence rescheduling |
 | Operations | Whether new persisted definition IDs, migrations, server validation, backup/import compatibility, trade support, monitoring, or staging fixtures are required |
@@ -193,13 +195,16 @@ be recorded before the corresponding event is implemented.
   (there is no assumed universal Pridefest date), recurrence, story tone, and
   any community/cooperative focus.
 
-### 2.3 Proposed event-only Trials (not approved or implemented)
+### 2.3 Event-only Trial program (one per event confirmed; not implemented)
 
-Each future event can have one temporary Trial that exists only while that
-event occurrence is active. These are design proposals, not current gameplay
-contracts. They intentionally use three distinct simple actions so Might,
-Spirit, and Arcana all matter without applying an expertise multiplier to the
-submitted score.
+Each future event will have one temporary Trial that exists only while that
+event occurrence is active. When one event is active, its Trial joins the three
+standard Trial kinds as a fourth eligible refill result; the Trial board itself
+still shows at most three offers. Equal weighting would make every eligible
+kind 25%, but that exact weight still awaits owner confirmation. The individual
+game names and mechanics below remain design proposals. They intentionally use
+three distinct simple actions so Might, Spirit, and Arcana all matter without
+applying an expertise multiplier to the submitted score.
 
 | Event | Proposed Trial | Simple game loop | Might contribution | Spirit contribution | Arcana contribution |
 |---|---|---|---|---|---|
@@ -290,6 +295,7 @@ is not sufficient for a worldwide rewarded ranking.
 #### Decisions needed before implementation
 
 - approve or rename each of the five Trial concepts;
+- confirm equal weighting when the active event Trial joins the refill pool;
 - choose three total ranked attempts per occurrence versus accumulated daily
   attempts;
 - decide whether every official attempt grants normal rewards or only the best
