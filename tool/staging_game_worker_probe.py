@@ -188,7 +188,9 @@ def main():
           (select count(*) from jsonb_array_elements(c.state->'eggStash') e where e->>'id'='{egg_id}') as egg_count,
           (select count(*) from private.canonical_game_intents where owner_id='{owner}' and status='processing') as pending,
           (select count(*) from private.canonical_game_intents where owner_id='{owner}' and status='succeeded') as successes,
-          (select private.game_json_sha256(state) from public.cloud_game_saves where user_id='{owner}') as source_hash,
+          (select s.state=i.source_state and s.revision=i.source_revision
+            from public.cloud_game_saves s join private.canonical_game_imports i on i.owner_id=s.user_id
+            where s.user_id='{owner}') as source_matches_import,
           (select to_jsonb(w) from public.player_wallets w where user_id='{owner}') as wallet,
           (select authority_mode from public.player_economy_authority where user_id='{owner}') as live_authority,
           (select mutations_enabled from private.economy_contract where singleton) as mutations
@@ -203,7 +205,7 @@ def main():
                 "probe_altar_cost_or_reward_changed")
         require(final["egg_count"] == 0 and final["pending"] == 0 and final["successes"] == 7,
                 "probe_intent_accounting_failed")
-        require(final["source_hash"] == prepared["source_hash"] and final["wallet"] == prepared["wallet"]
+        require(final["source_matches_import"] and final["wallet"] == prepared["wallet"]
                 and final["live_authority"] == "legacy_client" and not final["mutations"], "probe_live_state_changed")
         print("PASS: real Auth/Edge/Dart/Postgres; purchases, concurrent chest replay, tags, Sinister return and quill; live save/wallet unchanged.", flush=True)
     finally:
