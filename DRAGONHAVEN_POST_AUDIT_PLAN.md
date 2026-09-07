@@ -3,6 +3,23 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
+## Actieve auditbouw: serverkisten en herstelgrens (7 september)
+
+Nieuwe kandidaat op `feature/audit-server-economy`: migratie 45 voor het openen
+van alle kistinstanties op de server, migratie 46 voor het weigeren van oude
+inventarisuploads bij toekomstige serveraccounts. Beloningen, pity, unieke
+collecties, Special-eieren, vaste Chronoshard-percentages en Twinstar-historie
+worden atomair met de kist en de herhaalbare ontvangstbevestiging vastgelegd.
+De appgrens ondersteunt getypeerde ontvangsten en een per-account op schijf
+bewaarde aanvraag die een timeout of herstart overleeft. Geen activatie in de UI.
+
+De gerichte client-/catalogus-/fundering-/referentietests zijn groen (33).
+Staging-SQL-repetitie en volledige checks volgen; productie blijft op 44.
+Fase 4B is hiermee uitgebreid, niet afgerond: andere winkels, volledige
+conversie van bestaande stacks, snapshotreconciliatie en activering ontbreken.
+Fase 4C (ei-/draaklevensloop) en 4D (beloningsclaims) blijven open. Voor de
+support-/privacywebsite zijn de definitieve contactgegevens nog nodig.
+
 Release **v0.05.16 / versionCode 10066** is op 7 september 2026 gepubliceerd als
 Latest. APK-upload en definitieve downloadcontrole zijn geslaagd. De app en updater gebruiken
 beide 0.05.16. De release bevat Egg Altar, beschermtags, vijf craftrecepten, zes

@@ -2,9 +2,9 @@
 
 Last verified: 7 September 2026
 
-Ruleset: app version `v0.05.14`
+Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: 0377aba6a4935728 -->
+<!-- reference-source-fingerprint: 206b3ac89f99e74c -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -311,3 +311,33 @@ Conclaves have a shared cosmetic Weave Beacon with voluntary Shell Fragment gift
 and milestones at 500, 2000 and 5000. It gives no stat or reward bonuses. Only a
 milestone-crossing gift posts one aggregate project message; individual egg
 returns never post to chat. The progress caps at 5000.
+
+## Dormant server chest opening (audit phase 4B)
+
+Migration 45 adds server-side opening for ordinary, Sinister, Special, portrait,
+title and music chest instances. All existing probabilities, inclusive currency
+ranges and eligible pools above are preserved. The client catalog snapshot is
+checked by `tool/economy_chest_catalog.dart --verify`; future catalog changes
+require a forward migration. Oracle and Nameweaver's Quill remain Altar-only;
+Astral Lens remains in the normal relic pool.
+
+Each owner-locked transaction handles at most ten distinct owned chest IDs.
+The stored receipt and ledger prevent both request retries and a new request ID
+from rerolling an already opened chest. A full vanity collection leaves its
+chest unopened. Pity is recomputed after each granted egg and is inactive while
+an egg remains in inventory or in the nest. Independent server draws preserve
+Sinister's 50% Sinisterra chance, guaranteed relic, and ordinary fallback pool.
+Chronoshard's 10-90% value is stored once per relic instance; Twinstar's lifetime
+acquisition marker excludes it from subsequent drops, including after consumption.
+
+Special chest identity must be supplied by the trusted import/grant procedure;
+unknown or missing event IDs fail without consuming the chest. Special eggs use
+the event's exact incubation seconds and fixed moral/hatch-disclosure rule.
+Opening receipts omit hidden lineage, hatch seed and personality. The future
+hatch flow still needs to implement the Golden Hour spectral bonus.
+
+This path is not activated for players. The existing app opening flow and
+production economy authority flags remain unchanged. Migration 46 blocks legacy
+inventory synchronization/import for a future server-owned account, while legacy
+accounts keep their existing behavior. End-to-end cutover, instance conversion,
+server egg lifecycle and client reconciliation remain separate audit work.

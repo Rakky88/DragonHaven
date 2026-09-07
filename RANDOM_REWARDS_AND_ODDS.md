@@ -2,11 +2,11 @@
 
 Last verified: 7 September 2026
 
-Ruleset: app version `v0.05.14`
+Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-Source baseline: seasonal-event implementation released with `v0.05.14`
+Source baseline: v0.05.16, with the dormant server chest-opening candidate below
 
-<!-- reference-source-fingerprint: 0f13990aebaa5866 -->
+<!-- reference-source-fingerprint: 6300b57895be0d6e -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
@@ -681,3 +681,33 @@ Sources: lib/models/egg_altar.dart, lib/providers/egg_altar_systems.dart and
 supabase/migrations/202609070042_egg_altar.sql, with the forward reward update in
 supabase/migrations/202609070044_sinister_altar_rewards.sql. Witchlight challenge generation is
 in lib/screens/seasonal_trial_game.dart and lib/widgets/witchlight_trial_widgets.dart.
+
+## Dormant server chest opening (audit phase 4B)
+
+Migration 45 adds server-side opening for ordinary, Sinister, Special, portrait,
+title and music chest instances. All existing probabilities, inclusive currency
+ranges and eligible pools above are preserved. The client catalog snapshot is
+checked by `tool/economy_chest_catalog.dart --verify`; future catalog changes
+require a forward migration. Oracle and Nameweaver's Quill remain Altar-only;
+Astral Lens remains in the normal relic pool.
+
+Each owner-locked transaction handles at most ten distinct owned chest IDs.
+The stored receipt and ledger prevent both request retries and a new request ID
+from rerolling an already opened chest. A full vanity collection leaves its
+chest unopened. Pity is recomputed after each granted egg and is inactive while
+an egg remains in inventory or in the nest. Independent server draws preserve
+Sinister's 50% Sinisterra chance, guaranteed relic, and ordinary fallback pool.
+Chronoshard's 10-90% value is stored once per relic instance; Twinstar's lifetime
+acquisition marker excludes it from subsequent drops, including after consumption.
+
+Special chest identity must be supplied by the trusted import/grant procedure;
+unknown or missing event IDs fail without consuming the chest. Special eggs use
+the event's exact incubation seconds and fixed moral/hatch-disclosure rule.
+Opening receipts omit hidden lineage, hatch seed and personality. The future
+hatch flow still needs to implement the Golden Hour spectral bonus.
+
+This path is not activated for players. The existing app opening flow and
+production economy authority flags remain unchanged. Migration 46 blocks legacy
+inventory synchronization/import for a future server-owned account, while legacy
+accounts keep their existing behavior. End-to-end cutover, instance conversion,
+server egg lifecycle and client reconciliation remain separate audit work.

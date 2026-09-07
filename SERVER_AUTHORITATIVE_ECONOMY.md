@@ -1,8 +1,9 @@
 # DragonHaven server-authoritative economy contract
 
-Last updated: **5 September 2026**
-Candidate schema: **migrations 37–38 verified dormant on staging; migration 39 queued behind an exact staging gate**
-Release candidate app: **v0.05.14**
+Last updated: **7 September 2026**
+Released app: **v0.05.16 / 10066**; production and staging baseline **44/44**.
+Candidate: **dormant chest opening 45 and server inventory guard 46**.
+Staging validation is pending; no economy activation is included.
 
 ## Purpose and current boundary
 
@@ -13,7 +14,7 @@ not yet allowed to become the source of truth for purchases or ordinary reward
 claims.
 
 Migration 37 builds the missing transaction boundary without switching it on.
-Local migration 39 adds the first concrete, idempotent vanity-chest purchase
+Migration 39, already applied dormant in production and staging, adds the first concrete, idempotent vanity-chest purchase
 RPC, but it is still unreachable because every keeper remains in
 `legacy_client` mode, the app feature flag is `false` and the global
 `mutations_enabled` switch starts as `false`. Neither migration adds a live paid
@@ -182,3 +183,38 @@ switch remains disabled and every keeper remains on `legacy_client`. Migration
 correctly exposed migration 37's ambiguous clock-variable lint finding. No
 production project, public release, balance, inventory or other player value is
 changed by this staging foundation work.
+
+## Phase 4B chest-opening candidate, 7 September 2026
+
+`open_chest_instances` accepts one request UUID and 1-10 distinct instance UUIDs.
+It uses the existing protocol/build/global/owner gates, a per-owner advisory
+lock, authority/wallet/chest row locks and the append-only ledger. Each chest
+also keeps its receipt so even a different request UUID cannot reroll rewards.
+The bounded JSON response contains absolute wallet balances/revisions and
+instance identities; callers must reconcile by revision, never add reward
+amounts to local balances on replay. A completed collection does not consume a
+vanity chest. A bad/foreign/reserved chest rolls the entire batch back.
+
+The pure catalog exporter snapshots all current vanity/emote/lineage/relic and
+Special catalogs. Server crypto draws use rejection sampling for inclusive
+integer ranges; the private deterministic probability helper allows exact edge
+checks without exposing client-supplied randomness through an RPC.
+[PostgreSQL random-data reference](https://www.postgresql.org/docs/17/pgcrypto.html#PGCRYPTO-RANDOM-DATA-FUNCS).
+Egg pity is recomputed inside the batch and includes the occupied nest. Hidden
+identity is not included in the opening receipt. Chronoshard's percentage and
+Twinstar's lifetime acquisition are persisted independently of client backups.
+
+The account-scoped `EconomyChestIntentStore` flushes an intent before sending,
+keeps it through timeout/restart, rejects replacement by a second intent, and
+requires explicit acknowledgement after successful reconciliation. It remains
+a dormant integration boundary; the production UI still opens local chests.
+Migration 46 denies legacy import/sync for server accounts, including access to
+renamed wrapper functions; it does not rewrite or remove legacy player saves.
+
+Validation: `tool/chest_opening_contract.sql` creates only synthetic users and
+rolls back all switches, ownership, grants and assertions. The staging workflow
+first rehearses both migrations with that contract. Applying them is a separate
+boolean within the same staging-only workflow and requires the rehearsal to pass.
+Remaining: full aggregate-to-instance import/rollback, authoritative snapshot
+reconciliation and activation, remaining shops, egg/dragon lifecycle and reward
+claims. These items are not marked complete by this candidate.
