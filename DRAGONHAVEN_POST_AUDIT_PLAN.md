@@ -26,6 +26,18 @@ Hij controleert eigenaar, tags, oude saves, eenmaal teruggeven, Sinister-bevesti
 Lokale hervalidatie: 485/485 tests, inclusief compacte Altar/Beacon-schermen,
 transparante sprites, vertalingen en referentiedocumentatie; analyzer zonder
 problemen.
+Android-previewrun `34103519418` is volledig groen op appcommit `d5cf9ed`;
+artifact `10011704404` bevat een geldig debug-ondertekend staging-APK met alle
+15 Altar-PNG's. Lokaal gedownload via gecontroleerde byte-ranges nadat de normale
+GitHub CLI-download bleef hangen; archief-SHA256 is gelijk aan de GitHub-digest.
+APK-SHA256: `99b16a3dacdf3ae5dc3aef117eaee13bdf8a6e69a8de891e707db68aa41d979b`.
+APK versionName `0.5.15`, versionCode `10065`, debug-certificaat
+`7354973a274555fa6b0fff0faee11f16dca44cd4f579d924f7d85a44d1119804`.
+Dit is een test-APK voor staging, geen productie-update; het debugcertificaat
+vervangt het productiecertificaat niet. Draft-PR #2 vergelijkt deze uitbreiding
+met de gepubliceerde releasebranch v0.05.15. Productiehealth op 7 september 2026
+om 09:05:30 UTC gaf opnieuw HTTP 200 voor Auth health, Auth settings en apphealth.
+
 Productie is hierbij niet gewijzigd en staat nog op migratie 41. De bredere
 economycutover blijft uit. Bestaande clientinventarisregistratie is nog een
 vertrouwensgrens; het nieuwe register beveiligt verdere Altar-transacties, maar
