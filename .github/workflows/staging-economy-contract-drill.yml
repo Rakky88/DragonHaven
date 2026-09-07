@@ -15,17 +15,46 @@ on:
         options:
           - foundation
           - legacy-import-restore
+          - load-observer
 
 permissions:
   contents: read
 
 concurrency:
   # Never contaminate a capacity measurement with a restore rehearsal.
-  group: dragonhaven-staging-load
+  group: ${{ inputs.contract == 'load-observer' && 'dragonhaven-staging-observer' || 'dragonhaven-staging-load' }}
   cancel-in-progress: false
 
 jobs:
+  observe-load:
+    if: inputs.contract == 'load-observer'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+      - name: Observe only aggregate staging load progress
+        shell: pwsh
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if ($env:CONFIRMATION -cne 'OBSERVE_DRAGONHAVEN_STAGING_LOAD') {
+            throw 'The exact read-only observation scope is missing.'
+          }
+          New-Item -ItemType Directory -Path staging -Force | Out-Null
+          ./tool/staging_load_observer.ps1 |
+            Tee-Object -FilePath staging/load-observation.json
+      - uses: actions/upload-artifact@v6
+        with:
+          name: DragonHaven-staging-load-observation
+          path: staging/load-observation.json
+          retention-days: 30
+
   verify:
+    if: inputs.contract != 'load-observer'
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 15
