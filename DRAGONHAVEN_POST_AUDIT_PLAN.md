@@ -3,15 +3,15 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-## Releasevoorbereiding v0.05.18 / 10068 (7 september)
+## Gepubliceerde release v0.05.18 / 10068 (7 september)
 
 De nieuwe release bundelt de onderstaande auditbouw en UI-correcties. App,
 updater en Android gaan precies één stap omhoog. Migratie 49 is identiek aan
 de geslaagde stagingrun `34127201082`; de productiepoort eist dezelfde volledige
 migratiegeschiedenis en SQL-contractbron, oefent de wijziging met rollback en
 controleert vóór en na dat de economie uitstaat en alle accounts legacy blijven.
-Publicatie wacht op productiepariteit, analyse/tests, visuele APK-controle en
-de ondertekenings-/downloadcontroles. De 1000-accountcapaciteit blijft afgekeurd
+Productiepariteit, analyse/tests, visuele APK-controle en de
+ondertekenings-/downloadcontroles zijn afgerond. De 1000-accountcapaciteit blijft afgekeurd
 en wordt niet stilzwijgend geaccepteerd door deze release.
 
 Productierun [34129277707](https://github.com/Rakky88/DragonHaven/actions/runs/34129277707)
@@ -31,9 +31,19 @@ Screenshots en logs staan lokaal onder `release/v0.05.18-*`.
 APK: 505.821.796 bytes; SHA-256
 `e956b358d51e9304cd0f78647a4ccf9e447f0c85fc69152cfad06f00b0add89a`.
 Alle 48 openbare release-notes-bestanden zijn gecontroleerd op afgeschermde
-codewaarden en aankondigingen. Publicatie en de afzonderlijke AAB-gate volgen.
+codewaarden en aankondigingen. [Release v0.05.18](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.18)
+is gepubliceerd als Latest op commit `1d57cbe4506847293be690cab5f47a3dad5b4089`.
+De versiegebonden en permanente APK-download antwoorden met 200 en de juiste
+grootte; GitHub bevestigt exact dezelfde SHA-256. Productiehealth na publicatie
+is groen (Auth/settings/app 200). De onafhankelijke
+[AAB-run 34130064067](https://github.com/Rakky88/DragonHaven/actions/runs/34130064067)
+is volledig geslaagd: productiepariteit 49, analyzer, tests, bundlebuild,
+versie 0.05.18 / 10068 en het vaste certificaat. AAB SHA-256:
+`203feef6bfbc978969a092c64cd58ce559558ec1be1bd8f004a3740f51fcb521`.
+Het ondertekende bundle en server-/releasebewijs staan in het CI-artifact
+`DragonHaven-Play-Store`. Dit is geen publicatie in Google Play.
 
-## Actieve auditbouw na v0.05.17 (7 september)
+## Historische auditbouw tussen v0.05.17 en v0.05.18 (7 september)
 
 Op `feature/audit-capacity-and-import` is de Auth-opbouw gescheiden van de
 gemeten spelbelasting. Run [34119032803](https://github.com/Rakky88/DragonHaven/actions/runs/34119032803)

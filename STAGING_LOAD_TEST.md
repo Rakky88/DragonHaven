@@ -1,7 +1,7 @@
 # DragonHaven staging-loadtest
 
 Laatst bijgewerkt: **7 september 2026**
-Uitgangsversie: **v0.05.17 / huidig productieschema 49 / stagingschema 49**
+Uitgangsversie: **v0.05.18 / huidig productieschema 49 / stagingschema 49**
 De onderstaande 100- en 1000-accountmetingen zijn beide op schema 47 uitgevoerd.
 
 ## Doel en huidige status
