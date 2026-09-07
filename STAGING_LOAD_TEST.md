@@ -7,8 +7,9 @@ Uitgangsversie: **v0.05.16 / productieschema 44 / stagingschema 47**
 
 Deze test meet realistisch online leesgedrag uitsluitend op het afzonderlijke
 Supabase-stagingproject. De dependency-vrije Dart-runner en handmatige GitHub
-Actions-workflow zijn lokaal gebouwd en getest. Er is nog geen load naar staging
-verstuurd en productie is niet gewijzigd.
+Actions-workflow zijn lokaal gebouwd en getest. De eerste echte 100-user run
+is uitgevoerd; de Auth-begrenzing sloot de vervolgpoort naar 1000 gebruikers.
+Productie is niet gewijzigd.
 
 De eerste uitvoerbare stap is 100 gelijktijdige virtuele gebruikers. De stap van
 1.000 gebruikers wordt technisch geweigerd zolang geen geslaagd 100-user rapport
@@ -114,3 +115,29 @@ Productie blijft onafhankelijk hard geblokkeerd.
 Een testresultaat is geen toestemming voor betaalde capaciteit. Eerst meten we
 gratis op staging; alleen aantoonbare grenzen kunnen later aanleiding geven tot
 een afzonderlijk upgradebesluit.
+
+## Eerste echte meting - 7 september 2026
+
+Run [34115250094](https://github.com/Rakky88/DragonHaven/actions/runs/34115250094),
+schema 47, 180 seconden met 60 seconden ramp-up vanaf dezelfde CI-runner:
+
+| Controle | Uitkomst |
+| --- | --- |
+| Accounts gemaakt / verwijderd | 100 / 100; cleanup opnieuw gecontroleerd |
+| Login / bootstrap geslaagd | 59 / 59 |
+| Geweigerde login | 41 HTTP 429 |
+| Alle aanvragen | 861; 820 geslaagd; 4,762% fouten |
+| Lees-RPC's | 702; allemaal geslaagd |
+| Snapshot p95 / p99 | 319 / 336 ms |
+| p95 overige lees-RPC's | 309-322 ms |
+| Preflight na afloop | schema 47, nul lintfouten, Auth/settings/app HTTP 200 |
+| 1000-user vervolg | geweigerd; geen run gestart |
+
+De run blijft terecht als **failed** geregistreerd. De uitkomst is geen bewijs
+voor 100 of 1000 actieve spelers. De 429-responsen passen bij de gedocumenteerde
+Auth-tokenbucket per IP ([Supabase rate limits](https://supabase.com/docs/guides/auth/rate-limits));
+alle logins kwamen vanaf dezelfde CI-runner. Het volgende meetontwerp moet
+gewone sessieopbouw scheiden van loginpieken en bestaande beveiligingslimieten
+respecteren. Provider-CPU, verbindingen en echte egress zijn nog niet gemeten.
+De eerdere poging 34114939684 maakte geen accounts; de transportfout is hersteld
+met een apart offline contract dat voortaan voor iedere workflowrun draait.
