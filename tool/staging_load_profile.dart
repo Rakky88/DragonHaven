@@ -599,6 +599,19 @@ Future<void> writeJsonFile(String path, Map<String, Object> value) async {
       .writeAsString('${const JsonEncoder.withIndent('  ').convert(value)}\n');
 }
 
+/// A pipe avoids Linux's per-environment-variable size limit for 1000 accounts.
+/// The pool stays in memory, is bounded, and is never written to logs or disk.
+Future<String> readCredentialInput(Stream<List<int>> input) async {
+  final bytes = <int>[];
+  await for (final chunk in input.timeout(const Duration(seconds: 30))) {
+    if (bytes.length + chunk.length > 1024 * 1024) {
+      throw const FormatException('Synthetic credential input is too large.');
+    }
+    bytes.addAll(chunk);
+  }
+  return utf8.decode(bytes);
+}
+
 String discoverAppVersion() {
   final source = File('lib/app_info.dart').readAsStringSync();
   final match = RegExp(r"defaultValue:\s*'([^']+)'").firstMatch(source);
@@ -674,12 +687,14 @@ Future<void> main(List<String> arguments) async {
     final projectRef = environment['STAGING_SUPABASE_PROJECT_REF'] ?? '';
     final publishableKey =
         environment['STAGING_SUPABASE_PUBLISHABLE_KEY'] ?? '';
-    final rawCredentials = environment['STAGING_LOAD_CREDENTIALS_JSON'] ?? '';
     validateExecutionTarget(
       url: baseUrl,
       projectRef: projectRef,
       publishableKey: publishableKey,
     );
+    final rawCredentials = options['credentials-stdin'] == 'true'
+        ? await readCredentialInput(stdin)
+        : environment['STAGING_LOAD_CREDENTIALS_JSON'] ?? '';
     final credentials = parseCredentialPool(rawCredentials, virtualUsers);
     final report = await executeLoadProfile(
       onMeasurementStarted: () => writeJsonFile(

@@ -135,6 +135,8 @@ jobs:
         env:
           VIRTUAL_USERS: ${{ steps.profile.outputs.virtual-users }}
         run: |
+          dart run tool/staging_load_credential_pipe_contract.dart
+          if ($LASTEXITCODE -ne 0) { throw 'Credential pipe contract failed.' }
           dart run tool/staging_load_profile.dart `
             --plan-only `
             --virtual-users=$env:VIRTUAL_USERS `

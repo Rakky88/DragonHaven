@@ -128,17 +128,23 @@ try {
     $start.UseShellExecute = $false
     foreach ($argument in @('run', 'tool/staging_load_profile.dart', '--execute',
         "--virtual-users=$VirtualUsers", '--duration-seconds=180', '--ramp-up-seconds=60',
-        "--confirmation=$Confirmation", '--synthetic-accounts-confirmed', '--output=staging/load-report.json')) {
+        "--confirmation=$Confirmation", '--synthetic-accounts-confirmed', '--credentials-stdin', '--output=staging/load-report.json')) {
         $start.ArgumentList.Add($argument)
     }
     if ($BaselinePath) { $start.ArgumentList.Add("--baseline=$BaselinePath") }
     foreach ($name in @('STAGING_SUPABASE_ACCESS_TOKEN','SUPABASE_ACCESS_TOKEN',
-        'SUPABASE_DB_PASSWORD','STAGING_SUPABASE_DB_PASSWORD','GH_TOKEN','GITHUB_TOKEN')) {
+        'SUPABASE_DB_PASSWORD','STAGING_SUPABASE_DB_PASSWORD','GH_TOKEN','GITHUB_TOKEN',
+        'STAGING_LOAD_CREDENTIALS_JSON')) {
         $null = $start.Environment.Remove($name)
     }
-    $start.Environment['STAGING_LOAD_CREDENTIALS_JSON'] = ConvertTo-Json @{ accounts = @($accounts.ToArray()) } -Depth 5 -Compress
+    $start.RedirectStandardInput = $true
+    $start.StandardInputEncoding = [System.Text.UTF8Encoding]::new($false)
     Save-StagingLoadMetricSample -ProjectRef $projectRef -AccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN -OutputPath 'staging/load-provider-metrics.json'
     $process = [System.Diagnostics.Process]::Start($start)
+    # Private pipe, not an environment value or argument (Linux caps those).
+    # Close the writer so the reader can finish; no credential file is created.
+    $process.StandardInput.Write((ConvertTo-Json @{ accounts = @($accounts.ToArray()) } -Depth 5 -Compress))
+    $process.StandardInput.Close()
     $lastMetricSample = [DateTime]::UtcNow
     while (-not $process.WaitForExit(30000)) {
         'Staging load is running; account data remains private.'
