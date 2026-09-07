@@ -49,6 +49,65 @@ class ServerEconomyRepository {
 
   final EconomyRpcInvoker _invoke;
 
+  Future<EconomyItemPurchaseReceipt> purchaseItem({
+    required String requestId,
+    required String kind,
+    required String catalogId,
+  }) async {
+    if (!mutationsEnabled) {
+      throw const ServerEconomyException('economy_client_disabled');
+    }
+    return purchaseItemForTesting(
+        requestId: requestId, kind: kind, catalogId: catalogId);
+  }
+
+  Future<EconomyItemPurchaseReceipt> purchaseItemForTesting({
+    required String requestId,
+    required String kind,
+    required String catalogId,
+  }) async {
+    if (!_uuidPattern.hasMatch(requestId) ||
+        !const {'furniture', 'relic'}.contains(kind) ||
+        !RegExp(r'^[A-Za-z0-9_.-]{1,100}$').hasMatch(catalogId)) {
+      throw const ServerEconomyException('economy_request_invalid');
+    }
+    final response = _singleObject(await _invoke('purchase_economy_item', {
+      'p_request_id': requestId,
+      'p_item_kind': kind,
+      'p_catalog_id': catalogId,
+      'p_protocol_version': protocolVersion,
+      'p_client_build': clientBuild,
+    }));
+    final outcome = switch (response['outcome']) {
+      'purchased' => EconomyItemPurchaseOutcome.purchased,
+      'already_owned' => EconomyItemPurchaseOutcome.alreadyOwned,
+      'insufficient_funds' => EconomyItemPurchaseOutcome.insufficientFunds,
+      _ => throw const ServerEconomyException('economy_response_invalid'),
+    };
+    final instanceId = response['instance_id'];
+    if (response['item_kind'] != kind ||
+        response['catalog_id'] != catalogId ||
+        !const {'coins', 'gems'}.contains(response['currency']) ||
+        (outcome != EconomyItemPurchaseOutcome.insufficientFunds &&
+            (instanceId is! String || !_uuidPattern.hasMatch(instanceId))) ||
+        (instanceId != null && instanceId is! String) ||
+        (outcome == EconomyItemPurchaseOutcome.alreadyOwned &&
+            kind != 'furniture')) {
+      throw const ServerEconomyException('economy_response_invalid');
+    }
+    return EconomyItemPurchaseReceipt(
+        outcome: outcome,
+        kind: kind,
+        catalogId: catalogId,
+        instanceId: instanceId as String?,
+        currency: response['currency'] as String,
+        price: _requiredNonNegativeInt(response, 'price'),
+        coins: _requiredNonNegativeInt(response, 'coins'),
+        gems: _requiredNonNegativeInt(response, 'gems'),
+        walletRevision: _requiredNonNegativeInt(response, 'wallet_revision'),
+        serverRevision: _requiredNonNegativeInt(response, 'server_revision'));
+  }
+
   Future<ChestOpeningReceipt> openChests({
     required String requestId,
     required List<String> chestIds,
@@ -196,6 +255,33 @@ class ServerEconomyRepository {
     r'^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
     caseSensitive: false,
   );
+}
+
+enum EconomyItemPurchaseOutcome { purchased, alreadyOwned, insufficientFunds }
+
+class EconomyItemPurchaseReceipt {
+  const EconomyItemPurchaseReceipt(
+      {required this.outcome,
+      required this.kind,
+      required this.catalogId,
+      required this.instanceId,
+      required this.currency,
+      required this.price,
+      required this.coins,
+      required this.gems,
+      required this.walletRevision,
+      required this.serverRevision});
+
+  final EconomyItemPurchaseOutcome outcome;
+  final String kind;
+  final String catalogId;
+  final String? instanceId;
+  final String currency;
+  final int price;
+  final int coins;
+  final int gems;
+  final int walletRevision;
+  final int serverRevision;
 }
 
 class ChestOpeningReceipt {

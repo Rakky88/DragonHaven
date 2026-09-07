@@ -14,7 +14,14 @@ De appgrens ondersteunt getypeerde ontvangsten en een per-account op schijf
 bewaarde aanvraag die een timeout of herstart overleeft. Geen activatie in de UI.
 
 De gerichte client-/catalogus-/fundering-/referentietests zijn groen (33).
-Staging-SQL-repetitie en volledige checks volgen; productie blijft op 44.
+Stagingrepetitie `34110497546` en toepassing `34110676557` zijn groen:
+46 migraties, nul lintfouten, Auth-/apphealth 200 en zowel de funderings-,
+aankoop- als chestcontracten teruggedraaid bewezen. Productie blijft op 44.
+De volledige suite vond alleen een verouderde verwachting van migratie 44 in
+de loadprofieltest; die volgt nu de nieuwe kandidaat. Analyzer was schoon.
+Migratie 47 voegt nu gewone meubelaankopen en vier winkelrelics toe met prijzen
+uit de bestaande catalogus, vaste tradeability en herhaalbare ontvangsten.
+Stagingvalidatie van 47 volgt.
 Fase 4B is hiermee uitgebreid, niet afgerond: andere winkels, volledige
 conversie van bestaande stacks, snapshotreconciliatie en activering ontbreken.
 Fase 4C (ei-/draaklevensloop) en 4D (beloningsclaims) blijven open. Voor de
@@ -858,16 +865,19 @@ alleen het serverresultaat en bezit nooit een service-role key.
 
 - [ ] Verplaats coin/gemmutaties, shopaankopen, chestownership, chestopening,
   pity, collection caps en relicdrops naar atomaire RPC's.
-  Eerste lokale slice: migratie 39 koopt Portrait-, Title- en Music-chests met
-  vaste prijzen/caps via één wallet-, chestinstance-, ledger- en revisiontransactie.
-  Chestopening, pity, relicdrops en overige shops blijven open.
+  Migratie 39 koopt vanity-kisten; 45 opent alle kisttypen, bepaalt inhoud/pity
+  en bewaart vaste relicwaarden. Beide zijn dormant op staging bewezen, 39 ook
+  in productie. Kandidaat 47 voegt gewone meubels en winkelrelics toe. Treats,
+  kamerontgrendeling, volledige import en de zichtbare cutover blijven open.
 - [ ] Laat alle random rolls en collection checks op de server plaatsvinden.
   De drie collection caps van de eerste aankoop-RPC worden server-side onder
-  een keeperlock gecontroleerd; random chestinhoud blijft open.
+  een keeperlock gecontroleerd; migratie 45 bepaalt ook alle chestinhoud op de server.
+  Randomness buiten kisten en de uiteindelijke cutover blijven open.
 - [ ] Test replay, dubbele taps, timeouts, reconnects en aangepaste clients.
   Fundament-replay/conflict/rate limit/oud-client/rollback is op staging groen.
   De lokale clienttest bewijst één request-ID na verloren antwoord/reconnect en
-  twee gelijktijdige taps; migratie-39-E2E op staging blijft open.
+  twee gelijktijdige taps. Migratie-39-E2E en 45-replay/rollback zijn op staging
+  groen; de nieuwe intent-store bewaart de UUID door een appherstart heen.
 
 #### Jij
 

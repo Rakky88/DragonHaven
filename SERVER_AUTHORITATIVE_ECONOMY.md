@@ -1,9 +1,9 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **7 September 2026**
-Released app: **v0.05.16 / 10066**; production and staging baseline **44/44**.
+Released app: **v0.05.16 / 10066**; production baseline **44**, staging **46**.
 Candidate: **dormant chest opening 45 and server inventory guard 46**.
-Staging validation is pending; no economy activation is included.
+Staging runs `34110497546` and `34110676557` passed rollback contracts, parity, lint and health. No economy activation is included.
 
 ## Purpose and current boundary
 
@@ -218,3 +218,19 @@ boolean within the same staging-only workflow and requires the rehearsal to pass
 Remaining: full aggregate-to-instance import/rollback, authoritative snapshot
 reconciliation and activation, remaining shops, egg/dragon lifecycle and reward
 claims. These items are not marked complete by this candidate.
+
+## Dormant item shop candidate (migration 47)
+
+`purchase_economy_item` handles catalog furniture and the four purchasable Mystic
+Relics. The request contains identities only; price, currency and tradeability
+come from a versioned server snapshot verified against every client shop item.
+Furniture already owned, equipped or reserved returns the existing instance
+without a second charge. Relics may be purchased repeatedly for 500 gems and
+are non-tradeable, matching the app. Supporter goods and non-shop relics cannot
+be selected. Replay returns the original outcome, including insufficient funds;
+a player must make a fresh purchase intent after obtaining more currency.
+
+The staging contract covers exact prices, receipt replay, duplicate furniture,
+ledger conservation, prohibited goods, relic tradeability and insufficient funds.
+Starlight Treat and room unlocks depend on the phase 4C dragon lifecycle and are
+not implemented by this RPC. Paid products remain disabled.
