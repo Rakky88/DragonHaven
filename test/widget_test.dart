@@ -1378,11 +1378,12 @@ void main() {
         find.byKey(const Key('tutorial-target-outline')),
       );
       expect(spotlight.contains(tester.getCenter(intended)), isTrue,
-          reason: 'tutorial step $step did not follow its real widget');
+          reason:
+              'tutorial step $step did not follow its real widget: spotlight=$spotlight intended=${tester.getRect(intended)}');
     }
 
     Future<void> settleTutorialStep() async {
-      for (var frame = 0; frame < 8; frame++) {
+      for (var frame = 0; frame < 16; frame++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
     }
@@ -1454,6 +1455,20 @@ void main() {
       expectTargetAndCardSeparated(step);
       expectRealTargetMeasured(step);
       expect(tester.takeException(), isNull, reason: 'tutorial step $step');
+      if (step == 2 &&
+          find
+              .byKey(const Key('tutorial-friends-overview'))
+              .evaluate()
+              .isEmpty) {
+        final spotlight =
+            tester.getRect(find.byKey(const Key('tutorial-target-outline')));
+        expect(
+            spotlight.contains(
+                tester.getCenter(find.byKey(const Key('friends-tab')))),
+            isTrue,
+            reason:
+                'an offline tour must point to a real tab instead of an empty card');
+      }
       if (step == 3) {
         await tester.tap(find.byKey(const Key('previous-tutorial-step')));
         await settleTutorialStep();
@@ -1581,6 +1596,16 @@ void main() {
       );
       if (step == dragonHavenTutorialStepCount - 1) break;
 
+      final cardScroll = tester
+          .widget<SingleChildScrollView>(
+              find.byKey(const Key('tutorial-card-scroll')))
+          .controller!;
+      if (step == 13) {
+        expect(cardScroll.position.maxScrollExtent, greaterThan(0));
+        cardScroll.jumpTo(cardScroll.position.maxScrollExtent);
+        await tester.pump();
+      }
+
       await tester.tap(nextButton);
       await tester.pump();
       if (step == 7) {
@@ -1589,6 +1614,10 @@ void main() {
         await tester.binding.setSurfaceSize(const Size(360, 640));
       }
       await settleStep();
+      if (step == 13) {
+        expect(cardScroll.offset, 0,
+            reason: 'the next explanation starts at the top');
+      }
     }
   });
 

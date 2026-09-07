@@ -12,6 +12,10 @@ Technische uitgangsversie: **v0.04.06**
 - Tutorial: 19 stappen, terugknop, juiste Conclave-tab, Altar/tags/Beacon,
   Expertise en niet-blijvende testeventbeloningen. Alle nieuwe teksten zijn
   vertaald in alle acht talen. Kleine schermen/grote tekst/landscape getest.
+  Visuele controle vond daarnaast lege targets zonder online account; de tour
+  gebruikt nu een bestaande tab als alternatief, de echte overlayafmetingen
+  voor ankers, een eigen toegankelijkheidsroute en reset de tekstscroll per stap.
+  Gerichte regressieproeven voor offline targets, teruggaan en scrollreset slagen.
 - Productie heeft nu exact migraties 1–56. Alle zes contracten voor 50–56 zijn
   vóór toepassing in één rollbacktransactie geïsoleerd herhaald; getest
   stagingbronbewijs: 34153525465. Preflight: lint 0, Auth/settings/app 200.

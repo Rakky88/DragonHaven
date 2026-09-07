@@ -49,6 +49,7 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial>
   int _stepIndex = 0;
   Rect? _measuredTarget;
   bool _resolvingTarget = true;
+  final _cardScroll = ScrollController();
 
   @override
   void initState() {
@@ -64,6 +65,7 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _cardScroll.dispose();
     super.dispose();
   }
 
@@ -77,6 +79,7 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial>
       Navigator.pop(context, true);
       return;
     }
+    if (_cardScroll.hasClients) _cardScroll.jumpTo(0);
     setState(() {
       _stepIndex++;
       _measuredTarget = null;
@@ -88,6 +91,7 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial>
 
   void _previous(List<_TutorialStep> steps) {
     if (_stepIndex == 0) return;
+    if (_cardScroll.hasClients) _cardScroll.jumpTo(0);
     setState(() {
       _stepIndex--;
       _measuredTarget = null;
@@ -108,7 +112,27 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial>
     final step = _steps(strings, widget.dragon.displayName)[requestIndex];
     await _revealStepTarget(step, requestIndex);
     if (!mounted || requestIndex != _stepIndex) return;
-    final measured = _rectForKey(step.targetKey, step.targetPadding);
+    // Lazy lists may build the target only after the first scroll updates
+    // their estimated extent. Give that layout one bounded second attempt.
+    if (_rectForKey(step.targetKey, step.targetPadding) == null &&
+        step.scrollKey != null) {
+      await Future<void>.delayed(const Duration(milliseconds: 32));
+      if (!mounted || requestIndex != _stepIndex) return;
+      await _revealStepTarget(step, requestIndex);
+      if (!mounted || requestIndex != _stepIndex) return;
+    }
+    final measured = _rectForKey(step.targetKey, step.targetPadding) ??
+        _rectForKey(
+            switch (step.tabIndex) {
+              0 => const Key('friends-tab'),
+              1 => const Key('tutorial-adventure-header'),
+              2 => const Key('tutorial-tower-actions'),
+              3 => const Key('tutorial-inventory-tabs'),
+              _ => const Key('shop-currency-tabs'),
+            },
+            step.targetPadding) ??
+        _rectForKey(
+            const Key('tutorial-primary-navigation'), step.targetPadding);
     if (!mounted || requestIndex != _stepIndex) return;
     setState(() {
       _measuredTarget = measured;
@@ -181,7 +205,11 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial>
     }
     final origin = renderObject.localToGlobal(Offset.zero);
     final rect = origin & renderObject.size;
-    final viewport = Offset.zero & MediaQuery.sizeOf(context);
+    final overlay = context.findRenderObject();
+    final viewportSize = overlay is RenderBox && overlay.hasSize
+        ? overlay.size
+        : MediaQuery.sizeOf(context);
+    final viewport = Offset.zero & viewportSize;
     if (!rect.overlaps(viewport)) return null;
     return Rect.fromLTRB(
       rect.left - padding.left,
@@ -216,193 +244,209 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial>
     final step = steps[_stepIndex];
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
-    return Material(
-      color: Colors.transparent,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final size = constraints.biggest;
-          final padding = MediaQuery.paddingOf(context);
-          final target = _measuredTarget ?? _targetFor(step, size, padding);
-          final cardPlacement = _cardPlacementFor(target, size, padding);
-          return Stack(
-            children: [
-              Positioned.fill(
-                child: TweenAnimationBuilder<double>(
-                  key: ValueKey('tutorial-spotlight-$_stepIndex'),
-                  duration: reduceMotion
-                      ? Duration.zero
-                      : const Duration(milliseconds: 520),
-                  tween: Tween(begin: .72, end: 1),
-                  curve: Curves.easeOutBack,
-                  builder: (_, value, __) => CustomPaint(
-                    painter: _TutorialSpotlightPainter(
-                      target: target,
-                      cardRegion: cardPlacement.region,
-                      scale: value,
-                      resolving: _resolvingTarget,
+    return Semantics(
+        scopesRoute: true,
+        namesRoute: true,
+        explicitChildNodes: true,
+        label: strings.pick('Tutorial', 'Tutorial'),
+        child: Material(
+          color: Colors.transparent,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final size = constraints.biggest;
+              final padding = MediaQuery.paddingOf(context);
+              final target = _measuredTarget ?? _targetFor(step, size, padding);
+              final cardPlacement = _cardPlacementFor(target, size, padding);
+              return Stack(
+                children: [
+                  Positioned.fill(
+                    child: TweenAnimationBuilder<double>(
+                      key: ValueKey('tutorial-spotlight-$_stepIndex'),
+                      duration: reduceMotion
+                          ? Duration.zero
+                          : const Duration(milliseconds: 520),
+                      tween: Tween(begin: .72, end: 1),
+                      curve: Curves.easeOutBack,
+                      builder: (_, value, __) => CustomPaint(
+                        painter: _TutorialSpotlightPainter(
+                          target: target,
+                          cardRegion: cardPlacement.region,
+                          scale: value,
+                          resolving: _resolvingTarget,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              if (!_resolvingTarget)
-                Positioned.fromRect(
-                  rect: target,
-                  child: const IgnorePointer(
-                    child: SizedBox(key: Key('tutorial-target-outline')),
-                  ),
-                ),
-              Positioned.fromRect(
-                rect: cardPlacement.region,
-                child: Semantics(
-                  liveRegion: true,
-                  label: '${step.title}. ${step.body}',
-                  child: ClipRect(
-                    key: const Key('tutorial-card-region'),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Align(
-                          alignment: cardPlacement.alignment,
-                          child: SingleChildScrollView(
-                            key: const Key('tutorial-card-scroll'),
-                            padding: const EdgeInsets.fromLTRB(0, 64, 0, 16),
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 410),
-                              child: Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  Container(
-                                    key: Key('tutorial-step-$_stepIndex'),
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.fromLTRB(
-                                        24, 52, 24, 20),
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Color(0xFFFFFBF2),
-                                          Color(0xFFF1E9FF)
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(30),
-                                      border: Border.all(
-                                        color: const Color(0xFFFFD86E),
-                                        width: 2,
-                                      ),
-                                      boxShadow: const [
-                                        BoxShadow(
-                                          color: Color(0x88201644),
-                                          blurRadius: 32,
-                                          offset: Offset(0, 16),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          step.title,
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            color: AppColors.ink,
-                                            fontSize: 24,
-                                            height: 1.08,
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 11),
-                                        Text(
-                                          step.body,
-                                          textAlign: TextAlign.start,
-                                          style: const TextStyle(
-                                            color: AppColors.muted,
-                                            fontSize: 15,
-                                            height: 1.42,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 68),
-                                      ],
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: -58,
-                                    left: 0,
-                                    right: 0,
-                                    child: Center(
-                                      child: Container(
-                                        key: const Key('tutorial-dragon-guide'),
-                                        width: 104,
-                                        height: 104,
-                                        clipBehavior: Clip.antiAlias,
+                  if (!_resolvingTarget)
+                    Positioned.fromRect(
+                      rect: target,
+                      child: const IgnorePointer(
+                        child: SizedBox(key: Key('tutorial-target-outline')),
+                      ),
+                    ),
+                  Positioned.fromRect(
+                    rect: cardPlacement.region,
+                    child: Semantics(
+                      liveRegion: true,
+                      label: '${step.title}. ${step.body}',
+                      child: ClipRect(
+                        key: const Key('tutorial-card-region'),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Align(
+                              alignment: cardPlacement.alignment,
+                              child: SingleChildScrollView(
+                                key: const Key('tutorial-card-scroll'),
+                                controller: _cardScroll,
+                                padding:
+                                    const EdgeInsets.fromLTRB(0, 64, 0, 16),
+                                child: ConstrainedBox(
+                                  constraints:
+                                      const BoxConstraints(maxWidth: 410),
+                                  child: Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      Container(
+                                        key: Key('tutorial-step-$_stepIndex'),
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.fromLTRB(
+                                            24, 52, 24, 20),
                                         decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          gradient: const RadialGradient(
+                                          gradient: const LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
                                             colors: [
-                                              Colors.white,
-                                              Color(0xFFE6D8FF)
+                                              Color(0xFFFFFBF2),
+                                              Color(0xFFF1E9FF)
                                             ],
                                           ),
+                                          borderRadius:
+                                              BorderRadius.circular(30),
                                           border: Border.all(
                                             color: const Color(0xFFFFD86E),
-                                            width: 3,
+                                            width: 2,
                                           ),
                                           boxShadow: const [
                                             BoxShadow(
-                                              color: Color(0x665B3E91),
-                                              blurRadius: 18,
-                                              offset: Offset(0, 7),
+                                              color: Color(0x88201644),
+                                              blurRadius: 32,
+                                              offset: Offset(0, 16),
                                             ),
                                           ],
                                         ),
-                                        child: Transform.scale(
-                                          scale: 1.55,
-                                          alignment: const Alignment(0, -.7),
-                                          child: DragonArt(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              step.title,
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                color: AppColors.ink,
+                                                fontSize: 24,
+                                                height: 1.08,
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 11),
+                                            Text(
+                                              step.body,
+                                              textAlign: TextAlign.start,
+                                              style: const TextStyle(
+                                                color: AppColors.muted,
+                                                fontSize: 15,
+                                                height: 1.42,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 68),
+                                          ],
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: -58,
+                                        left: 0,
+                                        right: 0,
+                                        child: Center(
+                                          child: Container(
+                                            key: const Key(
+                                                'tutorial-dragon-guide'),
+                                            width: 104,
                                             height: 104,
-                                            animate: !reduceMotion,
-                                            stageKey: widget.dragon.stageKey,
-                                            lineageId: widget.dragon.lineageId,
-                                            evolutionPath: widget
-                                                .dragon.activeEvolutionPath,
-                                            prismatic: widget.dragon.spectral,
-                                            sinister: widget.dragon.sinister,
+                                            clipBehavior: Clip.antiAlias,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              gradient: const RadialGradient(
+                                                colors: [
+                                                  Colors.white,
+                                                  Color(0xFFE6D8FF)
+                                                ],
+                                              ),
+                                              border: Border.all(
+                                                color: const Color(0xFFFFD86E),
+                                                width: 3,
+                                              ),
+                                              boxShadow: const [
+                                                BoxShadow(
+                                                  color: Color(0x665B3E91),
+                                                  blurRadius: 18,
+                                                  offset: Offset(0, 7),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Transform.scale(
+                                              scale: 1.55,
+                                              alignment:
+                                                  const Alignment(0, -.7),
+                                              child: DragonArt(
+                                                height: 104,
+                                                animate: !reduceMotion,
+                                                stageKey:
+                                                    widget.dragon.stageKey,
+                                                lineageId:
+                                                    widget.dragon.lineageId,
+                                                evolutionPath: widget
+                                                    .dragon.activeEvolutionPath,
+                                                prismatic:
+                                                    widget.dragon.spectral,
+                                                sinister:
+                                                    widget.dragon.sinister,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                          ),
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: _TutorialFooter(
+                                strings: strings,
+                                stepIndex: _stepIndex,
+                                stepCount: steps.length,
+                                busy: _resolvingTarget,
+                                onSkip: () => Navigator.pop(context, false),
+                                onNext: () => _next(steps),
+                                onPrevious: _stepIndex == 0
+                                    ? null
+                                    : () => _previous(steps),
+                              ),
+                            ),
+                          ],
                         ),
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: _TutorialFooter(
-                            strings: strings,
-                            stepIndex: _stepIndex,
-                            stepCount: steps.length,
-                            busy: _resolvingTarget,
-                            onSkip: () => Navigator.pop(context, false),
-                            onNext: () => _next(steps),
-                            onPrevious:
-                                _stepIndex == 0 ? null : () => _previous(steps),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
+                ],
+              );
+            },
+          ),
+        ));
   }
 }
 
