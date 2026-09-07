@@ -2,7 +2,7 @@
 
 Last updated: 7 September 2026
 
-Planning baseline: implemented for app version `v0.05.13`
+Planning baseline: implemented for app version `v0.05.14`
 
 This is the original design plan plus the implementation ledger for the five
 new seasonal events. The owner approved the complete Halloween, Christmas,

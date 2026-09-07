@@ -119,7 +119,9 @@ with seasonal_tables(table_name) as (
 )
 select
   exists (select 1 from supabase_migrations.schema_migrations
-    where version = '202609070040') as migration_40_applied,
+    where version = '202609070040') and
+  exists (select 1 from supabase_migrations.schema_migrations
+    where version = '202609070041') as migrations_40_41_applied,
   (select count(*) = 6 from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     join seasonal_tables s on s.table_name = c.relname
@@ -165,7 +167,7 @@ select
 '@)
 if ($schemaRows.Count -ne 1) { throw 'Seasonal schema verification was ambiguous.' }
 foreach ($flag in @(
-    'migration_40_applied', 'all_tables_have_rls', 'direct_table_access_absent',
+    'migrations_40_41_applied', 'all_tables_have_rls', 'direct_table_access_absent',
     'rpc_grants_are_scoped', 'internal_window_is_private',
     'notification_contract_extended')) {
     Assert-True (Get-Value $schemaRows[0] $flag) $flag

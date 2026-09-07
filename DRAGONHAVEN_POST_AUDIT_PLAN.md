@@ -3,7 +3,9 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.05.12**
+Actuele openbare versie: **v0.05.13; de APK is intact, maar de taggate vond één
+verouderde statische migratieverwachting. De forward-only v0.05.14-hotfix is in
+voorbereiding en wordt de eerstvolgende Latest-release.**
 
 Actuele productieserver: **41/41 repositorymigraties; gezond, met nul
 database-lintfouten en groene Auth-/applicatiehealth**
@@ -39,7 +41,7 @@ lokale tests zijn groen. Runs `33981322674` en
 stagingpoort. App/release bleven toen v0.05.11; staging heeft 38 toegepast,
 productie 36 en de lokale repository bevat migratie 39.**
 
-Actuele releasecandidate v0.05.13: **de vijf volledig goedgekeurde
+Actuele releasecandidate v0.05.14: **de vijf volledig goedgekeurde
 eventcontracten voor Halloween, Kerst, Nieuwjaar, Valentijn en Pride zijn lokaal
 ingebouwd. Dit omvat vijf kalender-/previewvensters, vijf Special Adventures,
 vijf event-Trials met eigen hoogwaardige media, vijf nieuwe Special families,
@@ -50,8 +52,10 @@ Saveschema 53 bewaart nieuwe lokale idempotentievelden; lokale migratie 40 bevat
 de server-RPC's/RLS. De oorspronkelijke grote bronplaten staan buiten Flutter's
 assetbundle. De volledige verscheepte seasonal toevoeging is circa 57,0 MiB:
 28,4 MiB event-UI, 26,5 MiB draken en 2,0 MiB audio, zonder lagere
-runtime-WebP-kwaliteit. Appversie `0.05.13+10063`, analyzer, alle 457 tests, de
-transparantie-/safe-area-poorten en de ondertekende release-APK zijn lokaal groen.
+runtime-WebP-kwaliteit. Appversie `0.05.14+10064`; analyzer, alle 458 tests,
+PowerShell-parse, levende-documentatie-, transparantie-/safe-area- en
+signingpoorten zijn groen. De echte release-APK is als update op de emulator
+geïnstalleerd en toont Android-versionName `0.05.14` en versionCode `10064`.
 Migraties 39–41 hebben een exact begrensde stagingpoort met economyrollback,
 seasonal preview-E2E, lint, RLS/revokes en health; pas na die groene poort volgt
 de afzonderlijke productiegate voor 37–41. De openbare release is nog niet
@@ -1328,6 +1332,8 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 07-09-2026 | Seasonal event-UI in drie visuele rondes verfijnd | Codex | `seasonal_trial_game.dart`, `adventure_hub_screen.dart`, `seasonal_trial_rankings_sheet.dart`, vijf expliciete event-assetmappen en aangescherpte widget-/alphatests | Trials tonen nu eventembleem, spritefasepad, subtiele ambient motion en een thematische uitslag; Special Adventure-, Valentijn-, Pride- en rankingpresentaties hergebruiken de goedgekeurde eventart. Valentijn/Pride Trial-iconen zijn zonder afgesneden onderfragment en met echte alpha opnieuw opgebouwd; Nieuwjaar/Pride chest-/eggcutouts hebben extra randruimte. 320×640-dekking bewijst alle vijf Trials en de eventgate controleert alle buitenranden. Analyzer en 456/456 tests zijn groen. Geen versie-, server-, migratie-, productie- of releasewijziging. |
 | 07-09-2026 | Eerste seasonal stagingpoort stopte veilig op lint | Codex, binnen jouw releasetoestemming | [stagingrun 34072050993](https://github.com/Rakky88/DragonHaven/actions/runs/34072050993), migratie 40 en forward-only migratie 41 | De workflow bewees de exacte 38→40-set, groene voorafgaande health/lint en paste 39–40 uitsluitend op staging toe. De verplichte nacheck vond daarna twee ambigue PL/pgSQL-identifiers in de previewredeem- en Pride-progressfuncties en stopte vóór seasonal E2E. Productie bleef gezond op 36 en er is geen release gepubliceerd. Migratie 41 vervangt alleen deze twee functies met ondubbelzinnige identifiers; een 40→41-herstelpoort moet nog volledig groen worden voordat productie of v0.05.13 verdergaat. |
 | 07-09-2026 | Seasonal servercontracten forward-only hersteld en uitgerold | Codex, binnen jouw releasetoestemming | [stagingrun 34072959455](https://github.com/Rakky88/DragonHaven/actions/runs/34072959455), [productierun 34073058141](https://github.com/Rakky88/DragonHaven/actions/runs/34073058141), commit `70bc6f6` en migratie 41 | De begrensde 40→41-stagingpoort maakte beide functies ondubbelzinnig en bewees daarna 41/41 parity, nul lintfouten, RLS/revokes, de dormante vanity-aankoop in rollback, een gesimuleerde seasonal Trial met ranking en volledige cleanup plus Auth/apphealth. Pas daarna bracht de aparte productiepoort exact 36→41 over; dry-run, apply, parity, lint en health waren groen. Een onafhankelijke lokale productiepreflight bevestigde 41 migraties, nul lintfouten en HTTP 200 voor Auth en applicatiehealth. Economy-activatie bleef uit en er zijn geen bestaande spelerwaarden gemigreerd. |
+| 07-09-2026 | v0.05.13 gepubliceerd; taggate vond statische releaseverwachting | Codex, binnen jouw releasetoestemming | [release v0.05.13](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.13) en [taggate 34073419192](https://github.com/Rakky88/DragonHaven/actions/runs/34073419192) | De ondertekende APK van 477.701.825 bytes met SHA-256 `3636138ff7cf5cbe65eda154c0ff2ffc31fb2321e9f05fefedc808daee5070d2` is exact en openbaar. Productiepreflight en analyzer waren groen; 457 tests slaagden. Eén loadprofieltest verwachtte nog migratie 40 terwijl de repository en gezonde productie terecht op 41 stonden, waardoor de gate vóór signing/AAB stopte. De gepubliceerde historische release wordt niet herschreven. v0.05.14 corrigeert uitsluitend deze forward-validatie, verhoogt versie/versionCode en herhaalt alle gates. |
+| 07-09-2026 | v0.05.14 forward-only releasecandidate volledig lokaal groen | Codex, binnen jouw releasetoestemming | versie `0.05.14+10064`, 458 tests, productiepreflight en ondertekende `DragonHaven.apk` | De loadprofieltest leidt de actuele repositorymigratie nu correct af als 41 en de seasonal staging-E2E eist expliciet migraties 40 én 41. Analyzer, alle 458 tests, PowerShell-parse en levende-documentatiegates zijn groen. De APK heeft package `nl.dragonhaven.app`, Android-versionName `0.05.14`, versionCode `10064`, 477.701.825 bytes, SHA-256 `5d1bbd939e81665ccfd5904bfa55292f597456f2f6742a76d776c8ba38a8180f` en het vaste certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`; installatie als update op de open emulator is geslaagd. |
 
 ## Onderhoud van dit plan
 

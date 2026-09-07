@@ -2,7 +2,7 @@
 
 Last verified: 7 September 2026
 
-Ruleset: app version `v0.05.13`
+Ruleset: app version `v0.05.14`
 
 <!-- reference-source-fingerprint: d5095b97509c6845 -->
 
