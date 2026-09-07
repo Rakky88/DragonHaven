@@ -66,6 +66,7 @@ jobs:
           "virtual-users=$virtualUsers" >> $env:GITHUB_OUTPUT
           "execute=$($isExecution.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
           'The bounded load-stage request is valid; no secret was accessed.'
+          ./tool/staging_load_accounts_contract.ps1
 
       - name: Verify isolated staging execution configuration
         if: ${{ steps.profile.outputs.execute == 'true' }}
