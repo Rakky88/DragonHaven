@@ -1,8 +1,8 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **7 September 2026**
-Released app: **v0.05.17 / 10067**; production **48**, staging **49**.
-Migration **49** adds owner-scoped inventory pagination and passed its staging rehearsal and applied contracts in run `34127201082`. It has not been applied to production.
+Released app: **v0.05.17 / 10067**; production **49**, staging **49**.
+Migration **49** adds owner-scoped inventory pagination and passed its staging rehearsal and applied contracts in run `34127201082`. Production run `34129277707` then proved identical staging source, rollback rehearsal, exact migration 49, repeated snapshot contract, parity, zero lint errors and health 200. Mutations remain disabled and all accounts remain legacy.
 Migrations **45-47** are deployed dormant: chest opening, server inventory guard and item shop.
 Production run `34116589237` passed exact staging-source checks, rollback rehearsals, all three contracts, migration parity, zero-error lint and health. Before/after checks prove mutations remain disabled and all accounts remain in legacy compatibility.
 Staging runs `34110497546`, `34110676557` and `34111166461` passed rollback contracts, parity, lint and health. No economy activation is included.
@@ -181,12 +181,12 @@ path depends on migration 37.
 - decide the production migration/cutover window and its player impact. Current
   audit authorization covers isolated staging development and rehearsals.
 
-The production project has migrations 1-48 and staging has 1-49. Migration 48 only opens
+The production project and staging both have migrations 1-49. Migration 48 only opens
 the simulated Halloween preview to verified keepers (production run `34127198552`). The global mutation
 switch remains disabled and every production keeper remains on `legacy_client`. Migration 38
 is the immutable forward fix for the timestamp ambiguity found in migration 37.
-The current audit branch does not publish another public release or activate economy
-ownership for players.
+The authorized v0.05.18 public release is being prepared from this audit branch.
+It does not activate economy ownership for players.
 
 ## Proven legacy-import restore rehearsal
 
@@ -203,7 +203,7 @@ This is neither a production restore RPC nor a measured RTO for real large
 inventories. A reviewed operational procedure and aggregate-to-instance
 conversion still need implementation before cutover.
 
-## Staging-proven inventory snapshot (migration 49)
+## Dormant deployed inventory snapshot (migration 49)
 
 `get_my_economy_inventory_page` reads absolute coins/gems, wallet/server revision
 and up to 100 current chest/item instances. A shared owner lock makes each page

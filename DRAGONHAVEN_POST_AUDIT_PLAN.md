@@ -14,6 +14,25 @@ Publicatie wacht op productiepariteit, analyse/tests, visuele APK-controle en
 de ondertekenings-/downloadcontroles. De 1000-accountcapaciteit blijft afgekeurd
 en wordt niet stilzwijgend geaccepteerd door deze release.
 
+Productierun [34129277707](https://github.com/Rakky88/DragonHaven/actions/runs/34129277707)
+is inmiddels geslaagd: 48 naar 49, identieke stagingbron, rollbackrepetitie en
+herhaalde snapshotcontractproef. Nacontroles in CI en lokaal: 49 migraties,
+nul lintfouten, Auth/settings/app-health 200. Voor en na: mutations uit,
+nul niet-legacy accounts. Alle 518 lokale tests slagen en analyzer is schoon.
+De ondertekende APK is gebouwd en als update over v0.05.17 geïnstalleerd op
+`emulator-5554`: pakket `nl.dragonhaven.app`, versionName 0.05.18 en code 10068,
+bestaande voortgang behouden en het vaste certificaat gecontroleerd. Trials,
+shop en Inventory zijn visueel beoordeeld op circa 411 dp en 320 dp, inclusief
+uitgeschakelde animaties. De taalkeuze staat alfabetisch, Nederlands blijft na
+herstart geselecteerd en About toont v0.05.18. De Conclave-leesstatus is bewezen
+via de volledige-shellregressie; op de emulator is alleen de uitgelogde
+Friends/Conclave-layout bekeken. Er zijn geen echte chatberichten verzonden.
+Screenshots en logs staan lokaal onder `release/v0.05.18-*`.
+APK: 505.821.796 bytes; SHA-256
+`e956b358d51e9304cd0f78647a4ccf9e447f0c85fc69152cfad06f00b0add89a`.
+Alle 48 openbare release-notes-bestanden zijn gecontroleerd op afgeschermde
+codewaarden en aankondigingen. Publicatie en de afzonderlijke AAB-gate volgen.
+
 ## Actieve auditbouw na v0.05.17 (7 september)
 
 Op `feature/audit-capacity-and-import` is de Auth-opbouw gescheiden van de
