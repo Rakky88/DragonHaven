@@ -3,9 +3,9 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.05.13; de APK is intact, maar de taggate vond één
-verouderde statische migratieverwachting. De forward-only v0.05.14-hotfix is in
-voorbereiding en wordt de eerstvolgende Latest-release.**
+Actuele openbare versie: **v0.05.14, versionCode 10064 en Latest. Geregistreerde
+Keepers op een lagere versie krijgen bij appstart de wegdrukbare updatepopup met
+de permanente Android-downloadroute.**
 
 Actuele productieserver: **41/41 repositorymigraties; gezond, met nul
 database-lintfouten en groene Auth-/applicatiehealth**
@@ -21,45 +21,38 @@ lokale productiepreflight bevestigde opnieuw 41 migraties, nul lintfouten en HTT
 migraties 40–41 voegen de online eventcontracten toe zonder de bestaande
 economie te activeren.**
 
-Actuele uitgebrachte tranche: **v0.05.12 is openbaar uitgebracht met versionCode
-10062. Deze release koppelt de Trial-constellatie uitsluitend aan echte
-completion en maximaal eenmaal per lokale dag, stabiliseert Android-muziek rond
-het notificatiescherm, ondersteunt tabletlay-outs en toont geregistreerde Keepers
-een wegdrukbare updatepopup. Analyzer, alle 424 tests, vaste signing,
-productiepreflight, remote assetcontrole en post-release health zijn groen.
-Productie bleef voor deze release op migratie 36.**
+Actuele uitgebrachte tranche: **v0.05.14 brengt de vijf volledige seasonal
+events uit met versionCode 10064. Analyzer, alle 458 tests, vaste signing,
+productiepreflight, Play-ready AAB, remote APK-assetcontrole en post-release
+health zijn groen. De APK staat exact op commit
+`768a6ac48f681d3d9bea2ea63a6048bde4c453d2`; productie en staging zijn gezond
+op migratie 41/41.**
 
-Actuele audittranche naast v0.05.12: **auditfase 4A is met commits `aa1a571` t/m
-`e1e9c50` naar `main` gebracht en op staging bewezen. Fase 4B heeft lokaal een
-eerste ongepushte kandidaat: migratie 39, een standaard uitgeschakelde
-clientgrens, veilige request-ID-retry en cloudrestore-afscherming voor wallet en
-chests. Daarnaast bewaart de Trial-constellatie vanaf saveschema 51 expliciet
-welke kalenderdagen door een echt voltooide Trial zijn verdiend; verversen kan
-geen dag toevoegen en iedere dag telt maximaal eenmaal. Analyzer en 439/439
-lokale tests zijn groen. Runs `33981322674` en
-`33981974136` bewijzen staging 38/38; migratie 39 wacht op een aparte push- en
-stagingpoort. App/release bleven toen v0.05.11; staging heeft 38 toegepast,
-productie 36 en de lokale repository bevat migratie 39.**
+Actuele audittranche naast v0.05.14: **auditfase 4A en de eerste dormante 4B-
+aankoop staan op staging en productie. De authoritymodus blijft voor alle
+Keepers `legacy_client`, de globale mutatieschakelaar en appfeature blijven uit,
+en de stagingrollback bewees dat de nieuwe kooproute geen waarde achterlaat.
+Volgende Codexstap is server-owned chestopening met randomness, pity en
+relicdrops; activering voor spelers blijft een afzonderlijk gezamenlijk besluit.**
 
-Actuele releasecandidate v0.05.14: **de vijf volledig goedgekeurde
-eventcontracten voor Halloween, Kerst, Nieuwjaar, Valentijn en Pride zijn lokaal
-ingebouwd. Dit omvat vijf kalender-/previewvensters, vijf Special Adventures,
+Actuele seasonal release v0.05.14: **de vijf volledig goedgekeurde
+eventcontracten voor Halloween, Kerst, Nieuwjaar, Valentijn en Pride zijn
+uitgebracht. Dit omvat vijf kalender-/previewvensters, vijf Special Adventures,
 vijf event-Trials met eigen hoogwaardige media, vijf nieuwe Special families,
 eventspecifieke chests/eggs/audio, tijdelijke publiek-domeinmuziek, wereldwijde
 ranglijsten met vijfdaagse uitslag en permanente Chronicle, idempotente
 podiumprijzen, een wereldwijde Pride-meter en de tweepersoons Valentijnsflow.
-Saveschema 53 bewaart nieuwe lokale idempotentievelden; lokale migratie 40 bevat
-de server-RPC's/RLS. De oorspronkelijke grote bronplaten staan buiten Flutter's
+Saveschema 53 bewaart nieuwe lokale idempotentievelden; migraties 40–41 bevatten
+de server-RPC's/RLS en forward-only lintfix. De oorspronkelijke grote bronplaten staan buiten Flutter's
 assetbundle. De volledige verscheepte seasonal toevoeging is circa 57,0 MiB:
 28,4 MiB event-UI, 26,5 MiB draken en 2,0 MiB audio, zonder lagere
 runtime-WebP-kwaliteit. Appversie `0.05.14+10064`; analyzer, alle 458 tests,
 PowerShell-parse, levende-documentatie-, transparantie-/safe-area- en
 signingpoorten zijn groen. De echte release-APK is als update op de emulator
 geïnstalleerd en toont Android-versionName `0.05.14` en versionCode `10064`.
-Migraties 39–41 hebben een exact begrensde stagingpoort met economyrollback,
-seasonal preview-E2E, lint, RLS/revokes en health; pas na die groene poort volgt
-de afzonderlijke productiegate voor 37–41. De openbare release is nog niet
-gewijzigd.**
+Migraties 39–41 doorliepen de exact begrensde stagingpoort met economyrollback,
+seasonal preview-E2E, lint, RLS/revokes en health en daarna de afzonderlijke
+productiegate voor 37–41. Release, taggate en post-release health zijn groen.**
 
 Aanvullende visuele eventtranche: **drie afzonderlijke rondes zijn daarna over
 Trials, eventkaarten/rewards/ranglijsten en compacte schermen uitgevoerd. De
@@ -71,24 +64,21 @@ extra veilige randruimte. De vijf geneste eventmappen zijn nu expliciet in de
 Flutter assetbundle opgenomen. Productie, servermigraties, appversie en openbare
 release blijven hierdoor ongewijzigd. Analyzer en 457/457 tests zijn groen.**
 
-Server- en releasebewijs: **de volledige
-[stagingrun 33630222018](https://github.com/Rakky88/DragonHaven/actions/runs/33630222018)
-en begrensde
-[productiemigratie 33631028441](https://github.com/Rakky88/DragonHaven/actions/runs/33631028441)
-brachten staging en productie veilig op 36/36 met nul lintfouten. De actuele
-[release v0.05.11](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.11)
-wijst exact naar commit `95881fb02d74b1fa10694578e8e0e2a09ce94208` en bevat één
-`DragonHaven.apk` van 416.935.961 bytes met SHA-256
-`e2d78232df3851215fb74f5f54407215443652e07bcd176fd930bcc3d61cf8e2`.
+Server- en releasebewijs: **[stagingrun 34072959455](https://github.com/Rakky88/DragonHaven/actions/runs/34072959455)
+en [productiemigratie 34073058141](https://github.com/Rakky88/DragonHaven/actions/runs/34073058141)
+brachten staging en productie veilig op 41/41 met nul lintfouten. De actuele
+[release v0.05.14](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.14)
+wijst exact naar commit `768a6ac48f681d3d9bea2ea63a6048bde4c453d2` en bevat één
+`DragonHaven.apk` van 477.701.825 bytes met SHA-256
+`5d1bbd939e81665ccfd5904bfa55292f597456f2f6742a76d776c8ba38a8180f`.
 Remote grootte en digest zijn gelijk aan lokaal; de versiegebonden en permanente
 latest-download geven HTTP 200. De
-[taggate 33967651302](https://github.com/Rakky88/DragonHaven/actions/runs/33967651302)
-herhaalde productiepreflight, analyzer, 414 tests, vaste signing, Play-ready AAB
+[taggate 34074223335](https://github.com/Rakky88/DragonHaven/actions/runs/34074223335)
+herhaalde productiepreflight, analyzer, 458 tests, vaste signing, Play-ready AAB
 en artifactcontrole volledig groen. De
-[post-release healthrun 33968083818](https://github.com/Rakky88/DragonHaven/actions/runs/33968083818)
+[post-release healthrun 34074693676](https://github.com/Rakky88/DragonHaven/actions/runs/34074693676)
 bevestigde Auth en applicatiehealth, uploadde bewijs, sloot een eventueel hersteld
-alert en opende geen storingsalert. Productie blijft op 36/38; het geïsoleerde
-stagingproject staat op 38/38.**
+alert en opende geen storingsalert.**
 
 Open meldingsgrens: **privéberichten worden nu merkbaar sneller en retrybaar
 opgehaald zolang het appproces leeft en direct bij resume. Gegarandeerde bezorging
@@ -126,7 +116,7 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | --- | ---: | --- | --- | --- |
 | Google Play-voorbereiding | circa 38% | Permanent package-ID, vaste signingidentiteit, versiecontrole en een ondertekende AAB zijn bewezen. De reproduceerbare appgrootteaudit meet een actuele AAB van 345,00 MiB en 284,99 MiB universele media en legt een gratis optimalisatiepad vast | Beeldpilot en batchoptimalisatie uitvoeren; actuele target-/Play-eisen, storeteksten, graphics, Data Safety-inventaris en rolloutchecklist afronden | Play Console openen/verifiëren; app en Play App Signing aanmaken; pilot visueel goedkeuren; testers, publieke support/privacy-URL's en storeverklaringen beheren |
 | iOS/iPhone-voorbereiding | circa 25% | Xcode-project, vaste bundle ID, appicoon, Mac-buildscript en handmatige unsigned macOS-simulatorworkflow bestaan als niet-geactiveerde toekomstbasis | Alleen na een nieuw iOS-besluit de simulatorworkflow bewijzen, audio/notificaties valideren en een veilige deel-/updateroute bouwen | Voorlopig niets; pas bij hervatting Apple Developer/TestFlight, Mac-signing en een echte iPhone inrichten |
-| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.04 zijn groen; productie staat gecontroleerd op 36/36 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren en mogelijk blootgestelde ontwikkelcredentials roteren |
+| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.14 zijn groen; productie staat gecontroleerd op 41/41 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren en mogelijk blootgestelde ontwikkelcredentials roteren |
 | Fase 1 — monitoring en incidenten | circa 94% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan. Auth én de read-only applicatiecheck draaien ieder uur; contract-/klokvalidatie, migratie 32, onafhankelijke productiepreflight en post-release health zijn groen. De handmatige, secretvrije monitoringdrill leverde testissue #1 af, verifieerde het contract, bewaarde bewijs en sloot de melding. Privéberichtmeldingen pollen retrybaar zolang het appproces leeft | Firebase Crashlytics/Performance en FCM koppelen zodra de Android-projectconfig bestaat; daarna één gecontroleerde stagingfout, een latency-/foutbaseline en terminated-app privéberichtbezorging E2E bewijzen | Gratis Firebase Spark-project maken, `nl.dragonhaven.app` registreren, Analytics uit laten en `google-services.json` veilig in de werkmap zetten; privacy/Data Safety en het gebruik van FCM beoordelen |
 | Fase 2 — staging en E2E | circa 93% | Productie en geïsoleerde staging staan op migratie 41; account/login, back-up/conflict, Friends, Friend Messages/emotes, Conclaves, trade, Trial-ranglijsten, volledige Group Adventure completion/reward/replay en de seasonal preview/Trial/rankingcontracten zijn echt getest. Het productie-geblokkeerde 100→1.000-loadprofiel met unieke accounts, think time, p50/p95/p99 en privacyarm bewijs staat op `main` | Eerst plan-100 en pas met een bevestigde synthetische accountpool en afzonderlijke runtoestemming run-100 uitvoeren. E-mailbevestigingsautomatisering blijft afhankelijk van een veilige mailboxroute | Veilige stagingmailroute instellen; 100 unieke bevestigde synthetische accounts plus `STAGING_LOAD_CREDENTIALS_JSON` aanmaken en bevestigen dat zij geen echte persoonsgegevens bevatten. Meer dan 1.000 blijft apart goedkeuringsplichtig |
 | Fase 3 — back-up en multi-device | circa 98% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, automatische 15-minutenback-up plus achtergrondflush zijn gebouwd. De eerste automatisch geplande zondagrestore is groen en rondde de actieve account/back-up/restorerondgang in circa 7,3 seconden af | Later server-owned economievelden van restores afschermen en na fase 4 het terugrol-/duplicatiecontract opnieuw bewijzen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
@@ -1334,6 +1324,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 07-09-2026 | Seasonal servercontracten forward-only hersteld en uitgerold | Codex, binnen jouw releasetoestemming | [stagingrun 34072959455](https://github.com/Rakky88/DragonHaven/actions/runs/34072959455), [productierun 34073058141](https://github.com/Rakky88/DragonHaven/actions/runs/34073058141), commit `70bc6f6` en migratie 41 | De begrensde 40→41-stagingpoort maakte beide functies ondubbelzinnig en bewees daarna 41/41 parity, nul lintfouten, RLS/revokes, de dormante vanity-aankoop in rollback, een gesimuleerde seasonal Trial met ranking en volledige cleanup plus Auth/apphealth. Pas daarna bracht de aparte productiepoort exact 36→41 over; dry-run, apply, parity, lint en health waren groen. Een onafhankelijke lokale productiepreflight bevestigde 41 migraties, nul lintfouten en HTTP 200 voor Auth en applicatiehealth. Economy-activatie bleef uit en er zijn geen bestaande spelerwaarden gemigreerd. |
 | 07-09-2026 | v0.05.13 gepubliceerd; taggate vond statische releaseverwachting | Codex, binnen jouw releasetoestemming | [release v0.05.13](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.13) en [taggate 34073419192](https://github.com/Rakky88/DragonHaven/actions/runs/34073419192) | De ondertekende APK van 477.701.825 bytes met SHA-256 `3636138ff7cf5cbe65eda154c0ff2ffc31fb2321e9f05fefedc808daee5070d2` is exact en openbaar. Productiepreflight en analyzer waren groen; 457 tests slaagden. Eén loadprofieltest verwachtte nog migratie 40 terwijl de repository en gezonde productie terecht op 41 stonden, waardoor de gate vóór signing/AAB stopte. De gepubliceerde historische release wordt niet herschreven. v0.05.14 corrigeert uitsluitend deze forward-validatie, verhoogt versie/versionCode en herhaalt alle gates. |
 | 07-09-2026 | v0.05.14 forward-only releasecandidate volledig lokaal groen | Codex, binnen jouw releasetoestemming | versie `0.05.14+10064`, 458 tests, productiepreflight en ondertekende `DragonHaven.apk` | De loadprofieltest leidt de actuele repositorymigratie nu correct af als 41 en de seasonal staging-E2E eist expliciet migraties 40 én 41. Analyzer, alle 458 tests, PowerShell-parse en levende-documentatiegates zijn groen. De APK heeft package `nl.dragonhaven.app`, Android-versionName `0.05.14`, versionCode `10064`, 477.701.825 bytes, SHA-256 `5d1bbd939e81665ccfd5904bfa55292f597456f2f6742a76d776c8ba38a8180f` en het vaste certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`; installatie als update op de open emulator is geslaagd. |
+| 07-09-2026 | v0.05.14 openbaar en volledig groen | Codex, binnen jouw releasetoestemming | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.14), [taggate 34074223335](https://github.com/Rakky88/DragonHaven/actions/runs/34074223335), [healthrun 34074693676](https://github.com/Rakky88/DragonHaven/actions/runs/34074693676) en AAB-artifact `10001617610` | Exact commit `768a6ac48f681d3d9bea2ea63a6048bde4c453d2` is getagd en v0.05.14 is Latest. Remote `DragonHaven.apk` heeft exact de lokale grootte 477.701.825 bytes en SHA-256 `5d1bbd939e81665ccfd5904bfa55292f597456f2f6742a76d776c8ba38a8180f`; versiegebonden en permanente downloads geven HTTP 200. De taggate herhaalde productiepreflight, analyzer, 458 tests, vaste signing en Play-ready AAB volledig groen. De healthrun bevestigde Auth en applicatiehealth en opende geen storingsalert. Staging en productie blijven gezond op 41/41; de economyactivatie blijft uit. |
 
 ## Onderhoud van dit plan
 
