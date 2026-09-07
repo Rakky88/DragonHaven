@@ -1,6 +1,13 @@
 {
   "mode": "builtin image_gen",
   "date": "2026-09-07",
+  "scene": {
+    "file": "altar_grove.png",
+    "prompt": "Use case: stylized-concept. Asset type: polished 3:2 landscape background illustration for the Egg Altar scene in a premium cozy dragon-keeper mobile game. Input image is a STYLE AND PALETTE REFERENCE ONLY: ornate carved lavender stone, antique gold, amethyst and soft violet magic. Generate a new atmospheric sanctuary backdrop, not the referenced object. A tranquil twilight glade opening into a vast indigo and violet starry Weave, softly painted ancient roots and leafy silhouettes framing the far left and right edges, a few delicate luminous gold threads curving upward toward a gentle distant halo in the upper center. Deep navy/plum shadows, subtle teal foliage, warm champagne highlights. Luxurious painterly game art with careful depth and restrained bloom, enchanting and serene. Composition: keep the middle 70% and lower central area calm, dark and uncluttered, because a large interactive altar sprite will be composited over it in code. No altar, pedestal, basin, egg, creature, characters, text, UI, border or watermark anywhere in this background. Full-bleed background, opaque, 1536x1024 landscape. Avoid overexposed neon, hard outlines, large sparkling star stickers or noisy detail.",
+    "renderer": "lib/widgets/egg_altar_scene.dart",
+    "description": "The original altar stays fixed; the selected egg rests behind the near rim. Continuous light, lift, dissolve and motes replace the retired phase-sprite crossfades.",
+    "durationMilliseconds": 5200
+  },
   "base": {
     "file": "altar_empty.png",
     "description": "Transparent purple-and-gold carved stone bowl altar; empty base. Occupied state composites the selected egg in Flutter."

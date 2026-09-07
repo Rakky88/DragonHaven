@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: 206b3ac89f99e74c -->
+<!-- reference-source-fingerprint: c79c1a34da61a076 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -94,7 +94,10 @@ other seasonal Trials keep the existing 30-second minimum.
 
 Witchlight Arcana shows a pumpkin lantern to memorize for an extra second
 (initially 2.9 seconds), followed by six similar
-lantern choices. Eye direction and tooth position distinguish the six faces.
+lantern choices. Six individual painted, transparent pumpkin sprites share the
+same silhouette and palette; eye direction and tooth position distinguish the
+faces. They preload during the introduction. The Might lantern is extracted
+from the complete source outline, including its handle, with transparent padding.
 Spirit requires one continuous finger trace from the wisp to the lantern along
 the visible winding corridor. Crossing an edge, lifting early, or cancelling
 the gesture fails the action and applies the existing two-second penalty.
@@ -279,7 +282,21 @@ Primary sources are `lib/models/adventure.dart`, `lib/models/trial.dart`,
 
 ## Egg Altar and protection
 
-The permanent Egg Altar is reachable from Inventory > Eggs and the nest screen.
+The permanent Egg Altar has its own Inventory > Altar tab and is also reachable
+from the nest screen. Selecting an egg first opens its details, with known
+properties, hidden-property placeholders, incubation, acquisition date and hint;
+placing it on the altar requires a separate choice. Protected eggs can be
+inspected but cannot be selected for return. The info button contains a single
+tutorial text block without odds. The Weaveheart guarantee counter is hidden.
+Nameweaver's Quill appears first in crafting; recipe cards show effects and
+material costs without drop-source or exclusivity labels.
+
+The altar rests in a painted twilight grove. A fixed stone sprite, contact
+shadow and foreground bowl rim integrate the selected egg. The 5.2-second
+ritual continuously charges, lifts, dissolves, releases motes, fades and rests;
+twelve overlapping light ribbons replace the mismatched old sprite crossfades.
+Rewards fade into a reserved space, keeping the dialog stable. Reduced motion
+shows the completed scene after a short transition.
 Inventory eggs can be tagged and untagged without a material cost. Tags, scan
 knowledge and returned IDs persist across saves, nest activation and authorized
 trades. A newer explicit tag revision wins over an older backup. The selection

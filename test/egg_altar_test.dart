@@ -33,9 +33,14 @@ void main() {
         .listSync()
         .whereType<File>()
         .where((f) => f.path.endsWith('.png'));
-    expect(files.length, 15);
+    expect(files.length, 16);
     for (final file in files) {
       final decoded = image.decodePng(file.readAsBytesSync())!;
+      if (file.path.endsWith('altar_grove.png')) {
+        expect(decoded.width / decoded.height, 1.5);
+        expect(decoded.getPixel(0, 0).a, 255);
+        continue;
+      }
       expect(decoded.numChannels, 4, reason: file.path);
       for (final corner in [
         (0, 0),

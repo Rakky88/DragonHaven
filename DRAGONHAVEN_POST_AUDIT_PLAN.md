@@ -21,11 +21,29 @@ De volledige suite vond alleen een verouderde verwachting van migratie 44 in
 de loadprofieltest; die volgt nu de nieuwe kandidaat. Analyzer was schoon.
 Migratie 47 voegt nu gewone meubelaankopen en vier winkelrelics toe met prijzen
 uit de bestaande catalogus, vaste tradeability en herhaalbare ontvangsten.
-Stagingvalidatie van 47 volgt.
+Stagingvalidatie van 47 is groen in run `34111166461`: exacte 47-migratiepariteit,
+nul lintfouten, Auth-/apphealth 200 en alle aankoop-/chest-/winkelcontracten
+binnen rollback bewezen. Productie blijft op 44.
 Fase 4B is hiermee uitgebreid, niet afgerond: andere winkels, volledige
 conversie van bestaande stacks, snapshotreconciliatie en activering ontbreken.
 Fase 4C (ei-/draaklevensloop) en 4D (beloningsclaims) blijven open. Voor de
 support-/privacywebsite zijn de definitieve contactgegevens nog nodig.
+
+Tussentijdse UI-verzoeken zijn in deze kandidaat meegenomen: Inventory > Altar,
+compacte receptkaarten met Quill vooraan, ei-informatie voor selectie, een
+tutorial zonder odds/teller, een vaste altaarcompositie met vloeiend licht en
+deeltjes, compactere Trial-informatie en zes aparte Arcana-pompoensprites.
+De Might-sprite gebruikt de volledige oorspronkelijke uitsnede met marge.
+Visuele controles op 320 x 640 omvatten Arcana, Might, de compacte Trialpagina,
+Altar-selectie, ei-informatie, crafting, tutorial, zes animatiemomenten en het
+resultaat. De volledige suite is groen: **501/501 tests**. Analyzer meldt
+**No issues found**; de levende referentiedocumentatie is gecontroleerd.
+
+Het staging-loadprofiel kan nu zelf tijdelijk bevestigde synthetische accounts
+maken zonder e-mail en ruimt alleen eigen runaccounts weer op. De 1000-userpoort
+eist 100 geslaagde logins en bootstraps op hetzelfde schema. Beide kanten van de
+run controleren pariteit, lint en health. De eerste run is `34114939684`;
+het meetresultaat wordt pas na afronding beoordeeld.
 
 Release **v0.05.16 / versionCode 10066** is op 7 september 2026 gepubliceerd als
 Latest. APK-upload en definitieve downloadcontrole zijn geslaagd. De app en updater gebruiken

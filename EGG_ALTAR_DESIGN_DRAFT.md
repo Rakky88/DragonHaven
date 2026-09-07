@@ -14,7 +14,7 @@ Vastgelegde keuzes van de speler:
 - Weave Oracle en de nieuwe consumable voor drakennaamswijzigingen zijn exclusief
   via crafting bij het Egg Altar verkrijgbaar.
 - Eieren kunnen worden getagd en ontagd; getagde eieren mogen nooit naar de Weave.
-- De terugkeeranimatie krijgt zes fasen, met zes eigen sprites en vloeiende crossfades.
+- De terugkeeranimatie heeft zes vloeiende fasen met een vast altaar en twaalf overlappende lichtdraden; geen verspringende sprite-crossfades.
 - Sinister-eieren mogen naar de Weave: altijd 25 Fragments en 3–5 Essence,
   met 10% kans op één Weaveheart. Het extra bevestigingsscherm noemt geen opbrengst.
 - De gezamenlijke cosmetische Conclave Weave Beacon wordt direct meegenomen.
@@ -23,7 +23,7 @@ Vastgelegde keuzes van de speler:
 
 Overtollige eieren een betekenisvolle bestemming geven: ruimte maken, materialen
 verzamelen en gerichte informatie over andere eieren verdienen. Uitbroeden moet
-waardevol blijven. Het altaar is permanent en staat bij Inventory > Eggs, met een
+waardevol blijven. Het altaar is permanent en staat bij Inventory > Altar, met een
 eigen scherm en een lokale doorgang vanaf het nest/een passende torenruimte.
 
 De bestaande Dragon-, Mythical- en Sinister-chests geven gegarandeerd een ei.
@@ -89,7 +89,7 @@ ei die stiekem de onbekende inhoud verraadt.
 
 Na 39 teruggaven zonder Weaveheart geeft de 40e er gegarandeerd een. Elke verkregen
 Weaveheart reset die teller. Teller per account, geen reset door herstart of Conclave-
-wissel; zichtbaar als rustige voortgang. Geen dagelijkse limiet op inventarisopruiming.
+wissel; de teller wordt niet in de interface getoond. Geen dagelijkse limiet op inventarisopruiming.
 Exacte kansen en pity zichtbaar via een informatieknop en in RANDOM_REWARDS_AND_ODDS.md.
 
 ## Crafting - ingebouwde recepten
@@ -163,18 +163,15 @@ voor gedeelde decoratie met Fragments. Geen gedeelde toegang tot persoonlijke ei
 ## Art en audio
 
 - Leeg Egg Altar: eigen transparante sprite, stenen kom met zachte runen.
-- Actief altaar: basislaag en losse eilayer, zodat ei-typen correct blijven.
-- Zes animatiefasen met een eigen sprite per fase:
+- Actief altaar: vaste stenen kom in een geschilderde avondtuin, ei met contactschaduw achter de voorrand; bekende eigegevens worden eerst apart getoond.
+- Zes doorlopende animatiefasen met een vaste kom en twaalf overlappende lichtdraden:
   1. De altaarrunen ontwaken en beginnen te gloeien.
   2. Het ei stijgt op boven de kom.
   3. De Weave opent en lichtdraden omringen het ei.
   4. Het ei gaat geleidelijk over in lichtdraden.
   5. De lichtdraden keren terug naar de Weave.
   6. Het altaar dooft rustig uit en de ontvangen materialen verschijnen.
-  De zes sprites gaan in 220 ms vloeiend in elkaar over binnen een animatie van
-  4,2 seconden; de eilayer stijgt en verdwijnt geleidelijk. Het lege altaar en de
-  bezette toestand blijven ook als
-  afzonderlijke, herbruikbare weergaven beschikbaar.
+  De complete animatie duurt 5,2 seconden. Het ei stijgt, lost op en laat lichtdeeltjes achter; de geometrie van het altaar blijft steeds gelijk. Lege en bezette weergaven gebruiken dezelfde compositie. De materiaalbeloning vervaagt in een gereserveerde ruimte, zonder verspringend dialoogvenster.
 - Drie afzonderlijke resourcesprites, ook herkenbaar zonder raritykleur:
   Shell Fragments als gladde parelmoerscherven; Essence als opkrullende drakenvlam;
   Weaveheart als gevlochten kristalkern met een zachte lichtpuls.
@@ -216,3 +213,11 @@ Gerichte multiselect, meer cosmetische fragmentrecepten en optionele Conclave-
 varianten blijven vervolgwerk. Meet eerst ei-aanvoer, teruggaven en materiaalgebruik
 voordat dropkansen of recepten worden aangepast. Geen verborgen-rarityselectie,
 geen beloningen voor bekendgemaakte informatie en geen extra hatch-claims.
+
+## Interfaceverfijning 7 september 2026
+
+Eigen tab Altar, Quill als eerste recept, geen drop-/exclusiviteitlabels op recepten.
+De infoknop bevat een tutorial in een tekstblok zonder kansen. Ei-selectie opent
+eerst bekende eigenschappen, verborgen placeholders, broedtijd, verkrijgingsdatum
+en hint; plaatsen is een aparte handeling. De verborgen Weaveheart-teller en alle
+bescherming blijven functioneel ongewijzigd.

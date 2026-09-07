@@ -1,9 +1,9 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **7 September 2026**
-Released app: **v0.05.16 / 10066**; production baseline **44**, staging **46**.
-Candidate: **dormant chest opening 45 and server inventory guard 46**.
-Staging runs `34110497546` and `34110676557` passed rollback contracts, parity, lint and health. No economy activation is included.
+Released app: **v0.05.16 / 10066**; production baseline **44**, staging **47**.
+Candidate: **dormant chest opening 45, server inventory guard 46 and item shop 47**.
+Staging runs `34110497546`, `34110676557` and `34111166461` passed rollback contracts, parity, lint and health. No economy activation is included.
 
 ## Purpose and current boundary
 

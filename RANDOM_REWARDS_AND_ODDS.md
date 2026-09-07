@@ -6,7 +6,7 @@ Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
 Source baseline: v0.05.16, with the dormant server chest-opening candidate below
 
-<!-- reference-source-fingerprint: 6300b57895be0d6e -->
+<!-- reference-source-fingerprint: 4b890cf5d2cee82d -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
@@ -562,7 +562,9 @@ These systems use randomness but do not directly choose a reward item. Rewards r
   three-discipline round chooses one of six themed targets, one of two safe
   lanes, one palette color, and one of six answer positions. These choices only
   shape the challenge. They do not alter the grade reward or ranking rules.
-- Witchlight uses the target choice for six similar pumpkin faces. Its Spirit
+- Witchlight uses the target choice for six similar pumpkin faces, now rendered
+  as six individual painted sprites. The visual replacement changes no draws,
+  timings, mistake limits or reward rules. Its Spirit
   corridor gets a fresh 32-bit seeded shape on every challenge and has no random
   forgiveness roll. Six original points are jittered (x up to 9% of width, y up
   to 6% of height), normalized to the original arc length and recentered. Bounds

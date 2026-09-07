@@ -1,5 +1,176 @@
 // German, Spanish, French, Italian, Portuguese, Japanese.
 const eggAltarPhraseTranslations = <String, List<String>>{
+  "7-day constellation": [
+    "7-Tage-Konstellation",
+    "Constelación de 7 días",
+    "Constellation sur 7 jours",
+    "Costellazione di 7 giorni",
+    "Constelação de 7 dias",
+    "7日間の星座"
+  ],
+  "The Egg Altar": [
+    "Der Eieraltar",
+    "El altar de huevos",
+    "L’autel des œufs",
+    "L’altare delle uova",
+    "O altar dos ovos",
+    "卵の祭壇"
+  ],
+  "Got it": [
+    "Verstanden",
+    "Entendido",
+    "Compris",
+    "Capito",
+    "Entendido",
+    "わかりました"
+  ],
+  "How the Altar works": [
+    "So funktioniert der Altar",
+    "Cómo funciona el altar",
+    "Comment fonctionne l’autel",
+    "Come funziona l’altare",
+    "Como funciona o altar",
+    "祭壇の使い方"
+  ],
+  "Return to the Weave": [
+    "Zur Weave zurückgeben",
+    "Devolver a la Weave",
+    "Rendre à la Weave",
+    "Restituisci alla Weave",
+    "Devolver à Weave",
+    "Weaveへ返す"
+  ],
+  "Choose another egg": [
+    "Anderes Ei wählen",
+    "Elegir otro huevo",
+    "Choisir un autre œuf",
+    "Scegli un altro uovo",
+    "Escolher outro ovo",
+    "別の卵を選ぶ"
+  ],
+  "Give an egg back to the Weave and let its magic take a new form.": [
+    "Gib ein Ei an die Weave zurück und lass seine Magie eine neue Form annehmen.",
+    "Devuelve un huevo a la Weave y deja que su magia tome una nueva forma.",
+    "Rends un œuf à la Weave et laisse sa magie prendre une nouvelle forme.",
+    "Restituisci un uovo alla Weave e lascia che la sua magia prenda una nuova forma.",
+    "Devolve um ovo à Weave e deixa a sua magia ganhar uma nova forma.",
+    "卵をWeaveへ返すと、その魔法が新しい形になります。"
+  ],
+  "Details": ["Details", "Detalles", "Détails", "Dettagli", "Detalhes", "詳細"],
+  "Still hidden": [
+    "Noch verborgen",
+    "Aún oculto",
+    "Encore caché",
+    "Ancora nascosto",
+    "Ainda oculto",
+    "まだ不明"
+  ],
+  "Dragon family": [
+    "Drachenfamilie",
+    "Familia de dragones",
+    "Famille de dragons",
+    "Famiglia del drago",
+    "Família do dragão",
+    "ドラゴンの系統"
+  ],
+  "Moral alignment": [
+    "Moralische Gesinnung",
+    "Alineamiento moral",
+    "Alignement moral",
+    "Allineamento morale",
+    "Alinhamento moral",
+    "善悪の性質"
+  ],
+  "Order alignment": [
+    "Ordnungsgesinnung",
+    "Alineamiento de orden",
+    "Alignement d’ordre",
+    "Allineamento d’ordine",
+    "Alinhamento de ordem",
+    "秩序の性質"
+  ],
+  "Incubation": [
+    "Brutzeit",
+    "Incubación",
+    "Incubation",
+    "Incubazione",
+    "Incubação",
+    "孵化時間"
+  ],
+  "Acquired": ["Erhalten", "Obtenido", "Obtenu", "Ottenuto", "Obtido", "入手日"],
+  "Place on altar": [
+    "Auf den Altar legen",
+    "Colocar en el altar",
+    "Placer sur l’autel",
+    "Metti sull’altare",
+    "Colocar no altar",
+    "祭壇に置く"
+  ],
+  "Choose this egg": [
+    "Dieses Ei wählen",
+    "Elegir este huevo",
+    "Choisir cet œuf",
+    "Scegli questo uovo",
+    "Escolher este ovo",
+    "この卵を選ぶ"
+  ],
+  "Reveal an egg’s rarity.": [
+    "Enthülle die Seltenheit eines Eis.",
+    "Revela la rareza de un huevo.",
+    "Révèle la rareté d’un œuf.",
+    "Rivela la rarità di un uovo.",
+    "Revela a raridade de um ovo.",
+    "卵のレア度を明らかにします。"
+  ],
+  "Reveal an egg’s dragon family and rarity.": [
+    "Enthülle Drachenfamilie und Seltenheit eines Eis.",
+    "Revela la familia y la rareza del dragón de un huevo.",
+    "Révèle la famille et la rareté du dragon d’un œuf.",
+    "Rivela la famiglia e la rarità del drago di un uovo.",
+    "Revela a família e a raridade do dragão de um ovo.",
+    "卵のドラゴンの系統とレア度を明らかにします。"
+  ],
+  "Rename one dragon. Consumed on use.": [
+    "Benenne einen Drachen um. Wird beim Gebrauch verbraucht.",
+    "Cambia el nombre de un dragón. Se consume al usarla.",
+    "Renomme un dragon. Consommé à l’utilisation.",
+    "Rinomina un drago. Si consuma dopo l’uso.",
+    "Muda o nome de um dragão. Consumido ao usar.",
+    "ドラゴン1体の名前を変更します。使用すると消費されます。"
+  ],
+  "Use relic": [
+    "Relikt verwenden",
+    "Usar reliquia",
+    "Utiliser la relique",
+    "Usa reliquia",
+    "Usar relíquia",
+    "レリックを使う"
+  ],
+  "Returning to the Weave": [
+    "Rückkehr zur Weave",
+    "Regresando a la Weave",
+    "Retour à la Weave",
+    "Ritorno alla Weave",
+    "A regressar à Weave",
+    "Weaveへ還元中"
+  ],
+  "Returning...": [
+    "Wird zurückgegeben...",
+    "Devolviendo...",
+    "Retour en cours...",
+    "Restituzione...",
+    "A devolver...",
+    "還元中..."
+  ],
+  "Choose an egg and read its details before placing it on the altar. If you want to keep an egg, tag it to protect it. When you are ready, hold Return to the Weave: the egg leaves your inventory permanently and becomes materials you can use to craft relics. Special eggs, tagged eggs, eggs in the nest and eggs reserved for a trade are protected. Returning a Sinister egg asks for one extra confirmation. Open Craft to choose a relic, check its materials and make it. Use your crafted relics to learn more about an egg or give a dragon a new name.":
+      [
+    "Wähle ein Ei und lies seine Details, bevor du es auf den Altar legst. Markiere Eier, die du behalten möchtest, um sie zu schützen. Wenn du bereit bist, halte „Zur Weave zurückgeben“ gedrückt: Das Ei verlässt dein Inventar dauerhaft und wird zu Materialien, aus denen du Relikte herstellen kannst. Spezial-Eier, markierte Eier, Eier im Nest und für einen Tausch reservierte Eier sind geschützt. Bei einem Sinister-Ei ist eine zusätzliche Bestätigung erforderlich. Öffne „Herstellen“, wähle ein Relikt und prüfe die benötigten Materialien. Mit deinen hergestellten Relikten erfährst du mehr über ein Ei oder gibst einem Drachen einen neuen Namen.",
+    "Elige un huevo y lee sus detalles antes de colocarlo en el altar. Si quieres conservarlo, etiquétalo para protegerlo. Cuando estés listo, mantén pulsado «Devolver a la Weave»: el huevo desaparecerá de tu inventario para siempre y se convertirá en materiales para fabricar reliquias. Los huevos especiales, etiquetados, en el nido o reservados para un intercambio están protegidos. Devolver un huevo Sinister requiere una confirmación adicional. Abre «Fabricar», elige una reliquia y comprueba sus materiales. Usa tus reliquias fabricadas para saber más sobre un huevo o cambiar el nombre de un dragón.",
+    "Choisis un œuf et lis ses détails avant de le placer sur l’autel. Pour garder un œuf, marque-le afin de le protéger. Quand tu es prêt, maintiens « Rendre à la Weave » : l’œuf quitte définitivement ton inventaire et devient des matériaux pour fabriquer des reliques. Les œufs spéciaux, marqués, dans le nid ou réservés à un échange sont protégés. Rendre un œuf Sinister demande une confirmation supplémentaire. Ouvre « Fabriquer », choisis une relique et vérifie ses matériaux. Utilise tes reliques fabriquées pour en apprendre davantage sur un œuf ou donner un nouveau nom à un dragon.",
+    "Scegli un uovo e leggi i dettagli prima di metterlo sull’altare. Se vuoi conservarlo, contrassegnalo per proteggerlo. Quando sei pronto, tieni premuto «Restituisci alla Weave»: l’uovo lascerà definitivamente l’inventario e diventerà materiale per creare reliquie. Le uova speciali, contrassegnate, nel nido o riservate a uno scambio sono protette. Restituire un uovo Sinister richiede una conferma aggiuntiva. Apri «Crea», scegli una reliquia e controlla i materiali necessari. Usa le reliquie create per scoprire di più su un uovo o dare un nuovo nome a un drago.",
+    "Escolhe um ovo e lê os seus detalhes antes de o colocares no altar. Se o quiseres guardar, marca-o para o proteger. Quando estiveres pronto, mantém «Devolver à Weave» premido: o ovo sai definitivamente do inventário e transforma-se em materiais para criar relíquias. Os ovos especiais, marcados, no ninho ou reservados para uma troca estão protegidos. Devolver um ovo Sinister exige uma confirmação adicional. Abre «Criar», escolhe uma relíquia e verifica os materiais necessários. Usa as relíquias criadas para saber mais sobre um ovo ou dar um novo nome a um dragão.",
+    "卵を選び、詳細を確認してから祭壇に置きましょう。残しておきたい卵はタグを付けて保護できます。準備ができたら「Weaveへ返す」を長押ししてください。卵はインベントリから永久になくなり、レリックを作るための素材になります。Specialの卵、タグ付きの卵、巣にある卵、交換用に予約された卵は保護されています。Sinisterの卵を返すには追加の確認が必要です。「作成」を開き、レリックを選んで必要な素材を確認しましょう。作成したレリックで卵について調べたり、ドラゴンの名前を変更したりできます。"
+  ],
   'No eggs available.': [
     'Keine Eier verfügbar.',
     'No hay huevos disponibles.',
