@@ -1,8 +1,8 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **7 September 2026**
-Released app: **v0.05.17 / 10067**; production and staging baseline **47**.
-Local candidate **49** adds owner-scoped inventory pagination; its staging rehearsal is pending.
+Released app: **v0.05.17 / 10067**; production **48**, staging **49**.
+Migration **49** adds owner-scoped inventory pagination and passed its staging rehearsal and applied contracts in run `34127201082`. It has not been applied to production.
 Migrations **45-47** are deployed dormant: chest opening, server inventory guard and item shop.
 Production run `34116589237` passed exact staging-source checks, rollback rehearsals, all three contracts, migration parity, zero-error lint and health. Before/after checks prove mutations remain disabled and all accounts remain in legacy compatibility.
 Staging runs `34110497546`, `34110676557` and `34111166461` passed rollback contracts, parity, lint and health. No economy activation is included.
@@ -181,7 +181,8 @@ path depends on migration 37.
 - decide the production migration/cutover window and its player impact. Current
   audit authorization covers isolated staging development and rehearsals.
 
-The production project and staging have migrations 1-47. The global mutation
+The production project has migrations 1-48 and staging has 1-49. Migration 48 only opens
+the simulated Halloween preview to verified keepers (production run `34127198552`). The global mutation
 switch remains disabled and every production keeper remains on `legacy_client`. Migration 38
 is the immutable forward fix for the timestamp ambiguity found in migration 37.
 The current audit branch does not publish another public release or activate economy
@@ -202,7 +203,7 @@ This is neither a production restore RPC nor a measured RTO for real large
 inventories. A reviewed operational procedure and aggregate-to-instance
 conversion still need implementation before cutover.
 
-## Inventory snapshot candidate (migration 49)
+## Staging-proven inventory snapshot (migration 49)
 
 `get_my_economy_inventory_page` reads absolute coins/gems, wallet/server revision
 and up to 100 current chest/item instances. A shared owner lock makes each page
@@ -218,8 +219,11 @@ and cursors, discards partial downloads and permits one fresh attempt after a
 revision conflict. Minimum receipt/local revisions prevent stale reconciliation.
 It returns an immutable complete snapshot; it does not mutate the game, overwrite
 storage or acknowledge an intent. Durable local application, egg/dragon snapshot
-support and UI activation remain open. Nine client behavior tests are green;
-the database rehearsal is pending.
+support and UI activation remain open. Nine client behavior tests are green.
+Staging run `34127201082` passed the rollback rehearsal, applied exactly 49,
+repeated the inventory contract and the foundation/vanity/chest/item-shop
+contracts, and proved 49 migrations, zero lint errors and healthy endpoints.
+All synthetic contract changes rolled back; economy activation remains disabled.
 
 ## Phase 4B chest-opening candidate, 7 September 2026
 

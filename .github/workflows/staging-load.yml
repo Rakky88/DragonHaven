@@ -228,9 +228,8 @@ jobs:
           if ($lifecycle.cleanupComplete) { 'Synthetic cleanup already verified.'; exit 0 }
           ./tool/staging_load_accounts.ps1 -CleanupRunId $lifecycle.runIdentifier
           if (-not $?) { throw 'Synthetic recovery cleanup failed.' }
-          $lifecycle.cleanupComplete = $true
-          $lifecycle | Add-Member -NotePropertyName recoveredCleanup -NotePropertyValue $true -Force
-          $lifecycle | ConvertTo-Json | Set-Content -LiteralPath staging/load-account-lifecycle.json -Encoding utf8
+          $lifecycle = Get-Content -LiteralPath staging/load-account-lifecycle.json -Raw | ConvertFrom-Json
+          if (-not $lifecycle.cleanupComplete) { throw 'Recovery did not verify an empty synthetic account set.' }
 
       - name: Verify staging schema and health after load
         if: ${{ always() && steps.preflight.outcome == 'success' }}

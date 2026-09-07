@@ -18,8 +18,15 @@ De eerste 1000-poging `34120079328` stopte voor de meting: de Linux-limiet voor
 een environment-string blokkeerde het starten van de runner. Alle 1000
 accounts zijn opgeruimd; de server bleef gezond. Commit `c2b2d2f` vervangt die
 overdracht door een private, begrensde stdin-pipe, met een offline procesproef
-boven 128 KiB. Vervolgmeting `34121385770` loopt; capaciteit voor 1000 wordt pas
-na een volledig groen rapport en cleanup bevestigd.
+boven 128 KiB. Vervolgmeting `34121385770` bereikte 1000 tegelijk actieve
+accounts, maar is **afgekeurd**: 3729 van 7769 reads eindigden in een
+netwerk-time-out (47,998%). De runner schreef zijn rapport en bleef daarna
+leven; gecontroleerde annulering activeerde herstelcleanup van alle 1000
+accounts. Onafhankelijke nacheck `34127372780` bevestigt nul achterblijvers.
+De time-outfase wordt voortaan apart gemeten, vastgelopen requests worden
+afgebroken en de runnerafsluiting is begrensd. De oorzaak van de 1000-account-
+time-outs is nog niet geïsoleerd; capaciteit voor 1000 is niet geaccepteerd.
+Het volledige bewijs en de beperkingen staan in `STAGING_LOAD_TEST.md`.
 
 De gecontroleerde legacy-import-/herstelproef is **geslaagd** in run
 [34120524533](https://github.com/Rakky88/DragonHaven/actions/runs/34120524533).
@@ -31,11 +38,13 @@ onder 10 seconden. Alles draaide terug; schema 47, nul lintfouten en health 200.
 Dit is een tijdelijke SQL-repetitie; een operationele restore van echte accounts
 en de volledige aggregate-naar-instanceconversie blijven afzonderlijk open.
 
-Lokale kandidaat **49** voegt een gepagineerde, alleen-lezen inventarisroute
+Op staging bewezen migratie **49** voegt een gepagineerde, alleen-lezen inventarisroute
 toe voor toekomstige serveraccounts. De client verzamelt uitsluitend complete
 pagina's van dezelfde eigenaar/revisie en bewaart absolute saldi en vaste
-Chronoshard-waarden. Negen gedragstests zijn groen. Stagingrepetitie volgt na
-de capaciteitstest; productie en de openbare app blijven op 47/v0.05.17.
+Chronoshard-waarden. Negen gedragstests zijn groen. Stagingrun `34127201082`
+bewees de rollbackrepetitie, exacte toepassing van 49, herhaalde inventaris-/
+foundation-/vanity-/chest-/shopcontracten, nul lintfouten en health 200.
+Productie staat op 48; de openbare app blijft v0.05.17.
 Het toepassen op lokale opslag/UI, volledige instanceconversie en de
 ei-/draaklevensloop zijn hiermee nog niet afgerond.
 
@@ -44,8 +53,12 @@ Halloween-preview voor alle ingelogde keepers met bevestigde e-mail. De overige
 vier previews blijven afgeschermd. Actieve previews behouden hun oorspronkelijke
 vervalmoment; de extra clienttests bewijzen nul blijvende beloningen voor test-
 Trials, test-adventures en gesimuleerde duo-adventures. Stagingrun `34122815644`
-wacht achter de loadtest. De productiestap krijgt alleen de identieke, eerst op
-staging bewezen migratie 48; de inventariskandidaat 49 blijft daarvan gescheiden.
+en productierun `34127198552` zijn groen: identieke migratie 48, geteste publieke
+toegang, behoud van actieve vervaltijd en nul blijvende previewbeloningen.
+Productiepreflight bevestigt 48 migraties, nul lintfouten en health 200; de
+economie blijft uitgeschakeld en alle accounts behouden legacy-authority.
+De Halloween-code werkt ook voor bestaande v0.05.17-clients. Migratie 49 is
+uitsluitend op staging toegepast.
 
 Tussentijds verzoek uitgevoerd: Inventory toont nu lokaal **Eggs, Chests,
 Altar, Relics, Furniture**; bestaande Altar-widgettests en de levende referentie
@@ -60,11 +73,12 @@ inclusief omhoog/omlaag scrollen en terugkeren via de navigatie. De volledige
 lokale suite is **516/516 groen**, analyzer meldt nul problemen en de levende
 referenties zijn gesynchroniseerd. De appfix is nog niet publiek uitgebracht.
 
-Een afzonderlijke SQL-hotfixrepetitie staat klaar voor de staging-49-run.
+Een afzonderlijke SQL-hotfixrepetitie is geslaagd in stagingrun `34127201082`.
 Deze gebruikt sessielokale kopieën van de echte timestampfout uit migratie 37
 en de correctie uit 38. De proef controleert foutreproductie, atomair falen,
 timestampvenster, limiet en reset, plus ongewijzigde geïnstalleerde functies,
-rechten en activatie. Dit is nog geen uitgevoerde operationele incidentoefening.
+rechten en activatie. De aanvraag duurde 795 ms en alles draaide terug. Dit is
+nog geen uitgevoerde operationele detectie-/communicatie-/compensatieoefening.
 
 Twee volgende compactheidsverzoeken zijn lokaal uitgevoerd: de zevendaagse
 constellation staat binnen dezelfde paarse Trials-header, en de Furniture-shop
@@ -92,7 +106,7 @@ breedte. De Trial-titel blijft maximaal twee regels. Updaterfixtures en het
 staging-first-workflowcontract volgen de nieuwe release. Alle 47 openbare
 release-notesbestanden zijn vrij van private codes en aankondigingen daarvan.
 
-**Productie en staging staan op 47/47 migraties.** Productierun `34116589237`
+**Bij deze release stonden productie en staging op 47/47 migraties.** Productierun `34116589237`
 vergeleek migraties en contracten exact met de geslaagde stagingrun `34111166461`
 op commit `c57381b546e920822103b12d8466623ee89733a3`. Begintoestand 44, volledige
 baseline, de exacte pending set 45-47, health, lint en dry-run zijn gecontroleerd.
@@ -392,14 +406,14 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | --- | ---: | --- | --- | --- |
 | Google Play-voorbereiding | circa 38% | Permanent package-ID, vaste signingidentiteit, versiecontrole en een ondertekende AAB zijn bewezen. De reproduceerbare appgrootteaudit meet een actuele AAB van 345,00 MiB en 284,99 MiB universele media en legt een gratis optimalisatiepad vast | Beeldpilot en batchoptimalisatie uitvoeren; actuele target-/Play-eisen, storeteksten, graphics, Data Safety-inventaris en rolloutchecklist afronden | Play Console openen/verifiëren; app en Play App Signing aanmaken; pilot visueel goedkeuren; testers, publieke support/privacy-URL's en storeverklaringen beheren |
 | iOS/iPhone-voorbereiding | circa 25% | Xcode-project, vaste bundle ID, appicoon, Mac-buildscript en handmatige unsigned macOS-simulatorworkflow bestaan als niet-geactiveerde toekomstbasis | Alleen na een nieuw iOS-besluit de simulatorworkflow bewijzen, audio/notificaties valideren en een veilige deel-/updateroute bouwen | Voorlopig niets; pas bij hervatting Apple Developer/TestFlight, Mac-signing en een echte iPhone inrichten |
-| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.14 zijn groen; productie staat gecontroleerd op 41/41 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren en mogelijk blootgestelde ontwikkelcredentials roteren |
+| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.17 zijn groen; productie staat gecontroleerd op 48 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren en mogelijk blootgestelde ontwikkelcredentials roteren |
 | Fase 1 — monitoring en incidenten | circa 94% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan. Auth én de read-only applicatiecheck draaien ieder uur; contract-/klokvalidatie, migratie 32, onafhankelijke productiepreflight en post-release health zijn groen. De handmatige, secretvrije monitoringdrill leverde testissue #1 af, verifieerde het contract, bewaarde bewijs en sloot de melding. Privéberichtmeldingen pollen retrybaar zolang het appproces leeft | Firebase Crashlytics/Performance en FCM koppelen zodra de Android-projectconfig bestaat; daarna één gecontroleerde stagingfout, een latency-/foutbaseline en terminated-app privéberichtbezorging E2E bewijzen | Gratis Firebase Spark-project maken, `nl.dragonhaven.app` registreren, Analytics uit laten en `google-services.json` veilig in de werkmap zetten; privacy/Data Safety en het gebruik van FCM beoordelen |
-| Fase 2 — staging en E2E | circa 93% | Productie staat op migratie 44 en geïsoleerde staging op 47; account/login, back-up/conflict, Friends, Friend Messages/emotes, Conclaves, trade, Trial-ranglijsten, volledige Group Adventure completion/reward/replay en de seasonal preview/Trial/rankingcontracten zijn echt getest. Het productie-geblokkeerde 100→1.000-loadprofiel met unieke accounts, think time, p50/p95/p99 en privacyarm bewijs staat op `main` | De eerste 100-user meting stuit op Auth 429; scheid sessieopbouw van de leesbelasting. De gewone signup-mailbevestigingsflow blijft apart | Tijdelijke synthetische accounts en opruiming zijn bewezen; provider-CPU/verbindingen/egress en gewone signup-mailverificatie blijven nodig. Meer dan 1.000 valt buiten de begrensde workflow |
+| Fase 2 — staging en E2E | gedeeltelijk | Productie staat op 48 en staging op 49. Sociale, back-up-, trade-, seasonal- en dormant-economycontracten zijn getest. De herziende 100-accountbaseline is groen; de 1000-accountmeting faalt met 47,998% read-time-outs. Alle tijdelijke accounts zijn verwijderd | Time-outfase en belastingoorzaak isoleren; opnieuw 100 en daarna 1000 op het actuele schema meten. De gewone signup-mailbevestigingsflow blijft apart | Piekverbindingen, providerbelasting/egress en representatieve inventarissen ontbreken nog. Meer dan 1000 valt buiten de begrensde workflow |
 | Fase 3 — back-up en multi-device | circa 98% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, automatische 15-minutenback-up plus achtergrondflush zijn gebouwd. De eerste automatisch geplande zondagrestore is groen en rondde de actieve account/back-up/restorerondgang in circa 7,3 seconden af | Later server-owned economievelden van restores afschermen en na fase 4 het terugrol-/duplicatiecontract opnieuw bewijzen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
-| Fase 4 — server-authoritative economie | gedeeltelijk | Dormante wallet-/ledgergrens, vanity-aankopen, chestopening en gewone meubel-/relicshop zijn bewezen op productie en staging. De synthetische legacy-importrestore is uitgevoerd met exacte rij-/hashgelijkheid. Kandidaat 49 voegt gepagineerde inventarislezing toe | Volledige instanceconversie, duurzame lokale snapshottoepassing, overige winkels, ei-/draaklevensloop en gevalideerde rewardclaims bouwen | Vóór activatie migratievenster, spelerscommunicatie, compensatie-, storings- en nooit-stil-afnemenbeleid bevestigen |
+| Fase 4 — server-authoritative economie | gedeeltelijk | Dormante wallet-/ledgergrens, vanity-aankopen, chestopening en gewone meubel-/relicshop zijn bewezen op productie en staging. De synthetische legacy-importrestore is uitgevoerd met exacte rij-/hashgelijkheid. Migratie 49 bewijst gepagineerde inventarislezing op staging | Volledige instanceconversie, duurzame lokale snapshottoepassing, overige winkels, ei-/draaklevensloop en gevalideerde rewardclaims bouwen | Vóór activatie migratievenster, spelerscommunicatie, compensatie-, storings- en nooit-stil-afnemenbeleid bevestigen |
 | Fase 5 — Google Play Billing | circa 8%, bewust uitgesteld | Product-ID-contract voor valuta en het eenmalige Supporter Pack, idempotente lokale entitlementgrens en uitgeschakelde nepimplementatie houden de architectuur upgradebaar zonder nu kosten te maken | Pas na fase 4 de Billing-SDK, servervalidatie, acknowledgement, refunds/retries en Play-tracktests bouwen | Pas later beslissen wanneer verkoop actief mag worden; merchantprofiel, producten/prijzen/landen, service-identiteit, testers en beleid beheren |
 | Fase 6 — support en privacy | circa 68% | Accountverwijdering, veilige supportdiagnostiek en incidentrunbook bestaan. Migratie 33 met service-role-only supportlookup, 30-dagen-inzagelog zonder namen/e-mail/save en dagelijkse fysieke importback-upcleanup is na volledige staging-E2E begrensd op productie toegepast. De testsupportworkflow bewees clientweigering, minimale response, inzagelog/retentie en cleanup | De operationele koppeling van een aangeleverde privacyarme correlation ID aan dezelfde supportcasus oefenen. Na beleid akkoord notification-/Chronicle-retentie migreren en verwijder-E2E uitbreiden | Publiek supportadres, verantwoordelijken/reactietijden, privacy- en verwijderpagina en productietoegang beheren; termijnen voor sociale notificaties en Conclave Chronicle kiezen |
-| Fase 7 — capaciteit en rollout | gedeeltelijk | Releasegate en preflight bestaan; 100 tegelijk actieve synthetische accounts zijn gemeten zonder fouten en volledig opgeruimd. CPU/geheugen/hostnetwerk zijn apart vastgelegd; herstelproef is uitgevoerd | 1000-hermeting afronden, ontbrekende verbindingen/egress en representatieve gevulde inventarissen/schrijflast meten; algemene staging-hotfixoefening en rolloutdashboard afronden | Capaciteit, budgetalerts, rolloutpercentages en pauzebevoegdheid op meetresultaten kiezen |
+| Fase 7 — capaciteit en rollout | gedeeltelijk | 100 tegelijk actieve accounts zijn gemeten zonder fouten; de 1000-accountmeting is afgekeurd. Exacte synthetische importrestore en de historische SQL-hotfixrepetitie zijn uitgevoerd. Cleanup en nachecks zijn bewezen | Capaciteitsoorzaak isoleren, ontbrekende piekverbindingen/egress en representatieve schrijflast meten; operationele incidentoefening en rolloutdashboard afronden | Capaciteit, budgetalerts, rolloutpercentages en pauzebevoegdheid op meetresultaten kiezen |
 
 ### Meetbare checkliststand en eigenaarschap
 
@@ -1298,8 +1312,8 @@ Een taak of mijlpaal is pas gereed wanneer:
 2. **Codex — direct na Firebase:** koppel Crashlytics/Performance privacyarm,
    bewijs één gecontroleerde stagingfout en leg daarna een bruikbare latency- en
    foutbaseline vast. Geen betaalde monitoring activeren zonder nieuw besluit.
-3. **Codex - staging-load:** 100 gebruikers zijn gemeten met nul fouten en volledige cleanup. Rond de 1000-hermeting op schema 47 af; verzamel ontbrekende providerverbindingen/egress en onderscheid deze minimale leesbelasting van een representatieve gevulde inventaris en schrijflast.
-4. **Codex - servereconomie:** 45-47 zijn op staging en productie toegepast en contractueel bewezen, met de bredere economie uitgeschakeld. Bewijs kandidaat 49 voor gepagineerde inventarislezing op staging. Bouw vervolgens volledige instanceconversie en lokale snapshottoepassing, overige winkels, daarna ei-/draaklevensloop en gevalideerde beloningsclaims.
+3. **Codex - staging-load:** 100 gebruikers zijn gemeten met nul fouten; 1000 gebruikers faalden op netwerk-time-outs. Cleanup is volledig bevestigd en runnerafsluiting/diagnostiek zijn verbeterd. Isoleer de time-outfase en providerbelasting voordat een nieuwe 100→1000-meting op het actuele schema start; meet ook gevulde inventarissen, schrijflast en ontbrekende piekverbindingen/egress.
+4. **Codex - servereconomie:** 45-47 zijn op staging en productie bewezen met de economie uitgeschakeld. Inventarissnapshot 49 is op staging bewezen. Bouw volledige instanceconversie en duurzame lokale snapshottoepassing, overige winkels, daarna ei-/draaklevensloop en gevalideerde beloningsclaims.
 5. **Samen - activatievoorbereiding:** gebruik de geslaagde synthetische importrollback als basis en rond de operationele herstel-, storings-/compensatieprocedures en begrijpelijke spelersteksten af voordat de servereconomie voor spelers wordt ingeschakeld.
 6. **Codex — lokaal parallel uitvoerbaar:** werk daarnaast de gratis beeldpilot
    voor de Play-appgrootte uit; vervang geen volledige assetcategorie vóór de

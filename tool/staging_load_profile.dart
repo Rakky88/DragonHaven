@@ -28,6 +28,16 @@ class SyntheticCredential {
   final String password;
 }
 
+enum LoadNetworkFailure {
+  connectionTimeout,
+  responseTimeout,
+  bodyTimeout,
+  socketError,
+  tlsError,
+  protocolError,
+  clientError,
+}
+
 class RequestResult {
   const RequestResult({
     required this.statusCode,
@@ -35,6 +45,7 @@ class RequestResult {
     required this.responseBytes,
     this.bodyBytes = const <int>[],
     this.networkFailure = false,
+    this.networkFailureKind,
   });
 
   final int statusCode;
@@ -42,6 +53,7 @@ class RequestResult {
   final int responseBytes;
   final List<int> bodyBytes;
   final bool networkFailure;
+  final LoadNetworkFailure? networkFailureKind;
 
   bool get succeeded =>
       !networkFailure && statusCode >= 200 && statusCode < 300;
@@ -63,7 +75,7 @@ class OperationMetrics {
       return;
     }
     final key = result.networkFailure
-        ? 'network_error'
+        ? result.networkFailureKind?.name ?? 'network_error'
         : result.statusCode >= 500
             ? 'http_5xx'
             : result.statusCode == 429
@@ -288,19 +300,20 @@ Future<RequestResult> postJson({
   required Map<String, String> headers,
   required Map<String, Object?> body,
   bool retainBody = false,
+  Duration timeout = const Duration(seconds: 30),
 }) async {
   final stopwatch = Stopwatch()..start();
+  HttpClientRequest? request;
+  var timeoutKind = LoadNetworkFailure.connectionTimeout;
   try {
-    final request =
-        await client.postUrl(uri).timeout(const Duration(seconds: 30));
+    request = await client.postUrl(uri).timeout(timeout);
     headers.forEach(request.headers.set);
     request.headers.contentType = ContentType.json;
     request.add(utf8.encode(jsonEncode(body)));
-    final response = await request.close().timeout(const Duration(seconds: 30));
-    final bytes = await response.fold<List<int>>(
-      <int>[],
-      (buffer, chunk) => buffer..addAll(chunk),
-    ).timeout(const Duration(seconds: 30));
+    timeoutKind = LoadNetworkFailure.responseTimeout;
+    final response = await request.close().timeout(timeout);
+    timeoutKind = LoadNetworkFailure.bodyTimeout;
+    final bytes = await _readResponseBytes(response, timeout);
     stopwatch.stop();
     return RequestResult(
       statusCode: response.statusCode,
@@ -308,14 +321,43 @@ Future<RequestResult> postJson({
       responseBytes: bytes.length,
       bodyBytes: retainBody ? bytes : const <int>[],
     );
-  } on Object {
+  } on Object catch (error) {
+    request?.abort();
     stopwatch.stop();
     return RequestResult(
       statusCode: 0,
       durationMs: stopwatch.elapsedMilliseconds,
       responseBytes: 0,
       networkFailure: true,
+      networkFailureKind: switch (error) {
+        TimeoutException() => timeoutKind,
+        SocketException() => LoadNetworkFailure.socketError,
+        HandshakeException() => LoadNetworkFailure.tlsError,
+        HttpException() => LoadNetworkFailure.protocolError,
+        _ => LoadNetworkFailure.clientError,
+      },
     );
+  }
+}
+
+Future<List<int>> _readResponseBytes(
+    HttpClientResponse response, Duration timeout) async {
+  final completed = Completer<List<int>>();
+  final bytes = <int>[];
+  final timer = Timer(timeout, () {
+    if (!completed.isCompleted) completed.completeError(TimeoutException(''));
+  });
+  final subscription =
+      response.listen(bytes.addAll, onError: (Object error, StackTrace stack) {
+    if (!completed.isCompleted) completed.completeError(error, stack);
+  }, onDone: () {
+    if (!completed.isCompleted) completed.complete(bytes);
+  }, cancelOnError: true);
+  try {
+    return await completed.future;
+  } finally {
+    timer.cancel();
+    await subscription.cancel();
   }
 }
 
@@ -720,5 +762,11 @@ Future<void> main(List<String> arguments) async {
     stderr.writeln(
         'Staging load profile refused or failed safely: ${error.runtimeType}.');
     exitCode = 64;
+  } finally {
+    // Reports and client cleanup have been awaited. Abandoned transport handles
+    // must not keep this CLI alive and postpone synthetic-account removal.
+    await stdout.flush();
+    await stderr.flush();
+    exit(exitCode);
   }
 }

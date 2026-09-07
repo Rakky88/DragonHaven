@@ -87,6 +87,16 @@ function Remove-RunAccounts {
 
 if ($CleanupRunId) {
     $removed = Remove-RunAccounts
+    if ((Remove-RunAccounts) -ne 0) { throw 'Recovery cleanup needed a second removal pass.' }
+    $lifecyclePath = 'staging/load-account-lifecycle.json'
+    if (Test-Path -LiteralPath $lifecyclePath) {
+        $lifecycle = Get-Content -LiteralPath $lifecyclePath -Raw | ConvertFrom-Json
+        if ($lifecycle.runIdentifier -cne $CleanupRunId) { throw 'Recovery evidence belongs to a different run.' }
+        $lifecycle.removed += $removed
+        $lifecycle.cleanupComplete = $true
+        $lifecycle | Add-Member -NotePropertyName recoveredCleanup -NotePropertyValue $true -Force
+        $lifecycle | ConvertTo-Json | Set-Content -LiteralPath $lifecyclePath -Encoding utf8
+    }
     "Synthetic recovery cleanup completed: removed=$removed; no identifiers logged."
     exit 0
 }
@@ -146,7 +156,18 @@ try {
     $process.StandardInput.Write((ConvertTo-Json @{ accounts = @($accounts.ToArray()) } -Depth 5 -Compress))
     $process.StandardInput.Close()
     $lastMetricSample = [DateTime]::UtcNow
+    $processDeadline = [DateTime]::UtcNow.AddMinutes($(if ($VirtualUsers -eq 1000) { 55 } else { 15 }))
+    $reportSeenAt = $null
     while (-not $process.WaitForExit(30000)) {
+        if (Test-Path -LiteralPath staging/load-report.json) {
+            if ($null -eq $reportSeenAt) { $reportSeenAt = [DateTime]::UtcNow }
+            elseif (([DateTime]::UtcNow - $reportSeenAt).TotalSeconds -ge 30) {
+                throw 'The load process did not exit after publishing its report; cleanup will run.'
+            }
+        }
+        if ([DateTime]::UtcNow -gt $processDeadline) {
+            throw 'The bounded load process deadline expired; cleanup will run.'
+        }
         'Staging load is running; account data remains private.'
         if (([DateTime]::UtcNow - $lastMetricSample).TotalSeconds -ge 60) {
             Save-StagingLoadMetricSample -ProjectRef $projectRef -AccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN -OutputPath 'staging/load-provider-metrics.json'

@@ -1,15 +1,18 @@
 # DragonHaven staging-loadtest
 
 Laatst bijgewerkt: **7 september 2026**
-Uitgangsversie: **v0.05.17 / productieschema 47 / stagingschema 47**
+Uitgangsversie: **v0.05.17 / huidig productieschema 48 / stagingschema 49**
+De onderstaande 100- en 1000-accountmetingen zijn beide op schema 47 uitgevoerd.
 
 ## Doel en huidige status
 
 Deze test meet realistisch online leesgedrag uitsluitend op het afzonderlijke
 Supabase-stagingproject. De dependency-vrije Dart-runner en handmatige GitHub
-Actions-workflow zijn lokaal gebouwd en getest. De eerste echte 100-user run
-is uitgevoerd; de Auth-begrenzing sloot de vervolgpoort naar 1000 gebruikers.
-Productie is niet gewijzigd.
+Actions-workflow zijn gebouwd en uitgevoerd. De herziende 100-accountbaseline
+slaagt zonder fouten. De volgende 1000-accountmeting faalt door veel netwerk-
+time-outs en een niet-afsluitende runner; er is geen groene 1000-accountacceptatie.
+Alle tijdelijke accounts zijn verwijderd. De belastingstest heeft productie
+niet gewijzigd; de afzonderlijke Halloween-uitrol staat los van deze metingen.
 
 De eerste uitvoerbare stap is 100 gelijktijdige virtuele gebruikers. De stap van
 1.000 gebruikers wordt technisch geweigerd zolang geen geslaagd 100-user rapport
@@ -194,4 +197,48 @@ credential-environment-string weigerde (`Argument list too long`). Alle 1000
 accounts zijn opgeruimd; nachecks zijn groen. Commit `c2b2d2f` gebruikt daarom
 een begrensde UTF-8 stdin-pipe; de offline procesproef verstuurt 1000 fictieve
 credentials, overschrijdt bewust 128 KiB en weigert input boven 1 MiB.
-Vervolgmeting `34121385770` gebruikt dezelfde groene schema-47-baseline en loopt.
+Vervolgmeting `34121385770` gebruikte dezelfde groene schema-47-baseline; het
+rapport is afgekeurd en de niet-afsluitende workflow is gecontroleerd geannuleerd.
+
+## Afgekeurde 1000-accountmeting en herstel
+
+[Run 34121385770](https://github.com/Rakky88/DragonHaven/actions/runs/34121385770)
+bereidde alle 1000 sessies zonder Auth-/bootstrapfouten voor in 2198,4 seconden.
+De browsing startte om 13:04:06 UTC met 60 seconden ramp-up en 180 seconden
+steady state. Alle 1000 accounts waren tegelijk actief; minimaal vijf reads per
+gebruiker. Het rapport was om 13:08:36 UTC geschreven.
+
+| Controle | Uitkomst |
+| --- | --- |
+| Leesaanvragen | 7769, waarvan 3729 netwerkfouten: **47,998%** |
+| Alle aanvragen inclusief voorbereiding | 9769, waarvan 6040 geslaagd: **38,172% fouten** |
+| p95 / p99 snapshot | 30026 / 30033 ms; bevat time-outs, geen succeslatency |
+| Andere read-p95's | 30025-30027 ms |
+| Auth / bootstrap | beide 1000/1000 geslaagd |
+| Capaciteitsacceptatie | afgekeurd; oorzaak van de netwerk-time-outs nog niet geïsoleerd |
+| Opruiming | herstelstap verwijderde 1000 accounts; onafhankelijke nacheck vond nul |
+| Server na herstel | schema 47, nul lintfouten, Auth/settings/app HTTP 200 |
+
+De provider gaf tijdens de meting één bruikbare sample (130,97 MiB beschikbaar
+geheugen); de volgende drie samples waren niet beschikbaar. Daarom zijn hieruit
+geen CPU-interval, piekverbindingen of netwerkdelta voor de meetperiode afgeleid.
+De losse leescontroles na de meetperiode tonen 13 clientverbindingen en een
+geconfigureerde limiet van 60; dat is uitdrukkelijk geen piekmeting. De laatste
+[nacheck 34127372780](https://github.com/Rakky88/DragonHaven/actions/runs/34127372780)
+bevestigt nul synthetische accounts, nul actieve aanvragen en nul lock-wachters.
+
+De runner bleef na zijn afgekeurde rapport leven. Annulering activeerde de
+herstelstap; de log vermeldt `removed=1000`. Het oude lifecycle-artifact liet
+zijn eerdere `removed=0` staan, hoewel `recoveredCleanup=true`. Die rapportage-
+fout is hersteld: recovery bewaart nu het werkelijk verwijderde aantal en scant
+opnieuw op achterblijvers. De nieuwe afsluiting flusht het rapport en beëindigt
+de CLI; daarnaast stopt de wrapper een proces dat na zijn rapport blijft hangen.
+Time-outs onderscheiden voortaan verbinding, responseheaders en responsebody;
+de body-subscriptie wordt geannuleerd en een vastgelopen request afgebroken.
+Twee lokale transportproeven bewijzen dat hetzelfde HTTP-client na een vastgelopen
+response of body opnieuw een geldige aanvraag kan uitvoeren.
+
+Deze reparaties zijn geen bewijs dat staging 1000 spelers aankan. Een herhaling
+vereist een nieuwe 100-accountbaseline op het dan actuele schema, gerichte
+diagnose van de time-outfase en bruikbare providerbelasting tijdens de meting.
+Er zijn geen Auth-limieten, providerabonnementen of productiecapaciteit aangepast.

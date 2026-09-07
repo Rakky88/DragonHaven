@@ -1,7 +1,7 @@
 # DragonHaven rollback- en hotfixrunbook
 
 Laatst bijgewerkt: **7 september 2026**
-Uitgangsstand: **app v0.05.17, productie/staging 47, lokale kandidaat 49**
+Uitgangsstand: **app v0.05.17, productie 48, staging 49**
 
 ## Doel en harde grens
 
@@ -171,14 +171,17 @@ supportimpact is beoordeeld en het auditplan de werkelijke stand vermeldt.
   regressietest vastleggen.
 
 De algemene staging-hotfixoefening blijft open. De begrensde SQL-repetitie
-`tool/staging_economy_hotfix_contract.ps1` staat klaar voor staging: zij haalt
+`tool/staging_economy_hotfix_contract.ps1` is geslaagd in
+[run 34127201082](https://github.com/Rakky88/DragonHaven/actions/runs/34127201082): zij haalt
 de defecte limiter uit onveranderlijke migratie 37 en de correctie uit 38,
 installeert uitsluitend sessielokale kopieën en bewijst zowel het historische
 falen als de herstelbranches. De echte private functie, rechten, activatie en
 migratiehistorie worden niet vervangen. Het uitvoerbewijs vermeldt beide
 bronhashes, duur, controles en rollback; de staging-49-workflow bewaart dit naast
-lint, serverpreflight en functionele contracten. Uitvoering en resultaat moeten
-nog worden vastgelegd. Dit dekt niet de operationele detectie-, communicatie-
+lint, serverpreflight en functionele contracten. De aanvraag duurde 795 ms;
+historische foutreproductie, atomair falen, timestamp, limiet en vensterreset zijn
+bewezen. Alles draaide terug en staging bleef op 49 met nul lintfouten en health
+200. Dit dekt niet de operationele detectie-, communicatie-
 en compensatieketen van een volledig incident.
 
 Een afzonderlijke

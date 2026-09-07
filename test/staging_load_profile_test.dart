@@ -1,10 +1,63 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
 import '../tool/staging_load_profile.dart';
 
 void main() {
+  for (final stallBody in [false, true]) {
+    test('a stalled ${stallBody ? 'body' : 'response'} frees the HTTP client',
+        () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final client = HttpClient()..maxConnectionsPerHost = 1;
+      final requests = server.listen((request) {
+        unawaited(() async {
+          await request.drain<void>();
+          if (request.uri.path == '/ok') {
+            request.response.write('ok');
+            await request.response.close();
+          } else if (stallBody) {
+            request.response.write('partial');
+            await request.response.flush();
+          }
+        }()
+            .catchError((Object _) {}));
+      });
+      try {
+        final failed = await postJson(
+          client: client,
+          uri: Uri.parse('http://127.0.0.1:${server.port}/stall'),
+          headers: const {},
+          body: const {},
+          timeout: const Duration(milliseconds: 150),
+        );
+        expect(failed.succeeded, isFalse);
+        expect(
+            failed.networkFailureKind,
+            stallBody
+                ? LoadNetworkFailure.bodyTimeout
+                : LoadNetworkFailure.responseTimeout);
+        expect(failed.bodyBytes, isEmpty);
+        final next = await postJson(
+          client: client,
+          uri: Uri.parse('http://127.0.0.1:${server.port}/ok'),
+          headers: const {},
+          body: const {},
+          retainBody: true,
+          timeout: const Duration(seconds: 2),
+        );
+        expect(next.succeeded, isTrue);
+        expect(utf8.decode(next.bodyBytes), 'ok');
+      } finally {
+        client.close(force: true);
+        await server.close(force: true);
+        await requests.cancel();
+      }
+    });
+  }
+
   test('load plan combines realistic reads with bounded pacing', () {
     final plan = buildLoadPlan(
       virtualUsers: 100,

@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       contract:
-        description: Rollback-only contract to rehearse
+        description: Rollback-only contract or one read-only load observation
         required: true
         default: foundation
         type: choice
@@ -131,8 +131,8 @@ jobs:
             -ExpectedUrl $env:STAGING_SUPABASE_URL `
             -ExpectedPublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY |
             Tee-Object -FilePath staging/economy-contract-preflight.txt
-          if ((Get-ChildItem supabase/migrations -File -Filter '*.sql').Count -ne 47) {
-            throw 'The repository is not at the expected 47 migrations.'
+          if ((Get-ChildItem supabase/migrations -File -Filter '*.sql').Count -ne 49) {
+            throw 'The repository is not at the expected 49 migrations.'
           }
           ./tool/public_server_health_check.ps1 `
             -BaseUrl $env:STAGING_SUPABASE_URL `
