@@ -3,76 +3,75 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Release v0.05.16 / versionCode 10066 wordt op verzoek van de gebruiker voorbereid.
-Deze release brengt de volledige Egg Altar-tranche, de nieuwe Sinister-balans,
-Witchlight-feedback en de Friends/Conclave-correcties samen. AppInfo, pubspec,
-updaterfixtures en de Android-build krijgen dezelfde versiestap.
-De productie-uitrol is beperkt tot migraties 42–44. De workflow controleert
-stagingrun 34106264418 en vergelijkt de migraties en SQL-contracttest exact met
-de daar geteste commit; daarna volgen de begintoestand 41, health, lint, dry-run,
-een teruggerolde repetitie, de migratie en volledige preflight/contractcontrole.
-De brede economycutover blijft uit. Publicatie volgt pas na groene appcontroles,
-visuele controle, vaste APK-signing en publisher-dry-run.
-Lokale releasecontrole: analyzer schoon, 486/486 tests groen, levende referenties
-gesynchroniseerd en PowerShell-blokken van de productieworkflow correct geparseerd.
-De onafhankelijke begintoestand bevestigt productie op migratie 41; Auth health,
-Auth settings en applicatiehealth gaven op 7 september om 09:35:24 UTC HTTP 200.
+Release **v0.05.16 / versionCode 10066** is op 7 september 2026 gepubliceerd als
+Latest. APK-upload en definitieve downloadcontrole zijn geslaagd. De app en updater gebruiken
+beide 0.05.16. De release bevat Egg Altar, beschermtags, vijf craftrecepten, zes
+animatiefasen en de cosmetische Conclave Weave Beacon. Sinister geeft altijd 25
+Fragments, 3-5 Essence met gelijke kansen en 10% kans op een Weaveheart; de extra
+bevestiging vermeldt alleen de definitieve teruggave. Witchlight heeft wisselende
+paden van gelijke lengte, zwart pad, vingertrail, rode foutflits en game over bij
+drie fouten of verstreken tijd. Het eerste pompoenvoorbeeld blijft een seconde
+langer staan. De Conclave-badge heeft eigen ruimte en gelezen chat wordt na het
+voltooien van de scroll verwerkt. Het paarse Friends-introblok is verwijderd.
 
-Actuele openbare versie: **v0.05.15, versionCode 10065 en Latest. Geregistreerde
-Keepers op een lagere versie krijgen bij appstart de wegdrukbare updatepopup met
-de permanente Android-downloadroute.**
+Appcommit en tag v0.05.16: `0d1d44d638423ce5988ab140db026ca97e81d55d`.
+Analyzer schoon, **486/486 tests groen**, levende referenties gesynchroniseerd
+en PowerShell-stappen van de productieworkflow correct geparseerd. De vaste
+releasehandtekening is gecontroleerd; de APK is als update op de emulator
+geinstalleerd, met versionName 0.05.16 en versionCode 10066. About toont dezelfde
+versie. Friends-tabs, Altar, opbrengstuitleg, crafting en Quill zijn visueel
+gecontroleerd, ook op 320x640 met animaties uit. Taalvolgorde en bestaande
+Engelse selectie bleven behouden. De emulatorinstellingen zijn hersteld.
+De complete retour-/Sinister-/Beacon-acties zijn via de widgettests en het
+SQL-contract gecontroleerd; er zijn bij de visuele controle geen echte eieren
+of materialen verbruikt. Alle 15 Altar-PNG's zijn aanwezig in de APK.
 
-Nieuwe implementatie na v0.05.15 (nog niet gepubliceerd): Egg Altar met drie
-materialen, vijf craftrecepten, beschermtags en zes animatiefasen; Sinister met
-altijd 25 Fragments, 3–5 Essence (gelijke kansen) en 10% kans op één Weaveheart.
-De extra bevestiging noemt geen opbrengst. Het paarse Friends-introblok is
-verwijderd; de tutorial richt zich op de Friends-tab. Gedeelde cosmetische Weave Beacon.
-Witchlight krijgt variabele paden van gelijke lengte, zwarte corridor, zichtbare
-vingertrail, rode foutflits en game over op drie fouten of verstreken tijd.
-De Conclave-teller krijgt eigen ruimte naast de tabtekst. De chat start bij de
-nieuwste berichten en markeert gelezen na het afronden van de scroll; terugkomen
-uit de achtergrond probeert dat opnieuw. Geschiedenis lezen laat nieuwe berichten
-ongelezen. Compacte Aerie-kop voorkomt dat de chat op kleine schermen wegvalt.
+**Productie en staging staan op 44/44 migraties.** Productierun `34107061124`
+controleerde de geslaagde stagingrun `34106264418` en vergeleek alle migraties en
+het Altar-contract exact met stagingcommit `174fd3a`. Vervolgens: exact de
+begintoestand 41, health/lint, dry-run, alle drie migraties plus contract in een
+teruggerolde repetitie, toepassing van alleen 42-44 en opnieuw contract, parity,
+lint en Auth-/apphealth. Alles is groen. Het contract gebruikt tijdelijke
+accounts en draait alle testmutaties terug. De onafhankelijke lokale
+`release_server_preflight.ps1` bevestigde 44 migraties, nul lintfouten en HTTP 200
+voor Auth health, Auth settings en applicatiehealth om 09:39:08 UTC.
 
-Aanvullende controle van het verwijderde Friends-blok en de nieuwe Sinister-balans:
-150/150 gerichte tests groen, analyzer schoon en levende referenties gesynchroniseerd.
-De tests omvatten de Friends-tutorial, Conclave-teller, vertalingen, permanente
-bevestiging zonder opbrengsttekst, onafhankelijke kansgrenzen en één Weaveheart
-bij pity. Forward-migratie 44 bewaart bestaande wallets en ontvangstbewijzen;
-de SQL-contracttest controleert dezelfde grenzen en een eenmalige Sinister-return.
-Stagingrun `34106264418` op commit `174fd3a` is groen: eerst de migratie en
-contracttest teruggerold, daarna migratie 44 toegepast en de contracttest opnieuw
-geslaagd. De preflight bevestigt 44/44 parity, nul database-lintfouten en HTTP 200
-voor Auth health, Auth settings en applicatiehealth (09:30:10 UTC).
-Er is voor deze vervolgwijziging geen nieuwe APK gebouwd of release gepubliceerd.
+De bredere economycutover blijft uit. Bestaande clientinventarisregistratie blijft
+een vertrouwensgrens; het aparte Altar-register beveiligt verdere transacties,
+maar maakt de complete legacy loot-economie niet server-authoritatief.
 
-Stagingrun `34102634420` op branch `feature/egg-altar-witchlight` is groen:
-migraties 42/43 en de Altar-contracttest eerst volledig teruggerold, vervolgens
-43/43 parity, nul database-lintfouten en Auth health/settings/apphealth HTTP 200.
-De contracttest gebruikt tijdelijke accounts en draait alle testmutaties terug.
-Hij controleerde eigenaar, tags, oude saves, eenmaal teruggeven, Sinister-bevestiging
-en de toenmalige beloning, crafting, Oracle, Quill, metadataoverdracht en eenmalige
-Beacon-giften. De nieuwe beloningsbalans volgt via forward-migratie 44.
-Lokale hervalidatie: 485/485 tests, inclusief compacte Altar/Beacon-schermen,
-transparante sprites, vertalingen en referentiedocumentatie; analyzer zonder
-problemen.
-Android-previewrun `34103519418` is volledig groen op appcommit `d5cf9ed`;
-artifact `10011704404` bevat een geldig debug-ondertekend staging-APK met alle
-15 Altar-PNG's. Lokaal gedownload via gecontroleerde byte-ranges nadat de normale
-GitHub CLI-download bleef hangen; archief-SHA256 is gelijk aan de GitHub-digest.
-APK-SHA256: `99b16a3dacdf3ae5dc3aef117eaee13bdf8a6e69a8de891e707db68aa41d979b`.
-APK versionName `0.5.15`, versionCode `10065`, debug-certificaat
+APK: `DragonHaven.apk`, 502710087 bytes (479.4 MiB).
+SHA-256: `300b869ca9c24b9e6ffc64f7d82995b7cf0b0287ea9bde93dd2e6ca6671524bf`.
+Certificaat: `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`.
+De publisher-dry-run is groen. Tagworkflow `34107336773` is volledig groen:
+productiepreflight, analyzer, tests, ondertekend Play-bundle, certificaatcontrole
+en artifactupload. AAB-SHA256:
+`c980cdf953bcc31ff02ced95dbae7e396af45510a67d856e600b34cd98c0ea07`.
+
+Publicatiecontrole: release-API en Latest wijzen naar v0.05.16. Het publieke
+bestand DragonHaven.apk heeft exact dezelfde 502710087 bytes en SHA-256 als
+de lokaal gecontroleerde APK. De release notes komen inclusief Unicode overeen
+met het bronbestand. De vaste downloadlink geeft HTTP 200. De onafhankelijke
+controle na publicatie gaf om 09:52:09 UTC opnieuw HTTP 200 voor Auth health,
+Auth settings en applicatiehealth. Bewijzen staan lokaal in
+`release/v0.05.16-remote-verification.json`,
+`release/v0.05.16-health-after-publication.json` en de release-/productierunlogs.
+
+- Release: https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.16
+- Versie-APK: https://github.com/Rakky88/DragonHaven/releases/download/v0.05.16/DragonHaven.apk
+- Vaste download: https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk
+
+Eerdere previewbewijzen: stagingrun `34102634420` testte de oorspronkelijke
+migraties 42/43, en Android-previewrun `34103519418` op commit `d5cf9ed` leverde
+artifact `10011704404` met debugcertificaat
 `7354973a274555fa6b0fff0faee11f16dca44cd4f579d924f7d85a44d1119804`.
-Deze eerdere preview bevat nog het Friends-introblok en de oude Sinister-balans.
-Dit is een test-APK voor staging, geen productie-update; het debugcertificaat
-vervangt het productiecertificaat niet. Draft-PR #2 vergelijkt deze uitbreiding
-met de gepubliceerde releasebranch v0.05.15. Productiehealth op 7 september 2026
-om 09:05:30 UTC gaf opnieuw HTTP 200 voor Auth health, Auth settings en apphealth.
-
-Productie is hierbij niet gewijzigd en staat nog op migratie 41. De bredere
-economycutover blijft uit. Bestaande clientinventarisregistratie is nog een
-vertrouwensgrens; het nieuwe register beveiligt verdere Altar-transacties, maar
-maakt de complete legacy loot-economie niet server-authoritatief.
+Preview-APK-SHA256:
+`99b16a3dacdf3ae5dc3aef117eaee13bdf8a6e69a8de891e707db68aa41d979b`.
+Die preview is ouder dan de laatste Friends/Sinister-aanpassingen en is vervangen
+door de productie-APK van v0.05.16. De eerdere volledige suite had 485 tests;
+de Sinister-vervolgwijziging doorliep 150 gerichte tests en stagingrun `34106264418`.
+Draft-PR #2 documenteerde die featurevoorbereiding ten opzichte van v0.05.15.
+Deze PR is na de geslaagde publicatie gesloten en verwijst naar v0.05.16.
 
 Release **v0.05.15 / versionCode 10065** bevat de aangevraagde
 Friends/Conclave-tabs, een lokale ongelezen-teller per account en Conclave voor
@@ -98,7 +97,7 @@ nul database-lintfouten, Auth health/settings HTTP 200 en applicatiehealth HTTP
 200. Deze release wijzigt geen migraties, serverfuncties, economyactivatie of
 beloningstabellen.
 
-Actuele productieserver: **41 toegepaste migraties (42–44 alleen staging); gezond, met nul
+Actuele productieserver: **44 toegepaste migraties; gezond, met nul
 database-lintfouten en groene Auth-/applicatiehealth**
 
 Vorige serveruitrol: **staging en productie stonden beide op 41/41. Stagingrun
@@ -112,7 +111,7 @@ lokale productiepreflight bevestigde opnieuw 41 migraties, nul lintfouten en HTT
 migraties 40–41 voegen de online eventcontracten toe zonder de bestaande
 economie te activeren.**
 
-Actuele uitgebrachte tranche: **v0.05.14 brengt de vijf volledige seasonal
+Eerdere uitgebrachte tranche: **v0.05.14 brengt de vijf volledige seasonal
 events uit met versionCode 10064. Analyzer, alle 458 tests, vaste signing,
 productiepreflight, Play-ready AAB, remote APK-assetcontrole en post-release
 health zijn groen. De APK staat exact op commit
@@ -126,7 +125,7 @@ en de stagingrollback bewees dat de nieuwe kooproute geen waarde achterlaat.
 Volgende Codexstap is server-owned chestopening met randomness, pity en
 relicdrops; activering voor spelers blijft een afzonderlijk gezamenlijk besluit.**
 
-Actuele seasonal release v0.05.14: **de vijf volledig goedgekeurde
+Eerdere seasonal release v0.05.14: **de vijf volledig goedgekeurde
 eventcontracten voor Halloween, Kerst, Nieuwjaar, Valentijn en Pride zijn
 uitgebracht. Dit omvat vijf kalender-/previewvensters, vijf Special Adventures,
 vijf event-Trials met eigen hoogwaardige media, vijf nieuwe Special families,
