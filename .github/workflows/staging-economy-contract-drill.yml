@@ -18,6 +18,7 @@ on:
           - load-observer
           - social-push
           - social-push-apply
+          - push-device-probe
 
 permissions:
   contents: read
@@ -56,7 +57,7 @@ jobs:
           retention-days: 30
 
   verify:
-    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply'
+    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply' && inputs.contract != 'push-device-probe'
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 15
@@ -247,3 +248,23 @@ jobs:
           path: staging/social-push-apply.txt
           if-no-files-found: warn
           retention-days: 30
+
+  push-device-probe:
+    if: inputs.contract == 'push-device-probe'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Probe the real staging worker and operator test device
+        shell: pwsh
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          STAGING_PUSH_PROBE_TOKEN: ${{ secrets.STAGING_PUSH_PROBE_TOKEN }}
+        run: |
+          if ($env:CONFIRMATION -cne 'TEST_DRAGONHAVEN_STAGING_DEVICE_PUSH') {
+            throw 'Exact staging device probe scope is required.'
+          }
+          ./tool/staging_push_device_probe.ps1
