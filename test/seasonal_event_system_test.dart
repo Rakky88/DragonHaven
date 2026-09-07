@@ -317,6 +317,23 @@ void main() {
     expect(sql, isNot(contains('grant select on public.seasonal_')));
   });
 
+  test('seasonal lint fixes are forward-only and unambiguous', () {
+    final sql = File(
+      'supabase/migrations/202609070041_seasonal_event_lint_fixes.sql',
+    ).readAsStringSync();
+    expect(
+      sql,
+      contains(
+        'on conflict on constraint seasonal_event_previews_pkey do update',
+      ),
+    );
+    expect(sql, contains('current_occurrence_key text'));
+    expect(sql, contains('a.occurrence_key = current_occurrence_key'));
+    expect(sql, contains('occurrence_key := current_occurrence_key'));
+    expect(sql, isNot(contains('on conflict (user_id, event_id)')));
+    expect(sql, isNot(contains('a.occurrence_key = occurrence_key')));
+  });
+
   test('seasonal server rollout is staging-first and exactly scoped', () {
     final stagingWorkflow =
         File('.github/workflows/staging-seasonal-events.yml')
@@ -327,20 +344,19 @@ void main() {
     final stagingE2e =
         File('tool/staging_seasonal_events_e2e.ps1').readAsStringSync();
 
-    expect(stagingWorkflow, contains('APPLY_DRAGONHAVEN_STAGING_39_40'));
-    expect(stagingWorkflow, contains("\$expectedRemote = '202609050038'"));
-    expect(stagingWorkflow,
-        contains("\$expectedPending = @('202609050039', '202609070040')"));
+    expect(stagingWorkflow, contains('APPLY_DRAGONHAVEN_STAGING_SEASONAL_41'));
+    expect(stagingWorkflow, contains("\$expectedRemote = '202609070040'"));
+    expect(stagingWorkflow, contains("\$expectedPending = @('202609070041')"));
     expect(stagingWorkflow, contains('staging_seasonal_events_e2e.ps1'));
     expect(stagingWorkflow, contains('-VerifyVanityPurchase'));
     expect(stagingWorkflow, contains('must never target production'));
 
-    expect(productionWorkflow, contains('MIGRATE_PRODUCTION_37_TO_40'));
+    expect(productionWorkflow, contains('MIGRATE_PRODUCTION_37_TO_41'));
     expect(productionWorkflow, contains("\$expectedRemote = '202609020036'"));
     expect(
         productionWorkflow,
-        contains("'202609050037', '202609050038', "
-            "'202609050039', '202609070040'"));
+        contains("'202609050037', '202609050038', '202609050039',\n"
+            "            '202609070040', '202609070041'"));
     expect(productionWorkflow, contains('release_server_preflight.ps1'));
     expect(productionWorkflow, contains('supabase db lint'));
 

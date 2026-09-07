@@ -5,15 +5,19 @@ Technische uitgangsversie: **v0.04.06**
 
 Actuele openbare versie: **v0.05.12**
 
-Actuele productieserver: **36/40 repositorymigraties; ongewijzigd en gezond**
+Actuele productieserver: **36/41 repositorymigraties; ongewijzigd en gezond**
 
-Actuele serverkandidaat: **staging staat gezond op 38/40. Migraties 39–40 zijn
-exact begrensd achter één stagingworkflow die eerst de dormante vanity-aankoop
-in rollback bewijst en daarna een gesimuleerde seasonal Trial, ranking, RLS,
-revokes, lint en Auth/apphealth controleert. Productie blijft tot die stagingpoort
-groen is op 36/40. Migraties 37–39 houden alle keepers in `legacy_client`, de
-globale mutatieschakelaar uit en de appfeature uit; migratie 40 voegt de online
-eventcontracten toe zonder de bestaande economie te activeren.**
+Actuele serverkandidaat: **staging heeft migraties 39–40 toegepast. De verplichte
+post-apply lint in run `34072050993` vond twee ambigue PL/pgSQL-identifiers en
+stopte vóór de seasonal E2E; productie en de openbare release bleven onaangeraakt.
+De toegepaste migratie 40 wordt niet herschreven. Forward-only migratie 41
+kwalificeert de conflictconstraint en de Pride-occurrencevariabele. Een exact
+begrensde 40→41-stagingpoort herhaalt daarna parity, lint, RLS/revokes, de
+dormante economyrollback, seasonal preview-E2E en Auth/apphealth. Productie
+blijft tot die volledige poort groen is op 36/41. Migraties 37–39 houden alle
+keepers in `legacy_client`, de globale mutatieschakelaar uit en de appfeature
+uit; migraties 40–41 voegen en repareren de online eventcontracten zonder de
+bestaande economie te activeren.**
 
 Actuele uitgebrachte tranche: **v0.05.12 is openbaar uitgebracht met versionCode
 10062. Deze release koppelt de Trial-constellatie uitsluitend aan echte
@@ -48,9 +52,9 @@ assetbundle. De volledige verscheepte seasonal toevoeging is circa 57,0 MiB:
 28,4 MiB event-UI, 26,5 MiB draken en 2,0 MiB audio, zonder lagere
 runtime-WebP-kwaliteit. Appversie `0.05.13+10063`, analyzer, alle 457 tests, de
 transparantie-/safe-area-poorten en de ondertekende release-APK zijn lokaal groen.
-Migraties 39–40 hebben een exact begrensde stagingpoort met economyrollback,
+Migraties 39–41 hebben een exact begrensde stagingpoort met economyrollback,
 seasonal preview-E2E, lint, RLS/revokes en health; pas na die groene poort volgt
-de afzonderlijke productiegate voor 37–40. De openbare release is nog niet
+de afzonderlijke productiegate voor 37–41. De openbare release is nog niet
 gewijzigd.**
 
 Aanvullende visuele eventtranche: **drie afzonderlijke rondes zijn daarna over
@@ -1322,6 +1326,7 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 07-09-2026 | Vijf seasonal events lokaal volledig ingebouwd | Codex | `NEW_EVENTS_PLAN.md`, `SPECIAL_EVENTS_CHESTS_AND_EGGS.md`, migratie `202609070040_seasonal_events.sql`, saveschema 53, vijf event-Trials, vijf Special families, vijf chest-/eggsets, eventaudio, ranglijsten/Chronicle, previewcodes en de Valentijns-/Pride-serverflows | Halloween, Kerst, Nieuwjaar, Valentijn en Pride volgen hun volledig goedgekeurde kalender-, adventure-, reward-, Trial- en rankingcontracten. Iedere Trial heeft een eigen schermvullende achtergrond, zes thematische gameplayassets, iconen, animaties en feedbackaudio; de 30 eerder goedgekeurde drakenvormen en alle event-cutouts slagen voor alpha en safe area. Alle vaste eventteksten, achievements en Adventures bestaan in acht talen. Analyzer meldt nul problemen, 455/455 tests zijn groen en een debug-APK van 541.353.825 bytes compileert. De werkelijk gebundelde seasonal toevoeging is circa 57,0 MiB; grote bronplaten worden niet verscheept. Migratie 40 is nog niet gepusht of toegepast: database-lint en live E2E horen bij een later expliciet toegestane staginggate. Productie blijft 36, staging 38, app/release v0.05.11. |
 
 | 07-09-2026 | Seasonal event-UI in drie visuele rondes verfijnd | Codex | `seasonal_trial_game.dart`, `adventure_hub_screen.dart`, `seasonal_trial_rankings_sheet.dart`, vijf expliciete event-assetmappen en aangescherpte widget-/alphatests | Trials tonen nu eventembleem, spritefasepad, subtiele ambient motion en een thematische uitslag; Special Adventure-, Valentijn-, Pride- en rankingpresentaties hergebruiken de goedgekeurde eventart. Valentijn/Pride Trial-iconen zijn zonder afgesneden onderfragment en met echte alpha opnieuw opgebouwd; Nieuwjaar/Pride chest-/eggcutouts hebben extra randruimte. 320×640-dekking bewijst alle vijf Trials en de eventgate controleert alle buitenranden. Analyzer en 456/456 tests zijn groen. Geen versie-, server-, migratie-, productie- of releasewijziging. |
+| 07-09-2026 | Eerste seasonal stagingpoort stopte veilig op lint | Codex, binnen jouw releasetoestemming | [stagingrun 34072050993](https://github.com/Rakky88/DragonHaven/actions/runs/34072050993), migratie 40 en forward-only migratie 41 | De workflow bewees de exacte 38→40-set, groene voorafgaande health/lint en paste 39–40 uitsluitend op staging toe. De verplichte nacheck vond daarna twee ambigue PL/pgSQL-identifiers in de previewredeem- en Pride-progressfuncties en stopte vóór seasonal E2E. Productie bleef gezond op 36 en er is geen release gepubliceerd. Migratie 41 vervangt alleen deze twee functies met ondubbelzinnige identifiers; een 40→41-herstelpoort moet nog volledig groen worden voordat productie of v0.05.13 verdergaat. |
 
 ## Onderhoud van dit plan
 

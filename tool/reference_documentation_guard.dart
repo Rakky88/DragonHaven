@@ -29,6 +29,7 @@ const specialContentReference = ReferenceDocumentSpec(
     'lib/services/notification_service.dart',
     'supabase/migrations/202608290026_special_chest_trade_support.sql',
     'supabase/migrations/202609070040_seasonal_events.sql',
+    'supabase/migrations/202609070041_seasonal_event_lint_fixes.sql',
   ],
 );
 
@@ -55,6 +56,7 @@ const randomRewardsReference = ReferenceDocumentSpec(
     'lib/screens/trial_game_screen.dart',
     'supabase/migrations/202608240007_group_adventure_duration_rules.sql',
     'supabase/migrations/202609070040_seasonal_events.sql',
+    'supabase/migrations/202609070041_seasonal_event_lint_fixes.sql',
   ],
 );
 
@@ -65,6 +67,7 @@ const redeemCodesReference = ReferenceDocumentSpec(
     'lib/models/dragon_emote.dart',
     'lib/models/redeem_code.dart',
     'supabase/migrations/202609070040_seasonal_events.sql',
+    'supabase/migrations/202609070041_seasonal_event_lint_fixes.sql',
   ],
 );
 

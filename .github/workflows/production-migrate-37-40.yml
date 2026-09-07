@@ -1,10 +1,10 @@
-name: Production database migrations 37 to 40
+name: Production database migrations 37 to 41
 
 on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: Type MIGRATE_PRODUCTION_37_TO_40
+        description: Type MIGRATE_PRODUCTION_37_TO_41
         required: true
         type: string
 
@@ -26,7 +26,7 @@ jobs:
         env:
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
-          if ($env:CONFIRMATION -cne 'MIGRATE_PRODUCTION_37_TO_40') {
+          if ($env:CONFIRMATION -cne 'MIGRATE_PRODUCTION_37_TO_41') {
             throw 'The required production confirmation is missing.'
           }
 
@@ -51,7 +51,7 @@ jobs:
         with:
           version: 2.116.0
 
-      - name: Verify exact 36 to 40 migration set and dry run
+      - name: Verify exact 36 to 41 migration set and dry run
         shell: pwsh
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -59,7 +59,8 @@ jobs:
         run: |
           $expectedRemote = '202609020036'
           $expectedPending = @(
-            '202609050037', '202609050038', '202609050039', '202609070040')
+            '202609050037', '202609050038', '202609050039',
+            '202609070040', '202609070041')
           supabase link --project-ref tnzathhutuwmohmjfrlo `
             --password $env:SUPABASE_DB_PASSWORD
           New-Item -ItemType Directory -Path production-migration -Force |
@@ -83,7 +84,7 @@ jobs:
               $Matches[1]
             } | Where-Object { [long]$_ -gt [long]$expectedRemote } | Sort-Object)
           if (@(Compare-Object $expectedPending $pendingLocal).Count -ne 0) {
-            throw 'The pending production set is not exactly migrations 37 through 40.'
+            throw 'The pending production set is not exactly migrations 37 through 41.'
           }
           ./tool/public_server_health_check.ps1 `
             -Environment production `
@@ -95,7 +96,7 @@ jobs:
             Tee-Object production-migration/dry-run.txt
           if ($LASTEXITCODE -ne 0) { throw 'Production dry run failed.' }
 
-      - name: Apply migrations 37 through 40 and verify
+      - name: Apply migrations 37 through 41 and verify
         shell: pwsh
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -116,7 +117,7 @@ jobs:
             'DragonHaven production migration evidence'
             "Commit: $env:GITHUB_SHA"
             'Previous migration: 202609020036'
-            'Applied migrations: 202609050037 through 202609070040'
+            'Applied migrations: 202609050037 through 202609070041'
             'Economy authority remains in disabled legacy compatibility mode.'
             'Seasonal rankings, Chronicle, Valentine pair flow and Pride progress are available.'
             'Migration parity, database lint, Auth and application health: passed'
@@ -127,7 +128,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: DragonHaven-production-migrations-37-to-40
+          name: DragonHaven-production-migrations-37-to-41
           path: production-migration/
           if-no-files-found: warn
           retention-days: 30

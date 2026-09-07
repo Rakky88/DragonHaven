@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: app version `v0.05.13`
 
-<!-- reference-source-fingerprint: 3bd187b448127d07 -->
+<!-- reference-source-fingerprint: d5095b97509c6845 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special

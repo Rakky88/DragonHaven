@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: app version `v0.05.13`
 
-<!-- reference-source-fingerprint: 9abb4c03963d8b82 -->
+<!-- reference-source-fingerprint: e605f7176059dbae -->
 
 This private operational ledger lists every active code. Active codes must
 never be mentioned in public release notes, store copy, or public support

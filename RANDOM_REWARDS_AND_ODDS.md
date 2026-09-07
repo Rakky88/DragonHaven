@@ -6,7 +6,7 @@ Ruleset: app version `v0.05.13`
 
 Source baseline: seasonal-event implementation released with `v0.05.13`
 
-<!-- reference-source-fingerprint: 521406d96b6d65a9 -->
+<!-- reference-source-fingerprint: 07f499e86204ee83 -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
