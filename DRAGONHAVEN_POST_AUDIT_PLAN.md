@@ -3,6 +3,21 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
+Release v0.05.16 / versionCode 10066 wordt op verzoek van de gebruiker voorbereid.
+Deze release brengt de volledige Egg Altar-tranche, de nieuwe Sinister-balans,
+Witchlight-feedback en de Friends/Conclave-correcties samen. AppInfo, pubspec,
+updaterfixtures en de Android-build krijgen dezelfde versiestap.
+De productie-uitrol is beperkt tot migraties 42–44. De workflow controleert
+stagingrun 34106264418 en vergelijkt de migraties en SQL-contracttest exact met
+de daar geteste commit; daarna volgen de begintoestand 41, health, lint, dry-run,
+een teruggerolde repetitie, de migratie en volledige preflight/contractcontrole.
+De brede economycutover blijft uit. Publicatie volgt pas na groene appcontroles,
+visuele controle, vaste APK-signing en publisher-dry-run.
+Lokale releasecontrole: analyzer schoon, 486/486 tests groen, levende referenties
+gesynchroniseerd en PowerShell-blokken van de productieworkflow correct geparseerd.
+De onafhankelijke begintoestand bevestigt productie op migratie 41; Auth health,
+Auth settings en applicatiehealth gaven op 7 september om 09:35:24 UTC HTTP 200.
+
 Actuele openbare versie: **v0.05.15, versionCode 10065 en Latest. Geregistreerde
 Keepers op een lagere versie krijgen bij appstart de wegdrukbare updatepopup met
 de permanente Android-downloadroute.**

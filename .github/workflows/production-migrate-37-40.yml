@@ -1,15 +1,16 @@
-name: Production database migrations 37 to 41
+name: Production Egg Altar migrations 42 to 44
 
 on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: Type MIGRATE_PRODUCTION_37_TO_41
+        description: Type MIGRATE_PRODUCTION_42_TO_44
         required: true
         type: string
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: dragonhaven-production-migrations
@@ -26,12 +27,27 @@ jobs:
         env:
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
-          if ($env:CONFIRMATION -cne 'MIGRATE_PRODUCTION_37_TO_41') {
+          if ($env:CONFIRMATION -cne 'MIGRATE_PRODUCTION_42_TO_44') {
             throw 'The required production confirmation is missing.'
           }
 
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Verify the exact server content already passed staging
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $stagingSha = '174fd3ab71e03bf30d271cce1beed81b6951e189'
+          $run = gh api repos/Rakky88/DragonHaven/actions/runs/34106264418 | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $run.conclusion -ne 'success' -or $run.head_sha -ne $stagingSha) {
+            throw 'The exact staging evidence is missing or failed.'
+          }
+          git fetch --depth=1 origin $stagingSha
+          if ($LASTEXITCODE -ne 0) { throw 'Could not resolve the tested staging commit.' }
+          git diff --exit-code $stagingSha -- supabase/migrations tool/egg_altar_contract.sql
+          if ($LASTEXITCODE -ne 0) { throw 'The production server content differs from tested staging.' }
 
       - name: Verify required secrets
         shell: pwsh
@@ -51,16 +67,15 @@ jobs:
         with:
           version: 2.116.0
 
-      - name: Verify exact 36 to 41 migration set and dry run
+      - name: Verify exact 41 to 44 migration set and dry run
         shell: pwsh
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
-          $expectedRemote = '202609020036'
+          $expectedRemote = '202609070041'
           $expectedPending = @(
-            '202609050037', '202609050038', '202609050039',
-            '202609070040', '202609070041')
+            '202609070042', '202609070043', '202609070044')
           supabase link --project-ref tnzathhutuwmohmjfrlo `
             --password $env:SUPABASE_DB_PASSWORD
           New-Item -ItemType Directory -Path production-migration -Force |
@@ -74,7 +89,7 @@ jobs:
             Sort-Object)
           if ($remoteVersions.Count -eq 0 -or
               $remoteVersions[-1] -ne $expectedRemote) {
-            throw 'Production is not exactly at migration 36.'
+            throw 'Production is not exactly at migration 41.'
           }
           $pendingLocal = @(Get-ChildItem supabase/migrations -File -Filter '*.sql' |
             ForEach-Object {
@@ -84,7 +99,7 @@ jobs:
               $Matches[1]
             } | Where-Object { [long]$_ -gt [long]$expectedRemote } | Sort-Object)
           if (@(Compare-Object $expectedPending $pendingLocal).Count -ne 0) {
-            throw 'The pending production set is not exactly migrations 37 through 41.'
+            throw 'The pending production set is not exactly migrations 42 through 44.'
           }
           ./tool/public_server_health_check.ps1 `
             -Environment production `
@@ -96,7 +111,31 @@ jobs:
             Tee-Object production-migration/dry-run.txt
           if ($LASTEXITCODE -ne 0) { throw 'Production dry run failed.' }
 
-      - name: Apply migrations 37 through 41 and verify
+      - name: Rehearse migrations and contract with rollback before applying
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          $sql = "begin;`n"
+          foreach ($version in @('202609070042', '202609070043', '202609070044')) {
+            $file = Get-ChildItem supabase/migrations -File -Filter "$($version)_*.sql"
+            if (@($file).Count -ne 1) { throw 'The migration set is ambiguous.' }
+            $sql += (Get-Content -LiteralPath $file.FullName -Raw) + "`n"
+          }
+          $contract = Get-Content -LiteralPath tool/egg_altar_contract.sql -Raw
+          $sql += $contract.Replace('begin;', '').Replace('rollback;', '') + "`nrollback;`nselect true as egg_altar_contract_passed;"
+          $response = Invoke-RestMethod -Method Post `
+            -Uri 'https://api.supabase.com/v1/projects/tnzathhutuwmohmjfrlo/database/query' `
+            -Headers @{ Authorization = "Bearer $env:SUPABASE_ACCESS_TOKEN" } `
+            -ContentType 'application/json' `
+            -Body (ConvertTo-Json @{ query = $sql; read_only = $false } -Compress)
+          if (($response | ConvertTo-Json -Depth 5) -notmatch '"egg_altar_contract_passed"\s*:\s*true') {
+            throw 'Rolled-back production rehearsal failed; migrations will not be applied.'
+          }
+          'PASS: all three migrations and the Altar contract rolled back before applying.' |
+            Set-Content production-migration/rehearsal.txt
+
+      - name: Apply migrations 42 through 44 and verify
         shell: pwsh
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -105,6 +144,17 @@ jobs:
           supabase db push --linked --include-all --yes |
             Tee-Object production-migration/apply.txt
           if ($LASTEXITCODE -ne 0) { throw 'Production migration apply failed.' }
+          $contract = Get-Content -LiteralPath tool/egg_altar_contract.sql -Raw
+          $response = Invoke-RestMethod -Method Post `
+            -Uri 'https://api.supabase.com/v1/projects/tnzathhutuwmohmjfrlo/database/query' `
+            -Headers @{ Authorization = "Bearer $env:SUPABASE_ACCESS_TOKEN" } `
+            -ContentType 'application/json' `
+            -Body (ConvertTo-Json @{ query = $contract; read_only = $false } -Compress)
+          if (($response | ConvertTo-Json -Depth 5) -notmatch '"egg_altar_contract_passed"\s*:\s*true') {
+            throw 'The applied Altar contract failed.'
+          }
+          'PASS: ownership, tags, retries, Sinister rewards, crafting and Beacon; all test mutations rolled back.' |
+            Set-Content production-migration/contract.txt
           ./tool/release_server_preflight.ps1 |
             Tee-Object production-migration/preflight-after.txt
           supabase db lint --linked --level error --fail-on error `
@@ -116,10 +166,10 @@ jobs:
           @(
             'DragonHaven production migration evidence'
             "Commit: $env:GITHUB_SHA"
-            'Previous migration: 202609020036'
-            'Applied migrations: 202609050037 through 202609070041'
+            'Previous migration: 202609070041'
+            'Applied migrations: 202609070042 through 202609070044'
             'Economy authority remains in disabled legacy compatibility mode.'
-            'Seasonal rankings, Chronicle, Valentine pair flow and Pride progress are available.'
+            'Egg Altar, tags, crafted relics, Beacon and corrected Sinister rewards are available.'
             'Migration parity, database lint, Auth and application health: passed'
             'No credentials or player data are included in this artifact.'
           ) | Set-Content production-migration/verification.txt -Encoding utf8
@@ -128,7 +178,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: DragonHaven-production-migrations-37-to-41
+          name: DragonHaven-production-migrations-42-to-44
           path: production-migration/
           if-no-files-found: warn
           retention-days: 30
