@@ -38,7 +38,7 @@ jobs:
   staging-load:
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 20
+    timeout-minutes: 75
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -67,6 +67,7 @@ jobs:
           "execute=$($isExecution.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
           'The bounded load-stage request is valid; no secret was accessed.'
           ./tool/staging_load_accounts_contract.ps1
+          ./tool/staging_load_metrics_contract.ps1
 
       - name: Verify isolated staging execution configuration
         if: ${{ steps.profile.outputs.execute == 'true' }}

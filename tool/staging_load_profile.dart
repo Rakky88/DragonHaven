@@ -112,8 +112,11 @@ Map<String, Object> buildLoadPlan({
     rampUpSeconds: rampUpSeconds,
   );
   return <String, Object>{
-    'schemaVersion': 1,
+    'schemaVersion': 2,
     'kind': 'dragonhaven-staging-load-plan',
+    'measurementMode': loadMeasurementMode,
+    'loginSpacingMs': loginSpacing.inMilliseconds,
+    'steadyStateSeconds': durationSeconds,
     'environment': 'staging',
     'productionTarget': false,
     'appVersion': appVersion,
@@ -194,6 +197,15 @@ void validateExecutionTarget({
 void validateBaselineReport(Map<String, Object?> report,
     {String? migrationVersion}) {
   if (report['kind'] != 'dragonhaven-staging-load-report' ||
+      report['schemaVersion'] != 2 ||
+      report['measurementMode'] != loadMeasurementMode ||
+      report['environment'] != 'staging' ||
+      report['warmupCompleted'] != true ||
+      report['sessionsCoverMeasurement'] != true ||
+      report['preparedUsers'] != 100 ||
+      report['peakConcurrentBrowsingUsers'] != 100 ||
+      (report['steadyStateSeconds'] as num? ?? 0) < 180 ||
+      (report['minimumReadRequestsPerUser'] as num? ?? 0) < 1 ||
       report['productionTarget'] != false ||
       report['virtualUsers'] != 100 ||
       report['result'] != 'passed' ||
@@ -203,6 +215,13 @@ void validateBaselineReport(Map<String, Object?> report,
           report['repositoryMigrationVersion'] != migrationVersion)) {
     throw StateError(
         'The 1000-user stage requires a successful 100-user staging report.');
+  }
+  final readErrorRate = report['readErrorRatePercent'];
+  if (readErrorRate is! num ||
+      !readErrorRate.isFinite ||
+      readErrorRate < 0 ||
+      readErrorRate > 2) {
+    throw StateError('The baseline read error gate failed.');
   }
   final errorRate = report['errorRatePercent'];
   if (errorRate is! num ||
@@ -310,6 +329,87 @@ LoadOperation chooseOperation(Random random) {
   return browsingOperations.last;
 }
 
+// Keep the password token endpoint below its per-IP refill rate. Setup and
+// browsing are separate: the last user gets the full measured steady period.
+const loginSpacing = Duration(milliseconds: 2200);
+const loadMeasurementMode = 'preauthenticated_browsing';
+typedef LoadRequest = Future<RequestResult> Function(Uri uri,
+    Map<String, String> headers, Map<String, Object?> body, bool retainBody);
+
+class PreparedLoadSession {
+  const PreparedLoadSession(this.headers, this.expiresAt);
+  final Map<String, String> headers;
+  final DateTime expiresAt;
+}
+
+Future<List<PreparedLoadSession>> prepareLoadSessions({
+  required String baseUrl,
+  required String publishableKey,
+  required List<SyntheticCredential> credentials,
+  required LoadRequest request,
+  required Map<String, OperationMetrics> metrics,
+  DateTime Function()? clock,
+  Future<void> Function(Duration)? pause,
+}) async {
+  final now = clock ?? () => DateTime.now().toUtc();
+  final wait = pause ?? Future<void>.delayed;
+  final sessions = <PreparedLoadSession>[];
+  DateTime? previousLoginStartedAt;
+  for (final credential in credentials) {
+    if (previousLoginStartedAt != null) {
+      final remaining =
+          previousLoginStartedAt.add(loginSpacing).difference(now());
+      if (remaining > Duration.zero) await wait(remaining);
+    }
+    previousLoginStartedAt = now();
+    final login = await request(
+        Uri.parse('$baseUrl/auth/v1/token?grant_type=password'),
+        {'apikey': publishableKey},
+        {'email': credential.email, 'password': credential.password},
+        true);
+    metrics.putIfAbsent('password_login', OperationMetrics.new).record(login);
+    if (!login.succeeded) break; // A failed setup never becomes a partial load.
+    String accessToken;
+    DateTime expiry;
+    try {
+      final data =
+          jsonDecode(utf8.decode(login.bodyBytes)) as Map<String, dynamic>;
+      accessToken = data['access_token'] as String;
+      final expiresAt = data['expires_at'];
+      final expiresIn = data['expires_in'];
+      expiry = expiresAt is int
+          ? DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000, isUtc: true)
+          : now().add(Duration(seconds: expiresIn as int));
+      if (accessToken.isEmpty || !expiry.isAfter(now())) {
+        throw const FormatException('Invalid session');
+      }
+    } on Object {
+      metrics.putIfAbsent('login_contract', OperationMetrics.new).record(
+          const RequestResult(
+              statusCode: 0,
+              durationMs: 0,
+              responseBytes: 0,
+              networkFailure: true));
+      break;
+    }
+    final headers = {
+      'apikey': publishableKey,
+      'authorization': 'Bearer $accessToken'
+    };
+    final bootstrap = await request(
+        Uri.parse('$baseUrl/rest/v1/rpc/ensure_my_online_account'),
+        headers,
+        {},
+        false);
+    metrics
+        .putIfAbsent('ensure_my_online_account', OperationMetrics.new)
+        .record(bootstrap);
+    if (!bootstrap.succeeded) break;
+    sessions.add(PreparedLoadSession(headers, expiry));
+  }
+  return sessions;
+}
+
 Future<Map<String, Object>> executeLoadProfile({
   required String baseUrl,
   required String publishableKey,
@@ -319,135 +419,147 @@ Future<Map<String, Object>> executeLoadProfile({
   required double maxErrorPercent,
   required String appVersion,
   required String migrationVersion,
+  Future<void> Function()? onMeasurementStarted,
+  LoadRequest? requestOverride,
+  DateTime Function()? clock,
+  Future<void> Function(Duration)? pause,
 }) async {
-  final startedAt = DateTime.now().toUtc();
-  final endsAt = startedAt.add(Duration(seconds: durationSeconds));
+  final now = clock ?? () => DateTime.now().toUtc();
+  final wait = pause ?? Future<void>.delayed;
+  final setupStartedAt = now();
   final metrics = <String, OperationMetrics>{};
-  var authenticatedUsers = 0;
-  var activeUsers = 0;
-  OperationMetrics metricFor(String operation) =>
-      metrics.putIfAbsent(operation, OperationMetrics.new);
-
+  final setupClient = HttpClient()
+    ..connectionTimeout = const Duration(seconds: 30);
+  final sessions = await (() async {
+    try {
+      return await prepareLoadSessions(
+          baseUrl: baseUrl,
+          publishableKey: publishableKey,
+          credentials: credentials,
+          metrics: metrics,
+          clock: now,
+          pause: wait,
+          request: requestOverride ??
+              (uri, headers, body, retainBody) => postJson(
+                  client: setupClient,
+                  uri: uri,
+                  headers: headers,
+                  body: body,
+                  retainBody: retainBody));
+    } finally {
+      setupClient.close(force: true);
+    }
+  })();
+  final warmupDurationMs = now().difference(setupStartedAt).inMilliseconds;
+  final browsingStartedAt = now();
+  final endsAt =
+      browsingStartedAt.add(Duration(seconds: rampUpSeconds + durationSeconds));
+  final warmupCompleted = sessions.length == credentials.length;
+  final sessionsCoverMeasurement = warmupCompleted &&
+      sessions.every((session) =>
+          session.expiresAt.isAfter(endsAt.add(const Duration(seconds: 30))));
+  final readCounts = List<int>.filled(credentials.length, 0);
+  var simultaneousUsers = 0;
+  var peakUsers = 0;
   Future<void> runUser(int index) async {
     final rampDelayMs =
-        ((index / credentials.length) * rampUpSeconds * 1000).round();
-    await Future<void>.delayed(Duration(milliseconds: rampDelayMs));
-    if (DateTime.now().toUtc().isAfter(endsAt)) return;
-
-    final credential = credentials[index];
+        ((index / sessions.length) * rampUpSeconds * 1000).round();
+    await wait(Duration(milliseconds: rampDelayMs));
     final random = Random(830017 + index);
     final client = HttpClient()
       ..connectionTimeout = const Duration(seconds: 30)
       ..maxConnectionsPerHost = 2
       ..userAgent = 'DragonHaven-Staging-Load-Audit';
+    simultaneousUsers++;
+    peakUsers = max(peakUsers, simultaneousUsers);
     try {
-      final login = await postJson(
-        client: client,
-        uri: Uri.parse('$baseUrl/auth/v1/token?grant_type=password'),
-        headers: <String, String>{'apikey': publishableKey},
-        body: <String, Object?>{
-          'email': credential.email,
-          'password': credential.password,
-        },
-        retainBody: true,
-      );
-      metricFor('password_login').record(login);
-      if (!login.succeeded) return;
-
-      String accessToken;
-      try {
-        final decoded = jsonDecode(utf8.decode(login.bodyBytes));
-        accessToken =
-            (decoded as Map<String, dynamic>)['access_token'] as String;
-        if (accessToken.isEmpty) {
-          throw const FormatException('Missing login token');
-        }
-      } on Object {
-        metricFor('login_contract').record(const RequestResult(
-          statusCode: 0,
-          durationMs: 0,
-          responseBytes: 0,
-          networkFailure: true,
-        ));
-        return;
-      }
-
-      final headers = <String, String>{
-        'apikey': publishableKey,
-        'authorization': 'Bearer $accessToken',
-      };
-      authenticatedUsers++;
-      final bootstrap = await postJson(
-        client: client,
-        uri: Uri.parse('$baseUrl/rest/v1/rpc/ensure_my_online_account'),
-        headers: headers,
-        body: const <String, Object?>{},
-      );
-      metricFor('ensure_my_online_account').record(bootstrap);
-      if (!bootstrap.succeeded) return;
-      activeUsers++;
-
-      while (DateTime.now().toUtc().isBefore(endsAt)) {
+      while (now().isBefore(endsAt)) {
         final operation = chooseOperation(random);
-        final result = await postJson(
-          client: client,
-          uri: Uri.parse('$baseUrl/rest/v1/rpc/${operation.name}'),
-          headers: headers,
-          body: const <String, Object?>{},
-        );
-        metricFor(operation.name).record(result);
-        final thinkSeconds = 8 + random.nextInt(13);
-        final remaining = endsAt.difference(DateTime.now().toUtc());
+        final uri = Uri.parse('$baseUrl/rest/v1/rpc/${operation.name}');
+        final result = requestOverride != null
+            ? await requestOverride(uri, sessions[index].headers, {}, false)
+            : await postJson(
+                client: client,
+                uri: uri,
+                headers: sessions[index].headers,
+                body: const {});
+        metrics
+            .putIfAbsent(operation.name, OperationMetrics.new)
+            .record(result);
+        readCounts[index]++;
+        final remaining = endsAt.difference(now());
         if (remaining <= Duration.zero) break;
-        await Future<void>.delayed(
-          remaining < Duration(seconds: thinkSeconds)
-              ? remaining
-              : Duration(seconds: thinkSeconds),
-        );
+        final think = Duration(seconds: 8 + random.nextInt(13));
+        await wait(remaining < think ? remaining : think);
       }
     } finally {
+      simultaneousUsers--;
       client.close(force: true);
     }
   }
 
-  await Future.wait(<Future<void>>[
-    for (var index = 0; index < credentials.length; index++) runUser(index),
-  ]);
-
+  if (sessionsCoverMeasurement) {
+    await onMeasurementStarted?.call();
+    stdout.writeln(
+        'Session preparation complete; starting the bounded browsing measurement.');
+    await Future.wait([for (var i = 0; i < sessions.length; i++) runUser(i)]);
+  }
   final totalRequests =
       metrics.values.fold(0, (sum, item) => sum + item.requestCount);
   final totalSuccesses =
       metrics.values.fold(0, (sum, item) => sum + item.successes);
   final failures = totalRequests - totalSuccesses;
   final errorRate = totalRequests == 0 ? 100.0 : failures * 100 / totalRequests;
-  final responseBytes =
-      metrics.values.fold(0, (sum, item) => sum + item.responseBytes);
-  final passed = authenticatedUsers == credentials.length &&
+  final readMetrics = [
+    for (final operation in browsingOperations)
+      if (metrics[operation.name] != null) metrics[operation.name]!
+  ];
+  final readRequests =
+      readMetrics.fold<int>(0, (sum, item) => sum + item.requestCount);
+  final readSuccesses =
+      readMetrics.fold<int>(0, (sum, item) => sum + item.successes);
+  final readErrorRate = readRequests == 0
+      ? 100.0
+      : (readRequests - readSuccesses) * 100 / readRequests;
+  final activeUsers = readCounts.where((count) => count > 0).length;
+  final passed = sessionsCoverMeasurement &&
       activeUsers == credentials.length &&
-      totalRequests > credentials.length * 2 &&
-      errorRate <= maxErrorPercent;
-
+      peakUsers == credentials.length &&
+      errorRate <= maxErrorPercent &&
+      readErrorRate <= maxErrorPercent;
   return <String, Object>{
-    'schemaVersion': 1,
+    'schemaVersion': 2,
     'kind': 'dragonhaven-staging-load-report',
+    'measurementMode': loadMeasurementMode,
     'environment': 'staging',
     'productionTarget': false,
     'appVersion': appVersion,
     'applicationContractVersion': 1,
     'repositoryMigrationVersion': migrationVersion,
     'serverMigrationVersionVerified': false,
-    'generatedAtUtc': DateTime.now().toUtc().toIso8601String(),
+    'generatedAtUtc': now().toIso8601String(),
     'virtualUsers': credentials.length,
-    'authenticatedUsers': authenticatedUsers,
+    'authenticatedUsers': metrics['password_login']?.successes ?? 0,
+    'preparedUsers': sessions.length,
     'activeUsers': activeUsers,
+    'peakConcurrentBrowsingUsers': peakUsers,
+    'warmupCompleted': warmupCompleted,
+    'warmupDurationMs': warmupDurationMs,
+    'loginSpacingMs': loginSpacing.inMilliseconds,
+    'sessionsCoverMeasurement': sessionsCoverMeasurement,
     'durationSeconds': durationSeconds,
+    'steadyStateSeconds': durationSeconds,
     'rampUpSeconds': rampUpSeconds,
+    'minimumReadRequestsPerUser': readCounts.reduce(min),
     'result': passed ? 'passed' : 'failed',
+    'readRequests': readRequests,
+    'readErrorRatePercent': double.parse(readErrorRate.toStringAsFixed(3)),
     'totalRequests': totalRequests,
     'successes': totalSuccesses,
     'failures': failures,
     'errorRatePercent': double.parse(errorRate.toStringAsFixed(3)),
-    'responseBytesEstimate': responseBytes,
+    'responseBytesEstimate':
+        metrics.values.fold<int>(0, (sum, item) => sum + item.responseBytes),
     'operations': <String, Object>{
       for (final entry in metrics.entries) entry.key: entry.value.toJson(),
     },
@@ -570,6 +682,11 @@ Future<void> main(List<String> arguments) async {
     );
     final credentials = parseCredentialPool(rawCredentials, virtualUsers);
     final report = await executeLoadProfile(
+      onMeasurementStarted: () => writeJsonFile(
+          '${File(outputPath).parent.path}/load-phase.json', {
+        'phase': 'browsing',
+        'startedAtUtc': DateTime.now().toUtc().toIso8601String()
+      }),
       baseUrl: baseUrl,
       publishableKey: publishableKey,
       credentials: credentials,

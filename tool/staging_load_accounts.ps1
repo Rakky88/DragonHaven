@@ -27,7 +27,13 @@ if ($CleanupRunId) {
 if (-not $CleanupRunId -and $VirtualUsers -eq 1000) {
     if (-not $BaselinePath) { throw 'A successful 100-user baseline is required.' }
     $baseline = Get-Content -LiteralPath $BaselinePath -Raw | ConvertFrom-Json
-    if ($baseline.kind -ne 'dragonhaven-staging-load-report' -or $baseline.result -ne 'passed' -or
+    if ($baseline.schemaVersion -ne 2 -or $baseline.measurementMode -ne 'preauthenticated_browsing' -or
+        $baseline.environment -ne 'staging' -or $baseline.warmupCompleted -ne $true -or
+        $baseline.sessionsCoverMeasurement -ne $true -or $baseline.preparedUsers -ne 100 -or
+        $baseline.peakConcurrentBrowsingUsers -ne 100 -or $baseline.steadyStateSeconds -lt 180 -or
+        $baseline.minimumReadRequestsPerUser -lt 1 -or $baseline.errorRatePercent -lt 0 -or $baseline.readErrorRatePercent -lt 0 -or
+        $baseline.readErrorRatePercent -gt 2 -or
+        $baseline.kind -ne 'dragonhaven-staging-load-report' -or $baseline.result -ne 'passed' -or
         $baseline.virtualUsers -ne 100 -or $baseline.productionTarget -ne $false -or
         $baseline.errorRatePercent -gt 2 -or $baseline.authenticatedUsers -ne 100 -or
         $baseline.activeUsers -ne 100) {
@@ -93,6 +99,8 @@ function Save-Lifecycle {
 Save-Lifecycle
 $accounts = [System.Collections.Generic.List[object]]::new()
 $runFailed = $false
+$process = $null
+. (Join-Path $PSScriptRoot 'lib/staging_load_metrics.ps1')
 try {
     for ($index = 1; $index -le $VirtualUsers; $index++) {
         $passwordBytes = [System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32)
@@ -129,11 +137,25 @@ try {
         $null = $start.Environment.Remove($name)
     }
     $start.Environment['STAGING_LOAD_CREDENTIALS_JSON'] = ConvertTo-Json @{ accounts = @($accounts.ToArray()) } -Depth 5 -Compress
+    Save-StagingLoadMetricSample -ProjectRef $projectRef -AccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN -OutputPath 'staging/load-provider-metrics.json'
     $process = [System.Diagnostics.Process]::Start($start)
-    while (-not $process.WaitForExit(30000)) { 'Staging load is running; account data remains private.' }
+    $lastMetricSample = [DateTime]::UtcNow
+    while (-not $process.WaitForExit(30000)) {
+        'Staging load is running; account data remains private.'
+        if (([DateTime]::UtcNow - $lastMetricSample).TotalSeconds -ge 60) {
+            Save-StagingLoadMetricSample -ProjectRef $projectRef -AccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN -OutputPath 'staging/load-provider-metrics.json'
+            $lastMetricSample = [DateTime]::UtcNow
+        }
+    }
+    Save-StagingLoadMetricSample -ProjectRef $projectRef -AccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN -OutputPath 'staging/load-provider-metrics.json'
     if ($process.ExitCode -ne 0) { $runFailed = $true }
     $process.Dispose()
+    $process = $null
 } finally {
+    if ($null -ne $process) {
+        if (-not $process.HasExited) { $process.Kill($true); $process.WaitForExit() }
+        $process.Dispose()
+    }
     $accounts.Clear()
     $evidence.removed = Remove-RunAccounts
     if ((Remove-RunAccounts) -ne 0) { throw 'Synthetic cleanup required a second pass; investigate before another load run.' }

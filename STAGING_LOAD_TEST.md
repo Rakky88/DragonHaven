@@ -1,7 +1,7 @@
 # DragonHaven staging-loadtest
 
 Laatst bijgewerkt: **7 september 2026**
-Uitgangsversie: **v0.05.16 / productieschema 44 / stagingschema 47**
+Uitgangsversie: **v0.05.17 / productieschema 47 / stagingschema 47**
 
 ## Doel en huidige status
 
@@ -30,8 +30,11 @@ wachttijden van acht tot twintig seconden.
 | Cloudback-upgeschiedenis bekijken | 10% |
 | Conclave-overzicht bekijken | 10% |
 
-De test duurt standaard drie minuten en bouwt de belasting gedurende zestig
-seconden op. Dit benadert appgebruik beter dan constante requestspam. Schrijvende
+De test bereidt eerst alle normale password-sessies en bootstraps voor, met
+minimaal 2,2 seconden tussen loginstarts. Daarna bouwt hij gedurende zestig
+seconden de leesbelasting op, gevolgd door drie volledige minuten met alle
+gebruikers actief. Een ontbrekende of te vroeg verlopende sessie stopt de run
+voordat de leesmeting begint. Dit benadert appgebruik beter dan constante requestspam. Schrijvende
 economie- of rewardacties zijn bewust niet opgenomen zolang fase 4 nog niet
 server-authoritative is.
 
@@ -54,8 +57,9 @@ server-authoritative is.
 - Een run rapporteert alleen aantallen, veilige foutklassen, responsebytes en
   p50/p95/p99/max-latency per operatie. De nieuwste repositorymigratie wordt
   genoemd, maar nooit ten onrechte als geverifieerde serverstand gepresenteerd.
-- De workflow heeft een twintigminuten-timeout en artifacts verlopen na dertig
-  dagen.
+- De workflow heeft een limiet van 75 minuten en artifacts verlopen na dertig
+  dagen. De 1000-user-opzet heeft ongeveer 37 minuten rustige sessievoorbereiding
+  nodig; deze tijd telt niet mee als gemeten spelbelasting.
 
 ## Wat Codex heeft gebouwd
 
@@ -141,3 +145,26 @@ gewone sessieopbouw scheiden van loginpieken en bestaande beveiligingslimieten
 respecteren. Provider-CPU, verbindingen en echte egress zijn nog niet gemeten.
 De eerdere poging 34114939684 maakte geen accounts; de transportfout is hersteld
 met een apart offline contract dat voortaan voor iedere workflowrun draait.
+
+## Herzien meetontwerp (na v0.05.17)
+
+Rapportschema 2 heet `preauthenticated_browsing`. Het houdt login/bootstrap,
+voorbereidingstijd, succesvolle sessies, piek gelijktijdige browsende gebruikers,
+minimaal aantal reads per gebruiker en afzonderlijke readfouten bij. Alle sessies
+moeten de volledige meetperiode dekken; er zijn geen tokenrefreshpieken tijdens
+de meting. Zowel totale als readfouten moeten maximaal 2% zijn. De 1000-poort
+weigert oude rapporten, gedeeltelijke aantallen en minder dan 180 seconden
+steady state. Auth-configuratie en IP-forwarding worden niet aangepast.
+
+De tijdelijke-accountwrapper meet daarnaast maximaal eenmaal per minuut via
+het read-only [Metrics API](https://supabase.com/docs/reference/api/v1-scrape-project-metrics).
+Een vaste allowlist bewaart alleen opgetelde CPU-tellers, databaseverbindingen,
+geheugen en host-netwerkbytes, zonder labels, namen, SQL of responsebody.
+Host-netwerkbytes zijn uitdrukkelijk geen gefactureerde egress. Niet-beschikbare
+metrics worden als ontbrekend gerapporteerd en kunnen cleanup niet overslaan.
+Setup en daadwerkelijke browsing krijgen aparte fasemarkeringen. Offline
+contracten bewijzen productieblokkade en privacy voordat er netwerkverkeer is.
+
+Dit ontwerp blijft binnen de gedocumenteerde [Auth-begrenzing](https://supabase.com/docs/guides/auth/rate-limits).
+Het meet bestaande ingelogde sessies, geen plotselinge loginpiek van 1000 mensen
+vanaf een enkel IP-adres. De eerdere mislukte run blijft als apart bewijs staan.
