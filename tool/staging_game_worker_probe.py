@@ -83,7 +83,9 @@ def main():
     fixture_hex = json.dumps(fixture, separators=(",", ":")).encode("utf-8").hex()
     original_coins = fixture["pet"]["coins"]
     original_title_chests = fixture["chestInventory"].get("title", 0)
-    egg_id = fixture["eggStash"][0]["id"]
+    sinister_egg = next((egg for egg in fixture["eggStash"] if egg["lineageId"] == "sinisterra"), None)
+    require(sinister_egg is not None, "fixture_sinister_egg_missing")
+    egg_id = sinister_egg["id"]
     require(re.fullmatch(r"[a-zA-Z0-9_-]{1,100}", egg_id) is not None, "fixture_identity_invalid")
     baseline = query("""select r.enabled, r.ruleset_sha256,
         (select count(*) from private.canonical_game_states) as copies,

@@ -53,6 +53,14 @@ The staging apply/probe workflow builds the exact ruleset, rehearses migration
 52, deploys the worker and exercises real synthetic Auth requests before cleanup.
 The full live inventory projection and app integration remain separate work.
 
+`GameImportPreparation` is an internal, tested copy-preparation step. It binds
+the captured Altar owner/revision, preserves discoveries while using exact server
+tags, reconciles previously returned stashed eggs without another reward, and
+refuses stale/missing ledgers, mixed offline stock and contradictory returned
+dragons/nests/Special Eggs. Six behavior tests pass. Unknown owned content and
+missing fixed relic values still require review. This does not yet perform a
+database preparation commit, refresh an old import generation or promote anyone.
+
 Migration 52 adds a detached shadow copy of the full cloud save, an immutable
 source/hash plus the separately captured authoritative Altar, and a private
 command transaction. Only service-role RPCs can read a seed/state or claim a

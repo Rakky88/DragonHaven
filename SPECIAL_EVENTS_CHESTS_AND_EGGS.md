@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: a8739aca86b69615 -->
+<!-- reference-source-fingerprint: af773ed1bf6d896e -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -42,6 +42,11 @@ including through incubation/hatching. Exported ownership and counts replace
 their old values, so consumed eggs and spent stock cannot return through merging.
 Internal Altar execution uses the authenticated keeper from the transaction;
 foreign Altar ownership and unresolved legacy operations block evaluation.
+The isolated import preparer reconciles the captured authoritative Altar before
+evaluation. Server tags take precedence, discoveries remain, and an already
+returned stashed egg grants no second reward. Contradictory returned dragons,
+occupied nests or protected Special Eggs stop preparation for review. This
+preparer is internal and does not expose an import endpoint or activate accounts.
 
 - A **Special Event** owns one schedule, story, Adventure, Trial, temporary
   music alias, ranking occurrence, and reward contract.

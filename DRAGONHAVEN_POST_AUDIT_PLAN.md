@@ -63,6 +63,10 @@ Run `34146256475` heeft daarna precies migratie 52 toegepast en de worker
 uitgerold. Contracten vóór/na, pariteit 52, lint en health slagen. De HTTP-proef
 stopte vóór accountcreatie op een onleesbaar managementantwoord; de volledige
 workerproef wordt pas geaccepteerd na een geslaagde hercontrole.
+De interne Altar-conversie is nu gebouwd met zes gedragstests: actuele servertags,
+behouden ontdekkingen, geen tweede beloning voor eerdere returns en blokkering
+van tegenstrijdige of verouderde saves. De transactie voor het vastleggen van
+deze voorbereiding en de daadwerkelijke accountomschakeling blijven open.
 
 `GROWTH_AND_COST_PLAN.md` bevat de 100/1.000/10.000-accountscenario's, bestaande
 loadbewijzen, quota, opslag/egress-aannames en meetbare overstappen. De lokale

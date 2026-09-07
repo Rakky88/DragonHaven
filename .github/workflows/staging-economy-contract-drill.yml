@@ -325,7 +325,7 @@ jobs:
           test "$CONFIRMATION" = APPLY_DRAGONHAVEN_STAGING_GAME_52
           flutter pub get
           dart analyze lib integration_test test tool
-          flutter test --no-pub test/game_command_engine_test.dart test/reference_documentation_test.dart
+          flutter test --no-pub test/game_command_engine_test.dart test/game_import_preparation_test.dart test/reference_documentation_test.dart
           dart run tool/build_server_game.dart
           deno check supabase/functions/execute-game-command/index.ts
           deno test supabase/functions/execute-game-command/core_test.ts

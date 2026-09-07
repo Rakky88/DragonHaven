@@ -6,7 +6,7 @@ Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
 Source baseline: v0.05.16, with the dormant server chest-opening candidate below
 
-<!-- reference-source-fingerprint: cd3e4c5f58c7cb52 -->
+<!-- reference-source-fingerprint: a75cf997711ce619 -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
@@ -41,6 +41,9 @@ counts and inventories are replaced completely, preserving the same consumption
 and no-duplicate behavior rather than combining old and new reward inventories.
 Altar execution binds to the trusted keeper; unresolved legacy operations must
 be reconciled before any new command can draw rewards or consume resources.
+The internal import preparer uses the captured Altar wallet and crafted stock;
+it does not roll rewards for historical returns. Missing/older ledgers, foreign
+owners, ambiguous offline stock and missing fixed Chronoshards require review.
 
 - “Uniform” means every integer or every eligible item in the stated pool has the same chance.
 - Collection rewards never produce duplicates. Their exact per-item odds therefore change as the collection becomes smaller.
