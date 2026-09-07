@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_strings.dart';
 import '../models/dragon_egg.dart';
 import '../models/egg_altar.dart';
+import '../models/egg_collection_preferences.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
 import '../widgets/egg_art.dart';
@@ -400,6 +401,37 @@ class _AltarEggPicker extends StatefulWidget {
 
 class _AltarEggPickerState extends State<_AltarEggPicker> {
   int _filter = 0;
+  EggCollectionSortMode _sort = EggCollectionSortMode.acquiredAt;
+  bool _descending = true;
+  bool _loadedPreferences = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_loadedPreferences) return;
+    final game = context.read<HouseholdProvider>();
+    _sort = EggCollectionSortMode.values.firstWhere(
+      (mode) => mode.name == game.eggInventorySortMode,
+      orElse: () => EggCollectionSortMode.acquiredAt,
+    );
+    _descending = game.eggInventorySortDescending;
+    _loadedPreferences = true;
+  }
+
+  void _selectSort(EggCollectionSortMode mode) {
+    setState(() {
+      _descending = _sort == mode
+          ? !_descending
+          : mode == EggCollectionSortMode.acquiredAt;
+      _sort = mode;
+    });
+    final game = context.read<HouseholdProvider>();
+    unawaited(game.setEggInventoryCollectionPreferences(
+      viewMode: game.eggInventoryViewMode,
+      sortMode: _sort.name,
+      descending: _descending,
+    ));
+  }
 
   Future<void> _inspect(String id) async {
     final chosen = await showAltarEggDetails(context, id,
@@ -413,7 +445,9 @@ class _AltarEggPickerState extends State<_AltarEggPicker> {
     final s = AppStrings.of(context);
     final ids = [
       if (!widget.forReturn && game.nestEgg != null) game.nestEgg!.id,
-      ...game.eggStash.map((e) => e.id)
+      ...sortedDragonEggs(game.eggStash,
+              sortMode: _sort, descending: _descending)
+          .map((e) => e.id)
     ]
         .where((id) => _filter == 0 || game.isEggTagged(id) == (_filter == 1))
         .toList();
@@ -434,6 +468,51 @@ class _AltarEggPickerState extends State<_AltarEggPicker> {
                       selected: _filter == i,
                       onSelected: (_) => setState(() => _filter = i))
               ]),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(children: [
+                  Expanded(
+                      child: Text(s.pick(
+                          '${ids.length} eggs', '${ids.length} eieren'))),
+                  PopupMenuButton<EggCollectionSortMode>(
+                    key: const Key('altar-egg-sort'),
+                    tooltip: s.pick('Sort eggs', 'Eieren sorteren'),
+                    initialValue: _sort,
+                    onSelected: _selectSort,
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        key: const Key('altar-egg-sort-acquiredAt'),
+                        value: EggCollectionSortMode.acquiredAt,
+                        child: Text(s.pick('Received', 'Ontvangen')),
+                      ),
+                      PopupMenuItem(
+                        key: const Key('altar-egg-sort-hatchTime'),
+                        value: EggCollectionSortMode.hatchTime,
+                        child: Text(s.pick('Hatch time', 'Broedtijd')),
+                      ),
+                    ],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 14),
+                      child: Text(_sort == EggCollectionSortMode.acquiredAt
+                          ? s.pick('Received', 'Ontvangen')
+                          : s.pick('Hatch time', 'Broedtijd')),
+                    ),
+                  ),
+                  IconButton(
+                    key: const Key('altar-egg-sort-direction'),
+                    tooltip: _descending
+                        ? s.pick('Descending; tap to reverse',
+                            'Aflopend; tik om te keren')
+                        : s.pick('Ascending; tap to reverse',
+                            'Oplopend; tik om te keren'),
+                    onPressed: () => _selectSort(_sort),
+                    icon: Icon(_descending
+                        ? Icons.arrow_downward_rounded
+                        : Icons.arrow_upward_rounded),
+                  ),
+                ]),
+              ),
               Expanded(
                   child: ids.isEmpty
                       ? Center(

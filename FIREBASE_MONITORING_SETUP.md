@@ -49,9 +49,11 @@ Maximaal 45.000 geplande invocaties per kalendermaand; geen automatische upgrade
 De worker verstuurt maximaal 30 meldingen per batch met vijf gelijktijdige requests.
 Firebase-acceptatie markeert de duurzame inbox nadrukkelijk niet als gelezen.
 
-Productie blijft schema 49; staging is schema 53 (inclusief de aparte schaduweconomie). Push staat op staging standaard
-uit en de productie-economie blijft uit. De Edge worker en Vault-configuratie
-zijn op staging ingericht. De productie-uitrol volgt pas na de complete apppoort.
+Productie en staging hebben schema 56 (inclusief de aparte schaduweconomie).
+Push staat op staging uit en de productie-economie blijft uit. De FCM Edge
+worker en Vault-configuratie zijn op beide omgevingen ingericht. Productiepush
+blijft gepauzeerd tot de controles voor v0.05.19 zijn geslaagd. De Androidrelease
+gebruikt uitsluitend de gevalideerde productieconfig van dragonhaven-20ced.
 
 De aparte serviceaccount per Firebase-project heeft een custom IAM-rol met alleen
 `cloudmessaging.messages.create`. Sleutels blijven lokaal in genegeerde

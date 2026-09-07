@@ -17,6 +17,7 @@ import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/expertise_score_badge.dart';
+import '../widgets/dragon_expertise_info.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/trial_icon_sprite.dart';
 import '../widgets/trial_rankings_sheet.dart';
@@ -2889,13 +2890,18 @@ class _DragonPickerTile extends StatelessWidget {
                           const TextStyle(color: AppColors.muted, fontSize: 11),
                     ),
                     const SizedBox(height: 5),
-                    ExpertiseScoreBadge(
-                      dragonId: dragon.id,
-                      focus: focus,
-                      focusLabel: _focusName(strings, focus),
-                      score: dragon.trainingFor(focus),
-                      maximum: dragon.expertiseMaximum(focus),
-                    ),
+                    Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          ExpertiseScoreBadge(
+                            dragonId: dragon.id,
+                            focus: focus,
+                            focusLabel: _focusName(strings, focus),
+                            score: dragon.trainingFor(focus),
+                            maximum: dragon.expertiseMaximum(focus),
+                          ),
+                          DragonExpertiseInfo(dragon: dragon)
+                        ]),
                   ],
                 ),
               ),

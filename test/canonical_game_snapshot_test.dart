@@ -124,7 +124,7 @@ void main() {
         });
     expect((await reader.fetch(_owner, minimumRevision: 5)).serverRevision, 5);
     expect(requests.single,
-        {'protocol': 2, 'clientBuild': 10068, 'action': 'read_state'});
+        {'protocol': 2, 'clientBuild': 10069, 'action': 'read_state'});
     await expectLater(reader.fetch(_owner, minimumRevision: 6),
         _error('game_snapshot_stale'));
     await expectLater(reader.fetch(_owner, minimumRulesetRevision: 3),

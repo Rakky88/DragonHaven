@@ -16,7 +16,7 @@ const _config = OnlineConfig(
     url: CanonicalGameTransport.stagingUrl,
     publishableKey: 'synthetic-public-key',
     environment: OnlineEnvironment.staging);
-const _read = {'protocol': 2, 'clientBuild': 10068, 'action': 'read_state'};
+const _read = {'protocol': 2, 'clientBuild': 10069, 'action': 'read_state'};
 Matcher _error(String code) =>
     throwsA(isA<CanonicalGameException>().having((e) => e.code, 'code', code));
 

@@ -3,6 +3,108 @@
 ///
 /// Values are ordered German, Spanish, French, Italian, Portuguese, Japanese.
 const featureBatchPhraseTranslations = <String, List<String>>{
+  'Sort eggs': [
+    'Eier sortieren',
+    'Ordenar huevos',
+    'Trier les œufs',
+    'Ordina uova',
+    'Ordenar ovos',
+    '卵を並べ替える'
+  ],
+  'Descending; tap to reverse': [
+    'Absteigend; antippen zum Umkehren',
+    'Descendente; toca para invertir',
+    'Décroissant ; toucher pour inverser',
+    'Decrescente; tocca per invertire',
+    'Decrescente; toca para inverter',
+    '降順・タップで逆順に'
+  ],
+  'Ascending; tap to reverse': [
+    'Aufsteigend; antippen zum Umkehren',
+    'Ascendente; toca para invertir',
+    'Croissant ; toucher pour inverser',
+    'Crescente; tocca per invertire',
+    'Crescente; toca para inverter',
+    '昇順・タップで逆順に'
+  ],
+  'View all Expertise': [
+    'Alle Expertisen ansehen',
+    'Ver todas las especialidades',
+    'Voir toutes les expertises',
+    'Mostra tutte le competenze',
+    'Ver todas as especialidades',
+    'すべての専門能力を見る'
+  ],
+  'Expertise': [
+    'Expertise',
+    'Especialidad',
+    'Expertise',
+    'Competenza',
+    'Especialidade',
+    '専門能力'
+  ],
+  'Previous step': [
+    'Vorheriger Schritt',
+    'Paso anterior',
+    'Étape précédente',
+    'Passaggio precedente',
+    'Passo anterior',
+    '前のステップ'
+  ],
+  'Skip': ['Überspringen', 'Omitir', 'Passer', 'Salta', 'Saltar', 'スキップ'],
+  'Protect the eggs you love': [
+    'Schütze deine Lieblingseier',
+    'Protege tus huevos favoritos',
+    'Protégez vos œufs préférés',
+    'Proteggi le tue uova preferite',
+    'Protege os teus ovos favoritos',
+    'お気に入りの卵を守ろう'
+  ],
+  'Open the Conclave tab beside Friends. Join or found a group of up to 20 Keepers, chat and tend the Aerie. Donate Shell Fragments to build your shared cosmetic Weave Beacon. The red badge counts unread chat from the last 24 hours.':
+      [
+    'Öffne den Tab Conclave neben Friends. Gründe eine Gruppe mit bis zu 20 Hütern oder tritt einer bei, chatte und pflege die Aerie. Spende Shell Fragments für euer gemeinsames dekoratives Weave Beacon. Die rote Anzeige zählt ungelesene Chatnachrichten der letzten 24 Stunden.',
+    'Abre la pestaña Conclave junto a Friends. Crea un grupo de hasta 20 Guardianes o únete a uno, chatea y cuida el Aerie. Dona Shell Fragments para construir vuestro Weave Beacon decorativo. La insignia roja cuenta los mensajes sin leer de las últimas 24 horas.',
+    'Ouvrez Conclave à côté de Friends. Créez ou rejoignez un groupe de 20 Gardiens maximum, discutez et entretenez l’Aerie. Donnez des Shell Fragments pour construire votre Weave Beacon décoratif commun. Le badge rouge compte les messages non lus des dernières 24 heures.',
+    'Apri Conclave accanto a Friends. Crea o unisciti a un gruppo di massimo 20 Custodi, chatta e cura l’Aerie. Dona Shell Fragments per costruire il Weave Beacon decorativo condiviso. Il badge rosso conta i messaggi non letti delle ultime 24 ore.',
+    'Abre Conclave ao lado de Friends. Cria ou junta-te a um grupo de até 20 Guardiões, conversa e cuida do Aerie. Doa Shell Fragments para construir o Weave Beacon decorativo do grupo. O indicador vermelho conta as mensagens não lidas das últimas 24 horas.',
+    'Friendsの隣にあるConclaveタブを開きます。最大20人のキーパーのグループに参加するか、自分で作成して、チャットやAerieのお世話を楽しみましょう。Shell Fragmentsを寄付すると、共有の装飾Weave Beaconを作れます。赤いバッジは過去24時間の未読メッセージ数です。',
+  ],
+  'Choose an Adventure and a dragon. Matching Expertise shortens the journey; tap the i beside a dragon’s score to compare Might, Arcana and Spirit. Active Adventures show the shortest remaining journey first. Aborting a solo journey gives no rewards.':
+      [
+    'Wähle ein Abenteuer und einen Drachen. Passende Expertise verkürzt die Reise. Tippe auf das i neben dem Wert, um Might, Arcana und Spirit zu vergleichen. Aktive Abenteuer stehen nach kürzester Restzeit oben. Ein abgebrochenes Soloabenteuer bringt keine Belohnung.',
+    'Elige una aventura y un dragón. La especialidad adecuada acorta el viaje; toca la i junto a la puntuación para comparar Might, Arcana y Spirit. Las aventuras activas muestran primero la de menor tiempo restante. Abandonar un viaje individual no da recompensas.',
+    'Choisissez une aventure et un dragon. L’expertise correspondante raccourcit le voyage ; touchez le i près du score pour comparer Might, Arcana et Spirit. Les aventures actives au temps restant le plus court apparaissent en premier. Abandonner une aventure solo ne donne aucune récompense.',
+    'Scegli un’avventura e un drago. La competenza adatta accorcia il viaggio; tocca la i accanto al punteggio per confrontare Might, Arcana e Spirit. Le avventure attive con meno tempo rimasto appaiono per prime. Interrompere un viaggio in solitaria non dà ricompense.',
+    'Escolhe uma aventura e um dragão. A especialidade adequada encurta a viagem; toca no i ao lado da pontuação para comparar Might, Arcana e Spirit. As aventuras ativas com menos tempo restante aparecem primeiro. Abandonar uma viagem a solo não dá recompensas.',
+    '冒険とドラゴンを選びます。対応する専門能力が高いほど旅が短くなります。数値の隣のiをタップするとMight、Arcana、Spiritを比較できます。進行中の冒険は残り時間が短い順に表示されます。ソロ冒険を中止すると報酬は得られません。',
+  ],
+  'Join friends in a Group Adventure: the party starts when every place is filled and the combined requirements are met. Event Adventures remain finishable if started in time. Events marked TEST are previews: their rewards do not enter your permanent inventory.':
+      [
+    'Gehe mit Freunden auf ein Gruppenabenteuer: Es startet, sobald alle Plätze belegt und die gemeinsamen Anforderungen erfüllt sind. Rechtzeitig gestartete Eventabenteuer können später beendet werden. Events mit TEST sind Vorschauen: Ihre Belohnungen werden nicht dauerhaft gespeichert.',
+    'Únete a tus amigos en una aventura de grupo: comienza cuando se llenan todas las plazas y se cumplen los requisitos conjuntos. Las aventuras de evento iniciadas a tiempo se pueden terminar después. Los eventos TEST son pruebas: sus recompensas no pasan al inventario permanente.',
+    'Partez en aventure de groupe avec vos amis : le départ a lieu lorsque toutes les places sont remplies et les conditions communes remplies. Les aventures d’événement commencées à temps restent terminables. Les événements TEST sont des aperçus : leurs récompenses ne rejoignent pas votre inventaire permanent.',
+    'Partecipa a un’avventura di gruppo con gli amici: si parte quando tutti i posti sono occupati e i requisiti complessivi sono soddisfatti. Le avventure evento iniziate in tempo restano completabili. Gli eventi TEST sono anteprime: le ricompense non entrano nell’inventario permanente.',
+    'Parte numa aventura de grupo com amigos: começa quando todos os lugares estão ocupados e os requisitos conjuntos são cumpridos. As aventuras de evento iniciadas a tempo continuam disponíveis para concluir. Os eventos TEST são demonstrações: as recompensas não entram no inventário permanente.',
+    '友達とグループ冒険に参加しましょう。全員が揃い、合計の条件を満たすと出発します。期間内に開始したイベント冒険は後からでも完了できます。TESTと表示されたイベントはプレビューです。報酬は永久インベントリには追加されません。',
+  ],
+  'Tag an egg to protect it from Return to the Weave; tap its tag again to remove protection. Filter Tagged or Untagged and sort by Received or Hatch time. Choosing an Altar egg opens its details first, so you can review what you know before selecting it.':
+      [
+    'Markiere ein Ei, um es vor Return to the Weave zu schützen. Erneutes Antippen entfernt den Schutz. Filtere markierte oder unmarkierte Eier und sortiere nach Erhalt oder Brutzeit. Am Altar öffnen sich zuerst die Details, damit du bekannte Informationen vor der Auswahl prüfen kannst.',
+    'Etiqueta un huevo para protegerlo de Return to the Weave; toca la etiqueta otra vez para quitar la protección. Filtra los huevos etiquetados o sin etiquetar y ordénalos por recepción o incubación. En el Altar se abren primero los detalles para revisar la información antes de seleccionar.',
+    'Marquez un œuf pour le protéger de Return to the Weave ; touchez à nouveau sa marque pour retirer la protection. Filtrez les œufs marqués ou non et triez par réception ou incubation. À l’Altar, les détails s’ouvrent d’abord pour vérifier les informations connues avant de choisir.',
+    'Contrassegna un uovo per proteggerlo da Return to the Weave; tocca di nuovo il contrassegno per rimuovere la protezione. Filtra le uova contrassegnate o no e ordinale per ricezione o incubazione. Nell’Altar si aprono prima i dettagli, per controllare le informazioni note prima di scegliere.',
+    'Marca um ovo para o proteger de Return to the Weave; toca novamente na marca para retirar a proteção. Filtra os ovos marcados ou não marcados e ordena por receção ou incubação. No Altar, os detalhes abrem primeiro para reveres a informação antes de escolher.',
+    '卵にタグを付けるとReturn to the Weaveから保護できます。もう一度タグをタップすると保護を解除します。タグの有無で絞り込み、入手日や孵化時間で並べ替えられます。Altarでは選択前に詳細が開くので、判明している情報を確認できます。',
+  ],
+  'Open Altar in Inventory. Returning an egg is permanent and yields crafting materials: select an egg, review its details, then hold Return. Special eggs, tagged eggs and trade-reserved eggs are protected. Sinister eggs require a second confirmation. Craft Relics to learn about eggs, or a Nameweaver’s Quill to rename one dragon.':
+      [
+    'Öffne Altar im Inventar. Ein Ei zurückzugeben ist endgültig und liefert Materialien: Wähle ein Ei, prüfe seine Details und halte Return gedrückt. Special-Eier, markierte und zum Tausch reservierte Eier sind geschützt. Sinister-Eier brauchen eine zweite Bestätigung. Stelle Relikte für Ei-Informationen her oder einen Nameweaver’s Quill, um einen Drachen umzubenennen.',
+    'Abre Altar en el inventario. Devolver un huevo es permanente y da materiales: elige uno, revisa sus detalles y mantén pulsado Return. Los huevos Special, etiquetados o reservados para intercambios están protegidos. Los Sinister requieren otra confirmación. Fabrica reliquias para conocer los huevos o una Nameweaver’s Quill para renombrar un dragón.',
+    'Ouvrez Altar dans l’inventaire. Rendre un œuf est définitif et fournit des matériaux : choisissez-le, vérifiez ses détails et maintenez Return. Les œufs Special, marqués ou réservés à un échange sont protégés. Les œufs Sinister demandent une seconde confirmation. Fabriquez des reliques pour connaître les œufs, ou une Nameweaver’s Quill pour renommer un dragon.',
+    'Apri Altar nell’inventario. Restituire un uovo è definitivo e fornisce materiali: sceglilo, controlla i dettagli e tieni premuto Return. Le uova Special, contrassegnate o riservate agli scambi sono protette. Le Sinister richiedono una seconda conferma. Crea reliquie per conoscere le uova o una Nameweaver’s Quill per rinominare un drago.',
+    'Abre Altar no inventário. Devolver um ovo é permanente e dá materiais: escolhe-o, consulta os detalhes e mantém Return premido. Os ovos Special, marcados ou reservados para trocas estão protegidos. Os Sinister exigem uma segunda confirmação. Cria relíquias para conhecer os ovos ou uma Nameweaver’s Quill para mudar o nome de um dragão.',
+    'インベントリのAltarを開きます。卵を返すと元には戻せませんが、作成素材を得られます。卵を選び、詳細を確認してReturnを長押しします。Specialの卵、タグ付きの卵、交換予約中の卵は保護されます。Sinisterの卵は追加確認が必要です。卵を調べる遺物や、ドラゴン1体の名前を変えるNameweaver’s Quillを作れます。',
+  ],
   'No keeper badge': [
     'Kein Keeper-Abzeichen',
     'Sin insignia de Guardián',

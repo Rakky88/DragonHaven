@@ -1354,7 +1354,7 @@ void main() {
       Key('tutorial-tower-actions'),
       Key('friends-tab'),
       Key('tutorial-friends-overview'),
-      Key('open-conclave'),
+      Key('conclave-tab'),
       Key('tutorial-adventure-header'),
       Key('tutorial-adventure-section-group'),
       Key('adventure-tab-trials'),
@@ -1363,6 +1363,8 @@ void main() {
       Key('tutorial-rooftop-header'),
       Key('tutorial-dragon-school-title'),
       Key('tutorial-inventory-tabs'),
+      Key('inventory-tab-eggs'),
+      Key('inventory-tab-altar'),
       Key('inventory-tab-chests'),
       Key('shop-currency-tabs'),
       Key('shop-tab-packs'),
@@ -1452,6 +1454,15 @@ void main() {
       expectTargetAndCardSeparated(step);
       expectRealTargetMeasured(step);
       expect(tester.takeException(), isNull, reason: 'tutorial step $step');
+      if (step == 3) {
+        await tester.tap(find.byKey(const Key('previous-tutorial-step')));
+        await settleTutorialStep();
+        expect(find.byKey(const Key('tutorial-step-2')), findsOneWidget);
+        expectRealTargetMeasured(2);
+        await tester.tap(find.byKey(const Key('next-tutorial-step')));
+        await settleTutorialStep();
+        expectRealTargetMeasured(3);
+      }
     }
     expect(find.text('Journal, achievements and help'), findsOneWidget);
     await tester.tap(find.byKey(const Key('next-tutorial-step')));
@@ -2617,7 +2628,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.05.18'), findsOneWidget);
+    expect(find.text('v0.05.19'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-copy-iphone-link')), findsNothing);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);

@@ -1,7 +1,13 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **7 September 2026**
-Released app: **v0.05.18 / 10068**; production **49**, staging **55**.
+Released app: **v0.05.18 / 10068**; candidate **v0.05.19 / 10069**;
+production **56**, staging **56**.
+Production migrations 50–56 were applied after exact staging-source evidence
+34153525465 and rollback-only contracts for push/game/import/read/receipt/ruleset.
+Mandatory preflight: exact 56-migration parity, lint 0, Auth/settings/app 200.
+All accounts remain legacy; economic mutations and the game worker are disabled,
+with zero shadow copies. This rollout does not enable live server economy.
 Migration **49** adds owner-scoped inventory pagination and passed its staging rehearsal and applied contracts in run `34127201082`. Production run `34129277707` then proved identical staging source, rollback rehearsal, exact migration 49, repeated snapshot contract, parity, zero lint errors and health 200. Mutations remain disabled and all accounts remain legacy.
 Migrations **45-47** are deployed dormant: chest opening, server inventory guard and item shop.
 Production run `34116589237` passed exact staging-source checks, rollback rehearsals, all three contracts, migration parity, zero-error lint and health. Before/after checks prove mutations remain disabled and all accounts remain in legacy compatibility.
@@ -65,7 +71,16 @@ Changing compiled rules increments it; pausing mutations or a no-op does not.
 The client journals both game and ruleset revision floors, so a new projection
 can replace the same game revision after an upgrade, and a delayed old worker
 cannot undo that update. Sixteen snapshot tests include partial rules-only writes
-and delayed downgrade refusal. Staging 56 rehearsal/application is pending.
+and delayed downgrade refusal. Run
+[34153525465](https://github.com/Rakky88/DragonHaven/actions/runs/34153525465)
+applied exactly 56, passed contracts 52–56 and the real Auth/Edge/Dart/Postgres
+probe. Both synthetic accounts and all shadow commands were removed; runtime
+is disabled. Final schema 56, lint 0, Auth/settings/app 200.
+
+The owner requested finishing this bounded component and prioritizing the
+Altar picker, adventure Expertise details, tutorial review and next release.
+Those changes do not activate the shadow client. Full live economy routing,
+verified trials, social settlement and account cutover remain explicit open work.
 
 ### Shared rules candidate
 

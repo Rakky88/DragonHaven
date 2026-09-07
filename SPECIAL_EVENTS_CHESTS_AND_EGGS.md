@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: a71cebd83b26c4bd -->
+<!-- reference-source-fingerprint: 3ca6cce77b68ccaf -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -330,6 +330,11 @@ Primary sources are `lib/models/adventure.dart`, `lib/models/trial.dart`,
 `supabase/migrations/202609070040_seasonal_events.sql`.
 
 ## Egg Altar and protection
+
+The Altar egg picker shares Inventory's saved Received/Hatch time sorting,
+supports reversing the order and combining it with All/Tagged/Untagged filters.
+Opening an egg still shows its details before selection; filtering or sorting
+never reveals hidden traits or changes return eligibility.
 
 Inventory tabs are ordered Eggs, Chests, Altar, Relics, Furniture.
 The permanent Egg Altar has its own Inventory > Altar tab and is also reachable

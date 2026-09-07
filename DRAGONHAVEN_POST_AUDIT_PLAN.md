@@ -3,6 +3,32 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
+## Releasekandidaat v0.05.19 (10069), 7 september 2026
+
+- Altar: sorteren op ontvangen/broedtijd, omkeren, tagfilters combineren en
+  voorkeur delen met Inventory; details blijven verplicht vóór de selectie.
+- Adventures: de i naast de relevante Expertise opent Might, Arcana en Spirit
+  zonder de draak te selecteren of een avontuur te starten.
+- Tutorial: 19 stappen, terugknop, juiste Conclave-tab, Altar/tags/Beacon,
+  Expertise en niet-blijvende testeventbeloningen. Alle nieuwe teksten zijn
+  vertaald in alle acht talen. Kleine schermen/grote tekst/landscape getest.
+- Productie heeft nu exact migraties 1–56. Alle zes contracten voor 50–56 zijn
+  vóór toepassing in één rollbacktransactie geïsoleerd herhaald; getest
+  stagingbronbewijs: 34153525465. Preflight: lint 0, Auth/settings/app 200.
+  Alle accounts blijven legacy_client, economische mutaties uit, game-worker
+  uit, nul schaduwkopieën. FCM-worker en Vault zijn ingericht, verzending wacht
+  op de appreleasecontroles. Dit activeert geen volledige servereconomie.
+- Expliciete supportopdracht DH-4132F5C7: Love, Kisses, Hugs zijn in die volgorde
+  via de normale join-RPC aangesloten. Lobby 2abfc0ab-e313-466a-9a64-11346dfcdc29
+  is gestart met vier deelnemers; eindtijd 10 september 03:13:35 UTC.
+  Tijdelijke draken hebben level 8, 10 per Expertise; geen bestaande speler-save
+  of timer is aangepast. Eenmalige operationele cron controleert elk uur,
+  verwijdert alleen de drie vastgelegde synthetische accounts nadat echte
+  deelnemers hun beloning hebben bevestigd, en verwijdert daarna zichzelf.
+  Eerste uitvoering geslaagd: alle drie bleven terecht bestaan tijdens de reis.
+
+Publicatie en artifactbewijs worden na de buildpoort hieronder vastgelegd.
+
 ## Lopende opdracht: gratis Firebase en volledige servereconomie
 
 Rick heeft de volledige servereconomie expliciet toegevoegd aan de scope en
@@ -40,7 +66,13 @@ Lokale vervolgstap 56 ordent leesweergaven ook over spelregelupdates heen.
 De spelrevisie en spelregelrevisie worden afzonderlijk bewaakt en opgeslagen;
 een nieuwe weergave mag dezelfde inventaris vervangen, een laat oud antwoord
 mag dat niet terugdraaien. Zestien snapshotproeven slagen, inclusief een
-onderbroken update waarbij alleen de spelregels wijzigen. Stagingbewijs volgt.
+onderbroken update waarbij alleen de spelregels wijzigen. Run
+[34153525465](https://github.com/Rakky88/DragonHaven/actions/runs/34153525465)
+heeft 56 toegepast, contracten 52–56 en de volledige echte Auth/Edge/Dart/Postgres-
+proef doorlopen. Staging: schema 56, lint 0, health 200, runtime uit, tijdelijke
+accounts en schaduwverzoeken verwijderd. Dit begrensde serveronderdeel is klaar.
+Op verzoek van Rick hebben de eierkiezer, Expertise-informatie, tutorial en
+nieuwe release nu voorrang. De volledige live servereconomie blijft open werk.
 
 Productie- en staging-Firebase zijn ingericht zonder billingaccount. Staging
 gebruikt `dragonhaven-prod-rakky88` met weergavenaam DragonHaven Staging.

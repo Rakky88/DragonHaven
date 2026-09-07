@@ -262,6 +262,62 @@ void main() {
   });
 
   testWidgets(
+      'altar picker combines tags with saved sorting and reviews before selecting',
+      (tester) async {
+    final g = game();
+    g.eggStash = [
+      DragonEgg(
+          id: 'older',
+          prismatic: false,
+          lineageId: 'thunderpuff',
+          acquiredAt: DateTime(2026),
+          hatchSeed: 1,
+          incubationSeconds: 900),
+      DragonEgg(
+          id: 'newer',
+          prismatic: false,
+          lineageId: 'thunderpuff',
+          acquiredAt: DateTime(2026, 2),
+          hatchSeed: 2,
+          incubationSeconds: 300),
+    ];
+    await g.setEggTagged('older', true);
+    await mount(tester, g, const EggAltarScreen());
+    await tester.ensureVisible(find.byKey(const Key('altar-select-egg')));
+    await tester.tap(find.byKey(const Key('altar-select-egg')));
+    await settle(tester);
+    List<String> rows() => tester
+        .widgetList<ListTile>(find.byType(ListTile))
+        .map((tile) => (tile.key as ValueKey).value as String)
+        .toList();
+    expect(rows(), ['altar-egg-newer', 'altar-egg-older']);
+    await tester.tap(find.byKey(const Key('altar-egg-sort-direction')));
+    await settle(tester);
+    expect(rows(), ['altar-egg-older', 'altar-egg-newer']);
+    await tester.tap(find.byKey(const Key('altar-egg-sort')));
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('altar-egg-sort-hatchTime')));
+    await settle(tester);
+    expect(rows(), ['altar-egg-newer', 'altar-egg-older']);
+    expect(g.eggInventorySortMode, 'hatchTime');
+    expect(g.eggInventorySortDescending, isFalse);
+    await tester.tap(find.text('Tagged'));
+    await settle(tester);
+    expect(rows(), ['altar-egg-older']);
+    await tester.tap(find.text('Untagged'));
+    await settle(tester);
+    expect(rows(), ['altar-egg-newer']);
+    await capture(tester, 'picker-sorted');
+    await tester.tap(find.byKey(const Key('altar-egg-newer')));
+    await settle(tester);
+    expect(find.byKey(const Key('altar-choose-reviewed-egg')), findsOneWidget);
+    expect(g.eggStash, hasLength(2));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    g.dispose();
+  });
+
+  testWidgets(
       'Beacon confirmation submits the selected amount once and refreshes its shared progress',
       (tester) async {
     final g = game()..eggAltar.wallet = const WeaveWallet(40, 0, 0);

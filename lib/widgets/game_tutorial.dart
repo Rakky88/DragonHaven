@@ -15,7 +15,9 @@ Future<bool> showDragonHavenTutorial(
         barrierDismissible: false,
         barrierColor: Colors.transparent,
         barrierLabel: 'DragonHaven tutorial',
-        transitionDuration: const Duration(milliseconds: 360),
+        transitionDuration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 360),
         transitionBuilder: (_, animation, __, child) => FadeTransition(
           opacity:
               CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
@@ -84,6 +86,17 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial>
     _resolveCurrentTarget();
   }
 
+  void _previous(List<_TutorialStep> steps) {
+    if (_stepIndex == 0) return;
+    setState(() {
+      _stepIndex--;
+      _measuredTarget = null;
+      _resolvingTarget = true;
+    });
+    widget.onNavigate(steps[_stepIndex].tabIndex);
+    _resolveCurrentTarget();
+  }
+
   Future<void> _resolveCurrentTarget() async {
     if (!mounted) return;
     final requestIndex = _stepIndex;
@@ -108,25 +121,22 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial>
     int requestIndex,
   ) async {
     final scrollKey = step.scrollKey;
-    if (scrollKey == null) return;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final scrollRoot = _elementForKey(scrollKey);
+    final scrollRoot = scrollKey == null ? null : _elementForKey(scrollKey);
     final scrollable =
         scrollRoot == null ? null : _scrollableStateWithin(scrollRoot);
-    if (scrollable == null || !scrollable.position.hasContentDimensions) {
-      return;
-    }
-
-    final position = scrollable.position;
-    final requestedOffset =
-        position.maxScrollExtent * step.scrollFraction.clamp(0, 1);
-    if ((position.pixels - requestedOffset).abs() > 1) {
-      await position.animateTo(
-        requestedOffset,
-        duration:
-            reduceMotion ? Duration.zero : const Duration(milliseconds: 320),
-        curve: Curves.easeInOutCubic,
-      );
+    if (scrollable != null && scrollable.position.hasContentDimensions) {
+      final position = scrollable.position;
+      final requestedOffset =
+          position.maxScrollExtent * step.scrollFraction.clamp(0, 1);
+      if ((position.pixels - requestedOffset).abs() > 1) {
+        await position.animateTo(
+          requestedOffset,
+          duration:
+              reduceMotion ? Duration.zero : const Duration(milliseconds: 320),
+          curve: Curves.easeInOutCubic,
+        );
+      }
     }
     if (!mounted || requestIndex != _stepIndex) return;
     await WidgetsBinding.instance.endOfFrame;
@@ -379,6 +389,8 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial>
                             busy: _resolvingTarget,
                             onSkip: () => Navigator.pop(context, false),
                             onNext: () => _next(steps),
+                            onPrevious:
+                                _stepIndex == 0 ? null : () => _previous(steps),
                           ),
                         ),
                       ],
@@ -402,6 +414,7 @@ class _TutorialFooter extends StatelessWidget {
     required this.busy,
     required this.onSkip,
     required this.onNext,
+    required this.onPrevious,
   });
 
   final AppStrings strings;
@@ -410,6 +423,7 @@ class _TutorialFooter extends StatelessWidget {
   final bool busy;
   final VoidCallback onSkip;
   final VoidCallback onNext;
+  final VoidCallback? onPrevious;
 
   @override
   Widget build(BuildContext context) => Material(
@@ -421,6 +435,13 @@ class _TutorialFooter extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
           child: Row(
             children: [
+              if (onPrevious != null)
+                IconButton(
+                  key: const Key('previous-tutorial-step'),
+                  tooltip: strings.pick('Previous step', 'Vorige stap'),
+                  onPressed: busy ? null : onPrevious,
+                  icon: const Icon(Icons.arrow_back_rounded),
+                ),
               Expanded(
                 child: Align(
                   alignment: Alignment.centerLeft,
@@ -430,7 +451,7 @@ class _TutorialFooter extends StatelessWidget {
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        strings.pick('Skip tutorial', 'Tutorial overslaan'),
+                        strings.pick('Skip', 'Overslaan'),
                       ),
                     ),
                   ),
@@ -520,7 +541,7 @@ enum _TutorialSpotlight {
   currencies,
 }
 
-const dragonHavenTutorialStepCount = 17;
+const dragonHavenTutorialStepCount = 19;
 
 List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
       _TutorialStep(
@@ -558,11 +579,10 @@ List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
         0,
         strings.pick('Your Conclave', 'Jouw Conclave'),
         strings.pick(
-          'Conclave is directly below the Friends overview. Join or found one, chat with up to 20 Keepers, tend the shared Aerie, share achievements and follow its Chronicle.',
-          'Conclave staat direct onder het vriendenoverzicht. Word lid of sticht er één, chat met maximaal 20 Hoeders, verzorg de gedeelde Aerie, deel achievements en volg de Chronicle.',
+          'Open the Conclave tab beside Friends. Join or found a group of up to 20 Keepers, chat and tend the Aerie. Donate Shell Fragments to build your shared cosmetic Weave Beacon. The red badge counts unread chat from the last 24 hours.',
+          'Open de tab Conclave naast Friends. Word lid of sticht een groep met maximaal 20 Hoeders, chat en verzorg de Aerie. Doneer Shell Fragments voor jullie gezamenlijke cosmetische Weave Beacon. Het rode bolletje telt ongelezen chat uit de laatste 24 uur.',
         ),
-        targetKey: const Key('open-conclave'),
-        scrollKey: const PageStorageKey('friends-scroll'),
+        targetKey: const Key('conclave-tab'),
         scrollAlignment: .52,
         spotlight: _TutorialSpotlight.middleContent,
       ),
@@ -570,8 +590,8 @@ List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
         1,
         strings.pick('Adventures', 'Avonturen'),
         strings.pick(
-          'Mini, Short and Long Adventures take progressively longer. Matching Expertise reduces their duration. Completed cards list rewards; a solo active Adventure can be aborted without rewards.',
-          'Mini-, Short- en Long Adventures duren steeds langer. Bijpassende Expertise verkort de duur. Afgeronde kaarten tonen beloningen; een actief solo-avontuur kan zonder beloning worden afgebroken.',
+          'Choose an Adventure and a dragon. Matching Expertise shortens the journey; tap the i beside a dragon’s score to compare Might, Arcana and Spirit. Active Adventures show the shortest remaining journey first. Aborting a solo journey gives no rewards.',
+          'Kies een Adventure en een draak. Bijpassende Expertise verkort de reis; tik op de i naast de score voor Might, Arcana en Spirit. Actieve Adventures tonen de kortste resterende reis bovenaan. Een afgebroken soloreis geeft geen beloningen.',
         ),
         targetKey: const Key('tutorial-adventure-header'),
       ),
@@ -580,8 +600,8 @@ List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
         strings.pick(
             'Group and Special Adventures', 'Group- en Special Adventures'),
         strings.pick(
-          'Group Adventures show their combined Expertise requirement before joining. Special Adventures appear during events, show guaranteed rewards and remain finishable when started in time.',
-          'Group Adventures tonen vóór deelname hun vereiste gecombineerde Expertise. Special Adventures verschijnen tijdens events, tonen gegarandeerde beloningen en blijven afmaakbaar als je op tijd begon.',
+          'Join friends in a Group Adventure: the party starts when every place is filled and the combined requirements are met. Event Adventures remain finishable if started in time. Events marked TEST are previews: their rewards do not enter your permanent inventory.',
+          'Ga met vrienden op Group Adventure: de groep vertrekt zodra alle plekken gevuld zijn en de gezamenlijke eisen zijn gehaald. Event Adventures blijven afmaakbaar als je op tijd begon. Events met TEST zijn previews: hun beloningen komen niet in je blijvende inventaris.',
         ),
         targetKey: const Key('tutorial-adventure-section-group'),
         scrollKey: const PageStorageKey('available-adventures-scroll'),
@@ -654,6 +674,25 @@ List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
           'Eieren en furniture hebben opgeslagen raster-/lijstweergaven, sortering en filters. Ei-rijen tonen uitbroedtijd; kisten gebruiken een vaste rarity-volgorde. Gereserveerde ruilitems blijven onbruikbaar.',
         ),
         targetKey: const Key('tutorial-inventory-tabs'),
+      ),
+      _TutorialStep(
+        3,
+        strings.pick(
+            'Protect the eggs you love', 'Bescherm je favoriete eieren'),
+        strings.pick(
+          'Tag an egg to protect it from Return to the Weave; tap its tag again to remove protection. Filter Tagged or Untagged and sort by Received or Hatch time. Choosing an Altar egg opens its details first, so you can review what you know before selecting it.',
+          'Tag een ei om het te beschermen tegen Return to the Weave; tik nogmaals op de tag om de bescherming weg te halen. Filter op Getagd of Niet getagd en sorteer op Ontvangen of Broedtijd. Bij het Altar opent een ei eerst zijn informatie, zodat je die rustig kunt bekijken.',
+        ),
+        targetKey: const Key('inventory-tab-eggs'),
+      ),
+      _TutorialStep(
+        3,
+        strings.pick('Return to the Weave', 'Terug naar de Weave'),
+        strings.pick(
+          'Open Altar in Inventory. Returning an egg is permanent and yields crafting materials: select an egg, review its details, then hold Return. Special eggs, tagged eggs and trade-reserved eggs are protected. Sinister eggs require a second confirmation. Craft Relics to learn about eggs, or a Nameweaver’s Quill to rename one dragon.',
+          'Open Altar in Inventory. Een ei teruggeven is definitief en levert craftingmaterialen op: kies een ei, bekijk de informatie en houd Return ingedrukt. Special-eieren, getagde eieren en voor ruil gereserveerde eieren zijn beschermd. Sinister-eieren vragen extra bevestiging. Maak Relieken voor informatie over eieren, of een Nameweaver’s Quill om één draak te hernoemen.',
+        ),
+        targetKey: const Key('inventory-tab-altar'),
       ),
       _TutorialStep(
         3,
