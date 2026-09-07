@@ -341,7 +341,7 @@ void main() {
         File('.github/workflows/staging-seasonal-events.yml')
             .readAsStringSync();
     final productionWorkflow =
-        File('.github/workflows/production-migrate-37-40.yml')
+        File('.github/workflows/production-preview-access-48.yml')
             .readAsStringSync();
     final stagingE2e =
         File('tool/staging_seasonal_events_e2e.ps1').readAsStringSync();

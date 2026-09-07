@@ -3,6 +3,17 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
+## Releasevoorbereiding v0.05.18 / 10068 (7 september)
+
+De nieuwe release bundelt de onderstaande auditbouw en UI-correcties. App,
+updater en Android gaan precies één stap omhoog. Migratie 49 is identiek aan
+de geslaagde stagingrun `34127201082`; de productiepoort eist dezelfde volledige
+migratiegeschiedenis en SQL-contractbron, oefent de wijziging met rollback en
+controleert vóór en na dat de economie uitstaat en alle accounts legacy blijven.
+Publicatie wacht op productiepariteit, analyse/tests, visuele APK-controle en
+de ondertekenings-/downloadcontroles. De 1000-accountcapaciteit blijft afgekeurd
+en wordt niet stilzwijgend geaccepteerd door deze release.
+
 ## Actieve auditbouw na v0.05.17 (7 september)
 
 Op `feature/audit-capacity-and-import` is de Auth-opbouw gescheiden van de
