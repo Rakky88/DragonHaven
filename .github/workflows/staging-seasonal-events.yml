@@ -1,0 +1,160 @@
+name: Staging vanity and seasonal migrations 39-40
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type APPLY_DRAGONHAVEN_STAGING_39_40 to run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dragonhaven-staging-seasonal-40
+  cancel-in-progress: false
+
+jobs:
+  migrate-and-verify:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Require exact staging-only scope
+        shell: pwsh
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          STAGING_SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+        run: |
+          if ($env:CONFIRMATION -cne 'APPLY_DRAGONHAVEN_STAGING_39_40') {
+            throw 'The exact staging seasonal confirmation is missing.'
+          }
+          foreach ($name in @(
+            'STAGING_SUPABASE_URL', 'STAGING_SUPABASE_PUBLISHABLE_KEY',
+            'STAGING_SUPABASE_PROJECT_REF', 'STAGING_SUPABASE_ACCESS_TOKEN',
+            'STAGING_SUPABASE_DB_PASSWORD', 'STAGING_E2E_EMAIL',
+            'STAGING_E2E_PASSWORD')) {
+            if ([string]::IsNullOrWhiteSpace(
+                [Environment]::GetEnvironmentVariable($name))) {
+              throw "Missing protected staging configuration: $name."
+            }
+          }
+          $projectRef = $env:STAGING_SUPABASE_PROJECT_REF.Trim()
+          $baseUrl = $env:STAGING_SUPABASE_URL.TrimEnd('/')
+          if ($projectRef -eq 'tnzathhutuwmohmjfrlo' -or
+              $baseUrl -eq 'https://tnzathhutuwmohmjfrlo.supabase.co' -or
+              $baseUrl -ne "https://$projectRef.supabase.co") {
+            throw 'This workflow must never target production.'
+          }
+
+      - name: Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.116.0
+
+      - name: Verify exact 38 to 40 migration set and dry run
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+        run: |
+          $expectedRemote = '202609050038'
+          $expectedPending = @('202609050039', '202609070040')
+          supabase link --project-ref $env:STAGING_SUPABASE_PROJECT_REF `
+            --password $env:SUPABASE_DB_PASSWORD
+          New-Item -ItemType Directory -Path staging -Force | Out-Null
+          $migrationResult = ((supabase migration list --linked `
+            --output-format json) | Out-String) | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read staging migrations.' }
+          $remoteVersions = @($migrationResult.migrations |
+            ForEach-Object { [string]$_.remote } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            Sort-Object)
+          if ($remoteVersions.Count -eq 0 -or
+              $remoteVersions[-1] -ne $expectedRemote) {
+            throw 'Staging is not exactly at migration 38.'
+          }
+          $pendingLocal = @(Get-ChildItem supabase/migrations -File -Filter '*.sql' |
+            ForEach-Object {
+              if ($_.BaseName -notmatch '^(\d+)_') {
+                throw "Invalid migration filename: $($_.Name)."
+              }
+              $Matches[1]
+            } | Where-Object { [long]$_ -gt [long]$expectedRemote } | Sort-Object)
+          if (@(Compare-Object $expectedPending $pendingLocal).Count -ne 0) {
+            throw 'The pending staging set is not exactly migrations 39 and 40.'
+          }
+          ./tool/public_server_health_check.ps1 `
+            -BaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Environment staging -OutputPath staging/seasonal-health-before.json
+          supabase db lint --linked --level error --fail-on error `
+            --output-format json | Tee-Object staging/seasonal-lint-before.json
+          if ($LASTEXITCODE -ne 0) { throw 'Pre-migration lint failed.' }
+          supabase db push --linked --include-all --dry-run |
+            Tee-Object staging/seasonal-migration-dry-run.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Migrations 39-40 dry run failed.' }
+
+      - name: Apply migrations 39-40 and run both E2E contracts
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase db push --linked --include-all --yes |
+            Tee-Object staging/seasonal-migration-apply.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Migrations 39-40 were not applied.' }
+          ./tool/release_server_preflight.ps1 `
+            -ExpectedProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ExpectedUrl $env:STAGING_SUPABASE_URL `
+            -ExpectedPublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY |
+            Tee-Object staging/seasonal-preflight-after.txt
+          ./tool/staging_economy_foundation_e2e.ps1 `
+            -SupabaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Email $env:STAGING_E2E_EMAIL -Password $env:STAGING_E2E_PASSWORD `
+            -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
+            -EvidencePath staging/vanity-purchase-e2e.txt `
+            -VerifyVanityPurchase
+          ./tool/staging_seasonal_events_e2e.ps1 `
+            -SupabaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Email $env:STAGING_E2E_EMAIL -Password $env:STAGING_E2E_PASSWORD `
+            -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
+          supabase db lint --linked --level error --fail-on error `
+            --output-format json | Tee-Object staging/seasonal-lint-after.json
+          if ($LASTEXITCODE -ne 0) { throw 'Post-migration lint failed.' }
+          ./tool/public_server_health_check.ps1 `
+            -BaseUrl $env:STAGING_SUPABASE_URL `
+            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            -Environment staging -OutputPath staging/seasonal-health-after.json
+
+      - name: Upload privacy-safe staging evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: DragonHaven-staging-vanity-seasonal-39-40
+          path: staging/
+          if-no-files-found: warn
+          retention-days: 30

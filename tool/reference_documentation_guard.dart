@@ -25,8 +25,10 @@ const specialContentReference = ReferenceDocumentSpec(
     'lib/providers/dragonhaven_systems.dart',
     'lib/providers/household_provider.dart',
     'lib/screens/adventure_hub_screen.dart',
+    'lib/screens/seasonal_trial_game.dart',
     'lib/services/notification_service.dart',
     'supabase/migrations/202608290026_special_chest_trade_support.sql',
+    'supabase/migrations/202609070040_seasonal_events.sql',
   ],
 );
 
@@ -52,14 +54,17 @@ const randomRewardsReference = ReferenceDocumentSpec(
     'lib/screens/house_screen.dart',
     'lib/screens/trial_game_screen.dart',
     'supabase/migrations/202608240007_group_adventure_duration_rules.sql',
+    'supabase/migrations/202609070040_seasonal_events.sql',
   ],
 );
 
 const redeemCodesReference = ReferenceDocumentSpec(
   documentPath: 'REDEEM_CODES.md',
   sourcePaths: [
+    'lib/models/adventure.dart',
     'lib/models/dragon_emote.dart',
     'lib/models/redeem_code.dart',
+    'supabase/migrations/202609070040_seasonal_events.sql',
   ],
 );
 

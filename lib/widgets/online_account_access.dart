@@ -553,6 +553,52 @@ String socialMessage(
     'group_reward_apply_failed' => strings.pick(
         'The reward could not be linked to your local dragon.',
         'De beloning kon niet aan je lokale draak worden gekoppeld.'),
+    'seasonal_preview_restricted' => strings.pick(
+        'This event preview is not available for this Keeper.',
+        'Deze eventpreview is niet beschikbaar voor deze Hoeder.'),
+    'seasonal_preview_invalid' => strings.pick(
+        'This event preview code is not active.',
+        'Deze eventpreviewcode is niet actief.'),
+    'seasonal_trial_invalid' || 'seasonal_community_invalid' => strings.pick(
+        'This seasonal event is not recognized.',
+        'Dit seizoensevent wordt niet herkend.'),
+    'seasonal_trial_unavailable' ||
+    'seasonal_adventure_unavailable' =>
+      strings.pick('This seasonal event is not available right now.',
+          'Dit seizoensevent is nu niet beschikbaar.'),
+    'seasonal_attempt_not_found' ||
+    'seasonal_attempt_used' ||
+    'seasonal_attempt_expired' ||
+    'seasonal_attempt_token_invalid' =>
+      strings.pick('This Trial session expired. Start a new seasonal Trial.',
+          'Deze Trialsessie is verlopen. Start een nieuwe seizoensproef.'),
+    'seasonal_score_rejected' => strings.pick(
+        'The server could not validate this Trial score.',
+        'De server kon deze Trialscore niet valideren.'),
+    'seasonal_adventure_already_completed' => strings.pick(
+        'You already completed this edition of the event adventure.',
+        'Je hebt deze editie van het eventavontuur al voltooid.'),
+    'seasonal_pair_already_active' => strings.pick(
+        'One of these Keepers already has an active Valentine adventure.',
+        'Een van deze Hoeders heeft al een actief Valentijnsavontuur.'),
+    'seasonal_pair_invalid_dragon' => strings.pick(
+        'That dragon is no longer available for this adventure.',
+        'Die draak is niet meer beschikbaar voor dit avontuur.'),
+    'seasonal_pair_not_found' ||
+    'seasonal_pair_not_pending' ||
+    'seasonal_pair_not_accepted' =>
+      strings.pick(
+          'This Valentine invitation has changed. Refresh and try again.',
+          'Deze Valentijnsuitnodiging is gewijzigd. Vernieuw en probeer opnieuw.'),
+    'seasonal_pair_not_ready' => strings.pick(
+        'These Valentine rewards are not ready yet.',
+        'Deze Valentijnsbeloningen zijn nog niet klaar.'),
+    'seasonal_pair_reward_claimed' => strings.pick(
+        'These Valentine rewards were already claimed.',
+        'Deze Valentijnsbeloningen zijn al geclaimd.'),
+    'seasonal_pair_reward_apply_failed' => strings.pick(
+        'The Valentine reward could not be linked to your local dragon.',
+        'De Valentijnsbeloning kon niet aan je lokale draak worden gekoppeld.'),
     'trade_sent' =>
       strings.pick('Trade proposal sent.', 'Ruilvoorstel verstuurd.'),
     'trade_response_sent' => strings.pick(

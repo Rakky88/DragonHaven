@@ -1,0 +1,1556 @@
+import 'dart:async';
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
+import '../models/pet.dart';
+import '../models/trial.dart';
+import '../services/audio_service.dart';
+import '../widgets/dragon_art.dart';
+
+class SeasonalTrialRunResult {
+  const SeasonalTrialRunResult({
+    required this.score,
+    required this.correctActions,
+    required this.totalActions,
+    required this.duration,
+  });
+
+  final int score;
+  final int correctActions;
+  final int totalActions;
+  final Duration duration;
+}
+
+typedef SeasonalTrialFinished = Future<void> Function(
+  SeasonalTrialRunResult result,
+);
+
+class SeasonalTrialGame extends StatefulWidget {
+  const SeasonalTrialGame({
+    super.key,
+    required this.offer,
+    required this.dragon,
+    required this.onFinished,
+    this.randomSeed,
+  });
+
+  final TrialOffer offer;
+  final Pet dragon;
+  final SeasonalTrialFinished onFinished;
+  final int? randomSeed;
+
+  @override
+  State<SeasonalTrialGame> createState() => _SeasonalTrialGameState();
+}
+
+class _SeasonalTrialGameState extends State<SeasonalTrialGame>
+    with SingleTickerProviderStateMixin {
+  late final Random _random;
+  Timer? _ticker;
+  late final AnimationController _ambient;
+  late int _remainingMilliseconds;
+  var _started = false;
+  var _ending = false;
+  var _score = 0;
+  var _combo = 0;
+  var _bestCombo = 0;
+  var _phase = 0;
+  var _round = 1;
+  var _correctActions = 0;
+  var _totalActions = 0;
+  var _target = 0;
+  var _safeLane = 0;
+  var _targetColor = 0;
+  var _correctChoicePosition = 0;
+  var _promptVisible = true;
+  var _inputLocked = false;
+  var _status = '';
+  DateTime? _promptHidesAt;
+  DateTime? _feedbackUntil;
+  DateTime? _runStartedAt;
+
+  TrialDefinition get definition => widget.offer.definition;
+  _SeasonalTheme get theme => _themeFor(widget.offer.kind);
+  TrainingFocus get _currentPhaseFocus =>
+      widget.offer.kind == TrialKind.hollyfrostGiftforge
+          ? const [
+              TrainingFocus.arcana,
+              TrainingFocus.might,
+              TrainingFocus.spirit,
+            ][_phase.clamp(0, 2)]
+          : const [
+              TrainingFocus.arcana,
+              TrainingFocus.spirit,
+              TrainingFocus.might,
+            ][_phase.clamp(0, 2)];
+
+  @override
+  void initState() {
+    super.initState();
+    _random = Random(widget.randomSeed);
+    final totalExpertise = TrainingFocus.values.fold<int>(
+      0,
+      (total, focus) => total + widget.dragon.trainingFor(focus),
+    );
+    // Expertise assists play in a small, capped way and never multiplies score.
+    final assistance = (totalExpertise / 300).clamp(0, 3).round();
+    _remainingMilliseconds =
+        definition.duration.inMilliseconds + assistance * 1000;
+    _ambient = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat(reverse: true);
+    _newChallenge(initial: true);
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    _ambient.dispose();
+    super.dispose();
+  }
+
+  void _start() {
+    if (_started) return;
+    setState(() {
+      _started = true;
+      _runStartedAt = DateTime.now();
+      _newChallenge(initial: true);
+    });
+    var previous = DateTime.now();
+    _ticker = Timer.periodic(const Duration(milliseconds: 50), (_) {
+      if (!mounted || _ending) return;
+      final now = DateTime.now();
+      final elapsed = now.difference(previous).inMilliseconds;
+      previous = now;
+      setState(() {
+        _remainingMilliseconds = max(0, _remainingMilliseconds - elapsed);
+        if (_promptHidesAt?.isBefore(now) == true) {
+          _promptVisible = false;
+          _promptHidesAt = null;
+        }
+        if (_feedbackUntil?.isBefore(now) == true) {
+          _status = '';
+          _feedbackUntil = null;
+          _inputLocked = false;
+        }
+      });
+      if (_remainingMilliseconds <= 0) _finish();
+    });
+  }
+
+  Future<void> _finish() async {
+    if (_ending) return;
+    _ticker?.cancel();
+    setState(() {
+      _ending = true;
+      _remainingMilliseconds = 0;
+      _status = AppStrings.of(context).pick(
+        'The final light is sealed!',
+        'Het laatste licht is verzegeld!',
+      );
+    });
+    unawaited(HavenAudio.playAsset('event_${theme.soundPrefix}_finish'));
+    await Future<void>.delayed(const Duration(milliseconds: 900));
+    if (mounted) {
+      await widget.onFinished(SeasonalTrialRunResult(
+        score: _score,
+        correctActions: _correctActions,
+        totalActions: _totalActions,
+        duration: _runStartedAt == null
+            ? Duration.zero
+            : DateTime.now().difference(_runStartedAt!),
+      ));
+    }
+  }
+
+  void _newChallenge({bool initial = false}) {
+    _phase = 0;
+    _target = _random.nextInt(6);
+    _safeLane = _random.nextInt(2);
+    _targetColor = _random.nextInt(theme.palette.length);
+    _correctChoicePosition = _random.nextInt(6);
+    _promptVisible = true;
+    _promptHidesAt = DateTime.now().add(
+      Duration(
+        milliseconds: initial
+            ? 1900
+            : (widget.offer.kind == TrialKind.hollyfrostGiftforge
+                    ? 950
+                    : 1150) +
+                _arcanaAssistanceMilliseconds,
+      ),
+    );
+  }
+
+  int get _arcanaAssistanceMilliseconds =>
+      (widget.dragon.trainingFor(TrainingFocus.arcana).clamp(0, 400) * 2)
+          .round();
+
+  double get _spiritTolerance =>
+      widget.dragon.trainingFor(TrainingFocus.spirit).clamp(0, 400) / 400;
+
+  double get _mightTimingWindow =>
+      .20 +
+      widget.dragon.trainingFor(TrainingFocus.might).clamp(0, 400) / 400 * .09;
+
+  int _optionSprite(int position) => position == _correctChoicePosition
+      ? _target
+      : (_target + position + 1).remainder(6) == _target
+          ? (_target + position + 2).remainder(6)
+          : (_target + position + 1).remainder(6);
+
+  int _optionColor(int position) => position == _correctChoicePosition
+      ? _targetColor
+      : (_targetColor + position + 1).remainder(theme.palette.length);
+
+  void _answer(
+    bool correct, {
+    int basePoints = 70,
+    bool completesRound = false,
+  }) {
+    if (!_started || _ending || _inputLocked) return;
+    setState(() {
+      _inputLocked = true;
+      _totalActions++;
+      if (correct) {
+        _correctActions++;
+        _score += basePoints + min(90, _combo * 6);
+        if (completesRound) {
+          _combo++;
+          _bestCombo = max(_bestCombo, _combo);
+          _round++;
+        } else {
+          _phase++;
+        }
+        _status = theme.successText(AppStrings.of(context));
+        unawaited(HavenAudio.playAsset('event_${theme.soundPrefix}_success'));
+      } else {
+        _combo = 0;
+        _remainingMilliseconds = max(0, _remainingMilliseconds - 2000);
+        _status = theme.failureText(AppStrings.of(context));
+        unawaited(HavenAudio.playAsset('event_${theme.soundPrefix}_failure'));
+      }
+      _feedbackUntil = DateTime.now().add(const Duration(milliseconds: 650));
+      if (!correct || completesRound) _newChallenge();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return PopScope(
+      canPop: !_started || _ending,
+      child: Scaffold(
+        backgroundColor: theme.deepColor,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(theme.backgroundAsset, fit: BoxFit.cover),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: .18),
+                    theme.deepColor.withValues(alpha: .70),
+                    theme.deepColor.withValues(alpha: .92),
+                  ],
+                  stops: const [0, .58, 1],
+                ),
+              ),
+            ),
+            _SeasonalAmbientOrnaments(
+              theme: theme,
+              animation: _ambient,
+            ),
+            SafeArea(
+              child: Column(
+                children: [
+                  _SeasonalHud(
+                    theme: theme,
+                    title: definition.title(strings.languageCode),
+                    score: _score,
+                    combo: _combo,
+                    phase: _phase,
+                    phaseLabel: _currentPhaseFocus.name.toUpperCase(),
+                    round: _round,
+                    remaining: Duration(milliseconds: _remainingMilliseconds),
+                    accent: theme.accentColor,
+                    onClose: _started && !_ending
+                        ? null
+                        : () => Navigator.pop(context),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: _buildGame(strings),
+                    ),
+                  ),
+                  _DragonStudentStrip(
+                    dragon: widget.dragon,
+                    success: _combo > 0,
+                    accent: theme.accentColor,
+                    status: _status,
+                  ),
+                ],
+              ),
+            ),
+            if (!_started) _IntroOverlay(theme: theme, onStart: _start),
+            if (_ending)
+              _EndingVeil(
+                theme: theme,
+                score: _score,
+                combo: _bestCombo,
+                accuracy:
+                    _totalActions == 0 ? 0 : _correctActions / _totalActions,
+                elapsed: _runStartedAt == null
+                    ? Duration.zero
+                    : DateTime.now().difference(_runStartedAt!),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGame(AppStrings strings) => switch (widget.offer.kind) {
+        TrialKind.witchlightWard => _buildWitchlight(strings),
+        TrialKind.hollyfrostGiftforge => _buildGiftforge(strings),
+        TrialKind.midnightChime => _buildMidnightChime(strings),
+        TrialKind.rosevowRelay => _buildRosevow(strings),
+        TrialKind.prismaticParade => _buildPrismatic(strings),
+        TrialKind.cavernFlight ||
+        TrialKind.ruinBreaker ||
+        TrialKind.runeweaver =>
+          const SizedBox.shrink(),
+      };
+
+  Widget _glassPanel({required Widget child}) => Container(
+        decoration: BoxDecoration(
+          color: theme.panelColor.withValues(alpha: .82),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: theme.accentColor.withValues(alpha: .72),
+            width: 1.4,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: theme.glowColor.withValues(alpha: .28),
+              blurRadius: 30,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: child,
+      );
+
+  Widget _buildChoicePhase(
+    AppStrings strings, {
+    Key? key,
+    required String instructionEn,
+    required String instructionNl,
+    required String keyPrefix,
+    int optionCount = 6,
+    bool colored = false,
+  }) =>
+      Column(
+        key: key,
+        children: [
+          const SizedBox(height: 15),
+          Text(
+            strings.pick(instructionEn, instructionNl),
+            textAlign: TextAlign.center,
+            style: _instructionStyle,
+          ),
+          const SizedBox(height: 9),
+          Container(
+            width: 112,
+            height: 112,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: (colored ? theme.palette[_targetColor] : theme.glowColor)
+                  .withValues(alpha: .20),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color:
+                    colored ? theme.palette[_targetColor] : theme.accentColor,
+                width: 3,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.glowColor.withValues(alpha: .25),
+                  blurRadius: 22,
+                ),
+              ],
+            ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: _promptVisible
+                  ? _EventTrialSprite(
+                      key: ValueKey('prompt-$_target-$_round'),
+                      theme: theme,
+                      index: _target,
+                    )
+                  : const Icon(
+                      Icons.help_rounded,
+                      key: ValueKey('hidden-prompt'),
+                      color: Colors.white38,
+                      size: 54,
+                    ),
+            ),
+          ),
+          const Spacer(),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (var position = 0; position < optionCount; position++)
+                _SpriteTapTarget(
+                  key: Key('$keyPrefix-$position'),
+                  theme: theme,
+                  index: _optionSprite(position),
+                  color: colored ? theme.palette[_optionColor(position)] : null,
+                  onTap: _promptVisible
+                      ? null
+                      : () => _answer(
+                            _optionSprite(position) == _target &&
+                                (!colored ||
+                                    _optionColor(position) == _targetColor),
+                          ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 22),
+        ],
+      );
+
+  Widget _buildLanePhase(
+    AppStrings strings, {
+    Key? key,
+    required String instructionEn,
+    required String instructionNl,
+    required String keyPrefix,
+    required int travelerSprite,
+    bool completesRound = false,
+  }) =>
+      Column(
+        key: key,
+        children: [
+          const SizedBox(height: 16),
+          Text(
+            strings.pick(instructionEn, instructionNl),
+            textAlign: TextAlign.center,
+            style: _instructionStyle,
+          ),
+          const Spacer(),
+          _EventTrialSprite(theme: theme, index: travelerSprite, size: 116),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              for (var lane = 0; lane < 2; lane++) ...[
+                if (lane > 0) const SizedBox(width: 13),
+                Expanded(
+                  child: Semantics(
+                    label: strings.pick(
+                      lane == 0 ? 'Left path' : 'Right path',
+                      lane == 0 ? 'Linker pad' : 'Rechter pad',
+                    ),
+                    child: InkWell(
+                      key: Key('$keyPrefix-$lane'),
+                      borderRadius: BorderRadius.circular(34),
+                      onTap: () {
+                        final forgiving =
+                            _random.nextDouble() < _spiritTolerance * .05;
+                        _answer(
+                          lane == _safeLane || forgiving,
+                          completesRound: completesRound,
+                        );
+                      },
+                      child: Container(
+                        height: 156,
+                        padding: const EdgeInsets.all(17),
+                        decoration: BoxDecoration(
+                          color: (lane == _safeLane
+                                  ? theme.glowColor
+                                  : theme.buttonColor)
+                              .withValues(alpha: .22),
+                          borderRadius: BorderRadius.circular(34),
+                          border: Border.all(
+                            color: lane == _safeLane
+                                ? theme.accentColor.withValues(alpha: .60)
+                                : Colors.white24,
+                            width: 2,
+                          ),
+                        ),
+                        child: _EventTrialSprite(
+                          theme: theme,
+                          index: lane == _safeLane ? 3 : 5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 22),
+        ],
+      );
+
+  Widget _buildTimingPhase(
+    AppStrings strings, {
+    Key? key,
+    required String instructionEn,
+    required String instructionNl,
+    required String keyName,
+    required int sprite,
+    bool completesRound = true,
+  }) {
+    return Column(
+      key: key,
+      children: [
+        const SizedBox(height: 18),
+        Text(
+          strings.pick(instructionEn, instructionNl),
+          textAlign: TextAlign.center,
+          style: _instructionStyle,
+        ),
+        const Spacer(),
+        AnimatedBuilder(
+          animation: _ambient,
+          builder: (_, child) {
+            final pulse = (_ambient.value - .5).abs() * 2;
+            final good = pulse < _mightTimingWindow;
+            return GestureDetector(
+              key: Key(keyName),
+              onTap: () => _answer(
+                good,
+                basePoints: good ? 120 : 55,
+                completesRound: completesRound,
+              ),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 80),
+                width: 190 + pulse * 42,
+                height: 190 + pulse * 42,
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: theme.buttonColor.withValues(alpha: .30),
+                  border: Border.all(
+                    color: good ? theme.accentColor : Colors.white38,
+                    width: good ? 7 : 2,
+                  ),
+                  boxShadow: good
+                      ? [
+                          BoxShadow(
+                            color: theme.glowColor.withValues(alpha: .48),
+                            blurRadius: 35,
+                            spreadRadius: 8,
+                          ),
+                        ]
+                      : const [],
+                ),
+                child: child,
+              ),
+            );
+          },
+          child: _EventTrialSprite(theme: theme, index: sprite),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          strings.pick(
+              'Tap when the ring turns gold', 'Tik wanneer de ring goud wordt'),
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const Spacer(),
+      ],
+    );
+  }
+
+  Widget _buildWitchlight(AppStrings strings) => _glassPanel(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 260),
+          child: switch (_phase) {
+            0 => _buildChoicePhase(
+                strings,
+                key: const ValueKey('witchlight-arcana'),
+                instructionEn: 'Arcana · identify the safe ward',
+                instructionNl: 'Arcana · herken het veilige teken',
+                keyPrefix: 'witchlight-rune',
+              ),
+            1 => _buildLanePhase(
+                strings,
+                key: const ValueKey('witchlight-spirit'),
+                instructionEn: 'Spirit · guide the wisp to its lantern',
+                instructionNl: 'Spirit · leid het dwaallicht naar de lantaarn',
+                keyPrefix: 'witchlight-lane',
+                travelerSprite: 2,
+              ),
+            _ => _buildTimingPhase(
+                strings,
+                key: const ValueKey('witchlight-might'),
+                instructionEn: 'Might · shatter the approaching curse',
+                instructionNl: 'Might · verbrijzel de naderende vloek',
+                keyName: 'witchlight-strike',
+                sprite: 5,
+              ),
+          },
+        ),
+      );
+
+  Widget _buildGiftforge(AppStrings strings) => _glassPanel(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 260),
+          child: switch (_phase) {
+            0 => Column(
+                key: const ValueKey('giftforge-arcana'),
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    _promptVisible
+                        ? strings.pick('Arcana · remember this recipe',
+                            'Arcana · onthoud dit recept')
+                        : strings.pick('Arcana · find the matching gift',
+                            'Arcana · vind het juiste cadeau'),
+                    style: _instructionStyle,
+                  ),
+                  const SizedBox(height: 10),
+                  AnimatedOpacity(
+                    opacity: _promptVisible ? 1 : .12,
+                    duration: const Duration(milliseconds: 220),
+                    child: Container(
+                      width: 126,
+                      height: 126,
+                      padding: const EdgeInsets.all(11),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .12),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: theme.accentColor, width: 2),
+                      ),
+                      child: _promptVisible
+                          ? _EventTrialSprite(theme: theme, index: _target)
+                          : const Icon(Icons.help_rounded,
+                              color: Colors.white30, size: 62),
+                    ),
+                  ),
+                  const Spacer(),
+                  Wrap(
+                    spacing: 9,
+                    runSpacing: 9,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      for (var position = 0; position < 6; position++)
+                        _SpriteTapTarget(
+                          key: Key('giftforge-item-$position'),
+                          theme: theme,
+                          index: _optionSprite(position),
+                          onTap: _promptVisible
+                              ? null
+                              : () => _answer(
+                                    _optionSprite(position) == _target,
+                                  ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                ],
+              ),
+            1 => _buildTimingPhase(
+                strings,
+                key: const ValueKey('giftforge-might'),
+                instructionEn: 'Might · stamp the gift at golden heat',
+                instructionNl: 'Might · stempel het cadeau bij gouden hitte',
+                keyName: 'giftforge-stamp',
+                sprite: 4,
+                completesRound: false,
+              ),
+            _ => _buildLanePhase(
+                strings,
+                key: const ValueKey('giftforge-spirit'),
+                instructionEn: 'Spirit · send it to the open sleigh bay',
+                instructionNl: 'Spirit · stuur het naar het vrije sleevak',
+                keyPrefix: 'giftforge-sleigh',
+                travelerSprite: 1,
+                completesRound: true,
+              ),
+          },
+        ),
+      );
+
+  Widget _buildMidnightChime(AppStrings strings) {
+    return _glassPanel(
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 260),
+        child: switch (_phase) {
+          0 => _buildChoicePhase(
+              strings,
+              key: const ValueKey('midnight-arcana'),
+              instructionEn: 'Arcana · read the first-dawn sigil',
+              instructionNl: 'Arcana · lees het dageraadsteken',
+              keyPrefix: 'midnight-sigil',
+            ),
+          1 => _buildLanePhase(
+              strings,
+              key: const ValueKey('midnight-spirit'),
+              instructionEn: 'Spirit · launch through the open star ring',
+              instructionNl: 'Spirit · lanceer door de open sterrenring',
+              keyPrefix: 'midnight-ring',
+              travelerSprite: 2,
+            ),
+          _ => _buildTimingPhase(
+              strings,
+              key: const ValueKey('midnight-might'),
+              instructionEn: 'Might · strike the midnight chime',
+              instructionNl: 'Might · sla de middernachtklok',
+              keyName: 'midnight-chime-strike',
+              sprite: 4,
+            ),
+        },
+      ),
+    );
+  }
+
+  Widget _buildRosevow(AppStrings strings) => _glassPanel(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 260),
+          child: switch (_phase) {
+            0 => _buildChoicePhase(
+                strings,
+                key: const ValueKey('rosevow-arcana'),
+                instructionEn: 'Arcana · find the matching heart sigil',
+                instructionNl: 'Arcana · vind het gelijke hartteken',
+                keyPrefix: 'rosevow-heart',
+              ),
+            1 => _buildLanePhase(
+                strings,
+                key: const ValueKey('rosevow-spirit'),
+                instructionEn: 'Spirit · carry both lights along the safe path',
+                instructionNl:
+                    'Spirit · draag beide lichten over het veilige pad',
+                keyPrefix: 'rosevow-lane',
+                travelerSprite: 4,
+              ),
+            _ => _buildTimingPhase(
+                strings,
+                key: const ValueKey('rosevow-might'),
+                instructionEn: 'Might · break the thorn lock',
+                instructionNl: 'Might · breek het doornenslot',
+                keyName: 'rosevow-thorn-strike',
+                sprite: 5,
+              ),
+          },
+        ),
+      );
+
+  Widget _buildPrismatic(AppStrings strings) => _glassPanel(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 260),
+          child: switch (_phase) {
+            0 => _buildChoicePhase(
+                strings,
+                key: const ValueKey('prismatic-arcana'),
+                instructionEn: 'Arcana · match both shape and color',
+                instructionNl: 'Arcana · combineer vorm én kleur',
+                keyPrefix: 'prismatic-choice',
+                colored: true,
+              ),
+            1 => _buildLanePhase(
+                strings,
+                key: const ValueKey('prismatic-spirit'),
+                instructionEn: 'Spirit · weave through the matching hoop',
+                instructionNl: 'Spirit · weef door de juiste hoepel',
+                keyPrefix: 'prismatic-hoop',
+                travelerSprite: 2,
+              ),
+            _ => _buildTimingPhase(
+                strings,
+                key: const ValueKey('prismatic-might'),
+                instructionEn: 'Might · crack the dull crystal on the beat',
+                instructionNl: 'Might · breek het doffe kristal op de maat',
+                keyName: 'prismatic-crystal-strike',
+                sprite: 5,
+              ),
+          },
+        ),
+      );
+
+  TextStyle get _instructionStyle => const TextStyle(
+        color: Colors.white,
+        fontSize: 17,
+        fontWeight: FontWeight.w900,
+        shadows: [Shadow(color: Colors.black54, blurRadius: 8)],
+      );
+}
+
+class _SeasonalHud extends StatelessWidget {
+  const _SeasonalHud({
+    required this.theme,
+    required this.title,
+    required this.score,
+    required this.combo,
+    required this.phase,
+    required this.phaseLabel,
+    required this.round,
+    required this.remaining,
+    required this.accent,
+    required this.onClose,
+  });
+
+  final _SeasonalTheme theme;
+  final String title;
+  final int score;
+  final int combo;
+  final int phase;
+  final String phaseLabel;
+  final int round;
+  final Duration remaining;
+  final Color accent;
+  final VoidCallback? onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final seconds = (remaining.inMilliseconds / 1000).ceil();
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.panelColor.withValues(alpha: .96),
+            theme.deepColor.withValues(alpha: .96),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: accent.withValues(alpha: .70)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: onClose,
+            icon: const Icon(Icons.close_rounded),
+            color: Colors.white,
+            disabledColor: Colors.white24,
+            visualDensity: VisualDensity.compact,
+          ),
+          Image.asset(
+            theme.iconAsset,
+            width: 34,
+            height: 34,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                LayoutBuilder(
+                  builder: (_, constraints) {
+                    final showLabel = constraints.maxWidth >= 105;
+                    return Row(
+                      children: [
+                        if (showLabel) ...[
+                          Flexible(
+                            child: Text(
+                              'ROUND $round · $phaseLabel',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: accent,
+                                fontSize: 8,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: .7,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                        ],
+                        _SeasonalPhaseTrail(
+                          theme: theme,
+                          phase: phase,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          _HudChip(label: 'COMBO', value: '×$combo', color: accent),
+          const SizedBox(width: 7),
+          _HudChip(label: 'SCORE', value: '$score', color: accent),
+          const SizedBox(width: 7),
+          _HudChip(
+            label: 'TIME',
+            value: '$seconds',
+            color: seconds <= 5 ? const Color(0xFFFF6464) : accent,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SeasonalPhaseTrail extends StatelessWidget {
+  const _SeasonalPhaseTrail({required this.theme, required this.phase});
+
+  final _SeasonalTheme theme;
+  final int phase;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var index = 0; index < 3; index++) ...[
+            if (index > 0)
+              Container(
+                width: 4,
+                height: 1.5,
+                color: index <= phase
+                    ? theme.accentColor
+                    : Colors.white.withValues(alpha: .22),
+              ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              width: index == phase ? 19 : 15,
+              height: index == phase ? 19 : 15,
+              padding: const EdgeInsets.all(1),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: index <= phase
+                    ? theme.glowColor.withValues(alpha: .22)
+                    : Colors.black26,
+                border: Border.all(
+                  color: index == phase
+                      ? theme.accentColor
+                      : Colors.white.withValues(alpha: .18),
+                  width: index == phase ? 1.4 : .7,
+                ),
+              ),
+              child: Opacity(
+                opacity: index <= phase ? 1 : .34,
+                child: _EventTrialSprite(
+                  theme: theme,
+                  index: const [0, 2, 4][index],
+                ),
+              ),
+            ),
+          ],
+        ],
+      );
+}
+
+class _HudChip extends StatelessWidget {
+  const _HudChip(
+      {required this.label, required this.value, required this.color});
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(label,
+              style: TextStyle(
+                  color: color, fontSize: 8, fontWeight: FontWeight.w900)),
+          Text(value,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  fontFeatures: [FontFeature.tabularFigures()])),
+        ],
+      );
+}
+
+class _DragonStudentStrip extends StatelessWidget {
+  const _DragonStudentStrip({
+    required this.dragon,
+    required this.success,
+    required this.accent,
+    required this.status,
+  });
+
+  final Pet dragon;
+  final bool success;
+  final Color accent;
+  final String status;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        height: 108,
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xE51B1234),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: accent.withValues(alpha: .55)),
+        ),
+        child: Row(
+          children: [
+            AnimatedScale(
+              duration: const Duration(milliseconds: 220),
+              scale: success ? 1.06 : 1,
+              child: DragonArt(
+                height: 94,
+                stageKey: dragon.stageKey,
+                lineageId: dragon.lineageId,
+                evolutionPath: dragon.activeEvolutionPath,
+                prismatic: dragon.prismatic,
+                sinister: dragon.sinister,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    dragon.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    child: Text(
+                      status.isEmpty ? ' ' : status,
+                      key: ValueKey(status),
+                      maxLines: 2,
+                      style: TextStyle(
+                        color: accent,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _SeasonalAmbientOrnaments extends StatelessWidget {
+  const _SeasonalAmbientOrnaments({
+    required this.theme,
+    required this.animation,
+  });
+
+  final _SeasonalTheme theme;
+  final Animation<double> animation;
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+        child: AnimatedBuilder(
+          animation: animation,
+          builder: (_, __) {
+            final drift = (animation.value - .5) * 12;
+            return Stack(
+              children: [
+                Positioned(
+                  left: -20 + drift,
+                  top: MediaQuery.sizeOf(context).height * .23,
+                  child: Opacity(
+                    opacity: .12,
+                    child: Transform.rotate(
+                      angle: -.12,
+                      child: _EventTrialSprite(
+                        theme: theme,
+                        index: 1,
+                        size: 104,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: -25 - drift,
+                  bottom: MediaQuery.sizeOf(context).height * .19,
+                  child: Opacity(
+                    opacity: .10,
+                    child: Transform.rotate(
+                      angle: .14,
+                      child: _EventTrialSprite(
+                        theme: theme,
+                        index: 3,
+                        size: 118,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+}
+
+class _IntroOverlay extends StatelessWidget {
+  const _IntroOverlay({required this.theme, required this.onStart});
+
+  final _SeasonalTheme theme;
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return ColoredBox(
+      color: Colors.black.withValues(alpha: .72),
+      child: LayoutBuilder(
+        builder: (_, constraints) => SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: max(0.0, constraints.maxHeight - 16),
+            ),
+            child: Center(
+              child: Container(
+                margin: const EdgeInsets.all(20),
+                constraints: const BoxConstraints(maxWidth: 390),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [theme.panelColor, theme.deepColor],
+                  ),
+                  borderRadius: BorderRadius.circular(34),
+                  border: Border.all(color: theme.accentColor, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.glowColor,
+                      blurRadius: 42,
+                      spreadRadius: 3,
+                    )
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 166,
+                      height: 166,
+                      child: _EventTrialSprite(theme: theme, index: 0),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      theme.introTitle(strings),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 27,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      theme.instructions(strings),
+                      textAlign: TextAlign.center,
+                      style:
+                          const TextStyle(color: Colors.white70, height: 1.35),
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                      key: const Key('start-seasonal-trial'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: theme.buttonColor,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 15,
+                        ),
+                      ),
+                      onPressed: onStart,
+                      icon: _EventTrialSprite(theme: theme, index: 1, size: 27),
+                      label: Text(strings.pick('Begin Trial', 'Start Proef')),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EndingVeil extends StatelessWidget {
+  const _EndingVeil({
+    required this.theme,
+    required this.score,
+    required this.combo,
+    required this.accuracy,
+    required this.elapsed,
+  });
+
+  final _SeasonalTheme theme;
+  final int score;
+  final int combo;
+  final double accuracy;
+  final Duration elapsed;
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+        color: theme.deepColor.withValues(alpha: .78),
+        child: Center(
+          child: TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 760),
+            curve: Curves.easeOutBack,
+            tween: Tween(begin: .45, end: 1),
+            builder: (_, scale, child) => Transform.scale(
+              scale: scale,
+              child: child,
+            ),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 330),
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 22),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [theme.panelColor, theme.deepColor],
+                ),
+                borderRadius: BorderRadius.circular(34),
+                border: Border.all(color: theme.accentColor, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.glowColor.withValues(alpha: .38),
+                    blurRadius: 40,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 176,
+                    height: 176,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Image.asset(
+                          theme.iconAsset,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                        ),
+                        Positioned(
+                          right: -2,
+                          bottom: -2,
+                          child: Container(
+                            width: 72,
+                            height: 72,
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: theme.deepColor.withValues(alpha: .88),
+                              border: Border.all(
+                                color: theme.accentColor,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: _EventTrialSprite(
+                              theme: theme,
+                              index: 5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '$score',
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontSize: 56,
+                      fontWeight: FontWeight.w900,
+                      shadows: const [
+                        Shadow(color: Colors.black, blurRadius: 12)
+                      ],
+                    ),
+                  ),
+                  Text(
+                    'BEST COMBO ×$combo',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '${(accuracy * 100).round()}% ACCURACY · ${elapsed.inSeconds}s',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: .7,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+class _SpriteTapTarget extends StatelessWidget {
+  const _SpriteTapTarget({
+    super.key,
+    required this.theme,
+    required this.index,
+    required this.onTap,
+    this.color,
+  });
+
+  final _SeasonalTheme theme;
+  final int index;
+  final VoidCallback? onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(28),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            width: 84,
+            height: 84,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (color ?? theme.buttonColor).withValues(alpha: .28),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: (color ?? theme.accentColor).withValues(alpha: .78),
+              ),
+            ),
+            child: color == null
+                ? _EventTrialSprite(theme: theme, index: index)
+                : ColorFiltered(
+                    colorFilter: ColorFilter.mode(color!, BlendMode.modulate),
+                    child: _EventTrialSprite(theme: theme, index: index),
+                  ),
+          ),
+        ),
+      );
+}
+
+class _EventTrialSprite extends StatelessWidget {
+  const _EventTrialSprite({
+    super.key,
+    required this.theme,
+    required this.index,
+    this.size = 100,
+  });
+
+  final _SeasonalTheme theme;
+  final int index;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Image.asset(
+        '${theme.assetDirectory}/trial_sprite_${index.remainder(6)}.webp',
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+      ),
+    );
+  }
+}
+
+class _SeasonalTheme {
+  const _SeasonalTheme({
+    required this.soundPrefix,
+    required this.backgroundAsset,
+    required this.assetDirectory,
+    required this.deepColor,
+    required this.panelColor,
+    required this.accentColor,
+    required this.glowColor,
+    required this.buttonColor,
+    required this.palette,
+    required this.introEn,
+    required this.introNl,
+    required this.instructionsEn,
+    required this.instructionsNl,
+    required this.successEn,
+    required this.successNl,
+    required this.failureEn,
+    required this.failureNl,
+  });
+
+  final String soundPrefix;
+  final String backgroundAsset;
+  final String assetDirectory;
+  final Color deepColor;
+  final Color panelColor;
+  final Color accentColor;
+  final Color glowColor;
+  final Color buttonColor;
+  final List<Color> palette;
+  final String introEn;
+  final String introNl;
+  final String instructionsEn;
+  final String instructionsNl;
+  final String successEn;
+  final String successNl;
+  final String failureEn;
+  final String failureNl;
+
+  String get iconAsset => '$assetDirectory/trial_icon.webp';
+
+  String introTitle(AppStrings strings) => strings.pick(introEn, introNl);
+  String instructions(AppStrings strings) =>
+      strings.pick(instructionsEn, instructionsNl);
+  String successText(AppStrings strings) => strings.pick(successEn, successNl);
+  String failureText(AppStrings strings) => strings.pick(failureEn, failureNl);
+}
+
+_SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
+      TrialKind.witchlightWard => const _SeasonalTheme(
+          soundPrefix: 'witchlight',
+          backgroundAsset:
+              'assets/images/events/halloween/trial_background.webp',
+          assetDirectory: 'assets/images/events/halloween',
+          deepColor: Color(0xFF100D1A),
+          panelColor: Color(0xFF2A1734),
+          accentColor: Color(0xFFFFA43B),
+          glowColor: Color(0xFF79F06B),
+          buttonColor: Color(0xFF71376F),
+          palette: [Color(0xFFFFA43B), Color(0xFF79F06B), Color(0xFFC873FF)],
+          introEn: 'Raise the Witchlight Ward',
+          introNl: 'Herstel de Heksenlichtbescherming',
+          instructionsEn:
+              'Match each glowing ward before the creeping gloom reaches the lantern grove.',
+          instructionsNl:
+              'Vind elk gloeiend teken voordat de sluipende duisternis het lantaarnwoud bereikt.',
+          successEn: 'The ward burns brighter!',
+          successNl: 'De bescherming brandt feller!',
+          failureEn: 'The gloom stole two seconds.',
+          failureNl: 'De duisternis stal twee seconden.'),
+      TrialKind.hollyfrostGiftforge => const _SeasonalTheme(
+          soundPrefix: 'starlight',
+          backgroundAsset:
+              'assets/images/events/christmas/trial_background.webp',
+          assetDirectory: 'assets/images/events/christmas',
+          deepColor: Color(0xFF092A2A),
+          panelColor: Color(0xFF17483F),
+          accentColor: Color(0xFFFFE09A),
+          glowColor: Color(0xFFB9F3FF),
+          buttonColor: Color(0xFFB33A4B),
+          palette: [Color(0xFFFFE09A), Color(0xFFB9F3FF), Color(0xFFC94758)],
+          introEn: 'Light the Hollyfrost Giftforge',
+          introNl: 'Ontsteek Hollyfrosts Geschenkensmidse',
+          instructionsEn:
+              'Remember the gift, find it on the belt and keep the starlight sleigh supplied.',
+          instructionsNl:
+              'Onthoud het cadeau, vind het op de band en vul de sterrenlichtslee.',
+          successEn: 'Perfectly wrapped!',
+          successNl: 'Perfect ingepakt!',
+          failureEn: 'Wrong parcel — two seconds lost.',
+          failureNl: 'Verkeerd pakket — twee seconden verloren.'),
+      TrialKind.midnightChime => const _SeasonalTheme(
+          soundPrefix: 'firstlight',
+          backgroundAsset:
+              'assets/images/events/new_year/trial_background.webp',
+          assetDirectory: 'assets/images/events/new_year',
+          deepColor: Color(0xFF11153E),
+          panelColor: Color(0xFF252864),
+          accentColor: Color(0xFFFFD666),
+          glowColor: Color(0xFFFF7EAD),
+          buttonColor: Color(0xFF4C57A8),
+          palette: [Color(0xFFFFD666), Color(0xFFFF7EAD), Color(0xFF75E7FF)],
+          introEn: 'Ring in the First Dawn',
+          introNl: 'Luid de Eerste Dageraad in',
+          instructionsEn:
+              'Strike the called chime as its pulse crosses the golden ring, then launch the dawn light.',
+          instructionsNl:
+              'Sla de gevraagde klok wanneer de puls de gouden ring kruist en lanceer het dageraadslicht.',
+          successEn: 'A perfect midnight note!',
+          successNl: 'Een perfecte middernachttoon!',
+          failureEn: 'The rhythm slipped by two seconds.',
+          failureNl: 'Het ritme verloor twee seconden.'),
+      TrialKind.rosevowRelay => const _SeasonalTheme(
+          soundPrefix: 'twinheart',
+          backgroundAsset:
+              'assets/images/events/valentine/trial_background.webp',
+          assetDirectory: 'assets/images/events/valentine',
+          deepColor: Color(0xFF351426),
+          panelColor: Color(0xFF642440),
+          accentColor: Color(0xFFFFD2DC),
+          glowColor: Color(0xFFFF82AB),
+          buttonColor: Color(0xFFA93665),
+          palette: [Color(0xFFFFD2DC), Color(0xFFFF82AB), Color(0xFFFFC85F)],
+          introEn: 'Carry the Rosevow Relay',
+          introNl: 'Draag de Rozenbelofte-estafette',
+          instructionsEn:
+              'Choose the open lane and guide both heartlights beyond every thorn gate.',
+          instructionsNl:
+              'Kies de open baan en leid beide hartlichten voorbij elke doornpoort.',
+          successEn: 'Both promises shine!',
+          successNl: 'Beide beloften stralen!',
+          failureEn: 'A thorn cost two seconds.',
+          failureNl: 'Een doorn kostte twee seconden.'),
+      TrialKind.prismaticParade => const _SeasonalTheme(
+          soundPrefix: 'radiant',
+          backgroundAsset: 'assets/images/events/pride/trial_background.webp',
+          assetDirectory: 'assets/images/events/pride',
+          deepColor: Color(0xFF21143E),
+          panelColor: Color(0xFF452A70),
+          accentColor: Color(0xFFFFE878),
+          glowColor: Color(0xFF75F2DC),
+          buttonColor: Color(0xFF6747A8),
+          palette: [
+            Color(0xFFFF6078),
+            Color(0xFFFFA84A),
+            Color(0xFFFFE45D),
+            Color(0xFF55D78A),
+            Color(0xFF5AA8FF),
+            Color(0xFFB574ED),
+            Color(0xFFF58FCB),
+          ],
+          introEn: 'Lead the Prismatic Parade',
+          introNl: 'Leid de Prismatische Parade',
+          instructionsEn:
+              'Match both symbol and color to weave seven distinct ribbons into one radiant sky.',
+          instructionsNl:
+              'Combineer symbool en kleur om zeven unieke linten tot één stralende hemel te weven.',
+          successEn: 'Another true color joins!',
+          successNl: 'Nog een ware kleur sluit aan!',
+          failureEn: 'The ribbon tangled for two seconds.',
+          failureNl: 'Het lint raakte twee seconden in de knoop.'),
+      TrialKind.cavernFlight ||
+      TrialKind.ruinBreaker ||
+      TrialKind.runeweaver =>
+        throw ArgumentError.value(kind, 'kind', 'Not a seasonal Trial'),
+    };

@@ -130,7 +130,7 @@ void main() {
 
   test('all generated and authored adventures have localized content', () {
     final adventures = AdventureCatalog.byId.values;
-    expect(adventures, hasLength(1001));
+    expect(adventures, hasLength(1006));
     for (final language in translatedLanguages) {
       final strings = AppStrings(language);
       for (final adventure in adventures) {

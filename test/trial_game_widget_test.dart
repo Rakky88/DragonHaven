@@ -18,11 +18,20 @@ void main() {
 
   Future<(HouseholdProvider, TrialOffer)> pumpTrial(
     WidgetTester tester,
-    TrialKind kind,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(390, 800));
+    TrialKind kind, {
+    Size surfaceSize = const Size(390, 800),
+  }) async {
+    await tester.binding.setSurfaceSize(surfaceSize);
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final game = HouseholdProvider(random: Random(824))
+    final now = switch (kind) {
+      TrialKind.witchlightWard => DateTime.utc(2026, 10, 25, 12),
+      TrialKind.hollyfrostGiftforge => DateTime.utc(2026, 12, 25, 12),
+      TrialKind.midnightChime => DateTime.utc(2026, 12, 31, 20),
+      TrialKind.rosevowRelay => DateTime.utc(2027, 2, 14, 12),
+      TrialKind.prismaticParade => DateTime.utc(2027, 6, 2, 12),
+      _ => DateTime.now(),
+    };
+    final game = HouseholdProvider(random: Random(824), clock: () => now)
       ..pet = Pet(
         id: 'trial-game-dragon',
         name: 'Moss',
@@ -37,10 +46,19 @@ void main() {
         TrialOffer(
           id: 'widget-${kind.name}',
           kind: kind,
-          appearedAt: DateTime.now(),
+          appearedAt: now,
+          specialEventKey: trialDefinitions[kind]?.specialEventId == null
+              ? null
+              : specialAdventureWindowsAt(now)
+                  .singleWhere(
+                    (window) =>
+                        window.event.id ==
+                        trialDefinitions[kind]!.specialEventId,
+                  )
+                  .key,
         ),
       ]
-      ..trialRefilledAt = DateTime.now();
+      ..trialRefilledAt = now;
     final offer = game.availableTrials.firstWhere((item) => item.kind == kind);
     await tester.pumpWidget(
       ChangeNotifierProvider.value(
@@ -113,6 +131,30 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
     await tester.pump(const Duration(milliseconds: 150));
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('all seasonal Trials stay polished on a compact phone',
+      (tester) async {
+    for (final kind in const [
+      TrialKind.witchlightWard,
+      TrialKind.hollyfrostGiftforge,
+      TrialKind.midnightChime,
+      TrialKind.rosevowRelay,
+      TrialKind.prismaticParade,
+    ]) {
+      await pumpTrial(
+        tester,
+        kind,
+        surfaceSize: const Size(320, 640),
+      );
+      expect(find.byKey(const Key('start-seasonal-trial')), findsOneWidget,
+          reason: kind.name);
+      await tester.tap(find.byKey(const Key('start-seasonal-trial')));
+      await tester.pump(const Duration(milliseconds: 80));
+      expect(tester.takeException(), isNull, reason: kind.name);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    }
   });
 
   testWidgets('finished run presents the animated grade and exact rewards',

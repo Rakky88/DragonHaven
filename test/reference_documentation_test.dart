@@ -94,6 +94,11 @@ void main() {
           for (final emote in pack.emotes) {
             expect(contents, contains(emote.nameEn), reason: definition.code);
           }
+        case RedeemRewardType.seasonalEventPreview:
+          final event = specialAdventureEventById(definition.rewardId);
+          expect(event, isNotNull, reason: definition.code);
+          expect(contents, contains(event!.titleEn));
+          expect(event.previewHours, greaterThan(0));
       }
     }
   });

@@ -3,7 +3,16 @@ import 'pet.dart';
 import 'mystic_relic.dart';
 import 'dragon_emote.dart';
 
-enum TrialKind { cavernFlight, ruinBreaker, runeweaver }
+enum TrialKind {
+  cavernFlight,
+  ruinBreaker,
+  runeweaver,
+  witchlightWard,
+  hollyfrostGiftforge,
+  midnightChime,
+  rosevowRelay,
+  prismaticParade,
+}
 
 enum TrialGrade { d, c, b, a, s, sPlus }
 
@@ -15,6 +24,8 @@ class TrialDefinition {
     required this.titleNl,
     required this.subtitleEn,
     required this.subtitleNl,
+    this.specialEventId,
+    this.duration = const Duration(seconds: 75),
   });
 
   final TrialKind kind;
@@ -23,6 +34,10 @@ class TrialDefinition {
   final String titleNl;
   final String subtitleEn;
   final String subtitleNl;
+  final String? specialEventId;
+  final Duration duration;
+
+  bool get isSeasonal => specialEventId != null;
 
   String title(String languageCode) => languageCode == 'nl' ? titleNl : titleEn;
   String subtitle(String languageCode) =>
@@ -54,18 +69,99 @@ const trialDefinitions = <TrialKind, TrialDefinition>{
     subtitleEn: 'Remember the runes and awaken the sealed gate.',
     subtitleNl: 'Onthoud de runen en wek de verzegelde poort.',
   ),
+  TrialKind.witchlightWard: TrialDefinition(
+    kind: TrialKind.witchlightWard,
+    focus: TrainingFocus.arcana,
+    titleEn: 'Witchlight Ward',
+    titleNl: 'Heksenlichtbescherming',
+    subtitleEn:
+        'Balance lantern wards, catch brave wisps and drive the creeping gloom from the grove.',
+    subtitleNl:
+        'Breng lantaarntekens in balans, vang dappere dwaallichtjes en verjaag de sluipende duisternis.',
+    specialEventId: 'halloween_witchlight',
+  ),
+  TrialKind.hollyfrostGiftforge: TrialDefinition(
+    kind: TrialKind.hollyfrostGiftforge,
+    focus: TrainingFocus.might,
+    titleEn: 'Hollyfrost Giftforge',
+    titleNl: 'Hollyfrosts Geschenkensmidse',
+    subtitleEn:
+        'Remember each gift, stamp it at the glowing forge and send it safely to the starlight sleigh.',
+    subtitleNl:
+        'Onthoud elk cadeau, stempel het bij de gloeiende smidse en stuur het veilig naar de sterrenlichtslee.',
+    specialEventId: 'christmas_winter_hearth',
+  ),
+  TrialKind.midnightChime: TrialDefinition(
+    kind: TrialKind.midnightChime,
+    focus: TrainingFocus.spirit,
+    titleEn: 'Midnight Chime',
+    titleNl: 'Middernachtklank',
+    subtitleEn:
+        'Read the turning sky, strike the chimes in rhythm and launch a perfect first-dawn firework.',
+    subtitleNl:
+        'Lees de draaiende hemel, sla de klokken in ritme en lanceer perfect eerstedagvuurwerk.',
+    specialEventId: 'new_year_first_dawn',
+  ),
+  TrialKind.rosevowRelay: TrialDefinition(
+    kind: TrialKind.rosevowRelay,
+    focus: TrainingFocus.spirit,
+    titleEn: 'Rosevow Relay',
+    titleNl: 'Rozenbelofte-estafette',
+    subtitleEn:
+        'Carry paired heartlights across thorn gates and keep both promises glowing together.',
+    subtitleNl:
+        'Draag twee hartlichten langs doornpoorten en laat beide beloften samen gloeien.',
+    specialEventId: 'valentine_two_heartlights',
+  ),
+  TrialKind.prismaticParade: TrialDefinition(
+    kind: TrialKind.prismaticParade,
+    focus: TrainingFocus.arcana,
+    titleEn: 'Prismatic Parade',
+    titleNl: 'Prismatische Parade',
+    subtitleEn:
+        'Match color and shape, weave seven radiant ribbons and keep the whole parade shining.',
+    subtitleNl:
+        'Combineer kleur en vorm, weef zeven stralende linten en laat de hele parade schitteren.',
+    specialEventId: 'pride_every_color',
+  ),
 };
+
+const standardTrialKinds = <TrialKind>[
+  TrialKind.cavernFlight,
+  TrialKind.ruinBreaker,
+  TrialKind.runeweaver,
+];
+
+TrialKind? trialKindByName(String? name) {
+  if (name == null || name.isEmpty) return null;
+  for (final kind in TrialKind.values) {
+    if (kind.name == name) return kind;
+  }
+  return null;
+}
 
 class TrialOffer {
   const TrialOffer({
     required this.id,
     required this.kind,
     required this.appearedAt,
+    this.specialEventKey,
+    this.startedAt,
   });
 
   final String id;
   final TrialKind kind;
   final DateTime appearedAt;
+  final String? specialEventKey;
+  final DateTime? startedAt;
+
+  TrialOffer copyWith({DateTime? startedAt}) => TrialOffer(
+        id: id,
+        kind: kind,
+        appearedAt: appearedAt,
+        specialEventKey: specialEventKey,
+        startedAt: startedAt ?? this.startedAt,
+      );
 
   TrialDefinition get definition => trialDefinitions[kind]!;
 
@@ -73,6 +169,8 @@ class TrialOffer {
         'id': id,
         'kind': kind.name,
         'appearedAt': appearedAt.toIso8601String(),
+        'specialEventKey': specialEventKey,
+        'startedAt': startedAt?.toIso8601String(),
       };
 
   factory TrialOffer.fromJson(Map<String, dynamic> json) => TrialOffer(
@@ -83,6 +181,8 @@ class TrialOffer {
         ),
         appearedAt: DateTime.tryParse(json['appearedAt']?.toString() ?? '') ??
             DateTime.now(),
+        specialEventKey: json['specialEventKey']?.toString(),
+        startedAt: DateTime.tryParse(json['startedAt']?.toString() ?? ''),
       );
 }
 
@@ -95,6 +195,7 @@ class TrialReward {
     this.chestTier,
     this.relic,
     this.emote,
+    this.expertiseRewards = const {},
   });
 
   final TrialGrade grade;
@@ -104,6 +205,7 @@ class TrialReward {
   final ChestTier? chestTier;
   final MysticRelic? relic;
   final DragonEmoteDefinition? emote;
+  final Map<TrainingFocus, int> expertiseRewards;
 }
 
 class TrialCompletion {
@@ -112,12 +214,14 @@ class TrialCompletion {
     required this.score,
     required this.newDragonBest,
     required this.reward,
+    this.simulated = false,
   });
 
   final TrialKind kind;
   final int score;
   final bool newDragonBest;
   final TrialReward reward;
+  final bool simulated;
 }
 
 TrialGrade trialGradeForScore(TrialKind kind, int score) {
@@ -125,6 +229,12 @@ TrialGrade trialGradeForScore(TrialKind kind, int score) {
     TrialKind.cavernFlight => const [250, 600, 1100, 1700, 2500],
     TrialKind.ruinBreaker => const [900, 2250, 4000, 6750, 9000],
     TrialKind.runeweaver => const [3, 6, 9, 12, 15],
+    TrialKind.witchlightWard ||
+    TrialKind.hollyfrostGiftforge ||
+    TrialKind.midnightChime ||
+    TrialKind.rosevowRelay ||
+    TrialKind.prismaticParade =>
+      const [500, 1200, 2000, 3000, 4200],
   };
   if (score >= thresholds[4]) return TrialGrade.sPlus;
   if (score >= thresholds[3]) return TrialGrade.s;

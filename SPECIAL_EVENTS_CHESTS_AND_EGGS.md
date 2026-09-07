@@ -1,456 +1,251 @@
 # DragonHaven Special Events, Chests, and Eggs
 
-Last verified: 6 September 2026
-
-Ruleset: app version `v0.05.11`
-
-Source baseline: release `v0.05.11`
-
-<!-- reference-source-fingerprint: 97cdcd946af4b344 -->
-
-This is the living content catalog for every implemented Special Event,
-Special Adventure family, chest type, and egg type in DragonHaven. It records
-the current game implementation, including content relationships that are not
-yet fully represented in persisted item data.
-
-Exact random percentages, weighted pools, pity rules, and conditional odds live
-in [RANDOM_REWARDS_AND_ODDS.md](RANDOM_REWARDS_AND_ODDS.md). This catalog
-explains what each item or event *is*, where it belongs, and how its lifecycle
-works.
-
-## 1. Content model and terminology
-
-These names describe different concepts:
-
-- A **Special Event** is a scheduled availability window. It owns its story,
-  recurrence, start limit, requirements, journey definition, and reward bundle.
-- A **Special Adventure** is an Adventure with `AdventureKind.special`. It can
-  belong to a scheduled Special Event, but the released-dragon return system
-  also creates non-calendar Special Adventures.
-- A **Special Chest** is an optional reward belonging to one particular Special
-  Adventure definition. Future Special Events do not automatically award one,
-  and two Special Events may define completely different Special Chest
-  contents.
-- A **Special Egg** is an optional, deliberately configured egg. Its possible
-  dragon family or families are chosen by the owning event/chest definition;
-  “Special Egg” does not globally mean Cluckatrice.
-
-### Current implementation limitation
-
-The intended ownership model above is the design contract for new content. In
-the current `v0.05.04` implementation, the inventory still stores one global
-`special` chest tier without an event definition ID/version. Opening any such
-chest therefore uses the only implemented recipe: the Golden Wings chest with
-a Cluckatrice egg, 269 coins, and 10 gems. `DragonEgg` likewise stores the
-lineage and egg properties, but not its originating Special Event definition.
-
-Consequences until this is migrated to definition-backed items:
-
-- a future event with different Special Chest or Special Egg contents must not
-  reuse the global recipe unchanged;
-- traded or imported Special Chests cannot currently prove which event created
-  them;
-- event-specific item definitions need stable IDs and versions before a second
-  distinct Special Chest recipe is released;
-- save/import/trade compatibility must keep old Golden Wings items bound to
-  their original recipe instead of silently changing their contents.
-
-## 2. Scheduled Special Events
-
-There is currently one entry in `specialAdventureEventCatalog`.
-
-### 2.1 A Wish on Golden Wings
-
-| Field | Current definition |
-|---|---|
-| Event ID | `golden_wings_birthday` |
-| Adventure ID | `special_golden_wings_birthday` |
-| English title | A Wish on Golden Wings |
-| Dutch title | Een Wens op Gouden Vleugels |
-| Theme | A golden birthday wish for a beautiful woman whose kindness brightens the Haven |
-| First window | 1 September 2026 00:00 through 3 September 2026 00:00 |
-| Recurrence | Every year from 2027, 13 May 00:00 through 14 May 00:00 |
-| Schedule timezone | Europe/Amsterdam wall time, including daylight-saving conversion |
-| Starts allowed | Once per event occurrence per save/account |
-| Journey duration | 10 days before expertise reduction |
-| Availability after starting | The run remains finishable after the start window closes |
-| Participants | One available owned dragon |
-| Expertise reduction | Every combined Might + Spirit + Arcana point removes one hour; minimum duration is one day |
-| Event notification | Supported by the Special Events notification category, which defaults to on subject to device permission |
-
-The event card shows its own live availability countdown. The short story is
-not repeated in the Adventure detail sheet because `showStoryInDetails` is
-currently `false`.
-
-#### Guaranteed completion rewards
-
-- 500 XP for the participating dragon. The Adventure definition and event
-  reward metadata both describe this same 500 XP reward; it is not granted
-  twice.
-- +25 Might, +25 Spirit, and +25 Arcana.
-- One Special Chest using the Golden Wings recipe below.
-- One relic selected uniformly from Moral Prism, Order Compass, Soul Mirror,
-  and Astral Lens.
-- One Music Chest if the player has enough remaining unowned tracks for the
-  chest to be usable. No replacement reward is granted when the music
-  collection has no capacity.
-
-#### Golden Wings Special Chest definition
-
-| Property | Value |
-|---|---|
-| Inventory tier | `special` |
-| Chest sprite | `assets/images/chests/chest_special.webp` |
-| Opened sprite | `assets/images/chests/open/chest_special_open.webp` |
-| Opening sound | `chest_special` |
-| Fixed contents | 269 coins, 10 gems, one Golden Wings Special Egg |
-| Additional random find | 10% chance of one still-unowned chest emote |
-| Tradeable | Yes in the current app and server inventory model |
-| Multi-open | Ten may be opened together when at least ten are owned; each performs a normal independent opening |
-
-The Adventure details intentionally identify the guaranteed Special Chest but
-do not reveal its contents to the player before it is opened.
-
-#### Golden Wings Special Egg definition
-
-| Property | Value |
-|---|---|
-| Egg type | Special Egg |
-| Possible family | Cluckatrice only |
-| Family type | Special |
-| Incubation | Exactly 21 hours |
-| Spectral chance | 0%; this egg is excluded from both the creation roll and Golden Hour bonus |
-| Fixed at creation | Law alignment, moral alignment, size, and personality seed |
-| Hatch achievement | `winner_chicken_dinner` — Winner, Winner, Chicken Dinner |
-
-The Cluckatrice family contains Hatchling, Wyrmling, Might, Spirit, Arcana, and
-Mastery forms. The egg uses the special egg hint/presentation so it remains
-recognizable as event content without revealing its dragon early.
-
-### 2.2 Future event concepts (planned; not implemented)
-
-The concepts below are **not implemented Special Events** and are not entries
-in `specialAdventureEventCatalog`. Some now have an approved or proposed design,
-but their artwork remains outside Flutter's shipping asset tree, so it cannot
-appear in gameplay or increase the current download size. A holiday name must
-never be treated as an implied date, recurrence, reward, chest, egg,
-requirement, or gameplay rule; only explicitly recorded fields apply.
-
-| Event concept | Dragon family | What is already decided | Current status |
-|---|---|---|---|
-| Halloween | Gloamgourd | Charcoal harvest design with pumpkin light, vine horns, witchfire, and guardian wisps; six forms exist | Sprites approved and one event-only Trial confirmed; remaining event/gameplay fields are TBD |
-| Christmas | Hollyfrost | White-and-evergreen winter design with golden antlers, holly, frost crystal, and lantern light; six forms exist | Sprites and complete event contract approved; implementation has not started |
-| New Year's Day | Dawnchime | Indigo-and-dawn design with chimes, firework fins, turning-year rings, and sunrise ribbons; six forms exist | Sprites and complete event contract approved; implementation has not started |
-| Valentine's Day | Rosevow | Rose-quartz vow design with petal wings, thorn-gold armor, and a warm heart gem; six forms exist | Sprites and complete exactly-two-keeper event contract approved; implementation has not started |
-| Pridefest | Spectrumplume | Pearl-and-prism festival design with a full-spectrum feather mantle and aurora ribbons; six forms exist | Sprites and complete event contract approved; implementation has not started |
-
-The current art package and review instructions live in
-[`future_event_art/dragon_families/README.md`](future_event_art/dragon_families/README.md).
-The implementation roadmap and fill-in sheets for all five concepts live in
-[`NEW_EVENTS_PLAN.md`](NEW_EVENTS_PLAN.md).
-
-#### Information still required for each future event
-
-Every field not already marked confirmed remains independently configurable for
-Halloween, Christmas, New Year's Day, Valentine's Day, and Pridefest. These
-decisions must be recorded before the corresponding event is implemented.
-
-| Decision area | Information still needed |
-|---|---|
-| Identity | Stable event ID, Adventure ID, player-facing title, theme/occasion, and short story |
-| Availability | Exact first start and end date **including year**, wall-clock times, timezone, and whether the event recurs |
-| Recurrence | If recurring: cadence, first recurrence, timezone, and handling for leap years or other calendar edge cases |
-| Start/completion rules | Whether a run started before closing remains finishable; attempts per occurrence; whether parallel copies are allowed |
-| Adventure duration | Base journey length, minimum final duration, discount cap, and rounding behavior |
-| Participation | Solo or Group Adventure; minimum/maximum dragon and keeper count |
-| Dragon requirements | Allowed forms, rarities, families, alignments, levels, ownership/availability rules, and required individual or combined expertise |
-| Expertise reduction | Which of Might, Spirit, and Arcana shorten the journey and the exact reduction per point |
-| Direct rewards | Every guaranteed or random currency, XP, expertise, relic, chest, egg, Music Chest, furniture, vanity, emote, achievement, or other reward, including quantities and exact odds |
-| Reward visibility | Which rewards are shown before starting, which remain secret, and the exact player-facing wording |
-| Special Chest | Whether the event awards one at all; if yes, its stable definition/version, name, contents/odds, quantity, tradeability, duplicate and multi-open rules, reveal policy, sprite, and opening audio |
-| Egg delivery | Whether the event family comes from a direct egg reward, a Special Chest, another source, or is not awarded by this event |
-| Special Egg | If used: stable definition/version, name, exact family pool and odds, incubation duration, speed-up rules, tradeability, acquisition limit, hint, and reveal behavior |
-| Dragon rules | Family type/rarity, alignment restrictions, personality visibility, starting stats, evolution requirements, expertise caps, names, Draconomicon behavior, and whether any form grants existing rarity achievements |
-| Spectral behavior | Whether the egg/family can be Spectral, its base chance, and whether Golden Hour or another event modifier applies |
-| Milestones | Hatch/event achievements, journal entries, titles, badges, follow-up rewards, and duplicate/fallback behavior |
-| Event-only Trial | One unique Trial is confirmed per event; its final name, rules, grade thresholds, refill weight, attempt allowance, standard reward behavior, expertise split, and leaderboard/prize rules remain to be resolved |
-| Presentation | Event card and detail copy, countdown placement, completed-state UI, localization, accessibility, and reduced-motion treatment |
-| Notifications | Availability notification timing, deep link destination, account toggle/default, and recurrence rescheduling |
-| Operations | Whether new persisted definition IDs, migrations, server validation, backup/import compatibility, trade support, monitoring, or staging fixtures are required |
-
-#### Event-specific open choices
-
-- **Halloween / Gloamgourd:** exact Halloween window and recurrence; playful,
-  mysterious, or genuinely sinister tone; whether Sinister mechanics or chests
-  are involved (they are not implied by the artwork).
-- **Christmas / Hollyfrost:** material event choices are resolved in
-  `NEW_EVENTS_PLAN.md`; its data, UI, assets, server contract, tests, and release
-  remain to be implemented.
-- **New Year's Day / Dawnchime:** material event choices are resolved in
-  `NEW_EVENTS_PLAN.md`; its data, UI, assets, server contract, tests, and release
-  remain to be implemented.
-- **Valentine's Day / Rosevow:** material event choices are resolved in
-  `NEW_EVENTS_PLAN.md`, including an annual 14 February window and an Adventure
-  for exactly two keepers. Its data, UI, assets, server contract, tests, and
-  release remain to be implemented.
-- **Pridefest / Spectrumplume:** material event choices are resolved in
-  `NEW_EVENTS_PLAN.md`, including the 1–8 June annual window and decorative
-  worldwide Haven Spectrum display. Its implementation has not started.
-
-#### Planned event-specific chest and egg definitions
-
-These definitions remain outside the live catalog until their events are
-implemented. `Confirmed` means the owner has approved the content contract, not
-that the item currently exists in a released build.
-
-| Event | Adventure | Special Chest and fixed secret contents | Special Egg | Incubation and outcome | Status |
-|---|---|---|---|---|---|
-| Christmas | The Starlight Sleigh | Starlight Gift Chest: 250 coins, 12 gems, one Starlit Evergreen Egg | Starlit Evergreen Egg | 25 hours; 100% Hollyfrost | Confirmed |
-| New Year's Day | The Bell Beyond Midnight | Firstlight Celebration Chest: 365 coins, 12 gems, one Turning-Year Egg | Turning-Year Egg | 24 hours; 100% Dawnchime | Confirmed |
-| Valentine's Day | The Rosebound Crossing | Twinheart Keepsake Chest: 214 coins, 14 gems, one Rosebound Egg, separately for both keepers | Rosebound Egg | 14 hours; 100% Rosevow | Confirmed |
-| Pridefest | The Aurora We Weave | Radiant Festival Chest: 300 coins, 15 gems, one Truecolor Egg | Truecolor Egg | 18 hours; 100% Spectrumplume | Confirmed |
-
-All four planned chests and eggs are non-tradeable, have immutable event/version
-provenance, use fixed rather than random contents, conceal chest contents until
-opening, and use 5% base Spectral odds rising to 10% when the egg
-hatches during Golden Hour. Their complete contracts live in
-`NEW_EVENTS_PLAN.md`.
-
-### 2.3 Event-only Trial program (one per event confirmed; not implemented)
-
-Each future event will have one temporary Trial that exists only while that
-event occurrence is active. When one event is active, its Trial joins the three
-standard Trial kinds as a fourth eligible refill result; the Trial board itself
-still shows at most three offers. Equal 25% weighting is confirmed for all five
-planned seasonal event Trials.
-The individual game names and mechanics below remain design proposals unless
-their event section says otherwise. They intentionally use
-three distinct simple actions so Might, Spirit, and Arcana all matter without
-applying an expertise multiplier to the submitted score.
-
-| Event | Proposed Trial | Simple game loop | Might contribution | Spirit contribution | Arcana contribution |
-|---|---|---|---|---|---|
-| Halloween | **Witchlight Ward** | Protect a lantern through short repeating rounds: identify the safe rune, guide its wisp into the lantern, then strike the curse at the right moment | Makes the strike timing zone slightly wider | Gives slightly more steering control and a smaller wisp collision area | Keeps the safe rune visible slightly longer |
-| Christmas | **Hollyfrost Giftforge** | Memorize a tiny gift recipe, stamp it when the forge meter reaches gold, then drag it into the matching sleigh slot while avoiding snowballs | Makes the golden stamping zone slightly wider | Improves drag control and softens obstacle collisions | Extends recipe preview time slightly |
-| New Year's Day | **Midnight Chime** | Build one firework at a time: select its shown sigil, launch through a curved ring path, then tap on the midnight chime to burst it | Makes the final chime window slightly wider | Improves launch steering and ring tolerance | Extends sigil visibility slightly |
-| Valentine's Day | **Rosevow Relay** | Find two matching heart sigils, trace a safe path between them, then break the thorn lock at its bright point | Makes the thorn-break timing zone slightly wider | Makes path tracing slightly more forgiving | Extends the matching-symbol preview slightly |
-| Pridefest | **Prismatic Parade** | Read a two-color light recipe, steer the beam through matching festival hoops, then crack the final dull crystal on the beat | Makes the crystal timing zone slightly wider | Improves beam steering and hoop tolerance | Extends the color-recipe preview slightly |
-
-Recommended common game rules:
-
-- one available owned dragon participates and remains visible/reactive;
-- each run lasts about 60–90 seconds and gradually accelerates;
-- correct three-action sequences build a capped combo; there is no shared
-  three-error/life rule, and each game receives only a timer or failure mechanic
-  that genuinely belongs to its own loop;
-- the three expertise benefits are deliberately small and capped so developed
-  dragons feel useful without making a low-expertise score meaningless;
-- the leaderboard receives the actual achieved score, never a post-game
-  expertise multiplier;
-- each event receives its own tuned D/C/B/A/S/S+ thresholds after playtesting;
-  and
-- controls remain one-thumb friendly, color-blind distinguishable, reduced-
-  motion compatible, and deterministic from a server-issued ranked seed.
-
-#### Event Trial rewards
-
-All five planned event-Trial completions reuse the normal Trial grade table:
-the existing XP amount, chest roll, S+ relic roll, and S+ ordinary Trial-emote
-roll remain unchanged on every completed offer. The normal expertise amount is
-**split** across Might, Spirit, and Arcana instead of being granted three times:
-
-| Grade | Total expertise | Proposed balanced split |
-|---|---:|---|
-| D | 1 | +1 to the participant's lowest expertise |
-| C | 2 | +1 to each of the two lowest expertises |
-| B | 3 | +1 Might, +1 Spirit, +1 Arcana |
-| A | 4 | +2 to the lowest expertise and +1 to the other two |
-| S | 5 | +2 to the two lowest expertises and +1 to the highest |
-| S+ | 7 | +3 to the lowest expertise and +2 to the other two |
-
-Ties between equally low expertise values need a stable rotation so the same
-stat is not always favored. Existing expertise caps still apply. Christmas,
-New Year, Valentine, and Pridefest reroute a blocked point to another eligible
-expertise and discard it only if all three are capped; Halloween still needs to
-adopt or replace this rule.
-
-A completed Christmas, New Year, Valentine, or Pridefest Trial counts toward the
-Seven-day Trial Constellation, subject to the existing maximum of one filled day
-per local calendar date. A Trial can only start inside its event window. A
-genuinely started run can finish after the event boundary, while an unstarted
-offer is removed. Halloween still needs to confirm both rules.
-
-#### Temporary worldwide leaderboard
-
-The competition model is fully confirmed for Christmas, New Year, Valentine,
-and Pridefest, with Halloween's already confirmed core called out separately in
-`NEW_EVENTS_PLAN.md`:
-
-1. Only registered, e-mail-verified online keepers can submit ranked runs.
-   Christmas, New Year, Valentine, and Pridefest offline completion still grant
-   normal rewards but cannot enter the ranking; Halloween's exact offline
-   behavior remains undecided.
-2. There is no separate practice mode or event attempt allowance. Every event
-   Trial offer that appears through the normal refill system can be played once,
-   grants its normal reward, and may improve the submitted best score.
-3. Only a keeper's highest verified score appears. For Christmas, New Year,
-   Valentine, and Pridefest, tie-breakers are higher accuracy, then shorter run
-   time, then the earlier submission; Halloween has not yet confirmed these
-   tie-breakers.
-4. The board is live only during that event occurrence. At the exact close it
-   becomes read-only, freezes the winners, grants prizes exactly once, and
-   remains visible for five complete days with a results-expiry countdown.
-5. After those five days the full occurrence disappears from the active ranking
-   UI, but its top three remain in the permanent Seasonal Chronicle. A future
-   recurrence gets a new occurrence ID and a completely empty live board.
-6. The screen shows the top entries, the keeper's own rank even when outside
-   the visible top group, and a distinct podium presentation for places 1–3.
-
-Recommended podium rewards for every event occurrence:
-
-| Place | Chest | Cosmetic |
-|---:|---|---|
-| 1 | Mythical Chest | Event-specific gold/champion dragon emote |
-| 2 | Dragon Chest | Event-specific silver/runner-up dragon emote |
-| 3 | Gold Chest | Event-specific bronze/third-place dragon emote |
-
-This requires three podium emotes per event (15 total). Suggested themes
-are Gloamgourd lantern reactions, Hollyfrost festive reactions, Dawnchime
-firework reactions, Rosevow heart reactions, and Spectrumplume radiant parade
-reactions. Christmas, New Year, Valentine, and Pridefest use a visible win count
-instead of duplicate emotes; Halloween repeat handling remains TBD.
-
-Ranked attempts and prize delivery must be server-authoritative. The server
-should issue the occurrence ID, deterministic seed, nonce, and attempt token;
-validate a compact action log against plausible timing and the seeded game;
-rate-limit submissions; reject replayed/expired tokens; freeze standings in a
-transaction; and create idempotent prize grants. A client-reported score alone
-is not sufficient for a worldwide rewarded ranking.
-
-#### Decisions needed before implementation
-
-- approve or rename the remaining proposed Halloween Trial concept;
-- decide whether Halloween adopts the balanced expertise split and capped-point
-  overflow rule used by the other four planned events;
-- approve timer/failure behavior and final score/grade thresholds for every
-  event after prototypes, without assuming a shared three-error rule;
-- confirm the remaining Halloween podium-emote names and repeat handling; and
-- define moderation/disqualification behavior for invalid ranked submissions.
-
-When one concept is selected for implementation, resolve its own fields only.
-Do not copy Golden Wings values or another future concept's choices merely to
-fill a blank.
-
-## 3. Other Special Adventures
-
-The game also defines 100 non-calendar Special Adventure routes for the daily
-released-dragon return system. They do not appear in
-`specialAdventureEventCatalog`, do not recur on a fixed date, and do not use a
-Special Chest or Special Egg.
-
-| Route family | Definition IDs | Selection | Availability | Reward |
-|---|---|---|---|---|
-| A Strange Invitation | `special_1`–`special_90` | A released Hatchling maps to 1–30, Wyrmling to 31–60, and ascended dragon to 61–90; the dragon's stable hatch seed chooses the route inside that block | 48 hours after the return outcome creates it | One fixed, visible Wooden, Silver, Gold, Dragon, or Mythical Chest |
-| The Crooked Shadow | `special_91`–`special_100` | A sinister released-dragon outcome and the dragon's stable hatch seed choose one of ten routes | 48 hours after creation | One fixed, visible Sinister Chest |
-
-For both route families:
-
-- only one released-dragon Special Adventure can wait at a time;
-- route duration is generated as `8 + (index × 7 mod 113)` hours;
-- XP is `180 + 5 × duration in hours`;
-- expertise is `25 + floor(duration in hours / 4)` in the route's Might,
-  Spirit, or Arcana focus;
-- their fixed chest tier is not randomly rolled when the Adventure starts or
-  finishes; and
-- the random daily return outcome that may create one is documented in
-  [RANDOM_REWARDS_AND_ODDS.md](RANDOM_REWARDS_AND_ODDS.md#5-released-dragon-daily-return-system).
-
-These routes are “special” by Adventure kind, but they are not scheduled
-Special Events and do not consume the once-per-event occurrence key.
-
-## 4. Complete chest catalog
-
-The exact loot odds and collection formulas are in
-[section 1 of RANDOM_REWARDS_AND_ODDS.md](RANDOM_REWARDS_AND_ODDS.md#1-chest-contents).
-
-| Enum key | Player-facing type | Main purpose | Tradeable | Content behavior |
+Last verified: 7 September 2026
+
+Ruleset: app version `v0.05.12`
+
+<!-- reference-source-fingerprint: 3bd187b448127d07 -->
+
+This is the living implementation reference for scheduled Special Events,
+their Special Adventures, event Trials, event-bound Special Chests and Special
+Eggs. Update it whenever any linked schedule, reward, requirement, asset,
+server rule, or lifecycle changes.
+
+Exact random probabilities are maintained in
+[RANDOM_REWARDS_AND_ODDS.md](RANDOM_REWARDS_AND_ODDS.md). Private preview
+codes are maintained in [REDEEM_CODES.md](REDEEM_CODES.md) and must never be
+copied into public release notes.
+
+## 1. Content ownership model
+
+- A **Special Event** owns one schedule, story, Adventure, Trial, temporary
+  music alias, ranking occurrence, and reward contract.
+- A **Special Adventure** may award a Special Chest, but this is optional and
+  event-specific. A chest recipe is never inferred from another event.
+- A **Special Chest** has a stable ID/version and fixed event-specific recipe.
+- A **Special Egg** has a stable ID/version, fixed family pool, incubation,
+  alignment rules, and Spectral rules.
+- Event Special Chests, Special Eggs, preview entitlements, and ranked attempts
+  are non-tradeable. Ordinary released-dragon Special Adventures remain a
+  separate system.
+- Every listed event dragon has the `specialEvent` rarity enum and the visible
+  rarity label **Special**. It cannot unlock a Common through Mythical rarity
+  achievement.
+
+## 2. Implemented scheduled events
+
+All schedule boundaries are Europe/Amsterdam wall time, including daylight
+saving transitions. Every Adventure may finish after its event closes when it
+was validly started before the boundary. Except for Valentine, it can be
+started once per account per occurrence with one available owned dragon.
+
+| Event ID | Event and Adventure | Window and recurrence | Base journey | Direct completion reward |
 |---|---|---|---:|---|
-| `wooden` | Wooden Chest | Entry chest from Adventures and other rewards | Yes | Random coins, possible Mysterious Egg, possible unique chest emote; never gems or relics |
-| `silver` | Silver Chest | Early/mid-tier reward | Yes | Random coins and gems, possible Mysterious Egg and unique chest emote |
-| `gold` | Gold Chest | Mid-tier reward | Yes | Random coins and gems, possible Mysterious Egg, relic, and unique chest emote |
-| `dragon` | Dragon Chest | High-tier dragon reward | Yes | Random coins/gems, guaranteed Mysterious Egg, possible relic and unique chest emote |
-| `mythical` | Mythical Chest | Very high-tier reward | Yes | Random coins/gems, guaranteed Mysterious Egg, possible relic and unique chest emote |
-| `sinister` | Sinister Chest | Secret/sinister route reward | Yes | Random coins/gems, guaranteed relic, and guaranteed egg split between Sinister Egg and ordinary Mysterious Egg |
-| `special` | Special Chest | Optional event-specific container | Yes currently | Current global recipe is the Golden Wings chest described in section 2.1 |
-| `portrait` | Portrait Chest | Unlock one unowned standard portrait | No | Uniform selection from the remaining standard portrait collection |
-| `title` | Title Chest | Unlock one unowned standard title | No | Uniform selection from the remaining standard title collection |
-| `music` | Music Chest | Unlock one unowned jukebox track | No | Uniform selection from the remaining music collection |
+| `golden_wings_birthday` | A Wish on Golden Wings (`special_golden_wings_birthday`) | Launch: 1–3 Sep 2026; then every 13 May 00:00–14 May 00:00 from 2027 | 10 days | 500 XP; +25 Might/Spirit/Arcana; Golden Wings Chest; one random Moral Prism, Order Compass, Soul Mirror, or Astral Lens; one Music Chest if collection capacity remains |
+| `halloween_witchlight` | Night of the Witchlight / Roots Beneath the Lanterns (`special_halloween_witchlight`) | 25 Oct 00:00–2 Nov 00:00, annually from 2026 | 72 hours | 500 XP; +13 Might/Spirit/Arcana; Witchlight Chest |
+| `christmas_winter_hearth` | A Star for the Winter Hearth / The Starlight Sleigh (`special_christmas_winter_hearth`) | 25 Dec 00:00–27 Dec 00:00, annually from 2026 | 96 hours | 600 XP; +12 Might/Spirit/Arcana; Starlight Gift Chest |
+| `new_year_first_dawn` | When the New Dawn Rings / The Bell Beyond Midnight (`special_new_year_first_dawn`) | 31 Dec 18:00–2 Jan 00:00, annually from 2026 | 72 hours | 700 XP; +10 Might/Spirit/Arcana; Firstlight Celebration Chest |
+| `valentine_two_heartlights` | Where Two Heartlights Meet / The Rosebound Crossing (`special_valentine_two_heartlights`) | 14 Feb 00:00–15 Feb 00:00, annually from 2027 | 96 hours | Per Keeper: 650 XP; +8 Might/Spirit/Arcana; Twinheart Keepsake Chest; unique Heartbound Pair badge |
+| `pride_every_color` | The Haven of Every Color / The Aurora We Weave (`special_pride_every_color`) | 1 Jun 00:00–8 Jun 00:00, annually from 2027 | 84 hours | 700 XP; +10 Might/Spirit/Arcana; Radiant Festival Chest; unique True Colors title |
 
-Collection chests cannot be opened when their relevant collection is complete.
-Portrait, Title, and Music Chests are separate from supporter-exclusive vanity
-and music ownership. Current shop prices are 100 gems for a Portrait Chest, 100
-coins for a Title Chest, and 250 gems for a Music Chest.
+For the five new events, every combined Might, Spirit, and Arcana point removes
+15 minutes from the journey, down to an absolute minimum of 24 hours. Golden
+Wings retains its earlier one-hour-per-point rule and one-day minimum.
 
-## 5. Complete egg catalog
+### Valentine two-Keeper contract
 
-| Egg type | How it is created | Possible dragon | Incubation | Spectral behavior |
-|---|---|---|---:|---:|
-| Starter Egg | New-account starter state | One of 20 standard Common families, uniform | 1 hour before starter-only tap acceleration | 5% at creation; exactly 10% total when hatching during Golden Hour |
-| Mysterious Egg | Ordinary egg result from Wooden, Silver, Gold, Dragon, Mythical, or the ordinary branch of a Sinister Chest | One standard non-secret family using the source chest's rarity curve | Uniform 4h48m–33h36m in six-minute steps | 5% at creation; exactly 10% total when hatching during Golden Hour |
-| Sinister Egg | 50% branch of every Sinister Chest | Sinisterra only; secret Mythical and always Evil | 6h06m06s | 5% at creation; exactly 10% total when hatching during Golden Hour |
-| Special Egg | A configured Special Chest/event reward | Defined by that event; currently Cluckatrice only for Golden Wings | Defined by that event; currently 21 hours | Defined by that event; currently 0% for Golden Wings |
+- Exactly two registered Keepers participate, each with one available dragon.
+- The creator may invite via friends, Conclave, or Keeper ID; friendship is not
+  required.
+- The occurrence is consumed atomically only after the partner accepts and the
+  creator starts.
+- The two dragons' combined Might, Spirit, and Arcana determine the duration.
+- The Adventure cannot be aborted.
+- Each Keeper independently claims an idempotent server-issued reward. One
+  claim cannot consume the other Keeper's reward.
+- The server reservation makes both dragons unavailable until completion or a
+  declined/invalid pre-start invitation releases them.
 
-Egg identity values are fixed when the egg object is created. Opening another
-screen, restarting, backing up, restoring, or applying a revealing relic does
-not reroll the family, rarity, alignment, size, Spectral state, duration, or
-personality seed. Starter tapping only changes remaining time.
+### Pride Haven Spectrum
 
-Sinisterra is a secret Mythical family. Cluckatrice has the separate Special
-type and therefore cannot unlock the Mythical-dragon achievement. Both
-families are excluded from ordinary Starter and Mysterious Egg family pools.
+Every verified Prismatic Parade completion contributes to a global decorative
+seven-ribbon Haven Spectrum meter. Thresholds are 1, 10, 25, 50, 100, 250, and
+500 completions per occurrence. The meter never gates rewards.
 
-## 6. Lifecycle and persistence rules
+## 3. Event Trials
 
-### Event lifecycle
+| Event | Trial kind | Player-facing Trial | Loop |
+|---|---|---|---|
+| Halloween | `witchlightWard` | Witchlight Ward | Read a ward rune, guide its witchlight, break the approaching curse |
+| Christmas | `hollyfrostGiftforge` | Hollyfrost Giftforge | Memorize a gift recipe, stamp it at the forge, guide it to the sleigh |
+| New Year | `midnightChime` | Midnight Chime | Read the turning sky, strike chimes in rhythm, launch first-dawn light |
+| Valentine | `rosevowRelay` | Rosevow Relay | Pair heartlights, guide them through the crossing, seal the shared vow |
+| Pridefest | `prismaticParade` | Prismatic Parade | Match color and shape, guide radiant ribbons, complete the parade |
 
-1. The schedule resolver converts the event's Europe/Amsterdam wall-clock
-   window to UTC.
-2. The event appears only while the current instant is inside that window.
-3. Starting stores both `specialEventId` and a unique occurrence key on the
-   Adventure run and permanently records that occurrence as started.
-4. The Adventure may complete after the event window closes.
-5. Claiming grants the stored chest tier plus the event definition's expertise,
-   relic, and conditional Music Chest rewards.
+The five Trials each use their own full-screen background, icon, six gameplay
+sprites, animated three-phase loop, sounds, and theme. A run lasts 75 seconds.
+Might, Spirit, and Arcana provide small capped gameplay assistance; expertise
+never multiplies the submitted score.
 
-### Chest and egg lifecycle
+The runtime presentation deliberately carries that art through the complete
+flow: a themed HUD emblem and three-phase sprite trail, subtle ambient sprite
+motion, event-specific start and result compositions, illustrated compact
+Special Adventure cards/details, illustrated empty/error ranking states, and
+event-colored ranking headers backed by the corresponding Trial scene. The
+Pride Haven Spectrum uses seven actual festival sprites instead of generic
+symbols. All five nested event asset directories are declared explicitly in
+Flutter's asset bundle. Compact-phone widget coverage at 320×640 and an outer-
+edge alpha gate protect the layout and prevent visibly clipped cutouts.
 
-1. Awarding a chest increments the appropriate inventory tier.
-2. Random chest contents are rolled when the chest is opened, not when it is
-   awarded.
-3. Creating an egg fixes every hidden dragon property and its incubation
-   duration.
-4. Incubation and hatching reveal that fixed dragon; they do not roll a new
-   family.
+During one active event its Trial joins Cavern Flight, Ruin Breaker, and
+Runeweaver as four equally weighted refill candidates: 25% each per empty
+slot. The board still holds at most three offers and duplicates remain
+possible. An unstarted event offer disappears after closing; a run started
+with a valid server session may finish afterward.
 
-## 7. Required maintenance for every content change
+Every completed run receives the standard Trial reward. Seasonal expertise is
+split without tripling the grade reward:
 
-Update this file in the same change whenever any of the following happens:
+| Grade | Balanced expertise grant |
+|---|---|
+| D | +1 to the lowest expertise |
+| C | +1 to both lowest expertises |
+| B | +1 to all three |
+| A | +2 to lowest, +1 to both others |
+| S | +2 to both lowest, +1 to highest |
+| S+ | +3 to lowest, +2 to both others |
 
-- a Special Event or Special Adventure is added, removed, rescheduled, renamed,
-  rebalanced, or given different requirements, duration reduction, story,
-  notifications, or rewards;
-- a Special Chest/Special Egg definition, content relationship, provenance,
-  trade rule, sprite, sound, hatch result, or achievement changes;
-- any chest type or egg type is added, removed, renamed, or changes its creation
-  and lifecycle behavior;
-- persistence, import, backup, trade, or migration behavior changes for these
-  items.
+Points blocked by an expertise cap move to another uncapped expertise. A
+completed event Trial counts toward the Seven-day Trial Constellation under
+the same maximum of one credited completion per local date.
 
-Also update [RANDOM_REWARDS_AND_ODDS.md](RANDOM_REWARDS_AND_ODDS.md) whenever a
-change adds or modifies a random choice, probability, weighted pool, pity rule,
-range, conditional chance, or no-duplicate rule.
+### Worldwide event rankings
 
-After reviewing both documents, run:
+- Only registered, email-verified Keepers can start a ranked seasonal Trial.
+- The server issues the occurrence, deterministic seed, nonce/token, start,
+  and expiry; rejects replay, impossible timing, and scores beyond the
+  validated action bound.
+- There is no per-event attempt cap or separate practice mode: each naturally
+  offered Trial is one rewarded attempt.
+- Best verified score wins; ties use accuracy, then shortest duration, then
+  earliest submission.
+- New starts stop at event close. The full frozen ranking remains visible for
+  five days; its top three remain permanently in the Seasonal Chronicle.
+- First place receives a Mythical Chest and the event's gold podium emote;
+  second receives a Dragon Chest and silver emote; third receives a Gold Chest
+  and bronze emote.
+- Prize IDs are idempotent. A repeated podium finish keeps the chest and
+  increments the already-owned emote's win count.
+- If connectivity is lost after a valid server start, the normal local Trial
+  reward is kept, but that unverified score is excluded from the ranking.
+
+## 4. Event Special Chests
+
+All six definitions are non-tradeable, support safe multi-open if multiple
+copies legitimately exist, use their own closed/open art, and roll their
+contents only on opening. Event details reveal the chest but keep its contents
+secret.
+
+| Chest ID | Chest | Fixed contents | Opening sound |
+|---|---|---|---|
+| `golden_wings_chest_v1` | Golden Wings Chest | 269 coins, 10 gems, Golden Wings Special Egg | `golden_wings` |
+| `witchlight_chest_v1` | Witchlight Chest | 313 coins, 13 gems, Witchlight Egg | `witchlight` |
+| `starlight_gift_chest_v1` | Starlight Gift Chest | 250 coins, 12 gems, Starlit Evergreen Egg | `starlight` |
+| `firstlight_celebration_chest_v1` | Firstlight Celebration Chest | 365 coins, 12 gems, Turning-Year Egg | `firstlight` |
+| `twinheart_keepsake_chest_v1` | Twinheart Keepsake Chest | 214 coins, 14 gems, Rosebound Egg | `twinheart` |
+| `radiant_festival_chest_v1` | Radiant Festival Chest | 300 coins, 15 gems, Truecolor Egg | `radiant` |
+
+The event recipe itself is fixed. The normal Special-tier unique chest-emote
+find remains a separate 10% no-duplicate roll.
+
+## 5. Event Special Eggs and families
+
+| Egg ID | Egg | Incubation | Guaranteed family | Moral rule | Spectral |
+|---|---|---:|---|---|---:|
+| `golden_wings_egg_v1` | Golden Wings Special Egg | 21 hours | Cluckatrice | Random, initially hidden | 5%; 10% total during Golden Hour |
+| `witchlight_egg_v1` | Witchlight Egg | 13h13m13s | Gloamgourd | Random, initially hidden | 5%; 10% total during Golden Hour |
+| `starlit_evergreen_egg_v1` | Starlit Evergreen Egg | 25 hours | Hollyfrost | Always Good and known at hatch | 5%; 10% total during Golden Hour |
+| `turning_year_egg_v1` | Turning-Year Egg | 24 hours | Dawnchime | Always Neutral and known at hatch | 5%; 10% total during Golden Hour |
+| `rosebound_egg_v1` | Rosebound Egg | 14 hours | Rosevow | Always Good and known at hatch | 5%; 10% total during Golden Hour |
+| `truecolor_egg_v1` | Truecolor Egg | 18 hours | Spectrumplume | Always Good and known at hatch | 5%; 10% total during Golden Hour |
+
+Law alignment, size, and personality seed are fixed at egg creation. Moral is
+also fixed then, subject to the table. Opening screens, restarting, backup,
+restore, or a revealing relic never rerolls an egg. These eggs have no
+starter-only tap acceleration.
+
+Hatch achievements:
+
+- Cluckatrice: `winner_chicken_dinner` — Winner, Winner, Chicken Dinner
+- Gloamgourd: `warden_of_witchlight` — Warden of the Witchlight
+- Hollyfrost: `star_in_every_hearth` — A Star in Every Hearth
+- Dawnchime: `first_light_first_flight` — First Light, First Flight
+- Rosevow: `two_hearts_one_flight` — Two Hearts, One Flight
+- Spectrumplume: `every_color_takes_flight` — Every Color Takes Flight
+
+## 6. Temporary event music and notifications
+
+Each new event temporarily exposes one verified CC0/Public Domain jukebox
+alias while its real or private preview occurrence is active. It disappears
+after the occurrence and is not part of the 80-track Music Chest collection.
+The source performance for every alias is recorded in
+`assets/licenses/MUSIC_SOURCES.md`.
+
+One Special Events notification is scheduled for each opening and deep-links
+to Adventures. It respects the existing Special Events notification toggle
+and device notification permission.
+
+## 7. Private preview contract
+
+Each new event has a 48-hour reusable personal preview restricted server-side
+to Keeper `DH-17792DC5`. Preview rankings are isolated from live occurrences.
+Production preview rewards are simulated and cannot change permanent
+inventory; staging can grant persistent rewards for idempotency tests. The UI
+marks preview occurrences as test events.
+
+## 8. Other chest and egg types
+
+The complete chest enum remains:
+
+- `wooden`, `silver`, `gold`, `dragon`, `mythical`, `sinister`, `special`,
+  `portrait`, `title`, and `music`.
+
+The complete egg categories remain:
+
+- **Starter Egg** — first account egg, one standard Common family.
+- **Mysterious Egg** — ordinary standard family using its source-chest curve.
+- **Sinister Egg** — Sinisterra only, always Evil.
+- **Special Egg** — versioned event-bound family and rules from this document.
+
+## 9. Non-calendar Special Adventures
+
+The daily released-dragon system still owns 100 separate non-calendar routes:
+
+- `special_1`–`special_90`, A Strange Invitation, fixed visible ordinary chest;
+- `special_91`–`special_100`, The Crooked Shadow, fixed visible Sinister Chest.
+
+They wait for 48 hours, use their existing duration/XP/expertise formulas, do
+not enter an event Trial rotation, and never consume a scheduled event
+occurrence key.
+
+## 10. Persistence and server ownership
+
+- Save schema 53 persists event preview expiries, event Trial offers and local
+  bests, claimed prize IDs, podium-emote win counts, event chests/eggs, badge
+  ownership, and applied Valentine reward IDs.
+- Supabase migration `202609070040_seasonal_events.sql` owns preview
+  authorization, attempt tokens, rankings, frozen prizes, Chronicle records,
+  Valentine invitations/reservations/claims, and Pride community progress.
+- Event tables have RLS enabled, direct table access revoked, and only narrow
+  authenticated RPCs granted.
+- Ranking and paired-Adventure rewards are applied locally once and then
+  acknowledged; refresh/restart cannot duplicate them.
+
+## 11. Maintenance and source files
+
+After any relevant change, update this document and
+`RANDOM_REWARDS_AND_ODDS.md`, update `REDEEM_CODES.md` when preview codes
+change, then run:
 
 ```text
 dart run tool/reference_documentation_guard.dart --update
@@ -458,23 +253,8 @@ dart run tool/reference_documentation_guard.dart --verify
 flutter test test/reference_documentation_test.dart
 ```
 
-The fingerprints are deliberately derived from the implementation files, not
-from Git timestamps. Relevant source changes therefore fail the documentation
-test until the living references have been reviewed and re-signed.
-
-## 8. Primary source-of-truth files
-
-- `lib/models/adventure.dart` — Adventure catalogs, event schedule metadata,
-  requirements, durations, and reward bundles.
-- `lib/providers/dragonhaven_systems.dart` — event windows, start/claim logic,
-  released-dragon routes, notifications, and reward granting.
-- `lib/models/chest.dart` and `lib/providers/household_provider.dart` — chest
-  types, tradeability, opening recipes, egg construction, and collection rules.
-- `lib/models/dragon_egg.dart` and `lib/models/dragon_lineage.dart` — persisted
-  egg identity and dragon-family pools.
-- `lib/models/achievement.dart` — event hatch and sinister completion
-  achievements.
-- `lib/screens/adventure_hub_screen.dart` — player-visible event countdown,
-  requirements, and reward presentation.
-- `supabase/migrations/202608290026_special_chest_trade_support.sql` — current
-  Special Chest server inventory/import/trade support.
+Primary sources are `lib/models/adventure.dart`, `lib/models/trial.dart`,
+`lib/models/dragon_egg.dart`, `lib/models/dragon_lineage.dart`,
+`lib/providers/dragonhaven_systems.dart`, `lib/screens/seasonal_trial_game.dart`,
+`lib/screens/adventure_hub_screen.dart`, and
+`supabase/migrations/202609070040_seasonal_events.sql`.

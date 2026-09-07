@@ -12,7 +12,8 @@ class JukeboxScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
-    final tracks = game.ownedMusicTracks;
+    final tracks = game.availableJukeboxTracks;
+    final seasonalTracks = game.activeSeasonalMusicTracks;
     return Scaffold(
       appBar: AppBar(title: Text(strings.pick('Jukebox', 'Jukebox'))),
       body: ListView(
@@ -37,8 +38,8 @@ class JukeboxScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           strings.pick(
-                            '${tracks.length} tracks collected',
-                            '${tracks.length} nummers verzameld',
+                            '${game.ownedMusicTracks.length} tracks collected',
+                            '${game.ownedMusicTracks.length} nummers verzameld',
                           ),
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
@@ -78,7 +79,7 @@ class JukeboxScreen extends StatelessWidget {
               ),
             ),
           ),
-          if (game.musicEnabled && game.enabledMusicTrackIds.isEmpty) ...[
+          if (game.musicEnabled && game.enabledMusicResourceIds.isEmpty) ...[
             const SizedBox(height: 10),
             Card(
               color: const Color(0xFFFFF2DD),
@@ -117,17 +118,33 @@ class JukeboxScreen extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                     subtitle: Text(tracks[index].composer),
-                    value: game.enabledMusicTrackIds.contains(tracks[index].id),
+                    value: tracks[index].isTemporaryEventTrack
+                        ? !game.disabledSeasonalMusicTrackIds
+                            .contains(tracks[index].id)
+                        : game.enabledMusicTrackIds.contains(tracks[index].id),
                     onChanged: (enabled) => game.setMusicTrackEnabled(
                       tracks[index].id,
                       enabled,
                     ),
+                    tileColor: tracks[index].isTemporaryEventTrack
+                        ? const Color(0xFFFFF5D9)
+                        : null,
                   ),
                   if (index != tracks.length - 1) const Divider(height: 1),
                 ],
               ],
             ),
           ),
+          if (seasonalTracks.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              strings.pick(
+                'The highlighted event music is yours during this event and disappears when it closes.',
+                'De gemarkeerde eventmuziek is tijdens dit event beschikbaar en verdwijnt wanneer het sluit.',
+              ),
+              style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+          ],
         ],
       ),
     );

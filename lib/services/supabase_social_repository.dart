@@ -203,6 +203,175 @@ class SupabaseSocialRepository implements SocialRepository {
           .toList(growable: false);
 
   @override
+  Future<List<SeasonalEventPreviewEntitlement>>
+      loadSeasonalPreviewEntitlements() async =>
+          (await _listRpc('list_my_seasonal_event_previews'))
+              .map(SeasonalEventPreviewEntitlement.fromJson)
+              .toList(growable: false);
+
+  @override
+  Future<SeasonalEventPreviewEntitlement> redeemSeasonalPreview(
+    String code,
+  ) async =>
+      SeasonalEventPreviewEntitlement.fromJson(
+        await _singleRpc(
+          'redeem_seasonal_event_preview',
+          params: {'p_code': code},
+        ),
+      );
+
+  @override
+  Future<SeasonalTrialSession> startSeasonalTrial({
+    required String eventId,
+    required String trialKey,
+  }) async =>
+      SeasonalTrialSession.fromJson(
+        await _singleRpc(
+          'start_seasonal_trial_attempt',
+          params: {'p_event_id': eventId, 'p_trial_key': trialKey},
+        ),
+      );
+
+  @override
+  Future<SeasonalTrialSubmissionResult> completeSeasonalTrial({
+    required String attemptId,
+    required String token,
+    required int score,
+    required int correctActions,
+    required int totalActions,
+    required int durationMs,
+  }) async =>
+      SeasonalTrialSubmissionResult.fromJson(
+        await _singleRpc(
+          'complete_seasonal_trial_attempt',
+          params: {
+            'p_attempt_id': attemptId,
+            'p_completion_token': token,
+            'p_score': score,
+            'p_correct_actions': correctActions,
+            'p_total_actions': totalActions,
+            'p_duration_ms': durationMs,
+          },
+        ),
+      );
+
+  @override
+  Future<List<SeasonalTrialRankingEntry>> loadSeasonalTrialRankings({
+    required String eventId,
+    required String occurrenceKey,
+    bool preview = false,
+    int limit = 100,
+  }) async =>
+      (await _listRpc('get_seasonal_trial_rankings', params: {
+        'p_event_id': eventId,
+        'p_occurrence_key': occurrenceKey,
+        'p_preview': preview,
+        'p_limit': limit.clamp(1, 100),
+      }))
+          .map(SeasonalTrialRankingEntry.fromJson)
+          .toList(growable: false);
+
+  @override
+  Future<List<SeasonalChampionEntry>> loadSeasonalChronicle() async =>
+      (await _listRpc('list_seasonal_chronicle'))
+          .map(SeasonalChampionEntry.fromJson)
+          .toList(growable: false);
+
+  @override
+  Future<List<SeasonalChampionEntry>> finalizeSeasonalEventPrizes() async =>
+      (await _listRpc('finalize_my_seasonal_event_prizes'))
+          .map(SeasonalChampionEntry.fromJson)
+          .toList(growable: false);
+
+  @override
+  Future<void> acknowledgeSeasonalPrize(String prizeId) async {
+    await _rpc(
+      'acknowledge_seasonal_event_prize',
+      params: {'p_prize_id': prizeId},
+    );
+  }
+
+  @override
+  Future<List<SeasonalPairAdventure>> loadSeasonalPairAdventures() async =>
+      (await _listRpc('list_my_seasonal_pair_adventures'))
+          .map(SeasonalPairAdventure.fromJson)
+          .toList(growable: false);
+
+  @override
+  Future<void> inviteSeasonalPairAdventure({
+    required String keeperCode,
+    required String dragonId,
+    required int might,
+    required int arcana,
+    required int spirit,
+  }) async {
+    await _rpc('invite_seasonal_pair_adventure', params: {
+      'p_keeper_code': keeperCode,
+      'p_dragon_id': dragonId,
+      'p_might': might,
+      'p_arcana': arcana,
+      'p_spirit': spirit,
+    });
+  }
+
+  @override
+  Future<void> respondSeasonalPairAdventure({
+    required String adventureId,
+    required bool accept,
+    String? dragonId,
+    int might = 0,
+    int arcana = 0,
+    int spirit = 0,
+  }) async {
+    await _rpc('respond_seasonal_pair_adventure', params: {
+      'p_adventure_id': adventureId,
+      'p_accept': accept,
+      'p_dragon_id': dragonId,
+      'p_might': might,
+      'p_arcana': arcana,
+      'p_spirit': spirit,
+    });
+  }
+
+  @override
+  Future<void> startSeasonalPairAdventure(String adventureId) async {
+    await _rpc(
+      'start_seasonal_pair_adventure',
+      params: {'p_adventure_id': adventureId},
+    );
+  }
+
+  @override
+  Future<SeasonalPairReward?> claimSeasonalPairAdventure(
+    String adventureId,
+  ) async {
+    final rows = await _listRpc(
+      'claim_seasonal_pair_adventure_reward',
+      params: {'p_adventure_id': adventureId},
+    );
+    return rows.isEmpty ? null : SeasonalPairReward.fromJson(rows.first);
+  }
+
+  @override
+  Future<void> acknowledgeSeasonalPairReward(String adventureId) async {
+    await _rpc(
+      'acknowledge_seasonal_pair_adventure_reward',
+      params: {'p_adventure_id': adventureId},
+    );
+  }
+
+  @override
+  Future<SeasonalCommunityProgress> loadSeasonalCommunityProgress(
+    String eventId,
+  ) async =>
+      SeasonalCommunityProgress.fromJson(
+        await _singleRpc(
+          'get_seasonal_community_progress',
+          params: {'p_event_id': eventId},
+        ),
+      );
+
+  @override
   Future<List<FriendshipRequest>> loadRequests() async =>
       (await _listRpc('list_friend_requests'))
           .map(FriendshipRequest.fromJson)
@@ -607,8 +776,11 @@ class SupabaseSocialRepository implements SocialRepository {
     }
   }
 
-  Future<Map<String, dynamic>> _singleRpc(String function) async {
-    final rows = await _listRpc(function);
+  Future<Map<String, dynamic>> _singleRpc(
+    String function, {
+    Map<String, dynamic>? params,
+  }) async {
+    final rows = await _listRpc(function, params: params);
     if (rows.isEmpty) throw const SocialException('profile_not_found');
     return rows.first;
   }
@@ -661,6 +833,27 @@ class SupabaseSocialRepository implements SocialRepository {
       'invalid_group_dragon',
       'group_reward_not_ready',
       'group_reward_already_claimed',
+      'seasonal_preview_restricted',
+      'seasonal_preview_invalid',
+      'seasonal_trial_invalid',
+      'seasonal_trial_unavailable',
+      'seasonal_attempt_not_found',
+      'seasonal_attempt_used',
+      'seasonal_attempt_expired',
+      'seasonal_attempt_token_invalid',
+      'seasonal_score_rejected',
+      'seasonal_prize_not_found',
+      'seasonal_pair_invalid_dragon',
+      'seasonal_adventure_unavailable',
+      'seasonal_adventure_already_completed',
+      'seasonal_pair_already_active',
+      'seasonal_pair_not_found',
+      'seasonal_pair_not_pending',
+      'seasonal_pair_not_accepted',
+      'seasonal_pair_not_ready',
+      'seasonal_pair_reward_claimed',
+      'seasonal_pair_reward_apply_failed',
+      'seasonal_community_invalid',
       'trade_not_found',
       'trade_not_friends',
       'trade_wrong_participant',

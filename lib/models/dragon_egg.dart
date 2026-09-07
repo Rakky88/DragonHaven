@@ -15,6 +15,8 @@ class DragonEgg {
     int incubationMinutes = 1008,
     int? incubationSeconds,
     bool sinister = false,
+    this.specialEggId,
+    this.moralAxisKnown = false,
     this.xp = 0,
   })  : moralAxis =
             sinister || lineageId == 'sinisterra' ? MoralAxis.evil : moralAxis,
@@ -34,11 +36,14 @@ class DragonEgg {
   int get incubationMinutes => (incubationSeconds + 59) ~/ 60;
   Duration get incubationDuration => Duration(seconds: incubationSeconds);
   final bool sinister;
+  final String? specialEggId;
+  final bool moralAxisKnown;
   final int xp;
 
   DragonLineage get lineage => dragonLineageById(lineageId);
   bool get isSinisterEgg => lineageId == 'sinisterra';
-  bool get isSpecialEgg => lineage.secret && !isSinisterEgg;
+  bool get isSpecialEgg =>
+      specialEggId != null || (lineage.secret && !isSinisterEgg);
 
   Pet activate(
           {required int coins, required int gems, DateTime? activatedAt}) =>
@@ -52,7 +57,7 @@ class DragonEgg {
         sinister: sinister,
         lawAxis: lawAxis,
         moralAxis: moralAxis,
-        moralAxisKnown: isSinisterEgg,
+        moralAxisKnown: isSinisterEgg || moralAxisKnown,
         sizeFactor: sizeFactor,
         incubationSeconds: incubationSeconds,
         firstEgg: false,
@@ -74,6 +79,8 @@ class DragonEgg {
         'incubationMinutes': incubationMinutes,
         'incubationSeconds': incubationSeconds,
         'sinister': sinister,
+        'specialEggId': specialEggId,
+        'moralAxisKnown': moralAxisKnown,
         'xp': xp,
       };
 
@@ -101,6 +108,9 @@ class DragonEgg {
           .toDouble(),
       incubationSeconds: _incubationSecondsFromJson(json),
       sinister: json['sinister'] is bool && json['sinister'] as bool,
+      specialEggId: nonEmptyStringFromJson(json['specialEggId']),
+      moralAxisKnown:
+          json['moralAxisKnown'] is bool && json['moralAxisKnown'] as bool,
       xp: nonNegativeIntFromJson(json['xp'], fallback: 0),
     );
   }

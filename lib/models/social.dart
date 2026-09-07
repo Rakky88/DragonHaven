@@ -8,6 +8,291 @@ enum FriendRequestDirection { incoming, outgoing }
 
 enum TrialRankingScope { world, friends, conclave }
 
+enum SeasonalEventPhase { upcoming, live, results, archived, preview }
+
+class SeasonalEventPreviewEntitlement {
+  const SeasonalEventPreviewEntitlement({
+    required this.eventId,
+    required this.expiresAt,
+  });
+
+  final String eventId;
+  final DateTime expiresAt;
+
+  factory SeasonalEventPreviewEntitlement.fromJson(Map<String, dynamic> json) =>
+      SeasonalEventPreviewEntitlement(
+        eventId: json['event_id']?.toString() ?? '',
+        expiresAt: DateTime.parse(json['expires_at'].toString()).toLocal(),
+      );
+}
+
+class SeasonalTrialSession {
+  const SeasonalTrialSession({
+    required this.attemptId,
+    required this.eventId,
+    required this.occurrenceKey,
+    required this.token,
+    required this.seed,
+    required this.startedAt,
+    required this.expiresAt,
+    required this.simulated,
+  });
+
+  final String attemptId;
+  final String eventId;
+  final String occurrenceKey;
+  final String token;
+  final int seed;
+  final DateTime startedAt;
+  final DateTime expiresAt;
+  final bool simulated;
+
+  factory SeasonalTrialSession.fromJson(Map<String, dynamic> json) =>
+      SeasonalTrialSession(
+        attemptId: json['attempt_id']?.toString() ?? '',
+        eventId: json['event_id']?.toString() ?? '',
+        occurrenceKey: json['occurrence_key']?.toString() ?? '',
+        token: json['completion_token']?.toString() ?? '',
+        seed: _int(json['seed']),
+        startedAt: DateTime.parse(json['started_at'].toString()).toLocal(),
+        expiresAt: DateTime.parse(json['expires_at'].toString()).toLocal(),
+        simulated: json['simulated'] == true,
+      );
+}
+
+class SeasonalTrialSubmissionResult {
+  const SeasonalTrialSubmissionResult({
+    required this.accepted,
+    required this.bestScore,
+    required this.rankingPosition,
+    required this.simulated,
+  });
+
+  final bool accepted;
+  final int bestScore;
+  final int? rankingPosition;
+  final bool simulated;
+
+  factory SeasonalTrialSubmissionResult.fromJson(Map<String, dynamic> json) =>
+      SeasonalTrialSubmissionResult(
+        accepted: json['accepted'] == true,
+        bestScore: _int(json['best_score']),
+        rankingPosition: json['ranking_position'] == null
+            ? null
+            : _int(json['ranking_position']),
+        simulated: json['simulated'] == true,
+      );
+}
+
+class SeasonalTrialRankingEntry {
+  const SeasonalTrialRankingEntry({
+    required this.position,
+    required this.userId,
+    required this.displayName,
+    required this.title,
+    required this.portraitKey,
+    required this.score,
+    required this.accuracyPermille,
+    required this.durationMs,
+    required this.isCurrentUser,
+    this.frameKey,
+    this.badgeKey,
+  });
+
+  final int position;
+  final String userId;
+  final String displayName;
+  final String title;
+  final String portraitKey;
+  final String? frameKey;
+  final String? badgeKey;
+  final int score;
+  final int accuracyPermille;
+  final int durationMs;
+  final bool isCurrentUser;
+
+  factory SeasonalTrialRankingEntry.fromJson(Map<String, dynamic> json) =>
+      SeasonalTrialRankingEntry(
+        position: _int(json['ranking_position']),
+        userId: json['user_id']?.toString() ?? '',
+        displayName: json['display_name']?.toString() ?? 'Keeper',
+        title: json['title']?.toString() ?? 'title_001',
+        portraitKey: json['portrait_key']?.toString() ?? 'portrait_001',
+        frameKey: json['frame_key']?.toString(),
+        badgeKey: json['badge_key']?.toString(),
+        score: _int(json['score']),
+        accuracyPermille: _int(json['accuracy_permille']),
+        durationMs: _int(json['duration_ms']),
+        isCurrentUser: json['is_current_user'] == true,
+      );
+}
+
+class SeasonalChampionEntry {
+  const SeasonalChampionEntry({
+    required this.eventId,
+    required this.occurrenceKey,
+    required this.position,
+    required this.displayName,
+    required this.score,
+    required this.podiumEmoteId,
+    this.prizeId,
+    this.claimed = false,
+  });
+
+  final String eventId;
+  final String occurrenceKey;
+  final int position;
+  final String displayName;
+  final int score;
+  final String podiumEmoteId;
+  final String? prizeId;
+  final bool claimed;
+
+  factory SeasonalChampionEntry.fromJson(Map<String, dynamic> json) =>
+      SeasonalChampionEntry(
+        eventId: json['event_id']?.toString() ?? '',
+        occurrenceKey: json['occurrence_key']?.toString() ?? '',
+        position: _int(json['ranking_position']),
+        displayName: json['display_name']?.toString() ?? 'Keeper',
+        score: _int(json['score']),
+        podiumEmoteId: json['podium_emote_id']?.toString() ?? '',
+        prizeId: json['prize_id']?.toString(),
+        claimed: json['claimed'] == true,
+      );
+}
+
+enum SeasonalPairAdventureStatus {
+  invited,
+  accepted,
+  running,
+  rewardReady,
+  completed,
+  declined,
+}
+
+class SeasonalPairAdventure {
+  const SeasonalPairAdventure({
+    required this.id,
+    required this.eventId,
+    required this.occurrenceKey,
+    required this.status,
+    required this.creator,
+    required this.partner,
+    required this.isCreator,
+    required this.myDragonId,
+    required this.otherDragonId,
+    required this.createdAt,
+    this.startedAt,
+    this.endsAt,
+    this.myRewardClaimed = false,
+  });
+
+  final String id;
+  final String eventId;
+  final String occurrenceKey;
+  final SeasonalPairAdventureStatus status;
+  final KeeperProfile creator;
+  final KeeperProfile partner;
+  final bool isCreator;
+  final String myDragonId;
+  final String? otherDragonId;
+  final DateTime createdAt;
+  final DateTime? startedAt;
+  final DateTime? endsAt;
+  final bool myRewardClaimed;
+
+  bool get isIncomingInvite =>
+      !isCreator && status == SeasonalPairAdventureStatus.invited;
+  bool get isActive =>
+      status == SeasonalPairAdventureStatus.invited ||
+      status == SeasonalPairAdventureStatus.accepted ||
+      status == SeasonalPairAdventureStatus.running ||
+      status == SeasonalPairAdventureStatus.rewardReady;
+
+  factory SeasonalPairAdventure.fromJson(Map<String, dynamic> json) {
+    final rawCreator = _jsonMap(json['creator']);
+    final rawPartner = _jsonMap(json['partner']);
+    return SeasonalPairAdventure(
+      id: json['id']?.toString() ?? '',
+      eventId: json['event_id']?.toString() ?? '',
+      occurrenceKey: json['occurrence_key']?.toString() ?? '',
+      status: SeasonalPairAdventureStatus.values.firstWhere(
+        (value) => value.name == json['status'],
+        orElse: () => SeasonalPairAdventureStatus.invited,
+      ),
+      creator: KeeperProfile.fromJson(rawCreator),
+      partner: KeeperProfile.fromJson(rawPartner),
+      isCreator: json['is_creator'] == true,
+      myDragonId: json['my_dragon_id']?.toString() ?? '',
+      otherDragonId: json['other_dragon_id']?.toString(),
+      createdAt: DateTime.parse(json['created_at'].toString()).toLocal(),
+      startedAt:
+          DateTime.tryParse(json['started_at']?.toString() ?? '')?.toLocal(),
+      endsAt: DateTime.tryParse(json['ends_at']?.toString() ?? '')?.toLocal(),
+      myRewardClaimed: json['my_reward_claimed'] == true,
+    );
+  }
+}
+
+class SeasonalPairReward {
+  const SeasonalPairReward({
+    required this.adventureId,
+    required this.eventId,
+    required this.dragonId,
+    required this.xp,
+    required this.might,
+    required this.arcana,
+    required this.spirit,
+    required this.specialChestId,
+    required this.simulated,
+  });
+
+  final String adventureId;
+  final String eventId;
+  final String dragonId;
+  final int xp;
+  final int might;
+  final int arcana;
+  final int spirit;
+  final String specialChestId;
+  final bool simulated;
+
+  factory SeasonalPairReward.fromJson(Map<String, dynamic> json) =>
+      SeasonalPairReward(
+        adventureId: json['adventure_id']?.toString() ?? '',
+        eventId: json['event_id']?.toString() ?? '',
+        dragonId: json['dragon_id']?.toString() ?? '',
+        xp: _int(json['xp']),
+        might: _int(json['might']),
+        arcana: _int(json['arcana']),
+        spirit: _int(json['spirit']),
+        specialChestId: json['special_chest_id']?.toString() ?? '',
+        simulated: json['simulated'] == true,
+      );
+}
+
+class SeasonalCommunityProgress {
+  const SeasonalCommunityProgress({
+    required this.eventId,
+    required this.occurrenceKey,
+    required this.completedRuns,
+    required this.ribbonCount,
+  });
+
+  final String eventId;
+  final String occurrenceKey;
+  final int completedRuns;
+  final int ribbonCount;
+
+  factory SeasonalCommunityProgress.fromJson(Map<String, dynamic> json) =>
+      SeasonalCommunityProgress(
+        eventId: json['event_id']?.toString() ?? '',
+        occurrenceKey: json['occurrence_key']?.toString() ?? '',
+        completedRuns: _int(json['completed_runs']),
+        ribbonCount: _int(json['ribbon_count']).clamp(0, 7),
+      );
+}
+
 class TrialRankingEntry {
   const TrialRankingEntry({
     required this.position,
@@ -1273,6 +1558,14 @@ class OnlineInventorySnapshot {
           (dragon) => dragon?['favorite'] == true,
           orElse: () => null,
         );
+    final favoriteShowcase = favorite == null
+        ? null
+        : <String, dynamic>{
+            ...favorite,
+            'trial_high_scores': _standardTrialScores(
+              favorite['trial_high_scores'],
+            ),
+          };
     return {
       'discovered_dragon_count': discoveredForms.toSet().length,
       'dragon_count': dragons.length,
@@ -1284,7 +1577,16 @@ class OnlineInventorySnapshot {
         'ruinBreaker': _bestDragonTrialScore('ruinBreaker'),
         'runeweaver': _bestDragonTrialScore('runeweaver'),
       },
-      'favorite_dragon': favorite,
+      'favorite_dragon': favoriteShowcase,
+    };
+  }
+
+  Map<String, int> _standardTrialScores(Object? rawScores) {
+    final scores = rawScores is Map ? rawScores : const {};
+    return {
+      'cavernFlight': _int(scores['cavernFlight']),
+      'ruinBreaker': _int(scores['ruinBreaker']),
+      'runeweaver': _int(scores['runeweaver']),
     };
   }
 

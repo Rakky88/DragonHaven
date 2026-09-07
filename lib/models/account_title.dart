@@ -16,7 +16,7 @@ class AccountTitle {
   final bool supporterExclusive;
 
   String label(String languageCode) {
-    if (supporterExclusive) {
+    if (supporterExclusive || labelEn != null || labelNl != null) {
       return languageCode == 'nl'
           ? (labelNl ?? labelEn ?? id)
           : (labelEn ?? labelNl ?? id);
@@ -465,9 +465,18 @@ const supporterAccountTitle = AccountTitle(
   supporterExclusive: true,
 );
 
+const trueColorsAccountTitle = AccountTitle(
+  id: 'true_colors',
+  prefixIndex: 0,
+  roleIndex: 0,
+  labelEn: 'True Colors',
+  labelNl: 'Ware Kleuren',
+);
+
 final List<AccountTitle> allAccountTitles = List.unmodifiable([
   ...accountTitleCatalog,
   supporterAccountTitle,
+  trueColorsAccountTitle,
 ]);
 
 final Map<String, AccountTitle> _accountTitlesById = Map.unmodifiable({

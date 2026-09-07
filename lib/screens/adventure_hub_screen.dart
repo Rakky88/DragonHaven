@@ -20,6 +20,7 @@ import '../widgets/expertise_score_badge.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/trial_icon_sprite.dart';
 import '../widgets/trial_rankings_sheet.dart';
+import '../widgets/seasonal_trial_rankings_sheet.dart';
 import '../widgets/online_account_access.dart';
 import '../widgets/ui_bits.dart';
 
@@ -524,6 +525,16 @@ class _TrialOfferCard extends StatelessWidget {
         TrialKind.ruinBreaker =>
           'assets/images/ui/trials/trial_ruin_breaker.webp',
         TrialKind.runeweaver => 'assets/images/ui/trials/trial_runeweaver.webp',
+        TrialKind.witchlightWard =>
+          'assets/images/events/halloween/trial_background.webp',
+        TrialKind.hollyfrostGiftforge =>
+          'assets/images/events/christmas/trial_background.webp',
+        TrialKind.midnightChime =>
+          'assets/images/events/new_year/trial_background.webp',
+        TrialKind.rosevowRelay =>
+          'assets/images/events/valentine/trial_background.webp',
+        TrialKind.prismaticParade =>
+          'assets/images/events/pride/trial_background.webp',
       };
 
   @override
@@ -588,13 +599,63 @@ class _TrialOfferCard extends StatelessWidget {
                   Positioned(
                     right: 8,
                     top: 8,
-                    child: IconButton.filledTonal(
-                      key: Key('dismiss-trial-${offer.id}'),
-                      tooltip: strings.pick('Dismiss Trial', 'Proef negeren'),
-                      onPressed: () => game.dismissTrial(offer.id),
-                      icon: const Icon(Icons.close_rounded),
+                    child: Column(
+                      children: [
+                        IconButton.filledTonal(
+                          key: Key('dismiss-trial-${offer.id}'),
+                          tooltip:
+                              strings.pick('Dismiss Trial', 'Proef negeren'),
+                          onPressed: () => game.dismissTrial(offer.id),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                        if (definition.specialEventId case final eventId?) ...[
+                          const SizedBox(height: 4),
+                          IconButton.filled(
+                            key: Key('seasonal-rankings-${offer.id}'),
+                            tooltip:
+                                strings.pick('Event ranking', 'Eventranglijst'),
+                            onPressed: () {
+                              final event = specialAdventureEventById(eventId);
+                              if (event != null) {
+                                showSeasonalTrialRankingsSheet(
+                                  context,
+                                  event: event,
+                                  preview: offer.specialEventKey
+                                          ?.contains(':preview:') ==
+                                      true,
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.leaderboard_rounded),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
+                  if (offer.specialEventKey?.contains(':preview:') == true)
+                    Positioned(
+                      left: 10,
+                      top: 10,
+                      child: Container(
+                        key: Key('trial-test-label-${offer.id}'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFD86E),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: const Text(
+                          'TEST EVENT',
+                          style: TextStyle(
+                            color: Color(0xFF3B245A),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -685,6 +746,50 @@ Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
     ),
   );
   if (dragon == null || !context.mounted) return;
+  SeasonalTrialSession? seasonalSession;
+  if (offer.definition.isSeasonal) {
+    final online = context.read<OnlineAccountProvider>();
+    if (!online.isSignedIn || !online.isEmailVerified) {
+      showAppSnackBar(
+        context,
+        strings.pick(
+          'Sign in with a verified account to enter a seasonal Trial.',
+          'Log in met een geverifieerd account voor een seizoensproef.',
+        ),
+      );
+      return;
+    }
+    final eventId = offer.definition.specialEventId!;
+    seasonalSession = await online.startSeasonalTrial(
+      eventId: eventId,
+      trialKey: offer.kind.name,
+    );
+    if (seasonalSession == null || !context.mounted) {
+      if (context.mounted) {
+        showAppSnackBar(
+          context,
+          strings.pick(
+            'The event server could not start this Trial. Please try again.',
+            'De eventserver kon deze proef niet starten. Probeer opnieuw.',
+          ),
+        );
+      }
+      return;
+    }
+  }
+  if (!await game.beginTrial(offer.id)) {
+    if (context.mounted) {
+      showAppSnackBar(
+        context,
+        strings.pick(
+          'This seasonal Trial is no longer available.',
+          'Deze seizoensproef is niet meer beschikbaar.',
+        ),
+      );
+    }
+    return;
+  }
+  if (!context.mounted) return;
   game.beginPresentationDeferral();
   try {
     await Navigator.of(context).push<TrialCompletion>(
@@ -693,6 +798,7 @@ Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
         builder: (_) => TrialGameScreen(
           offerId: offer.id,
           dragonId: dragon.id,
+          seasonalSession: seasonalSession,
         ),
       ),
     );
@@ -820,6 +926,15 @@ String _trialStatBenefit(AppStrings strings, TrialKind kind) => switch (kind) {
       TrialKind.runeweaver => strings.pick(
           'Higher Arcana keeps every demonstrated rune visible longer.',
           'Hogere Arcana houdt iedere getoonde rune langer zichtbaar.'),
+      TrialKind.witchlightWard ||
+      TrialKind.hollyfrostGiftforge ||
+      TrialKind.midnightChime ||
+      TrialKind.rosevowRelay ||
+      TrialKind.prismaticParade =>
+        strings.pick(
+          'All three Expertises provide a small, capped play-assist. They never multiply your score.',
+          'Alle drie Expertises geven een kleine, begrensde speelhulp. Ze vermenigvuldigen je score nooit.',
+        ),
     };
 
 class _AvailableAdventures extends StatelessWidget {
@@ -923,6 +1038,8 @@ class _AdventureSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 5),
+          if (kind == AdventureKind.special)
+            const _SeasonalPairAdventurePanel(),
           if (adventures.isEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 8, 10, 18),
@@ -936,6 +1053,317 @@ class _AdventureSection extends StatelessWidget {
             for (final adventure in adventures)
               _AdventureCard(adventure: adventure),
         ],
+      ),
+    );
+  }
+}
+
+class _SeasonalPairAdventurePanel extends StatelessWidget {
+  const _SeasonalPairAdventurePanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final online = context.watch<OnlineAccountProvider>();
+    final entries = online.seasonalPairAdventures
+        .where((entry) =>
+            entry.eventId == 'valentine_two_heartlights' && entry.isActive)
+        .toList(growable: false);
+    if (entries.isEmpty) return const SizedBox.shrink();
+    return Column(
+      children: [
+        for (final entry in entries)
+          _SeasonalPairAdventureCard(adventure: entry),
+        const SizedBox(height: 4),
+      ],
+    );
+  }
+}
+
+class _SeasonalPairAdventureCard extends StatelessWidget {
+  const _SeasonalPairAdventureCard({required this.adventure});
+
+  final SeasonalPairAdventure adventure;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final other = adventure.isCreator ? adventure.partner : adventure.creator;
+    final now = DateTime.now();
+    final rewardReady =
+        adventure.status == SeasonalPairAdventureStatus.rewardReady ||
+            (adventure.status == SeasonalPairAdventureStatus.running &&
+                adventure.endsAt?.isBefore(now) == true);
+    final status = rewardReady
+        ? strings.pick('Shared reward ready', 'Gedeelde beloning klaar')
+        : switch (adventure.status) {
+            SeasonalPairAdventureStatus.invited => adventure.isCreator
+                ? strings.pick('Waiting for acceptance', 'Wacht op acceptatie')
+                : strings.pick('Invites you', 'Nodigt je uit'),
+            SeasonalPairAdventureStatus.accepted => adventure.isCreator
+                ? strings.pick(
+                    'Both dragons are ready', 'Beide draken staan klaar')
+                : strings.pick('Waiting for the creator', 'Wacht op de maker'),
+            SeasonalPairAdventureStatus.running => strings.pick(
+                'Returns in ${_formatRefreshCountdown(adventure.endsAt!.difference(now), includeDays: true)}',
+                'Terug over ${_formatRefreshCountdown(adventure.endsAt!.difference(now), includeDays: true)}',
+              ),
+            _ => '',
+          };
+    return Card(
+      key: Key('seasonal-pair-${adventure.id}'),
+      margin: const EdgeInsets.only(bottom: 7),
+      color: const Color(0xFFFFF8FC),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: Color(0xFFE7A2BE)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              padding: const EdgeInsets.all(3),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFFD3E2), Color(0xFFE7C6FF)],
+                ),
+              ),
+              child: const TrialIconSprite(
+                kind: TrialKind.rosevowRelay,
+                size: 42,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    strings.pick(
+                        'Rosebound Crossing', 'Rozengebonden Oversteek'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  Text(
+                    '${other.displayName} · $status',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        const TextStyle(color: AppColors.muted, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            if (adventure.isIncomingInvite)
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton.filledTonal(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: strings.pick('Accept', 'Accepteren'),
+                    onPressed: () => _accept(context),
+                    icon: const Icon(Icons.favorite_rounded, size: 19),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: strings.pick('Decline', 'Weigeren'),
+                    onPressed: () => context
+                        .read<OnlineAccountProvider>()
+                        .respondSeasonalPairAdventure(
+                          adventureId: adventure.id,
+                          accept: false,
+                        ),
+                    icon: const Icon(Icons.close_rounded, size: 19),
+                  ),
+                ],
+              )
+            else if (adventure.status == SeasonalPairAdventureStatus.accepted &&
+                adventure.isCreator)
+              FilledButton.icon(
+                onPressed: () => context
+                    .read<OnlineAccountProvider>()
+                    .startSeasonalPairAdventure(adventure.id),
+                icon: const Icon(Icons.favorite_rounded, size: 18),
+                label: Text(strings.pick('Start', 'Start')),
+              )
+            else if (rewardReady)
+              FilledButton(
+                onPressed: () async {
+                  final claimed = await context
+                      .read<OnlineAccountProvider>()
+                      .claimSeasonalPairAdventure(adventure.id);
+                  if (!context.mounted) return;
+                  showAppSnackBar(
+                    context,
+                    claimed
+                        ? strings.pick(
+                            'Your Valentine rewards are safely claimed.',
+                            'Je Valentijnsbeloningen zijn veilig geclaimd.',
+                          )
+                        : strings.pick(
+                            'The reward could not be claimed yet.',
+                            'De beloning kon nog niet worden geclaimd.',
+                          ),
+                  );
+                },
+                child: Text(strings.pick('Claim', 'Claim')),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _accept(BuildContext context) async {
+    final game = context.read<HouseholdProvider>();
+    final available = game.ownedDragons
+        .where((dragon) => dragon.activeAdventureId == null)
+        .toList(growable: false);
+    if (available.isEmpty) {
+      await _showStartResult(context, AdventureStartResult.eggCannotAdventure);
+      return;
+    }
+    final definition =
+        AdventureCatalog.byId['special_valentine_two_heartlights'] ??
+            AdventureCatalog.byId.values
+                .firstWhere((value) => value.requiresOnlinePartner);
+    final selected = await showModalBottomSheet<Pet>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _DragonPicker(adventure: definition, dragons: available),
+    );
+    if (selected == null || !context.mounted) return;
+    await context.read<OnlineAccountProvider>().respondSeasonalPairAdventure(
+          adventureId: adventure.id,
+          accept: true,
+          dragonId: selected.id,
+          might: selected.trainingFor(TrainingFocus.might),
+          arcana: selected.trainingFor(TrainingFocus.arcana),
+          spirit: selected.trainingFor(TrainingFocus.spirit),
+        );
+  }
+}
+
+class _SeasonalPartnerPicker extends StatefulWidget {
+  const _SeasonalPartnerPicker({required this.online});
+
+  final OnlineAccountProvider online;
+
+  @override
+  State<_SeasonalPartnerPicker> createState() => _SeasonalPartnerPickerState();
+}
+
+class _SeasonalPartnerPickerState extends State<_SeasonalPartnerPicker> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final candidates = <String, ({String name, String source})>{};
+    for (final friend in widget.online.friends) {
+      candidates[friend.keeperCode] = (
+        name: friend.displayName,
+        source: strings.pick('Friend', 'Vriend'),
+      );
+    }
+    for (final member
+        in widget.online.conclave?.members ?? const <ConclaveMember>[]) {
+      if (member.userId == widget.online.currentUserId) continue;
+      candidates.putIfAbsent(
+        member.keeperCode,
+        () => (
+          name: member.displayName,
+          source: strings.pick('Conclave', 'Conclave'),
+        ),
+      );
+    }
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          18,
+          0,
+          18,
+          18 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  strings.pick('Choose your Heartlight partner',
+                      'Kies je Hartlicht-partner'),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                strings.pick(
+                  'Friends and Conclave keepers are listed here. You can also invite any registered Keeper by ID.',
+                  'Vrienden en Conclave-hoeders staan hier. Je kunt ook iedere geregistreerde Hoeder via ID uitnodigen.',
+                ),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.muted),
+              ),
+              const SizedBox(height: 12),
+              for (final entry in candidates.entries)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: TrialIconSprite(
+                      kind: TrialKind.rosevowRelay,
+                      size: 44,
+                    ),
+                  ),
+                  title: Text(entry.value.name,
+                      style: const TextStyle(fontWeight: FontWeight.w800)),
+                  subtitle: Text('${entry.value.source} Â· ${entry.key}'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.pop(context, entry.key),
+                ),
+              TextField(
+                key: const Key('seasonal-partner-keeper-id'),
+                controller: _controller,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  labelText: strings.pick('Keeper ID', 'Hoeder-ID'),
+                  hintText: 'DH-12345678',
+                  prefixIcon: const Icon(Icons.badge_outlined),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    final code = _controller.text.trim().toUpperCase();
+                    if (RegExp(r'^DH-[A-Z0-9]{8}$').hasMatch(code)) {
+                      Navigator.pop(context, code);
+                    }
+                  },
+                  icon: const Icon(Icons.favorite_rounded),
+                  label: Text(
+                      strings.pick('Send invitation', 'Verstuur uitnodiging')),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1756,9 +2184,11 @@ class _AdventureCard extends StatelessWidget {
         : null;
     final specialWindow = specialEvent == null
         ? null
-        : specialAdventureWindowsAt(game.currentTime)
+        : game.activeSpecialAdventureWindows
             .where((window) => window.event.id == specialEvent.id)
             .firstOrNull;
+    final specialTrialKind = trialKindByName(specialEvent?.trialKindName);
+    final isPreview = specialWindow?.key.contains(':preview:') == true;
     return SizedBox(
       key: Key('adventure-card-${adventure.id}'),
       height: 82,
@@ -1773,6 +2203,20 @@ class _AdventureCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(11, 7, 7, 7),
             child: Row(children: [
+              if (specialTrialKind != null) ...[
+                Container(
+                  width: 48,
+                  height: 48,
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFF3EAFD),
+                    border: Border.all(color: const Color(0xFFD9C5F0)),
+                  ),
+                  child: TrialIconSprite(kind: specialTrialKind, size: 44),
+                ),
+                const SizedBox(width: 8),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1793,6 +2237,28 @@ class _AdventureCard extends StatelessWidget {
                       if (adventure.sinister)
                         const Icon(Icons.visibility_rounded,
                             size: 16, color: Color(0xFF8A285E)),
+                      if (isPreview) ...[
+                        const SizedBox(width: 5),
+                        Container(
+                          key: const Key('special-event-test-label'),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFD86E),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: const Text(
+                            'TEST',
+                            style: TextStyle(
+                              color: Color(0xFF3B245A),
+                              fontSize: 8,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
                     ]),
                     const SizedBox(height: 4),
                     Row(children: [
@@ -1883,12 +2349,61 @@ class _AdventureCard extends StatelessWidget {
           _DragonPicker(adventure: adventure, dragons: available),
     );
     if (selected == null || !context.mounted) return;
+    if (adventure.requiresOnlinePartner) {
+      await _inviteValentinePartner(context, selected);
+      return;
+    }
     final result = await game.startAdventure(adventure, dragonId: selected.id);
     if (!context.mounted) return;
     await _showStartResult(context, result);
     if (result == AdventureStartResult.started) {
       HavenAudio.play(HavenSound.adventureStart);
     }
+  }
+
+  Future<void> _inviteValentinePartner(
+    BuildContext context,
+    Pet dragon,
+  ) async {
+    final strings = AppStrings.of(context);
+    final online = context.read<OnlineAccountProvider>();
+    if (!online.isSignedIn || !online.isEmailVerified) {
+      showAppSnackBar(
+        context,
+        strings.pick(
+          'Sign in with a verified account to invite your Valentine partner.',
+          'Log in met een geverifieerd account om je Valentijnspartner uit te nodigen.',
+        ),
+      );
+      return;
+    }
+    final keeperCode = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _SeasonalPartnerPicker(online: online),
+    );
+    if (keeperCode == null || !context.mounted) return;
+    final sent = await online.inviteSeasonalPairAdventure(
+      keeperCode: keeperCode,
+      dragonId: dragon.id,
+      might: dragon.trainingFor(TrainingFocus.might),
+      arcana: dragon.trainingFor(TrainingFocus.arcana),
+      spirit: dragon.trainingFor(TrainingFocus.spirit),
+    );
+    if (!context.mounted) return;
+    showAppSnackBar(
+      context,
+      sent
+          ? strings.pick(
+              'Heartlight invitation sent. Your dragon is reserved while you wait.',
+              'Hartlicht-uitnodiging verstuurd. Je draak blijft gereserveerd terwijl je wacht.',
+            )
+          : strings.pick(
+              'The invitation could not be sent.',
+              'De uitnodiging kon niet worden verstuurd.',
+            ),
+    );
   }
 
   void _showAdventureDetails(
@@ -1900,9 +2415,10 @@ class _AdventureCard extends StatelessWidget {
     final specialEvent = specialAdventureEventForAdventure(definition.id);
     final specialWindow = specialEvent == null
         ? null
-        : specialAdventureWindowsAt(game.currentTime)
+        : game.activeSpecialAdventureWindows
             .where((window) => window.event.id == specialEvent.id)
             .firstOrNull;
+    final specialTrialKind = trialKindByName(specialEvent?.trialKindName);
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -1915,7 +2431,10 @@ class _AdventureCard extends StatelessWidget {
           key: const Key('available-adventure-details-scroll'),
           padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            GameIconSprite(_kindIcon(definition.kind), size: 122),
+            if (specialTrialKind != null)
+              TrialIconSprite(kind: specialTrialKind, size: 122)
+            else
+              GameIconSprite(_kindIcon(definition.kind), size: 122),
             Text(
               strings.adventureTitle(definition),
               textAlign: TextAlign.center,
@@ -1947,6 +2466,10 @@ class _AdventureCard extends StatelessWidget {
                 endsAt: specialWindow.endsAt,
                 compact: false,
               ),
+            ],
+            if (specialEvent?.id == 'pride_every_color') ...[
+              const SizedBox(height: 12),
+              const _HavenSpectrumMeter(),
             ],
             if (specialEvent == null) ...[
               const SizedBox(height: 6),
@@ -1984,8 +2507,8 @@ class _AdventureCard extends StatelessWidget {
                     size: 34),
                 title: strings.pick('Journey shortening', 'Reisverkorting'),
                 value: strings.pick(
-                  'Might + Arcana + Spirit: every combined point removes 1 hour (minimum 1 day).',
-                  'Might + Arcana + Spirit: elk gecombineerd punt haalt 1 uur van de reis af (minimum 1 dag).',
+                  'Might + Arcana + Spirit: every combined point removes ${definition.specialReductionPerExpertisePoint.inMinutes} minutes (minimum ${definition.minimumDuration?.inHours ?? definition.duration.inHours} hours).',
+                  'Might + Arcana + Spirit: elk gecombineerd punt haalt ${definition.specialReductionPerExpertisePoint.inMinutes} minuten van de reis af (minimum ${definition.minimumDuration?.inHours ?? definition.duration.inHours} uur).',
                 ),
               ),
             if (specialEvent != null)
@@ -2005,17 +2528,30 @@ class _AdventureCard extends StatelessWidget {
                 title: strings.pick('Possible chests', 'Mogelijke kisten'),
                 value: _chestPossibilities(strings, definition),
               ),
-            if (specialEvent != null) ...[
+            if (specialEvent != null &&
+                specialEvent.rewards.specialChestId != null) ...[
               _DetailRow(
                 icon: Image.asset(
-                  ChestTier.special.assetPath,
+                  specialChestById(specialEvent.rewards.specialChestId)
+                          ?.closedAssetPath ??
+                      ChestTier.special.assetPath,
                   width: 38,
                   height: 38,
                 ),
                 title: strings.pick(
                     'Guaranteed Special Chest', 'Gegarandeerde Speciale Kist'),
-                value: '1 ${strings.chestLabel(ChestTier.special)}',
+                value: strings.pick(
+                  specialChestById(specialEvent.rewards.specialChestId)
+                          ?.titleEn ??
+                      strings.chestLabel(ChestTier.special),
+                  specialChestById(specialEvent.rewards.specialChestId)
+                          ?.titleNl ??
+                      strings.chestLabel(ChestTier.special),
+                ),
               ),
+            ],
+            if (specialEvent != null &&
+                specialEvent.rewards.randomRelicPool.isNotEmpty) ...[
               _DetailRow(
                 icon: Image.asset(
                   MysticRelic.moralPrism.assetPath,
@@ -2025,19 +2561,32 @@ class _AdventureCard extends StatelessWidget {
                 title: strings.pick('Guaranteed relic', 'Gegarandeerde relic'),
                 value: strings.pick('1 random relic', '1 willekeurige relic'),
               ),
-              if (specialEvent.rewards.musicChest &&
-                  !game.musicChestCapacityReached)
-                _DetailRow(
-                  icon: Image.asset(
-                    ChestTier.music.assetPath,
-                    width: 38,
-                    height: 38,
-                  ),
-                  title: strings.pick(
-                      'Guaranteed Music Chest', 'Gegarandeerde Muziekkist'),
-                  value: '1 ${strings.chestLabel(ChestTier.music)}',
-                ),
             ],
+            if (specialEvent != null &&
+                specialEvent.rewards.musicChest &&
+                !game.musicChestCapacityReached)
+              _DetailRow(
+                icon: Image.asset(
+                  ChestTier.music.assetPath,
+                  width: 38,
+                  height: 38,
+                ),
+                title: strings.pick(
+                    'Guaranteed Music Chest', 'Gegarandeerde Muziekkist'),
+                value: '1 ${strings.chestLabel(ChestTier.music)}',
+              ),
+            if (definition.requiresOnlinePartner)
+              _DetailRow(
+                icon: const TrialIconSprite(
+                  kind: TrialKind.rosevowRelay,
+                  size: 34,
+                ),
+                title: strings.pick('Keeper requirement', 'Hoedervereiste'),
+                value: strings.pick(
+                  'Exactly 2 registered Keepers, each with one available dragon.',
+                  'Precies 2 geregistreerde Hoeders, elk met één beschikbare draak.',
+                ),
+              ),
             if (definition.kind == AdventureKind.group)
               _DetailRow(
                 icon: const Icon(Icons.group_rounded,
@@ -2066,6 +2615,117 @@ class _AdventureCard extends StatelessWidget {
             ),
           ]),
         ),
+      ),
+    );
+  }
+}
+
+class _HavenSpectrumMeter extends StatelessWidget {
+  const _HavenSpectrumMeter();
+
+  static const _colors = <Color>[
+    Color(0xFFE65A62),
+    Color(0xFFFFA342),
+    Color(0xFFFFD95B),
+    Color(0xFF55BF7A),
+    Color(0xFF4A9EE8),
+    Color(0xFF7A67C8),
+    Color(0xFFD26BB5),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final progress =
+        context.watch<OnlineAccountProvider>().prideCommunityProgress;
+    final filled = progress?.ribbonCount ?? 0;
+    return Container(
+      key: const Key('haven-spectrum-meter'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFF0F8), Color(0xFFEDEBFF)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFC5A7E7)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const TrialIconSprite(
+                kind: TrialKind.prismaticParade,
+                size: 38,
+              ),
+              const SizedBox(width: 7),
+              Flexible(
+                child: Text(
+                  strings.pick('The Haven Spectrum', 'Het Haven-spectrum'),
+                  style: const TextStyle(
+                    color: AppColors.twilightDark,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            strings.pick(
+              '${progress?.completedRuns ?? 0} global parade runs have woven $filled of 7 ribbons.',
+              '${progress?.completedRuns ?? 0} wereldwijde paraderuns hebben $filled van 7 linten geweven.',
+            ),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.muted, fontSize: 11),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (var index = 0; index < _colors.length; index++)
+                AnimatedScale(
+                  duration: const Duration(milliseconds: 450),
+                  scale: index < filled ? 1 : .84,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 450),
+                    opacity: index < filled ? 1 : .28,
+                    child: Container(
+                      width: 35,
+                      height: 43,
+                      margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _colors[index].withValues(alpha: .14),
+                        border: Border.all(
+                          color: index < filled
+                              ? _colors[index]
+                              : const Color(0xFFD5CEE0),
+                          width: 1.5,
+                        ),
+                        boxShadow: index < filled
+                            ? [
+                                BoxShadow(
+                                  color: _colors[index].withValues(alpha: .30),
+                                  blurRadius: 9,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Image.asset(
+                        'assets/images/events/pride/'
+                        'trial_sprite_${index.remainder(6)}.webp',
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -2940,7 +3600,9 @@ Future<void> _showRunDetails(
   final game = context.read<HouseholdProvider>();
   final specialEvent = specialAdventureEventById(run.specialEventId);
   final ready = run.status == AdventureRunStatus.rewardReady;
-  final abortable = !ready && definition.kind != AdventureKind.group;
+  final abortable = !ready &&
+      definition.kind != AdventureKind.group &&
+      !definition.requiresOnlinePartner;
   final chestTier = run.rewardTier ?? definition.knownChest;
   await showModalBottomSheet<void>(
     context: context,
@@ -3026,19 +3688,29 @@ Future<void> _showRunDetails(
                       : strings.pick(
                           'One sealed chest', 'Eén verzegelde kist')),
             if (specialEvent != null) ...[
-              _DetailRow(
-                icon: Image.asset(ChestTier.special.assetPath,
-                    width: 38, height: 38),
-                title: strings.pick(
-                    'Guaranteed Special Chest', 'Gegarandeerde Speciale Kist'),
-                value: '1 ${strings.chestLabel(ChestTier.special)}',
-              ),
-              _DetailRow(
-                icon: Image.asset(MysticRelic.moralPrism.assetPath,
-                    width: 36, height: 36),
-                title: strings.pick('Guaranteed relic', 'Gegarandeerde relic'),
-                value: strings.pick('1 random relic', '1 willekeurige relic'),
-              ),
+              if (specialEvent.rewards.specialChestId case final chestId?)
+                _DetailRow(
+                  icon: Image.asset(
+                    specialChestById(chestId)?.closedAssetPath ??
+                        ChestTier.special.assetPath,
+                    width: 38,
+                    height: 38,
+                  ),
+                  title: strings.pick('Guaranteed Special Chest',
+                      'Gegarandeerde Speciale Kist'),
+                  value: strings.pick(
+                    specialChestById(chestId)?.titleEn ?? 'Special Chest',
+                    specialChestById(chestId)?.titleNl ?? 'Speciale Kist',
+                  ),
+                ),
+              if (specialEvent.rewards.randomRelicPool.isNotEmpty)
+                _DetailRow(
+                  icon: Image.asset(MysticRelic.moralPrism.assetPath,
+                      width: 36, height: 36),
+                  title:
+                      strings.pick('Guaranteed relic', 'Gegarandeerde relic'),
+                  value: strings.pick('1 random relic', '1 willekeurige relic'),
+                ),
               if (specialEvent.rewards.musicChest &&
                   !game.musicChestCapacityReached)
                 _DetailRow(

@@ -1168,7 +1168,7 @@ void main() {
     expect(game.pet.spectral, isFalse);
   });
 
-  test('a Special Egg keeps its deliberately fixed Spectral eligibility',
+  test('a Special Egg receives the configured Golden Hour Spectral bonus',
       () async {
     final now = DateTime(2026, 8, 21, 18);
     final game = HouseholdProvider(
@@ -1188,7 +1188,7 @@ void main() {
       );
 
     expect(await game.hatchActiveDragon(), isTrue);
-    expect(game.pet.spectral, isFalse);
+    expect(game.pet.spectral, isTrue);
   });
 
   test('Cluckatrice does not unlock the Mythical dragon achievement', () {
@@ -1299,9 +1299,9 @@ void main() {
     expect(game.pet.activeAdventureId, 'legacy-group-run');
   });
 
-  test('the achievement catalog has 33 unique humorous milestones', () {
-    expect(achievementCatalog, hasLength(33));
-    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(33));
+  test('the achievement catalog has 38 unique humorous milestones', () {
+    expect(achievementCatalog, hasLength(38));
+    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(38));
     expect(achievementCatalog.every((entry) => entry.target > 0), isTrue);
     expect(
         achievementCatalog.every((entry) =>
@@ -2356,16 +2356,31 @@ void main() {
     target.dispose();
   });
 
-  test('no redeem codes are currently active', () async {
+  test('only Keeper-scoped seasonal preview codes are active', () async {
     final game = HouseholdProvider(
       random: Random(904),
       persistenceEnabled: false,
     );
 
-    expect(redeemCodeCatalog, isEmpty);
+    expect(redeemCodeCatalog, hasLength(5));
     expect(await game.redeemCode('EMOTEPACK1'), 'inactive');
     expect(await game.redeemCode('EMOTEPACK2'), 'inactive');
     expect(await game.redeemCode('EMOTEPACK3'), 'inactive');
+    expect(await game.redeemCode('HALLOWEENEVENT'), 'restricted');
+    expect(
+      await game.redeemCode(
+        'HALLOWEENEVENT',
+        keeperId: 'DH-17792DC5',
+      ),
+      'redeemed_event_preview',
+    );
+    expect(
+      await game.redeemCode(
+        'HALLOWEENEVENT',
+        keeperId: 'DH-17792DC5',
+      ),
+      'preview_active',
+    );
     expect(await game.redeemCode('bad code'), 'invalid_format');
     expect(game.ownedDragonEmotePackIds, isEmpty);
     expect(game.ownedDragonEmoteIds, isEmpty);

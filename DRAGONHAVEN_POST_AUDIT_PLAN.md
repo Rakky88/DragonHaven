@@ -1,6 +1,6 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
-Laatst bijgewerkt: **5 september 2026**
+Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
 Actuele openbare versie: **v0.05.11**
@@ -35,6 +35,34 @@ lokale tests zijn groen. Runs `33981322674` en
 `33981974136` bewijzen staging 38/38; migratie 39 wacht op een aparte push- en
 stagingpoort. App/release bleven v0.05.11; staging heeft 38 toegepast,
 productie 36 en de lokale repository bevat migratie 39.**
+
+Actuele releasecandidate v0.05.12: **de vijf volledig goedgekeurde
+eventcontracten voor Halloween, Kerst, Nieuwjaar, Valentijn en Pride zijn lokaal
+ingebouwd. Dit omvat vijf kalender-/previewvensters, vijf Special Adventures,
+vijf event-Trials met eigen hoogwaardige media, vijf nieuwe Special families,
+eventspecifieke chests/eggs/audio, tijdelijke publiek-domeinmuziek, wereldwijde
+ranglijsten met vijfdaagse uitslag en permanente Chronicle, idempotente
+podiumprijzen, een wereldwijde Pride-meter en de tweepersoons Valentijnsflow.
+Saveschema 53 bewaart nieuwe lokale idempotentievelden; lokale migratie 40 bevat
+de server-RPC's/RLS. De oorspronkelijke grote bronplaten staan buiten Flutter's
+assetbundle. De volledige verscheepte seasonal toevoeging is circa 57,0 MiB:
+28,4 MiB event-UI, 26,5 MiB draken en 2,0 MiB audio, zonder lagere
+runtime-WebP-kwaliteit. Appversie `0.05.12+10062`, analyzer, alle 457 tests, de
+transparantie-/safe-area-poorten en de ondertekende release-APK zijn lokaal groen.
+Migraties 39–40 hebben een exact begrensde stagingpoort met economyrollback,
+seasonal preview-E2E, lint, RLS/revokes en health; pas na die groene poort volgt
+de afzonderlijke productiegate voor 37–40. De openbare release is nog niet
+gewijzigd.**
+
+Aanvullende visuele eventtranche: **drie afzonderlijke rondes zijn daarna over
+Trials, eventkaarten/rewards/ranglijsten en compacte schermen uitgevoerd. De
+goedgekeurde eventart loopt nu door in HUD, fasepad, ambient motion, intro,
+uitslag, Special Adventure-kaarten/details, Valentijnskaarten, Pride-meter en
+ranglijststatussen. Twee afgesneden Trial-iconfragmenten zijn vervangen door
+schone transparante Valentijn-/Pride-sprites; Nieuwjaar- en Pride-cutouts kregen
+extra veilige randruimte. De vijf geneste eventmappen zijn nu expliciet in de
+Flutter assetbundle opgenomen. Productie, servermigraties, appversie en openbare
+release blijven hierdoor ongewijzigd. Analyzer en 457/457 tests zijn groen.**
 
 Server- en releasebewijs: **de volledige
 [stagingrun 33630222018](https://github.com/Rakky88/DragonHaven/actions/runs/33630222018)
@@ -1292,6 +1320,9 @@ Een taak of mijlpaal is pas gereed wanneer:
 | 05-09-2026 | Fase 4B eerste concrete aankoop lokaal gereed | Codex | lokale migratie `202609050039_dormant_vanity_chest_purchase.sql`, `server_economy_repository.dart`, `staging-vanity-chest-purchase.yml`, economy-/restoretests en uitgebreid rollback-E2E-script | De nog ongepushte RPC koopt alleen capped, non-tradeable Portrait-, Title- en Music-chests tegen exact 100 gems, 100 coins en 250 gems. Eén transactie vergrendelt de keeper, valideert collection cap en saldo, debiteert de revisioned wallet, creëert één chestinstance, schrijft twee append-only ledgerregels, verhoogt serverrevision en bewaart de response onder de request-ID. Lokaal zijn featureflag `false`, verloren antwoord/reconnect, gelijktijdige dubbele submit, strikte responsevalidatie en bescherming van server-owned wallet/chests tegen oude cloudsaves bewezen. De exacte 38→39-workflow en rollback-only stagingdrill staan klaar, maar zijn niet gepusht of uitgevoerd. Analyzer en 436/436 tests zijn groen; staging heeft 38 toegepast, productie 36 en de lokale repository bevat migratie 39. App/release blijven v0.05.11. |
 | 06-09-2026 | Trial-constellatiedagen aan echte completion gekoppeld | Codex | saveschema 51, `trialStreakCreditedDayKeys`, streaknormalisatie en drie nieuwe providerregressies | Iedere gevulde dag heeft nu een opgeslagen dagbewijs dat uitsluitend in `completeTrial` ontstaat. Alleen datumverversing gedurende acht dagen blijft 0/7; meerdere Trials op dezelfde lokale kalenderdag blijven 1/7. Bij het laden verwijdert de migratie aantoonbaar een vooruitgeschoven dag wanneer `trialStreakLastDayKey` geen overeenkomende laatst voltooide Trial heeft, terwijl geldige bestaande streaks behouden blijven. Analyzer, 111 gerichte provider-/widgettests en alle 439/439 tests zijn groen. De bewaakte kans- en Special-contentdocumenten zijn na inhoudelijke controle opnieuw gesynchroniseerd; odds en eventinhoud veranderden niet. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
 | 06-09-2026 | Alle bestaande redeemcodes gedeactiveerd | Codex | lege `redeemCodeCatalog`, `REDEEM_CODES.md` en catalogus-/documentatieregressies | De redemption-infrastructuur blijft beschikbaar voor toekomstige campagnes, maar de actieve catalogus bevat nul codes. Alle eerder uitgegeven codes geven voortaan dezelfde inactieve uitkomst en kunnen geen pack of emote meer verlenen; al rechtmatig verkregen items worden niet afgenomen. Het Engelstalige levende naslagwerk vermeldt expliciet dat er geen actieve codes zijn en de bronfingerprint is bijgewerkt. Analyzer, 102 gerichte tests en alle 439/439 tests zijn groen. Geen appversie-, server-, migratie-, productie- of openbare releasewijziging. |
+| 07-09-2026 | Vijf seasonal events lokaal volledig ingebouwd | Codex | `NEW_EVENTS_PLAN.md`, `SPECIAL_EVENTS_CHESTS_AND_EGGS.md`, migratie `202609070040_seasonal_events.sql`, saveschema 53, vijf event-Trials, vijf Special families, vijf chest-/eggsets, eventaudio, ranglijsten/Chronicle, previewcodes en de Valentijns-/Pride-serverflows | Halloween, Kerst, Nieuwjaar, Valentijn en Pride volgen hun volledig goedgekeurde kalender-, adventure-, reward-, Trial- en rankingcontracten. Iedere Trial heeft een eigen schermvullende achtergrond, zes thematische gameplayassets, iconen, animaties en feedbackaudio; de 30 eerder goedgekeurde drakenvormen en alle event-cutouts slagen voor alpha en safe area. Alle vaste eventteksten, achievements en Adventures bestaan in acht talen. Analyzer meldt nul problemen, 455/455 tests zijn groen en een debug-APK van 541.353.825 bytes compileert. De werkelijk gebundelde seasonal toevoeging is circa 57,0 MiB; grote bronplaten worden niet verscheept. Migratie 40 is nog niet gepusht of toegepast: database-lint en live E2E horen bij een later expliciet toegestane staginggate. Productie blijft 36, staging 38, app/release v0.05.11. |
+
+| 07-09-2026 | Seasonal event-UI in drie visuele rondes verfijnd | Codex | `seasonal_trial_game.dart`, `adventure_hub_screen.dart`, `seasonal_trial_rankings_sheet.dart`, vijf expliciete event-assetmappen en aangescherpte widget-/alphatests | Trials tonen nu eventembleem, spritefasepad, subtiele ambient motion en een thematische uitslag; Special Adventure-, Valentijn-, Pride- en rankingpresentaties hergebruiken de goedgekeurde eventart. Valentijn/Pride Trial-iconen zijn zonder afgesneden onderfragment en met echte alpha opnieuw opgebouwd; Nieuwjaar/Pride chest-/eggcutouts hebben extra randruimte. 320×640-dekking bewijst alle vijf Trials en de eventgate controleert alle buitenranden. Analyzer en 456/456 tests zijn groen. Geen versie-, server-, migratie-, productie- of releasewijziging. |
 
 ## Onderhoud van dit plan
 

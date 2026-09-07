@@ -1,8 +1,8 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **5 September 2026**
-Candidate schema: **migrations 37–38 verified dormant on staging; migration 39 local only**
-Current public app: **v0.05.11**
+Candidate schema: **migrations 37–38 verified dormant on staging; migration 39 queued behind an exact staging gate**
+Release candidate app: **v0.05.12**
 
 ## Purpose and current boundary
 

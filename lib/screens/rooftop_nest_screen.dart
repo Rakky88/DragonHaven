@@ -10,7 +10,7 @@ import '../models/egg_collection_preferences.dart';
 import '../models/pet.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
-import '../widgets/dragon_art.dart';
+import '../widgets/egg_art.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/haven_lighting.dart';
 import '../widgets/rooftop_egg_nest.dart';
@@ -378,18 +378,15 @@ class _NestEggGridTile extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(9, 8, 9, 9),
             child: Column(
               children: [
-                const Expanded(
-                  child: DragonArt(
+                Expanded(
+                  child: EggArt(
                     height: 88,
-                    animate: false,
-                    stageKey: 'moonEgg',
+                    lineageId: egg.lineageId,
+                    specialEggId: egg.specialEggId,
                   ),
                 ),
                 Text(
-                  strings.eggName(
-                    sinister: egg.isSinisterEgg,
-                    special: egg.isSpecialEgg,
-                  ),
+                  dragonEggDisplayName(strings, egg),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.w900),
@@ -455,12 +452,12 @@ class _NestEggListTile extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(10, 9, 8, 9),
           child: Row(
             children: [
-              const SizedBox.square(
+              SizedBox.square(
                 dimension: 62,
-                child: DragonArt(
+                child: EggArt(
                   height: 58,
-                  animate: false,
-                  stageKey: 'moonEgg',
+                  lineageId: egg.lineageId,
+                  specialEggId: egg.specialEggId,
                 ),
               ),
               const SizedBox(width: 10),
@@ -469,10 +466,7 @@ class _NestEggListTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      strings.eggName(
-                        sinister: egg.isSinisterEgg,
-                        special: egg.isSpecialEgg,
-                      ),
+                      dragonEggDisplayName(strings, egg),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w900),

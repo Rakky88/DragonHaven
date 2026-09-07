@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 
 import '../app_info.dart';
 import '../l10n/app_strings.dart';
+import '../models/redeem_code.dart';
 import '../providers/household_provider.dart';
+import '../providers/online_account_provider.dart';
 import '../services/platform_actions.dart';
 import '../services/release_service.dart';
 import '../theme/app_theme.dart';
@@ -435,7 +437,20 @@ class _AboutSheetState extends State<_AboutSheet> {
     );
     controller.dispose();
     if (code == null || !mounted) return;
-    final result = await context.read<HouseholdProvider>().redeemCode(code);
+    final definition = redeemCodeDefinition(code);
+    final result =
+        definition?.rewardType == RedeemRewardType.seasonalEventPreview
+            ? await context
+                        .read<OnlineAccountProvider>()
+                        .redeemSeasonalPreview(code) ==
+                    null
+                ? 'inactive'
+                : 'redeemed_event_preview'
+            : await context.read<HouseholdProvider>().redeemCode(
+                  code,
+                  keeperId:
+                      context.read<OnlineAccountProvider>().profile?.keeperCode,
+                );
     if (!mounted) return;
     final message = switch (result) {
       'invalid_format' => strings.pick(
@@ -447,6 +462,14 @@ class _AboutSheetState extends State<_AboutSheet> {
       'already_redeemed' => strings.pick(
           'You already own this Dragon emote pack.',
           'Je bezit dit drakenemotepakket al.'),
+      'redeemed_event_preview' => strings.pick(
+          'The private 48-hour event preview is now active.',
+          'De privépreview van 48 uur is nu actief.'),
+      'preview_active' => strings.pick('This event preview is already active.',
+          'Deze eventpreview is al actief.'),
+      'restricted' => strings.pick(
+          'This private preview code is not available for this Keeper ID.',
+          'Deze privépreviewcode is niet beschikbaar voor deze Keeper ID.'),
       _ =>
         strings.pick('This code is not active.', 'Deze code is niet actief.'),
     };

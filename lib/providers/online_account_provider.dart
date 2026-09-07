@@ -26,6 +26,18 @@ class OnlineAccountProvider extends ChangeNotifier {
       Map<String, int> relics,
     )? synchronizeTradeReservations,
     Future<bool> Function(TradeSettlement settlement)? applyTradeSettlement,
+    Future<bool> Function({
+      required String prizeId,
+      required String eventId,
+      required int position,
+    })? applySeasonalPrize,
+    Future<void> Function(
+      Map<String, DateTime> previews,
+    )? synchronizeSeasonalPreviews,
+    Future<void> Function(
+      Map<String, String> reservations,
+    )? synchronizeSeasonalPairReservations,
+    Future<bool> Function(SeasonalPairReward reward)? applySeasonalPairReward,
     Map<String, dynamic> Function()? gameStateSnapshot,
     Future<bool> Function(Map<String, dynamic> state)? applyCloudState,
     Future<String> Function()? deviceId,
@@ -44,6 +56,13 @@ class OnlineAccountProvider extends ChangeNotifier {
         _synchronizeTradeReservations =
             synchronizeTradeReservations ?? _ignoreTradeReservations,
         _applyTradeSettlement = applyTradeSettlement ?? _rejectTradeSettlement,
+        _applySeasonalPrize = applySeasonalPrize ?? _rejectSeasonalPrize,
+        _synchronizeSeasonalPreviews =
+            synchronizeSeasonalPreviews ?? _ignoreSeasonalPreviews,
+        _synchronizeSeasonalPairReservations =
+            synchronizeSeasonalPairReservations ?? _ignoreGroupReservations,
+        _applySeasonalPairReward =
+            applySeasonalPairReward ?? _rejectSeasonalPairReward,
         _gameStateSnapshot = gameStateSnapshot,
         _applyCloudState = applyCloudState,
         _deviceId = deviceId,
@@ -68,6 +87,17 @@ class OnlineAccountProvider extends ChangeNotifier {
     Map<String, int> relics,
   ) _synchronizeTradeReservations;
   final Future<bool> Function(TradeSettlement settlement) _applyTradeSettlement;
+  final Future<bool> Function({
+    required String prizeId,
+    required String eventId,
+    required int position,
+  }) _applySeasonalPrize;
+  final Future<void> Function(Map<String, DateTime> previews)
+      _synchronizeSeasonalPreviews;
+  final Future<void> Function(Map<String, String> reservations)
+      _synchronizeSeasonalPairReservations;
+  final Future<bool> Function(SeasonalPairReward reward)
+      _applySeasonalPairReward;
   final Map<String, dynamic> Function()? _gameStateSnapshot;
   final Future<bool> Function(Map<String, dynamic> state)? _applyCloudState;
   final Future<String> Function()? _deviceId;
@@ -110,6 +140,10 @@ class OnlineAccountProvider extends ChangeNotifier {
   bool shareAchievementsWithConclave = false;
   ConclaveSnapshot? conclave;
   List<ConclaveInvite> conclaveInvites = const [];
+  List<SeasonalEventPreviewEntitlement> seasonalEventPreviews = const [];
+  List<SeasonalChampionEntry> seasonalChronicle = const [];
+  List<SeasonalPairAdventure> seasonalPairAdventures = const [];
+  SeasonalCommunityProgress? prideCommunityProgress;
   CloudGameSave? cloudGameSave;
   CloudGameSave? cloudConflictSave;
   List<CloudGameSaveSummary> cloudSaveHistory = const [];
@@ -612,6 +646,161 @@ class OnlineAccountProvider extends ChangeNotifier {
         ),
       );
 
+  Future<SeasonalEventPreviewEntitlement?> redeemSeasonalPreview(
+    String rawCode,
+  ) =>
+      _run('seasonal.preview.redeem', () async {
+        final code = rawCode.trim().toUpperCase();
+        if (!RegExp(r'^[A-Z0-9]+$').hasMatch(code)) {
+          throw const SocialException('seasonal_preview_invalid');
+        }
+        final preview = await _repository.redeemSeasonalPreview(code);
+        seasonalEventPreviews = [
+          ...seasonalEventPreviews
+              .where((entry) => entry.eventId != preview.eventId),
+          preview,
+        ];
+        await _synchronizeSeasonalPreviews({
+          for (final entry in seasonalEventPreviews)
+            entry.eventId: entry.expiresAt,
+        });
+        noticeCode = 'redeemed_event_preview';
+        _notify();
+        return preview;
+      });
+
+  Future<SeasonalTrialSession?> startSeasonalTrial({
+    required String eventId,
+    required String trialKey,
+  }) =>
+      _run(
+        'seasonal.trial.start',
+        () => _repository.startSeasonalTrial(
+          eventId: eventId,
+          trialKey: trialKey,
+        ),
+      );
+
+  Future<SeasonalTrialSubmissionResult?> completeSeasonalTrial({
+    required SeasonalTrialSession session,
+    required int score,
+    required int correctActions,
+    required int totalActions,
+    required int durationMs,
+  }) =>
+      _run(
+        'seasonal.trial.complete',
+        () => _repository.completeSeasonalTrial(
+          attemptId: session.attemptId,
+          token: session.token,
+          score: score,
+          correctActions: correctActions,
+          totalActions: totalActions,
+          durationMs: durationMs,
+        ),
+      );
+
+  Future<List<SeasonalTrialRankingEntry>?> loadSeasonalTrialRankings({
+    required String eventId,
+    required String occurrenceKey,
+    bool preview = false,
+  }) =>
+      _run(
+        'seasonal.trial.rankings',
+        () => _repository.loadSeasonalTrialRankings(
+          eventId: eventId,
+          occurrenceKey: occurrenceKey,
+          preview: preview,
+        ),
+      );
+
+  Future<List<SeasonalChampionEntry>?> loadSeasonalChronicle() =>
+      _run('seasonal.chronicle', _repository.loadSeasonalChronicle);
+
+  Future<SeasonalCommunityProgress?> refreshPrideCommunityProgress() =>
+      _run('seasonal.community', () async {
+        final progress = await _repository.loadSeasonalCommunityProgress(
+          'pride_every_color',
+        );
+        prideCommunityProgress = progress;
+        _notify();
+        return progress;
+      });
+
+  Future<bool> inviteSeasonalPairAdventure({
+    required String keeperCode,
+    required String dragonId,
+    required int might,
+    required int arcana,
+    required int spirit,
+  }) async =>
+      await _run('seasonal.pair.invite', () async {
+        await _repository.inviteSeasonalPairAdventure(
+          keeperCode: keeperCode,
+          dragonId: dragonId,
+          might: might,
+          arcana: arcana,
+          spirit: spirit,
+        );
+        seasonalPairAdventures = await _repository.loadSeasonalPairAdventures();
+        await _syncSeasonalPairReservations();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> respondSeasonalPairAdventure({
+    required String adventureId,
+    required bool accept,
+    String? dragonId,
+    int might = 0,
+    int arcana = 0,
+    int spirit = 0,
+  }) async =>
+      await _run('seasonal.pair.respond', () async {
+        await _repository.respondSeasonalPairAdventure(
+          adventureId: adventureId,
+          accept: accept,
+          dragonId: dragonId,
+          might: might,
+          arcana: arcana,
+          spirit: spirit,
+        );
+        seasonalPairAdventures = await _repository.loadSeasonalPairAdventures();
+        await _syncSeasonalPairReservations();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> startSeasonalPairAdventure(String adventureId) async =>
+      await _run('seasonal.pair.start', () async {
+        await _repository.startSeasonalPairAdventure(adventureId);
+        seasonalPairAdventures = await _repository.loadSeasonalPairAdventures();
+        await _syncSeasonalPairReservations();
+        return true;
+      }) ??
+      false;
+
+  Future<bool> claimSeasonalPairAdventure(String adventureId) async =>
+      await _run('seasonal.pair.claim', () async {
+        final reward =
+            await _repository.claimSeasonalPairAdventure(adventureId);
+        if (reward == null || !await _applySeasonalPairReward(reward)) {
+          throw const SocialException('seasonal_pair_reward_apply_failed');
+        }
+        await _repository.acknowledgeSeasonalPairReward(adventureId);
+        seasonalPairAdventures = await _repository.loadSeasonalPairAdventures();
+        await _syncSeasonalPairReservations();
+        return true;
+      }) ??
+      false;
+
+  Future<void> _syncSeasonalPairReservations() =>
+      _synchronizeSeasonalPairReservations({
+        for (final adventure in seasonalPairAdventures)
+          if (adventure.isActive && adventure.myDragonId.isNotEmpty)
+            adventure.myDragonId: adventure.id,
+      });
+
   Future<bool> refreshConclave({bool background = false}) async =>
       await _run('conclave.refresh', () async {
         conclave = await _repository.loadConclaveSnapshot();
@@ -913,6 +1102,61 @@ class OnlineAccountProvider extends ChangeNotifier {
     var serverChanged = false;
     var onlineSnapshot = await _repository.loadOnlineSnapshot();
     _applyOnlineSnapshot(onlineSnapshot);
+    // Seasonal RPCs are additive maintenance. A temporarily unavailable or
+    // not-yet-migrated seasonal endpoint must never hide a valid Friends,
+    // Conclave, trade, or Group Adventure snapshot.
+    await _runRefreshMaintenanceStep(
+      'social.refresh.seasonal_previews',
+      () async {
+        seasonalEventPreviews =
+            await _repository.loadSeasonalPreviewEntitlements();
+        await _synchronizeSeasonalPreviews({
+          for (final preview in seasonalEventPreviews)
+            preview.eventId: preview.expiresAt,
+        });
+      },
+    );
+    await _runRefreshMaintenanceStep(
+      'social.refresh.seasonal_prizes',
+      () async {
+        final pendingSeasonalPrizes =
+            await _repository.finalizeSeasonalEventPrizes();
+        for (final prize in pendingSeasonalPrizes) {
+          final prizeId = prize.prizeId;
+          if (prizeId == null || prize.claimed) continue;
+          final applied = await _applySeasonalPrize(
+            prizeId: prizeId,
+            eventId: prize.eventId,
+            position: prize.position,
+          );
+          if (!applied) continue;
+          await _repository.acknowledgeSeasonalPrize(prizeId);
+          serverChanged = true;
+        }
+      },
+    );
+    await _runRefreshMaintenanceStep(
+      'social.refresh.seasonal_chronicle',
+      () async {
+        seasonalChronicle = await _repository.loadSeasonalChronicle();
+      },
+    );
+    await _runRefreshMaintenanceStep(
+      'social.refresh.seasonal_community',
+      () async {
+        prideCommunityProgress =
+            await _repository.loadSeasonalCommunityProgress(
+          'pride_every_color',
+        );
+      },
+    );
+    await _runRefreshMaintenanceStep(
+      'social.refresh.seasonal_pairs',
+      () async {
+        seasonalPairAdventures = await _repository.loadSeasonalPairAdventures();
+        await _syncSeasonalPairReservations();
+      },
+    );
     if (!onlineSnapshot.profile.inventoryImported) {
       await _repository.importLegacyInventory(snapshot);
       serverChanged = true;
@@ -1155,6 +1399,42 @@ class OnlineAccountProvider extends ChangeNotifier {
               ),
               category: HavenNotificationCategory.tradeCompletions,
             );
+          case 'seasonal_pair_invite':
+            await HavenNotifications.specialAdventureAvailable(
+              id: 'seasonal-pair-${notification.id}',
+              title: strings.pick(
+                'A Heartlight invitation',
+                'Een Hartlicht-uitnodiging',
+              ),
+              body: withName(
+                '{name} invited you on a Valentine Special Adventure.',
+                '{name} nodigt je uit voor een Valentijns Speciaal Avontuur.',
+              ),
+            );
+          case 'seasonal_pair_accepted':
+            await HavenNotifications.specialAdventureAvailable(
+              id: 'seasonal-pair-${notification.id}',
+              title: strings.pick(
+                'Your Heartlight partner is ready',
+                'Je Hartlicht-partner staat klaar',
+              ),
+              body: withName(
+                '{name} accepted. Open Adventures to begin together.',
+                '{name} heeft geaccepteerd. Open Avonturen om samen te beginnen.',
+              ),
+            );
+          case 'seasonal_pair_ready':
+            await HavenNotifications.specialAdventureAvailable(
+              id: 'seasonal-pair-${notification.id}',
+              title: strings.pick(
+                'Rosebound Crossing completed',
+                'Rozengebonden Oversteek voltooid',
+              ),
+              body: strings.pick(
+                'Your shared reward is ready in Adventures.',
+                'Jullie gedeelde beloning staat klaar bij Avonturen.',
+              ),
+            );
         }
         if (handled) acknowledgedIds.add(notification.id);
       }
@@ -1334,6 +1614,10 @@ class OnlineAccountProvider extends ChangeNotifier {
     shareAchievementsWithConclave = false;
     conclave = null;
     conclaveInvites = const [];
+    seasonalEventPreviews = const [];
+    seasonalChronicle = const [];
+    seasonalPairAdventures = const [];
+    prideCommunityProgress = null;
     cloudGameSave = null;
     cloudConflictSave = null;
     cloudSaveHistory = const [];
@@ -1349,6 +1633,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     _notificationDeliveryInFlight.clear();
     unawaited(_synchronizeGroupReservations(const {}));
     unawaited(_synchronizeTradeReservations(const {}, const {}, const {}));
+    unawaited(_synchronizeSeasonalPairReservations(const {}));
   }
 
   void _notify() {
@@ -1386,6 +1671,17 @@ Future<void> _ignoreTradeReservations(
 ) async {}
 
 Future<bool> _rejectTradeSettlement(TradeSettlement _) async => false;
+
+Future<bool> _rejectSeasonalPrize({
+  required String prizeId,
+  required String eventId,
+  required int position,
+}) async =>
+    false;
+
+Future<void> _ignoreSeasonalPreviews(Map<String, DateTime> _) async {}
+
+Future<bool> _rejectSeasonalPairReward(SeasonalPairReward _) async => false;
 
 String _defaultLanguageCode() => 'en';
 

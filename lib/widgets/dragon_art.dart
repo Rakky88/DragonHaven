@@ -68,6 +68,19 @@ abstract final class DragonArtwork {
     'velvetvolt': {'wyrmling', 'might', 'arcana', 'spirit'},
     'voidbloom': {'wyrmling', 'might', 'arcana', 'spirit'},
     'worldroot': {'wyrmling', 'might', 'arcana'},
+    'gloamgourd': {'wyrmling', 'might', 'arcana', 'spirit'},
+    'hollyfrost': {'wyrmling', 'might', 'arcana', 'spirit'},
+    'dawnchime': {'wyrmling', 'might', 'arcana', 'spirit'},
+    'rosevow': {'wyrmling', 'might', 'arcana', 'spirit'},
+    'spectrumplume': {'wyrmling', 'might', 'arcana', 'spirit'},
+  };
+
+  static const fullyStandaloneLineages = <String>{
+    'gloamgourd',
+    'hollyfrost',
+    'dawnchime',
+    'rosevow',
+    'spectrumplume',
   };
 
   static String hatchlingAsset(String? lineageId) =>
@@ -191,7 +204,8 @@ abstract final class DragonArtwork {
             safeStandaloneFormAsset(family.key, form),
         for (final lineage in dragonLineages) ...{
           hatchlingAsset(lineage.id),
-          formsAsset(lineage.id),
+          if (!fullyStandaloneLineages.contains(lineage.id))
+            formsAsset(lineage.id),
           masteryAsset(lineage.id),
         },
         sinisterHatchlingAsset(),

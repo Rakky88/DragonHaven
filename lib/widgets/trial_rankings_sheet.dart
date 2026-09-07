@@ -117,8 +117,9 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
             padding: const EdgeInsets.fromLTRB(14, 13, 14, 11),
             child: Row(
               children: [
-                for (final kind in TrialKind.values) ...[
-                  if (kind != TrialKind.values.first) const SizedBox(width: 7),
+                for (final kind in standardTrialKinds) ...[
+                  if (kind != standardTrialKinds.first)
+                    const SizedBox(width: 7),
                   Expanded(
                     child: _TrialChoice(
                       kind: kind,

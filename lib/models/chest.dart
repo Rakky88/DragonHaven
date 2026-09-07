@@ -29,6 +29,8 @@ class ChestReward {
     required this.eggFound,
     this.sinisterEgg = false,
     this.specialEgg = false,
+    this.specialChestId,
+    this.specialEggId,
     this.relicFound,
     this.portraitFound,
     this.titleFound,
@@ -41,6 +43,8 @@ class ChestReward {
   final bool eggFound;
   final bool sinisterEgg;
   final bool specialEgg;
+  final String? specialChestId;
+  final String? specialEggId;
   final MysticRelic? relicFound;
   final ProfilePortrait? portraitFound;
   final AccountTitle? titleFound;
@@ -99,7 +103,8 @@ extension ChestTierPresentation on ChestTier {
   bool get isTradeable =>
       this != ChestTier.portrait &&
       this != ChestTier.title &&
-      this != ChestTier.music;
+      this != ChestTier.music &&
+      this != ChestTier.special;
 
   String label(bool isDutch) => switch (this) {
         ChestTier.wooden => isDutch ? 'Houten Kist' : 'Wooden Chest',

@@ -7,26 +7,31 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/pet.dart';
+import '../models/social.dart';
 import '../models/dragon_emote.dart';
 import '../models/mystic_relic.dart';
 import '../models/trial.dart';
 import '../providers/household_provider.dart';
+import '../providers/online_account_provider.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/dragon_emote_picker.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/trial_icon_sprite.dart';
+import 'seasonal_trial_game.dart';
 
 class TrialGameScreen extends StatefulWidget {
   const TrialGameScreen({
     super.key,
     required this.offerId,
     required this.dragonId,
+    this.seasonalSession,
   });
 
   final String offerId;
   final String dragonId;
+  final SeasonalTrialSession? seasonalSession;
 
   @override
   State<TrialGameScreen> createState() => _TrialGameScreenState();
@@ -62,6 +67,24 @@ class _TrialGameScreenState extends State<TrialGameScreen> {
       TrialKind.cavernFlight => _CavernFlightGame(offer: offer, dragon: dragon),
       TrialKind.ruinBreaker => _RuinBreakerGame(offer: offer, dragon: dragon),
       TrialKind.runeweaver => _RuneweaverGame(offer: offer, dragon: dragon),
+      TrialKind.witchlightWard ||
+      TrialKind.hollyfrostGiftforge ||
+      TrialKind.midnightChime ||
+      TrialKind.rosevowRelay ||
+      TrialKind.prismaticParade =>
+        SeasonalTrialGame(
+          offer: offer,
+          dragon: dragon,
+          randomSeed: widget.seasonalSession?.seed,
+          onFinished: (result) => _finishTrial(
+            context,
+            offer: offer,
+            dragon: dragon,
+            score: result.score,
+            seasonalSession: widget.seasonalSession,
+            seasonalResult: result,
+          ),
+        ),
     };
   }
 }
@@ -224,12 +247,56 @@ Future<void> _finishTrial(
   required TrialOffer offer,
   required Pet dragon,
   required int score,
+  SeasonalTrialSession? seasonalSession,
+  SeasonalTrialRunResult? seasonalResult,
 }) async {
   // Keep the route navigator itself. Completing the Trial removes its offer and
   // rebuilds this screen, so the individual game's BuildContext can be disposed
   // while the result dialog is still visible.
   final routeNavigator = Navigator.of(context);
   final game = context.read<HouseholdProvider>();
+  var completedWithoutRanking = false;
+  if (offer.definition.isSeasonal) {
+    final session = seasonalSession;
+    final result = seasonalResult;
+    if (session == null || result == null) {
+      if (routeNavigator.mounted) routeNavigator.pop();
+      return;
+    }
+    final online = context.read<OnlineAccountProvider>();
+    final verified = await online.completeSeasonalTrial(
+      session: session,
+      score: score,
+      correctActions: result.correctActions,
+      totalActions: result.totalActions,
+      durationMs: result.duration.inMilliseconds,
+    );
+    if (verified?.accepted != true) {
+      completedWithoutRanking = const {
+        'online_timeout',
+        'online_server_error',
+        'online_unexpected_error',
+      }.contains(online.errorCode);
+      if (completedWithoutRanking) {
+        // The run began with a valid server token, so a lost connection during
+        // play must not erase the normal local Trial reward. The unverified
+        // score is deliberately excluded from the worldwide ranking.
+      } else {
+        if (routeNavigator.mounted) {
+          ScaffoldMessenger.of(routeNavigator.context).showSnackBar(
+            SnackBar(
+              content: Text(AppStrings.of(routeNavigator.context).pick(
+                'The server could not verify this seasonal Trial. No reward was changed.',
+                'De server kon deze seizoensproef niet verifiÃ«ren. Er is geen beloning aangepast.',
+              )),
+            ),
+          );
+          routeNavigator.pop();
+        }
+        return;
+      }
+    }
+  }
   final completion = await game.completeTrial(
     offerId: offer.id,
     dragonId: dragon.id,
@@ -239,6 +306,16 @@ Future<void> _finishTrial(
   if (completion == null) {
     routeNavigator.pop();
     return;
+  }
+  if (completedWithoutRanking && routeNavigator.mounted) {
+    ScaffoldMessenger.of(routeNavigator.context).showSnackBar(
+      SnackBar(
+        content: Text(AppStrings.of(routeNavigator.context).pick(
+          'Your Trial reward is safe, but this offline score was not added to the event ranking.',
+          'Je Trialbeloning is veilig, maar deze offline score is niet aan de eventranglijst toegevoegd.',
+        )),
+      ),
+    );
   }
   unawaited(HavenAudio.play(HavenSound.adventureReturn));
   await showGeneralDialog<void>(
@@ -324,7 +401,10 @@ class _TrialResultCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    strings.pick('TRIAL COMPLETE', 'PROEF VOLTOOID'),
+                    completion.simulated
+                        ? strings.pick(
+                            'TEST EVENT · SIMULATED', 'TESTEVENT · GESIMULEERD')
+                        : strings.pick('TRIAL COMPLETE', 'PROEF VOLTOOID'),
                     style: const TextStyle(
                       color: Color(0xFFFFE08A),
                       fontSize: 11,
@@ -411,6 +491,21 @@ class _TrialResultCard extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: 18),
+                  if (completion.simulated) ...[
+                    Text(
+                      strings.pick(
+                        'Preview only: these rewards and this score were not added to your permanent production account.',
+                        'Alleen preview: deze beloningen en score zijn niet aan je permanente productieaccount toegevoegd.',
+                      ),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFFFFE08A),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -430,13 +525,13 @@ class _TrialResultCard extends StatelessWidget {
                           icon: GameIconKind.experience,
                           label: '+${reward.xp} XP',
                         ),
-                        _RewardLine(
-                          icon: GameIconSprite.forTrainingFocus(
-                            trialDefinitions[completion.kind]!.focus,
+                        for (final expertise in reward.expertiseRewards.entries)
+                          _RewardLine(
+                            icon:
+                                GameIconSprite.forTrainingFocus(expertise.key),
+                            label:
+                                '+${expertise.value} ${_focusLabel(strings, expertise.key)}',
                           ),
-                          label:
-                              '+${reward.statPoints} ${_focusLabel(strings, trialDefinitions[completion.kind]!.focus)}',
-                        ),
                         if (chest != null)
                           _RewardLine(
                             icon: GameIconKind.chest,

@@ -102,7 +102,7 @@ enum RoomUnlockResult {
 }
 
 class HouseholdProvider extends ChangeNotifier {
-  static const saveSchemaVersion = 51;
+  static const saveSchemaVersion = 53;
 
   HouseholdProvider({
     Random? random,
@@ -118,6 +118,10 @@ class HouseholdProvider extends ChangeNotifier {
   final Random _random;
   final DateTime Function() _clock;
   final bool _persistenceEnabled;
+
+  /// Non-persistent runtime gate. Production previews must never farm rewards;
+  /// staging enables real grants so persistence and idempotency can be tested.
+  bool persistentSeasonalPreviewRewards = false;
   final _uuid = const Uuid();
   Future<void> _saveQueue = Future<void>.value();
   Timer? _starterEggTapPersistenceTimer;
@@ -134,6 +138,7 @@ class HouseholdProvider extends ChangeNotifier {
   Set<String> enabledMusicTrackIds = {'reverie'};
   bool jukeboxShuffle = false;
   bool jukeboxRepeat = true;
+  Set<String> disabledSeasonalMusicTrackIds = {};
   bool soundEffectsEnabled = true;
   Set<HavenNotificationCategory> enabledNotificationCategories =
       HavenNotificationCategory.values.toSet();
@@ -168,6 +173,7 @@ class HouseholdProvider extends ChangeNotifier {
   Map<ChestTier, int> chestInventory = {
     for (final tier in ChestTier.values) tier: 0,
   };
+  Map<String, int> specialChestInventory = {};
   Map<MysticRelic, int> relicInventory = {
     for (final relic in MysticRelic.values) relic: 0,
   };
@@ -221,6 +227,7 @@ class HouseholdProvider extends ChangeNotifier {
   Map<String, int> dragonSchoolRecords = {};
   Set<String> appliedOnlineGroupRewardIds = {};
   Set<String> appliedOnlineTradeIds = {};
+  Set<String> appliedOnlineSeasonalPairRewardIds = {};
   Set<String> reservedOnlineTradeEggIds = {};
   Map<String, int> reservedOnlineTradeChests = {};
   Map<String, int> reservedOnlineTradeRelics = {};
@@ -246,6 +253,9 @@ class HouseholdProvider extends ChangeNotifier {
   DateTime? returningSpecialAvailableUntil;
   Set<String> startedSeasonalSpecialEventKeys = {};
   Set<String> notifiedSeasonalSpecialEventKeys = {};
+  Map<String, DateTime> seasonalEventPreviewExpiresAt = {};
+  Set<String> appliedSeasonalPrizeIds = {};
+  Map<String, int> seasonalPodiumEmoteWinCounts = {};
 
   Set<String> ownedItemIds = {};
   Map<ItemSlot, String> equippedItemIds = {};
@@ -520,6 +530,7 @@ class HouseholdProvider extends ChangeNotifier {
     enabledMusicTrackIds = {'reverie'};
     jukeboxShuffle = false;
     jukeboxRepeat = true;
+    disabledSeasonalMusicTrackIds = {};
     final now = _clock();
     final seed = _random.nextInt(0x7fffffff);
     final sizeRoll = _random.nextDouble();
@@ -804,6 +815,10 @@ class HouseholdProvider extends ChangeNotifier {
         data['jukeboxShuffle'] is bool && data['jukeboxShuffle'] as bool;
     jukeboxRepeat =
         data['jukeboxRepeat'] is! bool || data['jukeboxRepeat'] as bool;
+    disabledSeasonalMusicTrackIds =
+        stringSetFromJson(data['disabledSeasonalMusicTrackIds'])
+            .where(seasonalMusicTracksById.containsKey)
+            .toSet();
     soundEffectsEnabled = data['soundEffectsEnabled'] is! bool ||
         data['soundEffectsEnabled'] as bool;
     final storedNotificationCategories = data['enabledNotificationCategories'];
@@ -905,6 +920,17 @@ class HouseholdProvider extends ChangeNotifier {
           fallback: 0,
         ),
     };
+    specialChestInventory = {
+      for (final entry in mapFromJson(data['specialChestInventory']).entries)
+        if (specialChestCatalog.containsKey(entry.key) &&
+            nonNegativeIntFromJson(entry.value, fallback: 0) > 0)
+          entry.key: nonNegativeIntFromJson(entry.value, fallback: 0),
+    };
+    final legacySpecialCount = chestInventory[ChestTier.special] ?? 0;
+    if (legacySpecialCount > 0 && specialChestInventory.isEmpty) {
+      specialChestInventory['golden_wings_chest_v1'] = legacySpecialCount;
+      chestInventory[ChestTier.special] = 0;
+    }
     final rawRelics = mapFromJson(data['relicInventory']);
     relicInventory = {
       for (final relic in MysticRelic.values)
@@ -1049,6 +1075,10 @@ class HouseholdProvider extends ChangeNotifier {
             .toSet();
     appliedOnlineTradeIds =
         stringSetFromJson(data['appliedOnlineTradeIds']).take(500).toSet();
+    appliedOnlineSeasonalPairRewardIds =
+        stringSetFromJson(data['appliedOnlineSeasonalPairRewardIds'])
+            .take(100)
+            .toSet();
     reservedOnlineTradeEggIds =
         stringSetFromJson(data['reservedOnlineTradeEggIds']);
     final rawReservedTradeChests =
@@ -1211,6 +1241,21 @@ class HouseholdProvider extends ChangeNotifier {
         stringSetFromJson(data['notifiedSeasonalSpecialEventKeys'])
             .take(50)
             .toSet();
+    seasonalEventPreviewExpiresAt = {};
+    for (final entry
+        in mapFromJson(data['seasonalEventPreviewExpiresAt']).entries) {
+      final expiresAt = DateTime.tryParse(entry.value.toString());
+      if (specialAdventureEventById(entry.key) != null && expiresAt != null) {
+        seasonalEventPreviewExpiresAt[entry.key] = expiresAt;
+      }
+    }
+    appliedSeasonalPrizeIds =
+        stringSetFromJson(data['appliedSeasonalPrizeIds']).take(100).toSet();
+    seasonalPodiumEmoteWinCounts = {
+      for (final entry
+          in mapFromJson(data['seasonalPodiumEmoteWinCounts']).entries)
+        entry.key: intFromJson(entry.value, fallback: 0).clamp(0, 999),
+    };
 
     ownedItemIds = stringSetFromJson(data['ownedItemIds'])
         .where((id) => shopItemById(id) != null)
@@ -1270,8 +1315,15 @@ class HouseholdProvider extends ChangeNotifier {
     _normalizeRoamingState();
   }
 
-  int chestCount(ChestTier tier) => chestInventory[tier] ?? 0;
-  int get totalChestCount => chestInventory.values.fold(0, (a, b) => a + b);
+  int chestCount(ChestTier tier) => tier == ChestTier.special
+      ? specialChestInventory.values.fold(0, (a, b) => a + b) +
+          (chestInventory[tier] ?? 0)
+      : chestInventory[tier] ?? 0;
+  int specialChestCount(String specialChestId) =>
+      specialChestInventory[specialChestId] ?? 0;
+  int get totalChestCount =>
+      chestInventory.values.fold(0, (a, b) => a + b) +
+      specialChestInventory.values.fold(0, (a, b) => a + b);
   int openableChestCount(ChestTier tier) {
     final available = tradeableChestCount(tier);
     return switch (tier) {
@@ -1344,14 +1396,29 @@ class HouseholdProvider extends ChangeNotifier {
   List<MusicTrack> get ownedMusicTracks => musicCatalog
       .where((track) => ownedMusicTrackIds.contains(track.id))
       .toList(growable: false);
+  List<MusicTrack> get activeSeasonalMusicTracks {
+    final activeIds = activeSpecialAdventureWindows
+        .map((window) => window.event.temporaryMusicTrackId)
+        .toSet();
+    return seasonalMusicCatalog
+        .where((track) => activeIds.contains(track.id))
+        .toList(growable: false);
+  }
+
+  List<MusicTrack> get availableJukeboxTracks => [
+        ...activeSeasonalMusicTracks,
+        ...ownedMusicTracks,
+      ];
   int get musicTrackCount => ownedMusicTrackIds.length;
   bool get hasEveryMusicTrack => musicTrackCount >= musicCatalog.length;
   bool get musicChestCapacityReached =>
       musicTrackCount + chestCount(ChestTier.music) >= musicCatalog.length;
   int get remainingMusicTrackCount =>
       max(0, musicCatalog.length - musicTrackCount);
-  List<String> get enabledMusicResourceIds => musicCatalog
-      .where((track) => enabledMusicTrackIds.contains(track.id))
+  List<String> get enabledMusicResourceIds => availableJukeboxTracks
+      .where((track) => track.isTemporaryEventTrack
+          ? !disabledSeasonalMusicTrackIds.contains(track.id)
+          : enabledMusicTrackIds.contains(track.id))
       .map((track) => track.rawResourceId)
       .toList(growable: false);
 
@@ -1362,10 +1429,16 @@ class HouseholdProvider extends ChangeNotifier {
       );
 
   Future<void> setMusicTrackEnabled(String trackId, bool enabled) async {
-    if (!ownedMusicTrackIds.contains(trackId)) return;
-    final changed = enabled
-        ? enabledMusicTrackIds.add(trackId)
-        : enabledMusicTrackIds.remove(trackId);
+    final seasonal =
+        activeSeasonalMusicTracks.any((track) => track.id == trackId);
+    if (!ownedMusicTrackIds.contains(trackId) && !seasonal) return;
+    final changed = seasonal
+        ? (enabled
+            ? disabledSeasonalMusicTrackIds.remove(trackId)
+            : disabledSeasonalMusicTrackIds.add(trackId))
+        : (enabled
+            ? enabledMusicTrackIds.add(trackId)
+            : enabledMusicTrackIds.remove(trackId));
     if (!changed) return;
     await _syncJukeboxAudio();
     await _notifyAndSave();
@@ -1995,6 +2068,27 @@ class HouseholdProvider extends ChangeNotifier {
   Future<ChestReward?> openChest(ChestTier tier) =>
       _openChest(tier, persist: true);
 
+  Future<ChestReward?> openSpecialChest(String specialChestId) =>
+      _openSpecialChest(specialChestId: specialChestId, persist: true);
+
+  Future<ChestRewardBundle?> openSpecialChests(
+    String specialChestId, {
+    required int count,
+  }) async {
+    if (count <= 0 || specialChestCount(specialChestId) < count) return null;
+    final rewards = <ChestReward>[];
+    for (var index = 0; index < count; index++) {
+      final reward = await _openSpecialChest(
+        specialChestId: specialChestId,
+        persist: false,
+      );
+      if (reward == null) return null;
+      rewards.add(reward);
+    }
+    await _notifyAndSave();
+    return ChestRewardBundle(tier: ChestTier.special, rewards: rewards);
+  }
+
   List<DragonEmoteDefinition> get ownedDragonEmotes => allDragonEmotes
       .where((emote) => ownedDragonEmoteIds.contains(emote.id))
       .toList(growable: false);
@@ -2054,7 +2148,9 @@ class HouseholdProvider extends ChangeNotifier {
     }
     if (tier == ChestTier.title) return _openTitleChest(persist: persist);
     if (tier == ChestTier.music) return _openMusicChest(persist: persist);
-    if (tier == ChestTier.special) return _openSpecialChest(persist: persist);
+    if (tier == ChestTier.special) {
+      return _openSpecialChest(persist: persist);
+    }
     chestInventory[tier] = chestCount(tier) - 1;
     final coins = switch (tier) {
       ChestTier.wooden => 20 + _random.nextInt(21),
@@ -2114,32 +2210,56 @@ class HouseholdProvider extends ChangeNotifier {
         emoteFound: emoteFound);
   }
 
-  Future<ChestReward?> _openSpecialChest({required bool persist}) async {
-    chestInventory[ChestTier.special] = chestCount(ChestTier.special) - 1;
-    eggStash.add(_createSpecialEgg());
-    pet.coins += 269;
-    pet.gems += 10;
+  Future<ChestReward?> _openSpecialChest({
+    String? specialChestId,
+    required bool persist,
+  }) async {
+    var resolvedId = specialChestId;
+    if (resolvedId == null || specialChestCount(resolvedId) <= 0) {
+      resolvedId = specialChestCatalog.keys.cast<String?>().firstWhere(
+            (id) => id != null && specialChestCount(id) > 0,
+            orElse: () => null,
+          );
+    }
+    if (resolvedId == null) {
+      final legacyCount = chestInventory[ChestTier.special] ?? 0;
+      if (legacyCount <= 0) return null;
+      resolvedId = 'golden_wings_chest_v1';
+      chestInventory[ChestTier.special] = legacyCount - 1;
+    } else {
+      specialChestInventory[resolvedId] = specialChestCount(resolvedId) - 1;
+      if (specialChestInventory[resolvedId] == 0) {
+        specialChestInventory.remove(resolvedId);
+      }
+    }
+    final definition = specialChestById(resolvedId);
+    if (definition == null) return null;
+    eggStash.add(_createSpecialEgg(definition.specialEggId));
+    pet.coins += definition.coins;
+    pet.gems += definition.gems;
     totalChestsOpened++;
     final emoteFound = _rollUniqueDragonEmote(
       DragonEmoteSource.chest,
       _chestEmoteDropChance(ChestTier.special),
     );
     _addActivity(
-      message: 'A Special Chest revealed a one-of-a-kind egg.',
+      message: '${definition.titleEn} revealed a one-of-a-kind egg.',
       type: ActivityType.discovery,
       code: ActivityCode.chestOpened,
       subject: ChestTier.special.name,
-      coins: 269,
-      gems: 10,
+      coins: definition.coins,
+      gems: definition.gems,
     );
     _evaluateAchievements();
     if (persist) await _notifyAndSave();
     return ChestReward(
       tier: ChestTier.special,
-      coins: 269,
-      gems: 10,
+      coins: definition.coins,
+      gems: definition.gems,
       eggFound: true,
       specialEgg: true,
+      specialChestId: definition.id,
+      specialEggId: definition.specialEggId,
       emoteFound: emoteFound,
     );
   }
@@ -2329,7 +2449,6 @@ class HouseholdProvider extends ChangeNotifier {
 
   void _applyGoldenHourSpectralBonus(Pet egg, DateTime hatchedAt) {
     if (egg.prismatic ||
-        egg.isSpecialEgg ||
         havenDayPhaseAt(hatchedAt) != HavenDayPhase.goldenHour) {
       return;
     }
@@ -2532,6 +2651,16 @@ class HouseholdProvider extends ChangeNotifier {
         'probably_fine' => totalSinisterAdventuresCompleted,
         'winner_chicken_dinner' =>
           discoveredForms.contains('cluckatrice:hatchling') ? 1 : 0,
+        'warden_of_the_witchlight' =>
+          discoveredForms.contains('gloamgourd:hatchling') ? 1 : 0,
+        'star_in_every_hearth' =>
+          discoveredForms.contains('hollyfrost:hatchling') ? 1 : 0,
+        'first_light_first_flight' =>
+          discoveredForms.contains('dawnchime:hatchling') ? 1 : 0,
+        'two_hearts_one_flight' =>
+          discoveredForms.contains('rosevow:hatchling') ? 1 : 0,
+        'every_color_takes_flight' =>
+          discoveredForms.contains('spectrumplume:hatchling') ? 1 : 0,
         'academy_graduate' =>
           ownedDragons.any((dragon) => dragon.dragonSchoolGraduated) ? 1 : 0,
         'dragon_school_dropout' =>
@@ -2655,6 +2784,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<void> refreshForCurrentDate() async {
+    final musicBefore = enabledMusicResourceIds.join('|');
     final specialNotificationsChanged =
         await refreshSpecialAdventureNotifications();
     final adventureOptionsBefore = [
@@ -2704,6 +2834,9 @@ class HouseholdProvider extends ChangeNotifier {
         streakChanged |
         roamIdleDragons();
     final achievementsChanged = _evaluateAchievements();
+    if (musicBefore != enabledMusicResourceIds.join('|')) {
+      await _syncJukeboxAudio();
+    }
     if (changed || achievementsChanged) await _notifyAndSave();
   }
 
@@ -2744,17 +2877,24 @@ class HouseholdProvider extends ChangeNotifier {
     );
   }
 
-  DragonEgg _createSpecialEgg() => DragonEgg(
-        id: _uuid.v4(),
-        lineageId: 'cluckatrice',
-        acquiredAt: _clock(),
-        hatchSeed: _random.nextInt(0x7fffffff),
-        prismatic: false,
-        lawAxis: LawAxis.values[_random.nextInt(LawAxis.values.length)],
-        moralAxis: MoralAxis.values[_random.nextInt(MoralAxis.values.length)],
-        sizeFactor: _dragonSizeFromRoll(_random.nextDouble()),
-        incubationMinutes: 21 * 60,
-      );
+  DragonEgg _createSpecialEgg([String specialEggId = 'golden_wings_egg_v1']) {
+    final definition = specialEggById(specialEggId) ??
+        specialEggCatalog['golden_wings_egg_v1']!;
+    return DragonEgg(
+      id: _uuid.v4(),
+      lineageId: definition.lineageId,
+      acquiredAt: _clock(),
+      hatchSeed: _random.nextInt(0x7fffffff),
+      prismatic: _random.nextDouble() < definition.normalSpectralChance,
+      lawAxis: LawAxis.values[_random.nextInt(LawAxis.values.length)],
+      moralAxis: definition.fixedMoral ??
+          MoralAxis.values[_random.nextInt(MoralAxis.values.length)],
+      moralAxisKnown: definition.moralKnownAtHatch,
+      sizeFactor: _dragonSizeFromRoll(_random.nextDouble()),
+      incubationSeconds: definition.incubation.inSeconds,
+      specialEggId: definition.id,
+    );
+  }
 
   DragonLineage _rollEggLineage(ChestTier sourceTier) {
     // Every chest tier has its own rarity curve. The later curves deliberately
@@ -2921,6 +3061,7 @@ class HouseholdProvider extends ChangeNotifier {
         'enabledMusicTrackIds': enabledMusicTrackIds.toList(),
         'jukeboxShuffle': jukeboxShuffle,
         'jukeboxRepeat': jukeboxRepeat,
+        'disabledSeasonalMusicTrackIds': disabledSeasonalMusicTrackIds.toList(),
         'soundEffectsEnabled': soundEffectsEnabled,
         'enabledNotificationCategories': enabledNotificationCategories
             .map((category) => category.name)
@@ -2944,6 +3085,7 @@ class HouseholdProvider extends ChangeNotifier {
           for (final entry in chestInventory.entries)
             entry.key.name: entry.value
         },
+        'specialChestInventory': specialChestInventory,
         'relicInventory': {
           for (final entry in relicInventory.entries)
             entry.key.name: entry.value
@@ -2999,6 +3141,8 @@ class HouseholdProvider extends ChangeNotifier {
         'dragonSchoolRecords': dragonSchoolRecords,
         'appliedOnlineGroupRewardIds': appliedOnlineGroupRewardIds.toList(),
         'appliedOnlineTradeIds': appliedOnlineTradeIds.toList(),
+        'appliedOnlineSeasonalPairRewardIds':
+            appliedOnlineSeasonalPairRewardIds.toList(),
         'reservedOnlineTradeEggIds': reservedOnlineTradeEggIds.toList(),
         'reservedOnlineTradeChests': reservedOnlineTradeChests,
         'reservedOnlineTradeRelics': reservedOnlineTradeRelics,
@@ -3036,6 +3180,12 @@ class HouseholdProvider extends ChangeNotifier {
             startedSeasonalSpecialEventKeys.toList(),
         'notifiedSeasonalSpecialEventKeys':
             notifiedSeasonalSpecialEventKeys.toList(),
+        'seasonalEventPreviewExpiresAt': {
+          for (final entry in seasonalEventPreviewExpiresAt.entries)
+            entry.key: entry.value.toIso8601String(),
+        },
+        'appliedSeasonalPrizeIds': appliedSeasonalPrizeIds.toList(),
+        'seasonalPodiumEmoteWinCounts': seasonalPodiumEmoteWinCounts,
         'ownedItemIds': ownedItemIds.toList(),
         'equippedItemIds': {
           for (final entry in equippedItemIds.entries)
@@ -3061,6 +3211,8 @@ class HouseholdProvider extends ChangeNotifier {
       final preservedCoins = pet.coins;
       final preservedGems = pet.gems;
       final preservedChests = Map<ChestTier, int>.from(chestInventory);
+      final preservedSpecialChests =
+          Map<String, int>.from(specialChestInventory);
       _restore(state);
       if (preserveServerOwnedWalletAndChests) {
         // Once an account is cut over, a cloud save is only a presentation and
@@ -3069,6 +3221,7 @@ class HouseholdProvider extends ChangeNotifier {
         pet.coins = preservedCoins;
         pet.gems = preservedGems;
         chestInventory = preservedChests;
+        specialChestInventory = preservedSpecialChests;
       }
       _evolveReadyDragons(_clock());
       pet.applyTimeDecay(_clock());

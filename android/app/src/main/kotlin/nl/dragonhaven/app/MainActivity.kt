@@ -319,6 +319,26 @@ class MainActivity : FlutterActivity() {
         "chest_special" -> R.raw.chest_special
         "chest_sinister_legacy" -> R.raw.chest_sinister_legacy
         "chest_wooden" -> R.raw.chest_wooden
+        "event_witchlight_chest" -> R.raw.event_witchlight_chest
+        "event_witchlight_success" -> R.raw.event_witchlight_success
+        "event_witchlight_failure" -> R.raw.event_witchlight_failure
+        "event_witchlight_finish" -> R.raw.event_witchlight_finish
+        "event_starlight_chest" -> R.raw.event_starlight_chest
+        "event_starlight_success" -> R.raw.event_starlight_success
+        "event_starlight_failure" -> R.raw.event_starlight_failure
+        "event_starlight_finish" -> R.raw.event_starlight_finish
+        "event_firstlight_chest" -> R.raw.event_firstlight_chest
+        "event_firstlight_success" -> R.raw.event_firstlight_success
+        "event_firstlight_failure" -> R.raw.event_firstlight_failure
+        "event_firstlight_finish" -> R.raw.event_firstlight_finish
+        "event_twinheart_chest" -> R.raw.event_twinheart_chest
+        "event_twinheart_success" -> R.raw.event_twinheart_success
+        "event_twinheart_failure" -> R.raw.event_twinheart_failure
+        "event_twinheart_finish" -> R.raw.event_twinheart_finish
+        "event_radiant_chest" -> R.raw.event_radiant_chest
+        "event_radiant_success" -> R.raw.event_radiant_success
+        "event_radiant_failure" -> R.raw.event_radiant_failure
+        "event_radiant_finish" -> R.raw.event_radiant_finish
         "evolution_ascended" -> R.raw.evolution_ascended
         "evolution_young" -> R.raw.evolution_young
         "floor_built" -> R.raw.floor_built

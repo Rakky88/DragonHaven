@@ -1025,6 +1025,121 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     ],
     'ja': ['勝者のチキンディナー', 'スペシャルエッグから秘密のクッカトリスを孵化させる。'],
   },
+  'warden_of_the_witchlight': {
+    'de': [
+      'Wächter des Hexenlichts',
+      'Brüte Gloamgourd aus einem Hexenlicht-Ei aus.'
+    ],
+    'es': [
+      'Guardián de la Luz de Bruja',
+      'Haz eclosionar a Gloamgourd de un Huevo de Luz de Bruja.'
+    ],
+    'fr': [
+      'Gardien de la Lueur sorcière',
+      'Fais éclore Gloamgourd d’un Œuf de Lueur sorcière.'
+    ],
+    'it': [
+      'Custode della Luce Stregata',
+      'Fai schiudere Gloamgourd da un Uovo della Luce Stregata.'
+    ],
+    'pt': [
+      'Guardião da Luz Feiticeira',
+      'Faça Gloamgourd nascer de um Ovo da Luz Feiticeira.'
+    ],
+    'ja': ['ウィッチライトの守り手', 'ウィッチライトエッグからグロームゴードを孵化させる。'],
+  },
+  'star_in_every_hearth': {
+    'de': [
+      'Ein Stern in jeder Feuerstelle',
+      'Brüte Hollyfrost aus einem Sternenlicht-Tannenei aus.'
+    ],
+    'es': [
+      'Una estrella en cada hogar',
+      'Haz eclosionar a Hollyfrost de un Huevo de Abeto Estrellado.'
+    ],
+    'fr': [
+      'Une étoile dans chaque foyer',
+      'Fais éclore Hollyfrost d’un Œuf de Sapin étoilé.'
+    ],
+    'it': [
+      'Una stella in ogni focolare',
+      'Fai schiudere Hollyfrost da un Uovo di Abete Stellato.'
+    ],
+    'pt': [
+      'Uma estrela em cada lareira',
+      'Faça Hollyfrost nascer de um Ovo de Pinheiro Estrelado.'
+    ],
+    'ja': ['すべての炉辺に星を', 'スターリット・エバーグリーンエッグからホリーフロストを孵化させる。'],
+  },
+  'first_light_first_flight': {
+    'de': [
+      'Erstes Licht, erster Flug',
+      'Brüte Dawnchime aus einem Jahreswende-Ei aus.'
+    ],
+    'es': [
+      'Primera luz, primer vuelo',
+      'Haz eclosionar a Dawnchime de un Huevo de Fin de Año.'
+    ],
+    'fr': [
+      'Première lueur, premier vol',
+      'Fais éclore Dawnchime d’un Œuf du Renouveau.'
+    ],
+    'it': [
+      'Prima luce, primo volo',
+      'Fai schiudere Dawnchime da un Uovo del Volgere dell’Anno.'
+    ],
+    'pt': [
+      'Primeira luz, primeiro voo',
+      'Faça Dawnchime nascer de um Ovo da Virada do Ano.'
+    ],
+    'ja': ['最初の光、最初の飛翔', 'ターニングイヤーエッグからドーンチャイムを孵化させる。'],
+  },
+  'two_hearts_one_flight': {
+    'de': [
+      'Zwei Herzen, ein Flug',
+      'Brüte Rosevow aus einem Rosenbund-Ei aus.'
+    ],
+    'es': [
+      'Dos corazones, un vuelo',
+      'Haz eclosionar a Rosevow de un Huevo del Vínculo de Rosas.'
+    ],
+    'fr': [
+      'Deux cœurs, un seul vol',
+      'Fais éclore Rosevow d’un Œuf du Lien de Rose.'
+    ],
+    'it': [
+      'Due cuori, un solo volo',
+      'Fai schiudere Rosevow da un Uovo del Vincolo di Rose.'
+    ],
+    'pt': [
+      'Dois corações, um voo',
+      'Faça Rosevow nascer de um Ovo do Laço de Rosas.'
+    ],
+    'ja': ['二つの心、一つの飛翔', 'ローズバウンドエッグからローズヴァウを孵化させる。'],
+  },
+  'every_color_takes_flight': {
+    'de': [
+      'Jede Farbe erhebt sich',
+      'Brüte Spectrumplume aus einem Echtfarben-Ei aus.'
+    ],
+    'es': [
+      'Cada color alza el vuelo',
+      'Haz eclosionar a Spectrumplume de un Huevo de Colores Verdaderos.'
+    ],
+    'fr': [
+      'Chaque couleur prend son envol',
+      'Fais éclore Spectrumplume d’un Œuf aux Vraies Couleurs.'
+    ],
+    'it': [
+      'Ogni colore prende il volo',
+      'Fai schiudere Spectrumplume da un Uovo dai Colori Autentici.'
+    ],
+    'pt': [
+      'Toda cor ganha asas',
+      'Faça Spectrumplume nascer de um Ovo de Cores Verdadeiras.'
+    ],
+    'ja': ['すべての色が羽ばたく', 'トゥルーカラーエッグからスペクトラムプルームを孵化させる。'],
+  },
   'probably_fine': {
     'de': [
       'Das geht bestimmt gut',

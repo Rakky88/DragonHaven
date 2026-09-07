@@ -3,6 +3,7 @@ import 'notification_phrase_translations.dart';
 import 'release_phrase_translations.dart';
 import 'feature_batch_phrase_translations.dart';
 import 'social_phrase_translations.dart';
+import 'seasonal_phrase_translations.dart';
 
 /// Offline translations for complete, user-visible UI phrases.
 ///
@@ -23,7 +24,8 @@ String? translatedUiPhrase(String english, String languageCode) {
   final values = uiPhraseTranslations[english] ??
       trialPhraseTranslations[english] ??
       featureBatchPhraseTranslations[english] ??
-      socialPhraseTranslations[english];
+      socialPhraseTranslations[english] ??
+      seasonalPhraseTranslations[english];
   if (index == null) return null;
   if (values != null && values.length == 6) return values[index];
   return _translatedDynamicUiPhrase(english, languageCode);

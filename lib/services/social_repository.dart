@@ -44,6 +44,52 @@ abstract interface class SocialRepository {
     required TrialRankingScope scope,
     int limit = 100,
   });
+  Future<List<SeasonalEventPreviewEntitlement>>
+      loadSeasonalPreviewEntitlements();
+  Future<SeasonalEventPreviewEntitlement> redeemSeasonalPreview(String code);
+  Future<SeasonalTrialSession> startSeasonalTrial({
+    required String eventId,
+    required String trialKey,
+  });
+  Future<SeasonalTrialSubmissionResult> completeSeasonalTrial({
+    required String attemptId,
+    required String token,
+    required int score,
+    required int correctActions,
+    required int totalActions,
+    required int durationMs,
+  });
+  Future<List<SeasonalTrialRankingEntry>> loadSeasonalTrialRankings({
+    required String eventId,
+    required String occurrenceKey,
+    bool preview = false,
+    int limit = 100,
+  });
+  Future<List<SeasonalChampionEntry>> loadSeasonalChronicle();
+  Future<List<SeasonalChampionEntry>> finalizeSeasonalEventPrizes();
+  Future<void> acknowledgeSeasonalPrize(String prizeId);
+  Future<List<SeasonalPairAdventure>> loadSeasonalPairAdventures();
+  Future<void> inviteSeasonalPairAdventure({
+    required String keeperCode,
+    required String dragonId,
+    required int might,
+    required int arcana,
+    required int spirit,
+  });
+  Future<void> respondSeasonalPairAdventure({
+    required String adventureId,
+    required bool accept,
+    String? dragonId,
+    int might = 0,
+    int arcana = 0,
+    int spirit = 0,
+  });
+  Future<void> startSeasonalPairAdventure(String adventureId);
+  Future<SeasonalPairReward?> claimSeasonalPairAdventure(String adventureId);
+  Future<void> acknowledgeSeasonalPairReward(String adventureId);
+  Future<SeasonalCommunityProgress> loadSeasonalCommunityProgress(
+    String eventId,
+  );
   Future<List<FriendshipRequest>> loadRequests();
   Future<List<SocialNotification>> loadSocialNotifications();
   Future<void> acknowledgeSocialNotifications(List<String> notificationIds);
@@ -153,6 +199,81 @@ class DisabledSocialRepository implements SocialRepository {
     required TrialRankingScope scope,
     int limit = 100,
   }) async =>
+      _disabled();
+  @override
+  Future<List<SeasonalEventPreviewEntitlement>>
+      loadSeasonalPreviewEntitlements() async => _disabled();
+  @override
+  Future<SeasonalEventPreviewEntitlement> redeemSeasonalPreview(
+          String code) async =>
+      _disabled();
+  @override
+  Future<SeasonalTrialSession> startSeasonalTrial({
+    required String eventId,
+    required String trialKey,
+  }) async =>
+      _disabled();
+  @override
+  Future<SeasonalTrialSubmissionResult> completeSeasonalTrial({
+    required String attemptId,
+    required String token,
+    required int score,
+    required int correctActions,
+    required int totalActions,
+    required int durationMs,
+  }) async =>
+      _disabled();
+  @override
+  Future<List<SeasonalTrialRankingEntry>> loadSeasonalTrialRankings({
+    required String eventId,
+    required String occurrenceKey,
+    bool preview = false,
+    int limit = 100,
+  }) async =>
+      _disabled();
+  @override
+  Future<List<SeasonalChampionEntry>> loadSeasonalChronicle() async =>
+      _disabled();
+  @override
+  Future<List<SeasonalChampionEntry>> finalizeSeasonalEventPrizes() async =>
+      _disabled();
+  @override
+  Future<void> acknowledgeSeasonalPrize(String prizeId) async => _disabled();
+  @override
+  Future<List<SeasonalPairAdventure>> loadSeasonalPairAdventures() async =>
+      _disabled();
+  @override
+  Future<void> inviteSeasonalPairAdventure({
+    required String keeperCode,
+    required String dragonId,
+    required int might,
+    required int arcana,
+    required int spirit,
+  }) async =>
+      _disabled();
+  @override
+  Future<void> respondSeasonalPairAdventure({
+    required String adventureId,
+    required bool accept,
+    String? dragonId,
+    int might = 0,
+    int arcana = 0,
+    int spirit = 0,
+  }) async =>
+      _disabled();
+  @override
+  Future<void> startSeasonalPairAdventure(String adventureId) async =>
+      _disabled();
+  @override
+  Future<SeasonalPairReward?> claimSeasonalPairAdventure(
+          String adventureId) async =>
+      _disabled();
+  @override
+  Future<void> acknowledgeSeasonalPairReward(String adventureId) async =>
+      _disabled();
+  @override
+  Future<SeasonalCommunityProgress> loadSeasonalCommunityProgress(
+          String eventId) async =>
       _disabled();
   @override
   Future<KeeperProfile> loadMyProfile() async => _disabled();

@@ -91,7 +91,7 @@ void main() {
   });
 
   test('achievements have unique badges and use Common terminology', () {
-    expect(achievementCatalog, hasLength(33));
+    expect(achievementCatalog, hasLength(38));
     expect(
       achievementCatalog.map((achievement) => achievement.badge).toSet(),
       hasLength(achievementCatalog.length),
@@ -839,11 +839,11 @@ void main() {
   });
 
   test('dragon chat emotes stay unique, collectible and server typed', () {
-    expect(allDragonEmotes, hasLength(140));
-    expect(allDragonEmotes.map((emote) => emote.id).toSet(), hasLength(140));
+    expect(allDragonEmotes, hasLength(155));
+    expect(allDragonEmotes.map((emote) => emote.id).toSet(), hasLength(155));
     expect(
       allDragonEmotes.map((emote) => emote.assetPath).toSet(),
-      hasLength(140),
+      hasLength(155),
     );
     expect(
       allDragonEmotes.where((emote) => emote.source == DragonEmoteSource.chest),

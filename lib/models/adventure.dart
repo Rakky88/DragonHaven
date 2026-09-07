@@ -80,6 +80,11 @@ class AdventureDefinition {
     this.sinister = false,
     this.combinedExpertise = false,
     this.seasonalSpecial = false,
+    this.specialChestId,
+    this.specialReductionPerExpertisePoint = Duration.zero,
+    this.minimumDuration,
+    this.requiredDragonCount = 1,
+    this.requiresOnlinePartner = false,
   });
 
   final String id;
@@ -97,6 +102,11 @@ class AdventureDefinition {
   final bool sinister;
   final bool combinedExpertise;
   final bool seasonalSpecial;
+  final String? specialChestId;
+  final Duration specialReductionPerExpertisePoint;
+  final Duration? minimumDuration;
+  final int requiredDragonCount;
+  final bool requiresOnlinePartner;
 }
 
 Duration expertiseAdjustedAdventureDuration(
@@ -112,27 +122,28 @@ Duration expertiseAdjustedAdventureDuration(
       ? 0
       : expertiseScores.reduce((first, second) => first + second) ~/
           expertiseScores.length;
-  final combinedExpertise = dragons.isEmpty
-      ? 0
-      : dragons.first.trainingFor(TrainingFocus.might) +
-          dragons.first.trainingFor(TrainingFocus.arcana) +
-          dragons.first.trainingFor(TrainingFocus.spirit);
+  final combinedExpertise = dragons.fold<int>(
+    0,
+    (total, dragon) =>
+        total +
+        dragon.trainingFor(TrainingFocus.might) +
+        dragon.trainingFor(TrainingFocus.arcana) +
+        dragon.trainingFor(TrainingFocus.spirit),
+  );
   final reduction = switch (adventure.kind) {
     AdventureKind.mini => Duration(seconds: singleDragonExpertise),
     AdventureKind.short => Duration(minutes: singleDragonExpertise),
     AdventureKind.long => Duration(minutes: singleDragonExpertise * 15),
     AdventureKind.group => Duration(hours: averageGroupExpertise),
     AdventureKind.special => adventure.combinedExpertise
-        ? Duration(hours: combinedExpertise)
+        ? adventure.specialReductionPerExpertisePoint * combinedExpertise
         : Duration.zero,
   };
   final minimum = switch (adventure.kind) {
     AdventureKind.mini => const Duration(minutes: 1),
     AdventureKind.short => const Duration(hours: 1),
     AdventureKind.long || AdventureKind.group => const Duration(days: 1),
-    AdventureKind.special => adventure.combinedExpertise
-        ? const Duration(days: 1)
-        : adventure.duration,
+    AdventureKind.special => adventure.minimumDuration ?? adventure.duration,
   };
   final adjusted = adventure.duration - reduction;
   return adjusted < minimum ? minimum : adjusted;
@@ -222,6 +233,9 @@ class SpecialAdventureRewardBundle {
     this.randomRelicPool = const [],
     this.musicChest = false,
     this.expertiseRewards = const {},
+    this.specialChestId,
+    this.accountTitleId,
+    this.keeperBadgeId,
   });
 
   final ChestTier chestTier;
@@ -229,6 +243,63 @@ class SpecialAdventureRewardBundle {
   final List<MysticRelic> randomRelicPool;
   final bool musicChest;
   final Map<TrainingFocus, int> expertiseRewards;
+  final String? specialChestId;
+  final String? accountTitleId;
+  final String? keeperBadgeId;
+}
+
+class SpecialEggDefinition {
+  const SpecialEggDefinition({
+    required this.id,
+    required this.version,
+    required this.titleEn,
+    required this.titleNl,
+    required this.lineageId,
+    required this.incubation,
+    required this.assetPath,
+    this.fixedMoral,
+    this.moralKnownAtHatch = false,
+    this.normalSpectralChance = .05,
+    this.goldenHourSpectralChance = .10,
+  });
+
+  final String id;
+  final int version;
+  final String titleEn;
+  final String titleNl;
+  final String lineageId;
+  final Duration incubation;
+  final String assetPath;
+  final MoralAxis? fixedMoral;
+  final bool moralKnownAtHatch;
+  final double normalSpectralChance;
+  final double goldenHourSpectralChance;
+}
+
+class SpecialChestDefinition {
+  const SpecialChestDefinition({
+    required this.id,
+    required this.version,
+    required this.titleEn,
+    required this.titleNl,
+    required this.closedAssetPath,
+    required this.openedAssetPath,
+    required this.coins,
+    required this.gems,
+    required this.specialEggId,
+    required this.openSoundId,
+  });
+
+  final String id;
+  final int version;
+  final String titleEn;
+  final String titleNl;
+  final String closedAssetPath;
+  final String openedAssetPath;
+  final int coins;
+  final int gems;
+  final String specialEggId;
+  final String openSoundId;
 }
 
 class SpecialAdventureEventDefinition {
@@ -249,6 +320,15 @@ class SpecialAdventureEventDefinition {
     this.recurrenceDay,
     this.recurrenceHour = 0,
     this.recurrenceAvailability,
+    required this.titleEn,
+    required this.titleNl,
+    required this.trialKindName,
+    required this.previewCode,
+    required this.previewHours,
+    required this.temporaryMusicTrackId,
+    this.previewOwnerKeeperId = 'DH-17792DC5',
+    this.previewRewardsSimulatedInProduction = true,
+    this.rankingVisibleAfterEvent = const Duration(days: 5),
   });
 
   final String id;
@@ -267,6 +347,15 @@ class SpecialAdventureEventDefinition {
   final String storyEn;
   final String storyNl;
   final bool showStoryInDetails;
+  final String titleEn;
+  final String titleNl;
+  final String trialKindName;
+  final String previewCode;
+  final int previewHours;
+  final String temporaryMusicTrackId;
+  final String previewOwnerKeeperId;
+  final bool previewRewardsSimulatedInProduction;
+  final Duration rankingVisibleAfterEvent;
 }
 
 abstract final class AdventureCatalog {
@@ -284,8 +373,119 @@ abstract final class AdventureCatalog {
     focus: TrainingFocus.might,
     statPoints: 0,
     knownChest: ChestTier.special,
+    specialChestId: 'golden_wings_chest_v1',
     combinedExpertise: true,
     seasonalSpecial: true,
+    specialReductionPerExpertisePoint: Duration(hours: 1),
+    minimumDuration: Duration(days: 1),
+  );
+
+  static const halloweenWitchlight = AdventureDefinition(
+    id: 'special_halloween_witchlight',
+    kind: AdventureKind.special,
+    titleEn: 'Roots Beneath the Lanterns',
+    titleNl: 'Wortels Onder de Lantaarns',
+    descriptionEn:
+        'Follow Gloamgourd through a lantern-lit grove and mend the ancient ward before the last witchlight fades.',
+    descriptionNl:
+        'Volg Gloamgourd door een lantaarnverlicht woud en herstel de oude bescherming voordat het laatste heksenlicht dooft.',
+    duration: Duration(hours: 72),
+    xp: 500,
+    focus: TrainingFocus.arcana,
+    statPoints: 0,
+    knownChest: ChestTier.special,
+    specialChestId: 'witchlight_chest_v1',
+    combinedExpertise: true,
+    seasonalSpecial: true,
+    specialReductionPerExpertisePoint: Duration(minutes: 15),
+    minimumDuration: Duration(hours: 24),
+  );
+
+  static const christmasWinterHearth = AdventureDefinition(
+    id: 'special_christmas_winter_hearth',
+    kind: AdventureKind.special,
+    titleEn: 'The Starlight Sleigh',
+    titleNl: 'De Sterrenlichtslee',
+    descriptionEn:
+        'Help Hollyfrost restore a lost starlight sleigh and carry warmth back to every winter hearth.',
+    descriptionNl:
+        'Help Hollyfrost een verloren sterrenlichtslee te herstellen en warmte terug te brengen naar elke winterhaard.',
+    duration: Duration(hours: 96),
+    xp: 600,
+    focus: TrainingFocus.spirit,
+    statPoints: 0,
+    knownChest: ChestTier.special,
+    specialChestId: 'starlight_gift_chest_v1',
+    combinedExpertise: true,
+    seasonalSpecial: true,
+    specialReductionPerExpertisePoint: Duration(minutes: 15),
+    minimumDuration: Duration(hours: 24),
+  );
+
+  static const newYearFirstDawn = AdventureDefinition(
+    id: 'special_new_year_first_dawn',
+    kind: AdventureKind.special,
+    titleEn: 'The Bell Beyond Midnight',
+    titleNl: 'De Klok Voorbij Middernacht',
+    descriptionEn:
+        'Guide Dawnchime beyond midnight and awaken the first bell of a hopeful new year.',
+    descriptionNl:
+        'Begeleid Dawnchime voorbij middernacht en wek de eerste klok van een hoopvol nieuw jaar.',
+    duration: Duration(hours: 72),
+    xp: 700,
+    focus: TrainingFocus.arcana,
+    statPoints: 0,
+    knownChest: ChestTier.special,
+    specialChestId: 'firstlight_celebration_chest_v1',
+    combinedExpertise: true,
+    seasonalSpecial: true,
+    specialReductionPerExpertisePoint: Duration(minutes: 15),
+    minimumDuration: Duration(hours: 24),
+  );
+
+  static const valentineTwoHeartlights = AdventureDefinition(
+    id: 'special_valentine_two_heartlights',
+    kind: AdventureKind.special,
+    titleEn: 'The Rosebound Crossing',
+    titleNl: 'De Rozenverbonden Oversteek',
+    descriptionEn:
+        'Two Keepers and two dragons cross a rosebound skybridge whose light only answers a shared promise.',
+    descriptionNl:
+        'Twee Hoeders en twee draken steken een rozenbrug over waarvan het licht alleen antwoordt op een gedeelde belofte.',
+    duration: Duration(hours: 96),
+    xp: 650,
+    focus: TrainingFocus.spirit,
+    statPoints: 0,
+    requirements: AdventureRequirements(players: 2),
+    knownChest: ChestTier.special,
+    specialChestId: 'twinheart_keepsake_chest_v1',
+    combinedExpertise: true,
+    seasonalSpecial: true,
+    specialReductionPerExpertisePoint: Duration(minutes: 15),
+    minimumDuration: Duration(hours: 24),
+    requiredDragonCount: 2,
+    requiresOnlinePartner: true,
+  );
+
+  static const prideEveryColor = AdventureDefinition(
+    id: 'special_pride_every_color',
+    kind: AdventureKind.special,
+    titleEn: 'The Aurora We Weave',
+    titleNl: 'De Aurora Die Wij Weven',
+    descriptionEn:
+        'Weave every honest color into the Haven sky and help Spectrumplume make room for every Keeper to shine.',
+    descriptionNl:
+        'Weef elke oprechte kleur door de hemel van de Haven en help Spectrumplume ruimte te maken voor iedere Hoeder om te stralen.',
+    duration: Duration(hours: 84),
+    xp: 700,
+    focus: TrainingFocus.spirit,
+    statPoints: 0,
+    knownChest: ChestTier.special,
+    specialChestId: 'radiant_festival_chest_v1',
+    combinedExpertise: true,
+    seasonalSpecial: true,
+    specialReductionPerExpertisePoint: Duration(minutes: 15),
+    minimumDuration: Duration(hours: 24),
   );
 
   static const _placesEn = [
@@ -488,10 +688,156 @@ abstract final class AdventureCatalog {
       ...group,
       ...special,
       goldenWingsBirthday,
+      halloweenWitchlight,
+      christmasWinterHearth,
+      newYearFirstDawn,
+      valentineTwoHeartlights,
+      prideEveryColor,
     ])
       adventure.id: adventure,
   });
 }
+
+const specialEggCatalog = <String, SpecialEggDefinition>{
+  'golden_wings_egg_v1': SpecialEggDefinition(
+    id: 'golden_wings_egg_v1',
+    version: 1,
+    titleEn: 'Golden Wings Special Egg',
+    titleNl: 'Gouden Vleugels Speciaal Ei',
+    lineageId: 'cluckatrice',
+    incubation: Duration(hours: 21),
+    assetPath: 'assets/images/ui/ui_special_egg.webp',
+  ),
+  'witchlight_egg_v1': SpecialEggDefinition(
+    id: 'witchlight_egg_v1',
+    version: 1,
+    titleEn: 'Witchlight Egg',
+    titleNl: 'Heksenlicht-ei',
+    lineageId: 'gloamgourd',
+    incubation: Duration(hours: 13, minutes: 13, seconds: 13),
+    assetPath: 'assets/images/events/halloween/witchlight_egg.webp',
+  ),
+  'starlit_evergreen_egg_v1': SpecialEggDefinition(
+    id: 'starlit_evergreen_egg_v1',
+    version: 1,
+    titleEn: 'Starlit Evergreen Egg',
+    titleNl: 'Sterrenlicht-dennenei',
+    lineageId: 'hollyfrost',
+    incubation: Duration(hours: 25),
+    assetPath: 'assets/images/events/christmas/starlit_evergreen_egg.webp',
+    fixedMoral: MoralAxis.good,
+    moralKnownAtHatch: true,
+  ),
+  'turning_year_egg_v1': SpecialEggDefinition(
+    id: 'turning_year_egg_v1',
+    version: 1,
+    titleEn: 'Turning-Year Egg',
+    titleNl: 'Jaarwende-ei',
+    lineageId: 'dawnchime',
+    incubation: Duration(hours: 24),
+    assetPath: 'assets/images/events/new_year/turning_year_egg.webp',
+    fixedMoral: MoralAxis.neutral,
+    moralKnownAtHatch: true,
+  ),
+  'rosebound_egg_v1': SpecialEggDefinition(
+    id: 'rosebound_egg_v1',
+    version: 1,
+    titleEn: 'Rosebound Egg',
+    titleNl: 'Rozenverbonden Ei',
+    lineageId: 'rosevow',
+    incubation: Duration(hours: 14),
+    assetPath: 'assets/images/events/valentine/rosebound_egg.webp',
+    fixedMoral: MoralAxis.good,
+    moralKnownAtHatch: true,
+  ),
+  'truecolor_egg_v1': SpecialEggDefinition(
+    id: 'truecolor_egg_v1',
+    version: 1,
+    titleEn: 'Truecolor Egg',
+    titleNl: 'Ware-Kleuren-ei',
+    lineageId: 'spectrumplume',
+    incubation: Duration(hours: 18),
+    assetPath: 'assets/images/events/pride/truecolor_egg.webp',
+    fixedMoral: MoralAxis.good,
+    moralKnownAtHatch: true,
+  ),
+};
+
+const specialChestCatalog = <String, SpecialChestDefinition>{
+  'golden_wings_chest_v1': SpecialChestDefinition(
+    id: 'golden_wings_chest_v1',
+    version: 1,
+    titleEn: 'Golden Wings Chest',
+    titleNl: 'Gouden Vleugels-kist',
+    closedAssetPath: 'assets/images/chests/chest_special.webp',
+    openedAssetPath: 'assets/images/chests/open/chest_special_open.webp',
+    coins: 269,
+    gems: 10,
+    specialEggId: 'golden_wings_egg_v1',
+    openSoundId: 'golden_wings',
+  ),
+  'witchlight_chest_v1': SpecialChestDefinition(
+    id: 'witchlight_chest_v1',
+    version: 1,
+    titleEn: 'Witchlight Chest',
+    titleNl: 'Heksenlichtkist',
+    closedAssetPath: 'assets/images/events/halloween/witchlight_chest.webp',
+    openedAssetPath:
+        'assets/images/events/halloween/witchlight_chest_open.webp',
+    coins: 313,
+    gems: 13,
+    specialEggId: 'witchlight_egg_v1',
+    openSoundId: 'witchlight',
+  ),
+  'starlight_gift_chest_v1': SpecialChestDefinition(
+    id: 'starlight_gift_chest_v1',
+    version: 1,
+    titleEn: 'Starlight Gift Chest',
+    titleNl: 'Sterrenlichtgeschenkkist',
+    closedAssetPath: 'assets/images/events/christmas/starlight_chest.webp',
+    openedAssetPath: 'assets/images/events/christmas/starlight_chest_open.webp',
+    coins: 250,
+    gems: 12,
+    specialEggId: 'starlit_evergreen_egg_v1',
+    openSoundId: 'starlight',
+  ),
+  'firstlight_celebration_chest_v1': SpecialChestDefinition(
+    id: 'firstlight_celebration_chest_v1',
+    version: 1,
+    titleEn: 'Firstlight Celebration Chest',
+    titleNl: 'Eerstelicht-feestkist',
+    closedAssetPath: 'assets/images/events/new_year/firstlight_chest.webp',
+    openedAssetPath: 'assets/images/events/new_year/firstlight_chest_open.webp',
+    coins: 365,
+    gems: 12,
+    specialEggId: 'turning_year_egg_v1',
+    openSoundId: 'firstlight',
+  ),
+  'twinheart_keepsake_chest_v1': SpecialChestDefinition(
+    id: 'twinheart_keepsake_chest_v1',
+    version: 1,
+    titleEn: 'Twinheart Keepsake Chest',
+    titleNl: 'Tweeharten-aandenkenkist',
+    closedAssetPath: 'assets/images/events/valentine/twinheart_chest.webp',
+    openedAssetPath: 'assets/images/events/valentine/twinheart_chest_open.webp',
+    coins: 214,
+    gems: 14,
+    specialEggId: 'rosebound_egg_v1',
+    openSoundId: 'twinheart',
+  ),
+  'radiant_festival_chest_v1': SpecialChestDefinition(
+    id: 'radiant_festival_chest_v1',
+    version: 1,
+    titleEn: 'Radiant Festival Chest',
+    titleNl: 'Stralend Festival-kist',
+    closedAssetPath: 'assets/images/events/pride/radiant_chest.webp',
+    openedAssetPath: 'assets/images/events/pride/radiant_chest_open.webp',
+    coins: 300,
+    gems: 15,
+    specialEggId: 'truecolor_egg_v1',
+    openSoundId: 'radiant',
+  ),
+};
 
 const specialAdventureEventCatalog = <SpecialAdventureEventDefinition>[
   SpecialAdventureEventDefinition(
@@ -507,6 +853,7 @@ const specialAdventureEventCatalog = <SpecialAdventureEventDefinition>[
     recurrenceAvailability: Duration(days: 1),
     rewards: SpecialAdventureRewardBundle(
       chestTier: ChestTier.special,
+      specialChestId: 'golden_wings_chest_v1',
       xp: 500,
       randomRelicPool: [
         MysticRelic.moralPrism,
@@ -526,6 +873,176 @@ const specialAdventureEventCatalog = <SpecialAdventureEventDefinition>[
     storyNl:
         'Een gouden verjaardagswens voor een mooie vrouw wier warmte de Haven laat stralen.',
     showStoryInDetails: false,
+    titleEn: 'A Wish on Golden Wings',
+    titleNl: 'Een Wens op Gouden Vleugels',
+    trialKindName: '',
+    previewCode: '',
+    previewHours: 0,
+    temporaryMusicTrackId: '',
+  ),
+  SpecialAdventureEventDefinition(
+    id: 'halloween_witchlight',
+    adventureId: 'special_halloween_witchlight',
+    initialYear: 2026,
+    initialMonth: DateTime.october,
+    initialDay: 25,
+    initialAvailability: Duration(days: 8),
+    recursYearlyFrom: 2027,
+    recurrenceMonth: DateTime.october,
+    recurrenceDay: 25,
+    recurrenceAvailability: Duration(days: 8),
+    rewards: SpecialAdventureRewardBundle(
+      chestTier: ChestTier.special,
+      specialChestId: 'witchlight_chest_v1',
+      xp: 500,
+      expertiseRewards: {
+        TrainingFocus.might: 13,
+        TrainingFocus.spirit: 13,
+        TrainingFocus.arcana: 13,
+      },
+    ),
+    titleEn: 'Night of the Witchlight',
+    titleNl: 'Nacht van het Heksenlicht',
+    storyEn:
+        'Once each autumn, friendly witchlights guide brave dragons to mend the ward beneath the oldest lantern grove.',
+    storyNl:
+        'Elke herfst leiden vriendelijke heksenlichten moedige draken naar de bescherming onder het oudste lantaarnwoud.',
+    trialKindName: 'witchlightWard',
+    previewCode: 'HALLOWEENEVENT',
+    previewHours: 48,
+    temporaryMusicTrackId: 'event_witchlight_nocturne',
+  ),
+  SpecialAdventureEventDefinition(
+    id: 'christmas_winter_hearth',
+    adventureId: 'special_christmas_winter_hearth',
+    initialYear: 2026,
+    initialMonth: DateTime.december,
+    initialDay: 25,
+    initialAvailability: Duration(days: 2),
+    recursYearlyFrom: 2027,
+    recurrenceMonth: DateTime.december,
+    recurrenceDay: 25,
+    recurrenceAvailability: Duration(days: 2),
+    rewards: SpecialAdventureRewardBundle(
+      chestTier: ChestTier.special,
+      specialChestId: 'starlight_gift_chest_v1',
+      xp: 600,
+      expertiseRewards: {
+        TrainingFocus.might: 12,
+        TrainingFocus.spirit: 12,
+        TrainingFocus.arcana: 12,
+      },
+    ),
+    titleEn: 'A Star for the Winter Hearth',
+    titleNl: 'Een Ster voor de Winterhaard',
+    storyEn:
+        'A lost starlight sleigh needs one brave dragon to carry its warmth back to every winter hearth.',
+    storyNl:
+        'Een verloren sterrenlichtslee heeft één dappere draak nodig om warmte naar elke winterhaard terug te brengen.',
+    trialKindName: 'hollyfrostGiftforge',
+    previewCode: 'CHRISTMASEVENT',
+    previewHours: 48,
+    temporaryMusicTrackId: 'event_winter_hearth_carol',
+  ),
+  SpecialAdventureEventDefinition(
+    id: 'new_year_first_dawn',
+    adventureId: 'special_new_year_first_dawn',
+    initialYear: 2026,
+    initialMonth: DateTime.december,
+    initialDay: 31,
+    initialHour: 18,
+    initialAvailability: Duration(hours: 30),
+    recursYearlyFrom: 2027,
+    recurrenceMonth: DateTime.december,
+    recurrenceDay: 31,
+    recurrenceHour: 18,
+    recurrenceAvailability: Duration(hours: 30),
+    rewards: SpecialAdventureRewardBundle(
+      chestTier: ChestTier.special,
+      specialChestId: 'firstlight_celebration_chest_v1',
+      xp: 700,
+      expertiseRewards: {
+        TrainingFocus.might: 10,
+        TrainingFocus.spirit: 10,
+        TrainingFocus.arcana: 10,
+      },
+    ),
+    titleEn: 'When the New Dawn Rings',
+    titleNl: 'Wanneer de Nieuwe Dageraad Klinkt',
+    storyEn:
+        'Beyond midnight, Dawnchime searches for the bell whose first note welcomes every hopeful beginning.',
+    storyNl:
+        'Voorbij middernacht zoekt Dawnchime de klok waarvan de eerste toon elk hoopvol begin verwelkomt.',
+    trialKindName: 'midnightChime',
+    previewCode: 'NEWYEARSEVENT',
+    previewHours: 48,
+    temporaryMusicTrackId: 'event_first_dawn_waltz',
+  ),
+  SpecialAdventureEventDefinition(
+    id: 'valentine_two_heartlights',
+    adventureId: 'special_valentine_two_heartlights',
+    initialYear: 2027,
+    initialMonth: DateTime.february,
+    initialDay: 14,
+    initialAvailability: Duration(days: 1),
+    recursYearlyFrom: 2028,
+    recurrenceMonth: DateTime.february,
+    recurrenceDay: 14,
+    recurrenceAvailability: Duration(days: 1),
+    rewards: SpecialAdventureRewardBundle(
+      chestTier: ChestTier.special,
+      specialChestId: 'twinheart_keepsake_chest_v1',
+      xp: 650,
+      keeperBadgeId: 'heartbound_pair',
+      expertiseRewards: {
+        TrainingFocus.might: 8,
+        TrainingFocus.spirit: 8,
+        TrainingFocus.arcana: 8,
+      },
+    ),
+    titleEn: 'Where Two Heartlights Meet',
+    titleNl: 'Waar Twee Hartlichten Samenkomen',
+    storyEn:
+        'A rosebound crossing appears for one day, but its path only shines when two Keepers choose to cross together.',
+    storyNl:
+        'Eén dag lang verschijnt een rozenbrug, maar haar pad straalt alleen wanneer twee Hoeders samen oversteken.',
+    trialKindName: 'rosevowRelay',
+    previewCode: 'VALENTINEEVENT',
+    previewHours: 48,
+    temporaryMusicTrackId: 'event_rosebound_romance',
+  ),
+  SpecialAdventureEventDefinition(
+    id: 'pride_every_color',
+    adventureId: 'special_pride_every_color',
+    initialYear: 2027,
+    initialMonth: DateTime.june,
+    initialDay: 1,
+    initialAvailability: Duration(days: 7),
+    recursYearlyFrom: 2028,
+    recurrenceMonth: DateTime.june,
+    recurrenceDay: 1,
+    recurrenceAvailability: Duration(days: 7),
+    rewards: SpecialAdventureRewardBundle(
+      chestTier: ChestTier.special,
+      specialChestId: 'radiant_festival_chest_v1',
+      xp: 700,
+      accountTitleId: 'true_colors',
+      expertiseRewards: {
+        TrainingFocus.might: 10,
+        TrainingFocus.spirit: 10,
+        TrainingFocus.arcana: 10,
+      },
+    ),
+    titleEn: 'The Haven of Every Color',
+    titleNl: 'De Haven van Elke Kleur',
+    storyEn:
+        'Every honest color belongs in the Haven sky; together they become an aurora bright enough for everyone.',
+    storyNl:
+        'Elke oprechte kleur hoort in de hemel van de Haven; samen vormen ze een aurora die helder genoeg is voor iedereen.',
+    trialKindName: 'prismaticParade',
+    previewCode: 'PRIDEFESTEVENT',
+    previewHours: 48,
+    temporaryMusicTrackId: 'event_every_color_festival',
   ),
 ];
 
@@ -541,6 +1058,19 @@ SpecialAdventureEventDefinition? specialAdventureEventForAdventure(
 ) {
   for (final event in specialAdventureEventCatalog) {
     if (event.adventureId == adventureId) return event;
+  }
+  return null;
+}
+
+SpecialChestDefinition? specialChestById(String? id) =>
+    id == null ? null : specialChestCatalog[id];
+
+SpecialEggDefinition? specialEggById(String? id) =>
+    id == null ? null : specialEggCatalog[id];
+
+SpecialEggDefinition? specialEggForLineage(String lineageId) {
+  for (final definition in specialEggCatalog.values) {
+    if (definition.lineageId == lineageId) return definition;
   }
   return null;
 }

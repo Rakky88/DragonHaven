@@ -352,6 +352,10 @@ String? translatedAdventureTitle(
       '黄金の翼に託す願い',
     ]);
   }
+  final seasonalTitle = _seasonalAdventureTitles[adventure.id];
+  if (seasonalTitle != null) {
+    return _localizedAdventure(languageCode, seasonalTitle);
+  }
   final index = int.tryParse(adventure.id.split('_').last);
   if (index == null || index < 1) return null;
   final zeroBased = index - 1;
@@ -392,6 +396,10 @@ String? translatedAdventureDescription(
       'Um desejo dourado de aniversário para uma mulher maravilhosa cuja bondade ilumina o Haven.',
       '優しさでヘイヴンを照らす素敵な女性へ贈る、黄金の誕生日の願い。',
     ]);
+  }
+  final seasonalDescription = _seasonalAdventureDescriptions[adventure.id];
+  if (seasonalDescription != null) {
+    return _localizedAdventure(languageCode, seasonalDescription);
   }
   return switch (adventure.kind) {
     AdventureKind.mini => _localizedAdventure(languageCode, const [
@@ -447,6 +455,92 @@ String? translatedAdventureDescription(
 
 String _localizedAdventure(String languageCode, List<String> values) =>
     values[catalogLanguageIndex[languageCode]!];
+
+const _seasonalAdventureTitles = <String, List<String>>{
+  'special_halloween_witchlight': [
+    'Wurzeln unter den Laternen',
+    'Raíces bajo los faroles',
+    'Les racines sous les lanternes',
+    'Radici sotto le lanterne',
+    'Raízes sob as lanternas',
+    '灯籠の下の根',
+  ],
+  'special_christmas_winter_hearth': [
+    'Der Sternenlichtschlitten',
+    'El trineo de luz estelar',
+    'Le traîneau de lumière stellaire',
+    'La slitta di luce stellare',
+    'O trenó de luz estelar',
+    '星明かりのそり',
+  ],
+  'special_new_year_first_dawn': [
+    'Die Glocke jenseits von Mitternacht',
+    'La campana más allá de la medianoche',
+    'La cloche au-delà de minuit',
+    'La campana oltre la mezzanotte',
+    'O sino além da meia-noite',
+    '真夜中の向こうの鐘',
+  ],
+  'special_valentine_two_heartlights': [
+    'Die Rosenbund-Überquerung',
+    'La travesía del Vínculo de Rosas',
+    'La traversée du Lien de Rose',
+    'La traversata del Vincolo di Rose',
+    'A travessia do Laço de Rosas',
+    'ローズバウンド・クロッシング',
+  ],
+  'special_pride_every_color': [
+    'Das Polarlicht, das wir weben',
+    'La aurora que tejemos',
+    'L’aurore que nous tissons',
+    'L’aurora che tessiamo',
+    'A aurora que tecemos',
+    'ともに織るオーロラ',
+  ],
+};
+
+const _seasonalAdventureDescriptions = <String, List<String>>{
+  'special_halloween_witchlight': [
+    'Folge Gloamgourd durch einen laternenbeleuchteten Hain und bessere den uralten Schutz aus, bevor das letzte Hexenlicht erlischt.',
+    'Sigue a Gloamgourd por una arboleda iluminada por faroles y repara la antigua protección antes de que se apague la última luz de bruja.',
+    'Suivez Gloamgourd dans un bosquet éclairé de lanternes et réparez l’ancienne protection avant que la dernière lueur sorcière ne s’éteigne.',
+    'Segui Gloamgourd in un boschetto illuminato dalle lanterne e ripara l’antica barriera prima che l’ultima luce stregata svanisca.',
+    'Siga Gloamgourd por um bosque iluminado por lanternas e restaure a antiga proteção antes que a última luz feiticeira se apague.',
+    'グロームゴードと灯籠の森を進み、最後の魔法の灯が消える前に古の結界を修復しよう。',
+  ],
+  'special_christmas_winter_hearth': [
+    'Hilf Hollyfrost, einen verlorenen Sternenlichtschlitten wiederherzustellen und Wärme zu jeder winterlichen Feuerstelle zurückzubringen.',
+    'Ayuda a Hollyfrost a restaurar un trineo de luz estelar perdido y devolver el calor a cada hogar invernal.',
+    'Aidez Hollyfrost à restaurer un traîneau de lumière stellaire perdu et à rapporter la chaleur dans chaque foyer d’hiver.',
+    'Aiuta Hollyfrost a restaurare una slitta di luce stellare perduta e a riportare calore in ogni focolare invernale.',
+    'Ajude Hollyfrost a restaurar um trenó de luz estelar perdido e levar o calor de volta a cada lareira de inverno.',
+    'ホリーフロストを助け、失われた星明かりのそりを直して、すべての冬の炉辺にぬくもりを届けよう。',
+  ],
+  'special_new_year_first_dawn': [
+    'Führe Dawnchime über Mitternacht hinaus und erwecke die erste Glocke eines hoffnungsvollen neuen Jahres.',
+    'Guía a Dawnchime más allá de la medianoche y despierta la primera campana de un nuevo año lleno de esperanza.',
+    'Guidez Dawnchime au-delà de minuit et éveillez la première cloche d’une nouvelle année porteuse d’espoir.',
+    'Guida Dawnchime oltre la mezzanotte e risveglia la prima campana di un nuovo anno pieno di speranza.',
+    'Guie Dawnchime além da meia-noite e desperte o primeiro sino de um novo ano cheio de esperança.',
+    'ドーンチャイムを真夜中の先へ導き、希望に満ちた新年最初の鐘を目覚めさせよう。',
+  ],
+  'special_valentine_two_heartlights': [
+    'Zwei Hüter und zwei Drachen überqueren eine Rosenhimmelbrücke, deren Licht nur auf ein gemeinsames Versprechen antwortet.',
+    'Dos Guardianes y dos dragones cruzan un puente celeste cubierto de rosas cuya luz solo responde a una promesa compartida.',
+    'Deux Gardiens et deux dragons traversent un pont céleste enlacé de roses dont la lumière ne répond qu’à une promesse partagée.',
+    'Due Custodi e due draghi attraversano un ponte celeste avvolto di rose, la cui luce risponde soltanto a una promessa condivisa.',
+    'Dois Guardiões e dois dragões cruzam uma ponte celeste envolta em rosas, cuja luz só responde a uma promessa compartilhada.',
+    '2人のキーパーと2頭のドラゴンで、共有した約束にだけ輝くバラの空橋を渡ろう。',
+  ],
+  'special_pride_every_color': [
+    'Webe jede ehrliche Farbe in den Himmel des Haven und hilf Spectrumplume, Raum zu schaffen, damit jeder Hüter strahlen kann.',
+    'Teje cada color auténtico en el cielo del Haven y ayuda a Spectrumplume a crear un lugar donde cada Guardián pueda brillar.',
+    'Tissez chaque couleur sincère dans le ciel du Haven et aidez Spectrumplume à faire une place où chaque Gardien pourra rayonner.',
+    'Intreccia ogni colore autentico nel cielo dell’Haven e aiuta Spectrumplume a creare spazio perché ogni Custode possa risplendere.',
+    'Entreteça cada cor verdadeira no céu do Haven e ajude Spectrumplume a abrir espaço para cada Guardião brilhar.',
+    'ありのままの色をヘイヴンの空に織り込み、すべてのキーパーが輝ける場所をスペクトラムプルームと作ろう。',
+  ],
+};
 
 String _longAdventureTitle(String language, String place) => switch (language) {
       'de' => 'Expedition nach $place',

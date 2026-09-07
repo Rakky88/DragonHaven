@@ -13,7 +13,7 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   test('birthday relic surprise includes all four configured relics', () {
-    final rewards = specialAdventureEventCatalog.single.rewards;
+    final rewards = specialAdventureEventById('golden_wings_birthday')!.rewards;
     expect(
       rewards.randomRelicPool,
       containsAll(<MysticRelic>[

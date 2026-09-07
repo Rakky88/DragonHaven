@@ -74,6 +74,8 @@ Future<void> main() async {
     game.prismaticForms.clear();
   }
   final onlineConfig = OnlineConfig.fromEnvironment();
+  game.persistentSeasonalPreviewRewards =
+      onlineConfig.environment != OnlineEnvironment.production;
   final diagnostics = BufferedDiagnosticReporter();
   SocialRepository socialRepository = const DisabledSocialRepository();
   if (onlineConfig.isConfigured) {
@@ -107,6 +109,30 @@ Future<void> main() async {
       receivedKind: settlement.received.kind.name,
       receivedKey: settlement.received.key,
       receivedData: settlement.received.data,
+    ),
+    applySeasonalPrize: ({
+      required prizeId,
+      required eventId,
+      required position,
+    }) =>
+        game.applySeasonalPodiumPrize(
+      prizeId: prizeId,
+      eventId: eventId,
+      position: position,
+    ),
+    synchronizeSeasonalPreviews: game.synchronizeSeasonalEventPreviews,
+    synchronizeSeasonalPairReservations:
+        game.synchronizeOnlineSeasonalPairReservations,
+    applySeasonalPairReward: (reward) => game.applyOnlineSeasonalPairReward(
+      adventureId: reward.adventureId,
+      eventId: reward.eventId,
+      dragonId: reward.dragonId,
+      xp: reward.xp,
+      might: reward.might,
+      arcana: reward.arcana,
+      spirit: reward.spirit,
+      specialChestId: reward.specialChestId,
+      simulated: reward.simulated,
     ),
     gameStateSnapshot: game.exportState,
     applyCloudState: game.restoreCloudState,

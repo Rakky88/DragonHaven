@@ -17,6 +17,7 @@ import '../theme/app_theme.dart';
 import '../widgets/chest_reveal.dart';
 import '../widgets/furniture_art.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/egg_art.dart';
 import '../widgets/game_icon_sprite.dart';
 
 class InventoryScreen extends StatelessWidget {
@@ -285,18 +286,15 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                           padding: const EdgeInsets.fromLTRB(9, 8, 9, 9),
                           child: Column(
                             children: [
-                              const Expanded(
-                                child: DragonArt(
+                              Expanded(
+                                child: EggArt(
                                   height: 86,
-                                  animate: false,
-                                  stageKey: 'moonEgg',
+                                  lineageId: egg.lineageId,
+                                  specialEggId: egg.specialEggId,
                                 ),
                               ),
                               Text(
-                                strings.eggName(
-                                  sinister: egg.isSinisterEgg,
-                                  special: egg.isSpecialEgg,
-                                ),
+                                dragonEggDisplayName(strings, egg),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -376,19 +374,16 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                       child: ListTile(
                         key: Key('inventory-egg-list-${egg.id}'),
                         onTap: () => _showEggDetails(context, egg),
-                        leading: const SizedBox.square(
+                        leading: SizedBox.square(
                           dimension: 54,
-                          child: DragonArt(
+                          child: EggArt(
                             height: 52,
-                            animate: false,
-                            stageKey: 'moonEgg',
+                            lineageId: egg.lineageId,
+                            specialEggId: egg.specialEggId,
                           ),
                         ),
                         title: Text(
-                          strings.eggName(
-                            sinister: egg.isSinisterEgg,
-                            special: egg.isSpecialEgg,
-                          ),
+                          dragonEggDisplayName(strings, egg),
                           style: const TextStyle(fontWeight: FontWeight.w900),
                         ),
                         subtitle: Text(
@@ -422,16 +417,13 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const DragonArt(
+              EggArt(
                 height: 126,
-                animate: false,
-                stageKey: 'moonEgg',
+                lineageId: egg.lineageId,
+                specialEggId: egg.specialEggId,
               ),
               Text(
-                strings.eggName(
-                  sinister: egg.isSinisterEgg,
-                  special: egg.isSpecialEgg,
-                ),
+                dragonEggDisplayName(strings, egg),
                 style: Theme.of(sheetContext).textTheme.titleLarge,
               ),
               const SizedBox(height: 10),
@@ -563,10 +555,7 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
 
   Future<void> _discardEgg(BuildContext context, DragonEgg egg) async {
     final strings = AppStrings.of(context);
-    final eggName = strings.eggName(
-      sinister: egg.isSinisterEgg,
-      special: egg.isSpecialEgg,
-    );
+    final eggName = dragonEggDisplayName(strings, egg);
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
@@ -613,9 +602,13 @@ class _ChestInventoryTab extends StatelessWidget {
       ChestTier.title,
       ChestTier.music,
     ];
-    final tiers =
-        chestOrder.where((tier) => game.chestCount(tier) > 0).toList();
-    if (tiers.isEmpty) {
+    final tiers = chestOrder
+        .where((tier) => tier != ChestTier.special && game.chestCount(tier) > 0)
+        .toList();
+    final specialChests = specialChestCatalog.values
+        .where((definition) => game.specialChestCount(definition.id) > 0)
+        .toList(growable: false);
+    if (tiers.isEmpty && specialChests.isEmpty) {
       return _EmptyState(
           kind: GameIconKind.inventoryChests,
           text: strings.pick('Adventure rewards are stored here.',
@@ -625,84 +618,59 @@ class _ChestInventoryTab extends StatelessWidget {
       key: const PageStorageKey('inventory-chests-scroll'),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
       children: [
-        for (final tier in tiers)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 9, 8),
-              child: Row(children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Color(tier.colorValue).withValues(alpha: .10),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Image.asset(tier.assetPath, fit: BoxFit.contain),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        strings.chestLabel(tier),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      Text(
-                        '×${game.chestCount(tier)}',
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FilledButton(
-                      key: Key('inventory-open-chest-${tier.name}'),
-                      onPressed: game.tradeableChestCount(tier) > 0
-                          ? () => _openChest(context, tier)
-                          : null,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 13,
-                          vertical: 10,
-                        ),
-                      ),
-                      child: Text(strings.pick('Open', 'Openen')),
-                    ),
-                    if (game.chestCount(tier) >= 10) ...[
-                      const SizedBox(height: 5),
-                      OutlinedButton(
-                        key: Key('inventory-open-ten-chests-${tier.name}'),
-                        onPressed: game.openableChestCount(tier) >= 10
-                            ? () => _openChest(
-                                  context,
-                                  tier,
-                                  quantity: 10,
-                                )
-                            : null,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 9,
-                          ),
-                        ),
-                        child: Text(strings.pick('Open 10', 'Open er 10')),
-                      ),
-                    ],
-                  ],
-                ),
-              ]),
-            ),
-          ),
+        for (final tier in tiers.takeWhile((tier) =>
+            chestOrder.indexOf(tier) < chestOrder.indexOf(ChestTier.special)))
+          _chestCard(context, game, strings, tier),
+        for (final definition in specialChests)
+          _specialChestCard(context, game, strings, definition),
+        for (final tier in tiers.skipWhile((tier) =>
+            chestOrder.indexOf(tier) < chestOrder.indexOf(ChestTier.special)))
+          _chestCard(context, game, strings, tier),
       ],
+    );
+  }
+
+  Widget _chestCard(
+    BuildContext context,
+    HouseholdProvider game,
+    AppStrings strings,
+    ChestTier tier,
+  ) =>
+      _InventoryChestCard(
+        key: ValueKey('chest-${tier.name}'),
+        assetPath: tier.assetPath,
+        color: Color(tier.colorValue),
+        title: strings.chestLabel(tier),
+        count: game.chestCount(tier),
+        openKey: Key('inventory-open-chest-${tier.name}'),
+        openTenKey: Key('inventory-open-ten-chests-${tier.name}'),
+        canOpen: game.tradeableChestCount(tier) > 0,
+        canOpenTen: game.openableChestCount(tier) >= 10,
+        onOpen: () => _openChest(context, tier),
+        onOpenTen: () => _openChest(context, tier, quantity: 10),
+      );
+
+  Widget _specialChestCard(
+    BuildContext context,
+    HouseholdProvider game,
+    AppStrings strings,
+    SpecialChestDefinition definition,
+  ) {
+    final count = game.specialChestCount(definition.id);
+    return _InventoryChestCard(
+      key: ValueKey('special-chest-${definition.id}'),
+      assetPath: definition.closedAssetPath,
+      color: const Color(0xFFE4A63A),
+      title: strings.languageCode == 'nl'
+          ? definition.titleNl
+          : definition.titleEn,
+      count: count,
+      openKey: Key('inventory-open-special-chest-${definition.id}'),
+      openTenKey: Key('inventory-open-ten-special-chests-${definition.id}'),
+      canOpen: count > 0,
+      canOpenTen: count >= 10,
+      onOpen: () => _openSpecialChest(context, definition),
+      onOpenTen: () => _openSpecialChest(context, definition, quantity: 10),
     );
   }
 
@@ -806,6 +774,139 @@ class _ChestInventoryTab extends StatelessWidget {
       await Future<void>.delayed(const Duration(milliseconds: 350));
       game.endPresentationDeferral();
     }
+  }
+
+  Future<void> _openSpecialChest(
+    BuildContext context,
+    SpecialChestDefinition definition, {
+    int quantity = 1,
+  }) async {
+    final navigator = Navigator.of(context);
+    final game = context.read<HouseholdProvider>();
+    game.beginPresentationDeferral();
+    try {
+      await showChestReveal(
+        navigator.context,
+        ChestTier.special,
+        quantity: quantity,
+        displayName: AppStrings.of(context).languageCode == 'nl'
+            ? definition.titleNl
+            : definition.titleEn,
+        closedAssetPath: definition.closedAssetPath,
+        openedAssetPath: definition.openedAssetPath,
+        openChest: () async {
+          if (quantity > 1) {
+            return game.openSpecialChests(definition.id, count: quantity);
+          }
+          final reward = await game.openSpecialChest(definition.id);
+          return reward == null ? null : ChestRewardBundle.single(reward);
+        },
+        onOpen: () => HavenAudio.playAsset(
+          definition.id == 'golden_wings_chest_v1'
+              ? HavenSound.chestSpecial.assetId
+              : 'event_${definition.openSoundId}_chest',
+        ),
+      );
+    } finally {
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      game.endPresentationDeferral();
+    }
+  }
+}
+
+class _InventoryChestCard extends StatelessWidget {
+  const _InventoryChestCard({
+    super.key,
+    required this.assetPath,
+    required this.color,
+    required this.title,
+    required this.count,
+    required this.openKey,
+    required this.openTenKey,
+    required this.canOpen,
+    required this.canOpenTen,
+    required this.onOpen,
+    required this.onOpenTen,
+  });
+
+  final String assetPath;
+  final Color color;
+  final String title;
+  final int count;
+  final Key openKey;
+  final Key openTenKey;
+  final bool canOpen;
+  final bool canOpenTen;
+  final VoidCallback onOpen;
+  final VoidCallback onOpenTen;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 8, 9, 8),
+        child: Row(children: [
+          Container(
+            width: 72,
+            height: 72,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: .10),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Image.asset(assetPath, fit: BoxFit.contain),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                Text(
+                  '×$count',
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FilledButton(
+                key: openKey,
+                onPressed: canOpen ? onOpen : null,
+                style: FilledButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+                ),
+                child: Text(strings.pick('Open', 'Openen')),
+              ),
+              if (count >= 10) ...[
+                const SizedBox(height: 5),
+                OutlinedButton(
+                  key: openTenKey,
+                  onPressed: canOpenTen ? onOpenTen : null,
+                  style: OutlinedButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                  ),
+                  child: Text(strings.pick('Open 10', 'Open er 10')),
+                ),
+              ],
+            ],
+          ),
+        ]),
+      ),
+    );
   }
 }
 

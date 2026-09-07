@@ -1,6 +1,7 @@
 enum DragonEmoteSource {
   chest,
   trial,
+  seasonal,
   cozyPack,
   infernalPack,
   celestialPack;
@@ -8,13 +9,17 @@ enum DragonEmoteSource {
   String get assetFolder => switch (this) {
         DragonEmoteSource.chest => 'chest',
         DragonEmoteSource.trial => 'trial',
+        DragonEmoteSource.seasonal => 'seasonal',
         DragonEmoteSource.cozyPack => 'cozy',
         DragonEmoteSource.infernalPack => 'infernal',
         DragonEmoteSource.celestialPack => 'celestial',
       };
 
   bool get isPack => switch (this) {
-        DragonEmoteSource.chest || DragonEmoteSource.trial => false,
+        DragonEmoteSource.chest ||
+        DragonEmoteSource.trial ||
+        DragonEmoteSource.seasonal =>
+          false,
         _ => true,
       };
 }
@@ -34,8 +39,9 @@ class DragonEmoteDefinition {
   final String nameNl;
   final DragonEmoteSource source;
 
-  String get assetPath =>
-      'assets/images/emotes/${source.assetFolder}/$assetName.png';
+  String get assetPath => source == DragonEmoteSource.seasonal
+      ? 'assets/images/events/$assetName'
+      : 'assets/images/emotes/${source.assetFolder}/$assetName.png';
 
   String label(String languageCode) => languageCode == 'nl' ? nameNl : nameEn;
 }
@@ -925,9 +931,118 @@ const _celestialPackEmotes = <DragonEmoteDefinition>[
       source: DragonEmoteSource.celestialPack),
 ];
 
+const _seasonalPodiumEmotes = <DragonEmoteDefinition>[
+  DragonEmoteDefinition(
+    id: 'seasonal_halloween_gold',
+    assetName: 'halloween/podium_gold.webp',
+    nameEn: 'Witchlight Champion',
+    nameNl: 'Heksenlichtkampioen',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_halloween_silver',
+    assetName: 'halloween/podium_silver.webp',
+    nameEn: 'Witchlight Runner-up',
+    nameNl: 'Heksenlichtfinalist',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_halloween_bronze',
+    assetName: 'halloween/podium_bronze.webp',
+    nameEn: 'Witchlight Third',
+    nameNl: 'Heksenlichtbrons',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_christmas_gold',
+    assetName: 'christmas/podium_gold.webp',
+    nameEn: 'Hearthlight Champion',
+    nameNl: 'Haardlichtkampioen',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_christmas_silver',
+    assetName: 'christmas/podium_silver.webp',
+    nameEn: 'Hearthlight Runner-up',
+    nameNl: 'Haardlichtfinalist',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_christmas_bronze',
+    assetName: 'christmas/podium_bronze.webp',
+    nameEn: 'Hearthlight Third',
+    nameNl: 'Haardlichtbrons',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_new_year_gold',
+    assetName: 'new_year/podium_gold.webp',
+    nameEn: 'First Dawn Champion',
+    nameNl: 'Eerstedageraadskampioen',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_new_year_silver',
+    assetName: 'new_year/podium_silver.webp',
+    nameEn: 'First Dawn Runner-up',
+    nameNl: 'Eerstedageraadfinalist',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_new_year_bronze',
+    assetName: 'new_year/podium_bronze.webp',
+    nameEn: 'First Dawn Third',
+    nameNl: 'Eerstedageraadbrons',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_valentine_gold',
+    assetName: 'valentine/podium_gold.webp',
+    nameEn: 'Twinheart Champion',
+    nameNl: 'Tweeharten-kampioen',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_valentine_silver',
+    assetName: 'valentine/podium_silver.webp',
+    nameEn: 'Twinheart Runner-up',
+    nameNl: 'Tweehartenfinalist',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_valentine_bronze',
+    assetName: 'valentine/podium_bronze.webp',
+    nameEn: 'Twinheart Third',
+    nameNl: 'Tweehartenbrons',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_pride_gold',
+    assetName: 'pride/podium_gold.webp',
+    nameEn: 'Every Color Champion',
+    nameNl: 'Elke-kleur-kampioen',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_pride_silver',
+    assetName: 'pride/podium_silver.webp',
+    nameEn: 'Every Color Runner-up',
+    nameNl: 'Elke-kleur-finalist',
+    source: DragonEmoteSource.seasonal,
+  ),
+  DragonEmoteDefinition(
+    id: 'seasonal_pride_bronze',
+    assetName: 'pride/podium_bronze.webp',
+    nameEn: 'Every Color Third',
+    nameNl: 'Elke-kleur-brons',
+    source: DragonEmoteSource.seasonal,
+  ),
+];
+
 const allDragonEmotes = <DragonEmoteDefinition>[
   ..._chestEmotes,
   ..._trialEmotes,
+  ..._seasonalPodiumEmotes,
   ..._cozyPackEmotes,
   ..._infernalPackEmotes,
   ..._celestialPackEmotes,

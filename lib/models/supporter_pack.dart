@@ -33,6 +33,13 @@ const supporterBadge = KeeperBadgeDefinition(
   assetPath: 'assets/images/supporter/supporter_badge.png',
 );
 
+const heartboundPairBadge = KeeperBadgeDefinition(
+  id: 'heartbound_pair',
+  nameEn: 'Heartbound Pair Badge',
+  nameNl: 'Hartverbonden Paar-badge',
+  assetPath: 'assets/images/events/valentine/heartbound_pair_badge.webp',
+);
+
 const supporterFrame = KeeperFrameDefinition(
   id: 'frame_supporter_founder',
   nameEn: 'Founding Supporter Frame',
@@ -42,6 +49,7 @@ const supporterFrame = KeeperFrameDefinition(
 
 const allKeeperBadges = <KeeperBadgeDefinition>[
   supporterBadge,
+  heartboundPairBadge,
 ];
 
 KeeperBadgeDefinition? keeperBadgeById(String? id) {

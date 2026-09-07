@@ -1,12 +1,12 @@
 # DragonHaven Random Rewards and Odds
 
-Last verified: 6 September 2026
+Last verified: 7 September 2026
 
-Ruleset: app version `v0.05.11`
+Ruleset: app version `v0.05.12`
 
-Source baseline: release `v0.05.11`
+Source baseline: seasonal-event implementation released with `v0.05.12`
 
-<!-- reference-source-fingerprint: 18e1fa6df8d216f5 -->
+<!-- reference-source-fingerprint: 521406d96b6d65a9 -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
@@ -38,7 +38,12 @@ Every integer inside a coin or gem range is equally likely.
 | Dragon | 180–300 | 10% none; 22.5% each for 4, 5, 6, or 7 | 100% | 2% | 4% | — |
 | Mythical | 400–650 | 8–13, uniform | 100% | 4% | 8% | — |
 | Sinister | 400–650 | 8–13, uniform | 100%; then 50% Sinister Egg and 50% ordinary Mysterious Egg | 100% | 12% | — |
-| Special (current Golden Wings recipe) | Exactly 269 | Exactly 10 | 100% Golden Wings Special Egg | None from the chest itself | 10% | — |
+| Golden Wings Special | Exactly 269 | Exactly 10 | 100% Golden Wings Special Egg | None from the chest itself | 10% | — |
+| Witchlight Special | Exactly 313 | Exactly 13 | 100% Witchlight Egg | None from the chest itself | 10% | — |
+| Starlight Gift Special | Exactly 250 | Exactly 12 | 100% Starlit Evergreen Egg | None from the chest itself | 10% | — |
+| Firstlight Celebration Special | Exactly 365 | Exactly 12 | 100% Turning-Year Egg | None from the chest itself | 10% | — |
+| Twinheart Keepsake Special | Exactly 214 | Exactly 14 | 100% Rosebound Egg | None from the chest itself | 10% | — |
+| Radiant Festival Special | Exactly 300 | Exactly 15 | 100% Truecolor Egg | None from the chest itself | 10% | — |
 | Portrait | None | None | None | None | None | One uniformly selected unowned standard portrait |
 | Title | None | None | None | None | None | One uniformly selected unowned standard title |
 | Music | None | None | None | None | None | One uniformly selected unowned music track |
@@ -47,7 +52,9 @@ Notes:
 
 - A Dragon, Mythical, or Sinister Chest always creates an egg. For a Sinister Chest, the 50/50 egg-type roll happens after that guaranteed egg result.
 - An ordinary egg from a Sinister Chest uses the same lineage-rarity curve as an egg from a Mythical Chest.
-- The currently implemented Golden Wings Special Chest contains its configured Special Egg, 269 coins, and 10 gems. The chest-emote roll is its only random content. Future Special Chests are event-specific and may use different recipes; they must receive stable definitions rather than silently changing this one.
+- Every implemented Special Chest has fixed event-specific currency and egg
+  contents. Its 10% no-duplicate chest-emote roll is the only random content.
+  One Special Chest definition never inherits or rerolls another event's recipe.
 - Portrait, Title, and Music Chests cannot be opened after their relevant collection is complete.
 - Their supporter-exclusive counterparts are not in these chest pools.
 
@@ -179,7 +186,12 @@ The complete pool is:
 | Starter Egg | One of the 20 Common standard families, uniform | Exactly 1 hour before tap acceleration | 5% base; 10% total if hatched during Golden Hour | Law, moral alignment, size, personality seed |
 | Mysterious Egg | One standard non-secret family, using the source-chest rarity curve | Uniformly 4h48m–33h36m in six-minute steps | 5% base; 10% total if hatched during Golden Hour | Law, moral alignment, size, personality seed |
 | Sinister Egg | Always Sinisterra | Exactly 6h06m06s | 5% base; 10% total if hatched during Golden Hour | Law and size are random; moral alignment is always Evil and immediately known |
-| Golden Wings Special Egg | Always Cluckatrice | Exactly 21 hours | Always 0% | Law, moral alignment, size, personality seed |
+| Golden Wings Special Egg | Always Cluckatrice | Exactly 21 hours | 5% base; 10% total if hatched during Golden Hour | Law, moral alignment, size, personality seed |
+| Witchlight Egg | Always Gloamgourd | Exactly 13h13m13s | 5% base; 10% total if hatched during Golden Hour | Law, moral alignment, size, personality seed |
+| Starlit Evergreen Egg | Always Hollyfrost | Exactly 25 hours | 5% base; 10% total if hatched during Golden Hour | Law and size; moral is always Good and known at hatch; personality seed |
+| Turning-Year Egg | Always Dawnchime | Exactly 24 hours | 5% base; 10% total if hatched during Golden Hour | Law and size; moral is always Neutral and known at hatch; personality seed |
+| Rosebound Egg | Always Rosevow | Exactly 14 hours | 5% base; 10% total if hatched during Golden Hour | Law and size; moral is always Good and known at hatch; personality seed |
+| Truecolor Egg | Always Spectrumplume | Exactly 18 hours | 5% base; 10% total if hatched during Golden Hour | Law and size; moral is always Good and known at hatch; personality seed |
 
 The family, rarity, alignments, size, initial Spectral roll, hatch duration, and personality seed are fixed when the egg is created. Opening the nest or restarting the app does not reroll them. An Astral Lens reveals the already-fixed rarity; it does not change it.
 
@@ -219,6 +231,11 @@ The next table combines the chest's egg chance with its egg-rarity curve. These 
 | Mythical | 0% | 10% | 20% | 25% | 25% | 17% | 3% | 0% |
 | Sinister | 0% | 5% | 10% | 12.5% | 12.5% | 8.5% | 1.5% | 50% Sinisterra |
 | Golden Wings Special | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 100% Cluckatrice |
+| Witchlight Special | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 100% Gloamgourd |
+| Starlight Gift Special | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 100% Hollyfrost |
+| Firstlight Celebration Special | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 100% Dawnchime |
+| Twinheart Keepsake Special | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 100% Rosevow |
+| Radiant Festival Special | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 100% Spectrumplume |
 
 When egg pity is active, only the first three rows change:
 
@@ -239,7 +256,10 @@ When egg pity is active, only the first three rows change:
 | Legendary | 2 | Starforged, Leviathanecho |
 | Mythical | 1 | Everwyrm |
 
-Sinisterra is the currently implemented secret Mythical family. Cluckatrice has the separate Special type, does not count toward the Mythical-dragon achievement, and belongs specifically to the Golden Wings Special Egg. Neither family is part of an ordinary Mysterious Egg or Starter Egg pool; a future Special Egg may deliberately contain another configured family or pool.
+Sinisterra is the implemented secret Mythical family. Cluckatrice,
+Gloamgourd, Hollyfrost, Dawnchime, Rosevow, and Spectrumplume have the separate
+Special type and do not count toward a standard rarity achievement. Every one
+is excluded from ordinary Mysterious Egg and Starter Egg pools.
 
 ### 2.4 Per-family chance inside one Mysterious Egg
 
@@ -260,7 +280,7 @@ Because every Sinister Chest gives an egg and then performs a 50/50 type roll:
 
 - Sinisterra: exactly 50% per Sinister Chest.
 - Any ordinary standard family: 50% multiplied by its value in the final column of the previous table.
-- Cluckatrice: 0%.
+- Cluckatrice, Gloamgourd, Hollyfrost, Dawnchime, Rosevow, and Spectrumplume: 0%.
 
 Examples of unconditional Sinister Chest family odds:
 
@@ -270,11 +290,15 @@ Examples of unconditional Sinister Chest family odds:
 
 ### 2.6 Spectral roll and Golden Hour
 
-Normal, Starter, and Sinister Eggs receive a `1/20 = 5%` Spectral roll when created. If a non-Spectral egg hatches during Golden Hour, it receives one extra `1/19` roll. The combined chance is exactly:
+Normal, Starter, Sinister, and all six implemented event Special Eggs receive a
+`1/20 = 5%` Spectral roll when created. If a non-Spectral egg hatches during
+Golden Hour, it receives one extra `1/19` roll. The combined chance is exactly:
 
 `1/20 + (19/20 × 1/19) = 1/10 = 10%`
 
-Golden Hour is 17:00 inclusive through 19:00 exclusive in local device time. The current Golden Wings Special Egg is explicitly excluded and can never become Spectral through this system. Any future event egg needs its own documented Spectral rule.
+Golden Hour is 17:00 inclusive through 19:00 exclusive in local device time.
+Any future event egg needs its own explicitly configured and documented
+Spectral rule.
 
 ### 2.7 Alignment, size, and personality
 
@@ -319,6 +343,11 @@ Incompatible pairs are Sleepy/Restless, Shy/Show-Off, Neat Freak/Messy, and Nigh
 | Group | 70% Gold; 25% Dragon; 5% Mythical |
 | Generic Special | A fixed, visible chest defined by that route; no chest-tier roll |
 | A Wish on Golden Wings | 100% Golden Wings Special Chest |
+| Roots Beneath the Lanterns | 100% Witchlight Chest |
+| The Starlight Sleigh | 100% Starlight Gift Chest |
+| The Bell Beyond Midnight | 100% Firstlight Celebration Chest |
+| The Rosebound Crossing | 100% Twinheart Keepsake Chest for each Keeper |
+| The Aurora We Weave | 100% Radiant Festival Chest |
 
 For a normal solo Adventure, the chest tier is rolled once when the Adventure starts, stored in the save, and kept hidden until completion. Reloading cannot reroll it.
 
@@ -338,7 +367,15 @@ Completing the birthday Special Adventure guarantees the event-specific reward b
 
 Each event-relic option has exactly a 25% chance. This event pool never contains Chronoshard, Wayfinder Sigil, or Twinstar Brooch.
 
-### 3.3 Wayfinder Sigil
+### 3.3 New seasonal Adventure rewards
+
+The five new event bundles contain no random reward selection. Their XP,
+balanced Might/Spirit/Arcana grants, event chest, Valentine badge, and Pride
+title are guaranteed as specified in `SPECIAL_EVENTS_CHESTS_AND_EGGS.md`.
+Opening their awarded Special Chest later has its fixed recipe plus the
+separate 10% unique chest-emote roll described in section 1.4.
+
+### 3.4 Wayfinder Sigil
 
 The player chooses Mini, Short, or Long and chooses whether to replace a particular offered Adventure or create another one when a slot is available. The Sigil then selects uniformly from every eligible Adventure definition of that chosen kind that:
 
@@ -354,13 +391,18 @@ Normal timed Mini, Short, and Long offer rotations are deterministic from the ti
 
 ### 4.1 Trial offer type
 
-Whenever an empty Trial slot refills, the offered Trial is selected uniformly from Cavern Flight, Ruin Breaker, and Runeweaver. Each has a `1/3` chance per refilled slot. Duplicate Trial kinds may occupy multiple slots.
+Outside a seasonal event, every empty Trial slot is selected uniformly from
+Cavern Flight, Ruin Breaker, and Runeweaver: `1/3` each. During one active
+seasonal event, its event Trial is added as a fourth eligible kind, so Cavern
+Flight, Ruin Breaker, Runeweaver, and the active event Trial each have exactly
+25% per refilled slot. Duplicate kinds may occupy multiple slots. Private event
+previews use the same four-kind distribution but a separate occurrence.
 
 ### 4.2 Trial reward by grade
 
 XP and expertise are fixed by grade. The chest is the random part shown here.
 
-| Grade | XP | Expertise | Chest result |
+| Grade | XP | Standard expertise / seasonal balanced split | Chest result |
 |---|---:|---:|---|
 | D | 10 | +1 | No chest |
 | C | 20 | +2 | 100% Wooden |
@@ -368,6 +410,17 @@ XP and expertise are fixed by grade. The chest is the random part shown here.
 | A | 40 | +4 | 30% Wooden; 50% Silver; 20% Gold |
 | S | 50 | +5 | 30% Silver; 69% Gold; 1% Dragon |
 | S+ | 69 | +7 | 90% Gold; 9% Dragon; 1% Mythical |
+
+For an event Trial, the expertise total is split as follows: D gives +1 to the
+lowest; C gives +1 to both lowest; B gives +1 to all; A gives +2 to the lowest
+and +1 to the others; S gives +2 to both lowest and +1 to the highest; S+ gives
++3 to the lowest and +2 to both others. Capped points move to another uncapped
+expertise. The achieved score itself is never multiplied by expertise.
+
+Event-ranking position is not random. Best score wins, followed by accuracy,
+shortest duration, and earliest submission. Frozen podium rewards are fixed:
+place 1 gets a Mythical Chest plus its event gold emote, place 2 a Dragon Chest
+plus silver emote, and place 3 a Gold Chest plus bronze emote.
 
 Every S+ completion also independently performs:
 
@@ -505,6 +558,15 @@ These systems use randomness but do not directly choose a reward item. Rewards r
 - Cavern Flight is seeded by the Trial-offer ID. Each obstacle has a gap center uniformly from 30% to 70% of the playfield, a 50% crystal state, a uniform movement phase, and—after four obstacles have been passed—a 25% chance to move. Replaying the same persisted offer recreates its seeded sequence.
 - Runeweaver is seeded by the Trial-offer ID combined with the selected dragon's hatch seed. Every added rune is uniform among the available rune keys. From round six onward, rune positions are shuffled.
 - Ruin Breaker uses timing and player input; it does not roll a reward-affecting target sequence.
+- Every seasonal Trial uses the server-provided seed when played online. Each
+  three-discipline round chooses one of six themed targets, one of two safe
+  lanes, one palette color, and one of six answer positions. These choices only
+  shape the challenge. They do not alter the grade reward or ranking rules.
+- Spirit expertise provides a small capped forgiveness roll on a wrong lane:
+  `Spirit / 400 * 5%` (0% through 5%). Arcana adds up to 800 milliseconds of
+  prompt visibility, Might widens the timing target, and total expertise adds
+  at most three seconds to the run. None of these assists multiplies score or
+  changes a loot table.
 
 ### 7.2 Dragon Academy lesson patterns
 
@@ -566,6 +628,8 @@ The active implementation was cross-checked against:
 - `lib/models/profile_portrait.dart`, `lib/models/account_title.dart`, and `lib/models/music_track.dart` — collection pools.
 - `lib/models/dragon_emote.dart` — collectible emote pools.
 - `lib/screens/trial_game_screen.dart` and `lib/screens/dragon_school_screen.dart` — random challenge layouts.
+- `lib/screens/seasonal_trial_game.dart` — seeded seasonal Trial layouts and
+  the three expertise-assist rules.
 - `android/app/src/main/kotlin/nl/dragonhaven/app/MainActivity.kt` — native jukebox shuffle.
 - `supabase/migrations/202608240007_group_adventure_duration_rules.sql` — authoritative Group Adventure chest roll.
 

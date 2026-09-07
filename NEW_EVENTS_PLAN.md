@@ -1,14 +1,38 @@
 # DragonHaven New Seasonal Events Plan
 
-Last updated: 6 September 2026
+Last updated: 7 September 2026
 
-Planning baseline: development after app version `v0.05.11`
+Planning baseline: implemented for app version `v0.05.12`
 
-This is the working plan for the five new seasonal events. It records confirmed
-owner decisions, proposals, unanswered questions, implementation work, owner
-actions, validation, and release gates. It is deliberately separate from the
-implemented-content catalog in
+This is the original design plan plus the implementation ledger for the five
+new seasonal events. The owner approved the complete Halloween, Christmas,
+New Year, Valentine, and Pride contracts on 7 September 2026. Earlier
+`Proposed`/`TBD` labels below are retained as design-history labels and no
+longer represent open product questions; the implementation status in the next
+section supersedes them. The authoritative live contract is kept separately in
 [`SPECIAL_EVENTS_CHESTS_AND_EGGS.md`](SPECIAL_EVENTS_CHESTS_AND_EGGS.md).
+
+## Implementation status — 7 September 2026
+
+| Area | Status | Evidence / remaining gate |
+|---|---|---|
+| Five schedules and recurrences | Implemented | Europe/Amsterdam boundary tests cover each first occurrence |
+| Five Special Adventures | Implemented | Event-specific durations, 15-minute combined expertise reduction, 24-hour floor, rewards and once-per-occurrence rules |
+| Valentine two-Keeper Adventure | Implemented locally and in migration 40 | Invite by friend/Conclave/Keeper ID, atomic start, reservations, non-abortable run, two idempotent claims and Heartbound Pair badge |
+| Five Special Chests and Eggs | Implemented | Stable v1 IDs, fixed recipes, incubations, alignments, Spectral behavior, secret Special families and hatch achievements |
+| Five event Trials | Implemented and visually refined | Five themed full-screen 75-second three-discipline games, unique backgrounds/icons/sprites/sounds, deterministic seed support, event HUD/phase art, ambient sprite motion and themed result compositions |
+| Trial rotation and rewards | Implemented | Equal 25% four-kind rotation, standard reward table, balanced expertise split, no expertise score multiplier, one streak credit per day |
+| Worldwide rankings | Implemented locally and in migration 40 | Authenticated tokenized starts, bounded submissions, tie-breakers, five-day results, permanent Chronicle, idempotent podium prizes |
+| Pride Haven Spectrum | Implemented locally and in migration 40 | Seven decorative global thresholds with no reward gating |
+| Private preview codes | Implemented locally and in migration 40 | Owner-only, reusable after 48 hours, isolated preview board, simulated production rewards |
+| Temporary music | Implemented | Five event-only aliases to explicitly verified CC0/Public Domain resources |
+| Asset package | Implemented and optimized | 30 approved family sprites plus event art/audio; oversized source sheets are excluded from Flutter. Every nested event directory is explicitly bundled, the Valentine/Pride Trial emblems have clean regenerated alpha, and the complete shipped seasonal addition remains quality-preserving |
+| Local verification | Complete for app/source | Analyzer reports zero issues; compact 320×640 coverage renders every event Trial and the seasonal alpha gate now checks complete outer edges, not only corners. Database lint and live E2E intentionally remain part of the staging apply gate |
+| Staging/production/release | Not performed | Migration 40, staging E2E, production deployment, version bump and public release each retain their normal explicit authorization gate |
+
+Implementation follows the shared contracts recorded below. A connectivity
+loss after a valid ranked Trial start keeps the normal local reward but omits
+the unverified score from the worldwide board.
 
 When a choice is approved and implemented, the living content catalog must be
 updated in the same change. Exact random odds must also be recorded in

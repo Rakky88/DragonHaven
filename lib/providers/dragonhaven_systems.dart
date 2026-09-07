@@ -96,11 +96,22 @@ SpecialAdventureWindow _initialSpecialWindow(
     event.initialDay,
     event.initialHour,
   );
+  final endWall = DateTime.utc(
+    event.initialYear,
+    event.initialMonth,
+    event.initialDay,
+    event.initialHour,
+  ).add(event.initialAvailability);
   return SpecialAdventureWindow(
     event: event,
     key: '${event.id}:launch:${event.initialYear}',
     startsAt: start,
-    endsAt: start.add(event.initialAvailability),
+    endsAt: _amsterdamWallTimeToUtc(
+      endWall.year,
+      endWall.month,
+      endWall.day,
+      endWall.hour,
+    ),
   );
 }
 
@@ -125,11 +136,18 @@ SpecialAdventureWindow? _annualSpecialWindow(
     day,
     event.recurrenceHour,
   );
+  final endWall =
+      DateTime.utc(year, month, day, event.recurrenceHour).add(availability);
   return SpecialAdventureWindow(
     event: event,
     key: '${event.id}:year:$year',
     startsAt: start,
-    endsAt: start.add(availability),
+    endsAt: _amsterdamWallTimeToUtc(
+      endWall.year,
+      endWall.month,
+      endWall.day,
+      endWall.hour,
+    ),
   );
 }
 
@@ -230,6 +248,35 @@ extension DragonHavenSystems on HouseholdProvider {
   static const int maxDragonsPerTowerFloor = 3;
 
   DateTime get currentTime => _clock();
+
+  bool _isSimulatedSeasonalPreview(String? key) =>
+      key?.contains(':preview:') == true && !persistentSeasonalPreviewRewards;
+
+  bool isSimulatedSeasonalPreviewKey(String? key) =>
+      _isSimulatedSeasonalPreview(key);
+
+  List<SpecialAdventureWindow> _activeSpecialAdventureWindows(DateTime now) {
+    final windows = [...specialAdventureWindowsAt(now)];
+    seasonalEventPreviewExpiresAt.removeWhere(
+      (_, expiresAt) => !expiresAt.isAfter(now),
+    );
+    for (final entry in seasonalEventPreviewExpiresAt.entries) {
+      final event = specialAdventureEventById(entry.key);
+      if (event == null) continue;
+      final startsAt =
+          entry.value.subtract(Duration(hours: event.previewHours));
+      windows.add(SpecialAdventureWindow(
+        event: event,
+        key: '${event.id}:preview:${entry.value.millisecondsSinceEpoch}',
+        startsAt: startsAt,
+        endsAt: entry.value,
+      ));
+    }
+    return windows;
+  }
+
+  List<SpecialAdventureWindow> get activeSpecialAdventureWindows =>
+      List.unmodifiable(_activeSpecialAdventureWindows(_clock()));
 
   Future<bool> refreshSpecialAdventureNotifications() async {
     if (!notificationEnabled(HavenNotificationCategory.specialEvents)) {
@@ -812,7 +859,7 @@ extension DragonHavenSystems on HouseholdProvider {
     final now = _clock();
     if (kind == AdventureKind.special) {
       final available = <AdventureDefinition>[];
-      for (final seasonalWindow in specialAdventureWindowsAt(now)) {
+      for (final seasonalWindow in _activeSpecialAdventureWindows(now)) {
         if (!startedSeasonalSpecialEventKeys.contains(seasonalWindow.key)) {
           final definition =
               AdventureCatalog.byId[seasonalWindow.event.adventureId];
@@ -974,6 +1021,13 @@ extension DragonHavenSystems on HouseholdProvider {
 
   bool _refreshTrialOffers() {
     final now = _clock();
+    final offerCountBeforeExpiry = trialOffers.length;
+    final activeEventKeys =
+        _activeSpecialAdventureWindows(now).map((window) => window.key).toSet();
+    trialOffers.removeWhere((offer) =>
+        offer.definition.isSeasonal &&
+        offer.startedAt == null &&
+        !activeEventKeys.contains(offer.specialEventKey));
     final currentBoundary = _adventureRefillBoundary(now, 15);
     final previous = trialRefilledAt;
     var refillCount = 0;
@@ -991,17 +1045,33 @@ extension DragonHavenSystems on HouseholdProvider {
       trialRefilledAt = currentBoundary;
     }
     var added = false;
+    final activeWindows = _activeSpecialAdventureWindows(now);
+    final seasonalKinds = activeWindows
+        .map((window) => trialKindByName(window.event.trialKindName))
+        .whereType<TrialKind>()
+        .toList(growable: false);
+    final eligibleKinds = <TrialKind>[...standardTrialKinds, ...seasonalKinds];
     while (refillCount > 0 && trialOffers.length < 3) {
-      final kind = TrialKind.values[_random.nextInt(TrialKind.values.length)];
+      final kind = eligibleKinds[_random.nextInt(eligibleKinds.length)];
+      final eventId = trialDefinitions[kind]?.specialEventId;
+      final specialWindow = eventId == null
+          ? null
+          : activeWindows.cast<SpecialAdventureWindow?>().firstWhere(
+                (window) => window?.event.id == eventId,
+                orElse: () => null,
+              );
       trialOffers.add(TrialOffer(
         id: _uuid.v4(),
         kind: kind,
         appearedAt: currentBoundary,
+        specialEventKey: specialWindow?.key,
       ));
       refillCount--;
       added = true;
     }
-    return added || oldBoundary != trialRefilledAt;
+    return added ||
+        oldBoundary != trialRefilledAt ||
+        offerCountBeforeExpiry != trialOffers.length;
   }
 
   void _scheduleTrialsFullNotification() {
@@ -1030,6 +1100,23 @@ extension DragonHavenSystems on HouseholdProvider {
     await _notifyAndSave();
   }
 
+  Future<bool> beginTrial(String offerId) async {
+    _refreshTrialOffers();
+    final index = trialOffers.indexWhere((offer) => offer.id == offerId);
+    if (index < 0) return false;
+    final offer = trialOffers[index];
+    if (offer.startedAt != null) return true;
+    if (offer.definition.isSeasonal) {
+      final activeKeys = _activeSpecialAdventureWindows(_clock())
+          .map((window) => window.key)
+          .toSet();
+      if (!activeKeys.contains(offer.specialEventKey)) return false;
+    }
+    trialOffers[index] = offer.copyWith(startedAt: _clock());
+    await _notifyAndSave();
+    return true;
+  }
+
   Future<TrialCompletion?> completeTrial({
     required String offerId,
     required String dragonId,
@@ -1044,6 +1131,7 @@ extension DragonHavenSystems on HouseholdProvider {
         );
     if (dragon == null) return null;
     final offer = trialOffers[offerIndex];
+    final simulated = _isSimulatedSeasonalPreview(offer.specialEventKey);
     final grade = trialGradeForScore(offer.kind, score);
     final rolledReward = trialRewardForGrade(
       grade,
@@ -1059,12 +1147,22 @@ extension DragonHavenSystems on HouseholdProvider {
           .toList(growable: false);
       earnedRelic = alternatives[_random.nextInt(alternatives.length)];
     }
-    final newBest = dragon.recordTrialScore(offer.kind.name, score);
-    final earnedEmote = grade == TrialGrade.sPlus
+    final newBest = simulated
+        ? score > dragon.trialBest(offer.kind.name)
+        : dragon.recordTrialScore(offer.kind.name, score);
+    final earnedEmote = !simulated && grade == TrialGrade.sPlus
         ? _rollUniqueDragonEmote(DragonEmoteSource.trial, .10)
         : null;
-    pet.coins += rolledReward.coins;
-    final grantedXp = _grantDragonXp(dragon, rolledReward.xp);
+    if (!simulated) pet.coins += rolledReward.coins;
+    final grantedXp =
+        simulated ? rolledReward.xp : _grantDragonXp(dragon, rolledReward.xp);
+    final expertiseRewards = offer.definition.isSeasonal
+        ? (simulated
+            ? _seasonalTrialExpertisePreview(dragon, grade)
+            : _grantSeasonalTrialExpertise(dragon, grade))
+        : <TrainingFocus, int>{
+            offer.definition.focus: rolledReward.statPoints,
+          };
     final reward = TrialReward(
       grade: rolledReward.grade,
       coins: rolledReward.coins,
@@ -1073,10 +1171,13 @@ extension DragonHavenSystems on HouseholdProvider {
       chestTier: rolledReward.chestTier,
       relic: earnedRelic,
       emote: earnedEmote,
+      expertiseRewards: expertiseRewards,
     );
-    dragon.addTraining(offer.definition.focus, reward.statPoints);
+    if (!simulated && !offer.definition.isSeasonal) {
+      dragon.addTraining(offer.definition.focus, reward.statPoints);
+    }
     final chestTier = reward.chestTier;
-    if (chestTier != null) {
+    if (!simulated && chestTier != null) {
       chestInventory.update(
         chestTier,
         (value) => value + 1,
@@ -1084,29 +1185,87 @@ extension DragonHavenSystems on HouseholdProvider {
       );
     }
     final relic = reward.relic;
-    if (relic != null) {
+    if (!simulated && relic != null) {
       _grantRelic(relic);
     }
     trialOffers.removeAt(offerIndex);
-    _recordTrialStreakCompletion(_clock());
+    if (!simulated) _recordTrialStreakCompletion(_clock());
     _scheduleTrialsFullNotification();
-    _evolveReadyDragons(_clock());
-    _addActivity(
-      message:
-          '${dragon.displayName} earned ${trialGradeLabel(grade)} in ${offer.definition.titleEn}.',
-      type: ActivityType.explore,
-      code: ActivityCode.activityCompleted,
-      subject: offer.kind.name,
-      xp: reward.xp,
-    );
-    _evaluateAchievements();
+    if (!simulated) {
+      _evolveReadyDragons(_clock());
+      _addActivity(
+        message:
+            '${dragon.displayName} earned ${trialGradeLabel(grade)} in ${offer.definition.titleEn}.',
+        type: ActivityType.explore,
+        code: ActivityCode.activityCompleted,
+        subject: offer.kind.name,
+        xp: reward.xp,
+      );
+      _evaluateAchievements();
+    }
     await _notifyAndSave();
     return TrialCompletion(
       kind: offer.kind,
       score: score,
       newDragonBest: newBest,
       reward: reward,
+      simulated: simulated,
     );
+  }
+
+  /// Applies a server-finalized seasonal podium prize exactly once.
+  ///
+  /// The server owns placement and prize identity. The local save only applies
+  /// the awarded cosmetic/chest and remembers the immutable prize id so a
+  /// refresh, restore, or second device can never duplicate the chest.
+  Future<bool> applySeasonalPodiumPrize({
+    required String prizeId,
+    required String eventId,
+    required int position,
+  }) async {
+    if (prizeId.isEmpty ||
+        appliedSeasonalPrizeIds.contains(prizeId) ||
+        specialAdventureEventById(eventId) == null ||
+        position < 1 ||
+        position > 3) {
+      return false;
+    }
+    final chest = switch (position) {
+      1 => ChestTier.mythical,
+      2 => ChestTier.dragon,
+      _ => ChestTier.gold,
+    };
+    final eventSlug = switch (eventId) {
+      'halloween_witchlight' => 'halloween',
+      'christmas_winter_hearth' => 'christmas',
+      'new_year_first_dawn' => 'new_year',
+      'valentine_two_heartlights' => 'valentine',
+      'pride_every_color' => 'pride',
+      _ => '',
+    };
+    if (eventSlug.isEmpty) return false;
+    final medal =
+        switch (position) { 1 => 'gold', 2 => 'silver', _ => 'bronze' };
+    final emoteId = 'seasonal_${eventSlug}_$medal';
+    if (!dragonEmotesById.containsKey(emoteId)) return false;
+
+    appliedSeasonalPrizeIds.add(prizeId);
+    chestInventory.update(chest, (count) => count + 1, ifAbsent: () => 1);
+    ownedDragonEmoteIds.add(emoteId);
+    seasonalPodiumEmoteWinCounts.update(
+      emoteId,
+      (count) => count + 1,
+      ifAbsent: () => 1,
+    );
+    _addActivity(
+      message:
+          'Seasonal ranking reward claimed: #$position, ${chest.label(false)} and a podium emote.',
+      type: ActivityType.discovery,
+      code: ActivityCode.bonusFound,
+      subject: '$eventId:$position',
+    );
+    await _notifyAndSave();
+    return true;
   }
 
   bool _normalizeTrialStreakForDate(DateTime now) {
@@ -1534,6 +1693,97 @@ extension DragonHavenSystems on HouseholdProvider {
     if (changed) await _notifyAndSave();
   }
 
+  Future<void> synchronizeOnlineSeasonalPairReservations(
+    Map<String, String> reservations,
+  ) async {
+    var changed = false;
+    for (final dragon in ownedDragons) {
+      final expectedAdventure = reservations[dragon.id];
+      final current = dragon.activeAdventureId;
+      if (current?.startsWith('online-seasonal:') == true) {
+        final expected = expectedAdventure == null
+            ? null
+            : 'online-seasonal:$expectedAdventure';
+        if (current != expected) {
+          dragon.activeAdventureId = null;
+          changed = true;
+        }
+      }
+      if (expectedAdventure != null &&
+          (dragon.activeAdventureId == null ||
+              dragon.activeAdventureId!.startsWith('online-seasonal:'))) {
+        final expected = 'online-seasonal:$expectedAdventure';
+        if (dragon.activeAdventureId != expected) {
+          dragon.activeAdventureId = expected;
+          changed = true;
+        }
+      }
+    }
+    if (changed) await _notifyAndSave();
+  }
+
+  Future<bool> applyOnlineSeasonalPairReward({
+    required String adventureId,
+    required String eventId,
+    required String dragonId,
+    required int xp,
+    required int might,
+    required int arcana,
+    required int spirit,
+    required String specialChestId,
+    required bool simulated,
+  }) async {
+    if (appliedOnlineSeasonalPairRewardIds.contains(adventureId)) return true;
+    final event = specialAdventureEventById(eventId);
+    final definition =
+        event == null ? null : AdventureCatalog.byId[event.adventureId];
+    final dragon = dragonById(dragonId);
+    if (event == null ||
+        definition == null ||
+        !definition.requiresOnlinePartner ||
+        dragon == null ||
+        specialChestById(specialChestId) == null) {
+      return false;
+    }
+    if (simulated && !persistentSeasonalPreviewRewards) {
+      if (dragon.activeAdventureId == 'online-seasonal:$adventureId') {
+        dragon.activeAdventureId = null;
+      }
+      appliedOnlineSeasonalPairRewardIds.add(adventureId);
+      await _notifyAndSave();
+      return true;
+    }
+    final grantedXp = _grantDragonXp(dragon, xp.clamp(0, 1000));
+    dragon.addTraining(TrainingFocus.might, might.clamp(0, 25));
+    dragon.addTraining(TrainingFocus.arcana, arcana.clamp(0, 25));
+    dragon.addTraining(TrainingFocus.spirit, spirit.clamp(0, 25));
+    final keeperBadgeId = event.rewards.keeperBadgeId;
+    if (keeperBadgeId != null && keeperBadgeById(keeperBadgeId) != null) {
+      ownedBadgeIds.add(keeperBadgeId);
+    }
+    specialChestInventory.update(
+      specialChestId,
+      (count) => count + 1,
+      ifAbsent: () => 1,
+    );
+    if (dragon.activeAdventureId == 'online-seasonal:$adventureId') {
+      dragon.activeAdventureId = null;
+    }
+    appliedOnlineSeasonalPairRewardIds.add(adventureId);
+    totalAdventuresCompleted++;
+    _evolveReadyDragons(_clock());
+    _addActivity(
+      message: '${dragon.displayName} returned from ${definition.titleEn}.',
+      type: ActivityType.explore,
+      code: ActivityCode.activityCompleted,
+      subject: definition.id,
+      xp: grantedXp,
+    );
+    _evaluateAchievements();
+    await _notifyAndSave();
+    return true;
+  }
+
   Future<bool> applyOnlineGroupReward({
     required String lobbyId,
     required String adventureId,
@@ -1606,6 +1856,9 @@ extension DragonHavenSystems on HouseholdProvider {
     if (adventure.kind == AdventureKind.group) {
       return AdventureStartResult.groupNeedsFriends;
     }
+    if (adventure.requiresOnlinePartner) {
+      return AdventureStartResult.groupNeedsFriends;
+    }
     final candidates = ownedDragons;
     final dragon = candidates.cast<Pet?>().firstWhere(
           (candidate) =>
@@ -1619,7 +1872,7 @@ extension DragonHavenSystems on HouseholdProvider {
     final now = _clock();
     SpecialAdventureWindow? specialWindow;
     if (adventure.seasonalSpecial) {
-      final matches = specialAdventureWindowsAt(now)
+      final matches = _activeSpecialAdventureWindows(now)
           .where((window) =>
               window.event.adventureId == adventure.id &&
               !startedSeasonalSpecialEventKeys.contains(window.key))
@@ -1727,12 +1980,27 @@ extension DragonHavenSystems on HouseholdProvider {
         );
     if (dragon == null) return null;
     final tier = run.rewardTier ?? _rollAdventureChest(definition.kind);
+    if (_isSimulatedSeasonalPreview(run.specialEventKey)) {
+      dragon.activeAdventureId = null;
+      adventureRuns.removeAt(index);
+      await _notifyAndSave();
+      return tier;
+    }
     final grantedXp = _grantDragonXp(dragon, definition.xp);
     dragon.addTraining(definition.focus, definition.statPoints);
     _evolveReadyDragons(_clock());
     dragon.activeAdventureId = null;
-    chestInventory.update(tier, (value) => value + 1, ifAbsent: () => 1);
     final event = specialAdventureEventById(run.specialEventId);
+    final specialChestId = event?.rewards.specialChestId;
+    if (specialChestId != null) {
+      specialChestInventory.update(
+        specialChestId,
+        (value) => value + 1,
+        ifAbsent: () => 1,
+      );
+    } else {
+      chestInventory.update(tier, (value) => value + 1, ifAbsent: () => 1);
+    }
     if (event != null) {
       for (final reward in event.rewards.expertiseRewards.entries) {
         dragon.addTraining(reward.key, reward.value);
@@ -1747,6 +2015,14 @@ extension DragonHavenSystems on HouseholdProvider {
           (value) => value + 1,
           ifAbsent: () => 1,
         );
+      }
+      final accountTitleId = event.rewards.accountTitleId;
+      if (accountTitleId != null && accountTitleById(accountTitleId) != null) {
+        ownedTitleIds.add(accountTitleId);
+      }
+      final keeperBadgeId = event.rewards.keeperBadgeId;
+      if (keeperBadgeId != null && keeperBadgeById(keeperBadgeId) != null) {
+        ownedBadgeIds.add(keeperBadgeId);
       }
     }
     adventureRuns.removeAt(index);
@@ -1776,7 +2052,8 @@ extension DragonHavenSystems on HouseholdProvider {
     final definition = AdventureCatalog.byId[run.adventureId];
     if (run.status != AdventureRunStatus.running ||
         definition == null ||
-        definition.kind == AdventureKind.group) {
+        definition.kind == AdventureKind.group ||
+        definition.requiresOnlinePartner) {
       return false;
     }
     final dragon = ownedDragons.cast<Pet?>().firstWhere(
@@ -1986,13 +2263,20 @@ extension DragonHavenSystems on HouseholdProvider {
     return true;
   }
 
-  Future<String> redeemCode(String rawCode) async {
+  Future<String> redeemCode(
+    String rawCode, {
+    String? keeperId,
+  }) async {
     final code = rawCode.trim();
     if (code.isEmpty || !RegExp(r'^[A-Z0-9]+$').hasMatch(code)) {
       return 'invalid_format';
     }
     final definition = redeemCodeDefinition(code);
     if (definition == null) return 'inactive';
+    final restrictedKeeperId = definition.restrictedKeeperId;
+    if (restrictedKeeperId != null && keeperId != restrictedKeeperId) {
+      return 'restricted';
+    }
     switch (definition.rewardType) {
       case RedeemRewardType.dragonEmotePack:
         final pack = dragonEmotePackById(definition.rewardId);
@@ -2000,7 +2284,112 @@ extension DragonHavenSystems on HouseholdProvider {
         return await _grantDragonEmotePackContents(pack)
             ? 'redeemed_emote_pack'
             : 'already_redeemed';
+      case RedeemRewardType.seasonalEventPreview:
+        final event = specialAdventureEventById(definition.rewardId);
+        if (event == null || event.previewHours <= 0) return 'inactive';
+        final now = _clock();
+        if (seasonalEventPreviewExpiresAt[event.id]?.isAfter(now) == true) {
+          return 'preview_active';
+        }
+        seasonalEventPreviewExpiresAt[event.id] =
+            now.add(Duration(hours: event.previewHours));
+        trialRefilledAt = null;
+        await _notifyAndSave();
+        return 'redeemed_event_preview';
     }
+  }
+
+  Future<void> synchronizeSeasonalEventPreviews(
+    Map<String, DateTime> previews,
+  ) async {
+    final now = _clock();
+    final normalized = <String, DateTime>{
+      for (final entry in previews.entries)
+        if (specialAdventureEventById(entry.key) != null &&
+            entry.value.isAfter(now))
+          entry.key: entry.value,
+    };
+    final unchanged =
+        normalized.length == seasonalEventPreviewExpiresAt.length &&
+            normalized.entries.every(
+              (entry) =>
+                  seasonalEventPreviewExpiresAt[entry.key] == entry.value,
+            );
+    if (unchanged) return;
+    seasonalEventPreviewExpiresAt = normalized;
+    trialRefilledAt = null;
+    await refreshForCurrentDate();
+  }
+
+  Map<TrainingFocus, int> _grantSeasonalTrialExpertise(
+    Pet dragon,
+    TrialGrade grade,
+  ) {
+    final ranked = TrainingFocus.values.toList()
+      ..sort((a, b) {
+        final score = dragon.trainingFor(a).compareTo(dragon.trainingFor(b));
+        return score != 0 ? score : a.index.compareTo(b.index);
+      });
+    final planned = switch (grade) {
+      TrialGrade.d => <int>[1, 0, 0],
+      TrialGrade.c => <int>[1, 1, 0],
+      TrialGrade.b => <int>[1, 1, 1],
+      TrialGrade.a => <int>[2, 1, 1],
+      TrialGrade.s => <int>[2, 2, 1],
+      TrialGrade.sPlus => <int>[3, 2, 2],
+    };
+    final granted = <TrainingFocus, int>{};
+    var overflow = 0;
+    for (var index = 0; index < ranked.length; index++) {
+      final focus = ranked[index];
+      final capacity =
+          dragon.expertiseMaximum(focus) - dragon.trainingFor(focus);
+      final amount = planned[index].clamp(0, max(0, capacity)).toInt();
+      if (amount > 0) {
+        dragon.addTraining(focus, amount);
+        granted[focus] = amount;
+      }
+      overflow += planned[index] - amount;
+    }
+    while (overflow > 0) {
+      final candidates = TrainingFocus.values
+          .where((focus) =>
+              dragon.trainingFor(focus) < dragon.expertiseMaximum(focus))
+          .toList()
+        ..sort((a, b) {
+          final score = dragon.trainingFor(a).compareTo(dragon.trainingFor(b));
+          return score != 0 ? score : a.index.compareTo(b.index);
+        });
+      if (candidates.isEmpty) break;
+      final focus = candidates.first;
+      dragon.addTraining(focus, 1);
+      granted.update(focus, (value) => value + 1, ifAbsent: () => 1);
+      overflow--;
+    }
+    return Map.unmodifiable(granted);
+  }
+
+  Map<TrainingFocus, int> _seasonalTrialExpertisePreview(
+    Pet dragon,
+    TrialGrade grade,
+  ) {
+    final ranked = TrainingFocus.values.toList()
+      ..sort((a, b) {
+        final score = dragon.trainingFor(a).compareTo(dragon.trainingFor(b));
+        return score != 0 ? score : a.index.compareTo(b.index);
+      });
+    final planned = switch (grade) {
+      TrialGrade.d => <int>[1, 0, 0],
+      TrialGrade.c => <int>[1, 1, 0],
+      TrialGrade.b => <int>[1, 1, 1],
+      TrialGrade.a => <int>[2, 1, 1],
+      TrialGrade.s => <int>[2, 2, 1],
+      TrialGrade.sPlus => <int>[3, 2, 2],
+    };
+    return {
+      for (var index = 0; index < ranked.length; index++)
+        if (planned[index] > 0) ranked[index]: planned[index],
+    };
   }
 
   String eggHint({bool? isDutch, String? locale}) {
@@ -2009,17 +2398,21 @@ extension DragonHavenSystems on HouseholdProvider {
     return _eggHintFor(
       strings,
       lineage: egg.lineage,
+      specialEgg: specialEggForLineage(egg.lineageId),
     );
   }
 
   String eggHintForEgg(DragonEgg egg, {String? locale}) => _eggHintFor(
         AppStrings(locale ?? languageCode),
         lineage: egg.lineage,
+        specialEgg: specialEggById(egg.specialEggId) ??
+            (egg.isSpecialEgg ? specialEggForLineage(egg.lineageId) : null),
       );
 
   String _eggHintFor(
     AppStrings strings, {
     required DragonLineage lineage,
+    SpecialEggDefinition? specialEgg,
   }) {
     final affinity = switch (lineage.affinityCategory) {
       'ember' || 'solar' => strings.pick(
@@ -2039,10 +2432,33 @@ extension DragonHavenSystems on HouseholdProvider {
           'Er klinkt een vreemd muzikaal tikje van binnen.'),
     };
     if (!lineage.secret) return affinity;
-    return '$affinity\n\n${strings.pick(
-      'A gentle golden warmth lingers around this egg, as if it carries a wish meant for someone truly special.',
-      'Rond dit ei blijft een zachte gouden warmte hangen, alsof het een wens draagt voor iemand die echt bijzonder is.',
-    )}';
+    final specialFeeling = switch (specialEgg?.id) {
+      'witchlight_egg_v1' => strings.pick(
+          'A watchful green flame curls around the shell. This egg feels bound to a rare autumn night.',
+          'Een waakzame groene vlam krult rond de schaal. Dit ei voelt verbonden met een zeldzame herfstnacht.',
+        ),
+      'starlit_evergreen_egg_v1' => strings.pick(
+          'A winter star seems to breathe beneath the shell. This egg carries the warmth of a special hearth.',
+          'Een winterster lijkt onder de schaal te ademen. Dit ei draagt de warmte van een bijzondere haard.',
+        ),
+      'turning_year_egg_v1' => strings.pick(
+          'A distant bell answers the first light within. This egg belongs to a turning of the year.',
+          'Een verre klok antwoordt het eerste licht binnenin. Dit ei hoort bij een jaarwende.',
+        ),
+      'rosebound_egg_v1' => strings.pick(
+          'Two quiet heartbeats echo through the shell. This egg remembers a promise shared.',
+          'Twee zachte hartslagen klinken door de schaal. Dit ei herinnert zich een gedeelde belofte.',
+        ),
+      'truecolor_egg_v1' => strings.pick(
+          'Every color glimmers without hiding another. This egg feels joyfully, unmistakably special.',
+          'Elke kleur schittert zonder een andere te verbergen. Dit ei voelt vreugdevol en onmiskenbaar bijzonder.',
+        ),
+      _ => strings.pick(
+          'A gentle golden warmth lingers around this egg, as if it carries a wish meant for someone truly special.',
+          'Rond dit ei blijft een zachte gouden warmte hangen, alsof het een wens draagt voor iemand die echt bijzonder is.',
+        ),
+    };
+    return '$affinity\n\n$specialFeeling';
   }
 
   String dragonSizeLabel(Pet dragon) {

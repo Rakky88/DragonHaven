@@ -68,7 +68,16 @@ Map<String, int> _normalizedTraining(
             .toInt(),
     };
 
-const _trialKeys = {'cavernFlight', 'ruinBreaker', 'runeweaver'};
+const _trialKeys = {
+  'cavernFlight',
+  'ruinBreaker',
+  'runeweaver',
+  'witchlightWard',
+  'hollyfrostGiftforge',
+  'midnightChime',
+  'rosevowRelay',
+  'prismaticParade',
+};
 
 Map<String, int> _normalizedTrialHighScores(Map<String, int>? values) => {
       for (final key in _trialKeys)

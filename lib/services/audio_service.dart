@@ -106,9 +106,13 @@ abstract final class HavenAudio {
   }
 
   static Future<void> play(HavenSound sound) async {
+    await playAsset(sound.assetId);
+  }
+
+  static Future<void> playAsset(String assetId) async {
     if (!_effectsEnabled) return;
     try {
-      await _channel.invokeMethod<void>('playSound', {'id': sound.assetId});
+      await _channel.invokeMethod<void>('playSound', {'id': assetId});
     } on MissingPluginException {
       // See applyPreferences.
     } on PlatformException {

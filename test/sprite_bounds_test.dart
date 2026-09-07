@@ -223,12 +223,12 @@ void _expectSingleSubject(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('all 140 dragon chat emotes are transparent contained app sprites',
+  test('all 155 dragon chat emotes are transparent contained app sprites',
       () async {
-    expect(allDragonEmotes, hasLength(140));
+    expect(allDragonEmotes, hasLength(155));
     expect(
       allDragonEmotes.map((emote) => emote.assetPath).toSet(),
-      hasLength(140),
+      hasLength(155),
     );
     for (final emote in allDragonEmotes) {
       final image = await _decode(emote.assetPath);
@@ -527,17 +527,23 @@ void main() {
           image.width,
           image.height,
           path,
-          // Meteorhide deliberately casts a separate fire orb and spark.
-          // Both are part of this Hatchling illustration, not atlas bleed.
-          expectedComponents:
-              path.endsWith('meteorhide_hatchling.webp') ? 3 : 1,
+          // Meteorhide deliberately casts a separate fire orb and spark;
+          // Hollyfrost has several detached holly accents. They are intentional
+          // parts of the illustrations rather than neighboring atlas sprites.
+          expectedComponents: path.endsWith('meteorhide_hatchling.webp')
+              ? 3
+              : path.endsWith('hollyfrost_hatchling.webp')
+                  ? 8
+                  : 1,
         );
       }
     }
   });
 
   test('every Wyrmling and Ascended frame fits its atlas quadrant', () async {
-    for (final lineage in dragonLineages) {
+    for (final lineage in dragonLineages.where(
+      (lineage) => !DragonArtwork.fullyStandaloneLineages.contains(lineage.id),
+    )) {
       final image = await _decode(DragonArtwork.formsAsset(lineage.id));
       expect(image.width, image.height,
           reason: '${lineage.id} forms atlas must remain square');
@@ -579,7 +585,7 @@ void main() {
     }
   });
 
-  test('all 44 Mastery Ascended sprites are complete standalone subjects',
+  test('all 49 Mastery Ascended sprites are complete standalone subjects',
       () async {
     for (final lineage in dragonLineages) {
       final path = DragonArtwork.masteryAsset(lineage.id);
@@ -605,7 +611,12 @@ void main() {
         path,
         // Cluckatrice's halo now meets its crest without an opaque matte, so
         // every Mastery render is one coherent alpha-connected subject.
-        expectedComponents: 1,
+        expectedComponents: switch (lineage.id) {
+          'gloamgourd' || 'hollyfrost' => 2,
+          // Rosevow intentionally carries detached petals around its aura.
+          'rosevow' => 11,
+          _ => 1,
+        },
       );
       final sampledAlpha = _alphaCount(
         image.rgba,

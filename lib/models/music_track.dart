@@ -3,14 +3,65 @@ class MusicTrack {
     required this.id,
     required this.title,
     required this.composer,
+    this.rawResourceIdOverride,
+    this.temporaryEventId,
   });
 
   final String id;
   final String title;
   final String composer;
+  final String? rawResourceIdOverride;
+  final String? temporaryEventId;
 
-  String get rawResourceId => 'music_$id';
+  String get rawResourceId => rawResourceIdOverride ?? 'music_$id';
+  bool get isTemporaryEventTrack => temporaryEventId != null;
 }
+
+/// Event music is available only during the matching real or private preview
+/// occurrence. These aliases deliberately reuse performances already verified
+/// as CC0/Public Domain in `assets/licenses/MUSIC_SOURCES.md`; they do not enter
+/// the 80-track Music Chest collection.
+const seasonalMusicCatalog = <MusicTrack>[
+  MusicTrack(
+    id: 'event_witchlight_nocturne',
+    title: 'Witchlight Nocturne',
+    composer: 'J. S. Bach · event arrangement',
+    rawResourceIdOverride: 'music_toccata_fugue_d_minor',
+    temporaryEventId: 'halloween_witchlight',
+  ),
+  MusicTrack(
+    id: 'event_winter_hearth_carol',
+    title: 'Winter Hearth Carol',
+    composer: 'Traditional · event arrangement',
+    rawResourceIdOverride: 'music_greensleeves',
+    temporaryEventId: 'christmas_winter_hearth',
+  ),
+  MusicTrack(
+    id: 'event_first_dawn_waltz',
+    title: 'First Dawn Waltz',
+    composer: 'Traditional · event arrangement',
+    rawResourceIdOverride: 'music_auld_lang_syne',
+    temporaryEventId: 'new_year_first_dawn',
+  ),
+  MusicTrack(
+    id: 'event_rosebound_romance',
+    title: 'Rosebound Romance',
+    composer: 'Claude Debussy · event arrangement',
+    rawResourceIdOverride: 'music_clair_de_lune',
+    temporaryEventId: 'valentine_two_heartlights',
+  ),
+  MusicTrack(
+    id: 'event_every_color_festival',
+    title: 'Every Color Festival',
+    composer: 'Johann Strauss II · event arrangement',
+    rawResourceIdOverride: 'music_tritsch_tratsch',
+    temporaryEventId: 'pride_every_color',
+  ),
+];
+
+final seasonalMusicTracksById = <String, MusicTrack>{
+  for (final track in seasonalMusicCatalog) track.id: track,
+};
 
 /// Stable jukebox order. IDs are persisted in saves and must never be reused.
 const musicCatalog = <MusicTrack>[

@@ -32,6 +32,29 @@ public-domain tag. Before commercial app-store distribution, replace it with a
 recording whose performer and recording rights are explicitly documented, or
 obtain a release-specific legal review.
 
+The current in-game Jukebox no longer relies on this legacy `reverie.ogg`
+recording. Its 80-track collection uses the separately audited resources in
+`assets/licenses/MUSIC_SOURCES.md`, including `music_reverie`. That catalog
+records a CC0 1.0 or Public Domain source for every shipped performance.
+
+## Temporary seasonal music
+
+The five seasonal tracks are temporary Jukebox aliases. They reuse an already
+audited resource byte-for-byte, are available only during the matching event or
+private preview, and do not enter the Music Chest collection.
+
+| Seasonal track | Event | Audited resource reused | Recorded status |
+|---|---|---|---|
+| Witchlight Nocturne | Halloween | `music_toccata_fugue_d_minor` | CC0 1.0, PDMX row 151563 |
+| Winter Hearth Carol | Christmas | `music_greensleeves` | CC0 1.0, PDMX row 124973 |
+| First Dawn Waltz | New Year | `music_auld_lang_syne` | CC0 1.0, PDMX row 12857 |
+| Rosebound Romance | Valentine | `music_clair_de_lune` | CC0 1.0, PDMX row 233400 |
+| Every Color Festival | Pride | `music_tritsch_tratsch` | Public Domain Mark, Wikimedia source recorded in `MUSIC_SOURCES.md` |
+
+The player-facing event titles are thematic aliases, not claims that the
+underlying recordings are new arrangements. The exact source metadata and
+links remain authoritative in `assets/licenses/MUSIC_SOURCES.md`.
+
 ## Interface and game sound effects
 
 The interface click, book, coin, latch, creak, door, metal and short musical

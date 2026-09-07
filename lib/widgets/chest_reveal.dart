@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/account_title.dart';
+import '../models/adventure.dart';
 import '../models/chest.dart';
 import '../models/dragon_emote.dart';
 import '../models/mystic_relic.dart';
@@ -19,6 +20,9 @@ Future<void> showChestReveal(
   int quantity = 1,
   required Future<ChestRewardBundle?> Function() openChest,
   FutureOr<void> Function()? onOpen,
+  String? displayName,
+  String? closedAssetPath,
+  String? openedAssetPath,
 }) =>
     showDialog<void>(
       context: context,
@@ -28,6 +32,9 @@ Future<void> showChestReveal(
         quantity: quantity,
         openChest: openChest,
         onOpen: onOpen,
+        displayName: displayName,
+        closedAssetPath: closedAssetPath,
+        openedAssetPath: openedAssetPath,
       ),
     );
 
@@ -37,11 +44,17 @@ class _ChestReveal extends StatefulWidget {
     required this.quantity,
     required this.openChest,
     this.onOpen,
+    this.displayName,
+    this.closedAssetPath,
+    this.openedAssetPath,
   });
   final ChestTier tier;
   final int quantity;
   final Future<ChestRewardBundle?> Function() openChest;
   final FutureOr<void> Function()? onOpen;
+  final String? displayName;
+  final String? closedAssetPath;
+  final String? openedAssetPath;
 
   @override
   State<_ChestReveal> createState() => _ChestRevealState();
@@ -154,11 +167,12 @@ class _ChestRevealState extends State<_ChestReveal>
           value: '${bundle.sinisterEggCount}',
           label: strings.eggName(sinister: true),
         ),
-      if (bundle.specialEggCount > 0)
-        _Reward(
-          kind: GameIconKind.mysteriousEgg,
-          value: '${bundle.specialEggCount}',
-          label: strings.eggName(special: true),
+      for (final entry in _specialEggCounts(bundle).entries)
+        _AssetReward(
+          assetPath: specialEggById(entry.key)?.assetPath ??
+              'assets/images/ui/ui_special_egg.webp',
+          value: '${entry.value}',
+          label: _specialEggLabel(strings, entry.key),
         ),
       for (final entry in relicCounts.entries)
         _RelicReward(
@@ -191,7 +205,7 @@ class _ChestRevealState extends State<_ChestReveal>
     final strings = AppStrings.of(context);
     final tier = widget.tier;
     final accent = Color(tier.colorValue);
-    final chestLabel = strings.chestLabel(tier);
+    final chestLabel = widget.displayName ?? strings.chestLabel(tier);
     final displayLabel =
         widget.quantity == 1 ? chestLabel : '${widget.quantity}× $chestLabel';
     return PopScope(
@@ -408,8 +422,10 @@ class _ChestRevealState extends State<_ChestReveal>
                                                       const EdgeInsets.all(6),
                                                   child: Image.asset(
                                                     _lidRevealed
-                                                        ? tier.openedAssetPath
-                                                        : tier.assetPath,
+                                                        ? widget.openedAssetPath ??
+                                                            tier.openedAssetPath
+                                                        : widget.closedAssetPath ??
+                                                            tier.assetPath,
                                                     fit: BoxFit.contain,
                                                     filterQuality:
                                                         FilterQuality.high,
@@ -497,6 +513,68 @@ class _GlowOrb extends StatelessWidget {
             ]),
           ),
         ),
+      );
+}
+
+Map<String, int> _specialEggCounts(ChestRewardBundle bundle) {
+  final counts = <String, int>{};
+  for (final reward in bundle.rewards) {
+    if (!reward.specialEgg) continue;
+    final id = reward.specialEggId ?? 'golden_wings_egg_v1';
+    counts.update(id, (value) => value + 1, ifAbsent: () => 1);
+  }
+  return counts;
+}
+
+String _specialEggLabel(AppStrings strings, String specialEggId) {
+  final definition = specialEggById(specialEggId);
+  if (definition == null) return strings.eggName(special: true);
+  return strings.languageCode == 'nl' ? definition.titleNl : definition.titleEn;
+}
+
+class _AssetReward extends StatelessWidget {
+  const _AssetReward({
+    required this.assetPath,
+    required this.value,
+    required this.label,
+  });
+
+  final String assetPath;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        constraints: const BoxConstraints(maxWidth: 210),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .94),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Image.asset(assetPath, width: 38, height: 38, fit: BoxFit.contain),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(value,
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF6D657D),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ]),
       );
 }
 

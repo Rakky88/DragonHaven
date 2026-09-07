@@ -244,13 +244,15 @@ void main() {
       find.byKey(const Key('special-event-availability-countdown-detail')),
       findsOneWidget,
     );
-    final event = specialAdventureEventCatalog.single;
+    final event = specialAdventureEventCatalog.singleWhere(
+      (entry) => entry.id == 'golden_wings_birthday',
+    );
     expect(find.text(event.storyEn), findsNothing);
     expect(find.text(adventure.descriptionEn), findsNothing);
     expect(find.text('+25 Might'), findsOneWidget);
     expect(find.text('+25 Spirit'), findsOneWidget);
     expect(find.text('+25 Arcana'), findsOneWidget);
-    expect(find.text('1 Special Chest'), findsOneWidget);
+    expect(find.text('Golden Wings Chest'), findsOneWidget);
     expect(find.text('1 random relic'), findsOneWidget);
     expect(find.text('1 Music Chest'), findsOneWidget);
     expect(find.textContaining('269 coins'), findsNothing);
