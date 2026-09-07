@@ -25,13 +25,24 @@ generiek bericht zichtbaar op het testtoestel, inbox bleef ongelezen, fixture
 verwijderd en push weer uit. De echte FATAL- en NON_FATAL-testmeldingen zijn
 ook teruggevonden in de Firebase Crashlytics API.
 
-Android bouwt zonder en met Firebase-configuratie. Analyzer was schoon; 526
-volledige-suiteproeven slaagden plus een verouderde vaste schemaverwachting.
-Die verwachting is bijgewerkt naar 51; de gerichte hercontrole van 25 tests
-slaagt. Zes Deno-workerproeven slagen. Zie `FIREBASE_MONITORING_SETUP.md` voor
+Android bouwt zonder en met Firebase-configuratie. De volledige Flutter-suite
+slaagt met 541 tests; de aanvullende native pariteitsfixture slaagt ook.
+Analyzer is schoon voor lib, tests, integratietests en tools. De vaste
+schemaverwachting is bijgewerkt naar 51. Zes Deno-workerproeven slagen.
+Zie `FIREBASE_MONITORING_SETUP.md` voor
 bewijs en resterende controle van Performance, release-symbolen en alerts.
-Het tijdelijke staging-probe-entrypoint moet worden vervangen door de normale
-app op het testtoestel zodra deze proeven zijn afgerond.
+De normale openbare v0.05.18-app is teruggezet op het testtoestel, met behoud
+van opslag. Tijdelijke probe-tokenbestanden en het GitHub-probetokensecret zijn
+verwijderd; Crashlytics-debuglogging is teruggezet naar INFO. Ook een normale
+releasebuild met staging-Firebase is lokaal geslaagd.
+
+De gedeelde spelregels zijn losgemaakt van Flutter-platformdiensten en
+compileren naar een interne servermodule van minder dan 1 MB. Een synthetische
+VM/Deno-vergelijking van chests, aankopen, inventaris, ei-eigenschappen en IDs
+slaagt. Acht gerichte tests dekken onder meer herstelbare vaste serverrandomness,
+saldo-/voorraadgrenzen, tags, Sinister-confirmatie, quillverbruik en incubatie.
+De database-transactie, volledige migratie/projectie, trialvalidatie en
+daadwerkelijke clientomschakeling zijn nog niet gebouwd of vrijgegeven.
 
 `GROWTH_AND_COST_PLAN.md` bevat de 100/1.000/10.000-accountscenario's, bestaande
 loadbewijzen, quota, opslag/egress-aannames en meetbare overstappen. De lokale

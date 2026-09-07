@@ -110,7 +110,7 @@ extension EggAltarSystems on HouseholdProvider {
                 payload))) {
       throw const EggAltarException('altar_pending');
     }
-    final id = pending?['id'] as String? ?? operationId ?? _uuid.v4();
+    final id = pending?['id'] as String? ?? operationId ?? _newId();
     final previous = EggAltarState.fromJson(eggAltar.toJson());
     final previousEggs =
         eggStash.map((egg) => DragonEgg.fromJson(egg.toJson())).toList();

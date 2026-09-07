@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: abc3419d093a6bfd -->
+<!-- reference-source-fingerprint: 9576affbec86b7ec -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -17,6 +17,15 @@ codes are maintained in [REDEEM_CODES.md](REDEEM_CODES.md) and must never be
 copied into public release notes.
 
 ## 1. Content ownership model
+
+The local server-domain candidate now calls the same Dart rules for opening
+event chests, incubating/hatching eggs and claiming solo Special Adventures.
+The scheduled event definitions, chest recipes, egg pools and production
+preview exclusions below have been reviewed and remain unchanged. Explicit
+activation time also initializes an egg's needs timestamp, so replay does not
+depend on the runtime's wall clock. This candidate has no deployed mutation
+endpoint or account cutover yet; its canonical state and entropy must come
+from the trusted server transaction.
 
 - A **Special Event** owns one schedule, story, Adventure, Trial, temporary
   music alias, ranking occurrence, and reward contract.

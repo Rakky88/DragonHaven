@@ -1,10 +1,14 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
+// Native defaults also let the analyzer retain Flutter's actual notifier type.
+// Flutter web takes dart.library.ui before the standalone server JS adapter.
+import 'package:flutter/foundation.dart'
+    if (dart.library.ui) 'package:flutter/foundation.dart'
+    if (dart.library.js_interop) '../domain/headless_notifier.dart';
 import 'package:uuid/uuid.dart';
 
-import '../l10n/app_strings.dart';
+import '../l10n/game_strings.dart';
 import '../models/account_title.dart';
 import '../models/achievement.dart';
 import '../models/adventure.dart';
@@ -27,9 +31,15 @@ import '../models/shop_item.dart';
 import '../models/supporter_pack.dart';
 import '../models/tower_interaction.dart';
 import '../models/trial.dart';
-import '../services/storage_service.dart';
-import '../services/audio_service.dart';
-import '../services/notification_service.dart';
+import '../services/storage_service.dart'
+    if (dart.library.ui) '../services/storage_service.dart'
+    if (dart.library.js_interop) '../domain/headless_storage.dart';
+import '../services/audio_service.dart'
+    if (dart.library.ui) '../services/audio_service.dart'
+    if (dart.library.js_interop) '../domain/headless_audio.dart';
+import '../services/notification_service.dart'
+    if (dart.library.ui) '../services/notification_service.dart'
+    if (dart.library.js_interop) '../domain/headless_notification.dart';
 import '../utils/json_utils.dart';
 
 part 'dragonhaven_systems.dart';
@@ -109,22 +119,51 @@ class HouseholdProvider extends ChangeNotifier {
   HouseholdProvider({
     Random? random,
     DateTime Function()? clock,
+    String Function()? idGenerator,
     bool initialize = true,
     bool persistenceEnabled = true,
   })  : _random = random ?? Random.secure(),
         _clock = clock ?? DateTime.now,
+        _newId = idGenerator ?? const Uuid().v4,
         _persistenceEnabled = persistenceEnabled {
     if (initialize) _initializeFresh();
   }
 
   final Random _random;
   final DateTime Function() _clock;
+  final String Function() _newId;
   final bool _persistenceEnabled;
+
+  /// Restores trusted database state for a single server command. This is not
+  /// the cloud-import path: loading alone grants no rewards and advances no
+  /// timers. The caller must supply server time and server-owned entropy, then
+  /// atomically commit the exported result outside this object.
+  factory HouseholdProvider.forServerState(
+    Map<String, dynamic> state, {
+    required Random random,
+    required DateTime now,
+    required String Function() idGenerator,
+  }) {
+    if (state['schemaVersion'] != saveSchemaVersion ||
+        state['pet'] is! Map ||
+        (state['pet'] as Map).isEmpty) {
+      throw const FormatException('Unsupported canonical game state');
+    }
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      random: random,
+      clock: () => now,
+      idGenerator: idGenerator,
+    );
+    game._restore(state);
+    game._applyAltarProtection();
+    return game;
+  }
 
   /// Non-persistent runtime gate. Production previews must never farm rewards;
   /// staging enables real grants so persistence and idempotency can be tested.
   bool persistentSeasonalPreviewRewards = false;
-  final _uuid = const Uuid();
   Future<void> _saveQueue = Future<void>.value();
   Timer? _starterEggTapPersistenceTimer;
   int _localMutationRevision = 0;
@@ -549,7 +588,7 @@ class HouseholdProvider extends ChangeNotifier {
         .where((lineage) => lineage.rarity == DragonRarity.common)
         .toList(growable: false);
     pet = Pet(
-      id: _uuid.v4(),
+      id: _newId(),
       hatchSeed: seed,
       lineageId: starterLineages[seed.remainder(starterLineages.length)].id,
       prismatic: _random.nextInt(spectralEggBaseRollSides) == 0,
@@ -559,6 +598,7 @@ class HouseholdProvider extends ChangeNotifier {
       incubationMinutes: 60,
       acquiredAt: now,
       stageStartedAt: now,
+      needsUpdatedAt: now,
     );
     incubatingEgg = null;
     tutorialCompleted = false;
@@ -578,7 +618,7 @@ class HouseholdProvider extends ChangeNotifier {
     towerFloorRoomIds = ['hearth'];
     activities = [
       ActivityEntry(
-        id: _uuid.v4(),
+        id: _newId(),
         message: 'A Mysterious Egg appeared in the tower nest.',
         createdAt: now,
         type: ActivityType.milestone,
@@ -2549,7 +2589,7 @@ class HouseholdProvider extends ChangeNotifier {
       createdAt: now.add(Duration(microseconds: queueOrder)),
       sortAt: dragon.acquiredAt,
     ));
-    final strings = AppStrings(languageCode);
+    final strings = GameStrings(languageCode);
     final form = strings.petStage(dragon);
     unawaited(HavenNotifications.evolutionUnlocked(
       id: 'evolution-${dragon.id}-${dragon.stage.name}',
@@ -2608,7 +2648,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<void> _scheduleEggReadyNotification(Pet egg) async {
-    final strings = AppStrings(languageCode);
+    final strings = GameStrings(languageCode);
     final eggName = strings.eggName(
       sinister: egg.isSinisterEgg,
       special: egg.isSpecialEgg,
@@ -2871,7 +2911,7 @@ class HouseholdProvider extends ChangeNotifier {
     if (sourceTier == ChestTier.sinister &&
         _random.nextDouble() < sinisterEggDropChance(sourceTier)) {
       return DragonEgg(
-        id: _uuid.v4(),
+        id: _newId(),
         lineageId: 'sinisterra',
         acquiredAt: _clock(),
         hatchSeed: seed,
@@ -2890,7 +2930,7 @@ class HouseholdProvider extends ChangeNotifier {
     final lineage = _rollEggLineage(sourceTier);
     final sizeRoll = _random.nextDouble();
     return DragonEgg(
-      id: _uuid.v4(),
+      id: _newId(),
       lineageId: lineage.id,
       acquiredAt: _clock(),
       hatchSeed: seed,
@@ -2907,7 +2947,7 @@ class HouseholdProvider extends ChangeNotifier {
     final definition = specialEggById(specialEggId) ??
         specialEggCatalog['golden_wings_egg_v1']!;
     return DragonEgg(
-      id: _uuid.v4(),
+      id: _newId(),
       lineageId: definition.lineageId,
       acquiredAt: _clock(),
       hatchSeed: _random.nextInt(0x7fffffff),
@@ -3005,7 +3045,7 @@ class HouseholdProvider extends ChangeNotifier {
         createdAt: unlockedAt,
         sortAt: unlockedAt,
       ));
-      final strings = AppStrings(languageCode);
+      final strings = GameStrings(languageCode);
       final title = strings.achievementTitle(achievement);
       unawaited(HavenNotifications.achievementUnlocked(
         id: achievement.id,
@@ -3034,7 +3074,7 @@ class HouseholdProvider extends ChangeNotifier {
     activities.insert(
         0,
         ActivityEntry(
-            id: _uuid.v4(),
+            id: _newId(),
             message: message,
             createdAt: _clock(),
             type: type,

@@ -55,6 +55,7 @@ class DragonEgg {
         lineageId: lineageId,
         acquiredAt: acquiredAt,
         stageStartedAt: activatedAt ?? DateTime.now(),
+        needsUpdatedAt: activatedAt,
         hatchSeed: hatchSeed,
         prismatic: prismatic,
         sinister: sinister,

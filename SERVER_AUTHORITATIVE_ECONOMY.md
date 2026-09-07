@@ -9,6 +9,32 @@ Staging runs `34110497546`, `34110676557` and `34111166461` passed rollback cont
 
 ## Work in progress: durable client reconciliation (7 September 2026)
 
+### Shared rules candidate
+
+`GameCommandEngine` now evaluates catalog purchases, bounded chest openings,
+relic use, incubation/hatching, dragon progression, solo adventures, housing,
+constellation claims and Altar actions using the existing Dart rules. Flutter
+keeps its native notifier/audio/notification/storage adapters. The server
+build uses no device storage, audio or pre-commit notifications. Translation
+data and preference enums are shared without importing Flutter.
+
+The compiled internal entrypoint is under 1 MB locally. The first synthetic
+VM/Deno comparison passes, including absolute state, hidden egg properties,
+reward values and generated identities. Eight contract tests cover the private
+entropy vector, deterministic retries, wallet limits, failed batches, rejected
+client grants/scores, tags, Sinister confirmation, quill consumption and
+server-clock incubation. This remains a **local candidate**, not a deployed
+authoritative economy.
+
+The worker must obtain state/time/owner/secret seed from PostgreSQL, reserve one
+intent per owner, then commit by revision comparison in one transaction. Public
+requests may contain only whitelisted intents. Full save conversion, private
+egg projection, normalized trade/Altar/social synchronization, validated trial
+transcripts, server timezone behavior, durable full client application and
+staging cutover/restore exercises remain open. The entrypoint intentionally
+does not accept arbitrary score, reward, paid entitlement or settlement grants.
+The current production mutation switch remains off.
+
 `EconomySnapshotStore` now persists complete owner-scoped snapshots outside
 cloud backups, with atomic replacement and monotonic wallet/server revisions.
 `EconomyChestReconciler` retains the original request through lost responses,
@@ -176,7 +202,8 @@ path depends on migration 37.
 - build the full save-to-instance conversion; the old trade mirror omits valuable
   non-tradeable and special content and is not a complete conversion source;
 - extend the existing atomic purchases/opening to the remaining shops;
-- move remaining gameplay randomness and collection checks to PostgreSQL;
+- execute the shared rules with private server entropy and commit randomness,
+  collection checks and full inventory changes atomically through PostgreSQL;
 - filter server-owned fields out of save restore/import after cutover;
 - add timeout/reconnect and double-submit E2E around the first concrete mutation
   RPC; foundation-level replay, conflicting payload, rate-limit, rollback and

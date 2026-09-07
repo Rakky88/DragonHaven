@@ -17,8 +17,9 @@ Publieke app: v0.05.18 / 10068; productie en staging: schema 49.
    BigQuery-export of betaald abonnement aanzetten. Supabase verzorgt het
    bestaande backenddeel en de begrensde pushworker binnen het gratis plan.
 5. Monitoring en push testen, inclusief time-outs, ontbrekende configuratie,
-   mislukte aflevering en accountwissel. Een echte stagingcrash en beëindigde-app
-   push zijn pas bewezen zodra een eigen Firebase-project beschikbaar is.
+   mislukte aflevering en accountwissel. De echte stagingcrash en beëindigde-app
+   push zijn inmiddels bewezen; Performance-rapportage en alertinstellingen
+   vragen nog controle in Firebase.
 6. Een onderbouwd groeiplan voor 100, 1.000 en 10.000 spelers leveren, met
    geregistreerde accounts, dagelijks actieve spelers en gelijktijdige spelers
    apart. Gebruik de bestaande loadmetingen zonder hun beperkingen te verbergen.

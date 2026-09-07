@@ -4,11 +4,17 @@ Last verified: 7 September 2026
 
 Ruleset: app version `v0.05.17`; Halloween-access update in migration 48
 
-<!-- reference-source-fingerprint: 80d595b319455511 -->
+<!-- reference-source-fingerprint: 2777d0292f80fa4b -->
 
 This private operational ledger lists every active code. Active codes must
 never be mentioned in public release notes, store copy, or public support
 announcements unless the owner explicitly changes that rule.
+
+The local server-domain candidate delegates redemption to the existing catalog
+and checks keeper restrictions using the trusted authenticated owner. The code
+values, rewards and preview behavior in this ledger were reviewed and remain
+unchanged. This internal candidate is not deployed or exposed as a public
+redemption endpoint yet.
 
 Codes are case-sensitive, use only `A-Z` and `0-9`, and unknown or retired
 codes return the same inactive result. Seasonal previews are authorized by the

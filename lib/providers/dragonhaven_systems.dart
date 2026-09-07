@@ -284,7 +284,7 @@ extension DragonHavenSystems on HouseholdProvider {
     }
     final now = _clock();
     var changed = false;
-    final strings = AppStrings(languageCode);
+    final strings = GameStrings(languageCode);
     for (final current in specialAdventureWindowsAt(now)) {
       if (!notifiedSeasonalSpecialEventKeys.contains(current.key)) {
         final adventure = AdventureCatalog.byId[current.event.adventureId];
@@ -695,7 +695,7 @@ extension DragonHavenSystems on HouseholdProvider {
     rareInteractionAt[dragon.id] = now;
     await _notifyAndSave();
     final name = dragon.displayName;
-    final strings = AppStrings(languageCode);
+    final strings = GameStrings(languageCode);
     return strings
         .pick(interaction.messageEn, interaction.messageNl)
         .replaceAll('{dragon}', name);
@@ -1061,7 +1061,7 @@ extension DragonHavenSystems on HouseholdProvider {
                 orElse: () => null,
               );
       trialOffers.add(TrialOffer(
-        id: _uuid.v4(),
+        id: _newId(),
         kind: kind,
         appearedAt: currentBoundary,
         specialEventKey: specialWindow?.key,
@@ -1080,7 +1080,7 @@ extension DragonHavenSystems on HouseholdProvider {
     final fullAt = nextTrialRefreshAt().add(
       Duration(minutes: 15 * (missingOffers - 1)),
     );
-    final strings = AppStrings(languageCode);
+    final strings = GameStrings(languageCode);
     unawaited(HavenNotifications.trialsFull(
       at: fullAt,
       title: strings.pick('Three Trials are ready', 'Drie Trials staan klaar'),
@@ -1885,7 +1885,7 @@ extension DragonHavenSystems on HouseholdProvider {
     }
     final duration = expertiseAdjustedAdventureDuration(adventure, [dragon]);
     final run = AdventureRun(
-      id: _uuid.v4(),
+      id: _newId(),
       adventureId: adventure.id,
       dragonId: dragon.id,
       startedAt: now,
@@ -1918,7 +1918,7 @@ extension DragonHavenSystems on HouseholdProvider {
     AdventureRun run,
     Pet dragon,
   ) async {
-    final strings = AppStrings(languageCode);
+    final strings = GameStrings(languageCode);
     await HavenNotifications.schedule(
       id: 'adventure-${run.id}',
       at: adventureReturnNotificationAt(run.endsAt),
@@ -2393,7 +2393,7 @@ extension DragonHavenSystems on HouseholdProvider {
   }
 
   String eggHint({bool? isDutch, String? locale}) {
-    final strings = AppStrings(locale ?? (isDutch == true ? 'nl' : 'en'));
+    final strings = GameStrings(locale ?? (isDutch == true ? 'nl' : 'en'));
     final egg = nestEgg ?? pet;
     return _eggHintFor(
       strings,
@@ -2403,14 +2403,14 @@ extension DragonHavenSystems on HouseholdProvider {
   }
 
   String eggHintForEgg(DragonEgg egg, {String? locale}) => _eggHintFor(
-        AppStrings(locale ?? languageCode),
+        GameStrings(locale ?? languageCode),
         lineage: egg.lineage,
         specialEgg: specialEggById(egg.specialEggId) ??
             (egg.isSpecialEgg ? specialEggForLineage(egg.lineageId) : null),
       );
 
   String _eggHintFor(
-    AppStrings strings, {
+    GameStrings strings, {
     required DragonLineage lineage,
     SpecialEggDefinition? specialEgg,
   }) {
@@ -2718,7 +2718,7 @@ extension DragonHavenSystems on HouseholdProvider {
     latestReturningEvent = sinister
         ? '${dragon.displayName} left a Sinister Adventure. It is available for 48 hours.'
         : '${dragon.displayName} revealed a Special Adventure. It is available for 48 hours.';
-    final strings = AppStrings(languageCode);
+    final strings = GameStrings(languageCode);
     unawaited(HavenNotifications.specialAdventureAvailable(
       id: 'returning-special-${definition.id}-${now.millisecondsSinceEpoch}',
       title: strings.pick(
