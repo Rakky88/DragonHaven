@@ -22,7 +22,7 @@ class CanonicalGameReader {
   final Duration timeout;
 
   Future<CanonicalGameSnapshot> fetch(String owner,
-      {int minimumRevision = 0}) async {
+      {int minimumRevision = 0, int minimumRulesetRevision = 0}) async {
     final epoch = sessionEpoch();
     void requireSession() {
       if (currentOwner() != owner || sessionEpoch() != epoch) {
@@ -43,6 +43,8 @@ class CanonicalGameReader {
     }
     requireSession();
     return CanonicalGameSnapshot.parse(response,
-        expectedOwner: owner, minimumRevision: minimumRevision);
+        expectedOwner: owner,
+        minimumRevision: minimumRevision,
+        minimumRulesetRevision: minimumRulesetRevision);
   }
 }

@@ -11,6 +11,7 @@ class CanonicalGameSnapshot {
   int get serverRevision => _wire['server_revision'] as int;
   String get stateHash => _wire['state_sha256'] as String;
   String get rulesetHash => _wire['ruleset_sha256'] as String;
+  int get rulesetRevision => _wire['ruleset_revision'] as int;
   String get authorityMode => _wire['authority_mode'] as String;
   bool get mutationsEnabled => _wire['mutations_enabled'] as bool;
   DateTime get serverTime => DateTime.parse(_wire['server_time'] as String);
@@ -24,7 +25,9 @@ class CanonicalGameSnapshot {
   Map<String, dynamic> toJson() => _wire;
 
   factory CanonicalGameSnapshot.parse(Object? value,
-      {required String expectedOwner, int minimumRevision = 0}) {
+      {required String expectedOwner,
+      int minimumRevision = 0,
+      int minimumRulesetRevision = 0}) {
     final wire = _map(_freeze(value));
     if (!_uuid.hasMatch(expectedOwner) ||
         !_keys(wire, const [
@@ -33,6 +36,7 @@ class CanonicalGameSnapshot {
           'server_revision',
           'state_sha256',
           'ruleset_sha256',
+          'ruleset_revision',
           'authority_mode',
           'mutations_enabled',
           'server_time',
@@ -43,12 +47,14 @@ class CanonicalGameSnapshot {
         !_positive(wire['server_revision']) ||
         !_hashValue(wire['state_sha256']) ||
         !_hashValue(wire['ruleset_sha256']) ||
+        !_positive(wire['ruleset_revision']) ||
         wire['authority_mode'] != 'shadow' ||
         wire['mutations_enabled'] is! bool ||
         !_date(wire['server_time'])) {
       throw const CanonicalGameException('game_snapshot_invalid');
     }
-    if ((wire['server_revision'] as int) < minimumRevision) {
+    if ((wire['server_revision'] as int) < minimumRevision ||
+        (wire['ruleset_revision'] as int) < minimumRulesetRevision) {
       throw const CanonicalGameException('game_snapshot_stale');
     }
     final data = _map(wire['data']);
@@ -142,6 +148,7 @@ class CanonicalGameSnapshot {
       serverRevision == other.serverRevision &&
       stateHash == other.stateHash &&
       rulesetHash == other.rulesetHash &&
+      rulesetRevision == other.rulesetRevision &&
       jsonEncode(data) == jsonEncode(other.data);
 }
 

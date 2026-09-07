@@ -25,7 +25,8 @@ try {
   $applied = @(Compare-Object $actual @($expected + '202609070052')).Count -eq 0 -or
     @(Compare-Object $actual @($expected + @('202609070052','202609070053'))).Count -eq 0 -or
     @(Compare-Object $actual @($expected + @('202609070052','202609070053','202609070054'))).Count -eq 0 -or
-    @(Compare-Object $actual @($expected + @('202609070052','202609070053','202609070054','202609070055'))).Count -eq 0
+    @(Compare-Object $actual @($expected + @('202609070052','202609070053','202609070054','202609070055'))).Count -eq 0 -or
+    @(Compare-Object $actual @($expected + @('202609070052','202609070053','202609070054','202609070055','202609070056'))).Count -eq 0
   if (-not $applied -and @(Compare-Object $actual $expected).Count -ne 0) {
     throw 'game_contract_baseline_mismatch'
   }

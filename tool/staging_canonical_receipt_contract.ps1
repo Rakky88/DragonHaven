@@ -19,7 +19,8 @@ try {
   $expected = @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot '../supabase/migrations') -Filter '*.sql' |
     ForEach-Object { $_.BaseName.Split('_')[0] } | Where-Object { [long]$_ -le 202609070054 } | Sort-Object)
   $actual = @($history | ForEach-Object { [string]$_.version } | Sort-Object)
-  $applied = @(Compare-Object $actual @($expected + '202609070055')).Count -eq 0
+  $applied = @(Compare-Object $actual @($expected + '202609070055')).Count -eq 0 -or
+    @(Compare-Object $actual @($expected + @('202609070055','202609070056'))).Count -eq 0
   if (-not $applied -and @(Compare-Object $actual $expected).Count -ne 0) { throw 'receipt_contract_baseline_mismatch' }
   $migration = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../supabase/migrations/202609070055_canonical_receipt_recovery.sql') -Raw -Encoding utf8
   $contract = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'canonical_receipt_contract.sql') -Raw -Encoding utf8

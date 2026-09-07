@@ -18,6 +18,7 @@ Map<String, dynamic> _wire({int revision = 5}) => jsonDecode(jsonEncode({
       'server_revision': revision,
       'state_sha256': 'ab' * 32,
       'ruleset_sha256': 'cd' * 32,
+      'ruleset_revision': 2,
       'authority_mode': 'shadow',
       'mutations_enabled': false,
       'server_time': '2026-09-07T12:00:00Z',
@@ -125,6 +126,8 @@ void main() {
     expect(requests.single,
         {'protocol': 2, 'clientBuild': 10068, 'action': 'read_state'});
     await expectLater(reader.fetch(_owner, minimumRevision: 6),
+        _error('game_snapshot_stale'));
+    await expectLater(reader.fetch(_owner, minimumRulesetRevision: 3),
         _error('game_snapshot_stale'));
   });
 
@@ -255,6 +258,52 @@ void main() {
           store.inspect('../somebody-else'), _error('game_snapshot_invalid'));
       expect((await store.inspect(_owner)).snapshot!.coins,
           _data['wallet']['coins']);
+    });
+
+    test(
+        'a new ruleset can update an unchanged game, and delayed old rules cannot replace it',
+        () async {
+      await store.persistFresh(_parse(_wire()));
+      final upgraded = _wire()
+        ..['ruleset_revision'] = 3
+        ..['ruleset_sha256'] = 'ef' * 32;
+      upgraded['data']['eggs'][0]['hints']['en'] = 'Updated clue presentation';
+      await store.persistFresh(_parse(upgraded));
+      final current = await store.inspect(_owner);
+      expect(current.minimumRevision, 5);
+      expect(current.minimumRulesetRevision, 3);
+      expect(
+          current.snapshot!.eggs.first.hint('en'), 'Updated clue presentation');
+      await expectLater(
+          store.persistFresh(_parse(_wire())), _error('game_snapshot_stale'));
+      await expectLater(store.persistFresh(_parse(_wire(revision: 6))),
+          _error('game_snapshot_stale'));
+      final invalidHash = _wire(revision: 6)
+        ..['ruleset_revision'] = 3
+        ..['ruleset_sha256'] = '12' * 32;
+      await expectLater(store.persistFresh(_parse(invalidHash)),
+          _error('game_snapshot_conflict'));
+    });
+
+    test('an interrupted rules-only update preserves its independent minimum',
+        () async {
+      await store.persistFresh(_parse(_wire()));
+      final upgraded = _wire()
+        ..['ruleset_revision'] = 3
+        ..['ruleset_sha256'] = 'ef' * 32;
+      final obstruction = Directory(file('.json.tmp').path);
+      await obstruction.create();
+      await expectLater(store.persistFresh(_parse(upgraded)),
+          throwsA(isA<FileSystemException>()));
+      final broken = await store.inspect(_owner);
+      expect(broken.snapshot, isNull);
+      expect(broken.minimumRulesetRevision, 3);
+      expect(broken.minimumRevision, 5);
+      await obstruction.delete();
+      await expectLater(
+          store.persistFresh(_parse(_wire())), _error('game_snapshot_stale'));
+      await store.persistFresh(_parse(upgraded));
+      expect((await store.inspect(_owner)).snapshot!.rulesetRevision, 3);
     });
   });
 }

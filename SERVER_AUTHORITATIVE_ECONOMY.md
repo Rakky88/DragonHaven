@@ -60,6 +60,13 @@ Seven SDK-backed local tests cover authorization, ownership, ABA account changes
 closed stalled connections, response limits and durable refusal status. It has
 no service credentials and cannot target production. Main/UI wiring is pending.
 
+Local migration 56 adds a monotonic ruleset revision to public observations.
+Changing compiled rules increments it; pausing mutations or a no-op does not.
+The client journals both game and ruleset revision floors, so a new projection
+can replace the same game revision after an upgrade, and a delayed old worker
+cannot undo that update. Sixteen snapshot tests include partial rules-only writes
+and delayed downgrade refusal. Staging 56 rehearsal/application is pending.
+
 ### Shared rules candidate
 
 `GameCommandEngine` now evaluates catalog purchases, bounded chest openings,

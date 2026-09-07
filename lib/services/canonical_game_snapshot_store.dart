@@ -6,11 +6,12 @@ import 'package:crypto/crypto.dart';
 import 'canonical_game_snapshot.dart';
 
 class CanonicalGameCache {
-  const CanonicalGameCache(
-      this.snapshot, this.minimumRevision, this.needsRepair);
+  const CanonicalGameCache(this.snapshot, this.minimumRevision,
+      this.needsRepair, this.minimumRulesetRevision);
   final CanonicalGameSnapshot? snapshot;
   final int minimumRevision;
   final bool needsRepair;
+  final int minimumRulesetRevision;
 }
 
 /// Account-private display journal, outside cloud restores. The small revision
@@ -69,7 +70,12 @@ class CanonicalGameSnapshotStore {
     try {
       fence = await _read(_fenceFile(owner), 4096);
       if (fence != null &&
-          (fence.length != 4 ||
+          ((!((fence.length == 4 && !fence.containsKey('rulesetRevision')) ||
+                  (fence.length == 5 &&
+                      fence['rulesetRevision'] is int &&
+                      (fence['rulesetRevision'] as int) > 0 &&
+                      (fence['rulesetRevision'] as int) <=
+                          9007199254740991))) ||
               fence['owner'] != owner ||
               fence['revision'] is! int ||
               (fence['revision'] as int) < 1 ||
@@ -96,14 +102,20 @@ class CanonicalGameSnapshotStore {
     final snapshotRevision = snapshot?.serverRevision ?? 0;
     final minimum =
         fenceRevision > snapshotRevision ? fenceRevision : snapshotRevision;
+    final fenceRules = fence?['rulesetRevision'] as int? ?? 0;
+    final snapshotRules = snapshot?.rulesetRevision ?? 0;
+    final minimumRules =
+        fenceRules > snapshotRules ? fenceRules : snapshotRules;
     if (fenceRevision != snapshotRevision ||
+        fenceRules != snapshotRules ||
         snapshot != null &&
             (fence?['stateHash'] != snapshot.stateHash ||
                 fence?['rulesetHash'] != snapshot.rulesetHash)) {
       corrupt = true;
     }
     return _Observation(
-        CanonicalGameCache(corrupt ? null : snapshot, minimum, corrupt),
+        CanonicalGameCache(
+            corrupt ? null : snapshot, minimum, corrupt, minimumRules),
         fence,
         snapshot);
   }
@@ -117,16 +129,22 @@ class CanonicalGameSnapshotStore {
   Future<void> persistFresh(CanonicalGameSnapshot snapshot) =>
       _serial(snapshot.ownerId, () async {
         final previous = await _inspect(snapshot.ownerId);
-        if (snapshot.serverRevision < previous.cache.minimumRevision) {
+        if (snapshot.serverRevision < previous.cache.minimumRevision ||
+            snapshot.rulesetRevision < previous.cache.minimumRulesetRevision) {
           throw const CanonicalGameException('game_snapshot_stale');
         }
         final fence = previous.fence;
         if (fence?['revision'] == snapshot.serverRevision &&
-            (fence?['stateHash'] != snapshot.stateHash ||
-                fence?['rulesetHash'] != snapshot.rulesetHash)) {
+                fence?['stateHash'] != snapshot.stateHash ||
+            fence?['rulesetRevision'] == snapshot.rulesetRevision &&
+                fence?['rulesetHash'] != snapshot.rulesetHash) {
           throw const CanonicalGameException('game_snapshot_conflict');
         }
+        // A newer compiled projection may legitimately change display fields
+        // without changing game state. The independent rules revision orders
+        // that update and rejects delayed responses from the previous worker.
         if (previous.snapshot?.serverRevision == snapshot.serverRevision &&
+            previous.snapshot?.rulesetRevision == snapshot.rulesetRevision &&
             !previous.snapshot!.hasSameState(snapshot)) {
           throw const CanonicalGameException('game_snapshot_conflict');
         }
@@ -136,6 +154,7 @@ class CanonicalGameSnapshotStore {
           'revision': snapshot.serverRevision,
           'stateHash': snapshot.stateHash,
           'rulesetHash': snapshot.rulesetHash,
+          'rulesetRevision': snapshot.rulesetRevision,
         });
         await _write(_snapshotFile(snapshot.ownerId), snapshot.toJson());
       });

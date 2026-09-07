@@ -188,6 +188,8 @@ def main():
         status, initial_view = read_state()
         require(status == 200 and initial_view.get("server_revision") == 1 + revision_offset
                 and initial_view.get("authority_mode") == "shadow", "probe_initial_read_failed")
+        require(type(initial_view.get('ruleset_revision')) is int and initial_view['ruleset_revision'] > 0,
+                'probe_ruleset_revision_missing')
         for egg in initial_view['data']['eggs']:
             require(egg.get('lineageId') is None and 'hatchSeed' not in egg and 'spectral' not in egg,
                     'probe_read_hidden_egg_exposed')
@@ -232,6 +234,7 @@ def main():
         status, paused_view = read_state()
         require(status == 200 and paused_view.get('mutations_enabled') is False
                 and paused_view.get('server_revision') == renamed['server_revision'], 'probe_paused_read_failed')
+        require(paused_view.get('ruleset_revision') == initial_view['ruleset_revision'], 'probe_pause_changed_ruleset')
         require(all(e['id'] != egg_id for e in paused_view['data']['eggs']), 'probe_read_resurrected_egg')
         require(next(d for d in paused_view['data']['dragons'] if d['id'] == fixture['pet']['id'])['name']
                 == 'Probe Weaver', 'probe_read_rename_missing')

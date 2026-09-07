@@ -47,6 +47,7 @@ function setup(overrides: Partial<Dependencies> = {}) {
 
 const readBody = { protocol: 2, clientBuild: 10068, action: "read_state" };
 const readSnapshot = { owner_id: owner, server_revision: 3, state_sha256: hash,
+  ruleset_revision: 2,
   authority_mode: "shadow", server_time: "2026-09-07T12:00:00Z", mutations_enabled: false,
   state: { private: "hidden egg identity", seed: "NEVER_RETURN" } };
 const publicData = { projectionVersion: 1, activeDragonId: null, wallet: { coins: 25, gems: 3 },

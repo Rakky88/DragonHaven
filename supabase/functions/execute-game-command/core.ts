@@ -214,6 +214,7 @@ async function readState(owner: string, clientBuild: number, deps: Dependencies)
     });
     if (!object(snapshot) || snapshot.owner_id !== owner ||
       !positiveInteger(snapshot.server_revision) || typeof snapshot.state_sha256 !== "string" ||
+      !positiveInteger(snapshot.ruleset_revision) ||
       !hash.test(snapshot.state_sha256) || snapshot.authority_mode !== "shadow" ||
       typeof snapshot.mutations_enabled !== "boolean" || !object(snapshot.state) ||
       typeof snapshot.server_time !== "string" || !Number.isFinite(Date.parse(snapshot.server_time))) {
@@ -231,6 +232,7 @@ async function readState(owner: string, clientBuild: number, deps: Dependencies)
     }
     return response({ protocol: 2, owner_id: owner, server_revision: snapshot.server_revision,
       state_sha256: snapshot.state_sha256, ruleset_sha256: deps.ruleset,
+      ruleset_revision: snapshot.ruleset_revision,
       authority_mode: "shadow", mutations_enabled: snapshot.mutations_enabled,
       server_time: snapshot.server_time, data });
   } catch (failure) {

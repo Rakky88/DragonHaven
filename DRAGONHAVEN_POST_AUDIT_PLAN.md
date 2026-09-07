@@ -36,6 +36,12 @@ en het sluiten van vastgelopen verbindingen. Productie blijft op 49.
 Herstel wanneer beide verzoekkopieën
 beschadigd zijn en de daadwerkelijke appschermen blijven open werk.
 
+Lokale vervolgstap 56 ordent leesweergaven ook over spelregelupdates heen.
+De spelrevisie en spelregelrevisie worden afzonderlijk bewaakt en opgeslagen;
+een nieuwe weergave mag dezelfde inventaris vervangen, een laat oud antwoord
+mag dat niet terugdraaien. Zestien snapshotproeven slagen, inclusief een
+onderbroken update waarbij alleen de spelregels wijzigen. Stagingbewijs volgt.
+
 Productie- en staging-Firebase zijn ingericht zonder billingaccount. Staging
 gebruikt `dragonhaven-prod-rakky88` met weergavenaam DragonHaven Staging.
 De Android-koppeling, privacyarme Crashlytics/Performance-reporter, account- en

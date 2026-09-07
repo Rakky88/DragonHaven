@@ -28,6 +28,7 @@ Map<String, dynamic> _wire({int revision = 6}) => jsonDecode(jsonEncode({
       'server_revision': revision,
       'state_sha256': 'ab' * 32,
       'ruleset_sha256': 'cd' * 32,
+      'ruleset_revision': 2,
       'authority_mode': 'shadow',
       'mutations_enabled': false,
       'server_time': '2026-09-07T12:00:00Z',

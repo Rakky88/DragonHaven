@@ -167,7 +167,9 @@ class CanonicalGameReconciler {
       receipt.serverRevision,
       cached.minimumRevision
     ].reduce((a, b) => a > b ? a : b);
-    final snapshot = await reader.fetch(owner, minimumRevision: minimum);
+    final snapshot = await reader.fetch(owner,
+        minimumRevision: minimum,
+        minimumRulesetRevision: cached.minimumRulesetRevision);
     requireSession();
     if (receipt.stateHash != null &&
         snapshot.serverRevision == receipt.serverRevision &&
