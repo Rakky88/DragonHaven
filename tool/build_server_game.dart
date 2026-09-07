@@ -41,6 +41,12 @@ export async function evaluate(input: Record<string, unknown>): Promise<unknown>
   };
   return JSON.parse(await domain.dragonhavenGameCommand(JSON.stringify(input)));
 }
+export function project(input: Record<string, unknown>): unknown {
+  const domain = globalThis as unknown as {
+    dragonhavenProjectGame: (value: string) => string;
+  };
+  return JSON.parse(domain.dragonhavenProjectGame(JSON.stringify(input)));
+}
 ''');
   stdout.writeln(jsonEncode(
       {'protocol': 2, 'rulesetSha256': digest, 'bundleBytes': bytes.length}));

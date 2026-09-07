@@ -9,6 +9,21 @@ Staging runs `34110497546`, `34110676557` and `34111166461` passed rollback cont
 
 ## Work in progress: durable client reconciliation (7 September 2026)
 
+### Public display projection candidate
+
+Migration 54 adds a service-only private read for the authenticated Edge worker.
+It requires a prepared import and matching build/ruleset, but permits reads
+while mutations are paused. The worker returns only the explicit Dart display
+projection, owner, revision and `shadow` authority. No live client applies it yet.
+The eight projection tests cover Lens versus Oracle, hidden alignment and Soul
+Mirror personality, nest/hatch transitions, Special/Sinister appearance and
+protection, trade animation payloads, future metadata, and preselected adventure
+rewards. Twelve worker tests cover commands and authenticated reads. VM/Deno
+parity now includes projections before and after hatching. Staging 54 deployment
+and its real paused-read proof are pending; production remains schema 49.
+Full client routing, durable application, verified trial transcripts, timezone
+rules, normalized social/trade settlement and production cutover remain open.
+
 ### Shared rules candidate
 
 `GameCommandEngine` now evaluates catalog purchases, bounded chest openings,

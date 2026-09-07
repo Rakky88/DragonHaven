@@ -9,6 +9,14 @@ Rick heeft de volledige servereconomie expliciet toegevoegd aan de scope en
 zelf Firebase-project `dragonhaven-20ced` aangemaakt. Nieuwe werkbranch:
 `feature/free-monitoring-and-growth`; dit is nog geen nieuwe apprelease.
 
+Lokale vervolgstap: migratie 54 en een expliciete leesweergave voor de app.
+Onbekende ei-genetica, seeds, toekomstige savevelden en verborgen inhoud in
+handelsanimaties blijven privé. Lens, Oracle en Soul Mirror onthullen alleen
+de verdiende informatie; leesacties veranderen geen beloningen of timers.
+Acht projectietests en twaalf Edge-routetests slagen. De stagingrepetitie en
+echte controle bij uitgezette mutaties volgen; de volledige appkoppeling en
+live-overgang zijn nog niet gereed.
+
 Productie- en staging-Firebase zijn ingericht zonder billingaccount. Staging
 gebruikt `dragonhaven-prod-rakky88` met weergavenaam DragonHaven Staging.
 De Android-koppeling, privacyarme Crashlytics/Performance-reporter, account- en

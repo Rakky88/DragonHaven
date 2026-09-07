@@ -12,6 +12,7 @@ export interface Dependencies {
   authenticate: (authorization: string) => Promise<string | null>;
   rpc: (name: string, payload: JsonObject) => Promise<unknown>;
   evaluate: (input: JsonObject) => Promise<unknown>;
+  project?: (input: JsonObject) => unknown;
 }
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -47,6 +48,7 @@ export const domainErrors = new Set([
 const databaseErrors = new Map<string, number>([
   ["game_engine_disabled", 503], ["game_client_upgrade_required", 426],
   ["game_ruleset_mismatch", 503], ["game_import_required", 409],
+  ["game_import_preparation_required", 409],
   ["game_idempotency_conflict", 409], ["game_pending_ruleset_changed", 409],
   ["game_command_busy", 409], ["game_revision_conflict", 409],
   ["game_pending_command_required", 409], ["game_lease_lost", 409],
@@ -125,8 +127,7 @@ function receipt(value: unknown, owner: string, command: Command): JsonObject {
     !Object.hasOwn(value, "result") || encoder.encode(JSON.stringify(value.result)).length > 30000) {
     throw new Error("invalid_receipt");
   }
-  // Shadow results must never be applied to a live game. There is deliberately
-  // no public snapshot here until hidden egg projection and cutover are built.
+  // Shadow results and projections must never be applied to a live game.
   return { protocol: 2, owner_id: owner, request_id: command.requestId,
     server_revision: value.server_revision, state_sha256: value.state_sha256,
     authority_mode: "shadow", result: value.result };
@@ -143,8 +144,17 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
   catch { return error("game_auth_unavailable", 503); }
   if (owner === null || !uuid.test(owner)) return error("game_login_required", 401);
   let command: Command | null;
-  try { command = parseCommand(await boundedJson(request.body, 8192)); }
+  let input: unknown;
+  try { input = await boundedJson(request.body, 8192); }
   catch { return error("game_request_invalid", 400); }
+  if (object(input) && input.action === "read_state") {
+    if (!exactKeys(input, ["protocol", "clientBuild", "action"]) || input.protocol !== 2 ||
+      !positiveInteger(input.clientBuild) || input.clientBuild > 2147483647) {
+      return error("game_request_invalid", 400);
+    }
+    return readState(owner, input.clientBuild, deps);
+  }
+  command = parseCommand(input);
   if (!command) return error("game_request_invalid", 400);
 
   try {
@@ -193,5 +203,40 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
     // A timeout may have happened after commit. Never mark that intent failed
     // or invent a new request; retrying the same UUID recovers its receipt.
     return error("game_command_unavailable", 503);
+  }
+}
+
+async function readState(owner: string, clientBuild: number, deps: Dependencies): Promise<Response> {
+  try {
+    if (!deps.project) throw new Error("projection_missing");
+    const snapshot = await deps.rpc("read_canonical_game_state", {
+      p_owner_id: owner, p_client_build: clientBuild, p_ruleset_sha256: deps.ruleset,
+    });
+    if (!object(snapshot) || snapshot.owner_id !== owner ||
+      !positiveInteger(snapshot.server_revision) || typeof snapshot.state_sha256 !== "string" ||
+      !hash.test(snapshot.state_sha256) || snapshot.authority_mode !== "shadow" ||
+      typeof snapshot.mutations_enabled !== "boolean" || !object(snapshot.state) ||
+      typeof snapshot.server_time !== "string" || !Number.isFinite(Date.parse(snapshot.server_time))) {
+      throw new Error("invalid_snapshot");
+    }
+    const data = deps.project({ state: snapshot.state, ownerId: owner, now: snapshot.server_time });
+    if (object(data) && data.error === "game_state_reconciliation_required") {
+      return error("game_state_reconciliation_required", 409);
+    }
+    if (!object(data) || data.projectionVersion !== 1 ||
+      !exactKeys(data, ["projectionVersion", "activeDragonId", "wallet", "eggs", "dragons", "inventory",
+        "collection", "house", "progress", "adventures", "trials", "presentations", "activities"]) ||
+      encoder.encode(JSON.stringify(data)).length > 8 * 1024 * 1024) {
+      throw new Error("invalid_projection");
+    }
+    return response({ protocol: 2, owner_id: owner, server_revision: snapshot.server_revision,
+      state_sha256: snapshot.state_sha256, ruleset_sha256: deps.ruleset,
+      authority_mode: "shadow", mutations_enabled: snapshot.mutations_enabled,
+      server_time: snapshot.server_time, data });
+  } catch (failure) {
+    if (failure instanceof RpcFailure && databaseErrors.has(failure.code)) {
+      return error(failure.code, databaseErrors.get(failure.code)!);
+    }
+    return error("game_snapshot_unavailable", 503);
   }
 }

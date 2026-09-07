@@ -45,6 +45,63 @@ function setup(overrides: Partial<Dependencies> = {}) {
   return { deps, calls, inputs };
 }
 
+const readBody = { protocol: 2, clientBuild: 10068, action: "read_state" };
+const readSnapshot = { owner_id: owner, server_revision: 3, state_sha256: hash,
+  authority_mode: "shadow", server_time: "2026-09-07T12:00:00Z", mutations_enabled: false,
+  state: { private: "hidden egg identity", seed: "NEVER_RETURN" } };
+const publicData = { projectionVersion: 1, activeDragonId: null, wallet: { coins: 25, gems: 3 },
+  eggs: [], dragons: [], inventory: {}, collection: {}, house: {}, progress: {},
+  adventures: {}, trials: {}, presentations: [], activities: [] };
+
+Deno.test("read uses Auth owner and public projection while mutations are disabled", async () => {
+  const calls: string[] = [];
+  const { deps } = setup({
+    rpc: async (name, payload) => {
+      calls.push(name);
+      equal(payload, { p_owner_id: owner, p_client_build: 10068, p_ruleset_sha256: hash });
+      return readSnapshot;
+    },
+    project: (input) => {
+      equal(input, { state: readSnapshot.state, ownerId: owner, now: readSnapshot.server_time });
+      return publicData;
+    },
+    evaluate: () => { throw new Error("a read cannot evaluate commands"); },
+  });
+  const result = await handleCommand(request(readBody), deps);
+  assert(result.status === 200 && result.headers.get("cache-control") === "no-store");
+  const text = await result.text();
+  assert(!text.includes("NEVER_RETURN") && !text.includes("hidden egg identity"));
+  const value = JSON.parse(text);
+  equal(value.data, publicData);
+  assert(value.mutations_enabled === false && value.authority_mode === "shadow");
+  equal(calls, ["read_canonical_game_state"]);
+});
+
+Deno.test("read rejects client state, owner, time, entropy and a cross-owner snapshot", async () => {
+  for (const extra of [{ ownerId: other }, { state: {} }, { now: leased.now }, { secretSeed: hash }]) {
+    const { deps, calls } = setup();
+    assert((await handleCommand(request({ ...readBody, ...extra }), deps)).status === 400);
+    equal(calls, []);
+  }
+  let projections = 0;
+  const { deps } = setup({ rpc: async () => ({ ...readSnapshot, owner_id: other }),
+    project: () => { projections++; return publicData; } });
+  assert((await handleCommand(request(readBody), deps)).status === 503);
+  assert(projections === 0);
+});
+
+Deno.test("read cannot pass through raw saves or unclassified projection failures", async () => {
+  for (const projection of [{ ...publicData, private: "NEVER_RETURN" }, readSnapshot.state,
+    { error: "NEVER_RETURN" }]) {
+    const { deps } = setup({ rpc: async () => readSnapshot, project: () => projection });
+    const result = await handleCommand(request(readBody), deps);
+    assert(result.status === 503 && !(await result.text()).includes("NEVER_RETURN"));
+  }
+  const { deps } = setup({ rpc: async () => readSnapshot,
+    project: () => ({ error: "game_state_reconciliation_required" }) });
+  assert((await handleCommand(request(readBody), deps)).status === 409);
+});
+
 Deno.test("a command uses authenticated owner and private lease inputs, and returns only the receipt", async () => {
   const { deps, calls, inputs } = setup();
   const result = await handleCommand(request(), deps);

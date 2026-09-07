@@ -1,5 +1,6 @@
 import 'package:dragon_haven/domain/server_entropy.dart';
 import 'package:dragon_haven/domain/game_command_engine.dart';
+import 'package:dragon_haven/domain/game_public_projection.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
@@ -66,6 +67,13 @@ Future<Map<String, dynamic>> runGameDomainProbe() async {
       'purchase': purchase.name,
       'state': state,
       'commands': [refreshed, activated, early, hatched],
+      'projections': [
+        for (final value in [refreshed, activated, early, hatched])
+          GamePublicProjection.project(
+              state: value['state'],
+              now: now,
+              ownerId: '11111111-1111-4111-8111-111111111111'),
+      ],
       'entropy': List.generate(8, (_) => commandIds.nextInt(4294967296)),
     };
   } finally {

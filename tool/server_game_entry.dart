@@ -3,6 +3,7 @@ import 'dart:js_interop';
 
 import 'package:dragon_haven/domain/game_command_engine.dart';
 import 'package:dragon_haven/domain/game_import_preparation.dart';
+import 'package:dragon_haven/domain/game_public_projection.dart';
 
 @JS('dragonhavenGameCommand')
 external set _command(JSFunction value);
@@ -10,11 +11,28 @@ external set _command(JSFunction value);
 @JS('dragonhavenPrepareGameImport')
 external set _prepareImport(JSFunction value);
 
+@JS('dragonhavenProjectGame')
+external set _projectGame(JSFunction value);
+
 /// Loaded only inside the trusted Edge worker. There is no network listener
 /// here and no public path accepting a saved game, entropy seed or clock.
 void main() {
   _command = ((JSString input) => _execute(input.toDart).toJS).toJS;
   _prepareImport = ((JSString input) => _prepare(input.toDart).toJS).toJS;
+  _projectGame = ((JSString input) => _project(input.toDart).toJS).toJS;
+}
+
+String _project(String input) {
+  final data = jsonDecode(input) as Map<String, dynamic>;
+  try {
+    return jsonEncode(GamePublicProjection.project(
+      state: data['state'] as Map<String, dynamic>,
+      ownerId: data['ownerId'] as String,
+      now: DateTime.parse(data['now'] as String),
+    ));
+  } on FormatException {
+    return jsonEncode({'error': 'game_state_reconciliation_required'});
+  }
 }
 
 String _prepare(String input) {

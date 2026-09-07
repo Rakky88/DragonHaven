@@ -18,6 +18,7 @@ const specialContentReference = ReferenceDocumentSpec(
     'lib/domain/game_asset_snapshot.dart',
     'lib/domain/game_state_envelope.dart',
     'lib/domain/game_import_preparation.dart',
+    'lib/domain/game_public_projection.dart',
     'supabase/migrations/202609070052_canonical_game_commands.sql',
     'supabase/migrations/202609070053_canonical_import_preparation.sql',
     'lib/models/achievement.dart',

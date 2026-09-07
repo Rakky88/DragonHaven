@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: 16c73b5b435711ae -->
+<!-- reference-source-fingerprint: ee59226cae93c093 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -17,6 +17,13 @@ codes are maintained in [REDEEM_CODES.md](REDEEM_CODES.md) and must never be
 copied into public release notes.
 
 ## 1. Content ownership model
+
+The authenticated server display projection preserves Special Egg catalog art
+and Sinister/Special protection, but omits unrevealed lineage, spectral roll,
+alignment, size, personality and hatch seed. An Astral Lens reveals rarity;
+the Weave Oracle additionally reveals lineage. Nest and historical trade
+presentations use the same projection. Hatching reveals the dragon's appearance;
+personality still requires its existing reveal. No content odds or rewards change.
 
 The local server-domain candidate now calls the same Dart rules for opening
 event chests, incubating/hatching eggs and claiming solo Special Adventures.

@@ -177,6 +177,22 @@ def main():
                 headers["Authorization"] = "Bearer " + bearer
             return call(BASE + "/functions/v1/execute-game-command", headers, request_body)
 
+        def read_state(bearer=token, extra=None):
+            request_body = {"protocol": 2, "clientBuild": 10068, "action": "read_state"}
+            request_body.update(extra or {})
+            return call(BASE + "/functions/v1/execute-game-command",
+                        {"apikey": PUBLIC_KEY, "Authorization": "Bearer " + bearer}, request_body)
+
+        require(read_state(outsider_token)[0] == 409, "probe_read_outsider_accepted")
+        require(read_state(extra={"ownerId": outsider})[0] == 400, "probe_read_owner_injection_accepted")
+        status, initial_view = read_state()
+        require(status == 200 and initial_view.get("server_revision") == 1 + revision_offset
+                and initial_view.get("authority_mode") == "shadow", "probe_initial_read_failed")
+        for egg in initial_view['data']['eggs']:
+            require(egg.get('lineageId') is None and 'hatchSeed' not in egg and 'spectral' not in egg,
+                    'probe_read_hidden_egg_exposed')
+        require('hatchSeed' not in json.dumps(initial_view['data']), 'probe_read_seed_exposed')
+
         require(command("refresh", bearer="")[0] == 401, "probe_anonymous_accepted")
         status, denied = command("refresh", bearer=outsider_token)
         require(status == 409 and denied.get("error") == "game_import_required", "probe_outsider_accepted")
@@ -212,6 +228,13 @@ def main():
         require(command("craft_altar_relic", {"relic": "nameweaversQuill"})[0] == 200, "probe_craft_failed")
         status, renamed = command("name_dragon", {"dragonId": fixture["pet"]["id"], "name": "Probe Weaver"})
         require(status == 200 and renamed.get("result") is True, "probe_rename_failed")
+        query("update private.game_engine_runtime set enabled=false where singleton")
+        status, paused_view = read_state()
+        require(status == 200 and paused_view.get('mutations_enabled') is False
+                and paused_view.get('server_revision') == renamed['server_revision'], 'probe_paused_read_failed')
+        require(all(e['id'] != egg_id for e in paused_view['data']['eggs']), 'probe_read_resurrected_egg')
+        require(next(d for d in paused_view['data']['dragons'] if d['id'] == fixture['pet']['id'])['name']
+                == 'Probe Weaver', 'probe_read_rename_missing')
         final = query(f"""select c.state->'pet'->>'coins' as coins, c.state->'chestInventory'->>'title' as titles,
           c.state->'chestInventory'->>'wooden' as wooden,
           c.state->'eggAltar'->'wallet' as altar_wallet, c.state->'eggAltar'->'crafted' as crafted,
@@ -241,6 +264,7 @@ def main():
         print("PASS: real Auth/Edge/Dart/Postgres; purchases, concurrent chest replay, tags, Sinister return and quill; live save/wallet unchanged.", flush=True)
         if prepare_import:
             print("PASS: captured authoritative Altar prepared and replayed before game commands; no migration reward grant.", flush=True)
+        print("PASS: authenticated public projection hides egg genetics, reflects committed actions and reads while mutations are paused.", flush=True)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"
         # The immutable run marker also finds an account whose admin-create
