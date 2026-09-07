@@ -654,7 +654,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
         completedLocalAdventureCount + completedGroupAdventureCount;
     final eggOnly = game.pet.isEgg;
     final screens = <Widget>[
-      FriendsScreen(active: _index == 2),
+      FriendsScreen(active: _index == 0),
       AdventureHubScreen(
         initialTab: _adventureInitialTab,
         navigationRevision: _adventureNavigationRevision,

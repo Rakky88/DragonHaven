@@ -213,6 +213,81 @@ void main() {
     online.dispose();
   });
 
+  testWidgets('shell navigation clears Conclave badge at the newest messages',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final game = HouseholdProvider(random: Random(7))
+      ..accountName = 'Rick'
+      ..onboardingComplete = true
+      ..tutorialCompleted = true;
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Ember';
+    game.loadWeaveBeacon = (_) async => {'fragments': 0};
+    final now = DateTime.now().subtract(const Duration(minutes: 1));
+    final messages = List.generate(40, (i) => badgeMessage('message-$i', now));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..conclaveSnapshot = unreadSnapshot(messages);
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+    Future<void> pumpNavigation() async {
+      for (var frame = 0; frame < 8; frame++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    await tester.pumpWidget(MultiProvider(providers: [
+      ChangeNotifierProvider.value(value: game),
+      ChangeNotifierProvider.value(value: online),
+    ], child: const DragonHavenApp()));
+    await tester.pump(const Duration(milliseconds: 450));
+    await tester.tap(find.byKey(const Key('tutorial-nav-friends')));
+    await pumpNavigation();
+    expect(online.unreadConclaveMessageCount, 40);
+    await tester.tap(find.byKey(const Key('conclave-tab')));
+    await pumpNavigation();
+    expect(online.unreadConclaveMessageCount, 0);
+
+    final chat = find.byKey(const Key('conclave-chat-list'));
+    await tester.drag(chat, const Offset(0, 200));
+    await pumpNavigation();
+    expect(tester.widget<ListView>(chat).controller!.offset, greaterThan(72));
+    repository.conclaveSnapshot =
+        unreadSnapshot([...messages, badgeMessage('newest', now)]);
+    await online.refreshConclave();
+    await pumpNavigation();
+    expect(online.unreadConclaveMessageCount, 1);
+    await tester.drag(chat, const Offset(0, -1000));
+    await pumpNavigation();
+    expect(online.unreadConclaveMessageCount, 0);
+    expect(
+        tester
+            .widget<Badge>(find.byKey(const Key('conclave-unread-badge')))
+            .isLabelVisible,
+        isFalse);
+
+    // The mounted chat must not mark new messages while the Tower is visible.
+    await tester.tap(find.byKey(const Key('tutorial-nav-tower')));
+    await pumpNavigation();
+    repository.conclaveSnapshot = unreadSnapshot([
+      ...messages,
+      badgeMessage('newest', now),
+      badgeMessage('while-away', now),
+    ]);
+    await online.refreshConclave();
+    await pumpNavigation();
+    expect(online.unreadConclaveMessageCount, 1);
+    await tester.tap(find.byKey(const Key('tutorial-nav-friends')));
+    await pumpNavigation();
+    expect(online.unreadConclaveMessageCount, 0);
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+  });
+
   testWidgets('keeper portraits preserve their complete circular artwork',
       (tester) async {
     await tester.pumpWidget(
