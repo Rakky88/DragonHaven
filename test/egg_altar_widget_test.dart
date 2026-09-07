@@ -189,11 +189,14 @@ void main() {
     await capture(tester, 'selected');
     final tag = find.byKey(const Key('egg-tag-sinister'));
     await tester.ensureVisible(tag);
+    await tester.pump();
     await tester.tap(tag);
     await settle(tester);
     expect(g.isEggTagged('sinister'), isTrue);
     expect(tester.widget<HoldToReturn>(find.byType(HoldToReturn)).enabled,
         isFalse);
+    await tester.ensureVisible(tag);
+    await tester.pump();
     await tester.tap(tag);
     await settle(tester);
     expect(

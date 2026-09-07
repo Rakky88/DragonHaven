@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: c79c1a34da61a076 -->
+<!-- reference-source-fingerprint: 3726c99b5b555668 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -358,3 +358,5 @@ production economy authority flags remain unchanged. Migration 46 blocks legacy
 inventory synchronization/import for a future server-owned account, while legacy
 accounts keep their existing behavior. End-to-end cutover, instance conversion,
 server egg lifecycle and client reconciliation remain separate audit work.
+
+Release v0.05.17: the compact seasonal HUD scales its phase icons within the available width; Altar tag/details actions wrap when text needs more space. Trial rules and rewards are unchanged.

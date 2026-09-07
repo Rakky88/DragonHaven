@@ -978,9 +978,15 @@ class _SeasonalHud extends StatelessWidget {
                           ),
                           const SizedBox(width: 5),
                         ],
-                        _SeasonalPhaseTrail(
-                          theme: theme,
-                          phase: phase,
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: _SeasonalPhaseTrail(
+                              theme: theme,
+                              phase: phase,
+                            ),
+                          ),
                         ),
                       ],
                     );

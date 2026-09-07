@@ -164,8 +164,13 @@ void main() {
         findsNothing);
     expect(find.byKey(const Key('open-trial-rankings')), findsOneWidget);
     expect(find.byKey(const Key('trial-streak-card')), findsOneWidget);
-    expect(tester.getBottomRight(find.byKey(const Key('trial-streak-card'))).dy,
-        lessThan(320));
+    // Measure the compact block itself; the surrounding Adventure heading can
+    // wrap differently with the test font or a player's language/text scale.
+    final summaryTop =
+        tester.getTopLeft(find.byKey(const Key('trial-summary-card'))).dy;
+    final streakBottom =
+        tester.getBottomRight(find.byKey(const Key('trial-streak-card'))).dy;
+    expect(streakBottom - summaryTop, lessThan(200));
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     game.dispose();

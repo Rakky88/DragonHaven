@@ -9,7 +9,11 @@ De nieuwste Altar- en Trialverbeteringen worden gebundeld in v0.05.17.
 Alle versiebronnen en updatercontroles zijn met precies een stap verhoogd.
 Productiemigraties 45-47 gebruiken exact de op staging geteste SQL: eerst een
 teruggerolde repetitie van de chest-, winkel- en bestaande Altar-contracten,
-dan toepassing en volledige pariteit/lint/health. De globale economyfunctie
+dan toepassing en volledige pariteit/lint/health. Productierun `34116589237`
+is volledig groen: 47/47 migraties, nul lintfouten, drie teruggerolde contracten
+en Auth-/apphealth 200. Voor en na de uitrol is bewezen: `mutations_enabled=false`
+en nul spelers buiten legacycompatibiliteit. De onafhankelijke lokale preflight
+is ook groen om 11:27:52 UTC. De globale economyfunctie
 blijft uit en alle spelers blijven in legacycompatibiliteit. Publicatie volgt
 pas na de verplichte serverpreflight, analyse, volledige tests, handtekening-
 en apparaatcontrole. Definitieve releasebewijzen worden hieronder bijgewerkt.

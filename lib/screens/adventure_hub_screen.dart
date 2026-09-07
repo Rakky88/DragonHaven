@@ -235,6 +235,7 @@ class _TrialsTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
       children: [
         Container(
+          key: const Key('trial-summary-card'),
           padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -247,6 +248,8 @@ class _TrialsTab extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
                 child: Text(strings.pick('Dragon Trials', 'Drakenproeven'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                         color: Colors.white,
                         fontSize: 17,

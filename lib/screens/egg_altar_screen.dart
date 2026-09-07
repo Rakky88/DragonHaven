@@ -354,7 +354,7 @@ class _EggAltarScreenState extends State<EggAltarScreen> {
                 textAlign: TextAlign.center,
                 style:
                     const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Wrap(alignment: WrapAlignment.center, children: [
               EggTagButton(eggId: egg.id),
               TextButton.icon(
                   onPressed: () => showAltarEggDetails(context, egg.id),

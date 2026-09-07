@@ -359,13 +359,13 @@ void main() {
         lessThan(stagingWorkflow.indexOf('supabase db push --linked --yes')));
     expect(stagingWorkflow, contains('release_server_preflight.ps1'));
 
-    expect(productionWorkflow, contains('MIGRATE_PRODUCTION_42_TO_44'));
-    expect(productionWorkflow, contains("\$expectedRemote = '202609070041'"));
+    expect(productionWorkflow, contains('MIGRATE_PRODUCTION_45_TO_47'));
+    expect(productionWorkflow, contains("\$expectedRemote = '202609070044'"));
     expect(productionWorkflow,
-        contains("'202609070042', '202609070043', '202609070044'"));
+        contains("'202609070045', '202609070046', '202609070047'"));
     expect(productionWorkflow, contains('release_server_preflight.ps1'));
     expect(productionWorkflow, contains('supabase db lint'));
-    expect(productionWorkflow, contains('34106264418'));
+    expect(productionWorkflow, contains('34111166461'));
     expect(
         productionWorkflow.indexOf('Rolled-back production rehearsal failed'),
         lessThan(productionWorkflow
