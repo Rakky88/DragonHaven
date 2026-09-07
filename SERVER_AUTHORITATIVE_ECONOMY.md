@@ -1,7 +1,7 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **7 September 2026**
-Released app: **v0.05.18 / 10068**; production **49**, staging **52**.
+Released app: **v0.05.18 / 10068**; production **49**, staging **53**.
 Migration **49** adds owner-scoped inventory pagination and passed its staging rehearsal and applied contracts in run `34127201082`. Production run `34129277707` then proved identical staging source, rollback rehearsal, exact migration 49, repeated snapshot contract, parity, zero lint errors and health 200. Mutations remain disabled and all accounts remain legacy.
 Migrations **45-47** are deployed dormant: chest opening, server inventory guard and item shop.
 Production run `34116589237` passed exact staging-source checks, rollback rehearsals, all three contracts, migration parity, zero-error lint and health. Before/after checks prove mutations remain disabled and all accounts remain in legacy compatibility.
@@ -106,6 +106,13 @@ workflow now also runs the internal `prepare_staging_game_import.ts` against a
 captured synthetic Altar, repeats its receipt, then runs the proven game actions.
 The operator tool is restricted to registered staging and never logs its private
 source, seed or service key. Applying 53 and this combined probe are still pending.
+The combined gate has now passed in
+[34148722971](https://github.com/Rakky88/DragonHaven/actions/runs/34148722971),
+source `5cdfc22`: exactly 53 applied, both rollback contracts repeated, the
+captured Altar prepared and replayed through compiled Dart, then all real game
+probe actions passed. Cleanup removed both accounts and shadow records, runtime
+returned to disabled, and final parity 53/lint zero/Auth+app health 200 passed.
+Production remains 49 and all live accounts retain legacy ownership.
 
 `EconomySnapshotStore` now persists complete owner-scoped snapshots outside
 cloud backups, with atomic replacement and monotonic wallet/server revisions.
@@ -292,7 +299,7 @@ path depends on migration 37.
 - decide the production migration/cutover window and its player impact. Current
   audit authorization covers isolated staging development and rehearsals.
 
-The production project has migrations 1-49; staging additionally has push migrations 50-51 and shadow game migration 52. Migration 48 only opens
+The production project has migrations 1-49; staging additionally has push migrations 50-51 and shadow game/import migrations 52-53. Migration 48 only opens
 the simulated Halloween preview to verified keepers (production run `34127198552`). The global mutation
 switch remains disabled and every production keeper remains on `legacy_client`. Migration 38
 is the immutable forward fix for the timestamp ambiguity found in migration 37.

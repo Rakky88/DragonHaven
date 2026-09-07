@@ -49,7 +49,7 @@ Maximaal 45.000 geplande invocaties per kalendermaand; geen automatische upgrade
 De worker verstuurt maximaal 30 meldingen per batch met vijf gelijktijdige requests.
 Firebase-acceptatie markeert de duurzame inbox nadrukkelijk niet als gelezen.
 
-Productie blijft schema 49; staging is schema 52 (inclusief de aparte schaduweconomie). Push staat op staging standaard
+Productie blijft schema 49; staging is schema 53 (inclusief de aparte schaduweconomie). Push staat op staging standaard
 uit en de productie-economie blijft uit. De Edge worker en Vault-configuratie
 zijn op staging ingericht. De productie-uitrol volgt pas na de complete apppoort.
 

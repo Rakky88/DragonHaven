@@ -84,6 +84,11 @@ Deze repetitie is geslaagd in
 [34148415163](https://github.com/Rakky88/DragonHaven/actions/runs/34148415163).
 De gecombineerde stagingpoort past daarna 53 toe en test de echte interne
 voorbereiding plus dezelfde spelacties. Die gecombineerde proef staat nog open.
+De gecombineerde proef is geslaagd in
+[34148722971](https://github.com/Rakky88/DragonHaven/actions/runs/34148722971):
+53 toegepast, beide contracten herhaald, echte Altar-voorbereiding/replay en alle
+spelacties groen. Alle synthetische gegevens zijn verwijderd en runtime staat
+weer uit. Eindcontrole: staging 53, lint nul, health 200; productie blijft 49.
 
 `GROWTH_AND_COST_PLAN.md` bevat de 100/1.000/10.000-accountscenario's, bestaande
 loadbewijzen, quota, opslag/egress-aannames en meetbare overstappen. De lokale
