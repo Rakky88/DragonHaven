@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: fa48c01e65b537bb -->
+<!-- reference-source-fingerprint: 5d6788ed793b86dd -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -32,6 +32,11 @@ isolated shadow record, retaining Special Chest counts, Special Egg identifiers,
 tag information and other fields. Its immutable source and separate Altar
 snapshot support the conversion review; live inventory is never changed by
 this rehearsal boundary.
+
+Loading the candidate canonical state now checks a semantic asset fingerprint.
+Missing/duplicate eggs, changed fixed genetics, silently filtered Special content,
+changed tags or stock, and altered progression stop evaluation for reconciliation.
+The loader must not grant, reroll or discard assets while preparing an action.
 
 - A **Special Event** owns one schedule, story, Adventure, Trial, temporary
   music alias, ranking occurrence, and reward contract.

@@ -75,22 +75,26 @@ herhalen met de officiele Firebase CLI-aanmelding, zonder billing te activeren.
   apparaat, inbox en outbox zijn verwijderd; push terug uitgezet.
   Visueel bewijs: lokaal `release/firebase-staging-push.png`.
 - Android-debugbuild zonder Firebase en met gevalideerde stagingconfig slagen.
-- Dart-analyse schoon. Zes worker-unitproeven en 23 gerichte Flutter-proeven
-  slagen. De volledige suite had 526 geslaagde tests en een verouderde vaste
-  schemaversieverwachting; correctie en hercontrole van 25 tests slagen.
+- Dart-analyse schoon. De volledige Flutter-suite slaagt met 541 tests;
+  aanvullende domein-/snapshotproeven en zes pushworker-unitproeven slagen.
 - Echte native crash en niet-fatale Fluttermelding zijn via de officiele
   Crashlytics-report-API teruggevonden, elk met een event in het stagingproject.
   Issues `ece9690113b884780b157ecd849ebd37` (FATAL) en
   `33259915c98f8bd7649f741512bcdc04` (NON_FATAL), versie 0.5.18.
   De fatale testcrash toont de leesbare native methode. De eerste veilige
   Fluttermelding bevat opzettelijk alleen de vaste probe-categorie.
-  Een lokaal geregistreerde Performance-trace is nog geen bewijs van een
-  zichtbaar Performance-dashboard.
+- Rick bevestigt op 7 september dat `dh_staging_probe` zichtbaar is in de
+  Custom traces-tabel van het staging-Performance-dashboard. Dit sluit de
+  dashboardcontrole, naast de eerdere lokale registratie van de trace.
+- De echte Gradle-taak `:app:uploadCrashlyticsMappingFileRelease` is succesvol
+  uitgevoerd met de gevalideerde stagingconfiguratie. Lokaal bewijs:
+  `.tools/firebase-mapping-upload.log`, BUILD SUCCESSFUL (2 min 21 sec).
+  De normale openbare app is teruggezet met behoud van opslag; tijdelijke
+  probe-tokenbestanden zijn verwijderd en debuglogging is teruggezet naar INFO.
 
 ## Nog af te ronden binnen de opdracht
 
-Dashboardcontrole van de Performance-trace en release-symbolupload,
-alertinstellingen voor Rick, productie-uitrol van de geteste koppeling en
+Alertinstellingen voor Rick, productie-uitrol van de geteste koppeling en
 appreleasepoort. De volledige resterende servereconomie wordt apart verder
 gebouwd; deze koppeling maakt die niet automatisch voltooid.
 

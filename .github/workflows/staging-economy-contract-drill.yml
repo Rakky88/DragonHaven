@@ -20,6 +20,7 @@ on:
           - social-push-apply
           - push-device-probe
           - canonical-game
+          - canonical-game-apply
 
 permissions:
   contents: read
@@ -58,7 +59,7 @@ jobs:
           retention-days: 30
 
   verify:
-    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply' && inputs.contract != 'push-device-probe' && inputs.contract != 'canonical-game'
+    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply' && inputs.contract != 'push-device-probe' && inputs.contract != 'canonical-game' && inputs.contract != 'canonical-game-apply'
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 15
@@ -297,5 +298,61 @@ jobs:
         with:
           name: DragonHaven-staging-canonical-game-contract
           path: staging/canonical-game-contract.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+  canonical-game-apply:
+    if: inputs.contract == 'canonical-game-apply'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.6
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.116.0
+      - name: Compile and verify the exact shared rules candidate
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          test "$CONFIRMATION" = APPLY_DRAGONHAVEN_STAGING_GAME_52
+          flutter pub get
+          dart analyze lib integration_test test tool
+          flutter test --no-pub test/game_command_engine_test.dart test/reference_documentation_test.dart
+          dart run tool/build_server_game.dart
+          deno check supabase/functions/execute-game-command/index.ts
+          deno test supabase/functions/execute-game-command/core_test.ts
+          dart run tool/game_domain_parity.dart "$(command -v deno)"
+          mkdir -p staging
+          flutter test --no-pub --dart-define=DOMAIN_PARITY_OUTPUT=staging/game-fixture.json test/game_domain_parity_fixture_test.dart
+      - name: Apply the detached schema, deploy and probe only staging
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          ./tool/staging_game_worker_apply.ps1 | Tee-Object -FilePath staging/game-worker.txt
+          python3 tool/staging_game_worker_probe.py | Tee-Object -FilePath staging/game-worker-probe.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Real game worker probe failed.' }
+          ./tool/release_server_preflight.ps1 -ExpectedProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ExpectedUrl $env:STAGING_SUPABASE_URL -ExpectedPublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: DragonHaven-staging-game-worker
+          path: |
+            staging/game-worker.txt
+            staging/game-worker-probe.txt
           if-no-files-found: warn
           retention-days: 30

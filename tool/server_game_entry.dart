@@ -26,5 +26,9 @@ Future<JSString> _execute(String input) async {
         .toJS;
   } on GameCommandException catch (error) {
     return jsonEncode({'error': error.code}).toJS;
+  } on FormatException {
+    // A legacy save needs explicit reconciliation. Never expose save content
+    // or the normalizer's detailed exception to the caller.
+    return jsonEncode({'error': 'game_state_reconciliation_required'}).toJS;
   }
 }

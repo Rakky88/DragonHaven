@@ -15,6 +15,7 @@ const specialContentReference = ReferenceDocumentSpec(
   documentPath: 'SPECIAL_EVENTS_CHESTS_AND_EGGS.md',
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
+    'lib/domain/game_asset_snapshot.dart',
     'supabase/migrations/202609070052_canonical_game_commands.sql',
     'lib/models/achievement.dart',
     'lib/models/adventure.dart',
@@ -51,6 +52,7 @@ const randomRewardsReference = ReferenceDocumentSpec(
   documentPath: 'RANDOM_REWARDS_AND_ODDS.md',
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
+    'lib/domain/game_asset_snapshot.dart',
     'lib/domain/server_entropy.dart',
     'supabase/migrations/202609070052_canonical_game_commands.sql',
     'android/app/src/main/kotlin/nl/dragonhaven/app/MainActivity.kt',

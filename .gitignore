@@ -39,3 +39,4 @@ ios/Runner/GoogleService-Info.plist
 firebase-service-account*.json
 __pycache__/
 *.pyc
+supabase/functions/execute-game-command/*.generated.*

@@ -385,6 +385,10 @@ deno_version = 2
 [functions.dispatch-social-push]
 verify_jwt = false
 
+# Validates every bearer token with Supabase Auth inside the handler.
+[functions.execute-game-command]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

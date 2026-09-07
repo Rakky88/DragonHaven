@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart'
     if (dart.library.js_interop) '../domain/headless_notifier.dart';
 import 'package:uuid/uuid.dart';
 
+import '../domain/game_asset_snapshot.dart';
 import '../l10n/game_strings.dart';
 import '../models/account_title.dart';
 import '../models/achievement.dart';
@@ -149,6 +150,7 @@ class HouseholdProvider extends ChangeNotifier {
         (state['pet'] as Map).isEmpty) {
       throw const FormatException('Unsupported canonical game state');
     }
+    final assets = GameAssetSnapshot(state);
     final game = HouseholdProvider(
       initialize: false,
       persistenceEnabled: false,
@@ -158,6 +160,12 @@ class HouseholdProvider extends ChangeNotifier {
     );
     game._restore(state);
     game._applyAltarProtection();
+    final restoredAssets = GameAssetSnapshot(game.exportState());
+    if (!assets.hasSameAssets(restoredAssets)) {
+      game.dispose();
+      throw FormatException('Canonical game state requires reconciliation: '
+          '${assets.differenceKinds(restoredAssets).join(', ')}');
+    }
     return game;
   }
 

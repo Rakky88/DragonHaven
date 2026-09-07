@@ -77,6 +77,37 @@ void main() {
         '97fa765a-9bf2-4d59-ba8e-3473373da625');
   });
 
+  test(
+      'loading refuses missing fixed relic identities and unknown owned content',
+      () async {
+    final missingShard = _fixture();
+    missingShard['relicInventory']['chronoshard'] = 2;
+    missingShard['chronoshardReductions'] = [35];
+    await expectLater(_execute(missingShard, 'purchase_title_chest'),
+        throwsA(isA<FormatException>()));
+    expect(missingShard['chronoshardReductions'], [35]);
+    final unknownOwnedItem = _fixture();
+    unknownOwnedItem['ownedItemIds'].add('future_furniture_must_not_disappear');
+    await expectLater(_execute(unknownOwnedItem, 'purchase_title_chest'),
+        throwsA(isA<FormatException>()));
+    expect(unknownOwnedItem['ownedItemIds'],
+        contains('future_furniture_must_not_disappear'));
+  });
+
+  test('loading refuses duplicate identities and silent incubation changes',
+      () async {
+    final duplicate = _fixture();
+    duplicate['eggStash']
+        .add(Map<String, dynamic>.from(duplicate['eggStash'].first));
+    await expectLater(
+        _execute(duplicate, 'refresh'), throwsA(isA<FormatException>()));
+    final alteredTimer = _fixture();
+    alteredTimer['eggStash'].first['incubationSeconds'] = 20;
+    await expectLater(
+        _execute(alteredTimer, 'refresh'), throwsA(isA<FormatException>()));
+    expect(alteredTimer['eggStash'].first['incubationSeconds'], 20);
+  });
+
   test('retrying private evaluation produces identical rewards and identities',
       () async {
     final state = _fixture();

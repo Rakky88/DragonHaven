@@ -28,9 +28,10 @@ ook teruggevonden in de Firebase Crashlytics API.
 Android bouwt zonder en met Firebase-configuratie. De volledige Flutter-suite
 slaagt met 541 tests; de aanvullende native pariteitsfixture slaagt ook.
 Analyzer is schoon voor lib, tests, integratietests en tools. De vaste
-schemaverwachting is bijgewerkt naar 51. Zes Deno-workerproeven slagen.
+schemaverwachting is bijgewerkt naar de lokale kandidaat 52. Zes Deno-pushworkerproeven slagen.
 Zie `FIREBASE_MONITORING_SETUP.md` voor
-bewijs en resterende controle van Performance, release-symbolen en alerts.
+bewijs en resterende alertinstellingen. Rick heeft de zichtbare stagingtrace
+`dh_staging_probe` bevestigd; de echte release-R8-mappingupload slaagt ook.
 De normale openbare v0.05.18-app is teruggezet op het testtoestel, met behoud
 van opslag. Tijdelijke probe-tokenbestanden en het GitHub-probetokensecret zijn
 verwijderd; Crashlytics-debuglogging is teruggezet naar INFO. Ook een normale
@@ -39,13 +40,25 @@ releasebuild met staging-Firebase is lokaal geslaagd.
 De gedeelde spelregels zijn losgemaakt van Flutter-platformdiensten en
 compileren naar een interne servermodule van minder dan 1 MB. Een synthetische
 VM/Deno-vergelijking van chests, aankopen, inventaris, ei-eigenschappen en IDs
-slaagt. Acht gerichte tests dekken onder meer herstelbare vaste serverrandomness,
+slaagt. Tien gerichte tests dekken onder meer herstelbare vaste serverrandomness,
 saldo-/voorraadgrenzen, tags, Sinister-confirmatie, quillverbruik en incubatie.
 Migratie 52 bevat nu een lokale kandidaat voor de transactie rond een
 afzonderlijke volledige savekopie. Zij kan alleen schaduwkopieën bijwerken;
 live saldo, inventaris, Altar en accountautoriteit blijven onaangeraakt.
-De rollbackproef staat klaar. Volledige reconciliatie/projectie, trialvalidatie
+De rollbackproef slaagt in
+[34143594035](https://github.com/Rakky88/DragonHaven/actions/runs/34143594035):
+volledige kopie, leases/replay, eigenaar-/saldocontroles en accountverwijdering.
+Alle wijzigingen draaiden terug; staging blijft 51. Een extra semantische
+controle weigert saves waarvoor laden bezittingen verwijdert, vaste ei- of
+relic-eigenschappen herloot of voortgang wijzigt; die vragen eerst reconciliatie.
+Volledige reconciliatie/projectie, trialvalidatie
 en daadwerkelijke clientomschakeling zijn nog niet gebouwd of vrijgegeven.
+
+De bijbehorende Edge worker is gebouwd en lokaal getypecheckt. Negen proeven
+dekken aanmelding, geweigerde vervalste invoer, afgeschermde servergegevens,
+replay na verloren commitantwoord en begrensde requests. De echte stagingproef
+wordt via een aparte workflow uitgevoerd op tijdelijke synthetische accounts;
+geen live speler kan via deze schaduwroute saldo of inventaris wijzigen.
 
 `GROWTH_AND_COST_PLAN.md` bevat de 100/1.000/10.000-accountscenario's, bestaande
 loadbewijzen, quota, opslag/egress-aannames en meetbare overstappen. De lokale

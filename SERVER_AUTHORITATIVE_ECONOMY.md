@@ -1,7 +1,7 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **7 September 2026**
-Released app: **v0.05.18 / 10068**; production **49**, staging **49**.
+Released app: **v0.05.18 / 10068**; production **49**, staging **51**.
 Migration **49** adds owner-scoped inventory pagination and passed its staging rehearsal and applied contracts in run `34127201082`. Production run `34129277707` then proved identical staging source, rollback rehearsal, exact migration 49, repeated snapshot contract, parity, zero lint errors and health 200. Mutations remain disabled and all accounts remain legacy.
 Migrations **45-47** are deployed dormant: chest opening, server inventory guard and item shop.
 Production run `34116589237` passed exact staging-source checks, rollback rehearsals, all three contracts, migration parity, zero-error lint and health. Before/after checks prove mutations remain disabled and all accounts remain in legacy compatibility.
@@ -20,10 +20,13 @@ data and preference enums are shared without importing Flutter.
 
 The compiled internal entrypoint is under 1 MB locally. The first synthetic
 VM/Deno comparison passes, including absolute state, hidden egg properties,
-reward values and generated identities. Eight contract tests cover the private
+reward values and generated identities. Ten contract tests cover the private
 entropy vector, deterministic retries, wallet limits, failed batches, rejected
 client grants/scores, tags, Sinister confirmation, quill consumption and
-server-clock incubation. This remains a **local candidate**, not a deployed
+server-clock incubation. The asset fence also refuses a load that silently
+discards owned content, changes fixed egg/Chronoshard properties, duplicates
+identities or changes progression. Such saves require reconciliation first.
+This remains a **local candidate**, not a deployed
 authoritative economy.
 
 The worker must obtain state/time/owner/secret seed from PostgreSQL, reserve one
@@ -35,6 +38,17 @@ staging cutover/restore exercises remain open. The entrypoint intentionally
 does not accept arbitrary score, reward, paid entitlement or settlement grants.
 The current production mutation switch remains off.
 
+The `execute-game-command` worker now validates each bearer token with Supabase
+Auth and takes only a protocol/build, request UUID, whitelisted action and its
+bounded identity arguments. It reserves the private database lease, invokes the
+compiled Dart rules and commits by lease/revision. It returns a bounded receipt
+marked `shadow`, never the private save, hidden egg genetics, entropy or lease.
+Nine worker tests cover forged input, cross-owner results, concurrent/repeated
+intents, lost commit responses, durable domain refusals and stream limits.
+The staging apply/probe workflow builds the exact ruleset, rehearses migration
+52, deploys the worker and exercises real synthetic Auth requests before cleanup.
+The full live inventory projection and app integration remain separate work.
+
 Migration 52 adds a detached shadow copy of the full cloud save, an immutable
 source/hash plus the separately captured authoritative Altar, and a private
 command transaction. Only service-role RPCs can read a seed/state or claim a
@@ -42,8 +56,10 @@ lease. The original seed/time survive a retry; expired workers are fenced by a
 new token, conflicting payloads fail, and one owner has at most one pending
 command. State and receipt commit together by revision comparison. The schema
 constrains these copies to `shadow` and cannot activate live economy ownership.
-It has not been applied. The new staging contract will rehearse the migration
-and roll back all schema, fixtures and changes. Captured Altar state still needs
+It has not been applied. Staging run
+[34143594035](https://github.com/Rakky88/DragonHaven/actions/runs/34143594035)
+passed the full-copy, lease/replay, owner, wallet and account-deletion contracts
+and rolled back all schema, fixtures and changes. Captured Altar state still needs
 explicit reconciliation before any production conversion.
 
 `EconomySnapshotStore` now persists complete owner-scoped snapshots outside
@@ -231,7 +247,7 @@ path depends on migration 37.
 - decide the production migration/cutover window and its player impact. Current
   audit authorization covers isolated staging development and rehearsals.
 
-The production project and staging both have migrations 1-49. Migration 48 only opens
+The production project has migrations 1-49; staging additionally has push migrations 50-51. Migration 48 only opens
 the simulated Halloween preview to verified keepers (production run `34127198552`). The global mutation
 switch remains disabled and every production keeper remains on `legacy_client`. Migration 38
 is the immutable forward fix for the timestamp ambiguity found in migration 37.
