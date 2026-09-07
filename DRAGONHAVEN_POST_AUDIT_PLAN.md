@@ -88,6 +88,15 @@ header is visueel gecontroleerd op 320 logische pixels breed
 slagen; analyzer meldt nul problemen. Gameplay, prijzen en beloningen wijzigen
 hierdoor niet. Ook deze UI-wijzigingen wachten op een volgende apprelease.
 
+Afsluitende validatie: de volledige suite bevat 518 tests. Daarvan slaagden
+517 direct; één vaste tekstcontrole moest na de actualisering van het
+economiecontract worden hersteld. De daaropvolgende 68 contract-/audit-/loadtests
+zijn allemaal groen, net als analyzer en referentieguard. Linux-planrun
+`34128315798` slaagt met de aangepaste CLI en de offline transport-/cleanup-/
+metricscontroles, zonder accounts aan te maken of load uit te voeren. Dit
+valideert de hulpmiddelen; de afgekeurde 1000-accountmeting blijft afzonderlijk
+open. Geen nieuwe APK of appversie is uitgebracht in deze auditbouwtranche.
+
 ## Gepubliceerde release v0.05.17 / 10067 (7 september)
 
 Release **v0.05.17** is gepubliceerd als Latest met appcommit en tag

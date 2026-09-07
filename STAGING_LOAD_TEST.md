@@ -242,3 +242,10 @@ Deze reparaties zijn geen bewijs dat staging 1000 spelers aankan. Een herhaling
 vereist een nieuwe 100-accountbaseline op het dan actuele schema, gerichte
 diagnose van de time-outfase en bruikbare providerbelasting tijdens de meting.
 Er zijn geen Auth-limieten, providerabonnementen of productiecapaciteit aangepast.
+
+De aangepaste tooling slaagt in de netwerkloze Linux-planrun
+[34128315798](https://github.com/Rakky88/DragonHaven/actions/runs/34128315798):
+PowerShell-transport/cleanup, metrics-allowlist, private credential-pipe en
+normale CLI-afsluiting zijn gecontroleerd. De 11 lokale loadtests, inclusief
+beide transport-time-outs, slagen eveneens. Deze run maakt geen accounts en
+is geen nieuwe capaciteitstest.
