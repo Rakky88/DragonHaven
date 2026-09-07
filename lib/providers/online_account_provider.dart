@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/mystic_relic.dart';
@@ -110,6 +111,8 @@ class OnlineAccountProvider extends ChangeNotifier {
   final Duration _operationTimeout;
   StreamSubscription<bool>? _authSubscription;
   Timer? _refreshTimer;
+  Timer? _conclaveBadgeTimer;
+  SharedPreferences? _readPreferences;
   Timer? _notificationPollTimer;
   Timer? _authRecoveryTimer;
   Future<bool>? _refreshInFlight;
@@ -178,6 +181,60 @@ class OnlineAccountProvider extends ChangeNotifier {
   bool get isEmailVerified => _repository.isEmailVerified;
   String? get currentUserId => _repository.currentUserId;
   String? get currentEmail => _repository.currentEmail;
+  String? get _conclaveReadKey {
+    final userId = currentUserId;
+    final conclaveId = conclave?.conclave.id;
+    if (!isSignedIn || userId == null || conclaveId == null) return null;
+    return 'conclave_read_v1:$userId:$conclaveId';
+  }
+
+  int get unreadConclaveMessageCount =>
+      unreadConclaveMessagesAt(DateTime.now());
+
+  int unreadConclaveMessagesAt(DateTime now) {
+    final key = _conclaveReadKey;
+    if (key == null || _readPreferences == null) return 0;
+    final seen =
+        (_readPreferences!.getStringList(key) ?? const <String>[]).toSet();
+    final cutoff = now.subtract(const Duration(hours: 24));
+    return conclave!.messages
+        .where((message) =>
+            message.senderId != currentUserId &&
+            message.createdAt.isAfter(cutoff) &&
+            !message.createdAt.isAfter(now) &&
+            !seen.contains(message.id))
+        .map((message) => message.id)
+        .toSet()
+        .length;
+  }
+
+  Future<void> markConclaveMessagesRead(ConclaveSnapshot displayed) async {
+    final key = _conclaveReadKey;
+    final preferences = _readPreferences;
+    if (key == null ||
+        preferences == null ||
+        displayed.conclave.id != conclave?.conclave.id) {
+      return;
+    }
+    final previous =
+        (preferences.getStringList(key) ?? const <String>[]).toSet();
+    final now = DateTime.now();
+    final cutoff = now.subtract(const Duration(hours: 24));
+    final recent = displayed.messages
+        .where((message) =>
+            message.createdAt.isAfter(cutoff) &&
+            !message.createdAt.isAfter(now))
+        .map((message) => message.id)
+        .toSet();
+    if (recent.every(previous.contains)) return;
+    // Keep IDs from the current snapshot as well when an older frame is marked.
+    final retained = conclave!.messages.map((message) => message.id).toSet();
+    final next = {...previous.where(retained.contains), ...recent}.toList();
+    final write = preferences.setStringList(key, next);
+    _notify();
+    await write;
+  }
+
   List<FriendshipRequest> get incomingRequests => requests
       .where((request) => request.direction == FriendRequestDirection.incoming)
       .toList(growable: false);
@@ -220,6 +277,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   Future<void> initialize({bool waitForFirstRefresh = true}) async {
+    _readPreferences = await SharedPreferences.getInstance();
     _authSubscription = _repository.authStateChanges.listen(
       (signedIn) {
         if (signedIn) {
@@ -1499,6 +1557,12 @@ class OnlineAccountProvider extends ChangeNotifier {
     _refreshTimer ??= Timer.periodic(const Duration(minutes: 2), (_) {
       if (isSignedIn && !busy) unawaited(refreshIfStale());
     });
+    _conclaveBadgeTimer ??= Timer.periodic(const Duration(seconds: 30), (_) {
+      if (isSignedIn && conclave != null) {
+        _notify(); // Expire badges even when the next network refresh fails.
+        if (!busy) unawaited(refreshConclave(background: true));
+      }
+    });
     _notificationPollTimer ??= Timer.periodic(const Duration(seconds: 15), (_) {
       if (isSignedIn) unawaited(pollSocialNotifications());
     });
@@ -1597,6 +1661,8 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   void _clearAccountData() {
+    _conclaveBadgeTimer?.cancel();
+    _conclaveBadgeTimer = null;
     _refreshTimer?.cancel();
     _refreshTimer = null;
     _notificationPollTimer?.cancel();
@@ -1644,6 +1710,8 @@ class OnlineAccountProvider extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _authSubscription?.cancel();
+    _conclaveBadgeTimer?.cancel();
+    _conclaveBadgeTimer = null;
     _refreshTimer?.cancel();
     _notificationPollTimer?.cancel();
     _authRecoveryTimer?.cancel();

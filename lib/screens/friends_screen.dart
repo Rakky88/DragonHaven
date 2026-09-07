@@ -18,7 +18,76 @@ import 'conclave_screen.dart';
 import 'friend_messages_screen.dart';
 
 class FriendsScreen extends StatelessWidget {
-  const FriendsScreen({super.key});
+  const FriendsScreen({super.key, this.active = true});
+
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final online = context.watch<OnlineAccountProvider>();
+    return DefaultTabController(
+      length: 2,
+      child: Column(children: [
+        TabBar(tabs: [
+          Tab(key: const Key('friends-tab'), text: strings.tr('friends')),
+          Tab(
+            key: const Key('conclave-tab'),
+            child: Badge.count(
+              key: const Key('conclave-unread-badge'),
+              count: online.unreadConclaveMessageCount,
+              backgroundColor: Colors.redAccent,
+              isLabelVisible:
+                  online.isSignedIn && online.unreadConclaveMessageCount > 0,
+              child: const Text('Conclave'),
+            ),
+          ),
+        ]),
+        Expanded(
+          child: TabBarView(children: [
+            const _FriendsContent(),
+            _ConclaveTab(active: active),
+          ]),
+        ),
+      ]),
+    );
+  }
+}
+
+class _ConclaveTab extends StatelessWidget {
+  const _ConclaveTab({required this.active});
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final online = context.watch<OnlineAccountProvider>();
+    if (!online.isConfigured || !online.isSignedIn) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
+        children: [
+          Text('Conclave', style: Theme.of(context).textTheme.displaySmall),
+          const SizedBox(height: 18),
+          if (!online.isConfigured)
+            _SetupRequired(strings: strings)
+          else
+            const OnlineAccountAccessCard(),
+        ],
+      );
+    }
+    final tabs = DefaultTabController.of(context);
+    return AnimatedBuilder(
+      animation: tabs.animation!,
+      builder: (context, _) => ConclaveScreen(
+        embedded: true,
+        active: active && tabs.index == 1 && tabs.animation!.value == 1,
+      ),
+    );
+  }
+}
+
+class _FriendsContent extends StatelessWidget {
+  const _FriendsContent();
 
   @override
   Widget build(BuildContext context) {
@@ -59,8 +128,6 @@ class FriendsScreen extends StatelessWidget {
           ),
         if (online.profile case final profile?) _MyKeeperCard(profile: profile),
         _FriendsOverview(online: online),
-        const SizedBox(height: 12),
-        _ConclaveEntry(online: online),
         const SizedBox(height: 14),
         FilledButton.icon(
           key: const Key('add-friend-button'),
@@ -704,126 +771,6 @@ class _FriendMessageButton extends StatelessWidget {
                     ),
                   ),
                 ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ConclaveEntry extends StatelessWidget {
-  const _ConclaveEntry({required this.online});
-  final OnlineAccountProvider online;
-
-  @override
-  Widget build(BuildContext context) {
-    final strings = AppStrings.of(context);
-    final current = online.conclave?.conclave;
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 5,
-      shadowColor: const Color(0x40301B5B),
-      child: InkWell(
-        key: const Key('open-conclave'),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const ConclaveScreen()),
-        ),
-        child: Ink(
-          padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF261642), Color(0xFF68449A)],
-            ),
-          ),
-          child: Row(
-            children: [
-              Badge.count(
-                count: online.conclaveInvites.length,
-                isLabelVisible: online.conclaveInvites.isNotEmpty,
-                backgroundColor: Colors.redAccent,
-                child: Container(
-                  width: 76,
-                  height: 76,
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white24),
-                  ),
-                  child: Image.asset(
-                    current == null
-                        ? aerieStageAsset(1)
-                        : aerieStageAsset(current.aerieStage),
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const Icon(
-                      Icons.castle_rounded,
-                      color: Color(0xFFFFD978),
-                      size: 48,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'CONCLAVE',
-                      style: TextStyle(
-                        color: Color(0xFFFFD978),
-                        fontSize: 10,
-                        letterSpacing: 1.3,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    Text(
-                      current?.name ??
-                          strings.pick(
-                              'Find your Conclave', 'Vind je Conclave'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    Text(
-                      current == null
-                          ? strings.pick(
-                              'Find Keepers and build an Aerie together.',
-                              'Vind Hoeders en bouw samen een Aerie.',
-                            )
-                          : '${strings.pick('Aerie stage', 'Aerie-fase')} ${current.aerieStage}/10 · ${strings.pick('Level', 'Level')} ${current.level}',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFFE8DFF6),
-                        fontSize: 11.5,
-                        height: 1.24,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 4),
-              Container(
-                width: 34,
-                height: 34,
-                decoration: const BoxDecoration(
-                  color: Color(0x22FFFFFF),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.white,
-                ),
-              ),
             ],
           ),
         ),

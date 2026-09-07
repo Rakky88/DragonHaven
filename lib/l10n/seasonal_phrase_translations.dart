@@ -2,6 +2,39 @@
 ///
 /// Values are ordered German, Spanish, French, Italian, Portuguese, Japanese.
 const seasonalPhraseTranslations = <String, List<String>>{
+  'Spirit · trace the path to the lantern': [
+    'Spirit · folge dem Pfad zur Laterne',
+    'Spirit · sigue el sendero hasta el farol',
+    'Spirit · suis le chemin vers la lanterne',
+    'Spirit · segui il sentiero fino alla lanterna',
+    'Spirit · segue o caminho até à lanterna',
+    'Spirit · ランタンまで道をなぞろう',
+  ],
+  'Start at the wisp. Keep your finger down and inside the edges.': [
+    'Beginne beim Irrlicht. Lass den Finger auf dem Bildschirm und bleibe innerhalb der Ränder.',
+    'Empieza en la luz. Mantén el dedo en la pantalla y dentro de los bordes.',
+    'Commence au feu follet. Garde le doigt sur l’écran et entre les bords.',
+    'Inizia dal fuoco fatuo. Tieni il dito sullo schermo e dentro i bordi.',
+    'Começa no fogo-fátuo. Mantém o dedo no ecrã e dentro das margens.',
+    '鬼火から始めよう。指を画面から離さず、道の内側をなぞってね。',
+  ],
+  'Arcana · remember the pumpkin face': [
+    'Arcana · merke dir das Kürbisgesicht',
+    'Arcana · recuerda la cara de la calabaza',
+    'Arcana · mémorise le visage de la citrouille',
+    'Arcana · ricorda il volto della zucca',
+    'Arcana · memoriza a cara da abóbora',
+    'Arcana · カボチャの顔を覚えよう',
+  ],
+  'Remember the pumpkin face, trace the path within its edges, then shatter the curse.':
+      [
+    'Merke dir das Kürbisgesicht, folge dem Pfad innerhalb seiner Ränder und zerschmettere dann den Fluch.',
+    'Recuerda la cara de la calabaza, sigue el sendero sin salir de los bordes y rompe la maldición.',
+    'Mémorise le visage de la citrouille, suis le chemin entre ses bords, puis brise la malédiction.',
+    'Ricorda il volto della zucca, segui il sentiero dentro i bordi e poi spezza la maledizione.',
+    'Memoriza a cara da abóbora, segue o caminho dentro das margens e quebra a maldição.',
+    'カボチャの顔を覚え、道からはみ出さずになぞってから、呪いを打ち砕こう。',
+  ],
   'A watchful green flame curls around the shell. This egg feels bound to a rare autumn night.':
       [
     'Eine wachsame grüne Flamme windet sich um die Schale. Dieses Ei scheint an eine seltene Herbstnacht gebunden.',

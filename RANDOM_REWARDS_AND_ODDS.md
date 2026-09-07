@@ -6,7 +6,7 @@ Ruleset: app version `v0.05.14`
 
 Source baseline: seasonal-event implementation released with `v0.05.14`
 
-<!-- reference-source-fingerprint: 07f499e86204ee83 -->
+<!-- reference-source-fingerprint: 2169ba6531b855e8 -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
@@ -562,7 +562,11 @@ These systems use randomness but do not directly choose a reward item. Rewards r
   three-discipline round chooses one of six themed targets, one of two safe
   lanes, one palette color, and one of six answer positions. These choices only
   shape the challenge. They do not alter the grade reward or ranking rules.
-- Spirit expertise provides a small capped forgiveness roll on a wrong lane:
+- Witchlight uses the target choice for six similar pumpkin faces. Its Spirit
+  corridor mirrors on alternate rounds and has no random forgiveness roll.
+  Spirit visibly widens that corridor from 24 to 32 logical pixels at 400
+  expertise; leaving it always fails. The seeded lane draw is unused there.
+- Other lane-based seasonal Spirit phases provide a capped forgiveness roll:
   `Spirit / 400 * 5%` (0% through 5%). Arcana adds up to 800 milliseconds of
   prompt visibility, Might widens the timing target, and total expertise adds
   at most three seconds to the run. None of these assists multiplies score or

@@ -61,7 +61,11 @@ List<_ConclaveMessageGroup> _groupConclaveMessages(
 }
 
 class ConclaveScreen extends StatefulWidget {
-  const ConclaveScreen({super.key});
+  const ConclaveScreen({super.key, this.embedded = false, this.active = true});
+
+  final bool active;
+
+  final bool embedded;
 
   @override
   State<ConclaveScreen> createState() => _ConclaveScreenState();
@@ -69,34 +73,10 @@ class ConclaveScreen extends StatefulWidget {
 
 class _ConclaveScreenState extends State<ConclaveScreen> {
   List<ConclaveSummary>? _directory;
-  Timer? _pollTimer;
-  bool _pollInFlight = false;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadDirectory());
-    _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted && context.read<OnlineAccountProvider>().conclave != null) {
-        unawaited(_refreshConclave());
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _pollTimer?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _refreshConclave() async {
-    if (_pollInFlight) return;
-    _pollInFlight = true;
-    final refreshed = await context
-        .read<OnlineAccountProvider>()
-        .refreshConclave(background: true);
-    _pollInFlight = false;
-    if (mounted && refreshed) setState(() {});
   }
 
   Future<void> _loadDirectory() async {
@@ -113,6 +93,8 @@ class _ConclaveScreenState extends State<ConclaveScreen> {
     final current = online.conclave?.conclave;
     return Scaffold(
       appBar: AppBar(
+        primary: !widget.embedded,
+        automaticallyImplyLeading: !widget.embedded,
         titleSpacing: 2,
         title: Row(
           children: [
@@ -176,7 +158,7 @@ class _ConclaveScreenState extends State<ConclaveScreen> {
             await _loadDirectory();
           },
           child: online.conclave != null
-              ? _ConclaveHome(snapshot: online.conclave!)
+              ? _ConclaveHome(snapshot: online.conclave!, active: widget.active)
               : _ConclaveDirectory(
                   directory: _directory,
                   invites: online.conclaveInvites,
@@ -381,12 +363,14 @@ class _ConclaveHeroPill extends StatelessWidget {
           children: [
             Icon(icon, color: const Color(0xFFFFD978), size: 13),
             const SizedBox(width: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 9.5,
-                fontWeight: FontWeight.w800,
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],
@@ -534,7 +518,9 @@ class _DirectoryCard extends StatelessWidget {
 }
 
 class _ConclaveHome extends StatelessWidget {
-  const _ConclaveHome({required this.snapshot});
+  const _ConclaveHome({required this.snapshot, required this.active});
+
+  final bool active;
 
   final ConclaveSnapshot snapshot;
 
@@ -595,7 +581,7 @@ class _ConclaveHome extends StatelessWidget {
         ],
         body: TabBarView(
           children: [
-            _ConclaveChat(snapshot: snapshot),
+            _ConclaveChat(snapshot: snapshot, active: active),
             _ConclaveMembers(snapshot: snapshot),
             _ConclaveChronicle(entries: snapshot.chronicle),
           ],
@@ -820,7 +806,8 @@ class _AerieHeader extends StatelessWidget {
 }
 
 class _ConclaveChat extends StatefulWidget {
-  const _ConclaveChat({required this.snapshot});
+  const _ConclaveChat({required this.snapshot, required this.active});
+  final bool active;
   final ConclaveSnapshot snapshot;
 
   @override
@@ -835,6 +822,40 @@ class _ConclaveChatState extends State<_ConclaveChat> {
   bool _nearBottom = true;
   bool _scrollScheduled = false;
   bool _automaticScroll = false;
+  TabController? _chatTabs;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final tabs = DefaultTabController.of(context);
+    if (_chatTabs != tabs) {
+      _chatTabs?.animation?.removeListener(_chatVisibilityChanged);
+      _chatTabs = tabs;
+      tabs.animation?.addListener(_chatVisibilityChanged);
+    }
+  }
+
+  void _chatVisibilityChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _markDisplayedRead(ConclaveSnapshot snapshot) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          !widget.active ||
+          !_nearBottom ||
+          _chatTabs?.index != 0 ||
+          _chatTabs?.animation?.value != 0 ||
+          ModalRoute.of(context)?.isCurrent != true) {
+        return;
+      }
+      final lifecycle = WidgetsBinding.instance.lifecycleState;
+      if (lifecycle != null && lifecycle != AppLifecycleState.resumed) return;
+      unawaited(context
+          .read<OnlineAccountProvider>()
+          .markConclaveMessagesRead(snapshot));
+    });
+  }
 
   @override
   void initState() {
@@ -851,6 +872,7 @@ class _ConclaveChatState extends State<_ConclaveChat> {
 
   @override
   void dispose() {
+    _chatTabs?.animation?.removeListener(_chatVisibilityChanged);
     _controller.removeListener(_handleDraftChanged);
     _controller.dispose();
     _scrollController.dispose();
@@ -928,6 +950,7 @@ class _ConclaveChatState extends State<_ConclaveChat> {
     final strings = AppStrings.of(context);
     final online = context.watch<OnlineAccountProvider>();
     final latest = online.conclave ?? widget.snapshot;
+    _markDisplayedRead(latest);
     final messageGroups = _groupConclaveMessages(latest.messages);
     final latestMessageId =
         messageGroups.isEmpty ? null : messageGroups.last.messages.last.id;

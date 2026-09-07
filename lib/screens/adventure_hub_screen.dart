@@ -2996,18 +2996,39 @@ class _ActiveAdventures extends StatelessWidget {
         ),
       );
     }
-    final itemCount = groupRuns.length + runs.length;
+    final entries = <({DateTime? endsAt, String id, Widget card})>[
+      for (final run in runs)
+        (
+          endsAt: run.endsAt,
+          id: 'local-${run.id}',
+          card: _ActiveAdventureCard(run: run, now: now),
+        ),
+      for (final lobby in groupRuns)
+        (
+          endsAt: lobby.isWaiting ? null : lobby.endsAt,
+          id: 'group-${lobby.id}',
+          card: _ActiveGroupAdventureCard(lobby: lobby, now: now),
+        ),
+    ]..sort((a, b) {
+        final aEnd = a.endsAt;
+        final bEnd = b.endsAt;
+        // Waiting groups have no countdown yet and belong below timed runs.
+        final order = aEnd == null
+            ? (bEnd == null ? 0 : 1)
+            : bEnd == null
+                ? -1
+                : aEnd.compareTo(bEnd);
+        return order != 0 ? order : a.id.compareTo(b.id);
+      });
     return ListView.separated(
       key: const PageStorageKey('active-adventures-scroll'),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
-      itemCount: itemCount,
+      itemCount: entries.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (context, index) => index < groupRuns.length
-          ? _ActiveGroupAdventureCard(lobby: groupRuns[index], now: now)
-          : _ActiveAdventureCard(
-              run: runs[index - groupRuns.length],
-              now: now,
-            ),
+      itemBuilder: (context, index) => KeyedSubtree(
+        key: ValueKey(entries[index].id),
+        child: entries[index].card,
+      ),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:dragon_haven/models/trial.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/screens/trial_game_screen.dart';
 import 'package:dragon_haven/theme/app_theme.dart';
+import 'package:dragon_haven/widgets/witchlight_trial_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -155,6 +156,41 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
     }
+  });
+
+  testWidgets('Witchlight matches pumpkin faces then opens the tracing path',
+      (tester) async {
+    await pumpTrial(tester, TrialKind.witchlightWard,
+        surfaceSize: const Size(320, 640));
+    await tester.tap(find.byKey(const Key('start-seasonal-trial')));
+    await tester.pump();
+    final pumpkins = tester
+        .widgetList<WitchlightPumpkin>(find.byType(WitchlightPumpkin))
+        .toList();
+    expect(pumpkins, hasLength(7));
+    expect(pumpkins.skip(1).map((p) => p.variant).toSet(), hasLength(6));
+    final target = pumpkins.first.variant;
+    final matchingPositions = <int>[];
+    for (var i = 0; i < 6; i++) {
+      final pumpkin = tester.widget<WitchlightPumpkin>(find.descendant(
+        of: find.byKey(Key('witchlight-rune-$i')),
+        matching: find.byType(WitchlightPumpkin),
+      ));
+      if (pumpkin.variant == target) matchingPositions.add(i);
+    }
+    expect(matchingPositions, hasLength(1));
+    await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 2000)));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester
+        .tap(find.byKey(Key('witchlight-rune-${matchingPositions.single}')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.byType(WitchlightTracePath), findsOneWidget);
+    expect(find.textContaining('Keep your finger down'), findsOneWidget);
+    expect(find.byKey(const Key('witchlight-lane-0')), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('finished run presents the animated grade and exact rewards',

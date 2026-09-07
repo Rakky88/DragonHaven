@@ -17,6 +17,7 @@ import 'package:dragon_haven/providers/online_account_provider.dart';
 import 'package:dragon_haven/screens/adventure_hub_screen.dart';
 import 'package:dragon_haven/screens/conclave_screen.dart';
 import 'package:dragon_haven/screens/friend_messages_screen.dart';
+import 'package:dragon_haven/screens/friends_screen.dart';
 import 'package:dragon_haven/services/diagnostic_reporter.dart';
 import 'package:dragon_haven/services/automatic_cloud_backup.dart';
 import 'package:dragon_haven/services/social_repository.dart';
@@ -31,6 +32,136 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  ConclaveSnapshot unreadSnapshot(List<ConclaveMessage> messages,
+          {String id = 'badge-conclave'}) =>
+      ConclaveSnapshot.fromJson({
+        'conclave': {'conclave_id': id, 'name': 'Badge Aerie'},
+        'messages': messages
+            .map((m) => {
+                  'message_id': m.id,
+                  'sender_id': m.senderId,
+                  'sender_name': m.senderName,
+                  'body': m.body,
+                  'kind': m.kind,
+                  'created_at': m.createdAt.toIso8601String(),
+                })
+            .toList(),
+      });
+
+  ConclaveMessage badgeMessage(String id, DateTime createdAt,
+          {String sender = 'friend-user'}) =>
+      ConclaveMessage(
+        id: id,
+        senderId: sender,
+        senderName: 'Lyra',
+        senderPortraitKey: 'portrait_001',
+        kind: 'text',
+        body: id,
+        payload: const {},
+        createdAt: createdAt,
+      );
+
+  test(
+      'Conclave unread count filters age and own messages and persists per Conclave',
+      () async {
+    final now = DateTime.now();
+    final game = HouseholdProvider(random: Random(7));
+    final messages = [
+      badgeMessage('new', now.subtract(const Duration(minutes: 5))),
+      badgeMessage('old', now.subtract(const Duration(hours: 25))),
+      badgeMessage('boundary', now.subtract(const Duration(hours: 24))),
+      badgeMessage('future', now.add(const Duration(minutes: 5))),
+      badgeMessage('mine', now.subtract(const Duration(minutes: 1)),
+          sender: 'my-user'),
+    ];
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..conclaveSnapshot = unreadSnapshot(messages);
+    final online = OnlineAccountProvider(
+        repository: repository,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
+    await online.initialize();
+    expect(online.unreadConclaveMessagesAt(now), 1);
+    expect(
+        online.unreadConclaveMessagesAt(now.add(const Duration(hours: 26))), 0);
+    await online.markConclaveMessagesRead(online.conclave!);
+    expect(online.unreadConclaveMessagesAt(now), 0);
+    online.dispose();
+
+    final restored = OnlineAccountProvider(
+        repository: _FakeSocialRepository(inventoryImported: true)
+          ..conclaveSnapshot = unreadSnapshot(messages),
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
+    await restored.initialize();
+    expect(restored.unreadConclaveMessagesAt(now), 0);
+    restored.conclave = unreadSnapshot(messages, id: 'other-conclave');
+    expect(restored.unreadConclaveMessagesAt(now), 1);
+    restored.dispose();
+  });
+
+  testWidgets(
+      'Conclave badge clears only in the visible chat and returns for new messages',
+      (tester) async {
+    final game = HouseholdProvider(random: Random(7));
+    final now = DateTime.now().subtract(const Duration(minutes: 1));
+    final messages = [badgeMessage('one', now), badgeMessage('two', now)];
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..conclaveSnapshot = unreadSnapshot(messages);
+    final online = OnlineAccountProvider(
+        repository: repository,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
+    await online.initialize();
+    Widget app(bool active) => MultiProvider(
+            providers: [
+              ChangeNotifierProvider.value(value: game),
+              ChangeNotifierProvider.value(value: online),
+            ],
+            child: MaterialApp(
+                home: Scaffold(body: FriendsScreen(active: active))));
+    await tester.pumpWidget(app(true));
+    Badge badge() =>
+        tester.widget<Badge>(find.byKey(const Key('conclave-unread-badge')));
+    expect(badge().isLabelVisible, isTrue);
+    expect((badge().label as Text).data, '2');
+    expect(badge().backgroundColor, Colors.redAccent);
+    await tester.tap(find.byKey(const Key('conclave-tab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    expect(online.unreadConclaveMessageCount, 0);
+    expect(badge().isLabelVisible, isFalse);
+
+    await tester.pumpWidget(app(false));
+    repository.conclaveSnapshot =
+        unreadSnapshot([...messages, badgeMessage('three', now)]);
+    await online.refresh();
+    await tester.pump();
+    await tester.pump();
+    expect(online.unreadConclaveMessageCount, 1);
+    expect(badge().isLabelVisible, isTrue);
+    await tester.pumpWidget(app(true));
+    await tester.pump();
+    expect(online.unreadConclaveMessageCount, 0);
+
+    await tester.tap(find.byKey(const Key('friends-tab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    repository.conclaveSnapshot = unreadSnapshot([
+      ...messages,
+      badgeMessage('three', now),
+      badgeMessage('four', now),
+    ]);
+    await online.refresh();
+    await tester.pump();
+    expect(online.unreadConclaveMessageCount, 1);
+    await tester.tap(find.byKey(const Key('conclave-tab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    expect(online.unreadConclaveMessageCount, 0);
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+  });
 
   testWidgets('keeper portraits preserve their complete circular artwork',
       (tester) async {
@@ -2080,10 +2211,20 @@ void main() {
     await tester.tap(find.text('Friends').last);
     await tester.pump(const Duration(milliseconds: 350));
     expect(
-      tester.getTopLeft(find.byKey(const Key('open-conclave'))).dy,
+      tester.getTopLeft(find.byKey(const Key('conclave-tab'))).dy,
       lessThan(
           tester.getTopLeft(find.byKey(const Key('add-friend-button'))).dy),
     );
+    expect(find.byKey(const Key('open-conclave')), findsNothing);
+    await tester.tap(find.byKey(const Key('conclave-tab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.byType(ConclaveScreen), findsOneWidget);
+    expect(find.byType(BackButton), findsNothing);
+    expect(find.byKey(const Key('friends-tab')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('friends-tab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
     await tester.scrollUntilVisible(
       find.byKey(const Key('friend-friend-user')),
       260,

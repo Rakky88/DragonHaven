@@ -419,23 +419,6 @@ class _TrialResultCard extends StatelessWidget {
                       alignment: Alignment.center,
                       children: [
                         TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0, end: 1),
-                          duration: const Duration(milliseconds: 1350),
-                          curve: Curves.easeOutCubic,
-                          builder: (_, turn, child) => Transform.rotate(
-                            angle: turn * pi * 1.5,
-                            child: Transform.scale(
-                              scale: .75 + turn * .42,
-                              child: child,
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.auto_awesome_rounded,
-                            size: 142,
-                            color: color.withValues(alpha: .28),
-                          ),
-                        ),
-                        TweenAnimationBuilder<double>(
                           tween: Tween(begin: .06, end: 1),
                           duration: const Duration(milliseconds: 1050),
                           curve: Curves.elasticOut,

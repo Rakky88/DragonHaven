@@ -26,6 +26,7 @@ const specialContentReference = ReferenceDocumentSpec(
     'lib/providers/household_provider.dart',
     'lib/screens/adventure_hub_screen.dart',
     'lib/screens/seasonal_trial_game.dart',
+    'lib/widgets/witchlight_trial_widgets.dart',
     'lib/services/notification_service.dart',
     'supabase/migrations/202608290026_special_chest_trade_support.sql',
     'supabase/migrations/202609070040_seasonal_events.sql',

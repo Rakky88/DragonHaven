@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: app version `v0.05.14`
 
-<!-- reference-source-fingerprint: d5095b97509c6845 -->
+<!-- reference-source-fingerprint: de21617fd575d490 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -76,7 +76,7 @@ seven-ribbon Haven Spectrum meter. Thresholds are 1, 10, 25, 50, 100, 250, and
 
 | Event | Trial kind | Player-facing Trial | Loop |
 |---|---|---|---|
-| Halloween | `witchlightWard` | Witchlight Ward | Read a ward rune, guide its witchlight, break the approaching curse |
+| Halloween | `witchlightWard` | Witchlight Ward | Memorize a pumpkin face, trace the witchlight path, break the approaching curse |
 | Christmas | `hollyfrostGiftforge` | Hollyfrost Giftforge | Memorize a gift recipe, stamp it at the forge, guide it to the sleigh |
 | New Year | `midnightChime` | Midnight Chime | Read the turning sky, strike chimes in rhythm, launch first-dawn light |
 | Valentine | `rosevowRelay` | Rosevow Relay | Pair heartlights, guide them through the crossing, seal the shared vow |
@@ -86,6 +86,16 @@ The five Trials each use their own full-screen background, icon, six gameplay
 sprites, animated three-phase loop, sounds, and theme. A run lasts 75 seconds.
 Might, Spirit, and Arcana provide small capped gameplay assistance; expertise
 never multiplies the submitted score.
+
+Witchlight Arcana shows a pumpkin lantern to memorize, followed by six similar
+lantern choices. Eye direction and tooth position distinguish the six faces.
+Spirit requires one continuous finger trace from the wisp to the lantern along
+the visible winding corridor. Crossing an edge, lifting early, or cancelling
+the gesture fails the action and applies the existing two-second penalty.
+Fast swipes are checked along their entire movement; tapping the destination
+does not complete the path. The path mirrors on alternate rounds. Spirit
+expertise visibly widens the corridor from 24 to 32 logical pixels (capped at
+400 Spirit), with no random forgiveness. Might keeps its timing challenge.
 
 The runtime presentation deliberately carries that art through the complete
 flow: a themed HUD emblem and three-phase sprite trail, subtle ambient sprite

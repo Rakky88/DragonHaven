@@ -8,6 +8,7 @@ import '../models/pet.dart';
 import '../models/trial.dart';
 import '../services/audio_service.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/witchlight_trial_widgets.dart';
 
 class SeasonalTrialRunResult {
   const SeasonalTrialRunResult({
@@ -196,11 +197,13 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
       .20 +
       widget.dragon.trainingFor(TrainingFocus.might).clamp(0, 400) / 400 * .09;
 
-  int _optionSprite(int position) => position == _correctChoicePosition
-      ? _target
-      : (_target + position + 1).remainder(6) == _target
-          ? (_target + position + 2).remainder(6)
-          : (_target + position + 1).remainder(6);
+  int _optionSprite(int position, {bool unique = false}) => unique
+      ? (_target + position - _correctChoicePosition) % 6
+      : position == _correctChoicePosition
+          ? _target
+          : (_target + position + 1).remainder(6) == _target
+              ? (_target + position + 2).remainder(6)
+              : (_target + position + 1).remainder(6);
 
   int _optionColor(int position) => position == _correctChoicePosition
       ? _targetColor
@@ -356,6 +359,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
     required String keyPrefix,
     int optionCount = 6,
     bool colored = false,
+    bool pumpkins = false,
   }) =>
       Column(
         key: key,
@@ -390,11 +394,13 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 180),
               child: _promptVisible
-                  ? _EventTrialSprite(
-                      key: ValueKey('prompt-$_target-$_round'),
-                      theme: theme,
-                      index: _target,
-                    )
+                  ? pumpkins
+                      ? WitchlightPumpkin(variant: _target)
+                      : _EventTrialSprite(
+                          key: ValueKey('prompt-$_target-$_round'),
+                          theme: theme,
+                          index: _target,
+                        )
                   : const Icon(
                       Icons.help_rounded,
                       key: ValueKey('hidden-prompt'),
@@ -413,12 +419,17 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                 _SpriteTapTarget(
                   key: Key('$keyPrefix-$position'),
                   theme: theme,
-                  index: _optionSprite(position),
+                  index: _optionSprite(position, unique: pumpkins),
+                  artwork: pumpkins
+                      ? WitchlightPumpkin(
+                          variant: _optionSprite(position, unique: pumpkins))
+                      : null,
                   color: colored ? theme.palette[_optionColor(position)] : null,
                   onTap: _promptVisible
                       ? null
                       : () => _answer(
-                            _optionSprite(position) == _target &&
+                            _optionSprite(position, unique: pumpkins) ==
+                                    _target &&
                                 (!colored ||
                                     _optionColor(position) == _targetColor),
                           ),
@@ -583,17 +594,46 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
             0 => _buildChoicePhase(
                 strings,
                 key: const ValueKey('witchlight-arcana'),
-                instructionEn: 'Arcana · identify the safe ward',
-                instructionNl: 'Arcana · herken het veilige teken',
+                instructionEn: 'Arcana · remember the pumpkin face',
+                instructionNl: 'Arcana · onthoud het pompoengezicht',
                 keyPrefix: 'witchlight-rune',
+                pumpkins: true,
               ),
-            1 => _buildLanePhase(
-                strings,
+            1 => Column(
                 key: const ValueKey('witchlight-spirit'),
-                instructionEn: 'Spirit · guide the wisp to its lantern',
-                instructionNl: 'Spirit · leid het dwaallicht naar de lantaarn',
-                keyPrefix: 'witchlight-lane',
-                travelerSprite: 2,
+                children: [
+                  const SizedBox(height: 12),
+                  Text(
+                    strings.pick(
+                      'Spirit · trace the path to the lantern',
+                      'Spirit · volg het pad naar de lantaarn',
+                    ),
+                    textAlign: TextAlign.center,
+                    style: _instructionStyle,
+                  ),
+                  const SizedBox(height: 6),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      strings.pick(
+                        'Start at the wisp. Keep your finger down and inside the edges.',
+                        'Begin bij het dwaallicht. Houd je vinger op het scherm en binnen de randen.',
+                      ),
+                      textAlign: TextAlign.center,
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ),
+                  Expanded(
+                    child: WitchlightTracePath(
+                      key: ValueKey('witchlight-path-$_round'),
+                      enabled: _started && !_ending && !_inputLocked,
+                      mirrored: _round.isEven,
+                      tolerance: _spiritTolerance,
+                      onResult: (correct) => _answer(correct),
+                    ),
+                  ),
+                ],
               ),
             _ => _buildTimingPhase(
                 strings,
@@ -1326,8 +1366,10 @@ class _SpriteTapTarget extends StatelessWidget {
     required this.index,
     required this.onTap,
     this.color,
+    this.artwork,
   });
 
+  final Widget? artwork;
   final _SeasonalTheme theme;
   final int index;
   final VoidCallback? onTap;
@@ -1351,12 +1393,14 @@ class _SpriteTapTarget extends StatelessWidget {
                 color: (color ?? theme.accentColor).withValues(alpha: .78),
               ),
             ),
-            child: color == null
-                ? _EventTrialSprite(theme: theme, index: index)
-                : ColorFiltered(
-                    colorFilter: ColorFilter.mode(color!, BlendMode.modulate),
-                    child: _EventTrialSprite(theme: theme, index: index),
-                  ),
+            child: artwork ??
+                (color == null
+                    ? _EventTrialSprite(theme: theme, index: index)
+                    : ColorFiltered(
+                        colorFilter:
+                            ColorFilter.mode(color!, BlendMode.modulate),
+                        child: _EventTrialSprite(theme: theme, index: index),
+                      )),
           ),
         ),
       );
@@ -1451,9 +1495,9 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
           introEn: 'Raise the Witchlight Ward',
           introNl: 'Herstel de Heksenlichtbescherming',
           instructionsEn:
-              'Match each glowing ward before the creeping gloom reaches the lantern grove.',
+              'Remember the pumpkin face, trace the path within its edges, then shatter the curse.',
           instructionsNl:
-              'Vind elk gloeiend teken voordat de sluipende duisternis het lantaarnwoud bereikt.',
+              'Onthoud het pompoengezicht, volg met je vinger het dwaallichtpad binnen de randen en verbrijzel de vloek.',
           successEn: 'The ward burns brighter!',
           successNl: 'De bescherming brandt feller!',
           failureEn: 'The gloom stole two seconds.',

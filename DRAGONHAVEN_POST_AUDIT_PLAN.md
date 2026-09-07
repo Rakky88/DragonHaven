@@ -7,6 +7,30 @@ Actuele openbare versie: **v0.05.14, versionCode 10064 en Latest. Geregistreerde
 Keepers op een lagere versie krijgen bij appstart de wegdrukbare updatepopup met
 de permanente Android-downloadroute.**
 
+Releasecandidate **v0.05.15 / versionCode 10065** bevat de aangevraagde
+Friends/Conclave-tabs, een lokale ongelezen-teller per account en Conclave voor
+berichten jonger dan 24 uur (eigen berichten uitgesloten), pompoengezichten voor
+Witchlight Arcana, continu padtraceren voor Spirit, een uitslag zonder extra
+sterren en actieve avonturen op oplopende eindtijd. Nog niet gestarte groepen
+staan onderaan. De chat wordt alleen gelezen gemarkeerd wanneer de chat zichtbaar
+is en de speler bij de nieuwste berichten is. De teller synchroniseert niet
+naar andere apparaten; hij ververst tijdens het actieve appproces elke 30 seconden.
+
+Releasecontrole: de eerste volledige suite vond ontbrekende vertalingen van de
+nieuwe uitleg en een updatefixture die niet meer nieuwer was dan de app. De
+vertalingen zijn voor alle zes extra talen aangevuld en de fixture biedt nu
+v0.05.16 aan een v0.05.15-app aan. De gerichte sociale suite (51 tests) en de
+Trial-/documentatiecontroles zijn groen. Volledige hervalidatie is groen: 467/467 tests. De ondertekende APK heeft
+versie 0.05.15, buildnummer 10065 en hetzelfde vaste certificaat als v0.05.14.
+Friends/Conclave en About zijn op de emulator gecontroleerd; compacte
+Witchlight- en uitslaglayouts en reduced motion vallen onder widgetcontroles.
+Publicatiebewijs wordt na publicatie toegevoegd.
+
+De lokale productiepreflight op 7 september 2026 bevestigde 41/41 migraties,
+nul database-lintfouten, Auth health/settings HTTP 200 en applicatiehealth HTTP
+200. Deze release wijzigt geen migraties, serverfuncties, economyactivatie of
+beloningstabellen.
+
 Actuele productieserver: **41/41 repositorymigraties; gezond, met nul
 database-lintfouten en groene Auth-/applicatiehealth**
 
@@ -1337,3 +1361,5 @@ op aannames rusten: voeg altijd een test, workflowrun, dashboard, migratiebewijs
 of expliciet gebruikersbesluit toe. Codex is eigenaar van dit onderhoud na door
 Codex uitgevoerd werk; Rick blijft eigenaar van externe accountacties en
 productbesluiten en bevestigt wanneer die werkelijk zijn uitgevoerd.
+
+| 07-09-2026 | v0.05.15 releasecandidate gecontroleerd | Codex, binnen jouw releasetoestemming | 467 tests, lokale productiepreflight en ondertekende APK | Friends/Conclave-tabs en lokale unread-badge, Witchlight-pompoenen/padtraceren, schonere Trial-rank en actieve avonturen op eindtijd. APK: 477.734.589 bytes, SHA-256 `1b9de0973d9de761d7486d95bf43240f78ad6a83dcc9a5b19d94920c4203d529`; package `nl.dragonhaven.app`, versionName `0.05.15`, versionCode `10065`; certificaat `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`. Preflight herhaald om 07:25 UTC: 41/41 migraties, nul lintfouten, Auth en apphealth HTTP 200. GitHub dry-run: tag en asset bestaan nog niet, geen vervanging nodig. |
