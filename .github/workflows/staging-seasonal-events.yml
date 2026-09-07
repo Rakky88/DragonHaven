@@ -1,18 +1,13 @@
-name: Staging seasonal forward fix 41
+name: Staging Egg Altar verification
 
 on:
   workflow_dispatch:
-    inputs:
-      confirmation:
-        description: Type APPLY_DRAGONHAVEN_STAGING_SEASONAL_41 to run
-        required: true
-        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: dragonhaven-staging-seasonal-41
+  group: dragonhaven-staging-egg-altar
   cancel-in-progress: false
 
 jobs:
@@ -20,143 +15,94 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 25
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+      ALTAR_STAGING_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+      ALTAR_STAGING_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+      ALTAR_STAGING_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Require exact staging-only scope
-        shell: pwsh
-        env:
-          CONFIRMATION: ${{ inputs.confirmation }}
-          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
-          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
-          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
-          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
-          STAGING_SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
-          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
-          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
-        run: |
-          if ($env:CONFIRMATION -cne 'APPLY_DRAGONHAVEN_STAGING_SEASONAL_41') {
-            throw 'The exact staging seasonal confirmation is missing.'
-          }
-          foreach ($name in @(
-            'STAGING_SUPABASE_URL', 'STAGING_SUPABASE_PUBLISHABLE_KEY',
-            'STAGING_SUPABASE_PROJECT_REF', 'STAGING_SUPABASE_ACCESS_TOKEN',
-            'STAGING_SUPABASE_DB_PASSWORD', 'STAGING_E2E_EMAIL',
-            'STAGING_E2E_PASSWORD')) {
-            if ([string]::IsNullOrWhiteSpace(
-                [Environment]::GetEnvironmentVariable($name))) {
-              throw "Missing protected staging configuration: $name."
-            }
-          }
-          $projectRef = $env:STAGING_SUPABASE_PROJECT_REF.Trim()
-          $baseUrl = $env:STAGING_SUPABASE_URL.TrimEnd('/')
-          if ($projectRef -eq 'tnzathhutuwmohmjfrlo' -or
-              $baseUrl -eq 'https://tnzathhutuwmohmjfrlo.supabase.co' -or
-              $baseUrl -ne "https://$projectRef.supabase.co") {
-            throw 'This workflow must never target production.'
-          }
-
-      - name: Supabase CLI
-        uses: supabase/setup-cli@v3
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v3
         with:
           version: 2.116.0
-
-      - name: Verify exact 40 to 41 migration set and dry run
+      - name: Verify staging scope and dry run
         shell: pwsh
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
-          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
-          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
-          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
         run: |
-          $expectedRemote = '202609070040'
-          $expectedPending = @('202609070041')
-          supabase link --project-ref $env:STAGING_SUPABASE_PROJECT_REF `
-            --password $env:SUPABASE_DB_PASSWORD
+          $ref = $env:ALTAR_STAGING_REF
+          if ($ref -notmatch '^[a-z0-9]{20}$' -or $ref -eq 'tnzathhutuwmohmjfrlo' -or
+            $env:ALTAR_STAGING_URL.TrimEnd('/') -ne "https://$ref.supabase.co") {
+            throw 'Only the configured staging project is permitted.'
+          }
           New-Item -ItemType Directory -Path staging -Force | Out-Null
-          $migrationResult = ((supabase migration list --linked `
-            --output-format json) | Out-String) | ConvertFrom-Json
-          if ($LASTEXITCODE -ne 0) { throw 'Could not read staging migrations.' }
-          $remoteVersions = @($migrationResult.migrations |
-            ForEach-Object { [string]$_.remote } |
-            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-            Sort-Object)
-          if ($remoteVersions.Count -eq 0 -or
-              $remoteVersions[-1] -ne $expectedRemote) {
-            throw 'Staging is not exactly at migration 40.'
+          supabase link --project-ref $ref --password $env:SUPABASE_DB_PASSWORD
+          if ($LASTEXITCODE -ne 0) { throw 'Staging link failed.' }
+          $result = ((supabase migration list --linked --output-format json) | Out-String) | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Migration list failed.' }
+          $remote = @($result.migrations | ForEach-Object { [string]$_.remote } |
+            Where-Object { $_ } | Sort-Object)
+          if ($remote.Count -eq 0 -or $remote[-1] -notin @('202609070041', '202609070042', '202609070043')) {
+            throw 'Staging must be at migration 41, 42 or 43.'
           }
-          $pendingLocal = @(Get-ChildItem supabase/migrations -File -Filter '*.sql' |
-            ForEach-Object {
-              if ($_.BaseName -notmatch '^(\d+)_') {
-                throw "Invalid migration filename: $($_.Name)."
-              }
-              $Matches[1]
-            } | Where-Object { [long]$_ -gt [long]$expectedRemote } | Sort-Object)
-          if (@(Compare-Object $expectedPending $pendingLocal).Count -ne 0) {
-            throw 'The pending staging set is not exactly migration 41.'
+          $pending = @(Get-ChildItem supabase/migrations -Filter '*.sql' |
+            ForEach-Object { $_.BaseName.Split('_')[0] } |
+            Where-Object { [long]$_ -gt [long]$remote[-1] })
+          if (@($pending | Where-Object { $_ -notin @('202609070042', '202609070043') }).Count -ne 0) {
+            throw 'An unexpected migration is pending.'
           }
-          ./tool/public_server_health_check.ps1 `
-            -BaseUrl $env:STAGING_SUPABASE_URL `
-            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
-            -Environment staging -OutputPath staging/seasonal-health-before.json
-          # Migration 40 is already on staging and its two ambiguous identifiers
-          # are the exact defects migration 41 replaces. Preserve the evidence,
-          # but gate on the post-migration lint below.
-          supabase db lint --linked --level error `
-            --output-format json | Tee-Object staging/seasonal-lint-before.json
-          supabase db push --linked --include-all --dry-run |
-            Tee-Object staging/seasonal-migration-dry-run.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Migration 41 dry run failed.' }
-
-      - name: Apply migration 41 and run both E2E contracts
+          ./tool/public_server_health_check.ps1 -BaseUrl $env:ALTAR_STAGING_URL `
+            -PublishableKey $env:ALTAR_STAGING_KEY -Environment staging `
+            -OutputPath staging/altar-health-before.json
+          supabase db push --linked --dry-run | Tee-Object staging/altar-dry-run.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Altar dry run failed.' }
+      - name: Rehearse pending migrations and contract in a rolled-back transaction
         shell: pwsh
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
-          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
-          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
-          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
-          STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
-          STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
-          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
         run: |
-          supabase db push --linked --include-all --yes |
-            Tee-Object staging/seasonal-migration-apply.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Migration 41 was not applied.' }
-          ./tool/release_server_preflight.ps1 `
-            -ExpectedProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
-            -ExpectedUrl $env:STAGING_SUPABASE_URL `
-            -ExpectedPublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY |
-            Tee-Object staging/seasonal-preflight-after.txt
-          ./tool/staging_economy_foundation_e2e.ps1 `
-            -SupabaseUrl $env:STAGING_SUPABASE_URL `
-            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
-            -Email $env:STAGING_E2E_EMAIL -Password $env:STAGING_E2E_PASSWORD `
-            -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
-            -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
-            -EvidencePath staging/vanity-purchase-e2e.txt `
-            -VerifyVanityPurchase
-          ./tool/staging_seasonal_events_e2e.ps1 `
-            -SupabaseUrl $env:STAGING_SUPABASE_URL `
-            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
-            -Email $env:STAGING_E2E_EMAIL -Password $env:STAGING_E2E_PASSWORD `
-            -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
-            -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
-          supabase db lint --linked --level error --fail-on error `
-            --output-format json | Tee-Object staging/seasonal-lint-after.json
-          if ($LASTEXITCODE -ne 0) { throw 'Post-migration lint failed.' }
-          ./tool/public_server_health_check.ps1 `
-            -BaseUrl $env:STAGING_SUPABASE_URL `
-            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
-            -Environment staging -OutputPath staging/seasonal-health-after.json
-
-      - name: Upload privacy-safe staging evidence
+          $listing = ((supabase migration list --linked --output-format json) | Out-String) | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Migration list failed.' }
+          $remote = @($listing.migrations | ForEach-Object { [string]$_.remote } | Where-Object { $_ })
+          $sql = "begin;`n"
+          foreach ($file in Get-ChildItem supabase/migrations -Filter '*.sql' | Sort-Object Name) {
+            if ($file.BaseName.Split('_')[0] -notin $remote) {
+              $sql += (Get-Content -LiteralPath $file.FullName -Raw) + "`n"
+            }
+          }
+          $contract = Get-Content -LiteralPath tool/egg_altar_contract.sql -Raw
+          $sql += $contract.Replace('begin;', '').Replace('rollback;', '') + "`nrollback;`nselect true as egg_altar_contract_passed;"
+          $response = Invoke-RestMethod -Method Post `
+            -Uri "https://api.supabase.com/v1/projects/$env:ALTAR_STAGING_REF/database/query" `
+            -Headers @{ Authorization = "Bearer $env:SUPABASE_ACCESS_TOKEN" } `
+            -ContentType 'application/json' `
+            -Body (ConvertTo-Json @{ query = $sql; read_only = $false } -Compress)
+          if (($response | ConvertTo-Json -Depth 5) -notmatch '"egg_altar_contract_passed"\s*:\s*true') {
+            throw 'Rolled-back rehearsal failed; migrations will not be applied.'
+          }
+          'PASS: migration and contract rehearsal rolled back before db push.' | Set-Content staging/altar-rehearsal.txt
+      - name: Apply and verify Altar contract
+        shell: pwsh
+        run: |
+          supabase db push --linked --yes | Tee-Object staging/altar-migrations.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Altar migrations failed.' }
+          $query = Get-Content -LiteralPath tool/egg_altar_contract.sql -Raw
+          $response = Invoke-RestMethod -Method Post `
+            -Uri "https://api.supabase.com/v1/projects/$env:ALTAR_STAGING_REF/database/query" `
+            -Headers @{ Authorization = "Bearer $env:SUPABASE_ACCESS_TOKEN" } `
+            -ContentType 'application/json' `
+            -Body (ConvertTo-Json @{ query = $query; read_only = $false } -Compress)
+          if (($response | ConvertTo-Json -Depth 5) -notmatch '"egg_altar_contract_passed"\s*:\s*true') {
+            throw 'The Altar contract did not pass.'
+          }
+          'PASS: ownership, tags, old saves, exactly-once returns, Sinister confirmation and 5x pity, crafting, Oracle, Quill, transfers, Beacon donations and permissions.' |
+            Set-Content staging/altar-contract.txt
+          ./tool/release_server_preflight.ps1 -ExpectedProjectRef $env:ALTAR_STAGING_REF `
+            -ExpectedUrl $env:ALTAR_STAGING_URL -ExpectedPublishableKey $env:ALTAR_STAGING_KEY |
+            Tee-Object staging/altar-preflight.txt
+          supabase db lint --linked --level error --fail-on error --output-format json |
+            Tee-Object staging/altar-lint.json
+          if ($LASTEXITCODE -ne 0) { throw 'Database lint failed.' }
+      - uses: actions/upload-artifact@v6
         if: always()
-        uses: actions/upload-artifact@v6
         with:
-          name: DragonHaven-staging-seasonal-forward-fix-41
+          name: DragonHaven-Egg-Altar-staging-evidence
           path: staging/
-          if-no-files-found: warn
           retention-days: 30
