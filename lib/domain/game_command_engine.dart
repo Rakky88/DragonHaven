@@ -30,6 +30,9 @@ abstract final class GameCommandEngine {
       throw const GameCommandException('invalid_command');
     }
     final args = _Arguments(payload);
+    if (state['pendingAltarOperation'] != null) {
+      throw const GameCommandException('game_state_reconciliation_required');
+    }
     final identities = ServerEntropy(secretSeed, stream: 'identities');
     final game = HouseholdProvider.forServerState(
       state,
@@ -38,6 +41,11 @@ abstract final class GameCommandEngine {
       idGenerator: identities.uuid,
     );
     try {
+      if (game.eggAltar.ownerId != null && game.eggAltar.ownerId != keeperId) {
+        throw const GameCommandException('game_state_owner_mismatch');
+      }
+      game.altarCurrentUserId = () => keeperId;
+      game.altarRequiresAccount = true;
       // Scores, reward amounts, paid entitlements, trade settlements and social
       // claims are deliberately absent. They need verified server records.
       final Object? result;

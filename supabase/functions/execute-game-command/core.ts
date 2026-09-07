@@ -38,6 +38,7 @@ const commandKeys: Record<string, readonly string[]> = {
 export const domainErrors = new Set([
   "invalid_command", "invalid_argument", "unknown_item", "special_chest_id_required",
   "unknown_adventure", "unknown_room", "game_state_reconciliation_required",
+  "game_state_owner_mismatch",
   "altar_busy", "altar_sign_in_required", "altar_pending", "egg_not_found",
   "sinister_confirmation_required", "invalid_relic", "insufficient_materials",
   "already_known", "egg_reserved", "relic_not_owned", "invalid_name", "invalid_action",

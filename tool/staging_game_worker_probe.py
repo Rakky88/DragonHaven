@@ -64,7 +64,10 @@ def call(url, headers, body=None, method=None):
 def query(sql, read_only=False):
     status, value = call("https://api.supabase.com/v1/projects/" + PROJECT + "/database/query",
                          {"Authorization": "Bearer " + MANAGEMENT}, {"query": sql, "read_only": read_only})
-    require(status == 200 and isinstance(value, list), "probe_database_failed")
+    code = value.get("code", "unknown") if isinstance(value, dict) else "unknown"
+    if not isinstance(code, str) or re.fullmatch(r"[A-Z0-9]{5}", code) is None:
+        code = "unknown"
+    require(status in (200, 201) and isinstance(value, list), f"probe_database_failed_http_{status}_sql_{code}_type_{type(value).__name__}")
     return value
 
 

@@ -40,7 +40,7 @@ releasebuild met staging-Firebase is lokaal geslaagd.
 De gedeelde spelregels zijn losgemaakt van Flutter-platformdiensten en
 compileren naar een interne servermodule van minder dan 1 MB. Een synthetische
 VM/Deno-vergelijking van chests, aankopen, inventaris, ei-eigenschappen en IDs
-slaagt. Elf gerichte tests dekken onder meer herstelbare vaste serverrandomness,
+slaagt. Twaalf gerichte tests dekken onder meer herstelbare vaste serverrandomness,
 saldo-/voorraadgrenzen, tags, Sinister-confirmatie, quillverbruik en incubatie.
 Migratie 52 bevat nu een lokale kandidaat voor de transactie rond een
 afzonderlijke volledige savekopie. Zij kan alleen schaduwkopieën bijwerken;

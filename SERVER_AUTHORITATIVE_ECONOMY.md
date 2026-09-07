@@ -20,7 +20,7 @@ data and preference enums are shared without importing Flutter.
 
 The compiled internal entrypoint is under 1 MB locally. The first synthetic
 VM/Deno comparison passes, including absolute state, hidden egg properties,
-reward values and generated identities. Eleven contract tests cover the private
+reward values and generated identities. Twelve contract tests cover the private
 entropy vector, deterministic retries, wallet limits, failed batches, rejected
 client grants/scores, tags, Sinister confirmation, quill consumption and
 server-clock incubation. The asset fence also refuses a load that silently
@@ -28,6 +28,8 @@ discards owned content, changes fixed egg/Chronoshard properties, duplicates
 identities or changes progression. Such saves require reconciliation first.
 The export envelope also retains unknown top-level and entity metadata by ID
 through hatching and dragon transfers, while replacing authoritative stock.
+Altar callbacks are bound to the trusted keeper. Foreign ownership and a pending
+legacy Altar operation refuse commands until import reconciliation is complete.
 This remains a **local candidate**, not a deployed
 authoritative economy.
 

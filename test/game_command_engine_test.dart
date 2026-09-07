@@ -205,6 +205,7 @@ void main() {
   test('tagging protects a Sinister egg and its return requires confirmation',
       () async {
     final state = _fixture();
+    state['eggAltar']['ownerId'] = '11111111-1111-4111-8111-111111111111';
     const eggId = 'legacy-egg-1720000000000';
     final tagged =
         await _execute(state, 'tag_egg', {'eggId': eggId, 'tagged': true});
@@ -230,6 +231,26 @@ void main() {
         {'eggId': eggId, 'sinisterConfirmed': true});
     expect(replay['state']['eggAltar']['wallet'],
         returned['state']['eggAltar']['wallet']);
+  });
+
+  test('foreign Altar ownership and unresolved old operations block evaluation',
+      () async {
+    final foreign = _fixture();
+    foreign['eggAltar']['ownerId'] = '22222222-2222-4222-8222-222222222222';
+    await expectLater(
+        _execute(foreign, 'purchase_title_chest'),
+        throwsA(isA<GameCommandException>().having(
+            (error) => error.code, 'code', 'game_state_owner_mismatch')));
+    final pending = _fixture();
+    pending['pendingAltarOperation'] = {
+      'id': 'old-request',
+      'action': 'return',
+      'payload': {}
+    };
+    await expectLater(
+        _execute(pending, 'purchase_title_chest'),
+        throwsA(isA<GameCommandException>().having((error) => error.code,
+            'code', 'game_state_reconciliation_required')));
   });
 
   test(
