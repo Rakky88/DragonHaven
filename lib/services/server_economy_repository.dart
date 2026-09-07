@@ -1,3 +1,5 @@
+import '../app_info.dart';
+
 typedef EconomyRpcInvoker = Future<Object?> Function(
   String function,
   Map<String, dynamic> parameters,
@@ -42,10 +44,7 @@ class ServerEconomyRepository {
 
   static const mutationsEnabled = false;
   static const protocolVersion = 1;
-  static const clientBuild = int.fromEnvironment(
-    'DRAGONHAVEN_BUILD_NUMBER',
-    defaultValue: 10068,
-  );
+  static const clientBuild = AppInfo.buildNumber;
 
   final EconomyRpcInvoker _invoke;
 

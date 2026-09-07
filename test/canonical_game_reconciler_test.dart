@@ -164,8 +164,9 @@ void main() {
     final requests = <String>[];
     final sync = reconciler(send: (intent) async {
       requests.add(intent.requestId);
-      if (requests.length == 1)
+      if (requests.length == 1) {
         throw TimeoutException('simulated lost response after commit');
+      }
       return _receipt(replayed: true);
     });
     await expectLater(sync.resume(_owner), _error('game_command_unavailable'));

@@ -1,7 +1,7 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **7 September 2026**
-Released app: **v0.05.18 / 10068**; production **49**, staging **54**.
+Released app: **v0.05.18 / 10068**; production **49**, staging **55**.
 Migration **49** adds owner-scoped inventory pagination and passed its staging rehearsal and applied contracts in run `34127201082`. Production run `34129277707` then proved identical staging source, rollback rehearsal, exact migration 49, repeated snapshot contract, parity, zero lint errors and health 200. Mutations remain disabled and all accounts remain legacy.
 Migrations **45-47** are deployed dormant: chest opening, server inventory guard and item shop.
 Production run `34116589237` passed exact staging-source checks, rollback rehearsals, all three contracts, migration parity, zero-error lint and health. Before/after checks prove mutations remain disabled and all accounts remain in legacy compatibility.
@@ -44,9 +44,21 @@ last. Eleven tests cover lost commit responses, local save failures, duplicate
 submits, account changes, old receipts, durable refusals and damaged journals.
 If both intent copies are unreadable it deliberately requires recovery instead
 of guessing a fresh purchase; automatic recovery from server intent history is
-still open. Local migration 55 lets completed success/failure receipts replay
+still open. Migration 55 lets completed success/failure receipts replay
 while mutations are paused or the ruleset changed, while new/unfinished leases
-remain gated. Its staging application and paused-replay proof are pending.
+remain gated. Run
+[34151895090](https://github.com/Rakky88/DragonHaven/actions/runs/34151895090)
+applied exactly 55 after contracts 52–55, deployed the compiled worker and proved
+both paused success and failure replay with new mutations refused. The original
+live save/wallet stayed unchanged, synthetic accounts were removed and runtime
+was disabled. Final schema 55, lint 0, Auth/settings/app 200.
+
+The staged client transport now uses the confirmed existing Supabase session,
+an account epoch, a fixed staging URL, redirect refusal and per-request HTTP
+clients that close on completion/timeout. Response streams are bounded at 9 MiB.
+Seven SDK-backed local tests cover authorization, ownership, ABA account changes,
+closed stalled connections, response limits and durable refusal status. It has
+no service credentials and cannot target production. Main/UI wiring is pending.
 
 ### Shared rules candidate
 

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import '../app_info.dart';
+
 import 'canonical_game_snapshot.dart';
 
 /// The adapter invokes execute-game-command with the active Supabase session.
@@ -9,7 +11,7 @@ class CanonicalGameReader {
       {required this.invoke,
       required this.currentOwner,
       required this.sessionEpoch,
-      this.clientBuild = 10068,
+      this.clientBuild = AppInfo.buildNumber,
       this.timeout = const Duration(seconds: 12)});
 
   final Future<Object?> Function(Map<String, dynamic>) invoke;

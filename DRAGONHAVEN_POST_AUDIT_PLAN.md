@@ -27,7 +27,13 @@ verzoeknummer. Elf tests bewijzen herstel na een verloren serverantwoord,
 lokale opslagfouten, dubbele tikken en accountwissels; afhandelen gebeurt pas na
 het bewaren en verwerken van de nieuwste serverinventaris. Lokale migratie 55
 maakt oude uitkomsten opvraagbaar tijdens een mutatiepauze zonder nieuwe acties
-toe te laten. Stagingbewijs hiervan volgt. Herstel wanneer beide verzoekkopieën
+toe te laten. Stagingrun
+[34151895090](https://github.com/Rakky88/DragonHaven/actions/runs/34151895090)
+bewijst dit met echte requests; schema 55, lint 0, health 200, testaccounts
+opgeruimd en runtime uit. Zeven lokale SDK-tests bewijzen daarnaast de client-
+transportkoppeling met de bestaande login, accountwissels, begrensde antwoorden
+en het sluiten van vastgelopen verbindingen. Productie blijft op 49.
+Herstel wanneer beide verzoekkopieën
 beschadigd zijn en de daadwerkelijke appschermen blijven open werk.
 
 Productie- en staging-Firebase zijn ingericht zonder billingaccount. Staging
