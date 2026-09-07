@@ -6,7 +6,7 @@ Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
 Source baseline: v0.05.16, with the dormant server chest-opening candidate below
 
-<!-- reference-source-fingerprint: fea1215cd97a62aa -->
+<!-- reference-source-fingerprint: 78bc4df4a6c0bf72 -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
@@ -36,6 +36,9 @@ The canonical loader refuses an implicit inventory normalization that rerolls
 missing Chronoshard percentages, changes fixed egg properties, grants starter
 collection items or discards unknown owned content. These cases require explicit
 reconciliation; the documented live reward probabilities remain unchanged.
+Unknown save/entity metadata survives command export by stable identity. Known
+counts and inventories are replaced completely, preserving the same consumption
+and no-duplicate behavior rather than combining old and new reward inventories.
 
 - “Uniform” means every integer or every eligible item in the stated pool has the same chance.
 - Collection rewards never produce duplicates. Their exact per-item odds therefore change as the collection becomes smaller.

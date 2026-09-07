@@ -126,6 +126,38 @@ void main() {
   });
 
   test(
+      'commands preserve unknown save metadata across egg-to-dragon transitions',
+      () async {
+    final state = _fixture();
+    state['futureSaveMetadata'] = {
+      'nested': ['keep', 17]
+    };
+    state['pet']['futureDragonMetadata'] = {'value': 'keep dragon'};
+    final egg = state['eggStash'].first as Map;
+    egg['futureEggMetadata'] = {'value': 'keep egg'};
+    final activated =
+        await _execute(state, 'activate_egg', {'eggId': egg['id']});
+    final hatched = await _execute(activated['state'], 'hatch_egg',
+        {'eggId': egg['id']}, _now.add(const Duration(hours: 2)));
+    expect(hatched['result'], isTrue);
+    expect(hatched['state']['futureSaveMetadata'], state['futureSaveMetadata']);
+    final dragons = [
+      hatched['state']['pet'],
+      ...hatched['state']['sanctuaryDragons']
+    ];
+    expect(
+        dragons.singleWhere(
+            (value) => value['id'] == egg['id'])['futureEggMetadata'],
+        egg['futureEggMetadata']);
+    expect(
+        dragons.singleWhere((value) => value['id'] == state['pet']['id'])[
+            'futureDragonMetadata'],
+        state['pet']['futureDragonMetadata']);
+    expect(hatched['state']['eggStash'], isEmpty,
+        reason: 'Preserving metadata must not restore the consumed egg');
+  });
+
+  test(
       'spending is bounded by the canonical wallet, including subsequent commands',
       () async {
     final purchased = await _execute(_fixture(), 'purchase_title_chest');

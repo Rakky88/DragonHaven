@@ -6,6 +6,7 @@ import '../models/mystic_relic.dart';
 import '../models/shop_item.dart';
 import '../providers/household_provider.dart';
 import 'server_entropy.dart';
+import 'game_state_envelope.dart';
 
 /// Runs existing game rules against trusted database state. This is an internal
 /// server module, not an HTTP authorization boundary: the worker must verify
@@ -165,7 +166,8 @@ abstract final class GameCommandEngine {
       return {
         'protocol': protocol,
         'result': result,
-        'state': game.exportState()
+        'state':
+            GameStateEnvelope.preserveUnknownMetadata(state, game.exportState())
       };
     } on EggAltarException catch (error) {
       throw GameCommandException(error.code);

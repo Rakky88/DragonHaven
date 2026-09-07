@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: 5d6788ed793b86dd -->
+<!-- reference-source-fingerprint: 9b40c03473bfa9f1 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -37,6 +37,9 @@ Loading the candidate canonical state now checks a semantic asset fingerprint.
 Missing/duplicate eggs, changed fixed genetics, silently filtered Special content,
 changed tags or stock, and altered progression stop evaluation for reconciliation.
 The loader must not grant, reroll or discard assets while preparing an action.
+The command envelope preserves unknown save and entity metadata by stable ID,
+including through incubation/hatching. Exported ownership and counts replace
+their old values, so consumed eggs and spent stock cannot return through merging.
 
 - A **Special Event** owns one schedule, story, Adventure, Trial, temporary
   music alias, ranking occurrence, and reward contract.

@@ -40,7 +40,7 @@ releasebuild met staging-Firebase is lokaal geslaagd.
 De gedeelde spelregels zijn losgemaakt van Flutter-platformdiensten en
 compileren naar een interne servermodule van minder dan 1 MB. Een synthetische
 VM/Deno-vergelijking van chests, aankopen, inventaris, ei-eigenschappen en IDs
-slaagt. Tien gerichte tests dekken onder meer herstelbare vaste serverrandomness,
+slaagt. Elf gerichte tests dekken onder meer herstelbare vaste serverrandomness,
 saldo-/voorraadgrenzen, tags, Sinister-confirmatie, quillverbruik en incubatie.
 Migratie 52 bevat nu een lokale kandidaat voor de transactie rond een
 afzonderlijke volledige savekopie. Zij kan alleen schaduwkopieën bijwerken;
@@ -59,6 +59,10 @@ dekken aanmelding, geweigerde vervalste invoer, afgeschermde servergegevens,
 replay na verloren commitantwoord en begrensde requests. De echte stagingproef
 wordt via een aparte workflow uitgevoerd op tijdelijke synthetische accounts;
 geen live speler kan via deze schaduwroute saldo of inventaris wijzigen.
+Run `34146256475` heeft daarna precies migratie 52 toegepast en de worker
+uitgerold. Contracten vóór/na, pariteit 52, lint en health slagen. De HTTP-proef
+stopte vóór accountcreatie op een onleesbaar managementantwoord; de volledige
+workerproef wordt pas geaccepteerd na een geslaagde hercontrole.
 
 `GROWTH_AND_COST_PLAN.md` bevat de 100/1.000/10.000-accountscenario's, bestaande
 loadbewijzen, quota, opslag/egress-aannames en meetbare overstappen. De lokale

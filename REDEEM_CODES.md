@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: app version `v0.05.17`; Halloween-access update in migration 48
 
-<!-- reference-source-fingerprint: 2777d0292f80fa4b -->
+<!-- reference-source-fingerprint: c0d8eee54fdf709b -->
 
 This private operational ledger lists every active code. Active codes must
 never be mentioned in public release notes, store copy, or public support

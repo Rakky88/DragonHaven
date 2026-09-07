@@ -16,6 +16,7 @@ const specialContentReference = ReferenceDocumentSpec(
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
     'lib/domain/game_asset_snapshot.dart',
+    'lib/domain/game_state_envelope.dart',
     'supabase/migrations/202609070052_canonical_game_commands.sql',
     'lib/models/achievement.dart',
     'lib/models/adventure.dart',
@@ -53,6 +54,7 @@ const randomRewardsReference = ReferenceDocumentSpec(
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
     'lib/domain/game_asset_snapshot.dart',
+    'lib/domain/game_state_envelope.dart',
     'lib/domain/server_entropy.dart',
     'supabase/migrations/202609070052_canonical_game_commands.sql',
     'android/app/src/main/kotlin/nl/dragonhaven/app/MainActivity.kt',

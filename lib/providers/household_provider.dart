@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart'
 import 'package:uuid/uuid.dart';
 
 import '../domain/game_asset_snapshot.dart';
+import '../domain/game_state_envelope.dart';
 import '../l10n/game_strings.dart';
 import '../models/account_title.dart';
 import '../models/achievement.dart';
@@ -160,7 +161,8 @@ class HouseholdProvider extends ChangeNotifier {
     );
     game._restore(state);
     game._applyAltarProtection();
-    final restoredAssets = GameAssetSnapshot(game.exportState());
+    final restoredAssets = GameAssetSnapshot(
+        GameStateEnvelope.preserveUnknownMetadata(state, game.exportState()));
     if (!assets.hasSameAssets(restoredAssets)) {
       game.dispose();
       throw FormatException('Canonical game state requires reconciliation: '

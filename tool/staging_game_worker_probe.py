@@ -5,6 +5,7 @@ Tokens and service keys stay in memory. No player save or secret is logged.
 The worker operates exclusively on detached shadow copies, not live inventory.
 """
 import concurrent.futures
+import gzip
 import json
 import os
 import pathlib
@@ -35,7 +36,8 @@ def require(condition, code):
 def call(url, headers, body=None, method=None):
     require(url.startswith(BASE + "/") or url.startswith("https://api.supabase.com/v1/projects/" + PROJECT + "/"),
             "probe_endpoint_invalid")
-    request = urllib.request.Request(url, headers={"Content-Type": "application/json", **headers},
+    request = urllib.request.Request(url, headers={"Content-Type": "application/json", "Accept": "application/json",
+                                     "User-Agent": "DragonHaven-Staging-Probe/1.0", **headers},
                                      method=method or ("GET" if body is None else "POST"),
                                      data=None if body is None else json.dumps(body).encode("utf-8"))
     try:
@@ -47,10 +49,15 @@ def call(url, headers, body=None, method=None):
     with response:
         raw = response.read(10 * 1024 * 1024 + 1)
         require(len(raw) <= 10 * 1024 * 1024, "probe_response_too_large")
+        if response.headers.get("Content-Encoding") == "gzip":
+            raw = gzip.decompress(raw)
+            require(len(raw) <= 10 * 1024 * 1024, "probe_response_too_large")
         try:
             value = json.loads(raw) if raw else None
         except (ValueError, UnicodeError):
-            raise ProbeError("probe_response_invalid") from None
+            # Safe transport diagnostics only: never include a response body,
+            # URL query, header, email or request data.
+            raise ProbeError(f"probe_response_invalid_http_{response.status}_bytes_{len(raw)}") from None
         return response.status, value
 
 

@@ -1,7 +1,7 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **7 September 2026**
-Released app: **v0.05.18 / 10068**; production **49**, staging **51**.
+Released app: **v0.05.18 / 10068**; production **49**, staging **52**.
 Migration **49** adds owner-scoped inventory pagination and passed its staging rehearsal and applied contracts in run `34127201082`. Production run `34129277707` then proved identical staging source, rollback rehearsal, exact migration 49, repeated snapshot contract, parity, zero lint errors and health 200. Mutations remain disabled and all accounts remain legacy.
 Migrations **45-47** are deployed dormant: chest opening, server inventory guard and item shop.
 Production run `34116589237` passed exact staging-source checks, rollback rehearsals, all three contracts, migration parity, zero-error lint and health. Before/after checks prove mutations remain disabled and all accounts remain in legacy compatibility.
@@ -20,12 +20,14 @@ data and preference enums are shared without importing Flutter.
 
 The compiled internal entrypoint is under 1 MB locally. The first synthetic
 VM/Deno comparison passes, including absolute state, hidden egg properties,
-reward values and generated identities. Ten contract tests cover the private
+reward values and generated identities. Eleven contract tests cover the private
 entropy vector, deterministic retries, wallet limits, failed batches, rejected
 client grants/scores, tags, Sinister confirmation, quill consumption and
 server-clock incubation. The asset fence also refuses a load that silently
 discards owned content, changes fixed egg/Chronoshard properties, duplicates
 identities or changes progression. Such saves require reconciliation first.
+The export envelope also retains unknown top-level and entity metadata by ID
+through hatching and dragon transfers, while replacing authoritative stock.
 This remains a **local candidate**, not a deployed
 authoritative economy.
 
@@ -56,11 +58,16 @@ lease. The original seed/time survive a retry; expired workers are fenced by a
 new token, conflicting payloads fail, and one owner has at most one pending
 command. State and receipt commit together by revision comparison. The schema
 constrains these copies to `shadow` and cannot activate live economy ownership.
-It has not been applied. Staging run
+Initial staging run
 [34143594035](https://github.com/Rakky88/DragonHaven/actions/runs/34143594035)
 passed the full-copy, lease/replay, owner, wallet and account-deletion contracts
 and rolled back all schema, fixtures and changes. Captured Altar state still needs
 explicit reconciliation before any production conversion.
+Run `34146256475` subsequently applied exactly 52 and deployed the shadow worker:
+the contract passed before and after, with parity 52, zero lint errors and healthy
+Auth/application endpoints. The first HTTP probe stopped before creating test
+accounts because its management response was not parseable; this is not yet a
+successful end-to-end worker proof. Production remains at 49.
 
 `EconomySnapshotStore` now persists complete owner-scoped snapshots outside
 cloud backups, with atomic replacement and monotonic wallet/server revisions.
@@ -247,7 +254,7 @@ path depends on migration 37.
 - decide the production migration/cutover window and its player impact. Current
   audit authorization covers isolated staging development and rehearsals.
 
-The production project has migrations 1-49; staging additionally has push migrations 50-51. Migration 48 only opens
+The production project has migrations 1-49; staging additionally has push migrations 50-51 and shadow game migration 52. Migration 48 only opens
 the simulated Halloween preview to verified keepers (production run `34127198552`). The global mutation
 switch remains disabled and every production keeper remains on `legacy_client`. Migration 38
 is the immutable forward fix for the timestamp ambiguity found in migration 37.
