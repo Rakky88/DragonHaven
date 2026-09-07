@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +9,7 @@ import '../models/egg_altar.dart';
 import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
 import '../widgets/egg_art.dart';
+import '../widgets/egg_altar_scene.dart';
 
 String altarErrorText(AppStrings s, String code) => switch (code) {
       'egg_tagged' => s.pick('Untag this egg before returning it.',
@@ -165,7 +165,8 @@ class WeaveWalletView extends StatelessWidget {
 }
 
 class EggAltarScreen extends StatefulWidget {
-  const EggAltarScreen({super.key});
+  const EggAltarScreen({super.key, this.embedded = false});
+  final bool embedded;
   @override
   State<EggAltarScreen> createState() => _EggAltarScreenState();
 }
@@ -235,102 +236,157 @@ class _EggAltarScreenState extends State<EggAltarScreen> {
             canSkip: game.eggAltar.totalReturned > 1));
   }
 
+  void _showTutorial() {
+    final s = AppStrings.of(context);
+    showDialog<void>(
+        context: context,
+        builder: (c) => AlertDialog(
+              title: Text(s.pick('The Egg Altar', 'Het Egg Altar')),
+              content: SingleChildScrollView(
+                  child: Text(
+                      s.pick(
+                          'Choose an egg and read its details before placing it on the altar. If you want to keep an egg, tag it to protect it. When you are ready, hold Return to the Weave: the egg leaves your inventory permanently and becomes materials you can use to craft relics. Special eggs, tagged eggs, eggs in the nest and eggs reserved for a trade are protected. Returning a Sinister egg asks for one extra confirmation. Open Craft to choose a relic, check its materials and make it. Use your crafted relics to learn more about an egg or give a dragon a new name.',
+                          'Kies een ei en bekijk eerst de informatie voordat je het op het altaar plaatst. Wil je een ei bewaren, tag het dan om het te beschermen. Houd Return to the Weave ingedrukt wanneer je klaar bent: het ei verdwijnt definitief uit je inventaris en wordt omgezet in materialen waarmee je relics kunt maken. Special-eieren, getagde eieren, eieren in het nest en eieren die voor een ruil zijn gereserveerd zijn beschermd. Een Sinister-ei teruggeven vraagt om een extra bevestiging. Open Maken, kies een relic, bekijk de benodigde materialen en maak hem. Gebruik je gemaakte relics om meer over een ei te ontdekken of een draak een nieuwe naam te geven.'),
+                      key: const Key('altar-tutorial-text'),
+                      style: const TextStyle(height: 1.55))),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(c),
+                    child: Text(s.pick('Got it', 'Begrepen')))
+              ],
+            ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final game = context.watch<HouseholdProvider>();
     final s = AppStrings.of(context);
     final egg = game.eggStash.where((e) => e.id == _selectedId).firstOrNull;
     final block = egg == null ? null : game.weaveReturnBlockReason(egg.id);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Egg Altar'), actions: [
-        IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () => showDialog<void>(
-                context: context,
-                builder: (c) => AlertDialog(
-                        title: Text(s.pick('Return rewards', 'Opbrengst')),
-                        content: Text(s.pick(
-                            'Every ordinary egg gives 5 Shell Fragments. Independent bonuses: 25% for 1 Draconic Essence and 2% for 1 Weaveheart. After 39 returns without a Weaveheart, the next is guaranteed. Sinister eggs always give 25 Shell Fragments and 3, 4 or 5 Draconic Essence with equal chances, plus an independent 10% chance of 1 Weaveheart. Every returned egg advances the counter once. Materials and crafted relics cannot be traded.',
-                            'Elk gewoon ei geeft 5 Shell Fragments. Onafhankelijke bonussen: 25% op 1 Draconic Essence en 2% op 1 Weaveheart. Na 39 teruggaven zonder Weaveheart is de volgende gegarandeerd. Sinister-eieren geven altijd 25 Shell Fragments en 3, 4 of 5 Draconic Essence met gelijke kansen, plus een onafhankelijke kans van 10% op 1 Weaveheart. Elk teruggegeven ei telt eenmaal voor de teller. Materialen en gemaakte relics zijn niet verhandelbaar.')),
-                        actions: [
-                          TextButton(
-                              onPressed: () => Navigator.pop(c),
-                              child: const Text('OK'))
-                        ]))),
-      ]),
-      body: SafeArea(
-          child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
-              children: [
-            SizedBox(height: 220, child: EggAltarArt(egg: egg)),
-            Card(
-                child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: WeaveWalletView(wallet: game.eggAltar.wallet))),
-            Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+    final info = IconButton(
+        key: const Key('altar-tutorial'),
+        tooltip: s.pick('How the Altar works', 'Hoe het Altar werkt'),
+        icon: const Icon(Icons.info_outline_rounded),
+        onPressed: _showTutorial);
+    final content = ListView(
+      key: const PageStorageKey('altar-scroll'),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+      children: [
+        if (widget.embedded)
+          Row(children: [
+            Expanded(
                 child: Text(
-                    '${s.pick('Returns without a Weaveheart', 'Teruggaven zonder Weaveheart')}: ${game.eggAltar.misses}/40',
+                    s.pick('Return to the Weave', 'Terug naar de Weave'),
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.w800))),
+            info
+          ]),
+        AnimatedSize(
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeInOutCubic,
+            child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 450),
+                child: SizedBox(
+                    key: ValueKey(egg?.id),
+                    height: _crafting ? 154 : 238,
+                    width: double.infinity,
+                    child: EggAltarArt(egg: egg)))),
+        const SizedBox(height: 14),
+        Card(
+            margin: EdgeInsets.zero,
+            child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                child: WeaveWalletView(wallet: game.eggAltar.wallet))),
+        const SizedBox(height: 18),
+        SegmentedButton<bool>(segments: [
+          ButtonSegment(
+              value: false,
+              label: Text(s.pick('Return', 'Teruggeven')),
+              icon: const Icon(Icons.auto_awesome)),
+          ButtonSegment(
+              value: true,
+              label: Text(s.pick('Craft', 'Maken')),
+              icon: const Icon(Icons.handyman_outlined)),
+        ], selected: {
+          _crafting
+        }, onSelectionChanged: (v) => setState(() => _crafting = v.single)),
+        const SizedBox(height: 18),
+        if (game.pendingAltarOperation != null)
+          Card(
+              child: ListTile(
+                  title: Text(s.pick('Pending action', 'Openstaande actie')),
+                  trailing: TextButton(
+                      onPressed: game.altarBusy
+                          ? null
+                          : () => runAltarAction(
+                              context, game.retryPendingAltarOperation),
+                      child: Text(s.pick('Retry', 'Opnieuw'))))),
+        if (_crafting)
+          for (final relic in [
+            AltarRelic.nameweaversQuill,
+            ...AltarRelic.values.where((r) => r != AltarRelic.nameweaversQuill)
+          ])
+            AltarRecipeCard(relic: relic)
+        else ...[
+          FilledButton.tonalIcon(
+              key: const Key('altar-select-egg'),
+              onPressed: game.altarBusy ? null : _selectEgg,
+              icon: Icon(
+                  egg == null ? Icons.egg_outlined : Icons.swap_horiz_rounded),
+              label: Text(egg == null
+                  ? s.pick('Choose an egg', 'Kies een ei')
+                  : s.pick('Choose another egg', 'Kies een ander ei'))),
+          if (egg == null)
+            Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                child: Text(
+                    s.pick(
+                        'Give an egg back to the Weave and let its magic take a new form.',
+                        'Geef een ei terug aan de Weave en laat zijn magie een nieuwe vorm aannemen.'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12))),
-            SegmentedButton<bool>(segments: [
-              ButtonSegment(
-                  value: false,
-                  label: Text(s.pick('Return', 'Teruggeven')),
-                  icon: const Icon(Icons.auto_awesome)),
-              ButtonSegment(
-                  value: true,
-                  label: Text(s.pick('Craft', 'Maken')),
-                  icon: const Icon(Icons.handyman_outlined)),
-            ], selected: {
-              _crafting
-            }, onSelectionChanged: (v) => setState(() => _crafting = v.single)),
-            const SizedBox(height: 16),
-            if (game.pendingAltarOperation != null)
-              Card(
-                  child: ListTile(
-                      title:
-                          Text(s.pick('Pending action', 'Openstaande actie')),
-                      trailing: TextButton(
-                          onPressed: game.altarBusy
-                              ? null
-                              : () => runAltarAction(
-                                  context, game.retryPendingAltarOperation),
-                          child: Text(s.pick('Retry', 'Opnieuw'))))),
-            if (_crafting)
-              for (final relic in AltarRelic.values)
-                AltarRecipeCard(relic: relic)
-            else ...[
-              FilledButton.tonalIcon(
-                  key: const Key('altar-select-egg'),
-                  onPressed: game.altarBusy ? null : _selectEgg,
-                  icon: const Icon(Icons.egg_outlined),
-                  label: Text(egg == null
-                      ? s.pick('Choose an egg', 'Kies een ei')
-                      : dragonEggDisplayName(s, egg))),
-              if (egg != null) ...[
-                EggTagButton(eggId: egg.id),
-                EggKnowledgeSummary(eggId: egg.id),
-                Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(
-                        block != null
-                            ? altarErrorText(s, block)
-                            : s.pick(
-                                'This egg will leave your inventory permanently. Hold the button to return it to the Weave.',
-                                'Dit ei verdwijnt definitief uit je inventaris. Houd de knop ingedrukt om het terug te geven aan de Weave.'),
-                        textAlign: TextAlign.center)),
-                HoldToReturn(
-                    enabled: !game.altarBusy && block == null,
-                    onConfirmed: () => _returnEgg(egg)),
-              ],
-              if (game.altarBusy)
-                const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(child: CircularProgressIndicator())),
-            ],
-          ])),
+                    style: const TextStyle(
+                        height: 1.45, color: Color(0xFF796A8B))))
+          else ...[
+            const SizedBox(height: 10),
+            Text(dragonEggDisplayName(s, egg),
+                textAlign: TextAlign.center,
+                style:
+                    const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              EggTagButton(eggId: egg.id),
+              TextButton.icon(
+                  onPressed: () => showAltarEggDetails(context, egg.id),
+                  icon: const Icon(Icons.visibility_outlined, size: 18),
+                  label: Text(s.pick('Details', 'Informatie'))),
+            ]),
+            Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                child: Text(
+                    block != null
+                        ? altarErrorText(s, block)
+                        : s.pick(
+                            'This egg will leave your inventory permanently. Hold the button to return it to the Weave.',
+                            'Dit ei verdwijnt definitief uit je inventaris. Houd de knop ingedrukt om het terug te geven aan de Weave.'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(height: 1.45))),
+            HoldToReturn(
+                enabled: !game.altarBusy && block == null,
+                onConfirmed: () => _returnEgg(egg)),
+          ],
+          if (game.altarBusy)
+            const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator())),
+        ],
+      ],
     );
+    if (widget.embedded) return content;
+    return Scaffold(
+        appBar: AppBar(title: const Text('Egg Altar'), actions: [info]),
+        body: SafeArea(child: content));
   }
 }
 
@@ -344,6 +400,13 @@ class _AltarEggPicker extends StatefulWidget {
 
 class _AltarEggPickerState extends State<_AltarEggPicker> {
   int _filter = 0;
+
+  Future<void> _inspect(String id) async {
+    final chosen = await showAltarEggDetails(context, id,
+        selectable: true, forReturn: widget.forReturn, relic: widget.relic);
+    if (mounted && chosen == true) Navigator.pop(context, id);
+  }
+
   @override
   Widget build(BuildContext context) {
     final game = context.watch<HouseholdProvider>();
@@ -411,12 +474,203 @@ class _AltarEggPickerState extends State<_AltarEggPicker> {
                                     : Text(altarErrorText(s, block)),
                                 trailing:
                                     EggTagButton(eggId: id, compact: true),
-                                onTap: block == null
-                                    ? () => Navigator.pop(context, id)
-                                    : null);
+                                onTap: () => _inspect(id));
                           })),
             ])));
   }
+}
+
+Future<bool?> showAltarEggDetails(
+  BuildContext context,
+  String eggId, {
+  bool selectable = false,
+  bool forReturn = false,
+  AltarRelic? relic,
+}) =>
+    showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) => _AltarEggDetails(
+            eggId: eggId,
+            selectable: selectable,
+            forReturn: forReturn,
+            relic: relic));
+
+class _AltarEggDetails extends StatelessWidget {
+  const _AltarEggDetails(
+      {required this.eggId,
+      required this.selectable,
+      required this.forReturn,
+      this.relic});
+  final String eggId;
+  final bool selectable;
+  final bool forReturn;
+  final AltarRelic? relic;
+
+  @override
+  Widget build(BuildContext context) {
+    final game = context.watch<HouseholdProvider>();
+    final s = AppStrings.of(context);
+    final nest = game.nestEgg?.id == eggId ? game.nestEgg : null;
+    final egg = game.eggStash.where((e) => e.id == eggId).firstOrNull ??
+        (nest == null
+            ? null
+            : DragonEgg(
+                id: nest.id,
+                lineageId: nest.lineageId,
+                acquiredAt: nest.acquiredAt,
+                hatchSeed: nest.hatchSeed,
+                prismatic: nest.prismatic,
+                lawAxis: nest.lawAxis,
+                moralAxis: nest.moralAxis,
+                sizeFactor: nest.sizeFactor,
+                incubationSeconds: nest.incubationSeconds,
+                sinister: nest.sinister,
+                moralAxisKnown: nest.moralAxisKnown));
+    if (egg == null) {
+      return SafeArea(
+          child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(altarErrorText(s, 'egg_not_found'))));
+    }
+    final known = game.eggKnowledge(eggId);
+    final unknown = s.pick('Still hidden', 'Nog verborgen');
+    final block = forReturn
+        ? game.weaveReturnBlockReason(eggId)
+        : relic != null && known.knows(relic!)
+            ? 'already_known'
+            : null;
+    return FractionallySizedBox(
+        heightFactor: .90,
+        child: SafeArea(
+            top: false,
+            child: Column(children: [
+              Expanded(
+                  child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                      child: Column(children: [
+                        Row(children: [
+                          Container(
+                              width: 88,
+                              height: 96,
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  gradient: const LinearGradient(colors: [
+                                    Color(0xFFF3EDF9),
+                                    Color(0xFFE9DEF6)
+                                  ])),
+                              child: EggArt(
+                                  height: 80,
+                                  lineageId: egg.lineageId,
+                                  specialEggId: egg.specialEggId)),
+                          const SizedBox(width: 14),
+                          Expanded(
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                Text(dragonEggDisplayName(s, egg),
+                                    key: const Key('altar-egg-detail-title'),
+                                    style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w800)),
+                                const SizedBox(height: 6),
+                                EggTagButton(eggId: eggId),
+                              ])),
+                        ]),
+                        const SizedBox(height: 18),
+                        _AltarDetailLine(
+                            label: s.pick('Dragon family', 'Drakenfamilie'),
+                            value: known.lineage
+                                ? s.lineageName(egg.lineage)
+                                : unknown),
+                        _AltarDetailLine(
+                            label: s.pick('Rarity', 'Zeldzaamheid'),
+                            value: known.rarity || game.isEggRarityKnown(eggId)
+                                ? s.lineageRarity(egg.lineage)
+                                : unknown),
+                        _AltarDetailLine(
+                            label: s.pick('Moral alignment', 'Morele aard'),
+                            value: known.moral ||
+                                    egg.isSinisterEgg ||
+                                    egg.moralAxisKnown
+                                ? s.moralAxisName(egg.moralAxis)
+                                : unknown),
+                        _AltarDetailLine(
+                            label: s.pick('Order alignment', 'Orde-aard'),
+                            value: known.order
+                                ? s.lawAxisName(egg.lawAxis)
+                                : unknown),
+                        _AltarDetailLine(
+                            label: s.pick('Incubation', 'Broedtijd'),
+                            value: s.remainingDuration(egg.incubationDuration)),
+                        _AltarDetailLine(
+                            label: s.pick('Acquired', 'Verkregen'),
+                            value: MaterialLocalizations.of(context)
+                                .formatMediumDate(egg.acquiredAt.toLocal())),
+                        const SizedBox(height: 12),
+                        Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                                color: const Color(0xFFFAF6EE),
+                                borderRadius: BorderRadius.circular(18)),
+                            child: Text(
+                                game.eggHintForEgg(egg, locale: s.languageCode),
+                                key: Key('altar-egg-clue-$eggId'),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    height: 1.35,
+                                    fontStyle: FontStyle.italic,
+                                    color: Color(0xFF756447)))),
+                        const SizedBox(height: 16),
+                        if (block != null)
+                          Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: Text(altarErrorText(s, block),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                      color: Color(0xFF8D5368), height: 1.4))),
+                      ]))),
+              Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 18),
+                  child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                          key: const Key('altar-choose-reviewed-egg'),
+                          onPressed:
+                              selectable && (block != null || game.altarBusy)
+                                  ? null
+                                  : () => Navigator.pop(context, selectable),
+                          child: Text(!selectable
+                              ? s.pick('Close', 'Sluiten')
+                              : forReturn
+                                  ? s.pick(
+                                      'Place on altar', 'Plaats op het altaar')
+                                  : s.pick(
+                                      'Choose this egg', 'Kies dit ei'))))),
+            ])));
+  }
+}
+
+class _AltarDetailLine extends StatelessWidget {
+  const _AltarDetailLine({required this.label, required this.value});
+  final String label;
+  final String value;
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(
+            child:
+                Text(label, style: const TextStyle(color: Color(0xFF84758F)))),
+        const SizedBox(width: 12),
+        Flexible(
+            child: Text(value,
+                textAlign: TextAlign.end,
+                style: const TextStyle(fontWeight: FontWeight.w700))),
+      ]));
 }
 
 String altarRelicEffect(AppStrings s, AltarRelic relic) => switch (relic) {
@@ -424,15 +678,14 @@ String altarRelicEffect(AppStrings s, AltarRelic relic) => switch (relic) {
           'Onthul de morele aard van een ei.'),
       AltarRelic.orderSigil => s.pick('Reveal an egg’s order alignment.',
           'Onthul de orde-aard van een ei.'),
-      AltarRelic.astralLens => s.pick(
-          'Reveal an egg’s rarity. Also found in existing drops.',
-          'Onthul de zeldzaamheid van een ei. Ook uit bestaande drops.'),
+      AltarRelic.astralLens =>
+        s.pick('Reveal an egg’s rarity.', 'Onthul de zeldzaamheid van een ei.'),
       AltarRelic.weaveOracle => s.pick(
-          'Reveal an egg’s dragon family and rarity. Altar exclusive.',
-          'Onthul de drakenfamilie en zeldzaamheid van een ei. Alleen via het altaar.'),
+          'Reveal an egg’s dragon family and rarity.',
+          'Onthul de drakenfamilie en zeldzaamheid van een ei.'),
       AltarRelic.nameweaversQuill => s.pick(
-          'Rename one dragon. Consumed on use. Altar exclusive.',
-          'Hernoem één draak. Eenmalig te gebruiken. Alleen via het altaar.'),
+          'Rename one dragon. Consumed on use.',
+          'Hernoem één draak. Eenmalig te gebruiken.'),
     };
 
 class AltarRecipeCard extends StatelessWidget {
@@ -444,50 +697,96 @@ class AltarRecipeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final game = context.watch<HouseholdProvider>();
     final s = AppStrings.of(context);
+    final owned = game.eggAltar.count(relic);
     return Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(children: [
-              Row(children: [
-                Image.asset(relic.asset, width: 66, height: 66),
-                const SizedBox(width: 12),
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: const BorderSide(color: Color(0xFFE8DFEE))),
+      child: Padding(
+          padding: const EdgeInsets.all(14),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(
+                  width: 58,
+                  height: 64,
+                  decoration: BoxDecoration(
+                      color: const Color(0xFFF5EFFA),
+                      borderRadius: BorderRadius.circular(16)),
+                  padding: const EdgeInsets.all(3),
+                  child: Image.asset(relic.asset, fit: BoxFit.contain)),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(relic.label,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w800, fontSize: 16)),
+                    const SizedBox(height: 5),
+                    Text(altarRelicEffect(s, relic),
+                        style: const TextStyle(
+                            fontSize: 12,
+                            height: 1.4,
+                            color: Color(0xFF80708D))),
+                    if (owned > 0)
+                      Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text('${s.pick('Owned', 'In bezit')}: $owned',
+                              style: const TextStyle(
+                                  fontSize: 11, fontWeight: FontWeight.w700))),
+                  ])),
+            ]),
+            const SizedBox(height: 12),
+            Row(children: [
+              if (!inventoryOnly)
                 Expanded(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                      Text(relic.label,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w900, fontSize: 17)),
-                      Text(altarRelicEffect(s, relic)),
-                      Text(
-                          '${s.pick('Owned', 'In bezit')}: ${game.eggAltar.count(relic)}',
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
-                    ]))
-              ]),
-              if (!inventoryOnly) ...[
-                const SizedBox(height: 10),
-                WeaveWalletView(wallet: relic.cost, showLabels: false)
-              ],
-              const SizedBox(height: 10),
-              Wrap(spacing: 12, children: [
-                if (!inventoryOnly)
-                  FilledButton(
-                      key: Key('altar-craft-${relic.name}'),
-                      onPressed: game.altarBusy ||
-                              !game.eggAltar.wallet.covers(relic.cost)
-                          ? null
-                          : () => runAltarAction(
-                              context, () => game.craftAltarRelic(relic)),
-                      child: Text(s.pick('Craft', 'Maken'))),
+                    child: Wrap(spacing: 10, runSpacing: 5, children: [
+                  for (final material in WeaveMaterial.values
+                      .where((m) => relic.cost.count(m) > 0))
+                    Tooltip(
+                        message: material.label,
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Image.asset(material.asset, width: 26, height: 26),
+                          const SizedBox(width: 3),
+                          Text('${relic.cost.count(material)}',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w800, fontSize: 12)),
+                        ])),
+                ]))
+              else
+                const Spacer(),
+              if (!inventoryOnly)
+                FilledButton(
+                    key: Key('altar-craft-${relic.name}'),
+                    style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 18)),
+                    onPressed: game.altarBusy ||
+                            !game.eggAltar.wallet.covers(relic.cost)
+                        ? null
+                        : () => runAltarAction(
+                            context, () => game.craftAltarRelic(relic)),
+                    child: Text(s.pick('Craft', 'Maken'))),
+              if (inventoryOnly)
                 OutlinedButton(
                     key: Key('altar-use-${relic.name}'),
-                    onPressed: game.altarBusy || game.eggAltar.count(relic) == 0
+                    onPressed: game.altarBusy || owned == 0
                         ? null
                         : () => showUseAltarRelic(context, relic),
                     child: Text(s.pick('Use', 'Gebruiken'))),
-              ]),
-            ])));
+            ]),
+            if (!inventoryOnly && owned > 0)
+              Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                      key: Key('altar-use-${relic.name}'),
+                      onPressed: game.altarBusy
+                          ? null
+                          : () => showUseAltarRelic(context, relic),
+                      child: Text(s.pick('Use relic', 'Gebruik relic')))),
+          ])),
+    );
   }
 }
 
@@ -670,36 +969,8 @@ class EggAltarArt extends StatelessWidget {
   final DragonEgg? egg;
   final double? progress;
   @override
-  Widget build(BuildContext context) {
-    final p = progress ?? 0;
-    final frame = math.min(6, (p * 6).floor() + 1).toString().padLeft(2, '0');
-    return AspectRatio(
-        aspectRatio: 1,
-        child: LayoutBuilder(
-            builder: (_, constraints) =>
-                Stack(alignment: Alignment.center, children: [
-                  Positioned.fill(
-                      child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 220),
-                          child: Image.asset(
-                              progress == null
-                                  ? 'assets/images/egg_altar/altar_empty.png'
-                                  : 'assets/images/egg_altar/altar_phase_$frame.png',
-                              key: ValueKey(progress == null ? 'empty' : frame),
-                              fit: BoxFit.contain))),
-                  if (egg != null)
-                    Positioned(
-                        top: constraints.maxHeight *
-                            (.32 - .16 * (p * 3).clamp(0, 1)),
-                        child: Opacity(
-                            opacity:
-                                (1 - ((p - .45) / .26).clamp(0, 1)).toDouble(),
-                            child: EggArt(
-                                height: constraints.maxHeight * .28,
-                                lineageId: egg!.lineageId,
-                                specialEggId: egg!.specialEggId))),
-                ])));
-  }
+  Widget build(BuildContext context) =>
+      EggAltarScene(egg: egg, progress: progress);
 }
 
 class _WeaveReturnResult extends StatefulWidget {
@@ -715,7 +986,7 @@ class _WeaveReturnResult extends StatefulWidget {
 class _WeaveReturnResultState extends State<_WeaveReturnResult>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animation = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 4200));
+      vsync: this, duration: const Duration(milliseconds: 5200));
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -740,32 +1011,59 @@ class _WeaveReturnResultState extends State<_WeaveReturnResult>
         animation: _animation,
         builder: (_, __) => PopScope(
             canPop: _animation.isCompleted,
-            child: AlertDialog(
-                title: Text(s.pick(
-                    'Returned to the Weave', 'Teruggegeven aan de Weave')),
-                content: SizedBox(
-                    width: 320,
+            child: Dialog(
+                insetPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28)),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(18),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 340),
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      Text(
+                          _animation.isCompleted
+                              ? s.pick('Returned to the Weave',
+                                  'Teruggegeven aan de Weave')
+                              : s.pick('Returning to the Weave',
+                                  'Terug naar de Weave'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 21, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 18),
                       SizedBox(
                           height: 220,
+                          width: double.infinity,
                           child: EggAltarArt(
                               egg: widget.egg,
                               progress: MediaQuery.disableAnimationsOf(context)
                                   ? 1
                                   : _animation.value)),
-                      if (_animation.isCompleted)
-                        WeaveWalletView(wallet: widget.reward),
-                    ])),
-                actions: [
-                  if (!_animation.isCompleted && widget.canSkip)
-                    TextButton(
-                        onPressed: () => _animation.value = 1,
-                        child: Text(
-                            s.pick('Skip animation', 'Animatie overslaan'))),
-                  if (_animation.isCompleted)
-                    FilledButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(s.pick('Continue', 'Verder'))),
-                ])));
+                      const SizedBox(height: 18),
+                      AnimatedOpacity(
+                          opacity: _animation.isCompleted ? 1 : 0,
+                          duration: const Duration(milliseconds: 450),
+                          child: ExcludeSemantics(
+                              excluding: !_animation.isCompleted,
+                              child: WeaveWalletView(wallet: widget.reward))),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                              onPressed: _animation.isCompleted
+                                  ? () => Navigator.pop(context)
+                                  : widget.canSkip
+                                      ? () => _animation.value = 1
+                                      : null,
+                              child: Text(_animation.isCompleted
+                                  ? s.pick('Continue', 'Verder')
+                                  : widget.canSkip
+                                      ? s.pick('Skip animation',
+                                          'Animatie overslaan')
+                                      : s.pick(
+                                          'Returning...', 'Teruggeven...')))),
+                    ]),
+                  ),
+                ))));
   }
 }

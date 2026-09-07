@@ -20,6 +20,7 @@ import '../widgets/chest_reveal.dart';
 import '../widgets/furniture_art.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/egg_art.dart';
+import '../widgets/egg_altar_scene.dart';
 import '../widgets/game_icon_sprite.dart';
 
 class InventoryScreen extends StatelessWidget {
@@ -31,7 +32,7 @@ class InventoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return DefaultTabController(
-      length: 4,
+      length: 5,
       initialIndex: initialTab,
       child: Column(children: [
         TabBar(
@@ -74,6 +75,13 @@ class InventoryScreen extends StatelessWidget {
               iconMargin: const EdgeInsets.only(bottom: 1),
               text: strings.pick('Relics', 'Relieken'),
             ),
+            Tab(
+              key: const Key('inventory-tab-altar'),
+              height: 70,
+              icon: Image.asset(EggAltarScene.altar, width: 35, height: 35),
+              iconMargin: const EdgeInsets.only(bottom: 1),
+              text: 'Altar',
+            ),
           ],
         ),
         const Expanded(
@@ -82,6 +90,7 @@ class InventoryScreen extends StatelessWidget {
           _ChestInventoryTab(),
           _FurnitureInventoryTab(),
           _RelicInventoryTab(),
+          EggAltarScreen(embedded: true),
         ])),
       ]),
     );
@@ -177,7 +186,6 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
     final strings = AppStrings.of(context);
     if (game.eggStash.isEmpty) {
       return Column(children: [
-        const EggAltarEntry(),
         Expanded(
             child: _EmptyState(
           kind: GameIconKind.inventoryEggs,
@@ -196,7 +204,6 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
     );
     return Column(
       children: [
-        const EggAltarEntry(),
         Wrap(spacing: 6, children: [
           for (var i = 0; i < 3; i++)
             ChoiceChip(

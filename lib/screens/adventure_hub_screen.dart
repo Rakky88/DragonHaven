@@ -235,86 +235,40 @@ class _TrialsTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
       children: [
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF2A1E50), Color(0xFF5B3D91)],
-            ),
-            borderRadius: BorderRadius.circular(24),
+                colors: [Color(0xFF2A1E50), Color(0xFF5B3D91)]),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.gold, width: 1.2),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x302A1E50),
-                blurRadius: 14,
-                offset: Offset(0, 7),
-              ),
-            ],
           ),
-          child: Row(
-            children: [
-              const GameIconSprite(GameIconKind.adventureSpecial, size: 52),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      strings.pick('Dragon Trials', 'Drakenproeven'),
-                      style: const TextStyle(
+          child: Row(children: [
+            const GameIconSprite(GameIconKind.adventureSpecial, size: 34),
+            const SizedBox(width: 8),
+            Expanded(
+                child: Text(strings.pick('Dragon Trials', 'Drakenproeven'),
+                    style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 19,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      strings.pick(
-                        'Your dragon helps, but your performance decides the reward.',
-                        'Je draak helpt, maar jouw prestatie bepaalt de beloning.',
-                      ),
-                      style: const TextStyle(
-                        color: Color(0xFFDCD2F4),
-                        fontSize: 11.5,
-                        height: 1.25,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              _TrialRefreshCountdown(
-                remaining: game.trialRefreshRemaining(from: now),
-              ),
-            ],
-          ),
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900))),
+            const SizedBox(width: 6),
+            _TrialRefreshCountdown(
+                remaining: game.trialRefreshRemaining(from: now)),
+            IconButton(
+                key: const Key('open-trial-rankings'),
+                tooltip: strings.pick(
+                    'View Trial Rankings', 'Bekijk Trial-ranglijsten'),
+                color: AppColors.gold,
+                icon: const Icon(Icons.leaderboard_rounded, size: 22),
+                onPressed: () => showTrialRankingsSheet(context,
+                    scopes: const [
+                      TrialRankingScope.world,
+                      TrialRankingScope.friends
+                    ],
+                    initialScope: TrialRankingScope.world)),
+          ]),
         ),
-        const SizedBox(height: 10),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            key: const Key('open-trial-rankings'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.twilightDark,
-              backgroundColor: const Color(0xFFFFF8DD),
-              side: const BorderSide(color: Color(0xFFD6A72E)),
-              padding: const EdgeInsets.symmetric(vertical: 11),
-            ),
-            onPressed: () => showTrialRankingsSheet(
-              context,
-              scopes: const [
-                TrialRankingScope.world,
-                TrialRankingScope.friends,
-              ],
-              initialScope: TrialRankingScope.world,
-            ),
-            icon: const Icon(Icons.leaderboard_rounded, size: 21),
-            label: Text(
-              strings.pick('View Trial Rankings', 'Bekijk Trial-ranglijsten'),
-              style: const TextStyle(fontWeight: FontWeight.w900),
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         const _TrialStreakCard(),
         const SizedBox(height: 14),
         if (offers.isEmpty)
@@ -356,10 +310,9 @@ class _TrialStreakCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  strings.pick('Seven-day Trial constellation',
-                      'Zevendaagse Trial-constellatie'),
+                  strings.pick('7-day constellation', '7-daagse constellatie'),
                   style: const TextStyle(
-                      fontWeight: FontWeight.w900, fontSize: 14.5),
+                      fontWeight: FontWeight.w900, fontSize: 13),
                 ),
               ),
               Text(

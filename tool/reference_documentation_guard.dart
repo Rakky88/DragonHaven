@@ -27,6 +27,9 @@ const specialContentReference = ReferenceDocumentSpec(
     'lib/providers/dragonhaven_systems.dart',
     'lib/providers/household_provider.dart',
     'lib/screens/adventure_hub_screen.dart',
+    'lib/screens/egg_altar_screen.dart',
+    'lib/screens/inventory_screen.dart',
+    'lib/widgets/egg_altar_scene.dart',
     'lib/screens/seasonal_trial_game.dart',
     'lib/widgets/witchlight_trial_widgets.dart',
     'lib/services/notification_service.dart',
@@ -36,6 +39,8 @@ const specialContentReference = ReferenceDocumentSpec(
     'supabase/migrations/202609070042_egg_altar.sql',
     'supabase/migrations/202609070043_witchlight_three_mistakes.sql',
     'supabase/migrations/202609070044_sinister_altar_rewards.sql',
+    'supabase/migrations/202609070045_dormant_chest_opening.sql',
+    'tool/economy_chest_catalog.dart',
   ],
 );
 
@@ -68,6 +73,8 @@ const randomRewardsReference = ReferenceDocumentSpec(
     'supabase/migrations/202609070042_egg_altar.sql',
     'supabase/migrations/202609070043_witchlight_three_mistakes.sql',
     'supabase/migrations/202609070044_sinister_altar_rewards.sql',
+    'supabase/migrations/202609070045_dormant_chest_opening.sql',
+    'tool/economy_chest_catalog.dart',
     'supabase/migrations/202609070040_seasonal_events.sql',
     'supabase/migrations/202609070041_seasonal_event_lint_fixes.sql',
   ],

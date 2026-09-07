@@ -44,7 +44,14 @@ const _coreNames = <String, List<String>>{
   ],
 };
 
-Future<void> main() async {
+Future<void> main(List<String> arguments) async {
+  if (arguments.contains('--witchlight-might-only')) {
+    final sheet = await _decode(
+        'artwork_sources/seasonal_events/halloween/trial_sprites.png');
+    await _writeWebp('assets/images/events/halloween/trial_sprite_5.webp',
+        _witchlightMightSprite(sheet));
+    return;
+  }
   for (final eventId in _eventIds) {
     final directory = Directory('assets/images/events/$eventId');
     final sourceDirectory =
@@ -96,6 +103,11 @@ Future<void> main() async {
     final cellWidth = sheet.width ~/ 3;
     final cellHeight = sheet.height ~/ 2;
     for (var index = 0; index < 6; index++) {
+      if (eventId == 'halloween' && index == 5) {
+        await _writeWebp('${directory.path}/trial_sprite_5.webp',
+            _witchlightMightSprite(sheet));
+        continue;
+      }
       final cell = copyCrop(
         sheet,
         x: (index % 3) * cellWidth,
@@ -146,6 +158,16 @@ Future<void> main() async {
       );
     }
   }
+}
+
+Image _witchlightMightSprite(Image sheet) {
+  // This handle crosses the nominal row boundary. Keep its complete outline
+  // from the source sheet and pad it before the standard alpha cleanup.
+  final cellWidth = sheet.width ~/ 3;
+  final top = (sheet.height * .47).floor();
+  final source = copyCrop(sheet,
+      x: cellWidth * 2, y: top, width: cellWidth, height: sheet.height - top);
+  return _cleanCutoutAlpha(_squareCanvas(source, 512, padding: 24));
 }
 
 Image _cleanCutoutAlpha(Image image) {

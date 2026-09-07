@@ -1,18 +1,19 @@
 # DragonHaven staging-loadtest
 
-Laatst bijgewerkt: **31 augustus 2026**  
-Uitgangsversie: **v0.05.01 / productieschema 32 / lokaal kandidaat-schema 33**
+Laatst bijgewerkt: **7 september 2026**
+Uitgangsversie: **v0.05.16 / productieschema 44 / stagingschema 47**
 
 ## Doel en huidige status
 
 Deze test meet realistisch online leesgedrag uitsluitend op het afzonderlijke
 Supabase-stagingproject. De dependency-vrije Dart-runner en handmatige GitHub
-Actions-workflow zijn lokaal gebouwd en getest. Er is nog geen load naar staging
-verstuurd en productie is niet gewijzigd.
+Actions-workflow zijn lokaal gebouwd en getest. De eerste echte 100-user run
+is uitgevoerd; de Auth-begrenzing sloot de vervolgpoort naar 1000 gebruikers.
+Productie is niet gewijzigd.
 
 De eerste uitvoerbare stap is 100 gelijktijdige virtuele gebruikers. De stap van
 1.000 gebruikers wordt technisch geweigerd zolang geen geslaagd 100-user rapport
-met maximaal 2% fouten is aangeleverd. Andere aantallen, waaronder 5.000 of
+met maximaal 2% fouten en 100 geslaagde logins en bootstraps op dezelfde migratieversie is aangeleverd. Andere aantallen, waaronder 5.000 of
 10.000, worden door dit profiel niet geaccepteerd.
 
 ## Realistische workload
@@ -69,32 +70,31 @@ server-authoritative is.
 - Contracttests bewaken dat workflow en runner geen productie- of service-role
   route krijgen.
 
-## Wat jij vóór de echte 100-user run moet doen
+## Tijdelijke synthetische accounts
 
-1. Gebruik een staging-only mailboxalias of catch-all waarvan de adressen geen
-   namen of andere echte persoonsgegevens bevatten.
-2. Maak en bevestig 100 afzonderlijke synthetische Supabase Auth-accounts. Deel
-   de adressen of het wachtwoord niet in chat, commits of artifacts.
-3. Voeg in GitHub bij de bestaande Environment **staging** één secret toe met de
-   naam `STAGING_LOAD_CREDENTIALS_JSON`. Een compact template heeft deze vorm:
+De optie `temporary_accounts=true` gebruikt de bestaande beschermde staging-
+Management-token voor een afzonderlijke setupwrapper. Deze maakt unieke accounts
+op het niet-bezorgbare domein `dragonhaven-load.invalid`, met een willekeurig
+wachtwoord per account en een specifieke runmarkering in `app_metadata`.
+Admin-create met `email_confirm=true` bevestigt direct en verstuurt geen mail
+([Supabase createUser](https://supabase.com/docs/reference/javascript/auth-admin-createuser)).
+De benodigde sleutel blijft uitsluitend in de setupwrapper; de Dart-loadrunner
+ontvangt een publishable key en normale accountwachtwoorden in zijn procesomgeving.
+Er wordt geen sleutel aangemaakt of geroteerd. De Management-route gebruikt
+`api-keys?reveal=true` in geheugen ([API-reference](https://supabase.com/docs/reference/api/v1-get-project-api-keys)).
 
-   ```json
-   {
-     "emailTemplate": "dragonhaven-load+{index}@STAGING-ONLY-DOMAIN",
-     "password": "EEN-UNIEK-STAGING-WACHTWOORD-VAN-MINSTENS-12-TEKENS",
-     "count": 100
-   }
-   ```
+Een finally-blok verwijdert alleen accounts met zowel de exacte runmarkering als
+het verwachte synthetische adrespatroon, en controleert daarna opnieuw. Een aparte
+`always()`-stap herstelt opruiming na een onderbroken loadstap. Het levenscyclus-
+artifact bevat uitsluitend een willekeurige runidentifier en aantallen, zonder
+account-ID's, adressen of credentials. Bij een volledige runneruitval kan hetzelfde
+script met `-CleanupRunId` worden gebruikt. Opruiming van andere accounts wordt geweigerd.
 
-   De `{index}`-placeholder wordt vervangen door `1` tot en met `count`. Gebruik
-   dit wachtwoord nergens anders. Een expliciete `accounts`-lijst met per account
-   een ander wachtwoord wordt ook ondersteund, maar is minder compact.
-4. Bevestig schriftelijk dat deze accounts uitsluitend synthetische testdata
-   bevatten. Daarna kan Codex de echte 100-user run gecontroleerd starten.
-
-Voor 1.000 gebruikers wordt de pool pas na beoordeling van de 100-user meting
-uitgebreid. Meer dan 1.000 blijft buiten deze workflow en vereist opnieuw een
-apart kosten- en capaciteitsbesluit.
+De bestaande optie met `STAGING_LOAD_CREDENTIALS_JSON` blijft beschikbaar voor een
+vooraf ingerichte, uitsluitend synthetische accountpool. Tijdelijke accounts hebben
+geen mailbox, signupinstellingen of extra secret nodig. Vóór en na elke echte run
+controleert de workflow volledige stagingmigratiepariteit, database-lint en health.
+Productie blijft onafhankelijk hard geblokkeerd.
 
 ## Uitvoering en bewijs
 
@@ -107,7 +107,7 @@ apart kosten- en capaciteitsbesluit.
    CPU, database/querylatency, provider-egress, rate limits en eventuele
    query-/indexbevindingen. Clientcode kan die providerwaarden niet betrouwbaar
    afleiden.
-4. Beoordeel p95/p99 en fouten. Bij meer dan 2% fouten stopt de vervolgpoort.
+4. Beoordeel p95/p99 en fouten. Bij meer dan 2% fouten of een ontbrekende geslaagde login/bootstrap stopt de vervolgpoort.
 5. Alleen na een groen rapport krijgt `run-1000` het workflow-run-ID van de
    100-user meting. De workflow downloadt en valideert dat artifact voordat een
    request wordt verstuurd.
@@ -115,3 +115,29 @@ apart kosten- en capaciteitsbesluit.
 Een testresultaat is geen toestemming voor betaalde capaciteit. Eerst meten we
 gratis op staging; alleen aantoonbare grenzen kunnen later aanleiding geven tot
 een afzonderlijk upgradebesluit.
+
+## Eerste echte meting - 7 september 2026
+
+Run [34115250094](https://github.com/Rakky88/DragonHaven/actions/runs/34115250094),
+schema 47, 180 seconden met 60 seconden ramp-up vanaf dezelfde CI-runner:
+
+| Controle | Uitkomst |
+| --- | --- |
+| Accounts gemaakt / verwijderd | 100 / 100; cleanup opnieuw gecontroleerd |
+| Login / bootstrap geslaagd | 59 / 59 |
+| Geweigerde login | 41 HTTP 429 |
+| Alle aanvragen | 861; 820 geslaagd; 4,762% fouten |
+| Lees-RPC's | 702; allemaal geslaagd |
+| Snapshot p95 / p99 | 319 / 336 ms |
+| p95 overige lees-RPC's | 309-322 ms |
+| Preflight na afloop | schema 47, nul lintfouten, Auth/settings/app HTTP 200 |
+| 1000-user vervolg | geweigerd; geen run gestart |
+
+De run blijft terecht als **failed** geregistreerd. De uitkomst is geen bewijs
+voor 100 of 1000 actieve spelers. De 429-responsen passen bij de gedocumenteerde
+Auth-tokenbucket per IP ([Supabase rate limits](https://supabase.com/docs/guides/auth/rate-limits));
+alle logins kwamen vanaf dezelfde CI-runner. Het volgende meetontwerp moet
+gewone sessieopbouw scheiden van loginpieken en bestaande beveiligingslimieten
+respecteren. Provider-CPU, verbindingen en echte egress zijn nog niet gemeten.
+De eerdere poging 34114939684 maakte geen accounts; de transportfout is hersteld
+met een apart offline contract dat voortaan voor iedere workflowrun draait.

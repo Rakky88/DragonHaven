@@ -2,9 +2,9 @@
 
 Last verified: 7 September 2026
 
-Ruleset: app version `v0.05.14`
+Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: 0377aba6a4935728 -->
+<!-- reference-source-fingerprint: c79c1a34da61a076 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -94,7 +94,10 @@ other seasonal Trials keep the existing 30-second minimum.
 
 Witchlight Arcana shows a pumpkin lantern to memorize for an extra second
 (initially 2.9 seconds), followed by six similar
-lantern choices. Eye direction and tooth position distinguish the six faces.
+lantern choices. Six individual painted, transparent pumpkin sprites share the
+same silhouette and palette; eye direction and tooth position distinguish the
+faces. They preload during the introduction. The Might lantern is extracted
+from the complete source outline, including its handle, with transparent padding.
 Spirit requires one continuous finger trace from the wisp to the lantern along
 the visible winding corridor. Crossing an edge, lifting early, or cancelling
 the gesture fails the action and applies the existing two-second penalty.
@@ -279,7 +282,21 @@ Primary sources are `lib/models/adventure.dart`, `lib/models/trial.dart`,
 
 ## Egg Altar and protection
 
-The permanent Egg Altar is reachable from Inventory > Eggs and the nest screen.
+The permanent Egg Altar has its own Inventory > Altar tab and is also reachable
+from the nest screen. Selecting an egg first opens its details, with known
+properties, hidden-property placeholders, incubation, acquisition date and hint;
+placing it on the altar requires a separate choice. Protected eggs can be
+inspected but cannot be selected for return. The info button contains a single
+tutorial text block without odds. The Weaveheart guarantee counter is hidden.
+Nameweaver's Quill appears first in crafting; recipe cards show effects and
+material costs without drop-source or exclusivity labels.
+
+The altar rests in a painted twilight grove. A fixed stone sprite, contact
+shadow and foreground bowl rim integrate the selected egg. The 5.2-second
+ritual continuously charges, lifts, dissolves, releases motes, fades and rests;
+twelve overlapping light ribbons replace the mismatched old sprite crossfades.
+Rewards fade into a reserved space, keeping the dialog stable. Reduced motion
+shows the completed scene after a short transition.
 Inventory eggs can be tagged and untagged without a material cost. Tags, scan
 knowledge and returned IDs persist across saves, nest activation and authorized
 trades. A newer explicit tag revision wins over an older backup. The selection
@@ -311,3 +328,33 @@ Conclaves have a shared cosmetic Weave Beacon with voluntary Shell Fragment gift
 and milestones at 500, 2000 and 5000. It gives no stat or reward bonuses. Only a
 milestone-crossing gift posts one aggregate project message; individual egg
 returns never post to chat. The progress caps at 5000.
+
+## Dormant server chest opening (audit phase 4B)
+
+Migration 45 adds server-side opening for ordinary, Sinister, Special, portrait,
+title and music chest instances. All existing probabilities, inclusive currency
+ranges and eligible pools above are preserved. The client catalog snapshot is
+checked by `tool/economy_chest_catalog.dart --verify`; future catalog changes
+require a forward migration. Oracle and Nameweaver's Quill remain Altar-only;
+Astral Lens remains in the normal relic pool.
+
+Each owner-locked transaction handles at most ten distinct owned chest IDs.
+The stored receipt and ledger prevent both request retries and a new request ID
+from rerolling an already opened chest. A full vanity collection leaves its
+chest unopened. Pity is recomputed after each granted egg and is inactive while
+an egg remains in inventory or in the nest. Independent server draws preserve
+Sinister's 50% Sinisterra chance, guaranteed relic, and ordinary fallback pool.
+Chronoshard's 10-90% value is stored once per relic instance; Twinstar's lifetime
+acquisition marker excludes it from subsequent drops, including after consumption.
+
+Special chest identity must be supplied by the trusted import/grant procedure;
+unknown or missing event IDs fail without consuming the chest. Special eggs use
+the event's exact incubation seconds and fixed moral/hatch-disclosure rule.
+Opening receipts omit hidden lineage, hatch seed and personality. The future
+hatch flow still needs to implement the Golden Hour spectral bonus.
+
+This path is not activated for players. The existing app opening flow and
+production economy authority flags remain unchanged. Migration 46 blocks legacy
+inventory synchronization/import for a future server-owned account, while legacy
+accounts keep their existing behavior. End-to-end cutover, instance conversion,
+server egg lifecycle and client reconciliation remain separate audit work.

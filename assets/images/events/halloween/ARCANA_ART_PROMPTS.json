@@ -1,0 +1,37 @@
+{
+  "mode": "builtin image_gen",
+  "date": "2026-09-07",
+  "processing": "tool/build_witchlight_pumpkins.dart removes the flat magenta extraction matte and exports transparent WebP sprites. No runtime canvas face construction.",
+  "assets": [
+    {
+      "source": "pumpkin_0.png",
+      "file": "assets/images/events/halloween/arcana_pumpkin_0.webp",
+      "prompt": "Use case: stylized-concept. Asset type: ONE premium hand-painted mobile game pumpkin-lantern sprite, first of six nearly identical memory-game faces. The attached DragonHaven Halloween lantern is a STYLE reference for rich orange carved pumpkin, golden inner fire, painterly carved texture and bronze highlights. Create a beautiful squat round jack-o-lantern facing directly forward, with full round orange ribbed body, a small curled brown-green stem and two tiny leaves, warm amber light glowing from carved eyes, small triangular nose, curved grinning mouth. No tall handle, no pedestal, no ghost, no scenery. The pumpkin FACE is large and easy to inspect at 64px. Both triangular eyes have their top apex leaning toward screen-left. The grinning mouth has exactly ONE square pumpkin tooth descending from its upper edge on the screen-left side; no other teeth. Keep this subtle identifying facial arrangement clear while charming, never scary. Symmetric framing, front view, object occupies central 80% of a square canvas, entire stem and leaves visible with at least 8% padding on all sides. Exquisite polished game illustration, soft painted shading, orange/gold/green/brown colors only. For clean sprite extraction use a perfectly flat uniform bright MAGENTA (#FF00FF) background, with no checkerboard, texture, gradient, cast shadow, glows or reflections on the magenta. No magenta in the object itself. No text, UI, border or labels. Square image."
+    },
+    {
+      "source": "pumpkin_1.png",
+      "file": "assets/images/events/halloween/arcana_pumpkin_1.webp",
+      "prompt": "Use case: precise-object-edit. This is variant 1 of a set of six nearly identical pumpkin memory-game sprites. The attached image is the EDIT TARGET. Preserve its exact canvas, size, framing, stem, leaves, body shape, ribs, rich orange painted texture, nose, inner golden light, mouth curvature and flat #FF00FF magenta background. Change the carved face ONLY as follows: Change ONLY both triangular eyes so their upper apex leans noticeably toward SCREEN-RIGHT (the upper corner near the right side of each triangle). Keep the single square upper tooth on SCREEN-LEFT exactly where it is. All other pixels and artistic details should remain as close to identical as possible. The face difference must be visible at 64px but subtle enough to demand attention. Do not change scale, orientation, lighting or palette. No added objects, no text, no labels, no grid. Preserve flat uniform MAGENTA backdrop for chroma extraction; no magenta in the pumpkin."
+    },
+    {
+      "source": "pumpkin_2.png",
+      "file": "assets/images/events/halloween/arcana_pumpkin_2.webp",
+      "prompt": "Use case: precise-object-edit. This is variant 2 of a set of six nearly identical pumpkin memory-game sprites. The attached image is the EDIT TARGET. Preserve its exact canvas, size, framing, stem, leaves, body shape, ribs, rich orange painted texture, nose, inner golden light, mouth curvature and flat #FF00FF magenta background. Change the carved face ONLY as follows: Keep both eyes EXACTLY unchanged. Move the single square tooth from the left part of the upper edge of the grin to the EXACT CENTER of the upper edge. Keep only that ONE central tooth. All other pixels and artistic details should remain as close to identical as possible. The face difference must be visible at 64px but subtle enough to demand attention. Do not change scale, orientation, lighting or palette. No added objects, no text, no labels, no grid. Preserve flat uniform MAGENTA backdrop for chroma extraction; no magenta in the pumpkin."
+    },
+    {
+      "source": "pumpkin_3.png",
+      "file": "assets/images/events/halloween/arcana_pumpkin_3.webp",
+      "prompt": "Use case: precise-object-edit. This is variant 3 of a set of six nearly identical pumpkin memory-game sprites. The attached image is the EDIT TARGET. Preserve its exact canvas, size, framing, stem, leaves, body shape, ribs, rich orange painted texture, nose, inner golden light, mouth curvature and flat #FF00FF magenta background. Change the carved face ONLY as follows: Change both triangular eyes so their upper apex leans noticeably toward SCREEN-RIGHT (the upper corner near the right side of each triangle). Move the single square tooth from the left part of the upper edge of the grin to the EXACT CENTER of the upper edge. Keep only that ONE central tooth. All other pixels and artistic details should remain as close to identical as possible. The face difference must be visible at 64px but subtle enough to demand attention. Do not change scale, orientation, lighting or palette. No added objects, no text, no labels, no grid. Preserve flat uniform MAGENTA backdrop for chroma extraction; no magenta in the pumpkin."
+    },
+    {
+      "source": "pumpkin_4.png",
+      "file": "assets/images/events/halloween/arcana_pumpkin_4.webp",
+      "prompt": "Use case: precise-object-edit. This is variant 4 of six nearly identical pumpkin memory-game sprites. The attached image is the EDIT TARGET. Preserve its exact canvas, size, framing, stem, leaves, body shape, ribs, painted texture, nose, golden inner light, mouth curvature and flat #FF00FF magenta background. Change ONLY the face: move the ONE square tooth from the left part of the upper edge of the grin to the SCREEN-RIGHT part, at about two-thirds of the width of the mouth. Keep only this ONE upper tooth, no others. Keep both triangular eyes EXACTLY unchanged. All other pixels and artistic details must stay as close to identical as possible. The difference should be subtle and visible at 64px. Do not change scale, orientation, lighting or palette. No added objects, text, labels or grid. Preserve flat uniform MAGENTA backdrop for extraction, no magenta in the pumpkin."
+    },
+    {
+      "source": "pumpkin_5.png",
+      "file": "assets/images/events/halloween/arcana_pumpkin_5.webp",
+      "prompt": "Use case: precise-object-edit. This is variant 5 of six nearly identical pumpkin memory-game sprites. The attached image is the EDIT TARGET. Preserve its exact canvas, size, framing, stem, leaves, body shape, ribs, painted texture, nose, golden inner light, mouth curvature and flat #FF00FF magenta background. Change ONLY the face: move the ONE square tooth from the left part of the upper edge of the grin to the SCREEN-RIGHT part, at about two-thirds of the width of the mouth. Keep only this ONE upper tooth, no others. Change the triangular eyes so their top apex leans noticeably toward SCREEN-RIGHT, especially the left eye whose apex needs to move from the left side to the right side of that triangle. Preserve their height, width and glow. All other pixels and artistic details must stay as close to identical as possible. The difference should be subtle and visible at 64px. Do not change scale, orientation, lighting or palette. No added objects, text, labels or grid. Preserve flat uniform MAGENTA backdrop for extraction, no magenta in the pumpkin."
+    }
+  ]
+}

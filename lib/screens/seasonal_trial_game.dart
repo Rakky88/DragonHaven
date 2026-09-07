@@ -120,6 +120,19 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
     super.dispose();
   }
 
+  bool _pumpkinsPrecached = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isWitchlight || _pumpkinsPrecached) return;
+    _pumpkinsPrecached = true;
+    for (var variant = 0; variant < 6; variant++) {
+      unawaited(precacheImage(
+          AssetImage(WitchlightPumpkin.assetFor(variant)), context));
+    }
+  }
+
   void _start() {
     if (_started) return;
     setState(() {
@@ -414,7 +427,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
           Container(
             width: 112,
             height: 112,
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(pumpkins ? 6 : 12),
             decoration: BoxDecoration(
               color: (colored ? theme.palette[_targetColor] : theme.glowColor)
                   .withValues(alpha: .20),
@@ -1425,7 +1438,7 @@ class _SpriteTapTarget extends StatelessWidget {
             duration: const Duration(milliseconds: 140),
             width: 84,
             height: 84,
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(artwork == null ? 8 : 4),
             decoration: BoxDecoration(
               color: (color ?? theme.buttonColor).withValues(alpha: .28),
               borderRadius: BorderRadius.circular(28),

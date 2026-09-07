@@ -221,6 +221,36 @@ void _expectSingleSubject(
 }
 
 void main() {
+  test('Witchlight pumpkins and Might lantern have clean padded silhouettes',
+      () async {
+    final faces = <String>{};
+    for (final path in [
+      for (var i = 0; i < 6; i++)
+        'assets/images/events/halloween/arcana_pumpkin_$i.webp',
+      'assets/images/events/halloween/trial_sprite_5.webp',
+    ]) {
+      final image = await _decode(path);
+      _expectTransparentCorners(image.rgba, image.width, image.height, path);
+      for (var y = 0; y < image.height; y++) {
+        for (var x = 0; x < image.width; x++) {
+          if (x >= 16 &&
+              x < image.width - 16 &&
+              y >= 16 &&
+              y < image.height - 16) {
+            continue;
+          }
+          expect(image.rgba[(y * image.width + x) * 4 + 3], lessThan(8),
+              reason:
+                  '$path must keep the entire silhouette away from the edge');
+        }
+      }
+      if (path.contains('arcana_pumpkin')) {
+        faces.add(base64Encode(await File(path).readAsBytes()));
+      }
+    }
+    expect(faces, hasLength(6));
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('all 155 dragon chat emotes are transparent contained app sprites',

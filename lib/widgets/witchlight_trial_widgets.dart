@@ -8,87 +8,17 @@ class WitchlightPumpkin extends StatelessWidget {
 
   final int variant;
 
+  static String assetFor(int variant) =>
+      'assets/images/events/halloween/arcana_pumpkin_${variant % 6}.webp';
+
   @override
-  Widget build(BuildContext context) => CustomPaint(
-        painter: _PumpkinPainter(variant),
-        child: const SizedBox.expand(),
+  Widget build(BuildContext context) => Image.asset(
+        assetFor(variant),
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        gaplessPlayback: true,
+        excludeFromSemantics: true,
       );
-}
-
-class _PumpkinPainter extends CustomPainter {
-  const _PumpkinPainter(this.variant);
-  final int variant;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.scale(size.width / 100, size.height / 100);
-    final paint = Paint();
-    canvas.drawOval(const Rect.fromLTWH(10, 79, 80, 12),
-        paint..color = const Color(0x44000000));
-    canvas.drawArc(
-        const Rect.fromLTWH(29, 4, 42, 55),
-        math.pi,
-        math.pi,
-        false,
-        paint
-          ..color = const Color(0xFFC69B55)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3);
-    paint.style = PaintingStyle.fill;
-    canvas.drawRRect(
-        RRect.fromRectAndRadius(
-            const Rect.fromLTWH(46, 16, 10, 20), const Radius.circular(4)),
-        paint..color = const Color(0xFF638743));
-    canvas.drawOval(
-        const Rect.fromLTWH(8, 27, 84, 61),
-        paint
-          ..shader = const RadialGradient(
-                  colors: [Color(0xFFFFB83D), Color(0xFFCD4D0B)])
-              .createShader(const Rect.fromLTWH(8, 27, 84, 61)));
-    paint.shader = null;
-    for (final width in [58.0, 30.0]) {
-      canvas.drawOval(
-          Rect.fromCenter(
-              center: const Offset(50, 57), width: width, height: 60),
-          paint
-            ..color = const Color(0x557F390B)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2);
-    }
-    paint.style = PaintingStyle.fill;
-    paint.color = const Color(0xFFFFE89A);
-    for (final x in [30.0, 61.0]) {
-      final eye = Path()
-        ..moveTo(x, 53)
-        ..lineTo(x + 13, 53)
-        ..lineTo(x + (variant.isEven ? 3 : 10), 41)
-        ..close();
-      canvas.drawPath(eye, paint);
-    }
-    canvas.drawPath(
-        Path()
-          ..moveTo(45, 61)
-          ..lineTo(55, 61)
-          ..lineTo(50, 54)
-          ..close(),
-        paint);
-    canvas.drawPath(
-        Path()
-          ..moveTo(27, 65)
-          ..quadraticBezierTo(50, 77, 73, 65)
-          ..quadraticBezierTo(50, 91, 27, 65)
-          ..close(),
-        paint);
-    final toothX = 35.0 + (variant ~/ 2) * 12;
-    canvas.drawRect(Rect.fromLTWH(toothX, 68, 7, 9),
-        paint..color = const Color(0xFFBC4C10));
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_PumpkinPainter oldDelegate) =>
-      oldDelegate.variant != variant;
 }
 
 /// The same centerline and width drive drawing and pointer validation.

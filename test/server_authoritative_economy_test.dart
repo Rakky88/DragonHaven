@@ -375,12 +375,12 @@ void main() {
       () {
     expect(
       vanityWorkflow,
-      contains('APPLY_DRAGONHAVEN_STAGING_VANITY_CHEST_39'),
+      contains('TEST_DRAGONHAVEN_STAGING_ITEM_SHOP_47'),
     );
-    expect(vanityWorkflow, contains("\$expectedRemote = '202609050038'"));
+    expect(vanityWorkflow, contains("\$expectedRemote = '202609070046'"));
     expect(
       vanityWorkflow,
-      contains("\$expectedPending = @('202609050039')"),
+      contains("\$expectedPending = @('202609070047')"),
     );
     expect(vanityWorkflow,
         contains('supabase db push --linked --include-all --dry-run'));
