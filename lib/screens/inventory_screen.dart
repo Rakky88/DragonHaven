@@ -56,12 +56,11 @@ class InventoryScreen extends StatelessWidget {
               text: strings.pick('Chests', 'Kisten'),
             ),
             Tab(
-              key: const Key('inventory-tab-furniture'),
+              key: const Key('inventory-tab-altar'),
               height: 70,
-              icon: const GameIconSprite(GameIconKind.inventoryFurniture,
-                  size: 35),
+              icon: Image.asset(EggAltarScene.altar, width: 35, height: 35),
               iconMargin: const EdgeInsets.only(bottom: 1),
-              text: strings.pick('Furniture', 'Meubels'),
+              text: 'Altar',
             ),
             Tab(
               key: const Key('inventory-tab-relics'),
@@ -76,11 +75,12 @@ class InventoryScreen extends StatelessWidget {
               text: strings.pick('Relics', 'Relieken'),
             ),
             Tab(
-              key: const Key('inventory-tab-altar'),
+              key: const Key('inventory-tab-furniture'),
               height: 70,
-              icon: Image.asset(EggAltarScene.altar, width: 35, height: 35),
+              icon: const GameIconSprite(GameIconKind.inventoryFurniture,
+                  size: 35),
               iconMargin: const EdgeInsets.only(bottom: 1),
-              text: 'Altar',
+              text: strings.pick('Furniture', 'Meubels'),
             ),
           ],
         ),
@@ -88,9 +88,9 @@ class InventoryScreen extends StatelessWidget {
             child: TabBarView(children: [
           _EggInventoryTab(),
           _ChestInventoryTab(),
-          _FurnitureInventoryTab(),
-          _RelicInventoryTab(),
           EggAltarScreen(embedded: true),
+          _RelicInventoryTab(),
+          _FurnitureInventoryTab(),
         ])),
       ]),
     );

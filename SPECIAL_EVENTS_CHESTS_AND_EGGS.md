@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: 3726c99b5b555668 -->
+<!-- reference-source-fingerprint: d71dd3cfbad5569a -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -282,6 +282,7 @@ Primary sources are `lib/models/adventure.dart`, `lib/models/trial.dart`,
 
 ## Egg Altar and protection
 
+Inventory tabs are ordered Eggs, Chests, Altar, Relics, Furniture.
 The permanent Egg Altar has its own Inventory > Altar tab and is also reachable
 from the nest screen. Selecting an egg first opens its details, with known
 properties, hidden-property placeholders, incubation, acquisition date and hint;

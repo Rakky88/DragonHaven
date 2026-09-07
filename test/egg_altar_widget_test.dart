@@ -212,7 +212,7 @@ void main() {
     final g = game();
     await g.setEggTagged('sinister', true);
     await mount(
-        tester, g, const Scaffold(body: InventoryScreen(initialTab: 4)));
+        tester, g, const Scaffold(body: InventoryScreen(initialTab: 2)));
     expect(find.byKey(const Key('inventory-tab-altar')), findsOneWidget);
     await capture(tester, 'inventory');
     await tester.tap(find.byKey(const Key('altar-tutorial')));
