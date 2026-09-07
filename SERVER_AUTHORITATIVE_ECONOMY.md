@@ -1,8 +1,9 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **7 September 2026**
-Released app: **v0.05.18 / 10068**; candidate **v0.05.19 / 10069**;
-production **56**, staging **56**.
+Released app: **v0.05.19 / 10069**; production **56**, staging **56**.
+Release workflow 34157071933 passed with 596 tests; APK/latest-download and
+post-publication server checks passed. See `RELEASE_V0.05.19_VERIFICATION.md`.
 Production migrations 50–56 were applied after exact staging-source evidence
 34153525465 and rollback-only contracts for push/game/import/read/receipt/ruleset.
 Mandatory preflight: exact 56-migration parity, lint 0, Auth/settings/app 200.

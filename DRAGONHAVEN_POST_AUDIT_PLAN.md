@@ -3,7 +3,7 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-## Releasekandidaat v0.05.19 (10069), 7 september 2026
+## Uitgebracht: v0.05.19 (10069), 7 september 2026
 
 - Altar: sorteren op ontvangen/broedtijd, omkeren, tagfilters combineren en
   voorkeur delen met Inventory; details blijven verplicht vóór de selectie.
@@ -20,8 +20,9 @@ Technische uitgangsversie: **v0.04.06**
   vóór toepassing in één rollbacktransactie geïsoleerd herhaald; getest
   stagingbronbewijs: 34153525465. Preflight: lint 0, Auth/settings/app 200.
   Alle accounts blijven legacy_client, economische mutaties uit, game-worker
-  uit, nul schaduwkopieën. FCM-worker en Vault zijn ingericht, verzending wacht
-  op de appreleasecontroles. Dit activeert geen volledige servereconomie.
+  uit, nul schaduwkopieën. FCM-worker en Vault zijn ingericht; productiepush is
+  aangezet na de geslaagde appreleasecontroles in workflow 34157071933.
+  Dit activeert geen volledige servereconomie.
 - Expliciete supportopdracht DH-4132F5C7: Love, Kisses, Hugs zijn in die volgorde
   via de normale join-RPC aangesloten. Lobby 2abfc0ab-e313-466a-9a64-11346dfcdc29
   is gestart met vier deelnemers; eindtijd 10 september 03:13:35 UTC.
@@ -31,13 +32,20 @@ Technische uitgangsversie: **v0.04.06**
   deelnemers hun beloning hebben bevestigd, en verwijdert daarna zichzelf.
   Eerste uitvoering geslaagd: alle drie bleven terecht bestaan tijdens de reis.
 
-Publicatie en artifactbewijs worden na de buildpoort hieronder vastgelegd.
+Publicatie voltooid: [v0.05.19](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.19),
+bron `6982eba07394d7b6a7a08032f9f053ebbe680235`. Workflow 34157071933 slaagt
+met schone analyse, 596 tests en een ondertekende AAB. De APK-versie en
+handtekening zijn gecontroleerd; GitHub-digest en bestandsgrootte zijn identiek
+aan het lokale artifact. De vaste latest-download geeft HTTP 200. Ook na
+publicatie: schema 56, lint 0, Auth/settings/app 200. Volledig bewijs en links:
+`RELEASE_V0.05.19_VERIFICATION.md`.
 
 ## Lopende opdracht: gratis Firebase en volledige servereconomie
 
 Rick heeft de volledige servereconomie expliciet toegevoegd aan de scope en
-zelf Firebase-project `dragonhaven-20ced` aangemaakt. Nieuwe werkbranch:
-`feature/free-monitoring-and-growth`; dit is nog geen nieuwe apprelease.
+zelf Firebase-project `dragonhaven-20ced` aangemaakt. Werkbranch:
+`feature/free-monitoring-and-growth`. Hieronder staat het opeenvolgende bewijs
+van de eerdere stappen; de actuele productie- en releasestatus staat bovenaan.
 
 Migratie 54 en een expliciete leesweergave voor de app zijn op staging bewezen in
 [34150477904](https://github.com/Rakky88/DragonHaven/actions/runs/34150477904).

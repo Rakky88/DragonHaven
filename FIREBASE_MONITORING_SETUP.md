@@ -52,12 +52,15 @@ Firebase-acceptatie markeert de duurzame inbox nadrukkelijk niet als gelezen.
 Productie en staging hebben schema 56 (inclusief de aparte schaduweconomie).
 Push staat op staging uit en de productie-economie blijft uit. De FCM Edge
 worker en Vault-configuratie zijn op beide omgevingen ingericht. Productiepush
-blijft gepauzeerd tot de controles voor v0.05.19 zijn geslaagd. De Androidrelease
+is aangezet na de geslaagde controles voor v0.05.19 (workflow 34157071933).
+Onbevoegde requests krijgen 401; een bevoegd leeg verzoek krijgt 200 met nul
+leases. De scheduler slaat een lege wachtrij over. De Androidrelease
 gebruikt uitsluitend de gevalideerde productieconfig van dragonhaven-20ced.
 
 De aparte serviceaccount per Firebase-project heeft een custom IAM-rol met alleen
 `cloudmessaging.messages.create`. Sleutels blijven lokaal in genegeerde
-`.tools/firebase-secrets` en voor staging in beschermde GitHub/Edge secrets.
+`.tools/firebase-secrets` en in de Edge secrets van de bijbehorende omgeving;
+staging gebruikt daarnaast beschermde GitHub secrets voor de proefworkflow.
 De dispatchsleutel staat in Supabase Vault en het worker secret, nooit in de app.
 Clientconfiguratie zit in het beschermde CI-secret
 `DRAGONHAVEN_FIREBASE_ANDROID_CONFIG`; `tool/write_firebase_build_config.dart`
@@ -66,6 +69,12 @@ herhalen met de officiele Firebase CLI-aanmelding, zonder billing te activeren.
 
 ## Bewijs
 
+- Productierelease v0.05.19: workflow
+  [34157071933](https://github.com/Rakky88/DragonHaven/actions/runs/34157071933)
+  slaagt met 596 tests, schone analyse en gevalideerde Firebaseconfiguratie.
+  De definitieve APK initialiseert native Crashlytics; de productiepushworker
+  en Vault zijn geverifieerd en push staat aan. Servercontrole na publicatie:
+  schema 56, lint 0, Auth/settings/app 200. Zie `RELEASE_V0.05.19_VERIFICATION.md`.
 - Staging rollbackrepetitie 50-51:
   [34136004296](https://github.com/Rakky88/DragonHaven/actions/runs/34136004296).
 - Staging apply/worker: schema 51, lint en health geslaagd, push bleef uit:
@@ -77,7 +86,7 @@ herhalen met de officiele Firebase CLI-aanmelding, zonder billing te activeren.
   apparaat, inbox en outbox zijn verwijderd; push terug uitgezet.
   Visueel bewijs: lokaal `release/firebase-staging-push.png`.
 - Android-debugbuild zonder Firebase en met gevalideerde stagingconfig slagen.
-- Dart-analyse schoon. De volledige Flutter-suite slaagt met 552 tests;
+- Dart-analyse schoon. De eerdere stagingcontrole slaagt met 552 tests;
   aanvullende domein-/snapshotproeven en zes pushworker-unitproeven slagen.
 - Echte native crash en niet-fatale Fluttermelding zijn via de officiele
   Crashlytics-report-API teruggevonden, elk met een event in het stagingproject.
@@ -96,8 +105,9 @@ herhalen met de officiele Firebase CLI-aanmelding, zonder billing te activeren.
 
 ## Nog af te ronden binnen de opdracht
 
-Alertinstellingen voor Rick, productie-uitrol van de geteste koppeling en
-appreleasepoort. De volledige resterende servereconomie wordt apart verder
+Persoonlijke alertvoorkeuren voor Rick zijn nog niet afzonderlijk geverifieerd.
+Productieconfiguratie, worker, Vault en de appreleasepoort zijn afgerond; zie
+`RELEASE_V0.05.19_VERIFICATION.md`. De volledige resterende servereconomie wordt apart verder
 gebouwd; deze koppeling maakt die niet automatisch voltooid.
 
 Gebruik `tool/firebase_staging_probe.dart` alleen met alle stagingdefinities.
