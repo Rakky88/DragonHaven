@@ -6,7 +6,7 @@ Ruleset: app version `v0.05.14`
 
 Source baseline: seasonal-event implementation released with `v0.05.14`
 
-<!-- reference-source-fingerprint: 56e291ee9f992f2e -->
+<!-- reference-source-fingerprint: 0f13990aebaa5866 -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
@@ -645,20 +645,23 @@ When any of these source tables change, this document must be reviewed and updat
 
 ## Egg Altar: Return to the Weave
 
-| Return | Guaranteed Shell Fragments | Independent Essence bonus | Independent Weaveheart bonus |
+| Return | Guaranteed Shell Fragments | Essence result | Independent Weaveheart bonus |
 |---|---:|---|---|
 | Ordinary inventory egg | 5 | 25% for 1 | 2% for 1 |
-| Sinister Egg (extra confirmation) | 25 | 25% for 5 | 2% for 5 |
+| Sinister Egg (extra confirmation) | 25 | Always 3, 4 or 5, each with 1/3 probability | 10% for 1 |
 
-The Essence and Weaveheart rolls are independent and can both succeed. After
-39 returns without a Weaveheart, the next return guarantees its heart bonus.
+The Essence and Weaveheart rolls are independent. Sinister eggs always grant
+Essence and have five times the ordinary Weaveheart chance (10% instead of 2%),
+awarding exactly one heart when successful. After 39 returns without a
+Weaveheart, the next return guarantees exactly one heart for either egg type.
 Any successful heart bonus resets the counter. One actual egg advances the
-counter once, including Sinister eggs; the 5x rule multiplies quantities rather
-than making five rolls. The counter persists per account, with no daily cap.
+counter once, including Sinister eggs. The counter persists per account, with no daily cap.
 All eligible ordinary eggs use the same table, independent of hidden rarity,
 Spectral status, hatch seed or source. Special-family, tagged, nested and
 trade-reserved eggs cannot be returned. Retrying a committed action never rolls
-again, consumes another egg or grants another reward.
+again, consumes another egg or grants another reward. Existing receipts and
+wallet balances are preserved when the reward table is updated; new returns
+use the current table.
 
 | Crafted consumable | Fragments | Essence | Weaveheart | Fixed information/action |
 |---|---:|---:|---:|---|
@@ -675,5 +678,6 @@ Materials and crafted stock are not tradeable. Beacon donations buy only shared
 cosmetic progress; there are no additional rolls or improved loot odds.
 
 Sources: lib/models/egg_altar.dart, lib/providers/egg_altar_systems.dart and
-supabase/migrations/202609070042_egg_altar.sql. Witchlight challenge generation is
+supabase/migrations/202609070042_egg_altar.sql, with the forward reward update in
+supabase/migrations/202609070044_sinister_altar_rewards.sql. Witchlight challenge generation is
 in lib/screens/seasonal_trial_game.dart and lib/widgets/witchlight_trial_widgets.dart.

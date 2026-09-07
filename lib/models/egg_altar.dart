@@ -209,14 +209,14 @@ class EggAltarState {
       );
 }
 
-/// Independent bonus rolls, with account pity once per returned egg.
+/// Independent Essence and heart rolls, with account pity once per returned egg.
 WeaveWallet rollWeaveReturn(Random random,
     {required bool sinister, required int misses}) {
-  final multiplier = sinister ? 5 : 1;
-  final essence = random.nextDouble() < .25;
-  final heart = random.nextDouble() < .02 || misses >= 39;
-  return WeaveWallet(
-      5 * multiplier, essence ? multiplier : 0, heart ? multiplier : 0);
+  final essenceRoll = random.nextDouble();
+  final essence =
+      sinister ? 3 + (essenceRoll * 3).floor() : (essenceRoll < .25 ? 1 : 0);
+  final heart = random.nextDouble() < (sinister ? .10 : .02) || misses >= 39;
+  return WeaveWallet(sinister ? 25 : 5, essence, heart ? 1 : 0);
 }
 
 class EggAltarException implements Exception {

@@ -35,6 +35,7 @@ const specialContentReference = ReferenceDocumentSpec(
     'supabase/migrations/202609070041_seasonal_event_lint_fixes.sql',
     'supabase/migrations/202609070042_egg_altar.sql',
     'supabase/migrations/202609070043_witchlight_three_mistakes.sql',
+    'supabase/migrations/202609070044_sinister_altar_rewards.sql',
   ],
 );
 
@@ -66,6 +67,7 @@ const randomRewardsReference = ReferenceDocumentSpec(
     'supabase/migrations/202608240007_group_adventure_duration_rules.sql',
     'supabase/migrations/202609070042_egg_altar.sql',
     'supabase/migrations/202609070043_witchlight_three_mistakes.sql',
+    'supabase/migrations/202609070044_sinister_altar_rewards.sql',
     'supabase/migrations/202609070040_seasonal_events.sql',
     'supabase/migrations/202609070041_seasonal_event_lint_fixes.sql',
   ],

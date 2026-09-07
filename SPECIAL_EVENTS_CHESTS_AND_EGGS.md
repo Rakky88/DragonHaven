@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: app version `v0.05.14`
 
-<!-- reference-source-fingerprint: 626914880e6a962c -->
+<!-- reference-source-fingerprint: 0377aba6a4935728 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -288,7 +288,9 @@ and the committing action both reject protected eggs.
 Every Special-family egg is excluded, including legacy eggs with no specialEggId.
 Nest eggs and trade-reserved eggs are excluded. Sinisterra is Mythical and may be
 returned: hold the return button and accept an additional Sinister confirmation.
-Its material quantities are five times those of an ordinary return. No hidden
+The confirmation describes the permanent return without listing rewards.
+Sinister always gives 25 Shell Fragments and 3–5 Draconic Essence (uniform), with
+an independent 10% chance of one Weaveheart. No hidden
 rarity, Spectral state or source affects the reward table. Exact probabilities
 and the account-wide Weaveheart guarantee are in RANDOM_REWARDS_AND_ODDS.md.
 
@@ -302,7 +304,8 @@ Online material spending and returns use a separate server ledger with atomic,
 idempotent commands, per-egg ownership checks and permanent returned-ID markers.
 The legacy inventory registration trust boundary remains; this feature does not
 activate the broader economy cutover. Lost responses retry the persisted command
-ID. See EGG_ALTAR_DESIGN_DRAFT.md for recipes and the complete implemented design.
+ID. The forward balance migration 202609070044 preserves existing receipts and
+wallet balances. See EGG_ALTAR_DESIGN_DRAFT.md for recipes and the complete implemented design.
 
 Conclaves have a shared cosmetic Weave Beacon with voluntary Shell Fragment gifts
 and milestones at 500, 2000 and 5000. It gives no stat or reward bonuses. Only a

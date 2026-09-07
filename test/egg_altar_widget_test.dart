@@ -127,6 +127,15 @@ void main() {
     await settle(tester);
     await hold(tester);
     expect(find.byKey(const Key('confirm-sinister-return')), findsOneWidget);
+    final confirmation = find.descendant(
+        of: find.byType(AlertDialog), matching: find.byType(Text));
+    final confirmationText = tester
+        .widgetList<Text>(confirmation)
+        .map((text) => text.data ?? '')
+        .join(' ');
+    expect(confirmationText, contains('This cannot be undone.'));
+    expect(confirmationText,
+        isNot(matches(r'Fragments|Essence|Weaveheart|25|10%')));
     await capture(tester, 'sinister-confirmation');
     expect(g.eggStash, hasLength(1));
     await tester.tap(find.text('Cancel'));
@@ -139,6 +148,8 @@ void main() {
     await settle(tester);
     expect(g.eggStash, isEmpty);
     expect(g.eggAltar.wallet.fragments, 25);
+    expect(g.eggAltar.wallet.essence, inInclusiveRange(3, 5));
+    expect(g.eggAltar.wallet.hearts, inInclusiveRange(0, 1));
     expect(find.text('Continue'), findsOneWidget);
     await capture(tester, 'result');
     expect(tester.takeException(), isNull);

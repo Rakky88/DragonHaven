@@ -99,13 +99,11 @@ class _FriendsContent extends StatelessWidget {
     final online = context.watch<OnlineAccountProvider>();
     if (!online.isConfigured) {
       return _FriendsList(children: [
-        _Header(strings: strings),
         _SetupRequired(strings: strings),
       ]);
     }
     if (!online.isSignedIn) {
       return _FriendsList(children: [
-        _Header(strings: strings),
         const OnlineAccountAccessCard(),
       ]);
     }
@@ -119,7 +117,6 @@ class _FriendsContent extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: online.refresh,
       child: _FriendsList(children: [
-        _Header(strings: strings),
         if (online.errorCode case final error?)
           _StatusCard(
             icon: Icons.cloud_off_rounded,
@@ -241,67 +238,6 @@ class _FriendsList extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
         children: children,
-      );
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.strings});
-  final AppStrings strings;
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 18),
-        child: Container(
-          key: const Key('tutorial-friends-header'),
-          padding: const EdgeInsets.fromLTRB(14, 13, 16, 14),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF241747), Color(0xFF6548A0)],
-            ),
-            borderRadius: BorderRadius.circular(26),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x332B174D),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              const GameIconSprite(GameIconKind.navFriends, size: 92),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      strings.tr('friends'),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      strings.pick(
-                        'Trusted keepers, shared adventures and safe trades.',
-                        'Vertrouwde hoeders, gedeelde avonturen en veilige ruilen.',
-                      ),
-                      style: const TextStyle(
-                        color: Color(0xFFE7DFFA),
-                        height: 1.25,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       );
 }
 

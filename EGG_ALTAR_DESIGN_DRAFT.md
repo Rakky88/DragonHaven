@@ -2,6 +2,8 @@
 
 Status: gebouwd en getest op 7 september 2026; 485 tests groen, analyzer schoon
 en servermigraties 42/43 met contractcontroles succesvol op staging.
+De aangepaste Sinister-balans is aanvullend gecontroleerd met 150 gerichte tests
+en een schone analyzer; forward-migratie 44 staat klaar voor de stagingcontrole.
 De startbalans hieronder is ingebouwd. Productie blijft op v0.05.15 / migratie 41
 tot een volgende gecontroleerde uitrol. Dit document behoudt zijn oorspronkelijke
 bestandsnaam zodat verwijzingen naar het plan blijven werken.
@@ -12,8 +14,8 @@ Vastgelegde keuzes van de speler:
   via crafting bij het Egg Altar verkrijgbaar.
 - Eieren kunnen worden getagd en ontagd; getagde eieren mogen nooit naar de Weave.
 - De terugkeeranimatie krijgt zes fasen, met zes eigen sprites en vloeiende crossfades.
-- Sinister-eieren mogen naar de Weave met vijfmaal de materialen en een extra
-  bevestigingsscherm.
+- Sinister-eieren mogen naar de Weave: altijd 25 Fragments en 3–5 Essence,
+  met 10% kans op één Weaveheart. Het extra bevestigingsscherm noemt geen opbrengst.
 - De gezamenlijke cosmetische Conclave Weave Beacon wordt direct meegenomen.
 
 ## Doel
@@ -39,8 +41,9 @@ Eieren met een draak van rarity specialEvent zijn altijd uitgesloten, ook bij
 legacy/importdata. Controleer de echte familie, niet alleen het plaatje of de naam.
 Het actieve nestei, trade-reserveringen en getagde eieren zijn niet selecteerbaar.
 Sinisterra is Mythical en mag naar de Weave. Na de vasthoudknop verschijnt nog
-een extra bevestigingsscherm. Een Sinister-ei geeft 25 Fragments en vijfmaal de
-eventuele Essence-/Weaveheart-bonus; de kansrollen en pityteller tellen eenmaal.
+een extra bevestigingsscherm dat alleen de definitieve teruggave vermeldt.
+Een Sinister-ei geeft altijd 25 Fragments en 3–5 Essence, met 10% kans op één
+Weaveheart; de pityteller telt eenmaal.
 Geen automatische selectie op verborgen rarity of Spectral-status.
 Na de eerste volledige animatie mag de speler volgende animaties versnellen.
 Een gerichte multiselect kan later, met bescherming per ei; geen select-all als default.
@@ -75,8 +78,10 @@ worden geen twee overlappende beschermingssystemen gebouwd.
 | Draconic Essence | Rare | Magische informatie-relics | 25% kans op 1 extra |
 | Weaveheart | Legendary | Hoogste onthullingsrelics | 2% kans op 1 extra |
 
-De twee bonusrollen zijn onafhankelijk: Essence en Weaveheart kunnen tegelijk
-vallen. Sinister vermenigvuldigt de materiaalhoeveelheden met vijf. Elk ander
+De twee rollen zijn onafhankelijk: Essence en Weaveheart kunnen tegelijk
+vallen. Sinister geeft altijd 25 Fragments en 3, 4 of 5 Essence met elk een kans
+van 1/3. De Weaveheart-kans is vijfmaal zo groot (10%), de opbrengst is één
+Weaveheart, ook bij de garantie na 39 gemiste teruggaven. Elk ander
 geschikt ei gebruikt dezelfde tabel, ongeacht verborgen drakenrarity,
 Spectral-status, hatchseed of herkomst. Geen vergoeding voor een zogenaamd duplicate
 ei die stiekem de onbekende inhoud verraadt.
@@ -192,7 +197,11 @@ consumable en ontvangstbewijs worden atomair verwerkt. Na een verloren antwoord
 kan dezelfde actie veilig worden hervat. Een andere actie wacht op die afronding.
 In de productieconfiguratie is een online account nodig voor Altar-acties.
 
-Tests omvatten beschermde/legacy Special-eieren, Sinister-bevestiging en 5x pity,
+De aanvullende migratie 44 wijzigt uitsluitend de beloning van nieuwe Sinister-
+teruggaven. Bestaande ontvangstbewijzen, wallets en de pityteller blijven behouden.
+
+Tests omvatten beschermde/legacy Special-eieren, Sinister-bevestiging zonder
+opbrengsttekst, de exacte 10%-grens, de drie Essence-uitkomsten en één-heart-pity,
 herhaald teruggeven, oude backups, taggen/ontaggen, vaste onthullingen, Quill-kosten,
 neutrale bestaande drop-pools en herstel na een verloren serverantwoord. Compacte
 widgettests behandelen de selectie, hold/annulering, tags en Beacon-giften.

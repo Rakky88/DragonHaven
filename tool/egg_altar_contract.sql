@@ -7,7 +7,33 @@ declare
   egg_special text := gen_random_uuid()::text; egg_scan text := gen_random_uuid()::text;
   dragon_key text := gen_random_uuid()::text; inventory jsonb; result jsonb; again jsonb;
   before_wallet jsonb; old_tag jsonb; new_tag jsonb;
+  essence_roll double precision; expected_essence integer;
 begin
+  -- Exercise the same reward function used by the command at exact boundaries.
+  if private.egg_altar_return_reward(false, 0, 0.249999, 0.019999)
+      <> '{"fragments":5,"essence":1,"hearts":1}'::jsonb
+    or private.egg_altar_return_reward(false, 0, 0.25, 0.02)
+      <> '{"fragments":5,"essence":0,"hearts":0}'::jsonb
+    or private.egg_altar_return_reward(false, 39, 0.9, 0.9)
+      <> '{"fragments":5,"essence":0,"hearts":1}'::jsonb
+    or private.egg_altar_return_reward(true, 38, 0.9, 0.9)
+      <> '{"fragments":25,"essence":5,"hearts":0}'::jsonb
+    or private.egg_altar_return_reward(true, 39, 0.9, 0.9)
+      <> '{"fragments":25,"essence":5,"hearts":1}'::jsonb then
+    raise exception 'altar_contract_reward_boundaries';
+  end if;
+  for essence_roll, expected_essence in
+    select * from (values (0::double precision, 3), (1::double precision / 3 - 0.000001, 3),
+      (1::double precision / 3, 4), (2::double precision / 3 - 0.000001, 4),
+      (2::double precision / 3, 5), (0.999999::double precision, 5)) as bins(roll, amount)
+  loop
+    if private.egg_altar_return_reward(true, 0, essence_roll, 0.099999)
+        <> jsonb_build_object('fragments', 25, 'essence', expected_essence, 'hearts', 1)
+      or private.egg_altar_return_reward(true, 0, essence_roll, 0.10)
+        <> jsonb_build_object('fragments', 25, 'essence', expected_essence, 'hearts', 0) then
+      raise exception 'altar_contract_sinister_independent_rolls';
+    end if;
+  end loop;
   insert into auth.users(id, email, email_confirmed_at) values
     (keeper, keeper::text || '@altar-test.invalid', now()),
     (other_keeper, other_keeper::text || '@altar-test.invalid', now());
@@ -25,6 +51,7 @@ begin
   perform public.synchronize_trade_inventory(inventory);
   result := public.get_egg_altar_state();
   if has_table_privilege('authenticated', 'private.egg_altar_accounts', 'update')
+    or has_function_privilege('authenticated', 'private.egg_altar_return_reward(boolean,integer,double precision,double precision)', 'execute')
     or has_function_privilege('anon', 'public.egg_altar_command(text,text,jsonb)', 'execute') then
     raise exception 'altar_contract_permissions';
   end if;
@@ -57,8 +84,11 @@ begin
   update private.egg_altar_accounts set misses = 39 where owner_id = keeper;
   result := public.egg_altar_command('sinister-confirmed', 'return', jsonb_build_object('eggId', egg_sinister, 'sinisterConfirmed', true));
   if (result->'receipt'->'reward'->>'fragments')::integer <> 25 or
-    (result->'receipt'->'reward'->>'hearts')::integer <> 5 or
+    (result->'receipt'->'reward'->>'essence')::integer not between 3 and 5 or
+    (result->'receipt'->'reward'->>'hearts')::integer <> 1 or
     (result->'state'->>'misses')::integer <> 0 then raise exception 'altar_contract_sinister_pity'; end if;
+  again := public.egg_altar_command('sinister-confirmed', 'return', jsonb_build_object('eggId', egg_sinister, 'sinisterConfirmed', true));
+  if again <> result then raise exception 'altar_contract_sinister_retry'; end if;
   perform set_config('request.jwt.claim.sub', other_keeper::text, true);
   begin
     perform public.egg_altar_command('not-mine', 'tag', jsonb_build_object('eggId', egg_scan, 'tagged', false));

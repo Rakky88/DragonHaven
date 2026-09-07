@@ -203,8 +203,8 @@ class _EggAltarScreenState extends State<EggAltarScreen> {
                     title: Text(s.pick(
                         'Return a Sinister Egg?', 'Sinister-ei teruggeven?')),
                     content: Text(s.pick(
-                        'This permanently returns your Sinister Egg to the Weave. It gives 25 Shell Fragments and five times any bonus materials. This cannot be undone.',
-                        'Dit geeft je Sinister-ei definitief terug aan de Weave. Je krijgt 25 Shell Fragments en vijfmaal de eventuele bonusmaterialen. Dit kan niet ongedaan worden gemaakt.')),
+                        'This permanently returns your Sinister Egg to the Weave. This cannot be undone.',
+                        'Dit geeft je Sinister-ei definitief terug aan de Weave. Dit kan niet ongedaan worden gemaakt.')),
                     actions: [
                       TextButton(
                           onPressed: () => Navigator.pop(dialogContext, false),
@@ -250,8 +250,8 @@ class _EggAltarScreenState extends State<EggAltarScreen> {
                 builder: (c) => AlertDialog(
                         title: Text(s.pick('Return rewards', 'Opbrengst')),
                         content: Text(s.pick(
-                            'Every ordinary egg gives 5 Shell Fragments. Independent bonuses: 25% for 1 Draconic Essence and 2% for 1 Weaveheart. After 39 returns without a Weaveheart, the next is guaranteed. Sinister eggs multiply all materials by five. Every returned egg advances the counter once. Materials and crafted relics cannot be traded.',
-                            'Elk gewoon ei geeft 5 Shell Fragments. Onafhankelijke bonussen: 25% op 1 Draconic Essence en 2% op 1 Weaveheart. Na 39 teruggaven zonder Weaveheart is de volgende gegarandeerd. Sinister-eieren geven vijfmaal alle materialen. Elk teruggegeven ei telt eenmaal voor de teller. Materialen en gemaakte relics zijn niet verhandelbaar.')),
+                            'Every ordinary egg gives 5 Shell Fragments. Independent bonuses: 25% for 1 Draconic Essence and 2% for 1 Weaveheart. After 39 returns without a Weaveheart, the next is guaranteed. Sinister eggs always give 25 Shell Fragments and 3, 4 or 5 Draconic Essence with equal chances, plus an independent 10% chance of 1 Weaveheart. Every returned egg advances the counter once. Materials and crafted relics cannot be traded.',
+                            'Elk gewoon ei geeft 5 Shell Fragments. Onafhankelijke bonussen: 25% op 1 Draconic Essence en 2% op 1 Weaveheart. Na 39 teruggaven zonder Weaveheart is de volgende gegarandeerd. Sinister-eieren geven altijd 25 Shell Fragments en 3, 4 of 5 Draconic Essence met gelijke kansen, plus een onafhankelijke kans van 10% op 1 Weaveheart. Elk teruggegeven ei telt eenmaal voor de teller. Materialen en gemaakte relics zijn niet verhandelbaar.')),
                         actions: [
                           TextButton(
                               onPressed: () => Navigator.pop(c),

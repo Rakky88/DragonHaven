@@ -8,8 +8,10 @@ Keepers op een lagere versie krijgen bij appstart de wegdrukbare updatepopup met
 de permanente Android-downloadroute.**
 
 Nieuwe implementatie na v0.05.15 (nog niet gepubliceerd): Egg Altar met drie
-materialen, vijf craftrecepten, beschermtags en zes animatiefasen; Sinister met 5x
-materiaalhoeveelheden plus extra bevestiging; gedeelde cosmetische Weave Beacon.
+materialen, vijf craftrecepten, beschermtags en zes animatiefasen; Sinister met
+altijd 25 Fragments, 3–5 Essence (gelijke kansen) en 10% kans op één Weaveheart.
+De extra bevestiging noemt geen opbrengst. Het paarse Friends-introblok is
+verwijderd; de tutorial richt zich op de Friends-tab. Gedeelde cosmetische Weave Beacon.
 Witchlight krijgt variabele paden van gelijke lengte, zwarte corridor, zichtbare
 vingertrail, rode foutflits en game over op drie fouten of verstreken tijd.
 De Conclave-teller krijgt eigen ruimte naast de tabtekst. De chat start bij de
@@ -17,12 +19,21 @@ nieuwste berichten en markeert gelezen na het afronden van de scroll; terugkomen
 uit de achtergrond probeert dat opnieuw. Geschiedenis lezen laat nieuwe berichten
 ongelezen. Compacte Aerie-kop voorkomt dat de chat op kleine schermen wegvalt.
 
+Aanvullende controle van het verwijderde Friends-blok en de nieuwe Sinister-balans:
+150/150 gerichte tests groen, analyzer schoon en levende referenties gesynchroniseerd.
+De tests omvatten de Friends-tutorial, Conclave-teller, vertalingen, permanente
+bevestiging zonder opbrengsttekst, onafhankelijke kansgrenzen en één Weaveheart
+bij pity. Forward-migratie 44 bewaart bestaande wallets en ontvangstbewijzen;
+de SQL-contracttest controleert dezelfde grenzen en een eenmalige Sinister-return.
+Deze migratie staat klaar voor de afgeschermde stagingcontrole.
+
 Stagingrun `34102634420` op branch `feature/egg-altar-witchlight` is groen:
 migraties 42/43 en de Altar-contracttest eerst volledig teruggerold, vervolgens
 43/43 parity, nul database-lintfouten en Auth health/settings/apphealth HTTP 200.
 De contracttest gebruikt tijdelijke accounts en draait alle testmutaties terug.
-Hij controleert eigenaar, tags, oude saves, eenmaal teruggeven, Sinister-bevestiging
-+ 5x pity, crafting, Oracle, Quill, metadataoverdracht en eenmalige Beacon-giften.
+Hij controleerde eigenaar, tags, oude saves, eenmaal teruggeven, Sinister-bevestiging
+en de toenmalige beloning, crafting, Oracle, Quill, metadataoverdracht en eenmalige
+Beacon-giften. De nieuwe beloningsbalans volgt via forward-migratie 44.
 Lokale hervalidatie: 485/485 tests, inclusief compacte Altar/Beacon-schermen,
 transparante sprites, vertalingen en referentiedocumentatie; analyzer zonder
 problemen.
@@ -33,6 +44,7 @@ GitHub CLI-download bleef hangen; archief-SHA256 is gelijk aan de GitHub-digest.
 APK-SHA256: `99b16a3dacdf3ae5dc3aef117eaee13bdf8a6e69a8de891e707db68aa41d979b`.
 APK versionName `0.5.15`, versionCode `10065`, debug-certificaat
 `7354973a274555fa6b0fff0faee11f16dca44cd4f579d924f7d85a44d1119804`.
+Deze eerdere preview bevat nog het Friends-introblok en de oude Sinister-balans.
 Dit is een test-APK voor staging, geen productie-update; het debugcertificaat
 vervangt het productiecertificaat niet. Draft-PR #2 vergelijkt deze uitbreiding
 met de gepubliceerde releasebranch v0.05.15. Productiehealth op 7 september 2026

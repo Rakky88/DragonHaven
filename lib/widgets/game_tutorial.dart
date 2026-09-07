@@ -541,8 +541,7 @@ List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
           "Create a verified online account and add Keepers by their Keeper ID. A friend's profile shows vanity, favorite dragon, discovered forms, achievements and Trial records.",
           'Maak een geverifieerd online account en voeg Hoeders toe via hun Keeper-ID. Een vriendenprofiel toont vanity, favoriete draak, ontdekte vormen, achievements en Trial-records.',
         ),
-        targetKey: const Key('tutorial-friends-header'),
-        scrollKey: const PageStorageKey('friends-scroll'),
+        targetKey: const Key('friends-tab'),
       ),
       _TutorialStep(
         0,

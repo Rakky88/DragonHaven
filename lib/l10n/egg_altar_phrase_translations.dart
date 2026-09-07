@@ -168,14 +168,14 @@ const eggAltarPhraseTranslations = <String, List<String>>{
     'Devolver um ovo Sinister?',
     'Sinisterの卵を返しますか？'
   ],
-  'This permanently returns your Sinister Egg to the Weave. It gives 25 Shell Fragments and five times any bonus materials. This cannot be undone.':
+  'This permanently returns your Sinister Egg to the Weave. This cannot be undone.':
       [
-    'Dein Sinister-Ei kehrt endgültig zur Weave zurück. Du erhältst 25 Shell Fragments und die fünffache Menge an Bonusmaterialien. Dies kann nicht rückgängig gemacht werden.',
-    'Tu huevo Sinister volverá definitivamente a la Weave. Obtendrás 25 Shell Fragments y cinco veces los materiales de bonificación que salgan. No se puede deshacer.',
-    'Ton œuf Sinister retourne définitivement à la Weave. Il donne 25 Shell Fragments et cinq fois les matériaux bonus éventuels. Cette action est irréversible.',
-    'Il tuo uovo Sinister torna definitivamente alla Weave. Ricevi 25 Shell Fragments e cinque volte gli eventuali materiali bonus. Non si può annullare.',
-    'O teu ovo Sinister regressa definitivamente à Weave. Recebes 25 Shell Fragments e cinco vezes os eventuais materiais de bónus. Não é possível anular.',
-    'Sinisterの卵を永久にWeaveへ返します。Shell Fragmentsを25個獲得し、ボーナス素材が出た場合は5倍になります。この操作は取り消せません。'
+    'Dein Sinister-Ei kehrt endgültig zur Weave zurück. Dies kann nicht rückgängig gemacht werden.',
+    'Tu huevo Sinister volverá definitivamente a la Weave. No se puede deshacer.',
+    'Ton œuf Sinister retourne définitivement à la Weave. Cette action est irréversible.',
+    'Il tuo uovo Sinister torna definitivamente alla Weave. Non si può annullare.',
+    'O teu ovo Sinister regressa definitivamente à Weave. Não é possível anular.',
+    'Sinisterの卵を永久にWeaveへ返します。この操作は取り消せません。'
   ],
   'Return Sinister Egg': [
     'Sinister-Ei zurückgeben',
@@ -193,14 +193,14 @@ const eggAltarPhraseTranslations = <String, List<String>>{
     'Recompensas da devolução',
     '返却の報酬'
   ],
-  'Every ordinary egg gives 5 Shell Fragments. Independent bonuses: 25% for 1 Draconic Essence and 2% for 1 Weaveheart. After 39 returns without a Weaveheart, the next is guaranteed. Sinister eggs multiply all materials by five. Every returned egg advances the counter once. Materials and crafted relics cannot be traded.':
+  'Every ordinary egg gives 5 Shell Fragments. Independent bonuses: 25% for 1 Draconic Essence and 2% for 1 Weaveheart. After 39 returns without a Weaveheart, the next is guaranteed. Sinister eggs always give 25 Shell Fragments and 3, 4 or 5 Draconic Essence with equal chances, plus an independent 10% chance of 1 Weaveheart. Every returned egg advances the counter once. Materials and crafted relics cannot be traded.':
       [
-    'Jedes normale Ei gibt 5 Shell Fragments. Unabhängige Boni: 25% für 1 Draconic Essence und 2% für 1 Weaveheart. Nach 39 Rückgaben ohne Weaveheart ist beim nächsten Ei eines garantiert. Sinister-Eier geben die fünffache Materialmenge. Jedes zurückgegebene Ei zählt einmal. Materialien und hergestellte Relikte sind nicht tauschbar.',
-    'Cada huevo normal da 5 Shell Fragments. Bonificaciones independientes: 25% de obtener 1 Draconic Essence y 2% de obtener 1 Weaveheart. Tras 39 devoluciones sin Weaveheart, el siguiente está garantizado. Los huevos Sinister multiplican todos los materiales por cinco. Cada huevo devuelto cuenta una vez. Los materiales y las reliquias fabricadas no se pueden intercambiar.',
-    'Chaque œuf ordinaire donne 5 Shell Fragments. Bonus indépendants : 25% pour 1 Draconic Essence et 2% pour 1 Weaveheart. Après 39 retours sans Weaveheart, le suivant est garanti. Les œufs Sinister multiplient tous les matériaux par cinq. Chaque œuf rendu compte une fois. Les matériaux et reliques fabriquées ne sont pas échangeables.',
-    'Ogni uovo normale dà 5 Shell Fragments. Bonus indipendenti: 25% per 1 Draconic Essence e 2% per 1 Weaveheart. Dopo 39 restituzioni senza Weaveheart, il prossimo è garantito. Le uova Sinister moltiplicano tutti i materiali per cinque. Ogni uovo restituito conta una volta. Materiali e reliquie create non sono scambiabili.',
-    'Cada ovo normal dá 5 Shell Fragments. Bónus independentes: 25% para 1 Draconic Essence e 2% para 1 Weaveheart. Após 39 devoluções sem Weaveheart, o próximo é garantido. Os ovos Sinister multiplicam todos os materiais por cinco. Cada ovo devolvido conta uma vez. Materiais e relíquias criadas não podem ser trocados.',
-    '通常の卵からShell Fragmentsを5個獲得します。独立したボーナスとして25%でDraconic Essenceを1個、2%でWeaveheartを1個獲得します。39回連続でWeaveheartが出なければ次は確定です。Sinisterの卵は全素材が5倍になります。返した卵1個につきカウンターが1回進みます。素材と作成したレリックは交換できません。'
+    'Jedes normale Ei gibt 5 Shell Fragments. Unabhängige Boni: 25% für 1 Draconic Essence und 2% für 1 Weaveheart. Nach 39 Rückgaben ohne Weaveheart ist beim nächsten Ei eines garantiert. Sinister-Eier geben immer 25 Shell Fragments und mit gleicher Wahrscheinlichkeit 3, 4 oder 5 Draconic Essence, dazu unabhängig eine Chance von 10% auf 1 Weaveheart. Jedes zurückgegebene Ei zählt einmal. Materialien und hergestellte Relikte sind nicht tauschbar.',
+    'Cada huevo normal da 5 Shell Fragments. Bonificaciones independientes: 25% de obtener 1 Draconic Essence y 2% de obtener 1 Weaveheart. Tras 39 devoluciones sin Weaveheart, el siguiente está garantizado. Los huevos Sinister siempre dan 25 Shell Fragments y 3, 4 o 5 Draconic Essence con igual probabilidad, más una probabilidad independiente del 10% de obtener 1 Weaveheart. Cada huevo devuelto cuenta una vez. Los materiales y las reliquias fabricadas no se pueden intercambiar.',
+    'Chaque œuf ordinaire donne 5 Shell Fragments. Bonus indépendants : 25% pour 1 Draconic Essence et 2% pour 1 Weaveheart. Après 39 retours sans Weaveheart, le suivant est garanti. Les œufs Sinister donnent toujours 25 Shell Fragments et 3, 4 ou 5 Draconic Essence à chances égales, plus une chance indépendante de 10% de recevoir 1 Weaveheart. Chaque œuf rendu compte une fois. Les matériaux et reliques fabriquées ne sont pas échangeables.',
+    'Ogni uovo normale dà 5 Shell Fragments. Bonus indipendenti: 25% per 1 Draconic Essence e 2% per 1 Weaveheart. Dopo 39 restituzioni senza Weaveheart, il prossimo è garantito. Le uova Sinister danno sempre 25 Shell Fragments e 3, 4 o 5 Draconic Essence con uguale probabilità, più una probabilità indipendente del 10% di ottenere 1 Weaveheart. Ogni uovo restituito conta una volta. Materiali e reliquie create non sono scambiabili.',
+    'Cada ovo normal dá 5 Shell Fragments. Bónus independentes: 25% para 1 Draconic Essence e 2% para 1 Weaveheart. Após 39 devoluções sem Weaveheart, o próximo é garantido. Os ovos Sinister dão sempre 25 Shell Fragments e 3, 4 ou 5 Draconic Essence com probabilidades iguais, mais uma probabilidade independente de 10% de obter 1 Weaveheart. Cada ovo devolvido conta uma vez. Materiais e relíquias criadas não podem ser trocados.',
+    '通常の卵からShell Fragmentsを5個獲得します。独立したボーナスとして25%でDraconic Essenceを1個、2%でWeaveheartを1個獲得します。39回連続でWeaveheartが出なければ次は確定です。Sinisterの卵からは必ずShell Fragmentsを25個と、等確率でDraconic Essenceを3個、4個、または5個獲得し、さらに独立した10%の確率でWeaveheartを1個獲得します。返した卵1個につきカウンターが1回進みます。素材と作成したレリックは交換できません。'
   ],
   'Returns without a Weaveheart': [
     'Rückgaben ohne Weaveheart',

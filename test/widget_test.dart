@@ -1352,7 +1352,7 @@ void main() {
 
     const targetKeys = <Key>[
       Key('tutorial-tower-actions'),
-      Key('tutorial-friends-header'),
+      Key('friends-tab'),
       Key('tutorial-friends-overview'),
       Key('open-conclave'),
       Key('tutorial-adventure-header'),

@@ -46,13 +46,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Migration list failed.' }
           $remote = @($result.migrations | ForEach-Object { [string]$_.remote } |
             Where-Object { $_ } | Sort-Object)
-          if ($remote.Count -eq 0 -or $remote[-1] -notin @('202609070041', '202609070042', '202609070043')) {
-            throw 'Staging must be at migration 41, 42 or 43.'
+          if ($remote.Count -eq 0 -or $remote[-1] -notin @('202609070041', '202609070042', '202609070043', '202609070044')) {
+            throw 'Staging must be at migration 41, 42, 43 or 44.'
           }
           $pending = @(Get-ChildItem supabase/migrations -Filter '*.sql' |
             ForEach-Object { $_.BaseName.Split('_')[0] } |
             Where-Object { [long]$_ -gt [long]$remote[-1] })
-          if (@($pending | Where-Object { $_ -notin @('202609070042', '202609070043') }).Count -ne 0) {
+          if (@($pending | Where-Object { $_ -notin @('202609070042', '202609070043', '202609070044') }).Count -ne 0) {
             throw 'An unexpected migration is pending.'
           }
           ./tool/public_server_health_check.ps1 -BaseUrl $env:ALTAR_STAGING_URL `
@@ -97,7 +97,7 @@ jobs:
           if (($response | ConvertTo-Json -Depth 5) -notmatch '"egg_altar_contract_passed"\s*:\s*true') {
             throw 'The Altar contract did not pass.'
           }
-          'PASS: ownership, tags, old saves, exactly-once returns, Sinister confirmation and 5x pity, crafting, Oracle, Quill, transfers, Beacon donations and permissions.' |
+          'PASS: ownership, tags, old saves, exactly-once returns, Sinister confirmation, 10% single-heart chance and 3-5 Essence, crafting, Oracle, Quill, transfers, Beacon donations and permissions.' |
             Set-Content staging/altar-contract.txt
           ./tool/release_server_preflight.ps1 -ExpectedProjectRef $env:ALTAR_STAGING_REF `
             -ExpectedUrl $env:ALTAR_STAGING_URL -ExpectedPublishableKey $env:ALTAR_STAGING_KEY |

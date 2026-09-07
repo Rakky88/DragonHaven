@@ -75,7 +75,7 @@ void main() {
   Matcher failure(String code) =>
       throwsA(isA<EggAltarException>().having((e) => e.code, 'code', code));
 
-  test('independent bonuses, exact Sinister multiplier, boundary and pity', () {
+  test('ordinary and Sinister reward boundaries and single-heart pity', () {
     expect(
         rollWeaveReturn(FixedRoll([.24, .01]), sinister: false, misses: 0)
             .toJson(),
@@ -87,10 +87,38 @@ void main() {
     expect(
         rollWeaveReturn(FixedRoll([.24, .01]), sinister: true, misses: 0)
             .toJson(),
-        {'fragments': 25, 'essence': 5, 'hearts': 5});
+        {'fragments': 25, 'essence': 3, 'hearts': 1});
     expect(
         rollWeaveReturn(FixedRoll([.9, .9]), sinister: true, misses: 39).hearts,
-        5);
+        1);
+    expect(
+        rollWeaveReturn(FixedRoll([.9, .9]), sinister: false, misses: 39)
+            .toJson(),
+        {'fragments': 5, 'essence': 0, 'hearts': 1});
+    expect(
+        rollWeaveReturn(FixedRoll([.9, .9]), sinister: true, misses: 38).hearts,
+        0);
+  });
+
+  test('Sinister always gives 3-5 Essence and a separate 10% single-heart roll',
+      () {
+    for (final (roll, essence) in [
+      (0.0, 3),
+      (1 / 3 - .000001, 3),
+      (1 / 3, 4),
+      (2 / 3 - .000001, 4),
+      (2 / 3, 5),
+      (.999999, 5),
+    ]) {
+      expect(
+          rollWeaveReturn(FixedRoll([roll, .099999]), sinister: true, misses: 0)
+              .toJson(),
+          {'fragments': 25, 'essence': essence, 'hearts': 1});
+      expect(
+          rollWeaveReturn(FixedRoll([roll, .10]), sinister: true, misses: 0)
+              .toJson(),
+          {'fragments': 25, 'essence': essence, 'hearts': 0});
+    }
   });
 
   test(
@@ -149,6 +177,8 @@ void main() {
     final reward =
         await g.returnEggToWeave('sinister', sinisterConfirmed: true);
     expect(reward.fragments, 25);
+    expect(reward.essence, inInclusiveRange(3, 5));
+    expect(reward.hearts, inInclusiveRange(0, 1));
     expect(g.eggAltar.totalReturned, 1);
   });
 

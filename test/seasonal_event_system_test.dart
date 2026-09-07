@@ -345,9 +345,12 @@ void main() {
         File('tool/staging_seasonal_events_e2e.ps1').readAsStringSync();
 
     expect(stagingWorkflow, contains("environment: staging"));
+    expect(
+        stagingWorkflow,
+        contains(
+            "'202609070041', '202609070042', '202609070043', '202609070044'"));
     expect(stagingWorkflow,
-        contains("'202609070041', '202609070042', '202609070043'"));
-    expect(stagingWorkflow, contains("@('202609070042', '202609070043')"));
+        contains("@('202609070042', '202609070043', '202609070044')"));
     expect(stagingWorkflow, contains("egg_altar_contract.sql"));
     expect(stagingWorkflow, contains("'tnzathhutuwmohmjfrlo'"));
     expect(stagingWorkflow,
