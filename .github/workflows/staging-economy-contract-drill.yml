@@ -7,12 +7,21 @@ on:
         description: Type TEST_DRAGONHAVEN_STAGING_ECONOMY_CONTRACT to run
         required: true
         type: string
+      contract:
+        description: Rollback-only contract to rehearse
+        required: true
+        default: foundation
+        type: choice
+        options:
+          - foundation
+          - legacy-import-restore
 
 permissions:
   contents: read
 
 concurrency:
-  group: dragonhaven-staging-economy-contract-drill
+  # Never contaminate a capacity measurement with a restore rehearsal.
+  group: dragonhaven-staging-load
   cancel-in-progress: false
 
 jobs:
@@ -73,6 +82,7 @@ jobs:
       - name: Verify exact schema and run rollback-only contract drill
         shell: pwsh
         env:
+          SELECTED_CONTRACT: ${{ inputs.contract }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
           STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
@@ -85,28 +95,36 @@ jobs:
           supabase link `
             --project-ref $env:STAGING_SUPABASE_PROJECT_REF `
             --password $env:SUPABASE_DB_PASSWORD
+          if ($LASTEXITCODE -ne 0) { throw 'Staging link failed.' }
           New-Item -ItemType Directory -Path staging -Force | Out-Null
           ./tool/release_server_preflight.ps1 `
             -ExpectedProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
             -ExpectedUrl $env:STAGING_SUPABASE_URL `
             -ExpectedPublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY |
             Tee-Object -FilePath staging/economy-contract-preflight.txt
-          if ((Get-ChildItem supabase/migrations -File -Filter '*.sql').Count -ne 38) {
-            throw 'The repository is not at the expected 38 migrations.'
+          if ((Get-ChildItem supabase/migrations -File -Filter '*.sql').Count -ne 47) {
+            throw 'The repository is not at the expected 47 migrations.'
           }
           ./tool/public_server_health_check.ps1 `
             -BaseUrl $env:STAGING_SUPABASE_URL `
             -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
             -Environment staging `
             -OutputPath staging/economy-contract-health-before.json
-          ./tool/staging_economy_foundation_e2e.ps1 `
-            -SupabaseUrl $env:STAGING_SUPABASE_URL `
-            -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
-            -Email $env:STAGING_E2E_EMAIL `
-            -Password $env:STAGING_E2E_PASSWORD `
-            -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
-            -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
-            -EvidencePath staging/economy-contract-drill.txt
+          if ($env:SELECTED_CONTRACT -eq 'legacy-import-restore') {
+            ./tool/staging_legacy_import_restore_contract.ps1 `
+              -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+              -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN |
+              Tee-Object -FilePath staging/legacy-import-restore.json
+          } else {
+            ./tool/staging_economy_foundation_e2e.ps1 `
+              -SupabaseUrl $env:STAGING_SUPABASE_URL `
+              -PublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+              -Email $env:STAGING_E2E_EMAIL `
+              -Password $env:STAGING_E2E_PASSWORD `
+              -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+              -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
+              -EvidencePath staging/economy-contract-drill.txt
+          }
           supabase db lint `
             --linked `
             --level error `
