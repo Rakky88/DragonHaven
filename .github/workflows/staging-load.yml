@@ -20,6 +20,11 @@ on:
         description: Successful 100-user workflow run ID; required for run-1000
         required: false
         type: string
+      temporary_accounts:
+        description: Create auto-confirmed synthetic accounts and remove them after the run
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -70,13 +75,15 @@ jobs:
           STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
           STAGING_LOAD_CREDENTIALS_JSON: ${{ secrets.STAGING_LOAD_CREDENTIALS_JSON }}
+          TEMPORARY_ACCOUNTS: ${{ inputs.temporary_accounts }}
         run: |
           $productionRef = 'tnzathhutuwmohmjfrlo'
           if ($env:STAGING_SUPABASE_PROJECT_REF -eq $productionRef -or
               $env:STAGING_SUPABASE_URL.TrimEnd('/') -eq "https://$productionRef.supabase.co") {
             throw 'Production is a forbidden load-test target.'
           }
-          if ([string]::IsNullOrWhiteSpace($env:STAGING_LOAD_CREDENTIALS_JSON)) {
+          if ($env:TEMPORARY_ACCOUNTS -ne 'true' -and
+              [string]::IsNullOrWhiteSpace($env:STAGING_LOAD_CREDENTIALS_JSON)) {
             throw 'The protected synthetic credential pool is missing.'
           }
           if ($env:STAGING_SUPABASE_URL.TrimEnd('/') -ne
@@ -87,6 +94,33 @@ jobs:
             throw 'A staging publishable key is required.'
           }
           'The execution target is isolated staging; no credential value was logged.'
+
+      - name: Supabase CLI for staging parity and health
+        if: ${{ steps.profile.outputs.execute == 'true' }}
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.116.0
+
+      - name: Verify staging schema and health before load
+        id: preflight
+        if: ${{ steps.profile.outputs.execute == 'true' }}
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          supabase link --project-ref $env:STAGING_SUPABASE_PROJECT_REF --password $env:SUPABASE_DB_PASSWORD
+          if ($LASTEXITCODE -ne 0) { throw 'Staging link failed.' }
+          New-Item -ItemType Directory -Path staging -Force | Out-Null
+          ./tool/release_server_preflight.ps1 `
+            -ExpectedProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ExpectedUrl $env:STAGING_SUPABASE_URL `
+            -ExpectedPublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            *> staging/load-preflight-before.txt
+          if (-not $?) { throw 'Staging preflight failed.' }
 
       - name: Flutter stable for the dependency-free Dart runner
         uses: subosito/flutter-action@v2
@@ -117,7 +151,7 @@ jobs:
           path: baseline
 
       - name: Execute realistic authenticated staging load
-        if: ${{ steps.profile.outputs.execute == 'true' }}
+        if: ${{ steps.profile.outputs.execute == 'true' && !inputs.temporary_accounts }}
         shell: pwsh
         env:
           VIRTUAL_USERS: ${{ steps.profile.outputs.virtual-users }}
@@ -144,6 +178,56 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw "The staging load runner failed safely with exit code $LASTEXITCODE."
           }
+
+      - name: Execute with temporary confirmed synthetic accounts
+        if: ${{ steps.profile.outputs.execute == 'true' && inputs.temporary_accounts }}
+        shell: pwsh
+        env:
+          VIRTUAL_USERS: ${{ steps.profile.outputs.virtual-users }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          $parameters = @{ VirtualUsers = [int]$env:VIRTUAL_USERS; Confirmation = $env:CONFIRMATION }
+          if ($env:VIRTUAL_USERS -eq '1000') { $parameters.BaselinePath = 'baseline/load-report.json' }
+          ./tool/staging_load_accounts.ps1 @parameters
+
+      - name: Recover synthetic cleanup if the load step was interrupted
+        if: ${{ always() && steps.preflight.outcome == 'success' && inputs.temporary_accounts }}
+        shell: pwsh
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if (-not (Test-Path -LiteralPath staging/load-account-lifecycle.json)) { exit 0 }
+          $lifecycle = Get-Content -LiteralPath staging/load-account-lifecycle.json -Raw | ConvertFrom-Json
+          if ($lifecycle.cleanupComplete) { 'Synthetic cleanup already verified.'; exit 0 }
+          ./tool/staging_load_accounts.ps1 -CleanupRunId $lifecycle.runIdentifier
+          if (-not $?) { throw 'Synthetic recovery cleanup failed.' }
+          $lifecycle.cleanupComplete = $true
+          $lifecycle | Add-Member -NotePropertyName recoveredCleanup -NotePropertyValue $true -Force
+          $lifecycle | ConvertTo-Json | Set-Content -LiteralPath staging/load-account-lifecycle.json -Encoding utf8
+
+      - name: Verify staging schema and health after load
+        if: ${{ always() && steps.preflight.outcome == 'success' }}
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          ./tool/release_server_preflight.ps1 `
+            -ExpectedProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ExpectedUrl $env:STAGING_SUPABASE_URL `
+            -ExpectedPublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY `
+            *> staging/load-preflight-after.txt
+          if (-not $?) { throw 'Post-load staging preflight failed.' }
 
       - name: Upload privacy-safe load evidence
         if: always()

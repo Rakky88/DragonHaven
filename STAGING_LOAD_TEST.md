@@ -1,7 +1,7 @@
 # DragonHaven staging-loadtest
 
-Laatst bijgewerkt: **31 augustus 2026**  
-Uitgangsversie: **v0.05.01 / productieschema 32 / lokaal kandidaat-schema 33**
+Laatst bijgewerkt: **7 september 2026**
+Uitgangsversie: **v0.05.16 / productieschema 44 / stagingschema 47**
 
 ## Doel en huidige status
 
@@ -12,7 +12,7 @@ verstuurd en productie is niet gewijzigd.
 
 De eerste uitvoerbare stap is 100 gelijktijdige virtuele gebruikers. De stap van
 1.000 gebruikers wordt technisch geweigerd zolang geen geslaagd 100-user rapport
-met maximaal 2% fouten is aangeleverd. Andere aantallen, waaronder 5.000 of
+met maximaal 2% fouten en 100 geslaagde logins en bootstraps op dezelfde migratieversie is aangeleverd. Andere aantallen, waaronder 5.000 of
 10.000, worden door dit profiel niet geaccepteerd.
 
 ## Realistische workload
@@ -69,32 +69,31 @@ server-authoritative is.
 - Contracttests bewaken dat workflow en runner geen productie- of service-role
   route krijgen.
 
-## Wat jij vóór de echte 100-user run moet doen
+## Tijdelijke synthetische accounts
 
-1. Gebruik een staging-only mailboxalias of catch-all waarvan de adressen geen
-   namen of andere echte persoonsgegevens bevatten.
-2. Maak en bevestig 100 afzonderlijke synthetische Supabase Auth-accounts. Deel
-   de adressen of het wachtwoord niet in chat, commits of artifacts.
-3. Voeg in GitHub bij de bestaande Environment **staging** één secret toe met de
-   naam `STAGING_LOAD_CREDENTIALS_JSON`. Een compact template heeft deze vorm:
+De optie `temporary_accounts=true` gebruikt de bestaande beschermde staging-
+Management-token voor een afzonderlijke setupwrapper. Deze maakt unieke accounts
+op het niet-bezorgbare domein `dragonhaven-load.invalid`, met een willekeurig
+wachtwoord per account en een specifieke runmarkering in `app_metadata`.
+Admin-create met `email_confirm=true` bevestigt direct en verstuurt geen mail
+([Supabase createUser](https://supabase.com/docs/reference/javascript/auth-admin-createuser)).
+De benodigde sleutel blijft uitsluitend in de setupwrapper; de Dart-loadrunner
+ontvangt een publishable key en normale accountwachtwoorden in zijn procesomgeving.
+Er wordt geen sleutel aangemaakt of geroteerd. De Management-route gebruikt
+`api-keys?reveal=true` in geheugen ([API-reference](https://supabase.com/docs/reference/api/v1-get-project-api-keys)).
 
-   ```json
-   {
-     "emailTemplate": "dragonhaven-load+{index}@STAGING-ONLY-DOMAIN",
-     "password": "EEN-UNIEK-STAGING-WACHTWOORD-VAN-MINSTENS-12-TEKENS",
-     "count": 100
-   }
-   ```
+Een finally-blok verwijdert alleen accounts met zowel de exacte runmarkering als
+het verwachte synthetische adrespatroon, en controleert daarna opnieuw. Een aparte
+`always()`-stap herstelt opruiming na een onderbroken loadstap. Het levenscyclus-
+artifact bevat uitsluitend een willekeurige runidentifier en aantallen, zonder
+account-ID's, adressen of credentials. Bij een volledige runneruitval kan hetzelfde
+script met `-CleanupRunId` worden gebruikt. Opruiming van andere accounts wordt geweigerd.
 
-   De `{index}`-placeholder wordt vervangen door `1` tot en met `count`. Gebruik
-   dit wachtwoord nergens anders. Een expliciete `accounts`-lijst met per account
-   een ander wachtwoord wordt ook ondersteund, maar is minder compact.
-4. Bevestig schriftelijk dat deze accounts uitsluitend synthetische testdata
-   bevatten. Daarna kan Codex de echte 100-user run gecontroleerd starten.
-
-Voor 1.000 gebruikers wordt de pool pas na beoordeling van de 100-user meting
-uitgebreid. Meer dan 1.000 blijft buiten deze workflow en vereist opnieuw een
-apart kosten- en capaciteitsbesluit.
+De bestaande optie met `STAGING_LOAD_CREDENTIALS_JSON` blijft beschikbaar voor een
+vooraf ingerichte, uitsluitend synthetische accountpool. Tijdelijke accounts hebben
+geen mailbox, signupinstellingen of extra secret nodig. Vóór en na elke echte run
+controleert de workflow volledige stagingmigratiepariteit, database-lint en health.
+Productie blijft onafhankelijk hard geblokkeerd.
 
 ## Uitvoering en bewijs
 
@@ -107,7 +106,7 @@ apart kosten- en capaciteitsbesluit.
    CPU, database/querylatency, provider-egress, rate limits en eventuele
    query-/indexbevindingen. Clientcode kan die providerwaarden niet betrouwbaar
    afleiden.
-4. Beoordeel p95/p99 en fouten. Bij meer dan 2% fouten stopt de vervolgpoort.
+4. Beoordeel p95/p99 en fouten. Bij meer dan 2% fouten of een ontbrekende geslaagde login/bootstrap stopt de vervolgpoort.
 5. Alleen na een groen rapport krijgt `run-1000` het workflow-run-ID van de
    100-user meting. De workflow downloadt en valideert dat artifact voordat een
    request wordt verstuurd.

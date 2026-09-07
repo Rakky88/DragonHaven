@@ -191,16 +191,24 @@ void validateExecutionTarget({
   }
 }
 
-void validateBaselineReport(Map<String, Object?> report) {
+void validateBaselineReport(Map<String, Object?> report,
+    {String? migrationVersion}) {
   if (report['kind'] != 'dragonhaven-staging-load-report' ||
       report['productionTarget'] != false ||
       report['virtualUsers'] != 100 ||
-      report['result'] != 'passed') {
+      report['result'] != 'passed' ||
+      report['authenticatedUsers'] != 100 ||
+      report['activeUsers'] != 100 ||
+      (migrationVersion != null &&
+          report['repositoryMigrationVersion'] != migrationVersion)) {
     throw StateError(
         'The 1000-user stage requires a successful 100-user staging report.');
   }
   final errorRate = report['errorRatePercent'];
-  if (errorRate is! num || errorRate > 2) {
+  if (errorRate is! num ||
+      !errorRate.isFinite ||
+      errorRate < 0 ||
+      errorRate > 2) {
     throw StateError('The 100-user baseline exceeded the 2% error gate.');
   }
 }
@@ -315,6 +323,8 @@ Future<Map<String, Object>> executeLoadProfile({
   final startedAt = DateTime.now().toUtc();
   final endsAt = startedAt.add(Duration(seconds: durationSeconds));
   final metrics = <String, OperationMetrics>{};
+  var authenticatedUsers = 0;
+  var activeUsers = 0;
   OperationMetrics metricFor(String operation) =>
       metrics.putIfAbsent(operation, OperationMetrics.new);
 
@@ -349,7 +359,9 @@ Future<Map<String, Object>> executeLoadProfile({
         final decoded = jsonDecode(utf8.decode(login.bodyBytes));
         accessToken =
             (decoded as Map<String, dynamic>)['access_token'] as String;
-        if (accessToken.isEmpty) return;
+        if (accessToken.isEmpty) {
+          throw const FormatException('Missing login token');
+        }
       } on Object {
         metricFor('login_contract').record(const RequestResult(
           statusCode: 0,
@@ -364,6 +376,7 @@ Future<Map<String, Object>> executeLoadProfile({
         'apikey': publishableKey,
         'authorization': 'Bearer $accessToken',
       };
+      authenticatedUsers++;
       final bootstrap = await postJson(
         client: client,
         uri: Uri.parse('$baseUrl/rest/v1/rpc/ensure_my_online_account'),
@@ -372,6 +385,7 @@ Future<Map<String, Object>> executeLoadProfile({
       );
       metricFor('ensure_my_online_account').record(bootstrap);
       if (!bootstrap.succeeded) return;
+      activeUsers++;
 
       while (DateTime.now().toUtc().isBefore(endsAt)) {
         final operation = chooseOperation(random);
@@ -408,8 +422,10 @@ Future<Map<String, Object>> executeLoadProfile({
   final errorRate = totalRequests == 0 ? 100.0 : failures * 100 / totalRequests;
   final responseBytes =
       metrics.values.fold(0, (sum, item) => sum + item.responseBytes);
-  final passed =
-      totalRequests > credentials.length * 2 && errorRate <= maxErrorPercent;
+  final passed = authenticatedUsers == credentials.length &&
+      activeUsers == credentials.length &&
+      totalRequests > credentials.length * 2 &&
+      errorRate <= maxErrorPercent;
 
   return <String, Object>{
     'schemaVersion': 1,
@@ -422,6 +438,8 @@ Future<Map<String, Object>> executeLoadProfile({
     'serverMigrationVersionVerified': false,
     'generatedAtUtc': DateTime.now().toUtc().toIso8601String(),
     'virtualUsers': credentials.length,
+    'authenticatedUsers': authenticatedUsers,
+    'activeUsers': activeUsers,
     'durationSeconds': durationSeconds,
     'rampUpSeconds': rampUpSeconds,
     'result': passed ? 'passed' : 'failed',
@@ -533,7 +551,8 @@ Future<void> main(List<String> arguments) async {
             'The 1000-user stage requires a 100-user baseline file.');
       }
       final baseline = jsonDecode(await File(baselinePath).readAsString());
-      validateBaselineReport((baseline as Map).cast<String, Object?>());
+      validateBaselineReport((baseline as Map).cast<String, Object?>(),
+          migrationVersion: migrationVersion);
     }
 
     final environment = Platform.environment;

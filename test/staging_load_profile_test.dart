@@ -131,10 +131,23 @@ void main() {
       'kind': 'dragonhaven-staging-load-report',
       'productionTarget': false,
       'virtualUsers': 100,
+      'authenticatedUsers': 100,
+      'activeUsers': 100,
       'result': 'passed',
       'errorRatePercent': 0.5,
     };
     expect(() => validateBaselineReport(passing), returnsNormally);
+    expect(() => validateBaselineReport({...passing, 'activeUsers': 99}),
+        throwsStateError);
+    expect(() => validateBaselineReport({...passing, 'authenticatedUsers': 99}),
+        throwsStateError);
+    expect(
+        () => validateBaselineReport(passing, migrationVersion: '202609070047'),
+        throwsStateError);
+    expect(
+        () => validateBaselineReport(
+            {...passing, 'errorRatePercent': double.nan}),
+        throwsStateError);
     expect(
       () => validateBaselineReport(<String, Object?>{
         ...passing,
