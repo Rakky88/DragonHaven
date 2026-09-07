@@ -323,12 +323,13 @@ jobs:
         env:
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
-          test "$CONFIRMATION" = APPLY_DRAGONHAVEN_STAGING_GAME_52
+          test "$CONFIRMATION" = APPLY_DRAGONHAVEN_STAGING_GAME_53
           flutter pub get
           dart analyze lib integration_test test tool
           flutter test --no-pub test/game_command_engine_test.dart test/game_import_preparation_test.dart test/reference_documentation_test.dart
           dart run tool/build_server_game.dart
           deno check supabase/functions/execute-game-command/index.ts
+          deno check tool/prepare_staging_game_import.ts
           deno test supabase/functions/execute-game-command/core_test.ts
           dart run tool/game_domain_parity.dart "$(command -v deno)"
           mkdir -p staging
@@ -344,7 +345,7 @@ jobs:
           STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
         run: |
           ./tool/staging_game_worker_apply.ps1 | Tee-Object -FilePath staging/game-worker.txt
-          python3 tool/staging_game_worker_probe.py | Tee-Object -FilePath staging/game-worker-probe.txt
+          python3 tool/staging_game_worker_probe.py --prepare-import | Tee-Object -FilePath staging/game-worker-probe.txt
           if ($LASTEXITCODE -ne 0) { throw 'Real game worker probe failed.' }
           ./tool/release_server_preflight.ps1 -ExpectedProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
             -ExpectedUrl $env:STAGING_SUPABASE_URL -ExpectedPublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY

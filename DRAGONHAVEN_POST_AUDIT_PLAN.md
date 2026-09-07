@@ -80,6 +80,10 @@ Sinister-ei en een eindcontrole zonder private functies onder de leesrol).
 Kandidaat 53 bewaart opeenvolgende importgeneraties onveranderlijk en legt de
 Altar-voorbereiding alleen vast als bron, Altar en revisie nog overeenkomen.
 De rollbackrepetitie wordt afzonderlijk uitgevoerd; 53 is nog niet toegepast.
+Deze repetitie is geslaagd in
+[34148415163](https://github.com/Rakky88/DragonHaven/actions/runs/34148415163).
+De gecombineerde stagingpoort past daarna 53 toe en test de echte interne
+voorbereiding plus dezelfde spelacties. Die gecombineerde proef staat nog open.
 
 `GROWTH_AND_COST_PLAN.md` bevat de 100/1.000/10.000-accountscenario's, bestaande
 loadbewijzen, quota, opslag/egress-aannames en meetbare overstappen. De lokale

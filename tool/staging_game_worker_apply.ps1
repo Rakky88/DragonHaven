@@ -24,12 +24,19 @@ $remote = @($state.migrations | ForEach-Object { [string]$_.remote } | Where-Obj
 $local = @(Get-ChildItem supabase/migrations -Filter '*.sql' | ForEach-Object { $_.BaseName.Split('_')[0] } | Sort-Object)
 $baseline = @($local | Where-Object { [long]$_ -le 202609070051 })
 $pending = @($local | Where-Object { [long]$_ -gt 202609070051 })
-if (@(Compare-Object $pending @('202609070052')).Count -ne 0 -or
-    (@(Compare-Object $remote $baseline).Count -ne 0 -and @(Compare-Object $remote $local).Count -ne 0)) {
-  throw 'Requires exact schema 51/52 and only candidate migration 52.'
+$hasPreparation = $pending -contains '202609070053'
+$allowedPending = if ($hasPreparation) { @('202609070052','202609070053') } else { @('202609070052') }
+$requiredBaseline = if ($hasPreparation) { @($baseline + '202609070052') } else { $baseline }
+if (@(Compare-Object $pending $allowedPending).Count -ne 0 -or
+    (@(Compare-Object $remote $requiredBaseline).Count -ne 0 -and @(Compare-Object $remote $local).Count -ne 0)) {
+  throw 'Requires exact registered staging baseline and only game migrations 52/53.'
 }
 ./tool/staging_canonical_game_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
+if ($hasPreparation) {
+  ./tool/staging_canonical_import_contract.ps1 -ProjectRef $projectRef `
+    -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
+}
 supabase db lint --linked --level error --fail-on error --output-format json
 if ($LASTEXITCODE -ne 0) { throw 'Pre-apply lint failed.' }
 if (@(Compare-Object $remote $local).Count -ne 0) {
@@ -40,8 +47,12 @@ if (@(Compare-Object $remote $local).Count -ne 0) {
 }
 ./tool/staging_canonical_game_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
+if ($hasPreparation) {
+  ./tool/staging_canonical_import_contract.ps1 -ProjectRef $projectRef `
+    -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
+}
 supabase functions deploy execute-game-command --project-ref $projectRef --no-verify-jwt --use-api
 if ($LASTEXITCODE -ne 0) { throw 'Staging game worker deployment failed.' }
 ./tool/release_server_preflight.ps1 -ExpectedProjectRef $projectRef `
   -ExpectedUrl $env:STAGING_SUPABASE_URL -ExpectedPublishableKey $env:STAGING_SUPABASE_PUBLISHABLE_KEY
-'PASS: detached staging schema 52 and game worker deployed; live economy activation remains disabled.'
+'PASS: detached staging game schema and worker deployed; live economy activation remains disabled.'

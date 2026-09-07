@@ -98,6 +98,14 @@ then stores the prepared shadow copy and immutable receipt atomically. Wallet
 coins/gems cannot change during preparation. Retries replay the original receipt;
 account deletion cascades through all generations. This candidate has not yet
 been applied; its separate staging rollback contract is the next gate.
+That rollback contract passed in
+[34148415163](https://github.com/Rakky88/DragonHaven/actions/runs/34148415163):
+immutable generations, changing cloud/Altar snapshots, pending/revision fences,
+receipt replay, unchanged live state and account cleanup. The staging apply
+workflow now also runs the internal `prepare_staging_game_import.ts` against a
+captured synthetic Altar, repeats its receipt, then runs the proven game actions.
+The operator tool is restricted to registered staging and never logs its private
+source, seed or service key. Applying 53 and this combined probe are still pending.
 
 `EconomySnapshotStore` now persists complete owner-scoped snapshots outside
 cloud backups, with atomic replacement and monotonic wallet/server revisions.

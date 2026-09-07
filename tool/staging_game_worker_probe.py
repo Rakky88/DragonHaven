@@ -11,6 +11,7 @@ import os
 import pathlib
 import re
 import secrets
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -72,6 +73,8 @@ def query(sql, read_only=False):
 
 
 def main():
+    prepare_import = sys.argv[1:] == ['--prepare-import']
+    require(not sys.argv[1:] or prepare_import, "probe_arguments_invalid")
     require(PROJECT == "vtmjkhzalalozpfnbvsd" and BASE == "https://" + PROJECT + ".supabase.co"
             and MANAGEMENT and PUBLIC_KEY, "registered_staging_required")
     bridge = (ROOT / "supabase/functions/execute-game-command/bundle.generated.ts").read_text(encoding="utf-8")
@@ -121,6 +124,11 @@ def main():
             owners.append((owner, signed_in["access_token"]))
         owner, token = owners[0]
         outsider, outsider_token = owners[1]
+        source_expression = f"convert_from(decode('{fixture_hex}','hex'),'utf8')::jsonb"
+        altar_fixture = ""
+        if prepare_import:
+            source_expression = f"jsonb_set({source_expression},'{{eggAltar,ownerId}}',to_jsonb('{owner}'::text))"
+            altar_fixture = f"insert into private.egg_altar_accounts(owner_id,fragments,essence) values('{owner}',20,2);"
         prepared = query(f"""begin;
           select set_config('request.jwt.claim.sub','{owner}',true);
           select set_config('request.jwt.claim.role','authenticated',true);
@@ -128,7 +136,8 @@ def main():
           select set_config('request.jwt.claim.sub','{outsider}',true);
           select public.ensure_my_online_account();
           insert into public.cloud_game_saves(user_id,revision,state,device_id,client_version,schema_version)
-            values('{owner}',1,convert_from(decode('{fixture_hex}','hex'),'utf8')::jsonb,'synthetic-game-worker','0.5.18',54);
+            values('{owner}',1,{source_expression},'synthetic-game-worker','0.5.18',54);
+          {altar_fixture}
           select set_config('request.jwt.claim.role','service_role',true);
           select public.stage_canonical_game_copy('{owner}',1,
             (select private.game_json_sha256(state) from public.cloud_game_saves where user_id='{owner}'));
@@ -136,6 +145,28 @@ def main():
           commit;
           select private.game_json_sha256(c.state) as source_hash, to_jsonb(w) as wallet
             from public.cloud_game_saves c join public.player_wallets w on w.user_id=c.user_id where c.user_id='{owner}';""")[0]
+        if prepare_import:
+            child_environment = {key: value for key, value in os.environ.items() if key not in (
+                'STAGING_SUPABASE_ACCESS_TOKEN', 'SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD',
+                'GITHUB_TOKEN', 'GH_TOKEN', 'STAGING_SUPABASE_DB_PASSWORD')}
+            child_environment['STAGING_SUPABASE_SERVICE_ROLE_KEY'] = admin_key
+            for replayed in (False, True):
+                result = subprocess.run(['deno', 'run',
+                    '--allow-env=STAGING_SUPABASE_URL,STAGING_SUPABASE_SERVICE_ROLE_KEY',
+                    '--allow-net=vtmjkhzalalozpfnbvsd.supabase.co',
+                    'tool/prepare_staging_game_import.ts', owner],
+                    cwd=ROOT, env=child_environment, capture_output=True, text=True, timeout=45)
+                if result.returncode != 0:
+                    code = result.stderr.strip()
+                    if re.fullmatch(r'game_[a-z_]+', code) is None:
+                        code = 'game_import_unavailable'
+                    raise ProbeError('probe_preparation_' + code)
+                receipt = json.loads(result.stdout)
+                require(receipt.get('prepared') and receipt.get('authority') == 'shadow'
+                        and receipt.get('serverRevision') == 2 and receipt.get('replayed') is replayed,
+                        'probe_preparation_receipt_failed')
+            del child_environment['STAGING_SUPABASE_SERVICE_ROLE_KEY']
+        revision_offset = 1 if prepare_import else 0
 
         def command(action, payload=None, request_id=None, bearer=token, extra=None):
             request_body = {"protocol": 2, "clientBuild": 10068, "requestId": request_id or str(uuid.uuid4()),
@@ -153,7 +184,7 @@ def main():
         require(command("complete_trial", {"score": 999999})[0] == 400, "probe_score_injection_accepted")
         purchase_id = str(uuid.uuid4())
         status, purchased = command("purchase_title_chest", request_id=purchase_id)
-        require(status == 200 and purchased.get("result") == "purchased" and purchased.get("server_revision") == 2,
+        require(status == 200 and purchased.get("result") == "purchased" and purchased.get("server_revision") == 2 + revision_offset,
                 "probe_purchase_failed")
         status, replay = command("purchase_title_chest", request_id=purchase_id)
         require(status == 200 and replay.get("replayed") and
@@ -167,7 +198,7 @@ def main():
         require(all(status in (200, 409) for status, _ in outcomes) and any(status == 200 for status, _ in outcomes),
                 "probe_double_submit_failed")
         status, opened = command("open_chests", {"tier": "wooden", "count": 2}, opening_id)
-        require(status == 200 and opened.get("replayed") and opened.get("server_revision") == 3, "probe_chest_replay_failed")
+        require(status == 200 and opened.get("replayed") and opened.get("server_revision") == 3 + revision_offset, "probe_chest_replay_failed")
         encoded_receipt = json.dumps(opened)
         require(not any(key in encoded_receipt for key in ("lineageId", "hatchSeed", "secret_seed", "lease_token")),
                 "probe_hidden_identity_exposed")
@@ -208,6 +239,8 @@ def main():
         require(final["source_matches_import"] and final["wallet"] == prepared["wallet"]
                 and final["live_authority"] == "legacy_client" and not final["mutations"], "probe_live_state_changed")
         print("PASS: real Auth/Edge/Dart/Postgres; purchases, concurrent chest replay, tags, Sinister return and quill; live save/wallet unchanged.", flush=True)
+        if prepare_import:
+            print("PASS: captured authoritative Altar prepared and replayed before game commands; no migration reward grant.", flush=True)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"
         # The immutable run marker also finds an account whose admin-create

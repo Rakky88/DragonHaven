@@ -22,7 +22,8 @@ try {
   $expected = @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot '../supabase/migrations') -Filter '*.sql' |
     ForEach-Object { $_.BaseName.Split('_')[0] } | Where-Object { [long]$_ -le 202609070051 } | Sort-Object)
   $actual = @($history | ForEach-Object { [string]$_.version } | Sort-Object)
-  $applied = @(Compare-Object $actual @($expected + '202609070052')).Count -eq 0
+  $applied = @(Compare-Object $actual @($expected + '202609070052')).Count -eq 0 -or
+    @(Compare-Object $actual @($expected + @('202609070052','202609070053'))).Count -eq 0
   if (-not $applied -and @(Compare-Object $actual $expected).Count -ne 0) {
     throw 'game_contract_baseline_mismatch'
   }
