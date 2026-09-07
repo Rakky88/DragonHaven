@@ -32,3 +32,10 @@ Thumbs.db
 artwork_sources/
 .artifacts/
 .tools/
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+.firebase/
+.firebaserc
+firebase-service-account*.json
+__pycache__/
+*.pyc

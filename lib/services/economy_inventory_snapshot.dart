@@ -20,6 +20,47 @@ class EconomyInventorySnapshot {
   final int coins;
   final int gems;
   final List<EconomyInventoryInstance> instances;
+
+  Map<String, Object> toJson() => {
+        'snapshot_version': 1,
+        'owner_id': ownerId,
+        'server_revision': serverRevision,
+        'wallet_revision': walletRevision,
+        'coins': coins,
+        'gems': gems,
+        'instances': instances.map((instance) => instance.toJson()).toList(),
+      };
+
+  /// A device cache is never mutation authority. Validate it before using its
+  /// revision fence or showing it as the last complete server observation.
+  factory EconomyInventorySnapshot.fromCache(Object? value) {
+    final data = _object(value);
+    if (data['snapshot_version'] is! int ||
+        data['snapshot_version'] != 1 ||
+        !_validUuid(data['owner_id']) ||
+        !_nonNegativeInt(data['server_revision']) ||
+        !_nonNegativeInt(data['wallet_revision']) ||
+        data['wallet_revision'] == 0 ||
+        !_nonNegativeInt(data['coins']) ||
+        !_nonNegativeInt(data['gems']) ||
+        data['instances'] is! List ||
+        (data['instances'] as List).length > 100000) {
+      throw _invalid;
+    }
+    final rows = (data['instances'] as List)
+        .map(EconomyInventoryInstance._parse)
+        .toList();
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i - 1]._key.compareTo(rows[i]._key) >= 0) throw _invalid;
+    }
+    return EconomyInventorySnapshot._(
+        ownerId: data['owner_id'] as String,
+        serverRevision: data['server_revision'] as int,
+        walletRevision: data['wallet_revision'] as int,
+        coins: data['coins'] as int,
+        gems: data['gems'] as int,
+        instances: List.unmodifiable(rows));
+  }
 }
 
 class EconomyInventoryInstance {
@@ -44,6 +85,17 @@ class EconomyInventoryInstance {
   final int? reductionPercent;
 
   String get _key => '$kind/$id';
+
+  Map<String, Object?> toJson() => {
+        'id': id,
+        'kind': kind,
+        'catalog_id': catalogId,
+        'state': state,
+        'tradeable': tradeable,
+        'item_kind': itemKind,
+        'special_chest_id': specialChestId,
+        'reduction_percent': reductionPercent,
+      };
 
   factory EconomyInventoryInstance._parse(Object? value) {
     final row = _object(value);

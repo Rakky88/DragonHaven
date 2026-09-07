@@ -115,6 +115,11 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > android/key.properties
 
+      - name: Configure optional production Firebase
+        env:
+          DRAGONHAVEN_FIREBASE_ANDROID_CONFIG: ${{ secrets.DRAGONHAVEN_FIREBASE_ANDROID_CONFIG }}
+        run: dart run tool/write_firebase_build_config.dart production
+
       - name: Build signed Play Store bundle
         shell: bash
         env:
@@ -132,6 +137,7 @@ jobs:
           echo "DRAGONHAVEN_BUILD_NAME=$APP_VERSION" >> "$GITHUB_ENV"
           echo "DRAGONHAVEN_BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
           flutter build appbundle --release --no-pub \
+            --dart-define-from-file=.tools/firebase-build-defines.json \
             --build-name="$APP_VERSION" \
             --build-number="$BUILD_NUMBER" \
             --dart-define=DRAGONHAVEN_GITHUB_OWNER=${{ github.repository_owner }} \

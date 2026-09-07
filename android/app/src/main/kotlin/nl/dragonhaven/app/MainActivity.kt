@@ -253,6 +253,8 @@ class MainActivity : FlutterActivity() {
                         title = title,
                         body = body,
                         kind = kind,
+                        notificationTag = if (kind == "friend_message" || kind == "friend_request" || kind == "friend_accepted" || kind == "trade" ||
+                            (kind == "special_adventure_available" && id.startsWith("seasonal-pair-"))) id else null,
                     )
                     result.success(true)
                 }
@@ -275,6 +277,8 @@ class MainActivity : FlutterActivity() {
                         title = title,
                         body = body,
                         kind = kind,
+                        notificationTag = if (kind == "friend_message" || kind == "friend_request" || kind == "friend_accepted" || kind == "trade" ||
+                            (kind == "special_adventure_available" && id.startsWith("seasonal-pair-"))) id else null,
                     )
                     result.success(true)
                 }

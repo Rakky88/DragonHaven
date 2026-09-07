@@ -41,6 +41,7 @@ class DragonHavenNotificationReceiver : BroadcastReceiver() {
             title: String,
             body: String,
             kind: String,
+            notificationTag: String? = null,
         ) {
             if (Build.VERSION.SDK_INT >= 33 &&
                 context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -81,9 +82,16 @@ class DragonHavenNotificationReceiver : BroadcastReceiver() {
                 .setStyle(NotificationCompat.BigTextStyle().bigText(body))
                 .setContentIntent(pendingLaunch)
                 .setAutoCancel(true)
+                .setOnlyAlertOnce(notificationTag != null)
                 .setPriority(if (milestone) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
                 .build()
-            NotificationManagerCompat.from(context).notify(notificationId, notification)
+            if (notificationTag != null) {
+                // Match FCM's (tag, 0) identity when the foreground inbox catches
+                // up with a notification already displayed by Android.
+                NotificationManagerCompat.from(context).notify(notificationTag, 0, notification)
+            } else {
+                NotificationManagerCompat.from(context).notify(notificationId, notification)
+            }
         }
     }
 }

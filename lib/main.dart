@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_info.dart';
 import 'config/online_config.dart';
+import 'config/firebase_config.dart';
 import 'dragonhaven_app.dart';
 import 'models/social.dart';
 import 'providers/household_provider.dart';
@@ -13,7 +14,8 @@ import 'screens/sprite_audit_screen.dart';
 import 'screens/special_event_audit_screen.dart';
 import 'screens/event_dragon_sprite_review_screen.dart';
 import 'services/audio_service.dart';
-import 'services/diagnostic_reporter.dart';
+import 'services/firebase_monitoring.dart';
+import 'services/firebase_push.dart';
 import 'services/notification_service.dart';
 import 'services/social_repository.dart';
 import 'services/egg_altar_repository.dart';
@@ -77,7 +79,9 @@ Future<void> main() async {
   final onlineConfig = OnlineConfig.fromEnvironment();
   game.persistentSeasonalPreviewRewards =
       onlineConfig.environment != OnlineEnvironment.production;
-  final diagnostics = BufferedDiagnosticReporter();
+  final firebase =
+      await HavenFirebase.initialize(HavenFirebaseConfig.fromEnvironment());
+  final diagnostics = firebase.reporter;
   SocialRepository socialRepository = const DisabledSocialRepository();
   if (onlineConfig.isConfigured) {
     await Supabase.initialize(
@@ -95,6 +99,7 @@ Future<void> main() async {
       ..loadWeaveBeacon = altar.beacon
       ..refreshEggAltar = altar.refresh;
   }
+  FirebasePushCoordinator? push;
   final online = OnlineAccountProvider(
     repository: socialRepository,
     inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
@@ -153,8 +158,21 @@ Future<void> main() async {
     saveCloudBaseRevision: StorageService.saveCloudBaseRevision,
     languageCode: () => game.languageCode,
     diagnostics: diagnostics,
+    prepareAccountExit: () async {
+      try {
+        await push
+            ?.unregisterBeforeSignOut()
+            .timeout(const Duration(seconds: 3));
+      } on Object {
+        // Optional push cannot block signing out during a network outage.
+      }
+    },
+    accountExitFinished: () => push?.afterSignOutAttempt(),
   );
   await online.initialize(waitForFirstRefresh: false);
+  if (firebase.available && onlineConfig.isConfigured) {
+    push = FirebasePushCoordinator(game, online, Supabase.instance.client);
+  }
   await HavenAudio.configureJukebox(
     trackIds: game.enabledMusicResourceIds,
     shuffle: game.jukeboxShuffle,

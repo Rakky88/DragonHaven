@@ -7,6 +7,18 @@ Migrations **45-47** are deployed dormant: chest opening, server inventory guard
 Production run `34116589237` passed exact staging-source checks, rollback rehearsals, all three contracts, migration parity, zero-error lint and health. Before/after checks prove mutations remain disabled and all accounts remain in legacy compatibility.
 Staging runs `34110497546`, `34110676557` and `34111166461` passed rollback contracts, parity, lint and health. No economy activation is included.
 
+## Work in progress: durable client reconciliation (7 September 2026)
+
+`EconomySnapshotStore` now persists complete owner-scoped snapshots outside
+cloud backups, with atomic replacement and monotonic wallet/server revisions.
+`EconomyChestReconciler` retains the original request through lost responses,
+local disk failures, game-save failures and account switches; acknowledgement
+happens only after both the snapshot journal and game projection succeed.
+Six new real-filesystem/recovery tests and the nine existing snapshot-reader
+tests pass. The production UI remains dormant until full inventory conversion
+and game-projection integration have been completed. This boundary is not yet
+an enabled purchase flow or a complete egg/dragon economy.
+
 ## Purpose and current boundary
 
 DragonHaven currently keeps most gameplay progression in the local/cloud save.

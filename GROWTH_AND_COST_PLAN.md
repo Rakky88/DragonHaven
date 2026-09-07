@@ -92,7 +92,7 @@ representatieve test op 100, 1.000, 3.000 en 10.000, een beoordeelde DB-/pool-
 configuratie en gemeten foutmarges. Geen 10.000-accountproef rechtstreeks op
 productie en geen verzonnen gratis-capaciteitsgarantie.
 
-## Meetbare waarschwingen en stopgrenzen
+## Meetbare waarschuwingen en stopgrenzen
 
 - Waarschuw bij 70% van opslag of maandquota; maak bij 80% een prognose met
   de huidige daggroei. Reserveer ruimte voor onderhoud, retries en herstel.
@@ -139,3 +139,13 @@ productie en geen verzonnen gratis-capaciteitsgarantie.
   database-/opslaggetallen. Geen synthetische load aan het rapport koppelen.
 - Bestaande audittests uitbreiden met privacy, uitval, accountwissel en
   quotabudgetten. Pas daarna een nieuwe capaciteitsmeting plannen.
+
+
+## Lokale hulpmiddelen
+
+`python tool/capacity_budget.py` rekent standaard met 100, 1.000 en 10.000
+accounts, 30% DAU en 10% piek-CCU. Alle aannames zijn commandoregelopties.
+Het resultaat scheidt savepayload en leesverkeer en noemt weggelaten overhead;
+het is geen factuur of garantie. `tool/database_capacity_report.sql` geeft alleen
+technische, alleen-lezen databaseaggregaten en geschatte tabelgroottes terug.
+Geen spelerdata, SQL-queryteksten, chats, tokens of wachtwoorden in het rapport.

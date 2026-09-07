@@ -237,12 +237,19 @@ jobs:
       - name: Test
         run: flutter test --no-pub
 
+      - name: Configure optional staging Firebase
+        env:
+          DRAGONHAVEN_FIREBASE_ANDROID_CONFIG: ${{ secrets.DRAGONHAVEN_FIREBASE_ANDROID_CONFIG }}
+        run: dart run tool/write_firebase_build_config.dart staging
+
       - name: Build isolated staging APK
         env:
           STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           flutter build apk --debug --no-pub \
+            --dart-define-from-file=.tools/firebase-build-defines.json \
+            --dart-define=DRAGONHAVEN_FIREBASE_STAGING_PROBE=true \
             --dart-define=DRAGONHAVEN_ENVIRONMENT=staging \
             --dart-define=SUPABASE_URL="$STAGING_SUPABASE_URL" \
             --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_SUPABASE_PUBLISHABLE_KEY"

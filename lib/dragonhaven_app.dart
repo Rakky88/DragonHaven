@@ -146,13 +146,21 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       // pausing here makes the jukebox cut out during an ordinary swipe.
       // `onHide`, `onPause`, and the native Activity lifecycle remain the
       // authoritative boundaries for genuinely leaving DragonHaven.
-      onHide: () => unawaited(HavenAudio.setAppInForeground(false)),
+      onHide: () {
+        _online.setAppInForeground(false);
+        unawaited(HavenAudio.setAppInForeground(false));
+      },
       onPause: () {
+        _online.setAppInForeground(false);
         unawaited(HavenAudio.setAppInForeground(false));
         unawaited(_automaticCloudBackup.tryWhenBackgrounded());
       },
-      onDetach: () => unawaited(HavenAudio.setAppInForeground(false)),
+      onDetach: () {
+        _online.setAppInForeground(false);
+        unawaited(HavenAudio.setAppInForeground(false));
+      },
       onResume: () async {
+        _online.setAppInForeground(true);
         await HavenAudio.setAppInForeground(true);
         _setTowerAmbientMusic();
         await _game.synchronizeNotificationPermissionWithPlatform();

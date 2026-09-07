@@ -66,6 +66,8 @@ abstract final class HavenNotifications {
     return destination;
   }
 
+  static void openRemoteDestination(String kind) => _recordNavigation(kind);
+
   @visibleForTesting
   static void handleNavigationKindForTest(String kind) =>
       _recordNavigation(kind);

@@ -3,6 +3,43 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
+## Lopende opdracht: gratis Firebase en volledige servereconomie
+
+Rick heeft de volledige servereconomie expliciet toegevoegd aan de scope en
+zelf Firebase-project `dragonhaven-20ced` aangemaakt. Nieuwe werkbranch:
+`feature/free-monitoring-and-growth`; dit is nog geen nieuwe apprelease.
+
+Productie- en staging-Firebase zijn ingericht zonder billingaccount. Staging
+gebruikt `dragonhaven-prod-rakky88` met weergavenaam DragonHaven Staging.
+De Android-koppeling, privacyarme Crashlytics/Performance-reporter, account- en
+apparaatgebonden pushregistratie, polling-levenscyclus en FCM-worker zijn gebouwd.
+De sender heeft alleen `cloudmessaging.messages.create`.
+
+Migraties 50-51 zijn uitsluitend op staging toegepast na rollbackrepetitie:
+[34136004296](https://github.com/Rakky88/DragonHaven/actions/runs/34136004296),
+[34136928567](https://github.com/Rakky88/DragonHaven/actions/runs/34136928567).
+Pariteit/lint/health slagen; push staat standaard uit. Echte aflevering via cron,
+Vault en Edge worker is bewezen in
+[34137456672](https://github.com/Rakky88/DragonHaven/actions/runs/34137456672):
+generiek bericht zichtbaar op het testtoestel, inbox bleef ongelezen, fixture
+verwijderd en push weer uit. De echte FATAL- en NON_FATAL-testmeldingen zijn
+ook teruggevonden in de Firebase Crashlytics API.
+
+Android bouwt zonder en met Firebase-configuratie. Analyzer was schoon; 526
+volledige-suiteproeven slaagden plus een verouderde vaste schemaverwachting.
+Die verwachting is bijgewerkt naar 51; de gerichte hercontrole van 25 tests
+slaagt. Zes Deno-workerproeven slagen. Zie `FIREBASE_MONITORING_SETUP.md` voor
+bewijs en resterende controle van Performance, release-symbolen en alerts.
+Het tijdelijke staging-probe-entrypoint moet worden vervangen door de normale
+app op het testtoestel zodra deze proeven zijn afgerond.
+
+`GROWTH_AND_COST_PLAN.md` bevat de 100/1.000/10.000-accountscenario's, bestaande
+loadbewijzen, quota, opslag/egress-aannames en meetbare overstappen. De lokale
+rekentool en SQL-capaciteitsrapportage bevatten uitsluitend technische gegevens.
+De volledige economie is in uitvoering: conversie, duurzame snapshots,
+overige aankopen, ei-/draaklevensloop, claimvalidatie en herstel-/stagingproeven
+blijven open. Productie blijft schema 49, legacy en mutations=false.
+
 ## Gepubliceerde release v0.05.18 / 10068 (7 september)
 
 De nieuwe release bundelt de onderstaande auditbouw en UI-correcties. App,

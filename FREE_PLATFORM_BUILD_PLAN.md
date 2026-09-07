@@ -33,11 +33,10 @@ De gebruiker wil geen kosten. Er worden geen factureringsaccounts gekoppeld,
 abonnementen geüpgraded of betaalde diensten aangezet. Schaaldoelen zijn geen
 toestemming om gratis quota te overschrijden of betalingen te activeren.
 
-De gebruiker heeft bevestigd dat er nog geen Firebase-project is. Deze
-werkplek heeft geen Google-aanmelding of Firebase-appconfiguratie. Code,
-tests, inrichting en documentatie worden alvast gebouwd. Projecteigendom en
-de eerste Google-aanmelding moeten onder het account van de gebruiker gebeuren;
-er wordt geen fictief project als werkende integratie opgevoerd.
+Rick heeft inmiddels zelf `dragonhaven-20ced` aangemaakt en de officiele
+Google-aanmelding voltooid. Productie en staging zijn geconfigureerd zonder
+facturering. De echte staging-pushproef is geslaagd; details en resterende
+verificatie staan in `FIREBASE_MONITORING_SETUP.md`.
 
 ## Definitie van gereed
 

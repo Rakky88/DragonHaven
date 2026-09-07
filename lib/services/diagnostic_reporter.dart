@@ -40,6 +40,11 @@ abstract interface class DiagnosticReporter {
   List<DiagnosticEvent> get recentEvents;
 }
 
+/// Optional live timing. Reporting must never delay or fail a game operation.
+abstract interface class DiagnosticTracingReporter {
+  void operationStarted(String operation, String correlationId);
+}
+
 class NoopDiagnosticReporter implements DiagnosticReporter {
   const NoopDiagnosticReporter();
 

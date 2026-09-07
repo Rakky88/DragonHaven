@@ -47,6 +47,8 @@ class OnlineAccountProvider extends ChangeNotifier {
     Future<int?> Function(String userId)? loadCloudBaseRevision,
     Future<void> Function(String userId, int revision)? saveCloudBaseRevision,
     String Function()? languageCode,
+    Future<void> Function()? prepareAccountExit,
+    void Function()? accountExitFinished,
     DiagnosticReporter diagnostics = const NoopDiagnosticReporter(),
     Duration operationTimeout = const Duration(seconds: 75),
   })  : _repository = repository,
@@ -75,6 +77,8 @@ class OnlineAccountProvider extends ChangeNotifier {
         _saveCloudBaseRevision =
             saveCloudBaseRevision ?? _ignoreCloudBaseRevision,
         _languageCode = languageCode ?? _defaultLanguageCode,
+        _prepareAccountExit = prepareAccountExit,
+        _accountExitFinished = accountExitFinished,
         _diagnostics = diagnostics,
         _operationTimeout = operationTimeout;
 
@@ -110,6 +114,8 @@ class OnlineAccountProvider extends ChangeNotifier {
   final Future<void> Function(String userId, int revision)
       _saveCloudBaseRevision;
   final String Function() _languageCode;
+  final Future<void> Function()? _prepareAccountExit;
+  final void Function()? _accountExitFinished;
   final DiagnosticReporter _diagnostics;
   final Duration _operationTimeout;
   StreamSubscription<bool>? _authSubscription;
@@ -120,6 +126,8 @@ class OnlineAccountProvider extends ChangeNotifier {
   Timer? _authRecoveryTimer;
   Future<bool>? _refreshInFlight;
   bool _notificationPollInFlight = false;
+  bool _appInForeground = true;
+  bool _pushAvailable = false;
   final Set<String> _notificationDeliveryInFlight = <String>{};
   DateTime? _lastRefreshStartedAt;
   bool _lastRefreshSucceeded = false;
@@ -363,18 +371,28 @@ class OnlineAccountProvider extends ChangeNotifier {
 
   Future<bool> signOut() async =>
       await _run('auth.sign_out', () async {
-        await _repository.signOut();
-        _clearAccountData();
-        return true;
+        try {
+          await _prepareAccountExit?.call();
+          await _repository.signOut();
+          _clearAccountData();
+          return true;
+        } finally {
+          _accountExitFinished?.call();
+        }
       }) ??
       false;
 
   Future<bool> deleteAccount(String password) async =>
       await _run('auth.delete_account', () async {
-        await _repository.deleteMyAccount(password);
-        _clearAccountData();
-        noticeCode = 'account_deleted';
-        return true;
+        try {
+          await _prepareAccountExit?.call();
+          await _repository.deleteMyAccount(password);
+          _clearAccountData();
+          noticeCode = 'account_deleted';
+          return true;
+        } finally {
+          _accountExitFinished?.call();
+        }
       }) ??
       false;
 
@@ -1342,8 +1360,23 @@ class OnlineAccountProvider extends ChangeNotifier {
     final correlationId = DiagnosticIds.create();
     final startedAt = DateTime.now();
     final stopwatch = Stopwatch()..start();
+    final reporter = _diagnostics;
+    if (reporter is DiagnosticTracingReporter) {
+      (reporter as DiagnosticTracingReporter)
+          .operationStarted(operationName, correlationId);
+    }
     try {
       await operation();
+      stopwatch.stop();
+      if (_diagnostics is DiagnosticTracingReporter) {
+        _diagnostics.record(DiagnosticEvent(
+          operation: operationName,
+          correlationId: correlationId,
+          outcome: DiagnosticOutcome.success,
+          startedAt: startedAt,
+          duration: stopwatch.elapsed,
+        ));
+      }
       return true;
     } on SocialException catch (error) {
       stopwatch.stop();
@@ -1510,7 +1543,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     }
   }
 
-  @visibleForTesting
+  /// Refreshes the durable inbox after foreground timers or an FCM wake-up.
   Future<void> pollSocialNotifications() async {
     if (!isConfigured ||
         !isSignedIn ||
@@ -1559,8 +1592,30 @@ class OnlineAccountProvider extends ChangeNotifier {
     await _synchronizeTradeReservations(eggs, chests, relics);
   }
 
+  void setAppInForeground(bool visible) {
+    _appInForeground = visible;
+    if (visible) {
+      _ensureRefreshTimer();
+    } else {
+      _refreshTimer?.cancel();
+      _refreshTimer = null;
+      _conclaveBadgeTimer?.cancel();
+      _conclaveBadgeTimer = null;
+      _notificationPollTimer?.cancel();
+      _notificationPollTimer = null;
+    }
+  }
+
+  void setPushAvailable(bool available) {
+    if (_pushAvailable == available) return;
+    _pushAvailable = available;
+    _notificationPollTimer?.cancel();
+    _notificationPollTimer = null;
+    _ensureRefreshTimer();
+  }
+
   void _ensureRefreshTimer() {
-    if (!isConfigured || !isSignedIn) return;
+    if (!isConfigured || !isSignedIn || !_appInForeground || _disposed) return;
     _refreshTimer ??= Timer.periodic(const Duration(minutes: 2), (_) {
       if (isSignedIn && !busy) unawaited(refreshIfStale());
     });
@@ -1570,7 +1625,8 @@ class OnlineAccountProvider extends ChangeNotifier {
         if (!busy) unawaited(refreshConclave(background: true));
       }
     });
-    _notificationPollTimer ??= Timer.periodic(const Duration(seconds: 15), (_) {
+    _notificationPollTimer ??=
+        Timer.periodic(Duration(seconds: _pushAvailable ? 60 : 15), (_) {
       if (isSignedIn) unawaited(pollSocialNotifications());
     });
   }
@@ -1584,6 +1640,11 @@ class OnlineAccountProvider extends ChangeNotifier {
     final correlationId = DiagnosticIds.create();
     final startedAt = DateTime.now();
     final stopwatch = Stopwatch()..start();
+    final reporter = _diagnostics;
+    if (reporter is DiagnosticTracingReporter) {
+      (reporter as DiagnosticTracingReporter)
+          .operationStarted(operationName, correlationId);
+    }
     _operationInFlight = true;
     busy = true;
     if (!background) {

@@ -1,39 +1,99 @@
-# Firebase-monitoring voor DragonHaven
+# Firebase-monitoring en push voor DragonHaven
 
-Besluit op 28 augustus 2026: begin gratis met Firebase Spark, Crashlytics en
-Performance Monitoring; laat Google Analytics uit. Rick is de enige eerste
-alertontvanger. De afgesproken Firebase-retentie geldt, DragonHaven-
-supportexports blijven maximaal zeven dagen bewaard en privacyarm incidentbewijs
-maximaal dertig dagen.
+Bijgewerkt: 7 september 2026. Firebase is kosteloos ingericht onder het
+Google-account van de eigenaar. De gepubliceerde app blijft v0.05.18 / 10068;
+de nieuwe appcode staat op `feature/free-monitoring-and-growth`.
 
-## Wat al zonder Firebase-config werkt
+## Projecten en kosten
 
-- De productie-Auth-healthcheck draait ieder uur via GitHub Actions.
-- Een storing maakt één SEV-1 GitHub-issue aan en wijst die aan `Rakky88` toe;
-  herstel sluit dezelfde melding automatisch.
-- Online operaties gebruiken veilige foutcodes, correlation IDs en een begrensd
-  lokaal supportrapport zonder e-mail, tokens of save-inhoud.
-- De implementatie kan later een externe reporter krijgen zonder de Auth-,
-  Friends-, trade-, Adventure- of back-upcode opnieuw te ontwerpen.
+| Omgeving | Firebase-project | Android-app-ID |
+| --- | --- | --- |
+| Productie | `dragonhaven-20ced` (door Rick aangemaakt: Dragonhaven) | `1:136858965382:android:aa1f3f01016f0254720807` |
+| Staging | `dragonhaven-prod-rakky88` (weergavenaam DragonHaven Staging) | `1:105248573133:android:116f9962f98042d8330b84` |
 
-## Eenmalige stap die Rick in Firebase moet doen
+De staging-ID is een historische, onveranderlijke project-ID; de build controleert
+het expliciete omgevingsregister in `firebase-projects.json`, niet het woord prod.
+Beide projecten zijn via de Google Billing API gecontroleerd: geen billingaccount
+en billingEnabled=false. Geen Firebase Functions, Firestore, Storage,
+BigQuery-export of betaald abonnement ingericht. FCM, Crashlytics en Performance
+zijn beschikbaar zonder kosten volgens de
+[Firebase-abonnementen](https://firebase.google.com/docs/projects/billing/firebase-pricing-plans).
+De bestaande Supabase-quota blijven relevant; zie `GROWTH_AND_COST_PLAN.md`.
 
-1. Open <https://console.firebase.google.com/> met het account dat eigenaar van
-   DragonHaven moet blijven.
-2. Kies **Create a project** en maak bijvoorbeeld `DragonHaven Production`.
-3. Laat **Google Analytics uitgeschakeld** en behoud het kosteloze **Spark**-
-   abonnement zonder betaalmethode.
-4. Kies in Project Overview **Add app → Android**.
-5. Vul als Android package name exact `nl.dragonhaven.app` in. De bijnaam is
-   vrij; een SHA-certificaat is voor Crashlytics/Performance niet vereist.
-6. Download `google-services.json`. Zet dit bestand niet in chat. Plaats het
-   rechtstreeks als `android/app/google-services.json` in de werkmap of geef
-   aan dat het klaarstaat; Codex kan daarna de officiële FlutterFire-config,
-   Crashlytics/Performance-SDK, release-symbolupload en testcrash afronden.
-7. Open na de technische koppeling **Crashlytics → Alerts** en laat crashes en
-   regressies naar Rick sturen. Maak voorlopig geen tweede ontvanger aan.
+## App en privacy
 
-De Firebase-clientconfig identificeert het project maar verleent geen
-beheertoegang. Service-accountkeys, databasewachtwoorden en toegangstokens horen
-nooit in Git of chat. Analytics wordt alleen later toegevoegd na een apart
-privacy- en Data Safety-besluit.
+- Firebase Core, Crashlytics, Performance en Messaging zijn aangesloten op de app.
+  Een build zonder configuratie behoudt het lokale diagnostiekbuffer.
+- Productie verzamelt alleen in releasebuilds; debugverzameling kan uitsluitend
+  met de expliciete staging-proefvlag. Project-ID en Android-pakket worden ook
+  tijdens de Gradle-build gecontroleerd.
+- Google Analytics is in de Android-app gedeactiveerd. Geen chatinhoud,
+  spelersnaam, account-ID, save, token, ruwe exception of correlation ID in
+  aangepaste crashmeldingen/trace-attributen. Alleen vaste foutcategorieen en
+  geschoonde bronlocaties; het native SDK verwerkt technische crashinformatie.
+- Traces meten echte operatieduur, met begrensde aantallen en foutmeldingen.
+  Meldingen bij dezelfde storing worden beperkt tot een per categorie per vijf minuten.
+- Appmeldingsvoorkeuren en Android-toestemming gelden ook voor push. Registratie
+  wordt vernieuwd bij tokenrotatie, hervatten, accountwissel en na verloop van tijd.
+  Afmelden en verwijderen trekken de registratie in. Verloren verbindingen
+  houden een begrensde retry en de bestaande inbox als vangnet.
+- Periodiek verversen stopt op de achtergrond. Bij werkende push blijft een
+  rustige inboxcontrole per minuut in de voorgrond beschikbaar.
+
+## Server en sleutels
+
+Migraties 50-51 bouwen een private apparaatregistratie, outbox, leases,
+begrensde retries, verval en een dispatcher per minuut. Er wordt alleen een
+HTTP-aanroep ingepland als er werk is, configuratie aanwezig is en push aanstaat.
+Maximaal 45.000 geplande invocaties per kalendermaand; geen automatische upgrade.
+De worker verstuurt maximaal 30 meldingen per batch met vijf gelijktijdige requests.
+Firebase-acceptatie markeert de duurzame inbox nadrukkelijk niet als gelezen.
+
+Productie blijft schema 49; staging is schema 51. Push staat op staging standaard
+uit en de productie-economie blijft uit. De Edge worker en Vault-configuratie
+zijn op staging ingericht. De productie-uitrol volgt pas na de complete apppoort.
+
+De aparte serviceaccount per Firebase-project heeft een custom IAM-rol met alleen
+`cloudmessaging.messages.create`. Sleutels blijven lokaal in genegeerde
+`.tools/firebase-secrets` en voor staging in beschermde GitHub/Edge secrets.
+De dispatchsleutel staat in Supabase Vault en het worker secret, nooit in de app.
+Clientconfiguratie zit in het beschermde CI-secret
+`DRAGONHAVEN_FIREBASE_ANDROID_CONFIG`; `tool/write_firebase_build_config.dart`
+valideert deze voor de build. `tool/firebase_free_setup.py` kan de inrichting
+herhalen met de officiele Firebase CLI-aanmelding, zonder billing te activeren.
+
+## Bewijs
+
+- Staging rollbackrepetitie 50-51:
+  [34136004296](https://github.com/Rakky88/DragonHaven/actions/runs/34136004296).
+- Staging apply/worker: schema 51, lint en health geslaagd, push bleef uit:
+  [34136928567](https://github.com/Rakky88/DragonHaven/actions/runs/34136928567).
+- Echte FCM-deviceproef via cron, Vault en Edge worker:
+  [34137456672](https://github.com/Rakky88/DragonHaven/actions/runs/34137456672).
+  Generiek Nederlands bericht zichtbaar op emulator-5554 terwijl de app op de
+  achtergrond gesloten was. Serverinbox bleef ongelezen. Synthetisch account,
+  apparaat, inbox en outbox zijn verwijderd; push terug uitgezet.
+  Visueel bewijs: lokaal `release/firebase-staging-push.png`.
+- Android-debugbuild zonder Firebase en met gevalideerde stagingconfig slagen.
+- Dart-analyse schoon. Zes worker-unitproeven en 23 gerichte Flutter-proeven
+  slagen. De volledige suite had 526 geslaagde tests en een verouderde vaste
+  schemaversieverwachting; correctie en hercontrole van 25 tests slagen.
+- Echte native crash en niet-fatale Fluttermelding zijn via de officiele
+  Crashlytics-report-API teruggevonden, elk met een event in het stagingproject.
+  Issues `ece9690113b884780b157ecd849ebd37` (FATAL) en
+  `33259915c98f8bd7649f741512bcdc04` (NON_FATAL), versie 0.5.18.
+  De fatale testcrash toont de leesbare native methode. De eerste veilige
+  Fluttermelding bevat opzettelijk alleen de vaste probe-categorie.
+  Een lokaal geregistreerde Performance-trace is nog geen bewijs van een
+  zichtbaar Performance-dashboard.
+
+## Nog af te ronden binnen de opdracht
+
+Dashboardcontrole van de Performance-trace en release-symbolupload,
+alertinstellingen voor Rick, productie-uitrol van de geteste koppeling en
+appreleasepoort. De volledige resterende servereconomie wordt apart verder
+gebouwd; deze koppeling maakt die niet automatisch voltooid.
+
+Gebruik `tool/firebase_staging_probe.dart` alleen met alle stagingdefinities.
+Dit tijdelijke entrypoint opent geen gamesave en bevat een zichtbare knop voor
+een gecontroleerde crash. Herstel daarna de normale app op het testtoestel.
