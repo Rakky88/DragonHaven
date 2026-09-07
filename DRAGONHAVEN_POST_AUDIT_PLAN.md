@@ -3,22 +3,65 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-## Releasekandidaat v0.05.17 / 10067 (7 september)
+## Gepubliceerde release v0.05.17 / 10067 (7 september)
 
-De nieuwste Altar- en Trialverbeteringen worden gebundeld in v0.05.17.
-Alle versiebronnen en updatercontroles zijn met precies een stap verhoogd.
-Productiemigraties 45-47 gebruiken exact de op staging geteste SQL: eerst een
-teruggerolde repetitie van de chest-, winkel- en bestaande Altar-contracten,
-dan toepassing en volledige pariteit/lint/health. Productierun `34116589237`
-is volledig groen: 47/47 migraties, nul lintfouten, drie teruggerolde contracten
-en Auth-/apphealth 200. Voor en na de uitrol is bewezen: `mutations_enabled=false`
-en nul spelers buiten legacycompatibiliteit. De onafhankelijke lokale preflight
-is ook groen om 11:27:52 UTC. De globale economyfunctie
-blijft uit en alle spelers blijven in legacycompatibiliteit. Publicatie volgt
-pas na de verplichte serverpreflight, analyse, volledige tests, handtekening-
-en apparaatcontrole. Definitieve releasebewijzen worden hieronder bijgewerkt.
-De eerdere Auth-loadbevinding blijft open; deze release claimt geen bewezen
-capaciteit voor 100 of 1000 gelijktijdige spelers.
+Release **v0.05.17** is gepubliceerd als Latest met appcommit en tag
+`a706a120a8f0b8cc3fb49d85096c4efeac5f5384`. About, updater, Android versionName
+0.05.17 en versionCode 10067 zijn gelijkgetrokken met precies een versiestap.
+De release bevat de nieuwe Inventory > Altar-tab, verbeterde Altar-compositie
+en animatie, ei-informatie voor plaatsing, compacte craftkeuzes met Quill
+vooraan, een tutorial zonder odds/teller, compacte Trials-informatie, de
+volledige Might-sprite en zes aparte, subtiel verschillende Arcana-pompoenen.
+
+**501/501 tests groen**, ook zonder extra lettertype-omgevingsvariabelen;
+analyzer schoon en levende referenties gesynchroniseerd. De releasecontrole
+vond en herstelde twee compacte layouts: Altar-tag/details-knoppen mogen
+omlopen en de fase-iconen in de seasonal HUD passen binnen de beschikbare
+breedte. De Trial-titel blijft maximaal twee regels. Updaterfixtures en het
+staging-first-workflowcontract volgen de nieuwe release. Alle 47 openbare
+release-notesbestanden zijn vrij van private codes en aankondigingen daarvan.
+
+**Productie en staging staan op 47/47 migraties.** Productierun `34116589237`
+vergeleek migraties en contracten exact met de geslaagde stagingrun `34111166461`
+op commit `c57381b546e920822103b12d8466623ee89733a3`. Begintoestand 44, volledige
+baseline, de exacte pending set 45-47, health, lint en dry-run zijn gecontroleerd.
+Alle drie migraties met zowel chest-, item-shop- als bestaand Altar-contract
+zijn eerst gerepeteerd met rollback. Na toepassing zijn alle contracten opnieuw
+teruggerold bewezen. Pariteit, nul lintfouten en Auth-/apphealth 200 zijn groen.
+Voor en na de uitrol: `mutations_enabled=false` en nul spelers buiten
+legacycompatibiliteit. De onafhankelijke lokale serverpreflight was groen om
+11:27:52 UTC. De bredere economycutover blijft uitgeschakeld.
+
+De ondertekende APK is succesvol als update op emulator-5554 geinstalleerd;
+de bestaande draak, voortgang en opgeslagen Engelse taalkeuze bleven behouden.
+Altar, crafting, tutorial, compacte Trials en About zijn op het apparaat
+gecontroleerd, ook op 320x640 met animaties uit. Alle acht talen staan op
+zichtbare taalnaam in alfabetische volgorde. Emulatorinstellingen zijn hersteld;
+geen Flutter- of Android-runtimefouten. Volledige retour-/Sinister-/Beacon-acties
+en Arcana/Might zijn aanvullend in widgettests en de eerdere visuele opnames
+gecontroleerd; bij de apparaatcontrole zijn geen echte eieren of materialen
+verbruikt. De zes pompoenen, Might-sprite en beide Altar-sceneafbeeldingen in
+de APK komen byte voor byte overeen met de releasebron.
+
+APK: `DragonHaven.apk`, **505821796 bytes (482.4 MiB)**.
+SHA-256: `5377b9e7017bcfd8bedc5bdd2c61bfeb264f20859f0c77a654aeaeae9ede98ee`.
+Certificaat: `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`.
+Publisher-dry-run en upload geslaagd. Om 11:42:31 UTC zijn Latest, remote
+digest, bestandsgrootte en vaste downloadlink (HTTP 200) onafhankelijk bevestigd.
+De controle na publicatie om **11:42:32 UTC** geeft opnieuw HTTP 200 voor beide
+Auth-endpoints en applicatiehealth. Tagworkflow `34117568948` heeft de
+productiepreflight, analyzer en volledige tests opnieuw groen; het aanvullende
+ondertekende Play-bundle wordt nog gebouwd. Deze workflow publiceert geen
+GitHub-releaseasset, zodat er maar een APK-publisher actief is.
+
+- Release: https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.17
+- APK: https://github.com/Rakky88/DragonHaven/releases/download/v0.05.17/DragonHaven.apk
+- Vaste link: https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk
+
+De audit is hiermee bijgewerkt, niet volledig afgerond: fase 4B blijft deels
+open, fase 4C/4D en supportcontactgegevens blijven open. De eerdere Auth-
+loadbevinding blijft staan; deze release claimt geen bewezen capaciteit voor
+100 of 1000 gelijktijdige spelers en versoepelt geen Auth-beveiligingslimieten.
 
 ## Auditbouw voorafgaand aan v0.05.17 (7 september)
 
