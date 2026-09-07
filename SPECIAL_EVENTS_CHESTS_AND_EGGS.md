@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: 9704587489c41eb7 -->
+<!-- reference-source-fingerprint: 7fd12c217ee29a30 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -73,6 +73,10 @@ seven-ribbon Haven Spectrum meter. Thresholds are 1, 10, 25, 50, 100, 250, and
 500 completions per occurrence. The meter never gates rewards.
 
 ## 3. Event Trials
+
+The Trials overview combines its title, refresh timer, rankings button and
+seven-day constellation in one purple panel. This layout does not change the
+streak rules or rewards.
 
 | Event | Trial kind | Player-facing Trial | Loop |
 |---|---|---|---|

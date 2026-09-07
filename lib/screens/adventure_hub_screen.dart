@@ -243,36 +243,41 @@ class _TrialsTab extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.gold, width: 1.2),
           ),
-          child: Row(children: [
-            const GameIconSprite(GameIconKind.adventureSpecial, size: 34),
-            const SizedBox(width: 8),
-            Expanded(
-                child: Text(strings.pick('Dragon Trials', 'Drakenproeven'),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w900))),
-            const SizedBox(width: 6),
-            _TrialRefreshCountdown(
-                remaining: game.trialRefreshRemaining(from: now)),
-            IconButton(
-                key: const Key('open-trial-rankings'),
-                tooltip: strings.pick(
-                    'View Trial Rankings', 'Bekijk Trial-ranglijsten'),
-                color: AppColors.gold,
-                icon: const Icon(Icons.leaderboard_rounded, size: 22),
-                onPressed: () => showTrialRankingsSheet(context,
-                    scopes: const [
-                      TrialRankingScope.world,
-                      TrialRankingScope.friends
-                    ],
-                    initialScope: TrialRankingScope.world)),
+          child: Column(children: [
+            Row(children: [
+              const GameIconSprite(GameIconKind.adventureSpecial, size: 34),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: Text(strings.pick('Dragon Trials', 'Drakenproeven'),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900))),
+              const SizedBox(width: 6),
+              _TrialRefreshCountdown(
+                  remaining: game.trialRefreshRemaining(from: now)),
+              IconButton(
+                  key: const Key('open-trial-rankings'),
+                  tooltip: strings.pick(
+                      'View Trial Rankings', 'Bekijk Trial-ranglijsten'),
+                  color: AppColors.gold,
+                  icon: const Icon(Icons.leaderboard_rounded, size: 22),
+                  onPressed: () => showTrialRankingsSheet(context,
+                      scopes: const [
+                        TrialRankingScope.world,
+                        TrialRankingScope.friends
+                      ],
+                      initialScope: TrialRankingScope.world)),
+            ]),
+            const Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: Divider(height: 10, color: Color(0x33F6DF9A)),
+            ),
+            const _TrialStreakCard(),
           ]),
         ),
-        const SizedBox(height: 8),
-        const _TrialStreakCard(),
         const SizedBox(height: 14),
         if (offers.isEmpty)
           const _EmptyTrials()
@@ -294,18 +299,9 @@ class _TrialStreakCard extends StatelessWidget {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
     final filled = game.trialStreakCount.clamp(0, 7);
-    return Container(
+    return Padding(
       key: const Key('trial-streak-card'),
-      padding: const EdgeInsets.fromLTRB(13, 10, 13, 11),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFF8DD), Color(0xFFF2E9FF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(19),
-        border: Border.all(color: const Color(0x66D6A72E)),
-      ),
+      padding: const EdgeInsets.fromLTRB(2, 2, 10, 1),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -315,13 +311,17 @@ class _TrialStreakCard extends StatelessWidget {
                 child: Text(
                   strings.pick('7-day constellation', '7-daagse constellatie'),
                   style: const TextStyle(
-                      fontWeight: FontWeight.w900, fontSize: 13),
+                      color: Color(0xFFF0E8FA),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12),
                 ),
               ),
               Text(
                 '$filled/7',
                 style: const TextStyle(
-                    color: AppColors.twilight, fontWeight: FontWeight.w900),
+                    color: AppColors.gold,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900),
               ),
               if (game.trialStreakRewardReady) ...[
                 const SizedBox(width: 7),
@@ -331,6 +331,8 @@ class _TrialStreakCard extends StatelessWidget {
                     key: const Key('claim-trial-streak'),
                     onPressed: () => _claim(context),
                     style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.gold,
+                      foregroundColor: AppColors.twilightDark,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                     child: Text(strings.pick('Claim', 'Claim')),
@@ -339,7 +341,7 @@ class _TrialStreakCard extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 4),
           LayoutBuilder(
             builder: (context, constraints) => Stack(
               alignment: Alignment.center,
@@ -350,7 +352,7 @@ class _TrialStreakCard extends StatelessWidget {
                   child: Container(
                     height: 2,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFD8CAE8),
+                      color: const Color(0x55D9BCEB),
                       borderRadius: BorderRadius.circular(99),
                     ),
                   ),
@@ -372,8 +374,8 @@ class _TrialStreakCard extends StatelessWidget {
                             opacity: day <= filled ? 1 : .3,
                             child: Image.asset(
                               'assets/images/ui/trials/trial_constellation_node.png',
-                              width: 29,
-                              height: 29,
+                              width: 26,
+                              height: 26,
                             ),
                           ),
                         ),

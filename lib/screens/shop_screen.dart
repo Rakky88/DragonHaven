@@ -58,47 +58,6 @@ class _ShopScreenState extends State<ShopScreen> {
                   currency: widget.currency,
                   largeText: largeText,
                 ),
-                const SizedBox(height: 19),
-                Container(
-                  padding: const EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(21),
-                    gradient: const LinearGradient(
-                        colors: [AppColors.goldLight, Color(0xFFFFE2D8)]),
-                  ),
-                  child: Row(children: [
-                    Container(
-                        width: 46,
-                        height: 46,
-                        decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            shape: BoxShape.circle),
-                        child: const Padding(
-                          padding: EdgeInsets.all(3),
-                          child: GameIconSprite(
-                            GameIconKind.inventoryFurniture,
-                            size: 44,
-                          ),
-                        )),
-                    const SizedBox(width: 12),
-                    Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                          Text(
-                              strings.pick(
-                                  '${household.ownedItemIds.length} of ${shopCatalog.length} collected',
-                                  '${household.ownedItemIds.length} van ${shopCatalog.length} verzameld'),
-                              style: Theme.of(context).textTheme.titleMedium),
-                          const SizedBox(height: 2),
-                          Text(
-                              strings.pick('Purchased items are always yours.',
-                                  'Gekochte spullen blijven altijd van jullie.'),
-                              style: const TextStyle(
-                                  fontSize: 12, color: AppColors.muted))
-                        ])),
-                  ]),
-                ),
                 const SizedBox(height: 15),
                 TextField(
                   key: const Key('shop-search'),
@@ -107,8 +66,8 @@ class _ShopScreenState extends State<ShopScreen> {
                   textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
                     hintText: strings.pick(
-                      'Search 200 house items',
-                      'Zoek in 200 huisspullen',
+                      'Search house items',
+                      'Zoek huisspullen',
                     ),
                     prefixIcon: const Icon(Icons.search_rounded),
                     suffixIcon: _query.isEmpty

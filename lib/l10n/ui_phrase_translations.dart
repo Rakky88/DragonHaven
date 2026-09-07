@@ -26,7 +26,8 @@ String? translatedUiPhrase(String english, String languageCode) {
       trialPhraseTranslations[english] ??
       featureBatchPhraseTranslations[english] ??
       socialPhraseTranslations[english] ??
-      seasonalPhraseTranslations[english] ?? eggAltarPhraseTranslations[english];
+      seasonalPhraseTranslations[english] ??
+      eggAltarPhraseTranslations[english];
   if (index == null) return null;
   if (values != null && values.length == 6) return values[index];
   return _translatedDynamicUiPhrase(english, languageCode);
@@ -2046,13 +2047,13 @@ const uiPhraseTranslations = <String, List<String>>{
     '屋上の巣'
   ],
   'Rooms': ['Räume', 'Habitaciones', 'Pièces', 'Stanze', 'Cômodos', '部屋'],
-  'Search 200 house items': [
-    '200 Hausgegenstände durchsuchen',
-    'Buscar entre 200 objetos de la casa',
-    'Rechercher parmi 200 objets',
-    'Cerca tra 200 oggetti per la casa',
-    'Pesquisar 200 itens da casa',
-    '200個の家具を検索'
+  'Search house items': [
+    'Hausgegenstände suchen',
+    'Buscar objetos de la casa',
+    'Rechercher des objets pour la maison',
+    'Cerca oggetti per la casa',
+    'Pesquisar itens da casa',
+    '家具を検索'
   ],
   'Search by a stable player code; names are never treated as unique IDs.': [
     'Suche über einen festen Spielercode; Namen gelten nie als eindeutige IDs.',

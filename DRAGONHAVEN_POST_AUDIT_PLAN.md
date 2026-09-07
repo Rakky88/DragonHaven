@@ -66,6 +66,14 @@ en de correctie uit 38. De proef controleert foutreproductie, atomair falen,
 timestampvenster, limiet en reset, plus ongewijzigde geïnstalleerde functies,
 rechten en activatie. Dit is nog geen uitgevoerde operationele incidentoefening.
 
+Twee volgende compactheidsverzoeken zijn lokaal uitgevoerd: de zevendaagse
+constellation staat binnen dezelfde paarse Trials-header, en de Furniture-shop
+heeft geen geel verzamelblok of vast aantal in de zoektekst meer. De Trials-
+header is visueel gecontroleerd op 320 logische pixels breed
+(`release/polish-trials.png`). De 82 relevante widget-/lokalisatie-/referentietests
+slagen; analyzer meldt nul problemen. Gameplay, prijzen en beloningen wijzigen
+hierdoor niet. Ook deze UI-wijzigingen wachten op een volgende apprelease.
+
 ## Gepubliceerde release v0.05.17 / 10067 (7 september)
 
 Release **v0.05.17** is gepubliceerd als Latest met appcommit en tag
