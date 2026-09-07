@@ -17,6 +17,7 @@ on:
           - legacy-import-restore
           - load-observer
           - social-push
+          - social-push-apply
 
 permissions:
   contents: read
@@ -55,7 +56,7 @@ jobs:
           retention-days: 30
 
   verify:
-    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push'
+    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply'
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 15
@@ -207,5 +208,42 @@ jobs:
         with:
           name: DragonHaven-staging-social-push-contract
           path: staging/social-push-contract.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+  social-push-apply:
+    if: inputs.contract == 'social-push-apply'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.116.0
+      - name: Apply and verify dormant push on staging only
+        shell: pwsh
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          FIREBASE_MESSAGING_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_MESSAGING_SERVICE_ACCOUNT }}
+          PUSH_DISPATCH_SECRET: ${{ secrets.PUSH_DISPATCH_SECRET }}
+        run: |
+          if ($env:CONFIRMATION -cne 'APPLY_DRAGONHAVEN_STAGING_PUSH_50_51') {
+            throw 'Exact staging apply scope is required.'
+          }
+          New-Item -ItemType Directory -Path staging -Force | Out-Null
+          ./tool/staging_social_push_apply.ps1 |
+            Tee-Object -FilePath staging/social-push-apply.txt
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: DragonHaven-staging-social-push-apply
+          path: staging/social-push-apply.txt
           if-no-files-found: warn
           retention-days: 30

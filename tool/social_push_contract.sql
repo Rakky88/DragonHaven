@@ -32,7 +32,7 @@ begin
   select id,generation into device,old_generation from private.push_devices where installation_id = installation;
   insert into public.social_notifications(user_id,kind,entity_id) values(keeper,'friend_message',gen_random_uuid()) returning id into notification;
   if exists(select 1 from private.social_push_outbox where notification_id = notification) then raise exception 'push_contract_disabled_enqueue'; end if;
-  update private.push_runtime set enabled = true;
+  update private.push_runtime set enabled = true, endpoint = null;
   if private.dispatch_social_push_tick() <> 'unconfigured' then raise exception 'push_contract_unconfigured_tick'; end if;
   insert into public.social_notifications(user_id,kind,entity_id) values(keeper,'friend_request',gen_random_uuid()) returning id into second_notice;
   if exists(select 1 from private.social_push_outbox where notification_id = second_notice) then raise exception 'push_contract_preferences'; end if;
