@@ -14,14 +14,13 @@ class RedeemCodeDefinition {
   final String? restrictedKeeperId;
 }
 
-// Preview codes are server-authorized and Keeper-scoped. Never expose active
+// Preview codes are server-authorized; most remain Keeper-scoped. Never expose active
 // codes in public release notes; maintain the private REDEEM_CODES.md ledger.
 const redeemCodeCatalog = <RedeemCodeDefinition>[
   RedeemCodeDefinition(
     code: 'HALLOWEENEVENT',
     rewardType: RedeemRewardType.seasonalEventPreview,
     rewardId: 'halloween_witchlight',
-    restrictedKeeperId: 'DH-17792DC5',
   ),
   RedeemCodeDefinition(
     code: 'CHRISTMASEVENT',

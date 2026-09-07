@@ -2356,7 +2356,7 @@ void main() {
     target.dispose();
   });
 
-  test('only Keeper-scoped seasonal preview codes are active', () async {
+  test('Halloween preview is public while other seasonal codes remain restricted', () async {
     final game = HouseholdProvider(
       random: Random(904),
       persistenceEnabled: false,
@@ -2366,11 +2366,11 @@ void main() {
     expect(await game.redeemCode('EMOTEPACK1'), 'inactive');
     expect(await game.redeemCode('EMOTEPACK2'), 'inactive');
     expect(await game.redeemCode('EMOTEPACK3'), 'inactive');
-    expect(await game.redeemCode('HALLOWEENEVENT'), 'restricted');
+    expect(await game.redeemCode('CHRISTMASEVENT'), 'restricted');
     expect(
       await game.redeemCode(
         'HALLOWEENEVENT',
-        keeperId: 'DH-17792DC5',
+        keeperId: 'DH-OTHER123',
       ),
       'redeemed_event_preview',
     );

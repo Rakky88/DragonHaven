@@ -57,7 +57,9 @@ void main() {
       expect(egg.goldenHourSpectralChance, .10, reason: event.id);
       expect(music?.temporaryEventId, event.id, reason: event.id);
       expect(code?.rewardId, event.id, reason: event.id);
-      expect(code?.restrictedKeeperId, 'DH-17792DC5', reason: event.id);
+      final expectedKeeper = event.id == 'halloween_witchlight' ? null : 'DH-17792DC5';
+      expect(code?.restrictedKeeperId, expectedKeeper, reason: event.id);
+      expect(event.previewOwnerKeeperId, expectedKeeper, reason: event.id);
       expect(event.previewHours, 48, reason: event.id);
       expect(event.previewRewardsSimulatedInProduction, isTrue,
           reason: event.id);
@@ -344,32 +346,23 @@ void main() {
     final stagingE2e =
         File('tool/staging_seasonal_events_e2e.ps1').readAsStringSync();
 
-    expect(stagingWorkflow, contains("environment: staging"));
-    expect(
-        stagingWorkflow,
-        contains(
-            "'202609070041', '202609070042', '202609070043', '202609070044'"));
-    expect(stagingWorkflow,
-        contains("@('202609070042', '202609070043', '202609070044')"));
-    expect(stagingWorkflow, contains("egg_altar_contract.sql"));
-    expect(stagingWorkflow, contains("'tnzathhutuwmohmjfrlo'"));
-    expect(stagingWorkflow,
-        contains('Only the configured staging project is permitted.'));
-    expect(stagingWorkflow.indexOf('Rolled-back rehearsal failed'),
-        lessThan(stagingWorkflow.indexOf('supabase db push --linked --yes')));
-    expect(stagingWorkflow, contains('release_server_preflight.ps1'));
-
-    expect(productionWorkflow, contains('MIGRATE_PRODUCTION_45_TO_47'));
-    expect(productionWorkflow, contains("\$expectedRemote = '202609070044'"));
-    expect(productionWorkflow,
-        contains("'202609070045', '202609070046', '202609070047'"));
-    expect(productionWorkflow, contains('release_server_preflight.ps1'));
-    expect(productionWorkflow, contains('supabase db lint'));
-    expect(productionWorkflow, contains('34111166461'));
-    expect(
-        productionWorkflow.indexOf('Rolled-back production rehearsal failed'),
-        lessThan(productionWorkflow
-            .indexOf('supabase db push --linked --include-all --yes')));
+    final gate = File('tool/preview_access_migration.ps1').readAsStringSync();
+    expect(stagingWorkflow, contains('environment: staging'));
+    expect(stagingWorkflow, contains('APPLY_STAGING_HALLOWEEN_PREVIEW_48'));
+    expect(stagingWorkflow, contains('group: dragonhaven-staging-load'));
+    expect(productionWorkflow, contains('APPLY_PRODUCTION_HALLOWEEN_PREVIEW_48'));
+    expect(productionWorkflow, contains('staging_run_id'));
+    expect(productionWorkflow, contains("run.conclusion -ne 'success'"));
+    expect(productionWorkflow, contains('git diff --exit-code'));
+    expect(gate, contains("'202609070047','202609070048'"));
+    expect(gate, contains('Compare-Object'));
+    expect(gate, contains('halloween_preview_contract.sql'));
+    expect(gate, contains('release_server_preflight.ps1'));
+    expect(gate, contains('supabase db lint'));
+    expect(gate.indexOf('Test-PreviewContract \$true'),
+        lessThan(gate.indexOf('supabase db push --linked --include-all --yes')));
+    expect(gate, contains("Environment -eq 'staging' -and \$ProjectRef -eq \$production"));
+    expect(gate, contains('preview-authority-after.json'));
 
     expect(stagingE2e,
         contains("\$productionProjectRef = 'tnzathhutuwmohmjfrlo'"));

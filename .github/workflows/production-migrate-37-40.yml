@@ -1,10 +1,14 @@
-name: Production dormant economy migrations 45 to 47
+name: Production Halloween preview access 48
 
 on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: Type MIGRATE_PRODUCTION_45_TO_47
+        description: Type APPLY_PRODUCTION_HALLOWEEN_PREVIEW_48
+        required: true
+        type: string
+      staging_run_id:
+        description: Successful staging preview-access workflow run
         required: true
         type: string
 
@@ -20,193 +24,53 @@ jobs:
   migrate-production:
     runs-on: ubuntu-latest
     environment: production
-    timeout-minutes: 25
+    timeout-minutes: 15
     steps:
-      - name: Require exact production scope
+      - name: Require exact scope
         shell: pwsh
         env:
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
-          if ($env:CONFIRMATION -cne 'MIGRATE_PRODUCTION_45_TO_47') {
-            throw 'The required production confirmation is missing.'
+          if ($env:CONFIRMATION -cne 'APPLY_PRODUCTION_HALLOWEEN_PREVIEW_48') {
+            throw 'The exact production scope is missing.'
           }
-
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Verify the exact server content already passed staging
+      - uses: actions/checkout@v5
+      - name: Require successful staging evidence for identical server content
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          STAGING_RUN_ID: ${{ inputs.staging_run_id }}
         run: |
-          $stagingSha = 'c57381b546e920822103b12d8466623ee89733a3'
-          $run = gh api repos/Rakky88/DragonHaven/actions/runs/34111166461 | ConvertFrom-Json
-          if ($LASTEXITCODE -ne 0 -or $run.conclusion -ne 'success' -or $run.head_sha -ne $stagingSha) {
-            throw 'The exact staging evidence is missing or failed.'
+          if ($env:STAGING_RUN_ID -notmatch '^\d+$') { throw 'A staging run ID is required.' }
+          $run = gh api "repos/Rakky88/DragonHaven/actions/runs/$env:STAGING_RUN_ID" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $run.conclusion -ne 'success' -or
+              $run.path -ne '.github/workflows/staging-seasonal-events.yml' -or
+              $run.head_repository.full_name -ne 'Rakky88/DragonHaven') {
+            throw 'The exact staging preview-access evidence is missing or failed.'
           }
-          git fetch --depth=1 origin $stagingSha
-          if ($LASTEXITCODE -ne 0) { throw 'Could not resolve the tested staging commit.' }
-          git diff --exit-code $stagingSha -- supabase/migrations tool/chest_opening_contract.sql tool/item_shop_contract.sql tool/egg_altar_contract.sql
-          if ($LASTEXITCODE -ne 0) { throw 'The production server content differs from tested staging.' }
-
-      - name: Verify required secrets
-        shell: pwsh
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: |
-          foreach ($name in @('SUPABASE_ACCESS_TOKEN', 'SUPABASE_DB_PASSWORD')) {
-            if ([string]::IsNullOrWhiteSpace(
-                [Environment]::GetEnvironmentVariable($name))) {
-              throw "Missing production secret: $name."
-            }
-          }
-
-      - name: Supabase CLI
-        uses: supabase/setup-cli@v3
+          git fetch --depth=1 origin $run.head_sha
+          if ($LASTEXITCODE -ne 0) { throw 'The tested staging commit could not be resolved.' }
+          git diff --exit-code $run.head_sha -- supabase/migrations tool/halloween_preview_contract.sql tool/preview_access_migration.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Production server content differs from tested staging.' }
+      - uses: supabase/setup-cli@v3
         with:
           version: 2.116.0
-
-      - name: Verify exact 44 to 47 migration set and dry run
+      - name: Rehearse and apply only preview access migration 48
         shell: pwsh
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          CONFIRMATION: ${{ inputs.confirmation }}
         run: |
-          $expectedRemote = '202609070044'
-          $expectedPending = @(
-            '202609070045', '202609070046', '202609070047')
-          supabase link --project-ref tnzathhutuwmohmjfrlo `
-            --password $env:SUPABASE_DB_PASSWORD
-          New-Item -ItemType Directory -Path production-migration -Force |
-            Out-Null
-          $migrationResult = ((supabase migration list --linked `
-            --output-format json) | Out-String) | ConvertFrom-Json
-          if ($LASTEXITCODE -ne 0) { throw 'Could not read production migrations.' }
-          $remoteVersions = @($migrationResult.migrations |
-            ForEach-Object { [string]$_.remote } |
-            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-            Sort-Object)
-          if ($remoteVersions.Count -eq 0 -or
-              $remoteVersions[-1] -ne $expectedRemote) {
-            throw 'Production is not exactly at migration 44.'
-          }
-          $pendingLocal = @(Get-ChildItem supabase/migrations -File -Filter '*.sql' |
-            ForEach-Object {
-              if ($_.BaseName -notmatch '^(\d+)_') {
-                throw "Invalid migration filename: $($_.Name)."
-              }
-              $Matches[1]
-            } | Where-Object { [long]$_ -gt [long]$expectedRemote } | Sort-Object)
-          if (@(Compare-Object $expectedPending $pendingLocal).Count -ne 0) {
-            throw 'The pending production set is not exactly migrations 45 through 47.'
-          }
-          $expectedExisting = @(Get-ChildItem supabase/migrations -File -Filter '*.sql' |
-            ForEach-Object { $_.BaseName.Split('_')[0] } |
-            Where-Object { [long]$_ -le [long]$expectedRemote } | Sort-Object)
-          if (@(Compare-Object $expectedExisting $remoteVersions).Count -ne 0) {
-            throw 'Existing production migrations differ from the exact tested baseline.'
-          }
-          $state = Invoke-RestMethod -Method Post `
-            -Uri 'https://api.supabase.com/v1/projects/tnzathhutuwmohmjfrlo/database/query' `
-            -Headers @{ Authorization = "Bearer $env:SUPABASE_ACCESS_TOKEN" } `
-            -ContentType 'application/json' `
-            -Body (ConvertTo-Json @{ query = "select (select mutations_enabled from private.economy_contract) as enabled, (select count(*) from public.player_economy_authority where authority_mode <> 'legacy_client') as nonlegacy;"; read_only = $true } -Compress)
-          if (@($state).Count -ne 1 -or $state[0].enabled -ne $false -or $state[0].nonlegacy -ne 0) {
-            throw 'Economy must remain disabled and every keeper in legacy compatibility mode.'
-          }
-          $state | ConvertTo-Json | Set-Content production-migration/authority-before.json
-          ./tool/public_server_health_check.ps1 `
-            -Environment production `
-            -OutputPath production-migration/health-before.json
-          supabase db lint --linked --level error --fail-on error `
-            --output-format json | Tee-Object production-migration/lint-before.json
-          if ($LASTEXITCODE -ne 0) { throw 'Pre-migration lint failed.' }
-          supabase db push --linked --include-all --dry-run |
-            Tee-Object production-migration/dry-run.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Production dry run failed.' }
-
-      - name: Rehearse migrations and contract with rollback before applying
-        shell: pwsh
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: |
-          foreach ($contractName in @('chest_opening', 'item_shop', 'egg_altar')) {
-            $sql = "begin;`n"
-            foreach ($version in @('202609070045', '202609070046', '202609070047')) {
-              $file = Get-ChildItem supabase/migrations -File -Filter "$($version)_*.sql"
-              if (@($file).Count -ne 1) { throw 'The migration set is ambiguous.' }
-              $sql += (Get-Content -LiteralPath $file.FullName -Raw) + "`n"
-            }
-            $contract = Get-Content -LiteralPath "tool/$($contractName)_contract.sql" -Raw
-            $sql += [regex]::Replace($contract, '(?m)^begin;\r?\n', '', 1)
-            $response = Invoke-RestMethod -Method Post `
-              -Uri 'https://api.supabase.com/v1/projects/tnzathhutuwmohmjfrlo/database/query' `
-              -Headers @{ Authorization = "Bearer $env:SUPABASE_ACCESS_TOKEN" } `
-              -ContentType 'application/json' `
-              -Body (ConvertTo-Json @{ query = $sql; read_only = $false } -Compress)
-            if (@($response).Count -ne 1 -or $response[0]."$($contractName)_contract_passed" -ne $true) {
-              throw 'Rolled-back production rehearsal failed; migrations will not be applied.'
-            }
-          }
-          'PASS: all three contracts and migrations rolled back before applying.' |
-            Set-Content production-migration/rehearsal.txt
-
-      - name: Apply migrations 45 through 47 and verify
-        shell: pwsh
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: |
-          supabase db push --linked --include-all --yes |
-            Tee-Object production-migration/apply.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Production migration apply failed.' }
-          foreach ($contractName in @('chest_opening', 'item_shop', 'egg_altar')) {
-            $contract = Get-Content -LiteralPath "tool/$($contractName)_contract.sql" -Raw
-            $response = Invoke-RestMethod -Method Post `
-              -Uri 'https://api.supabase.com/v1/projects/tnzathhutuwmohmjfrlo/database/query' `
-              -Headers @{ Authorization = "Bearer $env:SUPABASE_ACCESS_TOKEN" } `
-              -ContentType 'application/json' `
-              -Body (ConvertTo-Json @{ query = $contract; read_only = $false } -Compress)
-            if (@($response).Count -ne 1 -or $response[0]."$($contractName)_contract_passed" -ne $true) {
-              throw "The applied $contractName contract failed."
-            }
-          }
-          'PASS: chest opening, restore guards, item shop and existing Altar; all test mutations rolled back.' |
-            Set-Content production-migration/contract.txt
-          $state = Invoke-RestMethod -Method Post `
-            -Uri 'https://api.supabase.com/v1/projects/tnzathhutuwmohmjfrlo/database/query' `
-            -Headers @{ Authorization = "Bearer $env:SUPABASE_ACCESS_TOKEN" } `
-            -ContentType 'application/json' `
-            -Body (ConvertTo-Json @{ query = "select (select mutations_enabled from private.economy_contract) as enabled, (select count(*) from public.player_economy_authority where authority_mode <> 'legacy_client') as nonlegacy;"; read_only = $true } -Compress)
-          if (@($state).Count -ne 1 -or $state[0].enabled -ne $false -or $state[0].nonlegacy -ne 0) {
-            throw 'Economy must remain disabled and every keeper in legacy compatibility mode.'
-          }
-          $state | ConvertTo-Json | Set-Content production-migration/authority-after.json
-          ./tool/release_server_preflight.ps1 |
-            Tee-Object production-migration/preflight-after.txt
-          supabase db lint --linked --level error --fail-on error `
-            --output-format json | Tee-Object production-migration/lint-after.json
-          if ($LASTEXITCODE -ne 0) { throw 'Post-migration lint failed.' }
-          ./tool/public_server_health_check.ps1 `
-            -Environment production `
-            -OutputPath production-migration/health-after.json
-          @(
-            'DragonHaven production migration evidence'
-            "Commit: $env:GITHUB_SHA"
-            'Previous migration: 202609070044'
-            'Applied migrations: 202609070045 through 202609070047'
-            'Economy authority remains in disabled legacy compatibility mode.'
-            'Chest opening and item shop are dormant; existing Altar behavior is preserved.'
-            'Migration parity, database lint, Auth and application health: passed'
-            'No credentials or player data are included in this artifact.'
-          ) | Set-Content production-migration/verification.txt -Encoding utf8
-
-      - name: Upload production migration evidence
+          $keySource = Get-Content -LiteralPath lib/config/online_config.dart -Raw
+          $match = [regex]::Match($keySource, 'sb_publishable_[A-Za-z0-9_-]+')
+          if (-not $match.Success) { throw 'The public production client key is missing.' }
+          ./tool/preview_access_migration.ps1 -Environment production `
+            -ProjectRef tnzathhutuwmohmjfrlo -BaseUrl https://tnzathhutuwmohmjfrlo.supabase.co `
+            -PublishableKey $match.Value -Confirmation $env:CONFIRMATION
+      - uses: actions/upload-artifact@v6
         if: always()
-        uses: actions/upload-artifact@v6
         with:
-          name: DragonHaven-production-migrations-45-to-47
+          name: DragonHaven-Halloween-preview-production
           path: production-migration/
-          if-no-files-found: warn
           retention-days: 30

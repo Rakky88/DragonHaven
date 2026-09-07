@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: d71dd3cfbad5569a -->
+<!-- reference-source-fingerprint: 9704587489c41eb7 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -361,3 +361,11 @@ accounts keep their existing behavior. End-to-end cutover, instance conversion,
 server egg lifecycle and client reconciliation remain separate audit work.
 
 Release v0.05.17: the compact seasonal HUD scales its phase icons within the available width; Altar tag/details actions wrap when text needs more space. Trial rules and rewards are unchanged.
+
+Halloween preview access: any signed-in keeper with a confirmed email may redeem
+its existing personal 48-hour preview. The other four event previews remain
+restricted to their configured keeper. Active redemptions retain their original
+expiry; expired previews can be redeemed again. Production preview rewards stay
+simulated, and preview scores remain separate from live event rankings. This
+does not change the event calendar or grant a Special Chest. Migration 48 is the
+forward-only server override; the current app already uses that RPC.

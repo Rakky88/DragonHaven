@@ -353,7 +353,7 @@ class SpecialAdventureEventDefinition {
   final String previewCode;
   final int previewHours;
   final String temporaryMusicTrackId;
-  final String previewOwnerKeeperId;
+  final String? previewOwnerKeeperId;
   final bool previewRewardsSimulatedInProduction;
   final Duration rankingVisibleAfterEvent;
 }
@@ -910,6 +910,7 @@ const specialAdventureEventCatalog = <SpecialAdventureEventDefinition>[
     trialKindName: 'witchlightWard',
     previewCode: 'HALLOWEENEVENT',
     previewHours: 48,
+    previewOwnerKeeperId: null,
     temporaryMusicTrackId: 'event_witchlight_nocturne',
   ),
   SpecialAdventureEventDefinition(

@@ -1,152 +1,46 @@
-name: Staging Egg Altar verification
+name: Staging Halloween preview access 48
 
 on:
   workflow_dispatch:
     inputs:
-      build_apk:
-        description: Build an Android preview connected only to staging
-        type: boolean
-        default: false
+      confirmation:
+        description: Type APPLY_STAGING_HALLOWEEN_PREVIEW_48
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: dragonhaven-staging-egg-altar
+  group: dragonhaven-staging-load
   cancel-in-progress: false
 
 jobs:
   migrate-and-verify:
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 25
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
-      ALTAR_STAGING_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
-      ALTAR_STAGING_URL: ${{ secrets.STAGING_SUPABASE_URL }}
-      ALTAR_STAGING_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: supabase/setup-cli@v3
         with:
           version: 2.116.0
-      - name: Verify staging scope and dry run
+      - name: Rehearse and apply only preview access migration 48
         shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          CONFIRMATION: ${{ inputs.confirmation }}
         run: |
-          $ref = $env:ALTAR_STAGING_REF
-          if ($ref -notmatch '^[a-z0-9]{20}$' -or $ref -eq 'tnzathhutuwmohmjfrlo' -or
-            $env:ALTAR_STAGING_URL.TrimEnd('/') -ne "https://$ref.supabase.co") {
-            throw 'Only the configured staging project is permitted.'
-          }
-          New-Item -ItemType Directory -Path staging -Force | Out-Null
-          supabase link --project-ref $ref --password $env:SUPABASE_DB_PASSWORD
-          if ($LASTEXITCODE -ne 0) { throw 'Staging link failed.' }
-          $result = ((supabase migration list --linked --output-format json) | Out-String) | ConvertFrom-Json
-          if ($LASTEXITCODE -ne 0) { throw 'Migration list failed.' }
-          $remote = @($result.migrations | ForEach-Object { [string]$_.remote } |
-            Where-Object { $_ } | Sort-Object)
-          if ($remote.Count -eq 0 -or $remote[-1] -notin @('202609070041', '202609070042', '202609070043', '202609070044')) {
-            throw 'Staging must be at migration 41, 42, 43 or 44.'
-          }
-          $pending = @(Get-ChildItem supabase/migrations -Filter '*.sql' |
-            ForEach-Object { $_.BaseName.Split('_')[0] } |
-            Where-Object { [long]$_ -gt [long]$remote[-1] })
-          if (@($pending | Where-Object { $_ -notin @('202609070042', '202609070043', '202609070044') }).Count -ne 0) {
-            throw 'An unexpected migration is pending.'
-          }
-          ./tool/public_server_health_check.ps1 -BaseUrl $env:ALTAR_STAGING_URL `
-            -PublishableKey $env:ALTAR_STAGING_KEY -Environment staging `
-            -OutputPath staging/altar-health-before.json
-          supabase db push --linked --dry-run | Tee-Object staging/altar-dry-run.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Altar dry run failed.' }
-      - name: Rehearse pending migrations and contract in a rolled-back transaction
-        shell: pwsh
-        run: |
-          $listing = ((supabase migration list --linked --output-format json) | Out-String) | ConvertFrom-Json
-          if ($LASTEXITCODE -ne 0) { throw 'Migration list failed.' }
-          $remote = @($listing.migrations | ForEach-Object { [string]$_.remote } | Where-Object { $_ })
-          $sql = "begin;`n"
-          foreach ($file in Get-ChildItem supabase/migrations -Filter '*.sql' | Sort-Object Name) {
-            if ($file.BaseName.Split('_')[0] -notin $remote) {
-              $sql += (Get-Content -LiteralPath $file.FullName -Raw) + "`n"
-            }
-          }
-          $contract = Get-Content -LiteralPath tool/egg_altar_contract.sql -Raw
-          $sql += $contract.Replace('begin;', '').Replace('rollback;', '') + "`nrollback;`nselect true as egg_altar_contract_passed;"
-          $response = Invoke-RestMethod -Method Post `
-            -Uri "https://api.supabase.com/v1/projects/$env:ALTAR_STAGING_REF/database/query" `
-            -Headers @{ Authorization = "Bearer $env:SUPABASE_ACCESS_TOKEN" } `
-            -ContentType 'application/json' `
-            -Body (ConvertTo-Json @{ query = $sql; read_only = $false } -Compress)
-          if (($response | ConvertTo-Json -Depth 5) -notmatch '"egg_altar_contract_passed"\s*:\s*true') {
-            throw 'Rolled-back rehearsal failed; migrations will not be applied.'
-          }
-          'PASS: migration and contract rehearsal rolled back before db push.' | Set-Content staging/altar-rehearsal.txt
-      - name: Apply and verify Altar contract
-        shell: pwsh
-        run: |
-          supabase db push --linked --yes | Tee-Object staging/altar-migrations.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Altar migrations failed.' }
-          $query = Get-Content -LiteralPath tool/egg_altar_contract.sql -Raw
-          $response = Invoke-RestMethod -Method Post `
-            -Uri "https://api.supabase.com/v1/projects/$env:ALTAR_STAGING_REF/database/query" `
-            -Headers @{ Authorization = "Bearer $env:SUPABASE_ACCESS_TOKEN" } `
-            -ContentType 'application/json' `
-            -Body (ConvertTo-Json @{ query = $query; read_only = $false } -Compress)
-          if (($response | ConvertTo-Json -Depth 5) -notmatch '"egg_altar_contract_passed"\s*:\s*true') {
-            throw 'The Altar contract did not pass.'
-          }
-          'PASS: ownership, tags, old saves, exactly-once returns, Sinister confirmation, 10% single-heart chance and 3-5 Essence, crafting, Oracle, Quill, transfers, Beacon donations and permissions.' |
-            Set-Content staging/altar-contract.txt
-          ./tool/release_server_preflight.ps1 -ExpectedProjectRef $env:ALTAR_STAGING_REF `
-            -ExpectedUrl $env:ALTAR_STAGING_URL -ExpectedPublishableKey $env:ALTAR_STAGING_KEY |
-            Tee-Object staging/altar-preflight.txt
-          supabase db lint --linked --level error --fail-on error --output-format json |
-            Tee-Object staging/altar-lint.json
-          if ($LASTEXITCODE -ne 0) { throw 'Database lint failed.' }
+          ./tool/preview_access_migration.ps1 -Environment staging `
+            -ProjectRef $env:STAGING_REF -BaseUrl $env:STAGING_URL `
+            -PublishableKey $env:STAGING_KEY -Confirmation $env:CONFIRMATION
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: DragonHaven-Egg-Altar-staging-evidence
+          name: DragonHaven-Halloween-preview-staging
           path: staging/
-          retention-days: 30
-
-  build-preview:
-    if: ${{ inputs.build_apk }}
-    needs: migrate-and-verify
-    runs-on: ubuntu-latest
-    environment: staging
-    timeout-minutes: 30
-    env:
-      ALTAR_STAGING_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
-      ALTAR_STAGING_URL: ${{ secrets.STAGING_SUPABASE_URL }}
-      ALTAR_STAGING_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: '3.44.9'
-          cache: true
-      - name: Build staging preview
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$ALTAR_STAGING_REF" != tnzathhutuwmohmjfrlo
-          test "$ALTAR_STAGING_URL" = "https://$ALTAR_STAGING_REF.supabase.co"
-          test -n "$ALTAR_STAGING_KEY"
-          flutter pub get
-          flutter build apk --debug --no-pub \
-            --dart-define=DRAGONHAVEN_ENVIRONMENT=staging \
-            --dart-define=SUPABASE_URL="$ALTAR_STAGING_URL" \
-            --dart-define=SUPABASE_PUBLISHABLE_KEY="$ALTAR_STAGING_KEY"
-      - uses: actions/upload-artifact@v6
-        with:
-          name: DragonHaven-Egg-Altar-preview-APK
-          path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 30

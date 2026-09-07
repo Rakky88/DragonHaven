@@ -2,9 +2,9 @@
 
 Last verified: 7 September 2026
 
-Ruleset: app version `v0.05.14`
+Ruleset: app version `v0.05.17`; Halloween-access update in migration 48
 
-<!-- reference-source-fingerprint: e605f7176059dbae -->
+<!-- reference-source-fingerprint: 80d595b319455511 -->
 
 This private operational ledger lists every active code. Active codes must
 never be mentioned in public release notes, store copy, or public support
@@ -18,7 +18,7 @@ server rather than trusted from the public app catalog.
 
 | Code | Reward | Reward ID | Restriction and behavior |
 |---|---|---|---|
-| `HALLOWEENEVENT` | **Night of the Witchlight** | `halloween_witchlight` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; simulated production rewards |
+| `HALLOWEENEVENT` | **Night of the Witchlight** | `halloween_witchlight` | Any authenticated, email-confirmed keeper; 48-hour reusable personal preview; isolated test ranking; simulated production rewards |
 | `CHRISTMASEVENT` | **A Star for the Winter Hearth** | `christmas_winter_hearth` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; simulated production rewards |
 | `NEWYEARSEVENT` | **When the New Dawn Rings** | `new_year_first_dawn` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; simulated production rewards |
 | `VALENTINEEVENT` | **Where Two Heartlights Meet** | `valentine_two_heartlights` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; simulated production rewards |
@@ -27,9 +27,12 @@ server rather than trusted from the public app catalog.
 ## Security and lifecycle
 
 - The app catalog is for discovery and UI only; it is not access control.
-- `redeem_seasonal_event_preview` verifies the authenticated account's Keeper
-  ID and maps the code to one fixed event server-side.
+- `redeem_seasonal_event_preview` requires an authenticated, email-confirmed
+  account and maps each code to one fixed event. Only Halloween is available to
+  every keeper; the other four mappings still require Keeper `DH-17792DC5`.
 - A code can be reused only after its previous entitlement expires.
+- Repeating an active code returns the original expiry, without extending its
+  48-hour window or changing its test ranking key.
 - Preview scores use a preview occurrence key and never affect live rankings.
 - Production preview rewards are displayed but not persisted. Staging may
   persist them to validate save, restore, and idempotency paths.
@@ -39,7 +42,8 @@ server rather than trusted from the public app catalog.
 ## Maintenance contract
 
 The client catalog lives in `lib/models/redeem_code.dart`; server authorization
-lives in `supabase/migrations/202609070040_seasonal_events.sql`. Adding,
+lives in the immutable base migration 40 and the current forward override
+`supabase/migrations/202609070048_halloween_preview_access.sql`. Adding,
 removing, redirecting, restricting, or changing a code must update both sources
 and this document in the same change.
 
