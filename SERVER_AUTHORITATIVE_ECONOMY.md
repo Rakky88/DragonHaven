@@ -30,8 +30,8 @@ The export envelope also retains unknown top-level and entity metadata by ID
 through hatching and dragon transfers, while replacing authoritative stock.
 Altar callbacks are bound to the trusted keeper. Foreign ownership and a pending
 legacy Altar operation refuse commands until import reconciliation is complete.
-This remains a **local candidate**, not a deployed
-authoritative economy.
+This is deployed only as a detached staging candidate. The live economy has
+not been activated.
 
 The worker must obtain state/time/owner/secret seed from PostgreSQL, reserve one
 intent per owner, then commit by revision comparison in one transaction. Public
@@ -78,6 +78,26 @@ the contract passed before and after, with parity 52, zero lint errors and healt
 Auth/application endpoints. The first HTTP probe stopped before creating test
 accounts because its management response was not parseable; this is not yet a
 successful end-to-end worker proof. Production remains at 49.
+
+That proof subsequently passed in
+[34147658644](https://github.com/Rakky88/DragonHaven/actions/runs/34147658644),
+source `19979ee`: real confirmed Auth, Edge, compiled Dart and PostgreSQL;
+purchases, concurrent/repeated chest opening, tags, Sinister confirmation and
+25-fragment/3-5-essence/0-1-heart return, then crafting and consuming a quill.
+The original live save and wallet remained equal. Both synthetic accounts and
+all shadow rows were removed, runtime disabled, schema parity 52, lint zero and
+health 200. CI ruleset SHA-256:
+`11fc9bc5f68b6cec93da60abab7918b164a32810831283f888b3eb8297ffbd81`,
+901,387 bytes. All 552 local Flutter tests pass. This proves the detached worker
+path; it does not activate the live economy or validate every remaining reward.
+
+Candidate migration 53 retains immutable import generations when a cloud save
+or the authoritative Altar changes. Its service-only preparation commit checks
+the current generation, source, Altar, game revision, pending command and ruleset,
+then stores the prepared shadow copy and immutable receipt atomically. Wallet
+coins/gems cannot change during preparation. Retries replay the original receipt;
+account deletion cascades through all generations. This candidate has not yet
+been applied; its separate staging rollback contract is the next gate.
 
 `EconomySnapshotStore` now persists complete owner-scoped snapshots outside
 cloud backups, with atomic replacement and monotonic wallet/server revisions.

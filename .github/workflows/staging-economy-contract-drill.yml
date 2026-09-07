@@ -21,6 +21,7 @@ on:
           - push-device-probe
           - canonical-game
           - canonical-game-apply
+          - canonical-import
 
 permissions:
   contents: read
@@ -59,7 +60,7 @@ jobs:
           retention-days: 30
 
   verify:
-    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply' && inputs.contract != 'push-device-probe' && inputs.contract != 'canonical-game' && inputs.contract != 'canonical-game-apply'
+    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply' && inputs.contract != 'push-device-probe' && inputs.contract != 'canonical-game' && inputs.contract != 'canonical-game-apply' && inputs.contract != 'canonical-import'
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 15
@@ -354,5 +355,35 @@ jobs:
           path: |
             staging/game-worker.txt
             staging/game-worker-probe.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+  canonical-import:
+    if: inputs.contract == 'canonical-import'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Rehearse immutable import generations and preparation with rollback
+        shell: pwsh
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if ($env:CONFIRMATION -cne 'TEST_DRAGONHAVEN_STAGING_ECONOMY_CONTRACT') {
+            throw 'Exact staging rollback scope is required.'
+          }
+          New-Item -ItemType Directory -Path staging -Force | Out-Null
+          ./tool/staging_canonical_import_contract.ps1 `
+            -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN |
+            Tee-Object -FilePath staging/canonical-import-contract.txt
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: DragonHaven-staging-canonical-import
+          path: staging/canonical-import-contract.txt
           if-no-files-found: warn
           retention-days: 30

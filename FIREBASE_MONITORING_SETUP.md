@@ -75,7 +75,7 @@ herhalen met de officiele Firebase CLI-aanmelding, zonder billing te activeren.
   apparaat, inbox en outbox zijn verwijderd; push terug uitgezet.
   Visueel bewijs: lokaal `release/firebase-staging-push.png`.
 - Android-debugbuild zonder Firebase en met gevalideerde stagingconfig slagen.
-- Dart-analyse schoon. De volledige Flutter-suite slaagt met 541 tests;
+- Dart-analyse schoon. De volledige Flutter-suite slaagt met 552 tests;
   aanvullende domein-/snapshotproeven en zes pushworker-unitproeven slagen.
 - Echte native crash en niet-fatale Fluttermelding zijn via de officiele
   Crashlytics-report-API teruggevonden, elk met een event in het stagingproject.

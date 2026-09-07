@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: af773ed1bf6d896e -->
+<!-- reference-source-fingerprint: 16c73b5b435711ae -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -47,6 +47,10 @@ evaluation. Server tags take precedence, discoveries remain, and an already
 returned stashed egg grants no second reward. Contradictory returned dragons,
 occupied nests or protected Special Eggs stop preparation for review. This
 preparer is internal and does not expose an import endpoint or activate accounts.
+Candidate migration 53 retains each full source/Altar generation and commits a
+prepared shadow copy only while that source, Altar and revision are current.
+Historical returns, protected eggs and tags remain reviewable; live ownership
+and event rewards are unchanged by preparation.
 
 - A **Special Event** owns one schedule, story, Adventure, Trial, temporary
   music alias, ranking occurrence, and reward contract.

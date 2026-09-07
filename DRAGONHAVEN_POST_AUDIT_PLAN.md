@@ -26,9 +26,9 @@ verwijderd en push weer uit. De echte FATAL- en NON_FATAL-testmeldingen zijn
 ook teruggevonden in de Firebase Crashlytics API.
 
 Android bouwt zonder en met Firebase-configuratie. De volledige Flutter-suite
-slaagt met 541 tests; de aanvullende native pariteitsfixture slaagt ook.
+slaagt met 552 tests; de aanvullende native pariteitsfixture slaagt ook.
 Analyzer is schoon voor lib, tests, integratietests en tools. De vaste
-schemaverwachting is bijgewerkt naar de lokale kandidaat 52. Zes Deno-pushworkerproeven slagen.
+schemaverwachting is bijgewerkt naar de lokale kandidaat 53. Zes Deno-pushworkerproeven slagen.
 Zie `FIREBASE_MONITORING_SETUP.md` voor
 bewijs en resterende alertinstellingen. Rick heeft de zichtbare stagingtrace
 `dh_staging_probe` bevestigd; de echte release-R8-mappingupload slaagt ook.
@@ -67,6 +67,19 @@ De interne Altar-conversie is nu gebouwd met zes gedragstests: actuele servertag
 behouden ontdekkingen, geen tweede beloning voor eerdere returns en blokkering
 van tegenstrijdige of verouderde saves. De transactie voor het vastleggen van
 deze voorbereiding en de daadwerkelijke accountomschakeling blijven open.
+
+De volledige echte workerproef is nu geslaagd in
+[34147658644](https://github.com/Rakky88/DragonHaven/actions/runs/34147658644):
+Auth, Edge, gedeelde Dart-regels en PostgreSQL, inclusief gelijktijdig openen,
+idempotente aankopen, tags, Sinister-confirmatie/beloning en quillverbruik.
+Live save en wallet bleven exact gelijk. Twee synthetische accounts plus alle
+schaduwgegevens zijn verwijderd; runtime weer uit, pariteit 52, lint nul en
+health 200. De eerdere harnasfouten zijn opgelost (HTTP 201, keuze van een echt
+Sinister-ei en een eindcontrole zonder private functies onder de leesrol).
+
+Kandidaat 53 bewaart opeenvolgende importgeneraties onveranderlijk en legt de
+Altar-voorbereiding alleen vast als bron, Altar en revisie nog overeenkomen.
+De rollbackrepetitie wordt afzonderlijk uitgevoerd; 53 is nog niet toegepast.
 
 `GROWTH_AND_COST_PLAN.md` bevat de 100/1.000/10.000-accountscenario's, bestaande
 loadbewijzen, quota, opslag/egress-aannames en meetbare overstappen. De lokale
