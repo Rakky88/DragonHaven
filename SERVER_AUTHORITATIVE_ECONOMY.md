@@ -1,7 +1,7 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **7 September 2026**
-Released app: **v0.05.18 / 10068**; production **49**, staging **53**.
+Released app: **v0.05.18 / 10068**; production **49**, staging **54**.
 Migration **49** adds owner-scoped inventory pagination and passed its staging rehearsal and applied contracts in run `34127201082`. Production run `34129277707` then proved identical staging source, rollback rehearsal, exact migration 49, repeated snapshot contract, parity, zero lint errors and health 200. Mutations remain disabled and all accounts remain legacy.
 Migrations **45-47** are deployed dormant: chest opening, server inventory guard and item shop.
 Production run `34116589237` passed exact staging-source checks, rollback rehearsals, all three contracts, migration parity, zero-error lint and health. Before/after checks prove mutations remain disabled and all accounts remain in legacy compatibility.
@@ -19,10 +19,23 @@ The eight projection tests cover Lens versus Oracle, hidden alignment and Soul
 Mirror personality, nest/hatch transitions, Special/Sinister appearance and
 protection, trade animation payloads, future metadata, and preselected adventure
 rewards. Twelve worker tests cover commands and authenticated reads. VM/Deno
-parity now includes projections before and after hatching. Staging 54 deployment
-and its real paused-read proof are pending; production remains schema 49.
+parity now includes projections before and after hatching. Staging run
+[34150477904](https://github.com/Rakky88/DragonHaven/actions/runs/34150477904)
+applied exactly migration 54, passed contracts 52–54 before and after, and proved
+real authenticated projection, hidden eggs, committed rename/return visibility
+and paused reads. Synthetic accounts/copies were removed; runtime is disabled.
+Final parity: schema 54, lint 0, Auth/settings/app 200; production remains 49.
 Full client routing, durable application, verified trial transcripts, timezone
 rules, normalized social/trade settlement and production cutover remain open.
+
+The client now has a distinct immutable `CanonicalGameSnapshot`, nullable egg
+facts, owner/revision validation, session-epoch fences and a bounded reader.
+Its private display journal flushes a separate revision fence before the full
+snapshot, detects corrupted cache bytes, preserves the greatest surviving
+revision and repairs display files only from a fresh read. Fourteen tests cover
+real projection decoding, delayed/ABA account switches, timeout, concurrency,
+checksum corruption, interruption between files and equal-revision conflicts.
+These are display/transport components; no production UI applies shadow data.
 
 ### Shared rules candidate
 
