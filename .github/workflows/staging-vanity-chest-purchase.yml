@@ -89,6 +89,7 @@ jobs:
           supabase link `
             --project-ref $env:STAGING_SUPABASE_PROJECT_REF `
             --password $env:SUPABASE_DB_PASSWORD
+          if ($LASTEXITCODE -ne 0) { throw 'The staging project could not be linked.' }
           New-Item -ItemType Directory -Path staging -Force | Out-Null
           $migrationJson = supabase migration list --linked --output-format json
           if ($LASTEXITCODE -ne 0) {
@@ -192,6 +193,10 @@ jobs:
             -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
             -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN |
             Tee-Object -FilePath staging/inventory-snapshot-contract.txt
+          ./tool/staging_economy_hotfix_contract.ps1 `
+            -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN |
+            Tee-Object -FilePath staging/sql-hotfix-contract.json
           supabase db lint --linked --level error --fail-on error `
             --output-format json |
             Tee-Object -FilePath staging/vanity-lint-after.json

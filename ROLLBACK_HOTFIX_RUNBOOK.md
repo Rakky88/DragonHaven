@@ -170,7 +170,18 @@ supportimpact is beoordeeld en het auditplan de werkelijke stand vermeldt.
 - Na een echte SEV-1/SEV-2: binnen zeven dagen een privacyarme evaluatie en
   regressietest vastleggen.
 
-De algemene staging-hotfixoefening blijft open. Een afzonderlijke
+De algemene staging-hotfixoefening blijft open. De begrensde SQL-repetitie
+`tool/staging_economy_hotfix_contract.ps1` staat klaar voor staging: zij haalt
+de defecte limiter uit onveranderlijke migratie 37 en de correctie uit 38,
+installeert uitsluitend sessielokale kopieën en bewijst zowel het historische
+falen als de herstelbranches. De echte private functie, rechten, activatie en
+migratiehistorie worden niet vervangen. Het uitvoerbewijs vermeldt beide
+bronhashes, duur, controles en rollback; de staging-49-workflow bewaart dit naast
+lint, serverpreflight en functionele contracten. Uitvoering en resultaat moeten
+nog worden vastgelegd. Dit dekt niet de operationele detectie-, communicatie-
+en compensatieketen van een volledig incident.
+
+Een afzonderlijke
 legacy-import-/herstelproef is geslaagd op 7 september in
 [run 34120524533](https://github.com/Rakky88/DragonHaven/actions/runs/34120524533):
 volledige rij-/JSON-/SHA-256-gelijkheid, geweigerde nieuwere voortgang/verlopen
