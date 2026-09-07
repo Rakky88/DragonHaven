@@ -51,7 +51,7 @@ function Invoke-AdminRequest {
     $requestArguments = @{ Method = $Method; Uri = "$baseUrl/auth/v1/admin/$Path";
         Headers = $adminHeaders; ContentType = 'application/json'; TimeoutSec = 30 }
     if ($null -ne $Body) { $requestArguments.Body = ConvertTo-Json $Body -Depth 8 -Compress }
-    try { return Invoke-RestMethod @args }
+    try { return Invoke-RestMethod @requestArguments }
     catch { throw 'Synthetic staging account operation failed; response body omitted.' }
 }
 
