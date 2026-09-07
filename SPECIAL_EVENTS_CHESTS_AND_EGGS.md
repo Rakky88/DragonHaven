@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: 9576affbec86b7ec -->
+<!-- reference-source-fingerprint: fa48c01e65b537bb -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -26,6 +26,12 @@ activation time also initializes an egg's needs timestamp, so replay does not
 depend on the runtime's wall clock. This candidate has no deployed mutation
 endpoint or account cutover yet; its canonical state and entropy must come
 from the trusted server transaction.
+
+The dormant migration 52 candidate copies the full save verbatim into an
+isolated shadow record, retaining Special Chest counts, Special Egg identifiers,
+tag information and other fields. Its immutable source and separate Altar
+snapshot support the conversion review; live inventory is never changed by
+this rehearsal boundary.
 
 - A **Special Event** owns one schedule, story, Adventure, Trial, temporary
   music alias, ranking occurrence, and reward contract.

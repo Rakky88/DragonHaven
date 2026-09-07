@@ -35,6 +35,17 @@ staging cutover/restore exercises remain open. The entrypoint intentionally
 does not accept arbitrary score, reward, paid entitlement or settlement grants.
 The current production mutation switch remains off.
 
+Migration 52 adds a detached shadow copy of the full cloud save, an immutable
+source/hash plus the separately captured authoritative Altar, and a private
+command transaction. Only service-role RPCs can read a seed/state or claim a
+lease. The original seed/time survive a retry; expired workers are fenced by a
+new token, conflicting payloads fail, and one owner has at most one pending
+command. State and receipt commit together by revision comparison. The schema
+constrains these copies to `shadow` and cannot activate live economy ownership.
+It has not been applied. The new staging contract will rehearse the migration
+and roll back all schema, fixtures and changes. Captured Altar state still needs
+explicit reconciliation before any production conversion.
+
 `EconomySnapshotStore` now persists complete owner-scoped snapshots outside
 cloud backups, with atomic replacement and monotonic wallet/server revisions.
 `EconomyChestReconciler` retains the original request through lost responses,

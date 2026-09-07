@@ -41,8 +41,11 @@ compileren naar een interne servermodule van minder dan 1 MB. Een synthetische
 VM/Deno-vergelijking van chests, aankopen, inventaris, ei-eigenschappen en IDs
 slaagt. Acht gerichte tests dekken onder meer herstelbare vaste serverrandomness,
 saldo-/voorraadgrenzen, tags, Sinister-confirmatie, quillverbruik en incubatie.
-De database-transactie, volledige migratie/projectie, trialvalidatie en
-daadwerkelijke clientomschakeling zijn nog niet gebouwd of vrijgegeven.
+Migratie 52 bevat nu een lokale kandidaat voor de transactie rond een
+afzonderlijke volledige savekopie. Zij kan alleen schaduwkopieën bijwerken;
+live saldo, inventaris, Altar en accountautoriteit blijven onaangeraakt.
+De rollbackproef staat klaar. Volledige reconciliatie/projectie, trialvalidatie
+en daadwerkelijke clientomschakeling zijn nog niet gebouwd of vrijgegeven.
 
 `GROWTH_AND_COST_PLAN.md` bevat de 100/1.000/10.000-accountscenario's, bestaande
 loadbewijzen, quota, opslag/egress-aannames en meetbare overstappen. De lokale
