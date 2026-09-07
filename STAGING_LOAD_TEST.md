@@ -83,7 +83,9 @@ wachtwoord per account en een specifieke runmarkering in `app_metadata`.
 Admin-create met `email_confirm=true` bevestigt direct en verstuurt geen mail
 ([Supabase createUser](https://supabase.com/docs/reference/javascript/auth-admin-createuser)).
 De benodigde sleutel blijft uitsluitend in de setupwrapper; de Dart-loadrunner
-ontvangt een publishable key en normale accountwachtwoorden in zijn procesomgeving.
+ontvangt een publishable key en normale accountwachtwoorden via een private
+stdin-pipe. De accountpool blijft in geheugen en verschijnt niet in argumenten,
+environment-strings, tijdelijke bestanden of bewijsartifacts.
 Er wordt geen sleutel aangemaakt of geroteerd. De Management-route gebruikt
 `api-keys?reveal=true` in geheugen ([API-reference](https://supabase.com/docs/reference/api/v1-get-project-api-keys)).
 
@@ -168,3 +170,28 @@ contracten bewijzen productieblokkade en privacy voordat er netwerkverkeer is.
 Dit ontwerp blijft binnen de gedocumenteerde [Auth-begrenzing](https://supabase.com/docs/guides/auth/rate-limits).
 Het meet bestaande ingelogde sessies, geen plotselinge loginpiek van 1000 mensen
 vanaf een enkel IP-adres. De eerdere mislukte run blijft als apart bewijs staan.
+
+## Gemeten 100-accountbaseline
+
+[Run 34119032803](https://github.com/Rakky88/DragonHaven/actions/runs/34119032803)
+is groen op schema 47: 100 accounts gemaakt, voorbereid, tegelijk actief en
+verwijderd; 218,3 seconden sessievoorbereiding, 60 seconden ramp-up en 180
+seconden steady state. Alle 1.744 requests slagen, waarvan 1.544 lees-RPC's.
+Iedere gebruiker doet minimaal twaalf reads. p95 voor reads ligt op 239-298 ms;
+snapshot p95/p99 is 284/456 ms. Voor/na: 47 migraties, nul lintfouten en alle
+healthchecks 200.
+
+De aparte providersamples tijdens browsing tonen CPU-intervallen van 3,73%,
+3,26% en 18,98%, minimaal 159,95 MiB beschikbaar geheugen en 1.400.915 extra
+host-netwerkbytes binnen het bemonsterde venster. De laatste sample herhaalt
+gecachete tellers en telt niet als nieuw CPU-interval. Databaseverbindingen en
+gefactureerde egress zijn niet beschikbaar in dit bewijs. Host-netwerkbytes
+zijn geen factuurmeting. Verse accounts bevatten weinig spel-/sociale data;
+representatieve gevulde inventarissen en schrijflast vereisen een aparte proef.
+
+1000-poging `34120079328` stopte voor login/browsing doordat Linux de grote
+credential-environment-string weigerde (`Argument list too long`). Alle 1000
+accounts zijn opgeruimd; nachecks zijn groen. Commit `c2b2d2f` gebruikt daarom
+een begrensde UTF-8 stdin-pipe; de offline procesproef verstuurt 1000 fictieve
+credentials, overschrijdt bewust 128 KiB en weigert input boven 1 MiB.
+Vervolgmeting `34121385770` gebruikt dezelfde groene schema-47-baseline en loopt.

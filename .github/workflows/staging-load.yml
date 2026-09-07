@@ -144,6 +144,22 @@ jobs:
             --ramp-up-seconds=60 `
             --output=staging/load-plan.json
 
+      - name: Verify the baseline workflow completed successfully including cleanup
+        if: ${{ inputs.stage == 'run-1000' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASELINE_RUN_ID: ${{ inputs.baseline_run_id }}
+        run: |
+          if ($env:BASELINE_RUN_ID -notmatch '^\d+$') { throw 'A baseline run ID is required.' }
+          $baselineRun = gh api "repos/Rakky88/DragonHaven/actions/runs/$env:BASELINE_RUN_ID" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $baselineRun.status -ne 'completed' -or
+              $baselineRun.conclusion -ne 'success' -or
+              $baselineRun.path -ne '.github/workflows/staging-load.yml' -or
+              $baselineRun.head_repository.full_name -ne 'Rakky88/DragonHaven') {
+            throw 'The complete 100-user baseline workflow must be successful, including cleanup and postflight.'
+          }
+
       - name: Download successful 100-user baseline for the 1000-user gate
         if: ${{ inputs.stage == 'run-1000' }}
         uses: actions/download-artifact@v6

@@ -1,10 +1,10 @@
-name: Staging dormant item shop 47
+name: Staging economy inventory snapshot 49
 
 on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: Type TEST_DRAGONHAVEN_STAGING_ITEM_SHOP_47 to run
+        description: Type TEST_DRAGONHAVEN_STAGING_INVENTORY_SNAPSHOT_49 to run
         required: true
         type: string
       apply:
@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: dragonhaven-staging-item-shop-47
+  group: dragonhaven-staging-load
   cancel-in-progress: false
 
 jobs:
@@ -41,8 +41,8 @@ jobs:
           STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
           STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
         run: |
-          if ($env:CONFIRMATION -cne 'TEST_DRAGONHAVEN_STAGING_ITEM_SHOP_47') {
-            throw 'The exact staging vanity-chest confirmation is missing.'
+          if ($env:CONFIRMATION -cne 'TEST_DRAGONHAVEN_STAGING_INVENTORY_SNAPSHOT_49') {
+            throw 'The exact staging inventory-snapshot confirmation is missing.'
           }
           $required = @(
             'STAGING_SUPABASE_URL',
@@ -75,7 +75,7 @@ jobs:
         with:
           version: 2.116.0
 
-      - name: Verify exact 46 to 47 migration and dry run
+      - name: Verify exact 48 to 49 migration and dry run
         shell: pwsh
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
@@ -84,8 +84,8 @@ jobs:
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
           STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
         run: |
-          $expectedRemote = '202609070046'
-          $expectedPending = @('202609070047')
+          $expectedRemote = '202609070048'
+          $expectedPending = @('202609070049')
           supabase link `
             --project-ref $env:STAGING_SUPABASE_PROJECT_REF `
             --password $env:SUPABASE_DB_PASSWORD
@@ -101,9 +101,9 @@ jobs:
               Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
               Sort-Object
           )
-          if ($remoteVersions.Count -eq 0 -or
+          if ($remoteVersions.Count -ne 48 -or
               $remoteVersions[-1] -ne $expectedRemote) {
-            throw 'Staging is not exactly at expected migration 46.'
+            throw 'Staging is not exactly at expected migration 48.'
           }
           $pendingLocal = @(
             Get-ChildItem supabase/migrations -File -Filter '*.sql' |
@@ -117,7 +117,13 @@ jobs:
               Sort-Object
           )
           if (@(Compare-Object $expectedPending $pendingLocal).Count -ne 0) {
-            throw 'The local pending set is not exactly migration 47.'
+            throw 'The local pending set is not exactly migration 49.'
+          }
+          $expectedBaseline = @(Get-ChildItem supabase/migrations -File -Filter '*.sql' |
+            ForEach-Object { $_.BaseName.Split('_')[0] } |
+            Where-Object { [long]$_ -le [long]$expectedRemote } | Sort-Object)
+          if (@(Compare-Object $expectedBaseline $remoteVersions).Count -ne 0) {
+            throw 'Staging migration history differs from the complete expected baseline.'
           }
           ./tool/public_server_health_check.ps1 `
             -BaseUrl $env:STAGING_SUPABASE_URL `
@@ -130,21 +136,21 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Pre-migration database lint failed.' }
           supabase db push --linked --include-all --dry-run |
             Tee-Object -FilePath staging/vanity-migration-dry-run.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Migration 47 dry run failed.' }
+          if ($LASTEXITCODE -ne 0) { throw 'Migration 49 dry run failed.' }
 
-      - name: Rehearse exact migration and shop contract with rollback
+      - name: Rehearse exact migration and inventory snapshot with rollback
         shell: pwsh
         env:
           STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
           STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
         run: |
-          ./tool/staging_item_shop_contract.ps1 `
+          ./tool/staging_inventory_snapshot_contract.ps1 `
             -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
             -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
             -RehearseMigrations |
             Tee-Object -FilePath staging/chest-rehearsal.txt
 
-      - name: Apply only 47 and prove contracts inside rollback
+      - name: Apply only 49 and prove contracts inside rollback
         if: inputs.apply
         shell: pwsh
         env:
@@ -159,7 +165,7 @@ jobs:
         run: |
           supabase db push --linked --include-all --yes |
             Tee-Object -FilePath staging/vanity-migration-apply.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Migration 47 was not applied.' }
+          if ($LASTEXITCODE -ne 0) { throw 'Migration 49 was not applied.' }
           ./tool/release_server_preflight.ps1 `
             -ExpectedProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
             -ExpectedUrl $env:STAGING_SUPABASE_URL `
@@ -182,6 +188,10 @@ jobs:
             -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
             -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN |
             Tee-Object -FilePath staging/item-shop-contract.txt
+          ./tool/staging_inventory_snapshot_contract.ps1 `
+            -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN |
+            Tee-Object -FilePath staging/inventory-snapshot-contract.txt
           supabase db lint --linked --level error --fail-on error `
             --output-format json |
             Tee-Object -FilePath staging/vanity-lint-after.json
@@ -196,7 +206,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: DragonHaven-staging-item-shop-47
+          name: DragonHaven-staging-inventory-snapshot-49
           path: staging/
           if-no-files-found: warn
           retention-days: 30

@@ -2,6 +2,7 @@
 
 Last updated: **7 September 2026**
 Released app: **v0.05.17 / 10067**; production and staging baseline **47**.
+Local candidate **49** adds owner-scoped inventory pagination; its staging rehearsal is pending.
 Migrations **45-47** are deployed dormant: chest opening, server inventory guard and item shop.
 Production run `34116589237` passed exact staging-source checks, rollback rehearsals, all three contracts, migration parity, zero-error lint and health. Before/after checks prove mutations remain disabled and all accounts remain in legacy compatibility.
 Staging runs `34110497546`, `34110676557` and `34111166461` passed rollback contracts, parity, lint and health. No economy activation is included.
@@ -134,10 +135,11 @@ cannot be restored, duplicated or overwritten by an old save.
    RLS/revokes, the read-only contract, dormant defaults, idempotent replay,
    payload-conflict and old-client rejection, rate limiting, transactional
    rollback and healthy public endpoints.
-3. **First dormant mutation — local candidate:** migration 39 and the unused
-   client boundary buy capped Portrait, Title or Music Chests with one atomic
-   wallet/chest/ledger transaction. Local tests prove request reuse after a
-   timeout, concurrent double-submit behavior and cloud-restore shielding.
+3. **Dormant mutations — deployed and proven:** migrations 39 and 45-47 provide
+   vanity-chest purchases, chest opening, a legacy-upload guard, furniture and
+   shop relics on production/staging 47. Rollback contracts and client tests
+   cover replay, fixed rewards, prices, ownership and atomic ledgers. All
+   production accounts remain in legacy mode and mutations remain disabled.
 4. **Representative migration:** convert copies of real-shaped but synthetic
    saves, verify totals and hashes, then prove a forward-only rollback exercise.
 5. **Small server cohort:** enable `server` per selected staging keeper, never
@@ -157,10 +159,12 @@ path depends on migration 37.
 
 ### Codex
 
-- prove local migration 39 and its concrete vanity-chest purchase RPC on
-  isolated staging, still with every production feature flag disabled;
-- extend the same atomic pattern to chest opening and the remaining shops;
-- move all randomness and collection-cap checks for those paths to PostgreSQL;
+- prove candidate 49's complete paginated inventory read on staging, then wire
+  owner-scoped durable snapshot application before acknowledging pending intents;
+- build the full save-to-instance conversion; the old trade mirror omits valuable
+  non-tradeable and special content and is not a complete conversion source;
+- extend the existing atomic purchases/opening to the remaining shops;
+- move remaining gameplay randomness and collection checks to PostgreSQL;
 - filter server-owned fields out of save restore/import after cutover;
 - add timeout/reconnect and double-submit E2E around the first concrete mutation
   RPC; foundation-level replay, conflicting payload, rate-limit, rollback and
@@ -174,16 +178,48 @@ path depends on migration 37.
 - choose compensation behavior for failures and whether earned and purchased
   gems need separate spend rules;
 - decide which gameplay stays view-only or queueable during a server outage;
-- approve every staging apply, production migration and eventual cutover
-  separately.
+- decide the production migration/cutover window and its player impact. Current
+  audit authorization covers isolated staging development and rehearsals.
 
-Migrations 37–38 changed only the isolated staging schema; local migration 39
-has not been pushed or applied. The global mutation
-switch remains disabled and every keeper remains on `legacy_client`. Migration
-38 is the applied forward-only timestamp correction after the first staging run
-correctly exposed migration 37's ambiguous clock-variable lint finding. No
-production project, public release, balance, inventory or other player value is
-changed by this staging foundation work.
+The production project and staging have migrations 1-47. The global mutation
+switch remains disabled and every production keeper remains on `legacy_client`. Migration 38
+is the immutable forward fix for the timestamp ambiguity found in migration 37.
+The current audit branch does not publish another public release or activate economy
+ownership for players.
+
+## Proven legacy-import restore rehearsal
+
+Run `34120524533` executes `tool/legacy_import_restore_contract.sql` only against
+synthetic staging accounts. Temporary helpers restore the private pre-import
+snapshot and prove complete JSON/row equality and SHA-256 equality for wallets,
+dragons, eggs, chest stacks, relics, furniture and discovered lineages. Tests
+reject changed inventory, expired backups, wrong owners and server authority;
+partial-write failures roll back. The existing audit and one-time import marker
+remain intact, preventing a second grant. All rehearsal changes then roll back.
+
+The request took 1,250 ms and the synthetic restore stayed under ten seconds.
+This is neither a production restore RPC nor a measured RTO for real large
+inventories. A reviewed operational procedure and aggregate-to-instance
+conversion still need implementation before cutover.
+
+## Inventory snapshot candidate (migration 49)
+
+`get_my_economy_inventory_page` reads absolute coins/gems, wallet/server revision
+and up to 100 current chest/item instances. A shared owner lock makes each page
+consistent; subsequent pages must name the first page's server revision. A
+mutation invalidates the cursor with `economy_snapshot_changed`. Consumed items
+and opened chests are excluded. Reserved/equipped ownership and fixed
+Chronoshard percentages remain explicit. Internal metadata, source references
+and hidden egg identities are never returned. The endpoint requires server
+authority and compatible clients but stays readable when mutations are disabled.
+
+`EconomyInventoryReader` checks ownership, types, revisions, strict row ordering
+and cursors, discards partial downloads and permits one fresh attempt after a
+revision conflict. Minimum receipt/local revisions prevent stale reconciliation.
+It returns an immutable complete snapshot; it does not mutate the game, overwrite
+storage or acknowledge an intent. Durable local application, egg/dragon snapshot
+support and UI activation remain open. Nine client behavior tests are green;
+the database rehearsal is pending.
 
 ## Phase 4B chest-opening candidate, 7 September 2026
 

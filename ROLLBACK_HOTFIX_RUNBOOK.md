@@ -1,7 +1,7 @@
 # DragonHaven rollback- en hotfixrunbook
 
-Laatst bijgewerkt: **31 augustus 2026**  
-Uitgangsstand: **app v0.05.01, productie 32/32, kandidaat-schema 33 op staging bewezen**
+Laatst bijgewerkt: **7 september 2026**
+Uitgangsstand: **app v0.05.17, productie/staging 47, lokale kandidaat 49**
 
 ## Doel en harde grens
 
@@ -51,9 +51,11 @@ Gebruik supportcode/correlation ID en alleen het noodzakelijke UTC-venster.
 | Destructieve migratie of datacorruptie | Stop, maak apart herstelplan en bewijs restore op staging | Productie resetten, tabellen leegmaken of blind een oude dump terugzetten |
 | Alleen één account lijkt geraakt | Privacyarm supportonderzoek volgens `SUPPORT_PRIVACY_OPERATIONS.md` | Brede rollback op basis van naam, screenshot of onbevestigde aanname |
 
-Er bestaat nu nog geen algemene productie-maintenance- of economy-kill-switch.
-Tot fase 4 die veilig en getest toevoegt, mag het runbook niet doen alsof claims
-of mutaties met één knop kunnen worden uitgezet.
+Er bestaat een geteste globale schakelaar voor de nieuwe servereconomie:
+`private.economy_contract.mutations_enabled`. Hij staat uit. Dit is geen
+algemene productie-maintenance-schakelaar: huidige legacyspelregels, sociale functies en bestaande
+claims vallen er niet allemaal onder. Een incident vereist dus beoordeling van
+het daadwerkelijk getroffen pad.
 
 ## App-hotfix
 
@@ -168,5 +170,15 @@ supportimpact is beoordeeld en het auditplan de werkelijke stand vermeldt.
 - Na een echte SEV-1/SEV-2: binnen zeven dagen een privacyarme evaluatie en
   regressietest vastleggen.
 
-De eerste staging-hotfixoefening en het bewijs daarvan staan nog open. Dit
-runbook zelf wijzigt geen server, release of externe account.
+De algemene staging-hotfixoefening blijft open. Een afzonderlijke
+legacy-import-/herstelproef is geslaagd op 7 september in
+[run 34120524533](https://github.com/Rakky88/DragonHaven/actions/runs/34120524533):
+volledige rij-/JSON-/SHA-256-gelijkheid, geweigerde nieuwere voortgang/verlopen
+backups/verkeerde eigenaar/serveraccounts, transactionele foutafhandeling en
+behouden audit/importlock. De synthetische restore bleef onder tien seconden;
+de totale aanvraag duurde 1.250 ms. Alles draaide terug, schema 47 en health
+bleven groen. Het script heeft alleen tijdelijke helpers voor synthetische
+accounts en is geen operationele herstelroute voor echte spelers. Het bewijst
+ook geen herstelduur voor een productiedump of grote bestaande inventaris.
+
+Dit runbook zelf wijzigt geen server, release of externe account.
