@@ -18,10 +18,10 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   LatestRelease newerRelease() => const LatestRelease(
-        tagName: 'v0.05.13',
-        pageUrl: 'https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.13',
+        tagName: 'v0.05.14',
+        pageUrl: 'https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.14',
         downloadUrl:
-            'https://github.com/Rakky88/DragonHaven/releases/download/v0.05.13/DragonHaven.apk',
+            'https://github.com/Rakky88/DragonHaven/releases/download/v0.05.14/DragonHaven.apk',
         hasApk: true,
       );
 
@@ -81,8 +81,8 @@ void main() {
 
     expect(find.byKey(const Key('startup-update-dialog')), findsOneWidget);
     expect(find.text('Update available'), findsOneWidget);
-    expect(find.text('v0.05.12'), findsOneWidget);
     expect(find.text('v0.05.13'), findsOneWidget);
+    expect(find.text('v0.05.14'), findsOneWidget);
     expect(checks, 1);
 
     await tester.tap(find.byKey(const Key('startup-update-later')));

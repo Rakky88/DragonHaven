@@ -3,28 +3,27 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.05.11**
+Actuele openbare versie: **v0.05.12**
 
-Actuele productieserver: **36/38 repositorymigraties; ongewijzigd en gezond**
+Actuele productieserver: **36/40 repositorymigraties; ongewijzigd en gezond**
 
-Actuele serverkandidaat: **migraties 37–38 vormen het volledig dormante fundament
-voor een latere server-authoritative economie en zijn op geïsoleerde staging
-bewezen. De eerste run paste 37 toe en stopte terecht op een dubbelzinnige
-PostgreSQL-klokvariabele; forward-only migratie 38 corrigeerde dit. Staging staat
-nu op 38/38 met nul lintfouten, groene RLS/revokes, compatibiliteit, mutatieweigering
-en Auth/apphealth. Productie blijft op 36/38; alle keepers staan op
-`legacy_client` en de globale mutatieschakelaar is uit. Lokale migratie 39 voegt
-de eerste atomaire vanity-chestaankoop toe, maar is nog niet gepusht of toegepast.**
+Actuele serverkandidaat: **staging staat gezond op 38/40. Migraties 39–40 zijn
+exact begrensd achter één stagingworkflow die eerst de dormante vanity-aankoop
+in rollback bewijst en daarna een gesimuleerde seasonal Trial, ranking, RLS,
+revokes, lint en Auth/apphealth controleert. Productie blijft tot die stagingpoort
+groen is op 36/40. Migraties 37–39 houden alle keepers in `legacy_client`, de
+globale mutatieschakelaar uit en de appfeature uit; migratie 40 voegt de online
+eventcontracten toe zonder de bestaande economie te activeren.**
 
-Actuele uitgebrachte tranche: **v0.05.11 is openbaar uitgebracht met versionCode
-10061. Chest en Trial S+ bevatten ieder 55 unieke winbare emotes, waaronder per
-pool vijf huilreacties; samen met de 30 packemotes bevat de app 140 chat-emotes.
-Redeemcodes zijn centraal beheerd en een regressiepoort houdt ze uit publieke
-release notes. Productiepreflight, analyzer, alle 414 tests, vaste signing, Play
-Store-AAB, remote assetcontrole en post-release health zijn groen. Deze release
-bevat geen servermigratie.**
+Actuele uitgebrachte tranche: **v0.05.12 is openbaar uitgebracht met versionCode
+10062. Deze release koppelt de Trial-constellatie uitsluitend aan echte
+completion en maximaal eenmaal per lokale dag, stabiliseert Android-muziek rond
+het notificatiescherm, ondersteunt tabletlay-outs en toont geregistreerde Keepers
+een wegdrukbare updatepopup. Analyzer, alle 424 tests, vaste signing,
+productiepreflight, remote assetcontrole en post-release health zijn groen.
+Productie bleef voor deze release op migratie 36.**
 
-Actuele lokale tranche na v0.05.11: **auditfase 4A is met commits `aa1a571` t/m
+Actuele audittranche naast v0.05.12: **auditfase 4A is met commits `aa1a571` t/m
 `e1e9c50` naar `main` gebracht en op staging bewezen. Fase 4B heeft lokaal een
 eerste ongepushte kandidaat: migratie 39, een standaard uitgeschakelde
 clientgrens, veilige request-ID-retry en cloudrestore-afscherming voor wallet en
@@ -33,10 +32,10 @@ welke kalenderdagen door een echt voltooide Trial zijn verdiend; verversen kan
 geen dag toevoegen en iedere dag telt maximaal eenmaal. Analyzer en 439/439
 lokale tests zijn groen. Runs `33981322674` en
 `33981974136` bewijzen staging 38/38; migratie 39 wacht op een aparte push- en
-stagingpoort. App/release bleven v0.05.11; staging heeft 38 toegepast,
+stagingpoort. App/release bleven toen v0.05.11; staging heeft 38 toegepast,
 productie 36 en de lokale repository bevat migratie 39.**
 
-Actuele releasecandidate v0.05.12: **de vijf volledig goedgekeurde
+Actuele releasecandidate v0.05.13: **de vijf volledig goedgekeurde
 eventcontracten voor Halloween, Kerst, Nieuwjaar, Valentijn en Pride zijn lokaal
 ingebouwd. Dit omvat vijf kalender-/previewvensters, vijf Special Adventures,
 vijf event-Trials met eigen hoogwaardige media, vijf nieuwe Special families,
@@ -47,7 +46,7 @@ Saveschema 53 bewaart nieuwe lokale idempotentievelden; lokale migratie 40 bevat
 de server-RPC's/RLS. De oorspronkelijke grote bronplaten staan buiten Flutter's
 assetbundle. De volledige verscheepte seasonal toevoeging is circa 57,0 MiB:
 28,4 MiB event-UI, 26,5 MiB draken en 2,0 MiB audio, zonder lagere
-runtime-WebP-kwaliteit. Appversie `0.05.12+10062`, analyzer, alle 457 tests, de
+runtime-WebP-kwaliteit. Appversie `0.05.13+10063`, analyzer, alle 457 tests, de
 transparantie-/safe-area-poorten en de ondertekende release-APK zijn lokaal groen.
 Migraties 39–40 hebben een exact begrensde stagingpoort met economyrollback,
 seasonal preview-E2E, lint, RLS/revokes en health; pas na die groene poort volgt

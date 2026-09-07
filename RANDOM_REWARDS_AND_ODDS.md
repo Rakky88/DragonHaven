@@ -2,9 +2,9 @@
 
 Last verified: 7 September 2026
 
-Ruleset: app version `v0.05.12`
+Ruleset: app version `v0.05.13`
 
-Source baseline: seasonal-event implementation released with `v0.05.12`
+Source baseline: seasonal-event implementation released with `v0.05.13`
 
 <!-- reference-source-fingerprint: 521406d96b6d65a9 -->
 

@@ -2,7 +2,7 @@
 
 Last updated: **5 September 2026**
 Candidate schema: **migrations 37–38 verified dormant on staging; migration 39 queued behind an exact staging gate**
-Release candidate app: **v0.05.12**
+Release candidate app: **v0.05.13**
 
 ## Purpose and current boundary
 
