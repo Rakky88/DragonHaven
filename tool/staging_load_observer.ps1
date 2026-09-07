@@ -19,6 +19,10 @@ select now() as observed_at_utc,
   (select count(*) from auth.users where email like 'load-%@dragonhaven-load.invalid'
     and raw_app_meta_data ? 'dragonhaven_load_run' and created_at > now() - interval '2 hours'
     and last_sign_in_at is not null) as synthetic_accounts_signed_in,
+  (select min(last_sign_in_at) from auth.users where email like 'load-%@dragonhaven-load.invalid'
+    and raw_app_meta_data ? 'dragonhaven_load_run' and created_at > now() - interval '2 hours') as first_synthetic_login,
+  (select max(last_sign_in_at) from auth.users where email like 'load-%@dragonhaven-load.invalid'
+    and raw_app_meta_data ? 'dragonhaven_load_run' and created_at > now() - interval '2 hours') as last_synthetic_login,
   (select count(*) from pg_stat_activity where backend_type = 'client backend'
     and pid <> pg_backend_pid()) as client_connections_excluding_observer,
   (select count(*) from pg_stat_activity where backend_type = 'client backend'
@@ -41,6 +45,12 @@ if ($rows.Count -ne 1) { throw 'Staging returned an unexpected observation.' }
 $evidence = [ordered]@{
     environment = 'staging'; readOnly = $true; peakMeasurement = $false
     observedAtUtc = [DateTime]::Parse($rows[0].observed_at_utc).ToUniversalTime().ToString('o')
+}
+foreach ($name in @('first_synthetic_login', 'last_synthetic_login')) {
+    $value = $rows[0].$name
+    $evidence[$name] = if ($null -eq $value) { $null } else {
+        [DateTime]::Parse($value).ToUniversalTime().ToString('o')
+    }
 }
 foreach ($name in @('synthetic_accounts', 'synthetic_accounts_signed_in',
     'client_connections_excluding_observer', 'active_client_connections',
