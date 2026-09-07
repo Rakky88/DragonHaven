@@ -3,7 +3,8 @@
 Status: gebouwd en getest op 7 september 2026; 485 tests groen, analyzer schoon
 en servermigraties 42/43 met contractcontroles succesvol op staging.
 De aangepaste Sinister-balans is aanvullend gecontroleerd met 150 gerichte tests
-en een schone analyzer; forward-migratie 44 staat klaar voor de stagingcontrole.
+en een schone analyzer. Stagingrun 34106264418 bevestigt migratie 44, een
+teruggerolde contractrepetitie, 44/44 parity, nul database-lintfouten en groene healthchecks.
 De startbalans hieronder is ingebouwd. Productie blijft op v0.05.15 / migratie 41
 tot een volgende gecontroleerde uitrol. Dit document behoudt zijn oorspronkelijke
 bestandsnaam zodat verwijzingen naar het plan blijven werken.

@@ -25,7 +25,11 @@ De tests omvatten de Friends-tutorial, Conclave-teller, vertalingen, permanente
 bevestiging zonder opbrengsttekst, onafhankelijke kansgrenzen en één Weaveheart
 bij pity. Forward-migratie 44 bewaart bestaande wallets en ontvangstbewijzen;
 de SQL-contracttest controleert dezelfde grenzen en een eenmalige Sinister-return.
-Deze migratie staat klaar voor de afgeschermde stagingcontrole.
+Stagingrun `34106264418` op commit `174fd3a` is groen: eerst de migratie en
+contracttest teruggerold, daarna migratie 44 toegepast en de contracttest opnieuw
+geslaagd. De preflight bevestigt 44/44 parity, nul database-lintfouten en HTTP 200
+voor Auth health, Auth settings en applicatiehealth (09:30:10 UTC).
+Er is voor deze vervolgwijziging geen nieuwe APK gebouwd of release gepubliceerd.
 
 Stagingrun `34102634420` op branch `feature/egg-altar-witchlight` is groen:
 migraties 42/43 en de Altar-contracttest eerst volledig teruggerold, vervolgens
@@ -79,7 +83,7 @@ nul database-lintfouten, Auth health/settings HTTP 200 en applicatiehealth HTTP
 200. Deze release wijzigt geen migraties, serverfuncties, economyactivatie of
 beloningstabellen.
 
-Actuele productieserver: **41 toegepaste migraties (42/43 alleen staging); gezond, met nul
+Actuele productieserver: **41 toegepaste migraties (42–44 alleen staging); gezond, met nul
 database-lintfouten en groene Auth-/applicatiehealth**
 
 Vorige serveruitrol: **staging en productie stonden beide op 41/41. Stagingrun
