@@ -33,14 +33,18 @@ class FriendsScreen extends StatelessWidget {
           Tab(key: const Key('friends-tab'), text: strings.tr('friends')),
           Tab(
             key: const Key('conclave-tab'),
-            child: Badge.count(
-              key: const Key('conclave-unread-badge'),
-              count: online.unreadConclaveMessageCount,
-              backgroundColor: Colors.redAccent,
-              isLabelVisible:
-                  online.isSignedIn && online.unreadConclaveMessageCount > 0,
-              child: const Text('Conclave'),
-            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Flexible(child: Text('Conclave', maxLines: 1)),
+              if (online.isSignedIn && online.unreadConclaveMessageCount > 0)
+                const SizedBox(width: 7),
+              Badge.count(
+                key: const Key('conclave-unread-badge'),
+                count: online.unreadConclaveMessageCount,
+                backgroundColor: Colors.redAccent,
+                isLabelVisible:
+                    online.isSignedIn && online.unreadConclaveMessageCount > 0,
+              ),
+            ]),
           ),
         ]),
         Expanded(

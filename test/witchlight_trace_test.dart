@@ -3,6 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('random paths vary while preserving length and arena padding', () {
+    for (final size in [const Size(260, 240), const Size(280, 330)]) {
+      double length(List<Offset> p) =>
+          List.generate(p.length - 1, (i) => (p[i + 1] - p[i]).distance)
+              .fold(0.0, (a, b) => a + b);
+      final expected = length(WitchlightTracePath.points(size));
+      final shapes = <String>{};
+      for (var seed = 0; seed < 100; seed++) {
+        final p = WitchlightTracePath.points(size, seed: seed);
+        expect(length(p), closeTo(expected, .000001));
+        expect(
+            p.every((v) =>
+                v.dx >= size.width * .08 &&
+                v.dx <= size.width * .92 &&
+                v.dy >= size.height * .08 &&
+                v.dy <= size.height * .92),
+            isTrue);
+        shapes.add(p.toString());
+      }
+      expect(shapes, hasLength(100));
+    }
+  });
   Future<List<Offset>> mount(WidgetTester tester, List<bool> results,
       {bool mirrored = false, bool enabled = true}) async {
     await tester.pumpWidget(MaterialApp(

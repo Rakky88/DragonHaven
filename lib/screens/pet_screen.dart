@@ -19,6 +19,7 @@ import '../widgets/dragon_trial_records.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/rooftop_egg_nest.dart';
 import '../widgets/ui_bits.dart';
+import 'egg_altar_screen.dart';
 
 class PetScreen extends StatelessWidget {
   const PetScreen({super.key});
@@ -73,6 +74,7 @@ class PetScreen extends StatelessWidget {
           const SizedBox(height: 10),
           _EggCluePanel(hint: game.eggHint(locale: strings.languageCode)),
         ],
+        const EggAltarEntry(),
         if (!pet.isEgg) ...[
           const SizedBox(height: 18),
           _DragonNeedsPanel(pet: pet),
@@ -1588,6 +1590,13 @@ Future<void> _askForName(
   String? dragonId,
   bool closeAfter = false,
 }) async {
+  final existing = context
+      .read<HouseholdProvider>()
+      .dragonById(dragonId ?? context.read<HouseholdProvider>().pet.id);
+  if (existing != null && existing.name.trim().isNotEmpty) {
+    await showRenameWithQuill(context, existing.id);
+    return;
+  }
   final controller = TextEditingController();
   final strings = AppStrings.of(context);
   final name = await showDialog<String>(

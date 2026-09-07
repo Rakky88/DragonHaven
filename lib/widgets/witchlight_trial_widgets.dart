@@ -96,27 +96,62 @@ class WitchlightTracePath extends StatefulWidget {
   const WitchlightTracePath({
     super.key,
     required this.enabled,
-    required this.mirrored,
+    this.mirrored = false,
+    this.seed = 0,
     required this.tolerance,
     required this.onResult,
   });
 
   final bool enabled;
   final bool mirrored;
+  final int seed;
   final double tolerance;
   final ValueChanged<bool> onResult;
 
-  static List<Offset> points(Size size, {bool mirrored = false}) => [
-        const Offset(.16, .84),
-        const Offset(.32, .64),
-        const Offset(.72, .64),
-        const Offset(.80, .40),
-        const Offset(.40, .30),
-        const Offset(.24, .12),
-      ]
-          .map((p) => Offset(
-              (mirrored ? 1 - p.dx : p.dx) * size.width, p.dy * size.height))
+  static List<Offset> points(Size size, {bool mirrored = false, int seed = 0}) {
+    final original = [
+      const Offset(.16, .84),
+      const Offset(.32, .64),
+      const Offset(.72, .64),
+      const Offset(.80, .40),
+      const Offset(.40, .30),
+      const Offset(.24, .12),
+    ].map((p) => Offset(p.dx * size.width, p.dy * size.height)).toList();
+    double length(List<Offset> points) => List.generate(
+            points.length - 1, (i) => (points[i + 1] - points[i]).distance)
+        .fold(0.0, (a, b) => a + b);
+    final targetLength = length(original);
+    final random = math.Random(seed);
+    // Jitter bends, then normalize the whole route to the original arc length.
+    // Reject shapes that would push any of the corridor outside the arena.
+    for (var attempt = 0; attempt < 256; attempt++) {
+      var route = original
+          .map((p) =>
+              p +
+              Offset((random.nextDouble() - .5) * size.width * .18,
+                  (random.nextDouble() - .5) * size.height * .12))
           .toList();
+      final scale = targetLength / length(route);
+      route = route.map((p) => p * scale).toList();
+      final left = route.map((p) => p.dx).reduce(math.min);
+      final right = route.map((p) => p.dx).reduce(math.max);
+      final top = route.map((p) => p.dy).reduce(math.min);
+      final bottom = route.map((p) => p.dy).reduce(math.max);
+      if (right - left > size.width * .82 || bottom - top > size.height * .82) {
+        continue;
+      }
+      final center = Offset((left + right) / 2, (top + bottom) / 2);
+      final flip = random.nextBool() != mirrored;
+      return route.map((p) {
+        final centered = p - center;
+        return Offset(size.width / 2 + (flip ? -centered.dx : centered.dx),
+            size.height / 2 + centered.dy);
+      }).toList();
+    }
+    return original
+        .map((p) => Offset(mirrored ? size.width - p.dx : p.dx, p.dy))
+        .toList();
+  }
 
   @override
   State<WitchlightTracePath> createState() => _WitchlightTracePathState();
@@ -127,6 +162,7 @@ class _WitchlightTracePathState extends State<WitchlightTracePath> {
   Offset? _position;
   int _segment = 0;
   bool _reported = false;
+  final _trail = <Offset>[];
 
   double _distance(Offset p, Offset a, Offset b) {
     final vector = b - a;
@@ -158,7 +194,10 @@ class _WitchlightTracePathState extends State<WitchlightTracePath> {
         return;
       }
     }
-    setState(() => _position = next);
+    setState(() {
+      _position = next;
+      _trail.add(next);
+    });
     if (_segment == points.length - 2 &&
         (next - points.last).distance <= radius) {
       _result(true);
@@ -169,8 +208,8 @@ class _WitchlightTracePathState extends State<WitchlightTracePath> {
   Widget build(BuildContext context) =>
       LayoutBuilder(builder: (context, constraints) {
         final size = constraints.biggest;
-        final points =
-            WitchlightTracePath.points(size, mirrored: widget.mirrored);
+        final points = WitchlightTracePath.points(size,
+            mirrored: widget.mirrored, seed: widget.seed);
         final radius = 12.0 + widget.tolerance.clamp(0.0, 1.0) * 4;
         return Listener(
           key: const Key('witchlight-trace-surface'),
@@ -182,6 +221,7 @@ class _WitchlightTracePathState extends State<WitchlightTracePath> {
               _pointer = event.pointer;
               _position = event.localPosition;
               _segment = 0;
+              _trail.add(event.localPosition);
             });
           },
           onPointerMove: (event) {
@@ -198,7 +238,8 @@ class _WitchlightTracePathState extends State<WitchlightTracePath> {
           child: Stack(children: [
             Positioned.fill(
                 child: CustomPaint(
-                    painter: _TracePainter(points, radius, _position))),
+                    painter: _TracePainter(
+                        points, radius, _position, List.of(_trail)))),
             Positioned(
                 left: points.last.dx - 22,
                 top: points.last.dy - 22,
@@ -212,10 +253,11 @@ class _WitchlightTracePathState extends State<WitchlightTracePath> {
 }
 
 class _TracePainter extends CustomPainter {
-  const _TracePainter(this.points, this.radius, this.position);
+  const _TracePainter(this.points, this.radius, this.position, this.trail);
   final List<Offset> points;
   final double radius;
   final Offset? position;
+  final List<Offset> trail;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -235,13 +277,19 @@ class _TracePainter extends CustomPainter {
     canvas.drawPath(
         path,
         paint
-          ..color = const Color(0xFF294B42)
+          ..color = Colors.black
           ..strokeWidth = radius * 2);
-    canvas.drawPath(
-        path,
-        paint
-          ..color = const Color(0x5579F06B)
-          ..strokeWidth = 2);
+    if (trail.length > 1) {
+      final traced = Path()..moveTo(trail.first.dx, trail.first.dy);
+      for (final p in trail.skip(1)) {
+        traced.lineTo(p.dx, p.dy);
+      }
+      canvas.drawPath(
+          traced,
+          paint
+            ..color = const Color(0xFFC5FFB2)
+            ..strokeWidth = 5);
+    }
     paint.style = PaintingStyle.fill;
     final wisp = position ?? points.first;
     canvas.drawCircle(wisp, 16, paint..color = const Color(0x5579F06B));

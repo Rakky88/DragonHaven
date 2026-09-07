@@ -344,12 +344,17 @@ void main() {
     final stagingE2e =
         File('tool/staging_seasonal_events_e2e.ps1').readAsStringSync();
 
-    expect(stagingWorkflow, contains('APPLY_DRAGONHAVEN_STAGING_SEASONAL_41'));
-    expect(stagingWorkflow, contains("\$expectedRemote = '202609070040'"));
-    expect(stagingWorkflow, contains("\$expectedPending = @('202609070041')"));
-    expect(stagingWorkflow, contains('staging_seasonal_events_e2e.ps1'));
-    expect(stagingWorkflow, contains('-VerifyVanityPurchase'));
-    expect(stagingWorkflow, contains('must never target production'));
+    expect(stagingWorkflow, contains("environment: staging"));
+    expect(stagingWorkflow,
+        contains("'202609070041', '202609070042', '202609070043'"));
+    expect(stagingWorkflow, contains("@('202609070042', '202609070043')"));
+    expect(stagingWorkflow, contains("egg_altar_contract.sql"));
+    expect(stagingWorkflow, contains("'tnzathhutuwmohmjfrlo'"));
+    expect(stagingWorkflow,
+        contains('Only the configured staging project is permitted.'));
+    expect(stagingWorkflow.indexOf('Rolled-back rehearsal failed'),
+        lessThan(stagingWorkflow.indexOf('supabase db push --linked --yes')));
+    expect(stagingWorkflow, contains('release_server_preflight.ps1'));
 
     expect(productionWorkflow, contains('MIGRATE_PRODUCTION_37_TO_41'));
     expect(productionWorkflow, contains("\$expectedRemote = '202609020036'"));

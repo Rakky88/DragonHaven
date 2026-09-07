@@ -1,0 +1,180 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:dragon_haven/models/dragon_egg.dart';
+import 'package:dragon_haven/models/egg_altar.dart';
+import 'package:dragon_haven/models/pet.dart';
+import 'package:dragon_haven/providers/household_provider.dart';
+import 'package:dragon_haven/screens/egg_altar_screen.dart';
+import 'package:dragon_haven/widgets/weave_beacon.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  final captureKey = GlobalKey();
+  Future<void> capture(WidgetTester tester, String name) async {
+    if (Platform.environment['ALTAR_CAPTURE'] != '1') return;
+    await tester.runAsync(() async {
+      final boundary = captureKey.currentContext!.findRenderObject()!
+          as RenderRepaintBoundary;
+      final snapshot = await boundary.toImage(pixelRatio: 2);
+      final bytes = await snapshot.toByteData(format: ui.ImageByteFormat.png);
+      final file = File('release/altar-$name.png');
+      await file.parent.create(recursive: true);
+      await file.writeAsBytes(bytes!.buffer.asUint8List());
+      snapshot.dispose();
+    });
+  }
+
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+  HouseholdProvider game() => HouseholdProvider(persistenceEnabled: false)
+    ..pet = Pet(
+        id: 'dragon',
+        name: 'Ember',
+        firstEgg: false,
+        stage: DragonStage.hatchling)
+    ..eggStash = [
+      DragonEgg(
+          id: 'sinister',
+          lineageId: 'sinisterra',
+          acquiredAt: DateTime(2026),
+          hatchSeed: 8,
+          prismatic: false)
+    ];
+  Future<void> settle(WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+  }
+
+  Future<void> mount(
+      WidgetTester tester, HouseholdProvider g, Widget child) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+        value: g,
+        child:
+            RepaintBoundary(key: captureKey, child: MaterialApp(home: child))));
+    await settle(tester);
+  }
+
+  Future<void> hold(WidgetTester tester) async {
+    final button = find.byKey(const Key('hold-return-to-weave'));
+    await tester.scrollUntilVisible(button, 180,
+        scrollable: find.byType(Scrollable).first);
+    await settle(tester);
+    final gesture = await tester.startGesture(tester.getCenter(button));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 1200));
+    await gesture.up();
+    await settle(tester);
+  }
+
+  testWidgets(
+      'Sinister return requires a hold and a second confirmation; cancelling spends nothing',
+      (tester) async {
+    final g = game();
+    await mount(tester, g, const EggAltarScreen());
+    await tester.tap(find.byKey(const Key('altar-select-egg')));
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('altar-egg-sinister')));
+    await settle(tester);
+    await hold(tester);
+    expect(find.byKey(const Key('confirm-sinister-return')), findsOneWidget);
+    await capture(tester, 'sinister-confirmation');
+    expect(g.eggStash, hasLength(1));
+    await tester.tap(find.text('Cancel'));
+    await settle(tester);
+    expect(g.eggAltar.wallet.fragments, 0);
+    await hold(tester);
+    await tester.tap(find.byKey(const Key('confirm-sinister-return')));
+    await settle(tester);
+    await tester.pump(const Duration(seconds: 5));
+    await settle(tester);
+    expect(g.eggStash, isEmpty);
+    expect(g.eggAltar.wallet.fragments, 25);
+    expect(find.text('Continue'), findsOneWidget);
+    await capture(tester, 'result');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    g.dispose();
+  });
+
+  testWidgets(
+      'tagging a selected egg disables return immediately; untagging restores it',
+      (tester) async {
+    final g = game();
+    await mount(tester, g, const EggAltarScreen());
+    await tester.tap(find.byKey(const Key('altar-select-egg')));
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('altar-egg-sinister')));
+    await settle(tester);
+    final tag = find.byKey(const Key('egg-tag-sinister'));
+    await tester.ensureVisible(tag);
+    await tester.tap(tag);
+    await settle(tester);
+    expect(g.isEggTagged('sinister'), isTrue);
+    expect(tester.widget<HoldToReturn>(find.byType(HoldToReturn)).enabled,
+        isFalse);
+    await tester.tap(tag);
+    await settle(tester);
+    expect(
+        tester.widget<HoldToReturn>(find.byType(HoldToReturn)).enabled, isTrue);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    g.dispose();
+  });
+
+  testWidgets(
+      'Beacon confirmation submits the selected amount once and refreshes its shared progress',
+      (tester) async {
+    final g = game()..eggAltar.wallet = const WeaveWallet(40, 0, 0);
+    var amount = 490;
+    var commands = 0;
+    g.altarCurrentUserId = () => 'keeper';
+    g.loadWeaveBeacon = (_) async => {'fragments': amount};
+    g.altarCommand = (id, action, payload) async {
+      expect(action, 'donate');
+      expect(payload, {'conclaveId': 'conclave', 'amount': 10});
+      commands++;
+      amount += 10;
+      return {
+        'state': {
+          ...g.eggAltar.toJson(),
+          'ownerId': 'keeper',
+          'wallet': const WeaveWallet(30, 0, 0).toJson()
+        },
+        'receipt': {'donated': 10}
+      };
+    };
+    await mount(
+        tester,
+        g,
+        const Scaffold(
+            body: SingleChildScrollView(
+                child: WeaveBeaconCard(conclaveId: 'conclave', active: true))));
+    await tester.tap(find.text('Weave Beacon'));
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('donate-weave-fragments')));
+    await settle(tester);
+    await tester.enterText(
+        find.byKey(const Key('beacon-donation-amount')), '10');
+    await tester.tap(find.byKey(const Key('confirm-beacon-donation')));
+    await settle(tester);
+    expect(commands, 1);
+    expect(g.eggAltar.wallet.fragments, 30);
+    expect(find.text('500 / 5000'), findsOneWidget);
+    expect(find.text('Stage 1 / 3'), findsOneWidget);
+    await capture(tester, 'beacon');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    g.dispose();
+  });
+}

@@ -7,6 +7,8 @@ import '../l10n/app_strings.dart';
 import '../models/adventure.dart';
 import '../models/chest.dart';
 import '../models/dragon_egg.dart';
+import '../models/egg_altar.dart';
+import 'egg_altar_screen.dart';
 import '../models/egg_collection_preferences.dart';
 import '../models/mystic_relic.dart';
 import '../models/pet.dart';
@@ -125,6 +127,7 @@ class _EggInventoryTab extends StatefulWidget {
 }
 
 class _EggInventoryTabState extends State<_EggInventoryTab> {
+  int _tagFilter = 0;
   EggCollectionView _view = EggCollectionView.tiles;
   EggCollectionSortMode _sortMode = EggCollectionSortMode.acquiredAt;
   bool _sortDescending = true;
@@ -173,19 +176,38 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
     final game = context.watch<HouseholdProvider>();
     final strings = AppStrings.of(context);
     if (game.eggStash.isEmpty) {
-      return _EmptyState(
-        kind: GameIconKind.inventoryEggs,
-        text: strings.pick('No Eggs in your inventory yet.',
-            'Nog geen Eieren in je inventaris.'),
-      );
+      return Column(children: [
+        const EggAltarEntry(),
+        Expanded(
+            child: _EmptyState(
+          kind: GameIconKind.inventoryEggs,
+          text: strings.pick('No Eggs in your inventory yet.',
+              'Nog geen Eieren in je inventaris.'),
+        ))
+      ]);
     }
     final eggs = sortedDragonEggs(
-      game.eggStash,
+      game.eggStash
+          .where((egg) =>
+              _tagFilter == 0 || game.isEggTagged(egg.id) == (_tagFilter == 1))
+          .toList(),
       sortMode: _sortMode,
       descending: _sortDescending,
     );
     return Column(
       children: [
+        const EggAltarEntry(),
+        Wrap(spacing: 6, children: [
+          for (var i = 0; i < 3; i++)
+            ChoiceChip(
+                label: Text([
+                  strings.pick('All', 'Alle'),
+                  strings.pick('Tagged', 'Getagd'),
+                  strings.pick('Untagged', 'Niet getagd')
+                ][i]),
+                selected: _tagFilter == i,
+                onSelected: (_) => setState(() => _tagFilter = i))
+        ]),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 13, 16, 8),
           child: Wrap(
@@ -287,11 +309,17 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                           child: Column(
                             children: [
                               Expanded(
-                                child: EggArt(
-                                  height: 86,
-                                  lineageId: egg.lineageId,
-                                  specialEggId: egg.specialEggId,
-                                ),
+                                child: Stack(fit: StackFit.expand, children: [
+                                  EggArt(
+                                    height: 86,
+                                    lineageId: egg.lineageId,
+                                    specialEggId: egg.specialEggId,
+                                  ),
+                                  Align(
+                                      alignment: Alignment.topRight,
+                                      child: EggTagButton(
+                                          eggId: egg.id, compact: true))
+                                ]),
                               ),
                               Text(
                                 dragonEggDisplayName(strings, egg),
@@ -393,7 +421,7 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        trailing: const Icon(Icons.chevron_right_rounded),
+                        trailing: EggTagButton(eggId: egg.id, compact: true),
                       ),
                     );
                   },
@@ -426,6 +454,8 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                 dragonEggDisplayName(strings, egg),
                 style: Theme.of(sheetContext).textTheme.titleLarge,
               ),
+              EggTagButton(eggId: egg.id),
+              EggKnowledgeSummary(eggId: egg.id),
               const SizedBox(height: 10),
               Container(
                 width: double.infinity,
@@ -1247,13 +1277,17 @@ class _RelicInventoryTab extends StatelessWidget {
     final owned = MysticRelic.values
         .where((relic) => game.relicCount(relic) > 0)
         .toList(growable: false);
-    if (owned.isEmpty) {
+    if (owned.isEmpty &&
+        AltarRelic.values.every((relic) => game.eggAltar.count(relic) == 0)) {
       return _RelicEmptyState(strings: strings);
     }
     return ListView(
       key: const PageStorageKey('inventory-relics-scroll'),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
       children: [
+        for (final relic in AltarRelic.values)
+          if (game.eggAltar.count(relic) > 0)
+            AltarRecipeCard(relic: relic, inventoryOnly: true),
         for (final relic in owned)
           _RelicCard(
             relic: relic,

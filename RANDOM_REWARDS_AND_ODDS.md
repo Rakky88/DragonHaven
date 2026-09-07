@@ -6,7 +6,7 @@ Ruleset: app version `v0.05.14`
 
 Source baseline: seasonal-event implementation released with `v0.05.14`
 
-<!-- reference-source-fingerprint: 2169ba6531b855e8 -->
+<!-- reference-source-fingerprint: 56e291ee9f992f2e -->
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
@@ -563,7 +563,11 @@ These systems use randomness but do not directly choose a reward item. Rewards r
   lanes, one palette color, and one of six answer positions. These choices only
   shape the challenge. They do not alter the grade reward or ranking rules.
 - Witchlight uses the target choice for six similar pumpkin faces. Its Spirit
-  corridor mirrors on alternate rounds and has no random forgiveness roll.
+  corridor gets a fresh 32-bit seeded shape on every challenge and has no random
+  forgiveness roll. Six original points are jittered (x up to 9% of width, y up
+  to 6% of height), normalized to the original arc length and recentered. Bounds
+  rejection allows 256 attempts before the original shape fallback; a random
+  horizontal reflection also varies direction.
   Spirit visibly widens that corridor from 24 to 32 logical pixels at 400
   expertise; leaving it always fails. The seeded lane draw is unused there.
 - Other lane-based seasonal Spirit phases provide a capped forgiveness roll:
@@ -638,3 +642,38 @@ The active implementation was cross-checked against:
 - `supabase/migrations/202608240007_group_adventure_duration_rules.sql` — authoritative Group Adventure chest roll.
 
 When any of these source tables change, this document must be reviewed and updated in the same change. Run `dart run tool/reference_documentation_guard.dart --update` only after that review; the corresponding test rejects stale source fingerprints.
+
+## Egg Altar: Return to the Weave
+
+| Return | Guaranteed Shell Fragments | Independent Essence bonus | Independent Weaveheart bonus |
+|---|---:|---|---|
+| Ordinary inventory egg | 5 | 25% for 1 | 2% for 1 |
+| Sinister Egg (extra confirmation) | 25 | 25% for 5 | 2% for 5 |
+
+The Essence and Weaveheart rolls are independent and can both succeed. After
+39 returns without a Weaveheart, the next return guarantees its heart bonus.
+Any successful heart bonus resets the counter. One actual egg advances the
+counter once, including Sinister eggs; the 5x rule multiplies quantities rather
+than making five rolls. The counter persists per account, with no daily cap.
+All eligible ordinary eggs use the same table, independent of hidden rarity,
+Spectral status, hatch seed or source. Special-family, tagged, nested and
+trade-reserved eggs cannot be returned. Retrying a committed action never rolls
+again, consumes another egg or grants another reward.
+
+| Crafted consumable | Fragments | Essence | Weaveheart | Fixed information/action |
+|---|---:|---:|---:|---|
+| Moral Echo | 20 | 1 | 0 | Egg moral alignment |
+| Order Sigil | 30 | 2 | 0 | Egg law alignment |
+| Astral Lens | 50 | 5 | 1 | Egg rarity |
+| Weave Oracle | 125 | 12 | 2 | Egg family and rarity |
+| Nameweaver's Quill | 10 | 1 | 0 | Rename one already-named hatched dragon |
+
+Scans never reroll the egg and do not consume another relic for known information.
+Tagged eggs may be scanned. Oracle and Quill are Altar-exclusive; existing Astral
+Lens drops and shop remain unchanged, as do the seven-member MysticRelic pools.
+Materials and crafted stock are not tradeable. Beacon donations buy only shared
+cosmetic progress; there are no additional rolls or improved loot odds.
+
+Sources: lib/models/egg_altar.dart, lib/providers/egg_altar_systems.dart and
+supabase/migrations/202609070042_egg_altar.sql. Witchlight challenge generation is
+in lib/screens/seasonal_trial_game.dart and lib/widgets/witchlight_trial_widgets.dart.

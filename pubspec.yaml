@@ -66,6 +66,7 @@ flutter:
     - assets/images/chests/
     - assets/images/chests/open/
     - assets/images/relics/
+    - assets/images/egg_altar/
     - assets/images/relics/animations/moralPrism/
     - assets/images/relics/animations/orderCompass/
     - assets/images/relics/animations/soulMirror/

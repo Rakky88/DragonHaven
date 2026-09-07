@@ -163,6 +163,53 @@ void main() {
     online.dispose();
   });
 
+  testWidgets(
+      'long Conclave chats clear unread and badge never overlaps the tab label',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final game = HouseholdProvider(random: Random(7));
+    final now = DateTime.now().subtract(const Duration(minutes: 1));
+    final messages = List.generate(40, (i) => badgeMessage('message-$i', now));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..conclaveSnapshot = unreadSnapshot(messages);
+    final online = OnlineAccountProvider(
+        repository: repository,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
+    await online.initialize();
+    await tester.pumpWidget(MultiProvider(providers: [
+      ChangeNotifierProvider.value(value: game),
+      ChangeNotifierProvider.value(value: online),
+    ], child: const MaterialApp(home: Scaffold(body: FriendsScreen()))));
+    final label = find.descendant(
+        of: find.byKey(const Key('conclave-tab')),
+        matching: find.text('Conclave'));
+    final count = find.descendant(
+        of: find.byKey(const Key('conclave-unread-badge')),
+        matching: find.text('40'));
+    expect(tester.getRect(count).left,
+        greaterThan(tester.getRect(label).right + 3));
+    await tester.tap(find.byKey(const Key('conclave-tab')));
+    await tester.pumpAndSettle();
+    expect(online.unreadConclaveMessageCount, 0);
+    final chat = find.byKey(const Key('conclave-chat-list'));
+    await tester.drag(chat, const Offset(0, 180));
+    await tester.pumpAndSettle();
+    expect(tester.widget<ListView>(chat).controller!.offset, greaterThan(72));
+    expect(find.byKey(const Key('conclave-scroll-to-newest')), findsOneWidget);
+    repository.conclaveSnapshot =
+        unreadSnapshot([...messages, badgeMessage('newest', now)]);
+    await online.refreshConclave();
+    await tester.pumpAndSettle();
+    expect(online.unreadConclaveMessageCount, 1);
+    await tester.tap(find.byKey(const Key('conclave-scroll-to-newest')));
+    await tester.pumpAndSettle();
+    expect(online.unreadConclaveMessageCount, 0);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+  });
+
   testWidgets('keeper portraits preserve their complete circular artwork',
       (tester) async {
     await tester.pumpWidget(
@@ -1790,7 +1837,7 @@ void main() {
     final chatList = tester.widget<ListView>(
       find.byKey(const Key('conclave-chat-list')),
     );
-    expect(chatList.reverse, isFalse);
+    expect(chatList.reverse, isTrue);
     expect(chatList.controller, isNotNull);
 
     await tester.tap(
@@ -2756,6 +2803,8 @@ class _FakeSocialRepository implements SocialRepository {
   bool signedIn = true;
   CloudGameSave? cloudSave;
   ConclaveSnapshot? conclaveSnapshot;
+  @override
+  Future<ConclaveSnapshot?> loadConclaveSnapshot() async => conclaveSnapshot;
   final List<CloudGameSave> cloudSaveRevisions = [];
   String? deletedWithPassword;
 

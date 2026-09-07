@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../utils/json_utils.dart';
 import 'dragon_lineage.dart';
+import 'egg_altar.dart';
 
 enum DragonStage { egg, hatchling, wyrmling, ascended }
 
@@ -181,6 +182,7 @@ class Pet {
     this.lawAxis = LawAxis.neutral,
     MoralAxis moralAxis = MoralAxis.neutral,
     this.lawAxisKnown = false,
+    this.altarKnowledge = const AltarEggKnowledge(),
     bool moralAxisKnown = false,
     this.personalityKnown = false,
     this.sizeFactor = 1,
@@ -253,6 +255,7 @@ class Pet {
   final LawAxis lawAxis;
   final MoralAxis moralAxis;
   bool lawAxisKnown;
+  AltarEggKnowledge altarKnowledge;
   bool moralAxisKnown;
   bool personalityKnown;
   final double sizeFactor;
@@ -551,6 +554,7 @@ class Pet {
         'lawAxis': lawAxis.name,
         'moralAxis': moralAxis.name,
         'lawAxisKnown': lawAxisKnown,
+        'altarKnowledge': altarKnowledge.toJson(),
         'moralAxisKnown': moralAxisKnown,
         'personalityKnown': personalityKnown,
         'sizeFactor': sizeFactor,
@@ -632,6 +636,8 @@ class Pet {
           MoralAxis.values[(seed ~/ 3).remainder(MoralAxis.values.length)],
       lawAxisKnown:
           json['lawAxisKnown'] is bool && json['lawAxisKnown'] as bool,
+      altarKnowledge: AltarEggKnowledge.fromJson(
+          Map<String, dynamic>.from(json['altarKnowledge'] as Map? ?? {})),
       moralAxisKnown:
           json['moralAxisKnown'] is bool && json['moralAxisKnown'] as bool,
       personalityKnown:

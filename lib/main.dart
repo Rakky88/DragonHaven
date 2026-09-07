@@ -16,6 +16,7 @@ import 'services/audio_service.dart';
 import 'services/diagnostic_reporter.dart';
 import 'services/notification_service.dart';
 import 'services/social_repository.dart';
+import 'services/egg_altar_repository.dart';
 import 'services/storage_service.dart';
 import 'services/supabase_social_repository.dart';
 
@@ -84,11 +85,21 @@ Future<void> main() async {
       publishableKey: onlineConfig.publishableKey,
     );
     socialRepository = SupabaseSocialRepository(Supabase.instance.client);
+    final altar =
+        EggAltarRepository(Supabase.instance.client, socialRepository, game);
+    game
+      ..altarRequiresAccount = true
+      ..altarCurrentUserId = (() =>
+          socialRepository.isSignedIn ? socialRepository.currentUserId : null)
+      ..altarCommand = altar.command
+      ..loadWeaveBeacon = altar.beacon
+      ..refreshEggAltar = altar.refresh;
   }
   final online = OnlineAccountProvider(
     repository: socialRepository,
     inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
     profileSnapshot: () => OnlineProfileSnapshot.fromGame(game),
+    synchronizeEggAltar: game.refreshEggAltar,
     synchronizeGroupReservations: game.synchronizeOnlineGroupReservations,
     applyGroupReward: (reward) => game.applyOnlineGroupReward(
       lobbyId: reward.lobbyId,

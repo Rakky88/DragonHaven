@@ -7,6 +7,30 @@ Actuele openbare versie: **v0.05.15, versionCode 10065 en Latest. Geregistreerde
 Keepers op een lagere versie krijgen bij appstart de wegdrukbare updatepopup met
 de permanente Android-downloadroute.**
 
+Nieuwe implementatie na v0.05.15 (nog niet gepubliceerd): Egg Altar met drie
+materialen, vijf craftrecepten, beschermtags en zes animatiefasen; Sinister met 5x
+materiaalhoeveelheden plus extra bevestiging; gedeelde cosmetische Weave Beacon.
+Witchlight krijgt variabele paden van gelijke lengte, zwarte corridor, zichtbare
+vingertrail, rode foutflits en game over op drie fouten of verstreken tijd.
+De Conclave-teller krijgt eigen ruimte naast de tabtekst. De chat start bij de
+nieuwste berichten en markeert gelezen na het afronden van de scroll; terugkomen
+uit de achtergrond probeert dat opnieuw. Geschiedenis lezen laat nieuwe berichten
+ongelezen. Compacte Aerie-kop voorkomt dat de chat op kleine schermen wegvalt.
+
+Stagingrun `34102634420` op branch `feature/egg-altar-witchlight` is groen:
+migraties 42/43 en de Altar-contracttest eerst volledig teruggerold, vervolgens
+43/43 parity, nul database-lintfouten en Auth health/settings/apphealth HTTP 200.
+De contracttest gebruikt tijdelijke accounts en draait alle testmutaties terug.
+Hij controleert eigenaar, tags, oude saves, eenmaal teruggeven, Sinister-bevestiging
++ 5x pity, crafting, Oracle, Quill, metadataoverdracht en eenmalige Beacon-giften.
+Lokale hervalidatie: 485/485 tests, inclusief compacte Altar/Beacon-schermen,
+transparante sprites, vertalingen en referentiedocumentatie; analyzer zonder
+problemen.
+Productie is hierbij niet gewijzigd en staat nog op migratie 41. De bredere
+economycutover blijft uit. Bestaande clientinventarisregistratie is nog een
+vertrouwensgrens; het nieuwe register beveiligt verdere Altar-transacties, maar
+maakt de complete legacy loot-economie niet server-authoritatief.
+
 Release **v0.05.15 / versionCode 10065** bevat de aangevraagde
 Friends/Conclave-tabs, een lokale ongelezen-teller per account en Conclave voor
 berichten jonger dan 24 uur (eigen berichten uitgesloten), pompoengezichten voor
@@ -31,10 +55,10 @@ nul database-lintfouten, Auth health/settings HTTP 200 en applicatiehealth HTTP
 200. Deze release wijzigt geen migraties, serverfuncties, economyactivatie of
 beloningstabellen.
 
-Actuele productieserver: **41/41 repositorymigraties; gezond, met nul
+Actuele productieserver: **41 toegepaste migraties (42/43 alleen staging); gezond, met nul
 database-lintfouten en groene Auth-/applicatiehealth**
 
-Actuele serverstand: **staging en productie staan beide op 41/41. Stagingrun
+Vorige serveruitrol: **staging en productie stonden beide op 41/41. Stagingrun
 `34072959455` bewees de forward-only lintfix, parity, nul lintfouten,
 RLS/revokes, dormante economyrollback, seasonal preview/Trial/ranking-E2E en
 Auth/apphealth. Productierun `34073058141` bracht daarna uitsluitend migraties

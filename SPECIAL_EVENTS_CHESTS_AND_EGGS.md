@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: app version `v0.05.14`
 
-<!-- reference-source-fingerprint: de21617fd575d490 -->
+<!-- reference-source-fingerprint: 626914880e6a962c -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -87,13 +87,21 @@ sprites, animated three-phase loop, sounds, and theme. A run lasts 75 seconds.
 Might, Spirit, and Arcana provide small capped gameplay assistance; expertise
 never multiplies the submitted score.
 
-Witchlight Arcana shows a pumpkin lantern to memorize, followed by six similar
+Witchlight ends on the third mistake or when time expires. Each mistake flashes
+red for 300 ms. The server permits an early Witchlight finish only when the
+submitted action counts contain exactly three mistakes (at least one second);
+other seasonal Trials keep the existing 30-second minimum.
+
+Witchlight Arcana shows a pumpkin lantern to memorize for an extra second
+(initially 2.9 seconds), followed by six similar
 lantern choices. Eye direction and tooth position distinguish the six faces.
 Spirit requires one continuous finger trace from the wisp to the lantern along
 the visible winding corridor. Crossing an edge, lifting early, or cancelling
 the gesture fails the action and applies the existing two-second penalty.
 Fast swipes are checked along their entire movement; tapping the destination
-does not complete the path. The path mirrors on alternate rounds. Spirit
+does not complete the path. Every challenge receives a new seeded winding path,
+normalized to the same total length. The corridor is black inside a gold edge;
+the accepted finger trail remains visible in pale green. Spirit
 expertise visibly widens the corridor from 24 to 32 logical pixels (capped at
 400 Spirit), with no random forgiveness. Might keeps its timing challenge.
 
@@ -268,3 +276,35 @@ Primary sources are `lib/models/adventure.dart`, `lib/models/trial.dart`,
 `lib/providers/dragonhaven_systems.dart`, `lib/screens/seasonal_trial_game.dart`,
 `lib/screens/adventure_hub_screen.dart`, and
 `supabase/migrations/202609070040_seasonal_events.sql`.
+
+## Egg Altar and protection
+
+The permanent Egg Altar is reachable from Inventory > Eggs and the nest screen.
+Inventory eggs can be tagged and untagged without a material cost. Tags, scan
+knowledge and returned IDs persist across saves, nest activation and authorized
+trades. A newer explicit tag revision wins over an older backup. The selection
+and the committing action both reject protected eggs.
+
+Every Special-family egg is excluded, including legacy eggs with no specialEggId.
+Nest eggs and trade-reserved eggs are excluded. Sinisterra is Mythical and may be
+returned: hold the return button and accept an additional Sinister confirmation.
+Its material quantities are five times those of an ordinary return. No hidden
+rarity, Spectral state or source affects the reward table. Exact probabilities
+and the account-wide Weaveheart guarantee are in RANDOM_REWARDS_AND_ODDS.md.
+
+The Altar adds Moral Echo, Order Sigil, craftable Astral Lens, Weave Oracle and
+Nameweaver's Quill. Oracle reveals the fixed family and rarity, without awarding
+a hatch or discovery. Quill renames one already-named hatched dragon and costs
+10 Fragments + 1 Essence. First naming remains free. Existing Astral Lens drops,
+shop and trade stock remain intact. Crafted stock and materials cannot be traded.
+
+Online material spending and returns use a separate server ledger with atomic,
+idempotent commands, per-egg ownership checks and permanent returned-ID markers.
+The legacy inventory registration trust boundary remains; this feature does not
+activate the broader economy cutover. Lost responses retry the persisted command
+ID. See EGG_ALTAR_DESIGN_DRAFT.md for recipes and the complete implemented design.
+
+Conclaves have a shared cosmetic Weave Beacon with voluntary Shell Fragment gifts
+and milestones at 500, 2000 and 5000. It gives no stat or reward bonuses. Only a
+milestone-crossing gift posts one aggregate project message; individual egg
+returns never post to chat. The progress caps at 5000.

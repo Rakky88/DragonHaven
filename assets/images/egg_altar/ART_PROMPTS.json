@@ -1,0 +1,66 @@
+{
+  "mode": "builtin image_gen",
+  "date": "2026-09-07",
+  "base": {
+    "file": "altar_empty.png",
+    "description": "Transparent purple-and-gold carved stone bowl altar; empty base. Occupied state composites the selected egg in Flutter."
+  },
+  "assets": [
+    {
+      "file": "altar_phase_02.png",
+      "prompt": "Create a transparent PNG game animation sprite. Use the attached transparent altar as the exact visual reference: identical altar geometry, camera, placement and canvas. A narrow gold pillar of light rises from the bowl with two very fine gold spirals, lifting the unseen egg. Only change magical lighting and particles. Empty altar, no egg. Preserve the transparent background from the reference. Background must have actual alpha transparency, no opaque backdrop of any kind. Isolated sprite suitable for compositing on a dark mobile-game screen."
+    },
+    {
+      "file": "altar_phase_03.png",
+      "prompt": "Create a transparent PNG game animation sprite. Use the attached transparent altar as the exact visual reference: identical altar geometry, camera, placement and canvas. A thin upright oval portal of violet and gold filaments opens above the bowl, empty in the center. Only change magical lighting and particles. Empty altar, no egg. Preserve the transparent background from the reference. Background must have actual alpha transparency, no opaque backdrop of any kind. Isolated sprite suitable for compositing on a dark mobile-game screen."
+    },
+    {
+      "file": "altar_phase_04.png",
+      "prompt": "Create a transparent PNG game animation sprite. Use the attached transparent altar as the exact visual reference: identical altar geometry, camera, placement and canvas. Fine golden threads swirl in a bright horizontal halo above the bowl; peak of the returning ritual. Only change magical lighting and particles. Empty altar, no egg. Preserve the transparent background from the reference. Background must have actual alpha transparency, no opaque backdrop of any kind. Isolated sprite suitable for compositing on a dark mobile-game screen."
+    },
+    {
+      "file": "altar_phase_05.png",
+      "prompt": "Create a transparent PNG game animation sprite. Use the attached transparent altar as the exact visual reference: identical altar geometry, camera, placement and canvas. Only a few scattered violet motes settle above the bowl; the ritual is fading. Only change magical lighting and particles. Empty altar, no egg. Preserve the transparent background from the reference. Background must have actual alpha transparency, no opaque backdrop of any kind. Isolated sprite suitable for compositing on a dark mobile-game screen."
+    },
+    {
+      "file": "altar_phase_06.png",
+      "prompt": "Create a transparent PNG game animation sprite. Use the attached transparent altar as the exact visual reference: identical altar geometry, camera, placement and canvas. The magical ring around the altar is gone; only very dim violet runes remain inside the empty bowl. Only change magical lighting and particles. Empty altar, no egg. Preserve the transparent background from the reference. Background must have actual alpha transparency, no opaque backdrop of any kind. Isolated sprite suitable for compositing on a dark mobile-game screen."
+    },
+    {
+      "file": "shell_fragments.png",
+      "prompt": "Create ONE production-ready fantasy mobile game inventory sprite for DragonHaven: A small tidy pile of five smooth pearlescent dragon eggshell fragments with curved ivory exterior and subtle iridescent lavender interior. Gentle physical remains, no whole egg. Common material, handsome simple silhouette. Stylized richly painted 3D fantasy art with polished gold and jewel details, luxurious purple/gold dragon relic aesthetic. Centered on square canvas, full silhouette and all effects inside 15 percent transparent padding. Actual transparent RGBA background, no scene, no text, no lettering, no frame, no contact sheet. Crisp clearly readable as a 64px icon."
+    },
+    {
+      "file": "draconic_essence.png",
+      "prompt": "Create ONE production-ready fantasy mobile game inventory sprite for DragonHaven: A single curled magical dragon-shaped flame, turquoise luminous vapor spiraling around a bright violet core. Magical essence of a dragon, no bottle, no stone base. Rare material, very readable distinctive flame silhouette. Stylized richly painted 3D fantasy art with polished gold and jewel details, luxurious purple/gold dragon relic aesthetic. Centered on square canvas, full silhouette and all effects inside 15 percent transparent padding. Actual transparent RGBA background, no scene, no text, no lettering, no frame, no contact sheet. Crisp clearly readable as a 64px icon."
+    },
+    {
+      "file": "weaveheart.png",
+      "prompt": "Create ONE production-ready fantasy mobile game inventory sprite for DragonHaven: A legendary crystalline heart-shaped core woven from interlocking violet, rose and gold strands of light. Clearly a precious crystal, not a biological heart. Small concentrated potential of new dragon life, contained glow. Stylized richly painted 3D fantasy art with polished gold and jewel details, luxurious purple/gold dragon relic aesthetic. Centered on square canvas, full silhouette and all effects inside 15 percent transparent padding. Actual transparent RGBA background, no scene, no text, no lettering, no frame, no contact sheet. Crisp clearly readable as a 64px icon."
+    },
+    {
+      "file": "nameweavers_quill.png",
+      "prompt": "Create ONE production-ready fantasy mobile game inventory sprite for DragonHaven: A single elegant curved silver-violet feather quill, gold nib, trailing one tiny looping purple thread of magic. A consumable relic for renaming a dragon, no text, no paper. Distinct feather silhouette. Stylized richly painted 3D fantasy art with polished gold and jewel details, luxurious purple/gold dragon relic aesthetic. Centered on square canvas, full silhouette and all effects inside 15 percent transparent padding. Actual transparent RGBA background, no scene, no text, no lettering, no frame, no contact sheet. Crisp clearly readable as a 64px icon."
+    },
+    {
+      "file": "moral_echo.png",
+      "prompt": "Create ONE production-ready fantasy mobile game sprite for DragonHaven. A small oval polished opal pendant held in a delicate gold dragon-wing setting, three soft luminous reflections ivory, violet and amber. Magical relic that reveals an egg's moral alignment. No letters or symbols representing text. Stylized richly painted 3D fantasy art, polished gold and violet jewels, luxurious dragon relic aesthetic. Centered square composition with full silhouette and glow inside generous 15 percent transparent padding. Actual transparent RGBA background, no scene, no text, no lettering, no frame, no contact sheet. Crisp readable at small mobile game size."
+    },
+    {
+      "file": "order_sigil.png",
+      "prompt": "Create ONE production-ready fantasy mobile game sprite for DragonHaven. A precise triangular violet crystal sigil inside three interlocking gold rings, with three tiny silver compass points, a softly glowing core. Magical relic revealing order alignment, recognizable geometric silhouette. Stylized richly painted 3D fantasy art, polished gold and violet jewels, luxurious dragon relic aesthetic. Centered square composition with full silhouette and glow inside generous 15 percent transparent padding. Actual transparent RGBA background, no scene, no text, no lettering, no frame, no contact sheet. Crisp readable at small mobile game size."
+    },
+    {
+      "file": "weave_oracle.png",
+      "prompt": "Create ONE production-ready fantasy mobile game sprite for DragonHaven. An exceptionally precious large amethyst oracle orb embraced by two elegant golden dragon-shaped wings, woven silver magical threads crossing inside the orb around a tiny luminous egg silhouette. Magical relic for learning which dragon family is inside one egg. No eye or face. Stylized richly painted 3D fantasy art, polished gold and violet jewels, luxurious dragon relic aesthetic. Centered square composition with full silhouette and glow inside generous 15 percent transparent padding. Actual transparent RGBA background, no scene, no text, no lettering, no frame, no contact sheet. Crisp readable at small mobile game size."
+    },
+    {
+      "file": "weave_beacon.png",
+      "prompt": "Create ONE production-ready fantasy mobile game sprite for DragonHaven. A beautiful Conclave Weave Beacon: a tall slender silver-grey carved stone pillar with gold details and purple crystals, crowned by a floating woven lavender crystalline flame inside three golden crescent arcs. Small round stepped foundation. Luxurious shared Aerie decoration, front three-quarter view, whole monument fully visible. Stylized richly painted 3D fantasy art, polished gold and violet jewels, luxurious dragon relic aesthetic. Centered square composition with full silhouette and glow inside generous 15 percent transparent padding. Actual transparent RGBA background, no scene, no text, no lettering, no frame, no contact sheet. Crisp readable at small mobile game size."
+    },
+    {
+      "file": "altar_phase_01.png",
+      "prompt": "Edit the referenced empty Egg Altar sprite into ONE animation-phase sprite. The runes begin to awaken, slightly brighter lavender glow only around the bowl. STRICT INVARIANTS: exactly preserve the pedestal geometry, stone bowl, gold trim, crystal shapes, camera, scale and pixel position from the reference, no zoom, no crop. Keep the same square dimensions and generous transparent padding. Change only magical lighting and fine energy threads. Do NOT add an egg or any other solid object; the game layers the correct egg separately. Genuine transparent RGBA background, no scene, no matte, no labels or text. This is one frame of a gentle six-phase magical animation, not a contact sheet."
+    }
+  ]
+}

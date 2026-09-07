@@ -13,6 +13,7 @@ import '../theme/app_theme.dart';
 import '../widgets/online_account_access.dart';
 import '../widgets/dragon_emote_picker.dart';
 import '../widgets/trial_rankings_sheet.dart';
+import '../widgets/weave_beacon.dart';
 
 String conclaveEmblemAsset(String key) => 'assets/images/ui/conclave/$key.png';
 
@@ -537,6 +538,9 @@ class _ConclaveHome extends StatelessWidget {
               child: _ConclaveFeedback(online: online),
             ),
           SliverToBoxAdapter(child: _AerieHeader(snapshot: snapshot)),
+          SliverToBoxAdapter(
+              child: WeaveBeaconCard(
+                  conclaveId: snapshot.conclave.id, active: active)),
           SliverPersistentHeader(
             pinned: true,
             delegate: _TabHeaderDelegate(
@@ -628,14 +632,41 @@ class _ConclaveFeedback extends StatelessWidget {
 }
 
 class _AerieHeader extends StatelessWidget {
-  const _AerieHeader({required this.snapshot});
+  const _AerieHeader({required this.snapshot, this.expanded = false});
   final ConclaveSnapshot snapshot;
+  final bool expanded;
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final online = context.watch<OnlineAccountProvider>();
     final conclave = snapshot.conclave;
+    if (!expanded &&
+        (MediaQuery.sizeOf(context).height < 740 ||
+            MediaQuery.viewInsetsOf(context).bottom > 0)) {
+      return Card(
+          margin: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+          child: ListTile(
+            leading: Image.asset(aerieStageAsset(conclave.aerieStage),
+                width: 62, height: 62),
+            title: Text(conclave.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w900)),
+            subtitle: Text(
+                '${strings.pick('Level', 'Level')} ${conclave.level} · '
+                '${strings.pick('Aerie stage', 'Aerie-fase')} ${conclave.aerieStage}/10'),
+            trailing: const Icon(Icons.expand_more_rounded),
+            onTap: () => showModalBottomSheet<void>(
+                context: context,
+                showDragHandle: true,
+                isScrollControlled: true,
+                builder: (_) => SafeArea(
+                    child: SingleChildScrollView(
+                        child:
+                            _AerieHeader(snapshot: snapshot, expanded: true)))),
+          ));
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
       child: Container(
@@ -814,7 +845,8 @@ class _ConclaveChat extends StatefulWidget {
   State<_ConclaveChat> createState() => _ConclaveChatState();
 }
 
-class _ConclaveChatState extends State<_ConclaveChat> {
+class _ConclaveChatState extends State<_ConclaveChat>
+    with WidgetsBindingObserver {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   String? _latestMessageId;
@@ -839,6 +871,11 @@ class _ConclaveChatState extends State<_ConclaveChat> {
     if (mounted) setState(() {});
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) setState(() {});
+  }
+
   void _markDisplayedRead(ConclaveSnapshot snapshot) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted ||
@@ -860,6 +897,7 @@ class _ConclaveChatState extends State<_ConclaveChat> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _controller.addListener(_handleDraftChanged);
   }
 
@@ -872,6 +910,7 @@ class _ConclaveChatState extends State<_ConclaveChat> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _chatTabs?.animation?.removeListener(_chatVisibilityChanged);
     _controller.removeListener(_handleDraftChanged);
     _controller.dispose();
@@ -915,20 +954,27 @@ class _ConclaveChatState extends State<_ConclaveChat> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollScheduled = false;
       if (!mounted || !_scrollController.hasClients) return;
-      final target = _scrollController.position.maxScrollExtent;
+      const target = 0.0;
       if (!animate) {
         _scrollController.jumpTo(target);
+        if (mounted) setState(() => _nearBottom = true);
         return;
       }
       _automaticScroll = true;
       unawaited(
         _scrollController
             .animateTo(
-              target,
-              duration: const Duration(milliseconds: 240),
-              curve: Curves.easeOutCubic,
-            )
-            .whenComplete(() => _automaticScroll = false),
+          target,
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeOutCubic,
+        )
+            .whenComplete(() {
+          _automaticScroll = false;
+          if (mounted && _scrollController.hasClients) {
+            setState(() =>
+                _nearBottom = _scrollController.position.extentBefore < 72);
+          }
+        }),
       );
     });
   }
@@ -937,8 +983,7 @@ class _ConclaveChatState extends State<_ConclaveChat> {
     if (_automaticScroll || notification.metrics.axis != Axis.vertical) {
       return false;
     }
-    final nextNearBottom =
-        notification.metrics.maxScrollExtent - notification.metrics.pixels < 72;
+    final nextNearBottom = notification.metrics.extentBefore < 72;
     if (nextNearBottom != _nearBottom && mounted) {
       setState(() => _nearBottom = nextNearBottom);
     }
@@ -1020,10 +1065,12 @@ class _ConclaveChatState extends State<_ConclaveChat> {
                         child: ListView.builder(
                           key: const Key('conclave-chat-list'),
                           controller: _scrollController,
+                          reverse: true,
                           padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                           itemCount: messageGroups.length,
                           itemBuilder: (context, index) {
-                            final group = messageGroups[index];
+                            final group =
+                                messageGroups[messageGroups.length - 1 - index];
                             return _ConclaveMessageTile(
                               key: ValueKey(group.messages.first.id),
                               messages: group.messages,

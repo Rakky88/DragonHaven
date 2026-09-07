@@ -18,6 +18,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     required SocialRepository repository,
     required OnlineInventorySnapshot Function() inventorySnapshot,
     OnlineProfileSnapshot Function()? profileSnapshot,
+    Future<void> Function()? synchronizeEggAltar,
     Future<void> Function(Map<String, String> reservations)?
         synchronizeGroupReservations,
     Future<bool> Function(GroupAdventureReward reward)? applyGroupReward,
@@ -51,6 +52,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   })  : _repository = repository,
         _inventorySnapshot = inventorySnapshot,
         _profileSnapshot = profileSnapshot ?? _fallbackProfileSnapshot,
+        _synchronizeEggAltar = synchronizeEggAltar,
         _synchronizeGroupReservations =
             synchronizeGroupReservations ?? _ignoreGroupReservations,
         _applyGroupReward = applyGroupReward ?? _rejectGroupReward,
@@ -77,6 +79,7 @@ class OnlineAccountProvider extends ChangeNotifier {
         _operationTimeout = operationTimeout;
 
   final SocialRepository _repository;
+  final Future<void> Function()? _synchronizeEggAltar;
   final OnlineInventorySnapshot Function() _inventorySnapshot;
   final OnlineProfileSnapshot Function() _profileSnapshot;
   final Future<void> Function(Map<String, String> reservations)
@@ -1235,6 +1238,10 @@ class OnlineAccountProvider extends ChangeNotifier {
       if (!applied) throw const SocialException('trade_apply_failed');
       await _repository.acknowledgeTrade(trade.id);
       serverChanged = true;
+    }
+    if (_synchronizeEggAltar != null) {
+      await _runRefreshMaintenanceStep(
+          'social.refresh.egg_altar', _synchronizeEggAltar);
     }
     final currentSnapshot = _inventorySnapshot();
     final tradeInventoryFingerprint = jsonEncode(currentSnapshot.toTradeJson());

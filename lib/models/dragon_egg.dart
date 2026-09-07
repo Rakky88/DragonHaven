@@ -1,5 +1,6 @@
 import '../utils/json_utils.dart';
 import 'dragon_lineage.dart';
+import 'egg_altar.dart';
 import 'pet.dart';
 
 class DragonEgg {
@@ -18,6 +19,7 @@ class DragonEgg {
     this.specialEggId,
     this.moralAxisKnown = false,
     this.xp = 0,
+    this.altarKnowledge = const AltarEggKnowledge(),
   })  : moralAxis =
             sinister || lineageId == 'sinisterra' ? MoralAxis.evil : moralAxis,
         sinister = sinister || lineageId == 'sinisterra',
@@ -39,6 +41,7 @@ class DragonEgg {
   final String? specialEggId;
   final bool moralAxisKnown;
   final int xp;
+  AltarEggKnowledge altarKnowledge;
 
   DragonLineage get lineage => dragonLineageById(lineageId);
   bool get isSinisterEgg => lineageId == 'sinisterra';
@@ -64,6 +67,8 @@ class DragonEgg {
         xp: xp,
         coins: coins,
         gems: gems,
+        altarKnowledge: altarKnowledge,
+        lawAxisKnown: altarKnowledge.order,
       );
 
   Map<String, dynamic> toJson() => {
@@ -82,6 +87,7 @@ class DragonEgg {
         'specialEggId': specialEggId,
         'moralAxisKnown': moralAxisKnown,
         'xp': xp,
+        'altarKnowledge': altarKnowledge.toJson(),
       };
 
   factory DragonEgg.fromJson(Map<String, dynamic> json) {
@@ -112,6 +118,8 @@ class DragonEgg {
       moralAxisKnown:
           json['moralAxisKnown'] is bool && json['moralAxisKnown'] as bool,
       xp: nonNegativeIntFromJson(json['xp'], fallback: 0),
+      altarKnowledge: AltarEggKnowledge.fromJson(
+          Map<String, dynamic>.from(json['altarKnowledge'] as Map? ?? {})),
     );
   }
 

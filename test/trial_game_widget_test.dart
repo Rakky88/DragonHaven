@@ -180,7 +180,7 @@ void main() {
     }
     expect(matchingPositions, hasLength(1));
     await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 2000)));
+        () => Future<void>.delayed(const Duration(milliseconds: 3000)));
     await tester.pump(const Duration(milliseconds: 100));
     await tester
         .tap(find.byKey(Key('witchlight-rune-${matchingPositions.single}')));

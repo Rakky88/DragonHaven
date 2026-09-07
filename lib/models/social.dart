@@ -1433,6 +1433,7 @@ class OnlineInventorySnapshot {
         .map((dragon) => {
               'client_id': dragon.id,
               'name': dragon.displayName,
+              'custom_name': dragon.name,
               'lineage_id': dragon.lineageId,
               'stage': dragon.stage.name,
               'xp': dragon.xp,
@@ -1462,6 +1463,7 @@ class OnlineInventorySnapshot {
           'sinister': game.pet.sinister,
           'xp': game.pet.xp,
           'tradeable': false,
+          'altar_knowledge': game.eggKnowledge(game.pet.id).toJson(),
         },
       if (game.incubatingEgg case final egg?)
         {
@@ -1478,6 +1480,7 @@ class OnlineInventorySnapshot {
           'sinister': egg.sinister,
           'xp': egg.xp,
           'tradeable': false,
+          'altar_knowledge': game.eggKnowledge(egg.id).toJson(),
         },
       for (final egg in game.eggStash)
         {
@@ -1494,6 +1497,7 @@ class OnlineInventorySnapshot {
           'sinister': egg.sinister,
           'xp': egg.xp,
           'tradeable': true,
+          'altar_knowledge': game.eggKnowledge(egg.id).toJson(),
         },
     ];
     return OnlineInventorySnapshot(
@@ -1538,6 +1542,8 @@ class OnlineInventorySnapshot {
       };
 
   Map<String, dynamic> toTradeJson() => {
+        'altar_eggs': eggs,
+        'altar_dragons': dragons,
         'eggs': [
           for (final egg in eggs)
             if (egg['tradeable'] == true) egg,

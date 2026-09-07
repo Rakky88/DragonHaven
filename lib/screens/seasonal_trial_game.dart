@@ -35,12 +35,14 @@ class SeasonalTrialGame extends StatefulWidget {
     required this.dragon,
     required this.onFinished,
     this.randomSeed,
+    this.clock,
   });
 
   final TrialOffer offer;
   final Pet dragon;
   final SeasonalTrialFinished onFinished;
   final int? randomSeed;
+  final DateTime Function()? clock;
 
   @override
   State<SeasonalTrialGame> createState() => _SeasonalTrialGameState();
@@ -61,6 +63,9 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
   var _round = 1;
   var _correctActions = 0;
   var _totalActions = 0;
+  var _mistakes = 0;
+  var _pathSeed = 0;
+  DateTime? _errorFlashUntil;
   var _target = 0;
   var _safeLane = 0;
   var _targetColor = 0;
@@ -73,6 +78,8 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
   DateTime? _runStartedAt;
 
   TrialDefinition get definition => widget.offer.definition;
+  DateTime _now() => (widget.clock ?? DateTime.now)();
+  bool get _isWitchlight => widget.offer.kind == TrialKind.witchlightWard;
   _SeasonalTheme get theme => _themeFor(widget.offer.kind);
   TrainingFocus get _currentPhaseFocus =>
       widget.offer.kind == TrialKind.hollyfrostGiftforge
@@ -117,16 +124,17 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
     if (_started) return;
     setState(() {
       _started = true;
-      _runStartedAt = DateTime.now();
+      _runStartedAt = _now();
       _newChallenge(initial: true);
     });
-    var previous = DateTime.now();
+    var previous = _now();
     _ticker = Timer.periodic(const Duration(milliseconds: 50), (_) {
       if (!mounted || _ending) return;
-      final now = DateTime.now();
+      final now = _now();
       final elapsed = now.difference(previous).inMilliseconds;
       previous = now;
       setState(() {
+        if (_errorFlashUntil?.isBefore(now) == true) _errorFlashUntil = null;
         _remainingMilliseconds = max(0, _remainingMilliseconds - elapsed);
         if (_promptHidesAt?.isBefore(now) == true) {
           _promptVisible = false;
@@ -148,10 +156,12 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
     setState(() {
       _ending = true;
       _remainingMilliseconds = 0;
-      _status = AppStrings.of(context).pick(
-        'The final light is sealed!',
-        'Het laatste licht is verzegeld!',
-      );
+      _status = _isWitchlight
+          ? AppStrings.of(context).pick('Game over', 'Spel afgelopen')
+          : AppStrings.of(context).pick(
+              'The final light is sealed!',
+              'Het laatste licht is verzegeld!',
+            );
     });
     unawaited(HavenAudio.playAsset('event_${theme.soundPrefix}_finish'));
     await Future<void>.delayed(const Duration(milliseconds: 900));
@@ -162,26 +172,28 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
         totalActions: _totalActions,
         duration: _runStartedAt == null
             ? Duration.zero
-            : DateTime.now().difference(_runStartedAt!),
+            : _now().difference(_runStartedAt!),
       ));
     }
   }
 
   void _newChallenge({bool initial = false}) {
     _phase = 0;
+    if (_isWitchlight) _pathSeed = _random.nextInt(1 << 32);
     _target = _random.nextInt(6);
     _safeLane = _random.nextInt(2);
     _targetColor = _random.nextInt(theme.palette.length);
     _correctChoicePosition = _random.nextInt(6);
     _promptVisible = true;
-    _promptHidesAt = DateTime.now().add(
+    _promptHidesAt = _now().add(
       Duration(
-        milliseconds: initial
-            ? 1900
-            : (widget.offer.kind == TrialKind.hollyfrostGiftforge
-                    ? 950
-                    : 1150) +
-                _arcanaAssistanceMilliseconds,
+        milliseconds: (_isWitchlight ? 1000 : 0) +
+            (initial
+                ? 1900
+                : (widget.offer.kind == TrialKind.hollyfrostGiftforge
+                        ? 950
+                        : 1150) +
+                    _arcanaAssistanceMilliseconds),
       ),
     );
   }
@@ -231,14 +243,23 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
         _status = theme.successText(AppStrings.of(context));
         unawaited(HavenAudio.playAsset('event_${theme.soundPrefix}_success'));
       } else {
+        _mistakes++;
+        if (_isWitchlight) {
+          _errorFlashUntil = _now().add(const Duration(milliseconds: 300));
+        }
         _combo = 0;
         _remainingMilliseconds = max(0, _remainingMilliseconds - 2000);
         _status = theme.failureText(AppStrings.of(context));
         unawaited(HavenAudio.playAsset('event_${theme.soundPrefix}_failure'));
       }
-      _feedbackUntil = DateTime.now().add(const Duration(milliseconds: 650));
-      if (!correct || completesRound) _newChallenge();
+      _feedbackUntil = _now().add(const Duration(milliseconds: 650));
+      if ((!correct || completesRound) && (!_isWitchlight || _mistakes < 3)) {
+        _newChallenge();
+      }
     });
+    if (_remainingMilliseconds <= 0 || (_isWitchlight && _mistakes >= 3)) {
+      unawaited(_finish());
+    }
   }
 
   @override
@@ -287,6 +308,15 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                         ? null
                         : () => Navigator.pop(context),
                   ),
+                  if (_isWitchlight)
+                    Text(
+                      '${strings.pick('Mistakes', 'Fouten')}: $_mistakes / 3',
+                      key: const Key('witchlight-mistakes'),
+                      style: TextStyle(
+                          color:
+                              _mistakes > 0 ? Colors.redAccent : Colors.white70,
+                          fontWeight: FontWeight.w700),
+                    ),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -312,7 +342,17 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                     _totalActions == 0 ? 0 : _correctActions / _totalActions,
                 elapsed: _runStartedAt == null
                     ? Duration.zero
-                    : DateTime.now().difference(_runStartedAt!),
+                    : _now().difference(_runStartedAt!),
+              ),
+            if (_isWitchlight && _errorFlashUntil != null)
+              IgnorePointer(
+                child: TweenAnimationBuilder<double>(
+                  key: ValueKey('witchlight-error-flash-$_mistakes'),
+                  tween: Tween(begin: .48, end: 0),
+                  duration: const Duration(milliseconds: 300),
+                  builder: (_, alpha, __) =>
+                      ColoredBox(color: Colors.red.withValues(alpha: alpha)),
+                ),
               ),
           ],
         ),
@@ -364,7 +404,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
       Column(
         key: key,
         children: [
-          const SizedBox(height: 15),
+          const SizedBox(height: 8),
           Text(
             strings.pick(instructionEn, instructionNl),
             textAlign: TextAlign.center,
@@ -626,9 +666,9 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                   ),
                   Expanded(
                     child: WitchlightTracePath(
-                      key: ValueKey('witchlight-path-$_round'),
+                      key: ValueKey('witchlight-path-$_pathSeed'),
                       enabled: _started && !_ending && !_inputLocked,
-                      mirrored: _round.isEven,
+                      seed: _pathSeed,
                       tolerance: _spiritTolerance,
                       onResult: (correct) => _answer(correct),
                     ),

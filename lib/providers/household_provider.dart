@@ -12,6 +12,7 @@ import '../models/activity_entry.dart';
 import '../models/chest.dart';
 import '../models/day_phase.dart';
 import '../models/dragon_egg.dart';
+import '../models/egg_altar.dart';
 import '../models/dragon_emote.dart';
 import '../models/dragon_lineage.dart';
 import '../models/dragon_school.dart';
@@ -32,6 +33,7 @@ import '../services/notification_service.dart';
 import '../utils/json_utils.dart';
 
 part 'dragonhaven_systems.dart';
+part 'egg_altar_systems.dart';
 
 enum PurchaseResult {
   purchased,
@@ -102,7 +104,7 @@ enum RoomUnlockResult {
 }
 
 class HouseholdProvider extends ChangeNotifier {
-  static const saveSchemaVersion = 53;
+  static const saveSchemaVersion = 54;
 
   HouseholdProvider({
     Random? random,
@@ -169,6 +171,14 @@ class HouseholdProvider extends ChangeNotifier {
   late Pet pet;
   Pet? incubatingEgg;
   List<DragonEgg> eggStash = [];
+  EggAltarState eggAltar = EggAltarState();
+  EggAltarCommand? altarCommand;
+  Future<Map<String, dynamic>> Function(String conclaveId)? loadWeaveBeacon;
+  Future<void> Function()? refreshEggAltar;
+  String? Function()? altarCurrentUserId;
+  bool altarBusy = false;
+  bool altarRequiresAccount = false;
+  Map<String, dynamic>? pendingAltarOperation;
   List<Pet> sanctuaryDragons = [];
   Map<ChestTier, int> chestInventory = {
     for (final tier in ChestTier.values) tier: 0,
@@ -512,6 +522,7 @@ class HouseholdProvider extends ChangeNotifier {
       throw const FormatException('Stored game has no dragon state.');
     }
     provider._restore(data);
+    provider._applyAltarProtection();
     final schemaChanged = data['schemaVersion'] != _schemaVersion;
     final evolutionChanged = provider._evolveReadyDragons(provider._clock());
     final changed = provider.pet.applyTimeDecay(provider._clock()) |
@@ -789,6 +800,11 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   void _restore(Map<String, dynamic> data) {
+    eggAltar = EggAltarState.fromJson(
+        Map<String, dynamic>.from(data['eggAltar'] as Map? ?? {}));
+    pendingAltarOperation = data['pendingAltarOperation'] is Map
+        ? Map<String, dynamic>.from(data['pendingAltarOperation'] as Map)
+        : null;
     const supportedLanguages = {'en', 'nl', 'de', 'fr', 'es', 'pt', 'it', 'ja'};
     final storedLanguage = stringFromJson(data['languageCode']);
     languageCode =
@@ -2466,10 +2482,14 @@ class HouseholdProvider extends ChangeNotifier {
   Future<bool> nameDragon(String dragonId, String value) async {
     final name = value.trim();
     final dragon = dragonById(dragonId);
-    if (dragon == null || dragon.isEgg || name.isEmpty || name.length > 24) {
+    if (dragon == null ||
+        dragon.isEgg ||
+        name.isEmpty ||
+        name.runes.length > 24) {
       return false;
     }
     final firstName = dragon.name.trim().isEmpty;
+    if (!firstName) return renameDragonWithQuill(dragonId, name);
     dragon.name = name;
     if (firstName) totalNamed++;
     _evaluateAchievements();
@@ -2555,11 +2575,17 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<bool> activateEgg(String eggId) async {
+    if (altarBusy ||
+        pendingAltarOperation != null ||
+        eggAltar.returnedIds.contains(eggId)) {
+      return false;
+    }
     if (isEggReservedForTrade(eggId)) return false;
     final index = eggStash.indexWhere((egg) => egg.id == eggId);
     if (index < 0 || pet.isEgg || incubatingEgg != null) return false;
     final egg = eggStash.removeAt(index);
     incubatingEgg = egg.activate(coins: 0, gems: 0, activatedAt: _clock());
+    _applyAltarProtection();
     final activeEgg = incubatingEgg!;
     _evaluateAchievements();
     await _notifyAndSave();
@@ -3050,7 +3076,11 @@ class HouseholdProvider extends ChangeNotifier {
     await _save();
   }
 
+  void _notifyAltarListeners() => notifyListeners();
+
   Map<String, dynamic> exportState() => <String, dynamic>{
+        'eggAltar': eggAltar.toJson(),
+        'pendingAltarOperation': pendingAltarOperation,
         'schemaVersion': _schemaVersion,
         'languageCode': languageCode,
         'accountName': accountName,
@@ -3209,11 +3239,16 @@ class HouseholdProvider extends ChangeNotifier {
     try {
       await _restoreStoredState(candidate, state);
       final preservedCoins = pet.coins;
+      final preservedAltar = eggAltar;
+      final preservedPending = pendingAltarOperation;
       final preservedGems = pet.gems;
       final preservedChests = Map<ChestTier, int>.from(chestInventory);
       final preservedSpecialChests =
           Map<String, int>.from(specialChestInventory);
       _restore(state);
+      // A backup never rewinds consumed eggs, crafted stock or newer tags.
+      _mergeRestoredAltar(preservedAltar);
+      pendingAltarOperation = preservedPending ?? pendingAltarOperation;
       if (preserveServerOwnedWalletAndChests) {
         // Once an account is cut over, a cloud save is only a presentation and
         // offline-state backup. It may never overwrite authoritative balances
