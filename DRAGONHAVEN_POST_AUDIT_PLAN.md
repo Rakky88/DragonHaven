@@ -3,11 +3,11 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-Actuele openbare versie: **v0.05.14, versionCode 10064 en Latest. Geregistreerde
+Actuele openbare versie: **v0.05.15, versionCode 10065 en Latest. Geregistreerde
 Keepers op een lagere versie krijgen bij appstart de wegdrukbare updatepopup met
 de permanente Android-downloadroute.**
 
-Releasecandidate **v0.05.15 / versionCode 10065** bevat de aangevraagde
+Release **v0.05.15 / versionCode 10065** bevat de aangevraagde
 Friends/Conclave-tabs, een lokale ongelezen-teller per account en Conclave voor
 berichten jonger dan 24 uur (eigen berichten uitgesloten), pompoengezichten voor
 Witchlight Arcana, continu padtraceren voor Spirit, een uitslag zonder extra
@@ -24,7 +24,7 @@ Trial-/documentatiecontroles zijn groen. Volledige hervalidatie is groen: 467/46
 versie 0.05.15, buildnummer 10065 en hetzelfde vaste certificaat als v0.05.14.
 Friends/Conclave en About zijn op de emulator gecontroleerd; compacte
 Witchlight- en uitslaglayouts en reduced motion vallen onder widgetcontroles.
-Publicatiebewijs wordt na publicatie toegevoegd.
+Publicatie en downloadverificatie zijn afgerond; zie de bewijsregel van v0.05.15 onderaan.
 
 De lokale productiepreflight op 7 september 2026 bevestigde 41/41 migraties,
 nul database-lintfouten, Auth health/settings HTTP 200 en applicatiehealth HTTP
@@ -90,7 +90,7 @@ release blijven hierdoor ongewijzigd. Analyzer en 457/457 tests zijn groen.**
 
 Server- en releasebewijs: **[stagingrun 34072959455](https://github.com/Rakky88/DragonHaven/actions/runs/34072959455)
 en [productiemigratie 34073058141](https://github.com/Rakky88/DragonHaven/actions/runs/34073058141)
-brachten staging en productie veilig op 41/41 met nul lintfouten. De actuele
+brachten staging en productie veilig op 41/41 met nul lintfouten. De eerdere
 [release v0.05.14](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.14)
 wijst exact naar commit `768a6ac48f681d3d9bea2ea63a6048bde4c453d2` en bevat één
 `DragonHaven.apk` van 477.701.825 bytes met SHA-256
@@ -1367,3 +1367,5 @@ productbesluiten en bevestigt wanneer die werkelijk zijn uitgevoerd.
 | 07-09-2026 | v0.05.15 lokaal afgerond; publicatie wacht op expliciete bronuploadtoestemming | Codex | broncommit `b7d5584ec65225aa9be025bf04ad233b3b20a169`, releasebranch `release/v0.05.15` | De definitieve analyzer is schoon, 467 tests zijn groen en de definitieve APK is als update op emulator-5554 geinstalleerd met versionName 0.05.15/versionCode 10065. About toont v0.05.15; Friends/Conclave en het echte Trial-uitslagvenster zonder achtergrondsterren zijn visueel gecontroleerd. De eerste analyse na screenshots waarschuwde uitsluitend voor het tijdelijke reviewtestscript buiten test/; dit tijdelijke script is verwijderd en de eindanalyse is groen. De automatische goedkeuringscontrole blokkeerde de bron-/auditpush naar Rakky88/DragonHaven omdat de algemene releasetoestemming volgens de controle niet expliciet genoeg was voor deze bronupload. De push is niet uitgevoerd; er is geen v0.05.15-tag of release aangemaakt. Laatste openbare versie blijft v0.05.14. APK, signing, release-notes, read-only GitHub dry-run en productiepreflight zijn gereed. |
 
 | 07-09-2026 | v0.05.15 publicatie hervat op uitdrukkelijk verzoek | Codex | opnieuw bevestigde releasetoestemming en productiepreflight om 07:33 UTC | De gebruiker heeft na de expliciete vraag om de bron-/auditupload en publicatie opnieuw opdracht gegeven de release uit te brengen. De ongewijzigde, gevalideerde APK blijft 477.734.589 bytes met dezelfde SHA-256. Productie is nog steeds 41/41 met nul lintfouten en HTTP 200 voor Auth en applicatiehealth. GitHub dry-run bevestigt dat v0.05.15 nog niet bestaat. Het Egg Altar blijft een lokaal ontwerp en maakt geen deel uit van deze release. |
+
+| 07-09-2026 | v0.05.15 gepubliceerd en als Latest geverifieerd | Codex, op uitdrukkelijk verzoek | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.15), [APK](https://github.com/Rakky88/DragonHaven/releases/download/v0.05.15/DragonHaven.apk), [vaste download](https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk), [taggate 34096132993](https://github.com/Rakky88/DragonHaven/actions/runs/34096132993) | De release wijst exact naar commit `9f282216af6929a45d45ff37009a49e0642a08ef`. Asset `DragonHaven.apk` (ID 548376024) heeft exact 477.734.589 bytes en SHA-256 `1b9de0973d9de761d7486d95bf43240f78ad6a83dcc9a5b19d94920c4203d529`, gelijk aan de lokaal gecontroleerde APK. Latest is v0.05.15; beide downloadroutes geven HTTP 200. De onafhankelijke healthcheck na upload om 07:39 UTC bevestigt Auth health/settings en applicatiehealth HTTP 200. De taggate heeft productiepreflight, analyzer en tests groen afgerond; ook de aanvullende gesigneerde Play Store-bundle, artifactverificatie en volledige taggate zijn succesvol afgerond. Geen migraties of economyinstellingen gewijzigd. |
