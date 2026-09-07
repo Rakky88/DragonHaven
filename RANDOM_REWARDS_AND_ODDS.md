@@ -6,7 +6,9 @@ Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
 Source baseline: v0.05.16, with the dormant server chest-opening candidate below
 
-<!-- reference-source-fingerprint: 070fa8ff42450aa3 -->
+<!-- reference-source-fingerprint: 28f1ad84614f6691 -->
+
+The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 

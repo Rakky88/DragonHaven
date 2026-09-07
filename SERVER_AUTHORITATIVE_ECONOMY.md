@@ -37,6 +37,17 @@ real projection decoding, delayed/ABA account switches, timeout, concurrency,
 checksum corruption, interruption between files and equal-revision conflicts.
 These are display/transport components; no production UI applies shadow data.
 
+The detached client command coordinator now journals two checksummed copies of
+each intent, resumes the same UUID/payload, fetches a snapshot at least as new as
+the receipt/cache, persists it, applies the absolute display and acknowledges
+last. Eleven tests cover lost commit responses, local save failures, duplicate
+submits, account changes, old receipts, durable refusals and damaged journals.
+If both intent copies are unreadable it deliberately requires recovery instead
+of guessing a fresh purchase; automatic recovery from server intent history is
+still open. Local migration 55 lets completed success/failure receipts replay
+while mutations are paused or the ruleset changed, while new/unfinished leases
+remain gated. Its staging application and paused-replay proof are pending.
+
 ### Shared rules candidate
 
 `GameCommandEngine` now evaluates catalog purchases, bounded chest openings,

@@ -22,16 +22,18 @@ $state = (supabase migration list --linked --output-format json | Out-String) | 
 if ($LASTEXITCODE -ne 0) { throw 'Migration history unavailable.' }
 $remote = @($state.migrations | ForEach-Object { [string]$_.remote } | Where-Object { $_ } | Sort-Object)
 $local = @(Get-ChildItem supabase/migrations -Filter '*.sql' | ForEach-Object { $_.BaseName.Split('_')[0] } | Sort-Object)
-$baseline = @($local | Where-Object { [long]$_ -le 202609070053 })
-if ($local[-1] -cne '202609070054' -or
+$baseline = @($local | Where-Object { [long]$_ -le 202609070054 })
+if ($local[-1] -cne '202609070055' -or
     (@(Compare-Object $remote $baseline).Count -ne 0 -and @(Compare-Object $remote $local).Count -ne 0)) {
-  throw 'Requires exact registered staging schema 53/54 and only read migration 54.'
+  throw 'Requires exact registered staging schema 54/55 and only receipt migration 55.'
 }
 ./tool/staging_canonical_game_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 ./tool/staging_canonical_import_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 ./tool/staging_canonical_game_read_contract.ps1 -ProjectRef $projectRef `
+  -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
+./tool/staging_canonical_receipt_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 supabase db lint --linked --level error --fail-on error --output-format json
 if ($LASTEXITCODE -ne 0) { throw 'Pre-apply lint failed.' }
@@ -46,6 +48,8 @@ if (@(Compare-Object $remote $local).Count -ne 0) {
 ./tool/staging_canonical_import_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 ./tool/staging_canonical_game_read_contract.ps1 -ProjectRef $projectRef `
+  -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
+./tool/staging_canonical_receipt_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 supabase functions deploy execute-game-command --project-ref $projectRef --no-verify-jwt --use-api
 if ($LASTEXITCODE -ne 0) { throw 'Staging game worker deployment failed.' }

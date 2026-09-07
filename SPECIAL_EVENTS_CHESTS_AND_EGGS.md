@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: ee59226cae93c093 -->
+<!-- reference-source-fingerprint: a71cebd83b26c4bd -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -24,6 +24,10 @@ alignment, size, personality and hatch seed. An Astral Lens reveals rarity;
 the Weave Oracle additionally reveals lineage. Nest and historical trade
 presentations use the same projection. Hatching reveals the dragon's appearance;
 personality still requires its existing reveal. No content odds or rewards change.
+
+The shared command identity schema and durable client journal reuse the original
+server intent after a lost response. Replaying a Special Chest, egg return or
+hatch outcome does not grant or roll again, including during a mutation pause.
 
 The local server-domain candidate now calls the same Dart rules for opening
 event chests, incubating/hatching eggs and claiming solo Special Adventures.

@@ -235,6 +235,16 @@ def main():
         require(all(e['id'] != egg_id for e in paused_view['data']['eggs']), 'probe_read_resurrected_egg')
         require(next(d for d in paused_view['data']['dragons'] if d['id'] == fixture['pet']['id'])['name']
                 == 'Probe Weaver', 'probe_read_rename_missing')
+        status, paused_purchase = command('purchase_title_chest', request_id=purchase_id)
+        require(status == 200 and paused_purchase.get('replayed') is True and
+                {k: v for k, v in paused_purchase.items() if k != 'replayed'} ==
+                {k: v for k, v in purchased.items() if k != 'replayed'}, 'probe_paused_receipt_failed')
+        status, paused_refusal = command('return_egg', {'eggId': egg_id, 'sinisterConfirmed': True},
+                                         request_id=protected['request_id'])
+        require(status == 422 and paused_refusal.get('error') == 'egg_tagged'
+                and paused_refusal.get('replayed') is True, 'probe_paused_refusal_failed')
+        status, paused_new = command('purchase_title_chest')
+        require(status == 503 and paused_new.get('error') == 'game_engine_disabled', 'probe_paused_new_command_accepted')
         final = query(f"""select c.state->'pet'->>'coins' as coins, c.state->'chestInventory'->>'title' as titles,
           c.state->'chestInventory'->>'wooden' as wooden,
           c.state->'eggAltar'->'wallet' as altar_wallet, c.state->'eggAltar'->'crafted' as crafted,
@@ -265,6 +275,7 @@ def main():
         if prepare_import:
             print("PASS: captured authoritative Altar prepared and replayed before game commands; no migration reward grant.", flush=True)
         print("PASS: authenticated public projection hides egg genetics, reflects committed actions and reads while mutations are paused.", flush=True)
+        print("PASS: paused worker recovers original success/failure receipts and refuses new mutations.", flush=True)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"
         # The immutable run marker also finds an account whose admin-create

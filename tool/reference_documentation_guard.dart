@@ -15,6 +15,7 @@ const specialContentReference = ReferenceDocumentSpec(
   documentPath: 'SPECIAL_EVENTS_CHESTS_AND_EGGS.md',
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
+    'lib/models/game_command_schema.dart',
     'lib/domain/game_asset_snapshot.dart',
     'lib/domain/game_state_envelope.dart',
     'lib/domain/game_import_preparation.dart',
@@ -56,6 +57,7 @@ const randomRewardsReference = ReferenceDocumentSpec(
   documentPath: 'RANDOM_REWARDS_AND_ODDS.md',
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
+    'lib/models/game_command_schema.dart',
     'lib/domain/game_asset_snapshot.dart',
     'lib/domain/game_state_envelope.dart',
     'lib/domain/game_import_preparation.dart',
@@ -99,6 +101,7 @@ const redeemCodesReference = ReferenceDocumentSpec(
   documentPath: 'REDEEM_CODES.md',
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
+    'lib/models/game_command_schema.dart',
     'lib/models/adventure.dart',
     'lib/models/dragon_emote.dart',
     'lib/models/redeem_code.dart',

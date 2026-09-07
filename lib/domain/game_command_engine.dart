@@ -1,4 +1,5 @@
 import '../models/adventure.dart';
+import '../models/game_command_schema.dart';
 import '../models/chest.dart';
 import '../models/egg_altar.dart';
 import '../models/house.dart';
@@ -23,7 +24,7 @@ abstract final class GameCommandEngine {
     required DateTime now,
     required String keeperId,
   }) async {
-    final keys = _commandKeys[action];
+    final keys = GameCommandSchema.keys[action];
     if (keys == null ||
         payload.length != keys.length ||
         !keys.every(payload.containsKey)) {
@@ -183,44 +184,6 @@ abstract final class GameCommandEngine {
       game.dispose();
     }
   }
-
-  static const _commandKeys = <String, Set<String>>{
-    'refresh': {},
-    'purchase_portrait_chest': {},
-    'purchase_title_chest': {},
-    'purchase_music_chest': {},
-    'purchase_furniture': {'catalogId'},
-    'purchase_relic': {'relic'},
-    'open_chests': {'tier', 'count'},
-    'open_special_chests': {'catalogId', 'count'},
-    'use_relic': {'relic', 'dragonId'},
-    'use_astral_lens': {'eggId'},
-    'tag_egg': {'eggId', 'tagged'},
-    'return_egg': {'eggId', 'sinisterConfirmed'},
-    'craft_altar_relic': {'relic'},
-    'use_altar_relic': {'relic', 'eggId'},
-    'use_chronoshard': {'reductionPercent'},
-    'use_wayfinder': {'kind', 'replaceAdventureId'},
-    'equip_twinstar': {'dragonId'},
-    'activate_egg': {'eggId'},
-    'hatch_egg': {'eggId'},
-    'name_dragon': {'dragonId', 'name'},
-    'evolve_dragon': {'dragonId'},
-    'buy_starlight_treat': {'dragonId'},
-    'release_dragon': {'dragonId'},
-    'start_adventure': {'adventureId', 'dragonId'},
-    'dismiss_adventure': {'adventureId'},
-    'claim_adventure': {'runId'},
-    'abort_adventure': {'runId'},
-    'dismiss_trial': {'offerId'},
-    'claim_constellation': {},
-    'unlock_room': {'roomId'},
-    'build_floor': {'roomId'},
-    'repair_floor': {'index'},
-    'upgrade_ward': {},
-    'complete_tutorial': {'fullyViewed'},
-    'redeem_code': {'code'},
-  };
 
   static Object? _bundle(ChestRewardBundle? bundle) => bundle == null
       ? null

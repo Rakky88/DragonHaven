@@ -22,6 +22,14 @@ tests voor accountwissels, vertraagde antwoorden, revisies, corruptie en
 onderbroken schrijven. De volledige appkoppeling en live-overgang zijn nog niet
 gereed; schaduwgegevens kunnen geen live inventaris vervangen.
 
+De client bewaart spelverzoeken nu dubbel met checksum en hervat hetzelfde
+verzoeknummer. Elf tests bewijzen herstel na een verloren serverantwoord,
+lokale opslagfouten, dubbele tikken en accountwissels; afhandelen gebeurt pas na
+het bewaren en verwerken van de nieuwste serverinventaris. Lokale migratie 55
+maakt oude uitkomsten opvraagbaar tijdens een mutatiepauze zonder nieuwe acties
+toe te laten. Stagingbewijs hiervan volgt. Herstel wanneer beide verzoekkopieën
+beschadigd zijn en de daadwerkelijke appschermen blijven open werk.
+
 Productie- en staging-Firebase zijn ingericht zonder billingaccount. Staging
 gebruikt `dragonhaven-prod-rakky88` met weergavenaam DragonHaven Staging.
 De Android-koppeling, privacyarme Crashlytics/Performance-reporter, account- en
