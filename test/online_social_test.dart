@@ -169,6 +169,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(320, 640));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final game = HouseholdProvider(random: Random(7));
+    game.loadWeaveBeacon = (_) async => {'fragments': 0};
     final now = DateTime.now().subtract(const Duration(minutes: 1));
     final messages = List.generate(40, (i) => badgeMessage('message-$i', now));
     final repository = _FakeSocialRepository(inventoryImported: true)
@@ -205,6 +206,8 @@ void main() {
     await tester.tap(find.byKey(const Key('conclave-scroll-to-newest')));
     await tester.pumpAndSettle();
     expect(online.unreadConclaveMessageCount, 0);
+    await tester.tap(find.text('Weave Beacon'));
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     online.dispose();

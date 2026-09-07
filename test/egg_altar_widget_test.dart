@@ -8,12 +8,29 @@ import 'package:dragon_haven/screens/egg_altar_screen.dart';
 import 'package:dragon_haven/widgets/weave_beacon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:dragon_haven/theme/app_theme.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   final captureKey = GlobalKey();
+  final captureFont = Platform.environment['ALTAR_CAPTURE_FONT'];
+  setUpAll(() async {
+    if (captureFont == null) return;
+    final loader = FontLoader('AltarCapture');
+    loader.addFont(Future.value(
+        ByteData.sublistView(File(captureFont).readAsBytesSync())));
+    await loader.load();
+    final icons = Platform.environment['ALTAR_CAPTURE_ICONS'];
+    if (icons != null) {
+      final iconLoader = FontLoader('MaterialIcons');
+      iconLoader.addFont(
+          Future.value(ByteData.sublistView(File(icons).readAsBytesSync())));
+      await iconLoader.load();
+    }
+  });
   Future<void> capture(WidgetTester tester, String name) async {
     if (Platform.environment['ALTAR_CAPTURE'] != '1') return;
     await tester.runAsync(() async {
@@ -60,8 +77,29 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(ChangeNotifierProvider.value(
         value: g,
-        child:
-            RepaintBoundary(key: captureKey, child: MaterialApp(home: child))));
+        child: RepaintBoundary(
+            key: captureKey,
+            child: MaterialApp(
+                debugShowCheckedModeBanner: false,
+                theme: captureFont == null
+                    ? buildAppTheme()
+                    : buildAppTheme().copyWith(
+                        filledButtonTheme: FilledButtonThemeData(
+                            style: buildAppTheme()
+                                .filledButtonTheme
+                                .style!
+                                .copyWith(
+                                    textStyle: const WidgetStatePropertyAll(
+                                        TextStyle(
+                                            fontFamily: 'AltarCapture',
+                                            fontWeight: FontWeight.w800)))),
+                        primaryTextTheme: buildAppTheme()
+                            .primaryTextTheme
+                            .apply(fontFamily: 'AltarCapture'),
+                        textTheme: buildAppTheme()
+                            .textTheme
+                            .apply(fontFamily: 'AltarCapture')),
+                home: child))));
     await settle(tester);
   }
 
@@ -82,6 +120,7 @@ void main() {
       (tester) async {
     final g = game();
     await mount(tester, g, const EggAltarScreen());
+    await capture(tester, 'screen');
     await tester.tap(find.byKey(const Key('altar-select-egg')));
     await settle(tester);
     await tester.tap(find.byKey(const Key('altar-egg-sinister')));
