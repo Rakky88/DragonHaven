@@ -137,6 +137,7 @@ jobs:
             --dart-define=DRAGONHAVEN_GITHUB_OWNER=${{ github.repository_owner }} \
             --dart-define=DRAGONHAVEN_GITHUB_REPO=${{ github.event.repository.name }} \
             --dart-define=DRAGONHAVEN_APP_VERSION="$APP_VERSION" \
+            --dart-define=DRAGONHAVEN_BUILD_NUMBER="$BUILD_NUMBER" \
             --dart-define=DRAGONHAVEN_ENVIRONMENT=production \
             --dart-define=SUPABASE_URL=https://tnzathhutuwmohmjfrlo.supabase.co \
             --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_SllXjneKVmDAgtBGgkSgOg_tOJmYkX4

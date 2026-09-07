@@ -44,7 +44,7 @@ class ServerEconomyRepository {
   static const protocolVersion = 1;
   static const clientBuild = int.fromEnvironment(
     'DRAGONHAVEN_BUILD_NUMBER',
-    defaultValue: 10066,
+    defaultValue: 10067,
   );
 
   final EconomyRpcInvoker _invoke;

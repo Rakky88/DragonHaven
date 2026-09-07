@@ -3,7 +3,20 @@
 Laatst bijgewerkt: **7 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-## Actieve auditbouw: serverkisten en herstelgrens (7 september)
+## Releasekandidaat v0.05.17 / 10067 (7 september)
+
+De nieuwste Altar- en Trialverbeteringen worden gebundeld in v0.05.17.
+Alle versiebronnen en updatercontroles zijn met precies een stap verhoogd.
+Productiemigraties 45-47 gebruiken exact de op staging geteste SQL: eerst een
+teruggerolde repetitie van de chest-, winkel- en bestaande Altar-contracten,
+dan toepassing en volledige pariteit/lint/health. De globale economyfunctie
+blijft uit en alle spelers blijven in legacycompatibiliteit. Publicatie volgt
+pas na de verplichte serverpreflight, analyse, volledige tests, handtekening-
+en apparaatcontrole. Definitieve releasebewijzen worden hieronder bijgewerkt.
+De eerdere Auth-loadbevinding blijft open; deze release claimt geen bewezen
+capaciteit voor 100 of 1000 gelijktijdige spelers.
+
+## Auditbouw voorafgaand aan v0.05.17 (7 september)
 
 Nieuwe kandidaat op `feature/audit-server-economy`: migratie 45 voor het openen
 van alle kistinstanties op de server, migratie 46 voor het weigeren van oude

@@ -81,7 +81,7 @@ void main() {
 
     expect(find.byKey(const Key('startup-update-dialog')), findsOneWidget);
     expect(find.text('Update available'), findsOneWidget);
-    expect(find.text('v0.05.16'), findsOneWidget);
+    expect(find.text('v0.05.17'), findsOneWidget);
     expect(find.text('v0.05.17'), findsOneWidget);
     expect(checks, 1);
 
