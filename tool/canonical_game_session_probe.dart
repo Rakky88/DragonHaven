@@ -173,12 +173,13 @@ void main() {
         url: CanonicalGameTransport.stagingUrl,
         publishableKey: env['STAGING_SUPABASE_PUBLISHABLE_KEY']!,
         environment: OnlineEnvironment.staging);
-    final auth = SupabaseClient(config.url, config.publishableKey,
-        authOptions: const AuthClientOptions(autoRefreshToken: false));
+    late SupabaseClient auth;
     late Directory directory;
     late CanonicalGameSession game;
     await tester.runAsync(() async {
       stdout.writeln('PROBE: ui_auth_start');
+      auth = SupabaseClient(config.url, config.publishableKey,
+          authOptions: const AuthClientOptions(autoRefreshToken: false));
       await auth.auth.recoverSession(raw);
       require((await auth.auth.getUser()).user?.id == owner,
           'client_probe_auth_mismatch');
@@ -239,8 +240,12 @@ void main() {
       await settleCommand();
       stdout.writeln('PROBE: ui_reveal_settled');
       for (var n = 0; n < 30; n++) {
+        // The callback (including reveal delays) runs on the real clock.
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 100)));
         await tester.pump(const Duration(milliseconds: 100));
       }
+      stdout.writeln('PROBE: ui_animation_finished');
       require(
           find.byKey(const Key('chest-rewards')).evaluate().length == 1 &&
               game.snapshot!.shop.chests['title'] == initialChests &&
@@ -251,13 +256,15 @@ void main() {
       stdout.writeln(
           'PASS: real shop UI purchase, durable inventory and server chest reveal; one debit and one title.');
     } finally {
+      stdout.writeln('PROBE: ui_cleanup_start');
       await tester.pumpWidget(const SizedBox.shrink());
-      game.dispose();
       await tester.runAsync(() async {
+        game.dispose();
         await auth.dispose();
         await directory.delete(recursive: true);
       });
       await tester.binding.setSurfaceSize(null);
+      stdout.writeln('PROBE: ui_cleanup_finished');
     }
   }, timeout: const Timeout(Duration(minutes: 2)));
 }
