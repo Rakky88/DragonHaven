@@ -140,7 +140,7 @@ void main() {
           'client_probe_recovery_failed');
       // Success is deliberately fixed text; no account, token, raw state or
       // private egg facts are included in test output.
-      print(
+      stdout.writeln(
           'PASS: real SDK/session/journals; one charge after lost reply; corrupt intent recovery without another purchase.');
     } finally {
       game?.dispose();

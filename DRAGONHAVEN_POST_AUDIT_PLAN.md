@@ -57,7 +57,25 @@ Auth/Edge/Dart/Postgres-proef bewezen. Tijdelijke accounts, kopieën, verzoeken 
 herstelbewijzen zijn verwijderd; runtime uit, schema 57, lint 0, health 200.
 Productie blijft 56. De volgende appstap bundelt de losse transport-/opslagdelen
 in één accountsessie met actuele serverweergave, offline lezen en duurzaam
-hervatten; deze sessie is nog niet aan de echte spelschermen gekoppeld.
+hervatten. Acht nieuwe sessietests en 26 transport-/hersteltests slagen.
+Workflow [34256256939](https://github.com/Rakky88/DragonHaven/actions/runs/34256256939)
+bewijst ook de echte Flutter-client, SDK, opslagbestanden en server samen: een
+verloren antwoord na een echte aankoop, herstart en beschadigde verzoekkopieën
+geven precies één afschrijving. Testaccounts en gegevens opgeruimd, runtime uit,
+schema 57, lint 0, health 200. Dit onderdeel is klaar; de sessie is nog niet aan
+de echte spelschermen gekoppeld.
+
+Rick heeft aansluitend deze productwijzigingen prioriteit gegeven:
+- eventthema door de app, vooral logo/achtergrond, plus een duidelijke eindtimer;
+- Expertise-informatie ook in de trial-drakenkiezer;
+- per draak Might/Arcana/Spirit kunnen markeren in My Dragons, dezelfde markering
+  in informatievensters en een selectie “Highlighted for this path”;
+- compacte Draconomicon-knop bovenin beide drakenkiezers;
+- twee weken Halloween-testscores bewaren voor rangkalibratie en echte normale
+  beloningen voor eventtrials in de testfase;
+- permanent 50/50 male/female bepalen samen met de overige draakeigenschappen,
+  met een klein icoon in My Dragons, behouden bij uitkomen/evolutie/overdracht.
+De verdere volledige servereconomie volgt na deze gevraagde productwijzigingen.
 
 Rick heeft de volledige servereconomie expliciet toegevoegd aan de scope en
 zelf Firebase-project `dragonhaven-20ced` aangemaakt. Werkbranch:

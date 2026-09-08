@@ -47,10 +47,17 @@ fresh-read permission to act, one command at a time, durable intent/recovery
 resumption and offline cached viewing. It remains detached from main/UI while
 the session behavior is tested; no shadow inventory replaces a live save.
 Eight session tests and the 26 existing transport/reconciliation tests pass.
-The staging probe now also exercises the actual Flutter session and filesystem
+The staging probe also exercises the actual Flutter session and filesystem
 journals with a real authenticated synthetic account: dropping a committed HTTP
-receipt, restarting, then corrupting both intent files. That new applied probe
-is the next gate; its child process receives no service/management credentials.
+receipt, restarting, then corrupting both intent files. This passed in
+[34256256939](https://github.com/Rakky88/DragonHaven/actions/runs/34256256939),
+source `65a4705958f2d56159211dc3619d584bcb267766`. One purchase charge survived
+the lost response; corrupt-intent recovery created no additional purchase.
+Its child received no service/management credentials. Final cleanup, schema 57,
+lint 0 and Auth/settings/app 200 passed, with the staging game runtime disabled.
+This completes the current session/recovery component. The owner has requested
+event theming, training highlights, picker shortcuts, Halloween test scoring/
+rewards and persistent dragon sex next; full live economy routing remains open.
 
 ### Public display projection candidate
 
