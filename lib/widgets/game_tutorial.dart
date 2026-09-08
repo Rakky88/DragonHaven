@@ -634,8 +634,8 @@ List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
         1,
         strings.pick('Adventures', 'Avonturen'),
         strings.pick(
-          'Choose an Adventure and a dragon. Matching Expertise shortens the journey; tap the i beside a dragon’s score to compare Might, Arcana and Spirit. Active Adventures show the shortest remaining journey first. Aborting a solo journey gives no rewards.',
-          'Kies een Adventure en een draak. Bijpassende Expertise verkort de reis; tik op de i naast de score voor Might, Arcana en Spirit. Actieve Adventures tonen de kortste resterende reis bovenaan. Een afgebroken soloreis geeft geen beloningen.',
+          'Choose an Adventure and a dragon. Matching Expertise shortens the journey; tap the i beside a dragon’s score to compare Might, Arcana and Spirit and see your highlights. The compact Draconomicon shortcut keeps your place in the picker. Active Adventures show the shortest remaining journey first. Aborting a solo journey gives no rewards.',
+          'Kies een Adventure en een draak. Bijpassende Expertise verkort de reis; tik op de i naast de score voor Might, Arcana, Spirit en je markeringen. Via de compacte Draconomicon-knop houd je je plek in de draakkeuze. Actieve Adventures tonen de kortste resterende reis bovenaan. Een afgebroken soloreis geeft geen beloningen.',
         ),
         targetKey: const Key('tutorial-adventure-header'),
       ),
@@ -644,8 +644,8 @@ List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
         strings.pick(
             'Group and Special Adventures', 'Group- en Special Adventures'),
         strings.pick(
-          'Join friends in a Group Adventure: the party starts when every place is filled and the combined requirements are met. Event Adventures remain finishable if started in time. Events marked TEST are previews: their rewards do not enter your permanent inventory.',
-          'Ga met vrienden op Group Adventure: de groep vertrekt zodra alle plekken gevuld zijn en de gezamenlijke eisen zijn gehaald. Event Adventures blijven afmaakbaar als je op tijd begon. Events met TEST zijn previews: hun beloningen komen niet in je blijvende inventaris.',
+          'Join friends in a Group Adventure: the party starts when every place is filled and the combined requirements are met. Event Adventures remain finishable if started in time. Test Event Adventures and their Special Chests only preview rewards. Test Event Trials do give their normal permanent rewards; their event rankings stay separate.',
+          'Ga met vrienden op Group Adventure: de groep vertrekt zodra alle plekken gevuld zijn en de gezamenlijke eisen zijn gehaald. Event Adventures blijven afmaakbaar als je op tijd begon. Test-eventadventures en hun Special Chests tonen alleen voorbeeldbeloningen. Test-eventtrials geven wel hun normale blijvende beloningen; hun eventranglijsten blijven apart.',
         ),
         targetKey: const Key('tutorial-adventure-section-group'),
         scrollKey: const PageStorageKey('available-adventures-scroll'),
@@ -667,8 +667,8 @@ List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
         2,
         strings.pick('Evolution and Expertise', 'Evolutie en Expertise'),
         strings.pick(
-          'Train Expertise through Adventures, Trials and Academy lessons. Evolution choices raise different Expertise maximums; MAX always follows the correct dragon, form and Ascension cap.',
-          'Train Expertise via Adventures, Trials en Academy-lessen. Evolutiekeuzes verhogen verschillende Expertise-maxima; MAX volgt altijd de juiste draak, vorm en Ascension-limiet.',
+          'In My Dragons, open a dragon and tap one or more Expertise rows to highlight them for training; tap again to clear. Matching dragons appear under Highlighted for this path in Adventures and Trials. Train Expertise through Adventures, Trials and Academy lessons. Evolution choices raise different Expertise maximums; MAX always follows the correct dragon, form and Ascension cap.',
+          'Open een draak in Mijn draken en tik op een of meer Expertise-regels om die te markeren voor training; tik opnieuw om te wissen. Bijpassende draken verschijnen bij Gemarkeerd voor deze route in Adventures en Trials. Train Expertise via Adventures, Trials en Academy-lessen. Evolutiekeuzes verhogen verschillende Expertise-maxima; MAX volgt altijd de juiste draak, vorm en Ascension-limiet.',
         ),
         targetKey: const Key('open-my-dragons'),
         scrollKey: const PageStorageKey('dragon-tower-scroll'),

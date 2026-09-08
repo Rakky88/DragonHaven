@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'event_appearance.dart';
+
 abstract final class AppColors {
   static const ink = Color(0xFF24213B);
   static const twilight = Color(0xFF5B4B8A);
@@ -14,21 +16,22 @@ abstract final class AppColors {
   static const muted = Color(0xFF706B7D);
 }
 
-ThemeData buildAppTheme() {
+ThemeData buildAppTheme({EventAppearance? event}) {
   final scheme = ColorScheme.fromSeed(
-    seedColor: AppColors.twilight,
+    seedColor: event?.primary ?? AppColors.twilight,
     brightness: Brightness.light,
-    primary: AppColors.twilight,
-    secondary: AppColors.mint,
-    tertiary: AppColors.gold,
-    surface: AppColors.cream,
+    primary: event?.primary ?? AppColors.twilight,
+    secondary: event?.accent ?? AppColors.mint,
+    tertiary: event?.accent ?? AppColors.gold,
+    surface: event?.paper ?? AppColors.cream,
     onSurface: AppColors.ink,
   );
 
   return ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
-    scaffoldBackgroundColor: AppColors.cream,
+    scaffoldBackgroundColor:
+        event == null ? AppColors.cream : Colors.transparent,
     textTheme: const TextTheme(
       displaySmall: TextStyle(
           fontSize: 32,
@@ -57,8 +60,8 @@ ThemeData buildAppTheme() {
       labelLarge: TextStyle(
           fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.1),
     ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.cream,
+    appBarTheme: AppBarTheme(
+      backgroundColor: event?.paper ?? AppColors.cream,
       foregroundColor: AppColors.ink,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
@@ -66,8 +69,8 @@ ThemeData buildAppTheme() {
     ),
     navigationBarTheme: NavigationBarThemeData(
       height: 72,
-      backgroundColor: Colors.white,
-      indicatorColor: AppColors.mist,
+      backgroundColor: event?.paper ?? Colors.white,
+      indicatorColor: event?.accent.withValues(alpha: .3) ?? AppColors.mist,
       elevation: 8,
       shadowColor: AppColors.ink.withValues(alpha: 0.12),
       labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(

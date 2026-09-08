@@ -55,9 +55,15 @@ source `65a4705958f2d56159211dc3619d584bcb267766`. One purchase charge survived
 the lost response; corrupt-intent recovery created no additional purchase.
 Its child received no service/management credentials. Final cleanup, schema 57,
 lint 0 and Auth/settings/app 200 passed, with the staging game runtime disabled.
-This completes the current session/recovery component. The owner has requested
+This completes the current session/recovery component. The subsequently requested
 event theming, training highlights, picker shortcuts, Halloween test scoring/
-rewards and persistent dragon sex next; full live economy routing remains open.
+rewards and persistent dragon sex are now implemented as an unreleased feature
+change. All 621 Flutter tests, full analysis and reference checks pass. The
+updated shared game bundle compiles, and native/web sex values agree for 109
+synthetic identities. Production health remains 200/200/200; no schema or runtime
+switch changed. See `EVENT_THEME_AND_TRAINING_VERIFICATION.md`. Full live economy
+routing remains open; the weighted economy checklist is not advanced by these
+product features.
 
 ### Public display projection candidate
 

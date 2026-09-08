@@ -1131,7 +1131,9 @@ extension DragonHavenSystems on HouseholdProvider {
         );
     if (dragon == null) return null;
     final offer = trialOffers[offerIndex];
-    final simulated = _isSimulatedSeasonalPreview(offer.specialEventKey);
+    // Test event Trials award the ordinary Trial reward. Special Adventures
+    // and Special Chests retain their separate preview exclusions.
+    final testEvent = offer.specialEventKey?.contains(':preview:') == true;
     final grade = trialGradeForScore(offer.kind, score);
     final rolledReward = trialRewardForGrade(
       grade,
@@ -1147,19 +1149,14 @@ extension DragonHavenSystems on HouseholdProvider {
           .toList(growable: false);
       earnedRelic = alternatives[_random.nextInt(alternatives.length)];
     }
-    final newBest = simulated
-        ? score > dragon.trialBest(offer.kind.name)
-        : dragon.recordTrialScore(offer.kind.name, score);
-    final earnedEmote = !simulated && grade == TrialGrade.sPlus
+    final newBest = dragon.recordTrialScore(offer.kind.name, score);
+    final earnedEmote = grade == TrialGrade.sPlus
         ? _rollUniqueDragonEmote(DragonEmoteSource.trial, .10)
         : null;
-    if (!simulated) pet.coins += rolledReward.coins;
-    final grantedXp =
-        simulated ? rolledReward.xp : _grantDragonXp(dragon, rolledReward.xp);
+    pet.coins += rolledReward.coins;
+    final grantedXp = _grantDragonXp(dragon, rolledReward.xp);
     final expertiseRewards = offer.definition.isSeasonal
-        ? (simulated
-            ? _seasonalTrialExpertisePreview(dragon, grade)
-            : _grantSeasonalTrialExpertise(dragon, grade))
+        ? _grantSeasonalTrialExpertise(dragon, grade)
         : <TrainingFocus, int>{
             offer.definition.focus: rolledReward.statPoints,
           };
@@ -1173,11 +1170,11 @@ extension DragonHavenSystems on HouseholdProvider {
       emote: earnedEmote,
       expertiseRewards: expertiseRewards,
     );
-    if (!simulated && !offer.definition.isSeasonal) {
+    if (!offer.definition.isSeasonal) {
       dragon.addTraining(offer.definition.focus, reward.statPoints);
     }
     final chestTier = reward.chestTier;
-    if (!simulated && chestTier != null) {
+    if (chestTier != null) {
       chestInventory.update(
         chestTier,
         (value) => value + 1,
@@ -1185,31 +1182,29 @@ extension DragonHavenSystems on HouseholdProvider {
       );
     }
     final relic = reward.relic;
-    if (!simulated && relic != null) {
+    if (relic != null) {
       _grantRelic(relic);
     }
     trialOffers.removeAt(offerIndex);
-    if (!simulated) _recordTrialStreakCompletion(_clock());
+    _recordTrialStreakCompletion(_clock());
     _scheduleTrialsFullNotification();
-    if (!simulated) {
-      _evolveReadyDragons(_clock());
-      _addActivity(
-        message:
-            '${dragon.displayName} earned ${trialGradeLabel(grade)} in ${offer.definition.titleEn}.',
-        type: ActivityType.explore,
-        code: ActivityCode.activityCompleted,
-        subject: offer.kind.name,
-        xp: reward.xp,
-      );
-      _evaluateAchievements();
-    }
+    _evolveReadyDragons(_clock());
+    _addActivity(
+      message:
+          '${dragon.displayName} earned ${trialGradeLabel(grade)} in ${offer.definition.titleEn}.',
+      type: ActivityType.explore,
+      code: ActivityCode.activityCompleted,
+      subject: offer.kind.name,
+      xp: reward.xp,
+    );
+    _evaluateAchievements();
     await _notifyAndSave();
     return TrialCompletion(
       kind: offer.kind,
       score: score,
       newDragonBest: newBest,
       reward: reward,
-      simulated: simulated,
+      testEvent: testEvent,
     );
   }
 
@@ -2094,6 +2089,19 @@ extension DragonHavenSystems on HouseholdProvider {
     return adventureChestForRoll(kind, _random.nextDouble());
   }
 
+  Future<void> toggleDragonExpertiseHighlight(
+      String dragonId, TrainingFocus focus) async {
+    final selected = ownedDragons.cast<Pet?>().firstWhere(
+          (dragon) => dragon?.id == dragonId,
+          orElse: () => null,
+        );
+    if (selected == null || selected.isEgg) return;
+    if (!selected.highlightedExpertises.remove(focus)) {
+      selected.highlightedExpertises.add(focus);
+    }
+    await _notifyAndSave();
+  }
+
   Future<void> toggleFavorite(String dragonId) async {
     final selected = ownedDragons.cast<Pet?>().firstWhere(
           (dragon) => dragon?.id == dragonId,
@@ -2367,29 +2375,6 @@ extension DragonHavenSystems on HouseholdProvider {
       overflow--;
     }
     return Map.unmodifiable(granted);
-  }
-
-  Map<TrainingFocus, int> _seasonalTrialExpertisePreview(
-    Pet dragon,
-    TrialGrade grade,
-  ) {
-    final ranked = TrainingFocus.values.toList()
-      ..sort((a, b) {
-        final score = dragon.trainingFor(a).compareTo(dragon.trainingFor(b));
-        return score != 0 ? score : a.index.compareTo(b.index);
-      });
-    final planned = switch (grade) {
-      TrialGrade.d => <int>[1, 0, 0],
-      TrialGrade.c => <int>[1, 1, 0],
-      TrialGrade.b => <int>[1, 1, 1],
-      TrialGrade.a => <int>[2, 1, 1],
-      TrialGrade.s => <int>[2, 2, 1],
-      TrialGrade.sPlus => <int>[3, 2, 2],
-    };
-    return {
-      for (var index = 0; index < ranked.length; index++)
-        if (planned[index] > 0) ranked[index]: planned[index],
-    };
   }
 
   String eggHint({bool? isDutch, String? locale}) {

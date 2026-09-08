@@ -10,6 +10,7 @@ class DragonEgg {
     required this.acquiredAt,
     required this.hatchSeed,
     required this.prismatic,
+    DragonSex? sex,
     this.lawAxis = LawAxis.neutral,
     MoralAxis moralAxis = MoralAxis.neutral,
     this.sizeFactor = 1,
@@ -20,7 +21,8 @@ class DragonEgg {
     this.moralAxisKnown = false,
     this.xp = 0,
     this.altarKnowledge = const AltarEggKnowledge(),
-  })  : moralAxis =
+  })  : sex = sex ?? DragonSex.fromSeed(hatchSeed),
+        moralAxis =
             sinister || lineageId == 'sinisterra' ? MoralAxis.evil : moralAxis,
         sinister = sinister || lineageId == 'sinisterra',
         incubationSeconds = (incubationSeconds ?? incubationMinutes * 60)
@@ -31,6 +33,7 @@ class DragonEgg {
   final DateTime acquiredAt;
   final int hatchSeed;
   final bool prismatic;
+  final DragonSex sex;
   final LawAxis lawAxis;
   final MoralAxis moralAxis;
   final double sizeFactor;
@@ -58,6 +61,7 @@ class DragonEgg {
         needsUpdatedAt: activatedAt,
         hatchSeed: hatchSeed,
         prismatic: prismatic,
+        sex: sex,
         sinister: sinister,
         lawAxis: lawAxis,
         moralAxis: moralAxis,
@@ -78,6 +82,7 @@ class DragonEgg {
         'acquiredAt': acquiredAt.toIso8601String(),
         'hatchSeed': hatchSeed,
         'prismatic': prismatic,
+        'sex': sex.name,
         'spectral': prismatic,
         'lawAxis': lawAxis.name,
         'moralAxis': moralAxis.name,
@@ -104,6 +109,7 @@ class DragonEgg {
       acquiredAt: DateTime.tryParse(stringFromJson(json['acquiredAt']) ?? '') ??
           DateTime.now(),
       hatchSeed: seed,
+      sex: DragonSex.fromJson(json),
       prismatic: (json['spectral'] is bool && json['spectral'] as bool) ||
           (json['prismatic'] is bool && json['prismatic'] as bool),
       lawAxis: enumByName(LawAxis.values, json['lawAxis']) ??

@@ -287,7 +287,7 @@ Future<void> _finishTrial(
             SnackBar(
               content: Text(AppStrings.of(routeNavigator.context).pick(
                 'The server could not verify this seasonal Trial. No reward was changed.',
-                'De server kon deze seizoensproef niet verifiÃ«ren. Er is geen beloning aangepast.',
+                'De server kon deze seizoensproef niet verifiëren. Er is geen beloning aangepast.',
               )),
             ),
           );
@@ -404,7 +404,10 @@ class _TrialResultCard extends StatelessWidget {
                     completion.simulated
                         ? strings.pick(
                             'TEST EVENT · SIMULATED', 'TESTEVENT · GESIMULEERD')
-                        : strings.pick('TRIAL COMPLETE', 'PROEF VOLTOOID'),
+                        : completion.testEvent
+                            ? strings.pick('TEST EVENT · TRIAL COMPLETE',
+                                'TESTEVENT · PROEF VOLTOOID')
+                            : strings.pick('TRIAL COMPLETE', 'PROEF VOLTOOID'),
                     style: const TextStyle(
                       color: Color(0xFFFFE08A),
                       fontSize: 11,

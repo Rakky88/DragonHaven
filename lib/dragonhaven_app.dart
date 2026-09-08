@@ -27,6 +27,8 @@ import 'services/notification_service.dart';
 import 'services/platform_actions.dart';
 import 'services/release_service.dart';
 import 'theme/app_theme.dart';
+import 'theme/event_appearance.dart';
+import 'widgets/seasonal_app_frame.dart';
 import 'widgets/about_sheet.dart';
 import 'widgets/game_icon_sprite.dart';
 import 'widgets/game_tutorial.dart';
@@ -34,16 +36,55 @@ import 'widgets/achievement_reveal.dart';
 import 'widgets/pull_to_dismiss_sheet.dart';
 import 'widgets/trade_reveal.dart';
 
-class DragonHavenApp extends StatelessWidget {
+class DragonHavenApp extends StatefulWidget {
   const DragonHavenApp({super.key});
 
   @override
+  State<DragonHavenApp> createState() => _DragonHavenAppState();
+}
+
+class _DragonHavenAppState extends State<DragonHavenApp> {
+  Timer? _eventClock;
+  String? _eventKey;
+
+  @override
+  void initState() {
+    super.initState();
+    // No network work and no whole-app rebuild each second. Rebuild only at
+    // an event boundary; the small countdown owns its own local clock.
+    _eventClock = Timer.periodic(const Duration(seconds: 1), (_) {
+      final game = context.read<HouseholdProvider>();
+      final window =
+          appEventWindow(game.activeSpecialAdventureWindows, game.currentTime);
+      if (mounted && window?.key != _eventKey) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _eventClock?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final languageCode = context.watch<HouseholdProvider>().languageCode;
+    final game = context.watch<HouseholdProvider>();
+    final languageCode = game.languageCode;
+    final event =
+        appEventWindow(game.activeSpecialAdventureWindows, game.currentTime);
+    _eventKey = event?.key;
+    final appearance =
+        event == null ? null : EventAppearance.forEvent(event.event.id);
     return MaterialApp(
       title: 'DragonHaven',
       debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(),
+      theme: buildAppTheme(event: appearance),
+      builder: (context, child) => SeasonalAppFrame(
+        window: event,
+        child: appearance == null
+            ? child!
+            : EventBackdrop(appearance: appearance, child: child!),
+      ),
       locale: Locale(languageCode),
       supportedLocales: AppStrings.supportedLanguages.keys.map(Locale.new),
       localizationsDelegates: const [
@@ -660,6 +701,9 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     );
     final completedAdventureCount =
         completedLocalAdventureCount + completedGroupAdventureCount;
+    final event = SeasonalAppFrame.windowOf(context);
+    final appearance =
+        event == null ? null : EventAppearance.forEvent(event.event.id);
     final eggOnly = game.pet.isEgg;
     final screens = <Widget>[
       FriendsScreen(active: _index == 0),
@@ -697,32 +741,35 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
           tooltip: strings.pick('About DragonHaven', 'Over DragonHaven'),
           onPressed: () => showDragonHavenAboutSheet(context),
           padding: const EdgeInsets.fromLTRB(9, 7, 5, 7),
-          icon: Container(
-            width: 48,
-            height: 48,
-            padding: const EdgeInsets.all(2),
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-              border: Border.all(color: const Color(0xFFFFD76A), width: 1.5),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x225B4B8A),
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
+          icon: appearance != null
+              ? SeasonalAppLogo(appearance: appearance)
+              : Container(
+                  width: 48,
+                  height: 48,
+                  padding: const EdgeInsets.all(2),
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                    border:
+                        Border.all(color: const Color(0xFFFFD76A), width: 1.5),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x225B4B8A),
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Transform.translate(
+                    offset: const Offset(.7, 0),
+                    child: Image.asset(
+                      'assets/images/dragonhaven_logo.png',
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                    ),
+                  ),
                 ),
-              ],
-            ),
-            child: Transform.translate(
-              offset: const Offset(.7, 0),
-              child: Image.asset(
-                'assets/images/dragonhaven_logo.png',
-                fit: BoxFit.contain,
-                filterQuality: FilterQuality.high,
-              ),
-            ),
-          ),
         ),
         title: _DragonHavenBrandTitle(
           subtitle: eggOnly
@@ -785,17 +832,22 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
           const SizedBox(width: 3),
         ],
       ),
-      body: eggOnly
-          ? const DragonTowerScreen()
-          : IndexedStack(
-              index: _index,
-              children: [
-                for (var index = 0; index < screens.length; index++)
-                  _visited.contains(index)
-                      ? screens[index]
-                      : const SizedBox.shrink(),
-              ],
-            ),
+      body: Column(children: [
+        if (event != null)
+          EventCountdownBanner(window: event, now: () => game.currentTime),
+        Expanded(
+            child: eggOnly
+                ? const DragonTowerScreen()
+                : IndexedStack(
+                    index: _index,
+                    children: [
+                      for (var index = 0; index < screens.length; index++)
+                        _visited.contains(index)
+                            ? screens[index]
+                            : const SizedBox.shrink(),
+                    ],
+                  )),
+      ]),
       bottomNavigationBar: eggOnly
           ? null
           : NavigationBar(

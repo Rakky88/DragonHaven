@@ -2,7 +2,10 @@ import 'dart:math';
 
 import '../utils/json_utils.dart';
 import 'dragon_lineage.dart';
+import 'dragon_sex.dart';
 import 'egg_altar.dart';
+
+export 'dragon_sex.dart';
 
 enum DragonStage { egg, hatchling, wyrmling, ascended }
 
@@ -178,6 +181,8 @@ class Pet {
     this.stage = DragonStage.egg,
     this.firstEgg = true,
     this.prismatic = false,
+    DragonSex? sex,
+    Set<TrainingFocus>? highlightedExpertises,
     bool sinister = false,
     this.lawAxis = LawAxis.neutral,
     MoralAxis moralAxis = MoralAxis.neutral,
@@ -211,6 +216,8 @@ class Pet {
     String? lineageId,
     this.evolutionPath,
   })  : id = id ?? 'dragon-${DateTime.now().microsecondsSinceEpoch}',
+        _sex = sex,
+        highlightedExpertises = {...?highlightedExpertises},
         sinister = sinister || lineageId == 'sinisterra',
         moralAxis =
             sinister || lineageId == 'sinisterra' ? MoralAxis.evil : moralAxis,
@@ -251,6 +258,9 @@ class Pet {
   DragonStage stage;
   bool firstEgg;
   bool prismatic;
+  final DragonSex? _sex;
+  DragonSex get sex => _sex ?? DragonSex.fromSeed(hatchSeed);
+  final Set<TrainingFocus> highlightedExpertises;
   final bool sinister;
   final LawAxis lawAxis;
   final MoralAxis moralAxis;
@@ -549,6 +559,11 @@ class Pet {
         'stage': stage.name,
         'firstEgg': firstEgg,
         'prismatic': prismatic,
+        'sex': sex.name,
+        'highlightedExpertises': [
+          for (final focus in TrainingFocus.values)
+            if (highlightedExpertises.contains(focus)) focus.name,
+        ],
         'spectral': prismatic,
         'sinister': sinister,
         'lawAxis': lawAxis.name,
@@ -622,6 +637,13 @@ class Pet {
     return Pet(
       id: nonEmptyStringFromJson(json['id']) ?? 'legacy-$seed',
       name: stringFromJson(json['name'])?.trim() ?? '',
+      sex: DragonSex.fromJson(json),
+      highlightedExpertises: {
+        for (final focus in TrainingFocus.values)
+          if (json['highlightedExpertises'] is List &&
+              (json['highlightedExpertises'] as List).contains(focus.name))
+            focus,
+      },
       xp: oldXp,
       coins: nonNegativeIntFromJson(json['coins'], fallback: 25),
       gems: nonNegativeIntFromJson(json['gems'], fallback: 3),

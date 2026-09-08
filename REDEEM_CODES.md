@@ -26,11 +26,11 @@ server rather than trusted from the public app catalog.
 
 | Code | Reward | Reward ID | Restriction and behavior |
 |---|---|---|---|
-| `HALLOWEENEVENT` | **Night of the Witchlight** | `halloween_witchlight` | Any authenticated, email-confirmed keeper; 48-hour reusable personal preview; isolated test ranking; simulated production rewards |
-| `CHRISTMASEVENT` | **A Star for the Winter Hearth** | `christmas_winter_hearth` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; simulated production rewards |
-| `NEWYEARSEVENT` | **When the New Dawn Rings** | `new_year_first_dawn` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; simulated production rewards |
-| `VALENTINEEVENT` | **Where Two Heartlights Meet** | `valentine_two_heartlights` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; simulated production rewards |
-| `PRIDEFESTEVENT` | **The Haven of Every Color** | `pride_every_color` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; simulated production rewards |
+| `HALLOWEENEVENT` | **Night of the Witchlight** | `halloween_witchlight` | Any authenticated, email-confirmed keeper; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
+| `CHRISTMASEVENT` | **A Star for the Winter Hearth** | `christmas_winter_hearth` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
+| `NEWYEARSEVENT` | **When the New Dawn Rings** | `new_year_first_dawn` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
+| `VALENTINEEVENT` | **Where Two Heartlights Meet** | `valentine_two_heartlights` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
+| `PRIDEFESTEVENT` | **The Haven of Every Color** | `pride_every_color` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
 
 ## Security and lifecycle
 
@@ -42,8 +42,12 @@ server rather than trusted from the public app catalog.
 - Repeating an active code returns the original expiry, without extending its
   48-hour window or changing its test ranking key.
 - Preview scores use a preview occurrence key and never affect live rankings.
-- Production preview rewards are displayed but not persisted. Staging may
-  persist them to validate save, restore, and idempotency paths.
+- Test event Trials grant their ordinary permanent rewards and keep personal
+  bests. Production test Adventures and their Special Chests still display
+  rewards without persisting them; staging can enable those for persistence tests.
+- The 8 September 2026 change does not alter code access or entitlement length.
+  Halloween's stored test scores are analyzed for 8–22 September separately from
+  live rankings (`tool/halloween_trial_calibration_report.sql`).
 - Removing a definition from both the app catalog and server mapping retires
   the code without removing legitimate earlier rewards.
 

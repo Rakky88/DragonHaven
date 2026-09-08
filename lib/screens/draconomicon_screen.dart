@@ -23,6 +23,8 @@ class DraconomiconScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
+    final tabHeight = (24 + MediaQuery.textScalerOf(context).scale(14) * 1.5)
+        .clamp(48.0, double.infinity);
     final game = context.watch<HouseholdProvider>();
     final normalCollection = discoveredForms ?? game.discoveredForms;
     final spectralCollection = prismaticForms ?? game.prismaticForms;
@@ -259,14 +261,14 @@ class DraconomiconScreen extends StatelessWidget {
                       ),
                       tabs: [
                         Tab(
-                          height: 48,
+                          height: tabHeight,
                           icon: const Icon(Icons.menu_book_rounded, size: 18),
                           iconMargin: const EdgeInsets.only(bottom: 1),
                           text: strings.pick('Dragons', 'Draken'),
                         ),
                         if (hasSpectralCollection)
                           Tab(
-                            height: 48,
+                            height: tabHeight,
                             icon: const Icon(Icons.auto_awesome, size: 18),
                             iconMargin: const EdgeInsets.only(bottom: 1),
                             text: strings.pick('Spectral', 'Spectral'),
@@ -534,12 +536,16 @@ class DragonLineageEntry extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '$count/$visibleFormCount',
-                style: const TextStyle(
-                  color: AppColors.ink,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 10,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '$count/$visibleFormCount',
+                  maxLines: 1,
+                  style: const TextStyle(
+                    color: AppColors.ink,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 10,
+                  ),
                 ),
               ),
               Icon(

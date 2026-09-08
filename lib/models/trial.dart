@@ -215,6 +215,7 @@ class TrialCompletion {
     required this.newDragonBest,
     required this.reward,
     this.simulated = false,
+    this.testEvent = false,
   });
 
   final TrialKind kind;
@@ -222,6 +223,7 @@ class TrialCompletion {
   final bool newDragonBest;
   final TrialReward reward;
   final bool simulated;
+  final bool testEvent;
 }
 
 TrialGrade trialGradeForScore(TrialKind kind, int score) {

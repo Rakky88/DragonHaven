@@ -171,8 +171,8 @@ class HouseholdProvider extends ChangeNotifier {
     return game;
   }
 
-  /// Non-persistent runtime gate. Production previews must never farm rewards;
-  /// staging enables real grants so persistence and idempotency can be tested.
+  /// Non-persistent gate for preview Special Adventures and Special Chests.
+  /// Test Trials always grant their normal rewards, including in production.
   bool persistentSeasonalPreviewRewards = false;
   Future<void> _saveQueue = Future<void>.value();
   Timer? _starterEggTapPersistenceTimer;
@@ -592,7 +592,7 @@ class HouseholdProvider extends ChangeNotifier {
     jukeboxRepeat = true;
     disabledSeasonalMusicTrackIds = {};
     final now = _clock();
-    final seed = _random.nextInt(0x7fffffff);
+    final seed = _random.nextInt(0x80000000);
     final sizeRoll = _random.nextDouble();
     final starterLineages = dragonLineages
         .where((lineage) => lineage.rarity == DragonRarity.common)
@@ -2917,7 +2917,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   DragonEgg _createEgg({required ChestTier sourceTier}) {
-    final seed = _random.nextInt(0x7fffffff);
+    final seed = _random.nextInt(0x80000000);
     if (sourceTier == ChestTier.sinister &&
         _random.nextDouble() < sinisterEggDropChance(sourceTier)) {
       return DragonEgg(
@@ -2960,7 +2960,7 @@ class HouseholdProvider extends ChangeNotifier {
       id: _newId(),
       lineageId: definition.lineageId,
       acquiredAt: _clock(),
-      hatchSeed: _random.nextInt(0x7fffffff),
+      hatchSeed: _random.nextInt(0x80000000),
       prismatic: _random.nextDouble() < definition.normalSpectralChance,
       lawAxis: LawAxis.values[_random.nextInt(LawAxis.values.length)],
       moralAxis: definition.fixedMoral ??

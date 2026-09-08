@@ -15,8 +15,9 @@ import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ascension_requirements.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/dragon_expertise_row.dart';
+import '../widgets/dragon_sex_badge.dart';
 import '../widgets/dragon_trial_records.dart';
-import '../widgets/expertise_score_badge.dart';
 import '../widgets/compact_egg_hatch_time.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/haven_lighting.dart';
@@ -1263,261 +1264,271 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            SizedBox.square(
-              dimension: 190,
-              child: DragonArt(
-                height: 190,
-                animate: true,
-                stageKey: dragon.stageKey,
-                lineageId: dragon.lineageId,
-                evolutionPath: dragon.activeEvolutionPath,
-                prismatic: dragon.spectral,
-                sinister: dragon.sinister,
+      builder: (sheetContext) => Consumer<HouseholdProvider>(
+        builder: (sheetContext, _, __) => SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              SizedBox.square(
+                dimension: 190,
+                child: DragonArt(
+                  height: 190,
+                  animate: true,
+                  stageKey: dragon.stageKey,
+                  lineageId: dragon.lineageId,
+                  evolutionPath: dragon.activeEvolutionPath,
+                  prismatic: dragon.spectral,
+                  sinister: dragon.sinister,
+                ),
               ),
-            ),
-            Text(dragon.displayName,
-                textAlign: TextAlign.center,
-                style: Theme.of(sheetContext).textTheme.headlineSmall),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF4F0FB),
-                borderRadius: BorderRadius.circular(22),
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                children: [
+                  Text(dragon.displayName,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(sheetContext).textTheme.headlineSmall),
+                  DragonSexBadge(dragon: dragon),
+                ],
               ),
-              child: Column(children: [
-                _DragonDetailRow(
-                    label: strings.pick('Dragon type', 'Draaktype'),
-                    value: strings.lineageName(dragon.lineage)),
-                _DragonDetailRow(
-                    label: strings.pick('Maturity', 'Volwassenheid'),
-                    value: strings.petStage(dragon)),
-                const Divider(height: 13),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    strings.pick('Expertises', 'Expertises'),
-                    style: const TextStyle(
-                      color: AppColors.twilight,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: .35,
-                    ),
-                  ),
+              const SizedBox(height: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF4F0FB),
+                  borderRadius: BorderRadius.circular(22),
                 ),
-                const SizedBox(height: 3),
-                for (final focus in TrainingFocus.values)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
-                    child: ExpertiseScoreBadge(
-                      dragonId: dragon.id,
-                      focus: focus,
-                      focusLabel: switch (focus) {
-                        TrainingFocus.might => strings.pick('Might', 'Kracht'),
-                        TrainingFocus.arcana =>
-                          strings.pick('Arcana', 'Arcana'),
-                        TrainingFocus.spirit => strings.pick('Spirit', 'Geest'),
-                      },
-                      score: dragon.trainingFor(focus),
-                      maximum: dragon.expertiseMaximum(focus),
-                      iconSize: 27,
-                      expand: true,
-                    ),
-                  ),
-                const Divider(height: 13),
-                _DragonDetailRow(
-                  label: strings.pick('Moral nature', 'Morele aard'),
-                  value: dragon.moralAxisKnown
-                      ? strings.moralAxisName(dragon.moralAxis)
-                      : strings.pick('Undiscovered', 'Onontdekt'),
-                ),
-                _DragonDetailRow(
-                  label: strings.pick('Order nature', 'Orde-aard'),
-                  value: dragon.lawAxisKnown
-                      ? strings.lawAxisName(dragon.lawAxis)
-                      : strings.pick('Undiscovered', 'Onontdekt'),
-                ),
-                _DragonDetailRow(
-                  label: strings.pick('Personality', 'Karakter'),
-                  value: dragon.personalityKnown
-                      ? dragon.personalityTraitIds
-                          .map(strings.personality)
-                          .join(' · ')
-                      : strings.pick('Undiscovered', 'Onontdekt'),
-                ),
-              ]),
-            ),
-            const SizedBox(height: 10),
-            _DragonProgressCard(dragon: dragon),
-            if (dragon.dragonSchoolAttemptTotal > 0) ...[
-              const SizedBox(height: 10),
-              _DragonSchoolDiplomaCard(dragon: dragon),
-            ],
-            const SizedBox(height: 10),
-            DragonTrialRecords(
-              cavernFlightBest: dragon.trialBest('cavernFlight'),
-              ruinBreakerBest: dragon.trialBest('ruinBreaker'),
-              runeweaverBest: dragon.trialBest('runeweaver'),
-            ),
-            const SizedBox(height: 10),
-            Card(
-              margin: EdgeInsets.zero,
-              child: Column(children: [
-                ListTile(
-                  key: Key('dragon-roaming-${dragon.id}'),
-                  leading:
-                      const GameIconSprite(GameIconKind.roomClear, size: 38),
-                  title: Text(dragon.roamsTower
-                      ? strings.pick('Remove from Tower', 'Uit de Toren halen')
-                      : strings.pick(
-                          'Invite to Tower', 'Uitnodigen in de Toren')),
-                  trailing: dragon.roamsTower
-                      ? const Icon(Icons.check_circle_rounded,
-                          color: AppColors.twilight)
-                      : null,
-                  onTap: () async {
-                    final result = await game.setDragonRoaming(
-                        dragon.id, !dragon.roamsTower);
-                    if (!sheetContext.mounted) return;
-                    if (result == DragonRoamingResult.towerFull) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(strings.pick(
-                          'The Tower is full. Build another floor or disable another roaming dragon.',
-                          'De Toren is vol. Bouw een verdieping of zet een andere rondlopende draak uit.',
-                        )),
-                      ));
-                      return;
-                    }
-                    Navigator.pop(sheetContext);
-                  },
-                ),
-                const Divider(height: 1),
-                if (game.hasTwinstarBrooch) ...[
-                  ListTile(
-                    key: Key('dragon-twinstar-${dragon.id}'),
-                    leading: SizedBox.square(
-                      dimension: 40,
-                      child: Image.asset(
-                        MysticRelic.twinstarBrooch.assetPath,
-                        fit: BoxFit.contain,
+                child: Column(children: [
+                  _DragonDetailRow(
+                      label: strings.pick('Dragon type', 'Draaktype'),
+                      value: strings.lineageName(dragon.lineage)),
+                  _DragonDetailRow(
+                      label: strings.pick('Maturity', 'Volwassenheid'),
+                      value: strings.petStage(dragon)),
+                  const Divider(height: 13),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      strings.pick('Expertises', 'Expertises'),
+                      style: const TextStyle(
+                        color: AppColors.twilight,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: .35,
                       ),
                     ),
-                    title: Text(
-                      game.isTwinstarEquippedOn(dragon.id)
-                          ? strings.pick(
-                              'Unequip Twinstar Brooch',
-                              'Tweesterbroche afdoen',
-                            )
-                          : game.twinstarBroochDragonId == null
-                              ? strings.pick(
-                                  'Equip Twinstar Brooch',
-                                  'Tweesterbroche omdoen',
-                                )
-                              : strings.pick(
-                                  'Move Twinstar Brooch here',
-                                  'Tweesterbroche hierheen verplaatsen',
-                                ),
+                  ),
+                  Text(
+                    strings.pick(
+                        'Tap an Expertise to highlight it for training.',
+                        'Tik op een Expertise om die te markeren voor training.'),
+                    style:
+                        const TextStyle(fontSize: 11, color: AppColors.muted),
+                  ),
+                  const SizedBox(height: 3),
+                  for (final focus in TrainingFocus.values)
+                    DragonExpertiseRow(
+                      dragon: dragon,
+                      focus: focus,
+                      onToggle: () =>
+                          game.toggleDragonExpertiseHighlight(dragon.id, focus),
                     ),
-                    subtitle: Text(strings.pick(
-                      'Doubles all XP while equipped',
-                      'Verdubbelt alle XP zolang hij gedragen wordt',
-                    )),
-                    trailing: game.isTwinstarEquippedOn(dragon.id)
-                        ? const Icon(
-                            Icons.check_circle_rounded,
-                            color: AppColors.twilight,
-                          )
+                  const Divider(height: 13),
+                  _DragonDetailRow(
+                    label: strings.pick('Moral nature', 'Morele aard'),
+                    value: dragon.moralAxisKnown
+                        ? strings.moralAxisName(dragon.moralAxis)
+                        : strings.pick('Undiscovered', 'Onontdekt'),
+                  ),
+                  _DragonDetailRow(
+                    label: strings.pick('Order nature', 'Orde-aard'),
+                    value: dragon.lawAxisKnown
+                        ? strings.lawAxisName(dragon.lawAxis)
+                        : strings.pick('Undiscovered', 'Onontdekt'),
+                  ),
+                  _DragonDetailRow(
+                    label: strings.pick('Personality', 'Karakter'),
+                    value: dragon.personalityKnown
+                        ? dragon.personalityTraitIds
+                            .map(strings.personality)
+                            .join(' · ')
+                        : strings.pick('Undiscovered', 'Onontdekt'),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              _DragonProgressCard(dragon: dragon),
+              if (dragon.dragonSchoolAttemptTotal > 0) ...[
+                const SizedBox(height: 10),
+                _DragonSchoolDiplomaCard(dragon: dragon),
+              ],
+              const SizedBox(height: 10),
+              DragonTrialRecords(
+                cavernFlightBest: dragon.trialBest('cavernFlight'),
+                ruinBreakerBest: dragon.trialBest('ruinBreaker'),
+                runeweaverBest: dragon.trialBest('runeweaver'),
+              ),
+              const SizedBox(height: 10),
+              Card(
+                margin: EdgeInsets.zero,
+                child: Column(children: [
+                  ListTile(
+                    key: Key('dragon-roaming-${dragon.id}'),
+                    leading:
+                        const GameIconSprite(GameIconKind.roomClear, size: 38),
+                    title: Text(dragon.roamsTower
+                        ? strings.pick(
+                            'Remove from Tower', 'Uit de Toren halen')
+                        : strings.pick(
+                            'Invite to Tower', 'Uitnodigen in de Toren')),
+                    trailing: dragon.roamsTower
+                        ? const Icon(Icons.check_circle_rounded,
+                            color: AppColors.twilight)
                         : null,
                     onTap: () async {
-                      final equipped = game.isTwinstarEquippedOn(dragon.id);
-                      await game.equipTwinstarBrooch(
-                        equipped ? null : dragon.id,
-                      );
-                      if (sheetContext.mounted) Navigator.pop(sheetContext);
+                      final result = await game.setDragonRoaming(
+                          dragon.id, !dragon.roamsTower);
+                      if (!sheetContext.mounted) return;
+                      if (result == DragonRoamingResult.towerFull) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(strings.pick(
+                            'The Tower is full. Build another floor or disable another roaming dragon.',
+                            'De Toren is vol. Bouw een verdieping of zet een andere rondlopende draak uit.',
+                          )),
+                        ));
+                        return;
+                      }
+                      Navigator.pop(sheetContext);
                     },
                   ),
                   const Divider(height: 1),
-                ],
-                ListTile(
-                  leading: const GameIconSprite(
-                    GameIconKind.dragonFavorite,
-                    key: Key('dragon-favorite-action-sprite'),
-                    size: 40,
-                  ),
-                  title: Text(strings.pick(
-                      'Set as favorite', 'Instellen als favoriet')),
-                  enabled: !dragon.favorite,
-                  trailing: dragon.favorite
-                      ? const Icon(Icons.check_circle_rounded,
-                          color: Color(0xFFE05A78))
-                      : null,
-                  onTap: dragon.favorite
-                      ? null
-                      : () async {
-                          Navigator.pop(sheetContext);
-                          await game.toggleFavorite(dragon.id);
-                        },
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: Opacity(
-                    opacity: dragon.favorite || dragon.activeAdventureId != null
-                        ? .38
-                        : 1,
-                    child: const GameIconSprite(
-                      GameIconKind.dragonRelease,
-                      key: Key('dragon-release-action-sprite'),
+                  if (game.hasTwinstarBrooch) ...[
+                    ListTile(
+                      key: Key('dragon-twinstar-${dragon.id}'),
+                      leading: SizedBox.square(
+                        dimension: 40,
+                        child: Image.asset(
+                          MysticRelic.twinstarBrooch.assetPath,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      title: Text(
+                        game.isTwinstarEquippedOn(dragon.id)
+                            ? strings.pick(
+                                'Unequip Twinstar Brooch',
+                                'Tweesterbroche afdoen',
+                              )
+                            : game.twinstarBroochDragonId == null
+                                ? strings.pick(
+                                    'Equip Twinstar Brooch',
+                                    'Tweesterbroche omdoen',
+                                  )
+                                : strings.pick(
+                                    'Move Twinstar Brooch here',
+                                    'Tweesterbroche hierheen verplaatsen',
+                                  ),
+                      ),
+                      subtitle: Text(strings.pick(
+                        'Doubles all XP while equipped',
+                        'Verdubbelt alle XP zolang hij gedragen wordt',
+                      )),
+                      trailing: game.isTwinstarEquippedOn(dragon.id)
+                          ? const Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.twilight,
+                            )
+                          : null,
+                      onTap: () async {
+                        final equipped = game.isTwinstarEquippedOn(dragon.id);
+                        await game.equipTwinstarBrooch(
+                          equipped ? null : dragon.id,
+                        );
+                        if (sheetContext.mounted) Navigator.pop(sheetContext);
+                      },
+                    ),
+                    const Divider(height: 1),
+                  ],
+                  ListTile(
+                    leading: const GameIconSprite(
+                      GameIconKind.dragonFavorite,
+                      key: Key('dragon-favorite-action-sprite'),
                       size: 40,
                     ),
+                    title: Text(strings.pick(
+                        'Set as favorite', 'Instellen als favoriet')),
+                    enabled: !dragon.favorite,
+                    trailing: dragon.favorite
+                        ? const Icon(Icons.check_circle_rounded,
+                            color: Color(0xFFE05A78))
+                        : null,
+                    onTap: dragon.favorite
+                        ? null
+                        : () async {
+                            Navigator.pop(sheetContext);
+                            await game.toggleFavorite(dragon.id);
+                          },
                   ),
-                  title:
-                      Text(strings.pick('Release dragon…', 'Draak vrijlaten…')),
-                  subtitle: dragon.activeAdventureId == null
-                      ? null
-                      : Text(strings.pick(
-                          'This dragon is currently away on an Adventure.',
-                          'Deze draak is momenteel op avontuur.')),
-                  enabled: !dragon.favorite && dragon.activeAdventureId == null,
-                  onTap: dragon.favorite || dragon.activeAdventureId != null
-                      ? null
-                      : () async {
-                          Navigator.pop(sheetContext);
-                          final confirmed = await showDialog<bool>(
-                                context: context,
-                                builder: (dialogContext) => AlertDialog(
-                                  scrollable: true,
-                                  title: Text(strings.pick(
-                                      'Release ${dragon.displayName}?',
-                                      '${dragon.displayName} vrijlaten?')),
-                                  content: Text(strings.pick(
-                                      'This dragon leaves your collection and cannot be trained. Its identity, form, alignment and hidden personality are preserved. Each day it has a 10% chance to return at a random time.',
-                                      'Deze draak verlaat je collectie en kan niet meer worden getraind. Identiteit, vorm, alignment en verborgen persoonlijkheid blijven bewaard. Elke dag heeft hij 10% kans om op een willekeurig tijdstip terug te keren.')),
-                                  actions: [
-                                    TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(dialogContext, false),
-                                        child: Text(strings.tr('cancel'))),
-                                    FilledButton(
-                                        onPressed: () =>
-                                            Navigator.pop(dialogContext, true),
-                                        child: Text(strings.pick(
-                                            'Release', 'Vrijlaten'))),
-                                  ],
-                                ),
-                              ) ??
-                              false;
-                          if (confirmed) {
-                            await game.releaseDragon(dragon.id);
-                          }
-                        },
-                ),
-              ]),
-            ),
-          ]),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Opacity(
+                      opacity:
+                          dragon.favorite || dragon.activeAdventureId != null
+                              ? .38
+                              : 1,
+                      child: const GameIconSprite(
+                        GameIconKind.dragonRelease,
+                        key: Key('dragon-release-action-sprite'),
+                        size: 40,
+                      ),
+                    ),
+                    title: Text(
+                        strings.pick('Release dragon…', 'Draak vrijlaten…')),
+                    subtitle: dragon.activeAdventureId == null
+                        ? null
+                        : Text(strings.pick(
+                            'This dragon is currently away on an Adventure.',
+                            'Deze draak is momenteel op avontuur.')),
+                    enabled:
+                        !dragon.favorite && dragon.activeAdventureId == null,
+                    onTap: dragon.favorite || dragon.activeAdventureId != null
+                        ? null
+                        : () async {
+                            Navigator.pop(sheetContext);
+                            final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (dialogContext) => AlertDialog(
+                                    scrollable: true,
+                                    title: Text(strings.pick(
+                                        'Release ${dragon.displayName}?',
+                                        '${dragon.displayName} vrijlaten?')),
+                                    content: Text(strings.pick(
+                                        'This dragon leaves your collection and cannot be trained. Its identity, form, alignment and hidden personality are preserved. Each day it has a 10% chance to return at a random time.',
+                                        'Deze draak verlaat je collectie en kan niet meer worden getraind. Identiteit, vorm, alignment en verborgen persoonlijkheid blijven bewaard. Elke dag heeft hij 10% kans om op een willekeurig tijdstip terug te keren.')),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () => Navigator.pop(
+                                              dialogContext, false),
+                                          child: Text(strings.tr('cancel'))),
+                                      FilledButton(
+                                          onPressed: () => Navigator.pop(
+                                              dialogContext, true),
+                                          child: Text(strings.pick(
+                                              'Release', 'Vrijlaten'))),
+                                    ],
+                                  ),
+                                ) ??
+                                false;
+                            if (confirmed) {
+                              await game.releaseDragon(dragon.id);
+                            }
+                          },
+                  ),
+                ]),
+              ),
+            ]),
+          ),
         ),
       ),
     );
@@ -1773,6 +1784,14 @@ class _OwnedDragonGridCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color:
+          dragon.highlightedExpertises.isEmpty ? null : const Color(0xFFFFFAE9),
+      shape: dragon.highlightedExpertises.isEmpty
+          ? null
+          : RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppColors.gold),
+            ),
       clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,
       child: InkWell(
@@ -1799,13 +1818,18 @@ class _OwnedDragonGridCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                dragon.displayName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.w900),
-              ),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Flexible(
+                    child: Text(
+                  dragon.displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                )),
+                const SizedBox(width: 4),
+                DragonSexBadge(dragon: dragon),
+              ]),
             ]),
             if (dragon.favorite)
               const Positioned(
@@ -1897,6 +1921,14 @@ class _OwnedDragonListCard extends StatelessWidget {
       dragon.acquiredAt,
     );
     return Card(
+      color:
+          dragon.highlightedExpertises.isEmpty ? null : const Color(0xFFFFFAE9),
+      shape: dragon.highlightedExpertises.isEmpty
+          ? null
+          : RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppColors.gold),
+            ),
       clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,
       child: InkWell(
@@ -1937,6 +1969,8 @@ class _OwnedDragonListCard extends StatelessWidget {
                             ),
                           ),
                         ),
+                        const SizedBox(width: 4),
+                        DragonSexBadge(dragon: dragon),
                         if (dragon.favorite) ...[
                           const SizedBox(width: 4),
                           const Icon(

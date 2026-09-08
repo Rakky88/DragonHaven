@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: 3ca6cce77b68ccaf -->
+<!-- reference-source-fingerprint: fc0ce6cc2bcbef71 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -31,8 +31,8 @@ hatch outcome does not grant or roll again, including during a mutation pause.
 
 The local server-domain candidate now calls the same Dart rules for opening
 event chests, incubating/hatching eggs and claiming solo Special Adventures.
-The scheduled event definitions, chest recipes, egg pools and production
-preview exclusions below have been reviewed and remain unchanged. Explicit
+The scheduled event definitions, chest recipes and egg pools remain unchanged.
+The current preview reward rules are described in section 7 below. Explicit
 activation time also initializes an egg's needs timestamp, so replay does not
 depend on the runtime's wall clock. This candidate has no deployed mutation
 endpoint or account cutover yet; its canonical state and entropy must come
@@ -267,11 +267,31 @@ and device notification permission.
 
 ## 7. Private preview contract
 
-Each new event has a 48-hour reusable personal preview restricted server-side
-to Keeper `DH-17792DC5`. Preview rankings are isolated from live occurrences.
-Production preview rewards are simulated and cannot change permanent
-inventory; staging can grant persistent rewards for idempotency tests. The UI
-marks preview occurrences as test events.
+Each seasonal event has a 48-hour reusable personal preview. Halloween is
+available to authenticated, email-confirmed keepers; the other four previews
+remain restricted server-side to Keeper `DH-17792DC5`. Rankings remain isolated
+from live occurrences and the UI labels these occurrences as test events.
+
+Updated 8 September 2026: **test event Trials grant the normal permanent Trial
+rewards**, including XP, balanced Expertise, grade chest, eligible S+ relic/emote
+rolls and daily constellation credit. They also save the dragon's personal best.
+Completing the same local offer twice cannot grant twice. Test Special Adventures,
+Valentine test journeys and their preview Special Chests still do not grant
+permanent rewards in production. Staging may enable those separately for tests.
+
+Halloween's accepted test attempts already persist in `seasonal_trial_attempts`,
+with preview bests in `seasonal_trial_bests`. Neither is removed when a personal
+preview expires. `tool/halloween_trial_calibration_report.sql` reads the 14 days
+from 8 September 00:00 to 22 September 00:00 Europe/Amsterdam: all attempts and
+one best per keeper, percentiles, daily counts and 250-point buckets. It exports
+no keeper identifiers or tokens and does not change live rankings or grade
+thresholds. Insufficient samples should not be treated as reliable cutoffs.
+
+All six calendar events theme the app's shared palette and logo. The five
+seasonal events reuse their existing illustrated background and emblem; Golden
+Wings uses gold styling. A compact persistent banner shows the event end time,
+including for a personal test. Live events take precedence over previews;
+expiry restores the normal theme without reopening the app or polling a server.
 
 ## 8. Other chest and egg types
 
@@ -286,6 +306,14 @@ The complete egg categories remain:
 - **Mysterious Egg** — ordinary standard family using its source-chest curve.
 - **Sinister Egg** — Sinisterra only, always Evil.
 - **Special Egg** — versioned event-bound family and rules from this document.
+
+Every egg fixes a permanent male/female value when its hatch seed and other
+properties are created, with 50/50 chances. New seed draws use the full 31-bit
+range; the stable sex bit consumes no additional reward roll. Existing eggs and
+dragons derive the same value from their saved seed; very old seedless identities
+use a stable identity hash. The value survives incubation, hatching, evolution,
+trade and restore. Small labeled male/female icons appear only for hatched
+dragons, and unknown eggs do not expose sex or their private seed in projections.
 
 ## 9. Non-calendar Special Adventures
 
@@ -419,7 +447,8 @@ Release v0.05.17: the compact seasonal HUD scales its phase icons within the ava
 Halloween preview access: any signed-in keeper with a confirmed email may redeem
 its existing personal 48-hour preview. The other four event previews remain
 restricted to their configured keeper. Active redemptions retain their original
-expiry; expired previews can be redeemed again. Production preview rewards stay
-simulated, and preview scores remain separate from live event rankings. This
+expiry; expired previews can be redeemed again. Production preview Adventures
+and Special Chests remain simulated; test Trials grant normal rewards as described
+in section 7. Preview scores remain separate from live event rankings. This
 does not change the event calendar or grant a Special Chest. Migration 48 is the
 forward-only server override; the current app already uses that RPC.

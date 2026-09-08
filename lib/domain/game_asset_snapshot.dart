@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../models/dragon_sex.dart';
+
 /// A semantic inventory fingerprint used before evaluating canonical state.
 /// It tolerates map order and explicit zero counts, but detects discarded
 /// collections, changed fixed egg properties, missing dragons, rerolled
@@ -67,6 +69,13 @@ class GameAssetSnapshot {
         throw const FormatException('Invalid or duplicate game identity');
       }
       final properties = <String, dynamic>{};
+      // Old saves acquire the same stable value as the model, without rerolls.
+      properties['sex'] = DragonSex.fromJson(data).name;
+      if (location != 'egg') {
+        properties['highlightedExpertises'] =
+            (data['highlightedExpertises'] as List? ?? []).toSet().toList()
+              ..sort();
+      }
       for (final key in const [
         'name',
         'stage',

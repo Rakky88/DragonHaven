@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/pet.dart';
-import 'expertise_score_badge.dart';
+import 'dragon_expertise_row.dart';
 
 /// A separate tap target: inspecting a dragon never selects it for an adventure.
 class DragonExpertiseInfo extends StatelessWidget {
@@ -23,29 +23,19 @@ class DragonExpertiseInfo extends StatelessWidget {
         context: context,
         builder: (context) => AlertDialog(
           title: Text(dragon.displayName),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(s.pick('Expertise', 'Expertise')),
-                const SizedBox(height: 12),
-                for (final focus in TrainingFocus.values)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: ExpertiseScoreBadge(
-                      dragonId: dragon.id,
-                      focus: focus,
-                      focusLabel: switch (focus) {
-                        TrainingFocus.might => 'Might',
-                        TrainingFocus.arcana => 'Arcana',
-                        TrainingFocus.spirit => 'Spirit',
-                      },
-                      score: dragon.trainingFor(focus),
-                      maximum: dragon.expertiseMaximum(focus),
-                    ),
-                  ),
-              ],
+          content: SizedBox(
+            width: 320,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(s.pick('Expertise', 'Expertise')),
+                  const SizedBox(height: 12),
+                  for (final focus in TrainingFocus.values)
+                    DragonExpertiseRow(dragon: dragon, focus: focus),
+                ],
+              ),
             ),
           ),
           actions: [

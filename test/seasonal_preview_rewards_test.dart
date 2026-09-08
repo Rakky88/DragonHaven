@@ -44,13 +44,14 @@ void main() {
     };
   }
 
-  test('production Halloween test Trial displays rewards but persists none',
+  test(
+      'production Halloween test Trial persists normal rewards and its record once',
       () async {
     final g = game();
     addTearDown(g.dispose);
     await g.redeemCode('HALLOWEENEVENT', keeperId: 'DH-OTHER123');
-    final window = g.activeSpecialAdventureWindows.firstWhere(
-        (window) => window.event.id == 'halloween_witchlight');
+    final window = g.activeSpecialAdventureWindows
+        .firstWhere((window) => window.event.id == 'halloween_witchlight');
     g.trialRefilledAt = now;
     g.trialOffers = [
       TrialOffer(
@@ -62,9 +63,28 @@ void main() {
     final before = rewards(g);
     final result = await g.completeTrial(
         offerId: 'preview-trial', dragonId: g.pet.id, score: 4200);
-    expect(result!.simulated, isTrue);
+    expect(result!.simulated, isFalse);
+    expect(result.testEvent, isTrue);
     expect(result.reward.xp, greaterThan(0));
-    expect(rewards(g), before);
+    expect(g.pet.xp, (before['xp'] as int) + result.reward.xp);
+    expect(g.pet.trialBest(TrialKind.witchlightWard.name), 4200);
+    for (final entry in result.reward.expertiseRewards.entries) {
+      expect(g.pet.trainingFor(entry.key), entry.value);
+    }
+    if (result.reward.chestTier != null) {
+      expect(
+          g.chestInventory[result.reward.chestTier],
+          ((before['chestInventory'] as Map)[result.reward.chestTier!.name]
+                      as int? ??
+                  0) +
+              1);
+    }
+    final after = rewards(g);
+    expect(
+        await g.completeTrial(
+            offerId: 'preview-trial', dragonId: g.pet.id, score: 4200),
+        isNull);
+    expect(rewards(g), after);
   });
 
   test(

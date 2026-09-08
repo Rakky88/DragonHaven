@@ -6,7 +6,7 @@ Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
 Source baseline: v0.05.16, with the dormant server chest-opening candidate below
 
-<!-- reference-source-fingerprint: 28f1ad84614f6691 -->
+<!-- reference-source-fingerprint: b2567e0778374a1f -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
@@ -16,6 +16,20 @@ The ownership, schedule, lifecycle, and relationship between events, chests,
 and eggs are documented separately in
 [SPECIAL_EVENTS_CHESTS_AND_EGGS.md](SPECIAL_EVENTS_CHESTS_AND_EGGS.md). The
 tables below remain the authoritative reference for their random odds.
+
+## Permanent dragon sex (8 September 2026)
+
+All new starter, ordinary, Sinister and Special eggs have **50% male / 50%
+female**, determined with the other fixed egg properties. A full uniform 31-bit
+hatch seed supplies the sex bit (`seed XOR (seed >> 16)`, lowest bit). No extra
+chest/relic roll is consumed and no reward pool changes. Explicit serialized sex
+is preserved; older eggs and dragons deterministically derive the same bit from
+their existing seed. Seedless legacy records use a stable identity hash instead
+of time or platform hashCode. Hatching/evolution/trade never reroll it. Sex has no
+Expertise bonus, reward modifier or effect on rarity/Spectral/Sinister chances.
+
+Training highlights are optional player choices, can be independently toggled
+for Might/Arcana/Spirit, and have no effect on scores, caps, odds or rewards.
 
 ## Reading the tables
 
@@ -434,6 +448,12 @@ previews use the same four-kind distribution but a separate occurrence.
 ### 4.2 Trial reward by grade
 
 XP and expertise are fixed by grade. The chest is the random part shown here.
+Since the 8 September 2026 working change, event Trials in a personal test
+preview grant this same permanent reward table, including the S+ relic/emote
+rolls below and normal constellation credit. Test Special Adventures and their
+Special Chests retain their separate production preview exclusions. Preview
+event rankings remain separate; Halloween calibration uses accepted attempts
+from 8–22 September and does not automatically change any grade cutoff.
 
 | Grade | XP | Standard expertise / seasonal balanced split | Chest result |
 |---|---:|---:|---|

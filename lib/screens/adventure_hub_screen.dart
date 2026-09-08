@@ -16,6 +16,7 @@ import 'trial_game_screen.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/draconomicon_shortcut.dart';
 import '../widgets/expertise_score_badge.dart';
 import '../widgets/dragon_expertise_info.dart';
 import '../widgets/game_icon_sprite.dart';
@@ -770,6 +771,12 @@ Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
   }
 }
 
+bool _highlightedForPath(Pet dragon, TrainingFocus focus,
+        {bool combined = false}) =>
+    combined
+        ? dragon.highlightedExpertises.isNotEmpty
+        : dragon.highlightedExpertises.contains(focus);
+
 class _TrialDragonPicker extends StatelessWidget {
   const _TrialDragonPicker({required this.offer, required this.dragons});
 
@@ -780,95 +787,107 @@ class _TrialDragonPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final focus = offer.definition.focus;
+    bool highlighted(Pet dragon) => _highlightedForPath(dragon, focus,
+        combined: offer.definition.isSeasonal);
+    final marked = dragons.where(highlighted).toList();
+    final others = dragons.where((dragon) => !highlighted(dragon)).toList();
     return SafeArea(
-      child: SizedBox(
-        height: MediaQuery.sizeOf(context).height * .72,
-        child: Column(
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: .72,
+        maxChildSize: .92,
+        builder: (_, controller) => ListView(
+          key: const Key('trial-dragon-picker'),
+          controller: controller,
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 4, 18, 12),
-              child: Column(
-                children: [
-                  Text(
-                    strings.pick('Choose your Trial dragon',
-                        'Kies je draak voor de proef'),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _trialStatBenefit(strings, offer.kind),
-                    textAlign: TextAlign.center,
-                    style:
-                        const TextStyle(color: AppColors.muted, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
+            const DraconomiconShortcut(),
+            Text(
+                strings.pick(
+                    'Choose your Trial dragon', 'Kies je draak voor de proef'),
+                style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 4),
+            Text(_trialStatBenefit(strings, offer.kind),
+                style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+            if (marked.isNotEmpty) ...[
+              _PickerSectionLabel(
+                  label: strings.pick('Highlighted for this path',
+                      'Gemarkeerd voor deze route')),
+              for (final dragon in marked)
+                _TrialDragonTile(
+                    offer: offer, dragon: dragon, highlighted: true),
+            ],
+            if (others.isNotEmpty) ...[
+              _PickerSectionLabel(
+                  label:
+                      strings.pick('Available dragons', 'Beschikbare draken')),
+              for (final dragon in others)
+                _TrialDragonTile(
+                    offer: offer, dragon: dragon, highlighted: false),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrialDragonTile extends StatelessWidget {
+  const _TrialDragonTile(
+      {required this.offer, required this.dragon, required this.highlighted});
+  final TrialOffer offer;
+  final Pet dragon;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    final focus = offer.definition.focus;
+    return Card(
+      color: highlighted ? const Color(0xFFFFFAE9) : Colors.white,
+      child: InkWell(
+        key: Key('trial-dragon-${dragon.id}'),
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => Navigator.pop(context, dragon),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(children: [
+            SizedBox.square(
+                dimension: 58,
+                child: DragonArt(
+                  height: 58,
+                  animate: false,
+                  stageKey: dragon.stageKey,
+                  lineageId: dragon.lineageId,
+                  evolutionPath: dragon.activeEvolutionPath,
+                  prismatic: dragon.prismatic,
+                  sinister: dragon.sinister,
+                )),
+            const SizedBox(width: 8),
             Expanded(
-              child: ListView.separated(
-                key: const Key('trial-dragon-picker'),
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
-                itemCount: dragons.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 7),
-                itemBuilder: (context, index) {
-                  final dragon = dragons[index];
-                  return Card(
-                    color: index == 0 ? const Color(0xFFFFFAE9) : Colors.white,
-                    child: ListTile(
-                      key: Key('trial-dragon-${dragon.id}'),
-                      onTap: () => Navigator.pop(context, dragon),
-                      leading: SizedBox.square(
-                        dimension: 58,
-                        child: DragonArt(
-                          height: 58,
-                          animate: false,
-                          stageKey: dragon.stageKey,
-                          lineageId: dragon.lineageId,
-                          evolutionPath: dragon.activeEvolutionPath,
-                          prismatic: dragon.prismatic,
-                          sinister: dragon.sinister,
-                        ),
-                      ),
-                      title: Text(
-                        dragon.displayName,
-                        style: const TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      subtitle: Row(
-                        children: [
-                          ExpertiseScoreBadge(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(dragon.displayName,
+                      style: const TextStyle(fontWeight: FontWeight.w900)),
+                  Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        ExpertiseScoreBadge(
                             dragonId: dragon.id,
                             focus: focus,
-                            focusLabel: _focusName(strings, focus),
+                            focusLabel: _focusName(s, focus),
                             score: dragon.trainingFor(focus),
-                            maximum: dragon.expertiseMaximum(focus),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              '${strings.pick('Best', 'Beste')}: '
-                              '${dragon.trialBest(offer.kind.name)}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TrialIconSprite(kind: offer.kind, size: 34),
-                          const Icon(Icons.chevron_right_rounded),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+                            maximum: dragon.expertiseMaximum(focus)),
+                        DragonExpertiseInfo(dragon: dragon),
+                      ]),
+                  Text(
+                      '${s.pick('Best', 'Beste')}: ${dragon.trialBest(offer.kind.name)}',
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.muted)),
+                ])),
+            const Icon(Icons.chevron_right_rounded, size: 20),
+          ]),
         ),
       ),
     );
@@ -2751,7 +2770,12 @@ class _DragonPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final recommendationCount = dragons.length.clamp(1, 3);
+    final highlighted = dragons
+        .where((dragon) => _highlightedForPath(dragon, adventure.focus,
+            combined: adventure.combinedExpertise))
+        .toList();
+    final others =
+        dragons.where((dragon) => !highlighted.contains(dragon)).toList();
     return SafeArea(
       child: DraggableScrollableSheet(
         expand: false,
@@ -2762,6 +2786,7 @@ class _DragonPicker extends StatelessWidget {
           controller: controller,
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
           children: [
+            const DraconomiconShortcut(),
             Row(
               children: [
                 const GameIconSprite(GameIconKind.adventureStart, size: 70),
@@ -2780,26 +2805,21 @@ class _DragonPicker extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            _PickerSectionLabel(
-                label: strings.pick(
-                    'Recommended for this path', 'Aanbevolen voor deze route')),
-            for (var index = 0; index < recommendationCount; index++)
-              _DragonPickerTile(
-                  dragon: dragons[index],
-                  adventure: adventure,
-                  recommended: true),
-            if (dragons.length > recommendationCount) ...[
-              const SizedBox(height: 8),
+            if (highlighted.isNotEmpty) ...[
               _PickerSectionLabel(
-                  label: strings.pick(
-                      'Other available dragons', 'Andere beschikbare draken')),
-              for (var index = recommendationCount;
-                  index < dragons.length;
-                  index++)
+                  label: strings.pick('Highlighted for this path',
+                      'Gemarkeerd voor deze route')),
+              for (final dragon in highlighted)
                 _DragonPickerTile(
-                    dragon: dragons[index],
-                    adventure: adventure,
-                    recommended: false),
+                    dragon: dragon, adventure: adventure, highlighted: true),
+            ],
+            if (others.isNotEmpty) ...[
+              _PickerSectionLabel(
+                  label:
+                      strings.pick('Available dragons', 'Beschikbare draken')),
+              for (final dragon in others)
+                _DragonPickerTile(
+                    dragon: dragon, adventure: adventure, highlighted: false),
             ],
           ],
         ),
@@ -2827,20 +2847,21 @@ class _DragonPickerTile extends StatelessWidget {
   const _DragonPickerTile({
     required this.dragon,
     required this.adventure,
-    required this.recommended,
+    required this.highlighted,
   });
 
   final Pet dragon;
   final AdventureDefinition adventure;
-  final bool recommended;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final focus = adventure.focus;
     return Card(
-      color: recommended ? const Color(0xFFFFFAE9) : Colors.white,
+      color: highlighted ? const Color(0xFFFFFAE9) : Colors.white,
       child: InkWell(
+        key: Key('adventure-dragon-${dragon.id}'),
         onTap: () => Navigator.pop(context, dragon),
         borderRadius: BorderRadius.circular(20),
         child: Padding(
@@ -2864,25 +2885,29 @@ class _DragonPickerTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [
-                      Expanded(
-                        child: Text(dragon.displayName,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w900)),
-                      ),
-                      if (recommended)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.goldLight,
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                          child: Text(strings.pick('Recommended', 'Aanbevolen'),
-                              style: const TextStyle(
-                                  fontSize: 9, fontWeight: FontWeight.w900)),
-                        ),
-                    ]),
+                    Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(dragon.displayName,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w900)),
+                          if (highlighted)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.goldLight,
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: Text(
+                                  strings.pick('Highlighted', 'Gemarkeerd'),
+                                  style: const TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900)),
+                            ),
+                        ]),
                     const SizedBox(height: 3),
                     Text(
                       '${strings.lineageName(dragon.lineage)} · ${strings.levelShort(dragon.level)}',

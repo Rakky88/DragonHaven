@@ -65,7 +65,8 @@ geven precies één afschrijving. Testaccounts en gegevens opgeruimd, runtime ui
 schema 57, lint 0, health 200. Dit onderdeel is klaar; de sessie is nog niet aan
 de echte spelschermen gekoppeld.
 
-Rick heeft aansluitend deze productwijzigingen prioriteit gegeven:
+De aansluitend gevraagde productwijzigingen zijn op 8 september 2026 gebouwd
+en gevalideerd; ze zijn nog niet als nieuwe appversie gepubliceerd:
 - eventthema door de app, vooral logo/achtergrond, plus een duidelijke eindtimer;
 - Expertise-informatie ook in de trial-drakenkiezer;
 - per draak Might/Arcana/Spirit kunnen markeren in My Dragons, dezelfde markering
@@ -75,7 +76,15 @@ Rick heeft aansluitend deze productwijzigingen prioriteit gegeven:
   beloningen voor eventtrials in de testfase;
 - permanent 50/50 male/female bepalen samen met de overige draakeigenschappen,
   met een klein icoon in My Dragons, behouden bij uitkomen/evolutie/overdracht.
-De verdere volledige servereconomie volgt na deze gevraagde productwijzigingen.
+Alle **621 Flutter-tests** slagen; de analyzer en referentiecontrole zijn schoon.
+De app en gecompileerde servercode geven voor 109 identiteitsfixtures dezelfde
+uitkomst. Beide kiezers zijn met grotere tekst getest en de schermbeelden zijn
+visueel bekeken. Het rapport over de bestaande Halloween-testregistratie beslaat
+8–22 september in Europe/Amsterdam en verandert geen live ranglijst.
+Productiehealth is opnieuw 200/200/200 om 18:13:50 UTC. Er is geen migratie of
+live economyactivatie uitgevoerd. Zie
+[uitvoeringsbewijs](EVENT_THEME_AND_TRAINING_VERIFICATION.md).
+De verdere volledige servereconomie blijft het volgende afzonderlijke traject.
 
 Rick heeft de volledige servereconomie expliciet toegevoegd aan de scope en
 zelf Firebase-project `dragonhaven-20ced` aangemaakt. Werkbranch:
