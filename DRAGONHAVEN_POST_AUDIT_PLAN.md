@@ -1,6 +1,6 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
-Laatst bijgewerkt: **7 september 2026**
+Laatst bijgewerkt: **8 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
 ## Uitgebracht: v0.05.19 (10069), 7 september 2026
@@ -41,6 +41,17 @@ publicatie: schema 56, lint 0, Auth/settings/app 200. Volledig bewijs en links:
 `RELEASE_V0.05.19_VERIFICATION.md`.
 
 ## Lopende opdracht: gratis Firebase en volledige servereconomie
+
+Na de geslaagde release heeft Rick opdracht gegeven de servereconomie weer op
+te pakken. Kandidaat 57 bouwt herstel bij twee beschadigde lokale verzoekkopieën:
+een herhaalbare servergrens sluit onafgemaakte acties af, bewaart reeds bevestigde
+uitkomsten en weigert ook oude verzoeken die pas later arriveren. De inventaris
+verandert niet door herstel. Een apart dubbel herstelbestand houdt nieuwe acties
+tegen totdat serverstand en weergave duurzaam zijn opgeslagen. Accountwissels en
+onderbroken opruimen worden afgevangen. De databaseproef inclusief migratie is
+op staging volledig teruggedraaid en slaagt; staging blijft 56. Alle 604
+Fluttertests, 14 workerproeven en de volledige analyse slagen. Toepassen op
+staging en de echte Auth/Edge-proef zijn de volgende controle. Productie blijft 56.
 
 Rick heeft de volledige servereconomie expliciet toegevoegd aan de scope en
 zelf Firebase-project `dragonhaven-20ced` aangemaakt. Werkbranch:
@@ -83,8 +94,8 @@ onderbroken update waarbij alleen de spelregels wijzigen. Run
 heeft 56 toegepast, contracten 52–56 en de volledige echte Auth/Edge/Dart/Postgres-
 proef doorlopen. Staging: schema 56, lint 0, health 200, runtime uit, tijdelijke
 accounts en schaduwverzoeken verwijderd. Dit begrensde serveronderdeel is klaar.
-Op verzoek van Rick hebben de eierkiezer, Expertise-informatie, tutorial en
-nieuwe release nu voorrang. De volledige live servereconomie blijft open werk.
+De eierkiezer, Expertise-informatie, tutorial en nieuwe release zijn afgerond;
+Rick heeft het vervolg van de volledige servereconomie inmiddels hervat.
 
 Productie- en staging-Firebase zijn ingericht zonder billingaccount. Staging
 gebruikt `dragonhaven-prod-rakky88` met weergavenaam DragonHaven Staging.

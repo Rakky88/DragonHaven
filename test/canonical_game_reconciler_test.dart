@@ -74,6 +74,7 @@ void main() {
   CanonicalGameReconciler reconciler({
     Future<CanonicalGameHttpReply> Function(CanonicalGameIntent)? send,
     Future<void> Function(CanonicalGameSnapshot)? display,
+    Future<Object?> Function(String)? recover,
   }) =>
       CanonicalGameReconciler(
           intents: intents,
@@ -85,7 +86,163 @@ void main() {
               sessionEpoch: () => epoch,
               invoke: (_) async => _wire(revision: readRevision)),
           send: send ?? (_) async => _receipt(),
+          recoverCommands: recover,
+          newRecoveryId: () => _other,
           applyDisplay: display ?? (snapshot) async => displays.add(snapshot));
+
+  Future<void> corruptIntents() async {
+    await intents.prepare(_intent());
+    for (final suffix in ['', '.backup']) {
+      await File('${directory.path}/intent-v2-$_owner$suffix.json')
+          .writeAsString('broken');
+    }
+  }
+
+  Map<String, dynamic> recoveryReply({String requestId = _other}) => {
+        'protocol': 2,
+        'owner_id': _owner,
+        'request_id': requestId,
+        'authority_mode': 'shadow',
+        'barrier_revision': 6,
+        'cancelled_commands': 1,
+        'replayed': true,
+      };
+
+  test('corrupt requests recover absolute state without reissuing a purchase',
+      () async {
+    await corruptIntents();
+    var recoveries = 0;
+    await reconciler(
+      send: (_) async => throw StateError('must never guess a purchase'),
+      recover: (id) async {
+        expect(id, _other);
+        recoveries++;
+        await expectLater(intents.prepare(_intent()),
+            _error('game_intent_recovery_required'));
+        return recoveryReply();
+      },
+      display: (snapshot) async {
+        expect((await snapshots.inspect(_owner)).minimumRevision, 6);
+        await expectLater(
+            intents.pending(_owner), _error('game_intent_recovery_required'));
+        displays.add(snapshot);
+      },
+    ).resume(_owner);
+    expect(recoveries, 1);
+    expect(displays.single.coins, _data['wallet']['coins']);
+    expect(await intents.pending(_owner), isNull);
+    await intents.prepare(_intent());
+  });
+
+  test('lost recovery response retains its UUID through a restart', () async {
+    await corruptIntents();
+    final requests = <String>[];
+    await expectLater(
+        reconciler(recover: (id) async {
+          requests.add(id);
+          throw TimeoutException('server already fenced the old command');
+        }).resume(_owner),
+        _error('game_recovery_unavailable'));
+    intents = CanonicalGameIntentStore(directory);
+    expect(await intents.beginRecovery(_owner, _request), _other);
+    await reconciler(recover: (id) async {
+      requests.add(id);
+      return recoveryReply();
+    }).resume(_owner);
+    expect(requests, [_other, _other]);
+    expect(await intents.pending(_owner), isNull);
+  });
+
+  test(
+      'recovery refuses stale snapshots and retries failed display persistence',
+      () async {
+    await corruptIntents();
+    readRevision = 5;
+    await expectLater(
+        reconciler(recover: (_) async => recoveryReply()).resume(_owner),
+        _error('game_snapshot_stale'));
+    readRevision = 6;
+    await expectLater(
+        reconciler(
+            recover: (_) async => recoveryReply(),
+            display: (_) async => throw StateError('disk full')).resume(_owner),
+        throwsStateError);
+    await expectLater(
+        intents.pending(_owner), _error('game_intent_recovery_required'));
+    await reconciler(recover: (_) async => recoveryReply()).resume(_owner);
+    expect(await intents.pending(_owner), isNull);
+  });
+
+  test('recovery account fences reject ABA responses and cross-owner receipts',
+      () async {
+    await corruptIntents();
+    await expectLater(
+        reconciler(recover: (_) async {
+          epoch += 2;
+          return recoveryReply();
+        }).resume(_owner),
+        _error('game_account_changed'));
+    await expectLater(
+        reconciler(
+            recover: (_) async => {
+                  ...recoveryReply(),
+                  'owner_id': _other,
+                }).resume(_owner),
+        _error('game_recovery_unavailable'));
+    expect(displays, isEmpty);
+    await expectLater(
+        intents.prepare(_intent()), _error('game_intent_recovery_required'));
+  });
+
+  test('interrupted recovery cleanup cannot reopen the command lane early',
+      () async {
+    await corruptIntents();
+    await intents.beginRecovery(_owner, _other);
+    // Simulate a crash after old intent files have gone and one marker is gone.
+    for (final suffix in ['', '.backup']) {
+      await File('${directory.path}/intent-v2-$_owner$suffix.json').delete();
+    }
+    await File('${directory.path}/recovery-v2-$_owner.json').delete();
+    intents = CanonicalGameIntentStore(directory);
+    await expectLater(
+        intents.prepare(_intent()), _error('game_intent_recovery_required'));
+    await reconciler(recover: (_) async => recoveryReply()).resume(_owner);
+    expect(await intents.pending(_owner), isNull);
+  });
+
+  test('damaged recovery markers create only another barrier, never an action',
+      () async {
+    await corruptIntents();
+    await intents.beginRecovery(_owner, _request);
+    for (final suffix in ['', '.backup']) {
+      await File('${directory.path}/recovery-v2-$_owner$suffix.json')
+          .writeAsString('broken');
+    }
+    await reconciler(recover: (id) async {
+      expect(id, _other);
+      return recoveryReply();
+    }).resume(_owner);
+    expect(await intents.pending(_owner), isNull);
+  });
+
+  test('healthy or absent intents cannot be discarded through recovery',
+      () async {
+    await expectLater(intents.beginRecovery(_owner, _other),
+        _error('game_recovery_not_required'));
+    await intents.prepare(_intent());
+    await expectLater(intents.beginRecovery(_owner, _other),
+        _error('game_recovery_not_required'));
+    expect((await intents.pending(_owner))!.requestId, _request);
+    expect(_intent().toRequest(10069)['expectedRevision'], 5);
+    expect(
+        () => CanonicalGameIntent(
+            ownerId: _owner,
+            requestId: _request,
+            action: 'refresh',
+            payload: {},
+            minimumRevision: 0),
+        _error('game_intent_invalid'));
+  });
 
   test(
       'intent permits only exact bounded actions and preserves payload order independently',

@@ -167,15 +167,23 @@ def main():
                         'probe_preparation_receipt_failed')
             del child_environment['STAGING_SUPABASE_SERVICE_ROLE_KEY']
         revision_offset = 1 if prepare_import else 0
+        observed_revision = 1 + revision_offset
+        request_revisions = {}
 
         def command(action, payload=None, request_id=None, bearer=token, extra=None):
-            request_body = {"protocol": 2, "clientBuild": 10068, "requestId": request_id or str(uuid.uuid4()),
+            nonlocal observed_revision
+            request_id = request_id or str(uuid.uuid4())
+            request_body = {"protocol": 2, "clientBuild": 10069, "requestId": request_id,
+                            "expectedRevision": request_revisions.setdefault(request_id, observed_revision),
                             "action": action, "payload": payload or {}}
             request_body.update(extra or {})
             headers = {"apikey": PUBLIC_KEY}
             if bearer:
                 headers["Authorization"] = "Bearer " + bearer
-            return call(BASE + "/functions/v1/execute-game-command", headers, request_body)
+            status, result = call(BASE + "/functions/v1/execute-game-command", headers, request_body)
+            if status == 200:
+                observed_revision = max(observed_revision, result.get('server_revision', 0))
+            return status, result
 
         def read_state(bearer=token, extra=None):
             request_body = {"protocol": 2, "clientBuild": 10068, "action": "read_state"}
@@ -248,6 +256,50 @@ def main():
                 and paused_refusal.get('replayed') is True, 'probe_paused_refusal_failed')
         status, paused_new = command('purchase_title_chest')
         require(status == 503 and paused_new.get('error') == 'game_engine_disabled', 'probe_paused_new_command_accepted')
+        def recover(request_id, bearer=token, extra=None):
+            request_body = {'protocol': 2, 'clientBuild': 10069, 'action': 'recover_commands',
+                            'requestId': request_id}
+            request_body.update(extra or {})
+            return call(BASE + '/functions/v1/execute-game-command',
+                        {'apikey': PUBLIC_KEY, 'Authorization': 'Bearer ' + bearer}, request_body)
+
+        recovery_id = str(uuid.uuid4())
+        require(recover(recovery_id, outsider_token)[0] == 409, 'probe_recovery_outsider_accepted')
+        require(recover(recovery_id, extra={'ownerId': outsider})[0] == 400, 'probe_recovery_owner_injection')
+        status, recovered = recover(recovery_id)
+        require(status == 200 and recovered['barrier_revision'] == observed_revision + 1
+                and recovered['cancelled_commands'] == 0 and recovered['replayed'] is False,
+                'probe_recovery_failed')
+        status, repeated_recovery = recover(recovery_id)
+        require(status == 200 and repeated_recovery['replayed'] is True and
+                {k: v for k, v in recovered.items() if k != 'replayed'} ==
+                {k: v for k, v in repeated_recovery.items() if k != 'replayed'}, 'probe_recovery_replay')
+        query('update private.game_engine_runtime set enabled=true where singleton')
+        status, stale = command('purchase_title_chest')
+        require(status == 422 and stale.get('error') == 'game_state_changed', 'probe_late_request_accepted')
+        pending_id = str(uuid.uuid4())
+        boundary = recovered['barrier_revision']
+        # Create an interrupted private worker lease for this synthetic account.
+        # Only its status is returned; no state, seed or token leaves the query.
+        require(query(f"""select set_config('request.jwt.claim.role','service_role',true);
+          select public.begin_revisioned_game_command('{owner}','{pending_id}',
+            'purchase_title_chest','{{}}',10069,'{ruleset}',{boundary})->>'status' as pending_status""")[-1]
+            ['pending_status'] == 'processing', 'probe_pending_lease_failed')
+        query('update private.game_engine_runtime set enabled=false where singleton')
+        status, cancelled = recover(str(uuid.uuid4()))
+        require(status == 200 and cancelled['cancelled_commands'] == 1
+                and cancelled['barrier_revision'] == boundary + 1, 'probe_pending_recovery_failed')
+        request_revisions[pending_id] = boundary
+        status, cancelled_replay = command('purchase_title_chest', request_id=pending_id)
+        require(status == 422 and cancelled_replay.get('error') == 'game_command_recovered'
+                and cancelled_replay.get('replayed') is True, 'probe_cancelled_replay_failed')
+        status, recovered_view = read_state()
+        require(status == 200 and recovered_view['server_revision'] == boundary + 1
+                and recovered_view['state_sha256'] == paused_view['state_sha256'], 'probe_recovery_changed_assets')
+        status, committed_replay = command('purchase_title_chest', request_id=purchase_id)
+        require(status == 200 and committed_replay.get('replayed') is True
+                and committed_replay['server_revision'] == purchased['server_revision'], 'probe_recovery_lost_receipt')
+        print('PASS: real authenticated recovery, idempotent barrier, stale request refusal and paused pending cancellation; assets unchanged.', flush=True)
         final = query(f"""select c.state->'pet'->>'coins' as coins, c.state->'chestInventory'->>'title' as titles,
           c.state->'chestInventory'->>'wooden' as wooden,
           c.state->'eggAltar'->'wallet' as altar_wallet, c.state->'eggAltar'->'crafted' as crafted,
@@ -300,9 +352,10 @@ def main():
           select (select count(*) from auth.users where raw_app_meta_data->>'dragonhaven_game_probe'='{RUN}') as accounts,
             (select count(*) from private.canonical_game_states) as copies,
             (select count(*) from private.canonical_game_intents) as intents,
+            (select count(*) from private.canonical_game_recoveries) as recoveries,
             (select enabled from private.game_engine_runtime where singleton) as enabled;
         """)[0]
-        require(cleaned == {"accounts": 0, "copies": 0, "intents": 0, "enabled": False}, "probe_cleanup_incomplete")
+        require(cleaned == {"accounts": 0, "copies": 0, "intents": 0, "recoveries": 0, "enabled": False}, "probe_cleanup_incomplete")
         print("CLEANUP: both synthetic accounts and shadow commands removed; game worker disabled.", flush=True)
 
 

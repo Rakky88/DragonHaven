@@ -31,6 +31,8 @@ class CanonicalGameIntentStore {
 
   File _file(String owner, bool backup) =>
       File('${directory.path}/intent-v2-$owner${backup ? '.backup' : ''}.json');
+  File _recoveryFile(String owner, bool backup) => File(
+      '${directory.path}/recovery-v2-$owner${backup ? '.backup' : ''}.json');
   static String _checksum(Object? value) =>
       sha256.convert(utf8.encode(jsonEncode(value))).toString();
 
@@ -68,11 +70,23 @@ class CanonicalGameIntentStore {
     return valid.firstOrNull;
   }
 
+  Future<bool> _hasRecovery(String owner) async =>
+      await _recoveryFile(owner, false).exists() ||
+      await _recoveryFile(owner, true).exists();
+
   Future<CanonicalGameIntent?> pending(String owner) =>
-      _serial(owner, () => _pending(owner));
+      _serial(owner, () async {
+        if (await _hasRecovery(owner)) {
+          throw const CanonicalGameException('game_intent_recovery_required');
+        }
+        return _pending(owner);
+      });
 
   Future<CanonicalGameIntent> prepare(CanonicalGameIntent intent) =>
       _serial(intent.ownerId, () async {
+        if (await _hasRecovery(intent.ownerId)) {
+          throw const CanonicalGameException('game_intent_recovery_required');
+        }
         final previous = await _pending(intent.ownerId);
         if (previous != null && !previous.sameIntent(intent)) {
           throw const CanonicalGameException('game_intent_pending');
@@ -92,6 +106,9 @@ class CanonicalGameIntentStore {
 
   Future<void> acknowledge(String owner, String requestId) =>
       _serial(owner, () async {
+        if (await _hasRecovery(owner)) {
+          throw const CanonicalGameException('game_intent_recovery_required');
+        }
         final pending = await _pending(owner);
         if (pending == null) return;
         if (pending.requestId != requestId) {
@@ -99,6 +116,83 @@ class CanonicalGameIntentStore {
         }
         for (final backup in [false, true]) {
           final file = _file(owner, backup);
+          if (await file.exists()) await file.delete();
+        }
+      });
+
+  Future<String?> _recoveryId(String owner) async {
+    final ids = <String>{};
+    for (final backup in [false, true]) {
+      final file = _recoveryFile(owner, backup);
+      if (!await file.exists()) continue;
+      try {
+        if (await file.length() > 1024) continue;
+        final raw = jsonDecode(await file.readAsString());
+        if (raw is! Map ||
+            raw.length != 2 ||
+            _checksum(raw['recovery']) != raw['checksum']) {
+          continue;
+        }
+        final value = raw['recovery'];
+        if (value is Map &&
+            value.length == 3 &&
+            value['version'] == 1 &&
+            value['owner'] == owner &&
+            value['request'] is String &&
+            CanonicalGameIntent.validOwner(value['request'] as String)) {
+          ids.add(value['request'] as String);
+        }
+      } on FormatException {
+        // An unreadable recovery marker needs another harmless server barrier,
+        // never a newly invented purchase or an inferred reward.
+      }
+    }
+    return ids.length == 1 ? ids.single : null;
+  }
+
+  /// Called only for a corrupt intent or an interrupted recovery. Keep this
+  /// separate marker until the server boundary AND absolute display are durable.
+  Future<String> beginRecovery(String owner, String candidateRequestId) =>
+      _serial(owner, () async {
+        if (!CanonicalGameIntent.validOwner(candidateRequestId)) {
+          throw const CanonicalGameException('game_intent_invalid');
+        }
+        final marked = await _hasRecovery(owner);
+        if (!marked) {
+          try {
+            await _pending(owner);
+            throw const CanonicalGameException('game_recovery_not_required');
+          } on CanonicalGameException catch (error) {
+            if (error.code != 'game_intent_recovery_required') rethrow;
+          }
+        }
+        final requestId = await _recoveryId(owner) ?? candidateRequestId;
+        await directory.create(recursive: true);
+        final value = {'version': 1, 'owner': owner, 'request': requestId};
+        final bytes =
+            jsonEncode({'recovery': value, 'checksum': _checksum(value)});
+        for (final backup in [false, true]) {
+          final target = _recoveryFile(owner, backup);
+          final temporary = File('${target.path}.tmp');
+          await temporary.writeAsString(bytes, flush: true);
+          await temporary.rename(target.path);
+        }
+        return requestId;
+      });
+
+  Future<void> finishRecovery(String owner, String requestId) =>
+      _serial(owner, () async {
+        if (await _recoveryId(owner) != requestId) {
+          throw const CanonicalGameException('game_recovery_mismatch');
+        }
+        // Remove old intents first. Even if deletion is interrupted, remaining
+        // recovery markers keep prepare/send blocked until reconciliation repeats.
+        for (final backup in [false, true]) {
+          final file = _file(owner, backup);
+          if (await file.exists()) await file.delete();
+        }
+        for (final backup in [false, true]) {
+          final file = _recoveryFile(owner, backup);
           if (await file.exists()) await file.delete();
         }
       });

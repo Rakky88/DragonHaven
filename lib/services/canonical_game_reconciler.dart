@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:uuid/uuid.dart';
+
 import 'canonical_game_intent.dart';
 import 'canonical_game_intent_store.dart';
 import 'canonical_game_reader.dart';
@@ -90,6 +92,8 @@ class CanonicalGameReceipt {
     'special_egg',
     'egg_in_nest',
     'already_returned',
+    'game_state_changed',
+    'game_command_recovered',
   };
 }
 
@@ -104,6 +108,8 @@ class CanonicalGameReconciler {
       required this.sessionEpoch,
       required this.send,
       required this.applyDisplay,
+      this.recoverCommands,
+      this.newRecoveryId = _newRecoveryId,
       this.timeout = const Duration(seconds: 20)});
   final CanonicalGameIntentStore intents;
   final CanonicalGameSnapshotStore snapshots;
@@ -115,6 +121,9 @@ class CanonicalGameReconciler {
   // the absolute detached display before returning. Never add receipt rewards.
   final Future<void> Function(CanonicalGameSnapshot) applyDisplay;
   final Duration timeout;
+  final Future<Object?> Function(String requestId)? recoverCommands;
+  final String Function() newRecoveryId;
+  static String _newRecoveryId() => const Uuid().v4();
   Future<CanonicalGameReceipt?>? _pending;
   String? _pendingOwner;
   int? _pendingEpoch;
@@ -146,7 +155,18 @@ class CanonicalGameReconciler {
     }
 
     requireSession();
-    final intent = await intents.pending(owner);
+    final CanonicalGameIntent? intent;
+    try {
+      intent = await intents.pending(owner);
+    } on CanonicalGameException catch (error) {
+      if (error.code != 'game_intent_recovery_required' ||
+          recoverCommands == null) {
+        rethrow;
+      }
+      requireSession();
+      await _recover(owner, requireSession);
+      return null;
+    }
     requireSession();
     if (intent == null) return null;
     // Repair the second journal copy, if needed, before any HTTP request.
@@ -183,5 +203,45 @@ class CanonicalGameReconciler {
     await intents.acknowledge(owner, intent.requestId);
     requireSession();
     return receipt;
+  }
+
+  Future<void> _recover(String owner, void Function() requireSession) async {
+    final requestId = await intents.beginRecovery(owner, newRecoveryId());
+    requireSession();
+    final Object? response;
+    try {
+      response = await recoverCommands!(requestId).timeout(timeout);
+    } on TimeoutException {
+      throw const CanonicalGameException('game_recovery_unavailable');
+    }
+    requireSession();
+    if (response is! Map<String, dynamic> ||
+        response.length != 7 ||
+        response['protocol'] != 2 ||
+        response['owner_id'] != owner ||
+        response['request_id'] != requestId ||
+        response['authority_mode'] != 'shadow' ||
+        response['barrier_revision'] is! int ||
+        (response['barrier_revision'] as int) < 1 ||
+        (response['barrier_revision'] as int) > 9007199254740991 ||
+        response['cancelled_commands'] is! int ||
+        ![0, 1].contains(response['cancelled_commands']) ||
+        response['replayed'] is! bool) {
+      throw const CanonicalGameException('game_recovery_unavailable');
+    }
+    final cached = await snapshots.inspect(owner);
+    requireSession();
+    final barrier = response['barrier_revision'] as int;
+    final snapshot = await reader.fetch(owner,
+        minimumRevision:
+            barrier > cached.minimumRevision ? barrier : cached.minimumRevision,
+        minimumRulesetRevision: cached.minimumRulesetRevision);
+    requireSession();
+    await snapshots.persistFresh(snapshot);
+    requireSession();
+    await applyDisplay(snapshot);
+    requireSession();
+    await intents.finishRecovery(owner, requestId);
+    requireSession();
   }
 }

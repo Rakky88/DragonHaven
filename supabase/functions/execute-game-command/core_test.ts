@@ -6,7 +6,7 @@ const requestId = "33333333-3333-4333-8333-333333333333";
 const lease = "44444444-4444-4444-8444-444444444444";
 const hash = "a5".repeat(32);
 const token = "Bearer " + "synthetic-token-".repeat(4);
-const body = { protocol: 2, requestId, clientBuild: 10068, action: "open_chests", payload: { tier: "wooden", count: 1 } };
+const body = { protocol: 2, requestId, clientBuild: 10068, expectedRevision: 2, action: "open_chests", payload: { tier: "wooden", count: 1 } };
 const saved = { owner_id: owner, request_id: requestId, server_revision: 3,
   state_sha256: hash, authority_mode: "shadow", result: { coins: 5 } };
 const leased = { status: "processing", owner_id: owner, request_id: requestId,
@@ -31,7 +31,7 @@ function setup(overrides: Partial<Dependencies> = {}) {
     authenticate: async (value) => value === token ? owner : null,
     rpc: async (name, payload) => {
       calls.push({ name, payload });
-      if (name === "begin_canonical_game_command") return leased;
+      if (name === "begin_revisioned_game_command") return leased;
       if (name === "commit_canonical_game_command") return saved;
       if (name === "fail_canonical_game_command") return true;
       throw new Error("unexpected RPC");
@@ -111,8 +111,9 @@ Deno.test("a command uses authenticated owner and private lease inputs, and retu
   assert(!text.includes("private") && !text.includes("secret_seed") && !text.includes("lease_token"));
   equal(inputs, [{ state: leased.state, action: body.action, payload: body.payload,
     secretSeed: hash, now: leased.now, keeperId: owner }]);
-  equal(calls.map((call) => call.name), ["begin_canonical_game_command", "commit_canonical_game_command"]);
+  equal(calls.map((call) => call.name), ["begin_revisioned_game_command", "commit_canonical_game_command"]);
   assert(calls.every((call) => call.payload.p_owner_id === owner));
+  assert(calls[0].payload.p_expected_revision === 2);
   assert(calls[1].payload.p_lease_token === lease);
   assert(JSON.parse(text).authority_mode === "shadow");
 });
@@ -140,6 +141,8 @@ Deno.test("caller-supplied owner, state, clock, entropy, grants and nested argum
     { ...body, payload: { tier: "wooden", count: 1, coins: 999999 } },
     { ...body, payload: { tier: "x".repeat(5000), count: 1 } },
     { ...body, clientBuild: 2 ** 53 },
+    { ...body, expectedRevision: undefined }, { ...body, expectedRevision: 0 },
+    { ...body, expectedRevision: 2 ** 53 },
   ]) {
     const { deps, calls } = setup();
     assert((await handleCommand(request(candidate), deps)).status === 400);
@@ -147,9 +150,43 @@ Deno.test("caller-supplied owner, state, clock, entropy, grants and nested argum
   }
 });
 
+Deno.test("recovery is owner-scoped, bounded and cannot run game rules or expose history", async () => {
+  const recoveryBody = { protocol: 2, clientBuild: 10069, action: "recover_commands", requestId };
+  const proof = { protocol: 2, owner_id: owner, request_id: requestId, authority_mode: "shadow",
+    barrier_revision: 7, cancelled_commands: 1, replayed: false };
+  const { deps, inputs } = setup({rpc: async (name, payload) => {
+    assert(name === "recover_canonical_game_commands");
+    equal(payload, {p_owner_id: owner, p_request_id: requestId, p_client_build: 10069, p_ruleset_sha256: hash});
+    return proof;
+  }});
+  const response = await handleCommand(request(recoveryBody), deps);
+  assert(response.status === 200 && response.headers.get("cache-control") === "no-store");
+  equal(await response.json(), proof);
+  equal(inputs, []);
+  for (const extra of [{ownerId: other}, {state: {}}, {expectedRevision: 7}, {requestId: "bad"}]) {
+    assert((await handleCommand(request({...recoveryBody, ...extra}), deps)).status === 400);
+  }
+  for (const bad of [{...proof, owner_id: other}, {...proof, request_id: other},
+    {...proof, barrier_revision: 0}, {...proof, cancelled_commands: 2}, {...proof, secret_seed: hash}]) {
+    deps.rpc = async () => bad;
+    const rejected = await handleCommand(request(recoveryBody), deps);
+    assert(rejected.status === 503 && !(await rejected.text()).includes(hash));
+  }
+});
+
+Deno.test("stale commands and recovered leases produce durable refusals without evaluation", async () => {
+  for (const failure of ["game_state_changed", "game_command_recovered"]) {
+    const {deps, inputs} = setup({rpc: async () => ({status: "failed", failure_code: failure, replayed: false})});
+    const response = await handleCommand(request(), deps);
+    assert(response.status === 422);
+    equal(await response.json(), {error: failure, request_id: requestId, replayed: false});
+    equal(inputs, []);
+  }
+});
+
 Deno.test("replay returns the stored receipt without a second evaluation or commit", async () => {
   const { deps, inputs } = setup({ rpc: async (name) => {
-    assert(name === "begin_canonical_game_command");
+    assert(name === "begin_revisioned_game_command");
     return { status: "succeeded", response: { ...saved, state: leased.state, secret_seed: hash } };
   } });
   const result = await handleCommand(request(), deps);
@@ -166,7 +203,7 @@ Deno.test("cross-owner lease and receipt, live authority and wrong revision are 
     [{ ...leased, authority_mode: "server" }, saved],
     [leased, { ...saved, server_revision: 2 }],
   ]) {
-    const { deps } = setup({ rpc: async (name) => name === "begin_canonical_game_command" ? begin : end });
+    const { deps } = setup({ rpc: async (name) => name === "begin_revisioned_game_command" ? begin : end });
     const result = await handleCommand(request(), deps);
     assert(result.status === 503);
     assert(!(await result.text()).includes("hidden egg"));
@@ -178,7 +215,7 @@ Deno.test("a lost commit response retains the original intent for receipt recove
   let committed = false;
   const { deps, inputs } = setup({ rpc: async (name) => {
     calls.push(name);
-    if (name === "begin_canonical_game_command") return committed ? { status: "succeeded", response: saved } : leased;
+    if (name === "begin_revisioned_game_command") return committed ? { status: "succeeded", response: saved } : leased;
     if (name === "commit_canonical_game_command") { committed = true; throw new Error("connection lost after commit"); }
     throw new Error("must not fail an ambiguously committed intent");
   } });
@@ -186,16 +223,16 @@ Deno.test("a lost commit response retains the original intent for receipt recove
   const retried = await handleCommand(request(), deps);
   assert(retried.status === 200 && (await retried.json()).replayed);
   assert(inputs.length === 1);
-  equal(calls, ["begin_canonical_game_command", "commit_canonical_game_command", "begin_canonical_game_command"]);
+  equal(calls, ["begin_revisioned_game_command", "commit_canonical_game_command", "begin_revisioned_game_command"]);
 });
 
 Deno.test("known domain refusal is durably fenced before it is reported", async () => {
   const { deps, calls } = setup({ evaluate: async () => ({ error: "egg_tagged" }) });
   const result = await handleCommand(request(), deps);
   assert(result.status === 422 && (await result.json()).error === "egg_tagged");
-  equal(calls.map((call) => call.name), ["begin_canonical_game_command", "fail_canonical_game_command"]);
+  equal(calls.map((call) => call.name), ["begin_revisioned_game_command", "fail_canonical_game_command"]);
   assert(calls[1].payload.p_failure_code === "egg_tagged" && calls[1].payload.p_lease_token === lease);
-  deps.rpc = async (name) => name === "begin_canonical_game_command" ? leased : false;
+  deps.rpc = async (name) => name === "begin_revisioned_game_command" ? leased : false;
   assert((await handleCommand(request(), deps)).status === 409);
 });
 

@@ -80,6 +80,23 @@ class CanonicalGameTransport {
           {int clientBuild = AppInfo.buildNumber}) =>
       _invoke(intent.toRequest(clientBuild), expectedOwner: intent.ownerId);
 
+  Future<Object?> recover(String requestId,
+      {int clientBuild = AppInfo.buildNumber}) async {
+    if (!CanonicalGameIntent.validOwner(requestId)) {
+      throw const CanonicalGameException('game_request_invalid');
+    }
+    final reply = await _invoke({
+      'protocol': 2,
+      'clientBuild': clientBuild,
+      'action': 'recover_commands',
+      'requestId': requestId
+    });
+    if (reply.status != 200) {
+      throw const CanonicalGameException('game_recovery_unavailable');
+    }
+    return reply.body;
+  }
+
   Future<CanonicalGameHttpReply> _invoke(Map<String, dynamic> request,
       {String? expectedOwner}) async {
     final owner = currentOwner;

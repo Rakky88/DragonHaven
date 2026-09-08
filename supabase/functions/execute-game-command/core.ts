@@ -3,6 +3,7 @@ export type Command = {
   protocol: 2;
   requestId: string;
   clientBuild: number;
+  expectedRevision: number;
   action: string;
   payload: JsonObject;
 };
@@ -44,6 +45,7 @@ export const domainErrors = new Set([
   "sinister_confirmation_required", "invalid_relic", "insufficient_materials",
   "already_known", "egg_reserved", "relic_not_owned", "invalid_name", "invalid_action",
   "egg_tagged", "special_egg", "egg_in_nest", "already_returned",
+  "game_state_changed", "game_command_recovered",
 ]);
 const databaseErrors = new Map<string, number>([
   ["game_engine_disabled", 503], ["game_client_upgrade_required", 426],
@@ -71,9 +73,10 @@ function positiveInteger(value: unknown): value is number {
   return Number.isSafeInteger(value) && (value as number) > 0;
 }
 export function parseCommand(value: unknown): Command | null {
-  if (!object(value) || !exactKeys(value, ["protocol", "requestId", "clientBuild", "action", "payload"]) ||
+  if (!object(value) || !exactKeys(value, ["protocol", "requestId", "clientBuild", "action", "payload", "expectedRevision"]) ||
     value.protocol !== 2 || typeof value.requestId !== "string" || !uuid.test(value.requestId) ||
     !positiveInteger(value.clientBuild) || value.clientBuild > 2147483647 ||
+    !positiveInteger(value.expectedRevision) ||
     typeof value.action !== "string" || !Object.hasOwn(commandKeys, value.action) ||
     !object(value.payload) || !exactKeys(value.payload, commandKeys[value.action]) ||
     encoder.encode(JSON.stringify(value.payload)).length > 4096 ||
@@ -154,18 +157,27 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
     }
     return readState(owner, input.clientBuild, deps);
   }
+  if (object(input) && input.action === "recover_commands") {
+    if (!exactKeys(input, ["protocol", "clientBuild", "action", "requestId"]) || input.protocol !== 2 ||
+      !positiveInteger(input.clientBuild) || input.clientBuild > 2147483647 ||
+      typeof input.requestId !== "string" || !uuid.test(input.requestId)) {
+      return error("game_request_invalid", 400);
+    }
+    return recoverCommands(owner, input.requestId, input.clientBuild, deps);
+  }
   command = parseCommand(input);
   if (!command) return error("game_request_invalid", 400);
 
   try {
-    const leased = await deps.rpc("begin_canonical_game_command", {
+    const leased = await deps.rpc("begin_revisioned_game_command", {
       p_owner_id: owner, p_request_id: command.requestId, p_action: command.action,
       p_payload: command.payload, p_client_build: command.clientBuild, p_ruleset_sha256: deps.ruleset,
+      p_expected_revision: command.expectedRevision,
     });
     if (!object(leased)) throw new Error("invalid_lease");
     if (leased.status === "succeeded") return response({ ...receipt(leased.response, owner, command), replayed: true });
     if (leased.status === "failed" && typeof leased.failure_code === "string" && domainErrors.has(leased.failure_code)) {
-      return response({ error: leased.failure_code, request_id: command.requestId, replayed: true }, 422);
+      return response({ error: leased.failure_code, request_id: command.requestId, replayed: leased.replayed !== false }, 422);
     }
     if (leased.status !== "processing" || leased.owner_id !== owner || leased.request_id !== command.requestId ||
       leased.authority_mode !== "shadow" || !positiveInteger(leased.base_revision) ||
@@ -203,6 +215,26 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
     // A timeout may have happened after commit. Never mark that intent failed
     // or invent a new request; retrying the same UUID recovers its receipt.
     return error("game_command_unavailable", 503);
+  }
+}
+
+async function recoverCommands(owner: string, requestId: string, clientBuild: number,
+  deps: Dependencies): Promise<Response> {
+  try {
+    const result = await deps.rpc("recover_canonical_game_commands", {
+      p_owner_id: owner, p_request_id: requestId, p_client_build: clientBuild, p_ruleset_sha256: deps.ruleset,
+    });
+    if (!object(result) || !exactKeys(result, ["protocol", "owner_id", "request_id", "authority_mode",
+      "barrier_revision", "cancelled_commands", "replayed"]) || result.protocol !== 2 ||
+      result.owner_id !== owner || result.request_id !== requestId || result.authority_mode !== "shadow" ||
+      !positiveInteger(result.barrier_revision) || ![0, 1].includes(result.cancelled_commands as number) ||
+      typeof result.replayed !== "boolean") throw new Error("invalid_recovery");
+    return response(result);
+  } catch (failure) {
+    if (failure instanceof RpcFailure && databaseErrors.has(failure.code)) {
+      return error(failure.code, databaseErrors.get(failure.code)!);
+    }
+    return error("game_recovery_unavailable", 503);
   }
 }
 

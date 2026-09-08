@@ -137,7 +137,7 @@ void main() {
             requestId: _other,
             action: 'refresh',
             payload: {},
-            minimumRevision: 0)),
+            minimumRevision: 1)),
         _error('game_account_changed'));
     await expectLater(transport!.read({..._read, 'state': {}}),
         _error('game_request_invalid'));
@@ -224,5 +224,39 @@ void main() {
         minimumRevision: 4));
     expect(result.status, 422);
     expect(result.body, body);
+  });
+
+  test('recovery uses the same authenticated transport and fixed request UUID',
+      () async {
+    await _signIn(auth, _owner);
+    final proof = {
+      'protocol': 2,
+      'owner_id': _owner,
+      'request_id': _other,
+      'authority_mode': 'shadow',
+      'barrier_revision': 8,
+      'cancelled_commands': 1,
+      'replayed': true
+    };
+    var requests = 0;
+    transport = CanonicalGameTransport.staging(auth, _config,
+        httpClientFactory: () => _TrackingClient((request) async {
+              requests++;
+              expect(jsonDecode((request as http.Request).body), {
+                'protocol': 2,
+                'clientBuild': 10069,
+                'action': 'recover_commands',
+                'requestId': _other,
+              });
+              expect(request.headers['authorization'], startsWith('Bearer '));
+              expect(request.followRedirects, isFalse);
+              return _response(proof);
+            }));
+    expect(await transport!.recover(_other), proof);
+    await expectLater(
+        transport!.recover('invalid'),
+        throwsA(isA<CanonicalGameException>()
+            .having((e) => e.code, 'code', 'game_request_invalid')));
+    expect(requests, 1);
   });
 }

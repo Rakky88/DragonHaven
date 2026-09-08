@@ -1,6 +1,6 @@
 # DragonHaven server-authoritative economy contract
 
-Last updated: **7 September 2026**
+Last updated: **8 September 2026**
 Released app: **v0.05.19 / 10069**; production **56**, staging **56**.
 Release workflow 34157071933 passed with 596 tests; APK/latest-download and
 post-publication server checks passed. See `RELEASE_V0.05.19_VERIFICATION.md`.
@@ -15,6 +15,28 @@ Production run `34116589237` passed exact staging-source checks, rollback rehear
 Staging runs `34110497546`, `34110676557` and `34111166461` passed rollback contracts, parity, lint and health. No economy activation is included.
 
 ## Work in progress: durable client reconciliation (7 September 2026)
+
+### Resumed after v0.05.19: damaged-journal recovery
+
+The owner authorized continuing the server economy after the release. Candidate
+migration 57 adds an idempotent recovery boundary for damaged local intents.
+Recovery cancels only unfinished shadow leases and advances the game revision
+without changing assets. Already committed receipts remain available. New
+commands must name the revision originally observed; delayed pre-recovery
+requests receive a durable refusal, including previously unseen request UUIDs.
+The unfenced lease RPC is no longer executable by the service role.
+
+The client retains a separate two-copy recovery marker until the new boundary,
+fresh absolute snapshot and display are durable. Interrupted cleanup, a lost
+response, corrupt recovery markers and account switches cannot reopen the
+command lane early or invent a new purchase. A healthy original intent still
+uses ordinary receipt reconciliation. Recovery works while mutations are paused.
+
+The exact migration and database contract passed a rollback-only rehearsal on
+registered staging, preserving schema 56. All 604 Flutter tests, 14 worker tests
+and full analysis pass;
+the applied staging/real Auth probe remains the next gate. Production remains
+on schema 56 with legacy account ownership and economic mutations disabled.
 
 ### Public display projection candidate
 
@@ -50,8 +72,8 @@ the receipt/cache, persists it, applies the absolute display and acknowledges
 last. Eleven tests cover lost commit responses, local save failures, duplicate
 submits, account changes, old receipts, durable refusals and damaged journals.
 If both intent copies are unreadable it deliberately requires recovery instead
-of guessing a fresh purchase; automatic recovery from server intent history is
-still open. Migration 55 lets completed success/failure receipts replay
+of guessing a fresh purchase; the recovery candidate described above now handles
+that case without exposing private intent history. Migration 55 lets completed success/failure receipts replay
 while mutations are paused or the ruleset changed, while new/unfinished leases
 remain gated. Run
 [34151895090](https://github.com/Rakky88/DragonHaven/actions/runs/34151895090)
@@ -78,10 +100,10 @@ applied exactly 56, passed contracts 52–56 and the real Auth/Edge/Dart/Postgre
 probe. Both synthetic accounts and all shadow commands were removed; runtime
 is disabled. Final schema 56, lint 0, Auth/settings/app 200.
 
-The owner requested finishing this bounded component and prioritizing the
-Altar picker, adventure Expertise details, tutorial review and next release.
-Those changes do not activate the shadow client. Full live economy routing,
-verified trials, social settlement and account cutover remain explicit open work.
+The Altar picker, adventure Expertise details, tutorial review and v0.05.19
+release are complete. The owner has resumed the server-economy assignment.
+Full live economy routing, verified trials, social settlement and account
+cutover remain explicit open work.
 
 ### Shared rules candidate
 

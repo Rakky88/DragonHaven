@@ -13,7 +13,8 @@ begin
     or has_function_privilege('anon','public.begin_canonical_game_command(uuid,uuid,text,jsonb,integer,text)','execute')
     or has_function_privilege('authenticated','public.commit_canonical_game_command(uuid,uuid,uuid,jsonb,jsonb)','execute')
     or has_table_privilege('authenticated','private.canonical_game_intents','select')
-    or not has_function_privilege('service_role','public.begin_canonical_game_command(uuid,uuid,text,jsonb,integer,text)','execute') then
+    or (has_function_privilege('service_role','public.begin_canonical_game_command(uuid,uuid,text,jsonb,integer,text)','execute')
+    is distinct from (to_regprocedure('public.begin_revisioned_game_command(uuid,uuid,text,jsonb,integer,text,bigint)') is null)) then
     raise exception 'game_contract_permissions';
   end if;
   insert into auth.users(id,email,email_confirmed_at) values

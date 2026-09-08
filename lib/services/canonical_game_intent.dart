@@ -21,7 +21,7 @@ class CanonicalGameIntent {
         keys == null ||
         keys.length != payload.length ||
         !keys.every(payload.containsKey) ||
-        minimumRevision < 0 ||
+        minimumRevision < 1 ||
         minimumRevision > 9007199254740991 ||
         payload.entries
             .any((entry) => !_argument(action, entry.key, entry.value)) ||
@@ -40,6 +40,7 @@ class CanonicalGameIntent {
         'protocol': 2,
         'clientBuild': clientBuild,
         'requestId': requestId,
+        'expectedRevision': minimumRevision,
         'action': action,
         'payload': payload,
       };
