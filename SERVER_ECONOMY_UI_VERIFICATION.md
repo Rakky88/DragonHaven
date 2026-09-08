@@ -1,6 +1,7 @@
-# Canonical shop and inventory integration
+# Canonical gameplay integration
 
-Updated: 8 September 2026. Verified staging integration included in released v0.05.22 / 10072.
+Updated: 9 September 2026. Shop integration shipped in v0.05.22 / 10072;
+the lifecycle extension below is subsequent staging-only work, not a new release.
 
 ## Scope and boundaries
 
@@ -53,11 +54,47 @@ shop tabs scroll and the reconnect control keeps a 48dp icon target.
 
 ## Remaining full-economy work
 
-The staging lane is not the complete game. Other gameplay screens still need
-public read models and authoritative action routing; eggs/relics here are
-displayed without enabling legacy mutations. Verified trial transcripts,
+The staging lane is not the complete game. Adventure/house/trial screens still
+need public read models and authoritative action routing, including Wayfinder.
+Dragon preferences/highlights also need their command route. Verified trial transcripts,
 server calendar/day policy, social/trade settlement, full import reconciliation,
 staged migration and recovery remain open. Billing stays explicitly deferred.
 Production is schema 59, legacy authority, game/economic mutations off,
 zero shadow copies and production FCM enabled. Last independent production
 preflight: 8 September 21:35:35 UTC; see `RELEASE_V0.05.22_VERIFICATION.md`.
+
+## Egg, Altar and dragon lifecycle extension — 9 September 2026
+
+Typed public dragons/inventory expose validated owned equipment, reservations,
+fixed Chronoshard percentages, crafted stock and materials. They preserve
+unknown egg identity and unrevealed dragon nature/personality. Contradictory
+stock, equipment ownership and duplicate equipment slots fail reconciliation.
+No private save is loaded to fill missing fields.
+
+The staging inventory now offers Chests, Eggs, Relics and Altar. Egg filters and
+details precede selection; tagging, nest placement, hatching and reveals use
+the durable session. The hatch countdown anchors a monotonic clock to server
+time; only the server decides whether hatching is due. Altar craft order,
+protection, Sinister confirmation and existing rewards remain unchanged.
+The existing scene runs after a confirmed return, with reduced-motion support.
+Closing it cancels presentation without cancelling or repeating a committed action.
+
+The dragon page shows Gender only in details, after Type and Maturity, and uses
+the shared centered expertise badges. Name/Quill rename, evolution, equipment,
+dragon reveal relics and release use server commands. The four brooches retain
+their one-slot rule. Every callback captures owner, login epoch and displayed
+revision before opening a dialog; an old confirmation cannot act even after
+the same account logs in again. No automatic retry creates a new intent.
+
+Local checks: four lifecycle rule/session tests cover malformed snapshots,
+protected returns, lost reply/restart, duplicate crafting, discoveries, server
+hatch timing, Chronoshards, names, equipment and release. Seven widget tests cover
+the actual controls, double taps, lost return reconciliation, two Sinister
+confirmations, account changes (including open filters), rename completion and
+Dutch 320dp/1.35 text. All new fixed phrases have German, Spanish, French,
+Italian, Portuguese and Japanese translations in addition to English/Dutch.
+Roboto/icon screenshots are inspected under `release/economy-lifecycle-visual/`.
+The real staging probe has been extended with Altar/egg/name/equipment UI actions;
+its next run and final suite evidence are recorded after completion. Actual
+staging hatching is not accelerated: the completed hatch cycle is a local
+server-clock test, while the network UI probe checks incubation/early refusal.

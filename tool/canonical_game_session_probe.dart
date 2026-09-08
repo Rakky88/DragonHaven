@@ -11,6 +11,8 @@ import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:dragon_haven/services/canonical_game_transport.dart';
 import 'package:dragon_haven/screens/shop_hub_screen.dart';
 import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
+import 'package:dragon_haven/screens/canonical_dragons_screen.dart';
+import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -201,9 +203,29 @@ void main() {
 
     Future<void> mount(Widget child) async {
       await tester.pumpWidget(ChangeNotifierProvider.value(
-          value: game, child: MaterialApp(home: Scaffold(body: child))));
+          value: game,
+          child: MaterialApp(
+              key: UniqueKey(),
+              builder: (context, child) => MediaQuery(
+                  data:
+                      MediaQuery.of(context).copyWith(disableAnimations: true),
+                  child: child!),
+              home: Scaffold(body: child))));
       await tester.pump(const Duration(milliseconds: 400));
     }
+
+    Future<void> tap(Finder finder) async {
+      require(finder.evaluate().length == 1,
+          'client_probe_lifecycle_control_missing');
+      await tester.ensureVisible(finder);
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.runAsync(() => tester.tap(finder));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    Finder key(String name) => find.byKey(Key(name));
+    Future<void> confirm() => tap(find.widgetWithText(FilledButton, 'Confirm'));
 
     try {
       await tester.binding.setSurfaceSize(const Size(430, 1000));
@@ -255,6 +277,102 @@ void main() {
           'client_probe_ui_reveal_failed');
       stdout.writeln(
           'PASS: real shop UI purchase, durable inventory and server chest reveal; one debit and one title.');
+
+      final altarBefore = game.snapshot!.inventory.materials;
+      final returnedEgg = game.snapshot!.eggs.firstWhere(
+          (e) => e.kind == 'sinister' && e.returnBlockReason == null);
+      await mount(const CanonicalInventoryScreen());
+      await tap(find.text('Altar'));
+      await tap(key('canonical-altar-choose'));
+      await tap(key('canonical-egg-${returnedEgg.id}'));
+      await tap(key('canonical-place-egg'));
+      await tap(key('canonical-altar-return'));
+      await confirm();
+      require(
+          find.textContaining('This is a Sinister egg').evaluate().length == 1,
+          'client_probe_lifecycle_sinister_confirmation');
+      await confirm();
+      await settleCommand();
+      await tester.pump();
+      final returned = game.snapshot!;
+      require(
+          returned.egg(returnedEgg.id) == null &&
+              returned.inventory.materials.fragments ==
+                  altarBefore.fragments + 25 &&
+              returned.inventory.materials.essence >= altarBefore.essence + 3 &&
+              returned.inventory.materials.essence <= altarBefore.essence + 5 &&
+              returned.inventory.materials.hearts >= altarBefore.hearts &&
+              returned.inventory.materials.hearts <= altarBefore.hearts + 1,
+          'client_probe_lifecycle_return_failed');
+      stdout.writeln('PROBE: ui_altar_returned');
+      await tap(key('canonical-craft-nameweaversQuill'));
+      await settleCommand();
+      await tap(key('canonical-craft-moralEcho'));
+      await settleCommand();
+      require(
+          game.snapshot!.inventory.materials.fragments ==
+                  returned.inventory.materials.fragments - 30 &&
+              game.snapshot!.inventory.materials.essence ==
+                  returned.inventory.materials.essence - 2,
+          'client_probe_lifecycle_craft_cost');
+      final keptEgg =
+          game.snapshot!.eggs.firstWhere((e) => e.location == 'stash');
+      await tap(find.text('Eggs'));
+      await tap(key('canonical-egg-${keptEgg.id}'));
+      await tap(key('canonical-reveal-moralEcho'));
+      await confirm();
+      await settleCommand();
+      require(
+          game.snapshot!.egg(keptEgg.id)!.revealedMoralAxis != null &&
+              game.snapshot!.egg(keptEgg.id)!.revealedLineageId == null &&
+              game.snapshot!.inventory.crafted['moralEcho'] == 0,
+          'client_probe_lifecycle_discovery_failed');
+      await tap(key('canonical-tag-egg'));
+      await settleCommand();
+      require(game.snapshot!.egg(keptEgg.id)!.returnBlockReason == 'egg_tagged',
+          'client_probe_lifecycle_tag_failed');
+      await tap(key('canonical-tag-egg'));
+      await settleCommand();
+      require(!game.snapshot!.egg(keptEgg.id)!.tagged,
+          'client_probe_lifecycle_untag_failed');
+      await tap(key('canonical-incubate-egg'));
+      await confirm();
+      await settleCommand();
+      require(
+          game.snapshot!.nest?.id == keptEgg.id &&
+              tester
+                      .widget<FilledButton>(find.descendant(
+                          of: key('canonical-hatch-egg'),
+                          matching: find.byType(FilledButton)))
+                      .onPressed ==
+                  null,
+          'client_probe_lifecycle_incubation_failed');
+      stdout.writeln('PROBE: ui_egg_incubating');
+      final dragon = before.dragons.firstWhere((d) => d.owned);
+      await mount(const CanonicalDragonsScreen());
+      await tap(key('canonical-dragon-${dragon.id}'));
+      await tap(key('canonical-name-dragon'));
+      await tester.enterText(key('canonical-dragon-name-input'), 'UI Weaver');
+      await tap(key('canonical-save-name'));
+      await settleCommand();
+      await tester.pump(const Duration(milliseconds: 400));
+      require(
+          game.snapshot!.dragon(dragon.id)!.name == 'UI Weaver' &&
+              game.snapshot!.inventory.crafted['nameweaversQuill'] == 0,
+          'client_probe_lifecycle_rename_failed');
+      await tap(key('canonical-equip-twinstarBrooch'));
+      await settleCommand();
+      await tap(key('canonical-equip-emberheartBrooch'));
+      await settleCommand();
+      require(
+          game.snapshot!.inventory.equippedOn(dragon.id) ==
+                  MysticRelic.emberheartBrooch &&
+              game.snapshot!.inventory.equipment[MysticRelic.twinstarBrooch] ==
+                  null &&
+              tester.takeException() == null,
+          'client_probe_lifecycle_equipment_failed');
+      stdout.writeln(
+          'PASS: real lifecycle UI; Sinister confirmations and materials, crafting, hidden egg discovery, tags, incubation, Quill rename and exclusive equipment.');
     } finally {
       stdout.writeln('PROBE: ui_cleanup_start');
       await tester.pumpWidget(const SizedBox.shrink());

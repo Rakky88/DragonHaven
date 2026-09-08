@@ -1,14 +1,26 @@
 import 'dart:convert';
 
 import '../models/house.dart';
+import '../models/egg_altar.dart';
+import '../models/mystic_relic.dart';
+import '../models/pet.dart';
 
 /// Read-only server display data. It is deliberately incompatible with a local
 /// saved game: an unknown lineage is null, never a guessed DragonEgg/Pet.
 class CanonicalGameSnapshot {
-  CanonicalGameSnapshot._(this._wire, this.eggs, this.shop);
+  CanonicalGameSnapshot._(
+      this._wire, this.eggs, this.shop, this.dragons, this.inventory);
   final Map<String, dynamic> _wire;
   final List<CanonicalEggView> eggs;
   final CanonicalShopView shop;
+  final List<CanonicalDragonView> dragons;
+  final CanonicalInventoryView inventory;
+
+  CanonicalEggView? egg(String id) => eggs.where((e) => e.id == id).firstOrNull;
+  CanonicalDragonView? dragon(String id) =>
+      dragons.where((d) => d.id == id).firstOrNull;
+  CanonicalEggView? get nest =>
+      eggs.where((e) => e.location == 'nest').firstOrNull;
 
   String get ownerId => _wire['owner_id'] as String;
   int get serverRevision => _wire['server_revision'] as int;
@@ -140,7 +152,12 @@ class CanonicalGameSnapshot {
         utf8.encode(jsonEncode(wire)).length > 9 * 1024 * 1024) {
       throw const CanonicalGameException('game_snapshot_invalid');
     }
-    return CanonicalGameSnapshot._(wire, eggs, CanonicalShopView._parse(data));
+    final dragons = List<CanonicalDragonView>.unmodifiable(
+        (data['dragons'] as List)
+            .map((d) => CanonicalDragonView._parse(_map(d))));
+    final shop = CanonicalShopView._parse(data);
+    return CanonicalGameSnapshot._(wire, eggs, shop, dragons,
+        CanonicalInventoryView._parse(data, shop, dragons));
   }
 
   /// Read time and the mutation switch may change without a game revision.
@@ -243,6 +260,14 @@ class CanonicalEggView {
   Duration get incubation =>
       Duration(seconds: _data['incubationSeconds'] as int);
   int get xp => _data['xp'] as int;
+  DateTime? get hatchAt => startedAt?.add(incubation);
+  bool known(AltarRelic relic) => switch (relic) {
+        AltarRelic.moralEcho => revealedMoralAxis != null,
+        AltarRelic.orderSigil => revealedLawAxis != null,
+        AltarRelic.astralLens => revealedRarity != null,
+        AltarRelic.weaveOracle => revealedLineageId != null,
+        AltarRelic.nameweaversQuill => false,
+      };
   String hint(String locale) =>
       _data['hints'][locale == 'nl' ? 'nl' : 'en'] as String;
 
@@ -301,6 +326,152 @@ class CanonicalEggView {
     return CanonicalEggView._(data);
   }
 }
+
+/// Public facts only: no Pet construction, genetics or private save defaults.
+class CanonicalDragonView {
+  CanonicalDragonView._parse(this._data) {
+    for (final key in ['spectral', 'sinister', 'favorite']) {
+      if (_data[key] is! bool) _invalid();
+    }
+    if (!DragonSex.values.any((v) => v.name == _data['sex']) ||
+        !_date(_data['acquiredAt']) ||
+        !_date(_data['stageStartedAt']) ||
+        (_data['activeAdventureId'] != null &&
+            !_text(_data['activeAdventureId']))) {
+      _invalid();
+    }
+    training = CanonicalShopView._counts(_data['training']);
+    highlighted = CanonicalShopView._ids(_data['highlightedExpertises']);
+    if (training.keys
+            .toSet()
+            .difference(TrainingFocus.values.map((f) => f.name).toSet())
+            .isNotEmpty ||
+        training.length != 3 ||
+        training.values.any((v) => v > 400) ||
+        highlighted
+            .any((id) => !TrainingFocus.values.any((f) => f.name == id))) {
+      _invalid();
+    }
+    for (final key in ['lawAxis', 'moralAxis', 'evolutionPath']) {
+      if (_data[key] != null && !_text(_data[key])) _invalid();
+    }
+    if (!_text(_data['activeEvolutionPath'])) _invalid();
+    final traits = _data['personalityTraitIds'];
+    personality = traits == null ? null : CanonicalShopView._ids(traits);
+  }
+  final Map<String, dynamic> _data;
+  late final Map<String, int> training;
+  late final Set<String> highlighted;
+  late final Set<String>? personality;
+  String get id => _data['id'] as String;
+  String get name => _data['name'] as String;
+  String get lineageId => _data['lineageId'] as String;
+  String get location => _data['location'] as String;
+  bool get owned => location != 'released';
+  int get xp => _data['xp'] as int;
+  DragonStage get stage => DragonStage.values.byName(_data['stage'] as String);
+  DragonSex get sex => DragonSex.values.byName(_data['sex'] as String);
+  bool get spectral => _data['spectral'] as bool;
+  bool get sinister => _data['sinister'] as bool;
+  bool get favorite => _data['favorite'] as bool;
+  String get path => _data['activeEvolutionPath'] as String;
+  String? get lawAxis => _data['lawAxis'] as String?;
+  String? get moralAxis => _data['moralAxis'] as String?;
+  String? get adventureId => _data['activeAdventureId'] as String?;
+  int maximum(TrainingFocus focus) => dragonExpertiseMaximum(
+      stage: stage,
+      sinister: sinister,
+      evolutionPath: _data['evolutionPath'] as String?,
+      focus: focus);
+  bool get evolutionReady => switch (stage) {
+        DragonStage.hatchling => xp >= Pet.wyrmlingXp,
+        DragonStage.wyrmling => xp >= Pet.ascendedXp &&
+            training.values.fold(0, (a, b) => a + b) >=
+                Pet.ascensionExpertiseRequirement,
+        _ => false,
+      };
+  bool knows(MysticRelic relic) => switch (relic) {
+        MysticRelic.moralPrism => moralAxis != null,
+        MysticRelic.orderCompass => lawAxis != null,
+        MysticRelic.soulMirror => personality != null,
+        _ => false,
+      };
+}
+
+class CanonicalInventoryView {
+  CanonicalInventoryView._parse(Map<String, dynamic> data,
+      CanonicalShopView shop, List<CanonicalDragonView> dragons) {
+    final raw = _map(data['inventory']);
+    final altar = _map(raw['altar']);
+    final wallet = _map(altar['wallet']);
+    if (!_keys(wallet, const ['fragments', 'essence', 'hearts']) ||
+        wallet.values.any((v) => !_count(v))) {
+      _invalid();
+    }
+    materials = WeaveWallet(wallet['fragments'] as int,
+        wallet['essence'] as int, wallet['hearts'] as int);
+    crafted = CanonicalShopView._counts(altar['crafted']);
+    reservedEggIds = CanonicalShopView._ids(raw['reservedOnlineTradeEggIds']);
+    reservedRelics =
+        CanonicalShopView._counts(raw['reservedOnlineTradeRelics']);
+    final reductions = raw['chronoshardReductions'];
+    if (reductions is! List ||
+        reductions.any((n) => n is! int || n < 10 || n > 90) ||
+        reductions.length != (shop.relics['chronoshard'] ?? 0)) {
+      _invalid();
+    }
+    chronoshards = List<int>.unmodifiable(reductions.cast<int>());
+    final equipped = <MysticRelic, String>{};
+    final twin = raw['twinstarBroochDragonId'];
+    if (twin != null) {
+      if (!_text(twin)) _invalid();
+      equipped[MysticRelic.twinstarBrooch] = twin as String;
+    }
+    final map = _map(raw['equippedRelicDragonIds'] ?? <String, dynamic>{});
+    for (final entry in map.entries) {
+      final relic =
+          MysticRelic.values.where((r) => r.name == entry.key).firstOrNull;
+      if (relic == null ||
+          !relic.isEquipable ||
+          relic == MysticRelic.twinstarBrooch ||
+          !_text(entry.value)) {
+        _invalid();
+      }
+      equipped[relic] = entry.value as String;
+    }
+    if (equipped.values.toSet().length != equipped.length ||
+        equipped.entries.any((e) =>
+            (shop.relics[e.key.name] ?? 0) != 1 ||
+            !dragons.any((d) => d.owned && d.id == e.value))) {
+      _invalid();
+    }
+    equipment = Map.unmodifiable(equipped);
+    usableRelics = Map.unmodifiable({
+      for (final r in MysticRelic.values)
+        r: ((shop.relics[r.name] ?? 0) -
+                reservedRelics.entries
+                    .where((e) =>
+                        e.key == r.name || e.key.startsWith('${r.name}:'))
+                    .fold(0, (sum, e) => sum + e.value))
+            .clamp(0, 9007199254740991)
+    });
+  }
+  late final WeaveWallet materials;
+  late final Map<String, int> crafted, reservedRelics;
+  late final Map<MysticRelic, int> usableRelics;
+  late final Set<String> reservedEggIds;
+  late final List<int> chronoshards;
+  late final Map<MysticRelic, String> equipment;
+  int count(AltarRelic relic) => crafted[relic.name] ?? 0;
+  MysticRelic? equippedOn(String id) =>
+      equipment.entries.where((e) => e.value == id).firstOrNull?.key;
+  bool canUseChronoshard(int reduction) =>
+      (usableRelics[MysticRelic.chronoshard] ?? 0) > 0 &&
+      chronoshards.where((n) => n == reduction).length >
+          (reservedRelics['chronoshard:$reduction'] ?? 0);
+}
+
+Never _invalid() => throw const CanonicalGameException('game_snapshot_invalid');
 
 class CanonicalGameException implements Exception {
   const CanonicalGameException(this.code);

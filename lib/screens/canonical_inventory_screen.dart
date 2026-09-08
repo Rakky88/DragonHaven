@@ -9,10 +9,11 @@ import '../models/chest.dart';
 import '../models/mystic_relic.dart';
 import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
-import '../services/canonical_game_snapshot.dart';
 import '../widgets/chest_reveal.dart';
-import '../widgets/game_icon_sprite.dart';
 import '../widgets/shop_economy_scope.dart';
+import 'canonical_eggs.dart';
+import 'canonical_altar_screen.dart';
+import 'canonical_dragons_screen.dart';
 
 /// Server inventory uses nullable public egg facts. It never constructs a
 /// legacy egg with a made-up lineage, seed, alignment or eventual dragon.
@@ -32,12 +33,13 @@ class _InventoryContents extends StatelessWidget {
     final view = session.snapshot!;
     final strings = AppStrings.of(context);
     return DefaultTabController(
-        length: 3,
+        length: 4,
         child: Column(children: [
-          TabBar(tabs: [
+          TabBar(isScrollable: true, tabAlignment: TabAlignment.start, tabs: [
             Tab(text: strings.pick('Chests', 'Kisten')),
             Tab(text: strings.pick('Eggs', 'Eieren')),
             Tab(text: strings.pick('Relics', 'Relieken')),
+            const Tab(text: 'Altar'),
           ]),
           Expanded(
               child: TabBarView(children: [
@@ -63,25 +65,7 @@ class _InventoryContents extends StatelessWidget {
                 Text(strings.pick('Your chests will appear here.',
                     'Je kisten komen hier te staan.')),
             ]),
-            ListView(padding: const EdgeInsets.all(16), children: [
-              for (final egg in view.eggs)
-                Card(
-                    child: ListTile(
-                  key: Key('canonical-egg-${egg.id}'),
-                  leading: const GameIconSprite(GameIconKind.mysteriousEgg,
-                      size: 44),
-                  title:
-                      Text(strings.eggName(sinister: egg.kind == 'sinister')),
-                  subtitle: Text(egg.hint(strings.languageCode)),
-                  trailing: egg.tagged
-                      ? const Icon(Icons.bookmark_rounded)
-                      : const Icon(Icons.info_outline),
-                  onTap: () => _eggDetails(context, egg),
-                )),
-              if (view.eggs.isEmpty)
-                Text(strings.pick('Your eggs will appear here.',
-                    'Je eieren komen hier te staan.')),
-            ]),
+            const CanonicalEggList(),
             ListView(padding: const EdgeInsets.all(16), children: [
               for (final relic in MysticRelic.values)
                 if ((view.shop.relics[relic.name] ?? 0) > 0)
@@ -92,6 +76,19 @@ class _InventoryContents extends StatelessWidget {
                     title: Text(strings.relicName(relic)),
                     subtitle: Text(strings.relicDescription(relic)),
                     trailing: Text('${view.shop.relics[relic.name]}'),
+                    onTap: relic == MysticRelic.wayfinderSigil
+                        ? null
+                        : () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                                builder: (_) => Scaffold(
+                                    appBar: AppBar(
+                                        title: Text(strings.relicName(relic))),
+                                    body: relic.isEquipable ||
+                                            relic.hasUseAnimation
+                                        ? const CanonicalDragonsScreen()
+                                        : const ShopEconomyBoundary(
+                                            child: CanonicalEggList())))),
                   )),
               for (final entry in view.shop.relics.entries)
                 if (entry.value > 0 &&
@@ -103,35 +100,9 @@ class _InventoryContents extends StatelessWidget {
                 Text(strings.pick('Your relics will appear here.',
                     'Je relieken komen hier te staan.')),
             ]),
+            const CanonicalAltarScreen(),
           ])),
         ]));
-  }
-
-  Future<void> _eggDetails(BuildContext context, CanonicalEggView egg) async {
-    final strings = AppStrings.of(context);
-    await showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-              title: Text(strings.eggName(sinister: egg.kind == 'sinister')),
-              content: SingleChildScrollView(
-                  child: Text([
-                egg.hint(strings.languageCode),
-                '${strings.pick('Dragon', 'Draak')}: ${egg.revealedLineageId ?? strings.pick('Unknown', 'Onbekend')}',
-                '${strings.pick('Rarity', 'Zeldzaamheid')}: ${egg.revealedRarity ?? strings.pick('Unknown', 'Onbekend')}',
-                if (egg.revealedLawAxis != null) egg.revealedLawAxis!,
-                if (egg.revealedMoralAxis != null) egg.revealedMoralAxis!,
-                if (egg.tagged)
-                  strings.pick('Tagged · protected at the Altar',
-                      'Getagd · beschermd bij het Altar'),
-                if (egg.location == 'nest')
-                  strings.pick('In the nest', 'In het nest'),
-              ].join('\n\n'))),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(strings.pick('Close', 'Sluiten')))
-              ],
-            ));
   }
 }
 

@@ -14,7 +14,7 @@ class CanonicalUiServer {
   CanonicalUiServer(this.state);
   static const owner = '11111111-1111-4111-8111-111111111111';
   Map<String, dynamic> state;
-  final now = DateTime.utc(2026, 9, 7, 12);
+  DateTime now = DateTime.utc(2026, 9, 7, 12);
   int revision = 1;
   bool enabled = true;
   bool online = true;
@@ -42,7 +42,8 @@ class CanonicalUiServer {
     if (!online) throw const CanonicalGameException('game_command_unavailable');
     final previous = receipts[intent.requestId];
     if (previous != null) {
-      return CanonicalGameHttpReply(200, {...previous, 'replayed': true});
+      return CanonicalGameHttpReply(previous.containsKey('error') ? 422 : 200,
+          {...previous, 'replayed': true});
     }
     if (intent.ownerId != owner || intent.minimumRevision != revision) {
       return CanonicalGameHttpReply(422, {
@@ -51,13 +52,27 @@ class CanonicalUiServer {
         'error': 'game_state_changed'
       });
     }
-    final result = await GameCommandEngine.execute(
-        state: state,
-        action: intent.action,
-        payload: intent.payload,
-        secretSeed: 'de' * 32,
-        now: now,
-        keeperId: owner);
+    final Map<String, dynamic> result;
+    try {
+      result = await GameCommandEngine.execute(
+          state: state,
+          action: intent.action,
+          payload: intent.payload,
+          // Real workers allocate independent entropy per request. Reusing one
+          // seed here would collide with the Altar's internal operation IDs.
+          secretSeed: sha256
+              .convert(utf8.encode('fixture:${intent.requestId}'))
+              .toString(),
+          now: now,
+          keeperId: owner);
+    } on GameCommandException catch (error) {
+      final receipt = receipts[intent.requestId] = {
+        'request_id': intent.requestId,
+        'error': error.code,
+        'replayed': false,
+      };
+      return CanonicalGameHttpReply(422, receipt);
+    }
     state = result['state'] as Map<String, dynamic>;
     revision++;
     final receipt = receipts[intent.requestId] = {

@@ -3,6 +3,7 @@ import '../models/chest.dart';
 import '../models/dragon_emote.dart';
 import '../models/music_track.dart';
 import '../models/mystic_relic.dart';
+import '../models/egg_altar.dart';
 import '../models/profile_portrait.dart';
 import 'canonical_game_session.dart';
 import 'canonical_game_snapshot.dart';
@@ -51,6 +52,71 @@ class CanonicalGameActions {
     if (result == null) return null;
     return decodeChestRewards(result,
         tier: tier, count: count, specialChestId: specialChestId);
+  }
+
+  Future<void> _boolean(String action, Map<String, dynamic> payload) async {
+    final result = await execute(action, payload);
+    if (result is! bool) {
+      throw const CanonicalGameException('game_result_invalid');
+    }
+    if (!result) throw const CanonicalGameException('game_action_unavailable');
+  }
+
+  Future<void> tagEgg(String id, bool tagged) =>
+      _boolean('tag_egg', {'eggId': id, 'tagged': tagged});
+  Future<void> activateEgg(String id) =>
+      _boolean('activate_egg', {'eggId': id});
+  Future<void> hatchEgg(String id) => _boolean('hatch_egg', {'eggId': id});
+  Future<void> craft(AltarRelic relic) =>
+      _boolean('craft_altar_relic', {'relic': relic.name});
+  Future<void> revealEgg(AltarRelic relic, String id) =>
+      _boolean('use_altar_relic', {'relic': relic.name, 'eggId': id});
+  Future<void> nameDragon(String id, String name) =>
+      _boolean('name_dragon', {'dragonId': id, 'name': name.trim()});
+  Future<void> evolveDragon(String id) =>
+      _boolean('evolve_dragon', {'dragonId': id});
+  Future<void> equip(MysticRelic relic, String? dragonId) =>
+      _boolean('equip_relic', {'relic': relic.name, 'dragonId': dragonId});
+  Future<void> releaseDragon(String id) =>
+      _boolean('release_dragon', {'dragonId': id});
+
+  Future<void> _use(String action, Map<String, dynamic> payload,
+      {String success = 'revealed'}) async {
+    final result = await execute(action, payload);
+    if (result == success) return;
+    throw CanonicalGameException(switch (result) {
+      'notOwned' => 'relic_not_owned',
+      'alreadyKnown' => 'already_known',
+      'eggNotFound' => 'egg_not_found',
+      'dragonNotFound' => 'dragon_not_found',
+      'noEggInNest' => 'egg_not_in_nest',
+      _ => 'game_result_invalid',
+    });
+  }
+
+  Future<void> useLens(String id) => _use('use_astral_lens', {'eggId': id});
+  Future<void> useRelic(MysticRelic relic, String id) =>
+      _use('use_relic', {'relic': relic.name, 'dragonId': id});
+  Future<void> useChronoshard(int percent) =>
+      _use('use_chronoshard', {'reductionPercent': percent},
+          success: 'accelerated');
+
+  Future<WeaveWallet> returnEgg(String id,
+      {required bool sinisterConfirmed}) async {
+    final result = await execute('return_egg', {
+      'eggId': id,
+      'sinisterConfirmed': sinisterConfirmed,
+    });
+    if (result is! Map ||
+        result.length != 3 ||
+        !const ['fragments', 'essence', 'hearts'].every((k) =>
+            result[k] is int &&
+            result[k] >= 0 &&
+            result[k] <= 9007199254740991)) {
+      throw const CanonicalGameException('game_result_invalid');
+    }
+    return WeaveWallet(result['fragments'] as int, result['essence'] as int,
+        result['hearts'] as int);
   }
 }
 

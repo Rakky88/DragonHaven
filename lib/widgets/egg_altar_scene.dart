@@ -7,8 +7,13 @@ import 'egg_art.dart';
 /// One fixed altar, correctly occluded egg and continuous light choreography.
 /// The twelve beats blend continuously; no mismatched sprite frames crossfade.
 class EggAltarScene extends StatelessWidget {
-  const EggAltarScene({super.key, this.egg, this.progress});
+  const EggAltarScene({super.key, this.egg, this.eggArtwork, this.progress})
+      : assert(egg == null || eggArtwork == null);
   final DragonEgg? egg;
+
+  /// Public server inventories can supply artwork without constructing an egg
+  /// with invented hidden genetics. Legacy callers keep their existing model.
+  final Widget? eggArtwork;
   final double? progress;
   static const backdrop = 'assets/images/egg_altar/altar_grove.png';
   static const altar = 'assets/images/egg_altar/altar_empty.png';
@@ -55,7 +60,7 @@ class EggAltarScene extends StatelessWidget {
                   width: side,
                   height: side,
                   child: stone()),
-              if (egg != null && dissolve < 1) ...[
+              if ((egg != null || eggArtwork != null) && dissolve < 1) ...[
                 // Contact shadow and reflected basin light anchor the egg in space.
                 Positioned(
                     left: left + side * .36,
@@ -100,10 +105,8 @@ class EggAltarScene extends StatelessWidget {
                                     Color.lerp(Colors.transparent,
                                         const Color(0xFFFFEABC), charge * .50)!,
                                     BlendMode.srcATop),
-                                child: EggArt(
-                                    lineageId: egg!.lineageId,
-                                    specialEggId: egg!.specialEggId,
-                                    height: side * .29))))),
+                                child: eggArtwork ??
+                                    EggArt(lineageId: egg!.lineageId, specialEggId: egg!.specialEggId, height: side * .29))))),
                 // The near lip is above the egg, while the far rim is behind it.
                 Positioned(
                     left: left,

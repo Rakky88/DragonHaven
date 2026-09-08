@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/online_config.dart';
 import 'l10n/app_strings.dart';
 import 'screens/canonical_inventory_screen.dart';
+import 'screens/canonical_dragons_screen.dart';
 import 'screens/shop_hub_screen.dart';
 import 'services/canonical_game_session.dart';
 import 'services/canonical_game_snapshot.dart';
@@ -123,9 +124,11 @@ class _CanonicalStagingAppState extends State<CanonicalStagingApp>
           ]),
           body: SafeArea(
               child: signedIn
-                  ? (_tab == 0
-                      ? const ShopHubScreen()
-                      : const CanonicalInventoryScreen())
+                  ? switch (_tab) {
+                      0 => const ShopHubScreen(),
+                      1 => const CanonicalInventoryScreen(),
+                      _ => const CanonicalDragonsScreen(),
+                    }
                   : _StagingSignIn(auth: widget.auth)),
           bottomNavigationBar: signedIn
               ? NavigationBar(
@@ -138,6 +141,9 @@ class _CanonicalStagingAppState extends State<CanonicalStagingApp>
                       NavigationDestination(
                           icon: const Icon(Icons.inventory_2_outlined),
                           label: strings.pick('Inventory', 'Inventaris')),
+                      NavigationDestination(
+                          icon: const Icon(Icons.pets),
+                          label: strings.pick('Dragons', 'Draken')),
                     ])
               : null,
         );

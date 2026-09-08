@@ -51,6 +51,27 @@ String gameConnectionMessage(AppStrings strings, String? code) =>
       'game_state_changed' || 'game_refresh_required' => strings.pick(
           'Your inventory has changed. Refresh it before continuing.',
           'Je inventaris is gewijzigd. Vernieuw deze voordat je verdergaat.'),
+      'egg_tagged' => strings.pick('Untag this egg before returning it.',
+          'Verwijder de tag voordat je dit ei teruggeeft.'),
+      'special_egg' => strings.pick('Special eggs are protected at the Altar.',
+          'Special-eieren zijn beschermd bij het Altar.'),
+      'egg_reserved' => strings.pick('This egg is reserved for a trade.',
+          'Dit ei is gereserveerd voor een ruil.'),
+      'egg_in_nest' => strings.pick('An egg in the nest cannot be returned.',
+          'Een ei in het nest kan niet worden teruggegeven.'),
+      'insufficient_materials' => strings.pick(
+          'You need more crafting materials.',
+          'Je hebt meer materialen nodig om dit te maken.'),
+      'relic_not_owned' => strings.pick('This relic is no longer available.',
+          'Dit reliek is niet meer beschikbaar.'),
+      'already_known' => strings.pick('This information is already revealed.',
+          'Deze informatie is al onthuld.'),
+      'game_action_unavailable' ||
+      'egg_not_found' ||
+      'dragon_not_found' ||
+      'egg_not_in_nest' =>
+        strings.pick('This action is not available now.',
+            'Deze actie is nu niet beschikbaar.'),
       _ => strings.pick(
           'We could not confirm your inventory. Reconnect to check your last action before continuing.',
           'We konden je inventaris niet bevestigen. Verbind opnieuw om je laatste actie te controleren voordat je verdergaat.'),

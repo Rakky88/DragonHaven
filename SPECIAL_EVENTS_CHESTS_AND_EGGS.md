@@ -1,10 +1,10 @@
 # DragonHaven Special Events, Chests, and Eggs
 
-Last verified: 7 September 2026
+Last verified: 9 September 2026
 
-Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
+Ruleset: released app `v0.05.22`; server schema 59, economy activation disabled
 
-<!-- reference-source-fingerprint: 374c39a280dc81cd -->
+<!-- reference-source-fingerprint: 8887296a2354d6fc -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -17,6 +17,19 @@ codes are maintained in [REDEEM_CODES.md](REDEEM_CODES.md) and must never be
 copied into public release notes.
 
 ## 1. Content ownership model
+
+The isolated canonical staging app now offers egg details, type/tag filters and
+ordering, tagging, incubation, hatching, fixed-percentage Chronoshards and Altar
+crafting/reveals. Details precede Altar placement; tagged, Special, reserved and
+incubating eggs remain protected. A Sinister return requires two confirmations.
+Its existing reward remains 25 fragments, 3-5 essence and at most one Weaveheart
+with the existing fivefold chance, never five hearts. The interface does not
+show odds or pity counters. Quill remains the first craft choice. Server receipts
+drive the existing Altar scene; no egg genetics are invented to render its art.
+Account/revision checks and durable recovery cover every lifecycle action.
+This UI is staging-only and does not activate or change live player ownership,
+event schedules, reward pools or probabilities. Evidence and remaining work:
+`SERVER_ECONOMY_UI_VERIFICATION.md`.
 
 The authenticated server display projection preserves Special Egg catalog art
 and Sinister/Special protection, but omits unrevealed lineage, spectral roll,

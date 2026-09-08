@@ -1,7 +1,19 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
-Laatst bijgewerkt: **8 september 2026**
+Laatst bijgewerkt: **9 september 2026**
 Technische uitgangsversie: **v0.04.06**
+
+## Hervatte servereconomie: ei-, Altar- en drakenacties
+
+De volgende stagingkoppeling is gebouwd: ei-details met filters, taggen,
+broeden/uitkomen, Chronoshards, Altar-return/crafting/onthullen en drakennamen,
+uitrusting, evolutie en vrijlaten. De schermen gebruiken alleen de openbare
+serverweergave en de duurzame actiesessie. Verloren antwoorden en accountwissels
+kunnen geen tweede beloning of afschrijving veroorzaken. Lokale regel- en
+schermtests slagen; de uitgebreide netwerkproef wordt vóór afronding uitgevoerd.
+Bewijs en afbakening: `SERVER_ECONOMY_UI_VERIFICATION.md`.
+Dit blijft een deelstap: volledige gameplay, trialvalidatie, sociale afwikkeling,
+migratie en activatie staan nog open; versie en productie-economie wijzigen niet.
 
 ## Uitgebracht: v0.05.22 (10072): broches, events en expertise-uitlijning
 

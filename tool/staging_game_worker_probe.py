@@ -83,6 +83,13 @@ def main():
     ruleset = match.group(1)
     fixture = json.loads((ROOT / "staging/game-fixture.json").read_text(encoding="utf-8"))["state"]
     fixture["eggAltar"]["wallet"] = {"fragments": 20, "essence": 2, "hearts": 0}
+    # Explicit synthetic test stock; never grant through a live player/drop path.
+    brooches = ('twinstarBrooch', 'emberheartBrooch', 'moonweaveBrooch', 'soulbloomBrooch')
+    for relic in brooches:
+        fixture.setdefault('relicInventory', {})[relic] = 1
+        fixture.setdefault('untradeableRelicInventory', {})[relic] = 1
+    fixture['uniqueRelicsEverObtained'] = sorted(set(fixture.get('uniqueRelicsEverObtained', [])) | set(brooches))
+    fixture['twinstarBroochEverObtained'] = True
     fixture_hex = json.dumps(fixture, separators=(",", ":")).encode("utf-8").hex()
     original_coins = fixture["pet"]["coins"]
     original_title_chests = fixture["chestInventory"].get("title", 0)
@@ -359,6 +366,7 @@ def main():
             raise ProbeError(match.group(0) if match else 'client_probe_failed')
         require('PASS: real SDK/session/journals;' in client_result.stdout, 'client_probe_proof_missing')
         require('PASS: real shop UI purchase,' in client_result.stdout, 'client_probe_ui_proof_missing')
+        require('PASS: real lifecycle UI;' in client_result.stdout, 'client_probe_lifecycle_proof_missing')
         unchanged = query(f"""select
           (select s.state=i.source_state and s.revision=i.source_revision
             from public.cloud_game_saves s join private.canonical_game_imports i on i.owner_id=s.user_id
@@ -371,6 +379,7 @@ def main():
                 and unchanged['authority'] == 'legacy_client' and not unchanged['mutations'],
                 'client_probe_ui_changed_live_state')
         print('PASS: actual shop UI purchase and chest reveal; one debit and one earned title.', flush=True)
+        print('PASS: actual lifecycle UI; Sinister return, crafting, discovery, tags, incubation, rename and equipment.', flush=True)
         print('PASS: actual Flutter client, Supabase Auth, filesystem journals and server; one charge after lost reply; corrupt request recovery without another purchase.', flush=True)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"
