@@ -3,7 +3,7 @@
 Laatst bijgewerkt: **8 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-## Releasekandidaat v0.05.21 (10071): eventlogo's en compacte drakenkeuze
+## Uitgebracht: v0.05.21 (10071), 8 september 2026
 
 - Geselecteerde Expertises laten de bestaande sprite oplichten; ster en gele
   rijmarkering zijn verwijderd. Dezelfde gloed verschijnt in beide infovensters.
@@ -17,10 +17,16 @@ Technische uitgangsversie: **v0.04.06**
 
 Verificatie en platformgrenzen: `EVENT_BRANDING_VERIFICATION.md`.
 Appversie, updatevergelijking en Android-buildnummer zijn een stap verhoogd.
-De productiepreflight van 8 september 19:43:11 UTC bevestigt exact 57 migraties,
-nul lintfouten en Auth/settings/app HTTP 200. Er is geen servermigratie nodig.
-Releasecontroles en publicatiebewijs worden vastgelegd in
-`RELEASE_V0.05.21_VERIFICATION.md`.
+Publicatie voltooid op bron `7e91aacfaea8491d88e1ccd5d8ba2684524c8621`.
+Workflow [34270982612](https://github.com/Rakky88/DragonHaven/actions/runs/34270982612)
+slaagt met schone analyse, 625 tests, productiepreflight en ondertekende AAB.
+De productie-APK is als update getest; versie, vaste ondertekening en behoud
+van spelgegevens en taalkeuze zijn gecontroleerd. GitHub-digest en grootte
+zijn exact gelijk aan de lokale en geïnstalleerde APK; latest-download HTTP 200.
+Ook na publicatie om 20:03:24 UTC: exact 57 migraties, nul lintfouten en
+Auth/settings/app HTTP 200. Er is geen servermigratie uitgevoerd.
+Volledig bewijs: [releaseverificatie](RELEASE_V0.05.21_VERIFICATION.md) en
+[openbare release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.21).
 De open servereconomiepunten en productie-instellingen blijven ongewijzigd.
 
 ## Uitgebracht: v0.05.20 (10070), 8 september 2026

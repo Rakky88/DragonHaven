@@ -1,8 +1,9 @@
 # Event logos and dragon picker refinement
 
-Development after v0.05.20 / Android 10070, 8 September 2026. App version and
-published release are unchanged. No database, Edge Function, Firebase setting,
-account save or economy switch was deployed or changed for this work.
+Development checks after v0.05.20 / Android 10070, recorded on 8 September 2026.
+These changes are now included in v0.05.21 / 10071; publication and final server
+evidence are in `RELEASE_V0.05.21_VERIFICATION.md`. No database, Edge Function,
+Firebase setting, account save or economy switch was changed for this work.
 
 ## Behavior and artwork
 

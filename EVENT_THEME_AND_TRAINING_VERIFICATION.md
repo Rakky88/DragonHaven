@@ -10,8 +10,9 @@ live server economy activation remains disabled.
 
 The new Expertise glow, complete event logos, Android launcher switching and
 title-height sprite shortcuts are documented separately in
-`EVENT_BRANDING_VERIFICATION.md`. The release evidence below remains the original
-v0.05.20 baseline, not a claim that these later refinements are already published.
+`EVENT_BRANDING_VERIFICATION.md` and are released in v0.05.21 / 10071; see
+`RELEASE_V0.05.21_VERIFICATION.md`. The release evidence below remains the
+original v0.05.20 baseline.
 
 ## Delivered behavior
 
