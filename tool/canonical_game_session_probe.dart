@@ -89,6 +89,7 @@ void main() {
                     return true;
                   })));
       await game.synchronize();
+      stdout.writeln('PROBE: session_synchronized');
       require(game.canAct, 'client_probe_not_ready');
       final before = game.snapshot!;
       final titles =
@@ -177,6 +178,7 @@ void main() {
     late Directory directory;
     late CanonicalGameSession game;
     await tester.runAsync(() async {
+      stdout.writeln('PROBE: ui_auth_start');
       await auth.auth.recoverSession(raw);
       require((await auth.auth.getUser()).user?.id == owner,
           'client_probe_auth_mismatch');
@@ -185,6 +187,7 @@ void main() {
           directory: directory,
           connection: CanonicalGameTransport.staging(auth, config));
       await game.synchronize();
+      stdout.writeln('PROBE: ui_synchronized');
     });
     Future<void> settleCommand() async {
       for (var n = 0; n < 500 && game.busy; n++) {
@@ -212,11 +215,13 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       require(tester.widget<FilledButton>(purchase).onPressed != null,
           'client_probe_ui_buy_unavailable');
-      await tester.tap(purchase);
+      // Start real filesystem/network callbacks outside the fake test clock.
+      await tester.runAsync(() => tester.tap(purchase));
       await tester.pump();
       require(tester.widget<FilledButton>(purchase).onPressed == null,
           'client_probe_ui_double_tap_enabled');
       await settleCommand();
+      stdout.writeln('PROBE: ui_purchase_settled');
       require(
           game.snapshot!.coins == before.coins - 100 &&
               game.snapshot!.shop.chests['title'] == initialChests + 1,
@@ -229,8 +234,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       require(game.snapshot!.shop.chests['title'] == initialChests + 1,
           'client_probe_ui_preview_consumed');
-      await tester.tap(find.byKey(const Key('chest-reveal-tap-target')));
+      await tester.runAsync(
+          () => tester.tap(find.byKey(const Key('chest-reveal-tap-target'))));
       await settleCommand();
+      stdout.writeln('PROBE: ui_reveal_settled');
       for (var n = 0; n < 30; n++) {
         await tester.pump(const Duration(milliseconds: 100));
       }

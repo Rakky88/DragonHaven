@@ -349,6 +349,12 @@ def main():
             capture_output=True, text=True, timeout=240)
         del child_environment['STAGING_GAME_CLIENT_SESSION']
         if client_result.returncode != 0:
+            # Only fixed phase markers and timeout status may leave the child.
+            # Never print arbitrary SDK exceptions, state or session tokens.
+            for phase in re.findall(r'PROBE: ([a-z_]+)', client_result.stdout):
+                print('PROBE: ' + phase, flush=True)
+            if 'TimeoutException' in client_result.stdout + client_result.stderr:
+                print('PROBE: client_test_timeout', flush=True)
             match = re.search(r'client_probe_[a-z_]+', client_result.stdout + client_result.stderr)
             raise ProbeError(match.group(0) if match else 'client_probe_failed')
         require('PASS: real SDK/session/journals;' in client_result.stdout, 'client_probe_proof_missing')
