@@ -4,7 +4,9 @@ Last updated: **9 September 2026**
 
 Release **v0.05.22 / 10072** is published with clean analysis, 652 tests and verified signing.
 Production and staging both have exactly **59 migrations**. Production
-preflight at 21:35:35 UTC: parity 59, lint 0, Auth/settings/application HTTP 200.
+preflight at 21:52:19 UTC on 8 September: parity 59, lint 0,
+Auth/settings/application HTTP 200. A fresh read-only production health check
+also returned 200/200/200 at 23:42:42 UTC, after the staging extensions.
 All accounts remain legacy, game/economic mutations disabled, zero shadow
 copies, production push enabled. See `RELEASE_V0.05.22_VERIFICATION.md`.
 
@@ -34,8 +36,11 @@ native/JavaScript parity, an actual server deadline, early-claim refusal and
 one reward after a deliberately lost claim. Cleanup and final staging health
 passed at 23:19:28 UTC on 8 September. House purchases, repairs and wards passed
 run 34290527414 on `a53fb50`, all 675 tests and real UI commands; cleanup and
-schema 59/lint 0/health 200 at 23:33:58 UTC. Dragon preference commands and
-their screen controls are the next locally verified extension. Current component
+schema 59/lint 0/health 200 at 23:33:58 UTC. Dragon preferences and the combined
+UI regression passed run 34291657311 on `32817ed`: all 679 Flutter tests,
+15 Edge tests, native/JavaScript parity and actual server interactions. Cleanup
+removed both synthetic accounts and shadow data, disabled the worker, and final
+schema 59/lint 0/Auth/settings/app HTTP 200 passed at 23:49:09 UTC. Current component
 evidence and explicit remaining boundaries are maintained in
 `SERVER_ECONOMY_UI_VERIFICATION.md`.
 
@@ -53,7 +58,11 @@ Migrations **45-47** are deployed dormant: chest opening, server inventory guard
 Production run `34116589237` passed exact staging-source checks, rollback rehearsals, all three contracts, migration parity, zero-error lint and health. Before/after checks prove mutations remain disabled and all accounts remain in legacy compatibility.
 Staging runs `34110497546`, `34110676557` and `34111166461` passed rollback contracts, parity, lint and health. No economy activation is included.
 
-## Work in progress: durable client reconciliation (7 September 2026)
+## Implementation and verification history
+
+The dated records below retain the state of each earlier rehearsal and rollout.
+The overview above and `SERVER_ECONOMY_UI_VERIFICATION.md` track the latest
+component evidence and remaining activation work.
 
 ### Resumed after v0.05.19: damaged-journal recovery
 

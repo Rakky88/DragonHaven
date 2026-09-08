@@ -35,8 +35,13 @@ Na opruiming: schema 59, lint 0 en HTTP 200 om 23:33:58 UTC.
 Ook drakenvoorkeuren hebben nu een expliciete serveropdracht: zet een highlight
 aan/uit of kies één favoriet. Herhaalde opdrachten draaien een highlight niet
 terug en tellen een favorietkeuze niet nogmaals. Regel-/schermtests en visuele
-controle slagen; de echte netwerkproef volgt nog. Seasonal/group-afwikkeling,
-trialvalidatie, meubelbewerking en productiemigratie blijven afzonderlijk open.
+controle slagen. De echte netwerkproef 34291657311 op `32817ed` slaagt ook:
+679 Fluttertests, 15 Edge-tests, domeinpariteit en alle schermproeven opnieuw
+groen. Testaccounts/schaduwdata zijn opgeruimd en de worker is uitgeschakeld;
+schema 59, lint 0 en HTTP 200 om 23:49:09 UTC. Een onafhankelijke productiecheck
+gaf om 23:42:42 UTC HTTP 200 voor Auth/settings/app. Seasonal/group-afwikkeling,
+trialvalidatie, meubelbewerking, serverdaggrenzen en productiemigratie blijven
+afzonderlijk open; dit is geen volledige afronding of activatie van de economie.
 
 ## Uitgebracht: v0.05.22 (10072): broches, events en expertise-uitlijning
 
@@ -1716,8 +1721,9 @@ Een taak of mijlpaal is pas gereed wanneer:
    kistopening zijn in de geïsoleerde staging-app met echte Auth/Edge/Postgres
    bewezen (`34281388567`). Ei-/draaklevensloop, uitrusting en Altar zijn inmiddels
    ook bewezen (`34286596835`), net als gewone Adventures/Wayfinder (`34289398487`)
-   en woningacties (`34290527414`). Drakenvoorkeuren zijn gebouwd; het netwerkbewijs
-   volgt nog. Rond resterende publieke gameplaymodellen en schermkoppelingen af.
+   en woningacties (`34290527414`). Drakenvoorkeuren en de gecombineerde
+   regressieproef zijn ook bewezen (`34291657311`, 679 tests). Rond resterende
+   publieke gameplaymodellen en schermkoppelingen af.
    Daarna volgen gevalideerde trialbewijzen, serverdaggrenzen en sociale claims.
    Productie staat op schema 59 met legacy authority en uitgeschakelde economie.
 3. **Codex — staging-load:** 100 gebruikers zijn gemeten met nul fouten;

@@ -62,6 +62,18 @@ staged migration and recovery remain open. Billing stays explicitly deferred.
 Production is schema 59, legacy authority, game/economic mutations off,
 zero shadow copies and production FCM enabled. Last independent production
 preflight: 8 September 21:52:19 UTC; see `RELEASE_V0.05.22_VERIFICATION.md`.
+A read-only production health check after these staging extensions returned
+Auth/settings/application HTTP 200 at 23:42:42 UTC. No production writes were made.
+
+The next implementation boundaries are:
+
+| Area | Remaining work before live ownership |
+| --- | --- |
+| Trials and school | Server-issued attempt, bounded input transcript, shared score evaluation, expiry/offer/dragon checks and one atomic reward. The existing seasonal score/count/duration checks are not a verified transcript; arbitrary scores remain absent from canonical commands. |
+| House and care | Furniture editing, floor reordering, roaming/care and school interactions still need typed public controls and command validation. Economic room/floor/repair/ward controls are covered below. |
+| Calendar | Define the keeper's server day and preserve existing constellation/day keys through timezone and daylight-saving transitions; device-clock changes must not create another daily claim. |
+| Social and events | Settle group/seasonal Adventures, trades, Beacon contributions and podium prizes against one canonical owner state and the normalized social records. Preserve source event/preview identity on an already-started run. |
+| Activation | Finish import reconciliation, lossless representative migrations, recovery and old-client fences, then exercise cutover/rollback in staging. Current shadow copies cannot be promoted by the staging UI. |
 
 ## Egg, Altar and dragon lifecycle extension — 9 September 2026
 
@@ -181,5 +193,13 @@ egg/released/unknown targets or malformed arguments. A real-widget test covers
 multiple highlights, unhighlighting and the same glow in Adventure information;
 the sprite glow was visually inspected. The Edge test accepts the two exact
 command schemas using the authenticated owner and rejects added reward fields.
-The real staging probe is extended with these interactions; its network proof
-is pending. This changes no schema, gameplay odds or production authority.
+Run [34291657311](https://github.com/Rakky88/DragonHaven/actions/runs/34291657311)
+passed on `32817ed`: clean analysis, all 679 Flutter tests, 15 Edge tests and
+native/JavaScript parity (975446-byte probe bundle, including accepted preference
+commands). The real UI probe proved highlight/unhighlight, unchanged training,
+the glow in Adventure information, one favorite and one counter increment.
+All preceding shop/lifecycle/Adventure/house proofs passed again. Both synthetic
+accounts and their shadow commands were removed at 23:49:02 UTC; the worker was
+disabled. Final staging preflight at 23:49:09 UTC on 8 September confirmed schema
+59, lint 0 and Auth/settings/app HTTP 200. This changes no schema, gameplay odds
+or production authority.
