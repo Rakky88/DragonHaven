@@ -49,9 +49,15 @@ uitkomsten en weigert ook oude verzoeken die pas later arriveren. De inventaris
 verandert niet door herstel. Een apart dubbel herstelbestand houdt nieuwe acties
 tegen totdat serverstand en weergave duurzaam zijn opgeslagen. Accountwissels en
 onderbroken opruimen worden afgevangen. De databaseproef inclusief migratie is
-op staging volledig teruggedraaid en slaagt; staging blijft 56. Alle 604
-Fluttertests, 14 workerproeven en de volledige analyse slagen. Toepassen op
-staging en de echte Auth/Edge-proef zijn de volgende controle. Productie blijft 56.
+op staging volledig teruggedraaid en slaagt. Alle 604 Fluttertests, 14 workerproeven
+en de volledige analyse slagen. Workflow
+[34254991384](https://github.com/Rakky88/DragonHaven/actions/runs/34254991384)
+heeft daarna exact 57 toegepast, alle zes contracten herhaald en de echte
+Auth/Edge/Dart/Postgres-proef bewezen. Tijdelijke accounts, kopieën, verzoeken en
+herstelbewijzen zijn verwijderd; runtime uit, schema 57, lint 0, health 200.
+Productie blijft 56. De volgende appstap bundelt de losse transport-/opslagdelen
+in één accountsessie met actuele serverweergave, offline lezen en duurzaam
+hervatten; deze sessie is nog niet aan de echte spelschermen gekoppeld.
 
 Rick heeft de volledige servereconomie expliciet toegevoegd aan de scope en
 zelf Firebase-project `dragonhaven-20ced` aangemaakt. Werkbranch:

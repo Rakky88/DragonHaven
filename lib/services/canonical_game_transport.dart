@@ -8,13 +8,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/online_config.dart';
 import '../app_info.dart';
 import 'canonical_game_intent.dart';
-import 'canonical_game_reconciler.dart';
+import 'canonical_game_connection.dart';
 import 'canonical_game_snapshot.dart';
 
 /// Authenticated transport for the detached staging candidate. No service key,
 /// raw save, caller-owned clock or secret seed is ever present in this client.
 /// Each request owns its HTTP client so a timeout can actually close the socket.
-class CanonicalGameTransport {
+class CanonicalGameTransport implements CanonicalGameConnection {
   CanonicalGameTransport.staging(this.authClient, OnlineConfig config,
       {http.Client Function()? httpClientFactory,
       this.timeout = const Duration(seconds: 10)})
@@ -54,14 +54,18 @@ class CanonicalGameTransport {
   Future<void>? _refresh;
   final _activeClients = <http.Client>{};
 
+  @override
   String? get currentOwner => _disposed ||
           authClient.auth.currentSession == null ||
           authClient.auth.currentUser?.emailConfirmedAt == null
       ? null
       : authClient.auth.currentUser?.id;
+  @override
   int get sessionEpoch => _epoch;
+  @override
   Stream<int> get accountChanges => _changes.stream;
 
+  @override
   Future<Object?> read(Map<String, dynamic> request) async {
     if (request.length != 3 ||
         request['protocol'] != 2 ||
@@ -76,10 +80,12 @@ class CanonicalGameTransport {
     return reply.body;
   }
 
+  @override
   Future<CanonicalGameHttpReply> send(CanonicalGameIntent intent,
           {int clientBuild = AppInfo.buildNumber}) =>
       _invoke(intent.toRequest(clientBuild), expectedOwner: intent.ownerId);
 
+  @override
   Future<Object?> recover(String requestId,
       {int clientBuild = AppInfo.buildNumber}) async {
     if (!CanonicalGameIntent.validOwner(requestId)) {
@@ -188,6 +194,7 @@ class CanonicalGameTransport {
     }
   }
 
+  @override
   Future<void> dispose() async {
     _disposed = true;
     _epoch++;

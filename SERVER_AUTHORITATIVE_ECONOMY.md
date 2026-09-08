@@ -1,7 +1,7 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **8 September 2026**
-Released app: **v0.05.19 / 10069**; production **56**, staging **56**.
+Released app: **v0.05.19 / 10069**; production **56**, staging **57**.
 Release workflow 34157071933 passed with 596 tests; APK/latest-download and
 post-publication server checks passed. See `RELEASE_V0.05.19_VERIFICATION.md`.
 Production migrations 50–56 were applied after exact staging-source evidence
@@ -33,10 +33,24 @@ command lane early or invent a new purchase. A healthy original intent still
 uses ordinary receipt reconciliation. Recovery works while mutations are paused.
 
 The exact migration and database contract passed a rollback-only rehearsal on
-registered staging, preserving schema 56. All 604 Flutter tests, 14 worker tests
-and full analysis pass;
-the applied staging/real Auth probe remains the next gate. Production remains
-on schema 56 with legacy account ownership and economic mutations disabled.
+registered staging. All 604 Flutter tests, 14 worker tests and full analysis pass.
+Run [34254991384](https://github.com/Rakky88/DragonHaven/actions/runs/34254991384),
+source `f4cc7f2c8de6c87fd6b3d37f2f91ab326d419a6a`, then applied exactly 57,
+repeated all six contracts before/after, deployed the worker and proved real
+Auth/Edge/Dart/Postgres recovery, stale-request refusal and paused cancellation.
+Both synthetic accounts, copies, intents and recovery receipts were removed;
+runtime returned to disabled. Final staging parity 57, lint 0, Auth/settings/app
+200. Production remains on 56 with legacy accounts and economic mutations off.
+
+The next client component is `CanonicalGameSession`: owner/epoch-scoped display,
+fresh-read permission to act, one command at a time, durable intent/recovery
+resumption and offline cached viewing. It remains detached from main/UI while
+the session behavior is tested; no shadow inventory replaces a live save.
+Eight session tests and the 26 existing transport/reconciliation tests pass.
+The staging probe now also exercises the actual Flutter session and filesystem
+journals with a real authenticated synthetic account: dropping a committed HTTP
+receipt, restarting, then corrupting both intent files. That new applied probe
+is the next gate; its child process receives no service/management credentials.
 
 ### Public display projection candidate
 

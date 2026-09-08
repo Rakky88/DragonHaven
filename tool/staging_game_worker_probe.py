@@ -106,6 +106,7 @@ def main():
     require(isinstance(admin_key, str), "probe_admin_configuration_missing")
     admin_headers = {"Authorization": "Bearer " + admin_key, "apikey": admin_key}
     owners = []
+    client_sessions = {}
     try:
         for ordinal in range(2):
             password = secrets.token_urlsafe(32) + "Dh7!"
@@ -122,6 +123,7 @@ def main():
             require(status == 200 and signed_in.get("user", {}).get("id") == owner
                     and isinstance(signed_in.get("access_token"), str), "probe_sign_in_failed")
             owners.append((owner, signed_in["access_token"]))
+            client_sessions[owner] = signed_in
         owner, token = owners[0]
         outsider, outsider_token = owners[1]
         source_expression = f"convert_from(decode('{fixture_hex}','hex'),'utf8')::jsonb"
@@ -331,6 +333,26 @@ def main():
             print("PASS: captured authoritative Altar prepared and replayed before game commands; no migration reward grant.", flush=True)
         print("PASS: authenticated public projection hides egg genetics, reflects committed actions and reads while mutations are paused.", flush=True)
         print("PASS: paused worker recovers original success/failure receipts and refuses new mutations.", flush=True)
+        # Exercise the actual Flutter SDK transport/session and filesystem
+        # journals. This child receives no management/service/database secrets.
+        query('update private.game_engine_runtime set enabled=true where singleton')
+        child_environment = {key: value for key, value in os.environ.items()
+            if not any(part in key.upper() for part in ('SECRET', 'TOKEN', 'PASSWORD', 'SUPABASE', 'KEY'))}
+        child_environment.update({
+            'STAGING_SUPABASE_PROJECT_REF': PROJECT, 'STAGING_SUPABASE_URL': BASE,
+            'STAGING_SUPABASE_PUBLISHABLE_KEY': PUBLIC_KEY,
+            'STAGING_GAME_CLIENT_SESSION': json.dumps(client_sessions[owner]),
+            'STAGING_GAME_PROBE_RUN': RUN,
+        })
+        client_result = subprocess.run(['flutter', 'test', '--no-pub',
+            'tool/canonical_game_session_probe.dart'], cwd=ROOT, env=child_environment,
+            capture_output=True, text=True, timeout=150)
+        del child_environment['STAGING_GAME_CLIENT_SESSION']
+        if client_result.returncode != 0:
+            match = re.search(r'client_probe_[a-z_]+', client_result.stdout + client_result.stderr)
+            raise ProbeError(match.group(0) if match else 'client_probe_failed')
+        require('PASS: real SDK/session/journals;' in client_result.stdout, 'client_probe_proof_missing')
+        print('PASS: actual Flutter client, Supabase Auth, filesystem journals and server; one charge after lost reply; corrupt request recovery without another purchase.', flush=True)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"
         # The immutable run marker also finds an account whose admin-create

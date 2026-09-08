@@ -3,17 +3,14 @@ import 'dart:convert';
 
 import 'package:uuid/uuid.dart';
 
+import 'canonical_game_connection.dart';
 import 'canonical_game_intent.dart';
 import 'canonical_game_intent_store.dart';
 import 'canonical_game_reader.dart';
 import 'canonical_game_snapshot.dart';
 import 'canonical_game_snapshot_store.dart';
 
-class CanonicalGameHttpReply {
-  const CanonicalGameHttpReply(this.status, this.body);
-  final int status;
-  final Object? body;
-}
+export 'canonical_game_connection.dart' show CanonicalGameHttpReply;
 
 class CanonicalGameReceipt {
   const CanonicalGameReceipt._(this.requestId, this.serverRevision,
