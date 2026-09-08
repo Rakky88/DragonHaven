@@ -1,6 +1,22 @@
 import 'package:flutter/material.dart';
 
 class EventAppearance {
+  static const logoKeys = <String, String>{
+    'halloween_witchlight': 'halloween',
+    'christmas_winter_hearth': 'christmas',
+    'new_year_first_dawn': 'new_year',
+    'valentine_two_heartlights': 'valentine',
+    'pride_every_color': 'pride',
+    'golden_wings_birthday': 'golden_wings',
+  };
+
+  static String logoForEvent(String id) {
+    final key = logoKeys[id];
+    return key == null
+        ? 'assets/images/dragonhaven_logo.png'
+        : 'assets/images/event_logos/$key.png';
+  }
+
   const EventAppearance(
       {required this.folder,
       required this.primary,

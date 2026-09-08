@@ -36,6 +36,12 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/dragonhaven_logo.png
+    - assets/images/event_logos/halloween.png
+    - assets/images/event_logos/christmas.png
+    - assets/images/event_logos/new_year.png
+    - assets/images/event_logos/valentine.png
+    - assets/images/event_logos/pride.png
+    - assets/images/event_logos/golden_wings.png
     - assets/images/hatch_reveal_background.webp
     - assets/images/evolution_reveal_background.webp
     - assets/images/tower_nest_deep_night.webp

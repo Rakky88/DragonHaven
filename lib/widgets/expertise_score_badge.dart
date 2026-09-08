@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/pet.dart';
-import 'game_icon_sprite.dart';
+import 'expertise_icon.dart';
 
 class ExpertiseScoreBadge extends StatelessWidget {
   const ExpertiseScoreBadge({
@@ -13,6 +13,7 @@ class ExpertiseScoreBadge extends StatelessWidget {
     required this.maximum,
     this.iconSize = 21,
     this.expand = false,
+    this.highlighted = false,
   });
 
   static const maxAsset = 'assets/images/ui/ui_expertise_max.png';
@@ -24,6 +25,7 @@ class ExpertiseScoreBadge extends StatelessWidget {
   final int maximum;
   final double iconSize;
   final bool expand;
+  final bool highlighted;
 
   bool get isMaxed => score >= maximum;
 
@@ -32,9 +34,10 @@ class ExpertiseScoreBadge extends StatelessWidget {
         mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GameIconSprite(
-            GameIconSprite.forTrainingFocus(focus),
+          ExpertiseIcon(
+            focus: focus,
             size: iconSize,
+            highlighted: highlighted,
           ),
           const SizedBox(width: 4),
           Text(

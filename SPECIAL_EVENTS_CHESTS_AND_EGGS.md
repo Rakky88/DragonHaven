@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: fc0ce6cc2bcbef71 -->
+<!-- reference-source-fingerprint: 882f4d0d83b1be81 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -287,11 +287,30 @@ one best per keeper, percentiles, daily counts and 250-point buckets. It exports
 no keeper identifiers or tokens and does not change live rankings or grade
 thresholds. Insufficient samples should not be treated as reliable cutoffs.
 
-All six calendar events theme the app's shared palette and logo. The five
-seasonal events reuse their existing illustrated background and emblem; Golden
-Wings uses gold styling. A compact persistent banner shows the event end time,
-including for a personal test. Live events take precedence over previews;
-expiry restores the normal theme without reopening the app or polling a server.
+All six calendar events theme the app's shared palette and logo. Each event has
+a complete transparent logo derived from the original wing-and-egg mark in
+`assets/images/event_logos/`; the shared app header uses that full artwork.
+The five seasonal events retain their illustrated backgrounds; Golden Wings
+uses gold styling. A compact persistent banner shows the event end time,
+including for a personal test. Live events take precedence over previews,
+then earliest end time and stable occurrence key break ties. Expiry restores
+the normal app theme without reopening the app or polling a server.
+
+Android receives the existing Amsterdam calendar and personal previews locally.
+Its launcher aliases use the same six logos, with only one alias enabled at a
+time; the underlying MainActivity stays enabled for notifications. A persisted
+future calendar and inexact local alarms update the icon while the app is idle;
+opening/resuming, reboot and clock/package changes also refresh it. Launcher
+changes are deferred until the app leaves view because disabling the visible
+task's alias can close it; the in-app logo changes immediately. Android can
+delay background alarms or cache launcher icons; after force-stop the next app
+open refreshes the icon. The initial installation uses the ordinary icon until
+the first calendar synchronization. No new permission, server call or paid
+service is required. See `EVENT_BRANDING_VERIFICATION.md` for startup checks.
+
+Annual occurrences spanning December/January retain their original occurrence
+key and full configured duration after midnight on 1 January. Event dates,
+participation requirements, reward tables and preview entitlements are unchanged.
 
 ## 8. Other chest and egg types
 

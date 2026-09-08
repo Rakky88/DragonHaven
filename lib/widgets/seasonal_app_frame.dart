@@ -72,49 +72,16 @@ class EventBackdrop extends StatelessWidget {
 }
 
 class SeasonalAppLogo extends StatelessWidget {
-  const SeasonalAppLogo({super.key, required this.appearance});
-  final EventAppearance appearance;
+  const SeasonalAppLogo({super.key, required this.eventId});
+  final String eventId;
 
   @override
-  Widget build(BuildContext context) => SizedBox.square(
-        dimension: 48,
-        child: Stack(clipBehavior: Clip.none, children: [
-          Positioned.fill(
-              child: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient:
-                  RadialGradient(colors: [Colors.white, appearance.paper]),
-              border: Border.all(color: appearance.accent, width: 1.8),
-              boxShadow: [
-                BoxShadow(
-                    color: appearance.accent.withValues(alpha: .35),
-                    blurRadius: 12)
-              ],
-            ),
-            child: Image.asset('assets/images/dragonhaven_logo.png',
-                fit: BoxFit.contain),
-          )),
-          Positioned(
-              right: -3,
-              bottom: -2,
-              child: Container(
-                key: const Key('app-event-logo-emblem'),
-                width: 25,
-                height: 25,
-                decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: appearance.primary,
-                    border: Border.all(color: appearance.accent)),
-                child: appearance.emblem == null
-                    ? Icon(appearance.motif, color: appearance.accent, size: 17)
-                    : Padding(
-                        padding: const EdgeInsets.all(1),
-                        child: Image.asset(appearance.emblem!,
-                            fit: BoxFit.contain)),
-              )),
-        ]),
+  Widget build(BuildContext context) => Image.asset(
+        EventAppearance.logoForEvent(eventId),
+        key: const Key('app-event-logo'),
+        width: 48,
+        height: 48,
+        fit: BoxFit.contain,
       );
 }
 

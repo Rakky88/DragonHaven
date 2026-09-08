@@ -158,8 +158,11 @@ List<SpecialAdventureWindow> specialAdventureWindowsAt(DateTime instant) {
   for (final event in specialAdventureEventCatalog) {
     final initial = _initialSpecialWindow(event);
     if (initial.contains(instant)) windows.add(initial);
-    final annual = _annualSpecialWindow(event, amsterdamYear);
-    if (annual != null && annual.contains(instant)) windows.add(annual);
+    // A December occurrence can remain active into the next Amsterdam year.
+    for (final year in [amsterdamYear - 1, amsterdamYear]) {
+      final annual = _annualSpecialWindow(event, year);
+      if (annual != null && annual.contains(instant)) windows.add(annual);
+    }
   }
   return windows;
 }

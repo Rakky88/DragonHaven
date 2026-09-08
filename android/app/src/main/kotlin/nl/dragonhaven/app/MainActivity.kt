@@ -3,6 +3,7 @@ package nl.dragonhaven.app
 import android.content.Intent
 import android.Manifest
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -18,6 +19,18 @@ import androidx.core.app.NotificationManagerCompat
 import kotlin.random.Random
 
 class MainActivity : FlutterActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        EventBranding.activityVisible = true
+        super.onCreate(savedInstanceState)
+        runCatching {
+            EventBranding.refresh(this)
+            val logo = EventBranding.selectedLogo(this)
+            val background = if (logo == "default") R.drawable.launch_background else
+                resources.getIdentifier("launch_event_$logo", "drawable", packageName)
+            if (background != 0) window.setBackgroundDrawableResource(background)
+        }
+    }
+
     private var activityInForeground = false
     private var flutterAppInForeground = false
     // Stay silent until Flutter has loaded and sent the persisted preference.
@@ -75,6 +88,20 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nl.dragonhaven.app/event_branding")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "setSchedule") {
+                    result.notImplemented()
+                } else {
+                    try {
+                        EventBranding.setSchedule(this, call.argument<List<*>>("windows") ?: emptyList<Any>())
+                        result.success(null)
+                    } catch (_: Exception) {
+                        result.error("branding_failed", "Could not update the event icon.", null)
+                    }
+                }
+            }
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
@@ -762,6 +789,17 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun onStart() {
+        EventBranding.activityVisible = true
+        super.onStart()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        EventBranding.activityVisible = false
+        runCatching { EventBranding.refresh(this) }
+    }
+
     override fun onPause() {
         activityInForeground = false
         pauseMusicForBackground()
@@ -770,6 +808,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onResume() {
         super.onResume()
+        runCatching { EventBranding.refresh(this) }
         activityInForeground = true
         if (notificationsWaitingForPermission.isNotEmpty()) {
             requestNotificationPermissionIfNeeded()

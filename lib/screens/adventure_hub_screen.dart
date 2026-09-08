@@ -801,11 +801,15 @@ class _TrialDragonPicker extends StatelessWidget {
           controller: controller,
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
           children: [
-            const DraconomiconShortcut(),
-            Text(
-                strings.pick(
-                    'Choose your Trial dragon', 'Kies je draak voor de proef'),
-                style: Theme.of(context).textTheme.titleLarge),
+            Row(children: [
+              Expanded(
+                  child: Text(
+                      strings.pick('Choose your Trial dragon',
+                          'Kies je draak voor de proef'),
+                      style: Theme.of(context).textTheme.titleLarge)),
+              const SizedBox(width: 8),
+              const DraconomiconShortcut(),
+            ]),
             const SizedBox(height: 4),
             Text(_trialStatBenefit(strings, offer.kind),
                 style: const TextStyle(color: AppColors.muted, fontSize: 12)),
@@ -2786,11 +2790,9 @@ class _DragonPicker extends StatelessWidget {
           controller: controller,
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
           children: [
-            const DraconomiconShortcut(),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const GameIconSprite(GameIconKind.adventureStart, size: 70),
-                const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2802,6 +2804,8 @@ class _DragonPicker extends StatelessWidget {
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
+                const DraconomiconShortcut(),
               ],
             ),
             const SizedBox(height: 10),

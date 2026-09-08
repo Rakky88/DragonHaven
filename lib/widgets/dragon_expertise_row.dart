@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/pet.dart';
-import '../theme/app_theme.dart';
 import 'expertise_score_badge.dart';
 
 /// The same highlight treatment in the editable collection and picker details.
@@ -33,20 +32,12 @@ class DragonExpertiseRow extends StatelessWidget {
       label: highlighted
           ? '$label: ${s.pick('Highlighted for training', 'Gemarkeerd voor training')}'
           : null,
-      child: AnimatedContainer(
+      child: Container(
         key: Key('expertise-highlight-${dragon.id}-${focus.name}'),
-        duration: const Duration(milliseconds: 180),
         margin: const EdgeInsets.symmetric(vertical: 3),
         decoration: BoxDecoration(
-          color: highlighted
-              ? const Color(0xFFFFF4CD)
-              : Colors.white.withValues(alpha: .6),
+          color: Colors.white.withValues(alpha: .6),
           borderRadius: BorderRadius.circular(13),
-          border: Border.all(
-              color: highlighted ? AppColors.gold : Colors.transparent),
-          boxShadow: highlighted
-              ? const [BoxShadow(color: Color(0x33F4C95D), blurRadius: 12)]
-              : const [],
         ),
         child: Material(
           type: MaterialType.transparency,
@@ -66,18 +57,10 @@ class DragonExpertiseRow extends StatelessWidget {
                     focusLabel: label,
                     score: dragon.trainingFor(focus),
                     maximum: dragon.expertiseMaximum(focus),
-                    iconSize: 24,
+                    iconSize: 30,
                     expand: true,
+                    highlighted: highlighted,
                   )),
-                  const SizedBox(width: 10),
-                  Icon(
-                      highlighted
-                          ? Icons.star_rounded
-                          : Icons.star_outline_rounded,
-                      size: 21,
-                      color: highlighted
-                          ? const Color(0xFF916408)
-                          : AppColors.muted),
                 ]),
               ),
             ),

@@ -1,12 +1,12 @@
 # DragonHaven Random Rewards and Odds
 
-Last verified: 7 September 2026
+Last verified: 8 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
 Source baseline: v0.05.16, with the dormant server chest-opening candidate below
 
-<!-- reference-source-fingerprint: b2567e0778374a1f -->
+<!-- reference-source-fingerprint: b5dadf711d9577f4 -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
@@ -30,6 +30,9 @@ Expertise bonus, reward modifier or effect on rarity/Spectral/Sinister chances.
 
 Training highlights are optional player choices, can be independently toggled
 for Might/Arcana/Spirit, and have no effect on scores, caps, odds or rewards.
+The subsequent sprite glow and event branding changes consume no random draws.
+The annual New Year window now remains recognized through its existing January
+end time; this fixes availability evaluation without changing a reward table.
 
 ## Reading the tables
 

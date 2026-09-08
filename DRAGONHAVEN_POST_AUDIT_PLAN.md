@@ -3,6 +3,22 @@
 Laatst bijgewerkt: **8 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
+## In ontwikkeling na v0.05.20: eventlogo's en compacte drakenkeuze
+
+- Geselecteerde Expertises laten de bestaande sprite oplichten; ster en gele
+  rijmarkering zijn verwijderd. Dezelfde gloed verschijnt in beide infovensters.
+- Zes volledige eventlogo's op basis van het originele logo, gebruikt in de app
+  en als Android-starticoon. Lokale kalender en terugschakeling naar het gewone
+  icoon; geen serverwijziging of betaalde dienst.
+- Bestaande Draconomicon-sprite als compacte knop naast beide kiestitels,
+  met toegankelijk label en behoud van de selectie bij teruggaan.
+- Jaarlijkse nieuwjaarsvensters blijven na 1 januari actief tot hun bestaande
+  eindtijd. Geen verandering aan eventdatums, beloningen of previewrechten.
+
+Verificatie en platformgrenzen: `EVENT_BRANDING_VERIFICATION.md`.
+Dit werk heeft nog geen eigen release; v0.05.20 / 10070 blijft de actuele versie.
+De open servereconomiepunten en productie-instellingen blijven ongewijzigd.
+
 ## Uitgebracht: v0.05.20 (10070), 8 september 2026
 
 Deze release bundelt de hieronder beschreven eventthema's, trainingmarkeringen,

@@ -13,6 +13,8 @@ import 'package:dragon_haven/screens/draconomicon_screen.dart';
 import 'package:dragon_haven/services/social_repository.dart';
 import 'package:dragon_haven/theme/app_theme.dart';
 import 'package:dragon_haven/widgets/dragon_expertise_row.dart';
+import 'package:dragon_haven/widgets/expertise_icon.dart';
+import 'package:dragon_haven/widgets/game_icon_sprite.dart';
 import 'package:dragon_haven/widgets/seasonal_app_frame.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -170,7 +172,7 @@ void main() {
     var now = DateTime.utc(2026, 9, 8, 12);
     final game = await mount(tester, clock: () => now, event: true);
     expect(find.byKey(const Key('app-event-background')), findsOneWidget);
-    expect(find.byKey(const Key('app-event-logo-emblem')), findsOneWidget);
+    expect(find.byKey(const Key('app-event-logo')), findsOneWidget);
     expect(find.textContaining('Ends in 2d'), findsOneWidget);
     await capture(tester, 'tower');
     for (final destination in ['friends', 'adventure', 'inventory', 'shop']) {
@@ -208,6 +210,12 @@ void main() {
     }
     expect(game.pet.highlightedExpertises,
         {TrainingFocus.arcana, TrainingFocus.spirit});
+    for (final focus in TrainingFocus.values) {
+      final icon = tester.widget<ExpertiseIcon>(find.descendant(
+          of: find.byKey(Key('expertise-highlight-marked-${focus.name}')),
+          matching: find.byType(ExpertiseIcon)));
+      expect(icon.highlighted, focus != TrainingFocus.might);
+    }
     await capture(tester, 'dragon-details');
     await reveal(
         tester, find.byKey(const Key('expertise-highlight-marked-arcana')));
@@ -249,6 +257,11 @@ void main() {
     final shortcut = find.byKey(const Key('dragon-picker-draconomicon'));
     await reveal(tester, shortcut, towardTop: true);
     await tester.pump();
+    expect(
+        tester.widget<IconButton>(shortcut).icon,
+        isA<GameIconSprite>()
+            .having((w) => w.kind, 'sprite', GameIconKind.draconomicon));
+    expect(find.text('Draconomicon'), findsNothing);
     await capture(tester, 'trial-picker');
     await tester.tap(shortcut);
     await tester.pump();

@@ -6,6 +6,13 @@ and production migration evidence is in `RELEASE_V0.05.20_VERIFICATION.md`.
 Production and staging both have schema 57 after the separate release rollout;
 live server economy activation remains disabled.
 
+## Subsequent refinement after v0.05.20
+
+The new Expertise glow, complete event logos, Android launcher switching and
+title-height sprite shortcuts are documented separately in
+`EVENT_BRANDING_VERIFICATION.md`. The release evidence below remains the original
+v0.05.20 baseline, not a claim that these later refinements are already published.
+
 ## Delivered behavior
 
 - All calendar events apply a shared app palette and decorated logo. Seasonal

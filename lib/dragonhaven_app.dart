@@ -22,6 +22,7 @@ import 'screens/pet_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'screens/keeper_journal_screen.dart';
 import 'services/audio_service.dart';
+import 'services/event_branding_service.dart';
 import 'services/automatic_cloud_backup.dart';
 import 'services/notification_service.dart';
 import 'services/platform_actions.dart';
@@ -44,12 +45,17 @@ class DragonHavenApp extends StatefulWidget {
 }
 
 class _DragonHavenAppState extends State<DragonHavenApp> {
+  final _branding = EventBrandingService();
+  AppLifecycleListener? _brandingLifecycle;
   Timer? _eventClock;
   String? _eventKey;
 
   @override
   void initState() {
     super.initState();
+    _brandingLifecycle = AppLifecycleListener(onResume: () {
+      if (mounted) setState(() {});
+    });
     // No network work and no whole-app rebuild each second. Rebuild only at
     // an event boundary; the small countdown owns its own local clock.
     _eventClock = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -63,6 +69,7 @@ class _DragonHavenAppState extends State<DragonHavenApp> {
   @override
   void dispose() {
     _eventClock?.cancel();
+    _brandingLifecycle?.dispose();
     super.dispose();
   }
 
@@ -73,6 +80,11 @@ class _DragonHavenAppState extends State<DragonHavenApp> {
     final event =
         appEventWindow(game.activeSpecialAdventureWindows, game.currentTime);
     _eventKey = event?.key;
+    final schedule = eventBrandingSchedule(
+        game.currentTime, game.activeSpecialAdventureWindows);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_branding.synchronize(schedule));
+    });
     final appearance =
         event == null ? null : EventAppearance.forEvent(event.event.id);
     return MaterialApp(
@@ -742,7 +754,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
           onPressed: () => showDragonHavenAboutSheet(context),
           padding: const EdgeInsets.fromLTRB(9, 7, 5, 7),
           icon: appearance != null
-              ? SeasonalAppLogo(appearance: appearance)
+              ? SeasonalAppLogo(eventId: event!.event.id)
               : Container(
                   width: 48,
                   height: 48,
