@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:dragon_haven/app_info.dart';
 import 'package:dragon_haven/dragonhaven_app.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/social.dart';
@@ -17,13 +18,18 @@ void main() {
 
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  LatestRelease newerRelease() => const LatestRelease(
-        tagName: 'v0.05.21',
-        pageUrl: 'https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.21',
-        downloadUrl:
-            'https://github.com/Rakky88/DragonHaven/releases/download/v0.05.21/DragonHaven.apk',
-        hasApk: true,
-      );
+  LatestRelease newerRelease() {
+    final parts = AppInfo.version.split('.');
+    parts[2] = (int.parse(parts[2]) + 1).toString().padLeft(2, '0');
+    final tag = 'v${parts.join('.')}';
+    return LatestRelease(
+      tagName: tag,
+      pageUrl: 'https://github.com/Rakky88/DragonHaven/releases/tag/$tag',
+      downloadUrl:
+          'https://github.com/Rakky88/DragonHaven/releases/download/$tag/DragonHaven.apk',
+      hasApk: true,
+    );
+  }
 
   Future<OnlineAccountProvider> pumpShell(
     WidgetTester tester, {
@@ -81,8 +87,8 @@ void main() {
 
     expect(find.byKey(const Key('startup-update-dialog')), findsOneWidget);
     expect(find.text('Update available'), findsOneWidget);
-    expect(find.text('v0.05.20'), findsOneWidget);
-    expect(find.text('v0.05.21'), findsOneWidget);
+    expect(find.text(AppInfo.displayVersion), findsOneWidget);
+    expect(find.text(newerRelease().tagName), findsOneWidget);
     expect(checks, 1);
 
     await tester.tap(find.byKey(const Key('startup-update-later')));

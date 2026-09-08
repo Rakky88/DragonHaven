@@ -3,7 +3,7 @@
 Laatst bijgewerkt: **8 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-## In ontwikkeling na v0.05.20: eventlogo's en compacte drakenkeuze
+## Releasekandidaat v0.05.21 (10071): eventlogo's en compacte drakenkeuze
 
 - Geselecteerde Expertises laten de bestaande sprite oplichten; ster en gele
   rijmarkering zijn verwijderd. Dezelfde gloed verschijnt in beide infovensters.
@@ -16,7 +16,11 @@ Technische uitgangsversie: **v0.04.06**
   eindtijd. Geen verandering aan eventdatums, beloningen of previewrechten.
 
 Verificatie en platformgrenzen: `EVENT_BRANDING_VERIFICATION.md`.
-Dit werk heeft nog geen eigen release; v0.05.20 / 10070 blijft de actuele versie.
+Appversie, updatevergelijking en Android-buildnummer zijn een stap verhoogd.
+De productiepreflight van 8 september 19:43:11 UTC bevestigt exact 57 migraties,
+nul lintfouten en Auth/settings/app HTTP 200. Er is geen servermigratie nodig.
+Releasecontroles en publicatiebewijs worden vastgelegd in
+`RELEASE_V0.05.21_VERIFICATION.md`.
 De open servereconomiepunten en productie-instellingen blijven ongewijzigd.
 
 ## Uitgebracht: v0.05.20 (10070), 8 september 2026
