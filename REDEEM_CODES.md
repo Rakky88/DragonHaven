@@ -4,7 +4,7 @@ Last verified: 8 September 2026
 
 Ruleset: release candidate `v0.05.22`; personal event replacement in migration 59
 
-<!-- reference-source-fingerprint: 0916830531211d7f -->
+<!-- reference-source-fingerprint: d86979d97798ca44 -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 

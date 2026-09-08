@@ -14,6 +14,7 @@ import '../widgets/shop_economy_scope.dart';
 import 'canonical_eggs.dart';
 import 'canonical_altar_screen.dart';
 import 'canonical_dragons_screen.dart';
+import 'canonical_adventures_screen.dart';
 
 /// Server inventory uses nullable public egg facts. It never constructs a
 /// legacy egg with a made-up lineage, seed, alignment or eventual dragon.
@@ -76,16 +77,15 @@ class _InventoryContents extends StatelessWidget {
                     title: Text(strings.relicName(relic)),
                     subtitle: Text(strings.relicDescription(relic)),
                     trailing: Text('${view.shop.relics[relic.name]}'),
-                    onTap: relic == MysticRelic.wayfinderSigil
-                        ? null
-                        : () => Navigator.push(
-                            context,
-                            MaterialPageRoute<void>(
-                                builder: (_) => Scaffold(
-                                    appBar: AppBar(
-                                        title: Text(strings.relicName(relic))),
-                                    body: relic.isEquipable ||
-                                            relic.hasUseAnimation
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                            builder: (_) => Scaffold(
+                                appBar: AppBar(
+                                    title: Text(strings.relicName(relic))),
+                                body: relic == MysticRelic.wayfinderSigil
+                                    ? const CanonicalAdventuresScreen()
+                                    : relic.isEquipable || relic.hasUseAnimation
                                         ? const CanonicalDragonsScreen()
                                         : const ShopEconomyBoundary(
                                             child: CanonicalEggList())))),

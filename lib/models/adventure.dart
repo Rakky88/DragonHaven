@@ -116,12 +116,6 @@ Duration expertiseAdjustedAdventureDuration(
   final expertiseScores = dragons
       .map((dragon) => dragon.trainingFor(adventure.focus))
       .toList(growable: false);
-  final singleDragonExpertise =
-      expertiseScores.isEmpty ? 0 : expertiseScores.first;
-  final averageGroupExpertise = expertiseScores.isEmpty
-      ? 0
-      : expertiseScores.reduce((first, second) => first + second) ~/
-          expertiseScores.length;
   final combinedExpertise = dragons.fold<int>(
     0,
     (total, dragon) =>
@@ -130,6 +124,21 @@ Duration expertiseAdjustedAdventureDuration(
         dragon.trainingFor(TrainingFocus.arcana) +
         dragon.trainingFor(TrainingFocus.spirit),
   );
+  return expertiseAdjustedAdventureDurationFromScores(
+      adventure, expertiseScores,
+      combinedExpertise: combinedExpertise);
+}
+
+/// Shared duration rule for public server views without constructing a Pet.
+Duration expertiseAdjustedAdventureDurationFromScores(
+    AdventureDefinition adventure, List<int> expertiseScores,
+    {required int combinedExpertise}) {
+  final singleDragonExpertise =
+      expertiseScores.isEmpty ? 0 : expertiseScores.first;
+  final averageGroupExpertise = expertiseScores.isEmpty
+      ? 0
+      : expertiseScores.reduce((first, second) => first + second) ~/
+          expertiseScores.length;
   final reduction = switch (adventure.kind) {
     AdventureKind.mini => Duration(seconds: singleDragonExpertise),
     AdventureKind.short => Duration(minutes: singleDragonExpertise),

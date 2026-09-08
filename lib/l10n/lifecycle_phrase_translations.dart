@@ -1,5 +1,85 @@
 /// German, Spanish, French, Italian, Portuguese, Japanese.
 const lifecyclePhraseTranslations = <String, List<String>>{
+  "Active Adventures": [
+    "Laufende Abenteuer",
+    "Aventuras activas",
+    "Aventures en cours",
+    "Avventure in corso",
+    "Aventuras ativas",
+    "進行中の冒険"
+  ],
+  "Adventure": [
+    "Abenteuer",
+    "Aventura",
+    "Aventure",
+    "Avventura",
+    "Aventura",
+    "冒険"
+  ],
+  "Ready to claim": [
+    "Bereit zum Abholen",
+    "Listo para recoger",
+    "Prêt à récupérer",
+    "Pronto da riscattare",
+    "Pronto para recolher",
+    "受け取り可能"
+  ],
+  "Abort this adventure without rewards?": [
+    "Dieses Abenteuer ohne Belohnung abbrechen?",
+    "¿Cancelar esta aventura sin recompensas?",
+    "Abandonner cette aventure sans récompense ?",
+    "Interrompere questa avventura senza ricompense?",
+    "Cancelar esta aventura sem recompensas?",
+    "報酬なしでこの冒険を中止しますか？"
+  ],
+  "Choose dragon": [
+    "Drachen wählen",
+    "Elegir dragón",
+    "Choisir un dragon",
+    "Scegli un drago",
+    "Escolher dragão",
+    "ドラゴンを選ぶ"
+  ],
+  "Dismiss this adventure?": [
+    "Dieses Abenteuer verwerfen?",
+    "¿Descartar esta aventura?",
+    "Écarter cette aventure ?",
+    "Scartare questa avventura?",
+    "Descartar esta aventura?",
+    "この冒険を見送りますか？"
+  ],
+  "Use one Wayfinder Sigil to replace this adventure?": [
+    "Ein Wegfinder-Siegel verwenden, um dieses Abenteuer zu ersetzen?",
+    "¿Usar un Sello del Caminante para sustituir esta aventura?",
+    "Utiliser un Sceau d’éclaireur pour remplacer cette aventure ?",
+    "Usare un Sigillo del viandante per sostituire questa avventura?",
+    "Usar um Selo do Explorador para substituir esta aventura?",
+    "この冒険を変更するためにウェイファインダーの印を1個使いますか？"
+  ],
+  "Refresh to check for adventures.": [
+    "Aktualisiere, um nach Abenteuern zu suchen.",
+    "Actualiza para buscar aventuras.",
+    "Actualisez pour chercher des aventures.",
+    "Aggiorna per cercare avventure.",
+    "Atualiza para procurar aventuras.",
+    "更新して冒険を確認してください。"
+  ],
+  "Use one Wayfinder Sigil to find an adventure?": [
+    "Ein Wegfinder-Siegel verwenden, um ein Abenteuer zu finden?",
+    "¿Usar un Sello del Caminante para encontrar una aventura?",
+    "Utiliser un Sceau d’éclaireur pour trouver une aventure ?",
+    "Usare un Sigillo del viandante per trovare un’avventura?",
+    "Usar um Selo do Explorador para encontrar uma aventura?",
+    "冒険を探すためにウェイファインダーの印を1個使いますか？"
+  ],
+  "On adventure": [
+    "Auf Abenteuer",
+    "De aventura",
+    "En aventure",
+    "In avventura",
+    "Em aventura",
+    "冒険中"
+  ],
   "How it works": [
     "So funktioniert es",
     "Cómo funciona",

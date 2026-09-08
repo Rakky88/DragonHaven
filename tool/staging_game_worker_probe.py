@@ -90,6 +90,9 @@ def main():
         fixture.setdefault('untradeableRelicInventory', {})[relic] = 1
     fixture['uniqueRelicsEverObtained'] = sorted(set(fixture.get('uniqueRelicsEverObtained', [])) | set(brooches))
     fixture['twinstarBroochEverObtained'] = True
+    fixture['pet']['training'] = {'might': 60, 'arcana': 60, 'spirit': 60}
+    fixture.setdefault('adventureOptionIds', {})['mini'] = ['mini_1']
+    fixture['relicInventory']['wayfinderSigil'] = 1
     fixture_hex = json.dumps(fixture, separators=(",", ":")).encode("utf-8").hex()
     original_coins = fixture["pet"]["coins"]
     original_title_chests = fixture["chestInventory"].get("title", 0)
@@ -353,7 +356,7 @@ def main():
         })
         client_result = subprocess.run(['flutter', 'test', '--no-pub',
             'tool/canonical_game_session_probe.dart'], cwd=ROOT, env=child_environment,
-            capture_output=True, text=True, timeout=240)
+            capture_output=True, text=True, timeout=360)
         del child_environment['STAGING_GAME_CLIENT_SESSION']
         if client_result.returncode != 0:
             # Only fixed phase markers and timeout status may leave the child.
@@ -367,6 +370,7 @@ def main():
         require('PASS: real SDK/session/journals;' in client_result.stdout, 'client_probe_proof_missing')
         require('PASS: real shop UI purchase,' in client_result.stdout, 'client_probe_ui_proof_missing')
         require('PASS: real lifecycle UI;' in client_result.stdout, 'client_probe_lifecycle_proof_missing')
+        require('PASS: real adventure UI;' in client_result.stdout, 'client_probe_adventure_proof_missing')
         unchanged = query(f"""select
           (select s.state=i.source_state and s.revision=i.source_revision
             from public.cloud_game_saves s join private.canonical_game_imports i on i.owner_id=s.user_id
@@ -380,6 +384,7 @@ def main():
                 'client_probe_ui_changed_live_state')
         print('PASS: actual shop UI purchase and chest reveal; one debit and one earned title.', flush=True)
         print('PASS: actual lifecycle UI; Sinister return, crafting, discovery, tags, incubation, rename and equipment.', flush=True)
+        print('PASS: actual adventure UI; server deadline, lost claim recovery, one reward, abort and Wayfinder.', flush=True)
         print('PASS: actual Flutter client, Supabase Auth, filesystem journals and server; one charge after lost reply; corrupt request recovery without another purchase.', flush=True)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"

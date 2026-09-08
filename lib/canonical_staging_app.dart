@@ -11,6 +11,7 @@ import 'config/online_config.dart';
 import 'l10n/app_strings.dart';
 import 'screens/canonical_inventory_screen.dart';
 import 'screens/canonical_dragons_screen.dart';
+import 'screens/canonical_adventures_screen.dart';
 import 'screens/shop_hub_screen.dart';
 import 'services/canonical_game_session.dart';
 import 'services/canonical_game_snapshot.dart';
@@ -127,7 +128,8 @@ class _CanonicalStagingAppState extends State<CanonicalStagingApp>
                   ? switch (_tab) {
                       0 => const ShopHubScreen(),
                       1 => const CanonicalInventoryScreen(),
-                      _ => const CanonicalDragonsScreen(),
+                      2 => const CanonicalDragonsScreen(),
+                      _ => const CanonicalAdventuresScreen(),
                     }
                   : _StagingSignIn(auth: widget.auth)),
           bottomNavigationBar: signedIn
@@ -144,6 +146,9 @@ class _CanonicalStagingAppState extends State<CanonicalStagingApp>
                       NavigationDestination(
                           icon: const Icon(Icons.pets),
                           label: strings.pick('Dragons', 'Draken')),
+                      NavigationDestination(
+                          icon: const Icon(Icons.explore_outlined),
+                          label: strings.pick('Adventures', 'Avonturen')),
                     ])
               : null,
         );

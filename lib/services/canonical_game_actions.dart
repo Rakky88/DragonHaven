@@ -1,4 +1,5 @@
 import '../models/account_title.dart';
+import '../models/adventure.dart';
 import '../models/chest.dart';
 import '../models/dragon_emote.dart';
 import '../models/music_track.dart';
@@ -80,6 +81,28 @@ class CanonicalGameActions {
   Future<void> releaseDragon(String id) =>
       _boolean('release_dragon', {'dragonId': id});
 
+  Future<void> refresh() => _boolean('refresh', {});
+  Future<void> startAdventure(String adventureId, String dragonId) => _use(
+      'start_adventure', {'adventureId': adventureId, 'dragonId': dragonId},
+      success: 'started');
+  Future<void> dismissAdventure(String id) =>
+      _boolean('dismiss_adventure', {'adventureId': id});
+  Future<void> abortAdventure(String id) =>
+      _boolean('abort_adventure', {'runId': id});
+  Future<ChestTier> claimAdventure(String id) async {
+    final result = await execute('claim_adventure', {'runId': id});
+    if (result == null) {
+      throw const CanonicalGameException('game_action_unavailable');
+    }
+    return ChestTier.values.where((t) => t.name == result).firstOrNull ??
+        (throw const CanonicalGameException('game_result_invalid'));
+  }
+
+  Future<void> useWayfinder(AdventureKind kind, {String? replaceAdventureId}) =>
+      _use('use_wayfinder',
+          {'kind': kind.name, 'replaceAdventureId': replaceAdventureId},
+          success: 'changed');
+
   Future<void> _use(String action, Map<String, dynamic> payload,
       {String success = 'revealed'}) async {
     final result = await execute(action, payload);
@@ -90,6 +113,15 @@ class CanonicalGameActions {
       'eggNotFound' => 'egg_not_found',
       'dragonNotFound' => 'dragon_not_found',
       'noEggInNest' => 'egg_not_in_nest',
+      'dragonBusy' ||
+      'eggCannotAdventure' ||
+      'groupNeedsFriends' ||
+      'requirementsNotMet' ||
+      'unavailable' ||
+      'unsupportedAdventure' ||
+      'adventureNotFound' ||
+      'noCapacity' =>
+        'game_action_unavailable',
       _ => 'game_result_invalid',
     });
   }

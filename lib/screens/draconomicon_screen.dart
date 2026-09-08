@@ -25,9 +25,11 @@ class DraconomiconScreen extends StatelessWidget {
     final strings = AppStrings.of(context);
     final tabHeight = (24 + MediaQuery.textScalerOf(context).scale(14) * 1.5)
         .clamp(48.0, double.infinity);
-    final game = context.watch<HouseholdProvider>();
-    final normalCollection = discoveredForms ?? game.discoveredForms;
-    final spectralCollection = prismaticForms ?? game.prismaticForms;
+    final game = discoveredForms == null || prismaticForms == null
+        ? context.watch<HouseholdProvider>()
+        : null;
+    final normalCollection = discoveredForms ?? game!.discoveredForms;
+    final spectralCollection = prismaticForms ?? game!.prismaticForms;
     final discoveredLineageCount = {
       ...normalCollection,
       ...spectralCollection,

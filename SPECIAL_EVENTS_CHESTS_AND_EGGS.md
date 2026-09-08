@@ -4,7 +4,7 @@ Last verified: 9 September 2026
 
 Ruleset: released app `v0.05.22`; server schema 59, economy activation disabled
 
-<!-- reference-source-fingerprint: 8887296a2354d6fc -->
+<!-- reference-source-fingerprint: 3a3854c62a213509 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -30,6 +30,13 @@ Account/revision checks and durable recovery cover every lifecycle action.
 This UI is staging-only and does not activate or change live player ownership,
 event schedules, reward pools or probabilities. Evidence and remaining work:
 `SERVER_ECONOMY_UI_VERIFICATION.md`.
+
+The ordinary Adventure staging UI shares the existing duration calculation via
+public expertise scores, without constructing a private Pet. The extraction
+preserves Mini/Short/Long/Group/Special formulas and minimums. This does not
+enable seasonal/group starts in the new staging UI or change Special schedules,
+requirements, chest odds or rewards. Active run deadlines remain server times;
+an in-flight reward stays hidden until the server marks the run ready.
 
 The authenticated server display projection preserves Special Egg catalog art
 and Sinister/Special protection, but omits unrevealed lineage, spectral roll,

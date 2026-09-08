@@ -5,6 +5,8 @@ import 'dart:ui' as ui;
 
 import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
 import 'package:dragon_haven/screens/canonical_dragons_screen.dart';
+import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
+import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -41,7 +43,9 @@ void main() {
   late Directory directory;
   final capture = GlobalKey();
   Future<void> setup(WidgetTester tester, Widget screen,
-      {String language = 'en', double scale = 1}) async {
+      {String language = 'en',
+      double scale = 1,
+      void Function(CanonicalUiServer)? prepare}) async {
     await tester.runAsync(() async {
       directory = await Directory.systemTemp.createTemp('dh-lifecycle-ui-');
       server = CanonicalUiServer(
@@ -49,6 +53,7 @@ void main() {
       server.state['eggAltar']
           ['wallet'] = {'fragments': 200, 'essence': 30, 'hearts': 4};
       server.state['eggAltar']['crafted']['nameweaversQuill'] = 1;
+      prepare?.call(server);
       session = CanonicalGameSession(
           connection: CanonicalUiConnection(server), directory: directory);
       await session.synchronize();
@@ -293,5 +298,77 @@ void main() {
     expect(find.text('Fresh name'), findsNothing);
     expect(server.sent, isEmpty);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'Adventure picker inspections preserve selection and lost start/claim recover once',
+      (tester) async {
+    await setup(tester, const CanonicalAdventuresScreen());
+    await tap(tester, key('canonical-refresh-adventures'));
+    await command(tester);
+    final id = session.snapshot!.adventures.offers(AdventureKind.mini).first;
+    final dragon = session.snapshot!.dragons.first;
+    final stock = session.snapshot!.shop.chests['wooden'] ?? 0;
+    await tap(tester, key('canonical-select-adventure-$id'));
+    final before = server.sent.length;
+    await tap(tester, key('canonical-expertise-info-${dragon.id}'));
+    expect(find.text('Might'), findsWidgets);
+    expect(find.text('Arcana'), findsWidgets);
+    expect(find.text('Spirit'), findsWidgets);
+    await tap(tester, find.widgetWithText(TextButton, 'Close'));
+    final start = find.descendant(
+        of: key('canonical-start-adventure'),
+        matching: find.byType(FilledButton));
+    expect(tester.widget<FilledButton>(start).onPressed, isNull);
+    await tap(tester, key('canonical-adventure-dragon-${dragon.id}'));
+    await tap(tester, key('dragon-picker-draconomicon'));
+    await tap(tester, find.byType(BackButton));
+    expect(tester.widget<FilledButton>(start).onPressed, isNotNull);
+    expect(server.sent, hasLength(before));
+    await shot(tester, 'adventure-picker');
+    server.loseReply = true;
+    await tap(tester, key('canonical-start-adventure'));
+    await command(tester);
+    await tap(tester, find.widgetWithText(TextButton, 'Cancel'));
+    await tap(tester, key('economy-reconnect'));
+    await command(tester);
+    final run = session.snapshot!.adventures.runs.single;
+    expect(run.revealedRewardId, isNull);
+    server.now = run.endsAt.add(const Duration(seconds: 1));
+    await tester.runAsync(() => session.synchronize());
+    await tester.pump();
+    server.loseReply = true;
+    await tap(tester, key('canonical-claim-${run.id}'));
+    await command(tester);
+    await tap(tester, key('economy-reconnect'));
+    await command(tester);
+    expect(session.snapshot!.adventures.runs, isEmpty);
+    expect(session.snapshot!.shop.chests['wooden'], stock + 1);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
+      'Dutch large-text Adventure controls and Wayfinder confirmation fit and spend once',
+      (tester) async {
+    await setup(tester, const CanonicalAdventuresScreen(),
+        language: 'nl', scale: 1.35, prepare: (server) {
+      server.state['relicInventory']['wayfinderSigil'] = 1;
+    });
+    await tap(tester, key('canonical-refresh-adventures'));
+    await command(tester);
+    final id = session.snapshot!.adventures.offers(AdventureKind.mini).first;
+    await tap(tester, key('canonical-select-adventure-$id'));
+    await shot(tester, 'adventure-picker-nl-large');
+    await tap(tester, find.widgetWithText(TextButton, 'Annuleren'));
+    await tap(tester, key('canonical-wayfinder-$id'));
+    expect(session.snapshot!.shop.relics['wayfinderSigil'], 1);
+    await tap(tester, find.widgetWithText(FilledButton, 'Bevestigen'));
+    await command(tester);
+    expect(session.snapshot!.shop.relics['wayfinderSigil'], 0);
+    expect(session.snapshot!.adventures.offers(AdventureKind.mini),
+        isNot(contains(id)));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }

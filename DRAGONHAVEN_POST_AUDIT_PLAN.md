@@ -9,11 +9,21 @@ De volgende stagingkoppeling is gebouwd: ei-details met filters, taggen,
 broeden/uitkomen, Chronoshards, Altar-return/crafting/onthullen en drakennamen,
 uitrusting, evolutie en vrijlaten. De schermen gebruiken alleen de openbare
 serverweergave en de duurzame actiesessie. Verloren antwoorden en accountwissels
-kunnen geen tweede beloning of afschrijving veroorzaken. Lokale regel- en
-schermtests slagen; de uitgebreide netwerkproef wordt vóór afronding uitgevoerd.
+kunnen geen tweede beloning of afschrijving veroorzaken. Stagingrun 34286596835
+op bron `29c2519` slaagt: schone analyse, 663 tests, domeinpariteit, SQL-contracten
+en echte schermacties. Daarna zijn de synthetische accounts opgeruimd en de worker
+uitgezet; schema 59, lint 0 en alle health-endpoints HTTP 200 om 22:41:02 UTC.
 Bewijs en afbakening: `SERVER_ECONOMY_UI_VERIFICATION.md`.
 Dit blijft een deelstap: volledige gameplay, trialvalidatie, sociale afwikkeling,
 migratie en activatie staan nog open; versie en productie-economie wijzigen niet.
+
+De volgende deelstap koppelt gewone Mini/Short/Long Adventures en Wayfinder aan
+dezelfde serversessie: starten, afbreken, claimen, vervangen en verversen. De
+actieve lijst sorteert op eindtijd; de drakenkeuze gebruikt openbare expertises
+en opent de bestaande Draconomicon zonder lokale spelprovider. Vier extra
+regeltests en twee schermtests slagen. De echte stagingproef wordt uitgebreid
+met een daadwerkelijk afgewachte serverdeadline en verloren claimantwoord.
+Seasonal/group-afwikkeling, huizen, trials en drakenvoorkeuren blijven apart open.
 
 ## Uitgebracht: v0.05.22 (10072): broches, events en expertise-uitlijning
 

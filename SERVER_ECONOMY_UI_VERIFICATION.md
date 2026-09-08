@@ -54,8 +54,8 @@ shop tabs scroll and the reconnect control keeps a 48dp icon target.
 
 ## Remaining full-economy work
 
-The staging lane is not the complete game. Adventure/house/trial screens still
-need public read models and authoritative action routing, including Wayfinder.
+The staging lane is not the complete game. Seasonal/group Adventure, house and
+trial screens still need public read models and authoritative action routing.
 Dragon preferences/highlights also need their command route. Verified trial transcripts,
 server calendar/day policy, social/trade settlement, full import reconciliation,
 staged migration and recovery remain open. Billing stays explicitly deferred.
@@ -94,7 +94,39 @@ confirmations, account changes (including open filters), rename completion and
 Dutch 320dp/1.35 text. All new fixed phrases have German, Spanish, French,
 Italian, Portuguese and Japanese translations in addition to English/Dutch.
 Roboto/icon screenshots are inspected under `release/economy-lifecycle-visual/`.
-The real staging probe has been extended with Altar/egg/name/equipment UI actions;
-its next run and final suite evidence are recorded after completion. Actual
+Registered staging run [34286596835](https://github.com/Rakky88/DragonHaven/actions/runs/34286596835)
+passed on source `29c2519`: clean analysis, all 663 tests, Dart/JavaScript parity,
+the SQL contracts, and real Altar/egg/name/equipment UI actions. The network
+probe verified both unchanged legacy source/wallet and authority, removed its
+two synthetic accounts and shadow state, and disabled the game worker. Final
+staging preflight at 8 September 22:41:02 UTC: schema 59, lint 0 and Auth,
+settings and application health HTTP 200. No production migration or activation
+was performed. Actual
 staging hatching is not accelerated: the completed hatch cycle is a local
 server-clock test, while the network UI probe checks incubation/early refusal.
+
+## Ordinary Adventures extension — 9 September 2026
+
+The staging lane now also exposes persisted Mini/Short/Long offers and active
+runs, ordered by end time. Refresh, start, abort, claim, dismiss and Wayfinder
+use the same account/revision-fenced durable session. Unknown offer IDs stay in
+the snapshot but cannot start through this UI. Invalid run ownership, duplicate
+dragon assignments, dates and prematurely disclosed rewards reject the read.
+Legacy calendar markers are retained, never used as client deadlines.
+
+The compact dragon picker uses public expertise scores with the same shared
+duration formula as the existing game. Its information button shows all three
+expertises and highlights without selecting a dragon. The existing Draconomicon
+sprite opens the actual collection screen using explicit public collections;
+it does not require or instantiate a legacy game provider. Returning preserves
+selection. Wayfinder is reachable from both inventory and Adventures.
+
+Four rule/session tests cover lost start/claim replies, early/double claims,
+sorted runs, busy dragons, reward-free abort, Wayfinder replacement/capacity and
+invalid public data. Two additional widget tests cover inspections, selection,
+start/claim recovery, Wayfinder and Dutch 320dp/1.35 text. Local real-font
+screenshots are inspected beside the lifecycle captures. The staging probe is
+extended to wait for a real one-minute server deadline using a synthetic
+trained dragon, refuse an early claim, recover a deliberately lost claim reply,
+check one chest/XP/expertise grant, abort another run and use a Wayfinder.
+Final staging and full-suite evidence follow completion of that run.

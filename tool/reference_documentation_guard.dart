@@ -46,6 +46,7 @@ const specialContentReference = ReferenceDocumentSpec(
     'lib/screens/egg_altar_screen.dart',
     'lib/screens/canonical_altar_screen.dart',
     'lib/screens/canonical_eggs.dart',
+    'lib/screens/canonical_adventures_screen.dart',
     'lib/services/canonical_game_snapshot.dart',
     'lib/services/canonical_game_actions.dart',
     'lib/screens/inventory_screen.dart',

@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import '../models/house.dart';
+import '../models/adventure.dart';
+import '../models/chest.dart';
 import '../models/egg_altar.dart';
 import '../models/mystic_relic.dart';
 import '../models/pet.dart';
@@ -8,13 +10,14 @@ import '../models/pet.dart';
 /// Read-only server display data. It is deliberately incompatible with a local
 /// saved game: an unknown lineage is null, never a guessed DragonEgg/Pet.
 class CanonicalGameSnapshot {
-  CanonicalGameSnapshot._(
-      this._wire, this.eggs, this.shop, this.dragons, this.inventory);
+  CanonicalGameSnapshot._(this._wire, this.eggs, this.shop, this.dragons,
+      this.inventory, this.adventures);
   final Map<String, dynamic> _wire;
   final List<CanonicalEggView> eggs;
   final CanonicalShopView shop;
   final List<CanonicalDragonView> dragons;
   final CanonicalInventoryView inventory;
+  final CanonicalAdventuresView adventures;
 
   CanonicalEggView? egg(String id) => eggs.where((e) => e.id == id).firstOrNull;
   CanonicalDragonView? dragon(String id) =>
@@ -156,8 +159,13 @@ class CanonicalGameSnapshot {
         (data['dragons'] as List)
             .map((d) => CanonicalDragonView._parse(_map(d))));
     final shop = CanonicalShopView._parse(data);
-    return CanonicalGameSnapshot._(wire, eggs, shop, dragons,
-        CanonicalInventoryView._parse(data, shop, dragons));
+    return CanonicalGameSnapshot._(
+        wire,
+        eggs,
+        shop,
+        dragons,
+        CanonicalInventoryView._parse(data, shop, dragons),
+        CanonicalAdventuresView._parse(_map(data['adventures']), dragons));
   }
 
   /// Read time and the mutation switch may change without a game revision.
@@ -188,6 +196,8 @@ class CanonicalShopView {
     titles = _ids(collection['ownedTitleIds']);
     music = _ids(collection['ownedMusicTrackIds']);
     emotePacks = _ids(collection['ownedDragonEmotePackIds']);
+    discoveredForms = _ids(collection['discoveredForms']);
+    prismaticForms = _ids(collection['prismaticForms']);
     ownedItems = _ids(house['ownedItemIds']);
     if (collection['supporterPackOwned'] is! bool ||
         house['activeRoomId'] is! String ||
@@ -217,6 +227,8 @@ class CanonicalShopView {
       titles,
       music,
       emotePacks,
+      discoveredForms,
+      prismaticForms,
       ownedItems,
       placedItems;
   late final bool supporterPackOwned;
@@ -469,6 +481,101 @@ class CanonicalInventoryView {
       (usableRelics[MysticRelic.chronoshard] ?? 0) > 0 &&
       chronoshards.where((n) => n == reduction).length >
           (reservedRelics['chronoshard:$reduction'] ?? 0);
+}
+
+class CanonicalAdventuresView {
+  CanonicalAdventuresView._parse(
+      Map<String, dynamic> data, List<CanonicalDragonView> dragons) {
+    if (!_keys(data, const [
+      'adventureOptionIds',
+      'miniAdventureRefilledAt',
+      'shortAdventureRefilledAt',
+      'longAdventureRefillDay',
+      'runs'
+    ])) {
+      _invalid();
+    }
+    final rawOptions = _map(data['adventureOptionIds']);
+    options = Map.unmodifiable({
+      for (final entry in rawOptions.entries)
+        entry.key:
+            List<String>.unmodifiable(CanonicalShopView._ids(entry.value))
+    });
+    for (final key in ['miniAdventureRefilledAt', 'shortAdventureRefilledAt']) {
+      // Legacy calendar markers can lack an offset. They are retained as
+      // metadata, never interpreted by the client as a countdown or deadline.
+      if (data[key] != null &&
+          (!_text(data[key]) ||
+              DateTime.tryParse(data[key] as String) == null)) {
+        _invalid();
+      }
+    }
+    if (data['longAdventureRefillDay'] is! String || data['runs'] is! List) {
+      _invalid();
+    }
+    runs = List.unmodifiable((data['runs'] as List)
+        .map((raw) => CanonicalAdventureRun._parse(_map(raw))));
+    if (runs.map((r) => r.id).toSet().length != runs.length ||
+        runs.map((r) => r.dragonId).toSet().length != runs.length ||
+        runs.any((r) => !dragons.any(
+            (d) => d.owned && d.id == r.dragonId && d.adventureId == r.id))) {
+      _invalid();
+    }
+  }
+  late final Map<String, List<String>> options;
+  late final List<CanonicalAdventureRun> runs;
+  List<String> offers(AdventureKind kind) => options[kind.name] ?? const [];
+  CanonicalAdventureRun? run(String id) =>
+      runs.where((r) => r.id == id).firstOrNull;
+  List<CanonicalAdventureRun> get orderedRuns =>
+      List.unmodifiable([...runs]..sort((a, b) {
+          final byTime = a.endsAt.compareTo(b.endsAt);
+          return byTime == 0 ? a.id.compareTo(b.id) : byTime;
+        }));
+}
+
+class CanonicalAdventureRun {
+  CanonicalAdventureRun._parse(Map<String, dynamic> data) {
+    if (!_keys(data, const [
+          'id',
+          'adventureId',
+          'dragonId',
+          'startedAt',
+          'endsAt',
+          'status',
+          'participantCount',
+          'specialEventId',
+          'specialEventKey',
+          'rewardTier'
+        ]) ||
+        !['id', 'adventureId', 'dragonId'].every((key) => _text(data[key])) ||
+        !_date(data['startedAt']) ||
+        !_date(data['endsAt']) ||
+        !AdventureRunStatus.values.any((s) => s.name == data['status']) ||
+        !_positive(data['participantCount']) ||
+        data['participantCount'] > 4) {
+      _invalid();
+    }
+    for (final key in ['specialEventId', 'specialEventKey', 'rewardTier']) {
+      if (data[key] != null && !_text(data[key])) _invalid();
+    }
+    if (data['status'] == 'running' && data['rewardTier'] != null) _invalid();
+    id = data['id'] as String;
+    adventureId = data['adventureId'] as String;
+    dragonId = data['dragonId'] as String;
+    startedAt = DateTime.parse(data['startedAt'] as String);
+    endsAt = DateTime.parse(data['endsAt'] as String);
+    if (endsAt.isBefore(startedAt)) _invalid();
+    status = AdventureRunStatus.values.byName(data['status'] as String);
+    revealedRewardId = data['rewardTier'] as String?;
+  }
+  late final String id, adventureId, dragonId;
+  late final DateTime startedAt, endsAt;
+  late final AdventureRunStatus status;
+  late final String? revealedRewardId;
+  AdventureDefinition? get definition => AdventureCatalog.byId[adventureId];
+  ChestTier? get revealedReward =>
+      ChestTier.values.where((t) => t.name == revealedRewardId).firstOrNull;
 }
 
 Never _invalid() => throw const CanonicalGameException('game_snapshot_invalid');

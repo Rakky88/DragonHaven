@@ -12,6 +12,8 @@ import 'package:dragon_haven/services/canonical_game_transport.dart';
 import 'package:dragon_haven/screens/shop_hub_screen.dart';
 import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
 import 'package:dragon_haven/screens/canonical_dragons_screen.dart';
+import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
+import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,16 +27,15 @@ void require(bool condition, String code) {
 }
 
 class LostReplyClient extends http.BaseClient {
-  LostReplyClient(this.shouldDrop);
+  LostReplyClient(this.shouldDrop, {this.action = 'purchase_title_chest'});
   final bool Function() shouldDrop;
+  final String action;
   final http.Client inner = http.Client();
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final body = request is http.Request ? jsonDecode(request.body) : null;
     final result = await inner.send(request);
-    if (body is Map &&
-        body['action'] == 'purchase_title_chest' &&
-        shouldDrop()) {
+    if (body is Map && body['action'] == action && shouldDrop()) {
       require(result.statusCode == 200, 'client_probe_purchase_refused');
       await result.stream.drain<void>();
       throw TimeoutException('simulated lost receipt after real commit');
@@ -178,6 +179,7 @@ void main() {
     late SupabaseClient auth;
     late Directory directory;
     late CanonicalGameSession game;
+    var loseAdventureClaim = false;
     await tester.runAsync(() async {
       stdout.writeln('PROBE: ui_auth_start');
       auth = SupabaseClient(config.url, config.publishableKey,
@@ -188,7 +190,12 @@ void main() {
       directory = await Directory.systemTemp.createTemp('dh-staging-ui-probe-');
       game = CanonicalGameSession(
           directory: directory,
-          connection: CanonicalGameTransport.staging(auth, config));
+          connection: CanonicalGameTransport.staging(auth, config,
+              httpClientFactory: () => LostReplyClient(() {
+                    if (!loseAdventureClaim) return false;
+                    loseAdventureClaim = false;
+                    return true;
+                  }, action: 'claim_adventure')));
       await game.synchronize();
       stdout.writeln('PROBE: ui_synchronized');
     });
@@ -373,6 +380,110 @@ void main() {
           'client_probe_lifecycle_equipment_failed');
       stdout.writeln(
           'PASS: real lifecycle UI; Sinister confirmations and materials, crafting, hidden egg discovery, tags, incubation, Quill rename and exclusive equipment.');
+      await mount(const CanonicalAdventuresScreen());
+      await tap(key('canonical-refresh-adventures'));
+      await settleCommand();
+      require(
+          game.snapshot!.adventures
+              .offers(AdventureKind.mini)
+              .contains('mini_1'),
+          'client_probe_adventure_fixture_missing');
+      await tap(key('canonical-select-adventure-mini_1'));
+      await tap(key('canonical-expertise-info-${dragon.id}'));
+      await tap(find.widgetWithText(TextButton, 'Close'));
+      await tap(key('canonical-adventure-dragon-${dragon.id}'));
+      await tap(key('dragon-picker-draconomicon'));
+      await tap(find.byType(BackButton));
+      await tap(key('canonical-start-adventure'));
+      await settleCommand();
+      final run = game.snapshot!.adventures.runs.single;
+      final beforeReward = game.snapshot!;
+      require(
+          run.revealedRewardId == null &&
+              run.endsAt.difference(run.startedAt) ==
+                  const Duration(minutes: 1),
+          'client_probe_adventure_deadline_invalid');
+      final early = await tester
+          .runAsync(() => game.execute('claim_adventure', {'runId': run.id}));
+      require(
+          early?.result == null &&
+              game.snapshot!.adventures.runs.length == 1 &&
+              game.snapshot!.dragon(dragon.id)!.xp ==
+                  beforeReward.dragon(dragon.id)!.xp,
+          'client_probe_adventure_early_claim');
+      stdout.writeln('PROBE: ui_adventure_waiting_for_server_deadline');
+      final remaining = run.endsAt.difference(game.snapshot!.serverTime) +
+          const Duration(seconds: 1);
+      require(remaining <= const Duration(seconds: 65),
+          'client_probe_adventure_wait_unbounded');
+      final elapsed = Stopwatch()..start();
+      while (elapsed.elapsed < remaining) {
+        await tester
+            .runAsync(() => Future<void>.delayed(const Duration(seconds: 1)));
+        await tester.pump(const Duration(seconds: 1));
+      }
+      elapsed.stop();
+      await tester.runAsync(() => game.synchronize());
+      await tester.pump();
+      require(!game.snapshot!.serverTime.isBefore(run.endsAt),
+          'client_probe_adventure_not_due');
+      loseAdventureClaim = true;
+      await tap(key('canonical-claim-${run.id}'));
+      for (var n = 0; n < 500 && game.busy; n++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 25)));
+        await tester.pump();
+      }
+      require(!game.busy && !game.canAct && !loseAdventureClaim,
+          'client_probe_adventure_reply_not_lost');
+      await tap(key('economy-reconnect'));
+      await settleCommand();
+      final afterReward = game.snapshot!;
+      final definition = AdventureCatalog.byId['mini_1']!;
+      require(
+          afterReward.adventures.runs.isEmpty &&
+              afterReward.shop.chests['wooden'] ==
+                  (beforeReward.shop.chests['wooden'] ?? 0) + 1 &&
+              afterReward.dragon(dragon.id)!.xp ==
+                  beforeReward.dragon(dragon.id)!.xp + definition.xp &&
+              afterReward.dragon(dragon.id)!.training[definition.focus.name] ==
+                  beforeReward
+                          .dragon(dragon.id)!
+                          .training[definition.focus.name]! +
+                      2 * definition.statPoints,
+          'client_probe_adventure_reward_wrong');
+      stdout.writeln('PROBE: ui_adventure_claim_recovered');
+      await tap(find.widgetWithText(ChoiceChip, 'Short'));
+      final shortId =
+          game.snapshot!.adventures.offers(AdventureKind.short).first;
+      await tap(key('canonical-select-adventure-$shortId'));
+      await tap(key('canonical-adventure-dragon-${dragon.id}'));
+      await tap(key('canonical-start-adventure'));
+      await settleCommand();
+      final abortedId = game.snapshot!.adventures.runs.single.id;
+      await tap(key('canonical-abort-$abortedId'));
+      await confirm();
+      await settleCommand();
+      require(
+          game.snapshot!.adventures.runs.isEmpty &&
+              game.snapshot!.dragon(dragon.id)!.xp ==
+                  afterReward.dragon(dragon.id)!.xp &&
+              game.snapshot!.shop.chests['wooden'] ==
+                  afterReward.shop.chests['wooden'],
+          'client_probe_adventure_abort_reward');
+      final offers =
+          game.snapshot!.adventures.offers(AdventureKind.short).length;
+      await tap(key('canonical-wayfinder-add'));
+      await confirm();
+      await settleCommand();
+      require(
+          game.snapshot!.shop.relics['wayfinderSigil'] == 0 &&
+              game.snapshot!.adventures.offers(AdventureKind.short).length ==
+                  offers + 1 &&
+              tester.takeException() == null,
+          'client_probe_adventure_wayfinder_failed');
+      stdout.writeln(
+          'PASS: real adventure UI; server deadline, early refusal, lost claim recovery, one reward, abort and Wayfinder.');
     } finally {
       stdout.writeln('PROBE: ui_cleanup_start');
       await tester.pumpWidget(const SizedBox.shrink());
@@ -384,5 +495,5 @@ void main() {
       await tester.binding.setSurfaceSize(null);
       stdout.writeln('PROBE: ui_cleanup_finished');
     }
-  }, timeout: const Timeout(Duration(minutes: 2)));
+  }, timeout: const Timeout(Duration(minutes: 3)));
 }

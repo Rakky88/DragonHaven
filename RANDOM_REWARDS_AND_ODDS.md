@@ -1,14 +1,20 @@
 # DragonHaven Random Rewards and Odds
 
-Last verified: 8 September 2026
+Last verified: 9 September 2026
 
-Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
+Ruleset: released app `v0.05.22`; server schema 59, economy activation disabled
 
-Source baseline: v0.05.16, with the dormant server chest-opening candidate below
+Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 4bb20213f50a83ae -->
+<!-- reference-source-fingerprint: 9c3dcbae0b7c9795 -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
+
+The staging Adventure UI now uses that same command lane for starts, claims and
+Wayfinder. A lost claim response cannot grant again; recovering a Wayfinder
+keeps its first chosen replacement and consumes one Sigil. The shared duration
+helper now also accepts public expertise scores; all duration formulas and
+minimums are unchanged, and the extraction consumes no random draws.
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 
