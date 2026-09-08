@@ -93,6 +93,19 @@ void main() {
   }
 
   Future<void> tap(WidgetTester tester, Finder finder) async {
+    // A newly prepended run may be above the retained offer-list scroll offset.
+    // Scroll it into the lazy list before asking ensureVisible for its element.
+    final adventures = find.byKey(const Key('canonical-adventures-list'));
+    if (finder.evaluate().isEmpty && adventures.evaluate().isNotEmpty) {
+      final scrollable = find
+          .descendant(of: adventures, matching: find.byType(Scrollable))
+          .first;
+      tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+      await tester.pump();
+      if (finder.evaluate().isEmpty) {
+        await tester.scrollUntilVisible(finder, 200, scrollable: scrollable);
+      }
+    }
     await tester.ensureVisible(finder);
     await tester.pump(const Duration(milliseconds: 300));
     await tester.runAsync(() => tester.tap(finder));

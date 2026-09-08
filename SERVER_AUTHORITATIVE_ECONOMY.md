@@ -1,6 +1,6 @@
 # DragonHaven server-authoritative economy contract
 
-Last updated: **8 September 2026**
+Last updated: **9 September 2026**
 
 Release **v0.05.22 / 10072** is published with clean analysis, 652 tests and verified signing.
 Production and staging both have exactly **59 migrations**. Production
@@ -21,6 +21,17 @@ Real Auth/Edge/Postgres UI proof passed in run 34281388567, including cleanup
 and final health; see `SERVER_ECONOMY_UI_VERIFICATION.md`.
 The full existing gameplay UI, verified trials, social settlement and player
 migration/cutover remain open. No production authority switch was changed.
+
+The subsequent egg/Altar/dragon UI extension passed staging run 34286596835
+on source `29c2519`, including all 663 tests, native/JavaScript parity and real
+Auth/Edge/Postgres commands driven from the screens. It covers tags, Sinister
+return, crafting/discovery, nest incubation, Quill rename and exclusive brooch
+equipment, with local server-clock hatch/Chronoshard and lost-reply coverage.
+Cleanup removed its synthetic accounts and shadow state, disabled the worker,
+and rechecked schema 59, lint 0 and health HTTP 200 at 22:41:02 UTC.
+Ordinary Adventures/Wayfinder are the next built extension; their actual-deadline
+network probe is in progress. Current component evidence and explicit remaining
+boundaries are maintained in `SERVER_ECONOMY_UI_VERIFICATION.md`.
 
 Previous release evidence:
 Released app: **v0.05.19 / 10069**; production **56**, staging **57**.

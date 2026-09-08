@@ -222,6 +222,17 @@ void main() {
     }
 
     Future<void> tap(Finder finder) async {
+      final adventures = find.byKey(const Key('canonical-adventures-list'));
+      if (finder.evaluate().isEmpty && adventures.evaluate().isNotEmpty) {
+        final scrollable = find
+            .descendant(of: adventures, matching: find.byType(Scrollable))
+            .first;
+        tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+        await tester.pump();
+        if (finder.evaluate().isEmpty) {
+          await tester.scrollUntilVisible(finder, 200, scrollable: scrollable);
+        }
+      }
       require(finder.evaluate().length == 1,
           'client_probe_lifecycle_control_missing');
       await tester.ensureVisible(finder);

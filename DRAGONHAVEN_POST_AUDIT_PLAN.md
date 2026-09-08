@@ -1443,9 +1443,19 @@ alleen het serverresultaat en bezit nooit een service-role key.
 
 - [ ] Verplaats eggtoekenning/incubatie/hatch, dragonownership, XP, levels,
   evolution, expertise en economisch relevante achievements naar de server.
+  De gedeelde regels bestaan; de ei-/Altar-/drakenschermen gebruiken nu de
+  canonieke stagingserver. Proef 34286596835 bewijst de echte acties, verborgen
+  ei-informatie en herstel na een verloren antwoord. Volledige gameplay,
+  scorevalidatie en productiemigratie blijven de open afronding.
 - [ ] Bewaar Chronoshard-percentage en Twinstar-equip atomair en uniek.
+  De bestaande vaste percentages en alle vier broches zijn in de stagingclient
+  getypeerd en gevalideerd; dezelfde servertransactie bewaart de equipwissel.
+  De echte UI-proef bewijst één brocheplek. Productiecutover staat nog open.
 - [ ] Voorkom dat een oude cloudsave een uitgebroed ei of verbruikte relic
   terugbrengt.
+  De geïsoleerde lane leest geen lokale save en herstelt dezelfde request-ID
+  na herstart. De bestaande autoriteits-/importfences blijven actief; de
+  uiteindelijke omzetting van echte spelers is nog niet uitgevoerd.
 
 #### Jij
 
