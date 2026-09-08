@@ -1,6 +1,19 @@
 # DragonHaven server-authoritative economy contract
 
 Last updated: **8 September 2026**
+
+Release v0.05.20 / 10070 is in progress. Production and staging now both have
+exactly **57 migrations**. `tool/production_dormant_57.py` verified identical
+migration/contract source against successful staging run 34254991384, rehearsed
+all six game/recovery contracts in rollback-only transactions before and after
+applying only migration 57, and proved unchanged authority/runtime state.
+Production preflight at 18:23:52 UTC: lint 0, Auth/settings/application HTTP 200.
+All accounts remain legacy, game/economic mutations disabled, zero shadow
+copies, production push enabled. The session remains detached from main/UI;
+full server economy activation and its remaining integration work stay open.
+See `RELEASE_V0.05.20_VERIFICATION.md` for the publication evidence.
+
+Previous release evidence:
 Released app: **v0.05.19 / 10069**; production **56**, staging **57**.
 Release workflow 34157071933 passed with 596 tests; APK/latest-download and
 post-publication server checks passed. See `RELEASE_V0.05.19_VERIFICATION.md`.

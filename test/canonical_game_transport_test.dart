@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:dragon_haven/app_info.dart';
 import 'package:dragon_haven/config/online_config.dart';
 import 'package:dragon_haven/services/canonical_game_intent.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
@@ -244,7 +245,7 @@ void main() {
               requests++;
               expect(jsonDecode((request as http.Request).body), {
                 'protocol': 2,
-                'clientBuild': 10069,
+                'clientBuild': AppInfo.buildNumber,
                 'action': 'recover_commands',
                 'requestId': _other,
               });

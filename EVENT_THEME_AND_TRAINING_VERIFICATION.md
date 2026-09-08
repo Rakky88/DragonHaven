@@ -1,8 +1,10 @@
 # Event theme and training improvements — 8 September 2026
 
-Working change after v0.05.19 / Android 10069. This document records development
-verification; it does not announce a new app release or a production economy
-cutover. Production remains schema 56, staging schema 57.
+Feature verification after v0.05.19 / Android 10069, included in the v0.05.20 /
+10070 release. This document records the original development checks; release
+and production migration evidence is in `RELEASE_V0.05.20_VERIFICATION.md`.
+Production and staging both have schema 57 after the separate release rollout;
+live server economy activation remains disabled.
 
 ## Delivered behavior
 

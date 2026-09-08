@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dragon_haven/app_info.dart';
 import 'package:dragon_haven/services/canonical_game_reader.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot_store.dart';
@@ -123,8 +124,11 @@ void main() {
           return _wire();
         });
     expect((await reader.fetch(_owner, minimumRevision: 5)).serverRevision, 5);
-    expect(requests.single,
-        {'protocol': 2, 'clientBuild': 10069, 'action': 'read_state'});
+    expect(requests.single, {
+      'protocol': 2,
+      'clientBuild': AppInfo.buildNumber,
+      'action': 'read_state'
+    });
     await expectLater(reader.fetch(_owner, minimumRevision: 6),
         _error('game_snapshot_stale'));
     await expectLater(reader.fetch(_owner, minimumRulesetRevision: 3),

@@ -3,6 +3,19 @@
 Laatst bijgewerkt: **8 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
+## Release in uitvoering: v0.05.20 (10070), 8 september 2026
+
+Deze release bundelt de hieronder beschreven eventthema's, trainingmarkeringen,
+drakeninformatie, Draconomicon-knoppen, testtrialbeloningen en vaste geslachten.
+Appversie, updatevergelijking en Android-buildnummer zijn samen verhoogd.
+Productie heeft exact migratie 57 gekregen, na vergelijking met het geslaagde
+stagingbronbewijs 34254991384 en zes volledig teruggedraaide contractproeven
+vóór en na toepassing. De productiepreflight om 18:23:52 UTC bevestigt 57
+migraties, nul lintfouten en Auth/settings/app HTTP 200. Alle accounts blijven
+legacy, economische mutaties en game-worker uit, nul schaduwkopieën; bestaande
+productiepush blijft aan. Dit is geen activatie van de volledige servereconomie.
+Publicatie- en artifactbewijs wordt vastgelegd in `RELEASE_V0.05.20_VERIFICATION.md`.
+
 ## Uitgebracht: v0.05.19 (10069), 7 september 2026
 
 - Altar: sorteren op ontvangen/broedtijd, omkeren, tagfilters combineren en
@@ -55,7 +68,7 @@ en de volledige analyse slagen. Workflow
 heeft daarna exact 57 toegepast, alle zes contracten herhaald en de echte
 Auth/Edge/Dart/Postgres-proef bewezen. Tijdelijke accounts, kopieën, verzoeken en
 herstelbewijzen zijn verwijderd; runtime uit, schema 57, lint 0, health 200.
-Productie blijft 56. De volgende appstap bundelt de losse transport-/opslagdelen
+Productie heeft 57 sinds de releasevoorbereiding van v0.05.20. De volgende appstap bundelt de losse transport-/opslagdelen
 in één accountsessie met actuele serverweergave, offline lezen en duurzaam
 hervatten. Acht nieuwe sessietests en 26 transport-/hersteltests slagen.
 Workflow [34256256939](https://github.com/Rakky88/DragonHaven/actions/runs/34256256939)
@@ -66,7 +79,7 @@ schema 57, lint 0, health 200. Dit onderdeel is klaar; de sessie is nog niet aan
 de echte spelschermen gekoppeld.
 
 De aansluitend gevraagde productwijzigingen zijn op 8 september 2026 gebouwd
-en gevalideerd; ze zijn nog niet als nieuwe appversie gepubliceerd:
+en gevalideerd; ze gaan mee in release v0.05.20:
 - eventthema door de app, vooral logo/achtergrond, plus een duidelijke eindtimer;
 - Expertise-informatie ook in de trial-drakenkiezer;
 - per draak Might/Arcana/Spirit kunnen markeren in My Dragons, dezelfde markering
