@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class EventAppearance {
+class EventAppearance extends ThemeExtension<EventAppearance> {
   static const logoKeys = <String, String>{
     'halloween_witchlight': 'halloween',
     'christmas_winter_hearth': 'christmas',
@@ -30,11 +30,37 @@ class EventAppearance {
   final Color paper;
   final IconData motif;
 
+  bool get isPride => folder == 'pride';
+
+  List<Color> get panelColors => isPride
+      ? const [
+          Color(0xFF843B53),
+          Color(0xFF825421),
+          Color(0xFF28634D),
+          Color(0xFF345681),
+          Color(0xFF624795)
+        ]
+      : [Color.lerp(primary, Colors.black, .22)!, primary];
+
+  @override
+  EventAppearance copyWith({Color? primary, Color? accent, Color? paper}) =>
+      EventAppearance(
+          folder: folder,
+          primary: primary ?? this.primary,
+          accent: accent ?? this.accent,
+          paper: paper ?? this.paper,
+          motif: motif);
+
+  @override
+  EventAppearance lerp(covariant EventAppearance? other, double t) =>
+      other == null || t < .5 ? this : other;
+
   String? get background => folder == null
       ? null
       : 'assets/images/events/$folder/trial_background.webp';
-  String? get emblem =>
-      folder == null ? null : 'assets/images/events/$folder/trial_icon.webp';
+  String? get emblem => folder == null || folder == 'golden_wings'
+      ? null
+      : 'assets/images/events/$folder/trial_icon.webp';
 
   static EventAppearance forEvent(String id) => switch (id) {
         'halloween_witchlight' => const EventAppearance(
@@ -68,7 +94,7 @@ class EventAppearance {
             paper: Color(0xFFF4F0FB),
             motif: Icons.wb_sunny_rounded),
         _ => const EventAppearance(
-            folder: null,
+            folder: 'golden_wings',
             primary: Color(0xFF7D5B29),
             accent: Color(0xFFF0C759),
             paper: Color(0xFFFFF6DE),

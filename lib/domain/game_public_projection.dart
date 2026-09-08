@@ -86,6 +86,8 @@ abstract final class GamePublicProjection {
             'chronoshardReductions',
             'twinstarBroochEverObtained',
             'twinstarBroochDragonId',
+            'uniqueRelicsEverObtained',
+            'equippedRelicDragonIds',
             'reservedOnlineTradeEggIds',
             'reservedOnlineTradeChests',
             'reservedOnlineTradeRelics',

@@ -41,7 +41,7 @@ class AchievementsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
         children: [
           Card(
-            color: AppColors.twilightDark,
+            color: AppColors.eventColor(context, AppColors.twilightDark),
             child: Padding(
               padding: const EdgeInsets.all(18),
               child: Row(children: [
@@ -110,10 +110,14 @@ class _CompactAchievementGrid extends StatelessWidget {
                 : strings.achievementTitle(achievement);
             final badge = DecoratedBox(
               decoration: BoxDecoration(
-                color: unlocked ? Colors.white : const Color(0xFFE4E1E8),
+                color: unlocked
+                    ? Colors.white
+                    : AppColors.eventColor(context, const Color(0xFFE4E1E8)),
                 borderRadius: BorderRadius.circular(22),
                 border: Border.all(
-                  color: unlocked ? AppColors.gold : AppColors.mist,
+                  color: unlocked
+                      ? AppColors.gold
+                      : AppColors.eventColor(context, AppColors.mist),
                   width: unlocked ? 1.5 : 1,
                 ),
               ),
@@ -186,10 +190,14 @@ class _AchievementTile extends StatelessWidget {
               height: 68,
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
-                color: unlocked ? Colors.white : const Color(0xFFE1DEE5),
+                color: unlocked
+                    ? Colors.white
+                    : AppColors.eventColor(context, const Color(0xFFE1DEE5)),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: unlocked ? AppColors.gold : const Color(0xFFBBB7C1),
+                  color: unlocked
+                      ? AppColors.gold
+                      : AppColors.eventColor(context, const Color(0xFFBBB7C1)),
                   width: unlocked ? 1.6 : 1,
                 ),
               ),
@@ -232,7 +240,7 @@ Future<void> _showAchievementZoom(
   final strings = AppStrings.of(context);
   return showDialog<void>(
     context: context,
-    barrierColor: const Color(0xCC17112A),
+    barrierColor: AppColors.eventColor(context, const Color(0xCC17112A)),
     builder: (dialogContext) => Dialog(
       key: const Key('achievement-zoom-dialog'),
       backgroundColor: Colors.transparent,

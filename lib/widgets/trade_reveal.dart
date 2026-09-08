@@ -19,7 +19,7 @@ Future<void> showTradeReveal(
     showGeneralDialog<void>(
       context: context,
       barrierDismissible: false,
-      barrierColor: const Color(0xE8110923),
+      barrierColor: AppColors.eventColor(context, const Color(0xE8110923)),
       transitionDuration: const Duration(milliseconds: 650),
       transitionBuilder: (_, animation, __, child) => FadeTransition(
         opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
@@ -90,11 +90,11 @@ class _TradeRevealState extends State<_TradeReveal>
                 constraints: const BoxConstraints(maxWidth: 400),
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF4A287E), Color(0xFF1B1034)],
-                  ),
+                  gradient: AppColors.panelGradient(context,
+                      fallback: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF4A287E), Color(0xFF1B1034)])),
                   borderRadius: BorderRadius.circular(32),
                   border: Border.all(color: AppColors.gold, width: 2),
                   boxShadow: const [

@@ -410,7 +410,8 @@ class _TowerRoof extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xD91B1436),
+                      color: AppColors.eventColor(
+                          context, const Color(0xD91B1436)),
                       borderRadius: BorderRadius.circular(99),
                     ),
                     child: Row(
@@ -457,7 +458,7 @@ class _DragonSchoolEntrance extends StatelessWidget {
         child: Ink(
           height: cardHeight,
           decoration: BoxDecoration(
-            color: const Color(0xFF302454),
+            color: AppColors.eventColor(context, const Color(0xFF302454)),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Stack(
@@ -468,7 +469,9 @@ class _DragonSchoolEntrance extends StatelessWidget {
                 child: Image.asset(
                   'assets/images/ui/dragon_school.png',
                   fit: BoxFit.cover,
-                  color: unlocked ? null : const Color(0x99605B67),
+                  color: unlocked
+                      ? null
+                      : AppColors.eventColor(context, const Color(0x99605B67)),
                   colorBlendMode: unlocked ? null : BlendMode.saturation,
                   errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
@@ -476,9 +479,9 @@ class _DragonSchoolEntrance extends StatelessWidget {
               DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xEE211638), Color(0x44211638)],
-                  ),
+                  gradient: AppColors.panelGradient(context,
+                      fallback: const LinearGradient(
+                          colors: [Color(0xEE211638), Color(0x44211638)])),
                   border: Border.all(
                     color: unlocked ? AppColors.gold : Colors.white24,
                   ),
@@ -604,9 +607,9 @@ class _TowerFloor extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(19),
-              gradient: const LinearGradient(
-                colors: [Color(0xB5201C3F), Color(0x18201C3F)],
-              ),
+              gradient: AppColors.panelGradient(context,
+                  fallback: const LinearGradient(
+                      colors: [Color(0xB5201C3F), Color(0x18201C3F)])),
             ),
             padding: const EdgeInsets.all(13),
             child: Row(children: [
@@ -719,7 +722,9 @@ class _BuildFloorButton extends StatelessWidget {
                     : const [Color(0xFFECE5FF), Color(0xFFFFF3D4)],
               ),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFDED4ED)),
+              border: Border.all(
+                  color:
+                      AppColors.eventColor(context, const Color(0xFFDED4ED))),
               boxShadow: const [
                 BoxShadow(
                     color: Color(0x185B4B8A),
@@ -742,8 +747,8 @@ class _BuildFloorButton extends StatelessWidget {
                   child: label,
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.twilight),
+              Icon(Icons.chevron_right_rounded,
+                  color: AppColors.eventColor(context, AppColors.twilight)),
             ]),
           ),
         ),
@@ -978,7 +983,8 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                             vertical: 7,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF1ECFB),
+                            color: AppColors.eventColor(
+                                context, const Color(0xFFF1ECFB)),
                             borderRadius: BorderRadius.circular(99),
                           ),
                           child: Row(
@@ -989,13 +995,15 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                                     ? Icons.arrow_downward_rounded
                                     : Icons.arrow_upward_rounded,
                                 size: 18,
-                                color: AppColors.twilight,
+                                color: AppColors.eventColor(
+                                    context, AppColors.twilight),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 _sortLabel(strings),
-                                style: const TextStyle(
-                                  color: AppColors.twilight,
+                                style: TextStyle(
+                                  color: AppColors.eventColor(
+                                      context, AppColors.twilight),
                                   fontSize: 11,
                                   fontWeight: FontWeight.w900,
                                 ),
@@ -1055,7 +1063,8 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1ECFB),
+                      color: AppColors.eventColor(
+                          context, const Color(0xFFF1ECFB)),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(children: [
@@ -1067,8 +1076,9 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                             '${game.selectedRoamingDragonCount} / ${game.towerRoamingCapacity} roaming · maximum 3 per room',
                             '${game.selectedRoamingDragonCount} / ${game.towerRoamingCapacity} actief · maximaal 3 per kamer',
                           ),
-                          style: const TextStyle(
-                            color: AppColors.twilight,
+                          style: TextStyle(
+                            color: AppColors.eventColor(
+                                context, AppColors.twilight),
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
                           ),
@@ -1109,8 +1119,7 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                             final dragon = dragons[index];
                             return _OwnedDragonGridCard(
                               dragon: dragon,
-                              twinstarEquipped:
-                                  game.isTwinstarEquippedOn(dragon.id),
+                              equippedRelic: game.equippedRelicFor(dragon.id),
                               onTap: () => _showDragonDetails(context, dragon),
                             );
                           },
@@ -1126,8 +1135,7 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                             final dragon = dragons[index];
                             return _OwnedDragonListCard(
                               dragon: dragon,
-                              twinstarEquipped:
-                                  game.isTwinstarEquippedOn(dragon.id),
+                              equippedRelic: game.equippedRelicFor(dragon.id),
                               onTap: () => _showDragonDetails(context, dragon),
                             );
                           },
@@ -1289,7 +1297,6 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                   Text(dragon.displayName,
                       textAlign: TextAlign.center,
                       style: Theme.of(sheetContext).textTheme.headlineSmall),
-                  DragonSexBadge(dragon: dragon),
                 ],
               ),
               const SizedBox(height: 12),
@@ -1297,7 +1304,7 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF4F0FB),
+                  color: AppColors.eventColor(context, const Color(0xFFF4F0FB)),
                   borderRadius: BorderRadius.circular(22),
                 ),
                 child: Column(children: [
@@ -1307,13 +1314,21 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                   _DragonDetailRow(
                       label: strings.pick('Maturity', 'Volwassenheid'),
                       value: strings.petStage(dragon)),
+                  _DragonDetailRow(
+                    label: strings.pick('Gender', 'Geslacht'),
+                    value: dragon.sex == DragonSex.male
+                        ? strings.pick('Male', 'Mannelijk')
+                        : strings.pick('Female', 'Vrouwelijk'),
+                    icon: DragonSexBadge(dragon: dragon),
+                  ),
                   const Divider(height: 13),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       strings.pick('Expertises', 'Expertises'),
-                      style: const TextStyle(
-                        color: AppColors.twilight,
+                      style: TextStyle(
+                        color:
+                            AppColors.eventColor(context, AppColors.twilight),
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
                         letterSpacing: .35,
@@ -1384,8 +1399,9 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                         : strings.pick(
                             'Invite to Tower', 'Uitnodigen in de Toren')),
                     trailing: dragon.roamsTower
-                        ? const Icon(Icons.check_circle_rounded,
-                            color: AppColors.twilight)
+                        ? Icon(Icons.check_circle_rounded,
+                            color: AppColors.eventColor(
+                                context, AppColors.twilight))
                         : null,
                     onTap: () async {
                       final result = await game.setDragonRoaming(
@@ -1404,47 +1420,25 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                     },
                   ),
                   const Divider(height: 1),
-                  if (game.hasTwinstarBrooch) ...[
+                  for (final relic in MysticRelic.values.where(
+                      (r) => r.isEquipable && game.relicCount(r) > 0)) ...[
                     ListTile(
-                      key: Key('dragon-twinstar-${dragon.id}'),
-                      leading: SizedBox.square(
-                        dimension: 40,
-                        child: Image.asset(
-                          MysticRelic.twinstarBrooch.assetPath,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      title: Text(
-                        game.isTwinstarEquippedOn(dragon.id)
-                            ? strings.pick(
-                                'Unequip Twinstar Brooch',
-                                'Tweesterbroche afdoen',
-                              )
-                            : game.twinstarBroochDragonId == null
-                                ? strings.pick(
-                                    'Equip Twinstar Brooch',
-                                    'Tweesterbroche omdoen',
-                                  )
-                                : strings.pick(
-                                    'Move Twinstar Brooch here',
-                                    'Tweesterbroche hierheen verplaatsen',
-                                  ),
-                      ),
-                      subtitle: Text(strings.pick(
-                        'Doubles all XP while equipped',
-                        'Verdubbelt alle XP zolang hij gedragen wordt',
-                      )),
-                      trailing: game.isTwinstarEquippedOn(dragon.id)
-                          ? const Icon(
-                              Icons.check_circle_rounded,
-                              color: AppColors.twilight,
-                            )
-                          : null,
+                      key: Key('dragon-${relic.name}-${dragon.id}'),
+                      leading:
+                          Image.asset(relic.assetPath, width: 40, height: 40),
+                      title: Text(strings.relicName(relic)),
+                      subtitle: Text(strings.relicDescription(relic)),
+                      trailing: game.equippedRelicFor(dragon.id) == relic
+                          ? Icon(Icons.check_circle_rounded,
+                              color: AppColors.eventColor(
+                                  context, AppColors.twilight))
+                          : const Icon(Icons.add_circle_outline_rounded),
                       onTap: () async {
-                        final equipped = game.isTwinstarEquippedOn(dragon.id);
-                        await game.equipTwinstarBrooch(
-                          equipped ? null : dragon.id,
-                        );
+                        await game.equipRelic(
+                            relic,
+                            game.equippedRelicFor(dragon.id) == relic
+                                ? null
+                                : dragon.id);
                         if (sheetContext.mounted) Navigator.pop(sheetContext);
                       },
                     ),
@@ -1564,7 +1558,7 @@ class _DragonSchoolDiplomaCard extends StatelessWidget {
               ? AppColors.gold
               : complete
                   ? const Color(0xFFB25434)
-                  : const Color(0xFFDCD2E8),
+                  : AppColors.eventColor(context, const Color(0xFFDCD2E8)),
         ),
       ),
       child: Column(
@@ -1587,8 +1581,9 @@ class _DragonSchoolDiplomaCard extends StatelessWidget {
                           ? strings.pick(outcome.titleEn, outcome.titleNl)
                           : strings.pick('Dragon Academy report card',
                               'Drakenacademierapport'),
-                      style: const TextStyle(
-                          color: AppColors.twilight,
+                      style: TextStyle(
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight),
                           fontWeight: FontWeight.w900),
                     ),
                     Text(
@@ -1644,8 +1639,8 @@ class _DragonSchoolDiplomaCard extends StatelessWidget {
                 '${dragon.dragonSchoolMentorLessons} lessons taught as mentor',
                 '${dragon.dragonSchoolMentorLessons} lessen gegeven als mentor',
               ),
-              style: const TextStyle(
-                  color: AppColors.twilight,
+              style: TextStyle(
+                  color: AppColors.eventColor(context, AppColors.twilight),
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800),
             ),
@@ -1675,11 +1670,11 @@ class _DragonProgressCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(15, 13, 15, 14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF2B1D55), Color(0xFF654A9B)],
-        ),
+        gradient: AppColors.panelGradient(context,
+            fallback: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF2B1D55), Color(0xFF654A9B)])),
         borderRadius: BorderRadius.circular(22),
         boxShadow: const [
           BoxShadow(
@@ -1773,12 +1768,12 @@ class _DragonProgressCard extends StatelessWidget {
 class _OwnedDragonGridCard extends StatelessWidget {
   const _OwnedDragonGridCard({
     required this.dragon,
-    required this.twinstarEquipped,
+    required this.equippedRelic,
     required this.onTap,
   });
 
   final Pet dragon;
-  final bool twinstarEquipped;
+  final MysticRelic? equippedRelic;
   final VoidCallback onTap;
 
   @override
@@ -1828,7 +1823,6 @@ class _OwnedDragonGridCard extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 )),
                 const SizedBox(width: 4),
-                DragonSexBadge(dragon: dragon),
               ]),
             ]),
             if (dragon.favorite)
@@ -1850,7 +1844,7 @@ class _OwnedDragonGridCard extends StatelessWidget {
                   ),
                 ),
               ),
-            if (twinstarEquipped)
+            if (equippedRelic != null)
               Positioned(
                 top: 3,
                 left: 3,
@@ -1865,8 +1859,8 @@ class _OwnedDragonGridCard extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(3),
                     child: Image.asset(
-                      MysticRelic.twinstarBrooch.assetPath,
-                      key: Key('dragon-twinstar-badge-${dragon.id}'),
+                      equippedRelic!.assetPath,
+                      key: Key('dragon-brooch-badge-${dragon.id}'),
                       width: 24,
                       height: 24,
                     ),
@@ -1906,12 +1900,12 @@ class _OwnedDragonGridCard extends StatelessWidget {
 class _OwnedDragonListCard extends StatelessWidget {
   const _OwnedDragonListCard({
     required this.dragon,
-    required this.twinstarEquipped,
+    required this.equippedRelic,
     required this.onTap,
   });
 
   final Pet dragon;
-  final bool twinstarEquipped;
+  final MysticRelic? equippedRelic;
   final VoidCallback onTap;
 
   @override
@@ -1970,7 +1964,6 @@ class _OwnedDragonListCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        DragonSexBadge(dragon: dragon),
                         if (dragon.favorite) ...[
                           const SizedBox(width: 4),
                           const Icon(
@@ -1979,11 +1972,11 @@ class _OwnedDragonListCard extends StatelessWidget {
                             size: 15,
                           ),
                         ],
-                        if (twinstarEquipped) ...[
+                        if (equippedRelic != null) ...[
                           const SizedBox(width: 4),
                           Image.asset(
-                            MysticRelic.twinstarBrooch.assetPath,
-                            key: Key('dragon-twinstar-list-${dragon.id}'),
+                            equippedRelic!.assetPath,
+                            key: Key('dragon-brooch-list-${dragon.id}'),
                             width: 19,
                             height: 19,
                           ),
@@ -2005,8 +1998,9 @@ class _OwnedDragonListCard extends StatelessWidget {
                       '${strings.lineageRarity(dragon.lineage)}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.twilight,
+                      style: TextStyle(
+                        color:
+                            AppColors.eventColor(context, AppColors.twilight),
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
                       ),
@@ -2041,10 +2035,12 @@ class _DragonDetailRow extends StatelessWidget {
   const _DragonDetailRow({
     required this.label,
     required this.value,
+    this.icon,
   });
 
   final String label;
   final String value;
+  final Widget? icon;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -2054,9 +2050,16 @@ class _DragonDetailRow extends StatelessWidget {
             child: Text(label,
                 style: const TextStyle(color: AppColors.muted, fontSize: 12)),
           ),
-          Text(value,
-              style: const TextStyle(
-                  color: AppColors.ink, fontWeight: FontWeight.w900)),
+          Flexible(
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              if (icon != null) ...[icon!, const SizedBox(width: 5)],
+              Flexible(
+                  child: Text(value,
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(
+                          color: AppColors.ink, fontWeight: FontWeight.w900))),
+            ]),
+          ),
         ]),
       );
 }

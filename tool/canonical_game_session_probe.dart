@@ -9,8 +9,12 @@ import 'package:dragon_haven/services/canonical_game_intent.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:dragon_haven/services/canonical_game_transport.dart';
+import 'package:dragon_haven/screens/shop_hub_screen.dart';
+import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -146,6 +150,107 @@ void main() {
       game?.dispose();
       await auth.dispose();
       await directory.delete(recursive: true);
+    }
+  }, timeout: const Timeout(Duration(minutes: 2)));
+
+  testWidgets('ordinary shop and chest reveal use the real staging economy',
+      (tester) async {
+    final env = Platform.environment;
+    require(
+        env['STAGING_SUPABASE_PROJECT_REF'] == 'vtmjkhzalalozpfnbvsd' &&
+            env['STAGING_SUPABASE_URL'] == CanonicalGameTransport.stagingUrl,
+        'client_probe_staging_required');
+    final raw = env['STAGING_GAME_CLIENT_SESSION'];
+    require(raw != null, 'client_probe_session_missing');
+    final sessionJson = jsonDecode(raw!) as Map<String, dynamic>;
+    final owner = sessionJson['user']['id'] as String;
+    require(
+        sessionJson['user']['app_metadata']['dragonhaven_game_probe'] ==
+            env['STAGING_GAME_PROBE_RUN'],
+        'client_probe_synthetic_owner_required');
+    final config = OnlineConfig(
+        url: CanonicalGameTransport.stagingUrl,
+        publishableKey: env['STAGING_SUPABASE_PUBLISHABLE_KEY']!,
+        environment: OnlineEnvironment.staging);
+    final auth = SupabaseClient(config.url, config.publishableKey,
+        authOptions: const AuthClientOptions(autoRefreshToken: false));
+    late Directory directory;
+    late CanonicalGameSession game;
+    await tester.runAsync(() async {
+      await auth.auth.recoverSession(raw);
+      require((await auth.auth.getUser()).user?.id == owner,
+          'client_probe_auth_mismatch');
+      directory = await Directory.systemTemp.createTemp('dh-staging-ui-probe-');
+      game = CanonicalGameSession(
+          directory: directory,
+          connection: CanonicalGameTransport.staging(auth, config));
+      await game.synchronize();
+    });
+    Future<void> settleCommand() async {
+      for (var n = 0; n < 500 && game.busy; n++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 25)));
+        await tester.pump();
+      }
+      require(!game.busy && game.canAct, 'client_probe_ui_command_failed');
+    }
+
+    Future<void> mount(Widget child) async {
+      await tester.pumpWidget(ChangeNotifierProvider.value(
+          value: game, child: MaterialApp(home: Scaffold(body: child))));
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    try {
+      await tester.binding.setSurfaceSize(const Size(430, 1000));
+      final before = game.snapshot!;
+      final initialChests = before.shop.chests['title'] ?? 0;
+      final initialTitles = before.shop.titles.length;
+      await mount(const ShopHubScreen(initialCategoryTab: 1));
+      final purchase = find.byKey(const Key('buy-title-chest'));
+      await tester.ensureVisible(purchase);
+      await tester.pump(const Duration(milliseconds: 400));
+      require(tester.widget<FilledButton>(purchase).onPressed != null,
+          'client_probe_ui_buy_unavailable');
+      await tester.tap(purchase);
+      await tester.pump();
+      require(tester.widget<FilledButton>(purchase).onPressed == null,
+          'client_probe_ui_double_tap_enabled');
+      await settleCommand();
+      require(
+          game.snapshot!.coins == before.coins - 100 &&
+              game.snapshot!.shop.chests['title'] == initialChests + 1,
+          'client_probe_ui_purchase_failed');
+      await mount(const CanonicalInventoryScreen());
+      final open = find.byKey(const Key('canonical-open-title'));
+      await tester.ensureVisible(open);
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(open);
+      await tester.pump(const Duration(milliseconds: 400));
+      require(game.snapshot!.shop.chests['title'] == initialChests + 1,
+          'client_probe_ui_preview_consumed');
+      await tester.tap(find.byKey(const Key('chest-reveal-tap-target')));
+      await settleCommand();
+      for (var n = 0; n < 30; n++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      require(
+          find.byKey(const Key('chest-rewards')).evaluate().length == 1 &&
+              game.snapshot!.shop.chests['title'] == initialChests &&
+              game.snapshot!.shop.titles.length == initialTitles + 1 &&
+              game.snapshot!.coins == before.coins - 100 &&
+              tester.takeException() == null,
+          'client_probe_ui_reveal_failed');
+      stdout.writeln(
+          'PASS: real shop UI purchase, durable inventory and server chest reveal; one debit and one title.');
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      game.dispose();
+      await tester.runAsync(() async {
+        await auth.dispose();
+        await directory.delete(recursive: true);
+      });
+      await tester.binding.setSurfaceSize(null);
     }
   }, timeout: const Timeout(Duration(minutes: 2)));
 }

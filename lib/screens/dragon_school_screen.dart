@@ -234,8 +234,8 @@ class _AcademyStandings extends StatelessWidget {
       child: ExpansionTile(
         key: const Key('dragon-school-standings'),
         initiallyExpanded: dragons.isNotEmpty,
-        leading:
-            const Icon(Icons.leaderboard_rounded, color: AppColors.twilight),
+        leading: Icon(Icons.leaderboard_rounded,
+            color: AppColors.eventColor(context, AppColors.twilight)),
         title: Text(
           strings.pick('Academy standings', 'Academieranglijst'),
           style: const TextStyle(fontWeight: FontWeight.w900),
@@ -282,8 +282,9 @@ class _AcademyStandings extends StatelessWidget {
                           '15 sterren: Afgestudeerd · 21: Onderscheiding · 27: Grote onderscheiding · 30: Lichtingsbeste. Vervroegd afstuderen vereist één poging in elk vak. Uitval wordt pas na alle 30 pogingen bepaald.',
                         ),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: AppColors.twilight,
+                        style: TextStyle(
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight),
                           fontSize: 9.5,
                           fontWeight: FontWeight.w800,
                         ),
@@ -330,7 +331,9 @@ class _AcademyStandingRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 5),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: rank == 1 ? const Color(0xFFFFF8DC) : const Color(0xFFF7F3FA),
+        color: rank == 1
+            ? const Color(0xFFFFF8DC)
+            : AppColors.eventColor(context, const Color(0xFFF7F3FA)),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: color.withValues(alpha: .28)),
       ),
@@ -376,8 +379,8 @@ class _AcademyStandingRow extends StatelessWidget {
             children: [
               Text(
                 '${dragonSchoolAcademyScore(dragon)}/$dragonSchoolMaximumAcademyScore',
-                style: const TextStyle(
-                  color: AppColors.twilight,
+                style: TextStyle(
+                  color: AppColors.eventColor(context, AppColors.twilight),
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -527,8 +530,10 @@ class _SchoolLessonCard extends StatelessWidget {
                           ),
                         ),
                         if (definition.isTeamLesson)
-                          const Icon(Icons.groups_rounded,
-                              size: 17, color: AppColors.twilight),
+                          Icon(Icons.groups_rounded,
+                              size: 17,
+                              color: AppColors.eventColor(
+                                  context, AppColors.twilight)),
                       ],
                     ),
                     const SizedBox(height: 2),
@@ -556,8 +561,9 @@ class _SchoolLessonCard extends StatelessWidget {
               Column(
                 children: [
                   Text('$keeperRecord',
-                      style: const TextStyle(
-                          color: AppColors.twilight,
+                      style: TextStyle(
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight),
                           fontWeight: FontWeight.w900,
                           fontSize: 17)),
                   Text(strings.pick('KEEPER BEST', 'KEEPER BESTE'),
@@ -697,8 +703,9 @@ class _EnrollmentSheetState extends State<_EnrollmentSheet> {
                     Text(
                       strings.pick('Optional ascended mentor',
                           'Optionele Ascended-mentor'),
-                      style: const TextStyle(
-                          color: AppColors.twilight,
+                      style: TextStyle(
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight),
                           fontWeight: FontWeight.w900),
                     ),
                     Text(
@@ -802,7 +809,7 @@ class _EnrollmentDragonTile extends StatelessWidget {
       color: exhausted
           ? const Color(0xFFF0EDF2)
           : selected
-              ? const Color(0xFFF0E8FA)
+              ? AppColors.eventColor(context, const Color(0xFFF0E8FA))
               : Colors.white,
       child: ListTile(
         key: Key('school-pupil-${dragon.id}'),
@@ -1871,7 +1878,8 @@ class _StudentStrip extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: .9),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFDCD2E8)),
+        border: Border.all(
+            color: AppColors.eventColor(context, const Color(0xFFDCD2E8))),
       ),
       child: Row(
         children: [
@@ -2116,14 +2124,15 @@ class _AttemptPill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
         decoration: BoxDecoration(
-          color: const Color(0xFFF0E8FA),
+          color: AppColors.eventColor(context, const Color(0xFFF0E8FA)),
           borderRadius: BorderRadius.circular(99),
-          border: Border.all(color: const Color(0xFFC9B4DE)),
+          border: Border.all(
+              color: AppColors.eventColor(context, const Color(0xFFC9B4DE))),
         ),
         child: Text(
           label,
-          style: const TextStyle(
-            color: AppColors.twilight,
+          style: TextStyle(
+            color: AppColors.eventColor(context, AppColors.twilight),
             fontSize: 10,
             fontWeight: FontWeight.w900,
           ),
@@ -2144,13 +2153,14 @@ class _GameScore extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFDCD2E8)),
+          border: Border.all(
+              color: AppColors.eventColor(context, const Color(0xFFDCD2E8))),
         ),
         child: Column(
           children: [
             Text('$value',
-                style: const TextStyle(
-                    color: AppColors.twilight,
+                style: TextStyle(
+                    color: AppColors.eventColor(context, AppColors.twilight),
                     fontSize: 19,
                     fontWeight: FontWeight.w900)),
             Text(label,

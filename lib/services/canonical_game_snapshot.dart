@@ -1,11 +1,14 @@
 import 'dart:convert';
 
+import '../models/house.dart';
+
 /// Read-only server display data. It is deliberately incompatible with a local
 /// saved game: an unknown lineage is null, never a guessed DragonEgg/Pet.
 class CanonicalGameSnapshot {
-  CanonicalGameSnapshot._(this._wire, this.eggs);
+  CanonicalGameSnapshot._(this._wire, this.eggs, this.shop);
   final Map<String, dynamic> _wire;
   final List<CanonicalEggView> eggs;
+  final CanonicalShopView shop;
 
   String get ownerId => _wire['owner_id'] as String;
   int get serverRevision => _wire['server_revision'] as int;
@@ -137,7 +140,7 @@ class CanonicalGameSnapshot {
         utf8.encode(jsonEncode(wire)).length > 9 * 1024 * 1024) {
       throw const CanonicalGameException('game_snapshot_invalid');
     }
-    return CanonicalGameSnapshot._(wire, eggs);
+    return CanonicalGameSnapshot._(wire, eggs, CanonicalShopView._parse(data));
   }
 
   /// Read time and the mutation switch may change without a game revision.
@@ -150,6 +153,74 @@ class CanonicalGameSnapshot {
       rulesetHash == other.rulesetHash &&
       rulesetRevision == other.rulesetRevision &&
       jsonEncode(data) == jsonEncode(other.data);
+}
+
+/// Validated display fields used by the ordinary shop. Unknown collection IDs
+/// are retained; malformed or contradictory stock cannot enable a purchase.
+class CanonicalShopView {
+  CanonicalShopView._parse(Map<String, dynamic> data) {
+    final inventory = _map(data['inventory']);
+    final collection = _map(data['collection']);
+    final house = _map(data['house']);
+    chests = _counts(inventory['chestInventory']);
+    specialChests = _counts(inventory['specialChestInventory']);
+    reservedChests = _counts(inventory['reservedOnlineTradeChests']);
+    relics = _counts(inventory['relicInventory']);
+    untradeableRelics = _counts(inventory['untradeableRelicInventory']);
+    portraits = _ids(collection['ownedPortraitIds']);
+    titles = _ids(collection['ownedTitleIds']);
+    music = _ids(collection['ownedMusicTrackIds']);
+    emotePacks = _ids(collection['ownedDragonEmotePackIds']);
+    ownedItems = _ids(house['ownedItemIds']);
+    if (collection['supporterPackOwned'] is! bool ||
+        house['activeRoomId'] is! String ||
+        houseRoomById(house['activeRoomId'] as String) == null ||
+        house['placements'] is! List ||
+        untradeableRelics.entries.any((e) => e.value > (relics[e.key] ?? 0))) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
+    supporterPackOwned = collection['supporterPackOwned'] as bool;
+    activeRoomId = house['activeRoomId'] as String;
+    final placed = <String>{};
+    for (final raw in house['placements'] as List) {
+      final placement = _map(raw);
+      final id = placement['itemId'];
+      if (id is! String || !ownedItems.contains(id) || !placed.add(id)) {
+        throw const CanonicalGameException('game_snapshot_invalid');
+      }
+    }
+    placedItems = Set.unmodifiable(placed);
+  }
+  late final Map<String, int> chests,
+      specialChests,
+      reservedChests,
+      relics,
+      untradeableRelics;
+  late final Set<String> portraits,
+      titles,
+      music,
+      emotePacks,
+      ownedItems,
+      placedItems;
+  late final bool supporterPackOwned;
+  late final String activeRoomId;
+
+  static Map<String, int> _counts(Object? value) {
+    final map = _map(value);
+    if (map.entries.any((e) => !_text(e.key) || !_count(e.value))) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
+    return Map.unmodifiable(map.cast<String, int>());
+  }
+
+  static Set<String> _ids(Object? value) {
+    if (value is! List ||
+        value.any((id) => !_text(id)) ||
+        value.toSet().length != value.length) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
+    return Set.unmodifiable(value.cast<String>());
+  }
 }
 
 class CanonicalEggView {

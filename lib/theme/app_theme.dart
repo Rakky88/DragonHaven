@@ -14,6 +14,29 @@ abstract final class AppColors {
   static const mist = Color(0xFFE8E3F3);
   static const cream = Color(0xFFFFF9F0);
   static const muted = Color(0xFF706B7D);
+
+  static Color eventColor(BuildContext context, Color original) {
+    final event = Theme.of(context).extension<EventAppearance>();
+    if (event == null) return original;
+    final source = HSLColor.fromColor(original);
+    final target = HSLColor.fromColor(event.primary);
+    return source
+        .withHue(target.hue)
+        .withSaturation(target.saturation)
+        .toColor()
+        .withValues(alpha: original.a);
+  }
+
+  static LinearGradient panelGradient(BuildContext context,
+      {required LinearGradient fallback}) {
+    final event = Theme.of(context).extension<EventAppearance>();
+    return event == null
+        ? fallback
+        : LinearGradient(
+            begin: fallback.begin,
+            end: fallback.end,
+            colors: event.panelColors);
+  }
 }
 
 ThemeData buildAppTheme({EventAppearance? event}) {
@@ -28,6 +51,7 @@ ThemeData buildAppTheme({EventAppearance? event}) {
   );
 
   return ThemeData(
+    extensions: [if (event != null) event],
     useMaterial3: true,
     colorScheme: scheme,
     scaffoldBackgroundColor:
@@ -79,7 +103,7 @@ ThemeData buildAppTheme({EventAppearance? event}) {
                 ? FontWeight.w800
                 : FontWeight.w600,
             color: states.contains(WidgetState.selected)
-                ? AppColors.twilightDark
+                ? event?.primary ?? AppColors.twilightDark
                 : AppColors.muted,
           )),
     ),
@@ -100,7 +124,7 @@ ThemeData buildAppTheme({EventAppearance? event}) {
           borderSide: const BorderSide(color: AppColors.mist)),
       focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: AppColors.twilight, width: 2)),
+          borderSide: BorderSide(color: scheme.primary, width: 2)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
     ),
     filledButtonTheme: FilledButtonThemeData(

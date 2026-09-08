@@ -183,7 +183,8 @@ class _RailEdgeIndicator extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.mist),
+                  border: Border.all(
+                      color: AppColors.eventColor(context, AppColors.mist)),
                   boxShadow: const [
                     BoxShadow(
                       color: Color(0x165B4B8A),
@@ -192,7 +193,9 @@ class _RailEdgeIndicator extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Icon(icon, size: 20, color: AppColors.twilight),
+                child: Icon(icon,
+                    size: 20,
+                    color: AppColors.eventColor(context, AppColors.twilight)),
               ),
             ),
           ),

@@ -471,9 +471,9 @@ class _TutorialFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: const Color(0xFFF9F4FF),
+        color: AppColors.eventColor(context, const Color(0xFFF9F4FF)),
         elevation: 5,
-        shadowColor: const Color(0x44201644),
+        shadowColor: AppColors.eventColor(context, const Color(0x44201644)),
         borderRadius: BorderRadius.circular(22),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
@@ -506,12 +506,13 @@ class _TutorialFooter extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(99),
-                  border: Border.all(color: AppColors.mist),
+                  border: Border.all(
+                      color: AppColors.eventColor(context, AppColors.mist)),
                 ),
                 child: Text(
                   '${stepIndex + 1}/$stepCount',
-                  style: const TextStyle(
-                    color: AppColors.twilight,
+                  style: TextStyle(
+                    color: AppColors.eventColor(context, AppColors.twilight),
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),

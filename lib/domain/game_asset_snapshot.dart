@@ -164,6 +164,8 @@ class GameAssetSnapshot {
       'supporterPackOwned',
       'twinstarBroochEverObtained',
       'twinstarBroochDragonId',
+      'uniqueRelicsEverObtained',
+      'equippedRelicDragonIds',
       'eggAltar',
       'pendingAltarOperation',
       'adventureRuns',
@@ -179,6 +181,20 @@ class GameAssetSnapshot {
       'seasonalPodiumEmoteWinCounts',
     ]) {
       _assets[key] = _canonical(state[key]);
+    }
+    // Older saves predate the three Expertise brooches. Their empty equipment
+    // fields have the same meaning after restoration; retain the Twin marker.
+    if (!state.containsKey('uniqueRelicsEverObtained')) {
+      _assets['uniqueRelicsEverObtained'] = _canonical([
+        if (state['twinstarBroochEverObtained'] == true ||
+            ((state['relicInventory'] as Map?)?['twinstarBrooch'] as int? ??
+                    0) >
+                0)
+          'twinstarBrooch',
+      ]);
+    }
+    if (!state.containsKey('equippedRelicDragonIds')) {
+      _assets['equippedRelicDragonIds'] = _canonical(<String, dynamic>{});
     }
     _counts('progression', {
       for (final entry in state.entries)

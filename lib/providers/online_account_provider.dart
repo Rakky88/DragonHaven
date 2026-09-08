@@ -734,11 +734,7 @@ class OnlineAccountProvider extends ChangeNotifier {
           throw const SocialException('seasonal_preview_invalid');
         }
         final preview = await _repository.redeemSeasonalPreview(code);
-        seasonalEventPreviews = [
-          ...seasonalEventPreviews
-              .where((entry) => entry.eventId != preview.eventId),
-          preview,
-        ];
+        seasonalEventPreviews = [preview];
         await _synchronizeSeasonalPreviews({
           for (final entry in seasonalEventPreviews)
             entry.eventId: entry.expiresAt,

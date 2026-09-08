@@ -208,13 +208,17 @@ class _TabCount extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
         decoration: BoxDecoration(
-          color: gold ? AppColors.gold : AppColors.twilight,
+          color: gold
+              ? AppColors.gold
+              : AppColors.eventColor(context, AppColors.twilight),
           borderRadius: BorderRadius.circular(99),
         ),
         child: Text(
           '$value',
           style: TextStyle(
-            color: gold ? const Color(0xFF2A1E50) : Colors.white,
+            color: gold
+                ? AppColors.eventColor(context, const Color(0xFF2A1E50))
+                : Colors.white,
             fontSize: 10,
             fontWeight: FontWeight.w900,
           ),
@@ -240,8 +244,9 @@ class _TrialsTab extends StatelessWidget {
           key: const Key('trial-summary-card'),
           padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-                colors: [Color(0xFF2A1E50), Color(0xFF5B3D91)]),
+            gradient: AppColors.panelGradient(context,
+                fallback: const LinearGradient(
+                    colors: [Color(0xFF2A1E50), Color(0xFF5B3D91)])),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.gold, width: 1.2),
           ),
@@ -334,7 +339,8 @@ class _TrialStreakCard extends StatelessWidget {
                     onPressed: () => _claim(context),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.gold,
-                      foregroundColor: AppColors.twilightDark,
+                      foregroundColor:
+                          AppColors.eventColor(context, AppColors.twilightDark),
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                     child: Text(strings.pick('Claim', 'Claim')),
@@ -354,7 +360,8 @@ class _TrialStreakCard extends StatelessWidget {
                   child: Container(
                     height: 2,
                     decoration: BoxDecoration(
-                      color: const Color(0x55D9BCEB),
+                      color: AppColors.eventColor(
+                          context, const Color(0x55D9BCEB)),
                       borderRadius: BorderRadius.circular(99),
                     ),
                   ),
@@ -646,8 +653,9 @@ class _TrialOfferCard extends StatelessWidget {
                               ? strings.pick('No account record yet',
                                   'Nog geen accountrecord')
                               : '${strings.pick('Account best', 'Accountrecord')}: $best',
-                          style: const TextStyle(
-                            color: AppColors.twilight,
+                          style: TextStyle(
+                            color: AppColors.eventColor(
+                                context, AppColors.twilight),
                             fontSize: 11,
                             fontWeight: FontWeight.w900,
                           ),
@@ -662,9 +670,9 @@ class _TrialOfferCard extends StatelessWidget {
                       color: AppColors.goldLight,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.play_arrow_rounded,
-                      color: AppColors.twilight,
+                      color: AppColors.eventColor(context, AppColors.twilight),
                     ),
                   ),
                 ],
@@ -1423,8 +1431,8 @@ class _GroupAdventureSection extends StatelessWidget {
             Card(
               margin: EdgeInsets.zero,
               child: ListTile(
-                leading:
-                    const Icon(Icons.lock_rounded, color: AppColors.twilight),
+                leading: Icon(Icons.lock_rounded,
+                    color: AppColors.eventColor(context, AppColors.twilight)),
                 title: Text(strings.pick('Sign in for Group Adventures',
                     'Log in voor groepsavonturen')),
                 subtitle: Text(strings.pick(
@@ -1517,8 +1525,10 @@ class _GroupOfferCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Icon(Icons.group_rounded,
-                              size: 18, color: AppColors.twilight),
+                          Icon(Icons.group_rounded,
+                              size: 18,
+                              color: AppColors.eventColor(
+                                  context, AppColors.twilight)),
                           const SizedBox(width: 3),
                           Text(
                             '${adventure.requirements.players} ${strings.pick('dragons', 'draken')}',
@@ -1624,8 +1634,8 @@ class _JoinableGroupLobbyCard extends StatelessWidget {
                   const GameIconSprite(GameIconKind.adventureGroup, size: 39),
                   Text(
                     '${lobby.participants.length}/${lobby.requiredPlayers}',
-                    style: const TextStyle(
-                      color: AppColors.twilight,
+                    style: TextStyle(
+                      color: AppColors.eventColor(context, AppColors.twilight),
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
                     ),
@@ -1665,9 +1675,9 @@ class _GroupActionButton extends StatelessWidget {
               width: 56,
               height: 58,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF7256B5), Color(0xFF4C358D)],
-                ),
+                gradient: AppColors.panelGradient(context,
+                    fallback: const LinearGradient(
+                        colors: [Color(0xFF7256B5), Color(0xFF4C358D)])),
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: const [
                   BoxShadow(
@@ -1824,8 +1834,8 @@ class _GroupRequirementSummary extends StatelessWidget {
     final requirements = adventure.requirements;
     final details = <({Widget icon, String label})>[
       (
-        icon: const Icon(Icons.group_rounded,
-            color: AppColors.twilight, size: 21),
+        icon: Icon(Icons.group_rounded,
+            color: AppColors.eventColor(context, AppColors.twilight), size: 21),
         label:
             '${requirements.players} ${strings.pick('participants', 'deelnemers')}'
       ),
@@ -1861,8 +1871,8 @@ class _GroupRequirementSummary extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 detail.label,
-                style: const TextStyle(
-                  color: AppColors.twilight,
+                style: TextStyle(
+                  color: AppColors.eventColor(context, AppColors.twilight),
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                 ),
@@ -2103,7 +2113,8 @@ class _AdventureRefreshCountdown extends StatelessWidget {
       key: Key('adventure-refresh-${kind.name}'),
       padding: const EdgeInsets.fromLTRB(7, 5, 9, 5),
       decoration: BoxDecoration(
-        color: const Color(0xFF2A1E50).withValues(alpha: .94),
+        color: AppColors.eventColor(context, const Color(0xFF2A1E50))
+            .withValues(alpha: .94),
         borderRadius: BorderRadius.circular(99),
         boxShadow: const [
           BoxShadow(
@@ -2192,8 +2203,11 @@ class _AdventureCard extends StatelessWidget {
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFF3EAFD),
-                    border: Border.all(color: const Color(0xFFD9C5F0)),
+                    color:
+                        AppColors.eventColor(context, const Color(0xFFF3EAFD)),
+                    border: Border.all(
+                        color: AppColors.eventColor(
+                            context, const Color(0xFFD9C5F0))),
                   ),
                   child: TrialIconSprite(kind: specialTrialKind, size: 44),
                 ),
@@ -2571,8 +2585,9 @@ class _AdventureCard extends StatelessWidget {
               ),
             if (definition.kind == AdventureKind.group)
               _DetailRow(
-                icon: const Icon(Icons.group_rounded,
-                    color: AppColors.twilight, size: 30),
+                icon: Icon(Icons.group_rounded,
+                    color: AppColors.eventColor(context, AppColors.twilight),
+                    size: 30),
                 title: strings.pick('Keeper requirement', 'Hoedervereiste'),
                 value:
                     '${definition.requirements.players} ${strings.pick('connected keepers', 'gekoppelde hoeders')}',
@@ -2630,7 +2645,8 @@ class _HavenSpectrumMeter extends StatelessWidget {
           colors: [Color(0xFFFFF0F8), Color(0xFFEDEBFF)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFC5A7E7)),
+        border: Border.all(
+            color: AppColors.eventColor(context, const Color(0xFFC5A7E7))),
       ),
       child: Column(
         children: [
@@ -2645,8 +2661,9 @@ class _HavenSpectrumMeter extends StatelessWidget {
               Flexible(
                 child: Text(
                   strings.pick('The Haven Spectrum', 'Het Haven-spectrum'),
-                  style: const TextStyle(
-                    color: AppColors.twilightDark,
+                  style: TextStyle(
+                    color:
+                        AppColors.eventColor(context, AppColors.twilightDark),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -2684,7 +2701,8 @@ class _HavenSpectrumMeter extends StatelessWidget {
                         border: Border.all(
                           color: index < filled
                               ? _colors[index]
-                              : const Color(0xFFD5CEE0),
+                              : AppColors.eventColor(
+                                  context, const Color(0xFFD5CEE0)),
                           width: 1.5,
                         ),
                         boxShadow: index < filled
@@ -2733,8 +2751,9 @@ class _AdventureStartButton extends StatelessWidget {
               height: 54,
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [Color(0xFF7256B5), Color(0xFF4C358D)]),
+                gradient: AppColors.panelGradient(context,
+                    fallback: const LinearGradient(
+                        colors: [Color(0xFF7256B5), Color(0xFF4C358D)])),
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: const [
                   BoxShadow(
@@ -2839,8 +2858,8 @@ class _PickerSectionLabel extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(4, 8, 4, 7),
         child: Text(label.toUpperCase(),
-            style: const TextStyle(
-                color: AppColors.twilight,
+            style: TextStyle(
+                color: AppColors.eventColor(context, AppColors.twilight),
                 fontSize: 10,
                 letterSpacing: .7,
                 fontWeight: FontWeight.w900)),
@@ -2934,8 +2953,8 @@ class _DragonPickerTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.twilight),
+              Icon(Icons.chevron_right_rounded,
+                  color: AppColors.eventColor(context, AppColors.twilight)),
             ],
           ),
         ),
@@ -3158,7 +3177,8 @@ class _ActiveGroupAdventureCard extends StatelessWidget {
                           style: TextStyle(
                             color: ready
                                 ? const Color(0xFF24735B)
-                                : AppColors.twilight,
+                                : AppColors.eventColor(
+                                    context, AppColors.twilight),
                             fontWeight: FontWeight.w900,
                           )),
                     ],
@@ -3171,8 +3191,8 @@ class _ActiveGroupAdventureCard extends StatelessWidget {
                     child: Text(strings.pick('Claim', 'Ophalen')),
                   )
                 else
-                  const Icon(Icons.chevron_right_rounded,
-                      color: AppColors.twilight),
+                  Icon(Icons.chevron_right_rounded,
+                      color: AppColors.eventColor(context, AppColors.twilight)),
               ]),
               if (ready) ...[
                 const SizedBox(height: 10),
@@ -3552,7 +3572,8 @@ class _ActiveAdventureCard extends StatelessWidget {
                               style: TextStyle(
                                 color: ready
                                     ? const Color(0xFF24735B)
-                                    : AppColors.twilight,
+                                    : AppColors.eventColor(
+                                        context, AppColors.twilight),
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
@@ -3577,12 +3598,14 @@ class _ActiveAdventureCard extends StatelessWidget {
                         run,
                         dragon?.displayName,
                       ),
-                      icon: const Icon(Icons.cancel_outlined,
-                          color: AppColors.twilight),
+                      icon: Icon(Icons.cancel_outlined,
+                          color: AppColors.eventColor(
+                              context, AppColors.twilight)),
                     )
                   else
-                    const Icon(Icons.chevron_right_rounded,
-                        color: AppColors.twilight),
+                    Icon(Icons.chevron_right_rounded,
+                        color:
+                            AppColors.eventColor(context, AppColors.twilight)),
                 ],
               ),
               if (ready) ...[
@@ -3851,9 +3874,10 @@ class _CompletedAdventureRewards extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F3FF),
+        color: AppColors.eventColor(context, const Color(0xFFF7F3FF)),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: const Color(0x225B4B8A)),
+        border: Border.all(
+            color: AppColors.eventColor(context, const Color(0x225B4B8A))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3862,8 +3886,8 @@ class _CompletedAdventureRewards extends StatelessWidget {
             approximate
                 ? strings.pick('Expected rewards', 'Verwachte beloningen')
                 : strings.pick('Rewards', 'Beloningen'),
-            style: const TextStyle(
-              color: AppColors.twilight,
+            style: TextStyle(
+              color: AppColors.eventColor(context, AppColors.twilight),
               fontSize: 11,
               fontWeight: FontWeight.w900,
             ),
@@ -3988,7 +4012,7 @@ class _DetailRow extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
-          color: const Color(0xFFF6F2FF),
+          color: AppColors.eventColor(context, const Color(0xFFF6F2FF)),
           borderRadius: BorderRadius.circular(17),
         ),
         child: Row(children: [
@@ -4066,12 +4090,12 @@ class _AdventureInfoButton extends StatelessWidget {
           key: Key('adventure-info-${kind.name}'),
           customBorder: const CircleBorder(),
           onTap: () => _showAdventureRefreshInfo(context, kind),
-          child: const SizedBox.square(
+          child: SizedBox.square(
             dimension: 24,
             child: Icon(
               Icons.info_outline_rounded,
               size: 17,
-              color: AppColors.twilight,
+              color: AppColors.eventColor(context, AppColors.twilight),
             ),
           ),
         ),

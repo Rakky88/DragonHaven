@@ -1,8 +1,9 @@
 # Firebase-monitoring en push voor DragonHaven
 
-Bijgewerkt: 7 september 2026. Firebase is kosteloos ingericht onder het
-Google-account van de eigenaar. De gepubliceerde app blijft v0.05.18 / 10068;
-de nieuwe appcode staat op `feature/free-monitoring-and-growth`.
+Bijgewerkt: 8 september 2026. Firebase is kosteloos ingericht onder het
+Google-account van de eigenaar en zit in de openbare app **v0.05.21 / 10071**.
+Zie `RELEASE_V0.05.21_VERIFICATION.md`; de onderstaande oudere workflowlinks
+blijven het oorspronkelijke integratiebewijs.
 
 ## Projecten en kosten
 
@@ -49,7 +50,7 @@ Maximaal 45.000 geplande invocaties per kalendermaand; geen automatische upgrade
 De worker verstuurt maximaal 30 meldingen per batch met vijf gelijktijdige requests.
 Firebase-acceptatie markeert de duurzame inbox nadrukkelijk niet als gelezen.
 
-Productie en staging hebben schema 56 (inclusief de aparte schaduweconomie).
+Productie en staging hebben schema 57 (inclusief de aparte schaduweconomie).
 Push staat op staging uit en de productie-economie blijft uit. De FCM Edge
 worker en Vault-configuratie zijn op beide omgevingen ingericht. Productiepush
 is aangezet na de geslaagde controles voor v0.05.19 (workflow 34157071933).

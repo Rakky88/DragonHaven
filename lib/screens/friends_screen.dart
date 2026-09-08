@@ -292,8 +292,9 @@ class _MyKeeperCard extends StatelessWidget {
                       style: const TextStyle(color: AppColors.muted)),
                   const SizedBox(height: 4),
                   Text(profile.keeperCode,
-                      style: const TextStyle(
-                          color: AppColors.twilight,
+                      style: TextStyle(
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight),
                           fontWeight: FontWeight.w900,
                           letterSpacing: .8)),
                 ],
@@ -370,9 +371,10 @@ class _OverviewPill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 7),
         decoration: BoxDecoration(
-          color: const Color(0xFFF4F0FF),
+          color: AppColors.eventColor(context, const Color(0xFFF4F0FF)),
           borderRadius: BorderRadius.circular(17),
-          border: Border.all(color: const Color(0xFFD8CCF2)),
+          border: Border.all(
+              color: AppColors.eventColor(context, const Color(0xFFD8CCF2))),
         ),
         child: Row(
           children: [
@@ -383,8 +385,9 @@ class _OverviewPill extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(value,
-                      style: const TextStyle(
-                          color: AppColors.twilight,
+                      style: TextStyle(
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight),
                           fontWeight: FontWeight.w900)),
                   Text(label,
                       maxLines: 1,
@@ -564,7 +567,8 @@ class _FriendTile extends StatelessWidget {
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEDE8FF),
+                          color: AppColors.eventColor(
+                              context, const Color(0xFFEDE8FF)),
                           borderRadius: BorderRadius.circular(99),
                         ),
                         child: FittedBox(
@@ -577,8 +581,9 @@ class _FriendTile extends StatelessWidget {
                             ),
                             maxLines: 1,
                             softWrap: false,
-                            style: const TextStyle(
-                              color: AppColors.twilight,
+                            style: TextStyle(
+                              color: AppColors.eventColor(
+                                  context, AppColors.twilight),
                               fontSize: 10,
                               fontWeight: FontWeight.w900,
                             ),
@@ -650,14 +655,15 @@ class _FriendMessageButton extends StatelessWidget {
                   width: 58,
                   height: 60,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFF1ECFF), Color(0xFFD8C9FF)],
-                    ),
+                    gradient: AppColors.panelGradient(context,
+                        fallback: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFF1ECFF), Color(0xFFD8C9FF)])),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFF7654AE),
+                      color: AppColors.eventColor(
+                          context, const Color(0xFF7654AE)),
                       width: 1.4,
                     ),
                     boxShadow: const [
@@ -677,8 +683,9 @@ class _FriendMessageButton extends StatelessWidget {
                       ),
                       Text(
                         strings.pick('CHAT', 'CHAT'),
-                        style: const TextStyle(
-                          color: AppColors.twilight,
+                        style: TextStyle(
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight),
                           fontSize: 8.5,
                           fontWeight: FontWeight.w900,
                         ),
@@ -768,8 +775,8 @@ Future<void> _showFriendProfile(
             const SizedBox(height: 6),
             Text(friend.keeperCode,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: AppColors.twilight,
+                style: TextStyle(
+                    color: AppColors.eventColor(context, AppColors.twilight),
                     fontWeight: FontWeight.w900,
                     letterSpacing: .8)),
             const SizedBox(height: 13),
@@ -795,7 +802,8 @@ Future<void> _showFriendProfile(
                           Card(
                             color: trade.needsMyResponse
                                 ? const Color(0xFFFFF5CC)
-                                : const Color(0xFFF2ECFF),
+                                : AppColors.eventColor(
+                                    context, const Color(0xFFF2ECFF)),
                             child: ListTile(
                               key: Key('trade-${trade.id}'),
                               leading: const GameIconSprite(
@@ -955,11 +963,11 @@ class _FriendDraconomiconButton extends StatelessWidget {
           child: Ink(
             padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF2D175A), Color(0xFF7249A5)],
-              ),
+              gradient: AppColors.panelGradient(context,
+                  fallback: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF2D175A), Color(0xFF7249A5)])),
               borderRadius: BorderRadius.circular(21),
               border: Border.all(color: const Color(0xFFEBC05F), width: 1.4),
               boxShadow: const [
@@ -1024,7 +1032,7 @@ class _FavoriteDragonCard extends StatelessWidget {
     final strings = AppStrings.of(context);
     final lineage = dragonLineageById(dragon.lineageId);
     return Card(
-      color: const Color(0xFFF7F2FF),
+      color: AppColors.eventColor(context, const Color(0xFFF7F2FF)),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(children: [
@@ -1258,8 +1266,8 @@ class _Expertise extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(children: [
         Text('$value',
-            style: const TextStyle(
-                color: AppColors.twilight,
+            style: TextStyle(
+                color: AppColors.eventColor(context, AppColors.twilight),
                 fontWeight: FontWeight.w900,
                 fontSize: 17)),
         Text(label,
@@ -1276,7 +1284,8 @@ class _ProfileFact extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
         child: ListTile(
-          leading: Icon(icon, color: AppColors.twilight),
+          leading: Icon(icon,
+              color: AppColors.eventColor(context, AppColors.twilight)),
           title: Text(label),
           trailing: Text(value,
               style:
@@ -1440,8 +1449,9 @@ Future<void> _showTrade(BuildContext context, TradeOffer trade) async {
             Text(
               _tradeStatusLabel(strings, trade),
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: AppColors.twilight, fontWeight: FontWeight.w900),
+              style: TextStyle(
+                  color: AppColors.eventColor(context, AppColors.twilight),
+                  fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 18),
             _TradeOfferItemCard(
@@ -1451,10 +1461,11 @@ Future<void> _showTrade(BuildContext context, TradeOffer trade) async {
                       '${trade.otherKeeper.displayName} biedt aan'),
               item: trade.initiatorItem,
             ),
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Icon(Icons.swap_vert_rounded,
-                  size: 34, color: AppColors.twilight),
+                  size: 34,
+                  color: AppColors.eventColor(context, AppColors.twilight)),
             ),
             if (trade.recipientItem case final item?)
               _TradeOfferItemCard(
@@ -1466,7 +1477,7 @@ Future<void> _showTrade(BuildContext context, TradeOffer trade) async {
               )
             else
               Card(
-                color: const Color(0xFFF4F0FA),
+                color: AppColors.eventColor(context, const Color(0xFFF4F0FA)),
                 child: Padding(
                   padding: const EdgeInsets.all(22),
                   child: Text(
@@ -1569,7 +1580,7 @@ class _TradeOfferItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return Card(
-      color: const Color(0xFFF7F2FF),
+      color: AppColors.eventColor(context, const Color(0xFFF7F2FF)),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(children: [
@@ -1693,7 +1704,9 @@ class _StatusCard extends StatelessWidget {
               GameIconSprite(kind, size: 64)
             else
               Icon(icon,
-                  color: error ? Colors.redAccent : AppColors.twilight,
+                  color: error
+                      ? Colors.redAccent
+                      : AppColors.eventColor(context, AppColors.twilight),
                   size: 38),
             const SizedBox(height: 8),
             Text(text,

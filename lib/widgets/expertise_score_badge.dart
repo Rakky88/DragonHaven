@@ -30,28 +30,30 @@ class ExpertiseScoreBadge extends StatelessWidget {
   bool get isMaxed => score >= maximum;
 
   @override
-  Widget build(BuildContext context) => Row(
-        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment:
+            expand ? CrossAxisAlignment.stretch : CrossAxisAlignment.end,
         children: [
-          ExpertiseIcon(
-            focus: focus,
-            size: iconSize,
-            highlighted: highlighted,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            focusLabel,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(width: 3),
-          if (expand) const Spacer(),
-          Column(
+          Row(
+            mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              ExpertiseIcon(
+                focus: focus,
+                size: iconSize,
+                highlighted: highlighted,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                focusLabel,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(width: 3),
+              if (expand) const Spacer(),
               Text(
                 '$score',
                 style: const TextStyle(
@@ -59,9 +61,14 @@ class ExpertiseScoreBadge extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              if (isMaxed) ...[
-                const SizedBox(height: 2),
-                Image.asset(
+            ],
+          ),
+          if (isMaxed) ...[
+            const SizedBox(height: 2),
+            Align(
+                alignment: Alignment.centerRight,
+                widthFactor: expand ? null : 1,
+                child: Image.asset(
                   maxAsset,
                   key: Key('expertise-max-$dragonId-${focus.name}'),
                   width: 52,
@@ -69,10 +76,8 @@ class ExpertiseScoreBadge extends StatelessWidget {
                   fit: BoxFit.contain,
                   filterQuality: FilterQuality.high,
                   semanticLabel: '$focusLabel maximum',
-                ),
-              ],
-            ],
-          ),
+                )),
+          ],
         ],
       );
 }

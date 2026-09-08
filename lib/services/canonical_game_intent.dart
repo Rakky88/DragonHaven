@@ -90,7 +90,8 @@ class CanonicalGameIntent {
     }
     if (value == null) {
       return key == 'replaceAdventureId' ||
-          action == 'equip_twinstar' && key == 'dragonId';
+          (action == 'equip_twinstar' || action == 'equip_relic') &&
+              key == 'dragonId';
     }
     final maxLength = key == 'name'
         ? 24

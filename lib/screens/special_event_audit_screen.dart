@@ -105,9 +105,9 @@ class _ReviewHeader extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(17),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF25164D), Color(0xFF7253A8)],
-          ),
+          gradient: AppColors.panelGradient(context,
+              fallback: const LinearGradient(
+                  colors: [Color(0xFF25164D), Color(0xFF7253A8)])),
           borderRadius: BorderRadius.circular(24),
         ),
         child: const Row(
@@ -186,7 +186,8 @@ class _ReviewSurface extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFD4C8EA)),
+          border: Border.all(
+              color: AppColors.eventColor(context, const Color(0xFFD4C8EA))),
         ),
         padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
         child: Column(
@@ -199,7 +200,9 @@ class _ReviewSurface extends StatelessWidget {
                   // visible and exposes baked white, black or checkerboards.
                   color: const Color(0xFF1976D2),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFC8B9E2)),
+                  border: Border.all(
+                      color: AppColors.eventColor(
+                          context, const Color(0xFFC8B9E2))),
                 ),
                 padding: const EdgeInsets.all(5),
                 child: child,

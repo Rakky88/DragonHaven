@@ -77,8 +77,14 @@ class KeeperPortrait extends StatelessWidget {
           ),
         'forest' => (const Color(0xFF4A956C), Icons.park_rounded),
         'tide' => (const Color(0xFF438CB8), Icons.water_rounded),
-        'storm' => (const Color(0xFF7568B5), Icons.bolt_rounded),
-        _ => (AppColors.twilight, Icons.nightlight_round),
+        'storm' => (
+            AppColors.eventColor(context, const Color(0xFF7568B5)),
+            Icons.bolt_rounded
+          ),
+        _ => (
+            AppColors.eventColor(context, AppColors.twilight),
+            Icons.nightlight_round
+          ),
       };
       portraitBody = CircleAvatar(
         radius: portraitDiameter / 2,
@@ -124,9 +130,10 @@ class KeeperPortrait extends StatelessWidget {
                         badge.assetPath,
                         key: Key('keeper-portrait-badge-${badge.id}'),
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Icon(
+                        errorBuilder: (_, __, ___) => Icon(
                           Icons.shield_rounded,
-                          color: AppColors.twilight,
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight),
                         ),
                       ),
                     ),
@@ -155,8 +162,9 @@ class OnlineAccountAccessCard extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         child: Column(
           children: [
-            const Icon(Icons.shield_outlined,
-                size: 42, color: AppColors.twilight),
+            Icon(Icons.shield_outlined,
+                size: 42,
+                color: AppColors.eventColor(context, AppColors.twilight)),
             const SizedBox(height: 10),
             Text(
               strings.pick('Connect your keeper', 'Koppel je hoeder'),

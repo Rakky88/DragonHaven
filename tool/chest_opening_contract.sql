@@ -4,7 +4,7 @@ do $$
 declare keeper uuid := gen_random_uuid(); other_keeper uuid := gen_random_uuid();
   ids uuid[]; request_id uuid := gen_random_uuid(); result jsonb; replay jsonb;
   before_coins bigint; before_gems bigint; before_ledger bigint; reserved_id uuid;
-  probe uuid; rules jsonb; tier text; i integer; test_request uuid; item jsonb;
+  probe uuid; rules jsonb; tier text; i integer; test_request uuid; item jsonb; relic_name text;
 begin
   insert into auth.users(id, email, email_confirmed_at) values
     (keeper, keeper::text || '@economy-contract.invalid', now()),
@@ -28,6 +28,16 @@ begin
     or has_table_privilege('authenticated', 'private.economy_egg_details', 'select') then
     raise exception 'contract_permissions';
   end if;
+  if jsonb_array_length(private.economy_relic_drop_pool(other_keeper)) <> 64 then
+    raise exception 'contract_relic_pool_weight_total'; end if;
+  foreach relic_name in array array['moralPrism','orderCompass','soulMirror','astralLens','chronoshard','wayfinderSigil'] loop
+    if (select count(*) from jsonb_array_elements_text(private.economy_relic_drop_pool(other_keeper)) r(value)
+      where r.value = relic_name) <> 10 then raise exception 'contract_ordinary_relic_weight'; end if;
+  end loop;
+  foreach relic_name in array array['twinstarBrooch','emberheartBrooch','moonweaveBrooch','soulbloomBrooch'] loop
+    if (select count(*) from jsonb_array_elements_text(private.economy_relic_drop_pool(other_keeper)) r(value)
+      where r.value = relic_name) <> 1 then raise exception 'contract_brooch_weight'; end if;
+  end loop;
   -- Exact probability edges, pity, rarity, Sinister and independent rolls.
   foreach tier in array array['wooden','silver','gold','dragon','mythical','sinister'] loop
     rules := private.economy_chest_catalog()->'tiers'->tier;
@@ -159,6 +169,16 @@ begin
   if jsonb_array_length(private.economy_remaining_pool(keeper, 'relic', '["twinstarBrooch"]')) <> 0 then
     raise exception 'contract_twinstar_regranted';
   end if;
+  foreach relic_name in array array['emberheartBrooch','moonweaveBrooch','soulbloomBrooch'] loop
+    if jsonb_array_length(private.economy_remaining_pool(keeper, 'relic', jsonb_build_array(relic_name))) = 1 then
+      item := private.economy_grant_chest_item(keeper, test_request, probe, 'relic', relic_name);
+    end if;
+    if exists(select 1 from public.player_item_instances where owner_id = keeper and catalog_id = relic_name and tradeable) then
+      raise exception 'contract_brooch_tradeable'; end if;
+    update public.player_item_instances set state = 'consumed', consumed_at = now()
+      where owner_id = keeper and catalog_id = relic_name;
+    if private.economy_relic_drop_pool(keeper) ? relic_name then raise exception 'contract_brooch_regranted'; end if;
+  end loop;
   perform private.complete_economy_mutation(keeper, test_request, '{"ok":true}');
 end;
 $$;

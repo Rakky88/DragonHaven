@@ -255,6 +255,8 @@ class HouseholdProvider extends ChangeNotifier {
   List<int> chronoshardReductions = [];
   bool twinstarBroochEverObtained = false;
   String? twinstarBroochDragonId;
+  Set<MysticRelic> uniqueRelicsEverObtained = {};
+  Map<MysticRelic, String> equippedRelicDragonIds = {};
   Set<String> discoveredForms = {};
   Set<String> prismaticForms = {};
   Set<String> unlockedAchievementIds = {};
@@ -1029,6 +1031,31 @@ class HouseholdProvider extends ChangeNotifier {
       untradeableRelicInventory[MysticRelic.twinstarBrooch] = 0;
       twinstarBroochDragonId = null;
     }
+    uniqueRelicsEverObtained =
+        stringSetFromJson(data['uniqueRelicsEverObtained'])
+            .map((name) =>
+                MysticRelic.values.where((r) => r.name == name).firstOrNull)
+            .whereType<MysticRelic>()
+            .where((r) => r.isEquipable)
+            .toSet();
+    equippedRelicDragonIds = {};
+    final equipment = mapFromJson(data['equippedRelicDragonIds']);
+    final occupied = <String>{
+      if (twinstarBroochDragonId != null) twinstarBroochDragonId!
+    };
+    for (final relic in MysticRelic.values.where((r) => r.isEquipable)) {
+      if (relicCount(relic) > 0) uniqueRelicsEverObtained.add(relic);
+      if (!uniqueRelicsEverObtained.contains(relic)) continue;
+      relicInventory[relic] = 1;
+      untradeableRelicInventory[relic] = 1;
+      if (relic == MysticRelic.twinstarBrooch) continue;
+      final id = stringFromJson(equipment[relic.name]);
+      if (id != null &&
+          ownedDragons.any((dragon) => dragon.id == id) &&
+          occupied.add(id)) {
+        equippedRelicDragonIds[relic] = id;
+      }
+    }
     final storedChronoshards = (data['chronoshardReductions'] is List
             ? data['chronoshardReductions'] as List
             : const [])
@@ -1778,31 +1805,73 @@ class HouseholdProvider extends ChangeNotifier {
     return granted;
   }
 
-  Future<bool> equipTwinstarBrooch(String? dragonId) async {
-    if (!hasTwinstarBrooch) return false;
-    if (dragonId != null &&
-        !ownedDragons.any((dragon) => dragon.id == dragonId)) {
+  String? equippedDragonIdFor(MysticRelic relic) =>
+      relic == MysticRelic.twinstarBrooch
+          ? twinstarBroochDragonId
+          : equippedRelicDragonIds[relic];
+
+  MysticRelic? equippedRelicFor(String dragonId) => MysticRelic.values
+      .where((r) =>
+          r.isEquipable &&
+          relicCount(r) > 0 &&
+          equippedDragonIdFor(r) == dragonId)
+      .firstOrNull;
+
+  Set<MysticRelic> get obtainedUniqueRelics => {
+        ...uniqueRelicsEverObtained,
+        if (twinstarBroochEverObtained) MysticRelic.twinstarBrooch,
+        for (final r in MysticRelic.values)
+          if (r.isEquipable && relicCount(r) > 0) r,
+      };
+
+  Future<bool> equipTwinstarBrooch(String? dragonId) =>
+      equipRelic(MysticRelic.twinstarBrooch, dragonId);
+
+  Future<bool> equipRelic(MysticRelic relic, String? dragonId) async {
+    if (!relic.isEquipable || relicCount(relic) <= 0) return false;
+    if (dragonId != null && !ownedDragons.any((d) => d.id == dragonId)) {
       return false;
     }
-    if (twinstarBroochDragonId == dragonId) return true;
-    twinstarBroochDragonId = dragonId;
+    // Moving a brooch replaces the destination dragon's previous brooch in
+    // the same save. The displaced item remains owned and unequipped.
+    if (dragonId != null) {
+      equippedRelicDragonIds.removeWhere((_, id) => id == dragonId);
+      if (twinstarBroochDragonId == dragonId) twinstarBroochDragonId = null;
+    }
+    if (relic == MysticRelic.twinstarBrooch) {
+      twinstarBroochDragonId = dragonId;
+    } else if (dragonId == null) {
+      equippedRelicDragonIds.remove(relic);
+    } else {
+      equippedRelicDragonIds[relic] = dragonId;
+    }
     _addActivity(
-      message: dragonId == null
-          ? 'The Twinstar Brooch was unequipped.'
-          : 'The Twinstar Brooch was equipped.',
+      message:
+          '${relic.nameEn} was ${dragonId == null ? 'unequipped' : 'equipped'}.',
       type: ActivityType.discovery,
       code: ActivityCode.bonusFound,
-      subject: '${MysticRelic.twinstarBrooch.name}:${dragonId ?? 'none'}',
+      subject: '${relic.name}:${dragonId ?? 'none'}',
     );
     await _notifyAndSave();
     return true;
+  }
+
+  int _grantAdventureTrialExpertise(Pet dragon, TrainingFocus focus, int base) {
+    final before = dragon.trainingFor(focus);
+    final boosted = equippedRelicFor(dragon.id)?.boostedExpertise == focus;
+    dragon.addTraining(focus, base.clamp(0, 100000000) * (boosted ? 2 : 1));
+    return dragon.trainingFor(focus) - before;
   }
 
   bool isRelicKnownFor(MysticRelic relic, Pet dragon) => switch (relic) {
         MysticRelic.moralPrism => dragon.moralAxisKnown,
         MysticRelic.orderCompass => dragon.lawAxisKnown,
         MysticRelic.soulMirror => dragon.personalityKnown,
-        MysticRelic.twinstarBrooch => isTwinstarEquippedOn(dragon.id),
+        MysticRelic.twinstarBrooch ||
+        MysticRelic.emberheartBrooch ||
+        MysticRelic.moonweaveBrooch ||
+        MysticRelic.soulbloomBrooch =>
+          equippedRelicFor(dragon.id) == relic,
         MysticRelic.astralLens ||
         MysticRelic.chronoshard ||
         MysticRelic.wayfinderSigil =>
@@ -1814,9 +1883,12 @@ class HouseholdProvider extends ChangeNotifier {
     bool untradeable = false,
     int? chronoshardReduction,
   }) {
-    if (relic == MysticRelic.twinstarBrooch) {
-      if (twinstarBroochEverObtained) return;
-      twinstarBroochEverObtained = true;
+    if (relic.isEquipable) {
+      if (obtainedUniqueRelics.contains(relic)) return;
+      uniqueRelicsEverObtained.add(relic);
+      if (relic == MysticRelic.twinstarBrooch) {
+        twinstarBroochEverObtained = true;
+      }
       relicInventory[relic] = 1;
       untradeableRelicInventory[relic] = 1;
       return;
@@ -1875,6 +1947,9 @@ class HouseholdProvider extends ChangeNotifier {
       case MysticRelic.chronoshard:
       case MysticRelic.wayfinderSigil:
       case MysticRelic.twinstarBrooch:
+      case MysticRelic.emberheartBrooch:
+      case MysticRelic.moonweaveBrooch:
+      case MysticRelic.soulbloomBrooch:
         return MysticRelicUseResult.alreadyKnown;
     }
     _addActivity(
@@ -2430,13 +2505,7 @@ class HouseholdProvider extends ChangeNotifier {
   MysticRelic? _rollRelicDrop(ChestTier tier) {
     final chance = relicDropChance(tier);
     if (_random.nextDouble() >= chance) return null;
-    final eligible = MysticRelic.values
-        .where(
-          (relic) =>
-              relic != MysticRelic.twinstarBrooch ||
-              !twinstarBroochEverObtained,
-        )
-        .toList(growable: false);
+    final eligible = mysticRelicDropPool(excluded: obtainedUniqueRelics);
     return eligible[_random.nextInt(eligible.length)];
   }
 
@@ -3178,6 +3247,12 @@ class HouseholdProvider extends ChangeNotifier {
         'eggRarityRevealedIds': eggRarityRevealedIds.toList(),
         'twinstarBroochEverObtained': twinstarBroochEverObtained,
         'twinstarBroochDragonId': twinstarBroochDragonId,
+        'uniqueRelicsEverObtained':
+            obtainedUniqueRelics.map((r) => r.name).toList(),
+        'equippedRelicDragonIds': {
+          for (final entry in equippedRelicDragonIds.entries)
+            entry.key.name: entry.value
+        },
         'ownedPortraitIds': ownedPortraitIds.toList(),
         'selectedPortraitId': selectedPortraitId,
         'ownedTitleIds': ownedTitleIds.toList(),

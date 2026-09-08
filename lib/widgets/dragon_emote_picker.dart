@@ -25,9 +25,9 @@ class DragonEmoteSprite extends StatelessWidget {
         semanticLabel: emote.label(AppStrings.of(context).languageCode),
         errorBuilder: (_, __, ___) => SizedBox.square(
           dimension: size,
-          child: const Icon(
+          child: Icon(
             Icons.emoji_emotions_rounded,
-            color: AppColors.twilight,
+            color: AppColors.eventColor(context, AppColors.twilight),
           ),
         ),
       );
@@ -62,9 +62,9 @@ class _DragonEmotePicker extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.emoji_emotions_rounded,
-                    color: AppColors.twilight,
+                    color: AppColors.eventColor(context, AppColors.twilight),
                   ),
                   const SizedBox(width: 9),
                   Expanded(
@@ -131,10 +131,12 @@ class _DragonEmotePicker extends StatelessWidget {
                           borderRadius: BorderRadius.circular(18),
                           child: Ink(
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF4F0FA),
+                              color: AppColors.eventColor(
+                                  context, const Color(0xFFF4F0FA)),
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                color: const Color(0xFFE1D8EA),
+                                color: AppColors.eventColor(
+                                    context, const Color(0xFFE1D8EA)),
                               ),
                             ),
                             padding: const EdgeInsets.all(5),

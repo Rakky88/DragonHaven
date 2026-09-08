@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_info.dart';
+import 'canonical_staging_app.dart';
 import 'config/online_config.dart';
 import 'config/firebase_config.dart';
 import 'dragonhaven_app.dart';
@@ -24,6 +25,12 @@ import 'services/supabase_social_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  const canonicalStaging =
+      bool.fromEnvironment('DRAGONHAVEN_CANONICAL_STAGING');
+  if (canonicalStaging) {
+    await runCanonicalStaging(OnlineConfig.fromEnvironment());
+    return;
+  }
   await HavenNotifications.initializeNavigation();
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,

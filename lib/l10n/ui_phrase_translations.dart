@@ -6,6 +6,7 @@ import 'social_phrase_translations.dart';
 import 'seasonal_phrase_translations.dart';
 import 'egg_altar_phrase_translations.dart';
 import 'event_training_phrase_translations.dart';
+import 'economy_equipment_phrase_translations.dart';
 
 /// Offline translations for complete, user-visible UI phrases.
 ///
@@ -29,6 +30,7 @@ String? translatedUiPhrase(String english, String languageCode) {
       socialPhraseTranslations[english] ??
       seasonalPhraseTranslations[english] ??
       eventTrainingPhraseTranslations[english] ??
+      economyEquipmentPhraseTranslations[english] ??
       eggAltarPhraseTranslations[english];
   if (index == null) return null;
   if (values != null && values.length == 6) return values[index];

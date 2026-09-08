@@ -58,7 +58,7 @@ void main() {
       () {
     final catalog = economyChestCatalog();
     final sql =
-        File('supabase/migrations/202609070045_dormant_chest_opening.sql')
+        File('supabase/migrations/202609080058_equipment_relic_pool.sql')
             .readAsStringSync();
     final embedded = sql.split(r'$catalog$')[1];
     expect(jsonDecode(embedded), catalog);

@@ -66,6 +66,7 @@ class _ChestRevealState extends State<_ChestReveal>
   bool _opening = false;
   bool _lidRevealed = false;
   bool _flash = false;
+  bool _failed = false;
   ChestRewardBundle? _reward;
   late final AnimationController _float = AnimationController(
     vsync: this,
@@ -89,10 +90,23 @@ class _ChestRevealState extends State<_ChestReveal>
   }
 
   Future<void> _open() async {
-    if (_opening || _opened) return;
+    if (_opening || _opened || _failed) return;
     _float.stop();
     setState(() => _opening = true);
-    final reward = await widget.openChest();
+    final ChestRewardBundle? reward;
+    try {
+      reward = await widget.openChest();
+    } on Object {
+      // A lost receipt may already have committed. Leave reconciliation to
+      // the inventory; never offer a fresh purchase from the animation.
+      if (mounted) {
+        setState(() {
+          _failed = true;
+          _opening = false;
+        });
+      }
+      return;
+    }
     if (!mounted) return;
     if (reward == null) {
       Navigator.pop(context);
@@ -209,7 +223,7 @@ class _ChestRevealState extends State<_ChestReveal>
     final displayLabel =
         widget.quantity == 1 ? chestLabel : '${widget.quantity}× $chestLabel';
     return PopScope(
-      canPop: _opened,
+      canPop: _opened || _failed,
       child: Dialog.fullscreen(
         backgroundColor: Colors.transparent,
         child: GestureDetector(
@@ -272,33 +286,36 @@ class _ChestRevealState extends State<_ChestReveal>
                                 ),
                                 const SizedBox(height: 5),
                                 Text(
-                                  _opened
-                                      ? widget.quantity > 1
-                                          ? strings.pick(
-                                              '${widget.quantity} treasures revealed',
-                                              '${widget.quantity} schatten onthuld',
-                                            )
-                                          : tier == ChestTier.portrait
+                                  _failed
+                                      ? strings.pick('Result not confirmed',
+                                          'Resultaat niet bevestigd')
+                                      : _opened
+                                          ? widget.quantity > 1
                                               ? strings.pick(
-                                                  'Portrait revealed',
-                                                  'Portret onthuld')
-                                              : tier == ChestTier.title
+                                                  '${widget.quantity} treasures revealed',
+                                                  '${widget.quantity} schatten onthuld',
+                                                )
+                                              : tier == ChestTier.portrait
                                                   ? strings.pick(
-                                                      'Title revealed',
-                                                      'Titel onthuld')
-                                                  : tier == ChestTier.music
+                                                      'Portrait revealed',
+                                                      'Portret onthuld')
+                                                  : tier == ChestTier.title
                                                       ? strings.pick(
-                                                          'Music revealed',
-                                                          'Muziek onthuld')
-                                                      : strings.pick(
-                                                          'Treasure revealed',
-                                                          'Schat onthuld')
-                                      : _opening
-                                          ? strings.pick(
-                                              'Ancient magic awakens',
-                                              'Oude magie ontwaakt')
-                                          : strings.pick('Sealed treasure',
-                                              'Verzegelde schat'),
+                                                          'Title revealed',
+                                                          'Titel onthuld')
+                                                      : tier == ChestTier.music
+                                                          ? strings.pick(
+                                                              'Music revealed',
+                                                              'Muziek onthuld')
+                                                          : strings.pick(
+                                                              'Treasure revealed',
+                                                              'Schat onthuld')
+                                          : _opening
+                                              ? strings.pick(
+                                                  'Ancient magic awakens',
+                                                  'Oude magie ontwaakt')
+                                              : strings.pick('Sealed treasure',
+                                                  'Verzegelde schat'),
                                   style: const TextStyle(
                                     color: Color(0xFFC9C2E5),
                                     fontWeight: FontWeight.w700,
@@ -307,14 +324,16 @@ class _ChestRevealState extends State<_ChestReveal>
                               ],
                               const SizedBox(height: 16),
                               Semantics(
-                                button: !_opening && !_opened,
+                                button: !_opening && !_opened && !_failed,
                                 label: _opening
                                     ? strings.pick(
                                         'Chest opening', 'Kist opent')
                                     : displayLabel,
                                 child: GestureDetector(
                                   key: const Key('chest-reveal-tap-target'),
-                                  onTap: _opening || _opened ? null : _open,
+                                  onTap: _opening || _opened || _failed
+                                      ? null
+                                      : _open,
                                   child: SizedBox(
                                     width: double.infinity,
                                     height: 300,
@@ -452,31 +471,54 @@ class _ChestRevealState extends State<_ChestReveal>
                                     child: child,
                                   ),
                                 ),
-                                child: !_opened
-                                    ? const SizedBox(
-                                        key: Key('chest-opening'), height: 72)
-                                    : Column(
-                                        key: const Key('chest-rewards'),
+                                child: _failed
+                                    ? Column(
+                                        key: const Key('chest-open-failed'),
                                         children: [
-                                          Wrap(
-                                            alignment: WrapAlignment.center,
-                                            spacing: 9,
-                                            runSpacing: 9,
-                                            children: _rewardWidgets(strings),
+                                            Text(
+                                                strings.pick(
+                                                    'We could not confirm this chest. Return to your inventory and reconnect to check the result.',
+                                                    'We konden deze kist niet bevestigen. Ga terug naar je inventaris en verbind opnieuw om het resultaat te controleren.'),
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                    color: Colors.white)),
+                                            const SizedBox(height: 12),
+                                            FilledButton(
+                                                key: const Key(
+                                                    'chest-error-close'),
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: Text(strings.pick(
+                                                    'Return to inventory',
+                                                    'Terug naar inventaris'))),
+                                          ])
+                                    : !_opened
+                                        ? const SizedBox(
+                                            key: Key('chest-opening'),
+                                            height: 72)
+                                        : Column(
+                                            key: const Key('chest-rewards'),
+                                            children: [
+                                              Wrap(
+                                                alignment: WrapAlignment.center,
+                                                spacing: 9,
+                                                runSpacing: 9,
+                                                children:
+                                                    _rewardWidgets(strings),
+                                              ),
+                                              const SizedBox(height: 18),
+                                              Text(
+                                                strings.pick(
+                                                  'Tap anywhere to return',
+                                                  'Tik ergens om terug te gaan',
+                                                ),
+                                                style: const TextStyle(
+                                                  color: Color(0xFFC9C2E5),
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          const SizedBox(height: 18),
-                                          Text(
-                                            strings.pick(
-                                              'Tap anywhere to return',
-                                              'Tik ergens om terug te gaan',
-                                            ),
-                                            style: const TextStyle(
-                                              color: Color(0xFFC9C2E5),
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
                               ),
                             ],
                           ),

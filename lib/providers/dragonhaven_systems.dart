@@ -275,7 +275,14 @@ extension DragonHavenSystems on HouseholdProvider {
         endsAt: entry.value,
       ));
     }
-    return windows;
+    windows.sort((a, b) {
+      final preview = (a.key.contains(':preview:') ? 0 : 1)
+          .compareTo(b.key.contains(':preview:') ? 0 : 1);
+      if (preview != 0) return preview;
+      final start = b.startsAt.compareTo(a.startsAt);
+      return start == 0 ? a.key.compareTo(b.key) : start;
+    });
+    return windows.take(1).toList();
   }
 
   List<SpecialAdventureWindow> get activeSpecialAdventureWindows =>
@@ -1142,16 +1149,11 @@ extension DragonHavenSystems on HouseholdProvider {
       grade,
       _random.nextDouble(),
       relicRoll: _random.nextDouble(),
-      relicChoice: _random.nextInt(MysticRelic.values.length),
+      relicChoice: _random
+          .nextInt(mysticRelicDropPool(excluded: obtainedUniqueRelics).length),
+      excludedRelics: obtainedUniqueRelics,
     );
-    var earnedRelic = rolledReward.relic;
-    if (earnedRelic == MysticRelic.twinstarBrooch &&
-        twinstarBroochEverObtained) {
-      final alternatives = MysticRelic.values
-          .where((relic) => relic != MysticRelic.twinstarBrooch)
-          .toList(growable: false);
-      earnedRelic = alternatives[_random.nextInt(alternatives.length)];
-    }
+    final earnedRelic = rolledReward.relic;
     final newBest = dragon.recordTrialScore(offer.kind.name, score);
     final earnedEmote = grade == TrialGrade.sPlus
         ? _rollUniqueDragonEmote(DragonEmoteSource.trial, .10)
@@ -1161,21 +1163,19 @@ extension DragonHavenSystems on HouseholdProvider {
     final expertiseRewards = offer.definition.isSeasonal
         ? _grantSeasonalTrialExpertise(dragon, grade)
         : <TrainingFocus, int>{
-            offer.definition.focus: rolledReward.statPoints,
+            offer.definition.focus: _grantAdventureTrialExpertise(
+                dragon, offer.definition.focus, rolledReward.statPoints),
           };
     final reward = TrialReward(
       grade: rolledReward.grade,
       coins: rolledReward.coins,
       xp: grantedXp,
-      statPoints: rolledReward.statPoints,
+      statPoints: expertiseRewards.values.fold(0, (sum, value) => sum + value),
       chestTier: rolledReward.chestTier,
       relic: earnedRelic,
       emote: earnedEmote,
       expertiseRewards: expertiseRewards,
     );
-    if (!offer.definition.isSeasonal) {
-      dragon.addTraining(offer.definition.focus, reward.statPoints);
-    }
     final chestTier = reward.chestTier;
     if (chestTier != null) {
       chestInventory.update(
@@ -1752,9 +1752,12 @@ extension DragonHavenSystems on HouseholdProvider {
       return true;
     }
     final grantedXp = _grantDragonXp(dragon, xp.clamp(0, 1000));
-    dragon.addTraining(TrainingFocus.might, might.clamp(0, 25));
-    dragon.addTraining(TrainingFocus.arcana, arcana.clamp(0, 25));
-    dragon.addTraining(TrainingFocus.spirit, spirit.clamp(0, 25));
+    _grantAdventureTrialExpertise(
+        dragon, TrainingFocus.might, might.clamp(0, 25));
+    _grantAdventureTrialExpertise(
+        dragon, TrainingFocus.arcana, arcana.clamp(0, 25));
+    _grantAdventureTrialExpertise(
+        dragon, TrainingFocus.spirit, spirit.clamp(0, 25));
     final keeperBadgeId = event.rewards.keeperBadgeId;
     if (keeperBadgeId != null && keeperBadgeById(keeperBadgeId) != null) {
       ownedBadgeIds.add(keeperBadgeId);
@@ -1812,7 +1815,8 @@ extension DragonHavenSystems on HouseholdProvider {
     }
 
     final grantedXp = _grantDragonXp(dragon, xp);
-    dragon.addTraining(
+    _grantAdventureTrialExpertise(
+      dragon,
       parsedFocus,
       statPoints.clamp(0, dragon.expertiseMaximum(parsedFocus)),
     );
@@ -1985,7 +1989,8 @@ extension DragonHavenSystems on HouseholdProvider {
       return tier;
     }
     final grantedXp = _grantDragonXp(dragon, definition.xp);
-    dragon.addTraining(definition.focus, definition.statPoints);
+    _grantAdventureTrialExpertise(
+        dragon, definition.focus, definition.statPoints);
     _evolveReadyDragons(_clock());
     dragon.activeAdventureId = null;
     final event = specialAdventureEventById(run.specialEventId);
@@ -2001,7 +2006,7 @@ extension DragonHavenSystems on HouseholdProvider {
     }
     if (event != null) {
       for (final reward in event.rewards.expertiseRewards.entries) {
-        dragon.addTraining(reward.key, reward.value);
+        _grantAdventureTrialExpertise(dragon, reward.key, reward.value);
       }
       final relics = event.rewards.randomRelicPool;
       if (relics.isNotEmpty) {
@@ -2144,6 +2149,7 @@ extension DragonHavenSystems on HouseholdProvider {
       sanctuaryDragons.removeWhere((item) => item.id == dragon.id);
     }
     dragon.favorite = false;
+    equippedRelicDragonIds.removeWhere((_, id) => id == dragon.id);
     if (twinstarBroochDragonId == dragon.id) {
       twinstarBroochDragonId = null;
     }
@@ -2302,8 +2308,9 @@ extension DragonHavenSystems on HouseholdProvider {
         if (seasonalEventPreviewExpiresAt[event.id]?.isAfter(now) == true) {
           return 'preview_active';
         }
-        seasonalEventPreviewExpiresAt[event.id] =
-            now.add(Duration(hours: event.previewHours));
+        seasonalEventPreviewExpiresAt = {
+          event.id: now.add(Duration(hours: event.previewHours)),
+        };
         trialRefilledAt = null;
         await _notifyAndSave();
         return 'redeemed_event_preview';
@@ -2320,6 +2327,14 @@ extension DragonHavenSystems on HouseholdProvider {
             entry.value.isAfter(now))
           entry.key: entry.value,
     };
+    if (normalized.length > 1) {
+      final latest = normalized.entries.toList()
+        ..sort((a, b) {
+          final time = b.value.compareTo(a.value);
+          return time == 0 ? a.key.compareTo(b.key) : time;
+        });
+      normalized.removeWhere((key, _) => key != latest.first.key);
+    }
     final unchanged =
         normalized.length == seasonalEventPreviewExpiresAt.length &&
             normalized.entries.every(
@@ -2376,6 +2391,15 @@ extension DragonHavenSystems on HouseholdProvider {
       dragon.addTraining(focus, 1);
       granted.update(focus, (value) => value + 1, ifAbsent: () => 1);
       overflow--;
+    }
+    // Allocate the ordinary reward first, including its existing overflow
+    // rule, then double only the wearer's matching Expertise within its cap.
+    final boostedFocus = equippedRelicFor(dragon.id)?.boostedExpertise;
+    if (boostedFocus != null) {
+      final before = dragon.trainingFor(boostedFocus);
+      dragon.addTraining(boostedFocus, granted[boostedFocus] ?? 0);
+      final bonus = dragon.trainingFor(boostedFocus) - before;
+      if (bonus > 0) granted.update(boostedFocus, (value) => value + bonus);
     }
     return Map.unmodifiable(granted);
   }

@@ -173,8 +173,8 @@ class _HouseScreenState extends State<HouseScreen> {
           Card(
             color: AppColors.goldLight,
             child: ListTile(
-              leading: const Icon(Icons.auto_awesome_rounded,
-                  color: AppColors.twilight),
+              leading: Icon(Icons.auto_awesome_rounded,
+                  color: AppColors.eventColor(context, AppColors.twilight)),
               title: Text(strings.pick(
                   'A rare Tower moment', 'Een zeldzaam torenmoment')),
               subtitle: Text(message),
@@ -382,7 +382,9 @@ class _RoomActionButton extends StatelessWidget {
                     : const [Colors.white, Color(0xFFFFF8E8)],
               ),
               borderRadius: BorderRadius.circular(19),
-              border: Border.all(color: const Color(0xFFDCD2EC)),
+              border: Border.all(
+                  color:
+                      AppColors.eventColor(context, const Color(0xFFDCD2EC))),
             ),
             child: Row(children: [
               GameIconSprite(kind, size: 48),
@@ -535,7 +537,8 @@ class _HouseRoomScene extends StatelessWidget {
                                     ? Icons.edit_rounded
                                     : Icons.pets_rounded,
                                 size: 15,
-                                color: AppColors.twilight),
+                                color: AppColors.eventColor(
+                                    context, AppColors.twilight)),
                             const SizedBox(width: 5),
                             Text(
                               editMode
@@ -1107,14 +1110,16 @@ class _InventoryPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.mist),
+        border:
+            Border.all(color: AppColors.eventColor(context, AppColors.mist)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.inventory_2_rounded, color: AppColors.twilight),
+              Icon(Icons.inventory_2_rounded,
+                  color: AppColors.eventColor(context, AppColors.twilight)),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(strings.pick('House inventory', 'Huisinventaris'),
@@ -1157,8 +1162,9 @@ class _InventoryPanel extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.storefront_rounded,
-                      color: AppColors.twilightDark),
+                  Icon(Icons.storefront_rounded,
+                      color: AppColors.eventColor(
+                          context, AppColors.twilightDark)),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(strings.pick(
@@ -1195,7 +1201,9 @@ class _InventoryPanel extends StatelessWidget {
                         color: selected ? AppColors.goldLight : AppColors.cream,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: selected ? AppColors.gold : AppColors.mist,
+                          color: selected
+                              ? AppColors.gold
+                              : AppColors.eventColor(context, AppColors.mist),
                           width: selected ? 2 : 1,
                         ),
                       ),

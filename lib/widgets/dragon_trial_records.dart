@@ -67,8 +67,8 @@ class _DragonTrialRecordsState extends State<DragonTrialRecords> {
                           'Account Trial records', 'Trial-records van account')
                       : strings.pick(
                           'Dragon Trial records', 'Trial-records van draak'),
-                  style: const TextStyle(
-                    color: AppColors.twilight,
+                  style: TextStyle(
+                    color: AppColors.eventColor(context, AppColors.twilight),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -151,7 +151,9 @@ class _Record extends StatelessWidget {
           Text(
             score == 0 ? strings.pick('Not set', 'Geen') : '$score',
             style: TextStyle(
-              color: score == 0 ? AppColors.muted : AppColors.twilight,
+              color: score == 0
+                  ? AppColors.muted
+                  : AppColors.eventColor(context, AppColors.twilight),
               fontWeight: FontWeight.w900,
             ),
           ),

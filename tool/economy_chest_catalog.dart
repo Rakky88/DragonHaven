@@ -13,7 +13,7 @@ import 'package:dragon_haven/models/profile_portrait.dart';
 /// Versioned server snapshot. Changes require a NEW forward migration once 45
 /// has been applied. Never regenerate an already applied migration in place.
 Map<String, Object?> economyChestCatalog() => {
-      'version': 1,
+      'version': 2,
       'portrait': profilePortraitCatalog.map((item) => item.id).toList(),
       'title': accountTitleCatalog.map((item) => item.id).toList(),
       'music': musicCatalog.map((item) => item.id).toList(),
@@ -21,6 +21,13 @@ Map<String, Object?> economyChestCatalog() => {
           .map((item) => item.id)
           .toList(),
       'relic': MysticRelic.values.map((item) => item.name).toList(),
+      'relic_weights': {
+        for (final r in MysticRelic.values) r.name: r.dropWeight
+      },
+      'unique_relics': MysticRelic.values
+          .where((r) => r.isEquipable)
+          .map((r) => r.name)
+          .toList(),
       'lineages': {
         for (final rarity in DragonRarity.values)
           rarity.name: standardDragonLineages
@@ -94,7 +101,7 @@ void main(List<String> arguments) {
     return;
   }
   final sql = File('supabase/migrations/'
-          '202609070045_dormant_chest_opening.sql')
+          '202609080058_equipment_relic_pool.sql')
       .readAsStringSync();
   if (!sql.contains('\$catalog\$$snapshot\$catalog\$::jsonb')) {
     stderr.writeln(

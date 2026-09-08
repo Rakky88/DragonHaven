@@ -346,12 +346,25 @@ def main():
         })
         client_result = subprocess.run(['flutter', 'test', '--no-pub',
             'tool/canonical_game_session_probe.dart'], cwd=ROOT, env=child_environment,
-            capture_output=True, text=True, timeout=150)
+            capture_output=True, text=True, timeout=240)
         del child_environment['STAGING_GAME_CLIENT_SESSION']
         if client_result.returncode != 0:
             match = re.search(r'client_probe_[a-z_]+', client_result.stdout + client_result.stderr)
             raise ProbeError(match.group(0) if match else 'client_probe_failed')
         require('PASS: real SDK/session/journals;' in client_result.stdout, 'client_probe_proof_missing')
+        require('PASS: real shop UI purchase,' in client_result.stdout, 'client_probe_ui_proof_missing')
+        unchanged = query(f"""select
+          (select s.state=i.source_state and s.revision=i.source_revision
+            from public.cloud_game_saves s join private.canonical_game_imports i on i.owner_id=s.user_id
+            where s.user_id='{owner}') as source_matches_import,
+          (select to_jsonb(w) from public.player_wallets w where user_id='{owner}') as wallet,
+          (select authority_mode from public.player_economy_authority where user_id='{owner}') as authority,
+          (select mutations_enabled from private.economy_contract where singleton) as mutations
+        """, True)[0]
+        require(unchanged['source_matches_import'] and unchanged['wallet'] == prepared['wallet']
+                and unchanged['authority'] == 'legacy_client' and not unchanged['mutations'],
+                'client_probe_ui_changed_live_state')
+        print('PASS: actual shop UI purchase and chest reveal; one debit and one earned title.', flush=True)
         print('PASS: actual Flutter client, Supabase Auth, filesystem journals and server; one charge after lost reply; corrupt request recovery without another purchase.', flush=True)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"

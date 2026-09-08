@@ -1,0 +1,17 @@
+{
+  "tool": "built-in image_gen",
+  "assets": [
+    {
+      "name": "emberheart_brooch",
+      "prompt": "Create one polished fantasy mobile game inventory sprite named Emberheart Brooch. Single ornate equipable brooch, precious yellow gold filigree frame and small sculpted dragon wings holding one brilliant faceted amber-red crystal heart, a controlled curl of flame around it, powerful Might theme. Match a luxurious colorful hand-painted high-end fantasy RPG item icon: crisp polished metal highlights, jewel depth, clean stylized silhouette, charming collectible DragonHaven aesthetic. Front three-quarter view, centered on a genuinely transparent background, entire object including flames within 15% generous clear padding. Square 1024 composition. Distinct readable silhouette at 64 pixels. No text, numbers, letters, border, platform, person, scene, floor shadow, photographic noise or extra items. Do not reproduce two stars; use the amber crystal heart as central symbol."
+    },
+    {
+      "name": "moonweave_brooch",
+      "prompt": "Create one polished fantasy mobile game inventory sprite named Moonweave Brooch. Single ornate equipable brooch, precious yellow gold and silver filigree with two small sculpted dragon wings, a brilliant faceted violet amethyst orb nested inside a luminous silver crescent moon, small controlled blue-purple magical wisps, Arcana theme. Luxurious colorful hand-painted high-end fantasy RPG item icon: crisp polished metal highlights, jewel depth, clean stylized silhouette, charming collectible DragonHaven aesthetic. Front three-quarter view, centered on a genuinely transparent background, entire object including wisps within 15% generous clear padding. Square 1024 composition. Distinct readable silhouette at 64 pixels. No text, numbers, letters, border, platform, person, scene, floor shadow, photographic noise or extra items. No two-star design."
+    },
+    {
+      "name": "soulbloom_brooch",
+      "prompt": "Create one polished fantasy mobile game inventory sprite named Soulbloom Brooch. Single ornate equipable brooch, precious yellow gold filigree, two elegant small sculpted dragon wings woven with emerald leaves around one luminous faceted teal-green crystal flower with a heart-shaped central gem, delicate controlled mint-green spiritual light, Spirit theme. Luxurious colorful hand-painted high-end fantasy RPG item icon: crisp polished metal highlights, jewel depth, clean stylized silhouette, charming collectible DragonHaven aesthetic. Front three-quarter view, centered on a genuinely transparent background, entire object including glow within 15% generous clear padding. Square 1024 composition. Distinct readable silhouette at 64 pixels. No text, numbers, letters, border, platform, person, scene, floor shadow, photographic noise or extra items. No two-star design."
+    }
+  ]
+}

@@ -28,10 +28,12 @@ class AscensionRequirements extends StatelessWidget {
     final expertiseReady =
         dragon.totalTraining >= Pet.ascensionExpertiseRequirement;
     final foreground = onDark ? Colors.white : AppColors.ink;
-    final muted = onDark ? const Color(0xFFD8CFF1) : AppColors.muted;
+    final muted = onDark
+        ? AppColors.eventColor(context, const Color(0xFFD8CFF1))
+        : AppColors.muted;
     final track = onDark
         ? Colors.white.withValues(alpha: .14)
-        : AppColors.mist.withValues(alpha: .8);
+        : AppColors.eventColor(context, AppColors.mist).withValues(alpha: .8);
 
     return Container(
       key: const Key('ascension-requirements'),
@@ -40,12 +42,14 @@ class AscensionRequirements extends StatelessWidget {
       decoration: BoxDecoration(
         color: onDark
             ? Colors.white.withValues(alpha: .08)
-            : AppColors.mist.withValues(alpha: .48),
+            : AppColors.eventColor(context, AppColors.mist)
+                .withValues(alpha: .48),
         borderRadius: BorderRadius.circular(compact ? 14 : 17),
         border: Border.all(
           color: onDark
               ? Colors.white.withValues(alpha: .14)
-              : AppColors.twilight.withValues(alpha: .12),
+              : AppColors.eventColor(context, AppColors.twilight)
+                  .withValues(alpha: .12),
         ),
       ),
       child: Column(
@@ -151,7 +155,9 @@ class _ReadyPill extends StatelessWidget {
           Text(
             strings.pick('Ready', 'Klaar'),
             style: TextStyle(
-              color: onDark ? Colors.white : AppColors.twilightDark,
+              color: onDark
+                  ? Colors.white
+                  : AppColors.eventColor(context, AppColors.twilightDark),
               fontSize: 10,
               fontWeight: FontWeight.w900,
             ),

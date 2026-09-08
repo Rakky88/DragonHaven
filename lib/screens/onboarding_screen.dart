@@ -73,7 +73,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Container(
               height: 235,
               decoration: BoxDecoration(
-                color: const Color(0xFF292552),
+                color: AppColors.eventColor(context, const Color(0xFF292552)),
                 borderRadius: BorderRadius.circular(28),
               ),
               child: ClipRRect(

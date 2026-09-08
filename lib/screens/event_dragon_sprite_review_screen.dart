@@ -234,8 +234,9 @@ class _EventDragonSpriteReviewScreenState
           margin: const EdgeInsets.fromLTRB(14, 8, 14, 8),
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-                colors: [Color(0xFF25164D), Color(0xFF67449A)]),
+            gradient: AppColors.panelGradient(context,
+                fallback: const LinearGradient(
+                    colors: [Color(0xFF25164D), Color(0xFF67449A)])),
             borderRadius: BorderRadius.circular(22),
           ),
           child: Row(children: [

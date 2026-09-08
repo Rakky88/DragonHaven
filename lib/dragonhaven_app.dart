@@ -1120,10 +1120,14 @@ class _UpdateVersionRow extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: highlighted ? AppColors.goldLight : AppColors.mist,
+          color: highlighted
+              ? AppColors.goldLight
+              : AppColors.eventColor(context, AppColors.mist),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: highlighted ? AppColors.gold : AppColors.mist,
+            color: highlighted
+                ? AppColors.gold
+                : AppColors.eventColor(context, AppColors.mist),
           ),
         ),
         child: Row(
@@ -1141,7 +1145,9 @@ class _UpdateVersionRow extends StatelessWidget {
             Text(
               value,
               style: TextStyle(
-                color: highlighted ? AppColors.twilightDark : AppColors.ink,
+                color: highlighted
+                    ? AppColors.eventColor(context, AppColors.twilightDark)
+                    : AppColors.ink,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -1161,12 +1167,13 @@ class _DragonHavenBrandTitle extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text.rich(
-            const TextSpan(
+            TextSpan(
               children: [
                 TextSpan(text: 'Dragon'),
                 TextSpan(
                   text: 'Haven',
-                  style: TextStyle(color: AppColors.twilight),
+                  style: TextStyle(
+                      color: AppColors.eventColor(context, AppColors.twilight)),
                 ),
               ],
             ),
@@ -1220,7 +1227,7 @@ class _MenuRow extends StatelessWidget {
   final String? trailing;
   @override
   Widget build(BuildContext context) => Row(children: [
-        Icon(icon, color: AppColors.twilight),
+        Icon(icon, color: AppColors.eventColor(context, AppColors.twilight)),
         const SizedBox(width: 12),
         Expanded(
             child: Text(label,
@@ -1243,7 +1250,8 @@ class _TopCurrency extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(99),
-          border: Border.all(color: AppColors.mist),
+          border:
+              Border.all(color: AppColors.eventColor(context, AppColors.mist)),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           GameIconSprite(kind, size: 20),

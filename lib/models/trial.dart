@@ -231,7 +231,7 @@ TrialGrade trialGradeForScore(TrialKind kind, int score) {
     TrialKind.cavernFlight => const [250, 600, 1100, 1700, 2500],
     TrialKind.ruinBreaker => const [900, 2250, 4000, 6750, 9000],
     TrialKind.runeweaver => const [3, 6, 9, 12, 15],
-    TrialKind.witchlightWard ||
+    TrialKind.witchlightWard => const [500, 1200, 2000, 2250, 2500],
     TrialKind.hollyfrostGiftforge ||
     TrialKind.midnightChime ||
     TrialKind.rosevowRelay ||
@@ -267,6 +267,7 @@ TrialReward trialRewardForGrade(
   double chestRoll, {
   double relicRoll = 1,
   int relicChoice = 0,
+  Set<MysticRelic> excludedRelics = const {},
 }) {
   final chest = switch (grade) {
     TrialGrade.d => null,
@@ -300,8 +301,9 @@ TrialReward trialRewardForGrade(
     TrialGrade.s => (0, 50, 5),
     TrialGrade.sPlus => (0, 69, 7),
   };
-  final relic = grade == TrialGrade.sPlus && relicRoll < .01
-      ? MysticRelic.values[relicChoice.abs() % MysticRelic.values.length]
+  final pool = mysticRelicDropPool(excluded: excludedRelics);
+  final relic = grade == TrialGrade.sPlus && relicRoll < .01 && pool.isNotEmpty
+      ? pool[relicChoice.abs() % pool.length]
       : null;
   return TrialReward(
     grade: grade,

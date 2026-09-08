@@ -98,8 +98,9 @@ class _KeeperJournalScreenState extends State<KeeperJournalScreen> {
                           child: Text(
                             _dateLabel(context, entry.createdAt,
                                 game.currentTime, strings),
-                            style: const TextStyle(
-                              color: AppColors.twilight,
+                            style: TextStyle(
+                              color: AppColors.eventColor(
+                                  context, AppColors.twilight),
                               fontWeight: FontWeight.w900,
                               fontSize: 12,
                             ),
@@ -278,7 +279,10 @@ class _JournalEntryTile extends StatelessWidget {
                 ),
                 if (!isLast)
                   Expanded(
-                    child: Container(width: 2, color: const Color(0xFFDCD2E8)),
+                    child: Container(
+                        width: 2,
+                        color: AppColors.eventColor(
+                            context, const Color(0xFFDCD2E8))),
                   ),
               ],
             ),
@@ -335,8 +339,8 @@ class _RewardText extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(left: 7),
         child: Text(label,
-            style: const TextStyle(
-                color: AppColors.twilight,
+            style: TextStyle(
+                color: AppColors.eventColor(context, AppColors.twilight),
                 fontSize: 10.5,
                 fontWeight: FontWeight.w900)),
       );

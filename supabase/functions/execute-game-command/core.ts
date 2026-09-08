@@ -27,7 +27,7 @@ const commandKeys: Record<string, readonly string[]> = {
   tag_egg: ["eggId", "tagged"], return_egg: ["eggId", "sinisterConfirmed"],
   craft_altar_relic: ["relic"], use_altar_relic: ["relic", "eggId"],
   use_chronoshard: ["reductionPercent"], use_wayfinder: ["kind", "replaceAdventureId"],
-  equip_twinstar: ["dragonId"], activate_egg: ["eggId"], hatch_egg: ["eggId"],
+  equip_twinstar: ["dragonId"], equip_relic: ["relic", "dragonId"], activate_egg: ["eggId"], hatch_egg: ["eggId"],
   name_dragon: ["dragonId", "name"], evolve_dragon: ["dragonId"],
   buy_starlight_treat: ["dragonId"], release_dragon: ["dragonId"],
   start_adventure: ["adventureId", "dragonId"], dismiss_adventure: ["adventureId"],

@@ -349,9 +349,12 @@ class _SpriteAuditScreenState extends State<SpriteAuditScreen> {
               top: false,
               child: Container(
                 padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: Colors.white,
-                  border: Border(top: BorderSide(color: AppColors.mist)),
+                  border: Border(
+                      top: BorderSide(
+                          color:
+                              AppColors.eventColor(context, AppColors.mist))),
                 ),
                 child: Row(
                   children: [
@@ -419,9 +422,9 @@ class _AuditPageView extends StatelessWidget {
           margin: const EdgeInsets.fromLTRB(14, 8, 14, 8),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF25164D), Color(0xFF67449A)],
-            ),
+            gradient: AppColors.panelGradient(context,
+                fallback: const LinearGradient(
+                    colors: [Color(0xFF25164D), Color(0xFF67449A)])),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Column(
@@ -520,7 +523,9 @@ class _AuditFormCard extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(22),
           side: BorderSide(
-            color: marked ? AppColors.coral : AppColors.mist,
+            color: marked
+                ? AppColors.coral
+                : AppColors.eventColor(context, AppColors.mist),
             width: marked ? 3 : 1,
           ),
         ),
@@ -546,7 +551,9 @@ class _AuditFormCard extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: _auditArtBackground,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFFD4C8EA)),
+                            border: Border.all(
+                                color: AppColors.eventColor(
+                                    context, const Color(0xFFD4C8EA))),
                           ),
                           child: DragonArt(
                             height: size,
@@ -600,7 +607,7 @@ class _SpriteInspectionDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Dialog.fullscreen(
-        backgroundColor: const Color(0xFF17112F),
+        backgroundColor: AppColors.eventColor(context, const Color(0xFF17112F)),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(18),

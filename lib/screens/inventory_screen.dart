@@ -107,18 +107,20 @@ class _InventoryControlChip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1ECFB),
+          color: AppColors.eventColor(context, const Color(0xFFF1ECFB)),
           borderRadius: BorderRadius.circular(99),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 17, color: AppColors.twilight),
+            Icon(icon,
+                size: 17,
+                color: AppColors.eventColor(context, AppColors.twilight)),
             const SizedBox(width: 4),
             Text(
               label,
-              style: const TextStyle(
-                color: AppColors.twilight,
+              style: TextStyle(
+                color: AppColors.eventColor(context, AppColors.twilight),
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
               ),
@@ -227,14 +229,14 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1ECFB),
+                  color: AppColors.eventColor(context, const Color(0xFFF1ECFB)),
                   borderRadius: BorderRadius.circular(99),
                 ),
                 child: Text(
                   '${eggs.length} ${strings.pick(eggs.length == 1 ? 'egg' : 'eggs', eggs.length == 1 ? 'ei' : 'eieren')}',
                   key: const Key('egg-inventory-count'),
-                  style: const TextStyle(
-                    color: AppColors.twilight,
+                  style: TextStyle(
+                    color: AppColors.eventColor(context, AppColors.twilight),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -339,8 +341,9 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                               Text(
                                 strings
                                     .remainingDuration(egg.incubationDuration),
-                                style: const TextStyle(
-                                  color: AppColors.twilight,
+                                style: TextStyle(
+                                  color: AppColors.eventColor(
+                                      context, AppColors.twilight),
                                   fontSize: 11,
                                   fontWeight: FontWeight.w900,
                                 ),
@@ -366,8 +369,10 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(Icons.swap_horiz_rounded,
-                                        size: 14, color: AppColors.twilight),
+                                    Icon(Icons.swap_horiz_rounded,
+                                        size: 14,
+                                        color: AppColors.eventColor(
+                                            context, AppColors.twilight)),
                                     const SizedBox(width: 3),
                                     Flexible(
                                       child: Text(
@@ -377,8 +382,9 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: AppColors.twilight,
+                                        style: TextStyle(
+                                          color: AppColors.eventColor(
+                                              context, AppColors.twilight),
                                           fontSize: 9.5,
                                           fontWeight: FontWeight.w900,
                                         ),
@@ -468,7 +474,7 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F0FC),
+                  color: AppColors.eventColor(context, const Color(0xFFF5F0FC)),
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Text(
@@ -1164,8 +1170,9 @@ class _FurnitureInventoryTabState extends State<_FurnitureInventoryTab> {
                               '${_rarityLabel(strings, item.rarity)}',
                             ),
                             trailing: game.isEquipped(item)
-                                ? const Icon(Icons.check_circle_rounded,
-                                    color: AppColors.twilight)
+                                ? Icon(Icons.check_circle_rounded,
+                                    color: AppColors.eventColor(
+                                        context, AppColors.twilight))
                                 : null,
                           ),
                         );
@@ -1319,11 +1326,11 @@ class _RelicEmptyState extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 390),
             padding: const EdgeInsets.fromLTRB(22, 20, 22, 24),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF25194C), Color(0xFF624899)],
-              ),
+              gradient: AppColors.panelGradient(context,
+                  fallback: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF25194C), Color(0xFF624899)])),
               borderRadius: BorderRadius.circular(30),
               boxShadow: const [
                 BoxShadow(
@@ -1386,9 +1393,13 @@ class _RelicCard extends StatelessWidget {
     final detail = switch (relic) {
       MysticRelic.chronoshard =>
         game.chronoshardReductions.map((value) => '$value%').join(' · '),
-      MysticRelic.twinstarBrooch => game.twinstarBroochDragonId == null
-          ? strings.pick('Not equipped', 'Niet gekoppeld')
-          : strings.pick('Equipped to a dragon', 'Aan een draak gekoppeld'),
+      MysticRelic.twinstarBrooch ||
+      MysticRelic.emberheartBrooch ||
+      MysticRelic.moonweaveBrooch ||
+      MysticRelic.soulbloomBrooch =>
+        game.equippedDragonIdFor(relic) == null
+            ? strings.pick('Not equipped', 'Niet gekoppeld')
+            : strings.pick('Equipped to a dragon', 'Aan een draak gekoppeld'),
       _ => null,
     };
     return Card(
@@ -1425,8 +1436,8 @@ class _RelicCard extends StatelessWidget {
                   ),
                   Text(
                     '×$count',
-                    style: const TextStyle(
-                      color: AppColors.twilight,
+                    style: TextStyle(
+                      color: AppColors.eventColor(context, AppColors.twilight),
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -1442,8 +1453,8 @@ class _RelicCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     detail,
-                    style: const TextStyle(
-                      color: AppColors.twilight,
+                    style: TextStyle(
+                      color: AppColors.eventColor(context, AppColors.twilight),
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
                     ),
@@ -1476,7 +1487,10 @@ Future<void> _useRelic(BuildContext context, MysticRelic relic) async {
     case MysticRelic.wayfinderSigil:
       return _useWayfinderSigil(context);
     case MysticRelic.twinstarBrooch:
-      return _equipTwinstarBrooch(context);
+    case MysticRelic.emberheartBrooch:
+    case MysticRelic.moonweaveBrooch:
+    case MysticRelic.soulbloomBrooch:
+      return _equipBrooch(context, relic);
     case MysticRelic.moralPrism:
     case MysticRelic.orderCompass:
     case MysticRelic.soulMirror:
@@ -1604,8 +1618,9 @@ Future<void> _useDragonRevealRelic(
                             'Secret still hidden', 'Geheim nog verborgen'),
                   ),
                   trailing: game.isRelicKnownFor(relic, dragon)
-                      ? const Icon(Icons.check_circle_rounded,
-                          color: AppColors.twilight)
+                      ? Icon(Icons.check_circle_rounded,
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight))
                       : const Icon(Icons.chevron_right_rounded),
                   onTap: game.isRelicKnownFor(relic, dragon)
                       ? null
@@ -1855,7 +1870,7 @@ Future<void> _useWayfinderSigil(BuildContext context) async {
   ));
 }
 
-Future<void> _equipTwinstarBrooch(BuildContext context) async {
+Future<void> _equipBrooch(BuildContext context, MysticRelic relic) async {
   final game = context.read<HouseholdProvider>();
   final strings = AppStrings.of(context);
   const unequipKey = '__unequip__';
@@ -1869,16 +1884,15 @@ Future<void> _equipTwinstarBrooch(BuildContext context) async {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(14, 0, 14, 22),
           children: [
-            Text(strings.pick('Twinstar Brooch', 'Tweesterbroche'),
+            Text(strings.relicName(relic),
                 style: Theme.of(sheetContext).textTheme.titleLarge),
-            Text(strings.pick(
-              'Only its current wearer receives double XP.',
-              'Alleen de huidige drager ontvangt dubbele XP.',
-            )),
-            if (game.twinstarBroochDragonId != null)
+            Text(strings.relicDescription(relic)),
+            Text(strings.pick('Equipping replaces the dragon’s current brooch.',
+                'Uitrusten vervangt de huidige broche van de draak.')),
+            if (game.equippedDragonIdFor(relic) != null)
               Card(
                 child: ListTile(
-                  key: const Key('twinstar-unequip'),
+                  key: Key('${relic.name}-unequip'),
                   leading: const Icon(Icons.link_off_rounded),
                   title: Text(strings.pick('Unequip', 'Ontkoppelen')),
                   onTap: () => Navigator.pop(sheetContext, unequipKey),
@@ -1887,7 +1901,7 @@ Future<void> _equipTwinstarBrooch(BuildContext context) async {
             for (final dragon in game.ownedDragons)
               Card(
                 child: ListTile(
-                  key: Key('twinstar-equip-${dragon.id}'),
+                  key: Key('${relic.name}-equip-${dragon.id}'),
                   leading: SizedBox.square(
                     dimension: 52,
                     child: DragonArt(
@@ -1901,9 +1915,10 @@ Future<void> _equipTwinstarBrooch(BuildContext context) async {
                     ),
                   ),
                   title: Text(dragon.displayName),
-                  trailing: game.isTwinstarEquippedOn(dragon.id)
-                      ? const Icon(Icons.check_circle_rounded,
-                          color: AppColors.twilight)
+                  trailing: game.equippedRelicFor(dragon.id) == relic
+                      ? Icon(Icons.check_circle_rounded,
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight))
                       : const Icon(Icons.chevron_right_rounded),
                   onTap: () => Navigator.pop(sheetContext, dragon.id),
                 ),
@@ -1914,7 +1929,7 @@ Future<void> _equipTwinstarBrooch(BuildContext context) async {
     ),
   );
   if (choice == null || !context.mounted) return;
-  await game.equipTwinstarBrooch(choice == unequipKey ? null : choice);
+  await game.equipRelic(relic, choice == unequipKey ? null : choice);
 }
 
 class _AnimatedRelicRevealDialog extends StatefulWidget {
@@ -1986,11 +2001,14 @@ class _AnimatedRelicRevealDialogState
       MysticRelic.astralLens ||
       MysticRelic.chronoshard ||
       MysticRelic.wayfinderSigil ||
-      MysticRelic.twinstarBrooch =>
+      MysticRelic.twinstarBrooch ||
+      MysticRelic.emberheartBrooch ||
+      MysticRelic.moonweaveBrooch ||
+      MysticRelic.soulbloomBrooch =>
         '',
     };
     return Dialog.fullscreen(
-      backgroundColor: const Color(0xFF170E32),
+      backgroundColor: AppColors.eventColor(context, const Color(0xFF170E32)),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _finishAnimation,
@@ -2128,7 +2146,8 @@ class _EmptyState extends StatelessWidget {
                     colors: [Colors.white, Color(0xFFF0EAFF)],
                   ),
                   borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: AppColors.mist),
+                  border: Border.all(
+                      color: AppColors.eventColor(context, AppColors.mist)),
                   boxShadow: const [
                     BoxShadow(
                       color: Color(0x145B4B8A),

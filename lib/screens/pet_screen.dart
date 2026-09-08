@@ -64,8 +64,8 @@ class PetScreen extends StatelessWidget {
               ),
               key: const Key('starter-egg-tap-instruction'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.twilight,
+              style: TextStyle(
+                color: AppColors.eventColor(context, AppColors.twilight),
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
               ),
@@ -248,7 +248,9 @@ class _EggCountdownState extends State<EggHatchCountdown>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: (ready ? AppColors.gold : AppColors.twilight)
+                    color: (ready
+                            ? AppColors.gold
+                            : AppColors.eventColor(context, AppColors.twilight))
                         .withValues(alpha: .22 + wave * .14),
                     blurRadius: 18 + wave * 8,
                     spreadRadius: wave * 1.5,
@@ -437,7 +439,8 @@ Future<void> _talk(BuildContext context, Pet pet) async {
     context: context,
     builder: (context) => AlertDialog(
       scrollable: true,
-      icon: const Icon(Icons.chat_bubble_rounded, color: AppColors.twilight),
+      icon: Icon(Icons.chat_bubble_rounded,
+          color: AppColors.eventColor(context, AppColors.twilight)),
       title: Text(pet.displayName, textAlign: TextAlign.center),
       content: Text(line.text(strings.languageCode),
           textAlign: TextAlign.center,
@@ -542,9 +545,10 @@ class _DragonStageCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(99)),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
                           Text(strings.petStage(pet),
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontWeight: FontWeight.w900,
-                                  color: AppColors.twilightDark)),
+                                  color: AppColors.eventColor(
+                                      context, AppColors.twilightDark))),
                         ]))),
             ],
           ),
@@ -566,7 +570,8 @@ class _EggCluePanel extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(21),
-          border: Border.all(color: AppColors.mist),
+          border:
+              Border.all(color: AppColors.eventColor(context, AppColors.mist)),
         ),
         child: Row(
           children: [
@@ -686,7 +691,8 @@ class _TrainingBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = switch (focus) {
       TrainingFocus.might => const Color(0xFFD96852),
-      TrainingFocus.arcana => const Color(0xFF7A63D1),
+      TrainingFocus.arcana =>
+        AppColors.eventColor(context, const Color(0xFF7A63D1)),
       TrainingFocus.spirit => const Color(0xFF3FA37C)
     };
     final name = focus.name[0].toUpperCase() + focus.name.substring(1);
@@ -710,7 +716,7 @@ class _TrainingBar extends StatelessWidget {
               value: (value / maximum).clamp(0, 1),
               minHeight: 8,
               color: color,
-              backgroundColor: AppColors.mist,
+              backgroundColor: AppColors.eventColor(context, AppColors.mist),
               borderRadius: BorderRadius.circular(99))
         ]));
   }
@@ -755,7 +761,8 @@ class _EvolutionPanel extends StatelessWidget {
         padding: const EdgeInsets.all(17),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const Icon(Icons.auto_awesome_rounded, color: AppColors.twilight),
+            Icon(Icons.auto_awesome_rounded,
+                color: AppColors.eventColor(context, AppColors.twilight)),
             const SizedBox(width: 9),
             Expanded(
                 child: Text(
@@ -775,7 +782,7 @@ class _EvolutionPanel extends StatelessWidget {
                 value: (pet.xp / target).clamp(0, 1),
                 minHeight: 9,
                 borderRadius: BorderRadius.circular(99),
-                backgroundColor: AppColors.mist),
+                backgroundColor: AppColors.eventColor(context, AppColors.mist)),
             const SizedBox(height: 8),
             Text('${pet.xp}/$target XP',
                 style: const TextStyle(
@@ -952,7 +959,7 @@ class _EvolutionDialogState extends State<_EvolutionDialog>
     final strings = AppStrings.of(context);
     final pet = widget.pet;
     return Dialog.fullscreen(
-      backgroundColor: const Color(0xFF1D183B),
+      backgroundColor: AppColors.eventColor(context, const Color(0xFF1D183B)),
       child: GestureDetector(
         key: const Key('close-evolution-presentation'),
         behavior: HitTestBehavior.opaque,
@@ -1048,7 +1055,9 @@ class _EvolutionDialogState extends State<_EvolutionDialog>
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFB992FF).withValues(
+                                  color: AppColors.eventColor(
+                                          context, const Color(0xFFB992FF))
+                                      .withValues(
                                     alpha:
                                         _phase >= 3 ? .42 : .18 + pulse * .31,
                                   ),
@@ -1275,7 +1284,9 @@ class _HatchDialogState extends State<_HatchDialog> {
     final strings = AppStrings.of(context);
     final reveal = phase >= 5;
     return Dialog.fullscreen(
-      backgroundColor: phase == 4 ? Colors.white : const Color(0xFF30265E),
+      backgroundColor: phase == 4
+          ? Colors.white
+          : AppColors.eventColor(context, const Color(0xFF30265E)),
       child: SafeArea(
           child: AnimatedContainer(
               duration: const Duration(milliseconds: 350),
@@ -1406,11 +1417,11 @@ class _HatchNameButton extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF7557B8), Color(0xFF49307F)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              gradient: AppColors.panelGradient(context,
+                  fallback: const LinearGradient(
+                      colors: [Color(0xFF7557B8), Color(0xFF49307F)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight)),
               border: Border.all(color: const Color(0xFFFFD66B), width: 2),
               boxShadow: const [
                 BoxShadow(
@@ -1578,7 +1589,7 @@ class _NeedBar extends StatelessWidget {
                 value: value / 100,
                 minHeight: 8,
                 color: color,
-                backgroundColor: AppColors.mist,
+                backgroundColor: AppColors.eventColor(context, AppColors.mist),
                 borderRadius: BorderRadius.circular(99))),
         const SizedBox(width: 8),
         Text('$value', style: const TextStyle(fontWeight: FontWeight.w900))

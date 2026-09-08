@@ -134,9 +134,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF2E1B59), Color(0xFF7253A8)],
-              ),
+              gradient: AppColors.panelGradient(context,
+                  fallback: const LinearGradient(
+                      colors: [Color(0xFF2E1B59), Color(0xFF7253A8)])),
               borderRadius: BorderRadius.circular(26),
               boxShadow: const [
                 BoxShadow(
@@ -404,10 +404,11 @@ class _NotificationToggle extends StatelessWidget {
         width: 45,
         height: 45,
         decoration: BoxDecoration(
-          color: const Color(0xFFEDE7FA),
+          color: AppColors.eventColor(context, const Color(0xFFEDE7FA)),
           borderRadius: BorderRadius.circular(14),
         ),
-        child: Icon(icon, color: AppColors.twilight),
+        child: Icon(icon,
+            color: AppColors.eventColor(context, AppColors.twilight)),
       ),
       title: Text(
         strings.pick(titleEn, titleNl),

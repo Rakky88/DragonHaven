@@ -83,7 +83,7 @@ class _PullToDismissSheetState extends State<PullToDismissSheet> {
                         width: 44,
                         height: 5,
                         decoration: BoxDecoration(
-                          color: AppColors.mist,
+                          color: AppColors.eventColor(context, AppColors.mist),
                           borderRadius: BorderRadius.circular(99),
                         ),
                       ),

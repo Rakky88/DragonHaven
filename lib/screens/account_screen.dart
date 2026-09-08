@@ -120,9 +120,9 @@ class AccountScreen extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.workspace_premium_rounded,
-                  color: AppColors.twilight,
+                  color: AppColors.eventColor(context, AppColors.twilight),
                   size: 34,
                 ),
               ),
@@ -301,9 +301,9 @@ class AccountScreen extends StatelessWidget {
             Card(
               child: ListTile(
                 key: const Key('copy-support-diagnostics'),
-                leading: const Icon(
+                leading: Icon(
                   Icons.health_and_safety_outlined,
-                  color: AppColors.twilight,
+                  color: AppColors.eventColor(context, AppColors.twilight),
                 ),
                 title: Text(
                   strings.pick(
@@ -331,9 +331,9 @@ class AccountScreen extends StatelessWidget {
                 children: [
                   SwitchListTile(
                     key: const Key('allow-friend-messages-switch'),
-                    secondary: const Icon(
+                    secondary: Icon(
                       Icons.chat_bubble_rounded,
-                      color: AppColors.twilight,
+                      color: AppColors.eventColor(context, AppColors.twilight),
                     ),
                     title: Text(
                       strings.pick(
@@ -391,9 +391,9 @@ class AccountScreen extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.notifications_active_rounded,
-                  color: AppColors.twilight,
+                  color: AppColors.eventColor(context, AppColors.twilight),
                   size: 32,
                 ),
               ),
@@ -427,9 +427,9 @@ class AccountScreen extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.queue_music_rounded,
-                  color: AppColors.twilight,
+                  color: AppColors.eventColor(context, AppColors.twilight),
                   size: 34,
                 ),
               ),
@@ -1000,7 +1000,8 @@ class AccountScreen extends StatelessWidget {
                     return Material(
                       color: active
                           ? AppColors.goldLight
-                          : const Color(0xFFF4F0FA),
+                          : AppColors.eventColor(
+                              context, const Color(0xFFF4F0FA)),
                       borderRadius: BorderRadius.circular(22),
                       child: InkWell(
                         key: Key('select-portrait-${portrait.id}'),
@@ -1018,12 +1019,13 @@ class AccountScreen extends StatelessWidget {
                               ),
                             ),
                             if (active)
-                              const Positioned(
+                              Positioned(
                                 right: 6,
                                 top: 6,
                                 child: Icon(
                                   Icons.check_circle_rounded,
-                                  color: AppColors.twilight,
+                                  color: AppColors.eventColor(
+                                      context, AppColors.twilight),
                                 ),
                               ),
                           ],
@@ -1101,7 +1103,8 @@ class AccountScreen extends StatelessWidget {
                     return Material(
                       color: active
                           ? AppColors.goldLight
-                          : const Color(0xFFF4F0FA),
+                          : AppColors.eventColor(
+                              context, const Color(0xFFF4F0FA)),
                       borderRadius: BorderRadius.circular(18),
                       child: ListTile(
                         key: Key('select-title-${title.id}'),
@@ -1112,7 +1115,8 @@ class AccountScreen extends StatelessWidget {
                           active
                               ? Icons.workspace_premium_rounded
                               : Icons.auto_awesome_rounded,
-                          color: AppColors.twilight,
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight),
                         ),
                         title: Text(
                           strings.accountTitle(title),
@@ -1122,9 +1126,10 @@ class AccountScreen extends StatelessWidget {
                           ),
                         ),
                         trailing: active
-                            ? const Icon(
+                            ? Icon(
                                 Icons.check_circle_rounded,
-                                color: AppColors.twilight,
+                                color: AppColors.eventColor(
+                                    context, AppColors.twilight),
                               )
                             : null,
                         onTap: () => Navigator.pop(sheetContext, title),
@@ -1198,7 +1203,8 @@ class AccountScreen extends StatelessWidget {
                     return Material(
                       color: active
                           ? AppColors.goldLight
-                          : const Color(0xFFF4F0FA),
+                          : AppColors.eventColor(
+                              context, const Color(0xFFF4F0FA)),
                       borderRadius: BorderRadius.circular(18),
                       child: ListTile(
                         key: Key(frame == null
@@ -1229,9 +1235,10 @@ class AccountScreen extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.w900),
                         ),
                         trailing: active
-                            ? const Icon(
+                            ? Icon(
                                 Icons.check_circle_rounded,
-                                color: AppColors.twilight,
+                                color: AppColors.eventColor(
+                                    context, AppColors.twilight),
                               )
                             : null,
                         onTap: () => Navigator.pop(
@@ -1309,7 +1316,8 @@ class AccountScreen extends StatelessWidget {
                     return Material(
                       color: active
                           ? AppColors.goldLight
-                          : const Color(0xFFF4F0FA),
+                          : AppColors.eventColor(
+                              context, const Color(0xFFF4F0FA)),
                       borderRadius: BorderRadius.circular(18),
                       child: ListTile(
                         key: Key(badge == null
@@ -1339,9 +1347,10 @@ class AccountScreen extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.w900),
                         ),
                         trailing: active
-                            ? const Icon(
+                            ? Icon(
                                 Icons.check_circle_rounded,
-                                color: AppColors.twilight,
+                                color: AppColors.eventColor(
+                                    context, AppColors.twilight),
                               )
                             : null,
                         onTap: () => Navigator.pop(
@@ -1438,10 +1447,11 @@ class _AccountIdentityCard extends StatelessWidget {
                               selectedBadge.assetPath,
                               width: 24,
                               height: 24,
-                              errorBuilder: (_, __, ___) => const Icon(
+                              errorBuilder: (_, __, ___) => Icon(
                                 Icons.shield_rounded,
                                 size: 20,
-                                color: AppColors.twilight,
+                                color: AppColors.eventColor(
+                                    context, AppColors.twilight),
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -1474,8 +1484,9 @@ class _AccountIdentityCard extends StatelessWidget {
                                     .accountTitle(game.selectedAccountTitle!),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.twilight,
+                            style: TextStyle(
+                              color: AppColors.eventColor(
+                                  context, AppColors.twilight),
                               fontFamily: 'serif',
                               fontWeight: FontWeight.w900,
                             ),
@@ -1554,8 +1565,8 @@ class _AccountIdentityCard extends StatelessWidget {
               _IdentityInfoRow(
                 icon: Icons.badge_outlined,
                 label: profile.keeperCode,
-                labelStyle: const TextStyle(
-                  color: AppColors.twilight,
+                labelStyle: TextStyle(
+                  color: AppColors.eventColor(context, AppColors.twilight),
                   fontWeight: FontWeight.w900,
                   letterSpacing: .8,
                 ),
@@ -1682,7 +1693,9 @@ class _IdentityInfoRow extends StatelessWidget {
         padding: const EdgeInsets.only(top: 9),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.twilight, size: 22),
+            Icon(icon,
+                color: AppColors.eventColor(context, AppColors.twilight),
+                size: 22),
             const SizedBox(width: 9),
             Expanded(
               child: Text(

@@ -1,3 +1,5 @@
+import 'pet.dart';
+
 enum MysticRelic {
   moralPrism,
   orderCompass,
@@ -6,6 +8,9 @@ enum MysticRelic {
   chronoshard,
   wayfinderSigil,
   twinstarBrooch,
+  emberheartBrooch,
+  moonweaveBrooch,
+  soulbloomBrooch,
 }
 
 const relicShopGemPrice = 500;
@@ -19,6 +24,9 @@ extension MysticRelicPresentation on MysticRelic {
         MysticRelic.chronoshard => 'Chronoshard',
         MysticRelic.wayfinderSigil => 'Wayfinder Sigil',
         MysticRelic.twinstarBrooch => 'Twinstar Brooch',
+        MysticRelic.emberheartBrooch => 'Emberheart Brooch',
+        MysticRelic.moonweaveBrooch => 'Moonweave Brooch',
+        MysticRelic.soulbloomBrooch => 'Soulbloom Brooch',
       };
 
   String get nameNl => switch (this) {
@@ -29,6 +37,9 @@ extension MysticRelicPresentation on MysticRelic {
         MysticRelic.chronoshard => 'Chronoscherf',
         MysticRelic.wayfinderSigil => 'Padvinderszegel',
         MysticRelic.twinstarBrooch => 'Tweesterbroche',
+        MysticRelic.emberheartBrooch => 'Gloeihartbroche',
+        MysticRelic.moonweaveBrooch => 'Maanweefbroche',
+        MysticRelic.soulbloomBrooch => 'Zielenbloembroche',
       };
 
   String get descriptionEn => switch (this) {
@@ -46,6 +57,12 @@ extension MysticRelicPresentation on MysticRelic {
           'Rerolls one chosen adventure or creates a new adventure of a chosen type when space is available.',
         MysticRelic.twinstarBrooch =>
           'A unique equipable relic that doubles all experience received only while its chosen dragon wears it.',
+        MysticRelic.emberheartBrooch =>
+          'Doubles Might earned by its wearer in Adventures and Trials. One brooch per dragon.',
+        MysticRelic.moonweaveBrooch =>
+          'Doubles Arcana earned by its wearer in Adventures and Trials. One brooch per dragon.',
+        MysticRelic.soulbloomBrooch =>
+          'Doubles Spirit earned by its wearer in Adventures and Trials. One brooch per dragon.',
       };
 
   String get descriptionNl => switch (this) {
@@ -63,6 +80,12 @@ extension MysticRelicPresentation on MysticRelic {
           'Rerollt één gekozen avontuur of maakt een nieuw avontuur van een gekozen type als er ruimte is.',
         MysticRelic.twinstarBrooch =>
           'Een unieke uitrustbare relic die alle ontvangen ervaring alleen verdubbelt zolang de gekozen draak hem draagt.',
+        MysticRelic.emberheartBrooch =>
+          'Verdubbelt Might die de drager verdient in Adventures en Trials. Eén broche per draak.',
+        MysticRelic.moonweaveBrooch =>
+          'Verdubbelt Arcana die de drager verdient in Adventures en Trials. Eén broche per draak.',
+        MysticRelic.soulbloomBrooch =>
+          'Verdubbelt Spirit die de drager verdient in Adventures en Trials. Eén broche per draak.',
       };
 
   String get assetPath => 'assets/images/relics/${switch (this) {
@@ -73,6 +96,9 @@ extension MysticRelicPresentation on MysticRelic {
         MysticRelic.chronoshard => 'chronoshard',
         MysticRelic.wayfinderSigil => 'wayfinder_sigil',
         MysticRelic.twinstarBrooch => 'twinstar_brooch',
+        MysticRelic.emberheartBrooch => 'emberheart_brooch',
+        MysticRelic.moonweaveBrooch => 'moonweave_brooch',
+        MysticRelic.soulbloomBrooch => 'soulbloom_brooch',
       }}.png';
 
   bool get isShopAvailable => switch (this) {
@@ -83,7 +109,10 @@ extension MysticRelicPresentation on MysticRelic {
           true,
         MysticRelic.chronoshard ||
         MysticRelic.wayfinderSigil ||
-        MysticRelic.twinstarBrooch =>
+        MysticRelic.twinstarBrooch ||
+        MysticRelic.emberheartBrooch ||
+        MysticRelic.moonweaveBrooch ||
+        MysticRelic.soulbloomBrooch =>
           false,
       };
 
@@ -95,10 +124,37 @@ extension MysticRelicPresentation on MysticRelic {
         _ => false,
       };
 
-  bool get isConsumable => this != MysticRelic.twinstarBrooch;
+  bool get isEquipable => switch (this) {
+        MysticRelic.twinstarBrooch ||
+        MysticRelic.emberheartBrooch ||
+        MysticRelic.moonweaveBrooch ||
+        MysticRelic.soulbloomBrooch =>
+          true,
+        _ => false,
+      };
 
-  bool get isAlwaysUntradeable => this == MysticRelic.twinstarBrooch;
+  TrainingFocus? get boostedExpertise => switch (this) {
+        MysticRelic.emberheartBrooch => TrainingFocus.might,
+        MysticRelic.moonweaveBrooch => TrainingFocus.arcana,
+        MysticRelic.soulbloomBrooch => TrainingFocus.spirit,
+        _ => null,
+      };
+
+  int get dropWeight => isEquipable ? 1 : 10;
+
+  bool get isConsumable => !isEquipable;
+
+  bool get isAlwaysUntradeable => isEquipable;
 
   String animationFrameAsset(int frame) =>
       'assets/images/relics/animations/$name/frame_${frame.toString().padLeft(2, '0')}.webp';
 }
+
+/// Conditional pool after the unchanged chest / S+ relic-drop gate succeeds.
+/// Every ordinary relic has ten tickets; each unique brooch has one.
+List<MysticRelic> mysticRelicDropPool({Set<MysticRelic> excluded = const {}}) =>
+    [
+      for (final relic in MysticRelic.values)
+        if (!excluded.contains(relic))
+          for (var ticket = 0; ticket < relic.dropWeight; ticket++) relic,
+    ];

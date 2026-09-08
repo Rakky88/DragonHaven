@@ -12,6 +12,7 @@ import 'package:dragon_haven/screens/adventure_hub_screen.dart';
 import 'package:dragon_haven/screens/draconomicon_screen.dart';
 import 'package:dragon_haven/services/social_repository.dart';
 import 'package:dragon_haven/theme/app_theme.dart';
+import 'package:dragon_haven/theme/event_appearance.dart';
 import 'package:dragon_haven/widgets/dragon_expertise_row.dart';
 import 'package:dragon_haven/widgets/expertise_icon.dart';
 import 'package:dragon_haven/widgets/game_icon_sprite.dart';
@@ -82,6 +83,7 @@ void main() {
   Future<HouseholdProvider> mount(WidgetTester tester,
       {DateTime Function()? clock,
       bool event = false,
+      String eventId = 'halloween_witchlight',
       bool shell = true,
       double scale = 1}) async {
     tester.view.physicalSize = const Size(360, 800);
@@ -124,7 +126,7 @@ void main() {
     ];
     game.beginPresentationDeferral();
     if (event) {
-      game.seasonalEventPreviewExpiresAt['halloween_witchlight'] =
+      game.seasonalEventPreviewExpiresAt[eventId] =
           now().add(const Duration(days: 2));
     }
     final online = OnlineAccountProvider(
@@ -150,7 +152,9 @@ void main() {
     return game;
   }
 
-  test('live event wins over previews and expired windows are excluded', () {
+  test(
+      'personal preview wins over the calendar and expired windows are excluded',
+      () {
     final event = specialAdventureEventById('halloween_witchlight')!;
     final now = DateTime.utc(2026, 9, 8);
     SpecialAdventureWindow window(String key, DateTime end) =>
@@ -162,7 +166,7 @@ void main() {
     final preview =
         window('halloween:preview:test', now.add(const Duration(hours: 1)));
     final live = window('halloween:2026', now.add(const Duration(days: 1)));
-    expect(appEventWindow([preview, live], now)?.key, live.key);
+    expect(appEventWindow([preview, live], now)?.key, preview.key);
     expect(appEventWindow([preview], preview.endsAt), isNull);
   });
 
@@ -191,16 +195,54 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  for (final entry in EventAppearance.logoKeys.entries) {
+    testWidgets(
+        'complete ${entry.value} theme and countdown on compact main pages',
+        (tester) async {
+      final birthday = entry.value == 'golden_wings';
+      final window = nextSpecialAdventureWindowsAfter(DateTime.utc(2026, 9, 8))
+          .firstWhere((w) => w.event.id == entry.key);
+      final now = birthday
+          ? window.startsAt.add(const Duration(seconds: 1))
+          : DateTime.utc(2026, 9, 8, 12);
+      await mount(tester,
+          clock: () => now, event: !birthday, eventId: entry.key, scale: 1.35);
+      await capture(tester, '${entry.value}-tower');
+      await tester.tap(find.byKey(const Key('tutorial-nav-adventure')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 450));
+      await tester.tap(find.byKey(const Key('adventure-tab-trials')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(find.byKey(const Key('app-event-countdown')), findsOneWidget);
+      final background = tester
+          .widget<DecoratedBox>(find.byKey(const Key('app-event-background')));
+      expect((background.decoration as BoxDecoration).image, isNotNull);
+      final header =
+          tester.widget<Container>(find.byKey(const Key('trial-summary-card')));
+      expect(
+          ((header.decoration as BoxDecoration).gradient as LinearGradient)
+              .colors,
+          EventAppearance.forEvent(entry.key).panelColors);
+      await capture(tester, '${entry.value}-trials');
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
+
   testWidgets('My Dragons highlights independent Expertise rows and shows sex',
       (tester) async {
     final game = await mount(tester, event: true);
     await tester.tap(find.byKey(const Key('open-my-dragons')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 450));
-    expect(find.byKey(const Key('dragon-sex-marked')), findsOneWidget);
+    expect(find.byKey(const Key('dragon-sex-marked')), findsNothing);
     await tester.tap(find.byKey(const Key('owned-dragon-marked')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 450));
+    expect(find.byKey(const Key('dragon-sex-marked')), findsOneWidget);
+    expect(tester.getCenter(find.text('Gender')).dy,
+        greaterThan(tester.getCenter(find.text('Maturity')).dy));
     for (final focus in [TrainingFocus.arcana, TrainingFocus.spirit]) {
       final row = find.byKey(Key('expertise-highlight-marked-${focus.name}'));
       await reveal(tester, row);

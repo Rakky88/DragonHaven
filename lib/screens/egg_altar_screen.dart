@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
+import '../theme/app_theme.dart';
 import '../models/dragon_egg.dart';
 import '../models/egg_altar.dart';
 import '../models/egg_collection_preferences.dart';
@@ -94,7 +95,9 @@ class EggTagButton extends StatelessWidget {
         : s.pick('Tag egg', 'Ei taggen');
     final icon = Icon(
         tagged ? Icons.label_rounded : Icons.label_outline_rounded,
-        color: tagged ? const Color(0xFF804EB8) : null,
+        color: tagged
+            ? AppColors.eventColor(context, const Color(0xFF804EB8))
+            : null,
         size: compact ? 20 : 24);
     void change() => unawaited(
         runAltarAction(context, () => game.setEggTagged(eggId, !tagged)));
@@ -636,10 +639,11 @@ class _AltarEggDetails extends StatelessWidget {
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(20),
-                                  gradient: const LinearGradient(colors: [
-                                    Color(0xFFF3EDF9),
-                                    Color(0xFFE9DEF6)
-                                  ])),
+                                  gradient: AppColors.panelGradient(context,
+                                      fallback: const LinearGradient(colors: [
+                                        Color(0xFFF3EDF9),
+                                        Color(0xFFE9DEF6)
+                                      ]))),
                               child: EggArt(
                                   height: 80,
                                   lineageId: egg.lineageId,
@@ -791,7 +795,8 @@ class AltarRecipeCard extends StatelessWidget {
                   width: 58,
                   height: 64,
                   decoration: BoxDecoration(
-                      color: const Color(0xFFF5EFFA),
+                      color: AppColors.eventColor(
+                          context, const Color(0xFFF5EFFA)),
                       borderRadius: BorderRadius.circular(16)),
                   padding: const EdgeInsets.all(3),
                   child: Image.asset(relic.asset, fit: BoxFit.contain)),
@@ -1027,7 +1032,8 @@ class _HoldToReturnState extends State<HoldToReturn>
                     Container(
                         height: 54,
                         color: widget.enabled
-                            ? const Color(0xFF66418D)
+                            ? AppColors.eventColor(
+                                context, const Color(0xFF66418D))
                             : Colors.grey.shade400),
                     FractionallySizedBox(
                         widthFactor: _hold.value,

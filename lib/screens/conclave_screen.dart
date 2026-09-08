@@ -193,9 +193,9 @@ class _ConclaveDirectory extends StatelessWidget {
         Container(
           padding: const EdgeInsets.fromLTRB(18, 18, 14, 18),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF21143F), Color(0xFF7952A7)],
-            ),
+            gradient: AppColors.panelGradient(context,
+                fallback: const LinearGradient(
+                    colors: [Color(0xFF21143F), Color(0xFF7952A7)])),
             borderRadius: BorderRadius.circular(27),
           ),
           child: Row(
@@ -389,18 +389,20 @@ class _ConclaveStatusChip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
-          color: const Color(0xFFF0E9FA),
+          color: AppColors.eventColor(context, const Color(0xFFF0E9FA)),
           borderRadius: BorderRadius.circular(99),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: AppColors.twilight, size: 14),
+            Icon(icon,
+                color: AppColors.eventColor(context, AppColors.twilight),
+                size: 14),
             const SizedBox(width: 4),
             Text(
               label,
-              style: const TextStyle(
-                color: AppColors.twilight,
+              style: TextStyle(
+                color: AppColors.eventColor(context, AppColors.twilight),
                 fontSize: 9.5,
                 fontWeight: FontWeight.w900,
               ),
@@ -558,7 +560,8 @@ class _ConclaveHome extends StatelessWidget {
                   ],
                 ),
                 indicatorSize: TabBarIndicatorSize.tab,
-                labelColor: AppColors.twilightDark,
+                labelColor:
+                    AppColors.eventColor(context, AppColors.twilightDark),
                 unselectedLabelColor: AppColors.muted,
                 labelStyle: const TextStyle(
                   fontSize: 11,
@@ -672,11 +675,11 @@ class _AerieHeader extends StatelessWidget {
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1E1238), Color(0xFF7652A5)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+          gradient: AppColors.panelGradient(context,
+              fallback: const LinearGradient(
+                  colors: [Color(0xFF1E1238), Color(0xFF7652A5)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter)),
           borderRadius: BorderRadius.circular(30),
           border: Border.all(color: const Color(0x55FFD978)),
           boxShadow: const [
@@ -810,7 +813,8 @@ class _AerieHeader extends StatelessWidget {
                           : online.contributeToConclave,
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFFFFD76A),
-                        foregroundColor: AppColors.twilight,
+                        foregroundColor:
+                            AppColors.eventColor(context, AppColors.twilight),
                       ),
                       icon: Icon(snapshot.contributedToday
                           ? Icons.check_circle_rounded
@@ -1014,15 +1018,15 @@ class _ConclaveChatState extends State<_ConclaveChat>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: const Color(0xFFEAE2F4),
+                color: AppColors.eventColor(context, const Color(0xFFEAE2F4)),
                 borderRadius: BorderRadius.circular(99),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.schedule_rounded,
-                    color: AppColors.twilight,
+                    color: AppColors.eventColor(context, AppColors.twilight),
                     size: 14,
                   ),
                   const SizedBox(width: 4),
@@ -1034,8 +1038,9 @@ class _ConclaveChatState extends State<_ConclaveChat>
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.twilight,
+                      style: TextStyle(
+                        color:
+                            AppColors.eventColor(context, AppColors.twilight),
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                       ),
@@ -1115,9 +1120,12 @@ class _ConclaveChatState extends State<_ConclaveChat>
                         constraints: const BoxConstraints(minHeight: 48),
                         padding: const EdgeInsets.fromLTRB(4, 3, 5, 3),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF5F1FA),
+                          color: AppColors.eventColor(
+                              context, const Color(0xFFF5F1FA)),
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: const Color(0xFFDDD2E9)),
+                          border: Border.all(
+                              color: AppColors.eventColor(
+                                  context, const Color(0xFFDDD2E9))),
                           boxShadow: const [
                             BoxShadow(
                               color: Color(0x102E1B50),
@@ -1207,8 +1215,10 @@ class _ConclaveChatState extends State<_ConclaveChat>
                           tooltip: strings.pick('Send', 'Versturen'),
                           onPressed: online.busy || !_hasDraft ? null : _send,
                           style: IconButton.styleFrom(
-                            disabledBackgroundColor: const Color(0xFFE4DDEC),
-                            disabledForegroundColor: const Color(0xFF988EAA),
+                            disabledBackgroundColor: AppColors.eventColor(
+                                context, const Color(0xFFE4DDEC)),
+                            disabledForegroundColor: AppColors.eventColor(
+                                context, const Color(0xFF988EAA)),
                           ),
                           icon: const Icon(Icons.send_rounded, size: 21),
                         ),
@@ -1336,9 +1346,12 @@ class _ConclaveMessageTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: mine ? const Color(0xFFE8DFFF) : Colors.white,
+          color: mine
+              ? AppColors.eventColor(context, const Color(0xFFE8DFFF))
+              : Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE1D8EA)),
+          border: Border.all(
+              color: AppColors.eventColor(context, const Color(0xFFE1D8EA))),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1352,7 +1365,8 @@ class _ConclaveMessageTile extends StatelessWidget {
             else
               CircleAvatar(
                 backgroundColor: const Color(0xFFFFE39A),
-                child: Icon(icon, color: AppColors.twilight),
+                child: Icon(icon,
+                    color: AppColors.eventColor(context, AppColors.twilight)),
               ),
             const SizedBox(width: 9),
             Expanded(
@@ -1366,8 +1380,9 @@ class _ConclaveMessageTile extends StatelessWidget {
                           message.senderName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.twilight,
+                          style: TextStyle(
+                            color: AppColors.eventColor(
+                                context, AppColors.twilight),
                             fontWeight: FontWeight.w900,
                             fontSize: 12,
                           ),
@@ -1414,8 +1429,9 @@ class _ConclaveComposerAction extends StatelessWidget {
           padding: EdgeInsets.zero,
           visualDensity: VisualDensity.compact,
           style: IconButton.styleFrom(
-            foregroundColor: AppColors.twilight,
-            disabledForegroundColor: const Color(0xFFAAA1B7),
+            foregroundColor: AppColors.eventColor(context, AppColors.twilight),
+            disabledForegroundColor:
+                AppColors.eventColor(context, const Color(0xFFAAA1B7)),
           ),
           icon: Icon(icon, size: 20),
         ),
@@ -1443,9 +1459,12 @@ class _ConclaveEmoteMessageTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.fromLTRB(9, 8, 9, 7),
         decoration: BoxDecoration(
-          color: mine ? const Color(0xFFE8DFFF) : Colors.white,
+          color: mine
+              ? AppColors.eventColor(context, const Color(0xFFE8DFFF))
+              : Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE1D8EA)),
+          border: Border.all(
+              color: AppColors.eventColor(context, const Color(0xFFE1D8EA))),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1468,8 +1487,9 @@ class _ConclaveEmoteMessageTile extends StatelessWidget {
                           message.senderName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.twilight,
+                          style: TextStyle(
+                            color: AppColors.eventColor(
+                                context, AppColors.twilight),
                             fontWeight: FontWeight.w900,
                             fontSize: 11,
                           ),
@@ -1562,8 +1582,9 @@ class _ConclaveAchievementMessageTileState
                         firstMessage.senderName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.twilight,
+                        style: TextStyle(
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight),
                           fontWeight: FontWeight.w900,
                           fontSize: 13,
                         ),
@@ -1671,8 +1692,8 @@ class _ConclaveAchievementRow extends StatelessWidget {
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.twilight,
+                    style: TextStyle(
+                      color: AppColors.eventColor(context, AppColors.twilight),
                       fontWeight: FontWeight.w900,
                       fontSize: 13,
                       height: 1.15,
@@ -1737,17 +1758,17 @@ class _ConclaveAchievementBadge extends StatelessWidget {
         border: Border.all(color: const Color(0xFFD09A18), width: 1.3),
       ),
       child: achievement == null
-          ? const Icon(
+          ? Icon(
               Icons.emoji_events_rounded,
-              color: AppColors.twilight,
+              color: AppColors.eventColor(context, AppColors.twilight),
               size: 25,
             )
           : Image.asset(
               achievement!.badgeAsset,
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Icon(
+              errorBuilder: (_, __, ___) => Icon(
                 Icons.emoji_events_rounded,
-                color: AppColors.twilight,
+                color: AppColors.eventColor(context, AppColors.twilight),
                 size: 25,
               ),
             ),
@@ -1780,19 +1801,19 @@ class _ConclaveMembers extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF302050), Color(0xFF7652A5)],
-            ),
+            gradient: AppColors.panelGradient(context,
+                fallback: const LinearGradient(
+                    colors: [Color(0xFF302050), Color(0xFF7652A5)])),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 25,
                 backgroundColor: Color(0xFFFFE39A),
                 child: Icon(
                   Icons.groups_rounded,
-                  color: AppColors.twilightDark,
+                  color: AppColors.eventColor(context, AppColors.twilightDark),
                   size: 30,
                 ),
               ),
@@ -1829,7 +1850,8 @@ class _ConclaveMembers extends StatelessWidget {
           child: OutlinedButton.icon(
             key: const Key('open-conclave-trial-rankings'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.twilightDark,
+              foregroundColor:
+                  AppColors.eventColor(context, AppColors.twilightDark),
               backgroundColor: const Color(0xFFFFF8DD),
               side: const BorderSide(color: Color(0xFFD6A72E)),
               padding: const EdgeInsets.symmetric(vertical: 11),
@@ -2099,8 +2121,8 @@ class _ConclaveMemberCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(
             color: isCurrentKeeper
-                ? const Color(0xFFBFA5E7)
-                : const Color(0xFFE0D8E8),
+                ? AppColors.eventColor(context, const Color(0xFFBFA5E7))
+                : AppColors.eventColor(context, const Color(0xFFE0D8E8)),
           ),
         ),
         child: Padding(
@@ -2248,7 +2270,8 @@ class _ConclaveEmptyState extends StatelessWidget {
                             backgroundColor: const Color(0xFFFFE39A),
                             child: Icon(
                               icon,
-                              color: AppColors.twilight,
+                              color: AppColors.eventColor(
+                                  context, AppColors.twilight),
                               size: 24,
                             ),
                           ),
@@ -2270,7 +2293,8 @@ class _ConclaveEmptyState extends StatelessWidget {
                             backgroundColor: const Color(0xFFFFE39A),
                             child: Icon(
                               icon,
-                              color: AppColors.twilight,
+                              color: AppColors.eventColor(
+                                  context, AppColors.twilight),
                               size: 32,
                             ),
                           ),
@@ -2378,7 +2402,8 @@ class _ConclaveChronicle extends StatelessWidget {
                         bottom: -12,
                         child: Container(
                           width: 2,
-                          color: const Color(0xFFD8CBE8),
+                          color: AppColors.eventColor(
+                              context, const Color(0xFFD8CBE8)),
                         ),
                       ),
                     CircleAvatar(
@@ -2386,7 +2411,8 @@ class _ConclaveChronicle extends StatelessWidget {
                       backgroundColor: const Color(0xFFFFE39A),
                       child: Icon(
                         icon,
-                        color: AppColors.twilight,
+                        color:
+                            AppColors.eventColor(context, AppColors.twilight),
                         size: 21,
                       ),
                     ),
@@ -2498,13 +2524,16 @@ Future<bool> _showCreateConclave(BuildContext context) async {
                             margin: const EdgeInsets.all(3),
                             decoration: BoxDecoration(
                               color: emblem == key
-                                  ? const Color(0xFFE8DFFF)
+                                  ? AppColors.eventColor(
+                                      context, const Color(0xFFE8DFFF))
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(13),
                               border: Border.all(
                                   color: emblem == key
-                                      ? AppColors.twilight
-                                      : const Color(0xFFE0D8E8),
+                                      ? AppColors.eventColor(
+                                          context, AppColors.twilight)
+                                      : AppColors.eventColor(
+                                          context, const Color(0xFFE0D8E8)),
                                   width: 2),
                             ),
                             child: _Emblem(keyName: key, size: 48),
@@ -2640,7 +2669,7 @@ class _MemberRoleChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = switch (role) {
       ConclaveRole.flightmaster => const Color(0xFFD59A17),
-      ConclaveRole.warden => AppColors.twilight,
+      ConclaveRole.warden => AppColors.eventColor(context, AppColors.twilight),
       ConclaveRole.keeper => const Color(0xFF4E8C78),
     };
     return Container(
@@ -2711,9 +2740,10 @@ class _TabHeaderDelegate extends SliverPersistentHeaderDelegate {
           margin: const EdgeInsets.fromLTRB(14, 4, 14, 6),
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
-            color: const Color(0xFFE9E1F4),
+            color: AppColors.eventColor(context, const Color(0xFFE9E1F4)),
             borderRadius: BorderRadius.circular(21),
-            border: Border.all(color: const Color(0xFFD8CBE8)),
+            border: Border.all(
+                color: AppColors.eventColor(context, const Color(0xFFD8CBE8))),
           ),
           child: tabBar,
         ),

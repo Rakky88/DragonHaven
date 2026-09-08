@@ -22,11 +22,14 @@ $state = (supabase migration list --linked --output-format json | Out-String) | 
 if ($LASTEXITCODE -ne 0) { throw 'Migration history unavailable.' }
 $remote = @($state.migrations | ForEach-Object { [string]$_.remote } | Where-Object { $_ } | Sort-Object)
 $local = @(Get-ChildItem supabase/migrations -Filter '*.sql' | ForEach-Object { $_.BaseName.Split('_')[0] } | Sort-Object)
-$baseline = @($local | Where-Object { [long]$_ -le 202609070056 })
-if ($local[-1] -cne '202609070057' -or
+$baseline = @($local | Where-Object { [long]$_ -le 202609070057 })
+if ($local[-1] -cne '202609080059' -or
     (@(Compare-Object $remote $baseline).Count -ne 0 -and @(Compare-Object $remote $local).Count -ne 0)) {
-  throw 'Requires exact registered staging schema 56/57 and only command recovery migration 57.'
+  throw 'Requires exact registered staging schema 57/59 and only equipment/event migrations 58/59.'
 }
+./tool/staging_release22_feature_contract.ps1 -ProjectRef $projectRef `
+  -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
+  -RehearseMigrations:($remote[-1] -ceq '202609070057')
 ./tool/staging_canonical_game_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 ./tool/staging_canonical_import_contract.ps1 -ProjectRef $projectRef `

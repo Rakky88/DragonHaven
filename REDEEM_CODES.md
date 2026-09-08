@@ -1,10 +1,10 @@
 # DragonHaven Redeem Codes
 
-Last verified: 7 September 2026
+Last verified: 8 September 2026
 
-Ruleset: app version `v0.05.17`; Halloween-access update in migration 48
+Ruleset: release candidate `v0.05.22`; personal event replacement in migration 59
 
-<!-- reference-source-fingerprint: bc65f637a7ad0839 -->
+<!-- reference-source-fingerprint: 0916830531211d7f -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 
@@ -14,8 +14,9 @@ announcements unless the owner explicitly changes that rule.
 
 The local server-domain candidate delegates redemption to the existing catalog
 and checks keeper restrictions using the trusted authenticated owner. The code
-values, rewards and preview behavior in this ledger were reviewed and remain
-unchanged. This internal candidate is not deployed or exposed as a public
+values, rewards and restrictions remain unchanged. A new personal event
+replaces the previous event for that keeper, with same-event retries retaining
+their existing expiry. Started attempts and adventures retain their provenance. This internal candidate is not deployed or exposed as a public
 redemption endpoint yet.
 
 Codes are case-sensitive, use only `A-Z` and `0-9`, and unknown or retired

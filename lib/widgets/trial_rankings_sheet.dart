@@ -219,9 +219,9 @@ class _RankingsHeader extends StatelessWidget {
                 color: AppColors.gold,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.leaderboard_rounded,
-                color: AppColors.twilightDark,
+                color: AppColors.eventColor(context, AppColors.twilightDark),
                 size: 28,
               ),
             ),
@@ -277,7 +277,9 @@ class _TrialChoice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: selected ? const Color(0xFFEDE1FF) : Colors.white,
+        color: selected
+            ? AppColors.eventColor(context, const Color(0xFFEDE1FF))
+            : Colors.white,
         borderRadius: BorderRadius.circular(17),
         child: InkWell(
           key: Key('trial-ranking-kind-${kind.name}'),
@@ -289,7 +291,9 @@ class _TrialChoice extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(17),
               border: Border.all(
-                color: selected ? AppColors.twilight : const Color(0xFFE1D8EA),
+                color: selected
+                    ? AppColors.eventColor(context, AppColors.twilight)
+                    : AppColors.eventColor(context, const Color(0xFFE1D8EA)),
                 width: selected ? 1.5 : 1,
               ),
             ),
@@ -303,7 +307,9 @@ class _TrialChoice extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: selected ? AppColors.twilightDark : AppColors.ink,
+                    color: selected
+                        ? AppColors.eventColor(context, AppColors.twilightDark)
+                        : AppColors.ink,
                     fontSize: 9.5,
                     height: 1.05,
                     fontWeight: FontWeight.w900,
@@ -388,7 +394,7 @@ class _RankingRow extends StatelessWidget {
       1 => const Color(0xFFF4C95D),
       2 => const Color(0xFFC8CBD3),
       3 => const Color(0xFFD69B70),
-      _ => const Color(0xFFE9E0F5),
+      _ => AppColors.eventColor(context, const Color(0xFFE9E0F5)),
     };
     return Semantics(
       label:
@@ -402,7 +408,7 @@ class _RankingRow extends StatelessWidget {
           border: Border.all(
             color: entry.isCurrentUser
                 ? const Color(0xFFD8AA2B)
-                : const Color(0xFFE2DBE9),
+                : AppColors.eventColor(context, const Color(0xFFE2DBE9)),
             width: entry.isCurrentUser ? 1.5 : 1,
           ),
         ),
@@ -422,8 +428,9 @@ class _RankingRow extends StatelessWidget {
                   padding: const EdgeInsets.all(4),
                   child: Text(
                     '#${entry.position}',
-                    style: const TextStyle(
-                      color: AppColors.twilightDark,
+                    style: TextStyle(
+                      color:
+                          AppColors.eventColor(context, AppColors.twilightDark),
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
                     ),
@@ -505,8 +512,8 @@ class _RankingRow extends StatelessWidget {
                 Text(
                   '${entry.score}',
                   key: Key('trial-ranking-score-${entry.entryKey}'),
-                  style: const TextStyle(
-                    color: AppColors.twilight,
+                  style: TextStyle(
+                    color: AppColors.eventColor(context, AppColors.twilight),
                     fontSize: 17,
                     fontWeight: FontWeight.w900,
                     fontFeatures: [FontFeature.tabularFigures()],
@@ -550,7 +557,9 @@ class _RankingMessage extends StatelessWidget {
           padding: const EdgeInsets.all(28),
           child: Column(
             children: [
-              Icon(icon, size: 64, color: AppColors.twilight),
+              Icon(icon,
+                  size: 64,
+                  color: AppColors.eventColor(context, AppColors.twilight)),
               const SizedBox(height: 12),
               Text(
                 title,

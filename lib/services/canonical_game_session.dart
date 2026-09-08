@@ -39,6 +39,7 @@ class CanonicalGameSession extends ChangeNotifier {
   int _epoch = 0;
   bool _disposed = false;
   bool _fresh = false;
+  bool _foreground = true;
   CanonicalGameSnapshot? _snapshot;
   String? _errorCode;
   Future<CanonicalGameReceipt?>? _operation;
@@ -52,7 +53,17 @@ class CanonicalGameSession extends ChangeNotifier {
   String? get errorCode => _sameSession ? _errorCode : null;
   bool get busy => _sameSession && _operation != null;
   bool get fresh => _sameSession && _fresh;
-  bool get canAct => fresh && !busy && snapshot?.mutationsEnabled == true;
+  bool get canAct =>
+      _foreground && fresh && !busy && snapshot?.mutationsEnabled == true;
+
+  /// Returning from the background requires a new read. A command already in
+  /// flight still finishes its durable reconciliation, without enabling taps.
+  void setForeground(bool value) {
+    if (_disposed || value == _foreground) return;
+    _foreground = value;
+    _fresh = false;
+    notifyListeners();
+  }
 
   void _accountChanged() {
     if (_disposed) return;
@@ -153,7 +164,7 @@ class CanonicalGameSession extends ChangeNotifier {
       throw const CanonicalGameException('game_snapshot_stale');
     }
     _snapshot = value;
-    _fresh = true;
+    _fresh = _foreground;
     notifyListeners();
   }
 

@@ -6,16 +6,16 @@ import '../l10n/app_strings.dart';
 import '../providers/household_provider.dart';
 import '../theme/event_appearance.dart';
 
-/// Actual events take priority over personal previews; ties are deterministic.
+/// A newly started personal event takes priority; ties are deterministic.
 SpecialAdventureWindow? appEventWindow(
     Iterable<SpecialAdventureWindow> windows, DateTime now) {
   final active = windows.where((w) => w.contains(now)).toList()
     ..sort((a, b) {
-      final preview = (a.key.contains(':preview:') ? 1 : 0)
-          .compareTo(b.key.contains(':preview:') ? 1 : 0);
+      final preview = (a.key.contains(':preview:') ? 0 : 1)
+          .compareTo(b.key.contains(':preview:') ? 0 : 1);
       if (preview != 0) return preview;
-      final end = a.endsAt.compareTo(b.endsAt);
-      return end == 0 ? a.key.compareTo(b.key) : end;
+      final start = b.startsAt.compareTo(a.startsAt);
+      return start == 0 ? a.key.compareTo(b.key) : start;
     });
   return active.firstOrNull;
 }
@@ -128,10 +128,7 @@ class _EventCountdownBannerState extends State<EventCountdownBanner> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [
-        appearance.primary,
-        Color.lerp(appearance.primary, Colors.black, .18)!,
-      ])),
+          gradient: LinearGradient(colors: appearance.panelColors)),
       child: Wrap(
           spacing: 12,
           runSpacing: 3,

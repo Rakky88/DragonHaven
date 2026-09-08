@@ -110,6 +110,10 @@ abstract final class GameCommandEngine {
             replaceAdventureId: args.nullableText('replaceAdventureId'),
           ))
               .name;
+        case 'equip_relic':
+          result = await game.equipRelic(
+              args.enumValue('relic', MysticRelic.values),
+              args.nullableText('dragonId'));
         case 'equip_twinstar':
           result =
               await game.equipTwinstarBrooch(args.nullableText('dragonId'));

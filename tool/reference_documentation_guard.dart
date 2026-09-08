@@ -56,7 +56,9 @@ const specialContentReference = ReferenceDocumentSpec(
     'supabase/migrations/202609070043_witchlight_three_mistakes.sql',
     'supabase/migrations/202609070044_sinister_altar_rewards.sql',
     'supabase/migrations/202609070048_halloween_preview_access.sql',
+    'supabase/migrations/202609080059_single_active_event_preview.sql',
     'supabase/migrations/202609070045_dormant_chest_opening.sql',
+    'supabase/migrations/202609080058_equipment_relic_pool.sql',
     'tool/economy_chest_catalog.dart',
   ],
 );
@@ -100,6 +102,7 @@ const randomRewardsReference = ReferenceDocumentSpec(
     'supabase/migrations/202609070043_witchlight_three_mistakes.sql',
     'supabase/migrations/202609070044_sinister_altar_rewards.sql',
     'supabase/migrations/202609070045_dormant_chest_opening.sql',
+    'supabase/migrations/202609080058_equipment_relic_pool.sql',
     'tool/economy_chest_catalog.dart',
     'supabase/migrations/202609070040_seasonal_events.sql',
     'supabase/migrations/202609070041_seasonal_event_lint_fixes.sql',
@@ -117,6 +120,7 @@ const redeemCodesReference = ReferenceDocumentSpec(
     'supabase/migrations/202609070040_seasonal_events.sql',
     'supabase/migrations/202609070041_seasonal_event_lint_fixes.sql',
     'supabase/migrations/202609070048_halloween_preview_access.sql',
+    'supabase/migrations/202609080059_single_active_event_preview.sql',
   ],
 );
 

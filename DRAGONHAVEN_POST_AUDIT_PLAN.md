@@ -3,6 +3,36 @@
 Laatst bijgewerkt: **8 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
+## Releasekandidaat v0.05.22: broches, events en expertise-uitlijning
+
+De tussentijdse spelerswensen zijn gebouwd: Gender alleen als derde detailrij,
+verticaal gecentreerde Expertises, drie nieuwe broches met één gedeelde plek per
+draak, de 10:1 dropweging, Halloween S+ vanaf 2500 en uitgebreidere eventthema’s.
+Nieuwe persoonlijke events vervangen het vorige event; bestaande runs houden
+hun herkomst. Migraties 58/59 zijn eerst met rollback op staging gecontroleerd.
+Volledige releaseverificatie en uitrolstatus: `EQUIPMENT_AND_EVENT_VERIFICATION.md`.
+De winkel/serverkoppeling hieronder blijft uitsluitend in de expliciete staging-
+build; deze release activeert geen volledige servereconomie voor spelers.
+
+## Hervatte audit na v0.05.21: winkel en inventaris aan de server
+
+Binnen de gegeven toestemming is de volgende koppeling gebouwd: de bestaande
+meubel-/reliek-/vanitywinkel en kistanimatie kunnen dezelfde duurzame serversessie
+gebruiken. Dit werkt via een expliciete stagingbuild vóór het laden van lokale
+spelgegevens. Ontbrekende serverinformatie valt nooit terug op een lokale wallet.
+Dubbele taps, verloren antwoorden, herstart, achtergrond en accountwissel zijn
+lokaal getest met echte spelregels en schermen. Een mislukte kistopening heeft
+nu een sluitbare foutmelding. Grote Nederlandse tekst past in de verbindingsstatus;
+de winkeltabs kunnen bij grote tekst horizontaal schuiven.
+Bewijs en stagingstatus: `SERVER_ECONOMY_UI_VERIFICATION.md`.
+
+De laatste release blijft v0.05.21 / 10071. Productie is niet gemigreerd of
+geactiveerd. Volledige gameplaykoppeling, trialvalidatie, sociale afwikkeling en
+de gecontroleerde migratie van spelers blijven open. Het checklistoverzicht is
+ook gecorrigeerd: Firebase is al ingericht en bewezen; dat is geen ontbrekende
+accountactie meer. Een representatieve meetperiode en privacy-/storeverklaringen
+blijven afzonderlijke acceptatiepunten.
+
 ## Uitgebracht: v0.05.21 (10071), 8 september 2026
 
 - Geselecteerde Expertises laten de bestaande sprite oplichten; ster en gele
@@ -718,11 +748,11 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | --- | ---: | --- | --- | --- |
 | Google Play-voorbereiding | circa 38% | Permanent package-ID, vaste signingidentiteit, versiecontrole en een ondertekende AAB zijn bewezen. De reproduceerbare appgrootteaudit meet een actuele AAB van 345,00 MiB en 284,99 MiB universele media en legt een gratis optimalisatiepad vast | Beeldpilot en batchoptimalisatie uitvoeren; actuele target-/Play-eisen, storeteksten, graphics, Data Safety-inventaris en rolloutchecklist afronden | Play Console openen/verifiëren; app en Play App Signing aanmaken; pilot visueel goedkeuren; testers, publieke support/privacy-URL's en storeverklaringen beheren |
 | iOS/iPhone-voorbereiding | circa 25% | Xcode-project, vaste bundle ID, appicoon, Mac-buildscript en handmatige unsigned macOS-simulatorworkflow bestaan als niet-geactiveerde toekomstbasis | Alleen na een nieuw iOS-besluit de simulatorworkflow bewijzen, audio/notificaties valideren en een veilige deel-/updateroute bouwen | Voorlopig niets; pas bij hervatting Apple Developer/TestFlight, Mac-signing en een echte iPhone inrichten |
-| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.17 zijn groen; productie staat gecontroleerd op 48 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren en mogelijk blootgestelde ontwikkelcredentials roteren |
-| Fase 1 — monitoring en incidenten | circa 94% | Privacyarme diagnostiek, correlation IDs, redactiontests, dashboardspecificatie en incidentrunbook bestaan. Auth én de read-only applicatiecheck draaien ieder uur; contract-/klokvalidatie, migratie 32, onafhankelijke productiepreflight en post-release health zijn groen. De handmatige, secretvrije monitoringdrill leverde testissue #1 af, verifieerde het contract, bewaarde bewijs en sloot de melding. Privéberichtmeldingen pollen retrybaar zolang het appproces leeft | Firebase Crashlytics/Performance en FCM koppelen zodra de Android-projectconfig bestaat; daarna één gecontroleerde stagingfout, een latency-/foutbaseline en terminated-app privéberichtbezorging E2E bewijzen | Gratis Firebase Spark-project maken, `nl.dragonhaven.app` registreren, Analytics uit laten en `google-services.json` veilig in de werkmap zetten; privacy/Data Safety en het gebruik van FCM beoordelen |
+| Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.21 zijn groen; productie staat gecontroleerd op 57 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren en mogelijk blootgestelde ontwikkelcredentials roteren |
+| Fase 1 — monitoring en incidenten | circa 96% | Firebase Core, Crashlytics, Performance en FCM zijn ingebouwd. Echte stagingcrash/nonfatal gevonden; Performance-trace door Rick bevestigd; gesloten-app push ontvangen en inbox bleef ongelezen. Productieconfiguratie en releasegates zijn bewezen | Representatieve latency-/foutbaseline over een testperiode afronden en persoonlijke alertvoorkeuren verifiëren | Privacy-/Data Safety-verklaringen afronden; gratis projecten blijven onder eigen account zonder billing |
 | Fase 2 — staging en E2E | gedeeltelijk | Productie staat op 48 en staging op 49. Sociale, back-up-, trade-, seasonal- en dormant-economycontracten zijn getest. De herziende 100-accountbaseline is groen; de 1000-accountmeting faalt met 47,998% read-time-outs. Alle tijdelijke accounts zijn verwijderd | Time-outfase en belastingoorzaak isoleren; opnieuw 100 en daarna 1000 op het actuele schema meten. De gewone signup-mailbevestigingsflow blijft apart | Piekverbindingen, providerbelasting/egress en representatieve inventarissen ontbreken nog. Meer dan 1000 valt buiten de begrensde workflow |
 | Fase 3 — back-up en multi-device | circa 98% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, automatische 15-minutenback-up plus achtergrondflush zijn gebouwd. De eerste automatisch geplande zondagrestore is groen en rondde de actieve account/back-up/restorerondgang in circa 7,3 seconden af | Later server-owned economievelden van restores afschermen en na fase 4 het terugrol-/duplicatiecontract opnieuw bewijzen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
-| Fase 4 — server-authoritative economie | gedeeltelijk | Dormante wallet-/ledgergrens, vanity-aankopen, chestopening en gewone meubel-/relicshop zijn bewezen op productie en staging. De synthetische legacy-importrestore is uitgevoerd met exacte rij-/hashgelijkheid. Migratie 49 bewijst gepagineerde inventarislezing op staging | Volledige instanceconversie, duurzame lokale snapshottoepassing, overige winkels, ei-/draaklevensloop en gevalideerde rewardclaims bouwen | Vóór activatie migratievenster, spelerscommunicatie, compensatie-, storings- en nooit-stil-afnemenbeleid bevestigen |
+| Fase 4 — server-authoritative economie | gedeeltelijk | Schema 57, gedeelde regels, importvoorbereiding, private eifeiten, duurzame receipt-/snapshotopslag en beschadigd-journalherstel zijn op staging bewezen. De gewone shop en kistweergave zijn lokaal aan de serversessie gekoppeld | De schermkoppeling op staging bewijzen; volledige gameplay, gevalideerde Trials, sociale afwikkeling en migratie/herstel afronden | Vóór live omschakeling migratievenster, spelerscommunicatie en compensatie-/storingsbeleid bevestigen |
 | Fase 5 — Google Play Billing | circa 8%, bewust uitgesteld | Product-ID-contract voor valuta en het eenmalige Supporter Pack, idempotente lokale entitlementgrens en uitgeschakelde nepimplementatie houden de architectuur upgradebaar zonder nu kosten te maken | Pas na fase 4 de Billing-SDK, servervalidatie, acknowledgement, refunds/retries en Play-tracktests bouwen | Pas later beslissen wanneer verkoop actief mag worden; merchantprofiel, producten/prijzen/landen, service-identiteit, testers en beleid beheren |
 | Fase 6 — support en privacy | circa 68% | Accountverwijdering, veilige supportdiagnostiek en incidentrunbook bestaan. Migratie 33 met service-role-only supportlookup, 30-dagen-inzagelog zonder namen/e-mail/save en dagelijkse fysieke importback-upcleanup is na volledige staging-E2E begrensd op productie toegepast. De testsupportworkflow bewees clientweigering, minimale response, inzagelog/retentie en cleanup | De operationele koppeling van een aangeleverde privacyarme correlation ID aan dezelfde supportcasus oefenen. Na beleid akkoord notification-/Chronicle-retentie migreren en verwijder-E2E uitbreiden | Publiek supportadres, verantwoordelijken/reactietijden, privacy- en verwijderpagina en productietoegang beheren; termijnen voor sociale notificaties en Conclave Chronicle kiezen |
 | Fase 7 — capaciteit en rollout | gedeeltelijk | 100 tegelijk actieve accounts zijn gemeten zonder fouten; de 1000-accountmeting is afgekeurd. Exacte synthetische importrestore en de historische SQL-hotfixrepetitie zijn uitgevoerd. Cleanup en nachecks zijn bewezen | Capaciteitsoorzaak isoleren, ontbrekende piekverbindingen/egress en representatieve schrijflast meten; operationele incidentoefening en rolloutdashboard afronden | Capaciteit, budgetalerts, rolloutpercentages en pauzebevoegdheid op meetresultaten kiezen |
@@ -730,7 +760,7 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 ### Meetbare checkliststand en eigenaarschap
 
 Onderstaande telling is de objectieve momentopname van de bovenste
-checklistregels op **5 september 2026**. Een gedeeltelijk gerealiseerde regel
+checklistregels op **8 september 2026**. Een gedeeltelijk gerealiseerde regel
 blijft open totdat ook het laatste acceptatiecriterium bewezen is. Daardoor zijn
 de tellingen bewust strenger dan de gewogen voortgangspercentages hierboven:
 één grote servermigratie telt hier als één regel, net als één kleine
@@ -746,14 +776,14 @@ eigenaar pas veilig verder kan nadat de vorige stap is afgerond.
 | Google Play-voorbereiding | 2/7 | 0/6 | 0/0 | 11 | **C + R parallel:** Codex voert de beeldpilot en store-/Data Safety-inventaris uit; Rick maakt en bezit Play Console, support- en privacy-URL's |
 | iOS/iPhone-voorbereiding | 2/8 | 0/5 | 0/4 | 15 | **Gepauzeerd op jouw keuze:** de bronbasis blijft bewaard, maar er is geen iPhone-knop of actieve distributieroute; hervatting begint met een nieuw besluit over TestFlight |
 | Fase 0 | 4/4 | 1/4 | 3/3 | 3 | **R:** repositorytoegang controleren, keystore/recovery dubbel veilig bewaren en mogelijk blootgestelde productiecredentials roteren |
-| Fase 1 | 6/7 | 3/6 | 1/3 | 6 | **R → C:** Firebase Spark-appconfig en privacy-/FCM-keuze aanleveren; daarna koppelt Codex monitoring en push, bewijst een stagingfout, meet de eerste baseline en test privéberichtbezorging met een beëindigde app |
+| Fase 1 | 7/7 | 5/6 | 1/3 | 3 | **C + R:** Firebaseconfiguratie, echte crash/Performance en push zijn bewezen; Codex werkt de representatieve baseline/alertcontrole af, Rick beoordeelt privacy-/Data Safety-verklaringen |
 | Fase 2 | 5/8 | 4/8 | 2/4 | 9 | **R → C:** veilige mailboxroute en 100 synthetische accounts/secretpool; daarna plan-100 en alleen na aparte toestemming run-100 door Codex |
 | Fase 3 | 6/7 | 4/5 | 2/3 | 3 | **C + R:** Rick bevestigt conflicttekst; Codex schermt server-owned waarden af tijdens fase 4 en herbewijst daarna restore/duplicatie |
-| Fase 4 | 6/16 | 1/6 | 1/4 | 18 | **C:** dormante aankopen en chestopening zijn bewezen op productie/staging; de synthetische importrestore is geslaagd. Volgende stap: instanceconversie, duurzame snapshottoepassing en serverprogressie; activatie blijft apart. |
+| Fase 4 | 6/16 | 1/6 | 1/4 | 18 | **C:** duurzame sessie en recovery zijn bewezen; nu zichtbare shop/inventaris op staging toetsen en gameplay, Trials, sociale afwikkeling en migratie verder aansluiten |
 | Fase 5 | 0/7 | 0/6 | 0/9 | 22 | **Wacht bewust op fase 4 en een gezamenlijke go/no-go:** daarna bouwt Codex Billing; Rick beheert Play-producten, merchantaccount en beleid |
 | Fase 6 | 5/6 | 0/4 | 0/3 | 8 | **R + C:** Rick kiest supportkanaal, toegang en retentietermijnen; Codex kan daarna retentiemigraties/verwijder-E2E bouwen. Een echte privacyarme supportmelding is nodig voor de correlation-ID-casusoefening |
 | Fase 7 | 1/4 | 0/4 | 0/3 | 10 | **C → S:** 100 actieve accounts zijn gemeten zonder fouten en volledig opgeruimd; de 1000-hermeting loopt. Daarna representatieve gegevens, ontbrekende providerwaarden en een algemene hotfixoefening, gevolgd door gezamenlijke capaciteitskeuzes. |
-| **Totaal** | **37/74** | **13/54** | **9/36** | **105 van 164 open** | **59 van 164 checklistregels zijn aantoonbaar afgerond; de hoeveelheid zegt niets zonder de fasegewichten en bewijslinks erboven/eronder** |
+| **Totaal** | **38/74** | **15/54** | **9/36** | **102 van 164 open** | **62 van 164 checklistregels zijn aantoonbaar afgerond; gedeeltelijke economie-integratie blijft open tot de eindcriteria bewezen zijn** |
 
 De eerstvolgende afhankelijkheden die alleen jij kunt wegnemen zijn daarmee
 zichtbaar zonder de lange checklist te lezen. Alles waarvoor geen externe
@@ -1079,9 +1109,12 @@ bewaren de controle-uitkomst blijvend.
 
 ### Codex
 
-- [ ] Koppel crash- en performance-monitoring met buildversie, platform en een
+- [x] Koppel crash- en performance-monitoring met buildversie, platform en een
   willekeurige technische installatie-ID; log geen wachtwoorden, tokens,
-  volledige saves, e-mailadressen of zichtbare keepernamen.
+  volledige saves, e-mailadressen of zichtbare keepernamen. Firebase Core,
+  Crashlytics en Performance zijn ingebouwd en bewezen; de SDK beheert zijn
+  technische installatie-identiteit. Geen account-/correlation-ID in aangepaste
+  Firebase-attributen. Zie `FIREBASE_MONITORING_SETUP.md`.
 - [x] Voeg veilige request/correlation IDs toe aan Auth-, backup-, Friends-,
   Trade- en Group Adventure-paden.
 - [x] Maak dashboards of dashboardspecificaties voor
@@ -1103,7 +1136,7 @@ bewaren de controle-uitkomst blijvend.
 
 ### Jij
 
-- [ ] Maak en bezit het gekozen monitoring/Firebase-project en registreer
+- [x] Maak en bezit het gekozen monitoring/Firebase-project en registreer
   `nl.dragonhaven.app`.
 - [x] Kies in eerste instantie het gratis plan en zet budgetmeldingen aan waar
   de provider dat ondersteunt; een upgrade vereist een apart besluit.
@@ -1111,7 +1144,7 @@ bewaren de controle-uitkomst blijvend.
 - [x] Stel maandbudget, datalocatie en bewaartermijn in.
 - [ ] Beoordeel of diagnostische gegevens en toestemming in de
   privacyverklaring/Data Safety moeten worden aangepast.
-- [ ] Geef alleen projectconfiguratie via veilige configuratie of secret stores;
+- [x] Geef alleen projectconfiguratie via veilige configuratie of secret stores;
   deel geen beheer- of servicecredentials in de app.
 
 ### Samen klaar wanneer

@@ -24,11 +24,12 @@ class DragonSexBadge extends StatelessWidget {
           key: Key('dragon-sex-${dragon.id}'),
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
-            color: const Color(0xFFF1ECFB),
+            color: AppColors.eventColor(context, const Color(0xFFF1ECFB)),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(male ? Icons.male_rounded : Icons.female_rounded,
-              size: 17, color: AppColors.twilight),
+              size: 17,
+              color: AppColors.eventColor(context, AppColors.twilight)),
         ),
       ),
     );

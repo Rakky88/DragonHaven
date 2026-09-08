@@ -2,20 +2,25 @@
 
 Last updated: **8 September 2026**
 
-Release **v0.05.20 / 10070** is published. Production and staging both have
-exactly **57 migrations**. `tool/production_dormant_57.py` verified identical
-migration/contract source against successful staging run 34254991384, rehearsed
-all six game/recovery contracts in rollback-only transactions before and after
-applying only migration 57, and proved unchanged authority/runtime state.
-Production preflight at 18:23:52 UTC: lint 0, Auth/settings/application HTTP 200.
+Release **v0.05.21 / 10071** is published. Production and staging both have
+exactly **57 migrations**. Release workflow 34270982612 passed all 625 tests,
+analysis, signed AAB and production preflight. Post-publication preflight at
+20:03:24 UTC: schema parity 57, lint 0, Auth/settings/application HTTP 200.
 All accounts remain legacy, game/economic mutations disabled, zero shadow
-copies, production push enabled. The session remains detached from main/UI;
-full server economy activation and its remaining integration work stay open.
-Release workflow 34263298633 passes all 621 tests, analysis, server preflight
-and the signed AAB. Published/installed APK hashes match; the latest download
-returns HTTP 200. Post-publication preflight at 18:57:23 UTC repeats schema 57,
-lint 0 and Auth/settings/application 200, with unchanged runtime/authority.
-See `RELEASE_V0.05.20_VERIFICATION.md` for the publication evidence.
+copies, production push enabled. See `RELEASE_V0.05.21_VERIFICATION.md`.
+
+The resumed audit now connects the ordinary furniture/relic/vanity shop and
+chest reveal to the canonical session in an explicit staging-only app lane.
+The lane starts before legacy storage loads, uses separate Auth/cache keys,
+and rejects production URLs. Shop counts and balances come from a validated
+public projection; absent or stale state never falls back to local stock.
+A shared action boundary fences callbacks by account epoch and observed
+revision. Opening failure leaves an exit instead of a stuck animation.
+Local real-rule and widget tests cover lost receipts, double taps, background
+completion, account changes, paused/offline browsing and one server chest grant.
+Staging verification is pending; see `SERVER_ECONOMY_UI_VERIFICATION.md`.
+The full existing gameplay UI, verified trials, social settlement and player
+migration/cutover remain open. No production authority switch was changed.
 
 Previous release evidence:
 Released app: **v0.05.19 / 10069**; production **56**, staging **57**.

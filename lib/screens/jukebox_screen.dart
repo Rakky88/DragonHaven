@@ -21,7 +21,7 @@ class JukeboxScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
         children: [
           Card(
-            color: const Color(0xFFF3EEFF),
+            color: AppColors.eventColor(context, const Color(0xFFF3EEFF)),
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
@@ -29,9 +29,10 @@ class JukeboxScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.queue_music_rounded,
-                        color: AppColors.twilight,
+                        color:
+                            AppColors.eventColor(context, AppColors.twilight),
                         size: 34,
                       ),
                       const SizedBox(width: 10),
@@ -109,9 +110,9 @@ class JukeboxScreen extends StatelessWidget {
                 for (var index = 0; index < tracks.length; index++) ...[
                   SwitchListTile(
                     key: Key('jukebox-track-${tracks[index].id}'),
-                    secondary: const Icon(
+                    secondary: Icon(
                       Icons.music_note_rounded,
-                      color: AppColors.twilight,
+                      color: AppColors.eventColor(context, AppColors.twilight),
                     ),
                     title: Text(
                       tracks[index].title,

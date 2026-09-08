@@ -96,7 +96,7 @@ class _UnavailableTrial extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: const Color(0xFF17102E),
+        backgroundColor: AppColors.eventColor(context, const Color(0xFF17102E)),
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -150,9 +150,9 @@ class _TrialScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFF17102E),
+      backgroundColor: AppColors.eventColor(context, const Color(0xFF17102E)),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF17102E),
+        backgroundColor: AppColors.eventColor(context, const Color(0xFF17102E)),
         foregroundColor: Colors.white,
         title: Text(title),
       ),
@@ -367,11 +367,11 @@ class _TrialResultCard extends StatelessWidget {
     final grade = trialGradeLabel(reward.grade);
     final chest = reward.chestTier;
     final color = switch (reward.grade) {
-      TrialGrade.d => const Color(0xFFB6B0C4),
+      TrialGrade.d => AppColors.eventColor(context, const Color(0xFFB6B0C4)),
       TrialGrade.c => const Color(0xFF8BD8B9),
       TrialGrade.b => const Color(0xFF78B7FF),
       TrialGrade.a => const Color(0xFFF4C95D),
-      TrialGrade.s => const Color(0xFFE987FF),
+      TrialGrade.s => AppColors.eventColor(context, const Color(0xFFE987FF)),
       TrialGrade.sPlus => Colors.white,
     };
     return PopScope(
@@ -385,11 +385,11 @@ class _TrialResultCard extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 390),
               padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF392465), Color(0xFF1C1237)],
-                ),
+                gradient: AppColors.panelGradient(context,
+                    fallback: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF392465), Color(0xFF1C1237)])),
                 borderRadius: BorderRadius.circular(32),
                 border: Border.all(color: AppColors.gold, width: 1.5),
                 boxShadow: [
@@ -1103,7 +1103,7 @@ class _StartOverlay extends StatelessWidget {
             margin: const EdgeInsets.all(24),
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: const Color(0xEE2A1E50),
+              color: AppColors.eventColor(context, const Color(0xEE2A1E50)),
               borderRadius: BorderRadius.circular(26),
               border: Border.all(color: AppColors.gold),
             ),
@@ -1305,7 +1305,8 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
                     decoration: BoxDecoration(
                       color: _misses >= 2
                           ? const Color(0xD69B263C)
-                          : const Color(0xD62A1A51),
+                          : AppColors.eventColor(
+                              context, const Color(0xD62A1A51)),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
                         color: _misses >= 2
@@ -1655,7 +1656,8 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
               'assets/images/ui/trials/trial_rune_background.webp',
               fit: BoxFit.cover,
             ),
-            ColoredBox(color: const Color(0xAA100A25)),
+            ColoredBox(
+                color: AppColors.eventColor(context, const Color(0xAA100A25))),
             Column(
               children: [
                 const SizedBox(height: 14),

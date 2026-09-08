@@ -18,7 +18,7 @@ Future<void> showAchievementReveal(
     context: context,
     barrierDismissible: false,
     barrierLabel: AppStrings.of(context).tr('achievements'),
-    barrierColor: const Color(0xCC17122F),
+    barrierColor: AppColors.eventColor(context, const Color(0xCC17122F)),
     transitionDuration: const Duration(milliseconds: 250),
     pageBuilder: (_, __, ___) => _AchievementReveal(achievement: achievement),
     transitionBuilder: (_, animation, __, child) => FadeTransition(
@@ -176,8 +176,9 @@ class _AchievementRevealState extends State<_AchievementReveal>
                             Text(
                               strings.tr('achievement_unlocked').toUpperCase(),
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: AppColors.twilight,
+                              style: TextStyle(
+                                color: AppColors.eventColor(
+                                    context, AppColors.twilight),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 1.8,
@@ -206,15 +207,18 @@ class _AchievementRevealState extends State<_AchievementReveal>
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.touch_app_rounded,
-                                    color: AppColors.twilight, size: 18),
+                                Icon(Icons.touch_app_rounded,
+                                    color: AppColors.eventColor(
+                                        context, AppColors.twilight),
+                                    size: 18),
                                 const SizedBox(width: 7),
                                 Flexible(
                                   child: Text(
                                     strings.tr('tap_to_continue'),
                                     textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: AppColors.twilight,
+                                    style: TextStyle(
+                                      color: AppColors.eventColor(
+                                          context, AppColors.twilight),
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),

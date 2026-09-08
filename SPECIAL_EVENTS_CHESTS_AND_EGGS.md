@@ -4,7 +4,7 @@ Last verified: 7 September 2026
 
 Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
-<!-- reference-source-fingerprint: 882f4d0d83b1be81 -->
+<!-- reference-source-fingerprint: 374c39a280dc81cd -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -290,10 +290,15 @@ thresholds. Insufficient samples should not be treated as reliable cutoffs.
 All six calendar events theme the app's shared palette and logo. Each event has
 a complete transparent logo derived from the original wing-and-egg mark in
 `assets/images/event_logos/`; the shared app header uses that full artwork.
-The five seasonal events retain their illustrated backgrounds; Golden Wings
-uses gold styling. A compact persistent banner shows the event end time,
-including for a personal test. Live events take precedence over previews,
-then earliest end time and stable occurrence key break ties. Expiry restores
+All six have illustrated backgrounds, including a dedicated golden sanctuary
+for Golden Wings. Valentine uses pink accents, Christmas green, New Year blue,
+Pride rainbow panel gradients, and Golden Wings gold. A compact persistent banner shows the event end time,
+including birthday and personal tests. Starting a personal event replaces the
+previous personal event for that account. The selected preview takes precedence
+over the calendar; the most recent start and stable occurrence key break ties.
+Migration 59 preserves same-event retry expiry and replaces only activation
+records: already started adventures/attempts, earned items and recorded scores
+retain their own provenance and original reward rules. Expiry restores
 the normal app theme without reopening the app or polling a server.
 
 Android receives the existing Amsterdam calendar and personal previews locally.
@@ -311,6 +316,13 @@ service is required. See `EVENT_BRANDING_VERIFICATION.md` for startup checks.
 Annual occurrences spanning December/January retain their original occurrence
 key and full configured duration after midnight on 1 January. Event dates,
 participation requirements, reward tables and preview entitlements are unchanged.
+
+Halloween's current rank boundaries are 500 / 1200 / 2000 / 2250 / 2500
+(C / B / A / S / S+). Other event Trial cutoffs remain unchanged. S+ rewards
+use the weighted relic pool documented in `RANDOM_REWARDS_AND_ODDS.md`, including
+four unique equipable brooches. Their Expertise bonus applies once within the
+wearer's cap; event Adventures and online pair/group rewards use the same rule.
+Special Chest contents and each event's direct relic pool remain unchanged.
 
 ## 8. Other chest and egg types
 
@@ -446,7 +458,7 @@ from rerolling an already opened chest. A full vanity collection leaves its
 chest unopened. Pity is recomputed after each granted egg and is inactive while
 an egg remains in inventory or in the nest. Independent server draws preserve
 Sinister's 50% Sinisterra chance, guaranteed relic, and ordinary fallback pool.
-Chronoshard's 10-90% value is stored once per relic instance; Twinstar's lifetime
+Chronoshard's 10-90% value is stored once per relic instance; all four brooches' lifetime
 acquisition marker excludes it from subsequent drops, including after consumption.
 
 Special chest identity must be supplied by the trusted import/grant procedure;

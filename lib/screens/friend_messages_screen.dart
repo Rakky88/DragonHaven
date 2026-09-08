@@ -134,8 +134,8 @@ class _FriendMessagesScreenState extends State<FriendMessagesScreen> {
                 'Privéberichten verdwijnen na 24 uur.',
               ),
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.twilight,
+              style: TextStyle(
+                color: AppColors.eventColor(context, AppColors.twilight),
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -209,7 +209,8 @@ class _FriendMessagesScreenState extends State<FriendMessagesScreen> {
                               ),
                               counterText: '',
                               filled: true,
-                              fillColor: const Color(0xFFF5F1FA),
+                              fillColor: AppColors.eventColor(
+                                  context, const Color(0xFFF5F1FA)),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(22),
                                 borderSide: BorderSide.none,
@@ -273,7 +274,9 @@ class _MessageBubble extends StatelessWidget {
           8,
         ),
         decoration: BoxDecoration(
-          color: mine ? AppColors.twilight : Colors.white,
+          color: mine
+              ? AppColors.eventColor(context, AppColors.twilight)
+              : Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(19),
             topRight: const Radius.circular(19),

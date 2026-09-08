@@ -185,7 +185,7 @@ void main() {
       TrialGrade.sPlus,
       .50,
       relicRoll: .009,
-      relicChoice: 2,
+      relicChoice: 20,
     );
     expect(sPlusRelic.relic, MysticRelic.soulMirror);
     expect(

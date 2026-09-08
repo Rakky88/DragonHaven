@@ -6,7 +6,7 @@ Ruleset: released app `v0.05.16`; dormant server catalog v1 (migration 45)
 
 Source baseline: v0.05.16, with the dormant server chest-opening candidate below
 
-<!-- reference-source-fingerprint: b5dadf711d9577f4 -->
+<!-- reference-source-fingerprint: 4bb20213f50a83ae -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
@@ -131,19 +131,34 @@ There is no pity system for dragon rarity, relics, emotes, portraits, titles, mu
 | Sinister | 100% |
 | Special, Portrait, Title, Music | 0% |
 
-When a relic drop succeeds, one eligible relic is selected uniformly:
+When a relic drop succeeds, selection uses this weighted pool:
 
-- Moral Prism
-- Order Compass
-- Soul Mirror
-- Astral Lens
-- Chronoshard
-- Wayfinder Sigil
-- Twinstar Brooch, but only if it has never been obtained before
+| Relic | Weight | Effect |
+| --- | ---: | --- |
+| Moral Prism, Order Compass, Soul Mirror, Astral Lens, Chronoshard, Wayfinder Sigil | 10 each | Existing consumable effect |
+| Twinstar Brooch | 1 | Double all XP for its wearer |
+| Emberheart Brooch | 1 | Double earned Might in Adventures and Trials for its wearer |
+| Moonweave Brooch | 1 | Double earned Arcana in Adventures and Trials for its wearer |
+| Soulbloom Brooch | 1 | Double earned Spirit in Adventures and Trials for its wearer |
 
-Before the Twinstar Brooch has ever been obtained, each of the seven relics has a `1/7` share of a successful relic drop. Afterwards, the Brooch is permanently removed from the pool and each of the remaining six has a `1/6` share. The overall relic-drop chance does not decrease.
+With no brooch acquired, each ordinary relic has `10/64` (15.625%) and each
+brooch `1/64` (1.5625%) of a successful relic drop. Each brooch is therefore ten
+times rarer than one ordinary relic. A previously acquired brooch is removed
+permanently; with `b` still eligible brooches the denominator is `60 + b`.
+The overall chest relic-drop chance above remains unchanged. The same weighted
+pool applies to the independent 1% S+ Trial relic roll.
 
-The Twinstar Brooch is unique and always untradeable. Other gameplay-dropped relics are tradeable. A randomly granted Chronoshard receives a permanent reduction value selected uniformly from every whole percentage from 10% through 90%, so each value has a `1/81` chance conditional on obtaining a Chronoshard.
+All four brooches are unique, permanent, untradeable, and available only from
+eligible ordinary chests or S+ Trials. They cannot be bought or crafted. A dragon
+can equip only one of the four: replacing it leaves the previous brooch owned
+and unequipped. Each brooch can be worn by only one dragon at a time. Expertise
+bonuses apply once at claim, within that dragon's Expertise cap, and do not
+multiply scores, chest odds, School gains or the other two Expertises. Seasonal
+Trials allocate their ordinary balanced reward first, then double only the
+matching Expertise actually earned. Twinstar keeps its existing all-XP effect.
+
+Other gameplay-dropped relics remain tradeable. A Chronoshard's permanent
+reduction is uniformly selected from whole percentages 10–90: `1/81` each.
 
 ### 1.4 Collectible emotes from chests
 
@@ -415,7 +430,7 @@ Completing the birthday Special Adventure guarantees the event-specific reward b
 - one Music Chest if the remaining collection capacity allows it; and
 - one uniformly random relic from Moral Prism, Order Compass, Soul Mirror, and Astral Lens.
 
-Each event-relic option has exactly a 25% chance. This event pool never contains Chronoshard, Wayfinder Sigil, or Twinstar Brooch.
+Each event-relic option has exactly a 25% chance. This event pool contains no Chronoshard, Wayfinder Sigil or equipable brooch.
 
 ### 3.3 New seasonal Adventure rewards
 
@@ -450,6 +465,13 @@ previews use the same four-kind distribution but a separate occurrence.
 
 ### 4.2 Trial reward by grade
 
+Current Halloween (Witchlight Ward) boundaries: D below 500; C from 500;
+B from 1200; A from 2000; S from 2250; S+ from 2500. The interim S boundary
+keeps every rank reachable beneath the requested 2500 S+ cutoff. Other event
+Trials retain 500 / 1200 / 2000 / 3000 / 4200. Calibration still records raw
+scores and does not automatically adjust these cutoffs.
+
+
 XP and expertise are fixed by grade. The chest is the random part shown here.
 Since the 8 September 2026 working change, event Trials in a personal test
 preview grant this same permanent reward table, including the S+ relic/emote
@@ -483,7 +505,7 @@ Every S+ completion also independently performs:
 - a 1% relic roll; and
 - a 10% unique Trial-emote roll.
 
-The relic uses the same seven-relic pool and one-time Twinstar Brooch rule described in section 1.3. The emote is selected uniformly from the 55 unowned Trial emotes. If all Trial emotes are owned, the effective emote chance becomes 0%.
+The relic uses the same weighted ten-relic pool and four lifetime-unique brooch rules described in section 1.3. The emote is selected uniformly from the 55 unowned Trial emotes. If all Trial emotes are owned, the effective emote chance becomes 0%.
 
 The 55 Trial emotes are:
 
@@ -755,7 +777,7 @@ from rerolling an already opened chest. A full vanity collection leaves its
 chest unopened. Pity is recomputed after each granted egg and is inactive while
 an egg remains in inventory or in the nest. Independent server draws preserve
 Sinister's 50% Sinisterra chance, guaranteed relic, and ordinary fallback pool.
-Chronoshard's 10-90% value is stored once per relic instance; Twinstar's lifetime
+Chronoshard's 10-90% value is stored once per relic instance; all four brooches' lifetime
 acquisition marker excludes it from subsequent drops, including after consumption.
 
 Special chest identity must be supplied by the trusted import/grant procedure;

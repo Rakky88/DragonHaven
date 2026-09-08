@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/shop_item.dart';
@@ -8,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../widgets/furniture_art.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/ui_bits.dart';
+import '../widgets/shop_economy_scope.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key, this.currency = ItemCurrency.coins});
@@ -32,7 +32,7 @@ class _ShopScreenState extends State<ShopScreen> {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final household = context.watch<HouseholdProvider>();
+    final household = watchShopEconomy(context);
     final largeText = usesLargeText(context);
     final normalizedQuery = _query.trim().toLowerCase();
     final items = shopCatalog.where((item) {
@@ -53,8 +53,8 @@ class _ShopScreenState extends State<ShopScreen> {
               children: [
                 _ShopHeader(
                   balance: widget.currency == ItemCurrency.coins
-                      ? household.pet.coins
-                      : household.pet.gems,
+                      ? household.coins
+                      : household.gems,
                   currency: widget.currency,
                   largeText: largeText,
                 ),
@@ -222,12 +222,12 @@ class _ShopItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final largeText = usesLargeText(context);
-    final household = context.watch<HouseholdProvider>();
+    final household = watchShopEconomy(context);
     final owned = household.owns(item);
     final equipped = household.isEquipped(item);
     final affordable = (item.currency == ItemCurrency.coins
-            ? household.pet.coins
-            : household.pet.gems) >=
+            ? household.coins
+            : household.gems) >=
         item.price;
     final color = Color(furnitureThemeColorValue(item));
     return Container(
@@ -237,7 +237,9 @@ class _ShopItemCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-            color: equipped ? AppColors.mint : AppColors.mist,
+            color: equipped
+                ? AppColors.mint
+                : AppColors.eventColor(context, AppColors.mist),
             width: equipped ? 2 : 1),
         boxShadow: [
           BoxShadow(
@@ -267,8 +269,9 @@ class _ShopItemCard extends StatelessWidget {
               if (equipped)
                 const Icon(Icons.check_circle_rounded, color: AppColors.mint)
               else if (owned)
-                const Icon(Icons.inventory_2_rounded,
-                    color: AppColors.twilight, size: 21),
+                Icon(Icons.inventory_2_rounded,
+                    color: AppColors.eventColor(context, AppColors.twilight),
+                    size: 21),
             ],
           ),
           const SizedBox(height: 13),
@@ -305,12 +308,14 @@ class _ShopItemCard extends StatelessWidget {
             width: double.infinity,
             child: FilledButton(
               key: Key('shop-action-${item.id}'),
-              onPressed: equipped ? null : () => _act(context),
+              onPressed: equipped || !household.canAct
+                  ? null
+                  : () => runShopAction(context, () => _act(context)),
               style: FilledButton.styleFrom(
                 backgroundColor: owned
                     ? AppColors.mint
                     : affordable
-                        ? AppColors.twilight
+                        ? AppColors.eventColor(context, AppColors.twilight)
                         : AppColors.muted,
                 disabledBackgroundColor: AppColors.mintLight,
                 disabledForegroundColor: const Color(0xFF29745E),
@@ -349,12 +354,10 @@ class _ShopItemCard extends StatelessWidget {
   }
 
   Future<void> _act(BuildContext context) async {
-    final result =
-        await context.read<HouseholdProvider>().purchaseOrEquip(item);
+    final result = await readShopEconomy(context).purchaseOrEquip(item);
     if (!context.mounted) return;
     final strings = AppStrings.of(context);
-    final roomName =
-        strings.roomName(context.read<HouseholdProvider>().activeRoom);
+    final roomName = strings.roomName(readShopEconomy(context).activeRoom);
     final itemName = strings.itemName(item);
     final message = switch (result) {
       PurchaseResult.purchased => strings.pick(
@@ -363,11 +366,11 @@ class _ShopItemCard extends StatelessWidget {
       PurchaseResult.equipped => strings.pick(
           '$itemName is now in $roomName.', '$itemName staat nu in $roomName.'),
       PurchaseResult.insufficientCoins => strings.pick(
-          '${item.price - context.read<HouseholdProvider>().pet.coins} more coins needed.',
-          'Nog ${item.price - context.read<HouseholdProvider>().pet.coins} munten nodig.'),
+          '${item.price - readShopEconomy(context).coins} more coins needed.',
+          'Nog ${item.price - readShopEconomy(context).coins} munten nodig.'),
       PurchaseResult.insufficientGems => strings.pick(
-          '${item.price - context.read<HouseholdProvider>().pet.gems} more gems needed.',
-          'Nog ${item.price - context.read<HouseholdProvider>().pet.gems} edelstenen nodig.'),
+          '${item.price - readShopEconomy(context).gems} more gems needed.',
+          'Nog ${item.price - readShopEconomy(context).gems} edelstenen nodig.'),
       PurchaseResult.alreadyEquipped => strings.pick(
           '$itemName already has a place in the house.',
           '$itemName heeft al een plek in het huis.'),

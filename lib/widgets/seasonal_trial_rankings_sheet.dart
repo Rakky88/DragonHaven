@@ -312,9 +312,9 @@ class _SeasonalChronicleCard extends StatelessWidget {
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2B1B4D), Color(0xFF5C3D88)],
-        ),
+        gradient: AppColors.panelGradient(context,
+            fallback: const LinearGradient(
+                colors: [Color(0xFF2B1B4D), Color(0xFF5C3D88)])),
         borderRadius: BorderRadius.circular(23),
       ),
       child: Column(

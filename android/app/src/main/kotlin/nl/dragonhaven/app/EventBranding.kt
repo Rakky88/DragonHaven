@@ -48,8 +48,8 @@ object EventBranding {
 
     fun selectedLogo(context: Context, now: Long = System.currentTimeMillis()): String =
         windows(context).filter { it.optLong("start") <= now && now < it.optLong("end") }
-            .sortedWith(compareBy<JSONObject> { if (it.optBoolean("preview")) 1 else 0 }
-                .thenBy { it.optLong("end") }.thenBy { it.optString("key") })
+            .sortedWith(compareBy<JSONObject> { if (it.optBoolean("preview")) 0 else 1 }
+                .thenByDescending { it.optLong("start") }.thenBy { it.optString("key") })
             .firstOrNull()?.optString("logo") ?: "default"
 
     fun refresh(context: Context) {

@@ -67,15 +67,15 @@ class DraconomiconScreen extends StatelessWidget {
                     clipBehavior: Clip.antiAlias,
                     padding: const EdgeInsets.fromLTRB(14, 13, 14, 14),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF17112F),
-                          Color(0xFF37205F),
-                          Color(0xFF65449A),
-                        ],
-                      ),
+                      gradient: AppColors.panelGradient(context,
+                          fallback: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFF17112F),
+                                Color(0xFF37205F),
+                                Color(0xFF65449A)
+                              ])),
                       borderRadius: BorderRadius.circular(28),
                       border: Border.all(color: const Color(0x99FFD66E)),
                       boxShadow: const [
@@ -236,14 +236,16 @@ class DraconomiconScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE7DFF3),
+                      color: AppColors.eventColor(
+                          context, const Color(0xFFE7DFF3)),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: Colors.white),
                     ),
                     child: TabBar(
                       dividerColor: Colors.transparent,
                       indicatorSize: TabBarIndicatorSize.tab,
-                      labelColor: AppColors.twilight,
+                      labelColor:
+                          AppColors.eventColor(context, AppColors.twilight),
                       unselectedLabelColor: AppColors.muted,
                       labelStyle: const TextStyle(fontWeight: FontWeight.w900),
                       indicator: BoxDecoration(
@@ -459,7 +461,7 @@ class DragonLineageEntry extends StatelessWidget {
       surfaceTintColor: Colors.transparent,
       color: discovered
           ? Color.alphaBlend(primary.withValues(alpha: .06), Colors.white)
-          : const Color(0xFFE9E5EE),
+          : AppColors.eventColor(context, const Color(0xFFE9E5EE)),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(23),
         side: BorderSide(
@@ -481,9 +483,9 @@ class DragonLineageEntry extends StatelessWidget {
             shape: BoxShape.circle,
             gradient: discovered
                 ? LinearGradient(colors: [secondary, primary])
-                : const LinearGradient(
-                    colors: [Color(0xFFDCD7E3), Color(0xFFB9B2C3)],
-                  ),
+                : AppColors.panelGradient(context,
+                    fallback: const LinearGradient(
+                        colors: [Color(0xFFDCD7E3), Color(0xFFB9B2C3)])),
             border: Border.all(color: Colors.white, width: 2),
             boxShadow: discovered
                 ? [
@@ -690,7 +692,9 @@ class _FormTile extends StatelessWidget {
                   ],
                 )
               : null,
-          color: known ? null : const Color(0xFFD9D4E0),
+          color: known
+              ? null
+              : AppColors.eventColor(context, const Color(0xFFD9D4E0)),
           borderRadius: BorderRadius.circular(19),
           border: Border.all(
               color: spectral ? const Color(0xFF69C9E7) : rarityColor,
@@ -771,7 +775,7 @@ class _FormTile extends StatelessWidget {
                           silhouette: !known,
                           prismatic: spectral),
                       if (known)
-                        const Positioned(
+                        Positioned(
                           right: 2,
                           bottom: 2,
                           child: DecoratedBox(
@@ -782,7 +786,9 @@ class _FormTile extends StatelessWidget {
                             child: Padding(
                               padding: EdgeInsets.all(4),
                               child: Icon(Icons.zoom_in_rounded,
-                                  size: 16, color: AppColors.twilight),
+                                  size: 16,
+                                  color: AppColors.eventColor(
+                                      context, AppColors.twilight)),
                             ),
                           ),
                         ),
@@ -911,8 +917,8 @@ Future<void> _showDragonPreview(
                 const SizedBox(height: 4),
                 Text(
                   '✦ ${strings.pick('Spectral', 'Spectral')}',
-                  style: const TextStyle(
-                    color: AppColors.twilight,
+                  style: TextStyle(
+                    color: AppColors.eventColor(context, AppColors.twilight),
                     fontWeight: FontWeight.w800,
                   ),
                 ),

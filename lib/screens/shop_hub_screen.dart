@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/account_title.dart';
@@ -17,6 +16,7 @@ import '../widgets/dragon_emote_picker.dart';
 import '../widgets/furniture_art.dart';
 import '../widgets/profile_portrait_sprite.dart';
 import '../widgets/ui_bits.dart';
+import '../widgets/shop_economy_scope.dart';
 import 'shop_screen.dart';
 
 class ShopHubScreen extends StatelessWidget {
@@ -32,13 +32,16 @@ class ShopHubScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    return DefaultTabController(
+    return ShopEconomyBoundary(
+        child: DefaultTabController(
       length: 3,
       initialIndex: initialCurrencyTab,
       child: Column(
         children: [
           TabBar(
             key: const Key('shop-currency-tabs'),
+            isScrollable: usesLargeText(context),
+            tabAlignment: usesLargeText(context) ? TabAlignment.start : null,
             tabs: [
               Tab(
                 key: const Key('shop-tab-coins'),
@@ -78,7 +81,7 @@ class ShopHubScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 }
 
@@ -96,7 +99,7 @@ class _PacksShopState extends State<_PacksShop> {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final game = context.watch<HouseholdProvider>();
+    final game = watchShopEconomy(context);
     return ListView(
       key: const Key('packs-shop-scroll'),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 34),
@@ -318,7 +321,7 @@ class _DragonEmotePackCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final game = context.watch<HouseholdProvider>();
+    final game = watchShopEconomy(context);
     final owned = game.ownsDragonEmotePack(pack.id);
     final colors = switch (pack.source) {
       DragonEmoteSource.cozyPack => const [
@@ -391,7 +394,8 @@ class _DragonEmotePackCard extends StatelessWidget {
                 backgroundColor: Colors.white.withValues(alpha: .15),
                 disabledBackgroundColor: Colors.white.withValues(alpha: .10),
                 foregroundColor: Colors.white,
-                disabledForegroundColor: const Color(0xFFE9DFF9),
+                disabledForegroundColor:
+                    AppColors.eventColor(context, const Color(0xFFE9DFF9)),
                 side: const BorderSide(color: Colors.white24),
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 minimumSize: Size.zero,
@@ -463,7 +467,7 @@ class _DragonEmotePackGrid extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF0E8F8),
+          color: AppColors.eventColor(context, const Color(0xFFF0E8F8)),
           borderRadius: BorderRadius.circular(18),
         ),
         child: GridView.builder(
@@ -513,8 +517,9 @@ class _SupporterPackContents extends StatelessWidget {
           ),
         ),
         _SupporterContentTile(
-          art: const Icon(Icons.workspace_premium_rounded,
-              color: AppColors.twilight, size: 46),
+          art: Icon(Icons.workspace_premium_rounded,
+              color: AppColors.eventColor(context, AppColors.twilight),
+              size: 46),
           title: strings.pick(
               '“Founding Supporter” title', 'Titel “Oprichterssupporter”'),
           body: strings.pick(
@@ -546,7 +551,7 @@ class _SupporterPackContents extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFF7F2FF),
+            color: AppColors.eventColor(context, const Color(0xFFF7F2FF)),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
@@ -668,9 +673,11 @@ class _CurrencyShop extends StatelessWidget {
       child: Column(
         children: [
           Material(
-            color: const Color(0xFFF3EEFA),
+            color: AppColors.eventColor(context, const Color(0xFFF3EEFA)),
             child: TabBar(
               key: Key('shop-${currency.name}-category-tabs'),
+              isScrollable: usesLargeText(context),
+              tabAlignment: usesLargeText(context) ? TabAlignment.start : null,
               labelStyle: const TextStyle(fontWeight: FontWeight.w900),
               tabs: [
                 Tab(
@@ -715,7 +722,7 @@ class _RelicShop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final game = context.watch<HouseholdProvider>();
+    final game = watchShopEconomy(context);
     return ListView(
       key: const PageStorageKey('shop-gems-relics-scroll'),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -730,7 +737,8 @@ class _RelicShop extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.lock_rounded, color: AppColors.twilight),
+              Icon(Icons.lock_rounded,
+                  color: AppColors.eventColor(context, AppColors.twilight)),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -776,7 +784,7 @@ class _RelicShopCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final game = context.watch<HouseholdProvider>();
+    final game = watchShopEconomy(context);
     return Card(
       key: Key('shop-relic-${relic.name}'),
       margin: const EdgeInsets.only(bottom: 11),
@@ -824,8 +832,8 @@ class _RelicShopCard extends StatelessWidget {
                       'Owned: $owned · shop-bought: $untradeable (untradeable)',
                       'In bezit: $owned · uit shop: $untradeable (niet ruilbaar)',
                     ),
-                    style: const TextStyle(
-                      color: AppColors.twilight,
+                    style: TextStyle(
+                      color: AppColors.eventColor(context, AppColors.twilight),
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                     ),
@@ -835,9 +843,9 @@ class _RelicShopCard extends StatelessWidget {
                     width: double.infinity,
                     child: FilledButton.icon(
                       key: Key('buy-relic-${relic.name}'),
-                      onPressed: game.pet.gems < relicShopGemPrice
+                      onPressed: !game.canAct || game.gems < relicShopGemPrice
                           ? null
-                          : () => _buy(context),
+                          : () => runShopAction(context, () => _buy(context)),
                       icon: const GameIconSprite(GameIconKind.gem, size: 25),
                       label: const Text('$relicShopGemPrice'),
                     ),
@@ -852,7 +860,7 @@ class _RelicShopCard extends StatelessWidget {
   }
 
   Future<void> _buy(BuildContext context) async {
-    final result = await context.read<HouseholdProvider>().purchaseRelic(relic);
+    final result = await readShopEconomy(context).purchaseRelic(relic);
     if (!context.mounted) return;
     final strings = AppStrings.of(context);
     final name = strings.relicName(relic);
@@ -864,8 +872,8 @@ class _RelicShopCard extends StatelessWidget {
             '$name is aan je Inventory toegevoegd. Dit exemplaar is niet ruilbaar.',
           ),
         MysticRelicPurchaseResult.insufficientGems => strings.pick(
-            '${relicShopGemPrice - context.read<HouseholdProvider>().pet.gems} more gems needed.',
-            'Je hebt nog ${relicShopGemPrice - context.read<HouseholdProvider>().pet.gems} edelstenen nodig.',
+            '${relicShopGemPrice - readShopEconomy(context).gems} more gems needed.',
+            'Je hebt nog ${relicShopGemPrice - readShopEconomy(context).gems} edelstenen nodig.',
           ),
         MysticRelicPurchaseResult.notAvailable => strings.pick(
             'This Relic is not available in the shop.',
@@ -886,7 +894,7 @@ class _ChestShop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final game = context.watch<HouseholdProvider>();
+    final game = watchShopEconomy(context);
     final portraitChest = currency == ItemCurrency.gems;
     final tier = portraitChest ? ChestTier.portrait : ChestTier.title;
     final collectionComplete =
@@ -910,11 +918,11 @@ class _ChestShop extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 520),
           padding: const EdgeInsets.fromLTRB(18, 18, 18, 17),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF2B185B), Color(0xFF6B3FA0)],
-            ),
+            gradient: AppColors.panelGradient(context,
+                fallback: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF2B185B), Color(0xFF6B3FA0)])),
             borderRadius: BorderRadius.circular(28),
             boxShadow: const [
               BoxShadow(
@@ -972,13 +980,16 @@ class _ChestShop extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton(
                   key: Key('buy-${tier.name}-chest'),
-                  onPressed: capacityReached
+                  onPressed: !game.canAct || capacityReached
                       ? null
-                      : () => _buy(context, portraitChest: portraitChest),
+                      : () => runShopAction(context,
+                          () => _buy(context, portraitChest: portraitChest)),
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFFFFE39A),
-                    foregroundColor: const Color(0xFF29184C),
-                    disabledBackgroundColor: const Color(0xFF7F7394),
+                    foregroundColor:
+                        AppColors.eventColor(context, const Color(0xFF29184C)),
+                    disabledBackgroundColor:
+                        AppColors.eventColor(context, const Color(0xFF7F7394)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: capacityReached
@@ -1022,7 +1033,7 @@ class _ChestShop extends StatelessWidget {
     BuildContext context, {
     required bool portraitChest,
   }) async {
-    final game = context.read<HouseholdProvider>();
+    final game = readShopEconomy(context);
     final _ChestPurchaseOutcome result;
     if (portraitChest) {
       result = switch (await game.purchasePortraitChest()) {
@@ -1087,11 +1098,11 @@ class _ChestShop extends StatelessWidget {
         ),
       _ChestPurchaseOutcome.insufficientFunds => strings.pick(
           portraitChest
-              ? '${portraitChestGemPrice - game.pet.gems} more gems needed.'
-              : '${titleChestCoinPrice - game.pet.coins} more coins needed.',
+              ? '${portraitChestGemPrice - game.gems} more gems needed.'
+              : '${titleChestCoinPrice - game.coins} more coins needed.',
           portraitChest
-              ? 'Nog ${portraitChestGemPrice - game.pet.gems} edelstenen nodig.'
-              : 'Nog ${titleChestCoinPrice - game.pet.coins} munten nodig.',
+              ? 'Nog ${portraitChestGemPrice - game.gems} edelstenen nodig.'
+              : 'Nog ${titleChestCoinPrice - game.coins} munten nodig.',
         ),
       _ChestPurchaseOutcome.collectionComplete => '',
     };
@@ -1105,18 +1116,18 @@ class _MusicChestShopCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final game = context.watch<HouseholdProvider>();
+    final game = watchShopEconomy(context);
     const tier = ChestTier.music;
     return Container(
       key: const Key('shop-music-chest-card'),
       constraints: const BoxConstraints(maxWidth: 520),
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 17),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF2B185B), Color(0xFF6B3FA0)],
-        ),
+        gradient: AppColors.panelGradient(context,
+            fallback: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF2B185B), Color(0xFF6B3FA0)])),
         borderRadius: BorderRadius.circular(28),
         boxShadow: const [
           BoxShadow(
@@ -1218,13 +1229,15 @@ class _MusicChestShopCard extends StatelessWidget {
             width: double.infinity,
             child: FilledButton(
               key: const Key('buy-music-chest'),
-              onPressed: game.musicChestCapacityReached
+              onPressed: !game.canAct || game.musicChestCapacityReached
                   ? null
-                  : () => _buyMusic(context),
+                  : () => runShopAction(context, () => _buyMusic(context)),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFFFE39A),
-                foregroundColor: const Color(0xFF29184C),
-                disabledBackgroundColor: const Color(0xFF7F7394),
+                foregroundColor:
+                    AppColors.eventColor(context, const Color(0xFF29184C)),
+                disabledBackgroundColor:
+                    AppColors.eventColor(context, const Color(0xFF7F7394)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               child: game.musicChestCapacityReached
@@ -1255,7 +1268,7 @@ class _MusicChestShopCard extends StatelessWidget {
   }
 
   Future<void> _buyMusic(BuildContext context) async {
-    final game = context.read<HouseholdProvider>();
+    final game = readShopEconomy(context);
     final result = await game.purchaseMusicChest();
     if (!context.mounted) return;
     final strings = AppStrings.of(context);
@@ -1272,8 +1285,8 @@ class _MusicChestShopCard extends StatelessWidget {
         showAppSnackBar(
           context,
           strings.pick(
-            '${musicChestGemPrice - game.pet.gems} more gems needed.',
-            'Nog ${musicChestGemPrice - game.pet.gems} edelstenen nodig.',
+            '${musicChestGemPrice - game.gems} more gems needed.',
+            'Nog ${musicChestGemPrice - game.gems} edelstenen nodig.',
           ),
         );
       case MusicChestPurchaseResult.collectionComplete:
@@ -1536,7 +1549,9 @@ class _CurrencyPackTile extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: coin ? const Color(0xFFE2B84E) : const Color(0xFF9B72D0),
+            color: coin
+                ? const Color(0xFFE2B84E)
+                : AppColors.eventColor(context, const Color(0xFF9B72D0)),
           ),
           boxShadow: const [
             BoxShadow(
@@ -1560,7 +1575,8 @@ class _CurrencyPackTile extends StatelessWidget {
               child: Icon(
                 Icons.lock_rounded,
                 size: 14,
-                color: AppColors.twilight.withValues(alpha: .62),
+                color: AppColors.eventColor(context, AppColors.twilight)
+                    .withValues(alpha: .62),
               ),
             ),
             Positioned(

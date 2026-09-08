@@ -19,6 +19,7 @@ abstract final class GameCommandSchema {
     'use_chronoshard': {'reductionPercent'},
     'use_wayfinder': {'kind', 'replaceAdventureId'},
     'equip_twinstar': {'dragonId'},
+    'equip_relic': {'relic', 'dragonId'},
     'activate_egg': {'eggId'},
     'hatch_egg': {'eggId'},
     'name_dragon': {'dragonId', 'name'},

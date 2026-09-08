@@ -336,18 +336,20 @@ class _NestPickerControl extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1ECFB),
+          color: AppColors.eventColor(context, const Color(0xFFF1ECFB)),
           borderRadius: BorderRadius.circular(99),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: AppColors.twilight),
+            Icon(icon,
+                size: 18,
+                color: AppColors.eventColor(context, AppColors.twilight)),
             const SizedBox(width: 5),
             Text(
               label,
-              style: const TextStyle(
-                color: AppColors.twilight,
+              style: TextStyle(
+                color: AppColors.eventColor(context, AppColors.twilight),
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -400,8 +402,8 @@ class _NestEggGridTile extends StatelessWidget {
                   key: Key('nest-egg-hatch-time-${egg.id}'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.twilight,
+                  style: TextStyle(
+                    color: AppColors.eventColor(context, AppColors.twilight),
                     fontSize: 10.5,
                     fontWeight: FontWeight.w900,
                   ),
@@ -480,8 +482,9 @@ class _NestEggListTile extends StatelessWidget {
                       key: Key('nest-egg-hatch-time-${egg.id}'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.twilight,
+                      style: TextStyle(
+                        color:
+                            AppColors.eventColor(context, AppColors.twilight),
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
                       ),
@@ -557,7 +560,8 @@ class _NestScene extends StatelessWidget {
                           vertical: 10,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xD91D1639),
+                          color: AppColors.eventColor(
+                              context, const Color(0xD91D1639)),
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(
                             color: Colors.white.withValues(alpha: .18),
@@ -603,7 +607,8 @@ class _EmptyNestCard extends StatelessWidget {
           colors: [Color(0xFFF2ECFF), Color(0xFFFFF4D9)],
         ),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.mist),
+        border:
+            Border.all(color: AppColors.eventColor(context, AppColors.mist)),
       ),
       child: Row(children: [
         const GameIconSprite(GameIconKind.mysteriousEgg, size: 58),
@@ -658,7 +663,8 @@ class _EggClueCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(21),
-        border: Border.all(color: AppColors.mist),
+        border:
+            Border.all(color: AppColors.eventColor(context, AppColors.mist)),
       ),
       child: Row(children: [
         const GameIconSprite(GameIconKind.mysteriousEgg, size: 46),

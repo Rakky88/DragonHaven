@@ -179,8 +179,8 @@ class _AboutSheetState extends State<_AboutSheet> {
             _AboutPanel(
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading:
-                    const Icon(Icons.redeem_rounded, color: AppColors.twilight),
+                leading: Icon(Icons.redeem_rounded,
+                    color: AppColors.eventColor(context, AppColors.twilight)),
                 title: Text(
                   strings.pick('Redeem code', 'Code inwisselen'),
                   style: const TextStyle(fontWeight: FontWeight.w900),
@@ -201,11 +201,12 @@ class _AboutSheetState extends State<_AboutSheet> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppColors.mist,
+                          color: AppColors.eventColor(context, AppColors.mist),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.system_update_alt_rounded,
-                            color: AppColors.twilight),
+                        child: Icon(Icons.system_update_alt_rounded,
+                            color: AppColors.eventColor(
+                                context, AppColors.twilight)),
                       ),
                       const SizedBox(width: 11),
                       Expanded(
@@ -276,7 +277,8 @@ class _AboutSheetState extends State<_AboutSheet> {
                                   size: 19,
                                   color: releaseStatusIsError
                                       ? AppColors.coral
-                                      : AppColors.twilight,
+                                      : AppColors.eventColor(
+                                          context, AppColors.twilight),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
@@ -311,9 +313,10 @@ class _AboutSheetState extends State<_AboutSheet> {
                           color: AppColors.goldLight,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.coffee_outlined,
-                          color: AppColors.twilightDark,
+                          color: AppColors.eventColor(
+                              context, AppColors.twilightDark),
                         ),
                       ),
                       const SizedBox(width: 11),
@@ -350,15 +353,16 @@ class _AboutSheetState extends State<_AboutSheet> {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.mist,
+                      color: AppColors.eventColor(context, AppColors.mist),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.paypal_rounded,
                           key: Key('about-paypal-icon'),
-                          color: AppColors.twilight,
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight),
                           size: 28,
                         ),
                         const SizedBox(width: 10),
@@ -490,18 +494,19 @@ class _AboutHero extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF251C52),
-              Color(0xFF4A347E),
-              Color(0xFF71549D),
-            ],
-          ),
+          gradient: AppColors.panelGradient(context,
+              fallback: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF251C52),
+                    Color(0xFF4A347E),
+                    Color(0xFF71549D)
+                  ])),
           boxShadow: [
             BoxShadow(
-              color: AppColors.twilight.withValues(alpha: .28),
+              color: AppColors.eventColor(context, AppColors.twilight)
+                  .withValues(alpha: .28),
               blurRadius: 30,
               offset: const Offset(0, 14),
             ),
@@ -656,7 +661,8 @@ class _AboutPanel extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(22),
-          side: const BorderSide(color: AppColors.mist),
+          side:
+              BorderSide(color: AppColors.eventColor(context, AppColors.mist)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -683,10 +689,12 @@ class _InfoRow extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: AppColors.mist,
+              color: AppColors.eventColor(context, AppColors.mist),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppColors.twilight, size: 20),
+            child: Icon(icon,
+                color: AppColors.eventColor(context, AppColors.twilight),
+                size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -704,8 +712,9 @@ class _PanelDivider extends StatelessWidget {
   const _PanelDivider();
 
   @override
-  Widget build(BuildContext context) => const Padding(
+  Widget build(BuildContext context) => Padding(
         padding: EdgeInsets.symmetric(vertical: 10),
-        child: Divider(height: 1, color: AppColors.mist),
+        child: Divider(
+            height: 1, color: AppColors.eventColor(context, AppColors.mist)),
       );
 }
