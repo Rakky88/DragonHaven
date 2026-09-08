@@ -14,6 +14,8 @@ import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
 import 'package:dragon_haven/screens/canonical_dragons_screen.dart';
 import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
 import 'package:dragon_haven/screens/canonical_house_screen.dart';
+import 'package:dragon_haven/widgets/expertise_score_badge.dart';
+import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:flutter/material.dart';
@@ -395,6 +397,21 @@ void main() {
           'client_probe_lifecycle_equipment_failed');
       stdout.writeln(
           'PASS: real lifecycle UI; Sinister confirmations and materials, crafting, hidden egg discovery, tags, incubation, Quill rename and exclusive equipment.');
+      final beforeHighlight = game.snapshot!.dragon(dragon.id)!;
+      await tap(key('canonical-highlight-${dragon.id}-might'));
+      await settleCommand();
+      await tap(key('canonical-highlight-${dragon.id}-spirit'));
+      await settleCommand();
+      await tap(key('canonical-highlight-${dragon.id}-spirit'));
+      await settleCommand();
+      final highlighted = game.snapshot!.dragon(dragon.id)!;
+      require(
+          highlighted.highlighted.length == 1 &&
+              highlighted.highlighted.contains('might') &&
+              highlighted.xp == beforeHighlight.xp &&
+              highlighted.training.entries
+                  .every((e) => beforeHighlight.training[e.key] == e.value),
+          'client_probe_preferences_highlight');
       await mount(const CanonicalAdventuresScreen());
       await tap(key('canonical-refresh-adventures'));
       await settleCommand();
@@ -405,6 +422,13 @@ void main() {
           'client_probe_adventure_fixture_missing');
       await tap(key('canonical-select-adventure-mini_1'));
       await tap(key('canonical-expertise-info-${dragon.id}'));
+      final mightInfo = find.byWidgetPredicate((w) =>
+          w is ExpertiseScoreBadge &&
+          w.dragonId == dragon.id &&
+          w.focus == TrainingFocus.might &&
+          w.iconSize == 30);
+      require(tester.widget<ExpertiseScoreBadge>(mightInfo).highlighted,
+          'client_probe_preferences_adventure_glow');
       await tap(find.widgetWithText(TextButton, 'Close'));
       await tap(key('canonical-adventure-dragon-${dragon.id}'));
       await tap(key('dragon-picker-draconomicon'));
@@ -540,6 +564,22 @@ void main() {
           'client_probe_house_room_selection');
       stdout.writeln(
           'PASS: real house UI; stored repair price, ward upgrade, floor purchase and free room selection.');
+      await mount(const CanonicalDragonsScreen());
+      final other = game.snapshot!.dragons
+          .firstWhere((d) => d.owned && d.id != dragon.id);
+      final favoriteChanges =
+          game.snapshot!.data['progress']['favoriteChanges'] as int;
+      await tap(key('canonical-dragon-${other.id}'));
+      await tap(key('canonical-favorite-dragon'));
+      await settleCommand();
+      require(
+          game.snapshot!.dragons.where((d) => d.favorite).single.id ==
+                  other.id &&
+              game.snapshot!.data['progress']['favoriteChanges'] ==
+                  favoriteChanges + 1,
+          'client_probe_preferences_favorite');
+      stdout.writeln(
+          'PASS: real preferences UI; expertise highlights, adventure information and one favorite.');
     } finally {
       stdout.writeln('PROBE: ui_cleanup_start');
       await tester.pumpWidget(const SizedBox.shrink());

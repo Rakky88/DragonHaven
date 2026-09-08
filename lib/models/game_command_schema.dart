@@ -23,6 +23,8 @@ abstract final class GameCommandSchema {
     'activate_egg': {'eggId'},
     'hatch_egg': {'eggId'},
     'name_dragon': {'dragonId', 'name'},
+    'set_dragon_highlight': {'dragonId', 'focus', 'highlighted'},
+    'set_favorite_dragon': {'dragonId'},
     'evolve_dragon': {'dragonId'},
     'buy_starlight_treat': {'dragonId'},
     'release_dragon': {'dragonId'},

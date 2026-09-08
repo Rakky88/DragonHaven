@@ -8,6 +8,8 @@ import 'package:dragon_haven/screens/canonical_dragons_screen.dart';
 import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
 import 'package:dragon_haven/screens/canonical_house_screen.dart';
 import 'package:dragon_haven/models/adventure.dart';
+import 'package:dragon_haven/models/pet.dart';
+import 'package:dragon_haven/widgets/expertise_score_badge.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -396,6 +398,47 @@ void main() {
     server.state['damagedTowerRepairFactors'] = {'0': .60};
     server.state['dragonWardLevel'] = 0;
   }
+
+  testWidgets(
+      'dragon highlights remain visible in adventure expertise without changing scores',
+      (tester) async {
+    await setup(tester, const CanonicalDragonsScreen(), prepare: (server) {
+      server.state['pet']['highlightedExpertises'] = [];
+    });
+    final dragon = session.snapshot!.dragons.first;
+    await tap(tester, key('canonical-dragon-${dragon.id}'));
+    await tap(tester, key('canonical-highlight-${dragon.id}-might'));
+    await command(tester);
+    await tap(tester, key('canonical-highlight-${dragon.id}-spirit'));
+    await command(tester);
+    await shot(tester, 'dragon-highlight-controls');
+    expect(
+        session.snapshot!.dragon(dragon.id)!.highlighted, {'might', 'spirit'});
+    await tap(tester, key('canonical-highlight-${dragon.id}-spirit'));
+    await command(tester);
+    expect(session.snapshot!.dragon(dragon.id)!.highlighted, {'might'});
+    expect(session.snapshot!.dragon(dragon.id)!.training, dragon.training);
+    expect(session.snapshot!.dragon(dragon.id)!.xp, dragon.xp);
+    await tap(tester, find.widgetWithText(TextButton, 'Close'));
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+        value: session,
+        child: const MaterialApp(
+            home: Scaffold(body: CanonicalAdventuresScreen()))));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tap(tester, key('canonical-refresh-adventures'));
+    await command(tester);
+    final id = session.snapshot!.adventures.offers(AdventureKind.mini).first;
+    await tap(tester, key('canonical-select-adventure-$id'));
+    await tap(tester, key('canonical-expertise-info-${dragon.id}'));
+    final info = find.byWidgetPredicate((w) =>
+        w is ExpertiseScoreBadge &&
+        w.dragonId == dragon.id &&
+        w.focus == TrainingFocus.might &&
+        w.iconSize == 30);
+    expect(tester.widget<ExpertiseScoreBadge>(info).highlighted, isTrue);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
   testWidgets('Dutch large-text house confirms exact prices before spending',
       (tester) async {

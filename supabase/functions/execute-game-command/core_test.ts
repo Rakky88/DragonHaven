@@ -46,6 +46,22 @@ function setup(overrides: Partial<Dependencies> = {}) {
 }
 
 const readBody = { protocol: 2, clientBuild: 10068, action: "read_state" };
+
+Deno.test("dragon preferences use the authenticated lease and reject extra grants", async () => {
+  for (const [action, payload] of [
+    ["set_dragon_highlight", { dragonId: "owned-dragon", focus: "might", highlighted: true }],
+    ["set_favorite_dragon", { dragonId: "owned-dragon" }],
+  ] as const) {
+    const { deps, inputs, calls } = setup();
+    assert((await handleCommand(request({ ...body, action, payload }), deps)).status === 200);
+    assert(inputs.length === 1 && inputs[0].keeperId === owner);
+    equal(inputs[0].payload, payload);
+    assert(calls[0].payload.p_owner_id === owner);
+    const denied = setup();
+    assert((await handleCommand(request({ ...body, action, payload: { ...payload, xp: 100 } }), denied.deps)).status === 400);
+    equal(denied.calls, []);
+  }
+});
 const readSnapshot = { owner_id: owner, server_revision: 3, state_sha256: hash,
   ruleset_revision: 2,
   authority_mode: "shadow", server_time: "2026-09-07T12:00:00Z", mutations_enabled: false,

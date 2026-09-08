@@ -4,7 +4,7 @@ Last verified: 9 September 2026
 
 Ruleset: released app `v0.05.22`; server schema 59, economy activation disabled
 
-<!-- reference-source-fingerprint: 6489df6bb3d380a4 -->
+<!-- reference-source-fingerprint: 2ee3ee9805d190d9 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -42,6 +42,12 @@ The subsequent staging house controls extract only the existing deterministic
 floor/repair/ward price calculations. Egg lifecycle, returning Special
 Adventure eligibility, event schedules, chest contents and reward odds remain
 unchanged. Room/floor actions use the same durable, server-validated session.
+
+Dragon preference commands now persist the desired expertise highlights and
+one favorite in the staging lane. Highlighting changes no training, XP, event
+eligibility or reward. Favorite selection preserves the existing release
+protection and achievement counter; replaying the same choice cannot increment
+it again. Special/Sinister identity, eggs and event schedules are unchanged.
 
 The authenticated server display projection preserves Special Egg catalog art
 and Sinister/Special protection, but omits unrevealed lineage, spectral roll,

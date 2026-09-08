@@ -77,7 +77,8 @@ class CanonicalGameIntent {
       RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
           .hasMatch(value);
   static bool _argument(String action, String key, Object? value) {
-    if (const ['tagged', 'sinisterConfirmed', 'fullyViewed'].contains(key)) {
+    if (const ['tagged', 'sinisterConfirmed', 'fullyViewed', 'highlighted']
+        .contains(key)) {
       return value is bool;
     }
     if (const ['count', 'reductionPercent', 'index'].contains(key)) {

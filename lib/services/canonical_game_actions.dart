@@ -6,6 +6,7 @@ import '../models/music_track.dart';
 import '../models/mystic_relic.dart';
 import '../models/egg_altar.dart';
 import '../models/profile_portrait.dart';
+import '../models/pet.dart';
 import 'canonical_game_session.dart';
 import 'canonical_game_snapshot.dart';
 
@@ -74,6 +75,12 @@ class CanonicalGameActions {
       _boolean('use_altar_relic', {'relic': relic.name, 'eggId': id});
   Future<void> nameDragon(String id, String name) =>
       _boolean('name_dragon', {'dragonId': id, 'name': name.trim()});
+  Future<void> setDragonHighlight(
+          String id, TrainingFocus focus, bool highlighted) =>
+      _boolean('set_dragon_highlight',
+          {'dragonId': id, 'focus': focus.name, 'highlighted': highlighted});
+  Future<void> setFavoriteDragon(String id) =>
+      _boolean('set_favorite_dragon', {'dragonId': id});
   Future<void> evolveDragon(String id) =>
       _boolean('evolve_dragon', {'dragonId': id});
   Future<void> equip(MysticRelic relic, String? dragonId) =>

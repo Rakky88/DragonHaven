@@ -29,6 +29,7 @@ const commandKeys: Record<string, readonly string[]> = {
   use_chronoshard: ["reductionPercent"], use_wayfinder: ["kind", "replaceAdventureId"],
   equip_twinstar: ["dragonId"], equip_relic: ["relic", "dragonId"], activate_egg: ["eggId"], hatch_egg: ["eggId"],
   name_dragon: ["dragonId", "name"], evolve_dragon: ["dragonId"],
+  set_dragon_highlight: ["dragonId", "focus", "highlighted"], set_favorite_dragon: ["dragonId"],
   buy_starlight_treat: ["dragonId"], release_dragon: ["dragonId"],
   start_adventure: ["adventureId", "dragonId"], dismiss_adventure: ["adventureId"],
   claim_adventure: ["runId"], abort_adventure: ["runId"], dismiss_trial: ["offerId"],

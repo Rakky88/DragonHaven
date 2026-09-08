@@ -4,6 +4,7 @@ import '../models/chest.dart';
 import '../models/egg_altar.dart';
 import '../models/house.dart';
 import '../models/mystic_relic.dart';
+import '../models/pet.dart';
 import '../models/shop_item.dart';
 import '../providers/household_provider.dart';
 import 'server_entropy.dart';
@@ -125,6 +126,20 @@ abstract final class GameCommandEngine {
         case 'name_dragon':
           result = await game.nameDragon(
               args.text('dragonId'), args.text('name', max: 24));
+        case 'set_dragon_highlight':
+          final id = args.text('dragonId');
+          final focus = args.enumValue('focus', TrainingFocus.values);
+          final highlighted = args.boolean('highlighted');
+          final dragon = game.ownedDragons.where((d) => d.id == id).firstOrNull;
+          result = dragon != null;
+          if (dragon != null &&
+              dragon.highlightedExpertises.contains(focus) != highlighted) {
+            await game.toggleDragonExpertiseHighlight(id, focus);
+          }
+        case 'set_favorite_dragon':
+          final id = args.text('dragonId');
+          result = game.ownedDragons.any((d) => d.id == id);
+          if (result == true) await game.toggleFavorite(id);
         case 'evolve_dragon':
           result = await game.evolveDragon(args.text('dragonId'));
         case 'buy_starlight_treat':

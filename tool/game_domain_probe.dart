@@ -63,12 +63,37 @@ Future<Map<String, dynamic>> runGameDomainProbe() async {
     final hatched = await command(
         early['state'], 'hatch_egg', {'eggId': eggId}, 4,
         at: now.add(const Duration(days: 15)));
+    final highlighted = await command(hatched['state'], 'set_dragon_highlight',
+        {'dragonId': eggId, 'focus': 'might', 'highlighted': true}, 5,
+        at: now.add(const Duration(days: 15)));
+    final highlightedAgain = await command(
+        highlighted['state'],
+        'set_dragon_highlight',
+        {'dragonId': eggId, 'focus': 'might', 'highlighted': true},
+        6,
+        at: now.add(const Duration(days: 15)));
+    final favorite = await command(highlightedAgain['state'],
+        'set_favorite_dragon', {'dragonId': eggId}, 7,
+        at: now.add(const Duration(days: 15)));
+    if ([highlighted, highlightedAgain, favorite]
+        .any((c) => c['result'] != true)) {
+      throw StateError('Synthetic dragon preferences must be accepted');
+    }
+    final commands = [
+      refreshed,
+      activated,
+      early,
+      hatched,
+      highlighted,
+      highlightedAgain,
+      favorite
+    ];
     return {
       'purchase': purchase.name,
       'state': state,
-      'commands': [refreshed, activated, early, hatched],
+      'commands': commands,
       'projections': [
-        for (final value in [refreshed, activated, early, hatched])
+        for (final value in commands)
           GamePublicProjection.project(
               state: value['state'],
               now: now,

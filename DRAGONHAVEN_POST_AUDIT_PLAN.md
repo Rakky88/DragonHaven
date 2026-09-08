@@ -29,9 +29,14 @@ Opruiming en healthcontrole slagen om 23:19:28 UTC; schema 59, lint 0, HTTP 200.
 De volgende woningdeelstap is gebouwd: kamers ontgrendelen/selecteren,
 verdiepingen kopen, opgeslagen reparatieprijzen en ward-upgrades. De lokale
 regel- en schermproeven controleren exacte kosten, verloren antwoorden,
-bevestigingen en grote Nederlandse tekst. De echte stagingproef volgt nog.
-Seasonal/group-afwikkeling, trialvalidatie, meubelbewerking, drakenvoorkeuren en
-productiemigratie blijven afzonderlijk open.
+bevestigingen en grote Nederlandse tekst. Stagingrun 34290527414 op `a53fb50`
+slaagt met alle 675 tests, domeinpariteit, contracten en echte schermacties.
+Na opruiming: schema 59, lint 0 en HTTP 200 om 23:33:58 UTC.
+Ook drakenvoorkeuren hebben nu een expliciete serveropdracht: zet een highlight
+aan/uit of kies één favoriet. Herhaalde opdrachten draaien een highlight niet
+terug en tellen een favorietkeuze niet nogmaals. Regel-/schermtests en visuele
+controle slagen; de echte netwerkproef volgt nog. Seasonal/group-afwikkeling,
+trialvalidatie, meubelbewerking en productiemigratie blijven afzonderlijk open.
 
 ## Uitgebracht: v0.05.22 (10072): broches, events en expertise-uitlijning
 
@@ -1476,8 +1481,13 @@ alleen het serverresultaat en bezit nooit een service-role key.
 
 - [ ] Verplaats Adventure-, Trial-, minigame-, achievement- en dagelijkse
   claims naar servergestuurde, eenmalige rewardrecords.
+  Gewone Adventure-starts en claims zijn vanuit de echte staging-UI bewezen
+  (34289398487): ook na een verloren antwoord één chest/XP/expertisegrant.
+  Trialbewijzen, sociale/seasonal claims en productiecutover blijven open.
 - [ ] Laat de server claimtijd, daggrens en relevante scorebewijsgegevens
   valideren.
+  De echte Adventure-proef weigert een vroege claim en wacht de serverdeadline
+  af. De algemene daggrens en gevalideerde minigametranscripten zijn nog open.
 - [ ] Voeg misbruikdetectie toe voor onmogelijke frequenties, replays en
   afwijkende rewardpatronen zonder automatisch legitieme spelers te straffen.
 
@@ -1701,11 +1711,13 @@ Een taak of mijlpaal is pas gereed wanneer:
    Performance en gesloten-app push zijn gecontroleerd. Analytics blijft uit.
    Verzamel nu een representatieve latency-/foutbaseline; privacy- en
    storeverklaringen blijven apart open. Zie `FIREBASE_MONITORING_SETUP.md`.
-2. **Codex — servereconomie:** de volledige gedeelde spelregels, duurzame
+2. **Codex — servereconomie:** de gedeelde commandoregels, duurzame
    intent-/snapshotopslag en herstelgrens zijn gebouwd. De gewone winkel en
    kistopening zijn in de geïsoleerde staging-app met echte Auth/Edge/Postgres
-   bewezen (`34281388567`). Bouw nu de overige publieke gameplaymodellen en
-   schermkoppelingen, inclusief de ei-/draaklevensloop, uitrusting en Altar.
+   bewezen (`34281388567`). Ei-/draaklevensloop, uitrusting en Altar zijn inmiddels
+   ook bewezen (`34286596835`), net als gewone Adventures/Wayfinder (`34289398487`)
+   en woningacties (`34290527414`). Drakenvoorkeuren zijn gebouwd; het netwerkbewijs
+   volgt nog. Rond resterende publieke gameplaymodellen en schermkoppelingen af.
    Daarna volgen gevalideerde trialbewijzen, serverdaggrenzen en sociale claims.
    Productie staat op schema 59 met legacy authority en uitgeschakelde economie.
 3. **Codex — staging-load:** 100 gebruikers zijn gemeten met nul fouten;

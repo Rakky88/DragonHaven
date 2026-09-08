@@ -6,7 +6,7 @@ Ruleset: released app `v0.05.22`; server schema 59, economy activation disabled
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 958a6c3e9fdfce1d -->
+<!-- reference-source-fingerprint: 0a127095594a16e4 -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
@@ -21,6 +21,11 @@ ward price helpers with the evaluator. The saved repair factor remains 25–60%
 (40% fallback); this extraction does not draw a new factor or change return,
 damage, ward-protection, chest, egg or relic probabilities. Receipt replay
 cannot deduct a second floor/repair/ward price.
+
+Staging dragon preferences now use explicit desired-state commands. Highlights
+consume no randomness and change no expertise score, rank cutoff or reward.
+Selecting the already-favorite dragon does not increment its achievement
+counter; no new reward or probability was introduced.
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 

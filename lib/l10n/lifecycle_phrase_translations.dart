@@ -1,5 +1,13 @@
 /// German, Spanish, French, Italian, Portuguese, Japanese.
 const lifecyclePhraseTranslations = <String, List<String>>{
+  "Tap an expertise to highlight it for training.": [
+    "Tippe auf eine Expertise, um sie für das Training hervorzuheben.",
+    "Toca una pericia para destacarla para el entrenamiento.",
+    "Touchez une expertise pour la mettre en évidence pour l’entraînement.",
+    "Tocca una competenza per evidenziarla per l’allenamento.",
+    "Toque numa perícia para destacá-la para o treino.",
+    "専門能力をタップすると、訓練の目標として強調表示できます。"
+  ],
   "Haven": ["Zuflucht", "Refugio", "Havre", "Rifugio", "Refúgio", "安息の地"],
   "Dragon Ward": [
     "Drachenschutz",

@@ -32,8 +32,10 @@ and rechecked schema 59, lint 0 and health HTTP 200 at 22:41:02 UTC.
 Ordinary Adventures/Wayfinder passed run 34289398487 on `33d4fc5`: all 669 tests,
 native/JavaScript parity, an actual server deadline, early-claim refusal and
 one reward after a deliberately lost claim. Cleanup and final staging health
-passed at 23:19:28 UTC on 8 September. The next house-economy UI extension is
-built and locally checked; its staging proof is pending. Current component
+passed at 23:19:28 UTC on 8 September. House purchases, repairs and wards passed
+run 34290527414 on `a53fb50`, all 675 tests and real UI commands; cleanup and
+schema 59/lint 0/health 200 at 23:33:58 UTC. Dragon preference commands and
+their screen controls are the next locally verified extension. Current component
 evidence and explicit remaining boundaries are maintained in
 `SERVER_ECONOMY_UI_VERIFICATION.md`.
 

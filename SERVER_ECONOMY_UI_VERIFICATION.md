@@ -54,14 +54,14 @@ shop tabs scroll and the reconnect control keeps a 48dp icon target.
 
 ## Remaining full-economy work
 
-The staging lane is not the complete game. Seasonal/group Adventure, house and
-trial screens still need public read models and authoritative action routing.
-Dragon preferences/highlights also need their command route. Verified trial transcripts,
+The staging lane is not the complete game. Seasonal/group Adventure and trial
+screens, free-form house editing and remaining progression still need public
+read models and authoritative action routing. Verified trial transcripts,
 server calendar/day policy, social/trade settlement, full import reconciliation,
 staged migration and recovery remain open. Billing stays explicitly deferred.
 Production is schema 59, legacy authority, game/economic mutations off,
 zero shadow copies and production FCM enabled. Last independent production
-preflight: 8 September 21:35:35 UTC; see `RELEASE_V0.05.22_VERIFICATION.md`.
+preflight: 8 September 21:52:19 UTC; see `RELEASE_V0.05.22_VERIFICATION.md`.
 
 ## Egg, Altar and dragon lifecycle extension — 9 September 2026
 
@@ -157,5 +157,29 @@ malformed price data. Two screen tests cover Dutch 320dp/1.35 text, cancel and
 confirm, exact debits and sign-out during a floor confirmation. The tower and
 room picker were visually inspected with real fonts. Seven additional fixed
 phrases are translated for all six extra languages. The staging probe now also
-checks a real ward/repair/floor debit and free selection; final network evidence
-is pending its next run. No production activation or schema change is included.
+checks a real ward/repair/floor debit and free selection. Run
+[34290527414](https://github.com/Rakky88/DragonHaven/actions/runs/34290527414)
+passed on `a53fb50` with clean analysis, all 675 tests, native/JavaScript parity
+(972155-byte bundle), contracts and the actual house UI proof. Both synthetic
+accounts and shadow commands were removed and the worker disabled. Final
+schema 59/lint 0/Auth/settings/app HTTP 200 at 23:33:58 UTC on 8 September.
+No production activation or schema change is included.
+
+## Dragon preference extension — 9 September 2026
+
+The staging dragon detail screen now sends explicit desired highlight states
+for Might/Arcana/Spirit and a favorite dragon ID. The evaluator accepts only
+owned hatched dragons, keeps the existing one-favorite rule, and leaves an
+already-selected favorite unchanged without incrementing its achievement count.
+A repeated highlight intent cannot toggle the chosen state back. The existing
+sprite glow and centered scores are reused, with an accessible 48dp tap target.
+Adventure selection and its read-only expertise dialog show the saved highlight.
+
+Three rule/session tests cover desired-state retries, lost replies/restart,
+unchanged training/XP, one favorite/change counter, protected release and rejected
+egg/released/unknown targets or malformed arguments. A real-widget test covers
+multiple highlights, unhighlighting and the same glow in Adventure information;
+the sprite glow was visually inspected. The Edge test accepts the two exact
+command schemas using the authenticated owner and rejects added reward fields.
+The real staging probe is extended with these interactions; its network proof
+is pending. This changes no schema, gameplay odds or production authority.

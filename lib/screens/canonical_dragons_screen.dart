@@ -151,28 +151,12 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                                             ? Icons.male
                                             : Icons.female),
                                     const Divider(height: 24),
+                                    Text(strings.pick(
+                                        'Tap an expertise to highlight it for training.',
+                                        'Tik op een expertise om deze voor training te markeren.')),
                                     for (final focus in TrainingFocus.values)
-                                      Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 8),
-                                          child: ExpertiseScoreBadge(
-                                              dragonId: id,
-                                              focus: focus,
-                                              focusLabel: switch (focus) {
-                                                TrainingFocus.might => strings
-                                                    .pick('Might', 'Kracht'),
-                                                TrainingFocus.arcana =>
-                                                  'Arcana',
-                                                TrainingFocus.spirit => strings
-                                                    .pick('Spirit', 'Geest')
-                                              },
-                                              score:
-                                                  dragon.training[focus.name]!,
-                                              maximum: dragon.maximum(focus),
-                                              highlighted: dragon.highlighted
-                                                  .contains(focus.name),
-                                              expand: true,
-                                              iconSize: 30)),
+                                      _HighlightControl(
+                                          dragon: dragon, focus: focus),
                                     const Divider(height: 24),
                                     _Fact(
                                         strings.pick(
@@ -206,6 +190,18 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                                     Text(
                                         '${dragon.xp} XP · ${strings.pick('Level', 'Level')} ${Pet.levelAtXp(dragon.xp)}'),
                                     const SizedBox(height: 12),
+                                    CanonicalActionButton(
+                                        key: const Key(
+                                            'canonical-favorite-dragon'),
+                                        label: dragon.favorite
+                                            ? strings.pick('Favorite dragon',
+                                                'Favoriete draak')
+                                            : strings.pick('Set as favorite',
+                                                'Als favoriet instellen'),
+                                        action: enabled && !dragon.favorite
+                                            ? () =>
+                                                actions.setFavoriteDragon(id)
+                                            : null),
                                     OutlinedButton(
                                         key: const Key('canonical-name-dragon'),
                                         onPressed: enabled &&
@@ -300,6 +296,50 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                       child: Text(strings.pick('Close', 'Sluiten')))
                 ]);
           }));
+}
+
+class _HighlightControl extends StatelessWidget {
+  const _HighlightControl({required this.dragon, required this.focus});
+  final CanonicalDragonView dragon;
+  final TrainingFocus focus;
+  @override
+  Widget build(BuildContext context) {
+    final session = context.watch<CanonicalGameSession>();
+    final actions = CanonicalGameActions(session);
+    final s = AppStrings.of(context);
+    final highlighted = dragon.highlighted.contains(focus.name);
+    final label = switch (focus) {
+      TrainingFocus.might => s.pick('Might', 'Kracht'),
+      TrainingFocus.arcana => 'Arcana',
+      TrainingFocus.spirit => s.pick('Spirit', 'Geest'),
+    };
+    return Semantics(
+        button: true,
+        toggled: highlighted,
+        enabled: session.canAct,
+        child: InkWell(
+            key: Key('canonical-highlight-${dragon.id}-${focus.name}'),
+            borderRadius: BorderRadius.circular(12),
+            onTap: session.canAct
+                ? () => runShopAction(
+                    context,
+                    () => actions.setDragonHighlight(
+                        dragon.id, focus, !highlighted))
+                : null,
+            child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: ExpertiseScoreBadge(
+                        dragonId: dragon.id,
+                        focus: focus,
+                        focusLabel: label,
+                        score: dragon.training[focus.name]!,
+                        maximum: dragon.maximum(focus),
+                        highlighted: highlighted,
+                        expand: true,
+                        iconSize: 30)))));
+  }
 }
 
 Future<void> _name(BuildContext context, CanonicalDragonView dragon,
