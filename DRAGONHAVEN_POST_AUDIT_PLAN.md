@@ -3,7 +3,7 @@
 Laatst bijgewerkt: **8 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-## Releasekandidaat v0.05.22: broches, events en expertise-uitlijning
+## Uitgebracht: v0.05.22 (10072): broches, events en expertise-uitlijning
 
 De tussentijdse spelerswensen zijn gebouwd: Gender alleen als derde detailrij,
 verticaal gecentreerde Expertises, drie nieuwe broches met één gedeelde plek per
@@ -11,6 +11,11 @@ draak, de 10:1 dropweging, Halloween S+ vanaf 2500 en uitgebreidere eventthema�
 Nieuwe persoonlijke events vervangen het vorige event; bestaande runs houden
 hun herkomst. Migraties 58/59 zijn eerst met rollback op staging gecontroleerd.
 Volledige releaseverificatie en uitrolstatus: `EQUIPMENT_AND_EVENT_VERIFICATION.md`.
+Releaseworkflow 34281504522 slaagt met schone analyse, 652 tests, productie-
+preflight en ondertekende AAB. De geïnstalleerde APK, GitHub-digest en vaste
+latest-download zijn geverifieerd; ook de controle na publicatie slaagt.
+Bron: `0a736c9075d3e3d06cf54ad35882d32509fe68d7`.
+Bewijs: `RELEASE_V0.05.22_VERIFICATION.md`.
 De winkel/serverkoppeling hieronder blijft uitsluitend in de expliciete staging-
 build; deze release activeert geen volledige servereconomie voor spelers.
 
@@ -26,8 +31,9 @@ nu een sluitbare foutmelding. Grote Nederlandse tekst past in de verbindingsstat
 de winkeltabs kunnen bij grote tekst horizontaal schuiven.
 Bewijs en stagingstatus: `SERVER_ECONOMY_UI_VERIFICATION.md`.
 
-De laatste release blijft v0.05.21 / 10071. Productie is niet gemigreerd of
-geactiveerd. Volledige gameplaykoppeling, trialvalidatie, sociale afwikkeling en
+De nieuwste release is v0.05.22 / 10072. Productie en staging staan op schema
+59; de volledige servereconomie is niet geactiveerd. De echte winkel- en
+kistproef op staging slaagt. Volledige gameplaykoppeling, trialvalidatie, sociale afwikkeling en
 de gecontroleerde migratie van spelers blijven open. Het checklistoverzicht is
 ook gecorrigeerd: Firebase is al ingericht en bewezen; dat is geen ontbrekende
 accountactie meer. Een representatieve meetperiode en privacy-/storeverklaringen
@@ -1391,7 +1397,9 @@ alleen het serverresultaat en bezit nooit een service-role key.
   Migratie 39 koopt vanity-kisten; 45 opent alle kisttypen, bepaalt inhoud/pity
   en bewaart vaste relicwaarden. Beide zijn dormant op staging en productie
   bewezen. Migratie 47 voor gewone meubels en winkelrelics staat eveneens op beide omgevingen. Treats,
-  kamerontgrendeling, volledige import en de zichtbare cutover blijven open.
+  kamerontgrendeling en andere acties bestaan ook in de gedeelde canonieke
+  spelregels. De zichtbare winkel/kistkoppeling is met echte servers op staging
+  bewezen (34281388567); volledige gameplaykoppeling, import en cutover blijven open.
 - [ ] Laat alle random rolls en collection checks op de server plaatsvinden.
   De drie collection caps van de eerste aankoop-RPC worden server-side onder
   een keeperlock gecontroleerd; migratie 45 bepaalt ook alle chestinhoud op de server.
@@ -1649,25 +1657,33 @@ Een taak of mijlpaal is pas gereed wanneer:
 
 ### Nu actief, in veilige volgorde
 
-1. **Rick — externe configuratie:** maak het gratis Firebase Spark-project,
-   registreer `nl.dragonhaven.app`, laat Analytics uit en plaats
-   `google-services.json` volgens `FIREBASE_MONITORING_SETUP.md`. Kies tevens het
-   publieke supportadres, de verantwoordelijke personen/reactietijden en de
-   retentietermijnen voor duurzame sociale notificaties en Conclave Chronicle.
-2. **Codex — direct na Firebase:** koppel Crashlytics/Performance privacyarm,
-   bewijs één gecontroleerde stagingfout en leg daarna een bruikbare latency- en
-   foutbaseline vast. Geen betaalde monitoring activeren zonder nieuw besluit.
-3. **Codex - staging-load:** 100 gebruikers zijn gemeten met nul fouten; 1000 gebruikers faalden op netwerk-time-outs. Cleanup is volledig bevestigd en runnerafsluiting/diagnostiek zijn verbeterd. Isoleer de time-outfase en providerbelasting voordat een nieuwe 100→1000-meting op het actuele schema start; meet ook gevulde inventarissen, schrijflast en ontbrekende piekverbindingen/egress.
-4. **Codex - servereconomie:** 45-47 zijn op staging en productie bewezen met de economie uitgeschakeld. Inventarissnapshot 49 is op staging bewezen. Bouw volledige instanceconversie en duurzame lokale snapshottoepassing, overige winkels, daarna ei-/draaklevensloop en gevalideerde beloningsclaims.
-5. **Samen - activatievoorbereiding:** gebruik de geslaagde synthetische importrollback als basis en rond de operationele herstel-, storings-/compensatieprocedures en begrijpelijke spelersteksten af voordat de servereconomie voor spelers wordt ingeschakeld.
-6. **Codex — lokaal parallel uitvoerbaar:** werk daarnaast de gratis beeldpilot
-   voor de Play-appgrootte uit; vervang geen volledige assetcategorie vóór de
-   vereiste visuele goedkeuring.
-7. **Samen — acceptatie:** gebruik een echte, door een speler aangeleverde
-   privacyarme correlation ID voor de complete supportcasusoefening; beoordeel
-   vervolgens de meetresultaten, conflicttekst, capaciteit, alarmdrempels en
-   rollout-/rollbackbevoegdheid. Een synthetisch ID geldt niet als volledig
-   operationeel bewijs.
+1. **Firebase is ingericht en bewezen.** Beide gratis projecten, Crashlytics,
+   Performance en gesloten-app push zijn gecontroleerd. Analytics blijft uit.
+   Verzamel nu een representatieve latency-/foutbaseline; privacy- en
+   storeverklaringen blijven apart open. Zie `FIREBASE_MONITORING_SETUP.md`.
+2. **Codex — servereconomie:** de volledige gedeelde spelregels, duurzame
+   intent-/snapshotopslag en herstelgrens zijn gebouwd. De gewone winkel en
+   kistopening zijn in de geïsoleerde staging-app met echte Auth/Edge/Postgres
+   bewezen (`34281388567`). Bouw nu de overige publieke gameplaymodellen en
+   schermkoppelingen, inclusief de ei-/draaklevensloop, uitrusting en Altar.
+   Daarna volgen gevalideerde trialbewijzen, serverdaggrenzen en sociale claims.
+   Productie staat op schema 59 met legacy authority en uitgeschakelde economie.
+3. **Codex — staging-load:** 100 gebruikers zijn gemeten met nul fouten;
+   1000 gebruikers liepen tegen netwerk-time-outs aan. Cleanup is bevestigd.
+   Isoleer de time-outfase en providerbelasting voordat de 100→1000-meting
+   wordt herhaald; meet ook gevulde inventarissen, schrijflast en egress.
+4. **Samen — activatievoorbereiding:** rond importreconciliatie, herstel,
+   storings-/compensatieprocedures en begrijpelijke spelersteksten af voordat
+   spelers worden omgezet. Behoud de bestaande prijzen en voortgang.
+5. **Rick — operationele keuzes:** leg supportadres, verantwoordelijken,
+   reactietijden en retentietermijnen vast; gebruik een echte privacyarme
+   correlation ID voor de volledige supportoefening. Er ontbreekt geen
+   Firebase-project of aanmeldstap meer.
+6. **Codex — appgrootte:** vervolg de gratis beeldpilot; vervang geen volledige
+   assetcategorie voordat de afgesproken visuele beoordeling is afgerond.
+7. **Samen — acceptatie:** beoordeel de meetresultaten, conflicttekst,
+   capaciteit, alarmdrempels en rollout-/rollbackbevoegdheid. Betaalde billing
+   blijft uitgesteld en maakt geen deel uit van dit gratis traject.
 
 ### Reeds afgeronde actiehistorie
 

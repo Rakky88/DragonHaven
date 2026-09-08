@@ -3,11 +3,11 @@
 Lanceringseisen/kostenraming laatst gecontroleerd: **31 augustus 2026**
 Release-status bijgewerkt: **8 september 2026**
 
-Huidige openbare appversie: **v0.05.21 / 10071**, via GitHub Releases.
+Huidige openbare appversie: **v0.05.22 / 10072**, via GitHub Releases.
 Android package name: **`nl.dragonhaven.app`**
 
-De release, 625 tests, signing en productiehealth zijn gecontroleerd in
-[RELEASE_V0.05.21_VERIFICATION.md](RELEASE_V0.05.21_VERIFICATION.md).
+De release, 652 tests, signing en productiehealth zijn gecontroleerd in
+[RELEASE_V0.05.22_VERIFICATION.md](RELEASE_V0.05.22_VERIFICATION.md).
 Dit is geen Google Play/App Store-publicatie; er is geen betaalaccount
 geactiveerd. De eerdere kostenraming hieronder is met deze release niet
 opnieuw onderzocht.

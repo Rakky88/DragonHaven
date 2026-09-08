@@ -2,12 +2,11 @@
 
 Last updated: **8 September 2026**
 
-Release **v0.05.21 / 10071** is published. Production and staging both have
-exactly **57 migrations**. Release workflow 34270982612 passed all 625 tests,
-analysis, signed AAB and production preflight. Post-publication preflight at
-20:03:24 UTC: schema parity 57, lint 0, Auth/settings/application HTTP 200.
+Release **v0.05.22 / 10072** is published with clean analysis, 652 tests and verified signing.
+Production and staging both have exactly **59 migrations**. Production
+preflight at 21:35:35 UTC: parity 59, lint 0, Auth/settings/application HTTP 200.
 All accounts remain legacy, game/economic mutations disabled, zero shadow
-copies, production push enabled. See `RELEASE_V0.05.21_VERIFICATION.md`.
+copies, production push enabled. See `RELEASE_V0.05.22_VERIFICATION.md`.
 
 The resumed audit now connects the ordinary furniture/relic/vanity shop and
 chest reveal to the canonical session in an explicit staging-only app lane.
@@ -18,7 +17,8 @@ A shared action boundary fences callbacks by account epoch and observed
 revision. Opening failure leaves an exit instead of a stuck animation.
 Local real-rule and widget tests cover lost receipts, double taps, background
 completion, account changes, paused/offline browsing and one server chest grant.
-Staging verification is pending; see `SERVER_ECONOMY_UI_VERIFICATION.md`.
+Real Auth/Edge/Postgres UI proof passed in run 34281388567, including cleanup
+and final health; see `SERVER_ECONOMY_UI_VERIFICATION.md`.
 The full existing gameplay UI, verified trials, social settlement and player
 migration/cutover remain open. No production authority switch was changed.
 

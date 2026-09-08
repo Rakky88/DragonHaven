@@ -1,6 +1,6 @@
 # Equipment and event release verification
 
-Candidate: v0.05.22 / 10072. Publication is pending the final checks below.
+Released: v0.05.22 / 10072. All final checks passed; see `RELEASE_V0.05.22_VERIFICATION.md`.
 
 ## Player changes
 
@@ -39,8 +39,15 @@ Candidate: v0.05.22 / 10072. Publication is pending the final checks below.
   The event contract checks account isolation, retry expiry, rejected activation,
   old-event refusal and completion of an already-started old-event attempt.
   Staging remained at schema 57 after rehearsal; synthetic changes rolled back.
-- Final full suite, emulator update, staging deployment, production preflight,
-  signed artifact and GitHub download verification: pending.
+- Final CI analysis and all 652 tests passed. Android API 37 update preserves
+  the original save; Gender, equipment, expertise alignment, six themes, 320dp
+  width, 1.35 text and disabled animations were checked on the emulator.
+- Staging run 34281388567 passed feature/canonical contracts, actual authenticated
+  UI purchases and chest opening, cleanup and final health. Both environments
+  now have schema 59 with lint 0 and healthy Auth/settings/application endpoints.
+  Production authority is still legacy and game/economic mutations remain off.
+- Signed artifact, byte size, digest, production preflight and publication
+  evidence are tracked in `RELEASE_V0.05.22_VERIFICATION.md`.
 
 ## Artwork
 

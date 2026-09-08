@@ -1,16 +1,17 @@
 # DragonHaven serververbeteringen
 
-## Actuele stand — v0.05.21, 8 september 2026
+## Actuele stand — v0.05.22, 8 september 2026
 
-Productie en staging hebben exact 57 migraties. De releasecontrole slaagt met
-625 tests, nul lintfouten en gezonde Auth/settings/app-endpoints. Migratie 57
-is identiek aan het geslaagde stagingbewijs en heeft zes teruggedraaide
-contractproeven vóór en na productie-uitrol doorstaan. Alle accounts blijven
-legacy; de volledige servereconomie en game-worker blijven uit, nul
-schaduwkopieën, bestaande productiepush aan. Ook de controle na publicatie
-om 20:03:24 UTC is groen. Zie het
-[releasebewijs](RELEASE_V0.05.21_VERIFICATION.md) en
-[actuele economieplan](SERVER_AUTHORITATIVE_ECONOMY.md) voor resterend werk.
+Productie en staging hebben exact 59 migraties. De releasecontrole slaagt met
+652 tests, nul lintfouten en gezonde Auth/settings/app-endpoints. Migraties
+58/59 voegen de gewogen broche-pool en één persoonlijk actief event toe.
+Beide zijn eerst met rollback-contracten op staging bewezen; bestaande runs
+houden hun beloningsregels. De gewone winkel en kistopening zijn daarnaast
+met echte Auth/Edge/Postgres in de aparte staging-app bewezen (34281388567).
+Alle accounts blijven legacy; volledige servereconomie en game-worker blijven
+uit, nul schaduwkopieën, bestaande productiepush aan. Ook de servercontrole
+na publicatie is groen. Zie het [releasebewijs](RELEASE_V0.05.22_VERIFICATION.md)
+en [actuele economieplan](SERVER_AUTHORITATIVE_ECONOMY.md) voor resterend werk.
 
 ## Historisch uitrolbewijs v0.05.01
 
