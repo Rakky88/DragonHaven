@@ -1,9 +1,12 @@
 # DragonHaven v0.04.06 audit — 28 augustus 2026
 
-> **Status 31 augustus 2026:** deze audit blijft het historische
-> v0.04.06-baselinebewijs. De actuele stand is v0.05.01 met 349/349 groene
-> tests, productieschema 32/32, publieke Auth- én applicatiehealth, volledige
-> sociale/Group Adventure-staging-E2E en een groene Play-ready signinggate.
+> **Status 8 september 2026:** deze audit blijft het historische
+> v0.04.06-baselinebewijs. De actuele openbare versie is v0.05.20 / 10070 met
+> 621 groene tests, productieschema 57/57, gezonde Auth- en applicatie-endpoints
+> en een geslaagde APK/AAB-signinggate. Productiepush staat aan; de volledige
+> servereconomie blijft uit en de bijbehorende open auditpunten blijven open.
+> De openbare APK en vaste download zijn geverifieerd; zie
+> [RELEASE_V0.05.20_VERIFICATION.md](RELEASE_V0.05.20_VERIFICATION.md).
 > Bewijs, resterende acties per eigenaar en releasegeschiedenis staan in
 > [DRAGONHAVEN_POST_AUDIT_PLAN.md](DRAGONHAVEN_POST_AUDIT_PLAN.md).
 

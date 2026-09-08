@@ -1,9 +1,16 @@
 # DragonHaven openbaar lanceren
 
-Laatst gecontroleerd: **31 augustus 2026**
+Lanceringseisen/kostenraming laatst gecontroleerd: **31 augustus 2026**
+Release-status bijgewerkt: **8 september 2026**
 
-Huidige openbare appversie bij deze controle: **v0.04.15**
+Huidige openbare appversie: **v0.05.20 / 10070**, via GitHub Releases.
 Android package name: **`nl.dragonhaven.app`**
+
+De release, 621 tests, signing en productiehealth zijn gecontroleerd in
+[RELEASE_V0.05.20_VERIFICATION.md](RELEASE_V0.05.20_VERIFICATION.md).
+Dit is geen Google Play/App Store-publicatie; er is geen betaalaccount
+geactiveerd. De eerdere kostenraming hieronder is met deze release niet
+opnieuw onderzocht.
 
 Dit is de centrale, levende checklist voor een openbare lancering van
 DragonHaven. Bedragen zijn exclusief btw, marketing, klantenservice, juridische

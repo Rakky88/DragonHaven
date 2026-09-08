@@ -3,7 +3,7 @@
 Laatst bijgewerkt: **8 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-## Release in uitvoering: v0.05.20 (10070), 8 september 2026
+## Uitgebracht: v0.05.20 (10070), 8 september 2026
 
 Deze release bundelt de hieronder beschreven eventthema's, trainingmarkeringen,
 drakeninformatie, Draconomicon-knoppen, testtrialbeloningen en vaste geslachten.
@@ -14,7 +14,16 @@ vóór en na toepassing. De productiepreflight om 18:23:52 UTC bevestigt 57
 migraties, nul lintfouten en Auth/settings/app HTTP 200. Alle accounts blijven
 legacy, economische mutaties en game-worker uit, nul schaduwkopieën; bestaande
 productiepush blijft aan. Dit is geen activatie van de volledige servereconomie.
-Publicatie- en artifactbewijs wordt vastgelegd in `RELEASE_V0.05.20_VERIFICATION.md`.
+Publicatie voltooid op bron `aaafe6114eece36339ff26410fa4519ac1603e02`.
+Workflow [34263298633](https://github.com/Rakky88/DragonHaven/actions/runs/34263298633)
+slaagt met alle 621 tests, schone analyse, productiepreflight en ondertekende
+AAB. De APK is op de emulator als update geïnstalleerd; de geïnstalleerde en
+openbare checksum/grootte zijn exact gelijk aan het lokale releasebestand.
+De vaste latest-download geeft HTTP 200. Ook na publicatie om 18:57:23 UTC:
+schema 57, lint 0 en Auth/settings/app 200. Auditpunten voor volledige
+servereconomie blijven open; deze release activeert die niet.
+Zie [releasebewijs](RELEASE_V0.05.20_VERIFICATION.md) en
+[openbare release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.20).
 
 ## Uitgebracht: v0.05.19 (10069), 7 september 2026
 
@@ -79,7 +88,7 @@ schema 57, lint 0, health 200. Dit onderdeel is klaar; de sessie is nog niet aan
 de echte spelschermen gekoppeld.
 
 De aansluitend gevraagde productwijzigingen zijn op 8 september 2026 gebouwd
-en gevalideerd; ze gaan mee in release v0.05.20:
+en gevalideerd; ze zijn gepubliceerd in release v0.05.20:
 - eventthema door de app, vooral logo/achtergrond, plus een duidelijke eindtimer;
 - Expertise-informatie ook in de trial-drakenkiezer;
 - per draak Might/Arcana/Spirit kunnen markeren in My Dragons, dezelfde markering

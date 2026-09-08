@@ -1,6 +1,18 @@
-# DragonHaven serververbeteringen — v0.05.01
+# DragonHaven serververbeteringen
 
-## Productie v0.05.01 — gecontroleerde uitrol voltooid
+## Actuele stand — v0.05.20, 8 september 2026
+
+Productie en staging hebben exact 57 migraties. De releasecontrole slaagt met
+621 tests, nul lintfouten en gezonde Auth/settings/app-endpoints. Migratie 57
+is identiek aan het geslaagde stagingbewijs en heeft zes teruggedraaide
+contractproeven vóór en na productie-uitrol doorstaan. Alle accounts blijven
+legacy; de volledige servereconomie en game-worker blijven uit, nul
+schaduwkopieën, bestaande productiepush aan. Ook de controle na publicatie
+om 18:57:23 UTC is groen. Zie het
+[releasebewijs](RELEASE_V0.05.20_VERIFICATION.md) en
+[actuele economieplan](SERVER_AUTHORITATIVE_ECONOMY.md) voor resterend werk.
+
+## Historisch uitrolbewijs v0.05.01
 
 Productie staat gecontroleerd op migratie 32/32. Migraties
 `202608310030_friend_messages_and_conclaves.sql` en
