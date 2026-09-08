@@ -91,6 +91,11 @@ def main():
     fixture['uniqueRelicsEverObtained'] = sorted(set(fixture.get('uniqueRelicsEverObtained', [])) | set(brooches))
     fixture['twinstarBroochEverObtained'] = True
     fixture['pet']['training'] = {'might': 60, 'arcana': 60, 'spirit': 60}
+    fixture['pet']['coins'] = 10000
+    fixture['towerFloorRoomIds'] = ['hearth']
+    fixture['dragonWardLevel'] = 0
+    fixture['damagedTowerFloors'] = [0]
+    fixture['damagedTowerRepairFactors'] = {'0': 0.60}
     fixture.setdefault('adventureOptionIds', {})['mini'] = ['mini_1']
     fixture['relicInventory']['wayfinderSigil'] = 1
     fixture_hex = json.dumps(fixture, separators=(",", ":")).encode("utf-8").hex()
@@ -371,6 +376,7 @@ def main():
         require('PASS: real shop UI purchase,' in client_result.stdout, 'client_probe_ui_proof_missing')
         require('PASS: real lifecycle UI;' in client_result.stdout, 'client_probe_lifecycle_proof_missing')
         require('PASS: real adventure UI;' in client_result.stdout, 'client_probe_adventure_proof_missing')
+        require('PASS: real house UI;' in client_result.stdout, 'client_probe_house_proof_missing')
         unchanged = query(f"""select
           (select s.state=i.source_state and s.revision=i.source_revision
             from public.cloud_game_saves s join private.canonical_game_imports i on i.owner_id=s.user_id
@@ -385,6 +391,7 @@ def main():
         print('PASS: actual shop UI purchase and chest reveal; one debit and one earned title.', flush=True)
         print('PASS: actual lifecycle UI; Sinister return, crafting, discovery, tags, incubation, rename and equipment.', flush=True)
         print('PASS: actual adventure UI; server deadline, lost claim recovery, one reward, abort and Wayfinder.', flush=True)
+        print('PASS: actual house UI; stored repair price, ward upgrade, floor purchase and free room selection.', flush=True)
         print('PASS: actual Flutter client, Supabase Auth, filesystem journals and server; one charge after lost reply; corrupt request recovery without another purchase.', flush=True)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"

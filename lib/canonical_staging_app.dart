@@ -12,6 +12,7 @@ import 'l10n/app_strings.dart';
 import 'screens/canonical_inventory_screen.dart';
 import 'screens/canonical_dragons_screen.dart';
 import 'screens/canonical_adventures_screen.dart';
+import 'screens/canonical_house_screen.dart';
 import 'screens/shop_hub_screen.dart';
 import 'services/canonical_game_session.dart';
 import 'services/canonical_game_snapshot.dart';
@@ -111,6 +112,18 @@ class _CanonicalStagingAppState extends State<CanonicalStagingApp>
         final strings = AppStrings.of(context);
         return Scaffold(
           appBar: AppBar(title: const Text('DragonHaven · Staging'), actions: [
+            if (signedIn)
+              IconButton(
+                  tooltip: strings.pick('Haven', 'Haven'),
+                  icon: const Icon(Icons.home_outlined),
+                  onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                          builder: (context) => Scaffold(
+                              appBar: AppBar(
+                                  title: Text(AppStrings.of(context)
+                                      .pick('Haven', 'Haven'))),
+                              body: const SafeArea(
+                                  child: CanonicalHouseScreen()))))),
             if (signedIn)
               IconButton(
                   tooltip: strings.pick('Sign out', 'Uitloggen'),

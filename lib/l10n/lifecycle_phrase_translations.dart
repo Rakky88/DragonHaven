@@ -1,5 +1,54 @@
 /// German, Spanish, French, Italian, Portuguese, Japanese.
 const lifecyclePhraseTranslations = <String, List<String>>{
+  "Haven": ["Zuflucht", "Refugio", "Havre", "Rifugio", "Refúgio", "安息の地"],
+  "Dragon Ward": [
+    "Drachenschutz",
+    "Protección dracónica",
+    "Protection draconique",
+    "Protezione draconica",
+    "Proteção dracônica",
+    "ドラゴンの結界"
+  ],
+  "Available after a floor is damaged.": [
+    "Verfügbar, sobald ein Stockwerk beschädigt ist.",
+    "Disponible cuando una planta está dañada.",
+    "Disponible lorsqu’un étage est endommagé.",
+    "Disponibile quando un piano è danneggiato.",
+    "Disponível quando um andar está danificado.",
+    "階が損傷すると利用できます。"
+  ],
+  "Upgrade ward": [
+    "Schutz verbessern",
+    "Mejorar protección",
+    "Améliorer la protection",
+    "Migliora protezione",
+    "Melhorar proteção",
+    "結界を強化"
+  ],
+  "Add a floor": [
+    "Stockwerk hinzufügen",
+    "Añadir planta",
+    "Ajouter un étage",
+    "Aggiungi piano",
+    "Adicionar andar",
+    "階を追加"
+  ],
+  "Unlock": [
+    "Freischalten",
+    "Desbloquear",
+    "Déverrouiller",
+    "Sblocca",
+    "Desbloquear",
+    "解放"
+  ],
+  "Build": [
+    "Bauen",
+    "Construir",
+    "Construire",
+    "Costruisci",
+    "Construir",
+    "建設"
+  ],
   "Active Adventures": [
     "Laufende Abenteuer",
     "Aventuras activas",

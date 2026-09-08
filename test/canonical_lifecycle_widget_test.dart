@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
 import 'package:dragon_haven/screens/canonical_dragons_screen.dart';
 import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
+import 'package:dragon_haven/screens/canonical_house_screen.dart';
 import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/theme/app_theme.dart';
@@ -95,11 +96,14 @@ void main() {
   Future<void> tap(WidgetTester tester, Finder finder) async {
     // A newly prepended run may be above the retained offer-list scroll offset.
     // Scroll it into the lazy list before asking ensureVisible for its element.
-    final adventures = find.byKey(const Key('canonical-adventures-list'));
-    if (finder.evaluate().isEmpty && adventures.evaluate().isNotEmpty) {
-      final scrollable = find
-          .descendant(of: adventures, matching: find.byType(Scrollable))
-          .first;
+    final list = find.byWidgetPredicate((widget) => const [
+          Key('canonical-adventures-list'),
+          Key('canonical-tower-list'),
+          Key('canonical-rooms-list')
+        ].contains(widget.key));
+    if (finder.evaluate().isEmpty && list.evaluate().isNotEmpty) {
+      final scrollable =
+          find.descendant(of: list, matching: find.byType(Scrollable)).first;
       tester.state<ScrollableState>(scrollable).position.jumpTo(0);
       await tester.pump();
       if (finder.evaluate().isEmpty) {
@@ -381,6 +385,64 @@ void main() {
     expect(session.snapshot!.shop.relics['wayfinderSigil'], 0);
     expect(session.snapshot!.adventures.offers(AdventureKind.mini),
         isNot(contains(id)));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  void prepareHouse(CanonicalUiServer server) {
+    server.state['pet']['coins'] = 10000;
+    server.state['towerFloorRoomIds'] = ['hearth'];
+    server.state['damagedTowerFloors'] = [0];
+    server.state['damagedTowerRepairFactors'] = {'0': .60};
+    server.state['dragonWardLevel'] = 0;
+  }
+
+  testWidgets('Dutch large-text house confirms exact prices before spending',
+      (tester) async {
+    await setup(tester, const CanonicalHouseScreen(),
+        language: 'nl', scale: 1.35, prepare: prepareHouse);
+    await shot(tester, 'house-nl-large');
+    await tap(tester, key('canonical-upgrade-ward'));
+    await tap(tester, find.widgetWithText(TextButton, 'Annuleren'));
+    expect(session.snapshot!.coins, 10000);
+    await tap(tester, key('canonical-upgrade-ward'));
+    await tap(tester, find.widgetWithText(FilledButton, 'Bevestigen'));
+    await command(tester);
+    expect(session.snapshot!.house.wardLevel, 1);
+    expect(session.snapshot!.coins, 9850);
+    await tap(tester, key('canonical-repair-0'));
+    expect(find.textContaining('270 munten?'), findsOneWidget);
+    await tap(tester, find.widgetWithText(FilledButton, 'Bevestigen'));
+    await command(tester);
+    expect(session.snapshot!.house.damagedFloors, isEmpty);
+    expect(session.snapshot!.coins, 9580);
+    await tap(tester, key('canonical-add-floor'));
+    await shot(tester, 'house-floor-picker-nl-large');
+    await tap(tester, key('canonical-build-hearth'));
+    expect(find.textContaining('2050 munten?'), findsOneWidget);
+    await tap(tester, find.widgetWithText(FilledButton, 'Bevestigen'));
+    await command(tester);
+    expect(session.snapshot!.house.floorRoomIds, ['hearth', 'hearth']);
+    expect(session.snapshot!.coins, 7530);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('house purchase confirmation cannot cross an account change',
+      (tester) async {
+    await setup(tester, const CanonicalHouseScreen(), prepare: prepareHouse);
+    await tap(tester, key('canonical-add-floor'));
+    await tap(tester, key('canonical-build-hearth'));
+    final before = server.sent.length;
+    (session.connection as CanonicalUiConnection).signOut();
+    await tester.pump();
+    expect(
+        tester
+            .widget<FilledButton>(find.widgetWithText(FilledButton, 'Confirm'))
+            .onPressed,
+        isNull);
+    expect(server.sent, hasLength(before));
+    expect(server.state['pet']['coins'], 10000);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

@@ -1,8 +1,8 @@
 # DragonHaven Redeem Codes
 
-Last verified: 8 September 2026
+Last verified: 9 September 2026
 
-Ruleset: release candidate `v0.05.22`; personal event replacement in migration 59
+Ruleset: released `v0.05.22`; personal event replacement in migration 59
 
 <!-- reference-source-fingerprint: d86979d97798ca44 -->
 

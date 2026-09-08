@@ -4,7 +4,7 @@ Last verified: 9 September 2026
 
 Ruleset: released app `v0.05.22`; server schema 59, economy activation disabled
 
-<!-- reference-source-fingerprint: 3a3854c62a213509 -->
+<!-- reference-source-fingerprint: 6489df6bb3d380a4 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -37,6 +37,11 @@ preserves Mini/Short/Long/Group/Special formulas and minimums. This does not
 enable seasonal/group starts in the new staging UI or change Special schedules,
 requirements, chest odds or rewards. Active run deadlines remain server times;
 an in-flight reward stays hidden until the server marks the run ready.
+
+The subsequent staging house controls extract only the existing deterministic
+floor/repair/ward price calculations. Egg lifecycle, returning Special
+Adventure eligibility, event schedules, chest contents and reward odds remain
+unchanged. Room/floor actions use the same durable, server-validated session.
 
 The authenticated server display projection preserves Special Egg catalog art
 and Sinister/Special protection, but omits unrevealed lineage, spectral roll,

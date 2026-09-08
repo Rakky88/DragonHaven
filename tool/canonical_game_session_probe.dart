@@ -13,6 +13,7 @@ import 'package:dragon_haven/screens/shop_hub_screen.dart';
 import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
 import 'package:dragon_haven/screens/canonical_dragons_screen.dart';
 import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
+import 'package:dragon_haven/screens/canonical_house_screen.dart';
 import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:flutter/material.dart';
@@ -222,11 +223,14 @@ void main() {
     }
 
     Future<void> tap(Finder finder) async {
-      final adventures = find.byKey(const Key('canonical-adventures-list'));
-      if (finder.evaluate().isEmpty && adventures.evaluate().isNotEmpty) {
-        final scrollable = find
-            .descendant(of: adventures, matching: find.byType(Scrollable))
-            .first;
+      final list = find.byWidgetPredicate((widget) => const [
+            Key('canonical-adventures-list'),
+            Key('canonical-tower-list'),
+            Key('canonical-rooms-list')
+          ].contains(widget.key));
+      if (finder.evaluate().isEmpty && list.evaluate().isNotEmpty) {
+        final scrollable =
+            find.descendant(of: list, matching: find.byType(Scrollable)).first;
         tester.state<ScrollableState>(scrollable).position.jumpTo(0);
         await tester.pump();
         if (finder.evaluate().isEmpty) {
@@ -495,6 +499,47 @@ void main() {
           'client_probe_adventure_wayfinder_failed');
       stdout.writeln(
           'PASS: real adventure UI; server deadline, early refusal, lost claim recovery, one reward, abort and Wayfinder.');
+      final houseBalance = game.snapshot!.coins;
+      await mount(const CanonicalHouseScreen());
+      stdout.writeln('PROBE: ui_house_start');
+      require(
+          game.snapshot!.house.repairPrice(0) == 270 &&
+              game.snapshot!.house.nextWardPrice == 150 &&
+              game.snapshot!.house.nextFloorPrice == 2050,
+          'client_probe_house_quotes');
+      await tap(key('canonical-upgrade-ward'));
+      await confirm();
+      await settleCommand();
+      await tap(key('canonical-repair-0'));
+      await confirm();
+      await settleCommand();
+      require(
+          game.snapshot!.house.wardLevel == 1 &&
+              game.snapshot!.house.damagedFloors.isEmpty &&
+              game.snapshot!.coins == houseBalance - 420,
+          'client_probe_house_repair_cost');
+      await tap(key('canonical-add-floor'));
+      await tap(key('canonical-build-crystal'));
+      await confirm();
+      await settleCommand();
+      require(
+          game.snapshot!.house.floorRoomIds.length == 2 &&
+              game.snapshot!.house.floorRoomIds.last == 'crystal' &&
+              game.snapshot!.house.activeRoomId == 'crystal' &&
+              game.snapshot!.coins == houseBalance - 2470,
+          'client_probe_house_build_cost');
+      await tap(find.widgetWithText(Tab, 'Rooms'));
+      await tap(key('canonical-room-nest'));
+      await settleCommand();
+      await tap(key('canonical-room-crystal'));
+      await settleCommand();
+      require(
+          game.snapshot!.house.activeRoomId == 'crystal' &&
+              game.snapshot!.coins == houseBalance - 2470 &&
+              tester.takeException() == null,
+          'client_probe_house_room_selection');
+      stdout.writeln(
+          'PASS: real house UI; stored repair price, ward upgrade, floor purchase and free room selection.');
     } finally {
       stdout.writeln('PROBE: ui_cleanup_start');
       await tester.pumpWidget(const SizedBox.shrink());

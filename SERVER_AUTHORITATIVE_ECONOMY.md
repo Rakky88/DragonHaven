@@ -29,9 +29,13 @@ return, crafting/discovery, nest incubation, Quill rename and exclusive brooch
 equipment, with local server-clock hatch/Chronoshard and lost-reply coverage.
 Cleanup removed its synthetic accounts and shadow state, disabled the worker,
 and rechecked schema 59, lint 0 and health HTTP 200 at 22:41:02 UTC.
-Ordinary Adventures/Wayfinder are the next built extension; their actual-deadline
-network probe is in progress. Current component evidence and explicit remaining
-boundaries are maintained in `SERVER_ECONOMY_UI_VERIFICATION.md`.
+Ordinary Adventures/Wayfinder passed run 34289398487 on `33d4fc5`: all 669 tests,
+native/JavaScript parity, an actual server deadline, early-claim refusal and
+one reward after a deliberately lost claim. Cleanup and final staging health
+passed at 23:19:28 UTC on 8 September. The next house-economy UI extension is
+built and locally checked; its staging proof is pending. Current component
+evidence and explicit remaining boundaries are maintained in
+`SERVER_ECONOMY_UI_VERIFICATION.md`.
 
 Previous release evidence:
 Released app: **v0.05.19 / 10069**; production **56**, staging **57**.

@@ -21,9 +21,17 @@ De volgende deelstap koppelt gewone Mini/Short/Long Adventures en Wayfinder aan
 dezelfde serversessie: starten, afbreken, claimen, vervangen en verversen. De
 actieve lijst sorteert op eindtijd; de drakenkeuze gebruikt openbare expertises
 en opent de bestaande Draconomicon zonder lokale spelprovider. Vier extra
-regeltests en twee schermtests slagen. De echte stagingproef wordt uitgebreid
-met een daadwerkelijk afgewachte serverdeadline en verloren claimantwoord.
-Seasonal/group-afwikkeling, huizen, trials en drakenvoorkeuren blijven apart open.
+regeltests en twee schermtests slagen. Stagingrun 34289398487 op `33d4fc5` slaagt
+met alle 669 tests, domeinpariteit, een echt afgewachte serverdeadline, weigering
+van een vroege claim en precies één beloning na een verloren claimantwoord.
+Opruiming en healthcontrole slagen om 23:19:28 UTC; schema 59, lint 0, HTTP 200.
+
+De volgende woningdeelstap is gebouwd: kamers ontgrendelen/selecteren,
+verdiepingen kopen, opgeslagen reparatieprijzen en ward-upgrades. De lokale
+regel- en schermproeven controleren exacte kosten, verloren antwoorden,
+bevestigingen en grote Nederlandse tekst. De echte stagingproef volgt nog.
+Seasonal/group-afwikkeling, trialvalidatie, meubelbewerking, drakenvoorkeuren en
+productiemigratie blijven afzonderlijk open.
 
 ## Uitgebracht: v0.05.22 (10072): broches, events en expertise-uitlijning
 

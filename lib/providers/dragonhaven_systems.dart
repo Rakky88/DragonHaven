@@ -29,7 +29,7 @@ enum AdventureStartResult {
 
 enum TowerBuildResult { built, maximumReached, insufficientCoins, invalidRoom }
 
-const int towerFloorPriceMultiplier = 10;
+const int towerFloorPriceMultiplier = houseTowerPriceMultiplier;
 
 DateTime _adventureRefillBoundary(DateTime value, int intervalMinutes) {
   final minute = value.minute - value.minute.remainder(intervalMinutes);
@@ -2227,8 +2227,7 @@ extension DragonHavenSystems on HouseholdProvider {
     return true;
   }
 
-  int get nextTowerFloorPrice =>
-      (120 + towerFloorRoomIds.length * 85) * towerFloorPriceMultiplier;
+  int get nextTowerFloorPrice => towerBuildPrice(towerFloorRoomIds.length);
 
   Future<bool> repairTowerFloor(int index) async {
     if (!damagedTowerFloors.contains(index) ||
@@ -2248,10 +2247,7 @@ extension DragonHavenSystems on HouseholdProvider {
     if (index < 0 || index >= towerFloorRoomIds.length) return 0;
     final room = houseRoomById(towerFloorRoomIds[index]);
     final factor = damagedTowerRepairFactors[index] ?? .40;
-    return max(
-      1,
-      ((room?.price ?? 100) * factor * towerFloorPriceMultiplier).round(),
-    );
+    return towerRepairPrice(room, factor);
   }
 
   bool _expireReturningVisitors() {
@@ -2272,7 +2268,7 @@ extension DragonHavenSystems on HouseholdProvider {
 
   Future<bool> upgradeDragonWard() async {
     if (dragonWardLevel >= 3 || damagedTowerFloors.isEmpty) return false;
-    final price = [0, 150, 400, 850][dragonWardLevel + 1];
+    final price = dragonWardUpgradePrice(dragonWardLevel)!;
     if (pet.coins < price) return false;
     pet.coins -= price;
     dragonWardLevel++;

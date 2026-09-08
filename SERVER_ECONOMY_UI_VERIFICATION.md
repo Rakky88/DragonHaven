@@ -129,4 +129,33 @@ screenshots are inspected beside the lifecycle captures. The staging probe is
 extended to wait for a real one-minute server deadline using a synthetic
 trained dragon, refuse an early claim, recover a deliberately lost claim reply,
 check one chest/XP/expertise grant, abort another run and use a Wayfinder.
-Final staging and full-suite evidence follow completion of that run.
+Registered staging run [34289398487](https://github.com/Rakky88/DragonHaven/actions/runs/34289398487)
+passed on source `33d4fc5`: clean analysis, all 669 tests, native/JavaScript
+parity (970815-byte bundle), SQL contracts and the complete real-network probe.
+It waited for the actual server deadline, refused an early claim and recovered
+one lost claim receipt with exactly one chest/XP/expertise grant. Abort and
+Wayfinder also passed. Both synthetic accounts and all probe shadow state were
+removed, the worker disabled, and schema 59/lint 0/Auth/settings/app HTTP 200
+confirmed at 23:19:28 UTC on 8 September (9 September local time). The earlier
+run 34288453265 stopped at a widget-test scroll issue before any deployment;
+scrolling the newly inserted lazy-list row fixed the probe without changing
+the game rules or weakening assertions.
+
+## House economy extension — 9 September 2026
+
+The staging Haven screen now exposes room unlock/selection, floor purchases,
+stored-factor repairs and ward upgrades. Public tower facts validate floor
+indices, unique damage entries, repair-factor bounds and ward levels. Price
+quotes use extracted existing pure functions; server commands still decide
+eligibility and deduct coins. Confirmation callbacks retain the displayed
+revision and login epoch. The existing Shop continues to place owned furniture;
+free-form furniture editing, floor reordering and roaming UI are separate work.
+
+Four rule/session tests cover lost unlock/build/repair/upgrade receipts,
+insufficient funds, level gates, tower capacity, free reselection and stale or
+malformed price data. Two screen tests cover Dutch 320dp/1.35 text, cancel and
+confirm, exact debits and sign-out during a floor confirmation. The tower and
+room picker were visually inspected with real fonts. Seven additional fixed
+phrases are translated for all six extra languages. The staging probe now also
+checks a real ward/repair/floor debit and free selection; final network evidence
+is pending its next run. No production activation or schema change is included.

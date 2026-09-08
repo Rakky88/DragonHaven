@@ -6,7 +6,7 @@ Ruleset: released app `v0.05.22`; server schema 59, economy activation disabled
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 9c3dcbae0b7c9795 -->
+<!-- reference-source-fingerprint: 958a6c3e9fdfce1d -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
@@ -15,6 +15,12 @@ Wayfinder. A lost claim response cannot grant again; recovering a Wayfinder
 keeps its first chosen replacement and consumes one Sigil. The shared duration
 helper now also accepts public expertise scores; all duration formulas and
 minimums are unchanged, and the extraction consumes no random draws.
+
+Staging house controls now share the existing deterministic floor, repair and
+ward price helpers with the evaluator. The saved repair factor remains 25–60%
+(40% fallback); this extraction does not draw a new factor or change return,
+damage, ward-protection, chest, egg or relic probabilities. Receipt replay
+cannot deduct a second floor/repair/ward price.
 
 This document describes every player-facing random reward and the other meaningful random gameplay systems currently implemented in DragonHaven. Percentages are exact unless the word “approximately” is used.
 

@@ -1,6 +1,17 @@
+import 'dart:math' as math;
+
 import 'shop_item.dart';
 import 'day_phase.dart';
 import '../utils/json_utils.dart';
+
+// The server evaluator and public UI quote the same existing tower prices.
+const houseTowerPriceMultiplier = 10;
+int towerBuildPrice(int existingFloors) =>
+    (120 + existingFloors * 85) * houseTowerPriceMultiplier;
+int towerRepairPrice(HouseRoomDefinition? room, double factor) => math.max(
+    1, ((room?.price ?? 100) * factor * houseTowerPriceMultiplier).round());
+int? dragonWardUpgradePrice(int level) =>
+    level >= 0 && level < 3 ? const [150, 400, 850][level] : null;
 
 class HouseRoomDefinition {
   const HouseRoomDefinition({

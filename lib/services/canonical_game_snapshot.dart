@@ -11,13 +11,14 @@ import '../models/pet.dart';
 /// saved game: an unknown lineage is null, never a guessed DragonEgg/Pet.
 class CanonicalGameSnapshot {
   CanonicalGameSnapshot._(this._wire, this.eggs, this.shop, this.dragons,
-      this.inventory, this.adventures);
+      this.inventory, this.adventures, this.house);
   final Map<String, dynamic> _wire;
   final List<CanonicalEggView> eggs;
   final CanonicalShopView shop;
   final List<CanonicalDragonView> dragons;
   final CanonicalInventoryView inventory;
   final CanonicalAdventuresView adventures;
+  final CanonicalHouseView house;
 
   CanonicalEggView? egg(String id) => eggs.where((e) => e.id == id).firstOrNull;
   CanonicalDragonView? dragon(String id) =>
@@ -165,7 +166,8 @@ class CanonicalGameSnapshot {
         shop,
         dragons,
         CanonicalInventoryView._parse(data, shop, dragons),
-        CanonicalAdventuresView._parse(_map(data['adventures']), dragons));
+        CanonicalAdventuresView._parse(_map(data['adventures']), dragons),
+        CanonicalHouseView._parse(_map(data['house'])));
   }
 
   /// Read time and the mutation switch may change without a game revision.
@@ -178,6 +180,60 @@ class CanonicalGameSnapshot {
       rulesetHash == other.rulesetHash &&
       rulesetRevision == other.rulesetRevision &&
       jsonEncode(data) == jsonEncode(other.data);
+}
+
+/// Public tower facts, including the server's stored repair factor. Repeated
+/// room types are valid floors; duplicate damage entries are not.
+class CanonicalHouseView {
+  CanonicalHouseView._parse(Map<String, dynamic> data) {
+    unlockedRooms = CanonicalShopView._ids(data['unlockedRoomIds']);
+    activeRoomId = data['activeRoomId'] as String;
+    final rawFloors = data['towerFloorRoomIds'];
+    if (!unlockedRooms.contains(activeRoomId) ||
+        rawFloors is! List ||
+        rawFloors.isEmpty ||
+        rawFloors.length > 20 ||
+        rawFloors.any((id) => !_text(id) || id == 'nest') ||
+        !_count(data['dragonWardLevel']) ||
+        data['dragonWardLevel'] > 3) {
+      _invalid();
+    }
+    floorRoomIds = List.unmodifiable(rawFloors.cast<String>());
+    wardLevel = data['dragonWardLevel'] as int;
+    final damage = data['damagedTowerFloors'];
+    if (damage is! List ||
+        damage.toSet().length != damage.length ||
+        damage.any((i) => i is! int || i < 0 || i >= floorRoomIds.length)) {
+      _invalid();
+    }
+    damagedFloors = Set.unmodifiable(damage.cast<int>());
+    final factors = _map(data['damagedTowerRepairFactors']);
+    if (factors.length != damagedFloors.length ||
+        factors.entries.any((e) =>
+            !damagedFloors.any((i) => '$i' == e.key) ||
+            e.value is! num ||
+            !(e.value as num).isFinite ||
+            e.value < .25 ||
+            e.value > .60)) {
+      _invalid();
+    }
+    repairFactors = Map.unmodifiable(
+        {for (final i in damagedFloors) i: (factors['$i'] as num).toDouble()});
+  }
+  late final Set<String> unlockedRooms;
+  late final String activeRoomId;
+  late final List<String> floorRoomIds;
+  late final Set<int> damagedFloors;
+  late final Map<int, double> repairFactors;
+  late final int wardLevel;
+  int? get nextFloorPrice =>
+      floorRoomIds.length < 20 ? towerBuildPrice(floorRoomIds.length) : null;
+  int? get nextWardPrice => dragonWardUpgradePrice(wardLevel);
+  int? repairPrice(int index) => !damagedFloors.contains(index) ||
+          houseRoomById(floorRoomIds[index]) == null
+      ? null
+      : towerRepairPrice(
+          houseRoomById(floorRoomIds[index]), repairFactors[index]!);
 }
 
 /// Validated display fields used by the ordinary shop. Unknown collection IDs

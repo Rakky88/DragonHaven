@@ -82,6 +82,30 @@ class CanonicalGameActions {
       _boolean('release_dragon', {'dragonId': id});
 
   Future<void> refresh() => _boolean('refresh', {});
+  Future<void> unlockRoom(String id) async {
+    final result = await execute('unlock_room', {'roomId': id});
+    if (result == 'unlocked' || result == 'alreadyUnlocked') return;
+    _houseFailure(result);
+  }
+
+  Future<void> buildFloor(String id) async {
+    final result = await execute('build_floor', {'roomId': id});
+    if (result == 'built') return;
+    _houseFailure(result);
+  }
+
+  Never _houseFailure(Object? result) => throw CanonicalGameException(const [
+        'levelLocked',
+        'insufficientCoins',
+        'maximumReached',
+        'invalidRoom'
+      ].contains(result)
+          ? 'game_action_unavailable'
+          : 'game_result_invalid');
+  Future<void> repairFloor(int index) =>
+      _boolean('repair_floor', {'index': index});
+  Future<void> upgradeWard() => _boolean('upgrade_ward', {});
+
   Future<void> startAdventure(String adventureId, String dragonId) => _use(
       'start_adventure', {'adventureId': adventureId, 'dragonId': dragonId},
       success: 'started');
