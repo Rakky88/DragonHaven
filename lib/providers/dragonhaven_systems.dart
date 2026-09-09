@@ -850,6 +850,7 @@ extension DragonHavenSystems on HouseholdProvider {
       soundEffectsEnabled: soundEffectsEnabled,
       musicStyle: musicStyle,
     );
+    await _syncJukeboxAudio(force: true);
     await _notifyAndSave();
   }
 
@@ -2332,6 +2333,7 @@ extension DragonHavenSystems on HouseholdProvider {
           event.id: now.add(Duration(hours: event.previewHours)),
         };
         trialRefilledAt = null;
+        await _syncJukeboxAudio();
         await _notifyAndSave();
         return 'redeemed_event_preview';
     }

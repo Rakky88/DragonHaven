@@ -18,7 +18,7 @@ class RedeemCodeDefinition {
   final String? restrictedKeeperId;
 }
 
-// Preview codes are server-authorized; most remain Keeper-scoped. Never expose active
+// Preview codes are server-authorized for every verified keeper. Never expose active
 // codes in public release notes; maintain the private REDEEM_CODES.md ledger.
 const redeemCodeCatalog = <RedeemCodeDefinition>[
   RedeemCodeDefinition(
@@ -35,25 +35,21 @@ const redeemCodeCatalog = <RedeemCodeDefinition>[
     code: 'CHRISTMASEVENT',
     rewardType: RedeemRewardType.seasonalEventPreview,
     rewardId: 'christmas_winter_hearth',
-    restrictedKeeperId: 'DH-17792DC5',
   ),
   RedeemCodeDefinition(
     code: 'NEWYEARSEVENT',
     rewardType: RedeemRewardType.seasonalEventPreview,
     rewardId: 'new_year_first_dawn',
-    restrictedKeeperId: 'DH-17792DC5',
   ),
   RedeemCodeDefinition(
     code: 'VALENTINEEVENT',
     rewardType: RedeemRewardType.seasonalEventPreview,
     rewardId: 'valentine_two_heartlights',
-    restrictedKeeperId: 'DH-17792DC5',
   ),
   RedeemCodeDefinition(
     code: 'PRIDEFESTEVENT',
     rewardType: RedeemRewardType.seasonalEventPreview,
     rewardId: 'pride_every_color',
-    restrictedKeeperId: 'DH-17792DC5',
   ),
 ];
 

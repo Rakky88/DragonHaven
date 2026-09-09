@@ -6,7 +6,7 @@ Ruleset: v0.05.23 published and verified; staging and production schema 60 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: cbfc942f3e92103c -->
+<!-- reference-source-fingerprint: c4a028a8f8d16448 -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
@@ -837,3 +837,12 @@ production economy authority flags remain unchanged. Migration 46 blocks legacy
 inventory synchronization/import for a future server-owned account, while legacy
 accounts keep their existing behavior. End-to-end cutover, instance conversion,
 server egg lifecycle and client reconciliation remain separate audit work.
+
+### Jukebox cycle correction (0.05.25)
+
+Shuffle still randomizes each full selected playlist with Kotlin Random.Default,
+without duplication within a cycle. Removing temporary event music rebuilds the
+remaining queue from the current saved selections, including newly acquired
+tracks. A removed song does not consume the new cycle when repeat is off.
+Preference reevaluation and lifecycle callbacks do not draw gameplay entropy.
+MIDI performance-level normalization changes audio only, with no reward changes.

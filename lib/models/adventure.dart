@@ -335,7 +335,7 @@ class SpecialAdventureEventDefinition {
     required this.previewCode,
     required this.previewHours,
     required this.temporaryMusicTrackId,
-    this.previewOwnerKeeperId = 'DH-17792DC5',
+    this.previewOwnerKeeperId,
     this.previewRewardsSimulatedInProduction = true,
     this.rankingVisibleAfterEvent = const Duration(days: 5),
   });

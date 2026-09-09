@@ -324,7 +324,7 @@ jobs:
         env:
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
-          test "$CONFIRMATION" = APPLY_DRAGONHAVEN_STAGING_GAME_61
+          test "$CONFIRMATION" = APPLY_DRAGONHAVEN_STAGING_GAME_62
           flutter pub get
           dart analyze lib integration_test test tool
           flutter test --no-pub --concurrency=1

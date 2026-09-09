@@ -22,7 +22,8 @@ try {
   $applied = @(Compare-Object $actual @($expected + '202609070057')).Count -eq 0 -or
     @(Compare-Object $actual @($expected + @('202609070057','202609080058','202609080059'))).Count -eq 0 -or
     @(Compare-Object $actual @($expected + @('202609070057','202609080058','202609080059','202609090060'))).Count -eq 0 -or
-    @(Compare-Object $actual @($expected + @('202609070057','202609080058','202609080059','202609090060','202609090061'))).Count -eq 0
+    @(Compare-Object $actual @($expected + @('202609070057','202609080058','202609080059','202609090060','202609090061'))).Count -eq 0 -or
+    @(Compare-Object $actual @($expected + @('202609070057','202609080058','202609080059','202609090060','202609090061','202609090062'))).Count -eq 0
   if (-not $applied -and @(Compare-Object $actual $expected).Count -ne 0) { throw 'recovery_contract_baseline_mismatch' }
   $migration = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../supabase/migrations/202609070057_canonical_command_recovery.sql') -Raw -Encoding utf8
   $contract = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'canonical_command_recovery_contract.sql') -Raw -Encoding utf8

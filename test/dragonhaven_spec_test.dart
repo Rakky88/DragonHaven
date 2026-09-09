@@ -275,7 +275,10 @@ void main() {
     expect(nativeBridge, contains('"chest_mythical" -> R.raw.chest_mythical'));
     expect(nativeBridge, contains('"chest_sinister" -> R.raw.chest_sinister'));
     expect(nativeBridge, contains('"chest_special" -> R.raw.chest_special'));
-    expect(nativeBridge, contains('listOf("music_reverie")'));
+    expect(
+        File('android/app/src/main/kotlin/nl/dragonhaven/app/JukeboxQueue.kt')
+            .readAsStringSync(),
+        contains('listOf("music_reverie")'));
     expect(nativeBridge, isNot(contains('previousMusicStyle')));
   });
 

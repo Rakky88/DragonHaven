@@ -1527,11 +1527,21 @@ class HouseholdProvider extends ChangeNotifier {
       .map((track) => track.rawResourceId)
       .toList(growable: false);
 
-  Future<void> _syncJukeboxAudio() => HavenAudio.configureJukebox(
-        trackIds: enabledMusicResourceIds,
-        shuffle: jukeboxShuffle,
-        repeat: jukeboxRepeat,
-      );
+  Future<void> refreshJukeboxAudio() => _syncJukeboxAudio();
+
+  String? _lastJukeboxAudioConfiguration;
+
+  Future<void> _syncJukeboxAudio({bool force = false}) async {
+    final tracks = enabledMusicResourceIds;
+    final configuration = '${tracks.join('|')}:$jukeboxShuffle:$jukeboxRepeat';
+    if (!force && configuration == _lastJukeboxAudioConfiguration) return;
+    _lastJukeboxAudioConfiguration = configuration;
+    await HavenAudio.configureJukebox(
+      trackIds: tracks,
+      shuffle: jukeboxShuffle,
+      repeat: jukeboxRepeat,
+    );
+  }
 
   Future<void> setMusicTrackEnabled(String trackId, bool enabled) async {
     final seasonal =
@@ -2941,7 +2951,6 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<void> refreshForCurrentDate() async {
-    final musicBefore = enabledMusicResourceIds.join('|');
     final specialNotificationsChanged =
         await refreshSpecialAdventureNotifications();
     final adventureOptionsBefore = [
@@ -2991,9 +3000,8 @@ class HouseholdProvider extends ChangeNotifier {
         streakChanged |
         roamIdleDragons();
     final achievementsChanged = _evaluateAchievements();
-    if (musicBefore != enabledMusicResourceIds.join('|')) {
-      await _syncJukeboxAudio();
-    }
+    // Compare against what Android received, not a second time-dependent getter.
+    await _syncJukeboxAudio();
     if (changed || achievementsChanged) await _notifyAndSave();
   }
 

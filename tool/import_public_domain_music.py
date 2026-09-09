@@ -10,6 +10,8 @@ import csv
 import re
 import shutil
 import tarfile
+
+from normalize_jukebox_midi import normalize
 from pathlib import Path
 
 
@@ -174,6 +176,9 @@ def main() -> None:
     if wanted_ids != set(metadata_rows) | set(EXTERNAL_SOURCES):
         missing = wanted_ids - set(metadata_rows) - set(EXTERNAL_SOURCES)
         raise RuntimeError(f"Unresolved music IDs: {sorted(missing)}")
+
+    for midi in RAW.glob('music_*.mid'):
+        midi.write_bytes(normalize(midi.read_bytes()))
 
     lines = [
         "# DragonHaven music sources",

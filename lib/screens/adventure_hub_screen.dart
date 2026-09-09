@@ -1453,8 +1453,8 @@ class _GroupAdventureSection extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(8, 6, 8, 10),
                   child: Text(
                     strings.pick(
-                      'Your current weekly Group Adventure is reserved. Its lobby or journey stays under Active, then moves to Completed when rewards are ready.',
-                      'Je huidige wekelijkse groepsavontuur is gereserveerd. De lobby of reis staat onder Actief en verhuist naar Voltooid zodra de beloningen klaarstaan.',
+                      'No trail is available here right now.',
+                      'Hier is nu geen route beschikbaar.',
                     ),
                     style: const TextStyle(color: AppColors.muted),
                   ),

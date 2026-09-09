@@ -17,6 +17,17 @@ class AchievementsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final game = context.watch<HouseholdProvider>();
+    // Keep catalog order within each group, including revealed secret badges.
+    final achievements = [
+      for (final achievement in achievementCatalog)
+        if (!achievement.secret ||
+            game.unlockedAchievementIds.contains(achievement.id))
+          achievement,
+      for (final achievement in achievementCatalog)
+        if (achievement.secret &&
+            !game.unlockedAchievementIds.contains(achievement.id))
+          achievement,
+    ];
     return Scaffold(
       appBar: AppBar(
         title: Text(strings.tr('achievements')),
@@ -70,9 +81,10 @@ class AchievementsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           if (game.achievementsCompact)
-            _CompactAchievementGrid(strings: strings)
+            _CompactAchievementGrid(
+                strings: strings, achievements: achievements)
           else
-            for (final achievement in achievementCatalog)
+            for (final achievement in achievements)
               _AchievementTile(achievement: achievement),
         ],
       ),
@@ -81,9 +93,11 @@ class AchievementsScreen extends StatelessWidget {
 }
 
 class _CompactAchievementGrid extends StatelessWidget {
-  const _CompactAchievementGrid({required this.strings});
+  const _CompactAchievementGrid(
+      {required this.strings, required this.achievements});
 
   final AppStrings strings;
+  final List<AchievementDefinition> achievements;
 
   @override
   Widget build(BuildContext context) {
@@ -95,14 +109,14 @@ class _CompactAchievementGrid extends StatelessWidget {
           key: const Key('achievements-compact-grid'),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: achievementCatalog.length,
+          itemCount: achievements.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
           ),
           itemBuilder: (context, index) {
-            final achievement = achievementCatalog[index];
+            final achievement = achievements[index];
             final unlocked =
                 game.unlockedAchievementIds.contains(achievement.id);
             final name = achievement.secret && !unlocked

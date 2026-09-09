@@ -57,8 +57,7 @@ void main() {
       expect(egg.goldenHourSpectralChance, .10, reason: event.id);
       expect(music?.temporaryEventId, event.id, reason: event.id);
       expect(code?.rewardId, event.id, reason: event.id);
-      final expectedKeeper =
-          event.id == 'halloween_witchlight' ? null : 'DH-17792DC5';
+      const String? expectedKeeper = null;
       expect(code?.restrictedKeeperId, expectedKeeper, reason: event.id);
       expect(event.previewOwnerKeeperId, expectedKeeper, reason: event.id);
       expect(event.previewHours, 48, reason: event.id);

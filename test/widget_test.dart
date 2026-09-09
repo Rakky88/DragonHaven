@@ -2570,6 +2570,22 @@ void main() {
     await tester.pump(const Duration(milliseconds: 700));
     await tester.pump();
 
+    final revealedSecret = achievementCatalog.firstWhere((a) => a.secret);
+    game.unlockedAchievementIds.add(revealedSecret.id);
+    game.notifyListeners();
+    await tester.pump();
+    final expectedOrder = [
+      ...achievementCatalog.where(
+          (a) => !a.secret || game.unlockedAchievementIds.contains(a.id)),
+      ...achievementCatalog.where(
+          (a) => a.secret && !game.unlockedAchievementIds.contains(a.id)),
+    ].map((a) => a.id).toList();
+    final visibleOrder = tester
+        .widgetList<AchievementBadgeSprite>(find.byType(AchievementBadgeSprite))
+        .map((sprite) => sprite.achievement.id)
+        .toList();
+    expect(visibleOrder, expectedOrder.take(visibleOrder.length));
+
     expect(find.text('Starter'), findsNothing);
     expect(find.text('Easy'), findsNothing);
     expect(find.text('Challenging'), findsNothing);
@@ -2602,6 +2618,12 @@ void main() {
     expect(find.byKey(const Key('achievements-compact-grid')), findsOneWidget);
     expect(find.byType(AchievementBadgeSprite),
         findsNWidgets(achievementCatalog.length));
+    expect(
+        tester
+            .widgetList<AchievementBadgeSprite>(
+                find.byType(AchievementBadgeSprite))
+            .map((sprite) => sprite.achievement.id),
+        expectedOrder);
     expect(find.text('Hello, Little One!'), findsNothing);
 
     await tester.tap(find.byKey(const Key('achievements-view-toggle')));
@@ -2657,7 +2679,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.05.24'), findsOneWidget);
+    expect(find.text('v0.05.25'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-copy-iphone-link')), findsNothing);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);

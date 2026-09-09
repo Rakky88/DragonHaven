@@ -54,7 +54,9 @@ class _DragonHavenAppState extends State<DragonHavenApp> {
   void initState() {
     super.initState();
     _brandingLifecycle = AppLifecycleListener(onResume: () {
-      if (mounted) setState(() {});
+      if (!mounted) return;
+      unawaited(context.read<HouseholdProvider>().refreshJukeboxAudio());
+      setState(() {});
     });
     // No network work and no whole-app rebuild each second. Rebuild only at
     // an event boundary; the small countdown owns its own local clock.
@@ -62,7 +64,10 @@ class _DragonHavenAppState extends State<DragonHavenApp> {
       final game = context.read<HouseholdProvider>();
       final window =
           appEventWindow(game.activeSpecialAdventureWindows, game.currentTime);
-      if (mounted && window?.key != _eventKey) setState(() {});
+      if (mounted && window?.key != _eventKey) {
+        unawaited(game.refreshJukeboxAudio());
+        setState(() {});
+      }
     });
   }
 

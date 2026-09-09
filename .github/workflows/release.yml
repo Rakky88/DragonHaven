@@ -96,6 +96,13 @@ jobs:
       - name: Test
         run: flutter test --no-pub
 
+      - name: Verify consistent MIDI levels and native jukebox cycles
+        run: |
+          python3 tool/normalize_jukebox_midi.py --check
+          python3 -m unittest tool/test_normalize_jukebox_midi.py
+          cd android
+          ./gradlew :app:testDebugUnitTest -x :app:compileFlutterBuildDebug -x :app:copyFlutterAssetsDebug
+
       - name: Configure stable release signing
         env:
           KEYSTORE_BASE64: ${{ secrets.DRAGONHAVEN_KEYSTORE_BASE64 }}

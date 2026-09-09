@@ -113,13 +113,16 @@ void main() {
     });
   }
 
-  test('native music fades continue from the audible volume', () {
+  test('native background gain stays fixed and interruptions pause playback',
+      () {
     final bridge = File(
       'android/app/src/main/kotlin/nl/dragonhaven/app/MainActivity.kt',
     ).readAsStringSync();
 
-    expect(bridge, contains('val start = currentMusicVolume'));
-    expect(bridge, contains('currentMusicVolume = volume'));
+    expect(bridge, contains('setVolume(MUSIC_VOLUME, MUSIC_VOLUME)'));
+    expect(bridge, contains('.setWillPauseWhenDucked(true)'));
+    expect(bridge, isNot(contains('fadeMusic(')));
+    expect(bridge, isNot(contains('DUCKED_VOLUME')));
     expect(bridge, isNot(contains('LoudnessEnhancer')));
     expect(bridge, isNot(contains('MUSIC_GAIN_MILLIBELS')));
   });

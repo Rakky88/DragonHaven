@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 8cf8dc5aae672fbe -->
+<!-- reference-source-fingerprint: 6de4da33b9c900a7 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -376,9 +376,8 @@ and device notification permission.
 
 ## 7. Private preview contract
 
-Each seasonal event has a 48-hour reusable personal preview. Halloween is
-available to authenticated, email-confirmed keepers; the other four previews
-remain restricted server-side to Keeper `DH-17792DC5`. Rankings remain isolated
+Each seasonal event has a 48-hour reusable personal preview available to all
+authenticated, email-confirmed keepers (forward migration 62). Rankings remain isolated
 from live occurrences and the UI labels these occurrences as test events.
 
 Updated 8 September 2026: **test event Trials grant the normal permanent Trial
@@ -604,11 +603,19 @@ server egg lifecycle and client reconciliation remain separate audit work.
 
 Release v0.05.17: the compact seasonal HUD scales its phase icons within the available width; Altar tag/details actions wrap when text needs more space. Trial rules and rewards are unchanged.
 
-Halloween preview access: any signed-in keeper with a confirmed email may redeem
-its existing personal 48-hour preview. The other four event previews remain
-restricted to their configured keeper. Active redemptions retain their original
+Seasonal preview access: any signed-in keeper with a confirmed email may activate
+any of the five existing personal 48-hour previews. Active redemptions retain their original
 expiry; expired previews can be redeemed again. Production preview Adventures
 and Special Chests remain simulated; test Trials grant normal rewards as described
 in section 7. Preview scores remain separate from live event rankings. This
-does not change the event calendar or grant a Special Chest. Migration 48 is the
-forward-only server override; the current app already uses that RPC.
+does not change the event calendar or grant a Special Chest. Migration 62 is the
+current forward-only access override; the app uses the same authenticated RPC.
+
+## Jukebox restoration (release 0.05.25)
+
+Event music is temporary. Natural expiry, manual dismissal and replacing a
+personal preview reconcile the native playlist immediately against the last
+dispatched configuration. The saved ordinary song selection, shuffle and repeat
+remain intact, including music acquired during the event. An empty selection
+or disabled master music stays silent. Returning from the background also
+reconciles event expiry; unchanged clock ticks do not reset playback cycles.

@@ -25,7 +25,8 @@ try {
     @(Compare-Object $actual @($expected + @('202609070054','202609070055','202609070056','202609070057'))).Count -eq 0 -or
     @(Compare-Object $actual @($expected + @('202609070054','202609070055','202609070056','202609070057','202609080058','202609080059'))).Count -eq 0 -or
     @(Compare-Object $actual @($expected + @('202609070054','202609070055','202609070056','202609070057','202609080058','202609080059','202609090060'))).Count -eq 0 -or
-    @(Compare-Object $actual @($expected + @('202609070054','202609070055','202609070056','202609070057','202609080058','202609080059','202609090060','202609090061'))).Count -eq 0
+    @(Compare-Object $actual @($expected + @('202609070054','202609070055','202609070056','202609070057','202609080058','202609080059','202609090060','202609090061'))).Count -eq 0 -or
+    @(Compare-Object $actual @($expected + @('202609070054','202609070055','202609070056','202609070057','202609080058','202609080059','202609090060','202609090061','202609090062'))).Count -eq 0
   if (-not $applied -and @(Compare-Object $actual $expected).Count -ne 0) { throw 'read_contract_baseline_mismatch' }
   $migration = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../supabase/migrations/202609070054_canonical_game_read.sql') -Raw -Encoding utf8
   $contract = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'canonical_game_read_contract.sql') -Raw -Encoding utf8

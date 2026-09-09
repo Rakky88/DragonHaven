@@ -4,7 +4,7 @@ Last verified: 9 September 2026
 
 Ruleset: v0.05.23 published and verified; event stop in migration 60, staging and production verified
 
-<!-- reference-source-fingerprint: 5f632ff4397eb252 -->
+<!-- reference-source-fingerprint: 8fedb11c60bf5d10 -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 
@@ -31,10 +31,10 @@ server rather than trusted from the public app catalog.
 |---|---|---|---|
 | `ENDEVENT` | **End own active event** | `end_active_event` | Any authenticated, email-confirmed keeper; removes own previews and dismisses current calendar occurrences until their scheduled end; repeatable, no items granted |
 | `HALLOWEENEVENT` | **Night of the Witchlight** | `halloween_witchlight` | Any authenticated, email-confirmed keeper; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
-| `CHRISTMASEVENT` | **A Star for the Winter Hearth** | `christmas_winter_hearth` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
-| `NEWYEARSEVENT` | **When the New Dawn Rings** | `new_year_first_dawn` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
-| `VALENTINEEVENT` | **Where Two Heartlights Meet** | `valentine_two_heartlights` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
-| `PRIDEFESTEVENT` | **The Haven of Every Color** | `pride_every_color` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
+| `CHRISTMASEVENT` | **A Star for the Winter Hearth** | `christmas_winter_hearth` | Any authenticated keeper with a confirmed email; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
+| `NEWYEARSEVENT` | **When the New Dawn Rings** | `new_year_first_dawn` | Any authenticated keeper with a confirmed email; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
+| `VALENTINEEVENT` | **Where Two Heartlights Meet** | `valentine_two_heartlights` | Any authenticated keeper with a confirmed email; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
+| `PRIDEFESTEVENT` | **The Haven of Every Color** | `pride_every_color` | Any authenticated keeper with a confirmed email; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
 
 ## Ending an active event
 
@@ -55,8 +55,8 @@ No other player's event is stopped. Offline failure does not clear local state.
 
 - The app catalog is for discovery and UI only; it is not access control.
 - `redeem_seasonal_event_preview` requires an authenticated, email-confirmed
-  account and maps each code to one fixed event. Only Halloween is available to
-  every keeper; the other four mappings still require Keeper `DH-17792DC5`.
+  account and maps each code to one fixed event. All five mappings are available
+  to every verified keeper; migration 62 removes the former single-account gate.
 - A code can be reused only after its previous entitlement expires.
 - Repeating an active code returns the original expiry, without extending its
   48-hour window or changing its test ranking key.
@@ -86,3 +86,12 @@ dart run tool/reference_documentation_guard.dart --update
 dart run tool/reference_documentation_guard.dart --verify
 flutter test test/reference_documentation_test.dart
 ```
+
+## 9 September 2026 access update
+
+All previously account-restricted catalog codes now work for every verified
+keeper. The app catalog and event metadata agree with forward migration 62.
+Activation still affects only the authenticated account, uses one active preview,
+retains the existing 48-hour retry expiry and keeps preview ranking provenance.
+Anonymous/unverified requests and unknown codes remain rejected. No reward
+contents or permanence rules changed. Operational values stay out of release notes.

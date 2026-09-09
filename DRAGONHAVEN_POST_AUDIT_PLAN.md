@@ -1,5 +1,23 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Release v0.05.25 in voorbereiding
+
+De aanvullende trialbalans na v0.05.24 gaat mee: Halloween S+ 2000,
+Nieuwjaar 20000, Valentijn 10000 en Pride 12000; Kerst krijgt onafhankelijk
+binnenkomende, overlappende cadeaus met oplopend tempo en einde bij drie fouten.
+Verborgen achievements staan onderaan in beide weergaven; de gereserveerde
+Group Adventure toont de korte lege-statusmelding.
+Jukeboxherstel vergelijkt met de laatst verstuurde lijst, reageert op eventeinde
+(natuurlijk en handmatig), herselectie, masterknop en hervatten, en behoudt
+nieuwe nummers. Native cycli worden bewaakt; MIDI-dynamiek is gelijkgetrokken.
+Migratie 62 verwijdert de oude accountbeperking voor persoonlijke previews.
+De rollbackproef op staging slaagt voor toegangscontrole, herhaling en isolatie.
+De analyse slaagt; na het aanpassen van verouderde verwachtingen slagen alle
+207 gerichte regressietests, vier native jukeboxproeven en drie MIDI-proeven.
+Productie-uitrol en definitieve releasecontroles zijn nog niet afgerond.
+Economische activatie blijft het bestaande afzonderlijke audittraject.
+
+
 Laatst bijgewerkt: **9 september 2026**
 Technische uitgangsversie: **v0.04.06**
 

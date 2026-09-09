@@ -119,3 +119,13 @@ G5 (783.991Hz), mono 44.1kHz 16-bit PCM, 0.60 seconds each.
 `SeasonalArcadePacing.melody` supplies an original four-pitch 32-note melody and
 deterministic harmony. No third-party composition or recording was imported.
 They are effects outside the collectible Music Chest pool.
+
+## Background playback level (9 September 2026)
+
+The 75 bundled MIDI scores use a fixed nonzero note-on velocity of 64, channel
+volume 100 and expression 127. `tool/normalize_jukebox_midi.py` applies this
+reproducibly after import; pitch, timing, note-off/sustain, instruments and source
+metadata are preserved. This removes large performance-level swells (including
+Reverie) without a runtime compressor. Sources and licensing are unchanged.
+Native playback uses one fixed track gain; audio interruptions pause/resume
+instead of repeatedly ducking and fading the background track.

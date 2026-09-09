@@ -68,6 +68,7 @@ const specialContentReference = ReferenceDocumentSpec(
     'supabase/migrations/202609070048_halloween_preview_access.sql',
     'supabase/migrations/202609080059_single_active_event_preview.sql',
     'supabase/migrations/202609090060_end_active_event.sql',
+    'supabase/migrations/202609090062_seasonal_preview_access.sql',
     'supabase/migrations/202609070045_dormant_chest_opening.sql',
     'supabase/migrations/202609080058_equipment_relic_pool.sql',
     'tool/economy_chest_catalog.dart',
@@ -86,6 +87,7 @@ const randomRewardsReference = ReferenceDocumentSpec(
     'supabase/migrations/202609070052_canonical_game_commands.sql',
     'supabase/migrations/202609070053_canonical_import_preparation.sql',
     'android/app/src/main/kotlin/nl/dragonhaven/app/MainActivity.kt',
+    'android/app/src/main/kotlin/nl/dragonhaven/app/JukeboxQueue.kt',
     'lib/models/account_title.dart',
     'lib/models/adventure.dart',
     'lib/models/chest.dart',
@@ -137,6 +139,7 @@ const redeemCodesReference = ReferenceDocumentSpec(
     'supabase/migrations/202609070048_halloween_preview_access.sql',
     'supabase/migrations/202609080059_single_active_event_preview.sql',
     'supabase/migrations/202609090060_end_active_event.sql',
+    'supabase/migrations/202609090062_seasonal_preview_access.sql',
   ],
 );
 
