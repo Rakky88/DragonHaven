@@ -1,6 +1,6 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
-## Sunwake/Harvestmoon besturing voor v0.05.28 (releasecontrole)
+## Sunwake/Harvestmoon besturing: v0.05.28 uitgebracht
 
 Sunwake begint sneller. Besturing start alleen op de draak, volgt de duim met
 een maximumsnelheid en stopt bij loslaten; aanraken elders en een tweede duim
@@ -15,9 +15,19 @@ zijn visueel gecontroleerd op 320x640 en met grote tekst/verminderde animaties.
 De Android-preview bouwt en is als update in de emulator geïnstalleerd.
 Ook daar zijn het vastpakken/slepen van de draak, het negeren van aanraken
 elders en de volledige vierdelige plaatsingspreview visueel gecontroleerd.
-De gebruiker heeft publicatie van v0.05.28 / Android 10078 goedgekeurd.
-De releasecontrole loopt; publicatie en servercontroles worden hieronder vastgelegd.
-Er is geen databasewijziging nodig.
+v0.05.28 / Android 10078 is op 9 september 2026 om 16:38:17 UTC gepubliceerd.
+Release-CI 34376773439 slaagt met 744 tests, schone analyse, native muziektests
+en een ondertekende AAB. De productie-APK is als update geïnstalleerd; About,
+bestaande voortgang en opgeslagen taalkeuze kloppen. GitHub-bestand en lokale
+APK hebben dezelfde grootte en SHA-256; de vaste downloadlink geeft HTTP 200.
+Voor en na publicatie: 65 gelijke migraties, lint 0, drie healthchecks HTTP 200.
+Er is geen databasewijziging; economy/game-mutaties blijven uit en push blijft aan.
+Bewijs: `RELEASE_V0.05.28_VERIFICATION.md`.
+
+Lokale buildomgeving: de schijf raakte vol bij de laatste kopie naar Flutter's
+outputmap. De complete ondertekende Gradle-APK is direct teruggevonden en apart
+geverifieerd/geïnstalleerd; de gedeeltelijke kopie is niet gepubliceerd. Vóór
+een volgende grote build is extra lokale opslagruimte nodig.
 
 ## Sunwake en Harvestmoon: v0.05.27 afgerond
 
