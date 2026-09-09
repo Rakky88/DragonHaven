@@ -2,11 +2,11 @@
 
 Last verified: 9 September 2026
 
-Ruleset: released app `v0.05.22`; server schema 59, economy activation disabled
+Ruleset: v0.05.23 release candidate; migration 60 rehearsed, production still schema 59 and economy activation disabled
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 0a127095594a16e4 -->
+<!-- reference-source-fingerprint: 30c53c8b6fefc42e -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
@@ -477,8 +477,11 @@ Outside a seasonal event, every empty Trial slot is selected uniformly from
 Cavern Flight, Ruin Breaker, and Runeweaver: `1/3` each. During one active
 seasonal event, its event Trial is added as a fourth eligible kind, so Cavern
 Flight, Ruin Breaker, Runeweaver, and the active event Trial each have exactly
-25% per refilled slot. Duplicate kinds may occupy multiple slots. Private event
-previews use the same four-kind distribution but a separate occurrence.
+25% per ordinary refill. On first activation of an event occurrence, all currently
+empty slots are instead filled deterministically with that event's Trial (100%).
+Existing offers are preserved. A persisted occurrence key prevents repeating
+this initial fill. Duplicate kinds may occupy multiple slots. Personal previews
+use the same activation/refill rules with a separate occurrence.
 
 ### 4.2 Trial reward by grade
 
@@ -653,10 +656,10 @@ These systems use randomness but do not directly choose a reward item. Rewards r
 - Cavern Flight is seeded by the Trial-offer ID. Each obstacle has a gap center uniformly from 30% to 70% of the playfield, a 50% crystal state, a uniform movement phase, and—after four obstacles have been passed—a 25% chance to move. Replaying the same persisted offer recreates its seeded sequence.
 - Runeweaver is seeded by the Trial-offer ID combined with the selected dragon's hatch seed. Every added rune is uniform among the available rune keys. From round six onward, rune positions are shuffled.
 - Ruin Breaker uses timing and player input; it does not roll a reward-affecting target sequence.
-- Every seasonal Trial uses the server-provided seed when played online. Each
-  three-discipline round chooses one of six themed targets, one of two safe
-  lanes, one palette color, and one of six answer positions. These choices only
-  shape the challenge. They do not alter the grade reward or ranking rules.
+- Every online seasonal Trial uses the server-provided seed; local preview/test
+  seeds remain injectable. These random layouts never roll a reward item.
+  Witchlight retains its three-discipline draws (target, unused lane, palette
+  color and answer position), timings and six pumpkin faces.
 - Witchlight uses the target choice for six similar pumpkin faces, now rendered
   as six individual painted sprites. The visual replacement changes no draws,
   timings, mistake limits or reward rules. Its Spirit
@@ -667,11 +670,27 @@ These systems use randomness but do not directly choose a reward item. Rewards r
   horizontal reflection also varies direction.
   Spirit visibly widens that corridor from 24 to 32 logical pixels at 400
   expertise; leaving it always fails. The seeded lane draw is unused there.
-- Other lane-based seasonal Spirit phases provide a capped forgiveness roll:
-  `Spirit / 400 * 5%` (0% through 5%). Arcana adds up to 800 milliseconds of
-  prompt visibility, Might widens the timing target, and total expertise adds
-  at most three seconds to the run. None of these assists multiplies score or
-  changes a loot table.
+- The four rebuilt games derive a separate 31-bit board seed from the run's
+  seeded stream. Christmas draws a uniform parcel symbol from three choices.
+  New Year draws a uniform lane from four choices and adds uniform 0–120ms
+  spacing to a base interval that falls from 1.10s to a 0.72s floor.
+- Valentine independently shuffles eligible cells on each 3×5 board and selects
+  four thorn cells per side, protecting starts and goals. Breadth-first search
+  accepts only paired layouts solvable in 7–16 moves, for up to 160 attempts,
+  then uses a fixed reachable fallback. It never awards the same paired state
+  twice in one board. Directional movement and hints are deterministic.
+- Pride uses a shuffled depth-first search for a self-avoiding route of 6–11
+  cells on a 4×4 grid, with a uniform left-edge source row and a right-edge sink.
+  It tries up to 100 starts, then a fixed route. Decoys use equal elbow/straight
+  choices; every cell receives 0–3 uniformly selected initial quarter turns.
+  An already solved initial board is rotated out of solution. Each connected
+  cell scores at most once per board. No old random Spirit forgiveness remains
+  in these four games. Assistance, scoring and caps are documented in section 3
+  of `SPECIAL_EVENTS_CHESTS_AND_EGGS.md`; reward tables stay unchanged.
+
+The v0.05.23 event stop is deterministic and changes no reward roll. The new
+Jingle Bells performance is original synthesis with no random sample source;
+it replaces a temporary alias only, outside the Music Chest collection.
 
 ### 7.2 Dragon Academy lesson patterns
 

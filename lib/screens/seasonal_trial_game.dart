@@ -9,6 +9,7 @@ import '../models/trial.dart';
 import '../services/audio_service.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/witchlight_trial_widgets.dart';
+import '../widgets/seasonal_minigames.dart';
 
 class SeasonalTrialRunResult {
   const SeasonalTrialRunResult({
@@ -67,7 +68,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
   var _pathSeed = 0;
   DateTime? _errorFlashUntil;
   var _target = 0;
-  var _safeLane = 0;
+  late final int _arcadeSeed;
   var _targetColor = 0;
   var _correctChoicePosition = 0;
   var _promptVisible = true;
@@ -111,6 +112,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
       duration: const Duration(milliseconds: 2200),
     )..repeat(reverse: true);
     _newChallenge(initial: true);
+    _arcadeSeed = _isWitchlight ? 0 : _random.nextInt(1 << 31);
   }
 
   @override
@@ -194,7 +196,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
     _phase = 0;
     if (_isWitchlight) _pathSeed = _random.nextInt(1 << 32);
     _target = _random.nextInt(6);
-    _safeLane = _random.nextInt(2);
+    _random.nextInt(2); // Preserve the Witchlight seed sequence.
     _targetColor = _random.nextInt(theme.palette.length);
     _correctChoicePosition = _random.nextInt(6);
     _promptVisible = true;
@@ -312,7 +314,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                     title: definition.title(strings.languageCode),
                     score: _score,
                     combo: _combo,
-                    phase: _phase,
+                    phase: _isWitchlight ? _phase : -1,
                     phaseLabel: _currentPhaseFocus.name.toUpperCase(),
                     round: _round,
                     remaining: Duration(milliseconds: _remainingMilliseconds),
@@ -357,7 +359,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                     ? Duration.zero
                     : _now().difference(_runStartedAt!),
               ),
-            if (_isWitchlight && _errorFlashUntil != null)
+            if (_errorFlashUntil != null)
               IgnorePointer(
                 child: TweenAnimationBuilder<double>(
                   key: ValueKey('witchlight-error-flash-$_mistakes'),
@@ -373,17 +375,48 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
     );
   }
 
-  Widget _buildGame(AppStrings strings) => switch (widget.offer.kind) {
-        TrialKind.witchlightWard => _buildWitchlight(strings),
-        TrialKind.hollyfrostGiftforge => _buildGiftforge(strings),
-        TrialKind.midnightChime => _buildMidnightChime(strings),
-        TrialKind.rosevowRelay => _buildRosevow(strings),
-        TrialKind.prismaticParade => _buildPrismatic(strings),
-        TrialKind.cavernFlight ||
-        TrialKind.ruinBreaker ||
-        TrialKind.runeweaver =>
-          const SizedBox.shrink(),
-      };
+  Widget _buildGame(AppStrings strings) => _isWitchlight
+      ? _buildWitchlight(strings)
+      : SeasonalMinigames(
+          kind: widget.offer.kind,
+          dragon: widget.dragon,
+          seed: _arcadeSeed,
+          running: _started && !_ending,
+          clock: _now,
+          onAction: _arcadeAction);
+
+  void _arcadeAction(bool correct,
+      {required int points, required bool completesRound}) {
+    if (!_started || _ending || _totalActions >= 200) return;
+    setState(() {
+      _totalActions++;
+      if (correct) {
+        _correctActions++;
+        _score =
+            min(20000, _score + points.clamp(0, 130) + min(90, _combo * 6));
+        if (completesRound) {
+          _combo++;
+          _bestCombo = max(_bestCombo, _combo);
+          _round++;
+        }
+        _status = theme.successText(AppStrings.of(context));
+      } else {
+        _mistakes++;
+        _combo = 0;
+        _score = max(0, _score - 30);
+        _errorFlashUntil = _now().add(const Duration(milliseconds: 300));
+        _status = theme.failureText(AppStrings.of(context));
+      }
+      _feedbackUntil = _now().add(const Duration(milliseconds: 650));
+    });
+    if (completesRound || !correct) {
+      unawaited(HavenAudio.playAsset(
+          'event_${theme.soundPrefix}_${correct ? 'success' : 'failure'}'));
+    }
+    if (_remainingMilliseconds <= 0) {
+      unawaited(_finish());
+    }
+  }
 
   Widget _glassPanel({required Widget child}) => Container(
         decoration: BoxDecoration(
@@ -487,79 +520,6 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                                     _optionColor(position) == _targetColor),
                           ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 22),
-        ],
-      );
-
-  Widget _buildLanePhase(
-    AppStrings strings, {
-    Key? key,
-    required String instructionEn,
-    required String instructionNl,
-    required String keyPrefix,
-    required int travelerSprite,
-    bool completesRound = false,
-  }) =>
-      Column(
-        key: key,
-        children: [
-          const SizedBox(height: 16),
-          Text(
-            strings.pick(instructionEn, instructionNl),
-            textAlign: TextAlign.center,
-            style: _instructionStyle,
-          ),
-          const Spacer(),
-          _EventTrialSprite(theme: theme, index: travelerSprite, size: 116),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              for (var lane = 0; lane < 2; lane++) ...[
-                if (lane > 0) const SizedBox(width: 13),
-                Expanded(
-                  child: Semantics(
-                    label: strings.pick(
-                      lane == 0 ? 'Left path' : 'Right path',
-                      lane == 0 ? 'Linker pad' : 'Rechter pad',
-                    ),
-                    child: InkWell(
-                      key: Key('$keyPrefix-$lane'),
-                      borderRadius: BorderRadius.circular(34),
-                      onTap: () {
-                        final forgiving =
-                            _random.nextDouble() < _spiritTolerance * .05;
-                        _answer(
-                          lane == _safeLane || forgiving,
-                          completesRound: completesRound,
-                        );
-                      },
-                      child: Container(
-                        height: 156,
-                        padding: const EdgeInsets.all(17),
-                        decoration: BoxDecoration(
-                          color: (lane == _safeLane
-                                  ? theme.glowColor
-                                  : theme.buttonColor)
-                              .withValues(alpha: .22),
-                          borderRadius: BorderRadius.circular(34),
-                          border: Border.all(
-                            color: lane == _safeLane
-                                ? theme.accentColor.withValues(alpha: .60)
-                                : Colors.white24,
-                            width: 2,
-                          ),
-                        ),
-                        child: _EventTrialSprite(
-                          theme: theme,
-                          index: lane == _safeLane ? 3 : 5,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
           const SizedBox(height: 22),
@@ -700,182 +660,6 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
         ),
       );
 
-  Widget _buildGiftforge(AppStrings strings) => _glassPanel(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 260),
-          child: switch (_phase) {
-            0 => Column(
-                key: const ValueKey('giftforge-arcana'),
-                children: [
-                  const SizedBox(height: 16),
-                  Text(
-                    _promptVisible
-                        ? strings.pick('Arcana · remember this recipe',
-                            'Arcana · onthoud dit recept')
-                        : strings.pick('Arcana · find the matching gift',
-                            'Arcana · vind het juiste cadeau'),
-                    style: _instructionStyle,
-                  ),
-                  const SizedBox(height: 10),
-                  AnimatedOpacity(
-                    opacity: _promptVisible ? 1 : .12,
-                    duration: const Duration(milliseconds: 220),
-                    child: Container(
-                      width: 126,
-                      height: 126,
-                      padding: const EdgeInsets.all(11),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: .12),
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: theme.accentColor, width: 2),
-                      ),
-                      child: _promptVisible
-                          ? _EventTrialSprite(theme: theme, index: _target)
-                          : const Icon(Icons.help_rounded,
-                              color: Colors.white30, size: 62),
-                    ),
-                  ),
-                  const Spacer(),
-                  Wrap(
-                    spacing: 9,
-                    runSpacing: 9,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      for (var position = 0; position < 6; position++)
-                        _SpriteTapTarget(
-                          key: Key('giftforge-item-$position'),
-                          theme: theme,
-                          index: _optionSprite(position),
-                          onTap: _promptVisible
-                              ? null
-                              : () => _answer(
-                                    _optionSprite(position) == _target,
-                                  ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 22),
-                ],
-              ),
-            1 => _buildTimingPhase(
-                strings,
-                key: const ValueKey('giftforge-might'),
-                instructionEn: 'Might · stamp the gift at golden heat',
-                instructionNl: 'Might · stempel het cadeau bij gouden hitte',
-                keyName: 'giftforge-stamp',
-                sprite: 4,
-                completesRound: false,
-              ),
-            _ => _buildLanePhase(
-                strings,
-                key: const ValueKey('giftforge-spirit'),
-                instructionEn: 'Spirit · send it to the open sleigh bay',
-                instructionNl: 'Spirit · stuur het naar het vrije sleevak',
-                keyPrefix: 'giftforge-sleigh',
-                travelerSprite: 1,
-                completesRound: true,
-              ),
-          },
-        ),
-      );
-
-  Widget _buildMidnightChime(AppStrings strings) {
-    return _glassPanel(
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 260),
-        child: switch (_phase) {
-          0 => _buildChoicePhase(
-              strings,
-              key: const ValueKey('midnight-arcana'),
-              instructionEn: 'Arcana · read the first-dawn sigil',
-              instructionNl: 'Arcana · lees het dageraadsteken',
-              keyPrefix: 'midnight-sigil',
-            ),
-          1 => _buildLanePhase(
-              strings,
-              key: const ValueKey('midnight-spirit'),
-              instructionEn: 'Spirit · launch through the open star ring',
-              instructionNl: 'Spirit · lanceer door de open sterrenring',
-              keyPrefix: 'midnight-ring',
-              travelerSprite: 2,
-            ),
-          _ => _buildTimingPhase(
-              strings,
-              key: const ValueKey('midnight-might'),
-              instructionEn: 'Might · strike the midnight chime',
-              instructionNl: 'Might · sla de middernachtklok',
-              keyName: 'midnight-chime-strike',
-              sprite: 4,
-            ),
-        },
-      ),
-    );
-  }
-
-  Widget _buildRosevow(AppStrings strings) => _glassPanel(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 260),
-          child: switch (_phase) {
-            0 => _buildChoicePhase(
-                strings,
-                key: const ValueKey('rosevow-arcana'),
-                instructionEn: 'Arcana · find the matching heart sigil',
-                instructionNl: 'Arcana · vind het gelijke hartteken',
-                keyPrefix: 'rosevow-heart',
-              ),
-            1 => _buildLanePhase(
-                strings,
-                key: const ValueKey('rosevow-spirit'),
-                instructionEn: 'Spirit · carry both lights along the safe path',
-                instructionNl:
-                    'Spirit · draag beide lichten over het veilige pad',
-                keyPrefix: 'rosevow-lane',
-                travelerSprite: 4,
-              ),
-            _ => _buildTimingPhase(
-                strings,
-                key: const ValueKey('rosevow-might'),
-                instructionEn: 'Might · break the thorn lock',
-                instructionNl: 'Might · breek het doornenslot',
-                keyName: 'rosevow-thorn-strike',
-                sprite: 5,
-              ),
-          },
-        ),
-      );
-
-  Widget _buildPrismatic(AppStrings strings) => _glassPanel(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 260),
-          child: switch (_phase) {
-            0 => _buildChoicePhase(
-                strings,
-                key: const ValueKey('prismatic-arcana'),
-                instructionEn: 'Arcana · match both shape and color',
-                instructionNl: 'Arcana · combineer vorm én kleur',
-                keyPrefix: 'prismatic-choice',
-                colored: true,
-              ),
-            1 => _buildLanePhase(
-                strings,
-                key: const ValueKey('prismatic-spirit'),
-                instructionEn: 'Spirit · weave through the matching hoop',
-                instructionNl: 'Spirit · weef door de juiste hoepel',
-                keyPrefix: 'prismatic-hoop',
-                travelerSprite: 2,
-              ),
-            _ => _buildTimingPhase(
-                strings,
-                key: const ValueKey('prismatic-might'),
-                instructionEn: 'Might · crack the dull crystal on the beat',
-                instructionNl: 'Might · breek het doffe kristal op de maat',
-                keyName: 'prismatic-crystal-strike',
-                sprite: 5,
-              ),
-          },
-        ),
-      );
-
   TextStyle get _instructionStyle => const TextStyle(
         color: Colors.white,
         fontSize: 17,
@@ -965,7 +749,9 @@ class _SeasonalHud extends StatelessWidget {
                         if (showLabel) ...[
                           Flexible(
                             child: Text(
-                              'ROUND $round · $phaseLabel',
+                              phase < 0
+                                  ? 'ROUND $round'
+                                  : 'ROUND $round · $phaseLabel',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -978,16 +764,17 @@ class _SeasonalHud extends StatelessWidget {
                           ),
                           const SizedBox(width: 5),
                         ],
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: _SeasonalPhaseTrail(
-                              theme: theme,
-                              phase: phase,
+                        if (phase >= 0)
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: _SeasonalPhaseTrail(
+                                theme: theme,
+                                phase: phase,
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     );
                   },
@@ -1252,8 +1039,10 @@ class _IntroOverlay extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(
-                      width: 166,
-                      height: 166,
+                      width:
+                          theme.assetDirectory.endsWith('halloween') ? 166 : 96,
+                      height:
+                          theme.assetDirectory.endsWith('halloween') ? 166 : 96,
                       child: _EventTrialSprite(theme: theme, index: 0),
                     ),
                     const SizedBox(height: 10),
@@ -1575,13 +1364,13 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
           introEn: 'Light the Hollyfrost Giftforge',
           introNl: 'Ontsteek Hollyfrosts Geschenkensmidse',
           instructionsEn:
-              'Remember the gift, find it on the belt and keep the starlight sleigh supplied.',
+              'Drag moving parcels into the sleigh bay with the same symbol. Work quickly: parcels fall off the belt. Wrong deliveries cost 30 points.',
           instructionsNl:
-              'Onthoud het cadeau, vind het op de band en vul de sterrenlichtslee.',
+              'Sleep bewegende cadeaus naar het sleevak met hetzelfde symbool. Werk snel: cadeaus vallen van de band. Een foute bezorging kost 30 punten.',
           successEn: 'Perfectly wrapped!',
           successNl: 'Perfect ingepakt!',
-          failureEn: 'Wrong parcel — two seconds lost.',
-          failureNl: 'Verkeerd pakket — twee seconden verloren.'),
+          failureEn: 'Missed delivery · −30 points',
+          failureNl: 'Bezorging gemist · −30 punten'),
       TrialKind.midnightChime => const _SeasonalTheme(
           soundPrefix: 'firstlight',
           backgroundAsset:
@@ -1596,34 +1385,34 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
           introEn: 'Ring in the First Dawn',
           introNl: 'Luid de Eerste Dageraad in',
           instructionsEn:
-              'Strike the called chime as its pulse crosses the golden ring, then launch the dawn light.',
+              'Stars fall along four chime lanes. Tap the numbered chime exactly as its star crosses the gold line to light the midnight sky. Misses cost 30 points; sound is optional.',
           instructionsNl:
-              'Sla de gevraagde klok wanneer de puls de gouden ring kruist en lanceer het dageraadslicht.',
+              'Sterren vallen over vier klokbanen. Tik op de genummerde klok zodra de ster de gouden lijn kruist en verlicht de middernachthemel. Missers kosten 30 punten; geluid is niet nodig.',
           successEn: 'A perfect midnight note!',
           successNl: 'Een perfecte middernachttoon!',
-          failureEn: 'The rhythm slipped by two seconds.',
-          failureNl: 'Het ritme verloor twee seconden.'),
+          failureEn: 'Missed chime · −30 points',
+          failureNl: 'Klok gemist · −30 punten'),
       TrialKind.rosevowRelay => const _SeasonalTheme(
           soundPrefix: 'twinheart',
           backgroundAsset:
               'assets/images/events/valentine/trial_background.webp',
           assetDirectory: 'assets/images/events/valentine',
-          deepColor: Color(0xFF351426),
-          panelColor: Color(0xFF642440),
+          deepColor: Color(0xFF3C1932),
+          panelColor: Color(0xFF853C65),
           accentColor: Color(0xFFFFD2DC),
           glowColor: Color(0xFFFF82AB),
-          buttonColor: Color(0xFFA93665),
+          buttonColor: Color(0xFFAE4778),
           palette: [Color(0xFFFFD2DC), Color(0xFFFF82AB), Color(0xFFFFC85F)],
           introEn: 'Carry the Rosevow Relay',
           introNl: 'Draag de Rozenbelofte-estafette',
           instructionsEn:
-              'Choose the open lane and guide both heartlights beyond every thorn gate.',
+              'Swipe or use the arrows to guide two hearts to their roses. Horizontal moves are mirrored. A blocked heart waits while its partner moves. Reach both roses together to open a new maze.',
           instructionsNl:
-              'Kies de open baan en leid beide hartlichten voorbij elke doornpoort.',
+              'Swipe of gebruik de pijlen om twee harten naar hun roos te leiden. Horizontale bewegingen zijn gespiegeld. Een geblokkeerd hart wacht terwijl zijn partner beweegt. Bereik beide rozen om een nieuw doolhof te openen.',
           successEn: 'Both promises shine!',
           successNl: 'Beide beloften stralen!',
-          failureEn: 'A thorn cost two seconds.',
-          failureNl: 'Een doorn kostte twee seconden.'),
+          failureEn: 'Both paths blocked · −30 points',
+          failureNl: 'Beide paden geblokkeerd · −30 punten'),
       TrialKind.prismaticParade => const _SeasonalTheme(
           soundPrefix: 'radiant',
           backgroundAsset: 'assets/images/events/pride/trial_background.webp',
@@ -1645,13 +1434,13 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
           introEn: 'Lead the Prismatic Parade',
           introNl: 'Leid de Prismatische Parade',
           instructionsEn:
-              'Match both symbol and color to weave seven distinct ribbons into one radiant sky.',
+              'Rotate the prisms to connect their channels. Guide the rainbow from the white arrow to the gold star. Every newly lit prism scores once; finish the circuit for a bonus and a fresh puzzle.',
           instructionsNl:
-              'Combineer symbool en kleur om zeven unieke linten tot één stralende hemel te weven.',
+              'Draai de prisma’s om hun kanalen te verbinden. Leid de regenboog van de witte pijl naar de gouden ster. Elk nieuw verlicht prisma scoort één keer; voltooi het circuit voor een bonus en een nieuwe puzzel.',
           successEn: 'Another true color joins!',
           successNl: 'Nog een ware kleur sluit aan!',
-          failureEn: 'The ribbon tangled for two seconds.',
-          failureNl: 'Het lint raakte twee seconden in de knoop.'),
+          failureEn: 'Keep the rainbow flowing!',
+          failureNl: 'Laat de regenboog doorstromen!'),
       TrialKind.cavernFlight ||
       TrialKind.ruinBreaker ||
       TrialKind.runeweaver =>

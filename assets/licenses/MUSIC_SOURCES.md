@@ -1,8 +1,24 @@
 # DragonHaven music sources
 
-Every shipped jukebox resource is an explicitly CC0 or Public Domain
-MIDI/performance source. The composition title alone was not treated as
+The collected jukebox resources use explicitly CC0 or Public Domain
+MIDI/performance sources. The Christmas event additionally uses an original
+DragonHaven synthesis of a public-domain composition. The title alone was not treated as
 sufficient clearance for a modern recording.
+
+## Christmas event: original Jingle Bells arrangement (9 September 2026)
+
+`music_event_jingle_bells` (`music_event_jingle_bells.wav`) is a newly synthesized, 73.21-second instrumental
+arrangement of **Jingle Bells**, James Lord Pierpont (1857). The historical
+composition is documented by the Library of Congress, whose sheet-music item
+marks it public domain and free to use and reuse:
+https://www.loc.gov/item/2023838067/ (checked 9 September 2026).
+
+`tool/build_christmas_carol.dart` authors the melody, harmony, music-box timbre,
+soft accompaniment and sleigh-bell oscillators directly. It imports no modern
+arrangement, audio recording, sample or soundfont. This repository owns this
+new arrangement/performance. PCM 44.1 kHz, 16-bit mono; measured peak 0.554,
+with attack/release envelopes and a closing fade. It replaces only the temporary
+Christmas event alias, not any collected jukebox song or Music Chest pool.
 
 PDMX dataset: https://zenodo.org/records/15571083
 

@@ -129,27 +129,64 @@ class _EventCountdownBannerState extends State<EventCountdownBanner> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
           gradient: LinearGradient(colors: appearance.panelColors)),
-      child: Wrap(
-          spacing: 12,
-          runSpacing: 3,
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Text(
-                s.pick(
-                    widget.window.event.titleEn, widget.window.event.titleNl),
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12)),
-            Text(
-                '${preview ? s.pick('Test event · ', 'Testevent · ') : ''}${s.pick('Ends in', 'Nog')} $clock',
-                style: TextStyle(
-                    color: appearance.accent,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                    fontFeatures: const [FontFeature.tabularFigures()])),
-          ]),
+      child: LayoutBuilder(builder: (context, constraints) {
+        final title =
+            s.pick(widget.window.event.titleEn, widget.window.event.titleNl);
+        final timer = '${s.pick('Ends in', 'Nog')} $clock';
+        final testLabel = s.pick('Test event', 'Testevent');
+        final titleStyle = DefaultTextStyle.of(context).style.merge(
+            const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 12));
+        // A pale timer stays readable on every event's darkest panel.
+        final clockStyle = titleStyle.copyWith(
+            color: Colors.white,
+            fontFeatures: const [FontFeature.tabularFigures()]);
+        double width(String text, TextStyle style) {
+          final painter = TextPainter(
+              text: TextSpan(text: text, style: style),
+              textDirection: Directionality.of(context),
+              textScaler: MediaQuery.textScalerOf(context))
+            ..layout();
+          final result = painter.width.ceilToDouble();
+          painter.dispose();
+          return result;
+        }
+
+        final officialWidth =
+            width(title, titleStyle) + 12 + width(timer, clockStyle);
+        final spare = constraints.maxWidth - officialWidth;
+        Widget previewLabel(double available) => SizedBox(
+            width: available.clamp(0, width(testLabel, titleStyle)),
+            child: Text(testLabel,
+                key: const Key('event-preview-label'),
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.clip,
+                style: titleStyle.copyWith(color: Colors.white70)));
+        final titleText = Text(title,
+            key: const Key('event-countdown-title'), style: titleStyle);
+        final clockText = Text(timer,
+            key: const Key('event-countdown-clock'), style: clockStyle);
+        if (spare >= 0) {
+          return Row(children: [
+            titleText,
+            const Spacer(),
+            if (preview && spare > 8) ...[
+              previewLabel(spare - 8),
+              const SizedBox(width: 8)
+            ],
+            const SizedBox(width: 12),
+            clockText,
+          ]);
+        }
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          titleText,
+          const SizedBox(height: 3),
+          clockText,
+        ]);
+      }),
     );
   }
 }

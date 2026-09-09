@@ -144,6 +144,7 @@ Future<void> main() async {
       position: position,
     ),
     synchronizeSeasonalPreviews: game.synchronizeSeasonalEventPreviews,
+    synchronizeSeasonalDismissals: game.synchronizeSeasonalEventDismissals,
     synchronizeSeasonalPairReservations:
         game.synchronizeOnlineSeasonalPairReservations,
     applySeasonalPairReward: (reward) => game.applyOnlineSeasonalPairReward(

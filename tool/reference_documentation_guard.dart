@@ -54,6 +54,8 @@ const specialContentReference = ReferenceDocumentSpec(
     'lib/screens/inventory_screen.dart',
     'lib/widgets/egg_altar_scene.dart',
     'lib/screens/seasonal_trial_game.dart',
+    'lib/models/seasonal_minigame.dart',
+    'lib/widgets/seasonal_minigames.dart',
     'lib/widgets/witchlight_trial_widgets.dart',
     'lib/services/notification_service.dart',
     'supabase/migrations/202608290026_special_chest_trade_support.sql',
@@ -64,6 +66,7 @@ const specialContentReference = ReferenceDocumentSpec(
     'supabase/migrations/202609070044_sinister_altar_rewards.sql',
     'supabase/migrations/202609070048_halloween_preview_access.sql',
     'supabase/migrations/202609080059_single_active_event_preview.sql',
+    'supabase/migrations/202609090060_end_active_event.sql',
     'supabase/migrations/202609070045_dormant_chest_opening.sql',
     'supabase/migrations/202609080058_equipment_relic_pool.sql',
     'tool/economy_chest_catalog.dart',
@@ -91,6 +94,8 @@ const randomRewardsReference = ReferenceDocumentSpec(
     'lib/models/egg_altar.dart',
     'lib/providers/egg_altar_systems.dart',
     'lib/screens/seasonal_trial_game.dart',
+    'lib/models/seasonal_minigame.dart',
+    'lib/widgets/seasonal_minigames.dart',
     'lib/widgets/witchlight_trial_widgets.dart',
     'lib/models/dragon_egg.dart',
     'lib/models/dragon_sex.dart',
@@ -129,6 +134,7 @@ const redeemCodesReference = ReferenceDocumentSpec(
     'supabase/migrations/202609070041_seasonal_event_lint_fixes.sql',
     'supabase/migrations/202609070048_halloween_preview_access.sql',
     'supabase/migrations/202609080059_single_active_event_preview.sql',
+    'supabase/migrations/202609090060_end_active_event.sql',
   ],
 );
 

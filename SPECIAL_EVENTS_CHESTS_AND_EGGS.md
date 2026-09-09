@@ -2,9 +2,9 @@
 
 Last verified: 9 September 2026
 
-Ruleset: released app `v0.05.22`; server schema 59, economy activation disabled
+Ruleset: v0.05.23 release candidate; migration 60 rehearsed, production still schema 59 and economy activation disabled
 
-<!-- reference-source-fingerprint: 2ee3ee9805d190d9 -->
+<!-- reference-source-fingerprint: e304f0c0af5147f3 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -157,15 +157,37 @@ streak rules or rewards.
 | Event | Trial kind | Player-facing Trial | Loop |
 |---|---|---|---|
 | Halloween | `witchlightWard` | Witchlight Ward | Memorize a pumpkin face, trace the witchlight path, break the approaching curse |
-| Christmas | `hollyfrostGiftforge` | Hollyfrost Giftforge | Memorize a gift recipe, stamp it at the forge, guide it to the sleigh |
-| New Year | `midnightChime` | Midnight Chime | Read the turning sky, strike chimes in rhythm, launch first-dawn light |
-| Valentine | `rosevowRelay` | Rosevow Relay | Pair heartlights, guide them through the crossing, seal the shared vow |
-| Pridefest | `prismaticParade` | Prismatic Parade | Match color and shape, guide radiant ribbons, complete the parade |
+| Christmas | `hollyfrostGiftforge` | Hollyfrost Giftforge | Drag moving parcels from a conveyor into matching symbol bays |
+| New Year | `midnightChime` | Midnight Chime | Four-lane falling-star rhythm game; strike each chime at the golden line |
+| Valentine | `rosevowRelay` | Rosevow Relay | Guide two horizontally mirrored hearts through different, jointly solvable mazes |
+| Pridefest | `prismaticParade` | Prismatic Parade | Rotate channels in a 4×4 prism circuit to connect the rainbow source and star |
 
-The five Trials each use their own full-screen background, icon, six gameplay
-sprites, animated three-phase loop, sounds, and theme. A run lasts 75 seconds.
-Might, Spirit, and Arcana provide small capped gameplay assistance; expertise
-never multiplies the submitted score.
+The five Trials retain their own full-screen backgrounds, icons, sounds and
+themes. Only Halloween uses the three-phase memory/trace/timing loop. The other
+four use separate interactive boards, with vector channels, parcels and symbols
+that scale to compact screens. All start at 75 seconds; total expertise adds
+`round(clamp((Might + Arcana + Spirit) / 300, 0, 3))` seconds. Expertise never
+multiplies score. Event offer cards and dragon pickers show all three expertises;
+only dragons with all three highlighted appear in the highlighted section.
+
+Christmas parcels roll one of three symbols, moving across the belt in 4.8–5.7
+seconds (Might). Spirit extends delivery tolerance by up to 8px. New Year uses
+four chime lanes, 2.1–2.5-second travel (Spirit) and ±180–250ms windows (Might).
+Valentine moves both hearts simultaneously, mirroring horizontal direction;
+a blocked heart waits. Every maze pair is checked for a shared solution before
+play. Pride rotates two-ended prism channels and traces the connected beam;
+each newly lit cell scores only once per board. Both puzzle games offer 1–3
+hints for the whole run based on Arcana. Revisiting a maze state awards nothing.
+
+The four rebuilt games retain the full timer on a mistake, deduct 30 points
+without going below zero, reset combo and flash red. They record at most 200
+scoring actions and cap score at 20,000, matching the existing server bounds.
+No early submission is introduced; the existing server minimum remains 30s.
+Christmas deliveries award 120 base points; New Year 130 within 90ms and 100
+otherwise; new maze states 55 and a paired finish 120; new lit prisms 70 and a
+finished circuit 120. Each scoring action adds the existing capped combo bonus
+(minimum zero, maximum 90, +6 per completed round). Grade reward pools and
+rank thresholds remain unchanged.
 
 Witchlight ends on the third mistake or when time expires. Each mistake flashes
 red for 300 ms. The server permits an early Witchlight finish only when the
@@ -189,7 +211,7 @@ expertise visibly widens the corridor from 24 to 32 logical pixels (capped at
 400 Spirit), with no random forgiveness. Might keeps its timing challenge.
 
 The runtime presentation deliberately carries that art through the complete
-flow: a themed HUD emblem and three-phase sprite trail, subtle ambient sprite
+flow: a themed HUD emblem (with a three-phase trail only for Halloween), subtle ambient sprite
 motion, event-specific start and result compositions, illustrated compact
 Special Adventure cards/details, illustrated empty/error ranking states, and
 event-colored ranking headers backed by the corresponding Trial scene. The
@@ -198,7 +220,10 @@ symbols. All five nested event asset directories are declared explicitly in
 Flutter's asset bundle. Compact-phone widget coverage at 320×640 and an outer-
 edge alpha gate protect the layout and prevent visibly clipped cutouts.
 
-During one active event its Trial joins Cavern Flight, Ruin Breaker, and
+Starting a new event occurrence fills every currently empty slot with that
+specific event Trial, keeping existing standard offers and started runs. A
+persisted occurrence key prevents a second initial refill after dismissal or
+restart. Thereafter, during one active event its Trial joins Cavern Flight, Ruin Breaker, and
 Runeweaver as four equally weighted refill candidates: 25% each per empty
 slot. The board still holds at most three offers and duplicates remain
 possible. An unstarted event offer disappears after closing; a run started
@@ -323,14 +348,32 @@ a complete transparent logo derived from the original wing-and-egg mark in
 `assets/images/event_logos/`; the shared app header uses that full artwork.
 All six have illustrated backgrounds, including a dedicated golden sanctuary
 for Golden Wings. Valentine uses pink accents, Christmas green, New Year blue,
-Pride rainbow panel gradients, and Golden Wings gold. A compact persistent banner shows the event end time,
-including birthday and personal tests. Starting a personal event replaces the
+Pride rainbow panel gradients, and Golden Wings gold. Valentine now uses a
+clear rose pink (`#AE4778`) on blush paper (`#FFF3F7`). Collapsed Tower floors
+and the Academy entrance retain their original translucent artwork overlays;
+event panels no longer paint over those illustrations. Direct-chat buttons use
+a pale event tint with a dark ink label for contrast. A compact persistent banner shows the event end time,
+including birthday and personal tests. The banner first clips the test label,
+then removes it, and wraps only if the official title/timer still cannot fit.
+Measurement includes inherited font spacing and accessibility text scale.
+Starting a personal event replaces the
 previous personal event for that account. The selected preview takes precedence
 over the calendar; the most recent start and stable occurrence key break ties.
 Migration 59 preserves same-event retry expiry and replaces only activation
 records: already started adventures/attempts, earned items and recorded scores
-retain their own provenance and original reward rules. Expiry restores
-the normal app theme without reopening the app or polling a server.
+retain their own provenance and original reward rules. Migration 60 adds
+account-scoped event dismissal, authenticated and synchronized across sessions.
+It ends personal previews and suppresses current official calendar editions
+until their original end, including Golden Wings. Future editions and already
+started runs survive. The native launcher schedule filters the same dismissal
+state; previews explicitly started afterward still work. Expiry or dismissal
+restores the normal app theme without reopening the app.
+
+The temporary Christmas track now plays an original instrumental arrangement
+of Jingle Bells. Its catalog ID remains `event_winter_hearth_carol`; runtime
+resource is `music_event_jingle_bells.wav`. The public-domain composition and
+original synthesis are documented in `assets/licenses/MUSIC_SOURCES.md`.
+The 80-song Music Chest collection and music-drop probabilities are unchanged.
 
 Android receives the existing Amsterdam calendar and personal previews locally.
 Its launcher aliases use the same six logos, with only one alias enabled at a

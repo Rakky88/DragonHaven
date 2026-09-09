@@ -36,6 +36,8 @@ class OnlineAccountProvider extends ChangeNotifier {
     Future<void> Function(
       Map<String, DateTime> previews,
     )? synchronizeSeasonalPreviews,
+    Future<void> Function(Map<String, DateTime> dismissals)?
+        synchronizeSeasonalDismissals,
     Future<void> Function(
       Map<String, String> reservations,
     )? synchronizeSeasonalPairReservations,
@@ -62,6 +64,8 @@ class OnlineAccountProvider extends ChangeNotifier {
             synchronizeTradeReservations ?? _ignoreTradeReservations,
         _applyTradeSettlement = applyTradeSettlement ?? _rejectTradeSettlement,
         _applySeasonalPrize = applySeasonalPrize ?? _rejectSeasonalPrize,
+        _synchronizeSeasonalDismissals =
+            synchronizeSeasonalDismissals ?? _ignoreSeasonalPreviews,
         _synchronizeSeasonalPreviews =
             synchronizeSeasonalPreviews ?? _ignoreSeasonalPreviews,
         _synchronizeSeasonalPairReservations =
@@ -100,6 +104,8 @@ class OnlineAccountProvider extends ChangeNotifier {
     required String eventId,
     required int position,
   }) _applySeasonalPrize;
+  final Future<void> Function(Map<String, DateTime> dismissals)
+      _synchronizeSeasonalDismissals;
   final Future<void> Function(Map<String, DateTime> previews)
       _synchronizeSeasonalPreviews;
   final Future<void> Function(Map<String, String> reservations)
@@ -744,6 +750,19 @@ class OnlineAccountProvider extends ChangeNotifier {
         return preview;
       });
 
+  Future<bool> endSeasonalEvent(String code) async =>
+      await _run('seasonal.event.end', () async {
+        final dismissals =
+            await _repository.endSeasonalEvent(code.trim().toUpperCase());
+        seasonalEventPreviews = const [];
+        await _synchronizeSeasonalDismissals(dismissals);
+        await _synchronizeSeasonalPreviews(const {});
+        noticeCode = 'ended_seasonal_event';
+        _notify();
+        return true;
+      }) ??
+      false;
+
   Future<SeasonalTrialSession?> startSeasonalTrial({
     required String eventId,
     required String trialKey,
@@ -1180,6 +1199,11 @@ class OnlineAccountProvider extends ChangeNotifier {
     // Seasonal RPCs are additive maintenance. A temporarily unavailable or
     // not-yet-migrated seasonal endpoint must never hide a valid Friends,
     // Conclave, trade, or Group Adventure snapshot.
+    await _runRefreshMaintenanceStep(
+      'social.refresh.seasonal_dismissals',
+      () async => _synchronizeSeasonalDismissals(
+          await _repository.loadSeasonalEventDismissals()),
+    );
     await _runRefreshMaintenanceStep(
       'social.refresh.seasonal_previews',
       () async {

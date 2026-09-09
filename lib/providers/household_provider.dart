@@ -315,6 +315,8 @@ class HouseholdProvider extends ChangeNotifier {
   Set<String> startedSeasonalSpecialEventKeys = {};
   Set<String> notifiedSeasonalSpecialEventKeys = {};
   Map<String, DateTime> seasonalEventPreviewExpiresAt = {};
+  Map<String, DateTime> seasonalEventDismissedUntil = {};
+  String? lastTrialEventActivationKey;
   Set<String> appliedSeasonalPrizeIds = {};
   Map<String, int> seasonalPodiumEmoteWinCounts = {};
 
@@ -1334,6 +1336,16 @@ class HouseholdProvider extends ChangeNotifier {
         stringSetFromJson(data['notifiedSeasonalSpecialEventKeys'])
             .take(50)
             .toSet();
+    lastTrialEventActivationKey =
+        data['lastTrialEventActivationKey'] as String?;
+    seasonalEventDismissedUntil = {};
+    for (final entry
+        in mapFromJson(data['seasonalEventDismissedUntil']).entries) {
+      final until = DateTime.tryParse(entry.value.toString());
+      if (specialAdventureEventById(entry.key) != null && until != null) {
+        seasonalEventDismissedUntil[entry.key] = until;
+      }
+    }
     seasonalEventPreviewExpiresAt = {};
     for (final entry
         in mapFromJson(data['seasonalEventPreviewExpiresAt']).entries) {
@@ -3337,6 +3349,11 @@ class HouseholdProvider extends ChangeNotifier {
             notifiedSeasonalSpecialEventKeys.toList(),
         'seasonalEventPreviewExpiresAt': {
           for (final entry in seasonalEventPreviewExpiresAt.entries)
+            entry.key: entry.value.toIso8601String(),
+        },
+        'lastTrialEventActivationKey': lastTrialEventActivationKey,
+        'seasonalEventDismissedUntil': {
+          for (final entry in seasonalEventDismissedUntil.entries)
             entry.key: entry.value.toIso8601String(),
         },
         'appliedSeasonalPrizeIds': appliedSeasonalPrizeIds.toList(),

@@ -57,7 +57,8 @@ void main() {
       expect(egg.goldenHourSpectralChance, .10, reason: event.id);
       expect(music?.temporaryEventId, event.id, reason: event.id);
       expect(code?.rewardId, event.id, reason: event.id);
-      final expectedKeeper = event.id == 'halloween_witchlight' ? null : 'DH-17792DC5';
+      final expectedKeeper =
+          event.id == 'halloween_witchlight' ? null : 'DH-17792DC5';
       expect(code?.restrictedKeeperId, expectedKeeper, reason: event.id);
       expect(event.previewOwnerKeeperId, expectedKeeper, reason: event.id);
       expect(event.previewHours, 48, reason: event.id);
@@ -188,13 +189,16 @@ void main() {
     expect(game.pet.trainingFor(TrainingFocus.spirit), 32);
   });
 
-  test('active seasonal Trial is an equal fourth refill candidate', () {
+  test('after activation seasonal Trial is an equal fourth refill candidate',
+      () {
     final counts = <TrialKind, int>{
       for (final kind in TrialKind.values) kind: 0
     };
     final now = DateTime.utc(2026, 10, 25, 12);
     for (var seed = 0; seed < 500; seed++) {
-      final game = HouseholdProvider(random: Random(seed), clock: () => now);
+      final game = HouseholdProvider(random: Random(seed), clock: () => now)
+        ..lastTrialEventActivationKey =
+            specialAdventureWindowsAt(now).single.key;
       for (final offer in game.availableTrials) {
         counts.update(offer.kind, (value) => value + 1);
       }
@@ -350,7 +354,8 @@ void main() {
     expect(stagingWorkflow, contains('environment: staging'));
     expect(stagingWorkflow, contains('APPLY_STAGING_HALLOWEEN_PREVIEW_48'));
     expect(stagingWorkflow, contains('group: dragonhaven-staging-load'));
-    expect(productionWorkflow, contains('APPLY_PRODUCTION_HALLOWEEN_PREVIEW_48'));
+    expect(
+        productionWorkflow, contains('APPLY_PRODUCTION_HALLOWEEN_PREVIEW_48'));
     expect(productionWorkflow, contains('staging_run_id'));
     expect(productionWorkflow, contains("run.conclusion -ne 'success'"));
     expect(productionWorkflow, contains('git diff --exit-code'));
@@ -359,9 +364,14 @@ void main() {
     expect(gate, contains('halloween_preview_contract.sql'));
     expect(gate, contains('release_server_preflight.ps1'));
     expect(gate, contains('supabase db lint'));
-    expect(gate.indexOf('Test-PreviewContract \$true'),
-        lessThan(gate.indexOf('supabase db push --linked --include-all --yes')));
-    expect(gate, contains("Environment -eq 'staging' -and \$ProjectRef -eq \$production"));
+    expect(
+        gate.indexOf('Test-PreviewContract \$true'),
+        lessThan(
+            gate.indexOf('supabase db push --linked --include-all --yes')));
+    expect(
+        gate,
+        contains(
+            "Environment -eq 'staging' -and \$ProjectRef -eq \$production"));
     expect(gate, contains('preview-authority-after.json'));
 
     expect(stagingE2e,

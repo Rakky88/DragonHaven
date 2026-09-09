@@ -553,7 +553,9 @@ class _TrialOfferCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          _focusName(strings, definition.focus),
+                          definition.assistingExpertises
+                              .map((focus) => _focusName(strings, focus))
+                              .join(' · '),
                           style: const TextStyle(
                             color: Color(0xFFFFE08A),
                             fontWeight: FontWeight.w900,
@@ -691,9 +693,9 @@ Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
   final dragons = game.ownedDragons
       .where((dragon) => dragon.activeAdventureId == null)
       .toList()
-    ..sort((a, b) => b
-        .trainingFor(offer.definition.focus)
-        .compareTo(a.trainingFor(offer.definition.focus)));
+    ..sort((a, b) => offer.definition
+        .combinedExpertise(b)
+        .compareTo(offer.definition.combinedExpertise(a)));
   if (dragons.isEmpty) {
     showAppSnackBar(
       context,
@@ -794,9 +796,7 @@ class _TrialDragonPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final focus = offer.definition.focus;
-    bool highlighted(Pet dragon) => _highlightedForPath(dragon, focus,
-        combined: offer.definition.isSeasonal);
+    bool highlighted(Pet dragon) => offer.definition.highlightedFor(dragon);
     final marked = dragons.where(highlighted).toList();
     final others = dragons.where((dragon) => !highlighted(dragon)).toList();
     return SafeArea(
@@ -854,7 +854,6 @@ class _TrialDragonTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
-    final focus = offer.definition.focus;
     return Card(
       color: highlighted ? const Color(0xFFFFFAE9) : Colors.white,
       child: InkWell(
@@ -885,12 +884,16 @@ class _TrialDragonTile extends StatelessWidget {
                   Wrap(
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        ExpertiseScoreBadge(
-                            dragonId: dragon.id,
-                            focus: focus,
-                            focusLabel: _focusName(s, focus),
-                            score: dragon.trainingFor(focus),
-                            maximum: dragon.expertiseMaximum(focus)),
+                        for (final displayedFocus
+                            in offer.definition.assistingExpertises)
+                          ExpertiseScoreBadge(
+                              dragonId: dragon.id,
+                              focus: displayedFocus,
+                              focusLabel: _focusName(s, displayedFocus),
+                              score: dragon.trainingFor(displayedFocus),
+                              maximum: dragon.expertiseMaximum(displayedFocus),
+                              highlighted: dragon.highlightedExpertises
+                                  .contains(displayedFocus)),
                         DragonExpertiseInfo(dragon: dragon),
                       ]),
                   Text(

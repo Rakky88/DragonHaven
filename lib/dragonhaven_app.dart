@@ -81,7 +81,8 @@ class _DragonHavenAppState extends State<DragonHavenApp> {
         appEventWindow(game.activeSpecialAdventureWindows, game.currentTime);
     _eventKey = event?.key;
     final schedule = eventBrandingSchedule(
-        game.currentTime, game.activeSpecialAdventureWindows);
+        game.currentTime, game.activeSpecialAdventureWindows,
+        dismissedUntil: game.seasonalEventDismissedUntil);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_branding.synchronize(schedule));
     });

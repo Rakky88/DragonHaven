@@ -86,6 +86,9 @@ void main() {
       expect(contents, contains('`${definition.code}`'));
       expect(contents, contains('`${definition.rewardId}`'));
       switch (definition.rewardType) {
+        case RedeemRewardType.endSeasonalEvent:
+          expect(definition.rewardId, 'end_active_event');
+          expect(contents, contains('end_my_seasonal_event'));
         case RedeemRewardType.dragonEmotePack:
           final pack = dragonEmotePackById(definition.rewardId);
           expect(pack, isNotNull, reason: definition.code);

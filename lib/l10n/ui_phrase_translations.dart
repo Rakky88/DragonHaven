@@ -1,3 +1,4 @@
+import 'event_refresh_phrase_translations.dart';
 import 'trial_phrase_translations.dart';
 import 'notification_phrase_translations.dart';
 import 'release_phrase_translations.dart';
@@ -25,7 +26,8 @@ const _languageIndex = <String, int>{
 
 String? translatedUiPhrase(String english, String languageCode) {
   final index = _languageIndex[languageCode];
-  final values = uiPhraseTranslations[english] ??
+  final values = eventRefreshPhraseTranslations[english] ??
+      uiPhraseTranslations[english] ??
       trialPhraseTranslations[english] ??
       featureBatchPhraseTranslations[english] ??
       socialPhraseTranslations[english] ??

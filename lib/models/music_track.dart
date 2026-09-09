@@ -18,8 +18,8 @@ class MusicTrack {
 }
 
 /// Event music is available only during the matching real or private preview
-/// occurrence. These aliases deliberately reuse performances already verified
-/// as CC0/Public Domain in `assets/licenses/MUSIC_SOURCES.md`; they do not enter
+/// occurrence. Performances are either verified CC0/Public Domain or synthesized
+/// original arrangements documented in `assets/licenses/MUSIC_SOURCES.md`; they do not enter
 /// the 80-track Music Chest collection.
 const seasonalMusicCatalog = <MusicTrack>[
   MusicTrack(
@@ -31,9 +31,9 @@ const seasonalMusicCatalog = <MusicTrack>[
   ),
   MusicTrack(
     id: 'event_winter_hearth_carol',
-    title: 'Winter Hearth Carol',
-    composer: 'Traditional · event arrangement',
-    rawResourceIdOverride: 'music_greensleeves',
+    title: 'Jingle Bells · Winter Hearth',
+    composer: 'J. L. Pierpont · DragonHaven arrangement',
+    rawResourceIdOverride: 'music_event_jingle_bells',
     temporaryEventId: 'christmas_winter_hearth',
   ),
   MusicTrack(

@@ -458,7 +458,7 @@ class _DragonSchoolEntrance extends StatelessWidget {
         child: Ink(
           height: cardHeight,
           decoration: BoxDecoration(
-            color: AppColors.eventColor(context, const Color(0xFF302454)),
+            color: const Color(0xFF302454),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Stack(
@@ -469,9 +469,7 @@ class _DragonSchoolEntrance extends StatelessWidget {
                 child: Image.asset(
                   'assets/images/ui/dragon_school.png',
                   fit: BoxFit.cover,
-                  color: unlocked
-                      ? null
-                      : AppColors.eventColor(context, const Color(0x99605B67)),
+                  color: unlocked ? null : const Color(0x99605B67),
                   colorBlendMode: unlocked ? null : BlendMode.saturation,
                   errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
@@ -479,9 +477,8 @@ class _DragonSchoolEntrance extends StatelessWidget {
               DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  gradient: AppColors.panelGradient(context,
-                      fallback: const LinearGradient(
-                          colors: [Color(0xEE211638), Color(0x44211638)])),
+                  gradient: const LinearGradient(
+                      colors: [Color(0xEE211638), Color(0x44211638)]),
                   border: Border.all(
                     color: unlocked ? AppColors.gold : Colors.white24,
                   ),
@@ -607,14 +604,14 @@ class _TowerFloor extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(19),
-              gradient: AppColors.panelGradient(context,
-                  fallback: const LinearGradient(
-                      colors: [Color(0xB5201C3F), Color(0x18201C3F)])),
+              gradient: const LinearGradient(
+                  colors: [Color(0xB5201C3F), Color(0x18201C3F)]),
             ),
             padding: const EdgeInsets.all(13),
             child: Row(children: [
               CircleAvatar(
                 backgroundColor: Colors.white.withValues(alpha: .9),
+                foregroundColor: AppColors.twilight,
                 child: Text('${index + 1}',
                     style: const TextStyle(fontWeight: FontWeight.w900)),
               ),

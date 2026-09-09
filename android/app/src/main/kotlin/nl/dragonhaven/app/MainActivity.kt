@@ -452,6 +452,7 @@ class MainActivity : FlutterActivity() {
         "music_solace" -> R.raw.music_solace
         "music_elite_syncopations" -> R.raw.music_elite_syncopations
         "music_greensleeves" -> R.raw.music_greensleeves
+        "music_event_jingle_bells" -> R.raw.music_event_jingle_bells
         "music_scarborough_fair" -> R.raw.music_scarborough_fair
         "music_drunken_sailor" -> R.raw.music_drunken_sailor
         "music_irish_washerwoman" -> R.raw.music_irish_washerwoman

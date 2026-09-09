@@ -2356,13 +2356,21 @@ void main() {
     target.dispose();
   });
 
-  test('Halloween preview is public while other seasonal codes remain restricted', () async {
+  test(
+      'Halloween preview is public while other seasonal codes remain restricted',
+      () async {
     final game = HouseholdProvider(
       random: Random(904),
       persistenceEnabled: false,
     );
 
-    expect(redeemCodeCatalog, hasLength(5));
+    expect(
+        redeemCodeCatalog.where(
+            (c) => c.rewardType == RedeemRewardType.seasonalEventPreview),
+        hasLength(5));
+    expect(redeemCodeDefinition('ENDEVENT')?.rewardType,
+        RedeemRewardType.endSeasonalEvent);
+    expect(await game.redeemCode('ENDEVENT'), 'online_login_required');
     expect(await game.redeemCode('EMOTEPACK1'), 'inactive');
     expect(await game.redeemCode('EMOTEPACK2'), 'inactive');
     expect(await game.redeemCode('EMOTEPACK3'), 'inactive');

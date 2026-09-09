@@ -655,11 +655,14 @@ class _FriendMessageButton extends StatelessWidget {
                   width: 58,
                   height: 60,
                   decoration: BoxDecoration(
-                    gradient: AppColors.panelGradient(context,
-                        fallback: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFFF1ECFF), Color(0xFFD8C9FF)])),
+                    gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white,
+                          AppColors.eventColor(
+                              context, const Color(0xFFF1ECFF)),
+                        ]),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: AppColors.eventColor(
@@ -683,9 +686,8 @@ class _FriendMessageButton extends StatelessWidget {
                       ),
                       Text(
                         strings.pick('CHAT', 'CHAT'),
-                        style: TextStyle(
-                          color:
-                              AppColors.eventColor(context, AppColors.twilight),
+                        style: const TextStyle(
+                          color: AppColors.ink,
                           fontSize: 8.5,
                           fontWeight: FontWeight.w900,
                         ),

@@ -9,7 +9,8 @@ import '../theme/event_appearance.dart';
 /// Exports the existing Amsterdam calendar, plus this save's personal previews.
 /// Android can change the launcher locally at boundaries while Flutter is idle.
 List<Map<String, Object>> eventBrandingSchedule(
-    DateTime now, Iterable<SpecialAdventureWindow> active) {
+    DateTime now, Iterable<SpecialAdventureWindow> active,
+    {Map<String, DateTime> dismissedUntil = const {}}) {
   final windows = {for (final window in active) window.key: window};
   var cursor = now;
   for (var year = 0; year < 3; year++) {
@@ -22,7 +23,10 @@ List<Map<String, Object>> eventBrandingSchedule(
     ..sort((a, b) => a.key.compareTo(b.key));
   return [
     for (final window in sorted)
-      if (EventAppearance.logoKeys.containsKey(window.event.id))
+      if (EventAppearance.logoKeys.containsKey(window.event.id) &&
+          (window.key.contains(':preview:') ||
+              !(dismissedUntil[window.event.id]?.isAfter(window.startsAt) ??
+                  false)))
         {
           'key': window.key,
           'logo': EventAppearance.logoKeys[window.event.id]!,

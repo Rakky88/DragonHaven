@@ -47,6 +47,8 @@ abstract interface class SocialRepository {
   Future<List<SeasonalEventPreviewEntitlement>>
       loadSeasonalPreviewEntitlements();
   Future<SeasonalEventPreviewEntitlement> redeemSeasonalPreview(String code);
+  Future<Map<String, DateTime>> loadSeasonalEventDismissals();
+  Future<Map<String, DateTime>> endSeasonalEvent(String code);
   Future<SeasonalTrialSession> startSeasonalTrial({
     required String eventId,
     required String trialKey,
@@ -206,6 +208,12 @@ class DisabledSocialRepository implements SocialRepository {
   @override
   Future<SeasonalEventPreviewEntitlement> redeemSeasonalPreview(
           String code) async =>
+      _disabled();
+  @override
+  Future<Map<String, DateTime>> loadSeasonalEventDismissals() async =>
+      _disabled();
+  @override
+  Future<Map<String, DateTime>> endSeasonalEvent(String code) async =>
       _disabled();
   @override
   Future<SeasonalTrialSession> startSeasonalTrial({

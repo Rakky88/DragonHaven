@@ -442,8 +442,11 @@ class _AboutSheetState extends State<_AboutSheet> {
     controller.dispose();
     if (code == null || !mounted) return;
     final definition = redeemCodeDefinition(code);
-    final result =
-        definition?.rewardType == RedeemRewardType.seasonalEventPreview
+    final result = definition?.rewardType == RedeemRewardType.endSeasonalEvent
+        ? await context.read<OnlineAccountProvider>().endSeasonalEvent(code)
+            ? 'ended_seasonal_event'
+            : 'event_end_failed'
+        : definition?.rewardType == RedeemRewardType.seasonalEventPreview
             ? await context
                         .read<OnlineAccountProvider>()
                         .redeemSeasonalPreview(code) ==
@@ -457,6 +460,12 @@ class _AboutSheetState extends State<_AboutSheet> {
                 );
     if (!mounted) return;
     final message = switch (result) {
+      'ended_seasonal_event' => strings.pick(
+          'Your active event has ended. Adventures already underway can still finish.',
+          'Je actieve event is beëindigd. Adventures die al onderweg zijn kunnen nog afgemaakt worden.'),
+      'event_end_failed' || 'online_login_required' => strings.pick(
+          'Connect to your verified online account and try again.',
+          'Maak verbinding met je bevestigde online account en probeer het opnieuw.'),
       'invalid_format' => strings.pick(
           'Use only connected capital letters and numbers.',
           'Gebruik alleen aaneengesloten hoofdletters en cijfers.'),

@@ -83,9 +83,9 @@ class EventAppearance extends ThemeExtension<EventAppearance> {
             motif: Icons.auto_awesome_rounded),
         'valentine_two_heartlights' => const EventAppearance(
             folder: 'valentine',
-            primary: Color(0xFF8B3B63),
-            accent: Color(0xFFECA8B9),
-            paper: Color(0xFFFFF0F4),
+            primary: Color(0xFFAE4778),
+            accent: Color(0xFFFFD6E6),
+            paper: Color(0xFFFFF3F7),
             motif: Icons.favorite_rounded),
         'pride_every_color' => const EventAppearance(
             folder: 'pride',

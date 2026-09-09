@@ -2,9 +2,9 @@
 
 Last verified: 9 September 2026
 
-Ruleset: released `v0.05.22`; personal event replacement in migration 59
+Ruleset: v0.05.23 release candidate; event stop in migration 60 (staging rehearsal passed)
 
-<!-- reference-source-fingerprint: 88c69b1b6faae4f1 -->
+<!-- reference-source-fingerprint: 5f632ff4397eb252 -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 
@@ -14,7 +14,8 @@ announcements unless the owner explicitly changes that rule.
 
 The local server-domain candidate delegates redemption to the existing catalog
 and checks keeper restrictions using the trusted authenticated owner. The code
-values, rewards and restrictions remain unchanged. A new personal event
+values, rewards and restrictions are listed below. The end-event action uses its
+dedicated authenticated RPC, not the dormant game-command grant path. A new personal event
 replaces the previous event for that keeper, with same-event retries retaining
 their existing expiry. Started attempts and adventures retain their provenance. This internal candidate is not deployed or exposed as a public
 redemption endpoint yet.
@@ -27,11 +28,27 @@ server rather than trusted from the public app catalog.
 
 | Code | Reward | Reward ID | Restriction and behavior |
 |---|---|---|---|
+| `ENDEVENT` | **End own active event** | `end_active_event` | Any authenticated, email-confirmed keeper; removes own previews and dismisses current calendar occurrences until their scheduled end; repeatable, no items granted |
 | `HALLOWEENEVENT` | **Night of the Witchlight** | `halloween_witchlight` | Any authenticated, email-confirmed keeper; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
 | `CHRISTMASEVENT` | **A Star for the Winter Hearth** | `christmas_winter_hearth` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
 | `NEWYEARSEVENT` | **When the New Dawn Rings** | `new_year_first_dawn` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
 | `VALENTINEEVENT` | **Where Two Heartlights Meet** | `valentine_two_heartlights` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
 | `PRIDEFESTEVENT` | **The Haven of Every Color** | `pride_every_color` | Keeper `DH-17792DC5`; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
+
+## Ending an active event
+
+`end_my_seasonal_event` accepts `ENDEVENT`, checks the verified authenticated
+owner and takes the same per-owner transaction lock as preview activation.
+It deletes only that owner's preview activation and records current official
+calendar editions (including Golden Wings) in `seasonal_event_dismissals` until
+their original ending. These rows are private; there are no direct client table
+read/write grants. `list_my_seasonal_event_dismissals` returns only the owner.
+The app persists and refreshes these stops across sessions/devices, removes
+unstarted event offers, restores the ordinary theme/music/launcher schedule,
+and retains future annual editions. The normal Android launcher refresh is
+deferred until leaving the foreground. Explicitly starting a new preview is
+still allowed. Already started trials/adventures, scores and rewards survive.
+No other player's event is stopped. Offline failure does not clear local state.
 
 ## Security and lifecycle
 
@@ -55,8 +72,9 @@ server rather than trusted from the public app catalog.
 ## Maintenance contract
 
 The client catalog lives in `lib/models/redeem_code.dart`; server authorization
-lives in the immutable base migration 40 and the current forward override
-`supabase/migrations/202609070048_halloween_preview_access.sql`. Adding,
+lives in the immutable base migration 40 and the current forward overrides
+`supabase/migrations/202609080059_single_active_event_preview.sql` and
+`supabase/migrations/202609090060_end_active_event.sql`. Adding,
 removing, redirecting, restricting, or changing a code must update both sources
 and this document in the same change.
 

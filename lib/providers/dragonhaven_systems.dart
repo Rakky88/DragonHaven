@@ -259,7 +259,10 @@ extension DragonHavenSystems on HouseholdProvider {
       _isSimulatedSeasonalPreview(key);
 
   List<SpecialAdventureWindow> _activeSpecialAdventureWindows(DateTime now) {
-    final windows = [...specialAdventureWindowsAt(now)];
+    final windows = specialAdventureWindowsAt(now)
+        .where((window) =>
+            seasonalEventDismissedUntil[window.event.id]?.isAfter(now) != true)
+        .toList();
     seasonalEventPreviewExpiresAt.removeWhere(
       (_, expiresAt) => !expiresAt.isAfter(now),
     );
@@ -296,6 +299,10 @@ extension DragonHavenSystems on HouseholdProvider {
     var changed = false;
     final strings = GameStrings(languageCode);
     for (final current in specialAdventureWindowsAt(now)) {
+      if (seasonalEventDismissedUntil[current.event.id]?.isAfter(now) == true) {
+        await HavenNotifications.cancel('special-adventure-${current.key}');
+        continue;
+      }
       if (!notifiedSeasonalSpecialEventKeys.contains(current.key)) {
         final adventure = AdventureCatalog.byId[current.event.adventureId];
         await HavenNotifications.specialAdventureAvailable(
@@ -314,6 +321,10 @@ extension DragonHavenSystems on HouseholdProvider {
       }
     }
     for (final next in nextSpecialAdventureWindowsAfter(now)) {
+      if (seasonalEventDismissedUntil[next.event.id]?.isAfter(next.startsAt) ==
+          true) {
+        continue;
+      }
       final adventure = AdventureCatalog.byId[next.event.adventureId];
       await HavenNotifications.specialAdventureAvailable(
         id: 'special-adventure-${next.key}',
@@ -1061,8 +1072,17 @@ extension DragonHavenSystems on HouseholdProvider {
         .whereType<TrialKind>()
         .toList(growable: false);
     final eligibleKinds = <TrialKind>[...standardTrialKinds, ...seasonalKinds];
+    final activationKey =
+        seasonalKinds.isEmpty ? null : activeWindows.first.key;
+    final newlyActivated =
+        activationKey != null && activationKey != lastTrialEventActivationKey;
+    final activationChanged = activationKey != lastTrialEventActivationKey;
+    lastTrialEventActivationKey = activationKey;
+    if (newlyActivated) refillCount = 3;
     while (refillCount > 0 && trialOffers.length < 3) {
-      final kind = eligibleKinds[_random.nextInt(eligibleKinds.length)];
+      final kind = newlyActivated
+          ? seasonalKinds.first
+          : eligibleKinds[_random.nextInt(eligibleKinds.length)];
       final eventId = trialDefinitions[kind]?.specialEventId;
       final specialWindow = eventId == null
           ? null
@@ -1080,6 +1100,7 @@ extension DragonHavenSystems on HouseholdProvider {
       added = true;
     }
     return added ||
+        activationChanged ||
         oldBoundary != trialRefilledAt ||
         offerCountBeforeExpiry != trialOffers.length;
   }
@@ -2291,6 +2312,9 @@ extension DragonHavenSystems on HouseholdProvider {
       return 'restricted';
     }
     switch (definition.rewardType) {
+      case RedeemRewardType.endSeasonalEvent:
+        // Online authorization is required; the UI uses the authenticated RPC.
+        return 'online_login_required';
       case RedeemRewardType.dragonEmotePack:
         final pack = dragonEmotePackById(definition.rewardId);
         if (pack == null) return 'inactive';
@@ -2311,6 +2335,20 @@ extension DragonHavenSystems on HouseholdProvider {
         await _notifyAndSave();
         return 'redeemed_event_preview';
     }
+  }
+
+  Future<void> synchronizeSeasonalEventDismissals(
+      Map<String, DateTime> dismissals) async {
+    final now = _clock();
+    final normalized = <String, DateTime>{
+      for (final entry in dismissals.entries)
+        if (specialAdventureEventById(entry.key) != null &&
+            entry.value.isAfter(now))
+          entry.key: entry.value,
+    };
+    if (mapEquals(normalized, seasonalEventDismissedUntil)) return;
+    seasonalEventDismissedUntil = normalized;
+    await refreshForCurrentDate();
   }
 
   Future<void> synchronizeSeasonalEventPreviews(

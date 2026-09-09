@@ -1,4 +1,8 @@
-enum RedeemRewardType { dragonEmotePack, seasonalEventPreview }
+enum RedeemRewardType {
+  dragonEmotePack,
+  seasonalEventPreview,
+  endSeasonalEvent
+}
 
 class RedeemCodeDefinition {
   const RedeemCodeDefinition({
@@ -17,6 +21,11 @@ class RedeemCodeDefinition {
 // Preview codes are server-authorized; most remain Keeper-scoped. Never expose active
 // codes in public release notes; maintain the private REDEEM_CODES.md ledger.
 const redeemCodeCatalog = <RedeemCodeDefinition>[
+  RedeemCodeDefinition(
+    code: 'ENDEVENT',
+    rewardType: RedeemRewardType.endSeasonalEvent,
+    rewardId: 'end_active_event',
+  ),
   RedeemCodeDefinition(
     code: 'HALLOWEENEVENT',
     rewardType: RedeemRewardType.seasonalEventPreview,

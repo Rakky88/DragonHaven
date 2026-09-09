@@ -288,13 +288,15 @@ void main() {
         .whereType<File>()
         .where((file) => file.uri.pathSegments.last.startsWith('music_'))
         .toList(growable: false);
-    expect(resources, hasLength(80));
+    final allPlayable = [...musicCatalog, ...seasonalMusicCatalog];
+    expect(resources,
+        hasLength(allPlayable.map((t) => t.rawResourceId).toSet().length));
     final nativeBridge = File(
       'android/app/src/main/kotlin/nl/dragonhaven/app/MainActivity.kt',
     ).readAsStringSync();
     final licenses =
         File('assets/licenses/MUSIC_SOURCES.md').readAsStringSync();
-    for (final track in musicCatalog) {
+    for (final track in allPlayable) {
       final matches = resources.where((file) =>
           file.uri.pathSegments.last.startsWith('${track.rawResourceId}.'));
       expect(matches, hasLength(1), reason: track.rawResourceId);

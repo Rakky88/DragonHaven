@@ -221,6 +221,21 @@ class SupabaseSocialRepository implements SocialRepository {
       );
 
   @override
+  Future<Map<String, DateTime>> loadSeasonalEventDismissals() async => {
+        for (final row in await _listRpc('list_my_seasonal_event_dismissals'))
+          row['event_id'] as String:
+              DateTime.parse(row['expires_at'] as String),
+      };
+
+  @override
+  Future<Map<String, DateTime>> endSeasonalEvent(String code) async => {
+        for (final row in await _listRpc('end_my_seasonal_event',
+            params: {'p_code': code}))
+          row['event_id'] as String:
+              DateTime.parse(row['expires_at'] as String),
+      };
+
+  @override
   Future<SeasonalTrialSession> startSeasonalTrial({
     required String eventId,
     required String trialKey,

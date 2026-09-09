@@ -3,6 +3,18 @@
 Laatst bijgewerkt: **9 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
+## Eventrelease v0.05.23 in uitvoering
+
+Op verzoek krijgen de vier overige seizoensproeven eigen spelmechanieken;
+Halloween blijft behouden. Eventstop, initiële trialvulling, drie-expertisekeuze,
+leesbare timer/chatknoppen, toren-/academieafbeeldingen, roze Valentijn en eigen
+Jingle Bells-uitvoering zijn gebouwd. De regelproeven (500 doolhoven en 500
+prismapuzzels), schermbediening, documentatieguard en analyse slagen.
+Migratie 60 is op staging gerepeteerd met volledige rollback en behoud van
+schema 59. Productie en de volledige servereconomie zijn nog niet omgezet.
+Verdere releasebewijzen en open gates: `RELEASE_V0.05.23_VERIFICATION.md`.
+De onderstaande servereconomie-deelstappen blijven afzonderlijk afgebakend.
+
 ## Hervatte servereconomie: ei-, Altar- en drakenacties
 
 De volgende stagingkoppeling is gebouwd: ei-details met filters, taggen,

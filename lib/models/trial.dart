@@ -38,6 +38,14 @@ class TrialDefinition {
   final Duration duration;
 
   bool get isSeasonal => specialEventId != null;
+  List<TrainingFocus> get assistingExpertises =>
+      isSeasonal ? TrainingFocus.values : [focus];
+
+  bool highlightedFor(Pet dragon) =>
+      assistingExpertises.every(dragon.highlightedExpertises.contains);
+
+  int combinedExpertise(Pet dragon) => assistingExpertises.fold(
+      0, (total, focus) => total + dragon.trainingFor(focus));
 
   String title(String languageCode) => languageCode == 'nl' ? titleNl : titleEn;
   String subtitle(String languageCode) =>
@@ -86,9 +94,9 @@ const trialDefinitions = <TrialKind, TrialDefinition>{
     titleEn: 'Hollyfrost Giftforge',
     titleNl: 'Hollyfrosts Geschenkensmidse',
     subtitleEn:
-        'Remember each gift, stamp it at the glowing forge and send it safely to the starlight sleigh.',
+        'Sort moving parcels into matching sleigh bays before they tumble off the conveyor.',
     subtitleNl:
-        'Onthoud elk cadeau, stempel het bij de gloeiende smidse en stuur het veilig naar de sterrenlichtslee.',
+        'Sorteer bewegende cadeaus in de juiste sleevakken voordat ze van de lopende band vallen.',
     specialEventId: 'christmas_winter_hearth',
   ),
   TrialKind.midnightChime: TrialDefinition(
@@ -97,9 +105,9 @@ const trialDefinitions = <TrialKind, TrialDefinition>{
     titleEn: 'Midnight Chime',
     titleNl: 'Middernachtklank',
     subtitleEn:
-        'Read the turning sky, strike the chimes in rhythm and launch a perfect first-dawn firework.',
+        'Play four chimes as falling stars cross the golden line and fill the sky with fireworks.',
     subtitleNl:
-        'Lees de draaiende hemel, sla de klokken in ritme en lanceer perfect eerstedagvuurwerk.',
+        'Bespeel vier klokken als vallende sterren de gouden lijn raken en vul de hemel met vuurwerk.',
     specialEventId: 'new_year_first_dawn',
   ),
   TrialKind.rosevowRelay: TrialDefinition(
@@ -108,9 +116,9 @@ const trialDefinitions = <TrialKind, TrialDefinition>{
     titleEn: 'Rosevow Relay',
     titleNl: 'Rozenbelofte-estafette',
     subtitleEn:
-        'Carry paired heartlights across thorn gates and keep both promises glowing together.',
+        'Guide two mirrored heartlights through paired mazes and reunite them with their roses.',
     subtitleNl:
-        'Draag twee hartlichten langs doornpoorten en laat beide beloften samen gloeien.',
+        'Leid twee gespiegelde hartlichten door gekoppelde doolhoven naar hun rozen.',
     specialEventId: 'valentine_two_heartlights',
   ),
   TrialKind.prismaticParade: TrialDefinition(
@@ -119,9 +127,9 @@ const trialDefinitions = <TrialKind, TrialDefinition>{
     titleEn: 'Prismatic Parade',
     titleNl: 'Prismatische Parade',
     subtitleEn:
-        'Match color and shape, weave seven radiant ribbons and keep the whole parade shining.',
+        'Rotate prismatic channels to carry a rainbow beam through a new circuit each round.',
     subtitleNl:
-        'Combineer kleur en vorm, weef zeven stralende linten en laat de hele parade schitteren.',
+        'Draai prismakanalen om elke ronde een regenboogstraal door een nieuw circuit te leiden.',
     specialEventId: 'pride_every_color',
   ),
 };
