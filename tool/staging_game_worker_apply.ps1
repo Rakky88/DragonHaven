@@ -62,6 +62,8 @@ if (@(Compare-Object $remote $local).Count -ne 0) {
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 ./tool/staging_canonical_command_recovery_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
+./tool/staging_release23_feature_contract.ps1 -ProjectRef $projectRef `
+  -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 supabase functions deploy execute-game-command --project-ref $projectRef --no-verify-jwt --use-api
 if ($LASTEXITCODE -ne 0) { throw 'Staging game worker deployment failed.' }
 ./tool/release_server_preflight.ps1 -ExpectedProjectRef $projectRef `
