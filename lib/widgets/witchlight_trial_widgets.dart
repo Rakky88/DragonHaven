@@ -277,26 +277,55 @@ class _TracePainter extends CustomPainter {
       for (final p in trail.skip(1)) {
         traced.lineTo(p.dx, p.dy);
       }
-      canvas.drawPath(
-          traced,
-          paint
-            ..color = const Color(0x9978F2BF)
-            ..strokeWidth = 9
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
-      paint.maskFilter = null;
-      canvas.drawPath(
-          traced,
-          paint
-            ..color = const Color(0xFFC5FFB2)
-            ..strokeWidth = 5);
-      // Embers only travel over the line the player has actually traced.
+      // Leave twinkling stardust only where the finger has already travelled.
+      // Arc-length placement stays steady as new pointer samples arrive. The
+      // deterministic shimmer adds no randomness to the game's seeded rules.
       final metric = traced.computeMetrics().firstOrNull;
-      for (var i = 0; metric != null && i < 4; i++) {
-        final ember =
-            metric.getTangentForOffset(metric.length * ((phase + i / 4) % 1));
-        if (ember != null) {
+      if (metric != null) {
+        final spacing = math.max(7.0, metric.length / 240);
+        final dust = Paint();
+        for (var i = 0; i * spacing < metric.length; i++) {
+          final tangent = metric.getTangentForOffset(i * spacing);
+          if (tangent == null) continue;
+          final pulse = (math.sin(phase * math.pi * 2 + i * 2.4) + 1) / 2;
+          final normal = Offset(-tangent.vector.dy, tangent.vector.dx);
+          final position = tangent.position +
+              normal * (math.sin(i * 2.39996) * 5 + (pulse - .5) * 2);
+          final color =
+              i.isEven ? const Color(0xFFADFFE0) : const Color(0xFFFFEDB4);
+          final size = (i % 3 == 0 ? 2.7 : 1.0) + pulse * 1.1;
           canvas.drawCircle(
-              ember.position, 2, Paint()..color = const Color(0xFFFFF1C6));
+              position,
+              size * 1.8,
+              dust
+                ..color = color.withValues(alpha: .16 + pulse * .18)
+                ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5));
+          dust
+            ..maskFilter = null
+            ..color = color.withValues(alpha: .45 + pulse * .5);
+          if (i % 3 == 0) {
+            // Slender four-point sparkles surrounded by smaller floating dust.
+            final star = Path();
+            for (var tip = 0; tip < 8; tip++) {
+              final angle = tip * math.pi / 4;
+              final reach = tip.isEven ? size : size * .27;
+              final point = position +
+                  Offset(math.sin(angle) * reach, math.cos(angle) * reach);
+              if (tip == 0) {
+                star.moveTo(point.dx, point.dy);
+              } else {
+                star.lineTo(point.dx, point.dy);
+              }
+            }
+            canvas.drawPath(star..close(), dust);
+            canvas.drawCircle(
+                position,
+                .65,
+                Paint()
+                  ..color = Colors.white.withValues(alpha: .6 + pulse * .4));
+          } else {
+            canvas.drawCircle(position, size, dust);
+          }
         }
       }
     }

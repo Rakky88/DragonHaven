@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 3b90648abc24841b -->
+<!-- reference-source-fingerprint: 98f7c6c4a1228201 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -247,9 +247,10 @@ the gesture fails the action and applies the existing two-second penalty.
 Fast swipes are checked along their entire movement; tapping the destination
 does not complete the path. Every challenge receives a new seeded winding path,
 normalized to the same total length. The corridor is black inside a gold edge;
-the accepted finger trail remains visible in pale green with flowing gold
-embers. A painted mint wisp follows the finger; a softly pulsing pumpkin lantern
-marks the destination. Decorative motion stops with reduced motion enabled. Spirit
+the accepted finger trail leaves mint-and-gold sparkles that softly twinkle
+and drift in place, without a solid stroke. Reduced motion keeps this stardust
+static and visible. A painted mint wisp follows the finger; a softly pulsing
+pumpkin lantern marks the destination. Decorative motion stops with reduced motion enabled. Spirit
 expertise visibly widens the corridor from 24 to 32 logical pixels (capped at
 400 Spirit), with no random forgiveness. Completing the trace immediately starts
 the next memory round after feedback; Might still contributes to total time assistance.

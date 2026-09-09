@@ -16,8 +16,9 @@ acceptance use the same behavior. Ordinary Adventures keep their focus rules.
 ## Event game revision
 
 - Halloween now alternates pumpkin memory and tracing, with no Might timing game.
-  New individual wisp/lantern sprites pulse and hover; green traces carry golden
-  embers. The path stays black, seeded, equal length and strictly validated.
+  New individual wisp/lantern sprites pulse and hover. Finger movements leave
+  gently twinkling mint-and-gold sparkles, static with reduced motion.
+  The path stays black, seeded, equal length and strictly validated.
 - Christmas accelerates and ends after three mistakes; New Year accelerates,
   adds two-note chords at 22s and more often at 45s, and stops on three mistakes.
   Four original C5/D5/E5/G5 effects play through a polyphonic native SoundPool.
@@ -37,8 +38,15 @@ Audio generation: `tool/build_firstlight_notes.dart`, `assets/licenses/MUSIC_SOU
 - All six event picker regressions and the existing training/UI checks pass:
   17 tests. These cover visible scores, all/partial/no highlights, total-versus-
   single-score ordering, MAX display data, and opening info without starting.
-- Release analysis, full CI, device inspection, signing, server preflight and
-  publication evidence will be recorded after completion.
+- Full staging CI [34335950993](https://github.com/Rakky88/DragonHaven/actions/runs/34335950993)
+  passed on e815f0b9106f232250470018ddddd07b06ca2766, including analysis, 701
+  Flutter tests, Deno/server contracts, canonical worker/client/recovery probes
+  and synthetic-data cleanup. Release CI 34337273320 also passed on that source.
+  The subsequent sparkle-only UI revision receives its own final release checks.
+- Device inspection covered the revised games at normal width and 320dp with
+  1.35 text scale and reduced motion; the Halloween trace completed into the next
+  memory round. The language list is alphabetized; Dutch survives restart and
+  English was restored. Update installation preserved Quietstar and balances.
 
 - Focused interaction tests validate two-finger chords, all four audio IDs,
   bounded acceleration, exact grade boundaries, three-strike endings and two
@@ -48,4 +56,8 @@ Audio generation: `tool/build_firstlight_notes.dart`, `assets/licenses/MUSIC_SOU
 - Staging rollback contract passed for migration 61, including ownership, null
   and wrong tokens, null/invalid scores and counts, expiry, elapsed bounds,
   one-use submission, old-client completion and preserving existing bests.
-  Rehearsal left staging on schema 60 with fixtures removed by rollback.
+  The rollback rehearsal removed its fixtures. Migration 61 was then applied
+  successfully to staging and production. Production preflight at 09:53 UTC
+  confirmed 61 matching migrations, zero lint errors, Auth/settings/app HTTP 200.
+  Economy and game workers remain disabled in production, with zero nonlegacy
+  accounts or shadow states. Final artifact/publication evidence follows below.

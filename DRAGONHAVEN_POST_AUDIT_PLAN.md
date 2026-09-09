@@ -11,14 +11,19 @@ drie highlights voor de gemarkeerde groep en sorteert op hun som. Dit geldt
 ook voor verjaardag en het accepteren van een Valentijn-uitnodiging.
 Zes eventregressies en de bestaande keuzelijstcontroles slagen (17 tests).
 De nieuwe scope omvat ook de twee-spellencyclus van Halloween met geanimeerd
-dwaallicht en lantaarn, sneller Kerst/Nieuwjaar met maximaal drie fouten,
+dwaallicht, lantaarn en achterblijvende fonkeldeeltjes, sneller Kerst/Nieuwjaar met maximaal drie fouten,
 tweestemmige Nieuwjaarsnoten met vier eigen toonhoogtes en negen nieuwe sprites.
 S+ voor Valentijn begint bij 5500, voor Pride bij 10000; lagere rangen zijn
 mee aangepast. Regels, vertalingen en levende spelreferenties zijn bijgewerkt.
 De rollbackproef van migratie 61 slaagt op staging: vroege afronding werkt alleen
 bij exact drie fouten voor de bedoelde spellen; eigendom, tokens, verval,
 herhaling, scoregrenzen en oude volledige runs blijven gecontroleerd.
-Productie is nog niet gewijzigd. Visuele controle en releaseverificatie lopen.
+Migratie 61 staat inmiddels op staging en productie. De volledige stagingrun
+34335950993 slaagt, inclusief 701 tests, worker-/client-/recoveryproeven en
+opruiming. Productiepreflight: 61/61, lint 0, alle healthchecks HTTP 200;
+economische mutaties blijven uitgeschakeld, met nul niet-legacy-accounts en
+schaduwstaten. Normale en compacte Androidweergave zijn gecontroleerd.
+De laatste sparkles-aanpassing en definitieve publicatie worden nog geverifieerd.
 Releasebewijs: `RELEASE_V0.05.24_VERIFICATION.md`.
 
 ## Eventrelease v0.05.23 afgerond
