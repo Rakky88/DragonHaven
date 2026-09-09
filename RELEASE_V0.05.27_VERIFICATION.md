@@ -1,7 +1,7 @@
 # v0.05.27 / Android 10077 verification
 
-Candidate prepared 9 September 2026. Publication and artifact verification are
-recorded below when completed; v0.05.26 remains the public latest meanwhile.
+Published 9 September 2026 at 15:50:50 UTC as the verified public latest
+release, v0.05.27 / Android 10077.
 
 The user approved the twelve Solmanta/Ciderhorn sprites, the complete festival
 contract, and publication. Sunwake and Harvestmoon include their own calendar,
@@ -38,3 +38,59 @@ The starter egg hatching screen no longer offers the Egg Altar shortcut.
 Artwork provenance: `future_event_art/dragon_families/sunwake_harvestmoon/`.
 Original music source and PCM verification: `future_event_art/music/`.
 Operational code values and announcements are excluded from public release notes.
+
+## Publication and native verification
+
+- Source commit: `bde5fc09c678b75de99970de852cfaa908842ed2`.
+- Exact-commit release CI [34371375231](https://github.com/Rakky88/DragonHaven/actions/runs/34371375231)
+  passed: 738 Flutter tests, clean analysis, mandatory production preflight,
+  MIDI normalization/tests, native Kotlin jukebox tests and signed AAB.
+- Exact-commit staging CI [34371378563](https://github.com/Rakky88/DragonHaven/actions/runs/34371378563)
+  passed with the newly compiled shared worker deployed only to staging.
+  Real Auth/Edge/Dart/Postgres probes cover replay, stale requests, purchases,
+  chests, Altar, crafting, tags, hatching, rename, equipment, Adventures, houses
+  and preferences. Synthetic accounts/commands were removed and staging game
+  mutations disabled afterward; live saves and wallets were unchanged.
+- The production APK uses `lib/main.dart`, the production Firebase/Supabase
+  configuration, package `nl.dragonhaven.app`, version `0.05.27`, code `10077`.
+  Signing certificate SHA-256:
+  `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`.
+- Installed the exact production APK as an Android update. Original one-floor
+  tower, 25 coins, 3 gems and English selection remain; About displays v0.05.27.
+  All eight languages remain ordered by their visible names.
+- Both Trial intros and gameplay were visually checked on native Android at
+  1080x2400 and 320x640 logical pixels with animations disabled. Drag steering,
+  fruit placement, scoring, compact controls and timer remain usable. Normal
+  emulator dimensions and animation settings were restored afterward.
+- Native home themes, all-expertise selection, event music lists and restoration
+  were inspected. Both new original tracks produced active 44.1 kHz playback;
+  removal returns the ordinary jukebox list without removing collected music.
+  Android launcher aliases switch to the selected event when backgrounded.
+- Both expanded Conclave decorations were visually inspected at 320x640 and
+  1.35 text scale. The screenshot-only test harness lacks Material icon fonts;
+  native Android icons were separately confirmed and are bundled correctly.
+- Publisher read-only dry run and draft upload passed. The existing draft was
+  published once; tag, commit, stable asset name, GitHub digest and byte count
+  match the local APK. The permanent latest URL returns HTTP 200.
+- Mandatory production preflight passed again immediately before and after
+  publication: 65 matching migrations, lint 0, Auth health/settings/application
+  HTTP 200. Economy/game activation remains disabled, push enabled, zero
+  nonlegacy authorities and zero canonical shadow states.
+
+Release: https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.27
+
+Version download: https://github.com/Rakky88/DragonHaven/releases/download/v0.05.27/DragonHaven.apk
+
+Permanent download: https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk
+
+APK size: **627,719,094 bytes** (598.64 MiB).
+
+APK SHA-256: `a1ed8e00d12783393aa0bf2e8ebceac44aae2f3cc75171b1b7c3541e4c6170ee`.
+
+Evidence: `release/v0.05.27-artifact.json`,
+`release/v0.05.27-remote-verification.json`, `release/summer-device-*.png`,
+`release/summer-conclave-*.png`, and `release/v0.05.27-staging-ci/`.
+Artwork was created with the built-in image generator; exact prompts, selected
+sources and hashes are in `ART_PROMPTS.json` and `EVENT_ASSETS.json` under
+`future_event_art/dragon_families/sunwake_harvestmoon/`. All twelve approved
+family images retain their approved bytes; no placeholder artwork is shipped.

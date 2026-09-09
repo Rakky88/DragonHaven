@@ -1,8 +1,10 @@
 # Sunwake and Harvestmoon implementation plan
 
 Started after verified release v0.05.26 on 9 September 2026.
-Status: all twelve dragon sprites and the complete event contract approved by the user on 9 September 2026; implementation in progress.
-These events are not in the published release or live calendar.
+Status: implemented and published in v0.05.27 / 10077 on 9 September 2026.
+All twelve dragon sprites and the complete contract were approved by the user.
+Both personal test previews are available now; the annual public calendar begins
+in 2027 as approved. Verification: `RELEASE_V0.05.27_VERIFICATION.md`.
 
 ## Requested and resolved presentation
 
@@ -74,3 +76,14 @@ The user explicitly accepted this complete package. Both test codes and release 
 - Both original music compositions have been synthesized and their PCM headers,
   peaks and hashes checked. They are integrated as native event music outside the ordinary collection.
   Sources and verification records remain in `future_event_art/music/`.
+
+
+## Completed release
+
+All seven implementation/verification steps are complete. The full regression
+passes 738 tests; exact-commit release and staging worker CI both pass. Native
+Android update, compact/reduced-motion layouts, music, launcher branding and
+Conclave visuals have been reviewed. Production has 65 matching migrations,
+lint 0 and healthy Auth/application endpoints before and after publication.
+The public release and permanent APK download are verified against the local
+signature, version, SHA-256 and byte size. See `RELEASE_V0.05.27_VERIFICATION.md`.

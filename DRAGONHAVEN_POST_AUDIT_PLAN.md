@@ -1,6 +1,6 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
-## Sunwake en Harvestmoon: voorbereiding en drakenreview
+## Sunwake en Harvestmoon: v0.05.27 afgerond
 
 Na de geverifieerde release v0.05.26 zijn twaalf nieuwe sprites gemaakt voor
 Solmanta en Ciderhorn (zes vormen per familie). De review gebruikt echte
@@ -16,8 +16,14 @@ en opnieuw getest (lint 0); productie staat na de geslaagde stagingproeven op 65
 healthchecks HTTP 200; mutaties uit, push aan en spelerautoriteit behouden.
 De gerichte spel-/layouttests, Dart/JS-pariteit en 21 Deno-tests slagen.
 Kerst S+ 7500, verjaardag S+ 10000 en één fout als einde zijn verwerkt.
-De starterei-pagina toont de Altar-snelkoppeling niet meer. De definitieve regressie,
-native controles en publicatie volgen vóór afronding.
+De starterei-pagina toont de Altar-snelkoppeling niet meer. Alle 738 tests slagen,
+de analyse is schoon en de native scherm-/muziek-/updatecontroles zijn voltooid.
+v0.05.27 / 10077 is gepubliceerd op 9 september 2026 om 15:50:50 UTC.
+Release-CI 34371375231 en staging-CI 34371378563 slagen op dezelfde commit.
+De laatste stagingworker doorloopt echte Auth/Edge/Dart/Postgres- en Flutter-UI-
+proeven; de synthetische accounts zijn daarna verwijderd en mutaties staan uit.
+De vaste APK-link geeft HTTP 200; versie, ondertekening, grootte en SHA-256 kloppen.
+Productie is ook na publicatie gezond. Bewijs: `RELEASE_V0.05.27_VERIFICATION.md`.
 Specificatie: `SUNWAKE_HARVESTMOON_PLAN.md`.
 
 
