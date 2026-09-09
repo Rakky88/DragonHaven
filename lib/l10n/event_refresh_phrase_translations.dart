@@ -1,5 +1,32 @@
 /// Event refresh translations: German, Spanish, French, Italian, Portuguese, Japanese.
 const eventRefreshPhraseTranslations = <String, List<String>>{
+  "Remember the pumpkin face, then guide the Witchlight along the path. Stay within the edges. Three mistakes end the Trial.":
+      [
+    "Merke dir das Kürbisgesicht und führe das Hexenlicht am Pfad entlang. Bleibe innerhalb der Ränder. Drei Fehler beenden die Prüfung.",
+    "Recuerda la cara de la calabaza y guía la luz por el sendero sin salirte de los bordes. Tres errores terminan la prueba.",
+    "Mémorise le visage de la citrouille, puis guide le feu follet sur le chemin sans dépasser les bords. Trois erreurs terminent l’épreuve.",
+    "Ricorda il volto della zucca, poi guida il fuoco fatuo lungo il sentiero senza uscire dai bordi. Tre errori terminano la prova.",
+    "Memoriza o rosto da abóbora e guia a luz pelo caminho sem sair dos limites. Três erros terminam a prova.",
+    "カボチャの顔を覚えてから、鬼火を道に沿って導こう。道の縁からはみ出さないように。3回ミスすると試練終了。"
+  ],
+  "Drag gifts to the matching symbol. The belt speeds up. Three mistakes end the Trial.":
+      [
+    "Ziehe Geschenke zum passenden Symbol. Das Band wird schneller. Drei Fehler beenden die Prüfung.",
+    "Arrastra regalos al símbolo correspondiente. La cinta acelera. Tres errores terminan la prueba.",
+    "Fais glisser les cadeaux vers le même symbole. Le tapis accélère. Trois erreurs terminent l’épreuve.",
+    "Trascina i regali sul simbolo uguale. Il nastro accelera. Tre errori terminano la prova.",
+    "Arrasta presentes para o símbolo igual. A passadeira acelera. Três erros terminam a prova.",
+    "プレゼントを同じマークへドラッグ。ベルトは次第に速くなります。3回ミスすると試練終了。"
+  ],
+  "Tap 1–4 as stars reach the gold line. The melody speeds up and later plays two notes together. Three mistakes end the Trial; sound is optional.":
+      [
+    "Tippe auf 1–4, wenn Sterne die goldene Linie erreichen. Die Melodie wird schneller und spielt später zwei Töne zugleich. Drei Fehler beenden die Prüfung; Ton ist optional.",
+    "Toca 1–4 cuando las estrellas lleguen a la línea dorada. La melodía acelera y luego toca dos notas a la vez. Tres errores terminan la prueba; el sonido es opcional.",
+    "Touche 1–4 quand les étoiles atteignent la ligne dorée. La mélodie accélère puis joue deux notes à la fois. Trois erreurs terminent l’épreuve ; le son est facultatif.",
+    "Tocca 1–4 quando le stelle raggiungono la linea dorata. La melodia accelera e poi suona due note insieme. Tre errori terminano la prova; il suono è facoltativo.",
+    "Toca em 1–4 quando as estrelas chegam à linha dourada. A melodia acelera e depois toca duas notas juntas. Três erros terminam a prova; o som é opcional.",
+    "星が金色の線に届いたら1〜4をタップ。メロディーは次第に速くなり、後半は2音同時に登場。3回ミスで終了。音なしでも遊べます。"
+  ],
   "Keep the sleigh supplied": [
     "Versorge den Sternenschlitten",
     "Abastece el trineo",

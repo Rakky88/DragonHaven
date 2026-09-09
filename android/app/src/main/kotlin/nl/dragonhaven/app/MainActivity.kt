@@ -11,6 +11,7 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
+import android.media.SoundPool
 import android.net.Uri
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -37,6 +38,9 @@ class MainActivity : FlutterActivity() {
     private var musicEnabled = false
     private var effectsEnabled = true
     private var musicPlayer: MediaPlayer? = null
+    private var chimePool: SoundPool? = null
+    private val chimeSamples = mutableMapOf<String, Int>()
+    private val loadedChimes = mutableSetOf<Int>()
     private var currentMusicVolume = 0f
     private var musicScene: String? = null
     private var jukeboxTracks = listOf("music_reverie")
@@ -88,6 +92,7 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        prepareChimes()
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nl.dragonhaven.app/event_branding")
             .setMethodCallHandler { call, result ->
@@ -362,6 +367,10 @@ class MainActivity : FlutterActivity() {
         "event_firstlight_success" -> R.raw.event_firstlight_success
         "event_firstlight_failure" -> R.raw.event_firstlight_failure
         "event_firstlight_finish" -> R.raw.event_firstlight_finish
+        "event_firstlight_note_1" -> R.raw.event_firstlight_note_1
+        "event_firstlight_note_2" -> R.raw.event_firstlight_note_2
+        "event_firstlight_note_3" -> R.raw.event_firstlight_note_3
+        "event_firstlight_note_4" -> R.raw.event_firstlight_note_4
         "event_twinheart_chest" -> R.raw.event_twinheart_chest
         "event_twinheart_success" -> R.raw.event_twinheart_success
         "event_twinheart_failure" -> R.raw.event_twinheart_failure
@@ -621,8 +630,26 @@ class MainActivity : FlutterActivity() {
         explicitNotificationPermissionResult = null
     }
 
+    private fun prepareChimes() {
+        if (chimePool != null) return
+        val pool = SoundPool.Builder().setMaxStreams(8)
+            .setAudioAttributes(effectsAttributes).build()
+        chimePool = pool
+        pool.setOnLoadCompleteListener { _, sample, status ->
+            if (status == 0) loadedChimes.add(sample)
+        }
+        for (lane in 1..4) {
+            val id = "event_firstlight_note_$lane"
+            chimeSamples[id] = pool.load(this, rawResourceId(id), 1)
+        }
+    }
+
     private fun playOneShot(id: String): Boolean {
         if (!effectsEnabled) return false
+        val sample = chimeSamples[id]
+        if (sample != null && loadedChimes.contains(sample)) {
+            return (chimePool?.play(sample, EFFECTS_VOLUME, EFFECTS_VOLUME, 1, 0, 1f) ?: 0) > 0
+        }
         val resource = rawResourceId(id)
         if (resource == 0) return false
         val player = MediaPlayer.create(this, resource, effectsAttributes, 0) ?: return false
@@ -818,6 +845,10 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        chimePool?.release()
+        chimePool = null
+        chimeSamples.clear()
+        loadedChimes.clear()
         stopMusic()
         super.onDestroy()
     }

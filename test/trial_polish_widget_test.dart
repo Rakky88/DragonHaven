@@ -77,7 +77,7 @@ void main() {
   }
 
   testWidgets(
-      'six pumpkin sprites match correctly and Might stays inside its ring',
+      'six pumpkin sprites match correctly and tracing returns to memory',
       (tester) async {
     var now = DateTime(2026, 10, 26);
     await mount(
@@ -123,20 +123,14 @@ void main() {
     for (final point in points.skip(1)) {
       await finger.moveTo(origin + point);
       await tester.pump(const Duration(milliseconds: 30));
+      if (point == points[2]) await capture(tester, 'witchlight-trace');
     }
     await finger.up();
     now = now.add(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 700));
-    final ring = find.byKey(const Key('witchlight-strike'));
-    expect(ring, findsOneWidget);
-    await capture(tester, 'might');
-    for (var i = 0; i < 12; i++) {
-      final art = find.descendant(of: ring, matching: find.byType(Image));
-      final outer = tester.getRect(ring), inner = tester.getRect(art);
-      expect(outer.contains(inner.topLeft), isTrue);
-      expect(outer.contains(inner.bottomRight), isTrue);
-      await tester.pump(const Duration(milliseconds: 200));
-    }
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const Key('witchlight-strike')), findsNothing);
+    expect(find.byKey(const Key('witchlight-rune-0')), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

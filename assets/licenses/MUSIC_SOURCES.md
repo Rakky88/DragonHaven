@@ -109,3 +109,13 @@ PDMX row licenses were checked from `PDMX.csv`; every selected row
 is in both the `no_license_conflict` and `all_valid` subsets and uses
 `https://creativecommons.org/publicdomain/zero/1.0/` or
 `https://creativecommons.org/publicdomain/mark/1.0/`.
+
+## New Year playable chimes (v0.05.24)
+
+`event_firstlight_note_1.wav` through `_4.wav` are newly synthesized effects,
+not sampled recordings: C5 (523.251Hz), D5 (587.330Hz), E5 (659.255Hz),
+G5 (783.991Hz), mono 44.1kHz 16-bit PCM, 0.60 seconds each.
+`tool/build_firstlight_notes.dart` reproduces their original harmonic envelopes.
+`SeasonalArcadePacing.melody` supplies an original four-pitch 32-note melody and
+deterministic harmony. No third-party composition or recording was imported.
+They are effects outside the collectible Music Chest pool.

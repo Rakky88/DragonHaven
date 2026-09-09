@@ -7,6 +7,7 @@ import '../l10n/app_strings.dart';
 import '../models/pet.dart';
 import '../models/seasonal_minigame.dart';
 import '../models/trial.dart';
+import '../services/audio_service.dart';
 
 typedef SeasonalArcadeAction = void Function(bool correct,
     {required int points, required bool completesRound});
@@ -33,10 +34,11 @@ class SeasonalMinigames extends StatefulWidget {
 }
 
 class _ChimeNote {
-  _ChimeNote(this.id, this.lane, this.strikeAt);
+  _ChimeNote(this.id, this.lane, this.strikeAt, this.travel);
   final int id;
   final int lane;
   final double strikeAt;
+  final double travel;
 }
 
 class _SeasonalMinigamesState extends State<SeasonalMinigames> {
@@ -53,11 +55,15 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   int? _prismHint;
   int _parcel = 0;
   double _parcelBorn = 0;
+  double _parcelDuration = 4.8;
   Offset? _drag;
   final _surface = GlobalKey();
   final _notes = <_ChimeNote>[];
   double _nextNote = 0;
   int _noteId = 0;
+  int _beat = 0;
+  late final int _melodyPhrase;
+  final Map<int, double> _laneReadyAt = {};
   final Map<int, double> _flares = {};
 
   double get _spirit =>
@@ -66,8 +72,6 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
       widget.dragon.trainingFor(TrainingFocus.might).clamp(0, 400) / 400;
   double get _arcana =>
       widget.dragon.trainingFor(TrainingFocus.arcana).clamp(0, 400) / 400;
-  double get _parcelLifetime => 4.8 + _might * .9;
-  double get _chimeTravel => 2.1 + _spirit * .4;
   double get _chimeWindow => .18 + _might * .07;
   bool get _canInput => widget.running && _time >= _readyAt;
   bool get _reducedMotion => MediaQuery.disableAnimationsOf(context);
@@ -76,6 +80,8 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   void initState() {
     super.initState();
     _random = Random(widget.seed);
+    _melodyPhrase =
+        widget.kind == TrialKind.midnightChime ? _random.nextInt(4) : 0;
     _hints = 1 + (_arcana * 2).floor();
     _newPuzzle();
     _ticker = Timer.periodic(const Duration(milliseconds: 40), (_) => _tick());
@@ -99,6 +105,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
     _errorCell = null;
     _parcel = _random.nextInt(3);
     _parcelBorn = _time;
+    _parcelDuration = SeasonalArcadePacing.parcelLifetime(_time, _might);
     _drag = null;
     if (widget.kind == TrialKind.rosevowRelay) {
       _maze = HeartMaze.generate(_random);
@@ -124,7 +131,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
       _flares.removeWhere((_, until) => until <= _time);
       if (_time >= _readyAt) _errorCell = null;
       if (widget.kind == TrialKind.hollyfrostGiftforge &&
-          _time - _parcelBorn > _parcelLifetime &&
+          _time - _parcelBorn > _parcelDuration &&
           _time >= _readyAt) {
         _report(false);
         _newPuzzle();
@@ -138,11 +145,15 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
           _report(false);
         }
         if (_time >= _nextNote) {
-          _notes.add(
-              _ChimeNote(_noteId++, _random.nextInt(4), _time + _chimeTravel));
+          final travel = SeasonalArcadePacing.chimeTravel(_time, _spirit);
+          for (final lane
+              in SeasonalArcadePacing.chimeLanes(_beat, _time, _melodyPhrase)) {
+            _notes.add(_ChimeNote(_noteId++, lane, _time + travel, travel));
+          }
           _nextNote = _time +
-              max(.72, 1.10 - _noteId * .004) +
-              _random.nextDouble() * .12;
+              SeasonalArcadePacing.chimeBeat(_time) *
+                  (_beat % 16 == 15 ? 1.5 : 1);
+          _beat++;
         }
       }
     });
@@ -206,46 +217,30 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
     Icons.ac_unit_rounded
   ];
 
-  Widget _parcelArt(int type, {double size = 64}) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  _giftColors[type],
-                  Color.lerp(_giftColors[type], Colors.black, .28)!
-                ]),
-            border: Border.all(color: const Color(0xFFFFEABC), width: 2),
-            boxShadow: const [
-              BoxShadow(
-                  color: Colors.black38, blurRadius: 10, offset: Offset(0, 5))
-            ]),
-        child: Stack(alignment: Alignment.center, children: [
-          Container(width: 12, color: const Color(0xFFFFDE93)),
-          Container(height: 10, color: const Color(0xFFFFDE93)),
-          Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                  color: Color(0xFF293045), shape: BoxShape.circle),
-              child: Icon(_giftSymbols[type],
-                  color: _giftColors[type], size: size * .34)),
-        ]),
-      );
+  Widget _parcelArt(int type, {double size = 64}) => Image.asset(
+      'assets/images/events/christmas/arcade_gift_${const [
+        'heart',
+        'star',
+        'snow'
+      ][type]}.png',
+      width: size,
+      height: size,
+      cacheWidth: 192,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      excludeFromSemantics: true);
 
   Widget _giftforge(AppStrings s) => _panel(
         instruction:
             s.pick('Keep the sleigh supplied', 'Vul de sterrenlichtslee'),
         detail: s.pick(
-            'Drag each parcel from the belt to its matching symbol before it falls.',
-            'Sleep elk cadeau van de band naar hetzelfde symbool voordat het valt.'),
+            'Drag gifts to the matching symbol. The belt speeds up. Three mistakes end the Trial.',
+            'Sleep cadeaus naar hetzelfde symbool. De band versnelt. Bij drie fouten eindigt de proef.'),
         child: LayoutBuilder(builder: (context, box) {
           final size = Size(box.maxWidth, box.maxHeight);
           final giftSize = min(66.0, size.width / 4);
           final progress =
-              ((_time - _parcelBorn) / _parcelLifetime).clamp(0.0, 1.0);
+              ((_time - _parcelBorn) / _parcelDuration).clamp(0.0, 1.0);
           final center = _drag ??
               Offset(giftSize / 2 + (size.width - giftSize) * (1 - progress),
                   size.height * .27);
@@ -336,7 +331,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
       );
 
   void _strike(int lane) {
-    if (!_canInput) return;
+    if (!_canInput || _time < (_laneReadyAt[lane] ?? 0)) return;
     final candidates = _notes.where((n) => n.lane == lane).toList()
       ..sort((a, b) =>
           (_time - a.strikeAt).abs().compareTo((_time - b.strikeAt).abs()));
@@ -350,16 +345,20 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
           points: correct && (_time - target.strikeAt).abs() < .09 ? 130 : 100);
       _flares[lane] = _time + .35;
       _errorCell = correct ? null : lane;
-      _readyAt = _time + .12;
+      // Different lanes can be struck together, including with two fingers.
+      _laneReadyAt[lane] = _time + .12;
     });
+    if (correct) {
+      unawaited(HavenAudio.playAsset('event_firstlight_note_${lane + 1}'));
+    }
   }
 
   Widget _chimes(AppStrings s) => _panel(
         instruction:
             s.pick('Play the midnight sky', 'Bespeel de middernachthemel'),
         detail: s.pick(
-            'Tap a chime when its falling star reaches the gold line. Sound is optional.',
-            'Tik op een klok als de vallende ster de gouden lijn raakt. Geluid is niet nodig.'),
+            'Tap 1–4 as stars reach the gold line. The melody speeds up and later plays two notes together. Three mistakes end the Trial; sound is optional.',
+            'Tik op 1–4 als sterren de gouden lijn raken. De melodie versnelt en speelt later twee noten tegelijk. Bij drie fouten stopt de proef; geluid is optioneel.'),
         child: LayoutBuilder(builder: (context, box) {
           final laneWidth = box.maxWidth / 4;
           final strikeY = max(70.0, box.maxHeight - 68);
@@ -386,6 +385,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
                 left: 0,
                 right: 0,
                 child: Container(
+                    key: const Key('midnight-strike-line'),
                     height: 10,
                     decoration: BoxDecoration(
                         color: const Color(0x55FFDA84),
@@ -396,7 +396,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
               Positioned(
                   key: Key('midnight-note-${note.id}'),
                   left: note.lane * laneWidth + laneWidth / 2 - 20,
-                  top: strikeY * (1 - (note.strikeAt - _time) / _chimeTravel) -
+                  top: strikeY * (1 - (note.strikeAt - _time) / note.travel) -
                       20,
                   child: Container(
                       width: 40,
@@ -429,12 +429,24 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
                           key: Key('midnight-chime-$i'),
                           borderRadius: BorderRadius.circular(14),
                           onTap: () => _strike(i),
-                          child: Center(
-                              child: Text('${i + 1}',
-                                  style: const TextStyle(
-                                      color: Color(0xFFFFE8A6),
-                                      fontSize: 23,
-                                      fontWeight: FontWeight.w900)))))),
+                          child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Image.asset(
+                                    'assets/images/events/new_year/arcade_chime.png',
+                                    cacheWidth: 192,
+                                    width: 28,
+                                    height: 46,
+                                    fit: BoxFit.contain,
+                                    filterQuality: FilterQuality.high,
+                                    excludeFromSemantics: true),
+                                const SizedBox(width: 2),
+                                Text('${i + 1}',
+                                    style: const TextStyle(
+                                        color: Color(0xFFFFE8A6),
+                                        fontSize: 19,
+                                        fontWeight: FontWeight.w900)),
+                              ])))),
           ]);
         }),
       );
@@ -520,11 +532,19 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
                                                   color: Color(0xFFDA83A0),
                                                   size: 24)
                                               : i == goal
-                                                  ? const Icon(
-                                                      Icons
-                                                          .local_florist_rounded,
-                                                      color: Color(0xFFFFDB9B),
-                                                      size: 27)
+                                                  ? Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              3),
+                                                      child: Image.asset(
+                                                          'assets/images/events/valentine/arcade_rose.png',
+                                                          cacheWidth: 192,
+                                                          fit: BoxFit.contain,
+                                                          filterQuality:
+                                                              FilterQuality
+                                                                  .high,
+                                                          excludeFromSemantics:
+                                                              true))
                                                   : null)),
                                 AnimatedPositioned(
                                     duration: Duration(
@@ -533,12 +553,23 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
                                     top: heart ~/ 3 * cell,
                                     width: cell,
                                     height: cell,
-                                    child: Icon(Icons.favorite_rounded,
+                                    child: Container(
                                         key: Key('rosevow-heart-$side'),
-                                        color: side == 0
-                                            ? const Color(0xFFFF98C5)
-                                            : const Color(0xFFFFD3AF),
-                                        size: cell * .69)),
+                                        decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            gradient: RadialGradient(colors: [
+                                              (side == 0
+                                                      ? const Color(0xFFFF98C5)
+                                                      : const Color(0xFFFFD3AF))
+                                                  .withValues(alpha: .4),
+                                              Colors.transparent
+                                            ])),
+                                        child: Image.asset(
+                                            'assets/images/events/valentine/arcade_heart.png',
+                                            cacheWidth: 192,
+                                            fit: BoxFit.contain,
+                                            filterQuality: FilterQuality.high,
+                                            excludeFromSemantics: true))),
                               ]);
                             })))),
               ],
@@ -665,11 +696,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
                                             color: _prismHint == i
                                                 ? Colors.white
                                                 : lit.contains(i)
-                                                    ? HSVColor.fromAHSV(
-                                                            1,
-                                                            i * 360 / 16,
-                                                            .55,
-                                                            1)
+                                                    ? HSVColor.fromAHSV(1, i * 360 / 16, .55, 1)
                                                         .toColor()
                                                     : Colors.white24,
                                             width: _prismHint == i ? 2.5 : 1)),
@@ -682,7 +709,20 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
                                                     .toColor()
                                                 : const Color(0xFF88849D),
                                             lit: lit.contains(i),
-                                            glow: !_reducedMotion))))),
+                                            glow: !_reducedMotion),
+                                        child: Center(
+                                            child: Opacity(
+                                                opacity:
+                                                    lit.contains(i) ? 1 : .5,
+                                                child: Image.asset(
+                                                    'assets/images/events/pride/arcade_prism.png',
+                                                    cacheWidth: 192,
+                                                    width: cell * .58,
+                                                    height: cell * .58,
+                                                    fit: BoxFit.contain,
+                                                    filterQuality:
+                                                        FilterQuality.high,
+                                                    excludeFromSemantics: true))))))),
                       ),
                   ]);
                 }))),

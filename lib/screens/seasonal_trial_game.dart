@@ -81,6 +81,10 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
   TrialDefinition get definition => widget.offer.definition;
   DateTime _now() => (widget.clock ?? DateTime.now)();
   bool get _isWitchlight => widget.offer.kind == TrialKind.witchlightWard;
+  bool get _threeMistakeLimit =>
+      _isWitchlight ||
+      widget.offer.kind == TrialKind.hollyfrostGiftforge ||
+      widget.offer.kind == TrialKind.midnightChime;
   _SeasonalTheme get theme => _themeFor(widget.offer.kind);
   TrainingFocus get _currentPhaseFocus =>
       widget.offer.kind == TrialKind.hollyfrostGiftforge
@@ -133,6 +137,14 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
       unawaited(precacheImage(
           AssetImage(WitchlightPumpkin.assetFor(variant)), context));
     }
+    for (final art in const {'lantern': 192, 'wisp': 144}.entries) {
+      unawaited(precacheImage(
+          ResizeImage(
+              AssetImage(
+                  'assets/images/events/halloween/arcade_${art.key}.png'),
+              width: art.value),
+          context));
+    }
   }
 
   void _start() {
@@ -171,7 +183,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
     setState(() {
       _ending = true;
       _remainingMilliseconds = 0;
-      _status = _isWitchlight
+      _status = _threeMistakeLimit && _mistakes >= 3
           ? AppStrings.of(context).pick('Game over', 'Spel afgelopen')
           : AppStrings.of(context).pick(
               'The final light is sealed!',
@@ -179,7 +191,11 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
             );
     });
     unawaited(HavenAudio.playAsset('event_${theme.soundPrefix}_finish'));
-    await Future<void>.delayed(const Duration(milliseconds: 900));
+    final elapsed = _runStartedAt == null
+        ? 0
+        : _now().difference(_runStartedAt!).inMilliseconds;
+    await Future<void>.delayed(
+        Duration(milliseconds: max(900, 1000 - elapsed)));
     if (mounted) {
       await widget.onFinished(SeasonalTrialRunResult(
         score: _score,
@@ -219,10 +235,6 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
 
   double get _spiritTolerance =>
       widget.dragon.trainingFor(TrainingFocus.spirit).clamp(0, 400) / 400;
-
-  double get _mightTimingWindow =>
-      .20 +
-      widget.dragon.trainingFor(TrainingFocus.might).clamp(0, 400) / 400 * .09;
 
   int _optionSprite(int position, {bool unique = false}) => unique
       ? (_target + position - _correctChoicePosition) % 6
@@ -323,7 +335,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                         ? null
                         : () => Navigator.pop(context),
                   ),
-                  if (_isWitchlight)
+                  if (_threeMistakeLimit)
                     Text(
                       '${strings.pick('Mistakes', 'Fouten')}: $_mistakes / 3',
                       key: const Key('witchlight-mistakes'),
@@ -409,11 +421,12 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
       }
       _feedbackUntil = _now().add(const Duration(milliseconds: 650));
     });
-    if (completesRound || !correct) {
+    if (!correct ||
+        (completesRound && widget.offer.kind != TrialKind.midnightChime)) {
       unawaited(HavenAudio.playAsset(
           'event_${theme.soundPrefix}_${correct ? 'success' : 'failure'}'));
     }
-    if (_remainingMilliseconds <= 0) {
+    if (_remainingMilliseconds <= 0 || (_threeMistakeLimit && _mistakes >= 3)) {
       unawaited(_finish());
     }
   }
@@ -526,83 +539,10 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
         ],
       );
 
-  Widget _buildTimingPhase(
-    AppStrings strings, {
-    Key? key,
-    required String instructionEn,
-    required String instructionNl,
-    required String keyName,
-    required int sprite,
-    bool completesRound = true,
-  }) {
-    return Column(
-      key: key,
-      children: [
-        const SizedBox(height: 18),
-        Text(
-          strings.pick(instructionEn, instructionNl),
-          textAlign: TextAlign.center,
-          style: _instructionStyle,
-        ),
-        const Spacer(),
-        AnimatedBuilder(
-          animation: _ambient,
-          builder: (_, child) {
-            final pulse = (_ambient.value - .5).abs() * 2;
-            final good = pulse < _mightTimingWindow;
-            return GestureDetector(
-              key: Key(keyName),
-              onTap: () => _answer(
-                good,
-                basePoints: good ? 120 : 55,
-                completesRound: completesRound,
-              ),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 80),
-                width: 190 + pulse * 42,
-                height: 190 + pulse * 42,
-                padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.buttonColor.withValues(alpha: .30),
-                  border: Border.all(
-                    color: good ? theme.accentColor : Colors.white38,
-                    width: good ? 7 : 2,
-                  ),
-                  boxShadow: good
-                      ? [
-                          BoxShadow(
-                            color: theme.glowColor.withValues(alpha: .48),
-                            blurRadius: 35,
-                            spreadRadius: 8,
-                          ),
-                        ]
-                      : const [],
-                ),
-                child: child,
-              ),
-            );
-          },
-          child: _EventTrialSprite(theme: theme, index: sprite),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          strings.pick(
-              'Tap when the ring turns gold', 'Tik wanneer de ring goud wordt'),
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const Spacer(),
-      ],
-    );
-  }
-
   Widget _buildWitchlight(AppStrings strings) => _glassPanel(
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 260),
+          duration: Duration(
+              milliseconds: MediaQuery.disableAnimationsOf(context) ? 0 : 260),
           child: switch (_phase) {
             0 => _buildChoicePhase(
                 strings,
@@ -643,19 +583,13 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                       enabled: _started && !_ending && !_inputLocked,
                       seed: _pathSeed,
                       tolerance: _spiritTolerance,
-                      onResult: (correct) => _answer(correct),
+                      onResult: (correct) =>
+                          _answer(correct, completesRound: true),
                     ),
                   ),
                 ],
               ),
-            _ => _buildTimingPhase(
-                strings,
-                key: const ValueKey('witchlight-might'),
-                instructionEn: 'Might · shatter the approaching curse',
-                instructionNl: 'Might · verbrijzel de naderende vloek',
-                keyName: 'witchlight-strike',
-                sprite: 5,
-              ),
+            _ => const SizedBox.shrink(),
           },
         ),
       );
@@ -807,7 +741,7 @@ class _SeasonalPhaseTrail extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (var index = 0; index < 3; index++) ...[
+          for (var index = 0; index < 2; index++) ...[
             if (index > 0)
               Container(
                 width: 4,
@@ -1347,9 +1281,9 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
           introEn: 'Raise the Witchlight Ward',
           introNl: 'Herstel de Heksenlichtbescherming',
           instructionsEn:
-              'Remember the pumpkin face, trace the path within its edges, then shatter the curse.',
+              'Remember the pumpkin face, then guide the Witchlight along the path. Stay within the edges. Three mistakes end the Trial.',
           instructionsNl:
-              'Onthoud het pompoengezicht, volg met je vinger het dwaallichtpad binnen de randen en verbrijzel de vloek.',
+              'Onthoud het pompoengezicht en leid het heksenlicht langs het pad. Blijf binnen de randen. Bij drie fouten eindigt de proef.',
           successEn: 'The ward burns brighter!',
           successNl: 'De bescherming brandt feller!',
           failureEn: 'The gloom stole two seconds.',
@@ -1368,9 +1302,9 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
           introEn: 'Light the Hollyfrost Giftforge',
           introNl: 'Ontsteek Hollyfrosts Geschenkensmidse',
           instructionsEn:
-              'Drag moving parcels into the sleigh bay with the same symbol. Work quickly: parcels fall off the belt. Wrong deliveries cost 30 points.',
+              'Drag gifts to the matching symbol. The belt speeds up. Three mistakes end the Trial.',
           instructionsNl:
-              'Sleep bewegende cadeaus naar het sleevak met hetzelfde symbool. Werk snel: cadeaus vallen van de band. Een foute bezorging kost 30 punten.',
+              'Sleep cadeaus naar hetzelfde symbool. De band versnelt. Bij drie fouten eindigt de proef.',
           successEn: 'Perfectly wrapped!',
           successNl: 'Perfect ingepakt!',
           failureEn: 'Missed delivery · −30 points',
@@ -1389,9 +1323,9 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
           introEn: 'Ring in the First Dawn',
           introNl: 'Luid de Eerste Dageraad in',
           instructionsEn:
-              'Stars fall along four chime lanes. Tap the numbered chime exactly as its star crosses the gold line to light the midnight sky. Misses cost 30 points; sound is optional.',
+              'Tap 1–4 as stars reach the gold line. The melody speeds up and later plays two notes together. Three mistakes end the Trial; sound is optional.',
           instructionsNl:
-              'Sterren vallen over vier klokbanen. Tik op de genummerde klok zodra de ster de gouden lijn kruist en verlicht de middernachthemel. Missers kosten 30 punten; geluid is niet nodig.',
+              'Tik op 1–4 als sterren de gouden lijn raken. De melodie versnelt en speelt later twee noten tegelijk. Bij drie fouten stopt de proef; geluid is optioneel.',
           successEn: 'A perfect midnight note!',
           successNl: 'Een perfecte middernachttoon!',
           failureEn: 'Missed chime · −30 points',

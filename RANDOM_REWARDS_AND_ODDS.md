@@ -6,7 +6,7 @@ Ruleset: v0.05.23 published and verified; staging and production schema 60 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 28a5bb1acd4dafe0 -->
+<!-- reference-source-fingerprint: 42ed2a44f77520b3 -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
@@ -487,8 +487,9 @@ use the same activation/refill rules with a separate occurrence.
 
 Current Halloween (Witchlight Ward) boundaries: D below 500; C from 500;
 B from 1200; A from 2000; S from 2250; S+ from 2500. The interim S boundary
-keeps every rank reachable beneath the requested 2500 S+ cutoff. Other event
-Trials retain 500 / 1200 / 2000 / 3000 / 4200. Calibration still records raw
+keeps every rank reachable beneath the requested 2500 S+ cutoff. Valentine uses 650 / 1600 / 2600 / 3900 / 5500; Pride uses
+1200 / 2900 / 4800 / 7200 / 10000. Christmas and New Year retain
+500 / 1200 / 2000 / 3000 / 4200. All boundaries are inclusive. Calibration still records raw
 scores and does not automatically adjust these cutoffs.
 
 
@@ -658,11 +659,11 @@ These systems use randomness but do not directly choose a reward item. Rewards r
 - Ruin Breaker uses timing and player input; it does not roll a reward-affecting target sequence.
 - Every online seasonal Trial uses the server-provided seed; local preview/test
   seeds remain injectable. These random layouts never roll a reward item.
-  Witchlight retains its three-discipline draws (target, unused lane, palette
-  color and answer position), timings and six pumpkin faces.
+  Witchlight retains its seeded draws (target, unused lane, palette color and
+  answer position) and six pumpkin faces. It now alternates memory and tracing,
+  with no third timing game.
 - Witchlight uses the target choice for six similar pumpkin faces, now rendered
-  as six individual painted sprites. The visual replacement changes no draws,
-  timings, mistake limits or reward rules. Its Spirit
+  as six individual painted sprites. The artwork itself adds no random draw or forgiveness. Its Spirit
   corridor gets a fresh 32-bit seeded shape on every challenge and has no random
   forgiveness roll. Six original points are jittered (x up to 9% of width, y up
   to 6% of height), normalized to the original arc length and recentered. Bounds
@@ -672,8 +673,11 @@ These systems use randomness but do not directly choose a reward item. Rewards r
   expertise; leaving it always fails. The seeded lane draw is unused there.
 - The four rebuilt games derive a separate 31-bit board seed from the run's
   seeded stream. Christmas draws a uniform parcel symbol from three choices.
-  New Year draws a uniform lane from four choices and adds uniform 0–120ms
-  spacing to a base interval that falls from 1.10s to a 0.72s floor.
+  New Year draws one of four starting phrases uniformly, then follows an
+  original 32-note melody (C5, D5, E5, G5). Later chords, spacing and acceleration
+  are deterministic functions of active play time; no random lane/spacing draw
+  occurs per note. Christmas acceleration is also deterministic. See the Special
+  Events reference for exact pacing, assistance and three-strike rules.
 - Valentine independently shuffles eligible cells on each 3×5 board and selects
   four thorn cells per side, protecting starts and goals. Breadth-first search
   accepts only paired layouts solvable in 7–16 moves, for up to 160 attempts,

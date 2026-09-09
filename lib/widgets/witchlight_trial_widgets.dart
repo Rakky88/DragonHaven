@@ -87,12 +87,42 @@ class WitchlightTracePath extends StatefulWidget {
   State<WitchlightTracePath> createState() => _WitchlightTracePathState();
 }
 
-class _WitchlightTracePathState extends State<WitchlightTracePath> {
+class _WitchlightTracePathState extends State<WitchlightTracePath>
+    with SingleTickerProviderStateMixin {
+  late final _glimmer = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1800));
   int? _pointer;
   Offset? _position;
   int _segment = 0;
   bool _reported = false;
   final _trail = <Offset>[];
+
+  void _syncAnimation() {
+    if (widget.enabled && !MediaQuery.disableAnimationsOf(context)) {
+      if (!_glimmer.isAnimating) _glimmer.repeat();
+    } else {
+      _glimmer.stop();
+      _glimmer.value = 0;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncAnimation();
+  }
+
+  @override
+  void didUpdateWidget(WitchlightTracePath oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncAnimation();
+  }
+
+  @override
+  void dispose() {
+    _glimmer.dispose();
+    super.dispose();
+  }
 
   double _distance(Offset p, Offset a, Offset b) {
     final vector = b - a;
@@ -165,29 +195,55 @@ class _WitchlightTracePathState extends State<WitchlightTracePath> {
           onPointerCancel: (event) {
             if (event.pointer == _pointer) _result(false);
           },
-          child: Stack(children: [
-            Positioned.fill(
-                child: CustomPaint(
-                    painter: _TracePainter(
-                        points, radius, _position, List.of(_trail)))),
-            Positioned(
-                left: points.last.dx - 22,
-                top: points.last.dy - 22,
-                width: 44,
-                height: 44,
-                child:
-                    const IgnorePointer(child: WitchlightPumpkin(variant: 0))),
-          ]),
+          child: AnimatedBuilder(
+              animation: _glimmer,
+              builder: (context, _) {
+                final shimmer = math.sin(_glimmer.value * math.pi * 2);
+                final wisp = _position ?? points.first;
+                return IgnorePointer(
+                    child: Stack(clipBehavior: Clip.none, children: [
+                  Positioned.fill(
+                      child: CustomPaint(
+                          painter: _TracePainter(points, radius,
+                              List.of(_trail), _glimmer.value))),
+                  Positioned(
+                      left: points.last.dx - 30,
+                      top: points.last.dy - 32,
+                      width: 60,
+                      height: 64,
+                      child: Transform.scale(
+                          scale: 1 + shimmer * .025,
+                          child: Image.asset(
+                              'assets/images/events/halloween/arcade_lantern.png',
+                              cacheWidth: 192,
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.high,
+                              excludeFromSemantics: true))),
+                  Positioned(
+                      left: wisp.dx - 20,
+                      top: wisp.dy - 25 + (_pointer == null ? shimmer * 2 : 0),
+                      width: 40,
+                      height: 44,
+                      child: Transform.scale(
+                          scale: 1 + shimmer * .055,
+                          child: Image.asset(
+                              'assets/images/events/halloween/arcade_wisp.png',
+                              cacheWidth: 144,
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.high,
+                              excludeFromSemantics: true))),
+                ]));
+              }),
         );
       });
 }
 
 class _TracePainter extends CustomPainter {
-  const _TracePainter(this.points, this.radius, this.position, this.trail);
+  const _TracePainter(this.points, this.radius, this.trail, this.phase);
   final List<Offset> points;
   final double radius;
-  final Offset? position;
   final List<Offset> trail;
+  final double phase;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -199,6 +255,13 @@ class _TracePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(
+        path,
+        paint
+          ..color = const Color(0x668F63D9)
+          ..strokeWidth = radius * 2 + 12
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8));
+    paint.maskFilter = null;
     canvas.drawPath(
         path,
         paint
@@ -217,15 +280,29 @@ class _TracePainter extends CustomPainter {
       canvas.drawPath(
           traced,
           paint
+            ..color = const Color(0x9978F2BF)
+            ..strokeWidth = 9
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
+      paint.maskFilter = null;
+      canvas.drawPath(
+          traced,
+          paint
             ..color = const Color(0xFFC5FFB2)
             ..strokeWidth = 5);
+      // Embers only travel over the line the player has actually traced.
+      final metric = traced.computeMetrics().firstOrNull;
+      for (var i = 0; metric != null && i < 4; i++) {
+        final ember =
+            metric.getTangentForOffset(metric.length * ((phase + i / 4) % 1));
+        if (ember != null) {
+          canvas.drawCircle(
+              ember.position, 2, Paint()..color = const Color(0xFFFFF1C6));
+        }
+      }
     }
-    paint.style = PaintingStyle.fill;
-    final wisp = position ?? points.first;
-    canvas.drawCircle(wisp, 16, paint..color = const Color(0x5579F06B));
-    canvas.drawCircle(wisp, 8, paint..color = const Color(0xFFC5FFB2));
+    // The start marker remains visible beneath the hovering spirit.
     canvas.drawCircle(
-        wisp + const Offset(-2, -2), 3, paint..color = Colors.white);
+        points.first, radius - 3, Paint()..color = const Color(0x5578F2BF));
   }
 
   @override

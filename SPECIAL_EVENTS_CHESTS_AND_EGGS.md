@@ -3,8 +3,7 @@
 Last verified: 9 September 2026
 
 The four redesigned Trial introductions use their clean standalone event icons,
-avoiding adjacent-frame remnants in the older sprite-sheet cutouts. Halloween
-keeps its existing illustration and gameplay.
+avoiding adjacent-frame remnants in the older sprite-sheet cutouts. Halloween now alternates memory and tracing; the former Might timing phase is removed.
 
 Undiscovered Draconomicon family cards, silhouette medallions and form tiles
 retain light parchment/lavender surfaces during every event. These surfaces
@@ -17,7 +16,7 @@ and Start remain on the offer; the full details sheet retains availability.
 The shrinking test label keeps an eight-pixel gap from the event title, even
 when only a few characters fit.
 
-Ruleset: v0.05.24 picker correction under verification; schema 60 unchanged, economy activation disabled
+Ruleset: v0.05.24 event revision under verification; migration 61 adds bounded three-strike completions, economy activation remains disabled
 
 The Special Adventure dragon picker now also displays Might, Arcana and Spirit
 with their individual scores, MAX markers and selected highlight glow. This
@@ -28,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: d8788f7ede70a46d -->
+<!-- reference-source-fingerprint: 3b90648abc24841b -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -180,23 +179,32 @@ streak rules or rewards.
 
 | Event | Trial kind | Player-facing Trial | Loop |
 |---|---|---|---|
-| Halloween | `witchlightWard` | Witchlight Ward | Memorize a pumpkin face, trace the witchlight path, break the approaching curse |
+| Halloween | `witchlightWard` | Witchlight Ward | Memorize a pumpkin face, then trace the witchlight path; repeat these two games |
 | Christmas | `hollyfrostGiftforge` | Hollyfrost Giftforge | Drag moving parcels from a conveyor into matching symbol bays |
 | New Year | `midnightChime` | Midnight Chime | Four-lane falling-star rhythm game; strike each chime at the golden line |
 | Valentine | `rosevowRelay` | Rosevow Relay | Guide two horizontally mirrored hearts through different, jointly solvable mazes |
 | Pridefest | `prismaticParade` | Prismatic Parade | Rotate channels in a 4×4 prism circuit to connect the rainbow source and star |
 
 The five Trials retain their own full-screen backgrounds, icons, sounds and
-themes. Only Halloween uses the three-phase memory/trace/timing loop. The other
-four use separate interactive boards, with vector channels, parcels and symbols
-that scale to compact screens. All start at 75 seconds; total expertise adds
+themes. Halloween uses a two-phase memory/trace loop. The other four use separate
+interactive boards, now illustrated with individual painted gifts, hearts,
+roses, rainbow prisms and chimes. All start at 75 seconds; total expertise adds
 `round(clamp((Might + Arcana + Spirit) / 300, 0, 3))` seconds. Expertise never
 multiplies score. Event offer cards and dragon pickers show all three expertises;
 only dragons with all three highlighted appear in the highlighted section.
 
-Christmas parcels roll one of three symbols, moving across the belt in 4.8–5.7
-seconds (Might). Spirit extends delivery tolerance by up to 8px. New Year uses
-four chime lanes, 2.1–2.5-second travel (Spirit) and ±180–250ms windows (Might).
+Christmas rolls one of three parcel symbols. Each parcel takes
+`max(1.15, 4.8 - activeSeconds * .052) + clamp(Might / 400, 0, 1) * .9`
+seconds to cross the belt. Its lifetime is fixed when it spawns, so the parcel
+never jumps during acceleration. Spirit extends delivery tolerance by up to 8px.
+New Year beats shorten from 1.10s to a .42s floor at .0105s per active second;
+every 16th beat has a 1.5x phrase pause. Note travel shortens from 2.1s to .9s
+at .018s per active second, plus up to .4s from Spirit. Travel time is fixed
+at spawn. The hit window remains ±180–250ms (Might). After 22 active seconds,
+every fourth beat has two notes; after 45 seconds, every second beat does.
+Chords always use two distinct lanes and accept two fingers. Each lane has its
+own 120ms repeat guard. Four synthesized chimes (C5, D5, E5, G5) play the original
+32-note melody; missed notes retain the existing failure sound. Sound is optional.
 Valentine moves both hearts simultaneously, mirroring horizontal direction;
 a blocked heart waits. Every maze pair is checked for a shared solution before
 play. Pride rotates two-ended prism channels and traces the connected beam;
@@ -206,36 +214,48 @@ hints for the whole run based on Arcana. Revisiting a maze state awards nothing.
 The four rebuilt games retain the full timer on a mistake, deduct 30 points
 without going below zero, reset combo and flash red. They record at most 200
 scoring actions and cap score at 20,000, matching the existing server bounds.
-No early submission is introduced; the existing server minimum remains 30s.
+Christmas and New Year end after exactly three mistakes, or on timeout.
 Christmas deliveries award 120 base points; New Year 130 within 90ms and 100
 otherwise; new maze states 55 and a paired finish 120; new lit prisms 70 and a
 finished circuit 120. Each scoring action adds the existing capped combo bonus
-(minimum zero, maximum 90, +6 per completed round). Grade reward pools and
-rank thresholds remain unchanged.
+(minimum zero, maximum 90, +6 per completed round). Grade reward pools are unchanged. Current C/B/A/S/S+ cutoffs are:
+
+| Trial | C | B | A | S | S+ |
+|---|---:|---:|---:|---:|---:|
+| Halloween | 500 | 1200 | 2000 | 2250 | 2500 |
+| Christmas / New Year | 500 | 1200 | 2000 | 3000 | 4200 |
+| Valentine | 650 | 1600 | 2600 | 3900 | 5500 |
+| Pridefest | 1200 | 2900 | 4800 | 7200 | 10000 |
+
+Each boundary is inclusive; D is below C.
 
 Witchlight ends on the third mistake or when time expires. Each mistake flashes
-red for 300 ms. The server permits an early Witchlight finish only when the
-submitted action counts contain exactly three mistakes (at least one second);
-other seasonal Trials keep the existing 30-second minimum.
+red for 300 ms. Migration 61 permits a finish before 30 seconds for Witchlight, Christmas and
+New Year only when submitted action counts contain exactly three mistakes,
+with a minimum of one second. Valentine and Pride retain the 30-second minimum.
+Ownership, token, expiry, score/action caps, elapsed time and one-use validation
+remain enforced. Null scores/counts/duration/tokens are rejected explicitly.
 
 Witchlight Arcana shows a pumpkin lantern to memorize for an extra second
 (initially 2.9 seconds), followed by six similar
 lantern choices. Six individual painted, transparent pumpkin sprites share the
 same silhouette and palette; eye direction and tooth position distinguish the
-faces. They preload during the introduction. The Might lantern is extracted
-from the complete source outline, including its handle, with transparent padding.
+faces. They preload during the introduction.
 Spirit requires one continuous finger trace from the wisp to the lantern along
 the visible winding corridor. Crossing an edge, lifting early, or cancelling
 the gesture fails the action and applies the existing two-second penalty.
 Fast swipes are checked along their entire movement; tapping the destination
 does not complete the path. Every challenge receives a new seeded winding path,
 normalized to the same total length. The corridor is black inside a gold edge;
-the accepted finger trail remains visible in pale green. Spirit
+the accepted finger trail remains visible in pale green with flowing gold
+embers. A painted mint wisp follows the finger; a softly pulsing pumpkin lantern
+marks the destination. Decorative motion stops with reduced motion enabled. Spirit
 expertise visibly widens the corridor from 24 to 32 logical pixels (capped at
-400 Spirit), with no random forgiveness. Might keeps its timing challenge.
+400 Spirit), with no random forgiveness. Completing the trace immediately starts
+the next memory round after feedback; Might still contributes to total time assistance.
 
 The runtime presentation deliberately carries that art through the complete
-flow: a themed HUD emblem (with a three-phase trail only for Halloween), subtle ambient sprite
+flow: a themed HUD emblem (with a two-phase trail only for Halloween), subtle ambient sprite
 motion, event-specific start and result compositions, illustrated compact
 Special Adventure cards/details, illustrated empty/error ranking states, and
 event-colored ranking headers backed by the corresponding Trial scene. The
@@ -416,7 +436,8 @@ key and full configured duration after midnight on 1 January. Event dates,
 participation requirements, reward tables and preview entitlements are unchanged.
 
 Halloween's current rank boundaries are 500 / 1200 / 2000 / 2250 / 2500
-(C / B / A / S / S+). Other event Trial cutoffs remain unchanged. S+ rewards
+(C / B / A / S / S+). Valentine uses 650 / 1600 / 2600 / 3900 / 5500; Pride
+uses 1200 / 2900 / 4800 / 7200 / 10000. Christmas/New Year retain 4200 for S+. S+ rewards
 use the weighted relic pool documented in `RANDOM_REWARDS_AND_ODDS.md`, including
 four unique equipable brooches. Their Expertise bonus applies once within the
 wearer's cap; event Adventures and online pair/group rewards use the same rule.

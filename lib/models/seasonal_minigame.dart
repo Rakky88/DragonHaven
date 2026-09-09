@@ -1,5 +1,63 @@
 import 'dart:math';
 
+/// Elapsed active play drives difficulty, independent of render frame rate.
+abstract final class SeasonalArcadePacing {
+  static double parcelLifetime(double seconds, double might) =>
+      max(1.15, 4.8 - max(0, seconds) * .052) + might.clamp(0, 1) * .9;
+
+  static double chimeBeat(double seconds) =>
+      max(.42, 1.10 - max(0, seconds) * .0105);
+
+  static double chimeTravel(double seconds, double spirit) =>
+      max(.9, 2.1 - max(0, seconds) * .018) + spirit.clamp(0, 1) * .4;
+
+  // Original four-pitch melody: C, D, E and G. One phrase repeats with a
+  // seed-selected starting phrase; pitch, timing and harmony stay coordinated.
+  static const melody = [
+    0,
+    2,
+    3,
+    2,
+    1,
+    2,
+    1,
+    0,
+    2,
+    3,
+    3,
+    2,
+    1,
+    0,
+    1,
+    3,
+    0,
+    1,
+    2,
+    3,
+    2,
+    1,
+    0,
+    0,
+    3,
+    2,
+    1,
+    2,
+    1,
+    0,
+    3,
+    0,
+  ];
+
+  static List<int> chimeLanes(int beat, double seconds, int phrase) {
+    final lead = melody[(beat + phrase * 8) % melody.length];
+    final chord = seconds >= 45 ? beat.isEven : seconds >= 22 && beat % 4 == 0;
+    return [
+      lead,
+      if (chord) const [2, 3, 0, 1][lead]
+    ];
+  }
+}
+
 /// Directions are clockwise, matching the prism connector bits.
 enum HeartDirection { up, right, down, left }
 

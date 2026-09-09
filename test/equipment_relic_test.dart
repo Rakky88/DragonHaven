@@ -159,9 +159,7 @@ void main() {
     });
   }
 
-  test(
-      'Halloween S+ starts at 2500; other event thresholds retain their values',
-      () {
+  test('Halloween S+ starts at 2500; Christmas retains its threshold', () {
     for (final entry in {
       1999: TrialGrade.b,
       2000: TrialGrade.a,
@@ -173,7 +171,8 @@ void main() {
       expect(
           trialGradeForScore(TrialKind.witchlightWard, entry.key), entry.value);
     }
-    expect(trialGradeForScore(TrialKind.rosevowRelay, 2500), TrialGrade.a);
+    expect(
+        trialGradeForScore(TrialKind.hollyfrostGiftforge, 2500), TrialGrade.a);
   });
 
   test('canonical equipment command uses the same single-slot rule', () async {

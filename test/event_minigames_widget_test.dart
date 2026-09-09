@@ -176,6 +176,67 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('New Year plays four pitches and accepts both notes of a chord',
+      (tester) async {
+    final sounds = <String>[];
+    const channel = MethodChannel('nl.dragonhaven.app/audio');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
+        (call) async {
+      if (call.method == 'playSound') {
+        sounds.add(call.arguments['id'] as String);
+      }
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+    await mount(tester, TrialKind.midnightChime);
+    var playedChord = false;
+    for (var tick = 0; tick < 700 && !playedChord; tick++) {
+      await step(tester, 40);
+      final strikeY =
+          tester.getCenter(find.byKey(const Key('midnight-strike-line'))).dy;
+      final ready = find.byWidgetPredicate((w) =>
+          w is Positioned &&
+          w.key is ValueKey<String> &&
+          (w.key! as ValueKey<String>).value.startsWith('midnight-note-'));
+      final lanes = <int>[];
+      for (final element in ready.evaluate()) {
+        final note = tester.getCenter(find.byWidget(element.widget));
+        if ((note.dy - strikeY).abs() > 7) continue;
+        final lane = List.generate(4, (i) => i).reduce((a, b) =>
+            (tester.getCenter(find.byKey(Key('midnight-chime-$a'))).dx -
+                            note.dx)
+                        .abs() <
+                    (tester.getCenter(find.byKey(Key('midnight-chime-$b'))).dx -
+                            note.dx)
+                        .abs()
+                ? a
+                : b);
+        lanes.add(lane);
+      }
+      final before = actions.where((a) => a.$1).length;
+      final gestures = <TestGesture>[];
+      for (var i = 0; i < lanes.length; i++) {
+        gestures.add(await tester.startGesture(
+            tester.getCenter(find.byKey(Key('midnight-chime-${lanes[i]}'))),
+            pointer: i + 1));
+      }
+      for (final gesture in gestures) {
+        await gesture.up();
+      }
+      await tester.pump();
+      if (lanes.length == 2) {
+        expect(actions.where((a) => a.$1).length - before, 2);
+        playedChord = true;
+      }
+    }
+    expect(playedChord, isTrue);
+    expect(sounds.toSet(),
+        {for (var lane = 1; lane <= 4; lane++) 'event_firstlight_note_$lane'});
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets(
       'Pride rotates real channels, awards new light once and completes',
       (tester) async {
