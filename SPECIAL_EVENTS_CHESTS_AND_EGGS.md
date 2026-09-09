@@ -2,9 +2,13 @@
 
 Last verified: 9 September 2026
 
+The four redesigned Trial introductions use their clean standalone event icons,
+avoiding adjacent-frame remnants in the older sprite-sheet cutouts. Halloween
+keeps its existing illustration and gameplay.
+
 Ruleset: v0.05.23 release candidate; migration 60 rehearsed, production still schema 59 and economy activation disabled
 
-<!-- reference-source-fingerprint: e304f0c0af5147f3 -->
+<!-- reference-source-fingerprint: 5d4340c2163b1ca5 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special

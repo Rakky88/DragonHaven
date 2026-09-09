@@ -1043,7 +1043,11 @@ class _IntroOverlay extends StatelessWidget {
                           theme.assetDirectory.endsWith('halloween') ? 166 : 96,
                       height:
                           theme.assetDirectory.endsWith('halloween') ? 166 : 96,
-                      child: _EventTrialSprite(theme: theme, index: 0),
+                      child: theme.assetDirectory.endsWith('halloween')
+                          ? _EventTrialSprite(theme: theme, index: 0)
+                          : Image.asset(theme.iconAsset,
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.high),
                     ),
                     const SizedBox(height: 10),
                     Text(

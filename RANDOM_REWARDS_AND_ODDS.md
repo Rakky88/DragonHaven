@@ -6,7 +6,7 @@ Ruleset: v0.05.23 release candidate; migration 60 rehearsed, production still sc
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 30c53c8b6fefc42e -->
+<!-- reference-source-fingerprint: 28a5bb1acd4dafe0 -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
