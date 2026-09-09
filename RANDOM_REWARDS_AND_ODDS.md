@@ -2,7 +2,7 @@
 
 Last verified: 9 September 2026
 
-Ruleset: v0.05.23 release candidate; migration 60 rehearsed, production still schema 59 and economy activation disabled
+Ruleset: v0.05.23 published and verified; staging and production schema 60 verified, economy activation disabled
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 

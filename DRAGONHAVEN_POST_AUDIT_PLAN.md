@@ -3,7 +3,7 @@
 Laatst bijgewerkt: **9 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-## Eventrelease v0.05.23 in uitvoering
+## Eventrelease v0.05.23 afgerond
 
 Op verzoek krijgen de vier overige seizoensproeven eigen spelmechanieken;
 Halloween blijft behouden. Eventstop, initiële trialvulling, drie-expertisekeuze,
@@ -20,7 +20,14 @@ De dubbele beschikbaarheidstimer is uit compacte Special-adventurekaarten
 verwijderd; de eventbalk en de volledige details houden hun timer. De bestaande
 scherm-/documentatiecontrole slaagt met 19 tests. Draconomicon-overzicht en
 uitgeklapte silhouetten zijn ook op Android visueel gecontroleerd.
-Verdere releasebewijzen en open gates: `RELEASE_V0.05.23_VERIFICATION.md`.
+Release v0.05.23 / 10073 is op 9 september om 08:41:57 UTC gepubliceerd.
+De definitieve bron `8fa616a8a8f18b7b0f6196eaa4ee795b0ba65299` slaagt in
+releaseworkflow 34329479535 met 689 tests, analyse en ondertekeningscontrole.
+De APK is als update op Android gecontroleerd met behoud van spelvoortgang;
+taalkeuze blijft na herstart bewaard. Download, bestandshash en vaste latest-link
+zijn geverifieerd. Productiecontrole na publicatie om 08:42:22 UTC: schema 60,
+lint 0, alle healthchecks HTTP 200 en economische mutaties uitgeschakeld.
+Definitieve releasebewijzen: `RELEASE_V0.05.23_VERIFICATION.md`.
 De onderstaande servereconomie-deelstappen blijven afzonderlijk afgebakend.
 
 ## Hervatte servereconomie: ei-, Altar- en drakenacties

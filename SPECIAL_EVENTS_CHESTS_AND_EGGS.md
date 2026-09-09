@@ -17,7 +17,7 @@ and Start remain on the offer; the full details sheet retains availability.
 The shrinking test label keeps an eight-pixel gap from the event title, even
 when only a few characters fit.
 
-Ruleset: v0.05.23 release candidate; staging and production schema 60 verified, economy activation disabled
+Ruleset: v0.05.23 published and verified; staging and production schema 60 verified, economy activation disabled
 
 <!-- reference-source-fingerprint: 44dbc4564fdcf57a -->
 

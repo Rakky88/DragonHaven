@@ -1,9 +1,34 @@
 # DragonHaven v0.05.23 verification
 
-Status: release candidate under verification. Updated 9 September 2026.
-Target: app/display **0.05.23**, pubspec **0.5.23+10073**, Android **10073**.
-Production migration 60 is applied and healthy. Publication is pending final
-artifact verification and the release workflow.
+Status: **published and verified**, 9 September 2026, **08:41:57 UTC**.
+App/display **0.05.23**, pubspec **0.5.23+10073**, Android **10073**: one increment.
+Production migration 60 is applied and healthy. The permanent APK download and
+release tag point to the verified artifact and source below.
+
+## Published artifact
+
+- Source/tag commit: `8fa616a8a8f18b7b0f6196eaa4ee795b0ba65299`.
+  This document's completion commit follows the immutable release source.
+- [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.23),
+  [versioned APK](https://github.com/Rakky88/DragonHaven/releases/download/v0.05.23/DragonHaven.apk),
+  [permanent latest APK](https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk).
+- Asset `DragonHaven.apk`: **524996757 bytes**.
+- APK SHA-256: `89f57f2462bcc1eeed9801fb6588bed29d2f65cdb5c45109930f7dbff3d16a3b`.
+- Stable signing certificate SHA-256:
+  `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`.
+- Package `nl.dragonhaven.app`; production Firebase `dragonhaven-20ced`.
+- [Final release workflow 34329479535](https://github.com/Rakky88/DragonHaven/actions/runs/34329479535)
+  passed on that exact source: production preflight, analysis, **689 tests**,
+  signed AAB and certificate validation. AAB SHA-256:
+  `809e408e426ac60c30ab3fbee03924f5fa396122e480323d6469a0bde054c110`.
+  The workflow only stores its AAB artifact; it does not publish a second release.
+- Publisher dry run succeeded. Draft upload completed with the expected digest;
+  its final lookup by tag returned 404 while still a draft. Authenticated release
+  inspection confirmed the complete asset before publishing the existing draft
+  with `gh release edit`. No retry upload, asset replacement or tag move occurred.
+  The publisher then verified public release metadata, exact size/digest and the
+  permanent download's successful HTTP response. The remote tag resolves to the
+  full source commit above; the release is public, latest and not a prerelease.
 
 ## Scope and rules
 
@@ -34,7 +59,7 @@ artifact verification and the release workflow.
 - Original Jingle Bells synthesis: 73.21s PCM; no imported recording or samples.
   Composition source/rights recorded in `assets/licenses/MUSIC_SOURCES.md`.
 
-## Evidence collected so far
+## Validation evidence
 
 - Dart analysis of lib/test/tool: clean.
 - 500 paired mazes and 500 prism circuits: solvable, varied, no initial circuit win
@@ -64,6 +89,11 @@ artifact verification and the release workflow.
   schema **60**, lint **0**, Auth/settings/application **HTTP 200**.
   Before/after guards confirm all accounts remain legacy, zero shadow states,
   game/economy mutations disabled and push enabled. No gameplay balances edited.
+- Mandatory preflight repeated immediately before publication at **08:34:43 UTC**
+  and after publication at **08:42:22 UTC**: exactly **60** migrations,
+  **0** lint errors, Auth/settings/application **HTTP 200**. The final production
+  guard again confirms legacy accounts, zero shadow states, economic mutations
+  disabled and push enabled.
 
 ## Android inspection
 
@@ -72,8 +102,15 @@ new game introductions/boards, normal Tower/Academy artwork, Christmas chat
 contrast, all-three-expertise Trial cards/picker, birthday/default transition,
 and 320dp/1.35 text scale with system animations disabled. Controls remain usable.
 Clean standalone Valentine/Pride introduction icons were checked in the rebuilt
-preview after finding old sprite-cutout remnants. Preview saves are nonpersistent;
-the final production update must preserve the original saved game.
+preview after finding old sprite-cutout remnants. Preview saves are nonpersistent.
+The final signed production APK was installed as an update without clearing the
+main app. The original dragon, floor, 25 coins and 3 gems remain. Android's installed
+`base.apk` SHA-256 equals the published hash, and About displays **v0.05.23**.
+The language picker order was visually checked; Dutch persisted through a full
+process restart. English was restored and also persisted through a restart.
+Device density, text scale and all system animation scales were restored.
+Evidence: `release/event23-final-about.png`, `event23-final-language-order.png`,
+`event23-final-dutch-persisted.png` and `event23-final-english-persisted.png`.
 
 The Draconomicon addition passed all eight existing visual/bounds, locked-form
 and reference checks; Android family overview and expanded silhouettes were

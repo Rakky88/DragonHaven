@@ -2,7 +2,7 @@
 
 Last verified: 9 September 2026
 
-Ruleset: v0.05.23 release candidate; event stop in migration 60 (staging rehearsal passed)
+Ruleset: v0.05.23 published and verified; event stop in migration 60, staging and production verified
 
 <!-- reference-source-fingerprint: 5f632ff4397eb252 -->
 
@@ -17,8 +17,9 @@ and checks keeper restrictions using the trusted authenticated owner. The code
 values, rewards and restrictions are listed below. The end-event action uses its
 dedicated authenticated RPC, not the dormant game-command grant path. A new personal event
 replaces the previous event for that keeper, with same-event retries retaining
-their existing expiry. Started attempts and adventures retain their provenance. This internal candidate is not deployed or exposed as a public
-redemption endpoint yet.
+their existing expiry. Started attempts and adventures retain their provenance.
+The dedicated event-stop and preview RPCs are live. The broader canonical grant
+candidate remains dormant in production; it is not a public grant endpoint yet.
 
 Codes are case-sensitive, use only `A-Z` and `0-9`, and unknown or retired
 codes return the same inactive result. Seasonal previews are authorized by the
