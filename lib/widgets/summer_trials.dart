@@ -35,7 +35,14 @@ class _SummerTrialsState extends State<SummerTrials> {
   late final MoonlitOrchard _orchard;
   Timer? _ticker;
   DateTime? _lastTick;
-  double _time = 0, _basketResetAt = 0, _lastHarvest = -10;
+  double _time = 0, _basketResetAt = 0, _harvestStarted = 0;
+  static const _harvestDuration = .62;
+  bool _pendingBasketReset = false;
+  OrchardPlacement? _harvest;
+  ({int index, int x, int y})? _preview;
+  int? _surfPointer, _boardPointer, _draggedIndex;
+  double _surfGrabOffset = 0;
+  final _basketKey = GlobalKey();
   int _selected = 0;
   final _sparkles = <({double x, double y, double at})>[];
   String _hint = '';
@@ -44,7 +51,10 @@ class _SummerTrialsState extends State<SummerTrials> {
       widget.running &&
       (_sunwake
           ? !_surf.finished
-          : !_orchard.finished && _time >= _basketResetAt);
+          : !_orchard.finished &&
+              _harvest == null &&
+              !_pendingBasketReset &&
+              _time >= _basketResetAt);
 
   @override
   void initState() {
@@ -72,6 +82,15 @@ class _SummerTrialsState extends State<SummerTrials> {
       final actions = _sunwake ? _surf.advance(elapsed) : <SurfAction>[];
       setState(() {
         _time += elapsed;
+        if (_harvest != null && _time - _harvestStarted >= _harvestDuration) {
+          _harvest = null;
+        }
+        if (_pendingBasketReset && _time >= _basketResetAt) {
+          _pendingBasketReset = false;
+          _orchard.freshBasket();
+          _selected = 0;
+          _hint = '';
+        }
         _sparkles.removeWhere((s) => _time - s.at > .9);
         for (final action in actions.where((a) => a.correct)) {
           _sparkles.add((x: action.x, y: action.y, at: _time));
@@ -87,7 +106,12 @@ class _SummerTrialsState extends State<SummerTrials> {
   @override
   void didUpdateWidget(SummerTrials oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.running != widget.running) _lastTick = widget.clock();
+    if (oldWidget.running != widget.running) {
+      _lastTick = widget.clock();
+      _surf.releaseSteering();
+      _surfPointer = _boardPointer = null;
+      _preview = null;
+    }
   }
 
   @override
@@ -133,17 +157,42 @@ class _SummerTrialsState extends State<SummerTrials> {
       Expanded(child: LayoutBuilder(builder: (context, box) {
         final w = box.maxWidth, h = box.maxHeight;
         void steer(Offset p) {
-          if (_enabled) setState(() => _surf.steer(p.dx / w));
+          if (_enabled) {
+            setState(() => _surf
+                .steer((p.dx - _surfGrabOffset).clamp(38.0, w - 38.0) / w));
+          }
         }
 
         return Semantics(
-            label: s.pick('Slide left or right to steer',
-                'Schuif naar links of rechts om te sturen'),
-            child: GestureDetector(
+            label: s.pick(
+                'Hold and drag your dragon', 'Houd je draak vast en sleep'),
+            child: Listener(
                 key: const Key('sunwake-steering'),
                 behavior: HitTestBehavior.opaque,
-                onPanDown: (d) => steer(d.localPosition),
-                onPanUpdate: (d) => steer(d.localPosition),
+                onPointerDown: (d) {
+                  if (!_enabled || _surfPointer != null) return;
+                  final dragonBounds = Rect.fromCenter(
+                      center: Offset(_surf.x * w, SunwakeSurf.playerY * h),
+                      width: 76,
+                      height: 76);
+                  if (!dragonBounds.contains(d.localPosition)) return;
+                  _surfPointer = d.pointer;
+                  _surfGrabOffset = d.localPosition.dx - _surf.x * w;
+                  _surf.steer(_surf.x);
+                },
+                onPointerMove: (d) {
+                  if (_surfPointer == d.pointer) steer(d.localPosition);
+                },
+                onPointerUp: (d) {
+                  if (_surfPointer != d.pointer) return;
+                  _surfPointer = null;
+                  _surf.releaseSteering();
+                },
+                onPointerCancel: (d) {
+                  if (_surfPointer != d.pointer) return;
+                  _surfPointer = null;
+                  _surf.releaseSteering();
+                },
                 child: ClipRRect(
                     borderRadius: BorderRadius.circular(18),
                     child: Stack(children: [
@@ -185,6 +234,7 @@ class _SummerTrialsState extends State<SummerTrials> {
                                       'assets/images/events/sunwake/arcade_pearl.png'))),
                       ],
                       Positioned(
+                          key: const Key('sunwake-dragon'),
                           left: _surf.x * w - 38,
                           top: SunwakeSurf.playerY * h - 38,
                           width: 76,
@@ -215,25 +265,13 @@ class _SummerTrialsState extends State<SummerTrials> {
                     ]))));
       })),
       const SizedBox(height: 4),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        IconButton(
-            tooltip: s.pick('Steer left', 'Stuur naar links'),
-            onPressed: _enabled
-                ? () => setState(() => _surf.steer(_surf.targetX - .25))
-                : null,
-            icon: const Icon(Icons.chevron_left, color: Colors.white)),
-        Flexible(
-            child: Text(s.pick('Slide to steer', 'Schuif om te sturen'),
-                textAlign: TextAlign.center,
-                style:
-                    const TextStyle(color: Color(0xFFCDF6EA), fontSize: 12))),
-        IconButton(
-            tooltip: s.pick('Steer right', 'Stuur naar rechts'),
-            onPressed: _enabled
-                ? () => setState(() => _surf.steer(_surf.targetX + .25))
-                : null,
-            icon: const Icon(Icons.chevron_right, color: Colors.white)),
-      ]),
+      Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+              s.pick(
+                  'Hold and drag your dragon', 'Houd je draak vast en sleep'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xFFCDF6EA), fontSize: 12))),
     ]);
   }
 
@@ -242,21 +280,28 @@ class _SummerTrialsState extends State<SummerTrials> {
     final result = _orchard.place(index, x, y);
     final s = AppStrings.of(context);
     if (result == null) {
-      setState(() => _hint = s.pick(
-          'Leave room for every fruit', 'Maak ruimte voor elk stuk fruit'));
+      setState(() {
+        _preview = null;
+        _hint = s.pick(
+            'Leave room for every fruit', 'Maak ruimte voor elk stuk fruit');
+      });
       return;
     }
     setState(() {
+      _preview = null;
       _hint = result.rows > 0
           ? s.pick('A beautiful harvest!', 'Een prachtige oogst!')
           : '';
-      if (result.rows > 0) _lastHarvest = _time;
+      if (result.rows > 0 && !MediaQuery.disableAnimationsOf(context)) {
+        _harvest = result;
+        _harvestStarted = _time;
+      }
       _selected = _orchard.tray.indexWhere((v) => v != null);
       if (result.overflow) {
         _hint = s.pick('Basket full!', 'Mand vol!');
-        _basketResetAt = _time + .85;
-        _orchard.freshBasket();
-        _selected = 0;
+        _basketResetAt =
+            _time + (_harvest == null ? 0 : _harvestDuration) + .85;
+        _pendingBasketReset = !_orchard.finished;
       }
     });
     widget.onAction(true,
@@ -291,6 +336,206 @@ class _SummerTrialsState extends State<SummerTrials> {
                       child: _sprite(_fruitAsset(piece.fruit)))
               ]))));
 
+  void _previewFruit(int index, Offset position, double cell) {
+    if (!_enabled ||
+        index < 0 ||
+        index >= _orchard.tray.length ||
+        _orchard.tray[index] == null) {
+      return;
+    }
+    final x = (position.dx / cell).floor();
+    final y = (position.dy / cell).floor();
+    final next = x < 0 ||
+            x >= MoonlitOrchard.columns ||
+            y < 0 ||
+            y >= MoonlitOrchard.rows
+        ? null
+        : (index: index, x: x, y: y);
+    if (_preview != next) setState(() => _preview = next);
+  }
+
+  void _clearPreview() {
+    if (_preview != null) setState(() => _preview = null);
+  }
+
+  Widget _orchardBoard(AppStrings s, double cell) {
+    final preview = _enabled ? _preview : null;
+    final piece = preview == null ? null : _orchard.tray[preview.index];
+    final valid = piece != null && _orchard.fits(piece, preview!.x, preview.y);
+    final ghostCells = <int>{
+      if (piece != null)
+        for (final (dx, dy) in piece.cells)
+          if (preview!.x + dx < MoonlitOrchard.columns &&
+              preview.y + dy < MoonlitOrchard.rows)
+            (preview.y + dy) * MoonlitOrchard.columns + preview.x + dx
+    };
+    final harvest = _harvest;
+    final age = _time - _harvestStarted;
+    final fade = (age / .18).clamp(0.0, 1.0);
+    final fall = Curves.easeInOutCubic
+        .transform(((age - .18) / (_harvestDuration - .18)).clamp(0.0, 1.0));
+    final fruits = harvest?.boardBeforeHarvest ?? _orchard.board;
+
+    Offset local(Offset global) =>
+        (_basketKey.currentContext!.findRenderObject()! as RenderBox)
+            .globalToLocal(global);
+
+    return SizedBox(
+      width: cell * MoonlitOrchard.columns,
+      height: cell * MoonlitOrchard.rows,
+      child: DragTarget<int>(
+        onWillAcceptWithDetails: (d) {
+          if (!_enabled ||
+              _boardPointer != null ||
+              d.data < 0 ||
+              d.data >= _orchard.tray.length ||
+              _orchard.tray[d.data] == null) {
+            return false;
+          }
+          _previewFruit(d.data, local(d.offset), cell);
+          return true;
+        },
+        onMove: (d) => _previewFruit(d.data, local(d.offset), cell),
+        onLeave: (_) => _clearPreview(),
+        onAcceptWithDetails: (d) {
+          final p = local(d.offset);
+          _placeFruit(d.data, (p.dx / cell).floor(), (p.dy / cell).floor());
+        },
+        builder: (context, candidates, rejected) => Listener(
+          key: _basketKey,
+          behavior: HitTestBehavior.opaque,
+          onPointerDown: (d) {
+            if (!_enabled || _boardPointer != null || _draggedIndex != null) {
+              return;
+            }
+            _boardPointer = d.pointer;
+            _previewFruit(_selected, d.localPosition, cell);
+          },
+          onPointerMove: (d) {
+            if (_boardPointer == d.pointer) {
+              _previewFruit(_selected, d.localPosition, cell);
+            }
+          },
+          onPointerUp: (d) {
+            if (_boardPointer != d.pointer) return;
+            _boardPointer = null;
+            _previewFruit(_selected, d.localPosition, cell);
+            final target = _preview;
+            if (target != null) _placeFruit(target.index, target.x, target.y);
+            _clearPreview();
+          },
+          onPointerCancel: (d) {
+            if (_boardPointer != d.pointer) return;
+            _boardPointer = null;
+            _clearPreview();
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(key: const Key('orchard-basket'), children: [
+              for (var i = 0;
+                  i < MoonlitOrchard.columns * MoonlitOrchard.rows;
+                  i++)
+                Positioned(
+                  left: i % MoonlitOrchard.columns * cell,
+                  top: i ~/ MoonlitOrchard.columns * cell,
+                  width: cell,
+                  height: cell,
+                  child: Semantics(
+                    label:
+                        '${s.pick('Basket', 'Mand')} ${i ~/ 6 + 1}, ${i % 6 + 1}',
+                    button: true,
+                    onTap: _enabled
+                        ? () => _placeFruit(_selected, i % 6, i ~/ 6)
+                        : null,
+                    child: Container(
+                      key: ValueKey('orchard-cell-$i'),
+                      margin: const EdgeInsets.all(1),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        color: (i + i ~/ 6).isEven
+                            ? const Color(0xFF3B3024)
+                            : const Color(0xFF46382B),
+                      ),
+                    ),
+                  ),
+                ),
+              if (harvest != null)
+                for (final row in harvest.clearedRows)
+                  Positioned(
+                    left: 0,
+                    top: row * cell,
+                    width: cell * 6,
+                    height: cell,
+                    child: IgnorePointer(
+                        child: Opacity(
+                      opacity: 1 - fade,
+                      child: const ColoredBox(color: Color(0xAAFFD78A)),
+                    )),
+                  ),
+              for (var i = 0; i < fruits.length; i++)
+                if (fruits[i] != null)
+                  Positioned(
+                    key: ValueKey('orchard-fruit-$i'),
+                    left: i % 6 * cell,
+                    top: (i ~/ 6 +
+                            (harvest == null
+                                ? 0
+                                : harvest.clearedRows
+                                        .where((row) => row > i ~/ 6)
+                                        .length *
+                                    fall)) *
+                        cell,
+                    width: cell,
+                    height: cell,
+                    child: IgnorePointer(
+                        child: Opacity(
+                      opacity: harvest?.clearedRows.contains(i ~/ 6) == true
+                          ? 1 - fade
+                          : 1,
+                      child: _sprite(_fruitAsset(fruits[i]!)),
+                    )),
+                  ),
+              for (final i in ghostCells)
+                Positioned(
+                  left: i % 6 * cell,
+                  top: i ~/ 6 * cell,
+                  width: cell,
+                  height: cell,
+                  child: IgnorePointer(
+                      child: Container(
+                    key: ValueKey('orchard-preview-$i'),
+                    margin: const EdgeInsets.all(1),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      color: valid
+                          ? const Color(0xB3809754)
+                          : const Color(0xC2A93232),
+                      border: Border.all(
+                          width: 2,
+                          color: valid
+                              ? const Color(0xFFFFE4A0)
+                              : const Color(0xFFFFA6A0)),
+                    ),
+                    child: Opacity(
+                        opacity: .70,
+                        child: _sprite(_fruitAsset(piece!.fruit))),
+                  )),
+                ),
+              Positioned.fill(
+                  child: IgnorePointer(
+                      child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFB89055), width: 2),
+                ),
+              ))),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildOrchard(AppStrings s) => Column(children: [
         Text(
             _hint.isEmpty
@@ -302,56 +547,7 @@ class _SummerTrialsState extends State<SummerTrials> {
         const SizedBox(height: 6),
         Expanded(child: LayoutBuilder(builder: (context, box) {
           final cell = min(box.maxWidth / 6, box.maxHeight / 7);
-          return Center(
-              child: Container(
-                  width: cell * 6,
-                  height: cell * 7,
-                  decoration: BoxDecoration(
-                      color: const Color(0xFF5B4230),
-                      borderRadius: BorderRadius.circular(12),
-                      border:
-                          Border.all(color: const Color(0xFFB89055), width: 2)),
-                  child: GridView.builder(
-                      key: const Key('orchard-basket'),
-                      padding: EdgeInsets.zero,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 6),
-                      itemCount: 42,
-                      itemBuilder: (context, i) => DragTarget<int>(
-                          onWillAcceptWithDetails: (d) =>
-                              _enabled &&
-                              _orchard.tray[d.data] != null &&
-                              _orchard.fits(
-                                  _orchard.tray[d.data]!, i % 6, i ~/ 6),
-                          onAcceptWithDetails: (d) =>
-                              _placeFruit(d.data, i % 6, i ~/ 6),
-                          builder: (context, candidate, rejected) => Semantics(
-                              label:
-                                  '${s.pick('Basket', 'Mand')} ${i ~/ 6 + 1}, ${i % 6 + 1}',
-                              button: true,
-                              child: GestureDetector(
-                                  key: ValueKey('orchard-cell-$i'),
-                                  onTap: () =>
-                                      _placeFruit(_selected, i % 6, i ~/ 6),
-                                  child: Container(
-                                      margin: const EdgeInsets.all(1),
-                                      decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                          color: candidate.isNotEmpty
-                                              ? const Color(0xFF849754)
-                                              : _time - _lastHarvest < .4
-                                                  ? const Color(0xFF967345)
-                                                  : (i + i ~/ 6).isEven
-                                                      ? const Color(0xFF3B3024)
-                                                      : const Color(
-                                                          0xFF46382B)),
-                                      child: _orchard.board[i] == null
-                                          ? null
-                                          : _sprite(_fruitAsset(
-                                              _orchard.board[i]!)))))))));
+          return Center(child: _orchardBoard(s, cell));
         })),
         const SizedBox(height: 6),
         Row(children: [
@@ -383,16 +579,37 @@ class _SummerTrialsState extends State<SummerTrials> {
                   button: true,
                   child: GestureDetector(
                       key: ValueKey('orchard-tray-$i'),
-                      onTap: _enabled && piece != null
-                          ? () => setState(() => _selected = i)
+                      onTap: _enabled && piece != null && _boardPointer == null
+                          ? () => setState(() {
+                                _selected = i;
+                                _preview = null;
+                              })
                           : null,
-                      child: piece == null || !_enabled
+                      child: piece == null ||
+                              !_enabled ||
+                              (_draggedIndex != null && _draggedIndex != i)
                           ? child
                           : Draggable<int>(
                               data: i,
+                              maxSimultaneousDrags: 1,
+                              dragAnchorStrategy: pointerDragAnchorStrategy,
+                              onDragStarted: () => setState(() {
+                                    _selected = i;
+                                    _draggedIndex = i;
+                                    _preview = null;
+                                  }),
+                              onDragEnd: (_) {
+                                if (!mounted) return;
+                                setState(() {
+                                  _draggedIndex = null;
+                                  _preview = null;
+                                });
+                              },
                               feedback: Material(
                                   color: Colors.transparent,
-                                  child: _piece(piece, 90)),
+                                  child: Transform.translate(
+                                      offset: const Offset(-45, -105),
+                                      child: _piece(piece, 90))),
                               childWhenDragging:
                                   Opacity(opacity: .35, child: child),
                               child: child)));
@@ -400,15 +617,19 @@ class _SummerTrialsState extends State<SummerTrials> {
           IconButton(
               key: const Key('orchard-rotate'),
               tooltip: s.pick('Rotate shape', 'Draai vorm'),
-              onPressed: _enabled
-                  ? () => setState(() => _orchard.rotate(_selected))
-                  : null,
+              onPressed:
+                  _enabled && _boardPointer == null && _draggedIndex == null
+                      ? () => setState(() {
+                            _orchard.rotate(_selected);
+                            _preview = null;
+                          })
+                      : null,
               icon: const Icon(Icons.rotate_right, color: Color(0xFFFFDEA7))),
         ]),
         const SizedBox(height: 4),
         Text(
-            s.pick('Choose a shape, then tap the basket. Rotate to fit.',
-                'Kies een vorm en tik op de mand. Draai om hem passend te maken.'),
+            s.pick('Hold to preview, release to place. Rotate to fit.',
+                'Houd vast voor een voorbeeld en laat los om te plaatsen. Draai om te passen.'),
             textAlign: TextAlign.center,
             style: const TextStyle(color: Color(0xFFE4D2B7), fontSize: 11)),
       ]);

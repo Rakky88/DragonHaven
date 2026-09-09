@@ -9,6 +9,27 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('surf starts promptly, accelerates, and dragging cannot teleport', () {
+    final game = SunwakeSurf(seed: 42);
+    final startSpeed = game.speed;
+    expect(startSpeed, greaterThanOrEqualTo(.4));
+    game.steer(.85);
+    expect(game.x, .5);
+    game.advance(.1);
+    expect(game.x, greaterThan(.5));
+    expect(game.x - .5,
+        lessThanOrEqualTo(SunwakeSurf.maximumSteeringSpeed * .1 + .000001));
+    game.advance(.2);
+    expect(game.gates, isNotEmpty);
+    expect(game.speed, greaterThan(startSpeed));
+    expect(game.x, closeTo(.85, .000001));
+    game.steer(.2);
+    game.releaseSteering();
+    final released = game.x;
+    game.advance(.1);
+    expect((game.x - released).abs(), lessThan(.006));
+    expect(game.targetX, released);
+  });
   test('surf collisions and three lives are independent of frame rate', () {
     List<bool> run(int fps) {
       final game = SunwakeSurf(seed: 42);
@@ -72,10 +93,18 @@ void main() {
     }
     game.board[30] = 2;
     game.tray[0] = const OrchardPiece([(0, 0)], 1);
-    expect(game.place(0, 5, 6)!.rows, 1);
+    final result = game.place(0, 5, 6)!;
+    expect(result.rows, 1);
+    expect(result.clearedRows, [6]);
+    expect(result.boardBeforeHarvest[30], 2);
+    expect(result.boardBeforeHarvest[41], 1);
     expect(game.harvestedRows, 1);
     expect(game.board[36], 2);
     expect(game.board.whereType<int>(), hasLength(1));
+    game.board[36] = 0;
+    expect(result.boardBeforeHarvest[36], 0);
+    expect(result.boardBeforeHarvest[30], 2);
+    expect(() => result.boardBeforeHarvest[0] = 2, throwsUnsupportedError);
   });
   test('three blocked baskets finish and cannot be reset for extra points', () {
     final game = MoonlitOrchard(seed: 8);

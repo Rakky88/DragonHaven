@@ -93,9 +93,12 @@ void main() {
         expect(
             find.byKey(ValueKey('unique-game-${kind.name}')), findsOneWidget);
         if (kind == TrialKind.sunwakeSurf) {
-          await tester.drag(
-              find.byKey(const Key('sunwake-steering')), const Offset(70, 0));
-          await step(3500);
+          final thumb = await tester.startGesture(
+              tester.getCenter(find.byKey(const Key('sunwake-dragon'))));
+          await thumb.moveBy(const Offset(70, 0));
+          await step(200);
+          await thumb.up();
+          await step(3300);
         } else {
           await tester.tap(find.byKey(const Key('orchard-tray-0')));
           await tester.tap(find.byKey(const Key('orchard-rotate')));

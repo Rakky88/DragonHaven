@@ -1,5 +1,30 @@
 /// German, Spanish, French, Italian, Portuguese, Japanese.
 const summerPhraseTranslations = <String, List<String>>{
+  'Hold and drag your dragon to steer; movement speed is limited. Collect sunpearls and avoid coral reefs as the current gets faster. Three collisions end the Trial.':
+      [
+    'Halte deinen Drachen fest und ziehe ihn zum Steuern; seine Bewegungsgeschwindigkeit ist begrenzt. Sammle Sonnenperlen und meide Korallenriffe, während die Strömung schneller wird. Drei Zusammenstöße beenden die Prüfung.',
+    'Mantén pulsado tu dragón y arrástralo para guiarlo; su velocidad de movimiento es limitada. Recoge perlas solares y evita los arrecifes mientras la corriente acelera. Tres choques terminan la prueba.',
+    'Maintiens ton doigt sur ton dragon et fais-le glisser ; sa vitesse est limitée. Récolte les perles solaires et évite les récifs pendant que le courant accélère. Trois collisions terminent l’épreuve.',
+    'Tieni premuto il drago e trascinalo per guidarlo; la sua velocità è limitata. Raccogli perle solari ed evita i coralli mentre la corrente accelera. Tre collisioni terminano la prova.',
+    'Mantém o dedo no dragão e arrasta-o para o guiar; a sua velocidade é limitada. Recolhe pérolas solares e evita os recifes enquanto a corrente acelera. Três colisões terminam a prova.',
+    'ドラゴンを押さえたままドラッグして操縦しよう。移動速度には上限があるよ。速くなる流れの中で太陽真珠を集め、サンゴ礁を避けよう。3回ぶつかると終了。',
+  ],
+  'Hold and drag your dragon': [
+    'Halte deinen Drachen fest und ziehe ihn',
+    'Mantén pulsado tu dragón y arrástralo',
+    'Maintiens et fais glisser ton dragon',
+    'Tieni premuto il drago e trascinalo',
+    'Mantém o dedo no dragão e arrasta-o',
+    'ドラゴンを押さえてドラッグ',
+  ],
+  'Hold to preview, release to place. Rotate to fit.': [
+    'Halte gedrückt für die Vorschau, lasse zum Platzieren los. Drehe die Form passend.',
+    'Mantén pulsado para previsualizar y suelta para colocar. Gira para encajar.',
+    'Maintiens pour prévisualiser, relâche pour placer. Tourne la forme pour la faire rentrer.',
+    'Tieni premuto per vedere l’anteprima, rilascia per posizionare. Ruota per adattare.',
+    'Mantém premido para pré-visualizar e solta para colocar. Roda para encaixar.',
+    '押さえて配置を確認し、離して置こう。回転して合わせよう。',
+  ],
   'Sunwake Festival': [
     'Sunwake-Festival',
     'Festival Sunwake',

@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 1a72534a37c36dee -->
+<!-- reference-source-fingerprint: 5ed6aff96e93f135 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -699,13 +699,24 @@ achievement and gold/silver/bronze podium emotes with established podium rewards
 
 Sunwake: a 75-second steering game with three lanes. Each gate has one uniformly
 random safe lane/sunpearl and two reefs. Fixed 120Hz simulation preserves collisions
-across render rates. Speed min(.62, .22 + t*.005), interval max(.78, 1.7-t*.013).
+across render rates. The first gate spawns after .20 seconds. Speed is
+min(.78, .42 + t*.005), with interval max(.60, 1.05-t*.008) seconds.
+Steering must begin by holding the dragon, then dragging horizontally. A tap
+elsewhere never moves it. Speed is capped at 1.65 arena widths per second;
+releasing/cancelling stops pursuit of the previous target. The current only
+drifts the dragon while it is not being held; one active thumb owns steering.
 Might narrows collision width, Arcana widens pearl pickup, Spirit reduces current.
 A clean pearl gives 130 base points, a clean passage without a pearl 70; three hits end.
 Harvestmoon: a 75-second 6x7 packing game, three rotatable fruit shapes per tray.
 Seven normal shapes, three uniformly sampled fruits, four uniform orientations.
 Single-piece probability .10 + .035*(normalized Might+Arcana+Spirit), maximum .205.
-Full horizontal rows clear and remaining fruit sinks. A placement earns 55+12 per
+A held touch or dragged tray shape previews every occupied target cell; valid
+placements are green and invalid footprints red. Releasing places the shape;
+cancellation/outside drops do not place it. Full horizontal rows fade for .18
+seconds, then rows above move down over .44 seconds. Input waits for that .62
+second transition. Reduced motion displays the final board immediately.
+A blocked basket resets after the transition plus .85 seconds.
+A placement earns 55+12 per
 fruit, or 130 when harvesting a row; shared combo bonuses apply. Invalid placement
 is neutral. No remaining shape fitting in any orientation loses a basket; three end.
 Both use D/C/B/A/S/S+ cutoffs 0/500/1500/3000/5000/8000 with ordinary Trial rewards.

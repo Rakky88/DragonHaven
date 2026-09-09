@@ -13,9 +13,12 @@ class OrchardPiece {
 }
 
 class OrchardPlacement {
-  const OrchardPlacement(this.rows, this.fruitCount, this.overflow);
+  const OrchardPlacement(this.rows, this.fruitCount, this.overflow,
+      {this.clearedRows = const [], this.boardBeforeHarvest = const []});
   final int rows, fruitCount;
   final bool overflow;
+  final List<int> clearedRows;
+  final List<int?> boardBeforeHarvest;
 }
 
 /// A tray of three rotatable fruit shapes. Only complete rows are harvested.
@@ -111,6 +114,8 @@ class MoonlitOrchard {
         full.add(row);
       }
     }
+    final beforeHarvest =
+        full.isEmpty ? const <int?>[] : List<int?>.unmodifiable(board);
     if (full.isNotEmpty) {
       final remaining = [
         for (var y = 0; y < rows; y++)
@@ -124,7 +129,9 @@ class MoonlitOrchard {
     if (tray.every((v) => v == null)) refill();
     final overflow = !canPlaceAny;
     if (overflow) mistakes++;
-    return OrchardPlacement(full.length, piece.cells.length, overflow);
+    return OrchardPlacement(full.length, piece.cells.length, overflow,
+        clearedRows: List<int>.unmodifiable(full),
+        boardBeforeHarvest: beforeHarvest);
   }
 
   /// After a full basket, the next try starts empty; score remains outside here.

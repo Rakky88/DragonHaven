@@ -1,5 +1,22 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Sunwake/Harvestmoon besturing na v0.05.27 (nog niet uitgebracht)
+
+Sunwake begint sneller. Besturing start alleen op de draak, volgt de duim met
+een maximumsnelheid en stopt bij loslaten; aanraken elders en een tweede duim
+verplaatsen de draak niet. Harvestmoon toont de volledige plaatsingsvorm met
+geldig/ongeldig contrast, plaatst pas bij loslaten en laat rijen zichtbaar
+zakken na een oogst. Tijdens het zakken kan geen extra plaatsing worden geteld;
+verminderde animaties tonen direct de eindstand. Uitleg is vertaald.
+Alle 47 gerichte spel-, aanraak-, animatie-, event- en referentiecontroles
+slagen; analyse is schoon. De zes layoutcontroles zijn na de laatste testaanpassing
+nogmaals geslaagd. Volledige plaatsingsvormen en tussengelegen/uitgezakte rijen
+zijn visueel gecontroleerd op 320x640 en met grote tekst/verminderde animaties.
+De Android-preview bouwt en is als update in de emulator geïnstalleerd.
+Ook daar zijn het vastpakken/slepen van de draak, het negeren van aanraken
+elders en de volledige vierdelige plaatsingspreview visueel gecontroleerd.
+Er is geen databasewijziging of nieuwe publieke release gedaan.
+
 ## Sunwake en Harvestmoon: v0.05.27 afgerond
 
 Na de geverifieerde release v0.05.26 zijn twaalf nieuwe sprites gemaakt voor

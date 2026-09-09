@@ -1336,9 +1336,9 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
           introEn: 'Sunwake Surf',
           introNl: 'Sunwake Surf',
           instructionsEn:
-              'Slide left or right to guide your dragon through the currents. Collect sunpearls and avoid coral reefs. The current gets faster. Three collisions end the Trial.',
+              'Hold and drag your dragon to steer; movement speed is limited. Collect sunpearls and avoid coral reefs as the current gets faster. Three collisions end the Trial.',
           instructionsNl:
-              'Schuif naar links of rechts om je draak door de stroming te sturen. Verzamel zonneparels en ontwijk koraalriffen. De stroming wordt sneller. Drie botsingen beëindigen de proef.',
+              'Houd je draak vast en sleep om te sturen; zijn snelheid is begrensd. Verzamel zonneparels en ontwijk koraalriffen terwijl de stroming versnelt. Drie botsingen beëindigen de proef.',
           successEn: 'A sunpearl for the lighthouse!',
           successNl: 'Een zonneparel voor de vuurtoren!',
           failureEn: 'Mind the reef!',

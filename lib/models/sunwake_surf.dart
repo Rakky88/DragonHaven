@@ -35,15 +35,26 @@ class SunwakeSurf {
   final double reefWidth, pickupRadius, currentScale;
   final gates = <SurfGate>[];
   static const playerY = .80;
+  static const maximumSteeringSpeed = 1.65;
   double x = .5, targetX = .5, time = 0;
-  double _accumulator = 0, _nextGate = 1.0;
+  double _accumulator = 0, _nextGate = .20;
+  bool _steering = false;
   int _serial = 0, mistakes = 0;
   bool get finished => mistakes >= 3;
   double get current => sin(time * .85) * .052 * currentScale;
-  double get speed => min(.62, .22 + time * .005);
-  double get interval => max(.78, 1.7 - time * .013);
+  double get speed => min(.78, .42 + time * .005);
+  double get interval => max(.60, 1.05 - time * .008);
 
-  void steer(double position) => targetX = position.clamp(.055, .945);
+  void steer(double position) {
+    if (finished || !position.isFinite) return;
+    _steering = true;
+    targetX = position.clamp(.055, .945);
+  }
+
+  void releaseSteering() {
+    _steering = false;
+    targetX = x;
+  }
 
   List<SurfAction> advance(double seconds) {
     final actions = <SurfAction>[];
@@ -53,8 +64,14 @@ class SunwakeSurf {
     while (_accumulator >= dt && !finished) {
       _accumulator -= dt;
       time += dt;
-      x = (x + (targetX - x).clamp(-dt * 1.45, dt * 1.45) + current * dt)
-          .clamp(.045, .955);
+      // Dragging sets a target, never a teleport. Stop pursuing it on release;
+      // Spirit softens the passive current while the player is not steering.
+      if (_steering) {
+        x += (targetX - x)
+            .clamp(-dt * maximumSteeringSpeed, dt * maximumSteeringSpeed);
+      } else {
+        x = (x + current * dt).clamp(.055, .945);
+      }
       if (time >= _nextGate) {
         gates.add(SurfGate(
             id: _serial++,
