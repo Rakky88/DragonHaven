@@ -1,6 +1,6 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
-## Harvestmoon-aanraking en Sunwake-balans voor v0.05.29
+## Harvestmoon-aanraking en Sunwake-balans: v0.05.29 uitgebracht
 
 Harvestmoon toont bij slepen één grote plaatsingspreview, met het midden van de
 vorm bij de duim. Randcontrole en plaatsing gebruiken hetzelfde doelvak; de
@@ -8,9 +8,21 @@ kleine zwevende kopie is verwijderd. Sunwake heeft iets bredere koraalhitboxes
 en versnelt vloeiend door tot het einde, met behoud van Might-hulp en begrensde
 besturing. De 27 gerichte controles slagen, inclusief twintig navigeerbare seeds.
 Uitleg is vertaald en de levende gameplayreferenties zijn bijgewerkt.
-De gebruiker heeft release v0.05.29 / Android 10079 toegestaan; de releasegate
-loopt. Geen nieuwe migratie, beloningstabel of servereconomie-activatie.
-Bewijs wordt vastgelegd in `RELEASE_V0.05.29_VERIFICATION.md`.
+v0.05.29 / Android 10079 is met toestemming gepubliceerd op 9 september 2026
+om 19:52:56 UTC. Release-CI 34395101050 slaagt met 746 tests, schone analyse,
+native muziekcontroles en een ondertekende AAB. Compacte schermen, grote tekst
+en verminderde animaties zijn gecontroleerd; native Android bevestigt de
+gecentreerde fruitpreview en begrensde drakenbesturing. De productie-APK is
+als update geïnstalleerd en behoudt voortgang en opgeslagen taalkeuze.
+Voor en na publicatie: 65 gelijke migraties, lint 0, drie healthchecks HTTP 200.
+Geen nieuwe migratie, beloningstabel of servereconomie-activatie; mutaties
+blijven uit en push blijft aan. De vaste downloadlink werkt en de APK-hash
+en grootte komen overeen. Bewijs: `RELEASE_V0.05.29_VERIFICATION.md`.
+
+De lokale opslagdruk is verholpen met NTFS-compressie van gegenereerde
+Fluttercaches (circa 3,47 GB vrijgemaakt zonder inhoudsverandering). Beide
+APK-builds zijn normaal afgerond. Dit verkleint alleen lokale buildopslag;
+de aparte APK-verkleining uit het onderstaande onderzoek staat nog open.
 
 ## Appgrootte onderzocht na v0.05.28 (9 september 2026)
 
