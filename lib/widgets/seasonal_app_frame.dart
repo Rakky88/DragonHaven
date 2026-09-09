@@ -173,8 +173,9 @@ class _EventCountdownBannerState extends State<EventCountdownBanner> {
           return Row(children: [
             titleText,
             const Spacer(),
-            if (preview && spare > 8) ...[
-              previewLabel(spare - 8),
+            if (preview && spare > 16) ...[
+              const SizedBox(width: 8),
+              previewLabel(spare - 16),
               const SizedBox(width: 8)
             ],
             const SizedBox(width: 12),

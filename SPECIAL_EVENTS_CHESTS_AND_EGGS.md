@@ -14,10 +14,12 @@ normal/spectral artwork remain unchanged.
 The compact Special-adventure offer omits its duplicate availability countdown;
 the shared event banner supplies that timer. Trip duration, expertise information
 and Start remain on the offer; the full details sheet retains availability.
+The shrinking test label keeps an eight-pixel gap from the event title, even
+when only a few characters fit.
 
 Ruleset: v0.05.23 release candidate; staging and production schema 60 verified, economy activation disabled
 
-<!-- reference-source-fingerprint: cd3f0e7051499440 -->
+<!-- reference-source-fingerprint: 44dbc4564fdcf57a -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special

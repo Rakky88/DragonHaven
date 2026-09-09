@@ -231,6 +231,8 @@ void main() {
     await show(official + 35);
     expect(tester.getTopLeft(title).dy, tester.getTopLeft(clock).dy);
     expect(tester.getSize(label).width, lessThan(labelWidth));
+    expect(tester.getTopLeft(label).dx - tester.getTopRight(title).dx,
+        greaterThanOrEqualTo(8));
     await show(official + 3);
     expect(label, findsNothing);
     expect(tester.getTopLeft(title).dy, tester.getTopLeft(clock).dy);
