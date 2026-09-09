@@ -71,7 +71,8 @@ class _TrialGameScreenState extends State<TrialGameScreen> {
       TrialKind.hollyfrostGiftforge ||
       TrialKind.midnightChime ||
       TrialKind.rosevowRelay ||
-      TrialKind.prismaticParade =>
+      TrialKind.prismaticParade ||
+      TrialKind.wishcakeTower =>
         SeasonalTrialGame(
           offer: offer,
           dragon: dragon,

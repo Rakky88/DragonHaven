@@ -10,6 +10,7 @@ void main() {
   final output = Directory('android/app/src/main/res/raw')
     ..createSync(recursive: true);
   final themes = <String, ({double root, List<double> chord, int seed})>{
+    'birthday': (root: 261.63, chord: [1, 1.25, 1.5, 2], seed: 513),
     'witchlight': (root: 146.83, chord: [1, 1.2, 1.5, 2], seed: 13),
     'starlight': (root: 261.63, chord: [1, 1.25, 1.5, 2], seed: 25),
     'firstlight': (root: 220.0, chord: [1, 1.26, 1.5, 2], seed: 365),
@@ -19,11 +20,13 @@ void main() {
   for (final entry in themes.entries) {
     final id = entry.key;
     final theme = entry.value;
-    _write(
-      '${output.path}/event_${id}_chest.wav',
-      2.35,
-      _chest(theme.root, theme.chord, theme.seed),
-    );
+    if (id != 'birthday') {
+      _write(
+        '${output.path}/event_${id}_chest.wav',
+        2.35,
+        _chest(theme.root, theme.chord, theme.seed),
+      );
+    }
     _write(
       '${output.path}/event_${id}_success.wav',
       .48,

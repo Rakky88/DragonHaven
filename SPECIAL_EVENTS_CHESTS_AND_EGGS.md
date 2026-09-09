@@ -1,6 +1,6 @@
 # DragonHaven Special Events, Chests, and Eggs
 
-Last verified: 9 September 2026; v0.05.25 / 10075 published, schema 62 healthy
+Last reviewed: 9 September 2026; birthday additions after v0.05.25; migration 63 applied and verified on staging and production
 
 The four redesigned Trial introductions use their clean standalone event icons,
 avoiding adjacent-frame remnants in the older sprite-sheet cutouts. Halloween now alternates memory and tracing; the former Might timing phase is removed.
@@ -16,7 +16,7 @@ and Start remain on the offer; the full details sheet retains availability.
 The shrinking test label keeps an eight-pixel gap from the event title, even
 when only a few characters fit.
 
-Ruleset: v0.05.25 published and verified; staging and production schema 62 healthy. Migration 61 supports three-strike completions; economy activation remains disabled.
+Ruleset: v0.05.25 published and verified; staging and production schema 63 healthy. Migrations 61/63 support three-strike completions; economy activation remains disabled.
 
 The Special Adventure dragon picker now also displays Might, Arcana and Spirit
 with their individual scores, MAX markers and selected highlight glow. This
@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 6de4da33b9c900a7 -->
+<!-- reference-source-fingerprint: 86943759441ef1ee -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -179,14 +179,15 @@ streak rules or rewards.
 
 | Event | Trial kind | Player-facing Trial | Loop |
 |---|---|---|---|
+| Birthday | `wishcakeTower` | Wishcake Tower | Drop moving cake layers onto the stack; trim overhang, regain a little width after three perfect layers |
 | Halloween | `witchlightWard` | Witchlight Ward | Memorize a pumpkin face, then trace the witchlight path; repeat these two games |
 | Christmas | `hollyfrostGiftforge` | Hollyfrost Giftforge | Drag moving parcels from a conveyor into matching symbol bays |
 | New Year | `midnightChime` | Midnight Chime | Four-lane falling-star rhythm game; strike each chime at the golden line |
 | Valentine | `rosevowRelay` | Rosevow Relay | Guide two horizontally mirrored hearts through different, jointly solvable mazes |
 | Pridefest | `prismaticParade` | Prismatic Parade | Rotate channels in a 4×4 prism circuit to connect the rainbow source and star |
 
-The five Trials retain their own full-screen backgrounds, icons, sounds and
-themes. Halloween uses a two-phase memory/trace loop. The other four use separate
+The six Trials retain their own full-screen backgrounds, icons, sounds and
+themes. Halloween uses a two-phase memory/trace loop. The other five use separate
 interactive boards, now illustrated with individual painted gifts, hearts,
 roses, rainbow prisms and chimes. All start at 75 seconds; total expertise adds
 `round(clamp((Might + Arcana + Spirit) / 300, 0, 3))` seconds. Expertise never
@@ -195,9 +196,9 @@ only dragons with all three highlighted appear in the highlighted section.
 
 Christmas independently schedules uniformly chosen parcel symbols (three choices).
 New arrivals never wait for an earlier delivery. The spawn interval is
-`max(.36, 2.4 - activeSeconds * .031)` seconds; each parcel crosses the belt in
-`max(.95, 4.4 - activeSeconds * .05) + clamp(Might / 400, 0, 1) * .35` seconds.
-Both arrivals and travel get faster, producing several concurrent parcels.
+`max(.36, 2.4 - (35 + max(0, activeSeconds)) * .031)` seconds; each parcel crosses the belt in
+`max(.95, 4.4 - (35 + max(0, activeSeconds)) * .05) + clamp(Might / 400, 0, 1) * .35` seconds.
+The opening interval is 1.315s and travel time is 2.65s plus Might assistance: exactly the former 40-seconds-remaining pace. Both arrivals and travel get faster, producing several concurrent parcels.
 A parcel keeps its own deadline and speed from spawn; delivering another gift
 never resets it. Held parcels can still expire, and a late release cannot deliver
 another parcel. Spirit extends delivery tolerance by up to 8px. There is no
@@ -218,7 +219,7 @@ play. Pride rotates two-ended prism channels and traces the connected beam;
 each newly lit cell scores only once per board. Both puzzle games offer 1–3
 hints for the whole run based on Arcana. Revisiting a maze state awards nothing.
 
-The four rebuilt games retain the full timer on a mistake, deduct 30 points
+The five independent arcade games retain the full timer on a mistake, deduct 30 points
 without going below zero, reset combo and flash red. They record at most 200
 scoring actions and cap score at 20,000, matching the existing server bounds.
 Christmas and New Year end after exactly three mistakes, or on timeout.
@@ -364,7 +365,7 @@ Hatch achievements:
 
 ## 6. Temporary event music and notifications
 
-Each new event temporarily exposes one verified CC0/Public Domain jukebox
+Each of the six events temporarily exposes one verified CC0/Public Domain or original-synthesis jukebox
 alias while its real or private preview occurrence is active. It disappears
 after the occurrence and is not part of the 80-track Music Chest collection.
 The source performance for every alias is recorded in
@@ -377,7 +378,7 @@ and device notification permission.
 ## 7. Private preview contract
 
 Each seasonal event has a 48-hour reusable personal preview available to all
-authenticated, email-confirmed keepers (forward migration 62). Rankings remain isolated
+authenticated, email-confirmed keepers (forward migration 63). Rankings remain isolated
 from live occurrences and the UI labels these occurrences as test events.
 
 Updated 8 September 2026: **test event Trials grant the normal permanent Trial
@@ -604,7 +605,7 @@ server egg lifecycle and client reconciliation remain separate audit work.
 Release v0.05.17: the compact seasonal HUD scales its phase icons within the available width; Altar tag/details actions wrap when text needs more space. Trial rules and rewards are unchanged.
 
 Seasonal preview access: any signed-in keeper with a confirmed email may activate
-any of the five existing personal 48-hour previews. Active redemptions retain their original
+any of the six personal 48-hour previews. Active redemptions retain their original
 expiry; expired previews can be redeemed again. Production preview Adventures
 and Special Chests remain simulated; test Trials grant normal rewards as described
 in section 7. Preview scores remain separate from live event rankings. This
@@ -619,3 +620,46 @@ dispatched configuration. The saved ordinary song selection, shuffle and repeat
 remain intact, including music acquired during the event. An empty selection
 or disabled master music stays silent. Returning from the background also
 reconciles event expiry; unchanged clock ticks do not reset playback cycles.
+
+## Birthday Trial extension (9 September 2026)
+
+Golden Wings now links to Wishcake Tower, its own cake-stacking Trial, and
+`event_birthday_wish` (`music_event_happy_birthday.wav`). The 38.125-second
+instrumental is a new synthesized arrangement of the public-domain 1893 melody
+known as Happy Birthday. No lyrics or third-party performance are imported.
+`tool/build_birthday_song.dart` reproduces it. The saved jukebox selection,
+shuffle/repeat and master setting survive expiry, replacement and manual stop.
+This temporary track is outside the 80 collectible songs.
+
+Wishcake Tower runs for 75 seconds plus the established 0–3 seconds of assistance.
+Tap the board or Drop layer to place the moving cake. Only overlap of at least
+7% of board width survives; smaller overlaps count as misses. Within 1.8% of
+board width, alignment is perfect (Arcana adds up to .7 percentage points).
+The base is 44% of board width (Might adds up to 4 percentage points). Every
+three consecutive perfect layers restore 2.5 percentage points, capped at the
+original base width. A miss resets the base while keeping score and misses.
+Three misses end the run. A 420ms drop lock prevents duplicate taps.
+
+Crossing time at each layer spawn is `max(.48, 1.65 - activeSeconds * .012 -
+placedLayers * .009) * (1 + clamp(Spirit / 400, 0, 1) * .08)` seconds. It remains
+fixed for that moving layer. A seeded fair initial direction alternates after
+each drop. Geometry is normalized across screen sizes; essential cake movement
+continues with reduced motion, while falling offcuts, confetti and flame sway
+are suppressed. Feedback avoids zero-duration layout animation.
+
+Each correct placement scores 85 base points, or 130 for a perfect placement,
+plus the existing capped combo bonus. Misses deduct 30 points, floored at zero.
+C/B/A/S/S+ thresholds are 600 / 1500 / 2800 / 4200 / 6000, inclusive. Ordinary
+Trial grade rewards and balanced expertise apply, also during test previews.
+There is no additional birthday podium reward table; stored birthday scores
+and the five-day results window use the ordinary leaderboard infrastructure.
+The existing Golden Wings Adventure, Chest and predetermined egg contents,
+recurrence and item provenance are unchanged. The formerly missing egg artwork
+reference now resolves to `events/golden_wings/golden_wings_egg.png`.
+
+Migration 63 adds the birthday preview mapping, calendar window and Trial kind
+and accepts an early finish only with exactly three misses. It preserves owner,
+token, elapsed-time, score/action caps and one-use checks. Staging rollback
+coverage includes all six preview codes, retry expiry, owner isolation, invalid
+attempts, post-event completion, score persistence and duplicate rejection.
+No public release notes announce operational codes.

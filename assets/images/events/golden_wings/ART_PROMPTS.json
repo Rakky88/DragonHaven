@@ -1,0 +1,16 @@
+{
+  "generated": "2026-09-09",
+  "assets": [
+    {
+      "file": "assets/images/events/golden_wings/trial_icon.png",
+      "method": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Project-bound mobile fantasy game sprite for DragonHaven's golden birthday event. Create exactly one luxurious whimsical magical birthday cake icon, 1024 square, genuinely transparent RGBA background. Three rounded tiers of warm vanilla sponge, ivory piped cream and pale rose raspberry filling, fine gold filigree trim, a few tiny garnet berries, on a small ornate golden cake stand. Three elegant slim candles with soft golden flames, two small decorative golden feather wings attached to the cake sides (ornaments, no dragon or character). Painterly high-end fantasy inventory sprite, rich sculpted detail and warm highlights, clean silhouette readable at 48px. Three-quarter slightly elevated view. Keep entire cake and wings inside generous 15% transparent padding. No words, letters, numbers, logo, border, floating particles, scene, cast shadow or opaque backdrop. This is a new asset, not a reference edit."
+    },
+    {
+      "file": "assets/images/events/golden_wings/golden_wings_egg.png",
+      "method": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. New transparent inventory sprite for an existing DragonHaven birthday Special Egg called Golden Wings Egg. Exactly one beautiful warm pearl-ivory egg with ornate gold vine filigree, a few small rose-pink gemstone accents, and two sculpted small golden feather wings hugging the shell. The egg is closed and opaque. No creature, no chicken, no cracks and no visible contents. Elegant painterly fantasy collectible game art, softly lit from upper left, crisp clean silhouette legible at 48 pixels. Upright centered egg in a square image, entire object within the middle 70 percent of the canvas with 15 percent fully transparent padding on all sides. Genuinely transparent RGBA background, no ground, no cast shadow, no halo, no particles or stray pixels, no text, no border or labels. This is the definitive icon for a birthday egg with predetermined content; depict only its shell."
+    }
+  ],
+  "validation": "Inspected generated originals, alpha corners/edges and in-app cake icon; existing egg definition and hidden contents preserved. No new dragon family artwork."
+}

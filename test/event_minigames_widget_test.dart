@@ -106,7 +106,7 @@ void main() {
     await mount(tester, TrialKind.hollyfrostGiftforge);
     final first = find.byKey(const ValueKey('giftforge-parcel-0'));
     final firstX = tester.getCenter(first).dx;
-    await step(tester, 2500);
+    await step(tester, 1400);
     final second = find.byKey(const ValueKey('giftforge-parcel-1'));
     expect(first, findsOneWidget);
     expect(second, findsOneWidget);
@@ -125,7 +125,7 @@ void main() {
           find.byKey(Key('giftforge-bay-${correct ? type : (type + 1) % 3}'));
       await tester.drag(
           parcel, tester.getCenter(target) - tester.getCenter(parcel));
-      await step(tester, 400);
+      await step(tester, 100);
     }
 
     await deliver(second, true);
@@ -135,10 +135,10 @@ void main() {
     await deliver(first, false);
     expect(actions.last.$1, isFalse);
     // The next scheduled arrival does not depend on when either gift was sorted.
-    await step(tester, 1500);
+    await step(tester, 1000);
     expect(find.byKey(const ValueKey('giftforge-parcel-2')), findsOneWidget);
     await step(tester, 4800);
-    expect(actions.where((a) => !a.$1), hasLength(2));
+    expect(actions.where((a) => !a.$1), hasLength(3));
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -151,7 +151,7 @@ void main() {
     final finger = await tester.startGesture(tester.getCenter(first));
     await finger.moveBy(const Offset(-25, 25));
     await tester.pump();
-    await step(tester, 4600);
+    await step(tester, 2800);
     expect(first, findsNothing);
     expect(find.byKey(const ValueKey('giftforge-parcel-1')), findsOneWidget);
     expect(actions.single.$1, isFalse);

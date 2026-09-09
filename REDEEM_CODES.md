@@ -2,9 +2,9 @@
 
 Last verified: 9 September 2026
 
-Ruleset: v0.05.23 published and verified; event stop in migration 60, staging and production verified
+Ruleset: birthday extension after v0.05.25; forward migration 63 verified on staging and production; event stop remains migration 60
 
-<!-- reference-source-fingerprint: 8fedb11c60bf5d10 -->
+<!-- reference-source-fingerprint: 2d2933a9dbeb7522 -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 
@@ -29,6 +29,7 @@ server rather than trusted from the public app catalog.
 
 | Code | Reward | Reward ID | Restriction and behavior |
 |---|---|---|---|
+| `BDAYEVENT` | **A Wish on Golden Wings** | `golden_wings_birthday` | Any authenticated, email-confirmed keeper; reusable 48-hour personal preview with Wishcake Tower and Happy Birthday music; ordinary permanent Trial rewards, simulated Adventure/Special Chest rewards |
 | `ENDEVENT` | **End own active event** | `end_active_event` | Any authenticated, email-confirmed keeper; removes own previews and dismisses current calendar occurrences until their scheduled end; repeatable, no items granted |
 | `HALLOWEENEVENT` | **Night of the Witchlight** | `halloween_witchlight` | Any authenticated, email-confirmed keeper; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
 | `CHRISTMASEVENT` | **A Star for the Winter Hearth** | `christmas_winter_hearth` | Any authenticated keeper with a confirmed email; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
@@ -95,3 +96,11 @@ Activation still affects only the authenticated account, uses one active preview
 retains the existing 48-hour retry expiry and keeps preview ranking provenance.
 Anonymous/unverified requests and unknown codes remain rejected. No reward
 contents or permanence rules changed. Operational values stay out of release notes.
+
+## Birthday extension
+
+The birthday preview uses the same owner lock, single-active-preview rule and
+48-hour retry expiry as the other five. It grants no item merely for redeeming.
+`supabase/migrations/202609090063_birthday_trial.sql` is the current preview and
+trial override. Calendar dates remain 1–2 September 2026, then 13 May yearly
+from 2027 (Europe/Amsterdam). The code and its announcement stay out of release notes.

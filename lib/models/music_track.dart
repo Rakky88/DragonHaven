@@ -23,6 +23,13 @@ class MusicTrack {
 /// the 80-track Music Chest collection.
 const seasonalMusicCatalog = <MusicTrack>[
   MusicTrack(
+    id: 'event_birthday_wish',
+    title: 'Happy Birthday - A Golden Wish',
+    composer: 'Mildred J. Hill - DragonHaven arrangement',
+    rawResourceIdOverride: 'music_event_happy_birthday',
+    temporaryEventId: 'golden_wings_birthday',
+  ),
+  MusicTrack(
     id: 'event_witchlight_nocturne',
     title: 'Witchlight Nocturne',
     composer: 'J. S. Bach · event arrangement',

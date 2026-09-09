@@ -22,6 +22,11 @@ class RedeemCodeDefinition {
 // codes in public release notes; maintain the private REDEEM_CODES.md ledger.
 const redeemCodeCatalog = <RedeemCodeDefinition>[
   RedeemCodeDefinition(
+    code: 'BDAYEVENT',
+    rewardType: RedeemRewardType.seasonalEventPreview,
+    rewardId: 'golden_wings_birthday',
+  ),
+  RedeemCodeDefinition(
     code: 'ENDEVENT',
     rewardType: RedeemRewardType.endSeasonalEvent,
     rewardId: 'end_active_event',

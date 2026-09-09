@@ -10,6 +10,7 @@ import '../services/audio_service.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/witchlight_trial_widgets.dart';
 import '../widgets/seasonal_minigames.dart';
+import '../widgets/wishcake_trial.dart';
 
 class SeasonalTrialRunResult {
   const SeasonalTrialRunResult({
@@ -84,7 +85,8 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
   bool get _threeMistakeLimit =>
       _isWitchlight ||
       widget.offer.kind == TrialKind.hollyfrostGiftforge ||
-      widget.offer.kind == TrialKind.midnightChime;
+      widget.offer.kind == TrialKind.midnightChime ||
+      widget.offer.kind == TrialKind.wishcakeTower;
   _SeasonalTheme get theme => _themeFor(widget.offer.kind);
   TrainingFocus get _currentPhaseFocus =>
       widget.offer.kind == TrialKind.hollyfrostGiftforge
@@ -389,13 +391,20 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
 
   Widget _buildGame(AppStrings strings) => _isWitchlight
       ? _buildWitchlight(strings)
-      : SeasonalMinigames(
-          kind: widget.offer.kind,
-          dragon: widget.dragon,
-          seed: _arcadeSeed,
-          running: _started && !_ending,
-          clock: _now,
-          onAction: _arcadeAction);
+      : widget.offer.kind == TrialKind.wishcakeTower
+          ? WishcakeTrial(
+              dragon: widget.dragon,
+              seed: _arcadeSeed,
+              running: _started && !_ending,
+              clock: _now,
+              onAction: _arcadeAction)
+          : SeasonalMinigames(
+              kind: widget.offer.kind,
+              dragon: widget.dragon,
+              seed: _arcadeSeed,
+              running: _started && !_ending,
+              clock: _now,
+              onAction: _arcadeAction);
 
   void _arcadeAction(bool correct,
       {required int points, required bool completesRound}) {
@@ -643,90 +652,119 @@ class _SeasonalHud extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: accent.withValues(alpha: .70)),
       ),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: onClose,
-            icon: const Icon(Icons.close_rounded),
-            color: Colors.white,
-            disabledColor: Colors.white24,
-            visualDensity: VisualDensity.compact,
-          ),
-          Image.asset(
-            theme.iconAsset,
-            width: 34,
-            height: 34,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-          ),
-          const SizedBox(width: 7),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+      child: theme.soundPrefix == 'birthday'
+          ? Column(children: [
+              Row(children: [
+                IconButton(
+                    onPressed: onClose,
+                    icon: const Icon(Icons.close_rounded),
                     color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
+                    disabledColor: Colors.white24,
+                    visualDensity: VisualDensity.compact),
+                Image.asset(theme.iconAsset,
+                    width: 34, height: 34, fit: BoxFit.contain),
+                const SizedBox(width: 7),
+                Expanded(
+                    child: Text(title,
+                        maxLines: 2,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16))),
+              ]),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                _HudChip(label: 'COMBO', value: '$combo', color: accent),
+                _HudChip(label: 'SCORE', value: '$score', color: accent),
+                _HudChip(
+                    label: 'TIME',
+                    value: '$seconds',
+                    color: seconds <= 5 ? const Color(0xFFFF6464) : accent),
+              ]),
+            ])
+          : Row(
+              children: [
+                IconButton(
+                  onPressed: onClose,
+                  icon: const Icon(Icons.close_rounded),
+                  color: Colors.white,
+                  disabledColor: Colors.white24,
+                  visualDensity: VisualDensity.compact,
+                ),
+                Image.asset(
+                  theme.iconAsset,
+                  width: 34,
+                  height: 34,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      LayoutBuilder(
+                        builder: (_, constraints) {
+                          final showLabel = constraints.maxWidth >= 105;
+                          return Row(
+                            children: [
+                              if (showLabel) ...[
+                                Flexible(
+                                  child: Text(
+                                    phase < 0
+                                        ? 'ROUND $round'
+                                        : 'ROUND $round · $phaseLabel',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: accent,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: .7,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                              ],
+                              if (phase >= 0)
+                                Flexible(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: _SeasonalPhaseTrail(
+                                      theme: theme,
+                                      phase: phase,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 2),
-                LayoutBuilder(
-                  builder: (_, constraints) {
-                    final showLabel = constraints.maxWidth >= 105;
-                    return Row(
-                      children: [
-                        if (showLabel) ...[
-                          Flexible(
-                            child: Text(
-                              phase < 0
-                                  ? 'ROUND $round'
-                                  : 'ROUND $round · $phaseLabel',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: accent,
-                                fontSize: 8,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: .7,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                        ],
-                        if (phase >= 0)
-                          Flexible(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
-                              child: _SeasonalPhaseTrail(
-                                theme: theme,
-                                phase: phase,
-                              ),
-                            ),
-                          ),
-                      ],
-                    );
-                  },
+                _HudChip(label: 'COMBO', value: '×$combo', color: accent),
+                const SizedBox(width: 7),
+                _HudChip(label: 'SCORE', value: '$score', color: accent),
+                const SizedBox(width: 7),
+                _HudChip(
+                  label: 'TIME',
+                  value: '$seconds',
+                  color: seconds <= 5 ? const Color(0xFFFF6464) : accent,
                 ),
               ],
             ),
-          ),
-          _HudChip(label: 'COMBO', value: '×$combo', color: accent),
-          const SizedBox(width: 7),
-          _HudChip(label: 'SCORE', value: '$score', color: accent),
-          const SizedBox(width: 7),
-          _HudChip(
-            label: 'TIME',
-            value: '$seconds',
-            color: seconds <= 5 ? const Color(0xFFFF6464) : accent,
-          ),
-        ],
-      ),
     );
   }
 }
@@ -858,19 +896,12 @@ class _DragonStudentStrip extends StatelessWidget {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  AnimatedSize(
-                    alignment: Alignment.centerLeft,
-                    duration: MediaQuery.disableAnimationsOf(context)
-                        ? Duration.zero
-                        : const Duration(milliseconds: 180),
-                    child: Text(
-                      status.isEmpty ? ' ' : status,
-                      maxLines: 2,
-                      style: TextStyle(
-                        color: accent,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+                  Text(
+                    status.isEmpty ? ' ' : status,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        TextStyle(color: accent, fontWeight: FontWeight.w800),
                   ),
                 ],
               ),
@@ -1212,7 +1243,9 @@ class _EventTrialSprite extends StatelessWidget {
       width: size,
       height: size,
       child: Image.asset(
-        '${theme.assetDirectory}/trial_sprite_${index.remainder(6)}.webp',
+        theme.soundPrefix == 'birthday'
+            ? theme.iconAsset
+            : '${theme.assetDirectory}/trial_sprite_${index.remainder(6)}.webp',
         fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
       ),
@@ -1259,7 +1292,8 @@ class _SeasonalTheme {
   final String failureEn;
   final String failureNl;
 
-  String get iconAsset => '$assetDirectory/trial_icon.webp';
+  String get iconAsset =>
+      '$assetDirectory/trial_icon.${soundPrefix == 'birthday' ? 'png' : 'webp'}';
 
   String introTitle(AppStrings strings) => strings.pick(introEn, introNl);
   String instructions(AppStrings strings) =>
@@ -1269,6 +1303,27 @@ class _SeasonalTheme {
 }
 
 _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
+      TrialKind.wishcakeTower => const _SeasonalTheme(
+          soundPrefix: 'birthday',
+          backgroundAsset:
+              'assets/images/events/golden_wings/trial_background.webp',
+          assetDirectory: 'assets/images/events/golden_wings',
+          deepColor: Color(0xFF261729),
+          panelColor: Color(0xFF593A39),
+          accentColor: Color(0xFFFFE3A1),
+          glowColor: Color(0xFFFFC979),
+          buttonColor: Color(0xFF955B43),
+          palette: [Color(0xFFFFE3A1), Color(0xFFFFB4CE), Color(0xFFEDAB58)],
+          introEn: 'Bake a Wish to the Stars',
+          introNl: 'Bak een Wens tot de Sterren',
+          instructionsEn:
+              'Tap to drop the moving cake layer onto the one below. Overhanging cake falls away, so aim for a perfect fit. Three perfect layers restore a little width. The tower gets faster; three missed layers end the Trial.',
+          instructionsNl:
+              'Tik om de bewegende taartlaag op de vorige te laten vallen. Overhangende taart valt weg, dus mik precies. Drie perfecte lagen geven wat breedte terug. De toren versnelt; bij drie gemiste lagen eindigt de proef.',
+          successEn: 'Another layer of wishes!',
+          successNl: 'Nog een laag vol wensen!',
+          failureEn: 'Layer missed - 30 points lost',
+          failureNl: 'Laag gemist - 30 punten kwijt'),
       TrialKind.witchlightWard => const _SeasonalTheme(
           soundPrefix: 'witchlight',
           backgroundAsset:

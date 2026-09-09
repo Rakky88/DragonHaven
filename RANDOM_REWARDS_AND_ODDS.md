@@ -6,7 +6,7 @@ Ruleset: v0.05.25 published and verified; staging and production schema 62 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: c4a028a8f8d16448 -->
+<!-- reference-source-fingerprint: 42a6839553500332 -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
@@ -495,6 +495,7 @@ Valentine uses 650 / 1600 / 2600 / 3900 / 10000; Pride uses
 for New Year, Valentine and Pride. New Year's S+ equals the existing 20000 score
 cap. Calibration still records raw scores and never adjusts cutoffs automatically.
 Reward pools and the existing server score/action limits remain unchanged.
+The birthday addition after v0.05.25 uses 600 / 1500 / 2800 / 4200 / 6000.
 
 
 XP and expertise are fixed by grade. The chest is the random part shown here.
@@ -846,3 +847,20 @@ remaining queue from the current saved selections, including newly acquired
 tracks. A removed song does not consume the new cycle when repeat is off.
 Preference reevaluation and lifecycle callbacks do not draw gameplay entropy.
 MIDI performance-level normalization changes audio only, with no reward changes.
+
+## Birthday Trial and Christmas pacing (9 September 2026)
+
+Wishcake Tower uses C/B/A/S/S+ thresholds 600/1500/2800/4200/6000, inclusive.
+It shares the existing grade chest, XP, balanced expertise, relic and emote rolls;
+no new reward pool or podium prize is introduced. Its seeded initial movement
+direction is 50/50, followed by deterministic alternating sides. Overlap,
+perfect placement, width restoration and acceleration are deterministic.
+The separate 31-bit game seed comes from the existing seasonal run stream.
+Birthday music and animated decoration make no reward-affecting random draws.
+The 80-song Music Chest collection is unchanged.
+
+Christmas starts with a 35-second lead in both existing pacing curves (the
+former 40-seconds-remaining mark of its base 75-second timer): first arrival
+interval 1.315 seconds, first travel 2.65 seconds plus existing Might help.
+Acceleration continues to the same .36s arrival and .95s base travel floors.
+Parcel symbols remain uniformly distributed over the same three choices.

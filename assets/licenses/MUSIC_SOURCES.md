@@ -129,3 +129,19 @@ metadata are preserved. This removes large performance-level swells (including
 Reverie) without a runtime compressor. Sources and licensing are unchanged.
 Native playback uses one fixed track gain; audio interruptions pause/resume
 instead of repeatedly ducking and fading the background track.
+
+## Happy Birthday — Golden Wings (9 September 2026)
+
+`music_event_happy_birthday` (`music_event_happy_birthday.wav`) is a 38.125-second mono 44.1kHz/16-bit original
+DragonHaven synthesized music-box/harp arrangement and performance. Source:
+`tool/build_birthday_song.dart`. Melody only: Mildred J. Hill's *Good Morning to
+All* (1893), familiar as *Happy Birthday to You*. The Morgan Library's original
+edition record identifies the earliest printing and composer (1859–1916):
+https://www.themorgan.org/music-manuscripts-and-printed-music/113636 .
+WIPO's Copyright Law Division discusses the public-domain melody in its
+February 2016 magazine, p.34: https://www.wipo.int/wipo_magazine/en/pdf/2016/wipo_pub_121_2016_01.pdf .
+No lyrics, samples, soundfont, modern arrangement or third-party recording are
+used. The two verses have identical instrument gains, no dynamic normalization
+or volume pumping. A short ending release avoids a discontinuity. This is a
+temporary event alias, outside the 80 collectible tracks. Three brief birthday
+success/failure/finish sounds are original synthesis in `build_seasonal_audio.dart`.

@@ -12,6 +12,7 @@ enum TrialKind {
   midnightChime,
   rosevowRelay,
   prismaticParade,
+  wishcakeTower,
 }
 
 enum TrialGrade { d, c, b, a, s, sPlus }
@@ -53,6 +54,17 @@ class TrialDefinition {
 }
 
 const trialDefinitions = <TrialKind, TrialDefinition>{
+  TrialKind.wishcakeTower: TrialDefinition(
+    kind: TrialKind.wishcakeTower,
+    focus: TrainingFocus.arcana,
+    titleEn: 'Wishcake Tower',
+    titleNl: 'Wensentaarttoren',
+    subtitleEn:
+        'Stack golden birthday cake layers. Only the overlapping slice stays!',
+    subtitleNl:
+        'Stapel gouden verjaardagstaartlagen. Alleen het overlappende stuk blijft!',
+    specialEventId: 'golden_wings_birthday',
+  ),
   TrialKind.cavernFlight: TrialDefinition(
     kind: TrialKind.cavernFlight,
     focus: TrainingFocus.spirit,
@@ -239,6 +251,7 @@ TrialGrade trialGradeForScore(TrialKind kind, int score) {
     TrialKind.cavernFlight => const [250, 600, 1100, 1700, 2500],
     TrialKind.ruinBreaker => const [900, 2250, 4000, 6750, 9000],
     TrialKind.runeweaver => const [3, 6, 9, 12, 15],
+    TrialKind.wishcakeTower => const [600, 1500, 2800, 4200, 6000],
     TrialKind.witchlightWard => const [500, 1200, 1600, 1800, 2000],
     TrialKind.rosevowRelay => const [650, 1600, 2600, 3900, 10000],
     TrialKind.prismaticParade => const [1200, 2900, 4800, 7200, 12000],

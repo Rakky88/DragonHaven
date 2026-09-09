@@ -502,7 +502,8 @@ void main() {
       TrialKind.hollyfrostGiftforge ||
       TrialKind.midnightChime ||
       TrialKind.rosevowRelay ||
-      TrialKind.prismaticParade =>
+      TrialKind.prismaticParade ||
+      TrialKind.wishcakeTower =>
         const Key('start-seasonal-trial'),
     };
     expect(find.byKey(gameKey), findsOneWidget);

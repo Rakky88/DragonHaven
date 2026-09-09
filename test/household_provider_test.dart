@@ -2365,7 +2365,7 @@ void main() {
     expect(
         redeemCodeCatalog.where(
             (c) => c.rewardType == RedeemRewardType.seasonalEventPreview),
-        hasLength(5));
+        hasLength(6));
     expect(redeemCodeDefinition('ENDEVENT')?.rewardType,
         RedeemRewardType.endSeasonalEvent);
     expect(await game.redeemCode('ENDEVENT'), 'online_login_required');

@@ -1,5 +1,23 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Verjaardag en sneller kerstbegin — na v0.05.25
+
+Wishcake Tower, een persoonlijke verjaardagspreview en eigen instrumentale
+Happy Birthday-muziek zijn toegevoegd. Kalender, verjaardagsadventure en
+bestaande beloningen blijven behouden. De ontbrekende ei-afbeelding is hersteld.
+Kerst start op het vroegere tempo bij 40 seconden resterend, met verdere
+versnelling en exact drie fouten als einde. Migratie 63 slaagt in de staging-
+rollbackproef, inclusief eigenaarschap, kalender, scores, tokens en herhaling.
+Alle 40 gerichte eventcontroles slagen. De volledige regressieronde leverde
+714 geslaagde tests en een ontbrekende bronvermelding op; na herstel slagen
+ook alle 40 controles van dat specificatiebestand (715 verschillende tests
+gecontroleerd). Analyse is schoon; Dart/JS-pariteit en 15 Deno-contracttests
+slagen. Android bouwt en de kleine/grote layouts zijn visueel bekeken.
+Staging en productie staan op 63 migraties, lint 0; productiehealthchecks
+geven HTTP 200. Economische activatie en spelerinventories zijn behouden.
+Publicatie is nog niet gedaan;
+de openbare release blijft v0.05.25 / 10075. Bewijs: `BIRTHDAY_EVENT_VERIFICATION.md`.
+
 ## Release v0.05.25 afgerond
 
 De aanvullende trialbalans na v0.05.24 gaat mee: Halloween S+ 2000,

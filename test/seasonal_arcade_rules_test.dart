@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('seasonal grades include the requested S+ boundaries exactly', () {
     for (final entry in {
+      TrialKind.wishcakeTower: [600, 1500, 2800, 4200, 6000],
       TrialKind.prismaticParade: [1200, 2900, 4800, 7200, 12000],
       TrialKind.rosevowRelay: [650, 1600, 2600, 3900, 10000],
       TrialKind.midnightChime: [500, 1200, 2000, 3000, 20000],
@@ -42,7 +43,8 @@ void main() {
     }
     expect(SeasonalArcadePacing.parcelLifetime(180, -1), .95);
     expect(SeasonalArcadePacing.parcelLifetime(180, 100), closeTo(1.30, .001));
-    expect(SeasonalArcadePacing.parcelInterval(0), 2.4);
+    expect(SeasonalArcadePacing.parcelInterval(0), closeTo(1.315, .00001));
+    expect(SeasonalArcadePacing.parcelLifetime(0, 0), closeTo(2.65, .00001));
     expect(SeasonalArcadePacing.parcelInterval(60), lessThan(.6));
     expect(SeasonalArcadePacing.parcelInterval(180), .36);
     expect(SeasonalArcadePacing.parcelInterval(0),
@@ -88,7 +90,7 @@ void main() {
       for (var error = 1; error <= 3; error++) {
         if (kind == TrialKind.hollyfrostGiftforge) {
           if (error > 1) {
-            now = now.add(const Duration(milliseconds: 2500));
+            now = now.add(const Duration(milliseconds: 1350));
             await tester.pump(const Duration(milliseconds: 50));
           }
           final parcel = find.byKey(ValueKey('giftforge-parcel-${error - 1}'));

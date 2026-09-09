@@ -184,7 +184,7 @@ class _ChestRevealState extends State<_ChestReveal>
       for (final entry in _specialEggCounts(bundle).entries)
         _AssetReward(
           assetPath: specialEggById(entry.key)?.assetPath ??
-              'assets/images/ui/ui_special_egg.webp',
+              'assets/images/events/golden_wings/golden_wings_egg.png',
           value: '${entry.value}',
           label: _specialEggLabel(strings, entry.key),
         ),

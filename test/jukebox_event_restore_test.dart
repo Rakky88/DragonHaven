@@ -55,6 +55,25 @@ void main() {
         reason: 'No queue reset on an unchanged timer tick');
   });
 
+  test('birthday music replaces its preview and expires back to saved music',
+      () async {
+    var now = DateTime.utc(2026, 9, 9, 12);
+    final game = HouseholdProvider(clock: () => now, persistenceEnabled: false);
+    addTearDown(game.dispose);
+    await game.synchronizeSeasonalEventPreviews({
+      'christmas_winter_hearth': now.add(const Duration(hours: 48)),
+    });
+    await game.synchronizeSeasonalEventPreviews({
+      'golden_wings_birthday': now.add(const Duration(seconds: 10)),
+    });
+    expect(playlist(), ['music_event_happy_birthday', 'music_reverie']);
+    expect(game.ownedMusicTrackIds, isNot(contains('event_birthday_wish')));
+    now = now.add(const Duration(seconds: 11));
+    await game.refreshJukeboxAudio();
+    expect(playlist(), ['music_reverie']);
+    expect(game.enabledMusicTrackIds, {'reverie'});
+  });
+
   test('explicit stop and calendar dismissal immediately remove event music',
       () async {
     var now = DateTime.utc(2026, 9, 9, 12);

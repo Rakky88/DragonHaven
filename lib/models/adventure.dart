@@ -715,7 +715,7 @@ const specialEggCatalog = <String, SpecialEggDefinition>{
     titleNl: 'Gouden Vleugels Speciaal Ei',
     lineageId: 'cluckatrice',
     incubation: Duration(hours: 21),
-    assetPath: 'assets/images/ui/ui_special_egg.webp',
+    assetPath: 'assets/images/events/golden_wings/golden_wings_egg.png',
   ),
   'witchlight_egg_v1': SpecialEggDefinition(
     id: 'witchlight_egg_v1',
@@ -884,10 +884,10 @@ const specialAdventureEventCatalog = <SpecialAdventureEventDefinition>[
     showStoryInDetails: false,
     titleEn: 'A Wish on Golden Wings',
     titleNl: 'Een Wens op Gouden Vleugels',
-    trialKindName: '',
-    previewCode: '',
-    previewHours: 0,
-    temporaryMusicTrackId: '',
+    trialKindName: 'wishcakeTower',
+    previewCode: 'BDAYEVENT',
+    previewHours: 48,
+    temporaryMusicTrackId: 'event_birthday_wish',
   ),
   SpecialAdventureEventDefinition(
     id: 'halloween_witchlight',

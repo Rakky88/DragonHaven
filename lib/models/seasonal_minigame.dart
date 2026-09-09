@@ -2,11 +2,12 @@ import 'dart:math';
 
 /// Elapsed active play drives difficulty, independent of render frame rate.
 abstract final class SeasonalArcadePacing {
+  // Begin at the previous 40-seconds-remaining pace (75 - 40 = 35).
   static double parcelLifetime(double seconds, double might) =>
-      max(.95, 4.4 - max(0, seconds) * .05) + might.clamp(0, 1) * .35;
+      max(.95, 4.4 - (35 + max(0, seconds)) * .05) + might.clamp(0, 1) * .35;
 
   static double parcelInterval(double seconds) =>
-      max(.36, 2.4 - max(0, seconds) * .031);
+      max(.36, 2.4 - (35 + max(0, seconds)) * .031);
 
   static double chimeBeat(double seconds) =>
       max(.42, 1.10 - max(0, seconds) * .0105);

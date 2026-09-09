@@ -17,6 +17,7 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   const eventIds = <String>{
+    'golden_wings_birthday',
     'halloween_witchlight',
     'christmas_winter_hearth',
     'new_year_first_dawn',
@@ -24,11 +25,11 @@ void main() {
     'pride_every_color',
   };
 
-  test('all five event contracts are complete and internally linked', () {
+  test('all six event contracts are complete and internally linked', () {
     final events = specialAdventureEventCatalog
         .where((event) => eventIds.contains(event.id))
         .toList(growable: false);
-    expect(events, hasLength(5));
+    expect(events, hasLength(6));
     expect(events.map((event) => event.id).toSet(), eventIds);
 
     for (final event in events) {
@@ -42,11 +43,13 @@ void main() {
 
       expect(adventure, isNotNull, reason: event.id);
       expect(adventure!.seasonalSpecial, isTrue, reason: event.id);
-      expect(adventure.specialReductionPerExpertisePoint,
-          const Duration(minutes: 15),
-          reason: event.id);
-      expect(adventure.minimumDuration, const Duration(hours: 24),
-          reason: event.id);
+      if (event.id != 'golden_wings_birthday') {
+        expect(adventure.specialReductionPerExpertisePoint,
+            const Duration(minutes: 15),
+            reason: event.id);
+        expect(adventure.minimumDuration, const Duration(hours: 24),
+            reason: event.id);
+      }
       expect(trial?.specialEventId, event.id, reason: event.id);
       expect(trial?.duration, const Duration(seconds: 75), reason: event.id);
       expect(chest, isNotNull, reason: event.id);
@@ -70,6 +73,10 @@ void main() {
 
   test('event windows use exact Europe Amsterdam boundaries', () {
     final expected = <String, (DateTime, DateTime)>{
+      'golden_wings_birthday': (
+        DateTime.utc(2026, 8, 31, 22),
+        DateTime.utc(2026, 9, 2, 22)
+      ),
       'halloween_witchlight': (
         DateTime.utc(2026, 10, 24, 22),
         DateTime.utc(2026, 11, 1, 23),
@@ -277,6 +284,7 @@ void main() {
           'assets/images/events/$folder/podium_$medal.webp',
       },
       'assets/images/events/valentine/heartbound_pair_badge.webp',
+      'assets/images/events/golden_wings/trial_icon.png',
     };
 
     for (final path in cutouts) {
