@@ -858,11 +858,13 @@ class _DragonStudentStrip extends StatelessWidget {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
+                  AnimatedSize(
+                    alignment: Alignment.centerLeft,
+                    duration: MediaQuery.disableAnimationsOf(context)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 180),
                     child: Text(
                       status.isEmpty ? ' ' : status,
-                      key: ValueKey(status),
                       maxLines: 2,
                       style: TextStyle(
                         color: accent,
@@ -1302,9 +1304,9 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
           introEn: 'Light the Hollyfrost Giftforge',
           introNl: 'Ontsteek Hollyfrosts Geschenkensmidse',
           instructionsEn:
-              'Drag gifts to the matching symbol. The belt speeds up. Three mistakes end the Trial.',
+              'Drag gifts to matching symbols. More keep arriving, faster and faster. Three mistakes end the Trial.',
           instructionsNl:
-              'Sleep cadeaus naar hetzelfde symbool. De band versnelt. Bij drie fouten eindigt de proef.',
+              'Sleep cadeaus naar hetzelfde symbool. Er blijven nieuwe komen, steeds sneller. Bij drie fouten eindigt de proef.',
           successEn: 'Perfectly wrapped!',
           successNl: 'Perfect ingepakt!',
           failureEn: 'Missed delivery · −30 points',

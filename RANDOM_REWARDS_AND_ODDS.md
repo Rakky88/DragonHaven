@@ -6,7 +6,7 @@ Ruleset: v0.05.23 published and verified; staging and production schema 60 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 291a13e9ad3f7a01 -->
+<!-- reference-source-fingerprint: cbfc942f3e92103c -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
@@ -485,12 +485,16 @@ use the same activation/refill rules with a separate occurrence.
 
 ### 4.2 Trial reward by grade
 
-Current Halloween (Witchlight Ward) boundaries: D below 500; C from 500;
-B from 1200; A from 2000; S from 2250; S+ from 2500. The interim S boundary
-keeps every rank reachable beneath the requested 2500 S+ cutoff. Valentine uses 650 / 1600 / 2600 / 3900 / 5500; Pride uses
-1200 / 2900 / 4800 / 7200 / 10000. Christmas and New Year retain
-500 / 1200 / 2000 / 3000 / 4200. All boundaries are inclusive. Calibration still records raw
-scores and does not automatically adjust these cutoffs.
+Current working boundaries after v0.05.24 (not yet released): Halloween
+(Witchlight Ward) uses 500 / 1200 / 1600 / 1800 / 2000 for C/B/A/S/S+.
+A and S move below the new 2000 S+ boundary; its C and B remain unchanged.
+Valentine uses 650 / 1600 / 2600 / 3900 / 10000; Pride uses
+1200 / 2900 / 4800 / 7200 / 12000. New Year uses
+500 / 1200 / 2000 / 3000 / 20000. Christmas keeps
+500 / 1200 / 2000 / 3000 / 4200. All boundaries are inclusive. Only S+ changes
+for New Year, Valentine and Pride. New Year's S+ equals the existing 20000 score
+cap. Calibration still records raw scores and never adjusts cutoffs automatically.
+Reward pools and the existing server score/action limits remain unchanged.
 
 
 XP and expertise are fixed by grade. The chest is the random part shown here.
@@ -672,11 +676,13 @@ These systems use randomness but do not directly choose a reward item. Rewards r
   Spirit visibly widens that corridor from 24 to 32 logical pixels at 400
   expertise; leaving it always fails. The seeded lane draw is unused there.
 - The four rebuilt games derive a separate 31-bit board seed from the run's
-  seeded stream. Christmas draws a uniform parcel symbol from three choices.
+  seeded stream. Christmas draws a uniform parcel symbol from three choices on each scheduled
+  arrival, independently of deliveries; missed parcels still consume their draw.
   New Year draws one of four starting phrases uniformly, then follows an
   original 32-note melody (C5, D5, E5, G5). Later chords, spacing and acceleration
   are deterministic functions of active play time; no random lane/spacing draw
-  occurs per note. Christmas acceleration is also deterministic. See the Special
+  occurs per note. Christmas arrival intervals and each parcel's fixed travel time shorten
+  deterministically; the queue does not add another random draw. See the Special
   Events reference for exact pacing, assistance and three-strike rules.
 - Valentine independently shuffles eligible cells on each 3×5 board and selects
   four thorn cells per side, protecting starts and goals. Breadth-first search

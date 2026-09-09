@@ -3,6 +3,24 @@
 Laatst bijgewerkt: **9 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
+## Eventbalans na v0.05.24 gebouwd (nog niet uitgebracht)
+
+Op verzoek worden S+-grenzen aangepast naar Halloween 2000, Nieuwjaar 20000,
+Valentijn 10000 en Pride 12000. Halloween A/S gaan naar 1600/1800 om onder
+S+ te blijven; overige lagere grenzen en de kerstgrenzen blijven gelijk.
+Kerst krijgt een onafhankelijke, steeds snellere cadeaustroom met eigen
+levertijden per cadeau. Nieuwe cadeaus wachten niet op een bezorging, en gemiste
+cadeaus stoppen ook bij meerdere gelijktijdige verlopen deadlines op exact
+drie fouten. Verlopen sleeppogingen kunnen geen ander cadeau afleveren.
+De nieuwe snelle invoer bracht een fout met herhaalde feedbackanimaties aan
+het licht; de statusweergave is daarop hersteld. 23 gerichte controles slagen.
+Spelreferenties en acht instructietalen zijn bijgewerkt. Alle 703 regressietests
+slagen; analyse en documentatieguard zijn schoon. Android toont meerdere
+cadeaus tegelijk en de einduitslag bij de derde fout. Ook 320dp met 1,35
+tekstschaal en verminderde beweging is visueel gecontroleerd.
+Bewijs: `EVENT_TRIAL_BALANCE_VERIFICATION.md`. Dit werk is nog niet uitgebracht;
+productie en de openbare v0.05.24-release zijn niet gewijzigd.
+
 ## Correctierelease v0.05.24 afgerond
 
 De Special Adventure-drakenkeuze gebruikte na v0.05.23 nog de enkele focus.

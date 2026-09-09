@@ -9,14 +9,14 @@ const eventRefreshPhraseTranslations = <String, List<String>>{
     "Memoriza o rosto da abóbora e guia a luz pelo caminho sem sair dos limites. Três erros terminam a prova.",
     "カボチャの顔を覚えてから、鬼火を道に沿って導こう。道の縁からはみ出さないように。3回ミスすると試練終了。"
   ],
-  "Drag gifts to the matching symbol. The belt speeds up. Three mistakes end the Trial.":
+  "Drag gifts to matching symbols. More keep arriving, faster and faster. Three mistakes end the Trial.":
       [
-    "Ziehe Geschenke zum passenden Symbol. Das Band wird schneller. Drei Fehler beenden die Prüfung.",
-    "Arrastra regalos al símbolo correspondiente. La cinta acelera. Tres errores terminan la prueba.",
-    "Fais glisser les cadeaux vers le même symbole. Le tapis accélère. Trois erreurs terminent l’épreuve.",
-    "Trascina i regali sul simbolo uguale. Il nastro accelera. Tre errori terminano la prova.",
-    "Arrasta presentes para o símbolo igual. A passadeira acelera. Três erros terminam a prova.",
-    "プレゼントを同じマークへドラッグ。ベルトは次第に速くなります。3回ミスすると試練終了。"
+    "Ziehe Geschenke zu den passenden Symbolen. Neue kommen immer schneller nach. Drei Fehler beenden die Prüfung.",
+    "Arrastra los regalos a los símbolos correspondientes. Siguen llegando más, cada vez más rápido. Tres errores terminan la prueba.",
+    "Fais glisser les cadeaux vers les symboles correspondants. Ils arrivent sans arrêt, de plus en plus vite. Trois erreurs terminent l’épreuve.",
+    "Trascina i regali sui simboli corrispondenti. Ne arrivano sempre altri, sempre più in fretta. Tre errori terminano la prova.",
+    "Arrasta os presentes para os símbolos correspondentes. Continuam a chegar mais, cada vez mais depressa. Três erros terminam a prova.",
+    "プレゼントを同じマークへドラッグ。次々と届き、どんどん速くなります。3回ミスすると試練終了。",
   ],
   "Tap 1–4 as stars reach the gold line. The melody speeds up and later plays two notes together. Three mistakes end the Trial; sound is optional.":
       [

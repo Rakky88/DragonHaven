@@ -101,12 +101,19 @@ void main() {
   }
 
   testWidgets(
-      'Christmas delivers by dragging; the wrong bay and expiry are misses',
+      'Christmas arrivals overlap; deliveries leave other gifts and their deadlines intact',
       (tester) async {
     await mount(tester, TrialKind.hollyfrostGiftforge);
+    final first = find.byKey(const ValueKey('giftforge-parcel-0'));
+    final firstX = tester.getCenter(first).dx;
+    await step(tester, 2500);
+    final second = find.byKey(const ValueKey('giftforge-parcel-1'));
+    expect(first, findsOneWidget);
+    expect(second, findsOneWidget);
+    expect(tester.getCenter(first).dx, lessThan(firstX));
+    expect(tester.getCenter(first).dx, lessThan(tester.getCenter(second).dx));
     await capture(tester, 'christmas');
-    Future<void> deliver(bool correct) async {
-      final parcel = find.byKey(const Key('giftforge-parcel'));
+    Future<void> deliver(Finder parcel, bool correct) async {
       final label = tester
           .widgetList<Semantics>(
               find.descendant(of: parcel, matching: find.byType(Semantics)))
@@ -121,12 +128,38 @@ void main() {
       await step(tester, 400);
     }
 
-    await deliver(true);
+    await deliver(second, true);
     expect(actions.single, (true, 120, true));
-    await deliver(false);
+    expect(first, findsOneWidget);
+    expect(second, findsNothing);
+    await deliver(first, false);
     expect(actions.last.$1, isFalse);
-    await step(tester, 5100);
+    // The next scheduled arrival does not depend on when either gift was sorted.
+    await step(tester, 1500);
+    expect(find.byKey(const ValueKey('giftforge-parcel-2')), findsOneWidget);
+    await step(tester, 4800);
     expect(actions.where((a) => !a.$1), hasLength(2));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
+      'Christmas expiry during a drag cannot deliver a different parcel',
+      (tester) async {
+    await mount(tester, TrialKind.hollyfrostGiftforge, large: true);
+    final first = find.byKey(const ValueKey('giftforge-parcel-0'));
+    final finger = await tester.startGesture(tester.getCenter(first));
+    await finger.moveBy(const Offset(-25, 25));
+    await tester.pump();
+    await step(tester, 4600);
+    expect(first, findsNothing);
+    expect(find.byKey(const ValueKey('giftforge-parcel-1')), findsOneWidget);
+    expect(actions.single.$1, isFalse);
+    await finger
+        .moveTo(tester.getCenter(find.byKey(const Key('giftforge-bay-0'))));
+    await finger.up();
+    await step(tester, 100);
+    expect(actions, hasLength(1));
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

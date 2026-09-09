@@ -41,6 +41,14 @@ class _ChimeNote {
   final double travel;
 }
 
+class _GiftParcel {
+  _GiftParcel(this.id, this.type, this.born, this.duration);
+  final int id;
+  final int type;
+  final double born;
+  final double duration;
+}
+
 class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   late final Random _random;
   Timer? _ticker;
@@ -53,10 +61,13 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   int _hints = 0;
   HeartDirection? _hint;
   int? _prismHint;
-  int _parcel = 0;
-  double _parcelBorn = 0;
-  double _parcelDuration = 4.8;
+  final _parcels = <_GiftParcel>[];
+  int _parcelId = 0;
+  double _nextParcel = 0;
+  int? _draggingParcel;
   Offset? _drag;
+  int _mistakes = 0;
+  bool _lost = false;
   final _surface = GlobalKey();
   final _notes = <_ChimeNote>[];
   double _nextNote = 0;
@@ -73,7 +84,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   double get _arcana =>
       widget.dragon.trainingFor(TrainingFocus.arcana).clamp(0, 400) / 400;
   double get _chimeWindow => .18 + _might * .07;
-  bool get _canInput => widget.running && _time >= _readyAt;
+  bool get _canInput => widget.running && !_lost && _time >= _readyAt;
   bool get _reducedMotion => MediaQuery.disableAnimationsOf(context);
 
   @override
@@ -103,9 +114,11 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
     _hint = null;
     _prismHint = null;
     _errorCell = null;
-    _parcel = _random.nextInt(3);
-    _parcelBorn = _time;
-    _parcelDuration = SeasonalArcadePacing.parcelLifetime(_time, _might);
+    final symbol = _random.nextInt(3);
+    if (widget.kind == TrialKind.hollyfrostGiftforge) {
+      _spawnParcel(_time, type: symbol);
+    }
+    _draggingParcel = null;
     _drag = null;
     if (widget.kind == TrialKind.rosevowRelay) {
       _maze = HeartMaze.generate(_random);
@@ -115,11 +128,25 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
     }
   }
 
-  void _report(bool correct, {int points = 100, bool complete = true}) =>
-      widget.onAction(correct, points: points, completesRound: complete);
+  void _spawnParcel(double born, {int? type}) {
+    _parcels.add(_GiftParcel(_parcelId++, type ?? _random.nextInt(3), born,
+        SeasonalArcadePacing.parcelLifetime(born, _might)));
+    _nextParcel = born + SeasonalArcadePacing.parcelInterval(born);
+  }
+
+  void _report(bool correct, {int points = 100, bool complete = true}) {
+    if (!widget.running || _lost) return;
+    if (!correct &&
+        (widget.kind == TrialKind.hollyfrostGiftforge ||
+            widget.kind == TrialKind.midnightChime)) {
+      // Stop synchronously, including several expiries in one render frame.
+      _lost = ++_mistakes >= 3;
+    }
+    widget.onAction(correct, points: points, completesRound: complete);
+  }
 
   void _tick() {
-    if (!mounted || !widget.running) return;
+    if (!mounted || !widget.running || _lost) return;
     final now = widget.clock();
     final delta = _lastTick == null
         ? 0.0
@@ -130,12 +157,23 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
       _time += delta;
       _flares.removeWhere((_, until) => until <= _time);
       if (_time >= _readyAt) _errorCell = null;
-      if (widget.kind == TrialKind.hollyfrostGiftforge &&
-          _time - _parcelBorn > _parcelDuration &&
-          _time >= _readyAt) {
-        _report(false);
-        _newPuzzle();
-        _readyAt = _time + .25;
+      if (widget.kind == TrialKind.hollyfrostGiftforge) {
+        // Scheduled arrivals never wait for a delivery. Bound catch-up after
+        // a suspended frame; three expired parcels will end the game anyway.
+        while (_nextParcel <= _time && _parcels.length < 8) {
+          _spawnParcel(_nextParcel);
+        }
+        final missed =
+            _parcels.where((p) => _time > p.born + p.duration).toList();
+        for (final parcel in missed) {
+          _parcels.remove(parcel);
+          if (_draggingParcel == parcel.id) {
+            _draggingParcel = null;
+            _drag = null;
+          }
+          _report(false);
+          if (_lost) break;
+        }
       }
       if (widget.kind == TrialKind.midnightChime) {
         final missed =
@@ -144,7 +182,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
           _notes.remove(note);
           _report(false);
         }
-        if (_time >= _nextNote) {
+        if (!_lost && _time >= _nextNote) {
           final travel = SeasonalArcadePacing.chimeTravel(_time, _spirit);
           for (final lane
               in SeasonalArcadePacing.chimeLanes(_beat, _time, _melodyPhrase)) {
@@ -163,7 +201,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
     return IgnorePointer(
-        ignoring: !widget.running,
+        ignoring: !widget.running || _lost,
         child: switch (widget.kind) {
           TrialKind.hollyfrostGiftforge => _giftforge(s),
           TrialKind.midnightChime => _chimes(s),
@@ -234,23 +272,11 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
         instruction:
             s.pick('Keep the sleigh supplied', 'Vul de sterrenlichtslee'),
         detail: s.pick(
-            'Drag gifts to the matching symbol. The belt speeds up. Three mistakes end the Trial.',
-            'Sleep cadeaus naar hetzelfde symbool. De band versnelt. Bij drie fouten eindigt de proef.'),
+            'Drag gifts to matching symbols. More keep arriving, faster and faster. Three mistakes end the Trial.',
+            'Sleep cadeaus naar hetzelfde symbool. Er blijven nieuwe komen, steeds sneller. Bij drie fouten eindigt de proef.'),
         child: LayoutBuilder(builder: (context, box) {
           final size = Size(box.maxWidth, box.maxHeight);
           final giftSize = min(66.0, size.width / 4);
-          final progress =
-              ((_time - _parcelBorn) / _parcelDuration).clamp(0.0, 1.0);
-          final center = _drag ??
-              Offset(giftSize / 2 + (size.width - giftSize) * (1 - progress),
-                  size.height * .27);
-          void dragTo(Offset global) {
-            if (!_canInput) return;
-            final render =
-                _surface.currentContext!.findRenderObject()! as RenderBox;
-            setState(() => _drag = render.globalToLocal(global));
-          }
-
           return Stack(key: _surface, clipBehavior: Clip.hardEdge, children: [
             Positioned(
                 left: 0,
@@ -293,42 +319,84 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
                               borderRadius: BorderRadius.circular(18)),
                           child: Icon(_giftSymbols[i],
                               color: _giftColors[i], size: 35)))),
-            Positioned(
-                left: center.dx - giftSize / 2,
-                top: center.dy - giftSize / 2,
-                child: GestureDetector(
-                    key: const Key('giftforge-parcel'),
-                    onPanStart: (d) => dragTo(d.globalPosition),
-                    onPanUpdate: (d) => dragTo(d.globalPosition),
-                    onPanCancel: () => setState(() => _drag = null),
-                    onPanEnd: (_) {
-                      if (!_canInput || _drag == null) return;
-                      final dropped = _drag!;
-                      final bay = (dropped.dx / (size.width / 3)).floor();
-                      final isDelivery = dropped.dy >=
-                              size.height -
-                                  min(104, size.height * .32) -
-                                  12 -
-                                  _spirit * 8 &&
-                          dropped.dy <= size.height + 16 &&
-                          bay >= 0 &&
-                          bay < 3;
-                      setState(() {
-                        if (isDelivery) {
-                          _report(bay == _parcel, points: 120);
-                          _newPuzzle();
-                          _readyAt = _time + .3;
-                        } else {
-                          _drag = null;
-                        }
-                      });
-                    },
-                    child: Semantics(
-                        label: '${s.pick('Parcel', 'Cadeau')} ${_parcel + 1}',
-                        child: _parcelArt(_parcel, size: giftSize)))),
+            // The parcel being held stays above the moving queue.
+            for (final parcel in [
+              ..._parcels.where((p) => p.id != _draggingParcel),
+              ..._parcels.where((p) => p.id == _draggingParcel),
+            ])
+              _giftParcel(s, parcel, size, giftSize),
           ]);
         }),
       );
+
+  Widget _giftParcel(
+      AppStrings s, _GiftParcel parcel, Size size, double giftSize) {
+    final progress = ((_time - parcel.born) / parcel.duration).clamp(0.0, 1.0);
+    final held = _draggingParcel == parcel.id;
+    final center = held && _drag != null
+        ? _drag!
+        : Offset(giftSize / 2 + (size.width - giftSize) * (1 - progress),
+            size.height * .27);
+    void dragTo(Offset global) {
+      if (!_canInput ||
+          !_parcels.contains(parcel) ||
+          (_draggingParcel != null && _draggingParcel != parcel.id)) {
+        return;
+      }
+      final render = _surface.currentContext!.findRenderObject()! as RenderBox;
+      setState(() {
+        _draggingParcel = parcel.id;
+        _drag = render.globalToLocal(global);
+      });
+    }
+
+    void releaseDrag() {
+      if (_draggingParcel != parcel.id) return;
+      setState(() {
+        _draggingParcel = null;
+        _drag = null;
+      });
+    }
+
+    return Positioned(
+        key: ValueKey('giftforge-position-${parcel.id}'),
+        left: center.dx - giftSize / 2,
+        top: center.dy - giftSize / 2,
+        child: GestureDetector(
+            key: ValueKey('giftforge-parcel-${parcel.id}'),
+            onPanStart: (d) => dragTo(d.globalPosition),
+            onPanUpdate: (d) => dragTo(d.globalPosition),
+            onPanCancel: releaseDrag,
+            onPanEnd: (_) {
+              if (!_canInput ||
+                  !_parcels.contains(parcel) ||
+                  _draggingParcel != parcel.id ||
+                  _drag == null) {
+                return;
+              }
+              final dropped = _drag!;
+              final bay = (dropped.dx / (size.width / 3)).floor();
+              final isDelivery = dropped.dy >=
+                      size.height -
+                          min(104, size.height * .32) -
+                          12 -
+                          _spirit * 8 &&
+                  dropped.dy <= size.height + 16 &&
+                  bay >= 0 &&
+                  bay < 3;
+              setState(() {
+                _draggingParcel = null;
+                _drag = null;
+                if (isDelivery) {
+                  _parcels.remove(parcel);
+                  _report(bay == parcel.type, points: 120);
+                }
+              });
+            },
+            child: Semantics(
+                label: '${s.pick('Parcel', 'Cadeau')} ${parcel.type + 1}',
+                child: _parcelArt(parcel.type, size: giftSize))));
+  }
 
   void _strike(int lane) {
     if (!_canInput || _time < (_laneReadyAt[lane] ?? 0)) return;

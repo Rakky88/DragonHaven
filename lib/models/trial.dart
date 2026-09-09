@@ -239,16 +239,11 @@ TrialGrade trialGradeForScore(TrialKind kind, int score) {
     TrialKind.cavernFlight => const [250, 600, 1100, 1700, 2500],
     TrialKind.ruinBreaker => const [900, 2250, 4000, 6750, 9000],
     TrialKind.runeweaver => const [3, 6, 9, 12, 15],
-    TrialKind.witchlightWard => const [500, 1200, 2000, 2250, 2500],
-    TrialKind.rosevowRelay => const [650, 1600, 2600, 3900, 5500],
-    TrialKind.prismaticParade => const [1200, 2900, 4800, 7200, 10000],
-    TrialKind.hollyfrostGiftforge || TrialKind.midnightChime => const [
-        500,
-        1200,
-        2000,
-        3000,
-        4200
-      ],
+    TrialKind.witchlightWard => const [500, 1200, 1600, 1800, 2000],
+    TrialKind.rosevowRelay => const [650, 1600, 2600, 3900, 10000],
+    TrialKind.prismaticParade => const [1200, 2900, 4800, 7200, 12000],
+    TrialKind.midnightChime => const [500, 1200, 2000, 3000, 20000],
+    TrialKind.hollyfrostGiftforge => const [500, 1200, 2000, 3000, 4200],
   };
   if (score >= thresholds[4]) return TrialGrade.sPlus;
   if (score >= thresholds[3]) return TrialGrade.s;

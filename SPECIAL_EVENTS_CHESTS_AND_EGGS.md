@@ -16,7 +16,7 @@ and Start remain on the offer; the full details sheet retains availability.
 The shrinking test label keeps an eight-pixel gap from the event title, even
 when only a few characters fit.
 
-Ruleset: v0.05.24 published event revision; migration 61 adds bounded three-strike completions, economy activation remains disabled
+Ruleset: balance changes after v0.05.24, not yet released; migration 61 already supports three-strike completions, economy activation remains disabled
 
 The Special Adventure dragon picker now also displays Might, Arcana and Spirit
 with their individual scores, MAX markers and selected highlight glow. This
@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 98f7c6c4a1228201 -->
+<!-- reference-source-fingerprint: 8cf8dc5aae672fbe -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -193,10 +193,17 @@ roses, rainbow prisms and chimes. All start at 75 seconds; total expertise adds
 multiplies score. Event offer cards and dragon pickers show all three expertises;
 only dragons with all three highlighted appear in the highlighted section.
 
-Christmas rolls one of three parcel symbols. Each parcel takes
-`max(1.15, 4.8 - activeSeconds * .052) + clamp(Might / 400, 0, 1) * .9`
-seconds to cross the belt. Its lifetime is fixed when it spawns, so the parcel
-never jumps during acceleration. Spirit extends delivery tolerance by up to 8px.
+Christmas independently schedules uniformly chosen parcel symbols (three choices).
+New arrivals never wait for an earlier delivery. The spawn interval is
+`max(.36, 2.4 - activeSeconds * .031)` seconds; each parcel crosses the belt in
+`max(.95, 4.4 - activeSeconds * .05) + clamp(Might / 400, 0, 1) * .35` seconds.
+Both arrivals and travel get faster, producing several concurrent parcels.
+A parcel keeps its own deadline and speed from spawn; delivering another gift
+never resets it. Held parcels can still expire, and a late release cannot deliver
+another parcel. Spirit extends delivery tolerance by up to 8px. There is no
+shared delivery cooldown. Catch-up work is bounded to eight queued parcels;
+three misses stop play synchronously, including expiry batches after a stalled
+frame. Feedback text changes directly without stacking repeated fade-out labels.
 New Year beats shorten from 1.10s to a .42s floor at .0105s per active second;
 every 16th beat has a 1.5x phrase pause. Note travel shortens from 2.1s to .9s
 at .018s per active second, plus up to .4s from Spirit. Travel time is fixed
@@ -222,10 +229,11 @@ finished circuit 120. Each scoring action adds the existing capped combo bonus
 
 | Trial | C | B | A | S | S+ |
 |---|---:|---:|---:|---:|---:|
-| Halloween | 500 | 1200 | 2000 | 2250 | 2500 |
-| Christmas / New Year | 500 | 1200 | 2000 | 3000 | 4200 |
-| Valentine | 650 | 1600 | 2600 | 3900 | 5500 |
-| Pridefest | 1200 | 2900 | 4800 | 7200 | 10000 |
+| Halloween | 500 | 1200 | 1600 | 1800 | 2000 |
+| Christmas | 500 | 1200 | 2000 | 3000 | 4200 |
+| New Year | 500 | 1200 | 2000 | 3000 | 20000 |
+| Valentine | 650 | 1600 | 2600 | 3900 | 10000 |
+| Pridefest | 1200 | 2900 | 4800 | 7200 | 12000 |
 
 Each boundary is inclusive; D is below C.
 
@@ -436,9 +444,10 @@ Annual occurrences spanning December/January retain their original occurrence
 key and full configured duration after midnight on 1 January. Event dates,
 participation requirements, reward tables and preview entitlements are unchanged.
 
-Halloween's current rank boundaries are 500 / 1200 / 2000 / 2250 / 2500
-(C / B / A / S / S+). Valentine uses 650 / 1600 / 2600 / 3900 / 5500; Pride
-uses 1200 / 2900 / 4800 / 7200 / 10000. Christmas/New Year retain 4200 for S+. S+ rewards
+Halloween's current rank boundaries are 500 / 1200 / 1600 / 1800 / 2000
+(C / B / A / S / S+). Valentine uses 650 / 1600 / 2600 / 3900 / 10000; Pride
+uses 1200 / 2900 / 4800 / 7200 / 12000. New Year uses
+500 / 1200 / 2000 / 3000 / 20000; Christmas retains 4200 for S+. S+ rewards
 use the weighted relic pool documented in `RANDOM_REWARDS_AND_ODDS.md`, including
 four unique equipable brooches. Their Expertise bonus applies once within the
 wearer's cap; event Adventures and online pair/group rewards use the same rule.

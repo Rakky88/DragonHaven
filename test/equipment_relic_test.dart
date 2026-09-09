@@ -159,14 +159,14 @@ void main() {
     });
   }
 
-  test('Halloween S+ starts at 2500; Christmas retains its threshold', () {
+  test('Halloween S+ starts at 2000; Christmas retains its threshold', () {
     for (final entry in {
-      1999: TrialGrade.b,
-      2000: TrialGrade.a,
-      2249: TrialGrade.a,
-      2250: TrialGrade.s,
-      2499: TrialGrade.s,
-      2500: TrialGrade.sPlus
+      1599: TrialGrade.b,
+      1600: TrialGrade.a,
+      1799: TrialGrade.a,
+      1800: TrialGrade.s,
+      1999: TrialGrade.s,
+      2000: TrialGrade.sPlus
     }.entries) {
       expect(
           trialGradeForScore(TrialKind.witchlightWard, entry.key), entry.value);
