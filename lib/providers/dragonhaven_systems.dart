@@ -955,11 +955,10 @@ extension DragonHavenSystems on HouseholdProvider {
       }
     } else {
       final day = HouseholdProvider._dayKey(now);
-      refillCount =
-          longAdventureRefillDay.isEmpty || longAdventureRefillDay != day
-              ? 3
-              : 0;
-      longAdventureRefillDay = day;
+      final newDay = longAdventureRefillDay.isEmpty ||
+          day.compareTo(longAdventureRefillDay) > 0;
+      refillCount = newDay ? 3 : 0;
+      if (newDay) longAdventureRefillDay = day;
     }
     _addAdventureOptions(
       ids: ids,
@@ -1292,17 +1291,17 @@ extension DragonHavenSystems on HouseholdProvider {
 
   bool _normalizeTrialStreakForDate(DateTime now) {
     _reconcileTrialStreakCredits();
-    final today = DateTime(now.year, now.month, now.day);
+    final today = DateTime.utc(now.year, now.month, now.day);
     if (trialStreakRewardReady) {
       if (trialStreakCarryDayKey.isEmpty) return false;
       final carriedDay = DateTime.tryParse(trialStreakCarryDayKey);
       final distance = carriedDay == null
           ? 2
           : today
-              .difference(
-                  DateTime(carriedDay.year, carriedDay.month, carriedDay.day))
+              .difference(DateTime.utc(
+                  carriedDay.year, carriedDay.month, carriedDay.day))
               .inDays;
-      if (distance >= 0 && distance <= 1) return false;
+      if (distance <= 1) return false;
       // The pending seven-day reward remains claimable, but a day missed
       // behind it may not survive as the first day of the next streak.
       trialStreakCreditedDayKeys.remove(trialStreakCarryDayKey);
@@ -1317,9 +1316,10 @@ extension DragonHavenSystems on HouseholdProvider {
       trialStreakCreditedDayKeys.clear();
       return true;
     }
-    final normalizedLast = DateTime(lastDay.year, lastDay.month, lastDay.day);
+    final normalizedLast =
+        DateTime.utc(lastDay.year, lastDay.month, lastDay.day);
     final distance = today.difference(normalizedLast).inDays;
-    if (distance <= 1 && distance >= 0) return false;
+    if (distance <= 1) return false;
     trialStreakCount = 0;
     trialStreakLastDayKey = '';
     trialStreakCreditedDayKeys.clear();
@@ -1328,6 +1328,12 @@ extension DragonHavenSystems on HouseholdProvider {
 
   void _recordTrialStreakCompletion(DateTime now) {
     final dayKey = HouseholdProvider._dayKey(now);
+    // A backward day cannot erase already earned progress or earn it twice.
+    // Keep imported future date labels until the authoritative day catches up.
+    if (dayKey.compareTo(trialStreakLastCompletionDayKey) <= 0 ||
+        dayKey.compareTo(trialStreakLastDayKey) < 0) {
+      return;
+    }
     _normalizeTrialStreakForDate(now);
     if (dayKey == trialStreakLastCompletionDayKey ||
         trialStreakCreditedDayKeys.contains(dayKey)) {
@@ -1347,10 +1353,11 @@ extension DragonHavenSystems on HouseholdProvider {
 
     if (dayKey == trialStreakLastDayKey) return;
     final lastDay = DateTime.tryParse(trialStreakLastDayKey);
-    final today = DateTime(now.year, now.month, now.day);
+    final today = DateTime.utc(now.year, now.month, now.day);
     final consecutive = lastDay != null &&
         today
-                .difference(DateTime(lastDay.year, lastDay.month, lastDay.day))
+                .difference(
+                    DateTime.utc(lastDay.year, lastDay.month, lastDay.day))
                 .inDays ==
             1;
     if (!consecutive) trialStreakCreditedDayKeys.clear();
@@ -1403,12 +1410,12 @@ extension DragonHavenSystems on HouseholdProvider {
           DateTime.tryParse(trialStreakLastCompletionDayKey);
       final countedThrough = DateTime.tryParse(trialStreakLastDayKey);
       if (creditedThrough != null && countedThrough != null) {
-        final unverifiedDays = DateTime(
+        final unverifiedDays = DateTime.utc(
           countedThrough.year,
           countedThrough.month,
           countedThrough.day,
         )
-            .difference(DateTime(
+            .difference(DateTime.utc(
               creditedThrough.year,
               creditedThrough.month,
               creditedThrough.day,
@@ -1428,7 +1435,7 @@ extension DragonHavenSystems on HouseholdProvider {
       for (var offset = 0; offset < trialStreakCount; offset++) {
         trialStreakCreditedDayKeys.add(
           HouseholdProvider._dayKey(
-            DateTime(endingDay.year, endingDay.month, endingDay.day)
+            DateTime.utc(endingDay.year, endingDay.month, endingDay.day)
                 .subtract(Duration(days: offset)),
           ),
         );
@@ -1474,7 +1481,7 @@ extension DragonHavenSystems on HouseholdProvider {
     final verifiedKeys = <String>{};
     while (verifiedCount < trialStreakCount) {
       final key = HouseholdProvider._dayKey(
-        DateTime(endingDay.year, endingDay.month, endingDay.day)
+        DateTime.utc(endingDay.year, endingDay.month, endingDay.day)
             .subtract(Duration(days: verifiedCount)),
       );
       if (!trialStreakCreditedDayKeys.contains(key)) break;
@@ -1985,7 +1992,10 @@ extension DragonHavenSystems on HouseholdProvider {
     } else if (adventure.kind == AdventureKind.short) {
       shortAdventureRefilledAt = now;
     } else {
-      longAdventureRefillDay = HouseholdProvider._dayKey(now);
+      final day = HouseholdProvider._dayKey(now);
+      if (day.compareTo(longAdventureRefillDay) > 0) {
+        longAdventureRefillDay = day;
+      }
     }
     await _notifyAndSave();
   }
@@ -2533,7 +2543,8 @@ extension DragonHavenSystems on HouseholdProvider {
     }
 
     final dayKey = HouseholdProvider._dayKey(now);
-    if (lastReturningDayKey != dayKey) {
+    if (lastReturningDayKey.isEmpty ||
+        dayKey.compareTo(lastReturningDayKey) > 0) {
       lastReturningDayKey = dayKey;
       final dayStart = now.isUtc
           ? DateTime.utc(now.year, now.month, now.day)

@@ -73,7 +73,7 @@ The next implementation boundaries are:
 | Area | Remaining work before live ownership |
 | --- | --- |
 | Trials and school | Server-issued attempt, bounded input transcript, shared score evaluation, expiry/offer/dragon checks and one atomic reward. The existing seasonal score/count/duration checks are not a verified transcript; arbitrary scores remain absent from canonical commands. |
-| House and care | Furniture editing, floor reordering and roaming now have typed commands and local controls; their new network rehearsal is pending below. Care and school interactions still need authoritative controls. |
+| House and care | Furniture editing, floor reordering and roaming are proven through the actual staging UI and server. Care and school interactions still need authoritative controls. |
 | Calendar | Define the keeper's server day and preserve existing constellation/day keys through timezone and daylight-saving transitions; device-clock changes must not create another daily claim. |
 | Social and events | Settle group/seasonal Adventures, trades, Beacon contributions and podium prizes against one canonical owner state and the normalized social records. Preserve source event/preview identity on an already-started run. |
 | Activation | Finish import reconciliation, lossless representative migrations, recovery and old-client fences, then exercise cutover/rollback in staging. Current shadow copies cannot be promoted by the staging UI. |
@@ -229,6 +229,30 @@ Three additional real-widget tests cover Dutch 320dp/large text, room editing,
 lost-reply reconciliation, floor arrows, account reentry and roaming without
 training changes. The dedicated native/JavaScript fixture and authenticated
 Edge tests include these commands. The actual network UI probe now also checks
-placement, storing without loss, floor ordering and roaming. Final staging run
-and visual evidence will be recorded after completion; no production migration,
-authority switch, APK release or economy activation is part of this extension.
+placement, storing without loss, floor ordering and roaming. Run
+[34399422518](https://github.com/Rakky88/DragonHaven/actions/runs/34399422518)
+passed on `2a81df7`: clean analysis, 754 Flutter tests, 16 Edge tests,
+native/JavaScript parity and every SQL/network/UI contract. The real room
+editor and roaming markers were required by the network harness. Both synthetic
+accounts and shadow commands were removed, and the worker disabled. The final
+preflight at 20:19:18 UTC on 9 September confirmed schema 65, lint 0 and
+Auth/settings/application HTTP 200. Dutch 320dp/1.35-text room editing and
+reordered tower screenshots were visually inspected under
+`release/economy-house-edit-visual/`. No production migration, authority switch,
+APK release or economy activation is part of this extension.
+
+## Calendar hardening — after the house editing candidate
+
+The database instant is normalized to UTC before shared rules run. Daily
+long-adventure refills and returning-dragon rolls retain their greatest date,
+including dismissals, so changing time backward cannot roll/refill again.
+Streak credit, migration reconstruction and carry handling use calendar-date
+arithmetic instead of elapsed local midnight hours. They preserve already
+credited dates and ready rewards on backward clocks. Existing offline gameplay
+continues using local date labels; server commands accept no client day/time.
+
+Local tests cover spring/fall US and European transitions, repeated/backward
+and new days, ready-streak single claims, no second daily random draw and
+identical server results for local/UTC representations of one database instant.
+The existing local-label-to-server-day import bridge remains separate: no
+existing player has been switched or had day keys rewritten by this change.

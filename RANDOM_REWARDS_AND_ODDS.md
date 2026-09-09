@@ -2,11 +2,20 @@
 
 Last verified: 9 September 2026
 
-Ruleset: v0.05.25 published and verified; staging and production schema 62 verified, economy activation disabled
+Ruleset: v0.05.29 published and verified; staging and production schema 65 verified, economy activation disabled; subsequent calendar hardening below
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: c70ff6140b1bb0dd -->
+<!-- reference-source-fingerprint: 492c6610a369cd69 -->
+
+Calendar hardening after v0.05.29: canonical commands normalize the database
+instant to UTC. Legacy offline play retains its local day. Long-adventure
+refills and daily return rolls advance only to a later date; a backward clock
+cannot reopen a spent daily opportunity. Trial credits use calendar-date
+arithmetic across daylight-saving transitions and preserve earned/future date
+labels on a backward clock. The 7-day chest pool and 10% return chance are
+unchanged. Migration of existing local day labels to a UTC-owned account still
+needs an explicit, lossless import bridge before production activation.
 
 The staging house editor now places, moves and removes owned furniture through
 revision-fenced server commands. Floor reordering preserves the existing damage
@@ -553,7 +562,8 @@ Claiming a completed seven-day streak gives:
 
 The awarded chest is unopened and later uses its normal content rolls.
 
-Only the first completed Trial on a local calendar day can advance the
+Only the first completed Trial on a calendar day (local in legacy play; UTC
+in the canonical server lane) can advance the
 constellation. Claiming a completed constellation does not make that same day
 eligible again. A Trial completed on a later day while the reward is still
 waiting can become the first day of the next streak, but at most one day is
@@ -565,7 +575,7 @@ If there are no released dragons, no daily roll is made.
 
 If at least one released dragon exists:
 
-1. Once per local calendar day there is a 10% chance that a return event is scheduled.
+1. Once per calendar day (local in legacy play, UTC in the canonical lane) there is a 10% chance that a return event is scheduled.
 2. Conditional on a successful day, the arrival second is uniform across all 86,400 seconds of that day.
 3. When it resolves, one released dragon is selected uniformly from the released-dragon list.
 4. The result is rolled from the table for that dragon's current stage, moral alignment, and law alignment.

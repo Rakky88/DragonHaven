@@ -7,11 +7,17 @@ waaronder kwaliteitsbehoudende APK-verkleining, opnieuw opgedragen. De ontbreken
 meubelbewerking, verdiepingsvolgorde, kamer leegmaken en roaming zijn nu via de
 servercommandolaag gebouwd. Lokale tests bewijzen behoud van bezit, herstel na
 verloren antwoorden, accountfences, geldige coördinaten, torencapaciteit en het
-meeverhuizen van schade/reparatiefactoren. De echte stagingnetwerkproef is
-uitgebreid en volgt na de visuele/referencecontrole. Productie blijft op 65
+meeverhuizen van schade/reparatiefactoren. Stagingrun 34399422518 slaagt op `2a81df7` met 754 tests, schone analyse,
+16 Edge-tests, native/JavaScript-gelijkheid en echte UI/netwerkacties. Beide
+testaccounts zijn opgeruimd en de gameworker staat weer uit. Productie blijft op 65
 migraties, legacy autoriteit en uitgeschakelde economische/game-mutaties.
 
-Daarna blijven zorg/school, gevalideerde trialbewijzen, serverdaggrenzen,
+Daggrenzen zijn daarnaast lokaal aangescherpt: serverregels gebruiken UTC,
+dagmarkeringen lopen alleen vooruit en streaks rekenen met kalenderdagen rond
+zomer-/wintertijd. De verliesvrije brug van bestaande lokale daglabels naar
+serverdagen moet nog apart worden afgerond.
+
+Daarna blijven zorg/school, gevalideerde trialbewijzen, daglabelmigratie,
 seasonal/group/sociale afwikkeling en verliesvrije migratie/herstel open.
 APK-optimalisatie volgt op de economie; beeld- en geluidskwaliteit blijven
 behouden. Deze voortgang is geen afronding van de volledige economie.

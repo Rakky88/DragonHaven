@@ -156,7 +156,9 @@ class HouseholdProvider extends ChangeNotifier {
       initialize: false,
       persistenceEnabled: false,
       random: random,
-      clock: () => now,
+      // The database supplies the instant. Daily authority is UTC regardless
+      // of the worker host or the client's selected/device timezone.
+      clock: () => now.toUtc(),
       idGenerator: idGenerator,
     );
     game._restore(state);

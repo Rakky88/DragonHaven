@@ -1,6 +1,6 @@
 # DragonHaven Special Events, Chests, and Eggs
 
-Last reviewed: 9 September 2026; v0.05.27 candidate includes approved Sunwake/Harvestmoon content. Staging and production are at schema 65; database lint and public health checks pass.
+Last reviewed: 9 September 2026; v0.05.29 is published with the approved Sunwake/Harvestmoon content and subsequent control refinements. Staging and production are at schema 65; database lint and public health checks pass.
 
 The four redesigned Trial introductions use their clean standalone event icons,
 avoiding adjacent-frame remnants in the older sprite-sheet cutouts. Halloween now alternates memory and tracing; the former Might timing phase is removed.
@@ -16,7 +16,7 @@ and Start remain on the offer; the full details sheet retains availability.
 The shrinking test label keeps an eight-pixel gap from the event title, even
 when only a few characters fit.
 
-Ruleset candidate: v0.05.27. Migration 64 adds two approved festivals and one-miss birthday completion, with compatibility for older three-miss clients. Economy activation remains disabled.
+Published ruleset: v0.05.29; subsequent calendar hardening is described below. Migration 64 adds two approved festivals and one-miss birthday completion, with compatibility for older three-miss clients. Economy activation remains disabled.
 
 The Special Adventure dragon picker now also displays Might, Arcana and Spirit
 with their individual scores, MAX markers and selected highlight glow. This
@@ -27,7 +27,16 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 26808456971f146c -->
+<!-- reference-source-fingerprint: 7f03fea218951578 -->
+
+Calendar hardening after v0.05.29: canonical commands normalize the database
+instant to UTC. Legacy offline play retains its local day. Long-adventure
+refills and daily return rolls advance only to a later date; a backward clock
+cannot reopen a spent daily opportunity. Trial credits use calendar-date
+arithmetic across daylight-saving transitions and preserve earned/future date
+labels on a backward clock. The 7-day chest pool and 10% return chance are
+unchanged. Migration of existing local day labels to a UTC-owned account still
+needs an explicit, lossless import bridge before production activation.
 
 The staging house editor now places, moves and removes owned furniture through
 revision-fenced server commands. Floor reordering preserves the existing damage
