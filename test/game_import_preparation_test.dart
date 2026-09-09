@@ -1,10 +1,12 @@
 import 'dart:convert';
 
 import 'package:dragon_haven/domain/game_import_preparation.dart';
+import 'package:dragon_haven/domain/game_asset_snapshot.dart';
 import 'package:dragon_haven/domain/server_entropy.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/egg_altar.dart';
 import 'package:dragon_haven/models/pet.dart';
+import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -21,6 +23,7 @@ Map<String, dynamic> source() {
       persistenceEnabled: false);
   game.pet
     ..stage = DragonStage.hatchling
+    ..favorite = true
     ..firstEgg = false
     ..name = 'Mica';
   game.eggStash = [
@@ -55,6 +58,76 @@ PreparedGameImport prepare(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  Map<String, dynamic> furnishedSource() {
+    final saved = source();
+    saved['ownedItemIds'].add('moss_cushion');
+    saved['equippedItemIds'][shopItemById('moss_cushion')!.slot.name] =
+        'moss_cushion';
+    saved['housePlacements'] = <Map<String, dynamic>>[
+      {'itemId': 'moss_cushion', 'roomId': 'nest', 'x': .3, 'y': .7, 'scale': 1}
+    ];
+    return saved;
+  }
+
+  test('preparation preserves room layout, care and the chosen favorite', () {
+    final saved = furnishedSource();
+    saved['pet']['joy'] = 34;
+    saved['pet']['comfort'] = 91;
+    final result = prepare(saved, altar());
+    for (final key in ['housePlacements', 'equippedItemIds', 'activeRoomId']) {
+      expect(result.state[key], saved[key]);
+      expect(result.changedAssetKinds, isNot(contains(key)));
+    }
+    for (final key in [
+      'favorite',
+      'roamsTower',
+      'currentRoomId',
+      'currentFloorIndex',
+      'joy',
+      'energy',
+      'comfort'
+    ]) {
+      expect(result.state['pet'][key], saved['pet'][key]);
+    }
+  });
+
+  test('invalid layout and care need reconciliation, never silent repair', () {
+    final changes = <void Function(Map<String, dynamic>)>[
+      (s) => s['housePlacements'].first['x'] = 1.4,
+      (s) => s['housePlacements'].first['scale'] = .1,
+      (s) => s['housePlacements'].first['roomId'] = 'locked_future_room',
+      (s) => s['housePlacements']
+          .add(Map<String, dynamic>.from(s['housePlacements'].first)),
+      (s) => s['housePlacements'].first['futurePlacementFact'] = 'preserve',
+      (s) => s['equippedItemIds'].clear(),
+      (s) => s['activeRoomId'] = 'locked_future_room',
+      (s) => s['pet']['joy'] = 180,
+      (s) => s['pet']['currentFloorIndex'] = 999,
+      (s) => s['pet']['currentRoomId'] = 'locked_future_room',
+      (s) => s['pet']['favorite'] = false,
+    ];
+    for (var i = 0; i < changes.length; i++) {
+      final saved = furnishedSource();
+      changes[i](saved);
+      final untouched = jsonEncode(saved);
+      expect(() => prepare(saved, altar()), throwsA(isA<FormatException>()),
+          reason: 'Malformed saved state $i must be reviewed');
+      expect(jsonEncode(saved), untouched);
+    }
+  });
+
+  test('layout differences reveal categories without private IDs or values',
+      () {
+    final saved = furnishedSource();
+    final changed = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>;
+    changed['housePlacements'].first['x'] = .8;
+    changed['pet']['joy'] = 25;
+    final before = GameAssetSnapshot(saved);
+    final after = GameAssetSnapshot(changed);
+    expect(before.hasSameAssets(after), isFalse);
+    expect(before.differenceKinds(after), {'housePlacements', 'dragon'});
+  });
 
   test(
       'server tags win over larger client tag revisions while discoveries survive',

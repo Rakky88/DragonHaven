@@ -50,6 +50,67 @@ void main() {
   Matcher error(String code) => throwsA(
       isA<CanonicalGameException>().having((e) => e.code, 'fixed error', code));
 
+  test('a lost treat reply restores one debit, XP and bounded care', () async {
+    server.state['pet']['joy'] = 95;
+    server.state['pet']['energy'] = 31;
+    server.state['pet']['comfort'] = 40;
+    server.revision++;
+    await session.synchronize();
+    final id = session.snapshot!.activeDragonId!;
+    await actions().equip(MysticRelic.twinstarBrooch, id);
+    final before = session.snapshot!;
+    server.loseReply = true;
+    await expectLater(
+        actions().buyStarlightTreat(id), error('game_command_unavailable'));
+    session.dispose();
+    session = CanonicalGameSession(
+        connection: CanonicalUiConnection(server), directory: directory);
+    await session.synchronize();
+    final dragon = session.snapshot!.dragon(id)!;
+    expect(session.snapshot!.gems, before.gems - 3);
+    expect(dragon.xp, before.dragon(id)!.xp + 50);
+    expect([dragon.joy, dragon.energy, dragon.comfort], [100, 43, 52]);
+    expect(dragon.training, before.dragon(id)!.training);
+    await session.synchronize();
+    expect(session.snapshot!.gems, before.gems - 3);
+    expect(
+        server.sent
+            .where((r) => r.action == 'buy_starlight_treat')
+            .map((r) => r.requestId)
+            .toSet(),
+        hasLength(1));
+  });
+
+  test('treat refuses another dragon, insufficient gems and stale views',
+      () async {
+    final id = session.snapshot!.activeDragonId!;
+    final before = session.snapshot!;
+    await expectLater(actions().buyStarlightTreat('unowned'),
+        error('game_action_unavailable'));
+    expect(session.snapshot!.gems, before.gems);
+    expect(session.snapshot!.dragon(id)!.xp, before.dragon(id)!.xp);
+    final old = actions();
+    server.state['pet']['gems'] = 2;
+    server.revision++;
+    await session.synchronize();
+    final sent = server.sent.length;
+    await expectLater(
+        old.buyStarlightTreat(id), error('game_refresh_required'));
+    expect(server.sent, hasLength(sent));
+    await expectLater(
+        actions().buyStarlightTreat(id), error('game_action_unavailable'));
+    expect(session.snapshot!.gems, 2);
+    expect(session.snapshot!.dragon(id)!.xp, before.dragon(id)!.xp);
+    for (final value in [-1, 101, '78']) {
+      final wire = jsonDecode(jsonEncode(server.wire)) as Map<String, dynamic>;
+      wire['data']['dragons'][0]['energy'] = value;
+      expect(
+          () => CanonicalGameSnapshot.parse(wire,
+              expectedOwner: CanonicalUiServer.owner),
+          error('game_snapshot_invalid'));
+    }
+  });
+
   test(
       'typed inventory keeps hidden genetics absent and rejects contradictory equipment or stock',
       () {

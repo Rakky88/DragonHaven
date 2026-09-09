@@ -18,6 +18,7 @@ Future<Map<String, dynamic>> runGameDomainProbe() async {
   );
   fixture.pet
     ..stage = DragonStage.hatchling
+    ..favorite = true
     ..firstEgg = false
     ..name = 'Domain Probe'
     ..needsUpdatedAt = now

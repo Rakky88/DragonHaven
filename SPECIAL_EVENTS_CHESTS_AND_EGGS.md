@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 7f03fea218951578 -->
+<!-- reference-source-fingerprint: 7394235699bfae33 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -766,3 +766,11 @@ The Egg Altar shortcut is hidden while the starter egg hatches.
 Seasonal hatch achievements accept normal and Spectral hatchlings alike. Migration 65
 allows the exact shipped seasonal podium emotes in friend and Conclave chats, retaining
 friendship, membership, recipient preferences, payload bounds and rate limits.
+
+
+The subsequent house import/care candidate adds loss-detection for furniture,
+room and resident/care facts before canonical rules run. Starlight Treat controls
+reuse the existing active-dragon command: 3 gems, 25 XP (Twinstar doubles it),
++12 Joy/Energy/Comfort capped at 100. No Special schedule, chest/egg pool,
+probability, relic distribution or reward price changes. Invalid imported facts
+require reconciliation rather than a random replacement or silent repair.

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:dragon_haven/domain/game_command_engine.dart';
@@ -82,6 +83,13 @@ void main() {
   test(
       'seven calendar days stay consecutive across both US and European DST transitions',
       () async {
+    // Linux CI runs this file separately in both regions, not only UTC. Check
+    // that the process actually loaded DST rules before testing date labels.
+    if (const ['Europe/Amsterdam', 'America/New_York']
+        .contains(Platform.environment['TZ'])) {
+      expect(DateTime(2026, 3, 1).timeZoneOffset,
+          isNot(DateTime(2026, 4, 1).timeZoneOffset));
+    }
     for (final start in [
       DateTime(2026, 3, 6),
       DateTime(2026, 3, 27),

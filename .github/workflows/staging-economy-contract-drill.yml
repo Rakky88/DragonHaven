@@ -328,6 +328,8 @@ jobs:
           flutter pub get
           dart analyze lib integration_test test tool
           flutter test --no-pub --concurrency=1
+          TZ=Europe/Amsterdam flutter test --no-pub test/calendar_authority_test.dart
+          TZ=America/New_York flutter test --no-pub test/calendar_authority_test.dart
           dart run tool/build_server_game.dart
           deno check supabase/functions/execute-game-command/index.ts
           deno check tool/prepare_staging_game_import.ts

@@ -23,6 +23,7 @@ Map<String, dynamic> _fixture() {
   );
   game.pet
     ..stage = DragonStage.hatchling
+    ..favorite = true
     ..firstEgg = false
     ..name = 'Mica'
     ..coins = 150

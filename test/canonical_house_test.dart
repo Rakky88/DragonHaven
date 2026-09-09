@@ -31,6 +31,8 @@ void main() {
     server.state['activeRoomId'] = 'nest';
     server.state['dragonWardLevel'] = 0;
     server.state['damagedTowerFloors'] = [0];
+    // A damaged only floor has no roaming residents in a valid saved game.
+    server.state['pet']['roamsTower'] = false;
     server.state['damagedTowerRepairFactors'] = {'0': .60};
     session = CanonicalGameSession(
         connection: CanonicalUiConnection(server), directory: directory);

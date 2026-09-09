@@ -623,6 +623,30 @@ void main() {
           'client_probe_roaming_desired_state');
       stdout.writeln(
           'PASS: real roaming UI; desired state preserved without wallet changes.');
+      await tap(find.widgetWithText(TextButton, 'Close'));
+      final beforeTreat = game.snapshot!;
+      final treated = beforeTreat.dragon(beforeTreat.activeDragonId!)!;
+      final treatXp =
+          beforeTreat.inventory.equipment[MysticRelic.twinstarBrooch] ==
+                  treated.id
+              ? 50
+              : 25;
+      await tap(key('canonical-dragon-${treated.id}'));
+      await tap(key('canonical-starlight-treat'));
+      await tap(find.widgetWithText(FilledButton, 'Confirm'));
+      await settleCommand();
+      require(
+          game.snapshot!.gems == beforeTreat.gems - 3 &&
+              game.snapshot!.dragon(treated.id)!.xp == treated.xp + treatXp &&
+              game.snapshot!.dragon(treated.id)!.joy ==
+                  (treated.joy + 12).clamp(0, 100) &&
+              game.snapshot!.dragon(treated.id)!.energy ==
+                  (treated.energy + 12).clamp(0, 100) &&
+              game.snapshot!.dragon(treated.id)!.comfort ==
+                  (treated.comfort + 12).clamp(0, 100),
+          'client_probe_care_treat');
+      stdout.writeln(
+          'PASS: real care UI; one treat debit, earned XP and bounded needs.');
     } finally {
       stdout.writeln('PROBE: ui_cleanup_start');
       await tester.pumpWidget(const SizedBox.shrink());

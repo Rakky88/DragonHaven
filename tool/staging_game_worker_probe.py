@@ -100,6 +100,9 @@ def main():
     fixture['towerFloorRoomIds'] = ['hearth']
     fixture['dragonWardLevel'] = 0
     fixture['damagedTowerFloors'] = [0]
+    # Match the valid post-damage state; never rely on read-time repair.
+    for dragon in [fixture['pet'], *fixture['sanctuaryDragons']]:
+        dragon['roamsTower'] = False
     fixture['damagedTowerRepairFactors'] = {'0': 0.60}
     fixture.setdefault('adventureOptionIds', {})['mini'] = ['mini_1']
     fixture['relicInventory']['wayfinderSigil'] = 1
@@ -384,6 +387,7 @@ def main():
         require('PASS: real house UI;' in client_result.stdout, 'client_probe_house_proof_missing')
         require('PASS: real room editor;' in client_result.stdout, 'client_probe_room_editor_proof_missing')
         require('PASS: real roaming UI;' in client_result.stdout, 'client_probe_roaming_proof_missing')
+        require('PASS: real care UI;' in client_result.stdout, 'client_probe_care_proof_missing')
         require('PASS: real preferences UI;' in client_result.stdout, 'client_probe_preferences_proof_missing')
         unchanged = query(f"""select
           (select s.state=i.source_state and s.revision=i.source_revision
@@ -401,6 +405,7 @@ def main():
         print('PASS: actual adventure UI; server deadline, lost claim recovery, one reward, abort and Wayfinder.', flush=True)
         print('PASS: actual house UI; stored repair price, ward upgrade, floor purchase and free room selection.', flush=True)
         print('PASS: actual preferences UI; expertise highlights, adventure information and one favorite.', flush=True)
+        print('PASS: actual house editor, roaming and care UI; layout and needs preserved, one treat debit.', flush=True)
         print('PASS: actual Flutter client, Supabase Auth, filesystem journals and server; one charge after lost reply; corrupt request recovery without another purchase.', flush=True)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"

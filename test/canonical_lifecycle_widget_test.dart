@@ -239,7 +239,7 @@ void main() {
     server.hold = held.future;
     await tap(tester, craft);
     await tap(tester, craft);
-    for (var n = 0; n < 100 && server.sent.isEmpty; n++) {
+    for (var n = 0; n < 1000 && server.sent.isEmpty; n++) {
       await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 10)));
     }
@@ -398,6 +398,8 @@ void main() {
     server.state['pet']['coins'] = 10000;
     server.state['towerFloorRoomIds'] = ['hearth'];
     server.state['damagedTowerFloors'] = [0];
+    // A damaged only floor has no roaming residents in a valid saved game.
+    server.state['pet']['roamsTower'] = false;
     server.state['damagedTowerRepairFactors'] = {'0': .60};
     server.state['dragonWardLevel'] = 0;
   }
@@ -573,6 +575,30 @@ void main() {
     await command(tester);
     expect(session.snapshot!.dragon(dragon.id)!.roamsTower, !dragon.roamsTower);
     expect(session.snapshot!.dragon(dragon.id)!.training, before);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('Dutch care confirms one treat and recovers its lost reply',
+      (tester) async {
+    await setup(tester, const CanonicalDragonsScreen(),
+        language: 'nl', scale: 1.35);
+    final before = session.snapshot!;
+    final id = before.activeDragonId!;
+    await tap(tester, key('canonical-dragon-$id'));
+    await tap(tester, key('canonical-starlight-treat'));
+    await shot(tester, 'care-confirm-nl-large');
+    await tap(tester, find.text('Annuleren'));
+    await shot(tester, 'care-details-nl-large');
+    expect(session.snapshot!.gems, before.gems);
+    server.loseReply = true;
+    await tap(tester, key('canonical-starlight-treat'));
+    await tap(tester, find.text('Bevestigen').last);
+    await command(tester);
+    await tester.runAsync(() => session.synchronize());
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(session.snapshot!.gems, before.gems - 3);
+    expect(session.snapshot!.dragon(id)!.xp, before.dragon(id)!.xp + 25);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

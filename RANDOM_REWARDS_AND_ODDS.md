@@ -6,7 +6,7 @@ Ruleset: v0.05.29 published and verified; staging and production schema 65 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 492c6610a369cd69 -->
+<!-- reference-source-fingerprint: a48f16dd6ede7341 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -925,3 +925,11 @@ shared grade tables. Conclave milestones 1/5/15/30/60 give decoration only.
 Seasonal hatch achievements accept normal and Spectral hatchlings alike. Migration 65
 allows the exact shipped seasonal podium emotes in friend and Conclave chats, retaining
 friendship, membership, recipient preferences, payload bounds and rate limits.
+
+
+The subsequent house import/care candidate adds loss-detection for furniture,
+room and resident/care facts before canonical rules run. Starlight Treat controls
+reuse the existing active-dragon command: 3 gems, 25 XP (Twinstar doubles it),
++12 Joy/Energy/Comfort capped at 100. No Special schedule, chest/egg pool,
+probability, relic distribution or reward price changes. Invalid imported facts
+require reconciliation rather than a random replacement or silent repair.

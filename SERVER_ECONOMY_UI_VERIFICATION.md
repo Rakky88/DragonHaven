@@ -256,3 +256,35 @@ and new days, ready-streak single claims, no second daily random draw and
 identical server results for local/UTC representations of one database instant.
 The existing local-label-to-server-day import bridge remains separate: no
 existing player has been switched or had day keys rewritten by this change.
+Run [34401056711](https://github.com/Rakky88/DragonHaven/actions/runs/34401056711)
+passed on `ca558f7` with clean analysis, 759 tests, native/JavaScript parity,
+SQL contracts and every network/UI proof. Cleanup removed both synthetic
+accounts and disabled the worker; final schema 65/lint 0/Auth/settings/app 200
+at 20:35:46 UTC on 9 September. The next candidate also runs calendar tests
+explicitly in Europe/Amsterdam and America/New_York and checks that the
+process actually loaded different winter/summer UTC offsets.
+
+
+## House import and care controls
+
+The semantic before/after import guard now includes placements, selected room,
+equipped furniture, favorite/roaming/location, active Adventure assignment and
+care values. Invalid or forward-unknown placement data, duplicate furniture,
+clamped coordinates/needs or changed residents require reconciliation. Reads
+and commands cannot silently normalize these into a different saved game.
+The source copy is left intact; diagnostics contain category names only.
+Synthetic post-hatch and post-damage fixtures now carry their actual valid
+favorite/roaming state explicitly instead of relying on read-time repairs.
+
+The active dragon's detail view has the existing 3-gem Starlight Treat and
+validated Joy/Energy/Comfort values. An account/revision-bound confirmation
+precedes the debit. The existing 25 XP (50 with Twinstar) and +12 capped needs
+are unchanged. The durable intent recovers a lost reply without another debit.
+Non-active dragons, insufficient gems, malformed care facts and stale callbacks
+are refused. Local tests exercise the import guard, lost-reply/restart, caps,
+Twinstar, Dutch large text and cancel/confirm. The 16 lifecycle screen tests
+pass with real fonts; the care confirmation/details were visually inspected
+in `release/economy-care-visual/`. Narrow dragon facts now stack their label
+and value to avoid breaking words in half. Actual staging care proof is
+included in the network harness and pending the next candidate run.
+This does not complete verified Trials/school, social settlement or live import.

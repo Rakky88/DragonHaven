@@ -14,11 +14,17 @@ migraties, legacy autoriteit en uitgeschakelde economische/game-mutaties.
 
 Daggrenzen zijn daarnaast lokaal aangescherpt: serverregels gebruiken UTC,
 dagmarkeringen lopen alleen vooruit en streaks rekenen met kalenderdagen rond
-zomer-/wintertijd. De verliesvrije brug van bestaande lokale daglabels naar
+zomer-/wintertijd. Stagingrun 34401056711 op `ca558f7` slaagt met 759 tests,
+gelijke Dart/JavaScript-uitkomsten, volledige netwerkproeven en schone cleanup
+en healthchecks. De verliesvrije brug van bestaande lokale daglabels naar
 serverdagen moet nog apart worden afgerond.
 
 Daarna blijven zorg/school, gevalideerde trialbewijzen, daglabelmigratie,
 seasonal/group/sociale afwikkeling en verliesvrije migratie/herstel open.
+De importvergelijking bewaakt nu ook meubels, kamerkeuze, drakenposities,
+favoriet en verzorging. De Starlight Treat krijgt een bevestigde serveractie
+met behoud van prijs, XP en verzorging; verloren antwoorden worden hersteld
+zonder dubbel te betalen. Volledige stagingcontrole van deze aanvulling volgt.
 APK-optimalisatie volgt op de economie; beeld- en geluidskwaliteit blijven
 behouden. Deze voortgang is geen afronding van de volledige economie.
 Bewijs: `SERVER_ECONOMY_UI_VERIFICATION.md`.

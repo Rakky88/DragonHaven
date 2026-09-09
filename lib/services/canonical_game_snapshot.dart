@@ -426,6 +426,9 @@ class CanonicalEggView {
 /// Public facts only: no Pet construction, genetics or private save defaults.
 class CanonicalDragonView {
   CanonicalDragonView._parse(this._data) {
+    for (final key in ['joy', 'energy', 'comfort']) {
+      if (!_count(_data[key]) || _data[key] > 100) _invalid();
+    }
     for (final key in ['spectral', 'sinister', 'favorite', 'roamsTower']) {
       if (_data[key] is! bool) _invalid();
     }
@@ -470,6 +473,9 @@ class CanonicalDragonView {
   String get location => _data['location'] as String;
   bool get owned => location != 'released';
   int get xp => _data['xp'] as int;
+  int get joy => _data['joy'] as int;
+  int get energy => _data['energy'] as int;
+  int get comfort => _data['comfort'] as int;
   DragonStage get stage => DragonStage.values.byName(_data['stage'] as String);
   DragonSex get sex => DragonSex.values.byName(_data['sex'] as String);
   bool get spectral => _data['spectral'] as bool;

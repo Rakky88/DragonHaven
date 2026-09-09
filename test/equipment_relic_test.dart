@@ -17,6 +17,7 @@ void main() {
         persistenceEnabled: false, random: Random(82), clock: () => now);
     g.pet = Pet(
         id: 'wearer',
+        favorite: true,
         stage: DragonStage.hatchling,
         firstEgg: false,
         acquiredAt: now,

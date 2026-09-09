@@ -151,6 +151,29 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                                             ? Icons.male
                                             : Icons.female),
                                     const Divider(height: 24),
+                                    Wrap(spacing: 12, runSpacing: 4, children: [
+                                      Text(
+                                          '${strings.pick('Joy', 'Vreugde')}: ${dragon.joy}%'),
+                                      Text(
+                                          '${strings.pick('Energy', 'Energie')}: ${dragon.energy}%'),
+                                      Text(
+                                          '${strings.pick('Comfort', 'Comfort')}: ${dragon.comfort}%'),
+                                    ]),
+                                    if (view.activeDragonId == id)
+                                      CanonicalActionButton(
+                                          key: const Key(
+                                              'canonical-starlight-treat'),
+                                          label: strings.pick(
+                                              'Starlight Treat · 3 gems',
+                                              'Sterlichtsnack · 3 gems'),
+                                          confirmation: strings.pick(
+                                              'Spend 3 gems on a Starlight Treat for this dragon?',
+                                              '3 gems uitgeven aan een Sterlichtsnack voor deze draak?'),
+                                          action: enabled && view.gems >= 3
+                                              ? () =>
+                                                  actions.buyStarlightTreat(id)
+                                              : null),
+                                    const SizedBox(height: 12),
                                     Text(strings.pick(
                                         'Tap an expertise to highlight it for training.',
                                         'Tik op een expertise om deze voor training te markeren.')),
@@ -418,12 +441,27 @@ class _Fact extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-        Expanded(child: Text(label)),
-        const SizedBox(width: 10),
-        if (icon != null) ...[Icon(icon, size: 18), const SizedBox(width: 5)],
-        Flexible(
-            child: Text(value,
-                style: const TextStyle(fontWeight: FontWeight.w700))),
-      ]));
+      child: LayoutBuilder(builder: (context, constraints) {
+        final detail = Row(mainAxisSize: MainAxisSize.min, children: [
+          if (icon != null) ...[Icon(icon, size: 18), const SizedBox(width: 5)],
+          Flexible(
+              child: Text(value,
+                  style: const TextStyle(fontWeight: FontWeight.w700))),
+        ]);
+        if (constraints.maxWidth <
+            MediaQuery.textScalerOf(context).scale(260)) {
+          return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label),
+                const SizedBox(height: 2),
+                detail,
+              ]);
+        }
+        return Row(children: [
+          Expanded(child: Text(label)),
+          const SizedBox(width: 10),
+          Flexible(child: detail),
+        ]);
+      }));
 }

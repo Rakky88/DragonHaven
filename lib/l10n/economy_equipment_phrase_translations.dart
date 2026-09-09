@@ -1,5 +1,13 @@
 /// German, Spanish, French, Italian, Portuguese, Japanese.
 const economyEquipmentPhraseTranslations = <String, List<String>>{
+  "Spend 3 gems on a Starlight Treat for this dragon?": [
+    "3 Edelsteine für einen Sternenlicht-Snack für diesen Drachen ausgeben?",
+    "¿Gastar 3 gemas en una golosina estelar para este dragón?",
+    "Dépenser 3 gemmes pour une friandise étoilée pour ce dragon ?",
+    "Spendere 3 gemme per una delizia stellare per questo drago?",
+    "Gastar 3 gemas em um petisco estelar para este dragão?",
+    "このドラゴンに星明かりのおやつを与えるため、ジェムを3個使いますか？"
+  ],
   "Arrange your room": [
     "Richte dein Zimmer ein",
     "Decora tu habitación",

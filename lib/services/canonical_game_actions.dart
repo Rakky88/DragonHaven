@@ -83,6 +83,8 @@ class CanonicalGameActions {
       _boolean('set_favorite_dragon', {'dragonId': id});
   Future<void> evolveDragon(String id) =>
       _boolean('evolve_dragon', {'dragonId': id});
+  Future<void> buyStarlightTreat(String id) =>
+      _boolean('buy_starlight_treat', {'dragonId': id});
   Future<void> equip(MysticRelic relic, String? dragonId) =>
       _boolean('equip_relic', {'relic': relic.name, 'dragonId': dragonId});
   Future<void> releaseDragon(String id) =>

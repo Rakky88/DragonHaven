@@ -5,7 +5,7 @@ import '../models/dragon_sex.dart';
 /// A semantic inventory fingerprint used before evaluating canonical state.
 /// It tolerates map order and explicit zero counts, but detects discarded
 /// collections, changed fixed egg properties, missing dragons, rerolled
-/// Chronoshards, lost progression and changed Altar protection/stock.
+/// Chronoshards, lost progression, house layouts and changed Altar protection.
 /// It is not a migration: a difference requires explicit reconciliation first.
 class GameAssetSnapshot {
   GameAssetSnapshot(Map<String, dynamic> state) {
@@ -99,6 +99,14 @@ class GameAssetSnapshot {
         'dragonSchoolAttempts',
         'dragonSchoolFinalizedEarly',
         'dragonSchoolMentorLessons',
+        'favorite',
+        'roamsTower',
+        'currentRoomId',
+        'currentFloorIndex',
+        'activeAdventureId',
+        'joy',
+        'energy',
+        'comfort',
         'specialEggId',
         'altarKnowledge',
       ]) {
@@ -170,6 +178,9 @@ class GameAssetSnapshot {
       'pendingAltarOperation',
       'adventureRuns',
       'towerFloorRoomIds',
+      'housePlacements',
+      'equippedItemIds',
+      'activeRoomId',
       'dragonWardLevel',
       'damagedTowerFloors',
       'damagedTowerRepairFactors',

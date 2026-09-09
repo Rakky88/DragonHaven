@@ -66,7 +66,9 @@ void main() {
     final game = HouseholdProvider(
         persistenceEnabled: false, clock: () => now, random: Random(12));
     addTearDown(game.dispose);
-    game.pet.stage = DragonStage.hatchling;
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..favorite = true;
     await game.toggleDragonExpertiseHighlight(game.pet.id, TrainingFocus.might);
     await game.toggleDragonExpertiseHighlight(
         game.pet.id, TrainingFocus.spirit);
