@@ -10,10 +10,14 @@ mutations disabled, zero shadow copies, production push enabled. See
 their original schema numbers and timestamps.
 
 Resumed after v0.05.29: authoritative furniture placement/removal, floor
-reordering and roaming are implemented with validated public facts and durable
-intents. Local rule/session/UI tests pass; the extended real staging rehearsal
-is the next gate. This is still partial gameplay integration, not live migration
-or full economy completion. See `SERVER_ECONOMY_UI_VERIFICATION.md`.
+reordering and roaming passed staging run 34399422518 on `2a81df7` (754 tests).
+UTC server days, monotonic daily markers and DST-safe streak arithmetic passed
+run 34401056711 on `ca558f7` (759 tests). Both runs proved real UI/network
+behavior, cleaned their synthetic state, disabled the worker and passed schema
+65/lint 0/Auth/settings/application health. House/resident/care import guards
+and the existing 3-gem Starlight Treat control are the next staging candidate.
+This remains partial gameplay integration, not live migration or full economy
+completion. See `SERVER_ECONOMY_UI_VERIFICATION.md`.
 
 The resumed audit now connects the ordinary furniture/relic/vanity shop and
 chest reveal to the canonical session in an explicit staging-only app lane.

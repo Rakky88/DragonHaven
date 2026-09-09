@@ -134,6 +134,43 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets(
+      'Runeweaver counts rapid inputs once and closes a completed round immediately',
+      (tester) async {
+    final (provider, offer) = await pumpTrial(tester, TrialKind.runeweaver);
+    addTearDown(provider.dispose);
+    final random = Random(offer.id.hashCode ^ provider.pet.hatchSeed);
+    final first = random.nextInt(5);
+    final second = random.nextInt(5);
+    await tester.tap(find.byKey(const Key('runeweaver-game')));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(find.text('WEAVE THE SEQUENCE'), findsOneWidget);
+    await tester.tap(find.byKey(Key('rune-$first')));
+    // A second pointer event may arrive before Flutter rebuilds disabled runes.
+    await tester.tap(find.byKey(Key('rune-$first')));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(tester.takeException(), isNull);
+    expect(find.text('Sequence 1 · Completed 1'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 650));
+    for (var i = 0; i < 2; i++) {
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(const Duration(milliseconds: 150));
+    }
+    expect(find.text('WEAVE THE SEQUENCE'), findsOneWidget);
+    await tester.tap(find.byKey(Key('rune-$first')));
+    await tester.pump(const Duration(milliseconds: 30));
+    await tester.tap(find.byKey(Key('rune-$second')));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(find.text('Sequence 2 · Completed 2'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pump(const Duration(milliseconds: 650));
+    expect(find.text('Sequence 3 · Completed 2'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 2));
+  });
+
   testWidgets('all seasonal Trials stay polished on a compact phone',
       (tester) async {
     for (final kind in const [

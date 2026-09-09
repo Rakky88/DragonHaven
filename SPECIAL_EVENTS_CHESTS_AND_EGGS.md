@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 7394235699bfae33 -->
+<!-- reference-source-fingerprint: 19dffb539f66751e -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -774,3 +774,11 @@ reuse the existing active-dragon command: 3 gems, 25 XP (Twinstar doubles it),
 +12 Joy/Energy/Comfort capped at 100. No Special schedule, chest/egg pool,
 probability, relic distribution or reward price changes. Invalid imported facts
 require reconciliation rather than a random replacement or silent repair.
+
+
+Runeweaver now closes a completed input sequence before the 150 ms tap glow
+awaits. Earlier tap callbacks cannot complete the same round again or clear a
+newer glow. A second event after the final rune is ignored. Sequence generation,
+shuffle/Arcana help, display durations, grade cutoffs and reward pools remain
+unchanged. This fixes repeated completion/out-of-range access during fast taps;
+it does not introduce client scores into canonical server commands.

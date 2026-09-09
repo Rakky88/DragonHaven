@@ -6,7 +6,7 @@ Ruleset: v0.05.29 published and verified; staging and production schema 65 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: a48f16dd6ede7341 -->
+<!-- reference-source-fingerprint: 831368ca7db954c4 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -933,3 +933,11 @@ reuse the existing active-dragon command: 3 gems, 25 XP (Twinstar doubles it),
 +12 Joy/Energy/Comfort capped at 100. No Special schedule, chest/egg pool,
 probability, relic distribution or reward price changes. Invalid imported facts
 require reconciliation rather than a random replacement or silent repair.
+
+
+Runeweaver now closes a completed input sequence before the 150 ms tap glow
+awaits. Earlier tap callbacks cannot complete the same round again or clear a
+newer glow. A second event after the final rune is ignored. Sequence generation,
+shuffle/Arcana help, display durations, grade cutoffs and reward pools remain
+unchanged. This fixes repeated completion/out-of-range access during fast taps;
+it does not introduce client scores into canonical server commands.

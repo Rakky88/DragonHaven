@@ -288,3 +288,18 @@ in `release/economy-care-visual/`. Narrow dragon facts now stack their label
 and value to avoid breaking words in half. Actual staging care proof is
 included in the network harness and pending the next candidate run.
 This does not complete verified Trials/school, social settlement or live import.
+
+
+Candidate run 34402551855 on `621df79` stopped before any deployment: 764 tests
+passed, and the reference guard detected a fingerprint not refreshed after the
+last narrow-layout change. The reference content has been reviewed and its
+fingerprint refreshed in the following candidate. No staging mutation/cleanup
+was needed for that stopped run.
+
+While reviewing remaining Trial work, the Runeweaver widget was found to accept
+another pointer during the final rune's 150 ms glow. The regression reproduces
+a RangeError on the former code and verifies that immediate extra taps and rapid
+multi-rune input complete each round exactly once after the fix. Older glow
+callbacks cannot clear a newer input or award its completion. All 28 focused
+trial/lifecycle tests pass. This is a current game correctness fix; canonical
+verified-input Trials remain a separate open item.

@@ -25,6 +25,9 @@ De importvergelijking bewaakt nu ook meubels, kamerkeuze, drakenposities,
 favoriet en verzorging. De Starlight Treat krijgt een bevestigde serveractie
 met behoud van prijs, XP en verzorging; verloren antwoorden worden hersteld
 zonder dubbel te betalen. Volledige stagingcontrole van deze aanvulling volgt.
+Ook een Runeweaver-race is opgelost: snelle tikken konden tijdens de laatste
+animatie buiten de reeks lezen of een ronde meermaals tellen. De regressietest
+reproduceert de oude crash en bevestigt nu precies één voltooide ronde.
 APK-optimalisatie volgt op de economie; beeld- en geluidskwaliteit blijven
 behouden. Deze voortgang is geen afronding van de volledige economie.
 Bewijs: `SERVER_ECONOMY_UI_VERIFICATION.md`.

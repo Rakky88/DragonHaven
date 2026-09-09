@@ -1621,14 +1621,21 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
     }
     _litRune = rune;
     _inputIndex++;
+    final inputIndex = _inputIndex;
+    final roundComplete = inputIndex == _sequence.length;
+    // Close the round before yielding. Another pointer can arrive during the
+    // tap glow, even before disabled buttons have been rebuilt.
+    if (roundComplete) {
+      _accepting = false;
+      _rounds++;
+    }
     unawaited(HavenAudio.play(HavenSound.uiConfirm));
     setState(() {});
     await Future<void>.delayed(const Duration(milliseconds: 150));
-    if (!mounted || _ended) return;
+    // An older tap's animation must not clear a newer glow or finish its round.
+    if (!mounted || _ended || inputIndex != _inputIndex) return;
     _litRune = null;
-    if (_inputIndex == _sequence.length) {
-      _accepting = false;
-      _rounds++;
+    if (roundComplete) {
       setState(() {});
       await Future<void>.delayed(const Duration(milliseconds: 650));
       if (mounted && !_ended) await _nextRound();
