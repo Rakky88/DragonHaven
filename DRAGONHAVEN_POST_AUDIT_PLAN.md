@@ -10,8 +10,12 @@ Halloween blijft behouden. Eventstop, initiële trialvulling, drie-expertisekeuz
 leesbare timer/chatknoppen, toren-/academieafbeeldingen, roze Valentijn en eigen
 Jingle Bells-uitvoering zijn gebouwd. De regelproeven (500 doolhoven en 500
 prismapuzzels), schermbediening, documentatieguard en analyse slagen.
-Migratie 60 is op staging gerepeteerd met volledige rollback en behoud van
-schema 59. Productie en de volledige servereconomie zijn nog niet omgezet.
+Stagingrun 34326484098 slaagt inclusief echte client-/serverstromen en opruiming.
+Productie staat op schema 60: lint 0 en alle healthchecks HTTP 200; spelereconomie
+blijft legacy, met nul schaduwstaten en uitgeschakelde economische mutaties.
+Ook onontdekte Draconomicon-families en vormen krijgen lichtere achtergronden,
+zodat silhouetten tijdens events goed zichtbaar blijven. Acht bestaande controles
+op vormen, grenzen, vergrendeling en documentatie slagen.
 Verdere releasebewijzen en open gates: `RELEASE_V0.05.23_VERIFICATION.md`.
 De onderstaande servereconomie-deelstappen blijven afzonderlijk afgebakend.
 

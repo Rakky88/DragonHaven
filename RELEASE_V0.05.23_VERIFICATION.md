@@ -2,7 +2,8 @@
 
 Status: release candidate under verification. Updated 9 September 2026.
 Target: app/display **0.05.23**, pubspec **0.5.23+10073**, Android **10073**.
-No publication or production migration has occurred yet.
+Production migration 60 is applied and healthy. Publication is pending final
+artifact verification and the release workflow.
 
 ## Scope and rules
 
@@ -16,6 +17,8 @@ No publication or production migration has occurred yet.
   Valentine uses rose pink/blush paper; personal-chat buttons use pale backgrounds
   and dark ink. Countdown layout measures inherited fonts/text scale, clips the
   test label first, removes it next, and only then wraps the official content.
+- Undiscovered Draconomicon families, silhouette medallions and form tiles keep
+  pale parchment/lavender backgrounds, independent of dark event panel colors.
 - Event cards/pickers use all three Expertises. All three highlights are required
   for their highlighted group; standard Trials retain their single focus.
 - One deterministic initial refill per event occurrence, preserving occupied slots.
@@ -42,10 +45,35 @@ No publication or production migration has occurred yet.
   stop, calendar suppression, preserved started attempt, explicit restart and
   other-owner isolation. All synthetic rows and DDL rolled back.
 
-## Remaining release gates
+## Staging and production
 
-Full suite and staging integration; full-screen Android visual inspection;
-production exact-schema/health checks and migration; signed production build;
-artifact signature/version/hash and publisher verification. The broader canonical
-economy remains staging-only; no production worker or account cutover is authorized
-by this feature release.
+- Staging run [34326484098](https://github.com/Rakky88/DragonHaven/actions/runs/34326484098)
+  passed analysis, the full Flutter suite, 15 Edge tests, VM/Deno domain parity
+  (990948-byte bundle), six canonical rollback contracts and the event-stop
+  contract before and after application. The real SDK/UI probes cover purchases,
+  chest replay, tags, Altar, crafting, dragons, adventure recovery, house and
+  training preferences. Both synthetic accounts were removed; worker disabled.
+  Final staging preflight: **08:06:32 UTC**, schema **60**, lint **0**, HTTP **200**.
+- The first staging run applied 60 then stopped at an outdated validation-script
+  baseline. The six exact baseline allowlists now also accept schema 60; the
+  successful run above repeats all checks. No gameplay rule was bypassed.
+- Production dry run contained only `202609090060_end_active_event.sql`.
+  Applied exactly that migration. Mandatory preflight at **08:08:25 UTC**:
+  schema **60**, lint **0**, Auth/settings/application **HTTP 200**.
+  Before/after guards confirm all accounts remain legacy, zero shadow states,
+  game/economy mutations disabled and push enabled. No gameplay balances edited.
+
+## Android inspection
+
+Actual API 37 emulator captures in `release/event23-device-*.png` cover the four
+new game introductions/boards, normal Tower/Academy artwork, Christmas chat
+contrast, all-three-expertise Trial cards/picker, birthday/default transition,
+and 320dp/1.35 text scale with system animations disabled. Controls remain usable.
+Clean standalone Valentine/Pride introduction icons were checked in the rebuilt
+preview after finding old sprite-cutout remnants. Preview saves are nonpersistent;
+the final production update must preserve the original saved game.
+
+The Draconomicon addition passed all eight existing visual/bounds, locked-form
+and reference checks; final device and release evidence will be appended below.
+The broader canonical economy remains staging-only; this release performs no
+production worker or account cutover.

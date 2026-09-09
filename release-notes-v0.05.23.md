@@ -5,5 +5,6 @@ DragonHaven v0.05.23
 - Event starts fill empty Trial slots with the event's Trial.
 - Clearer seasonal countdowns and personal-chat buttons, a softer Valentine pink, and restored Tower and Academy artwork.
 - Christmas now features an original instrumental arrangement of Jingle Bells.
+- Undiscovered Draconomicon families and forms have lighter backgrounds so their silhouettes stay clear during events.
 
 Includes lifecycle and compatibility fixes. Existing accounts, items and adventures are preserved.

@@ -6,7 +6,12 @@ The four redesigned Trial introductions use their clean standalone event icons,
 avoiding adjacent-frame remnants in the older sprite-sheet cutouts. Halloween
 keeps its existing illustration and gameplay.
 
-Ruleset: v0.05.23 release candidate; migration 60 rehearsed, production still schema 59 and economy activation disabled
+Undiscovered Draconomicon family cards, silhouette medallions and form tiles
+retain light parchment/lavender surfaces during every event. These surfaces
+are deliberately independent of the dark event panels; discovery behavior and
+normal/spectral artwork remain unchanged.
+
+Ruleset: v0.05.23 release candidate; staging and production schema 60 verified, economy activation disabled
 
 <!-- reference-source-fingerprint: 5d4340c2163b1ca5 -->
 

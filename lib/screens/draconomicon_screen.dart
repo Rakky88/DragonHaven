@@ -8,6 +8,14 @@ import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
 
+// Silhouettes need a light surface even when the surrounding event uses dark
+// panels. Keep the same contrast for normal and spectral collection pages.
+const _undiscoveredCodexGradient = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [Color(0xFFFFFCF7), Color(0xFFEDE6F5)],
+);
+
 class DraconomiconScreen extends StatelessWidget {
   const DraconomiconScreen({
     super.key,
@@ -463,7 +471,7 @@ class DragonLineageEntry extends StatelessWidget {
       surfaceTintColor: Colors.transparent,
       color: discovered
           ? Color.alphaBlend(primary.withValues(alpha: .06), Colors.white)
-          : AppColors.eventColor(context, const Color(0xFFE9E5EE)),
+          : const Color(0xFFF5F1F9),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(23),
         side: BorderSide(
@@ -483,11 +491,9 @@ class DragonLineageEntry extends StatelessWidget {
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: discovered
+            gradient: firstKnown
                 ? LinearGradient(colors: [secondary, primary])
-                : AppColors.panelGradient(context,
-                    fallback: const LinearGradient(
-                        colors: [Color(0xFFDCD7E3), Color(0xFFB9B2C3)])),
+                : _undiscoveredCodexGradient,
             border: Border.all(color: Colors.white, width: 2),
             boxShadow: discovered
                 ? [
@@ -693,10 +699,7 @@ class _FormTile extends StatelessWidget {
                     ),
                   ],
                 )
-              : null,
-          color: known
-              ? null
-              : AppColors.eventColor(context, const Color(0xFFD9D4E0)),
+              : _undiscoveredCodexGradient,
           borderRadius: BorderRadius.circular(19),
           border: Border.all(
               color: spectral ? const Color(0xFF69C9E7) : rarityColor,
