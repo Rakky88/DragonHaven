@@ -96,12 +96,10 @@ jobs:
       - name: Test
         run: flutter test --no-pub
 
-      - name: Verify consistent MIDI levels and native jukebox cycles
+      - name: Verify consistent MIDI levels
         run: |
           python3 tool/normalize_jukebox_midi.py --check
           python3 -m unittest tool/test_normalize_jukebox_midi.py
-          cd android
-          ./gradlew :app:testDebugUnitTest -x :app:compileFlutterBuildDebug -x :app:copyFlutterAssetsDebug
 
       - name: Configure stable release signing
         env:
@@ -156,6 +154,12 @@ jobs:
             --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_SllXjneKVmDAgtBGgkSgOg_tOJmYkX4
           mkdir -p release
           cp build/app/outputs/bundle/release/app-release.aab release/DragonHaven.aab
+
+      - name: Verify native jukebox cycles
+        # Flutter creates the ignored Gradle wrapper and local SDK config above.
+        # Unit tests exercise Kotlin only; they do not rebuild Flutter debug assets.
+        working-directory: android
+        run: ./gradlew :app:testDebugUnitTest -x :app:compileFlutterBuildDebug -x :app:copyFlutterAssetsDebug
 
       - name: Verify and document release artifact
         shell: bash
