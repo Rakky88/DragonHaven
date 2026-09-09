@@ -94,3 +94,27 @@ Artwork was created with the built-in image generator; exact prompts, selected
 sources and hashes are in `ART_PROMPTS.json` and `EVENT_ASSETS.json` under
 `future_event_art/dragon_families/sunwake_harvestmoon/`. All twelve approved
 family images retain their approved bytes; no placeholder artwork is shipped.
+
+
+## Requested post-release event recheck (9 September 2026)
+
+The user requested a second Sunwake/Harvestmoon completeness check. All 12
+approved family PNGs and 27 event images match their provenance hashes,
+original generated files, repository copies and the released APK byte for
+byte. Every dragon has actual RGBA transparency and contained visible bounds;
+the stage selector resolves all six standalone forms for both families.
+Both original music recordings and eight sound effects are present with
+identical bytes in the optimized native APK resources.
+
+The targeted rerun passed **57 tests** across the two games, their widgets,
+Special Adventure lifecycle, seasonal system, full sprite bounds and reference
+documentation. Calendar, 48-hour previews, combined-expertise durations,
+event-specific rewards/eggs, achievements, themes and Conclave hooks match the
+approved contract. GitHub release/latest digest and production health were
+rechecked successfully: schema 65, lint 0, all three HTTP checks 200.
+
+One stale provenance status still said the sprites awaited user review. It is
+corrected to reflect the explicit approval and exact released bytes. This is
+an administrative correction only; no game asset, balance or APK changed.
+Evidence: `release/summer-recheck-assets.json`,
+`.tools/summer-recheck-gameplay.txt`, `.tools/summer-recheck-server.txt`.

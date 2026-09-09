@@ -1,5 +1,5 @@
 {
-  "status": "awaiting user emulator review",
+  "status": "all 12 sprites approved by the user in the emulator on 9 September 2026; exact bytes shipped in v0.05.27",
   "presentation": "actual source PNGs at 84% of each review art canvas, retaining a surrounding gutter; no bitmap crops or edits",
   "rejected": "Four earlier reference-edit variants contained an opaque checkerboard and are not used.",
   "assets": [
