@@ -1,6 +1,6 @@
 # DragonHaven Special Events, Chests, and Eggs
 
-Last verified: 9 September 2026
+Last verified: 9 September 2026; v0.05.25 / 10075 published, schema 62 healthy
 
 The four redesigned Trial introductions use their clean standalone event icons,
 avoiding adjacent-frame remnants in the older sprite-sheet cutouts. Halloween now alternates memory and tracing; the former Might timing phase is removed.
@@ -16,7 +16,7 @@ and Start remain on the offer; the full details sheet retains availability.
 The shrinking test label keeps an eight-pixel gap from the event title, even
 when only a few characters fit.
 
-Ruleset: balance changes after v0.05.24, not yet released; migration 61 already supports three-strike completions, economy activation remains disabled
+Ruleset: v0.05.25 published and verified; staging and production schema 62 healthy. Migration 61 supports three-strike completions; economy activation remains disabled.
 
 The Special Adventure dragon picker now also displays Might, Arcana and Spirit
 with their individual scores, MAX markers and selected highlight glow. This

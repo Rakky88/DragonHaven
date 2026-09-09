@@ -1,6 +1,7 @@
 # Event Trial balance after v0.05.24
 
-Status: built and locally verified, 9 September 2026; not yet published.
+Status: published in v0.05.25 / 10075, 9 September 2026.
+Final combined verification: `RELEASE_V0.05.25_VERIFICATION.md`.
 
 | Trial | S+ starts at |
 |---|---:|
@@ -36,5 +37,6 @@ Verification:
   `release/event-balance-christmas-compact-overlap.png`.
 - Preview used a nonpersistent game and an offline account fixture. The released
   production APK and normal emulator display settings were restored afterward.
-- No release/version bump, database migration, production deployment or paid
-  service activation occurred in this balance change.
+- The initial balance-only commit did not require a database change. It is now
+  included in v0.05.25; migration 62 concerns personal preview access only.
+  The combined release passes 707 tests and post-publication production health.

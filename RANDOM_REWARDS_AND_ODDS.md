@@ -2,7 +2,7 @@
 
 Last verified: 9 September 2026
 
-Ruleset: v0.05.23 published and verified; staging and production schema 60 verified, economy activation disabled
+Ruleset: v0.05.25 published and verified; staging and production schema 62 verified, economy activation disabled
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
@@ -485,7 +485,7 @@ use the same activation/refill rules with a separate occurrence.
 
 ### 4.2 Trial reward by grade
 
-Current working boundaries after v0.05.24 (not yet released): Halloween
+Current boundaries published in v0.05.25: Halloween
 (Witchlight Ward) uses 500 / 1200 / 1600 / 1800 / 2000 for C/B/A/S/S+.
 A and S move below the new 2000 S+ boundary; its C and B remain unchanged.
 Valentine uses 650 / 1600 / 2600 / 3900 / 10000; Pride uses

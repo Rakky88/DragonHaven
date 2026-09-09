@@ -1,6 +1,6 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
-## Release v0.05.25 in voorbereiding
+## Release v0.05.25 afgerond
 
 De aanvullende trialbalans na v0.05.24 gaat mee: Halloween S+ 2000,
 Nieuwjaar 20000, Valentijn 10000 en Pride 12000; Kerst krijgt onafhankelijk
@@ -14,14 +14,20 @@ Migratie 62 verwijdert de oude accountbeperking voor persoonlijke previews.
 De rollbackproef op staging slaagt voor toegangscontrole, herhaling en isolatie.
 De analyse slaagt; na het aanpassen van verouderde verwachtingen slagen alle
 207 gerichte regressietests, vier native jukeboxproeven en drie MIDI-proeven.
-Productie-uitrol en definitieve releasecontroles zijn nog niet afgerond.
+De volledige stagingrun 34346382070 en definitieve release-CI 34347846550
+slagen, inclusief 707 Fluttertests, native tests en server-/clientproeven.
+Release v0.05.25 / 10075 is gepubliceerd op 9 september 2026 om 12:05:26 UTC.
+De vaste download geeft HTTP 200 en de APK-hash komt exact overeen. Productie
+staat op 62/62 migraties, lint 0 en alle healthchecks HTTP 200, ook na publicatie.
+De update bewaart voortgang en taalkeuze; About toont v0.05.25. Het bewijs staat
+in `RELEASE_V0.05.25_VERIFICATION.md`.
 Economische activatie blijft het bestaande afzonderlijke audittraject.
 
 
 Laatst bijgewerkt: **9 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-## Eventbalans na v0.05.24 gebouwd (nog niet uitgebracht)
+## Eventbalans na v0.05.24 uitgebracht in v0.05.25
 
 Op verzoek worden S+-grenzen aangepast naar Halloween 2000, Nieuwjaar 20000,
 Valentijn 10000 en Pride 12000. Halloween A/S gaan naar 1600/1800 om onder
@@ -36,8 +42,8 @@ Spelreferenties en acht instructietalen zijn bijgewerkt. Alle 703 regressietests
 slagen; analyse en documentatieguard zijn schoon. Android toont meerdere
 cadeaus tegelijk en de einduitslag bij de derde fout. Ook 320dp met 1,35
 tekstschaal en verminderde beweging is visueel gecontroleerd.
-Bewijs: `EVENT_TRIAL_BALANCE_VERIFICATION.md`. Dit werk is nog niet uitgebracht;
-productie en de openbare v0.05.24-release zijn niet gewijzigd.
+Bewijs: `EVENT_TRIAL_BALANCE_VERIFICATION.md`. Dit werk is meegenomen in de
+openbare release v0.05.25; het definitieve bewijs staat bovenaan.
 
 ## Correctierelease v0.05.24 afgerond
 
