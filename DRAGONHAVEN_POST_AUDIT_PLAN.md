@@ -1,6 +1,6 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
-## Sunwake/Harvestmoon besturing na v0.05.27 (nog niet uitgebracht)
+## Sunwake/Harvestmoon besturing voor v0.05.28 (releasecontrole)
 
 Sunwake begint sneller. Besturing start alleen op de draak, volgt de duim met
 een maximumsnelheid en stopt bij loslaten; aanraken elders en een tweede duim
@@ -15,7 +15,9 @@ zijn visueel gecontroleerd op 320x640 en met grote tekst/verminderde animaties.
 De Android-preview bouwt en is als update in de emulator geïnstalleerd.
 Ook daar zijn het vastpakken/slepen van de draak, het negeren van aanraken
 elders en de volledige vierdelige plaatsingspreview visueel gecontroleerd.
-Er is geen databasewijziging of nieuwe publieke release gedaan.
+De gebruiker heeft publicatie van v0.05.28 / Android 10078 goedgekeurd.
+De releasecontrole loopt; publicatie en servercontroles worden hieronder vastgelegd.
+Er is geen databasewijziging nodig.
 
 ## Sunwake en Harvestmoon: v0.05.27 afgerond
 
