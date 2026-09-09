@@ -162,7 +162,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Special Event counts down and keeps its sealed rewards concise',
+  testWidgets('Special Event keeps its timer in details and its offer concise',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(360, 640));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -204,37 +204,14 @@ void main() {
     final compactCountdown = find.byKey(
       const Key('special-event-availability-countdown-compact'),
     );
-    expect(compactCountdown, findsOneWidget);
+    expect(compactCountdown, findsNothing);
     expect(
-      find.descendant(of: card, matching: compactCountdown),
+      find.descendant(
+        of: card,
+        matching: find.byKey(const Key('start-adventure-button')),
+      ),
       findsOneWidget,
     );
-    final startButton = find.descendant(
-      of: card,
-      matching: find.byKey(const Key('start-adventure-button')),
-    );
-    expect(startButton, findsOneWidget);
-    expect(
-      tester.getRect(compactCountdown).right,
-      lessThanOrEqualTo(tester.getRect(startButton).left),
-    );
-    final countdownText = find.descendant(
-      of: compactCountdown,
-      matching: find.byType(Text),
-    );
-    final beforeTick = tester
-        .widgetList<Text>(countdownText)
-        .map((text) => text.data)
-        .whereType<String>()
-        .join(' ');
-    now = now.add(const Duration(seconds: 1));
-    await tester.pump(const Duration(seconds: 1));
-    final afterTick = tester
-        .widgetList<Text>(countdownText)
-        .map((text) => text.data)
-        .whereType<String>()
-        .join(' ');
-    expect(afterTick, isNot(beforeTick));
     expect(tester.takeException(), isNull);
 
     await tester.tap(card);
@@ -244,6 +221,20 @@ void main() {
       find.byKey(const Key('special-event-availability-countdown-detail')),
       findsOneWidget,
     );
+    final countdownText = find.descendant(
+      of: find.byKey(const Key('special-event-availability-countdown-detail')),
+      matching: find.byType(Text),
+    );
+    String displayedTime() => tester
+        .widgetList<Text>(countdownText)
+        .map((text) => text.data)
+        .whereType<String>()
+        .join(' ');
+    final beforeTick = displayedTime();
+    now = now.add(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    expect(displayedTime(), isNot(beforeTick));
+
     final event = specialAdventureEventCatalog.singleWhere(
       (entry) => entry.id == 'golden_wings_birthday',
     );

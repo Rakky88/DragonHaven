@@ -19,6 +19,8 @@ artifact verification and the release workflow.
   test label first, removes it next, and only then wraps the official content.
 - Undiscovered Draconomicon families, silhouette medallions and form tiles keep
   pale parchment/lavender backgrounds, independent of dark event panel colors.
+- Compact Special-adventure offers omit the duplicate availability timer, leaving
+  room for the title and Expertise. The global banner and full details retain it.
 - Event cards/pickers use all three Expertises. All three highlights are required
   for their highlighted group; standard Trials retain their single focus.
 - One deterministic initial refill per event occurrence, preserving occupied slots.
@@ -74,6 +76,8 @@ preview after finding old sprite-cutout remnants. Preview saves are nonpersisten
 the final production update must preserve the original saved game.
 
 The Draconomicon addition passed all eight existing visual/bounds, locked-form
-and reference checks; final device and release evidence will be appended below.
+and reference checks; Android family overview and expanded silhouettes were
+visually checked after loading. The compact Special-card change passed 19
+existing screen/reference checks, including the live timer in full details.
 The broader canonical economy remains staging-only; this release performs no
 production worker or account cutover.

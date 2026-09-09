@@ -11,9 +11,13 @@ retain light parchment/lavender surfaces during every event. These surfaces
 are deliberately independent of the dark event panels; discovery behavior and
 normal/spectral artwork remain unchanged.
 
+The compact Special-adventure offer omits its duplicate availability countdown;
+the shared event banner supplies that timer. Trip duration, expertise information
+and Start remain on the offer; the full details sheet retains availability.
+
 Ruleset: v0.05.23 release candidate; staging and production schema 60 verified, economy activation disabled
 
-<!-- reference-source-fingerprint: 5d4340c2163b1ca5 -->
+<!-- reference-source-fingerprint: cd3f0e7051499440 -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special

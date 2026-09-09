@@ -2310,13 +2310,6 @@ class _AdventureCard extends StatelessWidget {
                   icon: const Icon(Icons.close_rounded,
                       size: 19, color: AppColors.muted),
                 ),
-              if (specialWindow != null) ...[
-                const SizedBox(width: 4),
-                _SpecialEventAvailabilityCountdown(
-                  endsAt: specialWindow.endsAt,
-                  compact: true,
-                ),
-              ],
               const SizedBox(width: 2),
               _AdventureStartButton(onPressed: () => _start(context)),
             ]),

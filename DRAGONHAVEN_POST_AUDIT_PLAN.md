@@ -16,6 +16,10 @@ blijft legacy, met nul schaduwstaten en uitgeschakelde economische mutaties.
 Ook onontdekte Draconomicon-families en vormen krijgen lichtere achtergronden,
 zodat silhouetten tijdens events goed zichtbaar blijven. Acht bestaande controles
 op vormen, grenzen, vergrendeling en documentatie slagen.
+De dubbele beschikbaarheidstimer is uit compacte Special-adventurekaarten
+verwijderd; de eventbalk en de volledige details houden hun timer. De bestaande
+scherm-/documentatiecontrole slaagt met 19 tests. Draconomicon-overzicht en
+uitgeklapte silhouetten zijn ook op Android visueel gecontroleerd.
 Verdere releasebewijzen en open gates: `RELEASE_V0.05.23_VERIFICATION.md`.
 De onderstaande servereconomie-deelstappen blijven afzonderlijk afgebakend.
 
