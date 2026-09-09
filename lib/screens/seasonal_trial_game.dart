@@ -1357,9 +1357,9 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
           introEn: 'Moonlit Orchard',
           introNl: 'Maanverlichte Boomgaard',
           instructionsEn:
-              'Choose a fruit shape, rotate it if needed, then tap its top-left cell in the basket. You can also drag shapes into place. Full rows are harvested. When no shape fits, you lose a basket. Three full baskets end the Trial.',
+              'Choose a fruit shape and rotate it if needed. Drag its center to the desired spot in the basket, then release to place it. Full rows are harvested. When no shape fits, you lose a basket. Three full baskets end the Trial.',
           instructionsNl:
-              'Kies een fruitvorm, draai hem zo nodig en tik op zijn cel linksboven in de mand. Je kunt vormen ook naar hun plek slepen. Volle rijen worden geoogst. Past geen enkele vorm meer, dan verlies je een mand. Drie volle manden beëindigen de proef.',
+              'Kies een fruitvorm en draai hem zo nodig. Sleep het midden naar de gewenste plek in de mand en laat los om te plaatsen. Volle rijen worden geoogst. Past geen enkele vorm meer, dan verlies je een mand. Drie volle manden beëindigen de proef.',
           successEn: 'A beautiful harvest!',
           successNl: 'Een prachtige oogst!',
           failureEn: 'Basket full!',

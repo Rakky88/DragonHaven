@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 5ed6aff96e93f135 -->
+<!-- reference-source-fingerprint: 10b4873f1b0dc6eb -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -700,7 +700,10 @@ achievement and gold/silver/bronze podium emotes with established podium rewards
 Sunwake: a 75-second steering game with three lanes. Each gate has one uniformly
 random safe lane/sunpearl and two reefs. Fixed 120Hz simulation preserves collisions
 across render rates. The first gate spawns after .20 seconds. Speed is
-min(.78, .42 + t*.005), with interval max(.60, 1.05-t*.008) seconds.
+min(1.4, .42 + t*.004 + t*t*.00011), with interval max(.56, 1.05-t*.0065)
+seconds. Reef collision width is .25-.025*normalized Might, plus the existing
+.026 dragon collision radius. The start speed is unchanged; speed rises smoothly
+through the final stretch (about 1.34 arena heights/s at 75 seconds).
 Steering must begin by holding the dragon, then dragging horizontally. A tap
 elsewhere never moves it. Speed is capped at 1.65 arena widths per second;
 releasing/cancelling stops pursuit of the previous target. The current only
@@ -711,7 +714,11 @@ Harvestmoon: a 75-second 6x7 packing game, three rotatable fruit shapes per tray
 Seven normal shapes, three uniformly sampled fruits, four uniform orientations.
 Single-piece probability .10 + .035*(normalized Might+Arcana+Spirit), maximum .205.
 A held touch or dragged tray shape previews every occupied target cell; valid
-placements are green and invalid footprints red. Releasing places the shape;
+placements are green and invalid footprints red. The thumb targets the center
+of the full shape, snapped to the nearest cells, for both tray drags and board
+touches. Only the full-size board preview follows the drag; there is no small
+floating copy. Off-board cells are clipped without wrapping to another row.
+Releasing places exactly the previewed footprint;
 cancellation/outside drops do not place it. Full horizontal rows fade for .18
 seconds, then rows above move down over .44 seconds. Input waits for that .62
 second transition. Reduced motion displays the final board immediately.

@@ -71,6 +71,13 @@ class _Harness {
   Offset cell(int x, int y) =>
       tester.getCenter(find.byKey(ValueKey('orchard-cell-${y * 6 + x}')));
 
+  Offset shapeCenter(OrchardPiece piece, int x, int y) {
+    final corner =
+        tester.getTopLeft(find.byKey(ValueKey('orchard-cell-${y * 6 + x}')));
+    final side = tester.getSize(find.byKey(const Key('orchard-cell-0'))).width;
+    return corner + Offset(piece.width * side / 2, piece.height * side / 2);
+  }
+
   Future<OrchardPlacement> place(int index, int x, int y,
       {int turns = 0}) async {
     await tester.tap(find.byKey(ValueKey('orchard-tray-$index')));
@@ -80,8 +87,9 @@ class _Harness {
       await tester.pump();
       model.rotate(index);
     }
+    final target = shapeCenter(model.tray[index]!, x, y);
     final result = model.place(index, x, y)!;
-    await tester.tapAt(cell(x, y));
+    await tester.tapAt(target);
     await tester.pump();
     return result;
   }
@@ -167,7 +175,7 @@ void main() {
     final piece = h.model.tray[index]!;
     await t.tap(find.byKey(ValueKey('orchard-tray-$index')));
     await t.pump();
-    final thumb = await t.startGesture(h.cell(1, 1));
+    final thumb = await t.startGesture(h.shapeCenter(piece, 1, 1));
     await t.pump();
     for (final (x, y) in piece.cells) {
       expect(find.byKey(ValueKey('orchard-preview-${(y + 1) * 6 + x + 1}')),
@@ -175,7 +183,7 @@ void main() {
     }
     expect(h.actions, isEmpty);
     await h.capture('harvestmoon-full-preview');
-    await thumb.moveTo(h.cell(2, 2));
+    await thumb.moveTo(h.shapeCenter(piece, 2, 2));
     await t.pump();
     for (final (x, y) in piece.cells) {
       expect(find.byKey(ValueKey('orchard-preview-${(y + 2) * 6 + x + 2}')),
@@ -203,35 +211,62 @@ void main() {
   });
 
   testWidgets(
-      'tray drag previews full shape, rejects edge, then accepts valid anchor',
+      'tray drag centres the only moving fruit preview and rejects clipped edges',
       (t) async {
     final h = _Harness(t);
     await h.mount(TrialKind.moonlitOrchard);
     final index = h.model.tray.indexWhere((p) => p!.cells.length > 1);
     final piece = h.model.tray[index]!;
+    final originalImages = find.byType(Image).evaluate().length;
+    void expectInvalidFootprint() {
+      final previews = t.widgetList<Container>(find.byWidgetPredicate((w) =>
+          w is Container &&
+          w.key is ValueKey<String> &&
+          (w.key! as ValueKey<String>).value.startsWith('orchard-preview-')));
+      expect(previews, isNotEmpty);
+      for (final preview in previews) {
+        expect((preview.decoration! as BoxDecoration).color,
+            const Color(0xC2A93232));
+        final index =
+            int.parse((preview.key! as ValueKey<String>).value.split('-').last);
+        expect(index, inInclusiveRange(0, 41));
+      }
+    }
+
     var thumb = await t
         .startGesture(t.getCenter(find.byKey(ValueKey('orchard-tray-$index'))));
     await thumb.moveTo(h.cell(5, 6));
     await t.pump();
-    final invalid =
-        t.widget<Container>(find.byKey(const Key('orchard-preview-41')));
-    expect(
-        (invalid.decoration! as BoxDecoration).color, const Color(0xC2A93232));
+    expectInvalidFootprint();
     await h.capture('harvestmoon-invalid-preview');
     await thumb.up();
     await t.pump();
     expect(h.actions, isEmpty);
+    // The top-left edge also clips a centred multi-cell footprint, rather than
+    // wrapping its off-board cells to another row or placing a partial shape.
     thumb = await t
         .startGesture(t.getCenter(find.byKey(ValueKey('orchard-tray-$index'))));
-    await thumb.moveTo(h.cell(0, 0));
+    final edge = t.getTopLeft(find.byKey(const Key('orchard-cell-0'))) +
+        const Offset(1, 1);
+    await thumb.moveTo(edge);
+    await t.pump();
+    expectInvalidFootprint();
+    await thumb.moveTo(h.shapeCenter(piece, 1, 1));
     await t.pump();
     for (final (x, y) in piece.cells) {
-      expect(
-          find.byKey(ValueKey('orchard-preview-${y * 6 + x}')), findsOneWidget);
+      expect(find.byKey(ValueKey('orchard-preview-${(y + 1) * 6 + x + 1}')),
+          findsOneWidget);
     }
+    expect(
+        find.byType(Image), findsNWidgets(originalImages + piece.cells.length));
+    await h.capture('harvestmoon-centred-drag');
     await thumb.up();
     await t.pump();
     expect(h.actions, hasLength(1));
+    for (final (x, y) in piece.cells) {
+      expect(find.byKey(ValueKey('orchard-fruit-${(y + 1) * 6 + x + 1}')),
+          findsOneWidget);
+    }
     await h.close();
   });
 

@@ -343,12 +343,14 @@ class _SummerTrialsState extends State<SummerTrials> {
         _orchard.tray[index] == null) {
       return;
     }
-    final x = (position.dx / cell).floor();
-    final y = (position.dy / cell).floor();
-    final next = x < 0 ||
-            x >= MoonlitOrchard.columns ||
-            y < 0 ||
-            y >= MoonlitOrchard.rows
+    final piece = _orchard.tray[index]!;
+    // The thumb targets the centre of the full footprint, snapped to the grid.
+    final x = (position.dx / cell - piece.width / 2).round();
+    final y = (position.dy / cell - piece.height / 2).round();
+    final next = position.dx < 0 ||
+            position.dx >= MoonlitOrchard.columns * cell ||
+            position.dy < 0 ||
+            position.dy >= MoonlitOrchard.rows * cell
         ? null
         : (index: index, x: x, y: y);
     if (_preview != next) setState(() => _preview = next);
@@ -365,7 +367,9 @@ class _SummerTrialsState extends State<SummerTrials> {
     final ghostCells = <int>{
       if (piece != null)
         for (final (dx, dy) in piece.cells)
-          if (preview!.x + dx < MoonlitOrchard.columns &&
+          if (preview!.x + dx >= 0 &&
+              preview.y + dy >= 0 &&
+              preview.x + dx < MoonlitOrchard.columns &&
               preview.y + dy < MoonlitOrchard.rows)
             (preview.y + dy) * MoonlitOrchard.columns + preview.x + dx
     };
@@ -398,8 +402,10 @@ class _SummerTrialsState extends State<SummerTrials> {
         onMove: (d) => _previewFruit(d.data, local(d.offset), cell),
         onLeave: (_) => _clearPreview(),
         onAcceptWithDetails: (d) {
-          final p = local(d.offset);
-          _placeFruit(d.data, (p.dx / cell).floor(), (p.dy / cell).floor());
+          _previewFruit(d.data, local(d.offset), cell);
+          final target = _preview;
+          if (target != null) _placeFruit(target.index, target.x, target.y);
+          _clearPreview();
         },
         builder: (context, candidates, rejected) => Listener(
           key: _basketKey,
@@ -605,11 +611,7 @@ class _SummerTrialsState extends State<SummerTrials> {
                                   _preview = null;
                                 });
                               },
-                              feedback: Material(
-                                  color: Colors.transparent,
-                                  child: Transform.translate(
-                                      offset: const Offset(-45, -105),
-                                      child: _piece(piece, 90))),
+                              feedback: const SizedBox.shrink(),
                               childWhenDragging:
                                   Opacity(opacity: .35, child: child),
                               child: child)));

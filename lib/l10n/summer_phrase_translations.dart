@@ -180,14 +180,14 @@ const summerPhraseTranslations = <String, List<String>>{
     'Desliza para a esquerda ou direita para guiar o dragão. Recolhe pérolas solares e evita recifes. A corrente acelera. Três colisões terminam a prova.',
     '左右にスライドして海流の中でドラゴンを導こう。太陽真珠を集め、サンゴ礁を避けよう。流れは次第に速くなり、3回ぶつかると終了。'
   ],
-  'Choose a fruit shape, rotate it if needed, then tap its top-left cell in the basket. You can also drag shapes into place. Full rows are harvested. When no shape fits, you lose a basket. Three full baskets end the Trial.':
+  'Choose a fruit shape and rotate it if needed. Drag its center to the desired spot in the basket, then release to place it. Full rows are harvested. When no shape fits, you lose a basket. Three full baskets end the Trial.':
       [
-    'Wähle eine Obstform, drehe sie bei Bedarf und tippe auf ihr Feld oben links im Korb. Du kannst sie auch hineinziehen. Volle Reihen werden geerntet. Passt keine Form mehr, verlierst du einen Korb. Drei volle Körbe beenden die Prüfung.',
-    'Elige una forma, gírala si hace falta y toca su casilla superior izquierda en la cesta. También puedes arrastrarla. Las filas completas se cosechan. Si ninguna forma cabe, pierdes una cesta. Tres cestas llenas terminan la prueba.',
-    'Choisis une forme, tourne-la si besoin puis touche sa case en haut à gauche dans le panier. Tu peux aussi la glisser. Les rangées pleines sont récoltées. Si aucune forme ne rentre, tu perds un panier. Trois paniers pleins terminent l’épreuve.',
-    'Scegli una forma, ruotala se serve e tocca la sua casella in alto a sinistra nel cesto. Puoi anche trascinarla. Le righe piene vengono raccolte. Se nessuna forma entra, perdi un cesto. Tre cesti pieni terminano la prova.',
-    'Escolhe uma forma, roda-a se necessário e toca na sua célula superior esquerda no cesto. Também podes arrastá-la. As filas cheias são colhidas. Se nenhuma forma couber, perdes um cesto. Três cestos cheios terminam a prova.',
-    '果物の形を選び、必要なら回転させ、かごの中でその形の左上になるマスをタップしよう。ドラッグでも置けます。横一列がそろうと収穫。どの形も入らないとかごを1つ失い、3つで終了。'
+    'Wähle eine Obstform und drehe sie bei Bedarf. Ziehe ihre Mitte an die gewünschte Stelle im Korb und lasse zum Platzieren los. Volle Reihen werden geerntet. Passt keine Form mehr, verlierst du einen Korb. Drei volle Körbe beenden die Prüfung.',
+    'Elige una forma y gírala si hace falta. Arrastra su centro al lugar deseado de la cesta y suelta para colocarla. Las filas completas se cosechan. Si ninguna forma cabe, pierdes una cesta. Tres cestas llenas terminan la prueba.',
+    'Choisis une forme et tourne-la si besoin. Fais glisser son centre vers la place souhaitée dans le panier, puis relâche pour la poser. Les rangées pleines sont récoltées. Si aucune forme ne rentre, tu perds un panier. Trois paniers pleins terminent l’épreuve.',
+    'Scegli una forma e ruotala se serve. Trascina il suo centro nel punto desiderato del cesto e rilascia per posizionarla. Le righe piene vengono raccolte. Se nessuna forma entra, perdi un cesto. Tre cesti pieni terminano la prova.',
+    'Escolhe uma forma e roda-a se necessário. Arrasta o seu centro para o lugar desejado no cesto e solta para a colocar. As filas cheias são colhidas. Se nenhuma forma couber, perdes um cesto. Três cestos cheios terminam a prova.',
+    '果物の形を選び、必要なら回転させよう。形の中心をかごの置きたい場所へドラッグし、指を離すと置けるよ。横一列がそろうと収穫。どの形も入らないとかごを1つ失い、3つで終了。',
   ],
   'Follow the sunpearls': [
     'Folge den Sonnenperlen',

@@ -9,6 +9,36 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('surf reef edges count hits while Might preserves its assistance', () {
+    bool crossesAt(double distance, {double might = 0}) {
+      final game = SunwakeSurf(seed: 1, might: might);
+      game.x = 1 / 6 + distance;
+      game.steer(game.x);
+      game.gates.add(
+          SurfGate(id: 0, safeLane: 1, y: .799, reefWidth: game.reefWidth));
+      return game.advance(1 / 60).single.correct;
+    }
+
+    expect(crossesAt(.14), false);
+    expect(crossesAt(.16), true);
+    expect(crossesAt(.14, might: 1), true);
+  });
+  test('surf gradually accelerates through the final stretch', () {
+    final game = SunwakeSurf(seed: 1);
+    var previousSpeed = 0.0, previousInterval = 2.0;
+    for (var second = 0; second <= 75; second++) {
+      game.time = second.toDouble();
+      expect(game.speed, greaterThan(previousSpeed));
+      if (second > 0) expect(game.speed - previousSpeed, lessThan(.021));
+      expect(game.interval, lessThan(previousInterval));
+      // Enough time to cross two lanes at the capped steering speed.
+      expect(game.interval,
+          greaterThan(2 / 3 / SunwakeSurf.maximumSteeringSpeed + .1));
+      previousSpeed = game.speed;
+      previousInterval = game.interval;
+    }
+    expect(game.speed, greaterThan(1.3));
+  });
   test('surf starts promptly, accelerates, and dragging cannot teleport', () {
     final game = SunwakeSurf(seed: 42);
     final startSpeed = game.speed;

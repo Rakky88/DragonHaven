@@ -6,7 +6,7 @@ Ruleset: v0.05.25 published and verified; staging and production schema 62 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 6132476158281bf7 -->
+<!-- reference-source-fingerprint: 70d4a1756003706f -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
@@ -880,17 +880,22 @@ never produce podium awards or permanent Conclave decorations.
 
 Sunwake uses a seeded uniform choice among three safe lanes per gate. The
 fixed-step movement, hitboxes, currents and score depend on play, not frame
-rate. The first gate is at .20s, speed min(.78,.42+t*.005) arena heights/s and
-gate interval max(.60,1.05-t*.008)s. A grabbed dragon follows a dragged target
+rate. The first gate is at .20s, speed min(1.4,.42+t*.004+t*t*.00011) arena
+heights/s and gate interval max(.56,1.05-t*.0065)s. Reef collision width is
+.25-.025*normalized Might, plus .026 dragon radius. A grabbed dragon follows a dragged target
 at at most 1.65 arena widths/s; releasing stops pursuit. Passive current
-applies only while not held. Safe-lane odds, hitboxes and points are unchanged.
+applies only while not held. Safe-lane odds and points are unchanged; reef
+hitboxes are wider and speed increases continuously through the 75-second run.
 Harvestmoon independently chooses fruit among three types and an initial
 rotation among four turns. A single-fruit shape has chance .10 plus .035 times
 each expertise normalized/capped at 400, maximum .205. Otherwise each of seven
 multi-fruit shapes is equally likely. Refill creates three shapes; invalid
 placement does not redraw. No-fitting-tray resets the basket, loses one of
 three lives and deducts 30. Full-shape previews and row-fall animation do not
-roll additional shapes or grant additional score. Placement is blocked during
+roll additional shapes or grant additional score. The full footprint is centered
+on the thumb, snapped to the grid, and is the only moving preview. Clipped edge
+placements are invalid; releasing uses the same anchor as the preview.
+Placement is blocked during
 the .62s harvest animation; reduced motion uses the final board immediately.
 These seeds never reroll egg/reward provenance.
 

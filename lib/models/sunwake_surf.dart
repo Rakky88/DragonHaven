@@ -28,7 +28,7 @@ class SunwakeSurf {
       double arcana = 0,
       double spirit = 0})
       : _random = Random(seed),
-        reefWidth = .21 - might.clamp(0, 1) * .025,
+        reefWidth = .25 - might.clamp(0, 1) * .025,
         pickupRadius = .10 + arcana.clamp(0, 1) * .025,
         currentScale = 1 - spirit.clamp(0, 1) * .25;
   final Random _random;
@@ -42,8 +42,8 @@ class SunwakeSurf {
   int _serial = 0, mistakes = 0;
   bool get finished => mistakes >= 3;
   double get current => sin(time * .85) * .052 * currentScale;
-  double get speed => min(.78, .42 + time * .005);
-  double get interval => max(.60, 1.05 - time * .008);
+  double get speed => min(1.4, .42 + time * .004 + time * time * .00011);
+  double get interval => max(.56, 1.05 - time * .0065);
 
   void steer(double position) {
     if (finished || !position.isFinite) return;

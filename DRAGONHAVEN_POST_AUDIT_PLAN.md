@@ -1,5 +1,17 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Harvestmoon-aanraking en Sunwake-balans voor v0.05.29
+
+Harvestmoon toont bij slepen één grote plaatsingspreview, met het midden van de
+vorm bij de duim. Randcontrole en plaatsing gebruiken hetzelfde doelvak; de
+kleine zwevende kopie is verwijderd. Sunwake heeft iets bredere koraalhitboxes
+en versnelt vloeiend door tot het einde, met behoud van Might-hulp en begrensde
+besturing. De 27 gerichte controles slagen, inclusief twintig navigeerbare seeds.
+Uitleg is vertaald en de levende gameplayreferenties zijn bijgewerkt.
+De gebruiker heeft release v0.05.29 / Android 10079 toegestaan; de releasegate
+loopt. Geen nieuwe migratie, beloningstabel of servereconomie-activatie.
+Bewijs wordt vastgelegd in `RELEASE_V0.05.29_VERIFICATION.md`.
+
 ## Appgrootte onderzocht na v0.05.28 (9 september 2026)
 
 De gepubliceerde APK is 627,72 MB: afbeeldingen 492,59 MB, audio 63,89 MB,
