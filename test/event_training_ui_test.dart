@@ -15,6 +15,7 @@ import 'package:dragon_haven/theme/app_theme.dart';
 import 'package:dragon_haven/theme/event_appearance.dart';
 import 'package:dragon_haven/widgets/dragon_expertise_row.dart';
 import 'package:dragon_haven/widgets/expertise_icon.dart';
+import 'package:dragon_haven/widgets/expertise_score_badge.dart';
 import 'package:dragon_haven/widgets/game_icon_sprite.dart';
 import 'package:dragon_haven/widgets/seasonal_app_frame.dart';
 import 'package:flutter/material.dart';
@@ -339,6 +340,10 @@ void main() {
     final marked = find.byKey(const Key('adventure-dragon-marked'));
     final other = find.byKey(const Key('adventure-dragon-unmarked'));
     expect(tester.getTopLeft(marked).dy, lessThan(tester.getTopLeft(other).dy));
+    final badges = tester.widgetList<ExpertiseScoreBadge>(find.descendant(
+        of: marked, matching: find.byType(ExpertiseScoreBadge)));
+    expect(badges.single.focus, adventure.focus);
+    expect(badges.single.highlighted, isTrue);
     final info = find.byKey(const Key('dragon-expertise-info-marked'));
     await reveal(tester, info);
     await tester.tap(info);
@@ -364,4 +369,78 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  for (final event in specialAdventureEventCatalog) {
+    testWidgets(
+        '${event.id} picker shows three scores, requires all highlights and sorts by total',
+        (tester) async {
+      final birthday = event.id == 'golden_wings_birthday';
+      final game = await mount(tester,
+          shell: false,
+          scale: 1.35,
+          event: !birthday,
+          eventId: event.id,
+          clock: () => birthday
+              ? DateTime.utc(2026, 9, 1, 12)
+              : DateTime.utc(2026, 9, 9, 12));
+      game.pet.highlightedExpertises.addAll(TrainingFocus.values);
+      game.pet.training['spirit'] =
+          game.pet.expertiseMaximum(TrainingFocus.spirit);
+      game.sanctuaryDragons.single.training
+        ..clear()
+        ..addAll({'might': 90, 'arcana': 90, 'spirit': 30});
+      game.sanctuaryDragons.add(Pet(
+          id: 'spirit-only',
+          name: 'Spirit specialist',
+          stage: DragonStage.hatchling,
+          lineageId: 'clockskip',
+          firstEgg: false,
+          training: {'might': 10, 'arcana': 10, 'spirit': 100})
+        ..highlightedExpertises.add(TrainingFocus.spirit));
+      final adventure = game.adventuresFor(AdventureKind.special).single;
+      final card = find.byKey(Key('adventure-card-${adventure.id}'));
+      await reveal(tester, card);
+      await tester.tap(find.descendant(
+          of: card, matching: find.byKey(const Key('start-adventure-button'))));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 450));
+
+      final marked = find.byKey(const Key('adventure-dragon-marked'));
+      final unmarked = find.byKey(const Key('adventure-dragon-unmarked'));
+      final partial = find.byKey(const Key('adventure-dragon-spirit-only'));
+      expect(tester.getTopLeft(marked).dy,
+          lessThan(tester.getTopLeft(find.text('AVAILABLE DRAGONS')).dy));
+      expect(tester.getTopLeft(unmarked).dy,
+          greaterThan(tester.getTopLeft(find.text('AVAILABLE DRAGONS')).dy));
+      await reveal(tester, partial);
+      expect(tester.getTopLeft(unmarked).dy,
+          lessThan(tester.getTopLeft(partial).dy));
+      for (final dragon in game.ownedDragons) {
+        final tile = find.byKey(Key('adventure-dragon-${dragon.id}'));
+        await reveal(tester, tile);
+        final badges = tester.widgetList<ExpertiseScoreBadge>(find.descendant(
+            of: tile, matching: find.byType(ExpertiseScoreBadge)));
+        expect(badges.map((badge) => badge.focus), TrainingFocus.values);
+        for (final badge in badges) {
+          expect(badge.score, dragon.trainingFor(badge.focus));
+          expect(badge.highlighted,
+              dragon.highlightedExpertises.contains(badge.focus));
+        }
+      }
+      final info = find.byKey(const Key('dragon-expertise-info-marked'));
+      await reveal(tester, info, towardTop: true);
+      await tester.tap(info);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(DragonExpertiseRow), findsNWidgets(3));
+      expect(game.activeAdventureRuns, isEmpty);
+      await tester.tap(find.text('Close'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await reveal(tester, find.text('Choose a dragon'), towardTop: true);
+      await capture(tester, 'special-picker-${event.id}');
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
 }

@@ -3,6 +3,16 @@
 Laatst bijgewerkt: **9 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
+## Correctierelease v0.05.24 in uitvoering
+
+De Special Adventure-drakenkeuze gebruikte na v0.05.23 nog de enkele focus.
+De gedeelde keuzelijst toont nu alle drie scores en markeringen, vereist alle
+drie highlights voor de gemarkeerde groep en sorteert op hun som. Dit geldt
+ook voor verjaardag en het accepteren van een Valentijn-uitnodiging.
+Zes eventregressies en de bestaande keuzelijstcontroles slagen (17 tests).
+Gewone Adventures houden hun enkele focus; serverregels en beloningen wijzigen
+niet. Releasebewijs: `RELEASE_V0.05.24_VERIFICATION.md`.
+
 ## Eventrelease v0.05.23 afgerond
 
 Op verzoek krijgen de vier overige seizoensproeven eigen spelmechanieken;

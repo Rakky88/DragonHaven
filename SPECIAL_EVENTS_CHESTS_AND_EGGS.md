@@ -17,9 +17,18 @@ and Start remain on the offer; the full details sheet retains availability.
 The shrinking test label keeps an eight-pixel gap from the event title, even
 when only a few characters fit.
 
-Ruleset: v0.05.23 published and verified; staging and production schema 60 verified, economy activation disabled
+Ruleset: v0.05.24 picker correction under verification; schema 60 unchanged, economy activation disabled
 
-<!-- reference-source-fingerprint: 44dbc4564fdcf57a -->
+The Special Adventure dragon picker now also displays Might, Arcana and Spirit
+with their individual scores, MAX markers and selected highlight glow. This
+applies to all six combined-expertise Adventures, including birthday and the
+Valentine partner invitation. Only dragons with all three Expertises highlighted
+enter the highlighted section. Within each section, combined Expertise sorts
+descending; existing recommendation/acquisition order breaks ties. Ordinary
+Adventures keep their single-focus display and ordering. Inspecting Expertise
+does not select or start a dragon. Duration formulas and rewards are unchanged.
+
+<!-- reference-source-fingerprint: d8788f7ede70a46d -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special

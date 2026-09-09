@@ -784,7 +784,7 @@ Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
 bool _highlightedForPath(Pet dragon, TrainingFocus focus,
         {bool combined = false}) =>
     combined
-        ? dragon.highlightedExpertises.isNotEmpty
+        ? TrainingFocus.values.every(dragon.highlightedExpertises.contains)
         : dragon.highlightedExpertises.contains(focus);
 
 class _TrialDragonPicker extends StatelessWidget {
@@ -1719,12 +1719,7 @@ Future<Pet?> _pickGroupDragon(
   final game = context.read<HouseholdProvider>();
   final available = game.ownedDragons
       .where((dragon) => dragon.activeAdventureId == null)
-      .toList()
-    ..sort((a, b) {
-      final score = _recommendationScore(b, adventure)
-          .compareTo(_recommendationScore(a, adventure));
-      return score != 0 ? score : a.acquiredAt.compareTo(b.acquiredAt);
-    });
+      .toList();
   if (available.isEmpty) {
     await _showStartResult(context, AdventureStartResult.eggCannotAdventure);
     return null;
@@ -2323,12 +2318,7 @@ class _AdventureCard extends StatelessWidget {
     final game = context.read<HouseholdProvider>();
     final available = game.ownedDragons
         .where((dragon) => dragon.activeAdventureId == null)
-        .toList()
-      ..sort((a, b) {
-        final score = _recommendationScore(b, adventure)
-            .compareTo(_recommendationScore(a, adventure));
-        return score != 0 ? score : a.acquiredAt.compareTo(b.acquiredAt);
-      });
+        .toList();
     if (available.isEmpty) {
       await _showStartResult(context, AdventureStartResult.eggCannotAdventure);
       return;
@@ -2789,12 +2779,24 @@ class _DragonPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final highlighted = dragons
+    // Sort here so offers, details and partner invitations use the same order.
+    final ordered = [...dragons]..sort((a, b) {
+        if (adventure.combinedExpertise) {
+          int total(Pet dragon) => TrainingFocus.values
+              .fold(0, (sum, focus) => sum + dragon.trainingFor(focus));
+          final combined = total(b).compareTo(total(a));
+          if (combined != 0) return combined;
+        }
+        final score = _recommendationScore(b, adventure)
+            .compareTo(_recommendationScore(a, adventure));
+        return score != 0 ? score : a.acquiredAt.compareTo(b.acquiredAt);
+      });
+    final highlighted = ordered
         .where((dragon) => _highlightedForPath(dragon, adventure.focus,
             combined: adventure.combinedExpertise))
         .toList();
     final others =
-        dragons.where((dragon) => !highlighted.contains(dragon)).toList();
+        ordered.where((dragon) => !highlighted.contains(dragon)).toList();
     return SafeArea(
       child: DraggableScrollableSheet(
         expand: false,
@@ -2876,7 +2878,6 @@ class _DragonPickerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final focus = adventure.focus;
     return Card(
       color: highlighted ? const Color(0xFFFFFAE9) : Colors.white,
       child: InkWell(
@@ -2935,15 +2936,22 @@ class _DragonPickerTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          ExpertiseScoreBadge(
-                            dragonId: dragon.id,
-                            focus: focus,
-                            focusLabel: _focusName(strings, focus),
-                            score: dragon.trainingFor(focus),
-                            maximum: dragon.expertiseMaximum(focus),
-                          ),
+                          for (final focus in adventure.combinedExpertise
+                              ? TrainingFocus.values
+                              : [adventure.focus])
+                            ExpertiseScoreBadge(
+                              dragonId: dragon.id,
+                              focus: focus,
+                              focusLabel: _focusName(strings, focus),
+                              score: dragon.trainingFor(focus),
+                              maximum: dragon.expertiseMaximum(focus),
+                              highlighted:
+                                  dragon.highlightedExpertises.contains(focus),
+                            ),
                           DragonExpertiseInfo(dragon: dragon)
                         ]),
                   ],
