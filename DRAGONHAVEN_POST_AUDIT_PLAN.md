@@ -1,5 +1,14 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Release v0.05.26 in voorbereiding
+
+De reeds gebouwde verjaardagsaanpassingen en het snellere kerstbegin worden
+uitgebracht als v0.05.26 / 10076. Publicatie volgt na regressietests, analyse,
+ondertekening, versiecontrole, emulatorcontrole en productiepreflight op schema 63.
+De nieuwe Sunwake- en Harvestmoon-events horen bij het volgende werkpakket.
+Bewijs en definitieve publicatiestatus: `RELEASE_V0.05.26_VERIFICATION.md`.
+
+
 ## Verjaardag en sneller kerstbegin — na v0.05.25
 
 Wishcake Tower, een persoonlijke verjaardagspreview en eigen instrumentale
