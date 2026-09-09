@@ -64,4 +64,3 @@ Evidence: `release/v0.05.28-artifact.json`,
 `release/summer-controls-visual/`, `release/summer-device-controls-*.png`,
 `.tools/release28-ci.txt`, `.tools/release28-version-tests.txt`, and
 `.tools/release28-postpublish-preflight.txt`/`release28-postpublish-guard.txt`.
-
