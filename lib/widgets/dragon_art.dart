@@ -75,7 +75,10 @@ abstract final class DragonArtwork {
     'spectrumplume': {'wyrmling', 'might', 'arcana', 'spirit'},
   };
 
+  static const pngLineages = {'solmanta', 'ciderhorn'};
+
   static const fullyStandaloneLineages = <String>{
+    ...pngLineages,
     'gloamgourd',
     'hollyfrost',
     'dawnchime',
@@ -84,13 +87,13 @@ abstract final class DragonArtwork {
   };
 
   static String hatchlingAsset(String? lineageId) =>
-      'assets/images/dragons/${_spriteLineageId(lineageId)}_hatchling.webp';
+      'assets/images/dragons/${_spriteLineageId(lineageId)}_hatchling.${pngLineages.contains(lineageId) ? 'png' : 'webp'}';
 
   static String formsAsset(String? lineageId) =>
       'assets/images/dragons/${_spriteLineageId(lineageId)}_forms.webp';
 
   static String masteryAsset(String? lineageId) =>
-      'assets/images/dragons/${dragonLineageById(lineageId).id}_mastery.webp';
+      'assets/images/dragons/${dragonLineageById(lineageId).id}_mastery.${pngLineages.contains(lineageId) ? 'png' : 'webp'}';
 
   static String safeStandaloneFormAsset(String lineageId, String form) =>
       secondPassStandaloneForms[lineageId]?.contains(form) == true
@@ -131,6 +134,22 @@ abstract final class DragonArtwork {
         masteryAsset(lineageId),
         DragonArtworkFrame.fullImage,
       );
+    }
+    if (pngLineages.contains(lineageId) && stageKey != 'moonEgg') {
+      final form = switch (stageKey) {
+        'spark' => 'hatchling',
+        'nestDragon' => 'wyrmling',
+        _ => switch (evolutionPath) {
+            'earth' || 'might' => 'might',
+            'storm' || 'arcana' => 'arcana',
+            'bond' || 'spirit' => 'spirit',
+            'mastery' => 'mastery',
+            _ => 'might',
+          },
+      };
+      return DragonArtworkSelection(
+          'assets/images/dragons/${lineageId}_$form.png',
+          DragonArtworkFrame.fullImage);
     }
     if (lineageId == 'seraphscale') {
       final individualAsset = switch (stageKey) {
@@ -192,6 +211,9 @@ abstract final class DragonArtwork {
   }
 
   static Set<String> get allAssetPaths => {
+        for (final id in pngLineages)
+          for (final form in const ['wyrmling', 'might', 'arcana', 'spirit'])
+            'assets/images/dragons/${id}_$form.png',
         eggAsset,
         seraphscaleHatchlingAsset,
         seraphscaleHatchlingSilhouetteAsset,

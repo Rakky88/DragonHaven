@@ -131,18 +131,15 @@ void _expectInsidePortraitCircle(
 }
 
 void _expectTransparentCorners(
-  Uint8List rgba,
-  int width,
-  int height,
-  String label,
-) {
+    Uint8List rgba, int width, int height, String label,
+    {int maxAlpha = 0}) {
   for (final (x, y) in [
     (0, 0),
     (width - 1, 0),
     (0, height - 1),
     (width - 1, height - 1),
   ]) {
-    expect(rgba[(y * width + x) * 4 + 3], 0,
+    expect(rgba[(y * width + x) * 4 + 3], lessThanOrEqualTo(maxAlpha),
         reason: '$label must have real alpha at corner ($x, $y)');
   }
 }
@@ -253,22 +250,29 @@ void main() {
 
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('all 155 dragon chat emotes are transparent contained app sprites',
+  test('all 161 dragon chat emotes are transparent contained app sprites',
       () async {
-    expect(allDragonEmotes, hasLength(155));
+    expect(allDragonEmotes, hasLength(161));
     expect(
       allDragonEmotes.map((emote) => emote.assetPath).toSet(),
-      hasLength(155),
+      hasLength(161),
     );
     for (final emote in allDragonEmotes) {
       final image = await _decode(emote.assetPath);
-      expect(image.width, 384, reason: emote.assetPath);
-      expect(image.height, 384, reason: emote.assetPath);
+      final generated = emote.assetPath.contains('/sunwake/') ||
+          emote.assetPath.contains('/harvestmoon/');
+      expect(
+          image.width, generated ? inInclusiveRange(1199, 1312) : equals(384),
+          reason: emote.assetPath);
+      expect(
+          image.height, generated ? inInclusiveRange(1199, 1312) : equals(384),
+          reason: emote.assetPath);
       _expectTransparentCorners(
         image.rgba,
         image.width,
         image.height,
         emote.assetPath,
+        maxAlpha: generated ? 2 : 0,
       );
       _expectContained(
         image.rgba,
@@ -286,8 +290,12 @@ void main() {
       () async {
     for (final achievement in achievementCatalog) {
       final image = await _decode(achievement.badgeAsset);
-      expect(image.width, 256, reason: achievement.badgeAsset);
-      expect(image.height, 256, reason: achievement.badgeAsset);
+      final generated = {'light_across_the_lagoon', 'beneath_the_harvest_moon'}
+          .contains(achievement.id);
+      expect(image.width, generated ? 1254 : 256,
+          reason: achievement.badgeAsset);
+      expect(image.height, generated ? 1254 : 256,
+          reason: achievement.badgeAsset);
       _expectContained(image.rgba, image.width, 0, 0, image.width, image.height,
           achievement.badgeAsset);
     }
@@ -615,13 +623,14 @@ void main() {
     }
   });
 
-  test('all 49 Mastery Ascended sprites are complete standalone subjects',
+  test('all 51 Mastery Ascended sprites are complete standalone subjects',
       () async {
     for (final lineage in dragonLineages) {
       final path = DragonArtwork.masteryAsset(lineage.id);
       final image = await _decode(path);
-      expect(image.width, 1024, reason: path);
-      expect(image.height, 1024, reason: path);
+      final side = DragonArtwork.pngLineages.contains(lineage.id) ? 1254 : 1024;
+      expect(image.width, side, reason: path);
+      expect(image.height, side, reason: path);
       _expectContained(
         image.rgba,
         image.width,

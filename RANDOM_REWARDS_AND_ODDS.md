@@ -6,7 +6,7 @@ Ruleset: v0.05.25 published and verified; staging and production schema 62 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 42a6839553500332 -->
+<!-- reference-source-fingerprint: 0b156bdad280393e -->
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 
@@ -491,11 +491,11 @@ A and S move below the new 2000 S+ boundary; its C and B remain unchanged.
 Valentine uses 650 / 1600 / 2600 / 3900 / 10000; Pride uses
 1200 / 2900 / 4800 / 7200 / 12000. New Year uses
 500 / 1200 / 2000 / 3000 / 20000. Christmas keeps
-500 / 1200 / 2000 / 3000 / 4200. All boundaries are inclusive. Only S+ changes
+500 / 1200 / 2000 / 3000 / 7500. All boundaries are inclusive. Only S+ changes
 for New Year, Valentine and Pride. New Year's S+ equals the existing 20000 score
 cap. Calibration still records raw scores and never adjusts cutoffs automatically.
 Reward pools and the existing server score/action limits remain unchanged.
-The birthday addition after v0.05.25 uses 600 / 1500 / 2800 / 4200 / 6000.
+The birthday addition after v0.05.25 uses 600 / 1500 / 2800 / 4200 / 10000.
 
 
 XP and expertise are fixed by grade. The chest is the random part shown here.
@@ -850,7 +850,7 @@ MIDI performance-level normalization changes audio only, with no reward changes.
 
 ## Birthday Trial and Christmas pacing (9 September 2026)
 
-Wishcake Tower uses C/B/A/S/S+ thresholds 600/1500/2800/4200/6000, inclusive.
+Wishcake Tower uses C/B/A/S/S+ thresholds 600/1500/2800/4200/10000, inclusive.
 It shares the existing grade chest, XP, balanced expertise, relic and emote rolls;
 no new reward pool or podium prize is introduced. Its seeded initial movement
 direction is 50/50, followed by deterministic alternating sides. Overlap,
@@ -864,3 +864,35 @@ former 40-seconds-remaining mark of its base 75-second timer): first arrival
 interval 1.315 seconds, first travel 2.65 seconds plus existing Might help.
 Acceleration continues to the same .36s arrival and .95s base travel floors.
 Parcel symbols remain uniformly distributed over the same three choices.
+
+
+## Sunwake and Harvestmoon / revised grade boundaries (v0.05.27 candidate)
+
+The approved event Adventures each grant fixed 650 XP, +10 per expertise and
+one distinct Special Chest. Each chest grants exactly 300 coins, 12 gems and
+its own guaranteed Special Egg: Solmanta (20 hours) or Ciderhorn (18 hours).
+Good is fixed and revealed on hatch. Spectral chances are 5% / 10% Golden Hour;
+shared 50/50 gender, law, personality and size draws happen once at egg creation.
+No ordinary egg pool includes either Special family. The existing Special-tier
+10% unique chest-emote roll is retained. Podium prizes use the established
+mythical/dragon/gold rewards with event-specific medal emotes; test results
+never produce podium awards or permanent Conclave decorations.
+
+Sunwake uses a seeded uniform choice among three safe lanes per gate. The
+fixed-step movement, hitboxes, currents and score depend on play, not frame
+rate. Harvestmoon independently chooses fruit among three types and an initial
+rotation among four turns. A single-fruit shape has chance .10 plus .035 times
+each expertise normalized/capped at 400, maximum .205. Otherwise each of seven
+multi-fruit shapes is equally likely. Refill creates three shapes; invalid
+placement does not redraw. No-fitting-tray resets the basket, loses one of
+three lives and deducts 30. These seeds never reroll egg/reward provenance.
+
+Both new Trials use inclusive C/B/A/S/S+ 500/1500/3000/5000/8000. Christmas S+
+is 7500 and birthday S+ is 10000; their other cutoffs are unchanged. Birthday
+now ends at its first miss; the server accepts legacy three-miss submissions
+for rollout compatibility. All Trial chest/relic/XP/expertise odds remain the
+shared grade tables. Conclave milestones 1/5/15/30/60 give decoration only.
+
+Seasonal hatch achievements accept normal and Spectral hatchlings alike. Migration 65
+allows the exact shipped seasonal podium emotes in friend and Conclave chats, retaining
+friendship, membership, recipient preferences, payload bounds and rate limits.

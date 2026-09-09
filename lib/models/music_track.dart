@@ -23,6 +23,16 @@ class MusicTrack {
 /// the 80-track Music Chest collection.
 const seasonalMusicCatalog = <MusicTrack>[
   MusicTrack(
+      id: 'event_harvestmoon_orchard_waltz',
+      title: 'Orchard Waltz',
+      composer: 'DragonHaven original',
+      temporaryEventId: 'harvestmoon_moonlit_orchard'),
+  MusicTrack(
+      id: 'event_sunwake_sunpearl_serenade',
+      title: 'Sunpearl Serenade',
+      composer: 'DragonHaven original',
+      temporaryEventId: 'sunwake_summer_sea'),
+  MusicTrack(
     id: 'event_birthday_wish',
     title: 'Happy Birthday - A Golden Wish',
     composer: 'Mildred J. Hill - DragonHaven arrangement',

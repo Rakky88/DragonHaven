@@ -1,3 +1,4 @@
+import 'seasonal_conclave_project.dart';
 import '../providers/household_provider.dart';
 import 'chest.dart';
 import 'dragon_egg.dart';
@@ -819,8 +820,10 @@ class ConclaveSnapshot {
     required this.messages,
     required this.chronicle,
     required this.joinRequests,
+    this.seasonalProjects = const [],
   });
 
+  final List<SeasonalConclaveProject> seasonalProjects;
   final ConclaveSummary conclave;
   final ConclaveRole myRole;
   final bool contributedToday;
@@ -850,6 +853,8 @@ class ConclaveSnapshot {
       messages: parse('messages', ConclaveMessage.fromJson),
       chronicle: parse('chronicle', ConclaveChronicleEntry.fromJson),
       joinRequests: parse('join_requests', ConclaveJoinRequest.fromJson),
+      seasonalProjects:
+          parse('seasonal_projects', SeasonalConclaveProject.fromJson),
     );
   }
 }

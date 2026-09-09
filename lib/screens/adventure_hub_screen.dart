@@ -500,6 +500,10 @@ class _TrialOfferCard extends StatelessWidget {
           'assets/images/events/new_year/trial_background.webp',
         TrialKind.rosevowRelay =>
           'assets/images/events/valentine/trial_background.webp',
+        TrialKind.sunwakeSurf =>
+          'assets/images/events/sunwake/trial_background.png',
+        TrialKind.moonlitOrchard =>
+          'assets/images/events/harvestmoon/trial_background.png',
         TrialKind.wishcakeTower =>
           'assets/images/events/golden_wings/trial_background.webp',
         TrialKind.prismaticParade =>
@@ -926,6 +930,8 @@ String _trialStatBenefit(AppStrings strings, TrialKind kind) => switch (kind) {
       TrialKind.midnightChime ||
       TrialKind.rosevowRelay ||
       TrialKind.prismaticParade ||
+      TrialKind.sunwakeSurf ||
+      TrialKind.moonlitOrchard ||
       TrialKind.wishcakeTower =>
         strings.pick(
           'All three Expertises provide a small, capped play-assist. They never multiply your score.',

@@ -82,6 +82,8 @@ const _trialKeys = {
   'rosevowRelay',
   'prismaticParade',
   'wishcakeTower',
+  'moonlitOrchard',
+  'sunwakeSurf',
 };
 
 Map<String, int> _normalizedTrialHighScores(Map<String, int>? values) => {

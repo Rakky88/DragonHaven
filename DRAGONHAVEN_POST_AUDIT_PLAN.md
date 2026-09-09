@@ -1,5 +1,26 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Sunwake en Harvestmoon: voorbereiding en drakenreview
+
+Na de geverifieerde release v0.05.26 zijn twaalf nieuwe sprites gemaakt voor
+Solmanta en Ciderhorn (zes vormen per familie). De review gebruikt echte
+transparantie, een zichtbare marge, inzoomen en opgeslagen goedkeuringen/notities.
+Vier gerichte tests bewaken selectie, alpha-randen, kleine schermen met grote
+tekst en het bewaren van reviewresultaten. Een bestaand probleem met de
+levensduur van het notitieveld tijdens sluiten is opgelost.
+De gebruiker heeft alle twaalf drakensprites en het volledige eventpakket
+expliciet goedgekeurd op 9 september 2026. Beide originele nummers, de nieuwe
+spellen, kalender, kisten/eieren, achievements en cosmetische Conclave-projecten
+zijn geïntegreerd voor v0.05.27. Migratie 64 is op staging gerepeteerd, toegepast
+en opnieuw getest (lint 0); productie staat na de geslaagde stagingproeven op 65. Lint 0 en alle drie
+healthchecks HTTP 200; mutaties uit, push aan en spelerautoriteit behouden.
+De gerichte spel-/layouttests, Dart/JS-pariteit en 21 Deno-tests slagen.
+Kerst S+ 7500, verjaardag S+ 10000 en één fout als einde zijn verwerkt.
+De starterei-pagina toont de Altar-snelkoppeling niet meer. De definitieve regressie,
+native controles en publicatie volgen vóór afronding.
+Specificatie: `SUNWAKE_HARVESTMOON_PLAN.md`.
+
+
 ## Release v0.05.26 afgerond
 
 De verjaardagsaanpassingen en het snellere kerstbegin zijn gepubliceerd als
@@ -2176,3 +2197,15 @@ productbesluiten en bevestigt wanneer die werkelijk zijn uitgevoerd.
 | 07-09-2026 | v0.05.15 publicatie hervat op uitdrukkelijk verzoek | Codex | opnieuw bevestigde releasetoestemming en productiepreflight om 07:33 UTC | De gebruiker heeft na de expliciete vraag om de bron-/auditupload en publicatie opnieuw opdracht gegeven de release uit te brengen. De ongewijzigde, gevalideerde APK blijft 477.734.589 bytes met dezelfde SHA-256. Productie is nog steeds 41/41 met nul lintfouten en HTTP 200 voor Auth en applicatiehealth. GitHub dry-run bevestigt dat v0.05.15 nog niet bestaat. Het Egg Altar blijft een lokaal ontwerp en maakt geen deel uit van deze release. |
 
 | 07-09-2026 | v0.05.15 gepubliceerd en als Latest geverifieerd | Codex, op uitdrukkelijk verzoek | [release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.15), [APK](https://github.com/Rakky88/DragonHaven/releases/download/v0.05.15/DragonHaven.apk), [vaste download](https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk), [taggate 34096132993](https://github.com/Rakky88/DragonHaven/actions/runs/34096132993) | De release wijst exact naar commit `9f282216af6929a45d45ff37009a49e0642a08ef`. Asset `DragonHaven.apk` (ID 548376024) heeft exact 477.734.589 bytes en SHA-256 `1b9de0973d9de761d7486d95bf43240f78ad6a83dcc9a5b19d94920c4203d529`, gelijk aan de lokaal gecontroleerde APK. Latest is v0.05.15; beide downloadroutes geven HTTP 200. De onafhankelijke healthcheck na upload om 07:39 UTC bevestigt Auth health/settings en applicatiehealth HTTP 200. De taggate heeft productiepreflight, analyzer en tests groen afgerond; ook de aanvullende gesigneerde Play Store-bundle, artifactverificatie en volledige taggate zijn succesvol afgerond. Geen migraties of economyinstellingen gewijzigd. |
+
+## Aanvullende eventcontrole v0.05.27
+
+De volledige proef vond verouderde aantallen en een catalogusvolgorde die de
+standaardfamilie veranderde; beide zijn hersteld. De bestaande standaardpool
+blijft 42 families, met nu negen geheime families. Alle 43 aanvullende tests
+voor gameplay, volledige eventbeloningen, hatchen en spritegrenzen slagen.
+Spectral hatchlings activeren nu ook hun eventachievement. Migratie 65 herstelt
+de bestaande weigering van podium-emotes in beide chats, met behoud van
+lidmaatschap, vriendencontrole, ontvangersvoorkeur en berichtlimieten.
+Staging staat op 65: lint 0, rollbackproeven voor chat, acht event-/economie-
+contracten geslaagd, mutaties uit en geen resterende synthetische speldata.

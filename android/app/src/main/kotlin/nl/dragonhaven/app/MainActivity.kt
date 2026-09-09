@@ -460,6 +460,16 @@ class MainActivity : FlutterActivity() {
         "music_elite_syncopations" -> R.raw.music_elite_syncopations
         "music_greensleeves" -> R.raw.music_greensleeves
         "music_event_happy_birthday" -> R.raw.music_event_happy_birthday
+        "music_event_sunwake_sunpearl_serenade" -> R.raw.music_event_sunwake_sunpearl_serenade
+        "music_event_harvestmoon_orchard_waltz" -> R.raw.music_event_harvestmoon_orchard_waltz
+        "event_sunwake_success" -> R.raw.event_sunwake_success
+        "event_sunwake_failure" -> R.raw.event_sunwake_failure
+        "event_sunwake_finish" -> R.raw.event_sunwake_finish
+        "event_sunwake_chest" -> R.raw.event_sunwake_chest
+        "event_harvestmoon_success" -> R.raw.event_harvestmoon_success
+        "event_harvestmoon_failure" -> R.raw.event_harvestmoon_failure
+        "event_harvestmoon_finish" -> R.raw.event_harvestmoon_finish
+        "event_harvestmoon_chest" -> R.raw.event_harvestmoon_chest
         "event_birthday_success" -> R.raw.event_birthday_success
         "event_birthday_failure" -> R.raw.event_birthday_failure
         "event_birthday_finish" -> R.raw.event_birthday_finish

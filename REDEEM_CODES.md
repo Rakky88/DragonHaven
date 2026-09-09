@@ -2,9 +2,9 @@
 
 Last verified: 9 September 2026
 
-Ruleset: birthday extension after v0.05.25; forward migration 63 verified on staging and production; event stop remains migration 60
+Ruleset: v0.05.27 candidate; Sunwake/Harvestmoon and stop mappings in forward migration 64, rehearsed on staging. Production remains schema 63 until rollout.
 
-<!-- reference-source-fingerprint: 2d2933a9dbeb7522 -->
+<!-- reference-source-fingerprint: 433bade8359eab99 -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 
@@ -29,6 +29,8 @@ server rather than trusted from the public app catalog.
 
 | Code | Reward | Reward ID | Restriction and behavior |
 |---|---|---|---|
+| `SUNWAKEEVENT` | **Sunwake Festival** | `sunwake_summer_sea` | Any authenticated, email-confirmed keeper; reusable 48-hour personal preview; ordinary permanent Trial rewards, simulated Adventure/Special Chest rewards and separate cosmetic test progress |
+| `HARVESTMOONEVENT` | **Harvestmoon Festival** | `harvestmoon_moonlit_orchard` | Any authenticated, email-confirmed keeper; reusable 48-hour personal preview; ordinary permanent Trial rewards, simulated Adventure/Special Chest rewards and separate cosmetic test progress |
 | `BDAYEVENT` | **A Wish on Golden Wings** | `golden_wings_birthday` | Any authenticated, email-confirmed keeper; reusable 48-hour personal preview with Wishcake Tower and Happy Birthday music; ordinary permanent Trial rewards, simulated Adventure/Special Chest rewards |
 | `ENDEVENT` | **End own active event** | `end_active_event` | Any authenticated, email-confirmed keeper; removes own previews and dismisses current calendar occurrences until their scheduled end; repeatable, no items granted |
 | `HALLOWEENEVENT` | **Night of the Witchlight** | `halloween_witchlight` | Any authenticated, email-confirmed keeper; 48-hour reusable personal preview; isolated test ranking; normal permanent Trial rewards, simulated Adventure/Special Chest rewards |
@@ -42,7 +44,7 @@ server rather than trusted from the public app catalog.
 `end_my_seasonal_event` accepts `ENDEVENT`, checks the verified authenticated
 owner and takes the same per-owner transaction lock as preview activation.
 It deletes only that owner's preview activation and records current official
-calendar editions (including Golden Wings) in `seasonal_event_dismissals` until
+calendar editions (including Golden Wings, Sunwake and Harvestmoon) in `seasonal_event_dismissals` until
 their original ending. These rows are private; there are no direct client table
 read/write grants. `list_my_seasonal_event_dismissals` returns only the owner.
 The app persists and refreshes these stops across sessions/devices, removes
@@ -56,7 +58,7 @@ No other player's event is stopped. Offline failure does not clear local state.
 
 - The app catalog is for discovery and UI only; it is not access control.
 - `redeem_seasonal_event_preview` requires an authenticated, email-confirmed
-  account and maps each code to one fixed event. All five mappings are available
+  account and maps each code to one fixed event. All eight event mappings are available
   to every verified keeper; migration 62 removes the former single-account gate.
 - A code can be reused only after its previous entitlement expires.
 - Repeating an active code returns the original expiry, without extending its
@@ -100,7 +102,13 @@ contents or permanence rules changed. Operational values stay out of release not
 ## Birthday extension
 
 The birthday preview uses the same owner lock, single-active-preview rule and
-48-hour retry expiry as the other five. It grants no item merely for redeeming.
-`supabase/migrations/202609090063_birthday_trial.sql` is the current preview and
-trial override. Calendar dates remain 1–2 September 2026, then 13 May yearly
+48-hour retry expiry as the other seven. It grants no item merely for redeeming.
+Migration 63 introduced the birthday override;
+`supabase/migrations/202609090064_sunwake_harvestmoon.sql` now extends it with the two new events. Calendar dates remain 1–2 September 2026, then 13 May yearly
 from 2027 (Europe/Amsterdam). The code and its announcement stay out of release notes.
+
+The new event codes use the same verified-account, retry-expiry, replacement,
+end-event and privacy rules. Sunwake/Harvestmoon definitions are version 1 with
+300 coins, 12 gems and a guaranteed own-family egg per Special Chest; production
+previews display those Adventure/Chest rewards without granting them. Code
+values and announcements remain absent from public release notes.

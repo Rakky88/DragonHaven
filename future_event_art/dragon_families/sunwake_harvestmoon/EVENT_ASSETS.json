@@ -1,0 +1,326 @@
+[
+  {
+    "key": "sunwake_logo",
+    "path": "assets/images/event_logos/sunwake.png",
+    "prompt": "Use case: logo-brand. Generate one ornate fantasy game emblem based on the described DragonHaven mark: upright egg with three curved feather-shaped inlays sweeping up to the right, enclosed by a pointed golden teardrop arch. Sunwake theme: luminous turquoise sea-glass egg, ivory pearl feather inlays, polished gold arch, elegant coral pink branches and small shells on the sides, a radiant sunpearl crown. Intricate painterly premium fantasy game sprite. Whole compact emblem occupies only central 75% of square canvas with generous transparent margins on EVERY side including top. ACTUAL transparent RGBA alpha background, no painted checkerboard, no floor, no background scene, no text.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-a1d123d1-c6ea-4256-9fa0-19d225e9076e.png",
+    "sha256": "db0f134bdf710a80751352a71ecb0d0d1e32d45e4f93eb30dd2afce043d92e97",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "sunwake_background",
+    "path": "assets/images/events/sunwake/trial_background.png",
+    "prompt": "Use case: stylized-concept. Portrait fantasy game environment illustration, very high quality hand-painted storybook realism, delicate light, atmospheric depth, no UI, no text, no characters, no dragons. The center 65% is quiet so a game board or cards can be drawn over it. Detailed framing mostly along the edges. A luminous summer lagoon seen from the clear shallow turquoise water, ivory stone lighthouse on a distant headland, coral pink reefs and pearl-white seashells near the lower corners, sun glitter and flowing currents, warm golden sky. Elegant welcoming summer festival, NOT underwater dark scene.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-27555173-5ca3-4e44-8fdd-ccf79c51fe95.png",
+    "sha256": "614cd5d7af1b55848e93d85c496963c335fa3070028de011a60ce5952a6770c7",
+    "size": [
+      1024,
+      1536
+    ],
+    "mode": "RGB"
+  },
+  {
+    "key": "harvestmoon_background",
+    "path": "assets/images/events/harvestmoon/trial_background.png",
+    "prompt": "Use case: stylized-concept. Portrait fantasy game environment illustration, very high quality hand-painted storybook realism, delicate light, atmospheric depth, no UI, no text, no characters, no dragons. The center 65% is quiet so a game board or cards can be drawn over it. Detailed framing mostly along the edges. A cozy apple orchard under a huge glowing honey-gold harvest moon at blue hour, copper russet and olive leaves framing the top, distant timber pavilion strung with amber lanterns, baskets of ruby apples beside the winding path in lower corners, soft firefly glimmers. No pumpkins, no Halloween, no orange fog. Beautiful copper, olive and cream palette.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-9fc72d5e-9013-4c18-bcf6-fd66a8080fd1.png",
+    "sha256": "acc2b2d0503807f6c66e7204c0dc120d9ffc997cf4b82139bcbcb3fb52604b10",
+    "size": [
+      1024,
+      1536
+    ],
+    "mode": "RGB"
+  },
+  {
+    "key": "sunwake_egg",
+    "path": "assets/images/events/sunwake/special_egg.png",
+    "prompt": "Use case: stylized-concept. One magnificent fantasy dragon egg inventory sprite, full unbroken egg upright and centered with 18% empty transparent margin on every edge, no base or nest, no scene, no letters. Painterly polished dimensional mobile fantasy game asset, crisp silhouette, rich intricate materials but readable small. Real transparent alpha background, never draw checkerboards. Pearly turquoise shell with flowing ivory manta-fin filigree and a radiant gold sunpearl inset, fine coral-pink ridges and sea-glass highlights.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-b709440b-6a0c-411c-b4b5-e604a9d04446.png",
+    "sha256": "9f16b6b6c9a148d8dd206dcaf25c6249a3269e5c3f1fab228392cb5e7f80b850",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "harvestmoon_egg",
+    "path": "assets/images/events/harvestmoon/special_egg.png",
+    "prompt": "Use case: stylized-concept. One magnificent fantasy dragon egg inventory sprite, full unbroken egg upright and centered with 18% empty transparent margin on every edge, no base or nest, no scene, no letters. Painterly polished dimensional mobile fantasy game asset, crisp silhouette, rich intricate materials but readable small. Real transparent alpha background, never draw checkerboards. Warm copper and honey-cream shell, graceful applewood vine filigree, olive leaves and delicate ivory apple blossoms, tiny ruby apple jewel inset beneath a moon-shaped golden crown mark.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-d046e7b5-389c-4c75-9f06-a51394576c74.png",
+    "sha256": "713ae31cc2b359cc8595170368af54e6c9179ae8251302763abb659678375fd6",
+    "size": [
+      1224,
+      1285
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "harvestmoon_logo",
+    "path": "assets/images/event_logos/harvestmoon.png",
+    "prompt": "Use case: precise-object-edit. Input is the original DragonHaven logo, edit target. Preserve its immediately recognizable central upright egg silhouette, golden pointed outer arch and three feather/flame shaped dark cutouts. Create a sumptuous high-end painted fantasy mobile game event emblem, polished dimensional metal and jewel textures, beautiful at 64px. The decoration must be part of a complete event-specific logo, not a small add-on. Center the entire object in generous 14% transparent margins, real transparent RGBA background, no checkerboard, no backdrop, no floor, no letters, no watermark. Harvestmoon Festival: glowing honey amber egg with deep copper and olive feather shapes, burnished applewood and gold arch carrying delicate autumn leaves, ivory apple blossoms and small ruby apples, a tiny golden harvest moon at crown. Cozy orchard at moonrise; elegant compact ornamentation.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-78dd3321-7abf-432f-914e-3185a200606c.png",
+    "sha256": "5020272a3cc5f3aba2bc6b36c613fca690b02d555781ac7f25474563cb998133",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "sunwake_chest_closed",
+    "path": "assets/images/events/sunwake/special_chest.png",
+    "prompt": "Use case: stylized-concept. A single closed magical treasure chest sprite for DragonHaven sunwake festival, turquoise lacquer and ivory shell panels, coral-pink trims, sculpted golden wave feet, scallop shell lid, a round sunpearl clasp. Lid tightly shut, contents hidden. Front three-quarter view, premium intricate hand-painted fantasy game art, beautifully readable at inventory size. Whole chest occupies central 72% of square, plenty of empty space every side, no crop. Actual RGBA transparent background, no checkerboard, no floor, no background, no text, no labels.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-717905ef-9434-4347-a308-ca0e11781582.png",
+    "sha256": "d8402571916deb03d6b96be18cb907d1ba2c0e72dedcac41e9833a0474fdc559",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "sunwake_chest_open",
+    "path": "assets/images/events/sunwake/special_chest_open.png",
+    "prompt": "Use case: stylized-concept. A single open magical treasure chest sprite for DragonHaven sunwake festival, turquoise lacquer and ivory shell panels, coral-pink trims, sculpted golden wave feet, scallop shell lid, a round sunpearl clasp. The lid is clearly raised on hinges, the inside velvet lining glows softly golden, no contents or coins or egg visible. Front three-quarter view, premium intricate hand-painted fantasy game art, beautifully readable at inventory size. Whole chest occupies central 72% of square, plenty of empty space every side, no crop. Actual RGBA transparent background, no checkerboard, no floor, no background, no text, no labels.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-347c5947-06e4-4291-906c-5e9aff8483dd.png",
+    "sha256": "cd170a7c925a499d1b1d278073ae7c9ca76092d51f83c1179310b6848dbb1052",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "harvestmoon_chest_closed",
+    "path": "assets/images/events/harvestmoon/special_chest.png",
+    "prompt": "Use case: stylized-concept. A single closed magical treasure chest sprite for DragonHaven harvestmoon festival, warm applewood and burnished copper, honey-gold vines, olive leaves and ivory apple-blossom accents, a crescent moon clasp and small ruby apple jewel. Lid tightly shut, contents hidden. Front three-quarter view, premium intricate hand-painted fantasy game art, beautifully readable at inventory size. Whole chest occupies central 72% of square, plenty of empty space every side, no crop. Actual RGBA transparent background, no checkerboard, no floor, no background, no text, no labels.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-ee3b9397-42a9-47f2-beb0-59ce87e60d60.png",
+    "sha256": "f73f9be49eb839e2b473da84dfc4dd3bc291bb969d2406eeabd0db587d2933bb",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "harvestmoon_chest_open",
+    "path": "assets/images/events/harvestmoon/special_chest_open.png",
+    "prompt": "Use case: stylized-concept. A single open magical treasure chest sprite for DragonHaven harvestmoon festival, warm applewood and burnished copper, honey-gold vines, olive leaves and ivory apple-blossom accents, a crescent moon clasp and small ruby apple jewel. The lid is clearly raised on hinges, the inside velvet lining glows softly golden, no contents or coins or egg visible. Front three-quarter view, premium intricate hand-painted fantasy game art, beautifully readable at inventory size. Whole chest occupies central 72% of square, plenty of empty space every side, no crop. Actual RGBA transparent background, no checkerboard, no floor, no background, no text, no labels.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-6bc81ac0-3f9e-41ef-8b63-039cc4581132.png",
+    "sha256": "e1da869410e0b2bf3b5ba51f64e5a68686f49643471bdcd44faa1d36ca9f018d",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "sunwake_pearl",
+    "path": "assets/images/events/sunwake/arcade_pearl.png",
+    "prompt": "Use case: stylized-concept. One isolated high quality hand-painted fantasy mobile game sprite, beautifully readable at 40 pixels, polished rich jewel-like materials, full object centered in 20% generous empty margins. True transparent RGBA alpha background. No checkerboard, no floor, no scene, no text or labels. A glowing ivory sunpearl nested in an open turquoise and golden scallop shell, tiny coral pink fin tips, compact round pickup collectible.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-45712f0a-6dff-4d98-a114-4c1dc29ae311.png",
+    "sha256": "bd712d7c5258c9840bcca60a47de90e1e49a3de971c0b4cfecc748e6c2b1c9ca",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "sunwake_reef",
+    "path": "assets/images/events/sunwake/arcade_reef.png",
+    "prompt": "Use case: stylized-concept. One isolated high quality hand-painted fantasy mobile game sprite, beautifully readable at 40 pixels, polished rich jewel-like materials, full object centered in 20% generous empty margins. True transparent RGBA alpha background. No checkerboard, no floor, no scene, no text or labels. A compact dangerous coral reef obstacle emerging from shallow lagoon water: rose-coral branches and teal rock with ivory barnacles, sharp readable silhouette. No water backdrop, only small foam edging around the rock base.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-00f9afa2-c298-414e-b273-38fda87da25a.png",
+    "sha256": "4f3592eaa11fe4c228cb5d774a9be41a8aec95293f055dec93c1a4ad935e9572",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "harvestmoon_apple",
+    "path": "assets/images/events/harvestmoon/fruit_apple.png",
+    "prompt": "Use case: stylized-concept. One isolated high quality hand-painted fantasy mobile game sprite, beautifully readable at 40 pixels, polished rich jewel-like materials, full object centered in 20% generous empty margins. True transparent RGBA alpha background. No checkerboard, no floor, no scene, no text or labels. One plump ruby-red orchard apple with a little olive leaf and golden shine. Beautiful crisp appetizing harvest fruit.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-53aa5251-4edf-44d2-98da-3de95aa613bc.png",
+    "sha256": "ef94de03e42bd80b1711c87581b2bd24de582ea7334a955dc49b9813db044957",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "harvestmoon_pear",
+    "path": "assets/images/events/harvestmoon/fruit_pear.png",
+    "prompt": "Use case: stylized-concept. One isolated high quality hand-painted fantasy mobile game sprite, beautifully readable at 40 pixels, polished rich jewel-like materials, full object centered in 20% generous empty margins. True transparent RGBA alpha background. No checkerboard, no floor, no scene, no text or labels. One golden yellow-green orchard pear with a little copper leaf and amber shine. Beautiful crisp appetizing harvest fruit.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-c3609bb9-bf03-4025-8a2e-21321c4c05fb.png",
+    "sha256": "1ab41e3dae4dbd67ae62cdad1fa4faed32cebe42e119b2c45440ca8b648fd574",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "harvestmoon_plum",
+    "path": "assets/images/events/harvestmoon/fruit_plum.png",
+    "prompt": "Use case: stylized-concept. One isolated high quality hand-painted fantasy mobile game sprite, beautifully readable at 40 pixels, polished rich jewel-like materials, full object centered in 20% generous empty margins. True transparent RGBA alpha background. No checkerboard, no floor, no scene, no text or labels. One deep violet-blue orchard plum with a little olive leaf and a dusting of silvery bloom. Beautiful crisp appetizing harvest fruit.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-954052b9-ec96-4584-98ad-f2ebc68a4fe2.png",
+    "sha256": "a706804ed3411b1874136bcaf773aa156025d61598deacaf44a88fa86922d27d",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "sunwake_podium_gold",
+    "path": "assets/images/events/sunwake/podium_gold.png",
+    "prompt": "Use case: stylized-concept. One seasonal podium emote for DragonHaven. An adorable miniature Solmanta baby dragon, full body with four paws, turquoise and ivory scales, flowing coral pink manta-fin wings, amber eyes and sunpearl on chest. The dragon's torso AND head/snout both clearly face screen-right in three-quarter profile, happy proud expression. Small gold medal on chest; matching gold laurel embracing the lower sides. Joyful champion raising one paw, modest luminous crown. Premium polished hand-painted fantasy mobile game sticker, dimensional jewel highlights and clean silhouette, object centered within generous 16% empty margins on every side. Actual transparent RGBA alpha background, no checkerboard, no floor, no text, no numbers, no lettering. No cropping.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-4c1312d7-95ef-4d75-b77f-eba803e18882.png",
+    "sha256": "17edb1586e724d9d4f5bc02c44ffbf7fbe2e74ae0af4a63deb97a044b6b3939f",
+    "size": [
+      1312,
+      1199
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "sunwake_podium_silver",
+    "path": "assets/images/events/sunwake/podium_silver.png",
+    "prompt": "Use case: stylized-concept. One seasonal podium emote for DragonHaven. An adorable miniature Solmanta baby dragon, full body with four paws, turquoise and ivory scales, flowing coral pink manta-fin wings, amber eyes and sunpearl on chest. The dragon's torso AND head/snout both clearly face screen-right in three-quarter profile, happy proud expression. Small silver medal on chest; matching silver laurel embracing the lower sides. Warm proud smile, one paw on medal. Premium polished hand-painted fantasy mobile game sticker, dimensional jewel highlights and clean silhouette, object centered within generous 16% empty margins on every side. Actual transparent RGBA alpha background, no checkerboard, no floor, no text, no numbers, no lettering. No cropping.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-4ed3d938-b2b9-418e-aca4-ccfe289b6e58.png",
+    "sha256": "965b8743023fd1202cc208c752a08bf509fe9ddf4e12a8774a6b3684ee5f59e4",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "sunwake_podium_bronze",
+    "path": "assets/images/events/sunwake/podium_bronze.png",
+    "prompt": "Use case: stylized-concept. One seasonal podium emote for DragonHaven. An adorable miniature Solmanta baby dragon, full body with four paws, turquoise and ivory scales, flowing coral pink manta-fin wings, amber eyes and sunpearl on chest. The dragon's torso AND head/snout both clearly face screen-right in three-quarter profile, happy proud expression. Small bronze medal on chest; matching bronze laurel embracing the lower sides. Gentle content smile, tail curled beside medal. Premium polished hand-painted fantasy mobile game sticker, dimensional jewel highlights and clean silhouette, object centered within generous 16% empty margins on every side. Actual transparent RGBA alpha background, no checkerboard, no floor, no text, no numbers, no lettering. No cropping.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-4895d2e0-addd-45d8-98f1-2054949c0d85.png",
+    "sha256": "0e0b2fa9b548eea4590b027c3ca339aff85bbb884a7032f1d8040ebdc8816894",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "harvestmoon_podium_gold",
+    "path": "assets/images/events/harvestmoon/podium_gold.png",
+    "prompt": "Use case: stylized-concept. One seasonal podium emote for DragonHaven. An adorable miniature Ciderhorn baby dragon, full body with four paws, copper russet scales and cream belly, small branching applewood antlers, olive leaf wings, ivory apple blossoms and ruby apples in the mane. The dragon's torso AND head/snout both clearly face screen-right in three-quarter profile, happy proud expression. Small gold medal on chest; matching gold laurel embracing the lower sides. Joyful champion raising one paw, modest luminous crown. Premium polished hand-painted fantasy mobile game sticker, dimensional jewel highlights and clean silhouette, object centered within generous 16% empty margins on every side. Actual transparent RGBA alpha background, no checkerboard, no floor, no text, no numbers, no lettering. No cropping.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-597d5f86-b40d-4d43-8f3b-68e0f4b2efbd.png",
+    "sha256": "b2f5d30186ffa0a3764f11d60224e6a7660640e55bc25d79823fc601e92ce176",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "harvestmoon_podium_silver",
+    "path": "assets/images/events/harvestmoon/podium_silver.png",
+    "prompt": "Use case: stylized-concept. One seasonal podium emote for DragonHaven. An adorable miniature Ciderhorn baby dragon, full body with four paws, copper russet scales and cream belly, small branching applewood antlers, olive leaf wings, ivory apple blossoms and ruby apples in the mane. The dragon's torso AND head/snout both clearly face screen-right in three-quarter profile, happy proud expression. Small silver medal on chest; matching silver laurel embracing the lower sides. Warm proud smile, one paw on medal. Premium polished hand-painted fantasy mobile game sticker, dimensional jewel highlights and clean silhouette, object centered within generous 16% empty margins on every side. Actual transparent RGBA alpha background, no checkerboard, no floor, no text, no numbers, no lettering. No cropping.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-8bb99da8-cc84-4476-9444-daf2ba2e7b34.png",
+    "sha256": "e6d8228df6a6457b6933e961bf64c09499cf12481f9903df8098cf550d208da6",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "harvestmoon_podium_bronze",
+    "path": "assets/images/events/harvestmoon/podium_bronze.png",
+    "prompt": "Use case: stylized-concept. One seasonal podium emote for DragonHaven. An adorable miniature Ciderhorn baby dragon, full body with four paws, copper russet scales and cream belly, small branching applewood antlers, olive leaf wings, ivory apple blossoms and ruby apples in the mane. The dragon's torso AND head/snout both clearly face screen-right in three-quarter profile, happy proud expression. Small bronze medal on chest; matching bronze laurel embracing the lower sides. Gentle content smile, tail curled beside medal. Premium polished hand-painted fantasy mobile game sticker, dimensional jewel highlights and clean silhouette, object centered within generous 16% empty margins on every side. Actual transparent RGBA alpha background, no checkerboard, no floor, no text, no numbers, no lettering. No cropping.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-9c992cf5-fb9f-40b8-bc2a-3f4d7fb60ba8.png",
+    "sha256": "e0c2210b1b1855dc9c0f01cf05132a5b47d80e409056a01e25831f7b219d0441",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "sunwake_trial",
+    "path": "assets/images/events/sunwake/trial_icon.png",
+    "prompt": "Use case: stylized-concept. Emblem for a summer lagoon dragon surfing minigame: an elegant curling turquoise wave wraps around a glowing sunpearl, coral pink fins, ivory seafoam and delicate gold edging, compact round silhouette. Single isolated premium hand-painted fantasy game asset, crisp legible silhouette, warm jewel-like highlights. Center the entire object in generous transparent margins. Actual transparent RGBA alpha background, never draw a checkerboard. No text, no labels, no floor or background scene, no people or dragons.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-7255a129-8d34-464e-846e-d873885521fe.png",
+    "sha256": "9b68774cbd161d6318722205028fc75d0b87a2f545229f278a211b2ed01091b6",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "harvestmoon_trial",
+    "path": "assets/images/events/harvestmoon/trial_icon.png",
+    "prompt": "Use case: stylized-concept. Emblem for a moonlit orchard fruit packing puzzle: a beautiful woven copper-brown basket full of ruby apples, gold-green pears and deep violet plums, olive leaves and a golden crescent moon above, delicate gold edging, compact round silhouette. Single isolated premium hand-painted fantasy game asset, crisp legible silhouette, warm jewel-like highlights. Center the entire object in generous transparent margins. Actual transparent RGBA alpha background, never draw a checkerboard. No text, no labels, no floor or background scene, no people or dragons.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-9edf0889-22c8-4ec5-9f96-efa9a5e54721.png",
+    "sha256": "5b84d90c58f1961343f72f21279aa207a8f158adeb493bcd4486df14f7ee6e9d",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "harvestmoon_achievement",
+    "path": "assets/images/achievements/beneath_the_harvest_moon.png",
+    "prompt": "Use case: stylized-concept. An ornate circular achievement badge showing a honey-copper dragon egg with graceful applewood vine patterns nestled among ivory blossoms. Golden harvest moon crowns a burnished copper and olive leaf frame, small ruby apple gem at the bottom. Elegant dimensional fantasy game award. Single isolated premium hand-painted fantasy game asset, crisp legible silhouette, warm jewel-like highlights. Center the entire object in generous transparent margins. Actual transparent RGBA alpha background, never draw a checkerboard. No text, no labels, no floor or background scene, no people or dragons.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-327df42a-5fbf-4066-8c17-b3c1bfd3da4c.png",
+    "sha256": "6a947f7ee99c5550c6ced6757f2626a13f5e609a99e02a82e8b2bb3e37962f5c",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "sunwake_conclave",
+    "path": "assets/images/events/sunwake/conclave_project.png",
+    "prompt": "Use case: stylized-concept. A magnificent small communal coral reef garden decoration on an oval ivory-stone plinth, isometric fantasy game building sprite. Turquoise water in shallow basin, elegant rose-coral branches, small pale shell towers, luminous pearls, curling gold ornaments, a miniature lighthouse surrounded by glassy seaweed and seafoam. Rich harmonious crafted miniature, cozy shared Sunwake festival project. Single isolated premium hand-painted fantasy game asset, crisp legible silhouette, warm jewel-like highlights. Center the entire object in generous transparent margins. Actual transparent RGBA alpha background, never draw a checkerboard. No text, no labels, no floor or background scene, no people or dragons.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-d53fdbb8-9c9b-43a4-9277-07a2db05bb24.png",
+    "sha256": "95621239a76e0bf05fed63b7e2b58096f0f53ff8e415978387fb0ecd27822c28",
+    "size": [
+      1374,
+      1145
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "sunwake_achievement",
+    "path": "assets/images/achievements/light_across_the_lagoon.png",
+    "prompt": "Use case: stylized-concept. An ornate circular achievement badge showing a pearly turquoise dragon egg with ivory fin patterns cradled in a radiant golden seashell. A tiny ivory lighthouse crowns the gold and coral-pink laurel frame, star-like sunpearl gemstone at the top. Elegant dimensional fantasy game award. Single isolated premium hand-painted fantasy game asset, crisp legible silhouette, warm jewel-like highlights. Center the entire object in generous transparent margins. Actual transparent RGBA alpha background, never draw a checkerboard. No text, no labels, no floor or background scene, no people or dragons.\nCRITICAL DELIVERY: actual transparent RGBA alpha background, not black/brown and no glowing cloudy background. Generous 12 percent empty transparent margin on ALL FOUR sides. The complete top of the moon/lighthouse must be fully inside this margin; no clipping. Clean isolated cutout with tight local illumination only. Landscape orientation for feast; square for badge.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-b6d9d302-8a98-4e70-b27a-8910e0278721.png",
+    "sha256": "87fc4933e27bfb1687a222581f821a76bc0871e1a106f1bccbe2b48f9ca43604",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA"
+  },
+  {
+    "key": "harvestmoon_conclave",
+    "path": "assets/images/events/harvestmoon/conclave_project.png",
+    "prompt": "Use case: stylized-concept. A magnificent communal harvest feast decoration on an oval applewood platform, isometric fantasy game building sprite. Long elegantly carved wooden table, copper autumn leaf runner, bowls of ruby apples and golden pears, baskets of purple plums, fresh bread and cider jugs, ivory blossom garlands, elegant lantern arch topped with golden harvest moon. Welcoming abundant cozy orchard festival miniature. Single isolated premium hand-painted fantasy game asset, crisp legible silhouette, warm jewel-like highlights. Center the entire object in generous transparent margins. Actual transparent RGBA alpha background, never draw a checkerboard. No text, no labels, no floor or background scene, no people or dragons.\nCRITICAL DELIVERY: actual transparent RGBA alpha background, not black/brown and no glowing cloudy background. Generous 12 percent empty transparent margin on ALL FOUR sides. The complete top of the moon/lighthouse must be fully inside this margin; no clipping. Clean isolated cutout with tight local illumination only. Landscape orientation for feast; square for badge.",
+    "source": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-1f5cd7fe-4b15-4995-8c22-678f0493f57c.png",
+    "sha256": "c7baaaeb50394bffd49f2013c13eee16dbdc0a92b67552448d25657a25f202eb",
+    "size": [
+      1536,
+      1024
+    ],
+    "mode": "RGBA"
+  }
+]

@@ -94,8 +94,7 @@ class _WishcakeTrialState extends State<WishcakeTrial> {
             : _drop!.hit
                 ? strings.pick('Keep your next layer centered',
                     'Houd de volgende laag in het midden')
-                : strings.pick('Missed! Try the fresh cake base',
-                    'Gemist! Probeer de nieuwe taartbodem');
+                : strings.pick('Game over', 'Spel afgelopen');
     return Container(
       key: const Key('unique-game-wishcakeTower'),
       padding: const EdgeInsets.all(12),

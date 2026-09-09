@@ -11,6 +11,7 @@ import '../widgets/dragon_art.dart';
 import '../widgets/witchlight_trial_widgets.dart';
 import '../widgets/seasonal_minigames.dart';
 import '../widgets/wishcake_trial.dart';
+import '../widgets/summer_trials.dart';
 
 class SeasonalTrialRunResult {
   const SeasonalTrialRunResult({
@@ -82,11 +83,17 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
   TrialDefinition get definition => widget.offer.definition;
   DateTime _now() => (widget.clock ?? DateTime.now)();
   bool get _isWitchlight => widget.offer.kind == TrialKind.witchlightWard;
-  bool get _threeMistakeLimit =>
-      _isWitchlight ||
-      widget.offer.kind == TrialKind.hollyfrostGiftforge ||
-      widget.offer.kind == TrialKind.midnightChime ||
-      widget.offer.kind == TrialKind.wishcakeTower;
+  int? get _mistakeLimit => switch (widget.offer.kind) {
+        TrialKind.wishcakeTower => 1,
+        TrialKind.witchlightWard ||
+        TrialKind.hollyfrostGiftforge ||
+        TrialKind.midnightChime ||
+        TrialKind.sunwakeSurf ||
+        TrialKind.moonlitOrchard =>
+          3,
+        _ => null,
+      };
+  bool get _outOfLives => _mistakeLimit != null && _mistakes >= _mistakeLimit!;
   _SeasonalTheme get theme => _themeFor(widget.offer.kind);
   TrainingFocus get _currentPhaseFocus =>
       widget.offer.kind == TrialKind.hollyfrostGiftforge
@@ -185,7 +192,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
     setState(() {
       _ending = true;
       _remainingMilliseconds = 0;
-      _status = _threeMistakeLimit && _mistakes >= 3
+      _status = _outOfLives
           ? AppStrings.of(context).pick('Game over', 'Spel afgelopen')
           : AppStrings.of(context).pick(
               'The final light is sealed!',
@@ -337,9 +344,9 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                         ? null
                         : () => Navigator.pop(context),
                   ),
-                  if (_threeMistakeLimit)
+                  if (_mistakeLimit != null)
                     Text(
-                      '${strings.pick('Mistakes', 'Fouten')}: $_mistakes / 3',
+                      '${strings.pick('Mistakes', 'Fouten')}: $_mistakes / $_mistakeLimit',
                       key: const Key('witchlight-mistakes'),
                       style: TextStyle(
                           color:
@@ -398,13 +405,22 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
               running: _started && !_ending,
               clock: _now,
               onAction: _arcadeAction)
-          : SeasonalMinigames(
-              kind: widget.offer.kind,
-              dragon: widget.dragon,
-              seed: _arcadeSeed,
-              running: _started && !_ending,
-              clock: _now,
-              onAction: _arcadeAction);
+          : widget.offer.kind == TrialKind.sunwakeSurf ||
+                  widget.offer.kind == TrialKind.moonlitOrchard
+              ? SummerTrials(
+                  kind: widget.offer.kind,
+                  dragon: widget.dragon,
+                  seed: _arcadeSeed,
+                  running: _started && !_ending,
+                  clock: _now,
+                  onAction: _arcadeAction)
+              : SeasonalMinigames(
+                  kind: widget.offer.kind,
+                  dragon: widget.dragon,
+                  seed: _arcadeSeed,
+                  running: _started && !_ending,
+                  clock: _now,
+                  onAction: _arcadeAction);
 
   void _arcadeAction(bool correct,
       {required int points, required bool completesRound}) {
@@ -435,7 +451,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
       unawaited(HavenAudio.playAsset(
           'event_${theme.soundPrefix}_${correct ? 'success' : 'failure'}'));
     }
-    if (_remainingMilliseconds <= 0 || (_threeMistakeLimit && _mistakes >= 3)) {
+    if (_remainingMilliseconds <= 0 || (_outOfLives)) {
       unawaited(_finish());
     }
   }
@@ -652,7 +668,8 @@ class _SeasonalHud extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: accent.withValues(alpha: .70)),
       ),
-      child: theme.soundPrefix == 'birthday'
+      child: const ['birthday', 'sunwake', 'harvestmoon']
+              .contains(theme.soundPrefix)
           ? Column(children: [
               Row(children: [
                 IconButton(
@@ -1243,7 +1260,7 @@ class _EventTrialSprite extends StatelessWidget {
       width: size,
       height: size,
       child: Image.asset(
-        theme.soundPrefix == 'birthday'
+        const ['birthday', 'sunwake', 'harvestmoon'].contains(theme.soundPrefix)
             ? theme.iconAsset
             : '${theme.assetDirectory}/trial_sprite_${index.remainder(6)}.webp',
         fit: BoxFit.contain,
@@ -1292,8 +1309,11 @@ class _SeasonalTheme {
   final String failureEn;
   final String failureNl;
 
-  String get iconAsset =>
-      '$assetDirectory/trial_icon.${soundPrefix == 'birthday' ? 'png' : 'webp'}';
+  String get iconAsset => '$assetDirectory/trial_icon.${const [
+        'birthday',
+        'sunwake',
+        'harvestmoon'
+      ].contains(soundPrefix) ? 'png' : 'webp'}';
 
   String introTitle(AppStrings strings) => strings.pick(introEn, introNl);
   String instructions(AppStrings strings) =>
@@ -1303,6 +1323,47 @@ class _SeasonalTheme {
 }
 
 _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
+      TrialKind.sunwakeSurf => const _SeasonalTheme(
+          soundPrefix: 'sunwake',
+          backgroundAsset: 'assets/images/events/sunwake/trial_background.png',
+          assetDirectory: 'assets/images/events/sunwake',
+          deepColor: Color(0xFF123744),
+          panelColor: Color(0xFF238B91),
+          accentColor: Color(0xFFE6F9EE),
+          glowColor: Color(0xFFF5A7A0),
+          buttonColor: Color(0xFF238B91),
+          palette: [Color(0xFF238B91), Color(0xFFE6F9EE), Color(0xFFF5A7A0)],
+          introEn: 'Sunwake Surf',
+          introNl: 'Sunwake Surf',
+          instructionsEn:
+              'Slide left or right to guide your dragon through the currents. Collect sunpearls and avoid coral reefs. The current gets faster. Three collisions end the Trial.',
+          instructionsNl:
+              'Schuif naar links of rechts om je draak door de stroming te sturen. Verzamel zonneparels en ontwijk koraalriffen. De stroming wordt sneller. Drie botsingen beëindigen de proef.',
+          successEn: 'A sunpearl for the lighthouse!',
+          successNl: 'Een zonneparel voor de vuurtoren!',
+          failureEn: 'Mind the reef!',
+          failureNl: 'Pas op voor het rif!'),
+      TrialKind.moonlitOrchard => const _SeasonalTheme(
+          soundPrefix: 'harvestmoon',
+          backgroundAsset:
+              'assets/images/events/harvestmoon/trial_background.png',
+          assetDirectory: 'assets/images/events/harvestmoon',
+          deepColor: Color(0xFF2F231C),
+          panelColor: Color(0xFF806038),
+          accentColor: Color(0xFFF5E8CA),
+          glowColor: Color(0xFFB96B45),
+          buttonColor: Color(0xFF806038),
+          palette: [Color(0xFF806038), Color(0xFFF5E8CA), Color(0xFFB96B45)],
+          introEn: 'Moonlit Orchard',
+          introNl: 'Maanverlichte Boomgaard',
+          instructionsEn:
+              'Choose a fruit shape, rotate it if needed, then tap its top-left cell in the basket. You can also drag shapes into place. Full rows are harvested. When no shape fits, you lose a basket. Three full baskets end the Trial.',
+          instructionsNl:
+              'Kies een fruitvorm, draai hem zo nodig en tik op zijn cel linksboven in de mand. Je kunt vormen ook naar hun plek slepen. Volle rijen worden geoogst. Past geen enkele vorm meer, dan verlies je een mand. Drie volle manden beëindigen de proef.',
+          successEn: 'A beautiful harvest!',
+          successNl: 'Een prachtige oogst!',
+          failureEn: 'Basket full!',
+          failureNl: 'Mand vol!'),
       TrialKind.wishcakeTower => const _SeasonalTheme(
           soundPrefix: 'birthday',
           backgroundAsset:
@@ -1317,9 +1378,9 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
           introEn: 'Bake a Wish to the Stars',
           introNl: 'Bak een Wens tot de Sterren',
           instructionsEn:
-              'Tap to drop the moving cake layer onto the one below. Overhanging cake falls away, so aim for a perfect fit. Three perfect layers restore a little width. The tower gets faster; three missed layers end the Trial.',
+              'Tap to drop the moving cake layer onto the one below. Overhanging cake falls away, so aim for a perfect fit. Three perfect layers restore a little width. The tower gets faster; one missed layer ends the Trial.',
           instructionsNl:
-              'Tik om de bewegende taartlaag op de vorige te laten vallen. Overhangende taart valt weg, dus mik precies. Drie perfecte lagen geven wat breedte terug. De toren versnelt; bij drie gemiste lagen eindigt de proef.',
+              'Tik om de bewegende taartlaag op de vorige te laten vallen. Overhangende taart valt weg, dus mik precies. Drie perfecte lagen geven wat breedte terug. De toren versnelt; bij één gemiste laag eindigt de proef.',
           successEn: 'Another layer of wishes!',
           successNl: 'Nog een laag vol wensen!',
           failureEn: 'Layer missed - 30 points lost',

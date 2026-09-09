@@ -9,11 +9,13 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('seasonal grades include the requested S+ boundaries exactly', () {
     for (final entry in {
-      TrialKind.wishcakeTower: [600, 1500, 2800, 4200, 6000],
+      TrialKind.sunwakeSurf: [500, 1500, 3000, 5000, 8000],
+      TrialKind.moonlitOrchard: [500, 1500, 3000, 5000, 8000],
+      TrialKind.wishcakeTower: [600, 1500, 2800, 4200, 10000],
       TrialKind.prismaticParade: [1200, 2900, 4800, 7200, 12000],
       TrialKind.rosevowRelay: [650, 1600, 2600, 3900, 10000],
       TrialKind.midnightChime: [500, 1200, 2000, 3000, 20000],
-      TrialKind.hollyfrostGiftforge: [500, 1200, 2000, 3000, 4200],
+      TrialKind.hollyfrostGiftforge: [500, 1200, 2000, 3000, 7500],
       TrialKind.witchlightWard: [500, 1200, 1600, 1800, 2000],
     }.entries) {
       expect(trialGradeForScore(entry.key, 0), TrialGrade.d);

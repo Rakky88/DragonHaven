@@ -59,16 +59,13 @@ void main() {
     expect(game.top.right, lessThanOrEqualTo(1));
   });
 
-  test(
-      'three actual missed layers stop input; small remnants reset after a miss',
-      () {
+  test('the first missed layer stops input and preserves the earned tower', () {
     final game = WishcakeTower(seed: 8);
     var drops = 0;
     while (!game.finished && drops++ < 30) {
       game.drop(game.readyAt); // Alternate far edges; overhang narrows first.
-      if (game.layers.length == 1) expect(game.top.width, game.baseWidth);
     }
-    expect(game.mistakes, 3);
+    expect(game.mistakes, 1);
     expect(game.finished, true);
     expect(game.drop(game.readyAt + 100), isNull);
   });
@@ -104,7 +101,7 @@ void main() {
     final offer = game.availableTrials.first;
     final xp = game.pet.xp;
     final completion = await game.completeTrial(
-        offerId: offer.id, dragonId: game.pet.id, score: 6000);
+        offerId: offer.id, dragonId: game.pet.id, score: 10000);
     expect(completion!.reward.grade, TrialGrade.sPlus);
     expect(completion.simulated, false);
     expect(completion.testEvent, true);
@@ -113,10 +110,10 @@ void main() {
         completion.reward.expertiseRewards.values.reduce((a, b) => a + b), 7);
     expect(
         await game.completeTrial(
-            offerId: offer.id, dragonId: game.pet.id, score: 6000),
+            offerId: offer.id, dragonId: game.pet.id, score: 10000),
         isNull);
     final restored = Pet.fromJson(game.pet.toJson());
-    expect(restored.trialHighScores['wishcakeTower'], 6000);
+    expect(restored.trialHighScores['wishcakeTower'], 10000);
     expect(game.specialChestCount('golden_wings_chest_v1'), 0);
   });
 
@@ -214,8 +211,8 @@ void main() {
         if (layer == 6) await capture('stack');
         await step(282);
       }
-      expect(find.text('Mistakes: 0 / 3'), findsOneWidget);
-      // Deliberately drop at far edges until three real misses, then try again.
+      expect(find.text('Mistakes: 0 / 1'), findsOneWidget);
+      // Deliberately drop at far edges until the first real miss, then try again.
       for (var taps = 0; taps < 20 && result.isEmpty; taps++) {
         final button = tester.widget<FilledButton>(
             find.byKey(const Key('wishcake-drop-button')));
@@ -224,7 +221,7 @@ void main() {
       }
       await step(1200);
       expect(result, hasLength(1));
-      expect(result.single.totalActions - result.single.correctActions, 3);
+      expect(result.single.totalActions - result.single.correctActions, 1);
       expect(result.single.score, greaterThan(0));
       await capture('finished');
       expect(tester.takeException(), isNull);

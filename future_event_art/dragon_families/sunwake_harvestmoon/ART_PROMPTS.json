@@ -1,0 +1,235 @@
+{
+  "status": "awaiting user emulator review",
+  "presentation": "actual source PNGs at 84% of each review art canvas, retaining a surrounding gutter; no bitmap crops or edits",
+  "rejected": "Four earlier reference-edit variants contained an opaque checkerboard and are not used.",
+  "assets": [
+    {
+      "id": "ciderhorn_arcana",
+      "path": "assets/images/dragons/ciderhorn_arcana.png",
+      "original_path": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-bf16a551-9700-487b-a721-665e0aec9689.png",
+      "method": "built-in image_gen; text-only generation; untouched generated PNG with alpha",
+      "prompt": "Generate one premium hand-painted DragonHaven fantasy dragon sprite on an ACTUAL TRANSPARENT RGBA BACKGROUND. No background pattern, no checkerboard, no scenery, no ground shadow, no text or watermark. Full body with four legs, entirely inside a square canvas with generous 12% transparent margins around all horns, wing tips, paws and tail. Both snout/head and torso/body axis point toward screen-right in a three-quarter SIDE view, tail extending to the left. Not front-facing, not symmetric. Beautiful jewel-like scales, dimensional painterly shading, clear crisp silhouette. This is an adult ascended dragon, visibly mature and majestic with a proportionally smaller head than a hatchling, but kind expressive amber eyes. Ciderhorn ARCANA ascension, 'Moonorchard Spellbloom': slender majestic copper-scaled orchard dragon with honey-cream face, long neck and underside, glowing amber eyes, great finely branching applewood antlers crowned with ivory apple blossoms and pale gold buds. Broad copper leaf-shaped wings have intricate golden leaf-vein rune patterns; soft moonlight silver highlights on the copper scales. Olive leaves around the head and long neck, one jewel-like ruby apple nested in that mane. A long fine woody tail with a spray of copper leaves and tiny luminous blossom buds. Elegant arched neck, curious wise expression, light poised four-legged stance facing right. No Halloween, no pumpkin, no alcohol, no clothing, no books, no staff; magic expressed through natural antlers and wing veins.",
+      "size": [
+        1254,
+        1254
+      ],
+      "opaque_bounds": [
+        25,
+        25,
+        1217,
+        1198
+      ],
+      "outer_edge_max_alpha": 1,
+      "sha256": "d43d76f9bb2714382284452bc28484dfdfdafbf8880d58e7ae8c3864d602f13d"
+    },
+    {
+      "id": "ciderhorn_hatchling",
+      "path": "assets/images/dragons/ciderhorn_hatchling.png",
+      "original_path": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-c314b484-cf23-4670-be2d-3b416c7d7245.png",
+      "method": "built-in image_gen; text-only generation; untouched generated PNG with alpha",
+      "prompt": "Use case: stylized-concept. Asset type: premium collectible dragon sprite for DragonHaven mobile fantasy game, ONE character only. Create Ciderhorn HATCHLING, an adorable young harvest orchard dragon. Warm russet-copper and honey-cream scales, a small pair of branching applewood antler buds with olive green leaves and one delicate ivory apple blossom, cozy auburn leaf-shaped wing membranes with subtle golden veins, one tiny ruby apple nestled in its leafy neck ruff, luminous amber eyes, four short dragon legs, curling woody tail ending in three copper leaves. Distinctive harvest-orchard identity, warm and friendly; NO pumpkin, NO Halloween imagery, NO alcohol props. Clear baby proportions: oversized expressive head, rounded tummy, tiny clawed paws, gentle playful smile. Beautiful polished hand-painted fantasy game art with dimensional jewel-like scales, detailed wood and leaves, delicate highlights and crisp readable silhouette, not flat cartoon. FULL BODY in a right-facing three-quarter SIDE VIEW: BOTH the head/snout and the torso's body axis point to screen-right; tail trails left. Head visibly projects right, NOT a front-facing symmetric pose. Wings modestly lifted so face and all paws are readable. Character occupies at most 76% of square canvas in each dimension, at least 12% transparent empty margin on ALL sides, every leaf, wing, tail and antler fully inside frame. Actual transparent RGBA background, no ground, no scenery, no cast shadow, no checkerboard baked into image, no text, no border, no other objects, no watermark. This is the defining base design for a six-stage family; coherent anatomy.",
+      "size": [
+        1254,
+        1254
+      ],
+      "opaque_bounds": [
+        89,
+        89,
+        1179,
+        1128
+      ],
+      "outer_edge_max_alpha": 1,
+      "sha256": "7ae1d6552b58905406076959ef5565297f59d893e9e00f362d6d647b433bf0a7"
+    },
+    {
+      "id": "ciderhorn_mastery",
+      "path": "assets/images/dragons/ciderhorn_mastery.png",
+      "original_path": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-cfed82d5-af7f-406f-982c-e59f4d0c80f5.png",
+      "method": "built-in image_gen; text-only generation; untouched generated PNG with alpha",
+      "prompt": "Generate a PNG sprite on a genuinely TRANSPARENT RGBA BACKGROUND with no drawn checkerboard pattern. ONE fully visible majestic fantasy dragon, Ciderhorn MASTERY form 'Sovereign of the Moonlit Orchard', a premium collectible DragonHaven character. The ultimate mature harvest orchard dragon combines natural protective applewood bark shoulder plates, golden leaf-vein patterns in broad copper wings, and a welcoming wise expression. Rich russet-copper and honey-gold scales, cream face and long neck and belly, amber eyes, magnificent branching applewood antlers bearing olive leaves and ivory apple blossoms with tiny gold centers. Graceful copper-leaf mane with a few ruby red apples naturally nestled within, long sweeping woody tail and copper leaf plume extending left. Four strong elegant dragon legs, regal arched neck, adult face with longer dragon snout, balanced massive-but-elegant silhouette. The two leaf-shaped wings spread backward and upward, not hiding the face. Polished hand-painted fantasy game art with detailed jewel-like scales, wood and leaves, delicate highlights and crisp clean edges. No Halloween, no pumpkin, no alcohol, no furniture or costume. FULL BODY THREE-QUARTER SIDE VIEW, BOTH head/snout AND torso/body axis point toward screen-right. Never front-facing or symmetric. Every antler, leaf, wing tip, tail and paw completely inside generous 12% transparent empty margins on ALL sides, character at most 76% of square canvas. No ground shadow, no background, no text, no border, no watermark.",
+      "size": [
+        1254,
+        1254
+      ],
+      "opaque_bounds": [
+        31,
+        65,
+        1231,
+        1147
+      ],
+      "outer_edge_max_alpha": 1,
+      "sha256": "e7794cda59b87a5f4256c2b72aefcde385393cd4a77e5afe0b8fd7d1f5781cff"
+    },
+    {
+      "id": "ciderhorn_might",
+      "path": "assets/images/dragons/ciderhorn_might.png",
+      "original_path": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-b363d30e-9c25-4bba-a86b-e01bced58705.png",
+      "method": "built-in image_gen; text-only generation; untouched generated PNG with alpha",
+      "prompt": "Generate a PNG game sprite on an ACTUAL TRANSPARENT BACKGROUND (RGBA alpha zero outside the character). NO checkerboard pattern or gray/white squares may be drawn. Use case: stylized-concept. Asset type: one standalone DragonHaven dragon sprite. Generate ONE beautiful dragon with the specified age and specialization, in polished hand-painted fantasy game rendering with dimensional jewel-like scales, amber eyes, a friendly dragon snout, four legs and clean coherent anatomy. Full body in right-facing three-quarter SIDE VIEW. Both head/snout AND torso/body axis point to screen-right; snout visibly projects right, tail extends left. Never front-facing or symmetric. Every wing, horn, foot and tail fully visible. Generous actual transparent padding at least 12% of the square canvas on every side. No scenery, floor, ground shadow, text, labels, frame, props, or watermark. Actual transparent RGBA background. Crisp readable edges without any colored matte. Ciderhorn adult MIGHT ascension: 'Orchardroot Warden'. A majestic powerful quadruped orchard dragon, much older and more muscular than the baby. Thick four legs, broad neck, natural dark applewood bark plates covering copper-scaled shoulders, great branching applewood antlers with olive leaves and a few tiny ivory blossoms, broad leaf wings folded upward and back, heavy curving woody tail with copper leaves. Honey-cream face and belly, glowing amber eyes, small ruby apples nestled in leaf mane. Strong grounded protective stance pointed right, lower broad head, regal and kind, not scary. Emphasize tree-root strength and warm copper harvest textures. No pumpkins, no Halloween, no weapon, no human clothes, no alcohol.",
+      "size": [
+        1254,
+        1254
+      ],
+      "opaque_bounds": [
+        30,
+        97,
+        1231,
+        1165
+      ],
+      "outer_edge_max_alpha": 1,
+      "sha256": "63ebfa737feca4fddac38e7d64618c94d6980439d76225c90631f8b865c16c5e"
+    },
+    {
+      "id": "ciderhorn_spirit",
+      "path": "assets/images/dragons/ciderhorn_spirit.png",
+      "original_path": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-61d84f67-4d75-4384-b3ae-9319d562b7d2.png",
+      "method": "built-in image_gen; text-only generation; untouched generated PNG with alpha",
+      "prompt": "Generate one premium hand-painted DragonHaven fantasy dragon sprite on an ACTUAL TRANSPARENT RGBA BACKGROUND. No background pattern, no checkerboard, no scenery, no ground shadow, no text or watermark. Full body with four legs, entirely inside a square canvas with generous 12% transparent margins around all horns, wing tips, paws and tail. Both snout/head and torso/body axis point toward screen-right in a three-quarter SIDE view, tail extending to the left. Not front-facing, not symmetric. Beautiful jewel-like scales, dimensional painterly shading, clear crisp silhouette. This is an adult ascended dragon, visibly mature and majestic with a proportionally smaller head than a hatchling, but kind expressive amber eyes. Ciderhorn SPIRIT ascension, 'Hearthharvest Companion': mature benevolent orchard dragon with warm copper and cinnamon scales, honey-cream muzzle, breast and underside, expressive amber eyes, smoothly branching applewood antlers dressed in soft olive leaves and several ivory apple blossoms. Full gentle leaf mane dotted with a few ruby red apples; broad warm russet leaf wings gently curved backward with simple gold veins. Long woody tail with generous copper-leaf plume curls toward the left. Graceful four-legged protective posture, soft welcoming face, rounded warm silhouette emphasizing care and companionship. No armor or weapons, no busy runic patterns, no pumpkins, no Halloween, no alcohol or furniture props.",
+      "size": [
+        1254,
+        1254
+      ],
+      "opaque_bounds": [
+        12,
+        19,
+        1245,
+        1200
+      ],
+      "outer_edge_max_alpha": 1,
+      "sha256": "c3e5ccd846faf6e316a511108f0af945b227d1d9619a0af085d10fe56ea5b875"
+    },
+    {
+      "id": "ciderhorn_wyrmling",
+      "path": "assets/images/dragons/ciderhorn_wyrmling.png",
+      "original_path": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-c88f36f5-d906-4df0-8f94-7bf67aab9440.png",
+      "method": "built-in image_gen; text-only generation; untouched generated PNG with alpha",
+      "prompt": "Generate a PNG game sprite on an ACTUAL TRANSPARENT BACKGROUND (RGBA alpha zero outside the character). NO checkerboard pattern or gray/white squares may be drawn. Use case: stylized-concept. Asset type: one standalone DragonHaven dragon sprite. Generate ONE beautiful dragon with the specified age and specialization, in polished hand-painted fantasy game rendering with dimensional jewel-like scales, amber eyes, a friendly dragon snout, four legs and clean coherent anatomy. Full body in right-facing three-quarter SIDE VIEW. Both head/snout AND torso/body axis point to screen-right; snout visibly projects right, tail extends left. Never front-facing or symmetric. Every wing, horn, foot and tail fully visible. Generous actual transparent padding at least 12% of the square canvas on every side. No scenery, floor, ground shadow, text, labels, frame, props, or watermark. Actual transparent RGBA background. Crisp readable edges without any colored matte. Ciderhorn WYRMLING: visibly adolescent, longer graceful neck and leaner body than the baby, proportionally smaller head, longer four legs, confident friendly smile. Warm copper/russet scales and cream underside, applewood antlers now visibly branching but not huge, olive-leaf mane with two ivory apple blossoms and small natural ruby apples, copper leaf-shaped wings longer and swept elegantly backward, long woody tail with copper leaf fan. A proud walking pose toward screen-right, one front paw lifted. Retain distinct orchard identity, no pumpkin, no armor, no alcohol, no saddle.",
+      "size": [
+        1254,
+        1254
+      ],
+      "opaque_bounds": [
+        37,
+        83,
+        1223,
+        1142
+      ],
+      "outer_edge_max_alpha": 1,
+      "sha256": "30daae90826a41b1a2d61f5c24bb3e6cac1a37db6722556a8a4b38ba30c4adda"
+    },
+    {
+      "id": "solmanta_arcana",
+      "path": "assets/images/dragons/solmanta_arcana.png",
+      "original_path": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-afa5c527-825b-4582-a2c4-e200d7354f3b.png",
+      "method": "built-in image_gen; text-only generation; untouched generated PNG with alpha",
+      "prompt": "Generate one premium hand-painted DragonHaven fantasy dragon sprite on an ACTUAL TRANSPARENT RGBA BACKGROUND. No background pattern, no checkerboard, no scenery, no ground shadow, no text or watermark. Full body with four legs, entirely inside a square canvas with generous 12% transparent margins around all horns, wing tips, paws and tail. Both snout/head and torso/body axis point toward screen-right in a three-quarter SIDE view, tail extending to the left. Not front-facing, not symmetric. Beautiful jewel-like scales, dimensional painterly shading, clear crisp silhouette. This is an adult ascended dragon, visibly mature and majestic with a proportionally smaller head than a hatchling, but kind expressive amber eyes. Solmanta ARCANA ascension, 'Sunpearl Tideweaver': elegant, slender turquoise lagoon dragon with mother-of-pearl ivory face, neck and belly, large soft manta-ray fin wings with coral-pink edges and luminous fine golden constellation patterns naturally on their membranes. Two swept-back coral-pink horns, delicate coral and ivory cheek fins, a natural golden sunpearl in the chest. A tall poised upright neck and sweeping long finned tail. Small lustrous golden pearls float closely around the upper curved tail, all well inside padding. Shimmering turquoise and ivory scales, translucent-looking sea-glass fins (the fins themselves remain opaque enough to read), sophisticated fluid outline. Magical celestial lagoon feeling; avoid hard armor, avoid weapons or clothing. Emphasize elegant arcane wing patterns and a thoughtful gentle expression.",
+      "size": [
+        1254,
+        1254
+      ],
+      "opaque_bounds": [
+        48,
+        41,
+        1225,
+        1211
+      ],
+      "outer_edge_max_alpha": 1,
+      "sha256": "d1032eb1449b9c9352536eb459a46aa939dad0fd677625ec7b203459f172f5a3"
+    },
+    {
+      "id": "solmanta_hatchling",
+      "path": "assets/images/dragons/solmanta_hatchling.png",
+      "original_path": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-6a50a3d0-7561-4d12-a4e9-aa22663bec44.png",
+      "method": "built-in image_gen; text-only generation; untouched generated PNG with alpha",
+      "prompt": "Use case: stylized-concept. Asset type: premium collectible dragon sprite for DragonHaven mobile fantasy game, ONE character only. Create Solmanta HATCHLING, an adorable young summer lagoon dragon whose distinctive wings are soft broad manta-ray fins. Pearlescent ivory belly and face, turquoise sea-glass scales on back, small warm coral-pink fin tips, luminous golden sunpearl set naturally at its chest, two tiny swept-back coral horns, large expressive amber eyes, four short dragon legs, a long gracefully curled manta-like tail with a small fan tip. Clear baby proportions: oversized head, round body, tiny feet, gentle curious smile. Beautiful polished hand-painted fantasy game art with dimensional jewel-like scales, delicate highlights and crisp readable silhouette, not flat cartoon. FULL BODY seen in a right-facing three-quarter SIDE VIEW: BOTH the head/snout and the torso's body axis point to screen-right; tail trails to the left. Head must visibly project to the right, NOT a front-facing symmetric pose. Wings modestly lifted so face and all paws remain distinct. Character occupies at most 76% of square canvas in each dimension, at least 12% transparent empty margin on ALL sides, every fin and tail and horn fully inside frame. Actual transparent RGBA background, no ground, no scenery, no cast shadow, no checkerboard baked into image, no text, no border, no other objects, no watermark. This is the defining base design for a six-stage family, maintain clean coherent anatomy.",
+      "size": [
+        1254,
+        1254
+      ],
+      "opaque_bounds": [
+        92,
+        192,
+        1176,
+        1058
+      ],
+      "outer_edge_max_alpha": 1,
+      "sha256": "8672d0e0fb4a4dcdf89a39af955f31d7abaa8c90f11128ae63c54f372e57f88c"
+    },
+    {
+      "id": "solmanta_mastery",
+      "path": "assets/images/dragons/solmanta_mastery.png",
+      "original_path": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-84dede4c-5d60-4b35-b790-885483ac995f.png",
+      "method": "built-in image_gen; text-only generation; untouched generated PNG with alpha",
+      "prompt": "Generate a PNG sprite on a genuinely TRANSPARENT RGBA BACKGROUND with no drawn checkerboard pattern. ONE fully visible majestic fantasy dragon, Solmanta MASTERy form 'Sovereign of the Sunlit Tide', a premium collectible DragonHaven character. The ultimate mature lagoon dragon combines protective pearly shoulder plates, arcane golden lines within its broad rounded manta-fin wings, and a graceful caring expression. Sea-glass turquoise scales, ivory pearl face and long neck and underside, coral-pink fin tips and two regal coral horns, amber eyes, a luminous golden sunpearl naturally set in its chest. Large four-legged adult dragon anatomy, powerful shoulders, elegant arched neck, broad sweeping manta wings, very long turquoise and ivory tail curving behind to the left with layered coral-edged fins. Beautiful intricate mother-of-pearl plates and small golden pearl accents, no human clothes, no weapon, no saddle. Polished hand-painted fantasy game art with dimensional jewel-like scales and crisp readable silhouette. Regal magical power with restraint, no giant explosive aura or floating scenery. FULL BODY THREE-QUARTER SIDE VIEW, BOTH head/snout AND torso/body axis point toward screen-right; snout clearly projects right. Never front-facing or symmetric. Entire body including every wing tip, horn, tail and foot inside generous 12% transparent margins on all sides, character at most 76% of square canvas. No ground shadow, no background, no text, no border, no watermark.",
+      "size": [
+        1254,
+        1254
+      ],
+      "opaque_bounds": [
+        40,
+        92,
+        1221,
+        1150
+      ],
+      "outer_edge_max_alpha": 1,
+      "sha256": "51a021ba68ce7ac5104da22e0ba46e4f6e569e09b68c52e7a61cdb8efd9c6028"
+    },
+    {
+      "id": "solmanta_might",
+      "path": "assets/images/dragons/solmanta_might.png",
+      "original_path": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-522577dd-7233-4eb8-b105-f7ac8f1d65a5.png",
+      "method": "built-in image_gen; text-only generation; untouched generated PNG with alpha",
+      "prompt": "Generate a PNG game sprite on an ACTUAL TRANSPARENT BACKGROUND (RGBA alpha zero outside the character). NO checkerboard pattern or gray/white squares may be drawn. Use case: stylized-concept. Asset type: one standalone DragonHaven dragon sprite. Generate ONE beautiful dragon with the specified age and specialization, in polished hand-painted fantasy game rendering with dimensional jewel-like scales, amber eyes, a friendly dragon snout, four legs and clean coherent anatomy. Full body in right-facing three-quarter SIDE VIEW. Both head/snout AND torso/body axis point to screen-right; snout visibly projects right, tail extends left. Never front-facing or symmetric. Every wing, horn, foot and tail fully visible. Generous actual transparent padding at least 12% of the square canvas on every side. No scenery, floor, ground shadow, text, labels, frame, props, or watermark. Actual transparent RGBA background. Crisp readable edges without any colored matte. Solmanta adult MIGHT ascension: 'Sunreef Bulwark'. A majestic massive muscular quadruped lagoon dragon, visibly much older and more powerful than the baby. Large broad shoulders, thick four legs with pearly claws, low broad head facing right, muscular long sweeping tail. Broad manta-fin wings held partly folded with turquoise scaled outer surfaces and coral-pink edging; striking overlapping natural mother-of-pearl shoulder plates and sun-gold scallop ridges like reef-grown organic armor. Two strong backward-curving coral horns, amber eyes, bright natural golden sunpearl chest. Powerful protective stance, calm noble expression, no weapon, no human clothing. Silhouette emphasizes strength and weight. Use turquoise and ivory body colors, coral-pink fin edges, and amber eyes.",
+      "size": [
+        1254,
+        1254
+      ],
+      "opaque_bounds": [
+        19,
+        122,
+        1244,
+        1138
+      ],
+      "outer_edge_max_alpha": 1,
+      "sha256": "585f6d6e75bbd35b7f7e0844c4f865d9ec0cbaafef07f28d3f1cb0e14141ecf4"
+    },
+    {
+      "id": "solmanta_spirit",
+      "path": "assets/images/dragons/solmanta_spirit.png",
+      "original_path": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-746c0d85-f086-4a72-8e2f-9a207a4cd431.png",
+      "method": "built-in image_gen; text-only generation; untouched generated PNG with alpha",
+      "prompt": "Generate one premium hand-painted DragonHaven fantasy dragon sprite on an ACTUAL TRANSPARENT RGBA BACKGROUND. No background pattern, no checkerboard, no scenery, no ground shadow, no text or watermark. Full body with four legs, entirely inside a square canvas with generous 12% transparent margins around all horns, wing tips, paws and tail. Both snout/head and torso/body axis point toward screen-right in a three-quarter SIDE view, tail extending to the left. Not front-facing, not symmetric. Beautiful jewel-like scales, dimensional painterly shading, clear crisp silhouette. This is an adult ascended dragon, visibly mature and majestic with a proportionally smaller head than a hatchling, but kind expressive amber eyes. Solmanta SPIRIT ascension, 'Lagoonheart Guardian': serene adult sea-glass turquoise dragon with pearly ivory face, chest and underside; amber eyes, two smooth coral-pink horns, friendly wise face and exceptionally long rounded manta-ray wings draping backward like graceful ribbons, edged warm coral pink. A leaf-shaped mother-of-pearl layered frill around the long neck, soft sun-gold highlights, a warm golden sunpearl glowing within a scalloped chest setting. Four elegant curved legs and long flowing finned tail curled to the left. Organic lagoon guardian silhouette, warm protective body language, no armor plates or weapons. Wings are smooth, soft and calming without busy constellation patterns. No extra creatures or external scenery.",
+      "size": [
+        1254,
+        1254
+      ],
+      "opaque_bounds": [
+        30,
+        91,
+        1245,
+        1109
+      ],
+      "outer_edge_max_alpha": 2,
+      "sha256": "a626bcd219de46e80f6e9d7e6b42754d3420fe7c19cbaf730cd5876d9df91219"
+    },
+    {
+      "id": "solmanta_wyrmling",
+      "path": "assets/images/dragons/solmanta_wyrmling.png",
+      "original_path": "C:\\Users\\groot\\.codex\\generated_images\\01a07aa5-f5d3-7543-bd03-e92a125a00c5\\exec-79ed754a-2bb4-407f-b219-a0d4f657bfd8.png",
+      "method": "built-in image_gen; text-only generation; untouched generated PNG with alpha",
+      "prompt": "Generate a PNG game sprite on an ACTUAL TRANSPARENT BACKGROUND (RGBA alpha zero outside the character). NO checkerboard pattern or gray/white squares may be drawn. Use case: stylized-concept. Asset type: one standalone DragonHaven dragon sprite. Generate ONE beautiful dragon with the specified age and specialization, in polished hand-painted fantasy game rendering with dimensional jewel-like scales, amber eyes, a friendly dragon snout, four legs and clean coherent anatomy. Full body in right-facing three-quarter SIDE VIEW. Both head/snout AND torso/body axis point to screen-right; snout visibly projects right, tail extends left. Never front-facing or symmetric. Every wing, horn, foot and tail fully visible. Generous actual transparent padding at least 12% of the square canvas on every side. No scenery, floor, ground shadow, text, labels, frame, props, or watermark. Actual transparent RGBA background. Crisp readable edges without any colored matte. Solmanta WYRMLING: the adolescent lagoon dragon, visibly older and taller than the baby: elongated pearly neck, lean elegant turquoise sea-glass scale body, longer four legs, confident playful expression, proportionally smaller head. Broad sweeping manta-fin wings with ivory membranes and coral-pink outer tips are larger and more sail-like than the baby's. Long flowing tail with coral-edged fin, two curved coral horns, golden natural sunpearl chest ornament. A lively poised stance, poised to glide over summer waves. Keep no armor, no weapons, no adult crown. Wings should retain rounded manta-finned design, not generic jagged bat wings.",
+      "size": [
+        1254,
+        1254
+      ],
+      "opaque_bounds": [
+        19,
+        60,
+        1204,
+        1155
+      ],
+      "outer_edge_max_alpha": 1,
+      "sha256": "c0b8dd71d45373725ad12319fdd4314e9a5877571ba5f8925bf060eda4c304aa"
+    }
+  ]
+}

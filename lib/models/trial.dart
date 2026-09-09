@@ -1,3 +1,4 @@
+import '../l10n/ui_phrase_translations.dart';
 import 'chest.dart';
 import 'pet.dart';
 import 'mystic_relic.dart';
@@ -13,6 +14,8 @@ enum TrialKind {
   rosevowRelay,
   prismaticParade,
   wishcakeTower,
+  moonlitOrchard,
+  sunwakeSurf,
 }
 
 enum TrialGrade { d, c, b, a, s, sPlus }
@@ -48,12 +51,34 @@ class TrialDefinition {
   int combinedExpertise(Pet dragon) => assistingExpertises.fold(
       0, (total, focus) => total + dragon.trainingFor(focus));
 
-  String title(String languageCode) => languageCode == 'nl' ? titleNl : titleEn;
-  String subtitle(String languageCode) =>
-      languageCode == 'nl' ? subtitleNl : subtitleEn;
+  String title(String languageCode) => languageCode == 'nl'
+      ? titleNl
+      : (translatedUiPhrase(titleEn, languageCode) ?? titleEn);
+  String subtitle(String languageCode) => languageCode == 'nl'
+      ? subtitleNl
+      : (translatedUiPhrase(subtitleEn, languageCode) ?? subtitleEn);
 }
 
 const trialDefinitions = <TrialKind, TrialDefinition>{
+  TrialKind.moonlitOrchard: TrialDefinition(
+    kind: TrialKind.moonlitOrchard,
+    focus: TrainingFocus.spirit,
+    titleEn: 'Moonlit Orchard',
+    titleNl: 'Maanverlichte Boomgaard',
+    subtitleEn: 'Fit fruit shapes into the basket and clear full rows.',
+    subtitleNl: 'Pas fruitvormen in de mand en maak volle rijen leeg.',
+    specialEventId: 'harvestmoon_moonlit_orchard',
+  ),
+  TrialKind.sunwakeSurf: TrialDefinition(
+    kind: TrialKind.sunwakeSurf,
+    focus: TrainingFocus.spirit,
+    titleEn: 'Sunwake Surf',
+    titleNl: 'Sunwake Surf',
+    subtitleEn: 'Steer through currents, avoid reefs and collect sunpearls.',
+    subtitleNl:
+        'Stuur door stromingen, ontwijk riffen en verzamel zonneparels.',
+    specialEventId: 'sunwake_summer_sea',
+  ),
   TrialKind.wishcakeTower: TrialDefinition(
     kind: TrialKind.wishcakeTower,
     focus: TrainingFocus.arcana,
@@ -251,12 +276,14 @@ TrialGrade trialGradeForScore(TrialKind kind, int score) {
     TrialKind.cavernFlight => const [250, 600, 1100, 1700, 2500],
     TrialKind.ruinBreaker => const [900, 2250, 4000, 6750, 9000],
     TrialKind.runeweaver => const [3, 6, 9, 12, 15],
-    TrialKind.wishcakeTower => const [600, 1500, 2800, 4200, 6000],
+    TrialKind.sunwakeSurf => const [500, 1500, 3000, 5000, 8000],
+    TrialKind.moonlitOrchard => const [500, 1500, 3000, 5000, 8000],
+    TrialKind.wishcakeTower => const [600, 1500, 2800, 4200, 10000],
     TrialKind.witchlightWard => const [500, 1200, 1600, 1800, 2000],
     TrialKind.rosevowRelay => const [650, 1600, 2600, 3900, 10000],
     TrialKind.prismaticParade => const [1200, 2900, 4800, 7200, 12000],
     TrialKind.midnightChime => const [500, 1200, 2000, 3000, 20000],
-    TrialKind.hollyfrostGiftforge => const [500, 1200, 2000, 3000, 4200],
+    TrialKind.hollyfrostGiftforge => const [500, 1200, 2000, 3000, 7500],
   };
   if (score >= thresholds[4]) return TrialGrade.sPlus;
   if (score >= thresholds[3]) return TrialGrade.s;

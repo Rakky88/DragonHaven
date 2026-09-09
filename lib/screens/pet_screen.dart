@@ -74,7 +74,7 @@ class PetScreen extends StatelessWidget {
           const SizedBox(height: 10),
           _EggCluePanel(hint: game.eggHint(locale: strings.languageCode)),
         ],
-        const EggAltarEntry(),
+        if (!(pet.isEgg && pet.firstEgg)) const EggAltarEntry(),
         if (!pet.isEgg) ...[
           const SizedBox(height: 18),
           _DragonNeedsPanel(pet: pet),

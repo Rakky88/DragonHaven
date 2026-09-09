@@ -10,19 +10,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('42 standard and seven secret lineages provide distinct forms', () {
+  test('42 standard and nine secret lineages provide distinct forms', () {
     expect(standardDragonLineages, hasLength(42));
-    expect(dragonLineages, hasLength(49));
-    expect(dragonLineages.map((lineage) => lineage.id).toSet(), hasLength(49));
+    expect(dragonLineages, hasLength(51));
+    expect(dragonLineages.map((lineage) => lineage.id).toSet(), hasLength(51));
     final adultNames = <String>{};
     for (final lineage in dragonLineages) {
       for (final path in ['might', 'arcana', 'spirit', 'mastery']) {
         adultNames.add(lineage.formName(path, false));
       }
     }
-    expect(adultNames, hasLength(196));
-    expect(DragonArtwork.logicalFormCount, 295);
-    expect(DragonArtwork.allAssetPaths, hasLength(275));
+    expect(adultNames, hasLength(204));
+    expect(DragonArtwork.logicalFormCount, 307);
+    expect(DragonArtwork.allAssetPaths, hasLength(287));
     final emberbun = dragonLineageById('emberbun');
     expect(emberbun.formName('spirit', false), 'Everwarm Hearthkeeper');
     expect(emberbun.formName('spirit', true), 'Eeuwarm Haardhoeder');
@@ -106,8 +106,8 @@ void main() {
   });
 
   test('all achievements are bilingual and uniquely identified', () {
-    expect(achievementCatalog, hasLength(38));
-    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(38));
+    expect(achievementCatalog, hasLength(40));
+    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(40));
     expect(
         achievementCatalog.every((entry) =>
             entry.titleEn.isNotEmpty &&

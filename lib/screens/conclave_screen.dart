@@ -14,6 +14,7 @@ import '../widgets/online_account_access.dart';
 import '../widgets/dragon_emote_picker.dart';
 import '../widgets/trial_rankings_sheet.dart';
 import '../widgets/weave_beacon.dart';
+import '../widgets/seasonal_conclave_project_card.dart';
 
 String conclaveEmblemAsset(String key) => 'assets/images/ui/conclave/$key.png';
 
@@ -540,6 +541,9 @@ class _ConclaveHome extends StatelessWidget {
               child: _ConclaveFeedback(online: online),
             ),
           SliverToBoxAdapter(child: _AerieHeader(snapshot: snapshot)),
+          for (final project in snapshot.seasonalProjects)
+            SliverToBoxAdapter(
+                child: SeasonalConclaveProjectCard(project: project)),
           SliverToBoxAdapter(
               child: WeaveBeaconCard(
                   conclaveId: snapshot.conclave.id, active: active)),

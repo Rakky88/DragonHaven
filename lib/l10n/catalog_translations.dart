@@ -1,3 +1,4 @@
+import 'summer_phrase_translations.dart';
 import '../models/adventure.dart';
 import '../models/shop_item.dart';
 
@@ -342,6 +343,8 @@ String? translatedAdventureTitle(
   String languageCode,
 ) {
   if (!catalogLanguageIndex.containsKey(languageCode)) return null;
+  final summer = summerPhraseTranslations[adventure.titleEn];
+  if (summer != null) return _catalogValue(languageCode, summer);
   if (adventure.id == 'special_golden_wings_birthday') {
     return _localizedAdventure(languageCode, const [
       'Ein Wunsch auf goldenen Schwingen',
@@ -387,6 +390,8 @@ String? translatedAdventureDescription(
   String languageCode,
 ) {
   if (!catalogLanguageIndex.containsKey(languageCode)) return null;
+  final summer = summerPhraseTranslations[adventure.descriptionEn];
+  if (summer != null) return _catalogValue(languageCode, summer);
   if (adventure.id == 'special_golden_wings_birthday') {
     return _localizedAdventure(languageCode, const [
       'Ein goldener Geburtstagswunsch für eine wundervolle Frau, deren Güte den Haven erhellt.',

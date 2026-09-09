@@ -1,3 +1,5 @@
+import '../l10n/ui_phrase_translations.dart';
+
 enum DragonEmoteSource {
   chest,
   trial,
@@ -43,7 +45,9 @@ class DragonEmoteDefinition {
       ? 'assets/images/events/$assetName'
       : 'assets/images/emotes/${source.assetFolder}/$assetName.png';
 
-  String label(String languageCode) => languageCode == 'nl' ? nameNl : nameEn;
+  String label(String languageCode) => languageCode == 'nl'
+      ? nameNl
+      : (translatedUiPhrase(nameEn, languageCode) ?? nameEn);
 }
 
 class DragonEmotePackDefinition {
@@ -69,7 +73,9 @@ class DragonEmotePackDefinition {
       .where((emote) => emote.source == source)
       .toList(growable: false);
 
-  String name(String languageCode) => languageCode == 'nl' ? nameNl : nameEn;
+  String name(String languageCode) => languageCode == 'nl'
+      ? nameNl
+      : (translatedUiPhrase(nameEn, languageCode) ?? nameEn);
   String description(String languageCode) =>
       languageCode == 'nl' ? descriptionNl : descriptionEn;
 }
@@ -932,6 +938,42 @@ const _celestialPackEmotes = <DragonEmoteDefinition>[
 ];
 
 const _seasonalPodiumEmotes = <DragonEmoteDefinition>[
+  DragonEmoteDefinition(
+      id: 'seasonal_harvestmoon_gold',
+      assetName: 'harvestmoon/podium_gold.png',
+      nameEn: 'Harvestmoon Festival Champion',
+      nameNl: 'Harvestmoon Festival Kampioen',
+      source: DragonEmoteSource.seasonal),
+  DragonEmoteDefinition(
+      id: 'seasonal_harvestmoon_silver',
+      assetName: 'harvestmoon/podium_silver.png',
+      nameEn: 'Harvestmoon Festival Runner-up',
+      nameNl: 'Harvestmoon Festival Finalist',
+      source: DragonEmoteSource.seasonal),
+  DragonEmoteDefinition(
+      id: 'seasonal_harvestmoon_bronze',
+      assetName: 'harvestmoon/podium_bronze.png',
+      nameEn: 'Harvestmoon Festival Third',
+      nameNl: 'Harvestmoon Festival Brons',
+      source: DragonEmoteSource.seasonal),
+  DragonEmoteDefinition(
+      id: 'seasonal_sunwake_gold',
+      assetName: 'sunwake/podium_gold.png',
+      nameEn: 'Sunwake Festival Champion',
+      nameNl: 'Sunwake Festival Kampioen',
+      source: DragonEmoteSource.seasonal),
+  DragonEmoteDefinition(
+      id: 'seasonal_sunwake_silver',
+      assetName: 'sunwake/podium_silver.png',
+      nameEn: 'Sunwake Festival Runner-up',
+      nameNl: 'Sunwake Festival Finalist',
+      source: DragonEmoteSource.seasonal),
+  DragonEmoteDefinition(
+      id: 'seasonal_sunwake_bronze',
+      assetName: 'sunwake/podium_bronze.png',
+      nameEn: 'Sunwake Festival Third',
+      nameNl: 'Sunwake Festival Brons',
+      source: DragonEmoteSource.seasonal),
   DragonEmoteDefinition(
     id: 'seasonal_halloween_gold',
     assetName: 'halloween/podium_gold.webp',

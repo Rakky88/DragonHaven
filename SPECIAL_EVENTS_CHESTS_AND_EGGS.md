@@ -1,6 +1,6 @@
 # DragonHaven Special Events, Chests, and Eggs
 
-Last reviewed: 9 September 2026; birthday additions published in v0.05.26; migration 63 applied and verified on staging and production
+Last reviewed: 9 September 2026; v0.05.27 candidate includes approved Sunwake/Harvestmoon content. Staging and production are at schema 65; database lint and public health checks pass.
 
 The four redesigned Trial introductions use their clean standalone event icons,
 avoiding adjacent-frame remnants in the older sprite-sheet cutouts. Halloween now alternates memory and tracing; the former Might timing phase is removed.
@@ -16,18 +16,18 @@ and Start remain on the offer; the full details sheet retains availability.
 The shrinking test label keeps an eight-pixel gap from the event title, even
 when only a few characters fit.
 
-Ruleset: v0.05.26 published and verified; staging and production schema 63 healthy. Migrations 61/63 support three-strike completions; economy activation remains disabled.
+Ruleset candidate: v0.05.27. Migration 64 adds two approved festivals and one-miss birthday completion, with compatibility for older three-miss clients. Economy activation remains disabled.
 
 The Special Adventure dragon picker now also displays Might, Arcana and Spirit
 with their individual scores, MAX markers and selected highlight glow. This
-applies to all six combined-expertise Adventures, including birthday and the
+applies to all eight combined-expertise Adventures, including birthday and the
 Valentine partner invitation. Only dragons with all three Expertises highlighted
 enter the highlighted section. Within each section, combined Expertise sorts
 descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 86943759441ef1ee -->
+<!-- reference-source-fingerprint: 1a72534a37c36dee -->
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special
@@ -231,7 +231,7 @@ finished circuit 120. Each scoring action adds the existing capped combo bonus
 | Trial | C | B | A | S | S+ |
 |---|---:|---:|---:|---:|---:|
 | Halloween | 500 | 1200 | 1600 | 1800 | 2000 |
-| Christmas | 500 | 1200 | 2000 | 3000 | 4200 |
+| Christmas | 500 | 1200 | 2000 | 3000 | 7500 |
 | New Year | 500 | 1200 | 2000 | 3000 | 20000 |
 | Valentine | 650 | 1600 | 2600 | 3900 | 10000 |
 | Pridefest | 1200 | 2900 | 4800 | 7200 | 12000 |
@@ -447,7 +447,7 @@ participation requirements, reward tables and preview entitlements are unchanged
 Halloween's current rank boundaries are 500 / 1200 / 1600 / 1800 / 2000
 (C / B / A / S / S+). Valentine uses 650 / 1600 / 2600 / 3900 / 10000; Pride
 uses 1200 / 2900 / 4800 / 7200 / 12000. New Year uses
-500 / 1200 / 2000 / 3000 / 20000; Christmas retains 4200 for S+. S+ rewards
+500 / 1200 / 2000 / 3000 / 20000; Christmas uses 7500 for S+. S+ rewards
 use the weighted relic pool documented in `RANDOM_REWARDS_AND_ODDS.md`, including
 four unique equipable brooches. Their Expertise bonus applies once within the
 wearer's cap; event Adventures and online pair/group rewards use the same rule.
@@ -649,7 +649,7 @@ are suppressed. Feedback avoids zero-duration layout animation.
 
 Each correct placement scores 85 base points, or 130 for a perfect placement,
 plus the existing capped combo bonus. Misses deduct 30 points, floored at zero.
-C/B/A/S/S+ thresholds are 600 / 1500 / 2800 / 4200 / 6000, inclusive. Ordinary
+C/B/A/S/S+ thresholds are 600 / 1500 / 2800 / 4200 / 10000, inclusive. Ordinary
 Trial grade rewards and balanced expertise apply, also during test previews.
 There is no additional birthday podium reward table; stored birthday scores
 and the five-day results window use the ordinary leaderboard infrastructure.
@@ -663,3 +663,72 @@ token, elapsed-time, score/action caps and one-use checks. Staging rollback
 coverage includes all six preview codes, retry expiry, owner isolation, invalid
 attempts, post-event completion, score persistence and duplicate rejection.
 No public release notes announce operational codes.
+
+
+## Sunwake and Harvestmoon - approved v0.05.27 content
+
+The user approved all twelve dragon sprites and the full package on 9 September 2026.
+Sunwake runs 20-26 July and Harvestmoon 7-13 September, Europe/Amsterdam, first in 2027.
+These are seven-day windows, ending at 00:00 the following day. Previews last 48 hours.
+
+| Content | Sunwake Festival | Harvestmoon Festival |
+|---|---|---|
+| Event ID | `sunwake_summer_sea` | `harvestmoon_moonlit_orchard` |
+| Adventure | Where the Summer Sea Shines | The Orchard Beneath the Harvest Moon |
+| Adventure ID | `special_sunwake_summer_sea` | `special_harvestmoon_moonlit_orchard` |
+| Trial | Sunwake Surf (sunwakeSurf) | Moonlit Orchard (moonlitOrchard) |
+| Chest | sunwake_chest_v1 | harvestmoon_chest_v1 |
+| Egg | sunwake_egg_v1 | harvestmoon_egg_v1 |
+| Family | Solmanta | Ciderhorn |
+| Incubation | 20 hours | 18 hours |
+| Hatch achievement | Light Across the Lagoon | Beneath the Harvest Moon |
+| Music | Sunpearl Serenade | Orchard Waltz |
+| Conclave decoration | Coral reef lighthouse | Harvest feast |
+
+Both Adventures are solo, one available owned dragon, once per keeper/occurrence.
+84-hour base duration, 15-minute discount per combined Might/Arcana/Spirit point,
+24-hour floor; a valid start remains finishable after expiry. Each grants 650 XP,
++10 per expertise, and its own Special Chest. Each chest grants 300 coins, 12 gems,
+and exactly one guaranteed own-family egg. Shared special-chest emote probability
+remains 10%, with no duplicate from the eligible unlock pool. No ordinary pool changes.
+Eggs are Special, Good, protected from Altar returns, untradeable; gender/law/size/
+personality use existing shared generation. Spectral is 5%, or 10% during Golden Hour.
+Six approved PNG forms per family use existing evolution and expertise-cap rules.
+Both have their own theme, background, icon/launcher/splash, music, effects, hatch
+achievement and gold/silver/bronze podium emotes with established podium rewards.
+
+Sunwake: a 75-second steering game with three lanes. Each gate has one uniformly
+random safe lane/sunpearl and two reefs. Fixed 120Hz simulation preserves collisions
+across render rates. Speed min(.62, .22 + t*.005), interval max(.78, 1.7-t*.013).
+Might narrows collision width, Arcana widens pearl pickup, Spirit reduces current.
+A clean pearl gives 130 base points, a clean passage without a pearl 70; three hits end.
+Harvestmoon: a 75-second 6x7 packing game, three rotatable fruit shapes per tray.
+Seven normal shapes, three uniformly sampled fruits, four uniform orientations.
+Single-piece probability .10 + .035*(normalized Might+Arcana+Spirit), maximum .205.
+Full horizontal rows clear and remaining fruit sinks. A placement earns 55+12 per
+fruit, or 130 when harvesting a row; shared combo bonuses apply. Invalid placement
+is neutral. No remaining shape fitting in any orientation loses a basket; three end.
+Both use D/C/B/A/S/S+ cutoffs 0/500/1500/3000/5000/8000 with ordinary Trial rewards.
+Personal preview Trials give ordinary rewards and keep preview score provenance;
+preview Adventures/Chests remain simulated and do not grant permanent special items.
+
+The two Conclave projects advance at 1/5/15/30/60 verified completed runs with at
+least one successful action. Membership is captured at start; each run counts once.
+Official progress is durable by Conclave/event/occurrence, has no currency reward,
+and is visible only to members. Preview progress stays separate, uses the last 48h,
+and cannot unlock the permanent decoration. No donations or economy flags change.
+Migration 64 was rehearsed with rollback, applied to staging, linted and tested again.
+It also extends end-event dismissal, saved score identities and dormant chest catalog v3.
+
+## Current birthday and Christmas balance in v0.05.27
+
+Birthday ends immediately after the first missed layer, retaining the earned tower.
+This is one life per run, not one attempt per account. D/C/B/A/S/S+ cutoffs are
+0/600/1500/2800/4200/10000. Migration 64 accepts one-miss early finishes and retains
+compatibility for older clients reporting three misses. Christmas uses
+0/500/1200/2000/3000/7500, retaining the faster start, acceleration and three misses.
+The Egg Altar shortcut is hidden while the starter egg hatches.
+
+Seasonal hatch achievements accept normal and Spectral hatchlings alike. Migration 65
+allows the exact shipped seasonal podium emotes in friend and Conclave chats, retaining
+friendship, membership, recipient preferences, payload bounds and rate limits.

@@ -19,7 +19,7 @@ void main() {
             .fold<int>(0, (count, forms) => count + forms.length),
         124);
     expect(releaseRepairAuditEntryIds(), hasLength(496));
-    expect(masteryAuditEntryIds(), hasLength(98));
+    expect(masteryAuditEntryIds(), hasLength(102));
   });
 
   testWidgets('sprite audit follows the requested four-pass family order',

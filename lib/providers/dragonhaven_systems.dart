@@ -1261,6 +1261,8 @@ extension DragonHavenSystems on HouseholdProvider {
       'new_year_first_dawn' => 'new_year',
       'valentine_two_heartlights' => 'valentine',
       'pride_every_color' => 'pride',
+      'harvestmoon_moonlit_orchard' => 'harvestmoon',
+      'sunwake_summer_sea' => 'sunwake',
       _ => '',
     };
     if (eventSlug.isEmpty) return false;

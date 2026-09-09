@@ -138,4 +138,55 @@ void main() {
     }
     expect(game.eggStash.any((egg) => egg.lineage.secret), isFalse);
   });
+
+  for (final (eventId, date, family, hours, achievement) in [
+    (
+      'sunwake_summer_sea',
+      DateTime.utc(2027, 7, 19, 22),
+      'solmanta',
+      20,
+      'light_across_the_lagoon'
+    ),
+    (
+      'harvestmoon_moonlit_orchard',
+      DateTime.utc(2027, 9, 6, 22),
+      'ciderhorn',
+      18,
+      'beneath_the_harvest_moon'
+    ),
+  ]) {
+    test('$family adventure survives event end and grants its own egg once',
+        () async {
+      var now = date;
+      final game = HouseholdProvider(
+          persistenceEnabled: false, random: Random(513), clock: () => now);
+      addTearDown(game.dispose);
+      game.pet.stage = DragonStage.hatchling;
+      game.pet.training.addAll({'might': 100, 'arcana': 100, 'spirit': 100});
+      final offer = game.adventuresFor(AdventureKind.special).single;
+      expect(offer.id, 'special_$eventId');
+      await game.startAdventure(offer, dragonId: game.pet.id);
+      final run = game.adventureRuns.single;
+      expect(run.endsAt.difference(now), const Duration(hours: 24));
+      now = now.add(const Duration(days: 8));
+      expect(await game.claimAdventure(run.id), ChestTier.special);
+      expect(await game.claimAdventure(run.id), isNull);
+      expect(game.pet.trainingFor(TrainingFocus.might), 110);
+      final reward = await game.openChest(ChestTier.special);
+      expect(reward!.coins, 300);
+      expect(reward.gems, 12);
+      expect(reward.specialEgg, true);
+      expect(await game.openChest(ChestTier.special), isNull);
+      final egg = game.eggStash.single;
+      expect(egg.lineageId, family);
+      expect(egg.incubationMinutes, hours * 60);
+      expect(egg.isSpecialEgg, true);
+      expect(Pet.fromJson(egg.toJson()).lineageId, family);
+      await game.activateEgg(egg.id);
+      now = now.add(Duration(hours: hours));
+      expect(await game.hatchActiveDragon(), true);
+      expect(game.pet.lineageId, family);
+      expect(game.unlockedAchievementIds, contains(achievement));
+    });
+  }
 }

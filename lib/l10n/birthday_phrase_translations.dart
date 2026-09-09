@@ -8,14 +8,14 @@ const birthdayPhraseTranslations = <String, List<String>>{
     "Um bolo de desejos até às estrelas",
     "星まで届く願いのケーキ"
   ],
-  "Tap to drop the moving cake layer onto the one below. Overhanging cake falls away, so aim for a perfect fit. Three perfect layers restore a little width. The tower gets faster; three missed layers end the Trial.":
+  "Tap to drop the moving cake layer onto the one below. Overhanging cake falls away, so aim for a perfect fit. Three perfect layers restore a little width. The tower gets faster; one missed layer ends the Trial.":
       [
-    "Tippe, um die bewegliche Kuchenschicht auf die darunterliegende fallen zu lassen. Überstehende Stücke fallen ab. Drei perfekte Schichten geben etwas Breite zurück. Das Tempo steigt; drei verfehlte Schichten beenden die Prüfung.",
-    "Toca para dejar caer la capa sobre la de abajo. Lo que sobresale se pierde. Tres capas perfectas recuperan un poco de anchura. La torre acelera; tres fallos terminan la prueba.",
-    "Touche pour poser la couche mobile sur celle du dessous. Les morceaux qui dépassent tombent. Trois couches parfaites rendent un peu de largeur. Le rythme accélère ; trois couches ratées terminent l’épreuve.",
-    "Tocca per far cadere lo strato su quello sotto. Le parti sporgenti cadono. Tre strati perfetti restituiscono un po’ di larghezza. La torre accelera; tre errori terminano la prova.",
-    "Toca para largar a camada sobre a de baixo. As partes que sobram caem. Três camadas perfeitas recuperam alguma largura. O ritmo aumenta; três falhas terminam a prova.",
-    "タップで動くケーキの層を下の層に重ねよう。はみ出した部分は落ちます。3回連続でぴったり重ねると幅が少し回復。次第に速くなり、3回外すと終了。"
+    "Tippe, um die bewegliche Kuchenschicht auf die darunterliegende fallen zu lassen. Überstehende Stücke fallen ab. Drei perfekte Schichten geben etwas Breite zurück. Das Tempo steigt; eine verfehlte Schicht beendet die Prüfung.",
+    "Toca para dejar caer la capa sobre la de abajo. Lo que sobresale se pierde. Tres capas perfectas recuperan un poco de anchura. La torre acelera; un fallo termina la prueba.",
+    "Touche pour poser la couche mobile sur celle du dessous. Les morceaux qui dépassent tombent. Trois couches parfaites rendent un peu de largeur. Le rythme accélère ; une couche ratée termine l’épreuve.",
+    "Tocca per far cadere lo strato su quello sotto. Le parti sporgenti cadono. Tre strati perfetti restituiscono un po’ di larghezza. La torre accelera; un errore termina la prova.",
+    "Toca para largar a camada sobre a de baixo. As partes que sobram caem. Três camadas perfeitas recuperam alguma largura. O ritmo aumenta; uma falha termina a prova.",
+    "タップで動くケーキの層を下の層に重ねよう。はみ出した部分は落ちます。3回連続でぴったり重ねると幅が少し回復。次第に速くなり、1回外すと終了。"
   ],
   "Stack a birthday wish": [
     "Stapele einen Geburtstagswunsch",

@@ -22,6 +22,14 @@ class RedeemCodeDefinition {
 // codes in public release notes; maintain the private REDEEM_CODES.md ledger.
 const redeemCodeCatalog = <RedeemCodeDefinition>[
   RedeemCodeDefinition(
+      code: 'HARVESTMOONEVENT',
+      rewardType: RedeemRewardType.seasonalEventPreview,
+      rewardId: 'harvestmoon_moonlit_orchard'),
+  RedeemCodeDefinition(
+      code: 'SUNWAKEEVENT',
+      rewardType: RedeemRewardType.seasonalEventPreview,
+      rewardId: 'sunwake_summer_sea'),
+  RedeemCodeDefinition(
     code: 'BDAYEVENT',
     rewardType: RedeemRewardType.seasonalEventPreview,
     rewardId: 'golden_wings_birthday',

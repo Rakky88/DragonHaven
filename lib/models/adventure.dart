@@ -497,6 +497,48 @@ abstract final class AdventureCatalog {
     minimumDuration: Duration(hours: 24),
   );
 
+  static const sunwakeFestival = AdventureDefinition(
+    id: 'special_sunwake_summer_sea',
+    kind: AdventureKind.special,
+    titleEn: 'Where the Summer Sea Shines',
+    titleNl: 'Waar de Zomerzee Straalt',
+    descriptionEn:
+        'Restore the ancient lighthouse and guide sunpearls home through the luminous summer lagoon.',
+    descriptionNl:
+        'Herstel de oude vuurtoren en breng zonneparels thuis door de stralende zomerlagune.',
+    duration: Duration(hours: 84),
+    xp: 650,
+    focus: TrainingFocus.spirit,
+    statPoints: 0,
+    knownChest: ChestTier.special,
+    specialChestId: 'sunwake_chest_v1',
+    combinedExpertise: true,
+    seasonalSpecial: true,
+    specialReductionPerExpertisePoint: Duration(minutes: 15),
+    minimumDuration: Duration(hours: 24),
+  );
+
+  static const harvestmoonFestival = AdventureDefinition(
+    id: 'special_harvestmoon_moonlit_orchard',
+    kind: AdventureKind.special,
+    titleEn: 'The Orchard Beneath the Harvest Moon',
+    titleNl: 'De Boomgaard onder de Oogstmaan',
+    descriptionEn:
+        'Gather the moonlit harvest and help Ciderhorn prepare a welcoming feast beneath the orchard lanterns.',
+    descriptionNl:
+        'Verzamel de maanverlichte oogst en help Ciderhorn een gastvrij feest onder de boomgaardlantaarns voor te bereiden.',
+    duration: Duration(hours: 84),
+    xp: 650,
+    focus: TrainingFocus.spirit,
+    statPoints: 0,
+    knownChest: ChestTier.special,
+    specialChestId: 'harvestmoon_chest_v1',
+    combinedExpertise: true,
+    seasonalSpecial: true,
+    specialReductionPerExpertisePoint: Duration(minutes: 15),
+    minimumDuration: Duration(hours: 24),
+  );
+
   static const _placesEn = [
     'Cloud Orchard',
     'Whispering Ruins',
@@ -702,12 +744,36 @@ abstract final class AdventureCatalog {
       newYearFirstDawn,
       valentineTwoHeartlights,
       prideEveryColor,
+      harvestmoonFestival,
+      sunwakeFestival,
     ])
       adventure.id: adventure,
   });
 }
 
 const specialEggCatalog = <String, SpecialEggDefinition>{
+  'harvestmoon_egg_v1': SpecialEggDefinition(
+    id: 'harvestmoon_egg_v1',
+    version: 1,
+    titleEn: 'Moonorchard Egg',
+    titleNl: 'Maanboomgaard-ei',
+    lineageId: 'ciderhorn',
+    incubation: Duration(hours: 18),
+    assetPath: 'assets/images/events/harvestmoon/special_egg.png',
+    fixedMoral: MoralAxis.good,
+    moralKnownAtHatch: true,
+  ),
+  'sunwake_egg_v1': SpecialEggDefinition(
+    id: 'sunwake_egg_v1',
+    version: 1,
+    titleEn: 'Sunpearl Egg',
+    titleNl: 'Zonneparel-ei',
+    lineageId: 'solmanta',
+    incubation: Duration(hours: 20),
+    assetPath: 'assets/images/events/sunwake/special_egg.png',
+    fixedMoral: MoralAxis.good,
+    moralKnownAtHatch: true,
+  ),
   'golden_wings_egg_v1': SpecialEggDefinition(
     id: 'golden_wings_egg_v1',
     version: 1,
@@ -773,6 +839,30 @@ const specialEggCatalog = <String, SpecialEggDefinition>{
 };
 
 const specialChestCatalog = <String, SpecialChestDefinition>{
+  'harvestmoon_chest_v1': SpecialChestDefinition(
+    id: 'harvestmoon_chest_v1',
+    version: 1,
+    titleEn: 'Harvest Moon Chest',
+    titleNl: 'Oogstmaankist',
+    closedAssetPath: 'assets/images/events/harvestmoon/special_chest.png',
+    openedAssetPath: 'assets/images/events/harvestmoon/special_chest_open.png',
+    coins: 300,
+    gems: 12,
+    specialEggId: 'harvestmoon_egg_v1',
+    openSoundId: 'harvestmoon',
+  ),
+  'sunwake_chest_v1': SpecialChestDefinition(
+    id: 'sunwake_chest_v1',
+    version: 1,
+    titleEn: 'Sunlit Lagoon Chest',
+    titleNl: 'Zonnige Lagune-kist',
+    closedAssetPath: 'assets/images/events/sunwake/special_chest.png',
+    openedAssetPath: 'assets/images/events/sunwake/special_chest_open.png',
+    coins: 300,
+    gems: 12,
+    specialEggId: 'sunwake_egg_v1',
+    openSoundId: 'sunwake',
+  ),
   'golden_wings_chest_v1': SpecialChestDefinition(
     id: 'golden_wings_chest_v1',
     version: 1,
@@ -849,6 +939,70 @@ const specialChestCatalog = <String, SpecialChestDefinition>{
 };
 
 const specialAdventureEventCatalog = <SpecialAdventureEventDefinition>[
+  SpecialAdventureEventDefinition(
+    id: 'harvestmoon_moonlit_orchard',
+    adventureId: 'special_harvestmoon_moonlit_orchard',
+    initialYear: 2027,
+    initialMonth: DateTime.september,
+    initialDay: 7,
+    initialAvailability: Duration(days: 7),
+    recursYearlyFrom: 2028,
+    recurrenceMonth: DateTime.september,
+    recurrenceDay: 7,
+    recurrenceAvailability: Duration(days: 7),
+    rewards: SpecialAdventureRewardBundle(
+      chestTier: ChestTier.special,
+      specialChestId: 'harvestmoon_chest_v1',
+      xp: 650,
+      expertiseRewards: {
+        TrainingFocus.might: 10,
+        TrainingFocus.arcana: 10,
+        TrainingFocus.spirit: 10
+      },
+    ),
+    titleEn: 'Harvestmoon Festival',
+    titleNl: 'Harvestmoon Festival',
+    storyEn:
+        'Gather the moonlit harvest and help Ciderhorn prepare a welcoming feast beneath the orchard lanterns.',
+    storyNl:
+        'Verzamel de maanverlichte oogst en help Ciderhorn een gastvrij feest onder de boomgaardlantaarns voor te bereiden.',
+    trialKindName: 'moonlitOrchard',
+    previewCode: 'HARVESTMOONEVENT',
+    previewHours: 48,
+    temporaryMusicTrackId: 'event_harvestmoon_orchard_waltz',
+  ),
+  SpecialAdventureEventDefinition(
+    id: 'sunwake_summer_sea',
+    adventureId: 'special_sunwake_summer_sea',
+    initialYear: 2027,
+    initialMonth: DateTime.july,
+    initialDay: 20,
+    initialAvailability: Duration(days: 7),
+    recursYearlyFrom: 2028,
+    recurrenceMonth: DateTime.july,
+    recurrenceDay: 20,
+    recurrenceAvailability: Duration(days: 7),
+    rewards: SpecialAdventureRewardBundle(
+      chestTier: ChestTier.special,
+      specialChestId: 'sunwake_chest_v1',
+      xp: 650,
+      expertiseRewards: {
+        TrainingFocus.might: 10,
+        TrainingFocus.arcana: 10,
+        TrainingFocus.spirit: 10
+      },
+    ),
+    titleEn: 'Sunwake Festival',
+    titleNl: 'Sunwake Festival',
+    storyEn:
+        'Restore the ancient lighthouse and guide sunpearls home through the luminous summer lagoon.',
+    storyNl:
+        'Herstel de oude vuurtoren en breng zonneparels thuis door de stralende zomerlagune.',
+    trialKindName: 'sunwakeSurf',
+    previewCode: 'SUNWAKEEVENT',
+    previewHours: 48,
+    temporaryMusicTrackId: 'event_sunwake_sunpearl_serenade',
+  ),
   SpecialAdventureEventDefinition(
     id: 'golden_wings_birthday',
     adventureId: 'special_golden_wings_birthday',

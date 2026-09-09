@@ -52,6 +52,7 @@ class GameStrings {
     if (languageCode == 'en') return achievement.titleEn;
     if (languageCode == 'nl') return achievement.titleNl;
     return _achievementTranslations[achievement.id]?[languageCode]?[0] ??
+        translatedUiPhrase(achievement.titleEn, languageCode) ??
         achievement.titleEn;
   }
 
@@ -59,6 +60,7 @@ class GameStrings {
     if (languageCode == 'en') return achievement.descriptionEn;
     if (languageCode == 'nl') return achievement.descriptionNl;
     return _achievementTranslations[achievement.id]?[languageCode]?[1] ??
+        translatedUiPhrase(achievement.descriptionEn, languageCode) ??
         achievement.descriptionEn;
   }
 

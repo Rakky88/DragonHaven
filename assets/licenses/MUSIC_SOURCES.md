@@ -145,3 +145,14 @@ used. The two verses have identical instrument gains, no dynamic normalization
 or volume pumping. A short ending release avoids a discontinuity. This is a
 temporary event alias, outside the 80 collectible tracks. Three brief birthday
 success/failure/finish sounds are original synthesis in `build_seasonal_audio.dart`.
+
+
+## Sunwake and Harvestmoon compositions (v0.05.27)
+
+Original DragonHaven compositions/arrangements/synthesized performances:
+`music_event_sunwake_sunpearl_serenade` and
+`music_event_harvestmoon_orchard_waltz`. No imported melody, sample, soundfont,
+recording or external paid service. Reproducible source:
+`tool/build_sunwake_harvestmoon_music.dart`. Prepared audio, exact PCM metadata
+and hashes are in `future_event_art/music/`. Both use one fixed recording gain,
+active RMS 0.105 and no runtime compressor. Native aliases and event availability are integrated in v0.05.27. Both are temporary event tracks outside the unchanged 80-track collection. Eight success/failure/finish/chest sounds are original synthesis in `tool/build_seasonal_audio.dart`.

@@ -72,3 +72,27 @@ high-quality transparent WebP to keep the APK practical on phones.
 The launcher mark is deliberately simple. Android uses a solid white adaptive
 icon background, while the in-app header places the mark in a white-and-gold
 medallion with an optically corrected crop.
+
+
+## Sunwake/Harvestmoon approved artwork (9 September 2026, after v0.05.26)
+
+Twelve separately generated RGBA PNGs are prepared for Solmanta and Ciderhorn:
+Hatchling, Wyrmling, Might, Arcana, Spirit and Mastery. Both head and body axes
+face screen-right. The original PNG bytes and alpha are unchanged; generated
+variants with opaque checkerboards were rejected. Every final outer edge has
+alpha <= 2 and all visible anatomy remains inside the image. The review adds
+an 8% gutter on each side in Flutter, without cropping or altering the bitmap.
+
+The user approved all twelve exact sprites on 9 September 2026. They are now
+registered in the candidate family/egg catalog for v0.05.27; not yet published. The isolated review selects just these two families, supports pinch
+zoom, and stores explicit approvals as well as requested fixes across restarts.
+Full prompts, original/final paths, hashes and alpha bounds:
+`future_event_art/dragon_families/sunwake_harvestmoon/ART_PROMPTS.json`.
+
+The two event packages also include 27 individually generated logos, backgrounds,
+eggs/chests, gameplay sprites, achievements, podium emotes and Conclave art.
+Final prompt/source/output/SHA records are in `future_event_art/dragon_families/
+sunwake_harvestmoon/EVENT_ASSETS.json`. Built-in image generation was used;
+accepted source bytes are copied unchanged. Android launcher density/padding
+exports use `tool/build_event_branding_icons.dart`. Transparent sprite tests
+accept invisible alpha quantization up to 2/255 at the new podium corners.

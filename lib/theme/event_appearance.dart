@@ -8,6 +8,8 @@ class EventAppearance extends ThemeExtension<EventAppearance> {
     'valentine_two_heartlights': 'valentine',
     'pride_every_color': 'pride',
     'golden_wings_birthday': 'golden_wings',
+    'harvestmoon_moonlit_orchard': 'harvestmoon',
+    'sunwake_summer_sea': 'sunwake',
   };
 
   static String logoForEvent(String id) {
@@ -55,14 +57,29 @@ class EventAppearance extends ThemeExtension<EventAppearance> {
   EventAppearance lerp(covariant EventAppearance? other, double t) =>
       other == null || t < .5 ? this : other;
 
+  String get _extension =>
+      folder == 'sunwake' || folder == 'harvestmoon' ? 'png' : 'webp';
+
   String? get background => folder == null
       ? null
-      : 'assets/images/events/$folder/trial_background.webp';
+      : 'assets/images/events/$folder/trial_background.$_extension';
   String? get emblem => folder == null || folder == 'golden_wings'
       ? null
-      : 'assets/images/events/$folder/trial_icon.webp';
+      : 'assets/images/events/$folder/trial_icon.$_extension';
 
   static EventAppearance forEvent(String id) => switch (id) {
+        'sunwake_summer_sea' => const EventAppearance(
+            folder: 'sunwake',
+            primary: Color(0xFF238B91),
+            accent: Color(0xFFF5A7A0),
+            paper: Color(0xFFE6F9EE),
+            motif: Icons.waves_rounded),
+        'harvestmoon_moonlit_orchard' => const EventAppearance(
+            folder: 'harvestmoon',
+            primary: Color(0xFF806038),
+            accent: Color(0xFFB96B45),
+            paper: Color(0xFFF5E8CA),
+            motif: Icons.eco_rounded),
         'halloween_witchlight' => const EventAppearance(
             folder: 'halloween',
             primary: Color(0xFF513277),

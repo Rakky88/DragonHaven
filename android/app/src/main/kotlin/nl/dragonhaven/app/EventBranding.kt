@@ -13,7 +13,7 @@ import org.json.JSONObject
 
 /** Local, cosmetic calendar. Never needs a network call or an exact-alarm grant. */
 object EventBranding {
-    private val logos = setOf("default", "halloween", "christmas", "new_year", "valentine", "pride", "golden_wings")
+    private val logos = setOf("default", "halloween", "christmas", "new_year", "valentine", "pride", "golden_wings", "sunwake", "harvestmoon")
     private const val PREFS = "dragonhaven_event_branding"
     private const val REQUEST = 7047
     // Disabling the alias of a visible task can finish that task even with

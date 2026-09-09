@@ -1,0 +1,16 @@
+[
+  {
+    "path": "future_event_art/music/music_event_harvestmoon_orchard_waltz.wav",
+    "seconds": 64.6087074829932,
+    "peak": 0.3143,
+    "sha256": "fba800c65221e9b9c28309f3e52384817c03ede96ccc04893ef35348ec57e93e",
+    "bytes": 5698532
+  },
+  {
+    "path": "future_event_art/music/music_event_sunwake_sunpearl_serenade.wav",
+    "seconds": 70.57142857142857,
+    "peak": 0.4913,
+    "sha256": "8d7f2854432cb0eca93549a83a410fd10b93c91c3da1886de5f04516b73bdacf",
+    "bytes": 6224444
+  }
+]

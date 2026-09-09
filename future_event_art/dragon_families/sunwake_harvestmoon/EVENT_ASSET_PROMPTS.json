@@ -1,0 +1,27 @@
+[
+  {
+    "key": "sunwake_logo",
+    "path": "assets/images/event_logos/sunwake.png",
+    "prompt": "Use case: logo-brand. Generate one ornate fantasy game emblem based on the described DragonHaven mark: upright egg with three curved feather-shaped inlays sweeping up to the right, enclosed by a pointed golden teardrop arch. Sunwake theme: luminous turquoise sea-glass egg, ivory pearl feather inlays, polished gold arch, elegant coral pink branches and small shells on the sides, a radiant sunpearl crown. Intricate painterly premium fantasy game sprite. Whole compact emblem occupies only central 75% of square canvas with generous transparent margins on EVERY side including top. ACTUAL transparent RGBA alpha background, no painted checkerboard, no floor, no background scene, no text."
+  },
+  {
+    "key": "sunwake_background",
+    "path": "assets/images/events/sunwake/trial_background.png",
+    "prompt": "Use case: stylized-concept. Portrait fantasy game environment illustration, very high quality hand-painted storybook realism, delicate light, atmospheric depth, no UI, no text, no characters, no dragons. The center 65% is quiet so a game board or cards can be drawn over it. Detailed framing mostly along the edges. A luminous summer lagoon seen from the clear shallow turquoise water, ivory stone lighthouse on a distant headland, coral pink reefs and pearl-white seashells near the lower corners, sun glitter and flowing currents, warm golden sky. Elegant welcoming summer festival, NOT underwater dark scene."
+  },
+  {
+    "key": "harvestmoon_background",
+    "path": "assets/images/events/harvestmoon/trial_background.png",
+    "prompt": "Use case: stylized-concept. Portrait fantasy game environment illustration, very high quality hand-painted storybook realism, delicate light, atmospheric depth, no UI, no text, no characters, no dragons. The center 65% is quiet so a game board or cards can be drawn over it. Detailed framing mostly along the edges. A cozy apple orchard under a huge glowing honey-gold harvest moon at blue hour, copper russet and olive leaves framing the top, distant timber pavilion strung with amber lanterns, baskets of ruby apples beside the winding path in lower corners, soft firefly glimmers. No pumpkins, no Halloween, no orange fog. Beautiful copper, olive and cream palette."
+  },
+  {
+    "key": "sunwake_egg",
+    "path": "assets/images/events/sunwake/special_egg.png",
+    "prompt": "Use case: stylized-concept. One magnificent fantasy dragon egg inventory sprite, full unbroken egg upright and centered with 18% empty transparent margin on every edge, no base or nest, no scene, no letters. Painterly polished dimensional mobile fantasy game asset, crisp silhouette, rich intricate materials but readable small. Real transparent alpha background, never draw checkerboards. Pearly turquoise shell with flowing ivory manta-fin filigree and a radiant gold sunpearl inset, fine coral-pink ridges and sea-glass highlights."
+  },
+  {
+    "key": "harvestmoon_egg",
+    "path": "assets/images/events/harvestmoon/special_egg.png",
+    "prompt": "Use case: stylized-concept. One magnificent fantasy dragon egg inventory sprite, full unbroken egg upright and centered with 18% empty transparent margin on every edge, no base or nest, no scene, no letters. Painterly polished dimensional mobile fantasy game asset, crisp silhouette, rich intricate materials but readable small. Real transparent alpha background, never draw checkerboards. Warm copper and honey-cream shell, graceful applewood vine filigree, olive leaves and delicate ivory apple blossoms, tiny ruby apple jewel inset beneath a moon-shaped golden crown mark."
+  }
+]

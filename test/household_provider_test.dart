@@ -1299,9 +1299,9 @@ void main() {
     expect(game.pet.activeAdventureId, 'legacy-group-run');
   });
 
-  test('the achievement catalog has 38 unique humorous milestones', () {
-    expect(achievementCatalog, hasLength(38));
-    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(38));
+  test('the achievement catalog has 40 unique humorous milestones', () {
+    expect(achievementCatalog, hasLength(40));
+    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(40));
     expect(achievementCatalog.every((entry) => entry.target > 0), isTrue);
     expect(
         achievementCatalog.every((entry) =>
@@ -2365,7 +2365,7 @@ void main() {
     expect(
         redeemCodeCatalog.where(
             (c) => c.rewardType == RedeemRewardType.seasonalEventPreview),
-        hasLength(6));
+        hasLength(8));
     expect(redeemCodeDefinition('ENDEVENT')?.rewardType,
         RedeemRewardType.endSeasonalEvent);
     expect(await game.redeemCode('ENDEVENT'), 'online_login_required');

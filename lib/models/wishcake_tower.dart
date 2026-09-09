@@ -44,7 +44,7 @@ class WishcakeTower {
   int perfectStreak = 0;
   int mistakes = 0;
   int placed = 0;
-  bool get finished => mistakes >= 3;
+  bool get finished => mistakes >= 1;
   WishcakeLayer get top => layers.last;
 
   double crossingSeconds(double seconds) =>
@@ -88,11 +88,7 @@ class WishcakeTower {
       mistakes++;
       perfectStreak = 0;
       offcuts.add(falling);
-      // A fresh base after a miss keeps a tiny remnant from making the next
-      // attempt impossible. Earned points and the number of misses persist.
-      layers
-        ..clear()
-        ..add(WishcakeLayer((1 - baseWidth) / 2, baseWidth, placed));
+      // Keep the earned tower visible. The first miss ends this attempt.
     }
     _fromRight = !_fromRight;
     readyAt = seconds + .42;

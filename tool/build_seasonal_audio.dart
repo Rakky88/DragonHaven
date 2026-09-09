@@ -6,10 +6,12 @@ const _sampleRate = 44100;
 
 typedef _Wave = double Function(double seconds);
 
-void main() {
+void main(List<String> args) {
   final output = Directory('android/app/src/main/res/raw')
     ..createSync(recursive: true);
   final themes = <String, ({double root, List<double> chord, int seed})>{
+    'sunwake': (root: 329.63, chord: [1, 1.25, 1.5, 2], seed: 720),
+    'harvestmoon': (root: 196.0, chord: [1, 1.25, 1.5, 1.875], seed: 907),
     'birthday': (root: 261.63, chord: [1, 1.25, 1.5, 2], seed: 513),
     'witchlight': (root: 146.83, chord: [1, 1.2, 1.5, 2], seed: 13),
     'starlight': (root: 261.63, chord: [1, 1.25, 1.5, 2], seed: 25),
@@ -19,6 +21,7 @@ void main() {
   };
   for (final entry in themes.entries) {
     final id = entry.key;
+    if (args.isNotEmpty && !args.contains(id)) continue;
     final theme = entry.value;
     if (id != 'birthday') {
       _write(

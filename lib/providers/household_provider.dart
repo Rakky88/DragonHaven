@@ -2817,17 +2817,45 @@ class HouseholdProvider extends ChangeNotifier {
             : 0,
         'probably_fine' => totalSinisterAdventuresCompleted,
         'winner_chicken_dinner' =>
-          discoveredForms.contains('cluckatrice:hatchling') ? 1 : 0,
+          (discoveredForms.contains('cluckatrice:hatchling') ||
+                  prismaticForms.contains('cluckatrice:hatchling'))
+              ? 1
+              : 0,
         'warden_of_the_witchlight' =>
-          discoveredForms.contains('gloamgourd:hatchling') ? 1 : 0,
+          (discoveredForms.contains('gloamgourd:hatchling') ||
+                  prismaticForms.contains('gloamgourd:hatchling'))
+              ? 1
+              : 0,
         'star_in_every_hearth' =>
-          discoveredForms.contains('hollyfrost:hatchling') ? 1 : 0,
+          (discoveredForms.contains('hollyfrost:hatchling') ||
+                  prismaticForms.contains('hollyfrost:hatchling'))
+              ? 1
+              : 0,
         'first_light_first_flight' =>
-          discoveredForms.contains('dawnchime:hatchling') ? 1 : 0,
+          (discoveredForms.contains('dawnchime:hatchling') ||
+                  prismaticForms.contains('dawnchime:hatchling'))
+              ? 1
+              : 0,
         'two_hearts_one_flight' =>
-          discoveredForms.contains('rosevow:hatchling') ? 1 : 0,
+          (discoveredForms.contains('rosevow:hatchling') ||
+                  prismaticForms.contains('rosevow:hatchling'))
+              ? 1
+              : 0,
+        'light_across_the_lagoon' =>
+          (discoveredForms.contains('solmanta:hatchling') ||
+                  prismaticForms.contains('solmanta:hatchling'))
+              ? 1
+              : 0,
+        'beneath_the_harvest_moon' =>
+          (discoveredForms.contains('ciderhorn:hatchling') ||
+                  prismaticForms.contains('ciderhorn:hatchling'))
+              ? 1
+              : 0,
         'every_color_takes_flight' =>
-          discoveredForms.contains('spectrumplume:hatchling') ? 1 : 0,
+          (discoveredForms.contains('spectrumplume:hatchling') ||
+                  prismaticForms.contains('spectrumplume:hatchling'))
+              ? 1
+              : 0,
         'academy_graduate' =>
           ownedDragons.any((dragon) => dragon.dragonSchoolGraduated) ? 1 : 0,
         'dragon_school_dropout' =>

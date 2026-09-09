@@ -10,6 +10,8 @@ const eventLogoKeys = [
   'valentine',
   'pride',
   'golden_wings',
+  'harvestmoon',
+  'sunwake',
 ];
 
 void main() {

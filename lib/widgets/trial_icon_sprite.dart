@@ -27,6 +27,9 @@ class TrialIconSprite extends StatelessWidget {
           'assets/images/events/new_year/trial_icon.webp',
         TrialKind.rosevowRelay =>
           'assets/images/events/valentine/trial_icon.webp',
+        TrialKind.sunwakeSurf => 'assets/images/events/sunwake/trial_icon.png',
+        TrialKind.moonlitOrchard =>
+          'assets/images/events/harvestmoon/trial_icon.png',
         TrialKind.wishcakeTower =>
           'assets/images/events/golden_wings/trial_icon.png',
         TrialKind.prismaticParade =>
