@@ -1,5 +1,18 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Appgrootte onderzocht na v0.05.28 (9 september 2026)
+
+De gepubliceerde APK is 627,72 MB: afbeeldingen 492,59 MB, audio 63,89 MB,
+native code voor drie processortypen 67,23 MB. Een proef met 36 afbeeldingen
+bespaart 11,64 MB op 45,13 MB (25,81%) met exact gelijke RGBA-pixels en afmetingen.
+Twaalf vervangen drakensprites (8,84 MB) zijn uitsluitkandidaten; exacte dubbele
+bestanden samen zijn slechts 0,31 MB. Distributie per ABI kan op ARM64 circa
+44,69 MB besparen. Dit onderzoek publiceert of verwijdert niets en wijzigt geen
+server. De eis is strikt kwaliteitsbehoud: oudere voorstellen voor resizen en
+compressie met verlies zijn voor dit traject vervangen. Volledige conversie,
+dynamische assetcontrole en native verificatie staan nog open.
+Meting, beperkingen en vervolgstappen: `APP_SIZE_AUDIT.md`.
+
 ## Sunwake/Harvestmoon besturing: v0.05.28 uitgebracht
 
 Sunwake begint sneller. Besturing start alleen op de draak, volgt de duim met

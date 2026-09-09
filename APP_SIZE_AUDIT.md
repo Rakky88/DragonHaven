@@ -1,5 +1,108 @@
 # DragonHaven Android-appgrootteaudit
 
+## Actuele meting: v0.05.28, 9 september 2026
+
+Vraag van de gebruiker: kan de app kleiner **zonder kwaliteitsverlies**?
+Deze actuele eis vervangt het eerdere voorstel om resolutie te verlagen of
+opnieuw met verlies te comprimeren. De meting hieronder is uitgevoerd op de
+exact gepubliceerde APK; er zijn geen runtimeassets of servergegevens gewijzigd.
+
+De APK is **627.719.018 bytes** (627,72 MB / 598,64 MiB), SHA-256
+`d3c4e79d4c9e17be1c89ed0ffe671e77b91f252dc48f9a26d78855674c4e57cb`.
+Dit is de downloadgrootte van het universele bestand, niet het totale
+opslaggebruik na installatie of de download van een Play-split.
+
+| Onderdeel | APK-bytes | MB, decimaal |
+| --- | ---: | ---: |
+| Afbeeldingen in Flutter-assets | 492.594.458 | 492,59 |
+| Muziek en geluid | 63.885.729 | 63,89 |
+| Flutter/native code voor drie ABI's | 67.225.496 | 67,23 |
+| Overige entries, exclusief ZIP/signinguitlijning | 3.570.100 | 3,57 |
+
+Binnen afbeeldingen: draken 196,43 MB, events 86,76 MB, UI 55,13 MB,
+emotes 27,66 MB, Altar 26,80 MB en kisten 25,62 MB. PNG-afbeeldingen
+in de Flutter-bundel zijn samen 214,85 MB. De grootste winst zit in media;
+codeopruiming alleen raakt een veel kleiner deel van de totale APK.
+
+### Bewezen compressieproef
+
+36 bestaande afbeeldingen uit meerdere categorieën zijn in het geheugen
+opnieuw gecodeerd met lossless WebP (`lossless=True`, `quality=100`,
+`method=6`, `exact=True`). Geen resize, kleurreductie of wijziging van artwork.
+Iedere kandidaat is teruggedecodeerd; breedte, hoogte en **alle RGBA-bytes**
+(inclusief volledig transparante pixels) zijn gelijk aan het gedecodeerde
+origineel. Eventuele ICC-profielen worden doorgegeven. Alleen kleinere
+kandidaten tellen als besparing; grotere uitkomsten zouden het origineel houden.
+
+- 36 bestanden: **45.125.273 → 33.480.756 bytes**, besparing **11.644.517 bytes**
+  (25,81%).
+- Daarbinnen 31 PNG's: 36.049.901 bytes, besparing 10.537.779 bytes (29,23%).
+- Vijf bestaande WebP's: 9.075.372 bytes, besparing 1.106.738 bytes (12,19%).
+- Voorbeeld: Music Chest open **2,56 → 1,36 MB**; Solmanta Mastery
+  **1,88 → 1,33 MB**; Ciderhorn Spirit **2,21 → 1,51 MB**.
+
+Dit is een bewuste steekproef van kleine, middelgrote en grote bestanden per
+categorie, geen volledige conversie en geen statistisch gegarandeerde
+projectie. Circa **100–150 MB totale reductie** lijkt als werkhypothese haalbaar
+met mediaoptimalisatie, opruiming en eventueel distributie per ABI samen.
+De definitieve winst moet blijken uit een volledige inventarisatie en rebuild.
+Een garantie op halvering of een APK onder 200 MB volgt niet uit deze meting.
+
+### Opruiming en distributie
+
+- Exact dubbele APK-assets/audio samen leveren slechts **308.547 bytes** op.
+  Identieke bestanden zijn niet automatisch ongebruikt; eerst verwijzingen
+  samenvoegen voordat één kopie uit de bundel kan verdwijnen.
+- Er zijn **twaalf oude `_safe.webp`-drakensprites (8.835.070 bytes)** meegeleverd
+  waarvoor `DragonArtwork.secondPassStandaloneForms` inmiddels `_safe_v2.webp`
+  selecteert. Dit zijn concrete uitsluitkandidaten. Controleer alle dynamische
+  routes en tests vóór uitsluiting; bewaar bronnen en auditbestanden buiten de
+  runtimebundel. Er is in deze analyse niets verwijderd.
+- Een simpele tekstzoekactie bewijst geen ongebruik: drakenvormen, kisten,
+  relics en animatiefasen construeren bestandsnamen dynamisch.
+- Native libraries zijn 22.534.720 bytes ARM64, 20.631.800 bytes ARM32 en
+  24.058.976 bytes x86-64. Een ARM64-specifieke APK kan daarmee ongeveer
+  **44.690.776 bytes** aan andere ABI-code uitsparen, zonder beeld-/geluidsverlies.
+  De bestaande universele download ondersteunt alle drie; een wijziging vereist
+  correcte toestelkeuze en behoud van de andere installatievarianten.
+- PCM-WAV beslaat 28,92 MB. FLAC is een mogelijke lossless vervolgstap, met
+  controle op exact gelijke samples, kanalen, samplefrequentie, speelduur,
+  loopgedrag en native Android-weergave. Dit is nog **niet** geconverteerd of
+  gemeten. Bestaande Ogg/MP3 niet nogmaals met verlies encoderen.
+- Ongebruikte projectbestanden die niet in de APK zitten verwijderen verkleint
+  alleen de werkmap. Bronkunst, reviewbeelden en buildlogs tellen dus niet
+  automatisch mee voor de appgrootte.
+
+### Aanpak met behoud van kwaliteit
+
+1. Maak een expliciete runtime-assetinventaris, inclusief dynamische paden.
+   Sluit bewezen verouderde varianten uit; behoud originele bronnen apart.
+2. Pas lossless beeldcompressie toe waar werkelijk kleiner, met gelijke
+   RGBA-pixels/afmetingen, kleurprofielcontrole en behoud van originele artwork.
+   Werk assetpaden en provenance bij; controleer Flutter/Android-decoding,
+   transparante randen, detailweergave en animaties in de emulator.
+3. Onderzoek daarna lossless WAV-compressie en distributie per processortype.
+4. Voeg de bestaande grootteanalyse toe als rapport bij iedere release.
+   Herhaal daarna de relevante asset-/speltests, volledige releasegate en
+   serverpreflight. Publiceer pas met een nieuw versienummer.
+
+Bronnen: [lossless WebP en exacte transparante pixels](https://developers.google.com/speed/webp/docs/cwebp),
+[Flutter APK's per ABI](https://docs.flutter.dev/deployment/android#build-an-apk),
+[Android FLAC-ondersteuning](https://developer.android.com/media/platform/supported-formats).
+
+Reproduceerbare APK-meting: `tool/measure_android_artifact_size.ps1` met
+`-ArtifactPath release/DragonHaven-v0.05.28.apk`.
+Bewijs: `release/v0.05.28-app-size.json`, `release/v0.05.28-size-baseline.json`,
+`release/v0.05.28-size-candidates.json`, `release/v0.05.28-lossless-probe.json`,
+`release/v0.05.28-superseded-art-candidates.json` en `.tools/size_lossless_probe.py`.
+
+## Historische baseline: 31 augustus 2026
+
+De onderstaande v0.05.01-meting en Play-grenzen zijn historische gegevens.
+De oude voorstellen voor resizen en audiocompressie met verlies passen niet
+bij de huidige eis; gebruik daarvoor de actuele aanpak hierboven. Play-limieten
+moeten opnieuw officieel worden gecontroleerd wanneer een Play-upload volgt.
+
 Laatst bijgewerkt: **31 augustus 2026**  
 Gemeten app: **v0.05.01**  
 Server tijdens meting: **productie 32/32; lokale migratie 33 niet uitgerold**
