@@ -24,7 +24,14 @@ seasonal/group/sociale afwikkeling en verliesvrije migratie/herstel open.
 De importvergelijking bewaakt nu ook meubels, kamerkeuze, drakenposities,
 favoriet en verzorging. De Starlight Treat krijgt een bevestigde serveractie
 met behoud van prijs, XP en verzorging; verloren antwoorden worden hersteld
-zonder dubbel te betalen. Volledige stagingcontrole van deze aanvulling volgt.
+zonder dubbel te betalen. Stagingrun 34403445166 op `cd3b6e9` bewijst deze aanvulling: 766 Flutter-tests,
+5 daggrenstests per Nederlandse/Amerikaanse tijdzone, 16 Edge-tests, gelijke
+native/JavaScript-regels en de echte UI/netwerkproef slagen. Beide testaccounts
+en alle shadowcommando’s zijn verwijderd en de gameworker staat uit. Staging
+heeft om 21:01:55 UTC 65 gelijke migraties, lint 0 en drie healthchecks 200;
+productie herhaalt dit read-only om 21:02:55 UTC. De aanvullende controle
+bevestigt game/economy uit, push aan, alle accounts legacy en nul shadowstates.
+Geen nieuwe productie-uitrol.
 Ook een Runeweaver-race is opgelost: snelle tikken konden tijdens de laatste
 animatie buiten de reeks lezen of een ronde meermaals tellen. De regressietest
 reproduceert de oude crash en bevestigt nu precies één voltooide ronde.

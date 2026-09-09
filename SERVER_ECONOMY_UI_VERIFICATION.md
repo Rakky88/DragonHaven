@@ -73,7 +73,7 @@ The next implementation boundaries are:
 | Area | Remaining work before live ownership |
 | --- | --- |
 | Trials and school | Server-issued attempt, bounded input transcript, shared score evaluation, expiry/offer/dragon checks and one atomic reward. The existing seasonal score/count/duration checks are not a verified transcript; arbitrary scores remain absent from canonical commands. |
-| House and care | Furniture editing, floor reordering and roaming are proven through the actual staging UI and server. Care and school interactions still need authoritative controls. |
+| House and care | Furniture editing, floor reordering and roaming are proven through the actual staging UI and server. The Starlight Treat is also proven; room interactions and school still need authoritative controls. |
 | Calendar | Define the keeper's server day and preserve existing constellation/day keys through timezone and daylight-saving transitions; device-clock changes must not create another daily claim. |
 | Social and events | Settle group/seasonal Adventures, trades, Beacon contributions and podium prizes against one canonical owner state and the normalized social records. Preserve source event/preview identity on an already-started run. |
 | Activation | Finish import reconciliation, lossless representative migrations, recovery and old-client fences, then exercise cutover/rollback in staging. Current shadow copies cannot be promoted by the staging UI. |
@@ -285,8 +285,7 @@ are refused. Local tests exercise the import guard, lost-reply/restart, caps,
 Twinstar, Dutch large text and cancel/confirm. The 16 lifecycle screen tests
 pass with real fonts; the care confirmation/details were visually inspected
 in `release/economy-care-visual/`. Narrow dragon facts now stack their label
-and value to avoid breaking words in half. Actual staging care proof is
-included in the network harness and pending the next candidate run.
+and value to avoid breaking words in half. Actual staging care proof passed in the final run below.
 This does not complete verified Trials/school, social settlement or live import.
 
 
@@ -303,3 +302,29 @@ multi-rune input complete each round exactly once after the fix. Older glow
 callbacks cannot clear a newer input or award its completion. All 28 focused
 trial/lifecycle tests pass. This is a current game correctness fix; canonical
 verified-input Trials remain a separate open item.
+
+
+Final candidate run
+[34403445166](https://github.com/Rakky88/DragonHaven/actions/runs/34403445166)
+passed on `cd3b6e96d1d02bbcefa98010e73f49c381fae6c0`: clean analysis,
+all 766 Flutter tests, five calendar tests in each of Europe/Amsterdam and
+America/New_York, 16 Edge tests and native/JavaScript parity. The compiled
+worker is 1,036,296 bytes (ruleset
+`df0ff964b653a76c5e523bfc83bbf10bd509d776e74d7e4b702d6f28ca220f20`).
+The actual UI/network harness proved house editing/roaming/care together with
+all earlier shopping, Altar, dragon and Adventure actions. Both synthetic
+accounts and shadow commands were removed and the game worker disabled at
+21:01:48 UTC. Final staging schema 65, lint 0 and Auth/settings/application HTTP
+200 at 21:01:55 UTC on 9 September. Production read-only preflight also passed
+schema 65/lint 0/all three HTTP 200 at 21:02:55 UTC. No production mutation,
+new migration, live authority switch or APK release was performed.
+
+Next work remains verified Trial/school input, room interactions,
+calendar-label import reconciliation and social/event settlements, followed by
+representative account migration/recovery and cutover. APK size reduction is
+still pending after that economy work; this candidate claims no APK savings.
+
+The final production mode check also confirms game/economy mutations disabled,
+push enabled, every account in legacy authority and zero canonical shadow
+states. An additional read-only management query timed out once; its sequential
+retry passed in four seconds. Public preflight health had remained HTTP 200.

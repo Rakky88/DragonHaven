@@ -15,7 +15,11 @@ UTC server days, monotonic daily markers and DST-safe streak arithmetic passed
 run 34401056711 on `ca558f7` (759 tests). Both runs proved real UI/network
 behavior, cleaned their synthetic state, disabled the worker and passed schema
 65/lint 0/Auth/settings/application health. House/resident/care import guards
-and the existing 3-gem Starlight Treat control are the next staging candidate.
+and the existing 3-gem Starlight Treat control passed run 34403445166 on
+`cd3b6e9`: 766 tests, explicit Dutch/US DST tests, 16 Edge tests, native/JS
+parity and the actual server/UI harness. The same candidate fixes rapid-tap
+Runeweaver duplicate completion. Staging cleanup and final health passed at
+21:01:55 UTC; production read-only parity/lint/health passed at 21:02:55 UTC.
 This remains partial gameplay integration, not live migration or full economy
 completion. See `SERVER_ECONOMY_UI_VERIFICATION.md`.
 
