@@ -16,7 +16,7 @@ and Start remain on the offer; the full details sheet retains availability.
 The shrinking test label keeps an eight-pixel gap from the event title, even
 when only a few characters fit.
 
-Ruleset: v0.05.24 event revision under verification; migration 61 adds bounded three-strike completions, economy activation remains disabled
+Ruleset: v0.05.24 published event revision; migration 61 adds bounded three-strike completions, economy activation remains disabled
 
 The Special Adventure dragon picker now also displays Might, Arcana and Spirit
 with their individual scores, MAX markers and selected highlight glow. This

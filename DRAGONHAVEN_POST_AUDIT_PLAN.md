@@ -3,7 +3,7 @@
 Laatst bijgewerkt: **9 september 2026**
 Technische uitgangsversie: **v0.04.06**
 
-## Correctierelease v0.05.24 in uitvoering
+## Correctierelease v0.05.24 afgerond
 
 De Special Adventure-drakenkeuze gebruikte na v0.05.23 nog de enkele focus.
 De gedeelde keuzelijst toont nu alle drie scores en markeringen, vereist alle
@@ -23,7 +23,15 @@ Migratie 61 staat inmiddels op staging en productie. De volledige stagingrun
 opruiming. Productiepreflight: 61/61, lint 0, alle healthchecks HTTP 200;
 economische mutaties blijven uitgeschakeld, met nul niet-legacy-accounts en
 schaduwstaten. Normale en compacte Androidweergave zijn gecontroleerd.
-De laatste sparkles-aanpassing en definitieve publicatie worden nog geverifieerd.
+De sparkles zijn ook op 320dp met 1,35 tekstschaal en verminderde beweging
+gecontroleerd. De definitieve release-CI 34339223015 slaagt met 701 tests.
+Release v0.05.24 / 10074 is gepubliceerd op 2026-09-09T10:32:42Z.
+De APK van 536,725,164 bytes komt exact overeen met GitHub;
+SHA-256 `c68782768f3ade0dfa9176a2942980e99d141fbc042e69258b4d72fc05ff7e62`.
+De vaste download werkt en wijst naar deze release. Installatie als update
+behoudt voortgang en About toont de juiste versie. De audit en distributie-
+referenties zijn bijgewerkt; economische activatie blijft een afzonderlijk
+openstaand audittraject.
 Releasebewijs: `RELEASE_V0.05.24_VERIFICATION.md`.
 
 ## Eventrelease v0.05.23 afgerond
