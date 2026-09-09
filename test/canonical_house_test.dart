@@ -5,6 +5,7 @@ import 'package:dragon_haven/services/canonical_game_actions.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:dragon_haven/domain/game_command_engine.dart';
 
 import '../tool/game_domain_probe.dart';
 import 'support/canonical_ui_server.dart';
@@ -147,6 +148,197 @@ void main() {
     ]) {
       final wire = jsonDecode(jsonEncode(server.wire)) as Map<String, dynamic>;
       corrupt(wire['data']['house'] as Map<String, dynamic>);
+      expect(
+          () => CanonicalGameSnapshot.parse(wire,
+              expectedOwner: CanonicalUiServer.owner),
+          error('game_snapshot_invalid'));
+    }
+  });
+  Future<void> prepareFurniture() async {
+    server.state['ownedItemIds'] = ['moss_cushion', 'moon_fern'];
+    server.state['equippedItemIds'] = <String, dynamic>{};
+    server.state['housePlacements'] = <dynamic>[];
+    server.state['unlockedRoomIds'] = ['nest', 'hearth', 'crystal'];
+    server.revision++;
+    await session.synchronize();
+  }
+
+  test(
+      'furniture survives lost replies and restart without spending or duplicating stock',
+      () async {
+    await prepareFurniture();
+    final coins = session.snapshot!.coins;
+    final stock = session.snapshot!.shop.ownedItems;
+    final before = actions();
+    server.loseReply = true;
+    await expectLater(
+        actions().placeHouseItem('moss_cushion', 'hearth', .2, .8),
+        error('game_command_unavailable'));
+    await restart();
+    expect(session.snapshot!.house.placements.single.itemId, 'moss_cushion');
+    expect(session.snapshot!.house.placements.single.x, .2);
+    await expectLater(
+        before.removeHouseItem('moss_cushion'), error('game_refresh_required'));
+    server.loseReply = true;
+    await expectLater(actions().moveHouseItem('moss_cushion', .7, .6),
+        error('game_command_unavailable'));
+    await restart();
+    expect(session.snapshot!.house.placements.single.x, .7);
+    await actions().placeHouseItem('moss_cushion', 'crystal', .3, .7);
+    expect(session.snapshot!.house.placements.single.roomId, 'crystal');
+    server.loseReply = true;
+    await expectLater(actions().removeHouseItem('moss_cushion'),
+        error('game_command_unavailable'));
+    await restart();
+    expect(session.snapshot!.house.placements, isEmpty);
+    expect(session.snapshot!.shop.placedItems, isEmpty);
+    expect(session.snapshot!.shop.ownedItems, stock);
+    expect(session.snapshot!.coins, coins);
+  });
+
+  test(
+      'server rejects unknown or unowned furniture, locked rooms and invalid coordinates',
+      () async {
+    await prepareFurniture();
+    for (final pair in [
+      ('cloud_basket', 'hearth'),
+      ('moss_cushion', 'garden'),
+      ('unknown', 'nest')
+    ]) {
+      await expectLater(actions().placeHouseItem(pair.$1, pair.$2, .5, .7),
+          error('game_action_unavailable'));
+    }
+    await expectLater(actions().moveHouseItem('moss_cushion', .4, .7),
+        error('game_action_unavailable'));
+    for (final value in [-.01, 1.01, double.nan, double.infinity, '0.5']) {
+      await expectLater(
+          GameCommandEngine.execute(
+              state: server.state,
+              action: 'place_house_item',
+              payload: {
+                'itemId': 'moss_cushion',
+                'roomId': 'hearth',
+                'x': value,
+                'y': .7
+              },
+              secretSeed: 'ab' * 32,
+              now: server.now,
+              keeperId: CanonicalUiServer.owner),
+          throwsA(isA<GameCommandException>()
+              .having((e) => e.code, 'code', 'invalid_argument')));
+    }
+    expect(session.snapshot!.house.placements, isEmpty);
+    expect(session.snapshot!.coins, 10000);
+  });
+
+  test(
+      'floor reorder keeps damage, repair factors and residents attached after lost reply',
+      () async {
+    server.state['towerFloorRoomIds'] = ['hearth', 'crystal', 'garden'];
+    server.state['unlockedRoomIds'] = ['nest', 'hearth', 'crystal', 'garden'];
+    server.state['pet']['roamsTower'] = false;
+    server.state['pet']['currentFloorIndex'] = 0;
+    server.state['pet']['currentRoomId'] = 'hearth';
+    server.revision++;
+    await session.synchronize();
+    final coins = session.snapshot!.coins;
+    final repair = session.snapshot!.house.repairPrice(0);
+    server.loseReply = true;
+    // Move the bottom visible row (2) to the top (0).
+    await expectLater(
+        actions().reorderFloor(2, 0), error('game_command_unavailable'));
+    await restart();
+    expect(
+        session.snapshot!.house.floorRoomIds, ['crystal', 'garden', 'hearth']);
+    expect(session.snapshot!.house.damagedFloors, {2});
+    expect(session.snapshot!.house.repairPrice(2), repair);
+    expect(session.snapshot!.dragon(server.state['pet']['id'])!.floorIndex, 2);
+    expect(
+        session.snapshot!.dragon(server.state['pet']['id'])!.roomId, 'hearth');
+    expect(session.snapshot!.coins, coins);
+    await expectLater(
+        actions().reorderFloor(0, 3), error('game_action_unavailable'));
+    await expectLater(
+        actions().reorderFloor(1, 1), error('game_action_unavailable'));
+    expect(
+        session.snapshot!.house.floorRoomIds, ['crystal', 'garden', 'hearth']);
+  });
+
+  test(
+      'roaming uses desired state across retries and respects ownership and capacity',
+      () async {
+    server.state['damagedTowerFloors'] = <int>[];
+    server.state['damagedTowerRepairFactors'] = <String, double>{};
+    server.revision++;
+    await session.synchronize();
+    final id = session.snapshot!.dragons.firstWhere((d) => d.owned).id;
+    final coins = session.snapshot!.coins;
+    server.loseReply = true;
+    await expectLater(actions().setDragonRoaming(id, false),
+        error('game_command_unavailable'));
+    await restart();
+    expect(session.snapshot!.dragon(id)!.roamsTower, isFalse);
+    await actions().setDragonRoaming(id, false);
+    expect(session.snapshot!.dragon(id)!.roamsTower, isFalse);
+    await actions().setDragonRoaming(id, true);
+    expect(session.snapshot!.dragon(id)!.roamsTower, isTrue);
+    await expectLater(actions().setDragonRoaming('not-owned', true),
+        error('game_action_unavailable'));
+    await expectLater(
+        actions().clearFloor(19), error('game_action_unavailable'));
+    await expectLater(
+        actions().clearFloor(0), error('game_action_unavailable'));
+    expect(session.snapshot!.coins, coins);
+    server.state['pet']['roamsTower'] = false;
+    server.state['pet']['activeAdventureId'] = null;
+    server.state['sanctuaryDragons'] = [
+      for (var i = 0; i < 3; i++)
+        {
+          ...server.state['pet'] as Map<String, dynamic>,
+          'id': 'roamer-$i',
+          'favorite': false,
+          'roamsTower': true,
+          'currentFloorIndex': 0,
+          'currentRoomId': 'hearth'
+        }
+    ];
+    server.revision++;
+    await session.synchronize();
+    await expectLater(
+        actions().setDragonRoaming(id, true), error('game_action_unavailable'));
+    expect(session.snapshot!.dragon(id)!.roamsTower, isFalse);
+    server.state['towerFloorRoomIds'] = ['hearth', 'crystal'];
+    server.state['unlockedRoomIds'] = ['nest', 'hearth', 'crystal'];
+    server.revision++;
+    await session.synchronize();
+    server.loseReply = true;
+    await expectLater(
+        actions().clearFloor(0), error('game_command_unavailable'));
+    await restart();
+    expect(
+        session.snapshot!.dragons
+            .where((d) => d.owned && d.roamsTower)
+            .every((d) => d.floorIndex == 1),
+        isTrue);
+    expect(session.snapshot!.coins, coins);
+  });
+
+  test('malformed placement or roaming facts reject the entire public view',
+      () async {
+    await prepareFurniture();
+    await actions().placeHouseItem('moss_cushion', 'hearth', .5, .7);
+    for (final corrupt in <void Function(Map<String, dynamic>)>[
+      (data) => data['house']['placements'][0]['x'] = '0.5',
+      (data) => data['house']['placements'][0]['y'] = 1.1,
+      (data) => data['house']['placements'][0]['scale'] = 0,
+      (data) => data['house']['placements'][0]['roomId'] = 'locked',
+      (data) => data['house']['placements'].add(data['house']['placements'][0]),
+      (data) => data['dragons'][0]['roamsTower'] = 1,
+      (data) => data['dragons'][0]['currentFloorIndex'] = 20,
+      (data) => data['dragons'][0]['currentRoomId'] = '',
+    ]) {
+      final wire = jsonDecode(jsonEncode(server.wire)) as Map<String, dynamic>;
+      corrupt(wire['data'] as Map<String, dynamic>);
       expect(
           () => CanonicalGameSnapshot.parse(wire,
               expectedOwner: CanonicalUiServer.owner),

@@ -2,13 +2,18 @@
 
 Last updated: **9 September 2026**
 
-Release **v0.05.22 / 10072** is published with clean analysis, 652 tests and verified signing.
-Production and staging both have exactly **59 migrations**. Production
-preflight at 21:52:19 UTC on 8 September: parity 59, lint 0,
-Auth/settings/application HTTP 200. A fresh read-only production health check
-also returned 200/200/200 at 23:42:42 UTC, after the staging extensions.
-All accounts remain legacy, game/economic mutations disabled, zero shadow
-copies, production push enabled. See `RELEASE_V0.05.22_VERIFICATION.md`.
+Release **v0.05.29 / 10079** is published and verified. Production and staging
+have **65 migrations**. Latest production pre/postflight: parity 65, lint 0 and
+Auth/settings/application HTTP 200; accounts remain legacy, game/economic
+mutations disabled, zero shadow copies, production push enabled. See
+`RELEASE_V0.05.29_VERIFICATION.md`. The older per-component runs below retain
+their original schema numbers and timestamps.
+
+Resumed after v0.05.29: authoritative furniture placement/removal, floor
+reordering and roaming are implemented with validated public facts and durable
+intents. Local rule/session/UI tests pass; the extended real staging rehearsal
+is the next gate. This is still partial gameplay integration, not live migration
+or full economy completion. See `SERVER_ECONOMY_UI_VERIFICATION.md`.
 
 The resumed audit now connects the ordinary furniture/relic/vanity shop and
 chest reveal to the canonical session in an explicit staging-only app lane.

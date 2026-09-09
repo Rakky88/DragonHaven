@@ -382,6 +382,8 @@ def main():
         require('PASS: real lifecycle UI;' in client_result.stdout, 'client_probe_lifecycle_proof_missing')
         require('PASS: real adventure UI;' in client_result.stdout, 'client_probe_adventure_proof_missing')
         require('PASS: real house UI;' in client_result.stdout, 'client_probe_house_proof_missing')
+        require('PASS: real room editor;' in client_result.stdout, 'client_probe_room_editor_proof_missing')
+        require('PASS: real roaming UI;' in client_result.stdout, 'client_probe_roaming_proof_missing')
         require('PASS: real preferences UI;' in client_result.stdout, 'client_probe_preferences_proof_missing')
         unchanged = query(f"""select
           (select s.state=i.source_state and s.revision=i.source_revision

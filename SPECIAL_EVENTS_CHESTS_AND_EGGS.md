@@ -27,7 +27,14 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 10b4873f1b0dc6eb -->
+<!-- reference-source-fingerprint: 26808456971f146c -->
+
+The staging house editor now places, moves and removes owned furniture through
+revision-fenced server commands. Floor reordering preserves the existing damage
+and repair factor, and roaming uses an explicit desired state with the existing
+capacity rules. These actions change no event calendar, chest/egg/relic pool,
+price, expertise, rank cutoff or random probability. Unknown egg facts remain
+hidden. A lost receipt is recovered without repeating an action or rerolling.
 
 This is the living implementation reference for scheduled Special Events,
 their Special Adventures, event Trials, event-bound Special Chests and Special

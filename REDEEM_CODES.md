@@ -4,7 +4,7 @@ Last verified: 9 September 2026
 
 Ruleset: v0.05.27 candidate; Sunwake/Harvestmoon and stop mappings in forward migration 64, rehearsed on staging. Production remains schema 63 until rollout.
 
-<!-- reference-source-fingerprint: 433bade8359eab99 -->
+<!-- reference-source-fingerprint: 33e3121f6f75d457 -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 

@@ -112,6 +112,27 @@ class CanonicalGameActions {
   Future<void> repairFloor(int index) =>
       _boolean('repair_floor', {'index': index});
   Future<void> upgradeWard() => _boolean('upgrade_ward', {});
+  Future<void> placeHouseItem(
+          String itemId, String roomId, double x, double y) =>
+      _boolean('place_house_item',
+          {'itemId': itemId, 'roomId': roomId, 'x': x, 'y': y});
+  Future<void> moveHouseItem(String itemId, double x, double y) =>
+      _boolean('move_house_item', {'itemId': itemId, 'x': x, 'y': y});
+  Future<void> removeHouseItem(String itemId) =>
+      _boolean('remove_house_item', {'itemId': itemId});
+  Future<void> reorderFloor(int oldIndex, int newIndex) => _boolean(
+      'reorder_tower_floor', {'oldIndex': oldIndex, 'newIndex': newIndex});
+  Future<void> clearFloor(int index) =>
+      _boolean('clear_tower_floor', {'index': index});
+  Future<void> setDragonRoaming(String dragonId, bool enabled) async {
+    final result = await execute(
+        'set_dragon_roaming', {'dragonId': dragonId, 'enabled': enabled});
+    if (result == 'updated' || result == 'unchanged') return;
+    throw CanonicalGameException(
+        result == 'towerFull' || result == 'dragonNotFound'
+            ? 'game_action_unavailable'
+            : 'game_result_invalid');
+  }
 
   Future<void> startAdventure(String adventureId, String dragonId) => _use(
       'start_adventure', {'adventureId': adventureId, 'dragonId': dragonId},

@@ -182,6 +182,30 @@ abstract final class GameCommandEngine {
               .repairTowerFloor(args.integer('index', min: 0, max: 19));
         case 'upgrade_ward':
           result = await game.upgradeDragonWard();
+        case 'place_house_item':
+          result = await game.placeHouseItem(args.text('itemId'),
+              roomId: args.text('roomId'),
+              x: args.number('x', min: 0, max: 1),
+              y: args.number('y', min: 0, max: 1));
+        case 'move_house_item':
+          result = await game.moveHouseItem(
+              args.text('itemId'),
+              args.number('x', min: 0, max: 1),
+              args.number('y', min: 0, max: 1));
+        case 'remove_house_item':
+          result = await game.removeHouseItem(args.text('itemId'));
+        case 'reorder_tower_floor':
+          result = await game.reorderTowerFloor(
+              args.integer('oldIndex', min: 0, max: 19),
+              args.integer('newIndex', min: 0, max: 19));
+        case 'set_dragon_roaming':
+          result = (await game.setDragonRoaming(
+                  args.text('dragonId'), args.boolean('enabled')))
+              .name;
+        case 'clear_tower_floor':
+          final index = args.integer('index', min: 0, max: 19);
+          result = index < game.towerFloorRoomIds.length &&
+              await game.clearDragonsFromRoom(index);
         case 'complete_tutorial':
           await game.completeTutorial(fullyViewed: args.boolean('fullyViewed'));
           result = true;
@@ -259,6 +283,14 @@ class _Arguments {
       throw const GameCommandException('invalid_argument');
     }
     return value;
+  }
+
+  double number(String key, {required double min, required double max}) {
+    final value = values[key];
+    if (value is! num || !value.isFinite || value < min || value > max) {
+      throw const GameCommandException('invalid_argument');
+    }
+    return value.toDouble();
   }
 
   bool boolean(String key) {

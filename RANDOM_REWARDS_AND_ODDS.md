@@ -6,7 +6,14 @@ Ruleset: v0.05.25 published and verified; staging and production schema 62 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 70d4a1756003706f -->
+<!-- reference-source-fingerprint: c70ff6140b1bb0dd -->
+
+The staging house editor now places, moves and removes owned furniture through
+revision-fenced server commands. Floor reordering preserves the existing damage
+and repair factor, and roaming uses an explicit desired state with the existing
+capacity rules. These actions change no event calendar, chest/egg/relic pool,
+price, expertise, rank cutoff or random probability. Unknown egg facts remain
+hidden. A lost receipt is recovered without repeating an action or rerolling.
 
 The shared command identity schema and durable client intent journal preserve the original request after a timeout. Recovering a completed outcome, including during a mutation pause, creates no new seed or reward roll. The pools, probabilities and pity behavior below are unchanged.
 

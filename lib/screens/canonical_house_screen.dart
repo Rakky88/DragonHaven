@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_strings.dart';
 import '../models/house.dart';
 import '../models/pet.dart';
+import 'canonical_room_editor.dart';
 import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
 import '../widgets/canonical_game_controls.dart';
@@ -95,6 +96,44 @@ class _HouseContents extends StatelessWidget {
                       _RoomCard(
                           room: room,
                           heading: '${i + 1} · ${s.roomName(room)}',
+                          extra: Wrap(alignment: WrapAlignment.end, children: [
+                            IconButton(
+                                key: Key('canonical-floor-up-$i'),
+                                tooltip:
+                                    s.pick('Move up', 'Omhoog verplaatsen'),
+                                constraints: const BoxConstraints(
+                                    minWidth: 48, minHeight: 48),
+                                onPressed: session.canAct &&
+                                        i < house.floorRoomIds.length - 1
+                                    ? () => runShopAction(
+                                        context,
+                                        () => actions.reorderFloor(
+                                            house.floorRoomIds.length - i - 1,
+                                            house.floorRoomIds.length - i - 2))
+                                    : null,
+                                icon: const Icon(Icons.arrow_upward_rounded)),
+                            IconButton(
+                                key: Key('canonical-floor-down-$i'),
+                                tooltip:
+                                    s.pick('Move down', 'Omlaag verplaatsen'),
+                                constraints: const BoxConstraints(
+                                    minWidth: 48, minHeight: 48),
+                                onPressed: session.canAct && i > 0
+                                    ? () => runShopAction(
+                                        context,
+                                        () => actions.reorderFloor(
+                                            house.floorRoomIds.length - i - 1,
+                                            house.floorRoomIds.length - i))
+                                    : null,
+                                icon: const Icon(Icons.arrow_downward_rounded)),
+                            CanonicalActionButton(
+                                key: Key('canonical-clear-floor-$i'),
+                                label: s.pick('Clear room', 'Kamer leegmaken'),
+                                action: session.canAct &&
+                                        house.floorRoomIds.length > 1
+                                    ? () => actions.clearFloor(i)
+                                    : null),
+                          ]),
                           control: switch (house.repairPrice(i)) {
                             final price? => CanonicalActionButton(
                                 key: Key('canonical-repair-$i'),
@@ -128,6 +167,14 @@ class _HouseContents extends StatelessWidget {
                     _RoomCard(
                         room: room,
                         heading: s.roomName(room),
+                        extra: house.unlockedRooms.contains(room.id)
+                            ? OutlinedButton(
+                                key: Key('canonical-edit-room-${room.id}'),
+                                onPressed: () =>
+                                    openCanonicalRoomEditor(context, room.id),
+                                child: Text(s.pick(
+                                    'Arrange your room', 'Richt je kamer in')))
+                            : null,
                         control: house.unlockedRooms.contains(room.id)
                             ? CanonicalActionButton(
                                 key: Key('canonical-room-${room.id}'),
@@ -221,10 +268,11 @@ class _HouseContents extends StatelessWidget {
 }
 
 class _RoomCard extends StatelessWidget {
-  const _RoomCard({required this.room, required this.heading, this.control});
+  const _RoomCard(
+      {required this.room, required this.heading, this.control, this.extra});
   final HouseRoomDefinition room;
   final String heading;
-  final Widget? control;
+  final Widget? control, extra;
   @override
   Widget build(BuildContext context) => Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -238,6 +286,7 @@ class _RoomCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(heading, style: Theme.of(context).textTheme.titleMedium),
+                  if (extra != null) extra!,
                   if (control != null) ...[const SizedBox(height: 8), control!],
                 ])),
       ]));

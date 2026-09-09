@@ -1,5 +1,70 @@
 /// German, Spanish, French, Italian, Portuguese, Japanese.
 const economyEquipmentPhraseTranslations = <String, List<String>>{
+  "Arrange your room": [
+    "Richte dein Zimmer ein",
+    "Decora tu habitación",
+    "Aménagez votre pièce",
+    "Arreda la tua stanza",
+    "Decore seu quarto",
+    "部屋を飾る"
+  ],
+  "Select an item, then tap the room to place it.": [
+    "Wähle ein Möbelstück und tippe auf die gewünschte Stelle im Zimmer.",
+    "Selecciona un mueble y toca la habitación para colocarlo.",
+    "Sélectionnez un meuble, puis touchez la pièce pour le placer.",
+    "Seleziona un mobile, poi tocca la stanza per posizionarlo.",
+    "Selecione um móvel e toque no quarto para colocá-lo.",
+    "家具を選び、部屋をタップして配置してください。"
+  ],
+  "Put away": ["Verstauen", "Guardar", "Ranger", "Riponi", "Guardar", "片付ける"],
+  "No furniture yet": [
+    "Noch keine Möbel",
+    "Aún no hay muebles",
+    "Aucun meuble pour le moment",
+    "Ancora nessun mobile",
+    "Ainda não há móveis",
+    "家具はまだありません"
+  ],
+  "Move up": [
+    "Nach oben",
+    "Subir",
+    "Monter",
+    "Sposta in alto",
+    "Mover para cima",
+    "上へ移動"
+  ],
+  "Move down": [
+    "Nach unten",
+    "Bajar",
+    "Descendre",
+    "Sposta in basso",
+    "Mover para baixo",
+    "下へ移動"
+  ],
+  "Clear room": [
+    "Zimmer freimachen",
+    "Despejar habitación",
+    "Libérer la pièce",
+    "Libera la stanza",
+    "Liberar o quarto",
+    "部屋を空ける"
+  ],
+  "Rest in sanctuary": [
+    "Im Refugium ruhen",
+    "Descansar en el santuario",
+    "Se reposer au sanctuaire",
+    "Riposa nel santuario",
+    "Descansar no santuário",
+    "保護区で休む"
+  ],
+  "Roam the Tower": [
+    "Den Turm erkunden",
+    "Recorrer la Torre",
+    "Parcourir la Tour",
+    "Esplora la Torre",
+    "Explorar a Torre",
+    "タワーを歩き回る"
+  ],
   "Inventory": [
     "Inventar",
     "Inventario",

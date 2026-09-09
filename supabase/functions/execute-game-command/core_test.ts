@@ -275,3 +275,24 @@ Deno.test("body reading enforces bytes and elapsed time even on streamed request
     assert(rejected);
   }
 });
+
+Deno.test("house commands bind to Auth and cannot attach inventory or wallet grants", async () => {
+  for (const [action, payload] of [
+    ["place_house_item", {itemId: "moss_cushion", roomId: "hearth", x: .2, y: .8}],
+    ["move_house_item", {itemId: "moss_cushion", x: .6, y: .8}],
+    ["remove_house_item", {itemId: "moss_cushion"}],
+    ["reorder_tower_floor", {oldIndex: 1, newIndex: 0}],
+    ["set_dragon_roaming", {dragonId: "owned-dragon", enabled: false}],
+    ["clear_tower_floor", {index: 0}],
+  ] as const) {
+    const {deps, inputs} = setup();
+    assert((await handleCommand(request({...body, action, payload}), deps)).status === 200);
+    assert(inputs[0].keeperId === owner);
+    equal(inputs[0].payload, payload);
+    for (const extra of [{coins: 100}, {ownerId: other}, {inventory: []}]) {
+      const denied = setup();
+      assert((await handleCommand(request({...body, action, payload: {...payload, ...extra}}), denied.deps)).status === 400);
+      equal(denied.calls, []);
+    }
+  }
+});

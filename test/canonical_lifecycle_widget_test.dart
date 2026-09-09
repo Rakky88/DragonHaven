@@ -101,6 +101,9 @@ void main() {
     final list = find.byWidgetPredicate((widget) => const [
           Key('canonical-adventures-list'),
           Key('canonical-tower-list'),
+          Key('canonical-rooms-list'),
+          Key('canonical-room-editor-list'),
+          Key('canonical-tower-list'),
           Key('canonical-rooms-list')
         ].contains(widget.key));
     if (finder.evaluate().isEmpty && list.evaluate().isNotEmpty) {
@@ -486,6 +489,90 @@ void main() {
         isNull);
     expect(server.sent, hasLength(before));
     expect(server.state['pet']['coins'], 10000);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  void prepareEditor(CanonicalUiServer server) {
+    prepareHouse(server);
+    server.state['ownedItemIds'] = ['moss_cushion', 'moon_fern'];
+    server.state['housePlacements'] = <dynamic>[];
+    server.state['equippedItemIds'] = <String, dynamic>{};
+    server.state['unlockedRoomIds'] = ['nest', 'hearth', 'crystal'];
+    server.state['towerFloorRoomIds'] = ['hearth', 'crystal'];
+  }
+
+  testWidgets(
+      'Dutch room editor places from public stock, recovers lost reply and keeps stock on removal',
+      (tester) async {
+    await setup(tester, const CanonicalHouseScreen(),
+        language: 'nl', scale: 1.35, prepare: prepareEditor);
+    await tap(tester, find.widgetWithText(Tab, 'Kamers'));
+    await tap(tester, key('canonical-edit-room-hearth'));
+    await tap(tester, key('canonical-select-furniture-moss_cushion'));
+    final canvas = key('canonical-room-canvas');
+    await tester.ensureVisible(canvas);
+    await tester.pump();
+    final rect = tester.getRect(canvas);
+    server.loseReply = true;
+    await tester.runAsync(() => tester.tapAt(
+        Offset(rect.left + rect.width * .3, rect.top + rect.height * .8)));
+    await command(tester);
+    await tester.runAsync(session.synchronize);
+    await tester.pump();
+    expect(session.snapshot!.house.placements.single.x, closeTo(.3, .001));
+    expect(session.snapshot!.house.placements.single.roomId, 'hearth');
+    expect(session.snapshot!.shop.ownedItems, contains('moss_cushion'));
+    expect(session.snapshot!.coins, 10000);
+    // Let the transient lost-reply message expire before reviewing the
+    // restored editor. The assertions above still verify actual reconciliation.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pump(const Duration(milliseconds: 400));
+    await shot(tester, 'house-editor-nl-large');
+    await tap(tester, key('canonical-remove-furniture'));
+    await command(tester);
+    expect(session.snapshot!.house.placements, isEmpty);
+    expect(session.snapshot!.shop.ownedItems, contains('moss_cushion'));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
+      'floor arrows persist order and an old room editor cannot act after account reentry',
+      (tester) async {
+    await setup(tester, const CanonicalHouseScreen(), prepare: prepareEditor);
+    await tap(tester, key('canonical-floor-up-0'));
+    await command(tester);
+    expect(session.snapshot!.house.floorRoomIds, ['crystal', 'hearth']);
+    expect(session.snapshot!.house.damagedFloors, {1});
+    await shot(tester, 'house-reordered');
+    await tap(tester, find.widgetWithText(Tab, 'Rooms'));
+    await tap(tester, key('canonical-edit-room-hearth'));
+    await tap(tester, key('canonical-select-furniture-moss_cushion'));
+    final sent = server.sent.length;
+    final connection = session.connection as CanonicalUiConnection;
+    connection.signOut();
+    await tester.pump();
+    connection.currentOwner = CanonicalUiServer.owner;
+    await tester.runAsync(session.synchronize);
+    await tester.pump();
+    expect(key('canonical-room-canvas'), findsNothing);
+    expect(key('canonical-select-furniture-moss_cushion'), findsNothing);
+    expect(server.sent, hasLength(sent));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
+      'dragon detail roaming sends desired state without changing expertise',
+      (tester) async {
+    await setup(tester, const CanonicalDragonsScreen());
+    final dragon = session.snapshot!.dragons.firstWhere((d) => d.owned);
+    final before = dragon.training;
+    await tap(tester, key('canonical-dragon-${dragon.id}'));
+    await tap(tester, key('canonical-roam-dragon'));
+    await command(tester);
+    expect(session.snapshot!.dragon(dragon.id)!.roamsTower, !dragon.roamsTower);
+    expect(session.snapshot!.dragon(dragon.id)!.training, before);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

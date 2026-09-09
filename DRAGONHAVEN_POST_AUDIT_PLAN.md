@@ -1,5 +1,22 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Hervat na v0.05.29: woningbewerking en draken in de Toren
+
+Rick heeft het afronden van de servereconomie en daarna verdere optimalisatie,
+waaronder kwaliteitsbehoudende APK-verkleining, opnieuw opgedragen. De ontbrekende
+meubelbewerking, verdiepingsvolgorde, kamer leegmaken en roaming zijn nu via de
+servercommandolaag gebouwd. Lokale tests bewijzen behoud van bezit, herstel na
+verloren antwoorden, accountfences, geldige coördinaten, torencapaciteit en het
+meeverhuizen van schade/reparatiefactoren. De echte stagingnetwerkproef is
+uitgebreid en volgt na de visuele/referencecontrole. Productie blijft op 65
+migraties, legacy autoriteit en uitgeschakelde economische/game-mutaties.
+
+Daarna blijven zorg/school, gevalideerde trialbewijzen, serverdaggrenzen,
+seasonal/group/sociale afwikkeling en verliesvrije migratie/herstel open.
+APK-optimalisatie volgt op de economie; beeld- en geluidskwaliteit blijven
+behouden. Deze voortgang is geen afronding van de volledige economie.
+Bewijs: `SERVER_ECONOMY_UI_VERIFICATION.md`.
+
 ## Harvestmoon-aanraking en Sunwake-balans: v0.05.29 uitgebracht
 
 Harvestmoon toont bij slepen één grote plaatsingspreview, met het midden van de

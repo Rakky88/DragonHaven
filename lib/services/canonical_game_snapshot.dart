@@ -217,9 +217,37 @@ class CanonicalHouseView {
             e.value > .60)) {
       _invalid();
     }
+    final rawPlacements = data['placements'];
+    final owned = CanonicalShopView._ids(data['ownedItemIds']);
+    if (rawPlacements is! List || rawPlacements.length > owned.length) {
+      _invalid();
+    }
+    final placed = <String>{};
+    final parsed = <HousePlacement>[];
+    for (final raw in rawPlacements) {
+      final p = _map(raw);
+      if (!_text(p['itemId']) ||
+          !owned.contains(p['itemId']) ||
+          !placed.add(p['itemId'] as String) ||
+          !_text(p['roomId']) ||
+          !unlockedRooms.contains(p['roomId']) ||
+          !_boundedNumber(p['x'], .04, .96) ||
+          !_boundedNumber(p['y'], .04, .96) ||
+          !_boundedNumber(p['scale'], .65, 1.35)) {
+        _invalid();
+      }
+      parsed.add(HousePlacement(
+          itemId: p['itemId'] as String,
+          roomId: p['roomId'] as String,
+          x: (p['x'] as num).toDouble(),
+          y: (p['y'] as num).toDouble(),
+          scale: (p['scale'] as num).toDouble()));
+    }
+    placements = List.unmodifiable(parsed);
     repairFactors = Map.unmodifiable(
         {for (final i in damagedFloors) i: (factors['$i'] as num).toDouble()});
   }
+  late final List<HousePlacement> placements;
   late final Set<String> unlockedRooms;
   late final String activeRoomId;
   late final List<String> floorRoomIds;
@@ -398,7 +426,7 @@ class CanonicalEggView {
 /// Public facts only: no Pet construction, genetics or private save defaults.
 class CanonicalDragonView {
   CanonicalDragonView._parse(this._data) {
-    for (final key in ['spectral', 'sinister', 'favorite']) {
+    for (final key in ['spectral', 'sinister', 'favorite', 'roamsTower']) {
       if (_data[key] is! bool) _invalid();
     }
     if (!DragonSex.values.any((v) => v.name == _data['sex']) ||
@@ -406,6 +434,11 @@ class CanonicalDragonView {
         !_date(_data['stageStartedAt']) ||
         (_data['activeAdventureId'] != null &&
             !_text(_data['activeAdventureId']))) {
+      _invalid();
+    }
+    if (!_count(_data['currentFloorIndex']) ||
+        _data['currentFloorIndex'] >= 20 ||
+        !_text(_data['currentRoomId'])) {
       _invalid();
     }
     training = CanonicalShopView._counts(_data['training']);
@@ -442,6 +475,9 @@ class CanonicalDragonView {
   bool get spectral => _data['spectral'] as bool;
   bool get sinister => _data['sinister'] as bool;
   bool get favorite => _data['favorite'] as bool;
+  bool get roamsTower => _data['roamsTower'] as bool;
+  int get floorIndex => _data['currentFloorIndex'] as int;
+  String get roomId => _data['currentRoomId'] as String;
   String get path => _data['activeEvolutionPath'] as String;
   String? get lawAxis => _data['lawAxis'] as String?;
   String? get moralAxis => _data['moralAxis'] as String?;
@@ -697,3 +733,7 @@ Object? _freeze(Object? value, [int depth = 0]) {
   }
   throw const CanonicalGameException('game_snapshot_invalid');
 }
+
+/// Rendering must never silently repair malformed public coordinates.
+bool _boundedNumber(Object? value, double min, double max) =>
+    value is num && value.isFinite && value >= min && value <= max;

@@ -202,6 +202,17 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                                             ? () =>
                                                 actions.setFavoriteDragon(id)
                                             : null),
+                                    CanonicalActionButton(
+                                        key: const Key('canonical-roam-dragon'),
+                                        label: dragon.roamsTower
+                                            ? strings.pick('Rest in sanctuary',
+                                                'Rust in het reservaat')
+                                            : strings.pick('Roam the Tower',
+                                                'Door de Toren lopen'),
+                                        action: enabled
+                                            ? () => actions.setDragonRoaming(
+                                                id, !dragon.roamsTower)
+                                            : null),
                                     OutlinedButton(
                                         key: const Key('canonical-name-dragon'),
                                         onPressed: enabled &&

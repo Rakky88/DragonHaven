@@ -228,7 +228,8 @@ void main() {
       final list = find.byWidgetPredicate((widget) => const [
             Key('canonical-adventures-list'),
             Key('canonical-tower-list'),
-            Key('canonical-rooms-list')
+            Key('canonical-rooms-list'),
+            Key('canonical-room-editor-list')
           ].contains(widget.key));
       if (finder.evaluate().isEmpty && list.evaluate().isNotEmpty) {
         final scrollable =
@@ -564,6 +565,39 @@ void main() {
           'client_probe_house_room_selection');
       stdout.writeln(
           'PASS: real house UI; stored repair price, ward upgrade, floor purchase and free room selection.');
+      await tester.runAsync(() =>
+          game.execute('purchase_furniture', {'catalogId': 'moss_cushion'}));
+      await tester.pump();
+      final editingBalance = game.snapshot!.coins;
+      await tap(key('canonical-edit-room-crystal'));
+      await tap(key('canonical-select-furniture-moss_cushion'));
+      final canvas = key('canonical-room-canvas');
+      await tester.ensureVisible(canvas);
+      await tester.pump();
+      final rect = tester.getRect(canvas);
+      await tester.runAsync(() => tester.tapAt(
+          Offset(rect.left + rect.width * .3, rect.top + rect.height * .8)));
+      await settleCommand();
+      final placed = game.snapshot!.house.placements
+          .singleWhere((p) => p.itemId == 'moss_cushion');
+      require(placed.roomId == 'crystal' && (placed.x - .3).abs() < .001,
+          'client_probe_room_placement');
+      await tap(key('canonical-remove-furniture'));
+      await settleCommand();
+      require(
+          !game.snapshot!.shop.placedItems.contains('moss_cushion') &&
+              game.snapshot!.shop.ownedItems.contains('moss_cushion') &&
+              game.snapshot!.coins == editingBalance,
+          'client_probe_room_removal');
+      await mount(const CanonicalHouseScreen());
+      await tap(key('canonical-floor-up-0'));
+      await settleCommand();
+      require(
+          game.snapshot!.house.floorRoomIds.join(',') == 'crystal,hearth' &&
+              game.snapshot!.coins == editingBalance,
+          'client_probe_floor_reorder');
+      stdout.writeln(
+          'PASS: real room editor; placement, removal retaining ownership and free floor reorder.');
       await mount(const CanonicalDragonsScreen());
       final other = game.snapshot!.dragons
           .firstWhere((d) => d.owned && d.id != dragon.id);
@@ -580,6 +614,15 @@ void main() {
           'client_probe_preferences_favorite');
       stdout.writeln(
           'PASS: real preferences UI; expertise highlights, adventure information and one favorite.');
+      final roaming = game.snapshot!.dragon(other.id)!.roamsTower;
+      await tap(key('canonical-roam-dragon'));
+      await settleCommand();
+      require(
+          game.snapshot!.dragon(other.id)!.roamsTower == !roaming &&
+              game.snapshot!.coins == editingBalance,
+          'client_probe_roaming_desired_state');
+      stdout.writeln(
+          'PASS: real roaming UI; desired state preserved without wallet changes.');
     } finally {
       stdout.writeln('PROBE: ui_cleanup_start');
       await tester.pumpWidget(const SizedBox.shrink());

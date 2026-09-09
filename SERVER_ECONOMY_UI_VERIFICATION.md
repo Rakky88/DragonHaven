@@ -1,7 +1,10 @@
 # Canonical gameplay integration
 
-Updated: 9 September 2026. Shop integration shipped in v0.05.22 / 10072;
-the lifecycle extension below is subsequent staging-only work, not a new release.
+Updated: 9 September 2026, after release v0.05.29 / 10079. Production and
+staging are on schema 65. The published app retains legacy economy ownership;
+production game/economic mutations remain disabled and push enabled. Latest
+release pre/postflight evidence: `RELEASE_V0.05.29_VERIFICATION.md`.
+The component runs below are dated historical proofs on their stated schemas.
 
 ## Scope and boundaries
 
@@ -55,11 +58,11 @@ shop tabs scroll and the reconnect control keeps a 48dp icon target.
 ## Remaining full-economy work
 
 The staging lane is not the complete game. Seasonal/group Adventure and trial
-screens, free-form house editing and remaining progression still need public
+screens, remaining care/school interactions and progression still need public
 read models and authoritative action routing. Verified trial transcripts,
 server calendar/day policy, social/trade settlement, full import reconciliation,
 staged migration and recovery remain open. Billing stays explicitly deferred.
-Production is schema 59, legacy authority, game/economic mutations off,
+At the initial shop rehearsal production was schema 59, legacy authority, game/economic mutations off,
 zero shadow copies and production FCM enabled. Last independent production
 preflight: 8 September 21:52:19 UTC; see `RELEASE_V0.05.22_VERIFICATION.md`.
 A read-only production health check after these staging extensions returned
@@ -70,7 +73,7 @@ The next implementation boundaries are:
 | Area | Remaining work before live ownership |
 | --- | --- |
 | Trials and school | Server-issued attempt, bounded input transcript, shared score evaluation, expiry/offer/dragon checks and one atomic reward. The existing seasonal score/count/duration checks are not a verified transcript; arbitrary scores remain absent from canonical commands. |
-| House and care | Furniture editing, floor reordering, roaming/care and school interactions still need typed public controls and command validation. Economic room/floor/repair/ward controls are covered below. |
+| House and care | Furniture editing, floor reordering and roaming now have typed commands and local controls; their new network rehearsal is pending below. Care and school interactions still need authoritative controls. |
 | Calendar | Define the keeper's server day and preserve existing constellation/day keys through timezone and daylight-saving transitions; device-clock changes must not create another daily claim. |
 | Social and events | Settle group/seasonal Adventures, trades, Beacon contributions and podium prizes against one canonical owner state and the normalized social records. Preserve source event/preview identity on an already-started run. |
 | Activation | Finish import reconciliation, lossless representative migrations, recovery and old-client fences, then exercise cutover/rollback in staging. Current shadow copies cannot be promoted by the staging UI. |
@@ -203,3 +206,29 @@ accounts and their shadow commands were removed at 23:49:02 UTC; the worker was
 disabled. Final staging preflight at 23:49:09 UTC on 8 September confirmed schema
 59, lint 0 and Auth/settings/app HTTP 200. This changes no schema, gameplay odds
 or production authority.
+
+## Furniture, floor ordering and roaming — resumed after v0.05.29
+
+The house editor reads validated public placements, shows the existing artwork,
+and uses the durable command lane to place/move/store owned furniture. It
+retains stock when storing an item and never charges a second purchase price.
+Coordinates must be finite and bounded, placement targets must be unlocked and
+items owned. Malformed public room/coordinate/scale/roaming facts reject the
+read instead of being repaired into a plausible client value.
+
+Floor arrows use the existing top-to-bottom permutation and carry residents,
+damage and the original repair factors with their room. Room clearing and
+explicit roaming on/off reuse existing ownership/capacity rules. A reopened
+account cannot reuse an old editor or callback. The editor selection is local;
+there is no local alternate balance, furniture ownership or placement save.
+
+Five additional rule/session tests prove lost placement/move/remove/reorder/
+clear replies, restart, preserved stock and prices, invalid coordinates,
+unowned or locked targets, full-tower refusal and malformed public projections.
+Three additional real-widget tests cover Dutch 320dp/large text, room editing,
+lost-reply reconciliation, floor arrows, account reentry and roaming without
+training changes. The dedicated native/JavaScript fixture and authenticated
+Edge tests include these commands. The actual network UI probe now also checks
+placement, storing without loss, floor ordering and roaming. Final staging run
+and visual evidence will be recorded after completion; no production migration,
+authority switch, APK release or economy activation is part of this extension.

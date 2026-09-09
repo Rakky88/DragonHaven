@@ -38,6 +38,12 @@ abstract final class GameCommandSchema {
     'build_floor': {'roomId'},
     'repair_floor': {'index'},
     'upgrade_ward': {},
+    'place_house_item': {'itemId', 'roomId', 'x', 'y'},
+    'move_house_item': {'itemId', 'x', 'y'},
+    'remove_house_item': {'itemId'},
+    'reorder_tower_floor': {'oldIndex', 'newIndex'},
+    'set_dragon_roaming': {'dragonId', 'enabled'},
+    'clear_tower_floor': {'index'},
     'complete_tutorial': {'fullyViewed'},
     'redeem_code': {'code'},
   };

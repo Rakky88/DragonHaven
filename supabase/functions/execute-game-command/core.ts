@@ -36,6 +36,9 @@ const commandKeys: Record<string, readonly string[]> = {
   claim_constellation: [], unlock_room: ["roomId"], build_floor: ["roomId"],
   repair_floor: ["index"], upgrade_ward: [], complete_tutorial: ["fullyViewed"],
   redeem_code: ["code"],
+  place_house_item: ["itemId", "roomId", "x", "y"], move_house_item: ["itemId", "x", "y"],
+  remove_house_item: ["itemId"], reorder_tower_floor: ["oldIndex", "newIndex"],
+  set_dragon_roaming: ["dragonId", "enabled"], clear_tower_floor: ["index"],
 };
 
 export const domainErrors = new Set([

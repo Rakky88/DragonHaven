@@ -79,6 +79,22 @@ Future<Map<String, dynamic>> runGameDomainProbe() async {
         .any((c) => c['result'] != true)) {
       throw StateError('Synthetic dragon preferences must be accepted');
     }
+    final roomUnlocked =
+        await command(favorite['state'], 'unlock_room', {'roomId': 'nest'}, 8);
+    final furniture = await command(roomUnlocked['state'], 'purchase_furniture',
+        {'catalogId': 'moss_cushion'}, 9);
+    final placed = await command(furniture['state'], 'place_house_item',
+        {'itemId': 'moss_cushion', 'roomId': 'nest', 'x': .25, 'y': .7}, 10);
+    final moved = await command(placed['state'], 'move_house_item',
+        {'itemId': 'moss_cushion', 'x': .72, 'y': .8}, 11);
+    final removed = await command(
+        moved['state'], 'remove_house_item', {'itemId': 'moss_cushion'}, 12);
+    final resting = await command(removed['state'], 'set_dragon_roaming',
+        {'dragonId': eggId, 'enabled': false}, 13);
+    if ([placed, moved, removed].any((c) => c['result'] != true) ||
+        !['updated', 'unchanged'].contains(resting['result'])) {
+      throw StateError('Synthetic house commands must be accepted');
+    }
     final commands = [
       refreshed,
       activated,
@@ -86,7 +102,13 @@ Future<Map<String, dynamic>> runGameDomainProbe() async {
       hatched,
       highlighted,
       highlightedAgain,
-      favorite
+      favorite,
+      roomUnlocked,
+      furniture,
+      placed,
+      moved,
+      removed,
+      resting
     ];
     return {
       'purchase': purchase.name,
