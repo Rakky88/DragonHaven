@@ -1,0 +1,30 @@
+ Client
+  AttributionSource(AttributionSourceState{pid: 5749, uid: 10297, deviceId: 0, packageName: nl.dragonhaven.app, attributionTag: (null), token: binder:0x760bfd6484a0, renouncedPermissions: [], next: []}), connId(568), status(0), looping(false)
+ NuPlayer
+  state(5), atEOS(0), looping(0), autoLoop(0), renderer(paused(0), offloading(0), wakelock(acquired=[0,0,0], timeout=[0,0,0], release=[0,0,0], cancel=[0,0,0]))
+  mime(audio/raw)
+    decoder(c2.android.raw.decoder)
+ AudioOutput
+  stream type(3), left - right volume(1.000000, 1.000000)
+  msec per frame(0.045351), latency (611)
+  aux effect id(0), send level (0.000000)
+ AudioTrack::dump
+  id(585) status(0), state(0), session Id(4665), flags(0)
+  stream type(3), left - right volume(1.000000, 1.000000)
+  format(0x1), channel mask(0x3), channel count(2), codec()
+  sample rate(22050), original sample rate(22050), speed(1.000000)
+  frame count(11477), req. frame count(11477)
+  notif. frame count(5738), req. notif. frame count(0), req. notif. per buff(0)
+  latency (611), selected device Id(0), routed device Ids(2)
+  output(13) AF latency (91) AF frame count(1088) AF SampleRate(48000)
+
+ 8 registered handlers:
+  8: CCodecWatchdog: 33760 messages processed, delivering 0, current msg 0, current msg durationUs 0
+  3971: MediaClock: 0 messages processed, delivering 0, current msg 0, current msg durationUs 0
+  3972: NuPlayerDriver Looper: 13 messages processed, delivering 0, current msg 0, current msg durationUs 0
+  3973: generic: 9 messages processed, delivering 0, current msg 0, current msg durationUs 0
+  3974: NuPlayerRenderer: 655 messages processed, delivering 0, current msg 0, current msg durationUs 0
+  3975: NPDecoder: 1225 messages processed, delivering 0, current msg 0, current msg durationUs 0
+  3976: NPDecoder-CL: 413 messages processed, delivering 0, current msg 0, current msg durationUs 0
+  3977: NPDecoder-CL: 1640 messages processed, delivering 0, current msg 0, current msg durationUs 0
+

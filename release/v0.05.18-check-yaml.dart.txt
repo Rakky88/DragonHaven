@@ -1,0 +1,9 @@
+﻿import 'dart:io';
+import 'package:yaml/yaml.dart';
+void main() {
+ for (final path in ['.github/workflows/production-migrate-37-40.yml', '.github/workflows/production-preview-access-48.yml']) {
+  final yaml = loadYaml(File(path).readAsStringSync()) as YamlMap;
+  if (yaml['on']['workflow_dispatch'] == null || yaml['jobs']['migrate-production']['environment'] != 'production') throw StateError('Invalid production gate');
+ }
+ print('Both production workflows parse and target the protected production environment.');
+}

@@ -1,0 +1,591 @@
+{
+  "kind": "dragonhaven-staging-provider-metrics",
+  "environment": "staging",
+  "productionTarget": false,
+  "sampleIntervalSeconds": 60,
+  "networkCounterIsBilledEgress": false,
+  "samples": [
+    {
+      "checkedAtUtc": "2026-09-07T12:27:26.1521786Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 170291200.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1109282269.0,
+        "cpuIdleSeconds": 1689364.62,
+        "cpuTotalSeconds": 1726061.17
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:28:28.0865509Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 196730880.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1110304449.0,
+        "cpuIdleSeconds": 1689480.92,
+        "cpuTotalSeconds": 1726183.54
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:29:29.0768114Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 172802048.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1110527453.0,
+        "cpuIdleSeconds": 1689598.9100000001,
+        "cpuTotalSeconds": 1726305.7599999998
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:30:30.2657998Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 155308032.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1111053174.0,
+        "cpuIdleSeconds": 1689708.3900000001,
+        "cpuTotalSeconds": 1726427.7799999998
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:31:31.9921675Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 187461632.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1111280345.0,
+        "cpuIdleSeconds": 1689812.8599999999,
+        "cpuTotalSeconds": 1726550.21
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:32:33.8548342Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 187596800.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1111691360.0,
+        "cpuIdleSeconds": 1689931.01,
+        "cpuTotalSeconds": 1726673.5799999998
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:33:35.2715032Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 169664512.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1111847339.0,
+        "cpuIdleSeconds": 1690048.92,
+        "cpuTotalSeconds": 1726795.2000000002
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:34:36.1932049Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 174817280.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1112410945.0,
+        "cpuIdleSeconds": 1690164.51,
+        "cpuTotalSeconds": 1726916.5799999998
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:35:36.9644826Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 161726464.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1112575466.0,
+        "cpuIdleSeconds": 1690282.33,
+        "cpuTotalSeconds": 1727038.39
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:36:38.151472Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 182091776.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1112982469.0,
+        "cpuIdleSeconds": 1690398.1400000001,
+        "cpuTotalSeconds": 1727159.65
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:37:38.9288948Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 180514816.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1113145083.0,
+        "cpuIdleSeconds": 1690516.0499999998,
+        "cpuTotalSeconds": 1727281.1099999999
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:38:39.8092358Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 177848320.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1113583885.0,
+        "cpuIdleSeconds": 1690632.87,
+        "cpuTotalSeconds": 1727403.0500000003
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:39:41.1194523Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 176451584.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1113751155.0,
+        "cpuIdleSeconds": 1690750.52,
+        "cpuTotalSeconds": 1727524.4699999997
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:40:42.5210349Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 183562240.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1114369398.0,
+        "cpuIdleSeconds": 1690867.21,
+        "cpuTotalSeconds": 1727646.7100000002
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:41:43.2648275Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 182980608.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1114589874.0,
+        "cpuIdleSeconds": 1690964.87,
+        "cpuTotalSeconds": 1727767.6599999997
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:42:44.3467207Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 194039808.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1114962000.0,
+        "cpuIdleSeconds": 1691080.77,
+        "cpuTotalSeconds": 1727889.3100000003
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:43:45.2948095Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 179728384.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1115120396.0,
+        "cpuIdleSeconds": 1691198.43,
+        "cpuTotalSeconds": 1728010.59
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:44:47.5628932Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 184778752.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1115698463.0,
+        "cpuIdleSeconds": 1691317.53,
+        "cpuTotalSeconds": 1728134.6299999997
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:45:48.3542295Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 185909248.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1116160279.0,
+        "cpuIdleSeconds": 1691433.93,
+        "cpuTotalSeconds": 1728256.39
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:46:49.9041974Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 181592064.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1116326229.0,
+        "cpuIdleSeconds": 1691552.17,
+        "cpuTotalSeconds": 1728378.5899999999
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:47:52.6224116Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 185323520.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1116750029.0,
+        "cpuIdleSeconds": 1691672.23,
+        "cpuTotalSeconds": 1728503.35
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:48:53.408123Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 181276672.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1116919240.0,
+        "cpuIdleSeconds": 1691790.08,
+        "cpuTotalSeconds": 1728625.21
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:49:54.4620394Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 191238144.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1117465299.0,
+        "cpuIdleSeconds": 1691906.42,
+        "cpuTotalSeconds": 1728746.6399999997
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:50:55.5781634Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 175067136.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1117627185.0,
+        "cpuIdleSeconds": 1692023.0299999998,
+        "cpuTotalSeconds": 1728867.89
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:51:56.2968579Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 187838464.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1118185351.0,
+        "cpuIdleSeconds": 1692140.6400000001,
+        "cpuTotalSeconds": 1728990.45
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:52:57.9489717Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 176222208.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1118344833.0,
+        "cpuIdleSeconds": 1692257.12,
+        "cpuTotalSeconds": 1729111.75
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:53:58.6904085Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 195731456.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1118838185.0,
+        "cpuIdleSeconds": 1692373.0899999999,
+        "cpuTotalSeconds": 1729233.2399999998
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:55:00.027547Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 215474176.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1119070688.0,
+        "cpuIdleSeconds": 1692473.93,
+        "cpuTotalSeconds": 1729358.9300000004
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:56:04.131166Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 191135744.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1119510909.0,
+        "cpuIdleSeconds": 1692592.4700000002,
+        "cpuTotalSeconds": 1729482.9500000002
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:57:05.2262339Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 175845376.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1119676195.0,
+        "cpuIdleSeconds": 1692709.43,
+        "cpuTotalSeconds": 1729604.09
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:58:06.0065942Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 182403072.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1120251195.0,
+        "cpuIdleSeconds": 1692826.35,
+        "cpuTotalSeconds": 1729726.23
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T12:59:07.3896138Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 172466176.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1120423080.0,
+        "cpuIdleSeconds": 1692944.74,
+        "cpuTotalSeconds": 1729848.7600000002
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:00:08.7089703Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 177348608.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1121105063.0,
+        "cpuIdleSeconds": 1693061.16,
+        "cpuTotalSeconds": 1729970.0800000003
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:01:09.9468207Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 175792128.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1121280157.0,
+        "cpuIdleSeconds": 1693180.0499999998,
+        "cpuTotalSeconds": 1730092.54
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:02:11.0485224Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 178601984.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1121732170.0,
+        "cpuIdleSeconds": 1693296.9500000002,
+        "cpuTotalSeconds": 1730213.91
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:03:11.978333Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 175005696.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1121899191.0,
+        "cpuIdleSeconds": 1693415.3,
+        "cpuTotalSeconds": 1730335.85
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:04:15.5028626Z",
+      "phase": "browsing",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 137330688.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1122720227.0,
+        "cpuIdleSeconds": 1693534.58,
+        "cpuTotalSeconds": 1730461.8
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:05:16.5600207Z",
+      "phase": "browsing",
+      "available": false,
+      "values": {}
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:06:26.8813071Z",
+      "phase": "browsing",
+      "available": false,
+      "values": {}
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:07:37.1041184Z",
+      "phase": "browsing",
+      "available": false,
+      "values": {}
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:08:47.3460484Z",
+      "phase": "browsing",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 115007488.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1136715225.0,
+        "cpuIdleSeconds": 1693662.54,
+        "cpuTotalSeconds": 1730999.5800000003
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:09:49.3082824Z",
+      "phase": "browsing",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 145797120.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1137068082.0,
+        "cpuIdleSeconds": 1693781.56,
+        "cpuTotalSeconds": 1731122.31
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:10:50.5275648Z",
+      "phase": "browsing",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 163614720.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1137548728.0,
+        "cpuIdleSeconds": 1693899.9100000001,
+        "cpuTotalSeconds": 1731244.82
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:11:51.9222191Z",
+      "phase": "browsing",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 155078656.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1137896026.0,
+        "cpuIdleSeconds": 1694020.48,
+        "cpuTotalSeconds": 1731366.29
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:12:52.8315235Z",
+      "phase": "browsing",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 163016704.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1138373215.0,
+        "cpuIdleSeconds": 1694138.76,
+        "cpuTotalSeconds": 1731487.24
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:13:53.5812956Z",
+      "phase": "browsing",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 199258112.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1138928105.0,
+        "cpuIdleSeconds": 1694227.01,
+        "cpuTotalSeconds": 1731608.99
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:14:55.3907059Z",
+      "phase": "browsing",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 171081728.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1139281271.0,
+        "cpuIdleSeconds": 1694346.9,
+        "cpuTotalSeconds": 1731730.9700000002
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:15:56.1785875Z",
+      "phase": "browsing",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 154304512.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1139787278.0,
+        "cpuIdleSeconds": 1694467.69,
+        "cpuTotalSeconds": 1731855.7000000002
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:17:04.1883623Z",
+      "phase": "browsing",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 158306304.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1140171863.0,
+        "cpuIdleSeconds": 1694598.3599999999,
+        "cpuTotalSeconds": 1731988.1700000002
+      }
+    },
+    {
+      "checkedAtUtc": "2026-09-07T13:18:05.5711922Z",
+      "phase": "browsing",
+      "available": true,
+      "values": {
+        "memoryAvailableBytes": 150671360.0,
+        "memoryTotalBytes": 426258432.0,
+        "hostNetworkTransmitBytes": 1140520345.0,
+        "cpuIdleSeconds": 1694719.4700000002,
+        "cpuTotalSeconds": 1732110.0800000003
+      }
+    }
+  ]
+}

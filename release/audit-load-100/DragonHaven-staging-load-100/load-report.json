@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "kind": "dragonhaven-staging-load-report",
+  "environment": "staging",
+  "productionTarget": false,
+  "appVersion": "v0.05.16",
+  "applicationContractVersion": 1,
+  "repositoryMigrationVersion": "202609070047",
+  "serverMigrationVersionVerified": false,
+  "generatedAtUtc": "2026-09-07T11:15:00.104296Z",
+  "virtualUsers": 100,
+  "authenticatedUsers": 59,
+  "activeUsers": 59,
+  "durationSeconds": 180,
+  "rampUpSeconds": 60,
+  "result": "failed",
+  "totalRequests": 861,
+  "successes": 820,
+  "failures": 41,
+  "errorRatePercent": 4.762,
+  "responseBytesEstimate": 689984,
+  "operations": {
+    "password_login": {
+      "requests": 100,
+      "successes": 59,
+      "failures": 41,
+      "p50Ms": 181,
+      "p95Ms": 210,
+      "p99Ms": 357,
+      "maxMs": 357,
+      "responseBytes": 135774,
+      "failureClasses": {
+        "http_429": 41
+      }
+    },
+    "ensure_my_online_account": {
+      "requests": 59,
+      "successes": 59,
+      "failures": 0,
+      "p50Ms": 146,
+      "p95Ms": 419,
+      "p99Ms": 699,
+      "maxMs": 699,
+      "responseBytes": 0,
+      "failureClasses": {}
+    },
+    "list_my_cloud_game_save_revisions": {
+      "requests": 70,
+      "successes": 70,
+      "failures": 0,
+      "p50Ms": 126,
+      "p95Ms": 319,
+      "p99Ms": 368,
+      "maxMs": 368,
+      "responseBytes": 140,
+      "failureClasses": {}
+    },
+    "list_group_adventures": {
+      "requests": 105,
+      "successes": 105,
+      "failures": 0,
+      "p50Ms": 124,
+      "p95Ms": 316,
+      "p99Ms": 348,
+      "maxMs": 361,
+      "responseBytes": 210,
+      "failureClasses": {}
+    },
+    "get_my_profile": {
+      "requests": 96,
+      "successes": 96,
+      "failures": 0,
+      "p50Ms": 126,
+      "p95Ms": 309,
+      "p99Ms": 633,
+      "maxMs": 633,
+      "responseBytes": 81312,
+      "failureClasses": {}
+    },
+    "list_conclaves": {
+      "requests": 69,
+      "successes": 69,
+      "failures": 0,
+      "p50Ms": 124,
+      "p95Ms": 322,
+      "p99Ms": 347,
+      "maxMs": 347,
+      "responseBytes": 138,
+      "failureClasses": {}
+    },
+    "get_online_snapshot": {
+      "requests": 362,
+      "successes": 362,
+      "failures": 0,
+      "p50Ms": 130,
+      "p95Ms": 319,
+      "p99Ms": 336,
+      "maxMs": 495,
+      "responseBytes": 472410,
+      "failureClasses": {}
+    }
+  },
+  "privacy": "No e-mail, password, token, user id, response body or save data is recorded.",
+  "serverMetricsCaptured": false,
+  "dashboardEvidenceStillRequired": [
+    "staging server migration parity with repositoryMigrationVersion",
+    "peak database connections and CPU",
+    "provider-measured egress",
+    "query/index findings and rate-limit observations"
+  ]
+}

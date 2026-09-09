@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 2,
+  "kind": "dragonhaven-staging-load-report",
+  "measurementMode": "preauthenticated_browsing",
+  "environment": "staging",
+  "productionTarget": false,
+  "appVersion": "v0.05.17",
+  "applicationContractVersion": 1,
+  "repositoryMigrationVersion": "202609070047",
+  "serverMigrationVersionVerified": false,
+  "generatedAtUtc": "2026-09-07T13:08:36.472994Z",
+  "virtualUsers": 1000,
+  "authenticatedUsers": 1000,
+  "preparedUsers": 1000,
+  "activeUsers": 1000,
+  "peakConcurrentBrowsingUsers": 1000,
+  "warmupCompleted": true,
+  "warmupDurationMs": 2198426,
+  "loginSpacingMs": 2200,
+  "sessionsCoverMeasurement": true,
+  "durationSeconds": 180,
+  "steadyStateSeconds": 180,
+  "rampUpSeconds": 60,
+  "minimumReadRequestsPerUser": 5,
+  "result": "failed",
+  "readRequests": 7769,
+  "readErrorRatePercent": 47.998,
+  "totalRequests": 9769,
+  "successes": 6040,
+  "failures": 3729,
+  "errorRatePercent": 38.172,
+  "responseBytesEstimate": 5383700,
+  "operations": {
+    "password_login": {
+      "requests": 1000,
+      "successes": 1000,
+      "failures": 0,
+      "p50Ms": 249,
+      "p95Ms": 287,
+      "p99Ms": 520,
+      "maxMs": 572,
+      "responseBytes": 2246526,
+      "failureClasses": {}
+    },
+    "ensure_my_online_account": {
+      "requests": 1000,
+      "successes": 1000,
+      "failures": 0,
+      "p50Ms": 175,
+      "p95Ms": 204,
+      "p99Ms": 386,
+      "maxMs": 833,
+      "responseBytes": 0,
+      "failureClasses": {}
+    },
+    "list_group_adventures": {
+      "requests": 1167,
+      "successes": 579,
+      "failures": 588,
+      "p50Ms": 30000,
+      "p95Ms": 30026,
+      "p99Ms": 30033,
+      "maxMs": 30129,
+      "responseBytes": 1158,
+      "failureClasses": {
+        "network_error": 588
+      }
+    },
+    "list_my_cloud_game_save_revisions": {
+      "requests": 766,
+      "successes": 429,
+      "failures": 337,
+      "p50Ms": 9594,
+      "p95Ms": 30027,
+      "p99Ms": 30035,
+      "maxMs": 30106,
+      "responseBytes": 858,
+      "failureClasses": {
+        "network_error": 337
+      }
+    },
+    "get_my_profile": {
+      "requests": 1181,
+      "successes": 599,
+      "failures": 582,
+      "p50Ms": 25634,
+      "p95Ms": 30025,
+      "p99Ms": 30032,
+      "maxMs": 30102,
+      "responseBytes": 507353,
+      "failureClasses": {
+        "network_error": 582
+      }
+    },
+    "list_conclaves": {
+      "requests": 803,
+      "successes": 420,
+      "failures": 383,
+      "p50Ms": 24072,
+      "p95Ms": 30025,
+      "p99Ms": 30033,
+      "maxMs": 30117,
+      "responseBytes": 840,
+      "failureClasses": {
+        "network_error": 383
+      }
+    },
+    "get_online_snapshot": {
+      "requests": 3852,
+      "successes": 2013,
+      "failures": 1839,
+      "p50Ms": 23795,
+      "p95Ms": 30026,
+      "p99Ms": 30033,
+      "maxMs": 30123,
+      "responseBytes": 2626965,
+      "failureClasses": {
+        "network_error": 1839
+      }
+    }
+  },
+  "privacy": "No e-mail, password, token, user id, response body or save data is recorded.",
+  "serverMetricsCaptured": false,
+  "dashboardEvidenceStillRequired": [
+    "staging server migration parity with repositoryMigrationVersion",
+    "peak database connections and CPU",
+    "provider-measured egress",
+    "query/index findings and rate-limit observations"
+  ]
+}

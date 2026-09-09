@@ -1,0 +1,14 @@
+{
+  "environment": "staging",
+  "readOnly": true,
+  "peakMeasurement": false,
+  "observedAtUtc": "2026-09-07T13:17:04.4210210Z",
+  "first_synthetic_login": "2026-09-07T12:27:28.3951260Z",
+  "last_synthetic_login": "2026-09-07T13:04:06.2735860Z",
+  "synthetic_accounts": 1000,
+  "synthetic_accounts_signed_in": 1000,
+  "client_connections_excluding_observer": 13,
+  "active_client_connections": 0,
+  "clients_waiting_for_lock": 0,
+  "configured_max_connections": 60
+}

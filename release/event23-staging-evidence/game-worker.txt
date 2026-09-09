@@ -1,0 +1,35 @@
+Finished supabase link.
+PASS: end_event_contract_passed; migrations_rehearsed=False; synthetic_changes_rolled_back=true
+PASS: canonical game migration 52; full-copy, lease/replay, owner and wallet guards; all changes rolled back.
+PASS: canonical import migration 53; immutable generations, source/Altar/revision fences, preparation replay and account cleanup; all changes rolled back.
+PASS: canonical read migration 54; service-only private access, prepared ownership, version fences, paused reads and zero game mutations; all changes rolled back.
+PASS: canonical receipt migration 55; paused success/failure replay, exact payload identity, pending lease and ruleset fences; all changes rolled back.
+PASS: canonical ruleset migration 56; monotonic ruleset generation, no-op/pause stability, prepared reads and zero game mutations; all changes rolled back.
+PASS: revision-bound requests, paused recovery, late worker/request refusal, receipt replay, unchanged live assets and account deletion; all changes rolled back.
+{"results":[],"message":"db lint"}
+PASS: canonical game migration 52; full-copy, lease/replay, owner and wallet guards; all changes rolled back.
+PASS: canonical import migration 53; immutable generations, source/Altar/revision fences, preparation replay and account cleanup; all changes rolled back.
+PASS: canonical read migration 54; service-only private access, prepared ownership, version fences, paused reads and zero game mutations; all changes rolled back.
+PASS: canonical receipt migration 55; paused success/failure replay, exact payload identity, pending lease and ruleset fences; all changes rolled back.
+PASS: canonical ruleset migration 56; monotonic ruleset generation, no-op/pause stability, prepared reads and zero game mutations; all changes rolled back.
+PASS: revision-bound requests, paused recovery, late worker/request refusal, receipt replay, unchanged live assets and account deletion; all changes rolled back.
+PASS: end_event_contract_passed; migrations_rehearsed=False; synthetic_changes_rolled_back=true
+Deployed Functions on project vtmjkhzalalozpfnbvsd: execute-game-command
+You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/vtmjkhzalalozpfnbvsd/functions
+
+ProjectRef                  : vtmjkhzalalozpfnbvsd
+MigrationCount              : 60
+DatabaseLintErrors          : 0
+AuthHealthStatus            : 200
+AuthHealthDurationMs        : 572
+AuthSettingsStatus          : 200
+AuthSettingsDurationMs      : 502
+EmailAuthConfigured         : True
+ApplicationHealthStatus     : 200
+ApplicationHealthDurationMs : 1032
+ApplicationService          : dragonhaven-online
+ApplicationContractVersion  : 1
+ApplicationServerTimeUtc    : 2026-09-09T08:03:33.0000000+00:00
+ApplicationClockSkewMs      : 931
+
+PASS: detached staging game schema and worker deployed; live economy activation remains disabled.

@@ -1,0 +1,17 @@
+﻿{
+    "CheckedAtUtc":  "2026-09-07T09:52:09.7274149Z",
+    "Environment":  "production",
+    "Host":  "tnzathhutuwmohmjfrlo.supabase.co",
+    "AuthHealthStatus":  200,
+    "AuthHealthDurationMs":  252,
+    "AuthSettingsStatus":  200,
+    "AuthSettingsDurationMs":  157,
+    "EmailAuthConfigured":  true,
+    "ApplicationHealthChecked":  true,
+    "ApplicationHealthStatus":  200,
+    "ApplicationHealthDurationMs":  338,
+    "ApplicationService":  "dragonhaven-online",
+    "ApplicationContractVersion":  1,
+    "ApplicationServerTimeUtc":  "2026-09-07T09:52:09.6980000+00:00",
+    "ApplicationClockSkewMs":  17
+}

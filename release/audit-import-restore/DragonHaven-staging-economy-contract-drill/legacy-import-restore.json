@@ -1,0 +1,18 @@
+{
+  "kind": "dragonhaven-legacy-import-restore-rehearsal",
+  "environment": "staging",
+  "production": false,
+  "result": "passed",
+  "completedAtUtc": "2026-09-07T12:14:04.8813061Z",
+  "requestDurationMs": 1250.0,
+  "snapshotEquality": true,
+  "sha256Equality": true,
+  "syntheticRestoreUnder10Seconds": true,
+  "newerProgressRejected": true,
+  "expiredBackupRejected": true,
+  "foreignOwnerRejected": true,
+  "serverAuthorityRejected": true,
+  "importRemainsLocked": true,
+  "allChangesRolledBack": true,
+  "operationalPlayerRestoreImplemented": false
+}

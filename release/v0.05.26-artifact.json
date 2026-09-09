@@ -1,0 +1,9 @@
+{
+  "version": "0.05.26",
+  "versionCode": 10076,
+  "commit": "efc358462e9b534394448921dd5b61fa915a66dd",
+  "sizeBytes": 542863996,
+  "sha256": "c2a9302e0abde30f147f438bf1727a46859f4b6c6e89771eeac3e32f46348301",
+  "certificate": "477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942",
+  "target": "lib/main.dart"
+}

@@ -1,0 +1,1 @@
+PASS: item-shop contract; migrations_rehearsed=False; all_synthetic_changes_rolled_back=true

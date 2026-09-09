@@ -1,0 +1,9 @@
+{
+  "version": "0.05.28",
+  "versionCode": 10078,
+  "commit": "5aa9c27441e756a8fd632d45b71f4946655dabad",
+  "sizeBytes": 627719018,
+  "sha256": "d3c4e79d4c9e17be1c89ed0ffe671e77b91f252dc48f9a26d78855674c4e57cb",
+  "certificate": "477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942",
+  "target": "lib/main.dart"
+}

@@ -1,0 +1,1 @@
+PASS: ownership, tags, old saves, exactly-once returns, Sinister confirmation, 10% single-heart chance and 3-5 Essence, crafting, Oracle, Quill, transfers, Beacon donations and permissions.

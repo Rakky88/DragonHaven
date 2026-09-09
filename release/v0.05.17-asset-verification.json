@@ -1,0 +1,15 @@
+{
+  "matchingRuntimeAssets": 9,
+  "allMatchSource": true,
+  "assets": [
+    "assets/images/events/halloween/arcana_pumpkin_0.webp",
+    "assets/images/events/halloween/arcana_pumpkin_1.webp",
+    "assets/images/events/halloween/arcana_pumpkin_2.webp",
+    "assets/images/events/halloween/arcana_pumpkin_3.webp",
+    "assets/images/events/halloween/arcana_pumpkin_4.webp",
+    "assets/images/events/halloween/arcana_pumpkin_5.webp",
+    "assets/images/events/halloween/trial_sprite_5.webp",
+    "assets/images/egg_altar/altar_grove.png",
+    "assets/images/egg_altar/altar_empty.png"
+  ]
+}

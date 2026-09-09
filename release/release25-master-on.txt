@@ -1,0 +1,21 @@
+ Client
+  AttributionSource(AttributionSourceState{pid: 7959, uid: 10297, deviceId: 0, packageName: nl.dragonhaven.app, attributionTag: (null), token: binder:0x760bfd64d670, renouncedPermissions: [], next: []}), connId(576), status(0), looping(false)
+ NuPlayer
+  state(5), atEOS(0), looping(0), autoLoop(0), renderer(paused(0), offloading(0), wakelock(acquired=[0,0,0], timeout=[0,0,0], release=[0,0,0], cancel=[0,0,0]))
+  mime(audio/raw)
+    decoder(c2.android.raw.decoder)
+ AudioOutput
+  stream type(3), left - right volume(1.000000, 1.000000)
+  msec per frame(0.000000), latency (-1)
+  aux effect id(0), send level (0.000000)
+
+ 8 registered handlers:
+  8: CCodecWatchdog: 33958 messages processed, delivering 0, current msg 0, current msg durationUs 0
+  4027: MediaClock: 0 messages processed, delivering 0, current msg 0, current msg durationUs 0
+  4028: NuPlayerDriver Looper: 9 messages processed, delivering 0, current msg 0, current msg durationUs 0
+  4029: generic: 3 messages processed, delivering 0, current msg 0, current msg durationUs 0
+  4030: NuPlayerRenderer: 1 messages processed, delivering 0, current msg 0, current msg durationUs 0
+  4031: NPDecoder: 0 messages processed, delivering 1, current msg 1668247142, current msg durationUs 285420
+  4032: NPDecoder-CL: 2 messages processed, delivering 1, current msg 2, current msg durationUs 12046
+  4033: NPDecoder-CL: 9 messages processed, delivering 0, current msg 0, current msg durationUs 0
+

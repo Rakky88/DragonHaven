@@ -1,0 +1,1 @@
+PASS: migration and contract rehearsal rolled back before db push.

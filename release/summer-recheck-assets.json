@@ -1,0 +1,12 @@
+{
+  "version": "0.05.27",
+  "dragonSprites": 12,
+  "eventSprites": 27,
+  "audioFiles": 10,
+  "mismatches": [],
+  "checks": [
+    "ledger = original generator output = repository = APK",
+    "all 12 dragon forms have RGBA and contained visible pixels",
+    "2 original music tracks and 8 event effects bundled identically"
+  ]
+}

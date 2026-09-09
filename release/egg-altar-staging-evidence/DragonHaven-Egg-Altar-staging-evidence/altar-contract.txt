@@ -1,0 +1,1 @@
+PASS: ownership, tags, old saves, exactly-once returns, Sinister confirmation and 5x pity, crafting, Oracle, Quill, transfers, Beacon donations and permissions.

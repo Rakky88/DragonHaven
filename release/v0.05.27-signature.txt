@@ -1,0 +1,17 @@
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: CN=Rick Groot, OU=DragonHaven, O=DragonHaven, L=Amsterdam, ST=Noord-Holland, C=NL
+Signer #1 certificate SHA-256 digest: 477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942
+Signer #1 certificate SHA-1 digest: c9440c3dc7ad0a8dd29310325f1f0294a5c5d14f
+Signer #1 certificate MD5 digest: d29a692d5895a9e7d59a2b37d7db3cb3
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 4096
+Signer #1 public key SHA-256 digest: ccf5bcaac511ec4ca6b7c726e4f6c8e3da9995e487b6712a9523b090e366edd3
+Signer #1 public key SHA-1 digest: 53e5dc2da5fe4f197b7c8087656b077540f8644a
+Signer #1 public key MD5 digest: add38608ef7aa7e3e15020c1e11dbd79

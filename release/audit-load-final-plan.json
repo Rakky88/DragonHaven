@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 2,
+  "kind": "dragonhaven-staging-load-plan",
+  "measurementMode": "preauthenticated_browsing",
+  "loginSpacingMs": 2200,
+  "steadyStateSeconds": 180,
+  "environment": "staging",
+  "productionTarget": false,
+  "appVersion": "v0.05.17",
+  "applicationContractVersion": 1,
+  "repositoryMigrationVersion": "202609070049",
+  "serverMigrationVersionVerified": false,
+  "virtualUsers": 100,
+  "uniqueConfirmedSyntheticAccountsRequired": 100,
+  "durationSeconds": 180,
+  "rampUpSeconds": 60,
+  "thinkTimeSeconds": {
+    "minimum": 8,
+    "maximum": 20
+  },
+  "operations": [
+    {
+      "name": "get_online_snapshot",
+      "weightPercent": 50
+    },
+    {
+      "name": "get_my_profile",
+      "weightPercent": 15
+    },
+    {
+      "name": "list_my_cloud_game_save_revisions",
+      "weightPercent": 10
+    },
+    {
+      "name": "list_group_adventures",
+      "weightPercent": 15
+    },
+    {
+      "name": "list_conclaves",
+      "weightPercent": 10
+    }
+  ],
+  "perUserSetup": [
+    "password_login",
+    "ensure_my_online_account"
+  ],
+  "sequentialGate": "first load stage",
+  "reportIncludes": [
+    "request count and success/error percentage",
+    "p50/p95/p99/max latency per operation",
+    "privacy-safe error classes",
+    "response-byte estimate"
+  ],
+  "dashboardEvidenceStillRequired": [
+    "staging server migration parity with repositoryMigrationVersion",
+    "peak database connections and CPU",
+    "database/query latency and rate-limit observations",
+    "provider egress and any query/index findings"
+  ]
+}

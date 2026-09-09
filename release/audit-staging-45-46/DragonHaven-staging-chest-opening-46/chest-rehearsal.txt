@@ -1,0 +1,1 @@
+PASS: chest contract; migrations_rehearsed=True; all_synthetic_changes_rolled_back=true

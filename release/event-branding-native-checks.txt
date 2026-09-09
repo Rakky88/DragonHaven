@@ -1,0 +1,3 @@
+new_year : one launcher, foreground preserved, background switch successful
+valentine : one launcher, foreground preserved, background switch successful
+pride : one launcher, foreground preserved, background switch successful

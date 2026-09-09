@@ -1,0 +1,1 @@
+PASS: all three migrations and the Altar contract rolled back before applying.

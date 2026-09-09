@@ -1,0 +1,1 @@
+PASS: all three contracts and migrations rolled back before applying.

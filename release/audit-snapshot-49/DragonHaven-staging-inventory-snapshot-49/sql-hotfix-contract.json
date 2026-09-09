@@ -1,0 +1,20 @@
+{
+  "kind": "dragonhaven-sql-hotfix-rehearsal",
+  "environment": "staging",
+  "production": false,
+  "result": "passed",
+  "completedAtUtc": "2026-09-07T13:25:29.5829541Z",
+  "requestDurationMs": 795.0,
+  "historicalMigrationSha256": "e4b41cf8d7f798d1b0c15373e84d22dcd0a871c0116f366e297fc9108842e8c9",
+  "correctedMigrationSha256": "d478093fdba4b7bb693e4ed5eaba01d217c8c276c9115ff14fe40d6dbf59079f",
+  "historicalFaultReproduced": true,
+  "failedWriteAtomic": true,
+  "correctedTimestamp": true,
+  "rateLimitEnforced": true,
+  "expiredWindowReset": true,
+  "installedFunctionUnchanged": true,
+  "grantsUnchanged": true,
+  "activationUnchanged": true,
+  "allChangesRolledBack": true,
+  "fullOperationalIncidentDrill": false
+}

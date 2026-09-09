@@ -1,0 +1,21 @@
+{
+  "kind": "dragonhaven-staging-provider-metrics",
+  "environment": "staging",
+  "productionTarget": false,
+  "sampleIntervalSeconds": 60,
+  "networkCounterIsBilledEgress": false,
+  "samples": [
+    {
+      "checkedAtUtc": "2026-09-07T12:11:07.5666068Z",
+      "phase": "preparation",
+      "available": true,
+      "values": {
+        "memoryTotalBytes": 426258432.0,
+        "memoryAvailableBytes": 186605568.0,
+        "cpuTotalSeconds": 1724109.8100000003,
+        "hostNetworkTransmitBytes": 1102391707.0,
+        "cpuIdleSeconds": 1687581.1099999999
+      }
+    }
+  ]
+}

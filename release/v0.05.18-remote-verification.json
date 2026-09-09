@@ -1,0 +1,12 @@
+{
+    "CheckedAtUtc":  "2026-09-07T14:00:20.8356766Z",
+    "Version":  "v0.05.18",
+    "ReleaseUrl":  "https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.18",
+    "AssetUrl":  "https://github.com/Rakky88/DragonHaven/releases/download/v0.05.18/DragonHaven.apk",
+    "LatestDownloadUrl":  "https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk",
+    "SizeBytes":  505821796,
+    "Sha256":  "e956b358d51e9304cd0f78647a4ccf9e447f0c85fc69152cfad06f00b0add89a",
+    "RemoteDigestMatches":  true,
+    "LatestMatches":  true,
+    "DownloadStatus":  200
+}

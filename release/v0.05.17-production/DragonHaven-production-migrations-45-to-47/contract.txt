@@ -1,0 +1,1 @@
+PASS: chest opening, restore guards, item shop and existing Altar; all test mutations rolled back.

@@ -1,0 +1,8 @@
+DragonHaven production migration evidence
+Commit: e249bd3967917335bbe24732a3195d3410df3120
+Previous migration: 202609070044
+Applied migrations: 202609070045 through 202609070047
+Economy authority remains in disabled legacy compatibility mode.
+Chest opening and item shop are dormant; existing Altar behavior is preserved.
+Migration parity, database lint, Auth and application health: passed
+No credentials or player data are included in this artifact.

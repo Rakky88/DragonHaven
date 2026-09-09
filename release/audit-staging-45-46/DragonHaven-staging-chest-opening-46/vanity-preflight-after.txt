@@ -1,0 +1,16 @@
+
+ProjectRef                  : vtmjkhzalalozpfnbvsd
+MigrationCount              : 46
+DatabaseLintErrors          : 0
+AuthHealthStatus            : 200
+AuthHealthDurationMs        : 126
+AuthSettingsStatus          : 200
+AuthSettingsDurationMs      : 134
+EmailAuthConfigured         : True
+ApplicationHealthStatus     : 200
+ApplicationHealthDurationMs : 362
+ApplicationService          : dragonhaven-online
+ApplicationContractVersion  : 1
+ApplicationServerTimeUtc    : 2026-09-07T10:18:28.0000000+00:00
+ApplicationClockSkewMs      : 344
+

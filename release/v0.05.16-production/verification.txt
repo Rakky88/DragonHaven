@@ -1,0 +1,8 @@
+DragonHaven production migration evidence
+Commit: 0d1d44d638423ce5988ab140db026ca97e81d55d
+Previous migration: 202609070041
+Applied migrations: 202609070042 through 202609070044
+Economy authority remains in disabled legacy compatibility mode.
+Egg Altar, tags, crafted relics, Beacon and corrected Sinister rewards are available.
+Migration parity, database lint, Auth and application health: passed
+No credentials or player data are included in this artifact.

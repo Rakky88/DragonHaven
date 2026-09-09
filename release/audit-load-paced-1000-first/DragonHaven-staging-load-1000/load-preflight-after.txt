@@ -1,0 +1,21 @@
+Connecting to remote database...
+Connecting to remote database...
+Linting schema: extensions
+Linting schema: private
+Linting schema: public
+
+ProjectRef                  : vtmjkhzalalozpfnbvsd
+MigrationCount              : 47
+DatabaseLintErrors          : 0
+AuthHealthStatus            : 200
+AuthHealthDurationMs        : 165
+AuthSettingsStatus          : 200
+AuthSettingsDurationMs      : 122
+EmailAuthConfigured         : True
+ApplicationHealthStatus     : 200
+ApplicationHealthDurationMs : 834
+ApplicationService          : dragonhaven-online
+ApplicationContractVersion  : 1
+ApplicationServerTimeUtc    : 2026-09-07T12:13:11.0000000+00:00
+ApplicationClockSkewMs      : 500
+

@@ -1,0 +1,15 @@
+
+
+Mode              : WhatIf
+Repository        : Rakky88/DragonHaven
+Tag               : v0.05.24
+ReleaseExists     : False
+AssetExists       : False
+WouldReplaceAsset : False
+AssetPath         : C:\Users\groot\python projects\ChoreQuest\.release-staging-v00109\release\DragonHaven-v0.05.24.apk
+AssetName         : DragonHaven.apk
+SizeBytes         : 536708780
+Sha256            : 26ed9d2d652c374c385b542f8dcb71da6a74bf60a67bba60ae182ab5f2f63443
+
+
+

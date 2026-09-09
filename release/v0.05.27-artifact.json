@@ -1,0 +1,9 @@
+{
+  "version": "0.05.27",
+  "versionCode": 10077,
+  "commit": "bde5fc09c678b75de99970de852cfaa908842ed2",
+  "sizeBytes": 627719094,
+  "sha256": "a1ed8e00d12783393aa0bf2e8ebceac44aae2f3cc75171b1b7c3541e4c6170ee",
+  "certificate": "477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942",
+  "target": "lib/main.dart"
+}

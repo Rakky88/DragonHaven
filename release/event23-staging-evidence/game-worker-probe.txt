@@ -1,0 +1,12 @@
+PASS: real authenticated recovery, idempotent barrier, stale request refusal and paused pending cancellation; assets unchanged.
+PASS: real Auth/Edge/Dart/Postgres; purchases, concurrent chest replay, tags, Sinister return and quill; live save/wallet unchanged.
+PASS: captured authoritative Altar prepared and replayed before game commands; no migration reward grant.
+PASS: authenticated public projection hides egg genetics, reflects committed actions and reads while mutations are paused.
+PASS: paused worker recovers original success/failure receipts and refuses new mutations.
+PASS: actual shop UI purchase and chest reveal; one debit and one earned title.
+PASS: actual lifecycle UI; Sinister return, crafting, discovery, tags, incubation, rename and equipment.
+PASS: actual adventure UI; server deadline, lost claim recovery, one reward, abort and Wayfinder.
+PASS: actual house UI; stored repair price, ward upgrade, floor purchase and free room selection.
+PASS: actual preferences UI; expertise highlights, adventure information and one favorite.
+PASS: actual Flutter client, Supabase Auth, filesystem journals and server; one charge after lost reply; corrupt request recovery without another purchase.
+CLEANUP: both synthetic accounts and shadow commands removed; game worker disabled.

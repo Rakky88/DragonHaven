@@ -1,0 +1,22 @@
+--- 
+
++++ 
+
+@@ -2256,6 +2256,6 @@
+
+         resource 0x7f0e001b nl.dragonhaven.app:string/androidx_startup: t=0x03 d=0x000000d6 (s=0x0008 r=0x00)
+           (string8) "androidx.startup"
+-        resource 0x7f0e0023 nl.dragonhaven.app:string/com.google.firebase.crashlytics.mapping_file_id: t=0x03 d=0x000000c7 (s=0x0008 r=0x00)
+-          (string8) "09aabeae591941ce959b13817d3c3e95"
++        resource 0x7f0e0023 nl.dragonhaven.app:string/com.google.firebase.crashlytics.mapping_file_id: t=0x03 d=0x000000c8 (s=0x0008 r=0x00)
++          (string8) "1633ffa5e1cf458f98c712d17cf5e4cc"
+         resource 0x7f0e0024 nl.dragonhaven.app:string/com.google.firebase.crashlytics.version_control_info: t=0x03 d=0x000000d9 (s=0x0008 r=0x00)
+           (string8) "generate_error_reason: NO_SUPPORTED_VCS_FOUND\n"
+@@ -2292,5 +2292,5 @@
+
+         resource 0x7f0e0034 nl.dragonhaven.app:string/common_open_on_phone: t=0x03 d=0x000000d3 (s=0x0008 r=0x00)
+           (string8) "Open on phone"
+-        resource 0x7f0e003e nl.dragonhaven.app:string/gcm_defaultSenderId: t=0x03 d=0x000000c8 (s=0x0008 r=0x00)
++        resource 0x7f0e003e nl.dragonhaven.app:string/gcm_defaultSenderId: t=0x03 d=0x000000c7 (s=0x0008 r=0x00)
+           (string8) "136858965382"
+         resource 0x7f0e003f nl.dragonhaven.app:string/google_api_key: t=0x03 d=0x000000ca (s=0x0008 r=0x00)

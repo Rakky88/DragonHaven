@@ -1,0 +1,12 @@
+{
+  "source": "dd0f8b295af544004f7094b384a0b13aa473c01a",
+  "version": "0.05.25",
+  "build": 10075,
+  "bytes": 536790700,
+  "sha256": "dfc6d2ce0dcb30fd7c2779b264a954dec28d28bfee2d9a649f17d25e82d87bad",
+  "target": "lib/main.dart",
+  "package": "nl.dragonhaven.app",
+  "releaseCommit": "f9de822839788b550674ff0689eb28a0a78073f4",
+  "runtimeSource": "dd0f8b295af544004f7094b384a0b13aa473c01a",
+  "rebuildComparison": "All 1563 APK entry payloads match the workflow-fix rebuild except resources.arsc: only a newly generated Crashlytics mapping ID and string-table indexes differ."
+}

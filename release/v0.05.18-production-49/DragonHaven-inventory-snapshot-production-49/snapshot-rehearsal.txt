@@ -1,0 +1,1 @@
+PASS: inventory snapshot; rehearsal=True; synthetic_records_rolled_back=true

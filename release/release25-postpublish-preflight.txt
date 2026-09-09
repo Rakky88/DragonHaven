@@ -1,0 +1,19 @@
+
+
+ProjectRef                  : tnzathhutuwmohmjfrlo
+MigrationCount              : 62
+DatabaseLintErrors          : 0
+AuthHealthStatus            : 200
+AuthHealthDurationMs        : 250
+AuthSettingsStatus          : 200
+AuthSettingsDurationMs      : 193
+EmailAuthConfigured         : True
+ApplicationHealthStatus     : 200
+ApplicationHealthDurationMs : 238
+ApplicationService          : dragonhaven-online
+ApplicationContractVersion  : 1
+ApplicationServerTimeUtc    : 2026-09-09T12:05:56.9570000+00:00
+ApplicationClockSkewMs      : 3
+
+
+

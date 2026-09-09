@@ -1,0 +1,16 @@
+{
+    "ProjectRef":  "tnzathhutuwmohmjfrlo",
+    "MigrationCount":  57,
+    "DatabaseLintErrors":  0,
+    "AuthHealthStatus":  200,
+    "AuthHealthDurationMs":  168,
+    "AuthSettingsStatus":  200,
+    "AuthSettingsDurationMs":  180,
+    "EmailAuthConfigured":  true,
+    "ApplicationHealthStatus":  200,
+    "ApplicationHealthDurationMs":  157,
+    "ApplicationService":  "dragonhaven-online",
+    "ApplicationContractVersion":  1,
+    "ApplicationServerTimeUtc":  "2026-09-08T19:43:11.9760000+00:00",
+    "ApplicationClockSkewMs":  64
+}

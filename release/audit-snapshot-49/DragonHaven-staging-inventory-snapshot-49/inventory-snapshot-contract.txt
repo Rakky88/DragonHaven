@@ -1,0 +1,1 @@
+PASS: inventory snapshot; migrations_rehearsed=False; all_synthetic_changes_rolled_back=true

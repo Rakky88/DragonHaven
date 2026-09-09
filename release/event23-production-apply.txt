@@ -1,0 +1,10 @@
+{"upToDate":false,"dryRun":false,"migrations":["202609090060_end_active_event.sql"],"seeds":[],"roles":[],"message":"Finished supabase db push."}
+
+Initialising login role...
+Connecting to remote database...
+Do you want to push these migrations to the remote database?
+ • 202609090060_end_active_event.sql
+ [Y/n] y
+Applying migration 202609090060_end_active_event.sql...
+A new version of Supabase CLI is available: v2.117.0 (currently installed v2.115.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
