@@ -1,13 +1,15 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
-## Release v0.05.26 in voorbereiding
+## Release v0.05.26 afgerond
 
-De reeds gebouwde verjaardagsaanpassingen en het snellere kerstbegin worden
-uitgebracht als v0.05.26 / 10076. Publicatie volgt na regressietests, analyse,
-ondertekening, versiecontrole, emulatorcontrole en productiepreflight op schema 63.
-De nieuwe Sunwake- en Harvestmoon-events horen bij het volgende werkpakket.
-Bewijs en definitieve publicatiestatus: `RELEASE_V0.05.26_VERIFICATION.md`.
-
+De verjaardagsaanpassingen en het snellere kerstbegin zijn gepubliceerd als
+v0.05.26 / 10076 op 9 september 2026 om 13:20:43 UTC. Release-CI 34355223649
+slaagt: 715 Fluttertests, analyse, native muziekcontroles en ondertekende build.
+De update behoudt de opgeslagen draak, toren, valuta en taalkeuze; About toont
+de juiste versie. Productie behoudt 63 overeenkomende migraties, lint 0 en alle
+healthchecks HTTP 200. De vaste downloadlink werkt en de APK-hash klopt exact.
+Sunwake en Harvestmoon volgen als afzonderlijk werkpakket met drakenreview.
+Bewijs: `RELEASE_V0.05.26_VERIFICATION.md`.
 
 ## Verjaardag en sneller kerstbegin — na v0.05.25
 
@@ -24,8 +26,7 @@ gecontroleerd). Analyse is schoon; Dart/JS-pariteit en 15 Deno-contracttests
 slagen. Android bouwt en de kleine/grote layouts zijn visueel bekeken.
 Staging en productie staan op 63 migraties, lint 0; productiehealthchecks
 geven HTTP 200. Economische activatie en spelerinventories zijn behouden.
-Publicatie is nog niet gedaan;
-de openbare release blijft v0.05.25 / 10075. Bewijs: `BIRTHDAY_EVENT_VERIFICATION.md`.
+Deze aanpassingen zijn uitgebracht in v0.05.26 / 10076. Bewijs: `BIRTHDAY_EVENT_VERIFICATION.md`.
 
 ## Release v0.05.25 afgerond
 

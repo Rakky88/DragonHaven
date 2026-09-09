@@ -1,7 +1,8 @@
 # Birthday event and Christmas pacing verification
 
 Reviewed 9 September 2026, after published v0.05.25 / build 10075.
-The public release is unchanged; these app changes await the next release.
+Published in v0.05.26 / build 10076 on 9 September 2026.
+Final release evidence: `RELEASE_V0.05.26_VERIFICATION.md`.
 
 ## Implemented
 
