@@ -167,6 +167,8 @@ void main() {
   testWidgets(
       'the existing Ruin artwork plays canonical input and displays the verified reward',
       (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     var elapsed = 0;
     final initialXp = source.dragon!.xp;
     await tester.runAsync(() => tester.pumpWidget(MaterialApp(
