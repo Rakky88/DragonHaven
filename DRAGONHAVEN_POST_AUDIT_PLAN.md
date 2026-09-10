@@ -1,5 +1,7 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+2026-09-10: full staging run `34477912601` on `8716db0` applied schema 73 and deployed ruleset `643da93847b20c1306bad8d67082c23cbd32767571b602cdde4092b8efe13163` (1,147,506 bytes). All compatibility/rollback contracts passed; preflight at 12:48:15 UTC reported 73 migrations, lint 0, Auth/settings/application 200. Existing real UI, four-keeper groups and two-keeper partners passed. The Beacon widget probe timed out; cleanup removed the synthetic accounts/Conclave and disabled all four switches at 12:57:53 UTC. Focused Beacon diagnostics/retest remain required; production is unchanged.
+
 2026-09-10 staging update: full run `34476782241` passed app/rules and all social rollback rehearsals, then stopped before DDL/deployment because compatibility runners accidentally omitted baseline 72. The exact-prefix history guard now accepts all reviewed prefixes through 73 and rejects gaps, duplicates and newer schemas. Staging remains schema 72; production is unchanged. Full rerun is required.
 
 ## Group, partner and Beacon rollback proofs passed (10 September)

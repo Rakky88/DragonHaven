@@ -1,6 +1,6 @@
-"""Focused client proof against the already-deployed schema-72 worker.
+"""Focused client proof against the already-deployed schema-73 worker.
 
-The pinned ruleset was built by full staging run 34474222373 on 6a2e91e.
+The pinned ruleset was built by full staging run 34477912601 on 8716db0.
 This runner deploys no code and applies no migration; all state is synthetic.
 """
 import json
@@ -9,8 +9,9 @@ import sys
 import staging_game_worker_probe as probe
 from staging_group_probe import run_group_probe
 from staging_pair_probe import run_pair_probe
+from staging_beacon_probe import run_beacon_probe
 
-RULESET = 'f482069b22b4f9cbe96bac91bb7aa506378492879f15fba08612824554ec989b'
+RULESET = '643da93847b20c1306bad8d67082c23cbd32767571b602cdde4092b8efe13163'
 
 def main():
     p = probe
@@ -18,8 +19,8 @@ def main():
       and p.MANAGEMENT and p.PUBLIC_KEY, 'group_probe_registered_staging_required')
     versions = p.query('select version from supabase_migrations.schema_migrations order by version', True)
     expected = sorted(path.name.split('_')[0] for path in (p.ROOT/'supabase/migrations').glob('*.sql')
-      if path.name.split('_')[0] <= '202609100072')
-    p.require([row['version'] for row in versions] == expected and len(expected) == 72, 'group_probe_schema_mismatch')
+      if path.name.split('_')[0] <= '202609100073')
+    p.require([row['version'] for row in versions] == expected and len(expected) == 73, 'group_probe_schema_mismatch')
     baseline=p.query("""select enabled or shadow_social_enabled or shadow_projection_enabled or shadow_lifecycle_enabled as enabled,
       ruleset_sha256,(select count(*) from private.canonical_game_states) as copies,
       (select mutations_enabled from private.economy_contract where singleton) as mutations
@@ -34,8 +35,8 @@ def main():
     try:
       p.query(f"update private.game_engine_runtime set enabled=true,ruleset_sha256='{RULESET}' where singleton")
       mode=p.os.environ.get('STAGING_SOCIAL_PROBE','group')
-      p.require(mode in ('group','pair'),'social_probe_mode_invalid')
-      run_probe=run_group_probe if mode=='group' else run_pair_probe
+      p.require(mode in ('group','pair','beacon'),'social_probe_mode_invalid')
+      run_probe={'group':run_group_probe,'pair':run_pair_probe,'beacon':run_beacon_probe}[mode]
       run_probe(root=p.ROOT,project=p.PROJECT,base=p.BASE,public_key=p.PUBLIC_KEY,run=p.RUN,
         fixture=fixture,admin_headers={'Authorization':'Bearer '+admin,'apikey':admin},call=p.call,query=p.query,require=p.require)
     finally:
@@ -51,6 +52,8 @@ def main():
         update private.game_engine_runtime set enabled=false,shadow_social_enabled=false,shadow_projection_enabled=false,
           shadow_lifecycle_enabled=false,ruleset_sha256={restore} where singleton;
         select set_config('request.jwt.claim.role','service_role',true);
+        delete from public.conclaves where description='{p.RUN}' and created_by in
+          (select id from auth.users where raw_app_meta_data->>'dragonhaven_game_probe'='{p.RUN}' and email like '%@dragonhaven-probe.invalid');
         delete from auth.users where raw_app_meta_data->>'dragonhaven_game_probe'='{p.RUN}' and email like '%@dragonhaven-probe.invalid';
         commit;
         select (select count(*) from auth.users where raw_app_meta_data->>'dragonhaven_game_probe'='{p.RUN}') as accounts,

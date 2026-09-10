@@ -46,6 +46,7 @@ void main() {
     var loseReply = true;
     await tester.binding.setSurfaceSize(const Size(430, 1000));
     try {
+      stdout.writeln('PROBE: beacon_auth_begin');
       await tester.runAsync(() async {
         await auth.auth.recoverSession(jsonEncode(signed));
         require((await auth.auth.getUser()).user?.id == signed['user']['id'],
@@ -60,6 +61,7 @@ void main() {
                       return true;
                     }, action: 'donate_beacon')));
         await game!.synchronize();
+        stdout.writeln('PROBE: beacon_read_complete');
       });
       final session = game!;
       Future<void> settle() async {
@@ -77,9 +79,12 @@ void main() {
       Future<void> tap(String key) async {
         final finder = find.byKey(Key(key));
         require(finder.evaluate().length == 1, 'control_missing');
-        await tester.ensureVisible(finder);
+        stdout.writeln('PROBE: beacon_tap_${key.replaceAll('-', '_')}_begin');
+        await tester.runAsync(() => tester.ensureVisible(finder));
         await tester.runAsync(() => tester.tap(finder));
         await settle();
+        stdout
+            .writeln('PROBE: beacon_tap_${key.replaceAll('-', '_')}_complete');
       }
 
       await tester.runAsync(() => tester.pumpWidget(MultiProvider(
@@ -93,6 +98,7 @@ void main() {
                       body: SingleChildScrollView(
                           child: WeaveBeaconCard(
                               conclaveId: conclave, active: true)))))));
+      stdout.writeln('PROBE: beacon_rendered');
       await settle();
       for (var i = 0;
           i < 80 && find.text('490 / 5000').evaluate().isEmpty;
@@ -101,6 +107,7 @@ void main() {
       }
       require(find.text('490 / 5000').evaluate().length == 1,
           'shared_total_missing');
+      stdout.writeln('PROBE: beacon_initial_total_visible');
       await tap('weave-beacon-project');
       await tap('donate-weave-fragments');
       await tap('confirm-beacon-donation');
