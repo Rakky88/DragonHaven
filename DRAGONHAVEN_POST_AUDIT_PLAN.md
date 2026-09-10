@@ -1,5 +1,16 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+2026-09-10 trade follow-up: rollback-only staging run `34483041422` (`04b7c6a`)
+passed exact two-owner conservation, receipt replay, forged-wallet refusal,
+expiry and legacy fences. Candidate 74 remains unapplied. The UI now has owned
+item details, variant selection, cancellation/rejection/final confirmation and
+the existing persistent trade animation using only masked display data. Local
+picker/lost-answer/acknowledgment/account-switch tests pass. The two-Auth test
+adds an actual tagged Special egg for an exact Chronoshard, retaining DNA,
+knowledge and future metadata; it has not yet run. Full cutover and APK work
+remain open. No production mutation or release.
+
+
 2026-09-10 Beacon follow-up: focused authenticated UI run `34481864223` on
 `99e3208` passed on staging schema 73 / ruleset `643da938…13163`. It proves one
 25-fragment debit, shared 490→515 progression, one stage message and recovery

@@ -10,6 +10,7 @@ import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
 import '../services/canonical_game_snapshot.dart';
 import 'achievement_reveal.dart';
+import 'trade_reveal.dart';
 import 'shop_economy_scope.dart';
 import 'ui_bits.dart';
 
@@ -64,8 +65,8 @@ Future<bool> showCanonicalMilestone(
       if (achievement == null) return false;
       await showAchievementReveal(context, achievement, guard: guard);
     case GamePresentationType.trade:
-      // The trade scene is connected with normalized social settlement.
-      return false;
+      await showCanonicalTradeReveal(context, event.sent!, event.received!,
+          guard: guard);
   }
   if (!context.mounted || !current() || !session.canAct) return false;
   await CanonicalGameActions(session).completePresentation(event.id);
@@ -136,7 +137,6 @@ class _CanonicalMilestonesState extends State<CanonicalMilestones> {
     final view = session.snapshot;
     final event = view?.presentations.firstOrNull;
     final available = event != null &&
-        event.type != GamePresentationType.trade &&
         view!.trialAttempt == null &&
         view.schoolAttempt == null;
     if (available && !_showing && _deferred != event.id && session.canAct) {

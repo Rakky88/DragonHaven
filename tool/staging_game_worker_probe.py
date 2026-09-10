@@ -467,6 +467,9 @@ def main():
         from staging_beacon_probe import run_beacon_probe
         run_beacon_probe(root=ROOT, project=PROJECT, base=BASE, public_key=PUBLIC_KEY,
             run=RUN, fixture=fixture, admin_headers=admin_headers, call=call, query=query, require=require)
+        from staging_trade_probe import run_trade_probe
+        run_trade_probe(root=ROOT, project=PROJECT, base=BASE, public_key=PUBLIC_KEY,
+            run=RUN, fixture=fixture, admin_headers=admin_headers, call=call, query=query, require=require)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"
         # The immutable run marker also finds an account whose admin-create

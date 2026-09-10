@@ -24,7 +24,8 @@ String canonicalEggName(AppStrings strings, CanonicalEggView egg) {
       : strings.pick(special.titleEn, special.titleNl);
 }
 
-String _knownRarity(AppStrings strings, String? value) => switch (value) {
+String canonicalKnownRarity(AppStrings strings, String? value) =>
+    switch (value) {
       'common' => strings.pick('Common', 'Gewoon'),
       'uncommon' => strings.pick('Uncommon', 'Ongewoon'),
       'rare' => strings.pick('Rare', 'Zeldzaam'),
@@ -222,7 +223,7 @@ Future<void> showCanonicalEggDetails(BuildContext context, String id,
                                   Text(
                                       '${strings.pick('Dragon', 'Draak')}: ${lineage == null ? unknown : strings.lineageName(lineage)}'),
                                   Text(
-                                      '${strings.pick('Rarity', 'Zeldzaamheid')}: ${_knownRarity(strings, egg.revealedRarity)}'),
+                                      '${strings.pick('Rarity', 'Zeldzaamheid')}: ${canonicalKnownRarity(strings, egg.revealedRarity)}'),
                                   if (egg.revealedLawAxis != null)
                                     Text(switch (LawAxis.values
                                         .where((v) =>

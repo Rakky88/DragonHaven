@@ -62,6 +62,12 @@ begin
     'reservedOnlineTradeChests','{}'::jsonb);
   -- The old one-owner commit and a forged second wallet must neither complete
   -- the trade nor leave a debit or receipt on the first account.
+  begin
+    update private.canonical_game_states set revision=revision+1 where owner_id=b;
+    perform public.commit_canonical_trade_command(a,qc,(leased->>'lease_token')::uuid,na,
+      jsonb_build_object('tradeId',tid,'status','completed'),nb,jsonb_build_object('tradeId',tid,'status','completed'));
+    raise exception 'trade_contract_changed_counterparty_accepted';
+  exception when others then if sqlerrm<>'game_social_state_changed' then raise; end if; end;
   begin perform public.commit_canonical_game_command(a,qc,(leased->>'lease_token')::uuid,na,jsonb_build_object('tradeId',tid,'status','completed'));
     raise exception 'trade_contract_single_commit_accepted';
   exception when others then if sqlerrm<>'game_social_state_changed' then raise; end if; end;

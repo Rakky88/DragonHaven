@@ -12,6 +12,7 @@ import 'egg_altar_phrase_translations.dart';
 import 'event_training_phrase_translations.dart';
 import 'economy_equipment_phrase_translations.dart';
 import 'lifecycle_phrase_translations.dart';
+import 'trade_phrase_translations.dart';
 
 /// Offline translations for complete, user-visible UI phrases.
 ///
@@ -41,6 +42,7 @@ String? translatedUiPhrase(String english, String languageCode) {
       eventTrainingPhraseTranslations[english] ??
       economyEquipmentPhraseTranslations[english] ??
       lifecyclePhraseTranslations[english] ??
+      tradePhraseTranslations[english] ??
       eggAltarPhraseTranslations[english];
   if (index == null) return null;
   if (values != null && values.length == 6) return values[index];

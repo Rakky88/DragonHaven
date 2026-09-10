@@ -1109,6 +1109,14 @@ class CanonicalPresentationView {
         type == GamePresentationType.achievement && achievementId == null) {
       throw const CanonicalGameException('game_snapshot_invalid');
     }
+    if (type == GamePresentationType.trade) {
+      final items = _map(_data['trade']);
+      if (!_keys(items, const ['sent', 'received'])) {
+        throw const CanonicalGameException('game_snapshot_invalid');
+      }
+      CanonicalTradeItemView._parse(items['sent']);
+      CanonicalTradeItemView._parse(items['received']);
+    }
   }
   CanonicalTradeItemView? get sent => type == GamePresentationType.trade
       ? CanonicalTradeItemView._parse(_map(_data['trade'])['sent'])

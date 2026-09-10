@@ -9,6 +9,7 @@ import '../models/game_presentation.dart';
 import '../models/mystic_relic.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
+import '../services/canonical_game_snapshot.dart';
 import 'game_icon_sprite.dart';
 
 Future<void> showTradeReveal(
@@ -16,6 +17,25 @@ Future<void> showTradeReveal(
   HouseholdProvider game,
   GamePresentation presentation,
 ) =>
+    _showTradeReveal(context,
+        sent: _RevealItem.fromPayload(presentation.payload, 'sent'),
+        received: _RevealItem.fromPayload(presentation.payload, 'received'),
+        game: game);
+
+/// Uses only the server's masked display items, never an egg's private DNA.
+Future<void> showCanonicalTradeReveal(BuildContext context,
+        CanonicalTradeItemView sent, CanonicalTradeItemView received,
+        {Widget Function(Widget)? guard}) =>
+    _showTradeReveal(context,
+        sent: _RevealItem.fromCanonical(sent),
+        received: _RevealItem.fromCanonical(received),
+        guard: guard);
+
+Future<void> _showTradeReveal(BuildContext context,
+        {required _RevealItem sent,
+        required _RevealItem received,
+        HouseholdProvider? game,
+        Widget Function(Widget)? guard}) =>
     showGeneralDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -30,22 +50,26 @@ Future<void> showTradeReveal(
           child: child,
         ),
       ),
-      pageBuilder: (dialogContext, _, __) => _TradeReveal(
-        game: game,
-        presentation: presentation,
-        onContinue: () => Navigator.pop(dialogContext),
-      ),
+      pageBuilder: (dialogContext, _, __) {
+        final child = _TradeReveal(
+            game: game,
+            sent: sent,
+            received: received,
+            onContinue: () => Navigator.pop(dialogContext));
+        return guard?.call(child) ?? child;
+      },
     );
 
 class _TradeReveal extends StatefulWidget {
   const _TradeReveal({
     required this.game,
-    required this.presentation,
+    required this.sent,
+    required this.received,
     required this.onContinue,
   });
 
-  final HouseholdProvider game;
-  final GamePresentation presentation;
+  final HouseholdProvider? game;
+  final _RevealItem sent, received;
   final VoidCallback onContinue;
 
   @override
@@ -74,9 +98,8 @@ class _TradeRevealState extends State<_TradeReveal>
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final payload = widget.presentation.payload;
-    final sent = _RevealItem.fromPayload(payload, 'sent');
-    final received = _RevealItem.fromPayload(payload, 'received');
+    final sent = widget.sent;
+    final received = widget.received;
     return PopScope(
       canPop: false,
       child: SafeArea(
@@ -205,7 +228,7 @@ class _TradeItemCard extends StatelessWidget {
 
   final String eyebrow;
   final _RevealItem item;
-  final HouseholdProvider game;
+  final HouseholdProvider? game;
   final bool received;
 
   @override
@@ -274,7 +297,17 @@ class _TradeItemArt extends StatelessWidget {
 }
 
 class _RevealItem {
-  const _RevealItem(this.kind, this.key, this.data);
+  const _RevealItem(this.kind, this.key, this.data, {this.displayEgg});
+
+  final CanonicalEggView? displayEgg;
+  factory _RevealItem.fromCanonical(CanonicalTradeItemView item) => _RevealItem(
+      item.kind,
+      item.key,
+      {
+        if (item.reductionPercent != null)
+          'reductionPercent': item.reductionPercent,
+      },
+      displayEgg: item.egg);
 
   final String kind;
   final String key;
@@ -299,7 +332,7 @@ class _RevealItem {
         orElse: () => null,
       );
 
-  String label(AppStrings strings, HouseholdProvider game) {
+  String label(AppStrings strings, HouseholdProvider? game) {
     if (kind == 'chest') {
       return chest?.label(strings.isDutch) ?? strings.pick('Chest', 'Kist');
     }
@@ -307,9 +340,10 @@ class _RevealItem {
       final value = relic;
       return value == null
           ? strings.pick('Relic', 'Reliek')
-          : strings.relicName(value);
+          : '${strings.relicName(value)}${value == MysticRelic.chronoshard ? ' · ${data['reductionPercent']}%' : ''}';
     }
+    if (displayEgg != null) return displayEgg!.hint(strings.languageCode);
     final egg = DragonEgg.fromJson({...data, 'id': key});
-    return game.eggHintForEgg(egg, locale: strings.languageCode);
+    return game!.eggHintForEgg(egg, locale: strings.languageCode);
   }
 }

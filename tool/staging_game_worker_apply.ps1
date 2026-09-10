@@ -24,10 +24,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Migration history unavailable.' }
 $remote = @($state.migrations | ForEach-Object { [string]$_.remote } | Where-Object { $_ } | Sort-Object)
 $local = @(Get-ChildItem supabase/migrations -Filter '*.sql' | ForEach-Object { $_.BaseName.Split('_')[0] } | Sort-Object)
 $expectedRemote = @($local | Where-Object { [long]$_ -le [long]$remote[-1] })
-if ($local[-1] -cne '202609100073' -or $local.Count -ne 73 -or
-    $remote[-1] -notin @('202609090065','202609100066','202609100067','202609100068','202609100069','202609100070','202609100071','202609100072','202609100073') -or
+if ($local[-1] -cne '202609100074' -or $local.Count -ne 74 -or
+    $remote[-1] -notin @('202609090065','202609100066','202609100067','202609100068','202609100069','202609100070','202609100071','202609100072','202609100073','202609100074') -or
     @(Compare-Object $remote $expectedRemote).Count -ne 0) {
-  throw 'Requires exact registered staging schema 65 through 73 and the reviewed canonical migrations.'
+  throw 'Requires exact registered staging schema 65 through 74 and the reviewed canonical migrations.'
 }
 ./tool/staging_endless_sunwake_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
@@ -50,6 +50,9 @@ if ($local[-1] -cne '202609100073' -or $local.Count -ne 73 -or
 ./tool/staging_canonical_beacon_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
   -RehearseMigrations:([long]$remote[-1] -lt 202609100073)
+./tool/staging_canonical_trade_contract.ps1 -ProjectRef $projectRef `
+  -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
+  -RehearseMigrations:([long]$remote[-1] -lt 202609100074)
 # Schema 69's internal-entry grant is the known, dormant staging defect.
 # The reservation rollback contract above rehearses the exact 70 repair and
 # checks that grant before any DDL is applied. All compatibility contracts run
@@ -87,6 +90,8 @@ if (@(Compare-Object $remote $local).Count -ne 0) {
 ./tool/staging_canonical_pair_lifecycle_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 ./tool/staging_canonical_beacon_contract.ps1 -ProjectRef $projectRef `
+  -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
+./tool/staging_canonical_trade_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 ./tool/staging_canonical_game_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN

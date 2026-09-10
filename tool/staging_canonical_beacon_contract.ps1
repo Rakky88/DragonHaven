@@ -19,7 +19,7 @@ try {
     $remote = @($history | ForEach-Object { [string]$_.version } | Sort-Object)
     $files = @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot '../supabase/migrations') -Filter '*.sql' | Sort-Object Name)
     $expected = @($files | ForEach-Object { $_.BaseName.Split('_')[0] } | Where-Object { [long]$_ -le [long]$remote[-1] })
-    if ($remote[-1] -notin @('202609090065','202609100066','202609100067','202609100068','202609100069','202609100070','202609100071','202609100072','202609100073') -or
+    if ($remote[-1] -notin @('202609090065','202609100066','202609100067','202609100068','202609100069','202609100070','202609100071','202609100072','202609100073','202609100074') -or
         @(Compare-Object $remote $expected).Count -ne 0) { throw 'beacon_contract_schema'; }
     $pending = @($files | Where-Object { [long]$_.BaseName.Split('_')[0] -gt [long]$remote[-1] -and
         [long]$_.BaseName.Split('_')[0] -le 202609100073 } | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw -Encoding utf8 })

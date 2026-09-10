@@ -15,6 +15,7 @@ import 'screens/canonical_dragons_screen.dart';
 import 'screens/canonical_adventures_screen.dart';
 import 'screens/canonical_house_screen.dart';
 import 'screens/canonical_profile_screen.dart';
+import 'screens/canonical_trades_screen.dart';
 import 'screens/shop_hub_screen.dart';
 import 'services/canonical_game_session.dart';
 import 'services/canonical_groups.dart';
@@ -139,6 +140,18 @@ class _CanonicalStagingAppState extends State<CanonicalStagingApp>
                                       .pick('Haven', 'Haven'))),
                               body: const SafeArea(
                                   child: CanonicalHouseScreen()))))),
+            if (signedIn)
+              IconButton(
+                  tooltip: strings.pick('Trades', 'Ruilen'),
+                  icon: const Icon(Icons.swap_horiz),
+                  onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                          builder: (_) => Scaffold(
+                              appBar: AppBar(
+                                  title:
+                                      Text(strings.pick('Trades', 'Ruilen'))),
+                              body: const SafeArea(
+                                  child: CanonicalTradesScreen()))))),
             if (signedIn)
               IconButton(
                   tooltip: strings.pick('Profile', 'Profiel'),

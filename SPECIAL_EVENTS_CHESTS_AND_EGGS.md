@@ -18,8 +18,12 @@ eligibility; cosmetic/Special chests and all four equipable brooches remain
 untradeable. A Chronoshard moves with its exact percentage, without a new roll.
 Unknown egg information stays private in offers, receipts and reveal scenes.
 No chance, reward table, event schedule or redeem-code value changes. Domain,
-Edge and VM/JavaScript parity tests pass; SQL rollback, actual trade UI and
-legacy-trade migration remain open.
+Edge and VM/JavaScript parity tests pass. Staging rollback run 34483041422 on
+04b7c6a passed atomic two-owner conservation, replay, expiry and legacy fences.
+The picker now shows item details before offering, and the existing animated
+trade scene accepts masked server data and acknowledges without another grant.
+Local UI lost-response/account-switch checks pass. The real two-Auth UI probe
+and legacy-trade migration remain open; migration 74 is not deployed.
 
 Beacon (migration 73, applied only on staging): voluntary donations spend 1–5000 owned Shell
 Fragments, capped by the existing shared goal of 5000. The command seals current
@@ -72,7 +76,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: d941a2fff43a4dcc -->
+<!-- reference-source-fingerprint: cba336eef7758377 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

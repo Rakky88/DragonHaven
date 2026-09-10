@@ -105,6 +105,48 @@ class CanonicalGameActions {
     return result['fragments'] as int;
   }
 
+  Future<String> offerTrade(String keeperCode,
+          {required String kind, required String key, int variant = 0}) =>
+      _tradeAction(
+          'offer_trade',
+          {
+            'keeperCode': keeperCode.trim().toUpperCase(),
+            'kind': kind,
+            'key': key,
+            'variant': variant
+          },
+          'awaiting_recipient');
+
+  Future<String> replyTrade(String tradeId,
+          {required String kind, required String key, int variant = 0}) =>
+      _tradeAction(
+          'reply_trade',
+          {'tradeId': tradeId, 'kind': kind, 'key': key, 'variant': variant},
+          'awaiting_initiator');
+
+  Future<String> confirmTrade(String tradeId) =>
+      _tradeAction('confirm_trade', {'tradeId': tradeId}, 'completed');
+  Future<String> cancelTrade(String tradeId) =>
+      _tradeAction('cancel_trade', {'tradeId': tradeId}, 'cancelled');
+  Future<String> rejectTrade(String tradeId) =>
+      _tradeAction('reject_trade', {'tradeId': tradeId}, 'rejected');
+
+  Future<String> _tradeAction(
+      String action, Map<String, dynamic> payload, String status) async {
+    final result = await execute(action, payload);
+    if (result is! Map ||
+        result.length != 2 ||
+        result['status'] != status ||
+        result['tradeId'] is! String ||
+        !RegExp(r'^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
+            .hasMatch(result['tradeId'] as String) ||
+        (payload['tradeId'] != null &&
+            result['tradeId'] != payload['tradeId'])) {
+      throw const CanonicalGameException('game_result_invalid');
+    }
+    return result['tradeId'] as String;
+  }
+
   Future<String> invitePairAdventure(String keeperCode, String dragonId) =>
       _socialLifecycleAction('invite_pair_adventure', {
         'keeperCode': keeperCode.trim().toUpperCase(),

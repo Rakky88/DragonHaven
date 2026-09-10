@@ -24,7 +24,7 @@ try {
   $actual = @($history | ForEach-Object { [string]$_.version } | Sort-Object)
   . (Join-Path $PSScriptRoot 'canonical_contract_history.ps1')
   $applied = Test-CanonicalContractHistory -Actual $actual `
-    -FirstAppliedVersion '202609070052' -LastReviewedVersion '202609100073'
+    -FirstAppliedVersion '202609070052' -LastReviewedVersion '202609100074'
   if (-not $applied -and @(Compare-Object $actual $expected).Count -ne 0) {
     throw 'game_contract_baseline_mismatch'
   }
