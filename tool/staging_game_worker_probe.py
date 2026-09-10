@@ -464,6 +464,9 @@ def main():
         from staging_pair_probe import run_pair_probe
         run_pair_probe(root=ROOT, project=PROJECT, base=BASE, public_key=PUBLIC_KEY,
             run=RUN, fixture=fixture, admin_headers=admin_headers, call=call, query=query, require=require)
+        from staging_beacon_probe import run_beacon_probe
+        run_beacon_probe(root=ROOT, project=PROJECT, base=BASE, public_key=PUBLIC_KEY,
+            run=RUN, fixture=fixture, admin_headers=admin_headers, call=call, query=query, require=require)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"
         # The immutable run marker also finds an account whose admin-create
@@ -480,6 +483,9 @@ def main():
           end $$;
           update private.game_engine_runtime set enabled=false, shadow_social_enabled=false, shadow_projection_enabled=false, shadow_lifecycle_enabled=false, ruleset_sha256={restore} where singleton;
           select set_config('request.jwt.claim.role','service_role',true);
+          delete from public.conclaves where created_by in
+            (select id from auth.users where raw_app_meta_data->>'dragonhaven_game_probe'='{RUN}'
+              and email like '%@dragonhaven-probe.invalid') and description='{RUN}';
           delete from auth.users where raw_app_meta_data->>'dragonhaven_game_probe'='{RUN}'
             and email like '%@dragonhaven-probe.invalid';
           commit;
