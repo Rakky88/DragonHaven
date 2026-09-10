@@ -1,5 +1,7 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+2026-09-10 staging update: full run `34476782241` passed app/rules and all social rollback rehearsals, then stopped before DDL/deployment because compatibility runners accidentally omitted baseline 72. The exact-prefix history guard now accepts all reviewed prefixes through 73 and rejects gaps, duplicates and newer schemas. Staging remains schema 72; production is unchanged. Full rerun is required.
+
 ## Group, partner and Beacon rollback proofs passed (10 September)
 
 Focused schema-72 social verification now passed: group run 34475939615 and

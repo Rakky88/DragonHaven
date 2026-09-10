@@ -3,6 +3,7 @@
 param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+& (Join-Path $PSScriptRoot 'canonical_contract_history_test.ps1')
 $projectRef = $env:STAGING_SUPABASE_PROJECT_REF
 if ($projectRef -cne 'vtmjkhzalalozpfnbvsd' -or
     $env:STAGING_SUPABASE_URL.TrimEnd('/') -cne "https://$projectRef.supabase.co") {
