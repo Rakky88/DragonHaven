@@ -70,10 +70,10 @@ class CanonicalUiServer {
               .toString(),
           now: now,
           keeperId: owner,
-          verifiedSocialContext:
-              intent.action.startsWith('claim_') && intent.payload.length == 1
+          verifiedSocialContext: socialContexts[intent.action] ??
+              (intent.action.startsWith('claim_') && intent.payload.length == 1
                   ? socialContexts[intent.payload.values.single]
-                  : null);
+                  : null));
     } on GameCommandException catch (error) {
       final receipt = receipts[intent.requestId] = {
         'request_id': intent.requestId,

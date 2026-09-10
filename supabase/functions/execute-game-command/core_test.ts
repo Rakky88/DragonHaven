@@ -345,8 +345,12 @@ Deno.test("cosmetic and milestone commands cannot import ownership, cooldowns or
   }
 });
 
-Deno.test("social claims use only the sealed database context and reject client grants", async () => {
+Deno.test("social actions use only sealed database facts and reject client grants", async () => {
   for (const [action, payload] of [
+    ["create_group_adventure", {adventureId: "group_1", dragonId: "owned-dragon"}],
+    ["join_group_adventure", {lobbyId: other, dragonId: "owned-dragon"}],
+    ["leave_group_adventure", {lobbyId: other}],
+    ["remove_group_adventure_member", {lobbyId: other, memberId: requestId}],
     ["claim_group_reward", {lobbyId: other}], ["claim_pair_reward", {adventureId: other}],
     ["claim_podium_prize", {prizeId: other}],
   ] as const) {

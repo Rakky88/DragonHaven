@@ -17,6 +17,7 @@ import 'screens/canonical_house_screen.dart';
 import 'screens/canonical_profile_screen.dart';
 import 'screens/shop_hub_screen.dart';
 import 'services/canonical_game_session.dart';
+import 'services/canonical_groups.dart';
 import 'services/canonical_game_snapshot.dart';
 import 'services/canonical_game_transport.dart';
 import 'theme/app_theme.dart';
@@ -45,9 +46,13 @@ Future<void> runCanonicalStaging(OnlineConfig config) async {
   final session = CanonicalGameSession(
       connection: CanonicalGameTransport.staging(auth, config),
       directory: Directory('${support.path}/canonical-staging-v1'));
-  runApp(ChangeNotifierProvider.value(
-      value: session,
-      child: CanonicalStagingApp(session: session, auth: auth)));
+  runApp(MultiProvider(providers: [
+    ChangeNotifierProvider.value(value: session),
+    ChangeNotifierProvider(
+        create: (_) => CanonicalGroups(
+            connection: session.connection,
+            source: SupabaseCanonicalGroupsSource(auth))),
+  ], child: CanonicalStagingApp(session: session, auth: auth)));
 }
 
 class CanonicalStagingApp extends StatefulWidget {

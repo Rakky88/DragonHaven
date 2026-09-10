@@ -458,6 +458,9 @@ def main():
         print('PASS: actual preferences UI; expertise highlights, adventure information and one favorite.', flush=True)
         print('PASS: actual house editor, roaming and care UI; layout and needs preserved, one treat debit.', flush=True)
         print('PASS: actual Flutter client, Supabase Auth, filesystem journals and server; one charge after lost reply; corrupt request recovery without another purchase.', flush=True)
+        from staging_group_probe import run_group_probe
+        run_group_probe(root=ROOT, project=PROJECT, base=BASE, public_key=PUBLIC_KEY,
+            run=RUN, fixture=fixture, admin_headers=admin_headers, call=call, query=query, require=require)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"
         # The immutable run marker also finds an account whose admin-create
@@ -473,6 +476,7 @@ def main():
             end if;
           end $$;
           update private.game_engine_runtime set enabled=false, shadow_social_enabled=false, shadow_projection_enabled=false, shadow_lifecycle_enabled=false, ruleset_sha256={restore} where singleton;
+          select set_config('request.jwt.claim.role','service_role',true);
           delete from auth.users where raw_app_meta_data->>'dragonhaven_game_probe'='{RUN}'
             and email like '%@dragonhaven-probe.invalid';
           commit;
@@ -483,7 +487,7 @@ def main():
             (select enabled or shadow_social_enabled or shadow_projection_enabled or shadow_lifecycle_enabled from private.game_engine_runtime where singleton) as enabled;
         """)[0]
         require(cleaned == {"accounts": 0, "copies": 0, "intents": 0, "recoveries": 0, "enabled": False}, "probe_cleanup_incomplete")
-        print("CLEANUP: both synthetic accounts and shadow commands removed; game worker disabled.", flush=True)
+        print("CLEANUP: all synthetic accounts and shadow commands removed; all four worker/social switches disabled.", flush=True)
 
 
 if __name__ == "__main__":

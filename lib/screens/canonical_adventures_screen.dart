@@ -1,3 +1,5 @@
+import '../services/canonical_groups.dart';
+import 'canonical_groups_screen.dart';
 import '../widgets/canonical_social_rewards.dart';
 import 'canonical_trials_screen.dart';
 import 'dart:async';
@@ -90,6 +92,19 @@ class _AdventuresState extends State<_Adventures> {
                           body: const CanonicalTrialsScreen()))),
               icon: const Icon(Icons.auto_awesome),
               label: Text(s.pick('Dragon Trials', 'Drakenproeven'))),
+          if (context.watch<CanonicalGroups?>() != null)
+            OutlinedButton.icon(
+                key: const Key('canonical-open-groups'),
+                onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                        builder: (_) => Scaffold(
+                            appBar: AppBar(
+                                title: Text(s.pick(
+                                    'Group Adventures', 'Groepsavonturen'))),
+                            body: const CanonicalGroupsScreen()))),
+                icon: const Icon(Icons.groups_outlined),
+                label: Text(s.pick('Group Adventures', 'Groepsavonturen'))),
           const CanonicalSocialRewards(),
           if (view.adventures.runs.isNotEmpty) ...[
             const SizedBox(height: 16),

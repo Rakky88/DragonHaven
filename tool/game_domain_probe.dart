@@ -194,6 +194,9 @@ Future<Map<String, dynamic>> runGameDomainProbe(
         'futureMetadata': {'createdAt': 'unchanged'},
       }),
       'school': school,
+      'groupLifecycle': includeTrialCommands
+          ? await _groupLifecycleProbe(stored, now, seed)
+          : const [],
       'socialReservations': [
         if (includeTrialCommands)
           for (final kind in ['group', 'pair'])
@@ -255,4 +258,53 @@ Future<Map<String, dynamic>> _reservationProbe(
       now: now,
       verifiedSocialReservations: reservations);
   return {'kind': kind, 'command': command, 'projection': projected};
+}
+
+Future<List<Map<String, dynamic>>> _groupLifecycleProbe(
+    Map<String, dynamic> state, DateTime now, String seed) async {
+  const owner = '11111111-1111-4111-8111-111111111111';
+  const source = '22222222-2222-4222-8222-222222222222';
+  const member = '33333333-3333-4333-8333-333333333333';
+  final results = <Map<String, dynamic>>[];
+  for (final action in [
+    'create_group_adventure',
+    'join_group_adventure',
+    'leave_group_adventure',
+    'remove_group_adventure_member'
+  ]) {
+    final copy = jsonDecode(jsonEncode(state)) as Map<String, dynamic>;
+    final leaving = action == 'leave_group_adventure';
+    final removing = action == 'remove_group_adventure_member';
+    copy['pet']['activeAdventureId'] = leaving ? 'online-group:$source' : null;
+    final result = await GameCommandEngine.execute(
+        state: copy,
+        action: action,
+        payload: {
+          if (action == 'create_group_adventure')
+            'adventureId': 'group_1'
+          else
+            'lobbyId': source,
+          if (action == 'create_group_adventure' ||
+              action == 'join_group_adventure')
+            'dragonId': copy['pet']['id'],
+          if (removing) 'memberId': member,
+        },
+        secretSeed: seed,
+        now: now,
+        keeperId: owner,
+        verifiedSocialContext: {
+          'version': 1,
+          'ownerId': owner,
+          'action': action,
+          'sourceId': source,
+          'fingerprint': 'ab' * 32,
+          'facts': {
+            'adventureId': 'group_1',
+            'dragonId': removing ? 'other-dragon' : copy['pet']['id'],
+            'memberId': removing ? member : null
+          },
+        });
+    results.add({'action': action, 'result': result});
+  }
+  return results;
 }
