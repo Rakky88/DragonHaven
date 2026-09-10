@@ -1,5 +1,11 @@
 # DragonHaven server-authoritative economy contract
 
+## Schema 70 verified; group lifecycle candidate (10 September 2026)
+
+Full staging run [34467076186](https://github.com/Rakky88/DragonHaven/actions/runs/34467076186) on `1c93734` passed the repair, compatibility contracts, domain/client checks and real authenticated UI harness. Schema 70 has zero lint errors and healthy Auth/settings/application endpoints; both synthetic accounts and all four worker/social switches were cleaned up. Production remains unchanged on schema 65, release 29.
+
+The next candidate adds server-sealed create/join/leave/remove group actions. Membership and the canonical command receipt commit in one transaction; an expired friendship or changed lobby refuses the whole action. Existing weekly catalog, duration and shared 70% Gold / 25% Dragon / 5% Mythical roll are preserved. The group lifecycle rollback rehearsal and player UI integration are still pending; this is not production activation.
+
 ## Reservation apply stopped at the permission guard (10 September 2026)
 
 The isolated reservation rollback contract passed in run 34465503291.
@@ -16,8 +22,7 @@ Migration **70** restores the revoked grant without editing applied history.
 The reservation rollback test now asserts this exact boundary too, and
 rehearses 69 together with 70 on older baselines. On the known schema-69
 baseline, the verified repair is applied before the historical compatibility
-contracts, which must all pass afterward. This repair is **pending staging
-verification**. Production remains untouched on schema 65, release 29.
+contracts, which must all pass afterward. This repair subsequently passed full staging run 34467076186. Production remains untouched on schema 65, release 29.
 
 
 ## Social projection verified; reservation integration candidate (10 September)

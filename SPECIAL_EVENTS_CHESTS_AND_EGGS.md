@@ -1,5 +1,7 @@
 # DragonHaven Special Events, Chests, and Eggs
 
+Current server verification (10 September): staging schema 70 passed run 34467076186; production remains at schema 65 / v0.05.29. The group lifecycle candidate only seals membership, owned dragon facts and the existing shared chest roll to one receipt. It changes no event content, code catalog, reward pool or probability. Group timing and the 70% Gold / 25% Dragon / 5% Mythical pool are preserved; migration 71 is pending rehearsal.
+
 Last reviewed: 10 September 2026; v0.05.29 is published with the approved Sunwake/Harvestmoon content and subsequent control refinements. Staging is at schema 66 and production remains at schema 65; database lint and public health checks pass.
 
 The four redesigned Trial introductions use their clean standalone event icons,
@@ -27,7 +29,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: e28e666bc2898a68 -->
+<!-- reference-source-fingerprint: 71a7979bbd88f7f2 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

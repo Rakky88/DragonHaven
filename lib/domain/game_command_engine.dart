@@ -1,3 +1,4 @@
+import 'social_group_lifecycle.dart';
 import 'social_dragon_reservations.dart';
 import 'social_claims.dart';
 import 'dart:convert';
@@ -82,6 +83,16 @@ abstract final class GameCommandEngine {
       // separately sealed database facts; paid entitlements remain absent.
       final Object? result;
       switch (action) {
+        case 'create_group_adventure':
+        case 'join_group_adventure':
+        case 'leave_group_adventure':
+        case 'remove_group_adventure_member':
+          result = SocialGroupLifecycle.apply(
+              game: game,
+              ownerId: keeperId,
+              action: action,
+              payload: payload,
+              context: verifiedSocialContext);
         case 'claim_group_reward':
         case 'claim_pair_reward':
         case 'claim_podium_prize':
@@ -398,6 +409,8 @@ abstract final class GameCommandEngine {
             '_lastGameResult': lastGameResult,
         }
       };
+    } on SocialGroupException {
+      throw const GameCommandException('game_action_unavailable');
     } on SocialClaimException catch (error) {
       throw GameCommandException(error.code);
     } on TrialAttemptException catch (error) {

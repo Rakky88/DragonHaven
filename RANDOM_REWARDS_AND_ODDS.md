@@ -1,12 +1,14 @@
 # DragonHaven Random Rewards and Odds
 
+Current server verification (10 September): staging schema 70 passed run 34467076186; production remains at schema 65 / v0.05.29. The group lifecycle candidate only seals membership, owned dragon facts and the existing shared chest roll to one receipt. It changes no event content, code catalog, reward pool or probability. Group timing and the 70% Gold / 25% Dragon / 5% Mythical pool are preserved; migration 71 is pending rehearsal.
+
 Last verified: 9 September 2026
 
 Ruleset: v0.05.29 published and verified; staging and production schema 65 verified, economy activation disabled; subsequent calendar hardening below
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 8ce88935e5d1745f -->
+<!-- reference-source-fingerprint: 7eebddf90a3795d2 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

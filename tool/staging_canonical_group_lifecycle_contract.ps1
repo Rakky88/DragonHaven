@@ -9,7 +9,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 if ($ProjectRef -cne 'vtmjkhzalalozpfnbvsd') { throw 'Only registered staging is allowed.' }
 if ([string]::IsNullOrWhiteSpace($ManagementAccessToken)) { throw 'Missing protected management configuration.' }
-$query = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'canonical_social_reservation_contract.sql') -Raw -Encoding utf8
+$query = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'canonical_group_lifecycle_contract.sql') -Raw -Encoding utf8
 $phase = 'history'
 try {
   if ($RehearseMigrations) {
@@ -20,9 +20,9 @@ try {
     $files = @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot '../supabase/migrations') -Filter '*.sql' | Sort-Object Name)
     $expected = @($files | ForEach-Object { $_.BaseName.Split('_')[0] } | Where-Object { [long]$_ -le [long]$remote[-1] })
     if ($remote[-1] -notin @('202609090065','202609100066','202609100067','202609100068','202609100069','202609100070','202609100071') -or
-        @(Compare-Object $remote $expected).Count -ne 0) { throw 'social_reservation_contract_schema'; }
+        @(Compare-Object $remote $expected).Count -ne 0) { throw 'group_lifecycle_contract_schema'; }
     $pending = @($files | Where-Object { [long]$_.BaseName.Split('_')[0] -gt [long]$remote[-1] -and
-        [long]$_.BaseName.Split('_')[0] -le 202609100070 } | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw -Encoding utf8 })
+        [long]$_.BaseName.Split('_')[0] -le 202609100071 } | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw -Encoding utf8 })
     $query = "begin;`n" + ($pending -join "`n") + "`n" + [regex]::Replace($query, '(?m)^begin;\r?\n', '', 1)
   }
   $phase = 'rollback_query'
@@ -31,7 +31,7 @@ try {
     -Body (ConvertTo-Json @{query=$query; read_only=$false} -Compress)
 } catch {
   $detail = if ($null -ne $_.ErrorDetails) { [string]$_.ErrorDetails.Message } else { [string]$_.Exception.Message }
-  if ($detail -match '\b(social_reservation_contract_[a-z_]+)\b') { Write-Output "Failed assertion: $($Matches[1])" }
+  if ($detail -match '\b(group_lifecycle_contract_[a-z_]+)\b') { Write-Output "Failed assertion: $($Matches[1])" }
   Write-Output "Failed phase: $phase"
   if ($null -ne $_.Exception.Response) { Write-Output "HTTP status: $([int]$_.Exception.Response.StatusCode)" }
   if ($detail -match 'ERROR:\s+([0-9A-Z]{5}):') { Write-Output "SQL state: $($Matches[1])" }
@@ -45,7 +45,7 @@ try {
     if ($detail.Contains($classification)) { Write-Output "SQL classification: $classification" }
   }
 
-  throw 'Staging social reservation rehearsal failed; its transaction must roll back.'
+  throw 'Staging group lifecycle rehearsal failed; its transaction must roll back.'
 }
-if ($result.canonical_social_reservation_contract_passed -ne $true) { throw 'Social reservation contract did not confirm rollback.' }
-Write-Output "PASS: canonical social reservation contract; frozen owner reservations, source-change rollback, claims and legacy fences; migrations_rehearsed=$RehearseMigrations; synthetic_changes_rolled_back=true"
+if ($result.canonical_group_lifecycle_contract_passed -ne $true) { throw 'Group lifecycle contract did not confirm rollback.' }
+Write-Output "PASS: canonical group lifecycle contract; sealed membership, replay, join/leave/kick, shared start and legacy fences; migrations_rehearsed=$RehearseMigrations; synthetic_changes_rolled_back=true"

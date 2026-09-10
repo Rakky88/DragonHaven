@@ -1,10 +1,12 @@
 # DragonHaven Redeem Codes
 
+Current server verification (10 September): staging schema 70 passed run 34467076186; production remains at schema 65 / v0.05.29. The group lifecycle candidate only seals membership, owned dragon facts and the existing shared chest roll to one receipt. It changes no event content, code catalog, reward pool or probability. Group timing and the 70% Gold / 25% Dragon / 5% Mythical pool are preserved; migration 71 is pending rehearsal.
+
 Last verified: 10 September 2026
 
 Ruleset: v0.05.29 / 10079 published; production remains at schema 65; staging is at schema 66 after the verified Academy/Sunwake rehearsal. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
 
-<!-- reference-source-fingerprint: dbea7d3f10a1a882 -->
+<!-- reference-source-fingerprint: 56a609261b84c6a1 -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 

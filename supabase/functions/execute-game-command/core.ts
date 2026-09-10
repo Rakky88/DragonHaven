@@ -20,6 +20,11 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const hash = /^[0-9a-f]{64}$/;
 const encoder = new TextEncoder();
 const commandKeys: Record<string, readonly string[]> = {
+
+  create_group_adventure: ["adventureId", "dragonId"],
+  join_group_adventure: ["lobbyId", "dragonId"],
+  leave_group_adventure: ["lobbyId"],
+  remove_group_adventure_member: ["lobbyId", "memberId"],
   start_trial: ["offerId", "dragonId"],
   claim_group_reward: ["lobbyId"], claim_pair_reward: ["adventureId"], claim_podium_prize: ["prizeId"],
   checkpoint_trial: ["attemptId", "inputs", "elapsedMs", "finish"],

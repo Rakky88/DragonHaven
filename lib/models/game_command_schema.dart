@@ -3,6 +3,10 @@
 abstract final class GameCommandSchema {
   static const keys = <String, Set<String>>{
     'refresh': {},
+    'create_group_adventure': {'adventureId', 'dragonId'},
+    'join_group_adventure': {'lobbyId', 'dragonId'},
+    'leave_group_adventure': {'lobbyId'},
+    'remove_group_adventure_member': {'lobbyId', 'memberId'},
     'claim_group_reward': {'lobbyId'},
     'claim_pair_reward': {'adventureId'},
     'claim_podium_prize': {'prizeId'},

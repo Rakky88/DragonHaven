@@ -91,6 +91,42 @@ class CanonicalGameActions {
   Future<void> releaseDragon(String id) =>
       _boolean('release_dragon', {'dragonId': id});
 
+  Future<String> createGroupAdventure(String adventureId, String dragonId) =>
+      _groupAction('create_group_adventure',
+          {'adventureId': adventureId, 'dragonId': dragonId});
+  Future<void> joinGroupAdventure(String lobbyId, String dragonId) async {
+    await _groupAction(
+        'join_group_adventure', {'lobbyId': lobbyId, 'dragonId': dragonId},
+        expectedSource: lobbyId);
+  }
+
+  Future<void> leaveGroupAdventure(String lobbyId) async {
+    await _groupAction('leave_group_adventure', {'lobbyId': lobbyId},
+        expectedSource: lobbyId);
+  }
+
+  Future<void> removeGroupAdventureMember(
+      String lobbyId, String memberId) async {
+    await _groupAction('remove_group_adventure_member',
+        {'lobbyId': lobbyId, 'memberId': memberId},
+        expectedSource: lobbyId);
+  }
+
+  Future<String> _groupAction(String action, Map<String, dynamic> payload,
+      {String? expectedSource}) async {
+    final result = await execute(action, payload);
+    if (result is! Map ||
+        result.length != 2 ||
+        result['accepted'] != true ||
+        result['sourceId'] is! String ||
+        !RegExp(r'^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
+            .hasMatch(result['sourceId'] as String) ||
+        (expectedSource != null && result['sourceId'] != expectedSource)) {
+      throw const CanonicalGameException('game_result_invalid');
+    }
+    return result['sourceId'] as String;
+  }
+
   Future<void> claimGroupReward(String lobbyId) =>
       _socialClaim('claim_group_reward', {'lobbyId': lobbyId}, lobbyId);
   Future<void> claimPairReward(String adventureId) => _socialClaim(
