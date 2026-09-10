@@ -200,7 +200,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tester.tap(find.byKey(const Key('ruin-breaker-game')));
     }
-    for (var i = 0; i < 120 && find.text('Continue').evaluate().isEmpty; i++) {
+    final finishDeadline = Stopwatch()..start();
+    while (find.text('Continue').evaluate().isEmpty &&
+        finishDeadline.elapsed.inSeconds < 15) {
       elapsed += 50;
       server.now = server.now.add(const Duration(milliseconds: 50));
       await tester.runAsync(

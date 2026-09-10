@@ -1,3 +1,6 @@
+import 'social_trade_assets.dart';
+import 'social_trade_lifecycle.dart';
+import 'social_trade_reservations.dart';
 import 'conclave_beacon.dart';
 import 'social_pair_lifecycle.dart';
 import 'social_group_lifecycle.dart';
@@ -35,6 +38,7 @@ abstract final class GameCommandEngine {
     required String keeperId,
     Map<String, dynamic>? verifiedSocialContext,
     Map<String, dynamic>? verifiedSocialReservations,
+    Map<String, dynamic>? verifiedTradeReservations,
   }) async {
     final keys = GameCommandSchema.keys[action];
     if (keys == null ||
@@ -65,6 +69,11 @@ abstract final class GameCommandEngine {
             ? null
             : Map<String, dynamic>.from(state['_activeGameAttempt'] as Map),
       );
+      SocialTradeReservations.apply(
+          game: game,
+          ownerId: keeperId,
+          state: state,
+          verified: verifiedTradeReservations);
       game.altarCurrentUserId = () => keeperId;
       game.altarRequiresAccount = true;
       Map<String, dynamic>? activeAttempt = state['_activeGameAttempt'] == null
@@ -85,6 +94,18 @@ abstract final class GameCommandEngine {
       // separately sealed database facts; paid entitlements remain absent.
       final Object? result;
       switch (action) {
+        case 'offer_trade':
+        case 'reply_trade':
+        case 'confirm_trade':
+        case 'cancel_trade':
+        case 'reject_trade':
+          result = await SocialTradeLifecycle.apply(
+              game: game,
+              state: state,
+              ownerId: keeperId,
+              action: action,
+              payload: payload,
+              context: verifiedSocialContext);
         case 'donate_beacon':
           result = ConclaveBeacon.donate(
               game: game,
@@ -423,13 +444,17 @@ abstract final class GameCommandEngine {
         'result': result,
         'state': {
           ...GameStateEnvelope.preserveUnknownMetadata(
-              state, game.exportState()),
+              SocialTradeLifecycle.metadataSource(
+                  state, action, verifiedSocialContext),
+              game.exportState()),
           if (state.containsKey('_activeGameAttempt') || activeAttempt != null)
             '_activeGameAttempt': activeAttempt,
           if (state.containsKey('_lastGameResult') || lastGameResult != null)
             '_lastGameResult': lastGameResult,
         }
       };
+    } on SocialTradeException {
+      throw const GameCommandException('game_action_unavailable');
     } on BeaconException catch (error) {
       throw GameCommandException(error.code);
     } on SocialPairException {

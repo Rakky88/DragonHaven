@@ -1,3 +1,5 @@
+import 'package:dragon_haven/models/dragon_egg.dart';
+import 'package:dragon_haven/domain/social_trade_assets.dart';
 import 'package:dragon_haven/domain/game_time_bridge.dart';
 import 'social_claim_probe.dart';
 import 'care_command_probe.dart';
@@ -194,6 +196,9 @@ Future<Map<String, dynamic>> runGameDomainProbe(
         'futureMetadata': {'createdAt': 'unchanged'},
       }),
       'school': school,
+      'tradeLifecycle': includeTrialCommands
+          ? await _tradeLifecycleProbe(stored, now, seed)
+          : null,
       'beacon':
           includeTrialCommands ? await _beaconProbe(stored, now, seed) : null,
       'pairLifecycle': includeTrialCommands
@@ -391,4 +396,111 @@ Future<Map<String, dynamic>> _beaconProbe(
         'fingerprint': 'ab' * 32,
         'facts': {'beforeFragments': 490, 'amount': 25, 'goal': 5000}
       });
+}
+
+Future<List<Map<String, dynamic>>> _tradeLifecycleProbe(
+    Map<String, dynamic> stored, DateTime now, String seed) async {
+  const owner = '11111111-1111-4111-8111-111111111111';
+  const other = '33333333-3333-4333-8333-333333333333';
+  const id = '22222222-2222-4222-8222-222222222222';
+  Map<String, dynamic> copy() =>
+      jsonDecode(jsonEncode(stored)) as Map<String, dynamic>;
+  final a = copy();
+  final b = copy();
+  a['eggAltar']['ownerId'] = owner;
+  b['eggAltar']['ownerId'] = other;
+  a['eggStash'] = [
+    DragonEgg(
+            id: 'trade-fixed-egg',
+            lineageId: 'copperflame',
+            acquiredAt: now,
+            hatchSeed: 876543,
+            prismatic: true,
+            sex: DragonSex.female)
+        .toJson()
+      ..['futureMetadata'] = {'fixedRoll': 'preserved'}
+  ];
+  b['eggStash'] = [];
+  b['pet']['id'] = 'other-private-dragon';
+  b['relicInventory']['chronoshard'] = 2;
+  b['chronoshardReductions'] = [60, 60];
+  Map<String, dynamic> selected(
+      Map<String, dynamic> state, String kind, String key, int variant) {
+    final random = ServerEntropy(seed, stream: 'identities');
+    final game = HouseholdProvider.forServerState(state,
+        random: random, now: now, idGenerator: random.uuid);
+    try {
+      return SocialTradeAssets.select(
+          game: game, state: state, kind: kind, key: key, variant: variant);
+    } finally {
+      game.dispose();
+    }
+  }
+
+  final egg = selected(a, 'egg', a['eggStash'][0]['id'] as String, 0);
+  final shard = selected(b, 'relic', 'chronoshard', 60);
+  Future<Map<String, dynamic>> command(
+          Map<String, dynamic> state,
+          String keeper,
+          String action,
+          Map<String, dynamic> payload,
+          String before,
+          String after,
+          Map<String, dynamic>? sent,
+          Map<String, dynamic>? received) =>
+      GameCommandEngine.execute(
+          state: state,
+          action: action,
+          payload: payload,
+          secretSeed: seed,
+          now: now,
+          keeperId: keeper,
+          verifiedSocialContext: {
+            'version': 1,
+            'ownerId': keeper,
+            'action': action,
+            'sourceId': id,
+            'fingerprint': 'ab' * 32,
+            'facts': {
+              'initiatorId': owner,
+              'recipientId': other,
+              'otherOwnerId': keeper == owner ? other : owner,
+              'beforeStatus': before,
+              'afterStatus': after,
+              'sent': sent,
+              'received': received
+            }
+          });
+  final offered = await command(
+      a,
+      owner,
+      'offer_trade',
+      {
+        'keeperCode': 'DH-1234ABCD',
+        'kind': 'egg',
+        'key': egg['key'],
+        'variant': 0
+      },
+      'new',
+      'awaiting_recipient',
+      egg,
+      null);
+  final rejected = await command(b, other, 'reject_trade', {'tradeId': id},
+      'awaiting_recipient', 'rejected', null, egg);
+  final cancelled = await command(offered['state'], owner, 'cancel_trade',
+      {'tradeId': id}, 'awaiting_recipient', 'cancelled', egg, null);
+  final replied = await command(
+      b,
+      other,
+      'reply_trade',
+      {'tradeId': id, 'kind': 'relic', 'key': 'chronoshard', 'variant': 60},
+      'awaiting_recipient',
+      'awaiting_initiator',
+      shard,
+      egg);
+  final first = await command(offered['state'], owner, 'confirm_trade',
+      {'tradeId': id}, 'awaiting_initiator', 'completed', egg, shard);
+  final second = await command(replied['state'], other, 'confirm_trade',
+      {'tradeId': id}, 'awaiting_initiator', 'completed', shard, egg);
+  return [offered, rejected, cancelled, replied, first, second];
 }

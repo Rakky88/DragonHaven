@@ -79,7 +79,7 @@ Deno.test("read uses Auth owner and public projection while mutations are disabl
       return readSnapshot;
     },
     project: (input) => {
-      equal(input, { state: readSnapshot.state, ownerId: owner, now: readSnapshot.server_time, verifiedSocialClaims: [], verifiedSocialReservations: null });
+      equal(input, { state: readSnapshot.state, ownerId: owner, now: readSnapshot.server_time, verifiedSocialClaims: [], verifiedTradeOffers: {completedToday: 0, offers: []}, verifiedSocialReservations: null, verifiedTradeReservations: null });
       return publicData;
     },
     evaluate: () => { throw new Error("a read cannot evaluate commands"); },
@@ -126,7 +126,7 @@ Deno.test("a command uses authenticated owner and private lease inputs, and retu
   const text = await result.text();
   assert(!text.includes("private") && !text.includes("secret_seed") && !text.includes("lease_token"));
   equal(inputs, [{ state: leased.state, action: body.action, payload: body.payload,
-    secretSeed: hash, now: leased.now, keeperId: owner, verifiedSocialContext: null, verifiedSocialReservations: null }]);
+    secretSeed: hash, now: leased.now, keeperId: owner, verifiedSocialContext: null, verifiedSocialReservations: null, verifiedTradeReservations: null }]);
   equal(calls.map((call) => call.name), ["begin_revisioned_game_command", "commit_canonical_game_command"]);
   assert(calls.every((call) => call.payload.p_owner_id === owner));
   assert(calls[0].payload.p_expected_revision === 2);
@@ -423,4 +423,53 @@ Deno.test("social reservations originate only in the database lease and owner re
     project: (input) => {equal(input.verifiedSocialReservations, reservations); return publicData;},
   });
   assert((await handleCommand(request(readBody), reader.deps)).status === 200);
+});
+
+Deno.test("trade confirmation evaluates both sealed inventories and uses one atomic commit RPC", async () => {
+  const result = {tradeId: requestId, status: "completed"};
+  const counter = {owner_id: other, base_revision: 8, state_sha256: hash, authority_mode: "shadow",
+    state: {private: "counterparty egg DNA"}, secret_seed: "c8".repeat(32),
+    social_context: {ownerId: other, sourceId: requestId}, social_reservations: null, trade_reservations: null};
+  const inputs: JsonObject[] = []; const calls: string[] = [];
+  const {deps} = setup({evaluate: async (input) => {
+    inputs.push(input); return {protocol: 2, state: {private: "new state " + input.keeperId}, result};
+  }, rpc: async (name,payload) => {
+    calls.push(name);
+    if(name === "begin_revisioned_game_command") return {...leased, trade_counterparty: counter};
+    assert(name === "commit_canonical_trade_command");
+    equal(payload.p_state,{private: "new state " + owner});
+    equal(payload.p_counterparty_state,{private: "new state " + other});
+    return {...saved,result};
+  }});
+  const reply = await handleCommand(request({...body,action:"confirm_trade",payload:{tradeId:requestId}}),deps);
+  assert(reply.status === 200); const output = await reply.text();
+  assert(!output.includes("DNA") && !output.includes("new state"));
+  equal(inputs.map((i)=>i.keeperId),[owner,other]);
+  equal(inputs.map((i)=>i.secretSeed),[hash,counter.secret_seed]);
+  equal(calls,["begin_revisioned_game_command","commit_canonical_trade_command"]);
+});
+Deno.test("trade counterparty failure commits neither inventory and never accepts caller state", async () => {
+  for (const failure of ["domain", "timeout", "wrong_owner"]) {
+    const calls: string[] = [];
+    const {deps} = setup({evaluate: async(input) => {
+      if (input.keeperId === other) {
+        if(failure === "timeout") throw new Error("timeout");
+        return {error:"game_action_unavailable"};
+      }
+      return {protocol:2,state:{private:true},result:{tradeId:requestId,status:"completed"}};
+    },rpc:async(name)=>{
+      calls.push(name);
+      if(name === "begin_revisioned_game_command") return {...leased,trade_counterparty:{owner_id:failure === "wrong_owner"?owner:other,
+        base_revision:8,state_sha256:hash,authority_mode:"shadow",state:{private:true},secret_seed:hash,
+        social_context:{ownerId:other,sourceId:requestId},social_reservations:null,trade_reservations:null}};
+      assert(name === "fail_canonical_game_command");return true;
+    }});
+    const response=await handleCommand(request({...body,action:"confirm_trade",payload:{tradeId:requestId}}),deps);
+    assert(response.status === (failure === "domain" ? 422 : 503));
+    assert(!calls.some((name)=>name.startsWith("commit_")));
+    assert(calls.includes("fail_canonical_game_command") === (failure === "domain"));
+  }
+  const {deps,calls}=setup();
+  assert((await handleCommand(request({...body,action:"confirm_trade",payload:{tradeId:requestId,state:{coins:999}}}),deps)).status===400);
+  equal(calls,[]);
 });

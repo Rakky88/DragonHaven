@@ -3,6 +3,11 @@
 abstract final class GameCommandSchema {
   static const keys = <String, Set<String>>{
     'refresh': {},
+    'offer_trade': {'keeperCode', 'kind', 'key', 'variant'},
+    'reply_trade': {'tradeId', 'kind', 'key', 'variant'},
+    'confirm_trade': {'tradeId'},
+    'cancel_trade': {'tradeId'},
+    'reject_trade': {'tradeId'},
     'donate_beacon': {'conclaveId', 'amount'},
     'invite_pair_adventure': {'keeperCode', 'dragonId'},
     'accept_pair_adventure': {'adventureId', 'dragonId'},

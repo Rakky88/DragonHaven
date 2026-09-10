@@ -21,6 +21,9 @@ const hash = /^[0-9a-f]{64}$/;
 const encoder = new TextEncoder();
 const commandKeys: Record<string, readonly string[]> = {
 
+  offer_trade: ["keeperCode", "kind", "key", "variant"],
+  reply_trade: ["tradeId", "kind", "key", "variant"],
+  confirm_trade: ["tradeId"], cancel_trade: ["tradeId"], reject_trade: ["tradeId"],
   donate_beacon: ["conclaveId", "amount"],
   invite_pair_adventure: ["keeperCode", "dragonId"],
   accept_pair_adventure: ["adventureId", "dragonId"],
@@ -216,11 +219,23 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
       typeof leased.now !== "string" || !Number.isFinite(Date.parse(leased.now)) || !object(leased.state)) {
       throw new Error("invalid_lease");
     }
+    const counterpart = leased.trade_counterparty;
+    if (command.action === "confirm_trade") {
+      if (!object(counterpart) || !exactKeys(counterpart, ["owner_id", "base_revision", "state_sha256",
+        "authority_mode", "state", "secret_seed", "social_context", "social_reservations", "trade_reservations"]) ||
+        typeof counterpart.owner_id !== "string" || !uuid.test(counterpart.owner_id) || counterpart.owner_id === owner ||
+        !positiveInteger(counterpart.base_revision) || typeof counterpart.state_sha256 !== "string" || !hash.test(counterpart.state_sha256) ||
+        counterpart.authority_mode !== leased.authority_mode || !object(counterpart.state) ||
+        typeof counterpart.secret_seed !== "string" || !hash.test(counterpart.secret_seed) ||
+        !object(counterpart.social_context) || counterpart.social_context.ownerId !== counterpart.owner_id ||
+        counterpart.social_context.sourceId !== command.payload.tradeId) throw new Error("invalid_counterparty_lease");
+    } else if (counterpart !== undefined && counterpart !== null) throw new Error("unexpected_counterparty_lease");
     // These inputs come exclusively from Auth and the private database lease.
     const evaluated = await deps.evaluate({ state: leased.state, action: command.action,
       payload: command.payload, secretSeed: leased.secret_seed, now: leased.now, keeperId: owner,
       verifiedSocialContext: leased.social_context ?? null,
-      verifiedSocialReservations: leased.social_reservations ?? null });
+      verifiedSocialReservations: leased.social_reservations ?? null,
+      verifiedTradeReservations: leased.trade_reservations ?? null });
     if (!object(evaluated)) throw new Error("invalid_evaluation");
     if (typeof evaluated.error === "string" && domainErrors.has(evaluated.error)) {
       const recorded = await deps.rpc("fail_canonical_game_command", {
@@ -233,11 +248,28 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
     if (evaluated.protocol !== 2 || !object(evaluated.state) || !Object.hasOwn(evaluated, "result")) {
       throw new Error("invalid_evaluation");
     }
+    let otherEvaluation: JsonObject | null = null;
+    if (command.action === "confirm_trade" && object(counterpart)) {
+      const result = await deps.evaluate({state: counterpart.state, action: command.action, payload: command.payload,
+        secretSeed: counterpart.secret_seed, now: leased.now, keeperId: counterpart.owner_id,
+        verifiedSocialContext: counterpart.social_context, verifiedSocialReservations: counterpart.social_reservations,
+        verifiedTradeReservations: counterpart.trade_reservations});
+      if (!object(result)) throw new Error("invalid_counterparty_evaluation");
+      if (typeof result.error === "string" && domainErrors.has(result.error)) {
+        const recorded = await deps.rpc("fail_canonical_game_command", {p_owner_id: owner,
+          p_request_id: command.requestId, p_lease_token: leased.lease_token, p_failure_code: result.error});
+        if (recorded !== true) throw new RpcFailure("game_lease_lost");
+        return response({error: result.error, request_id: command.requestId, replayed: false}, 422);
+      }
+      if (result.protocol !== 2 || !object(result.state) || !Object.hasOwn(result,"result")) throw new Error("invalid_counterparty_evaluation");
+      otherEvaluation = result;
+    }
     let committed;
     try {
-      committed = await deps.rpc("commit_canonical_game_command", {
+      committed = await deps.rpc(otherEvaluation ? "commit_canonical_trade_command" : "commit_canonical_game_command", {
         p_owner_id: owner, p_request_id: command.requestId, p_lease_token: leased.lease_token,
         p_state: evaluated.state, p_result: evaluated.result,
+        ...(otherEvaluation ? {p_counterparty_state: otherEvaluation.state, p_counterparty_result: otherEvaluation.result} : {}),
       });
     } catch (failure) {
       // This exact SQL refusal rolls the entire commit back. Unlike a timeout,
@@ -299,7 +331,9 @@ async function readState(owner: string, clientBuild: number, deps: Dependencies)
     }
     const data = deps.project({ state: snapshot.state, ownerId: owner, now: snapshot.server_time,
       verifiedSocialClaims: snapshot.social_claims ?? [],
-      verifiedSocialReservations: snapshot.social_reservations ?? null });
+      verifiedTradeOffers: snapshot.trade_offers ?? {completedToday: 0, offers: []},
+      verifiedSocialReservations: snapshot.social_reservations ?? null,
+      verifiedTradeReservations: snapshot.trade_reservations ?? null });
     if (object(data) && data.error === "game_state_reconciliation_required") {
       return error("game_state_reconciliation_required", 409);
     }

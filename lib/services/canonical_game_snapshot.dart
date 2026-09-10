@@ -54,6 +54,7 @@ class CanonicalGameSnapshot {
           final queued = a.createdAt.compareTo(b.createdAt);
           return queued != 0 ? queued : a.id.compareTo(b.id);
         }));
+  CanonicalTradeBoard get trades => CanonicalTradeBoard._parse(data['trades']);
   int get coins => data['wallet']['coins'] as int;
   CanonicalSchoolAttempt? get schoolAttempt =>
       data['trials']['attempt']?['type'] != 'school'
@@ -108,7 +109,7 @@ class CanonicalGameSnapshot {
       throw const CanonicalGameException('game_snapshot_stale');
     }
     final data = _map(wire['data']);
-    if (!_keys(data, const [
+    if (!_keys(Map<String, dynamic>.from(data)..remove('trades'), const [
           'projectionVersion',
           'activeDragonId',
           'wallet',
@@ -183,6 +184,10 @@ class CanonicalGameSnapshot {
       }
     }
     CanonicalProfileView._parse(data['collection']);
+    final tradeBoard = CanonicalTradeBoard._parse(data['trades']);
+    if (tradeBoard.offers.any((offer) => offer.otherOwnerId == expectedOwner)) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
     final presentationIds = <String>{};
     for (final raw in data['presentations'] as List) {
       if (!presentationIds.add(CanonicalPresentationView._parse(raw).id)) {
@@ -262,6 +267,21 @@ class CanonicalGameSnapshot {
 
   static Map<String, dynamic> _ownedData(Map<String, dynamic> data) => {
         ...data,
+        'trades': const {},
+        'inventory': {
+          ...data['inventory'] as Map<String, dynamic>,
+          'reservedOnlineTradeEggIds': const [],
+          'reservedOnlineTradeChests': const {},
+          'reservedOnlineTradeRelics': const {},
+        },
+        'eggs': [
+          for (final egg in data['eggs'] as List)
+            {
+              ...egg as Map<String, dynamic>,
+              if (egg['returnBlockReason'] == 'egg_reserved')
+                'returnBlockReason': null,
+            }
+        ],
         'dragons': [
           for (final dragon in data['dragons'] as List)
             {
@@ -467,7 +487,8 @@ class CanonicalEggView {
   String hint(String locale) =>
       _data['hints'][locale == 'nl' ? 'nl' : 'en'] as String;
 
-  static CanonicalEggView _parse(Map<String, dynamic> data) {
+  static CanonicalEggView _parse(Map<String, dynamic> data,
+      {bool trade = false}) {
     if (!_keys(data, const [
           'id',
           'location',
@@ -486,7 +507,8 @@ class CanonicalEggView {
           'moralAxis'
         ]) ||
         !_text(data['id']) ||
-        !const ['stash', 'nest'].contains(data['location']) ||
+        !(trade ? const ['trade'] : const ['stash', 'nest'])
+            .contains(data['location']) ||
         !const ['ordinary', 'sinister', 'special'].contains(data['kind']) ||
         !_date(data['acquiredAt']) ||
         !_positive(data['incubationSeconds']) ||
@@ -539,12 +561,18 @@ class CanonicalDragonView implements TrialDragon {
         _invalid();
       }
     }
-    if (_data['dragonSchoolFinalizedEarly'] is! bool) _invalid();
+    if (_data['dragonSchoolFinalizedEarly'] is! bool) {
+      _invalid();
+    }
     for (final key in ['joy', 'energy', 'comfort']) {
-      if (!_count(_data[key]) || _data[key] > 100) _invalid();
+      if (!_count(_data[key]) || _data[key] > 100) {
+        _invalid();
+      }
     }
     for (final key in ['spectral', 'sinister', 'favorite', 'roamsTower']) {
-      if (_data[key] is! bool) _invalid();
+      if (_data[key] is! bool) {
+        _invalid();
+      }
     }
     if (!DragonSex.values.any((v) => v.name == _data['sex']) ||
         !_date(_data['acquiredAt']) ||
@@ -571,9 +599,13 @@ class CanonicalDragonView implements TrialDragon {
       _invalid();
     }
     for (final key in ['lawAxis', 'moralAxis', 'evolutionPath']) {
-      if (_data[key] != null && !_text(_data[key])) _invalid();
+      if (_data[key] != null && !_text(_data[key])) {
+        _invalid();
+      }
     }
-    if (!_text(_data['activeEvolutionPath'])) _invalid();
+    if (!_text(_data['activeEvolutionPath'])) {
+      _invalid();
+    }
     final traits = _data['personalityTraitIds'];
     personality = traits == null ? null : CanonicalShopView._ids(traits);
   }
@@ -690,7 +722,9 @@ class CanonicalInventoryView {
     final equipped = <MysticRelic, String>{};
     final twin = raw['twinstarBroochDragonId'];
     if (twin != null) {
-      if (!_text(twin)) _invalid();
+      if (!_text(twin)) {
+        _invalid();
+      }
       equipped[MysticRelic.twinstarBrooch] = twin as String;
     }
     final map = _map(raw['equippedRelicDragonIds'] ?? <String, dynamic>{});
@@ -814,15 +848,21 @@ class CanonicalAdventureRun {
       _invalid();
     }
     for (final key in ['specialEventId', 'specialEventKey', 'rewardTier']) {
-      if (data[key] != null && !_text(data[key])) _invalid();
+      if (data[key] != null && !_text(data[key])) {
+        _invalid();
+      }
     }
-    if (data['status'] == 'running' && data['rewardTier'] != null) _invalid();
+    if (data['status'] == 'running' && data['rewardTier'] != null) {
+      _invalid();
+    }
     id = data['id'] as String;
     adventureId = data['adventureId'] as String;
     dragonId = data['dragonId'] as String;
     startedAt = DateTime.parse(data['startedAt'] as String);
     endsAt = DateTime.parse(data['endsAt'] as String);
-    if (endsAt.isBefore(startedAt)) _invalid();
+    if (endsAt.isBefore(startedAt)) {
+      _invalid();
+    }
     status = AdventureRunStatus.values.byName(data['status'] as String);
     revealedRewardId = data['rewardTier'] as String?;
   }
@@ -1070,6 +1110,12 @@ class CanonicalPresentationView {
       throw const CanonicalGameException('game_snapshot_invalid');
     }
   }
+  CanonicalTradeItemView? get sent => type == GamePresentationType.trade
+      ? CanonicalTradeItemView._parse(_map(_data['trade'])['sent'])
+      : null;
+  CanonicalTradeItemView? get received => type == GamePresentationType.trade
+      ? CanonicalTradeItemView._parse(_map(_data['trade'])['received'])
+      : null;
   final Map<String, dynamic> _data;
   String get id => _data['id'] as String;
   GamePresentationType get type =>
@@ -1080,3 +1126,143 @@ class CanonicalPresentationView {
   String? get achievementId => _data['achievementId'] as String?;
   String? get previousStageKey => _data['previousStageKey'] as String?;
 }
+
+class CanonicalTradeItemView {
+  CanonicalTradeItemView._parse(Object? raw) : _data = _map(raw) {
+    final kind = _data['kind'];
+    if (kind == 'egg') {
+      if (!_keys(_data, const ['kind', 'egg'])) {
+        _invalid();
+      }
+      egg = CanonicalEggView._parse(_map(_data['egg']), trade: true);
+      if (egg!.location != 'trade') {
+        _invalid();
+      }
+    } else if (kind == 'chest') {
+      if (!_keys(_data, const ['kind', 'catalogId'])) {
+        _invalid();
+      }
+      chest = ChestTier.values
+          .where((c) => c.name == _data['catalogId'])
+          .firstOrNull;
+      if (chest?.isTradeable != true) {
+        _invalid();
+      }
+    } else if (kind == 'relic') {
+      relic = MysticRelic.values
+          .where((r) => r.name == _data['catalogId'])
+          .firstOrNull;
+      if (relic == null || relic!.isAlwaysUntradeable) {
+        _invalid();
+      }
+      if (relic == MysticRelic.chronoshard) {
+        if (!_keys(_data, const ['kind', 'catalogId', 'reductionPercent']) ||
+            _data['reductionPercent'] is! int ||
+            _data['reductionPercent'] < 10 ||
+            _data['reductionPercent'] > 90) {
+          _invalid();
+        }
+        reductionPercent = _data['reductionPercent'] as int;
+      } else if (!_keys(_data, const ['kind', 'catalogId'])) {
+        _invalid();
+      }
+    } else {
+      _invalid();
+    }
+  }
+  final Map<String, dynamic> _data;
+  String get kind => _data['kind'] as String;
+  String get key => egg?.id ?? _data['catalogId'] as String;
+  int get variant => reductionPercent ?? 0;
+  CanonicalEggView? egg;
+  ChestTier? chest;
+  MysticRelic? relic;
+  int? reductionPercent;
+  static Never _invalid() =>
+      throw const CanonicalGameException('game_snapshot_invalid');
+}
+
+class CanonicalTradeOfferView {
+  CanonicalTradeOfferView._parse(Object? raw) : _data = _map(raw) {
+    if (!_keys(_data, const [
+          'id',
+          'otherOwnerId',
+          'otherName',
+          'otherKeeperCode',
+          'amInitiator',
+          'status',
+          'createdAt',
+          'expiresAt',
+          'sent',
+          'received'
+        ]) ||
+        !_tradeUuid(_data['id']) ||
+        !_tradeUuid(_data['otherOwnerId']) ||
+        !_text(_data['otherName']) ||
+        _data['otherKeeperCode'] is! String ||
+        !RegExp(r'^DH-[A-F0-9]{8}$').hasMatch(_data['otherKeeperCode']) ||
+        _data['amInitiator'] is! bool ||
+        !_date(_data['createdAt']) ||
+        !_date(_data['expiresAt']) ||
+        !const [
+          'awaiting_recipient',
+          'awaiting_initiator',
+          'completed',
+          'cancelled',
+          'rejected',
+          'expired'
+        ].contains(_data['status'])) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
+    if (_data['sent'] != null) {
+      sent = CanonicalTradeItemView._parse(_data['sent']);
+    }
+    if (_data['received'] != null) {
+      received = CanonicalTradeItemView._parse(_data['received']);
+    }
+    if ((amInitiator ? sent : received) == null ||
+        const ['awaiting_initiator', 'completed'].contains(status) &&
+            (sent == null || received == null)) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
+  }
+  final Map<String, dynamic> _data;
+  String get id => _data['id'] as String;
+  String get otherOwnerId => _data['otherOwnerId'] as String;
+  String get otherName => _data['otherName'] as String;
+  String get otherKeeperCode => _data['otherKeeperCode'] as String;
+  bool get amInitiator => _data['amInitiator'] as bool;
+  String get status => _data['status'] as String;
+  DateTime get createdAt => DateTime.parse(_data['createdAt'] as String);
+  DateTime get expiresAt => DateTime.parse(_data['expiresAt'] as String);
+  bool get active =>
+      status == 'awaiting_recipient' || status == 'awaiting_initiator';
+  CanonicalTradeItemView? sent;
+  CanonicalTradeItemView? received;
+}
+
+class CanonicalTradeBoard {
+  CanonicalTradeBoard._parse(Object? raw) {
+    final data = _map(raw ?? const {'completedToday': 0, 'offers': []});
+    if (!_keys(data, const ['completedToday', 'offers']) ||
+        data['completedToday'] is! int ||
+        data['completedToday'] < 0 ||
+        data['offers'] is! List ||
+        (data['offers'] as List).length > 20) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
+    completedToday = data['completedToday'] as int;
+    offers = List.unmodifiable(
+        (data['offers'] as List).map(CanonicalTradeOfferView._parse));
+    if (offers.map((o) => o.id).toSet().length != offers.length) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
+  }
+  late final int completedToday;
+  late final List<CanonicalTradeOfferView> offers;
+  bool get hasActive => offers.any((o) => o.active);
+}
+
+bool _tradeUuid(Object? value) =>
+    value is String &&
+    RegExp(r'^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$').hasMatch(value);

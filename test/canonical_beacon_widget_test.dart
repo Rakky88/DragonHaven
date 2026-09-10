@@ -70,8 +70,12 @@ void main() {
       session.dispose();
       await directory.delete(recursive: true);
     });
-    Future<void> settle() async {
-      for (var i = 0; i < 35; i++) {
+    Future<void> settle({bool Function()? until}) async {
+      final deadline = Stopwatch()..start();
+      for (var i = 0;
+          i < 35 ||
+              (until != null && !until() && deadline.elapsed.inSeconds < 15);
+          i++) {
         await tester.runAsync(
             () => Future<void>.delayed(const Duration(milliseconds: 10)));
         await tester
@@ -102,6 +106,8 @@ void main() {
     await tap(find.byKey(const Key('donate-weave-fragments')));
     server.loseReply = true;
     await tap(find.byKey(const Key('confirm-beacon-donation')));
+    // Wait for the durable journal/network work, also under full-suite I/O load.
+    await settle(until: () => !session.busy);
     expect(session.canAct, isFalse);
     expect(server.state['eggAltar']['wallet']['fragments'], 175,
         reason:

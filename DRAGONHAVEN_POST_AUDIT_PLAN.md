@@ -1,5 +1,17 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+2026-09-10 Beacon follow-up: focused authenticated UI run `34481864223` on
+`99e3208` passed on staging schema 73 / ruleset `643da938…13163`. It proves one
+25-fragment debit, shared 490→515 progression, one stage message and recovery
+through the same request after a lost reply. All synthetic accounts/Conclave
+data were removed and all four switches disabled. The test harness now creates
+its network client inside real async execution; the earlier timeout was in the
+fixture. Production stays unchanged. This supersedes the pending Beacon notes
+below; trades, remaining migration/cutover and APK reduction are still open.
+
+
+Trade candidate 74 (not deployed): shared rules preserve exact eggs/knowledge/sex/Special identity and Chronoshard variants. Both keepers are evaluated from private database leases; one SQL transaction checks both revisions, exact asset deltas, pending work and current source facts before saving both inventories. Reservation cancellation/expiry may update a later display at the same private revision, while counts and owned traits remain fenced. Four domain tests, the display-journal regression and 23 Edge checks pass. VM/JavaScript parity passed (1,180,106-byte probe, ~902 ms). SQL rollback and real trade UI are still required; no production activation or APK reduction is claimed.
+
 2026-09-10: full staging run `34477912601` on `8716db0` applied schema 73 and deployed ruleset `643da93847b20c1306bad8d67082c23cbd32767571b602cdde4092b8efe13163` (1,147,506 bytes). All compatibility/rollback contracts passed; preflight at 12:48:15 UTC reported 73 migrations, lint 0, Auth/settings/application 200. Existing real UI, four-keeper groups and two-keeper partners passed. The Beacon widget probe timed out; cleanup removed the synthetic accounts/Conclave and disabled all four switches at 12:57:53 UTC. Focused Beacon diagnostics/retest remain required; production is unchanged.
 
 2026-09-10 staging update: full run `34476782241` passed app/rules and all social rollback rehearsals, then stopped before DDL/deployment because compatibility runners accidentally omitted baseline 72. The exact-prefix history guard now accepts all reviewed prefixes through 73 and rejects gaps, duplicates and newer schemas. Staging remains schema 72; production is unchanged. Full rerun is required.

@@ -1,3 +1,4 @@
+import 'social_trade_reservations.dart';
 import 'social_dragon_reservations.dart';
 import 'dart:math';
 
@@ -20,7 +21,12 @@ abstract final class GamePublicProjection {
     required String ownerId,
     required DateTime now,
     List<dynamic> verifiedSocialClaims = const [],
+    Map<String, dynamic> verifiedTradeOffers = const {
+      'completedToday': 0,
+      'offers': []
+    },
     Map<String, dynamic>? verifiedSocialReservations,
+    Map<String, dynamic>? verifiedTradeReservations,
   }) {
     if (state['pendingAltarOperation'] != null) {
       throw const FormatException('Unresolved Altar operation');
@@ -39,6 +45,11 @@ abstract final class GamePublicProjection {
             ? null
             : Map<String, dynamic>.from(state['_activeGameAttempt'] as Map),
       );
+      SocialTradeReservations.apply(
+          game: game,
+          ownerId: ownerId,
+          state: state,
+          verified: verifiedTradeReservations);
       final eggs = <Map<String, dynamic>>[
         for (final egg in game.eggStash) _egg(game, egg, location: 'stash'),
       ];
@@ -87,6 +98,7 @@ abstract final class GamePublicProjection {
         'projectionVersion': version,
         'activeDragonId': game.pet.isEgg ? null : game.pet.id,
         'wallet': {'coins': game.pet.coins, 'gems': game.pet.gems},
+        'trades': _trades(game, ownerId, verifiedTradeOffers),
         'eggs': eggs,
         'dragons': dragons,
         'inventory': {
@@ -413,9 +425,59 @@ abstract final class GamePublicProjection {
     }
     if (kind == 'chest' || kind == 'relic') {
       final key = payload['${direction}Key'];
-      return key is String ? {'kind': kind, 'catalogId': key} : null;
+      if (key is! String) return null;
+      final data = payload['${direction}Data'];
+      return {
+        'kind': kind,
+        'catalogId': key,
+        if (kind == 'relic' && key == 'chronoshard' && data is Map)
+          'reductionPercent': data['reductionPercent'],
+      };
     }
     return null;
+  }
+
+  static Map<String, dynamic> _trades(
+      HouseholdProvider game, String owner, Map<String, dynamic> verified) {
+    if (verified.length != 2 ||
+        verified['completedToday'] is! int ||
+        verified['completedToday'] < 0 ||
+        verified['offers'] is! List ||
+        (verified['offers'] as List).length > 20) {
+      throw const FormatException('Invalid trade board');
+    }
+    final offers = <Map<String, dynamic>>[];
+    for (final raw in verified['offers'] as List) {
+      if (raw is! Map<String, dynamic> ||
+          raw.length != 10 ||
+          raw['otherOwnerId'] == owner) {
+        throw const FormatException('Invalid trade offer');
+      }
+      offers.add({
+        ..._select(raw, const [
+          'id',
+          'otherOwnerId',
+          'otherName',
+          'otherKeeperCode',
+          'amInitiator',
+          'status',
+          'createdAt',
+          'expiresAt'
+        ]),
+        for (final direction in const ['sent', 'received'])
+          direction: raw[direction] == null
+              ? null
+              : _tradeItem(
+                  game,
+                  {
+                    '${direction}Kind': raw[direction]['kind'],
+                    '${direction}Key': raw[direction]['key'],
+                    '${direction}Data': raw[direction]['data'],
+                  },
+                  direction),
+      });
+    }
+    return {'completedToday': verified['completedToday'], 'offers': offers};
   }
 
   static Map<String, dynamic>? _findEntity(

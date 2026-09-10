@@ -1,16 +1,27 @@
 # DragonHaven Redeem Codes
 
-Latest staging: schema 72, deployed from `6a2e91e` by run 34474222373.
-All app/domain/SQL checks and the existing real UI suite passed, but the new
-group phase received an unavailable response while leaving its lobby. The
-partner phase was not reached. Schema 72 had lint 0 and all public health
-endpoints 200 at 12:07:38 UTC. Synthetic state and all four switches were cleaned
-up at 12:11:58 UTC. The earlier focused group proof passed on schema 71 in run
-34473757845. Focused group and partner probes now pin the actual schema-72 worker;
-no new DDL or worker deployment is needed for that investigation.
-Production remains schema 65 / v0.05.29.
+Latest staging: schema 73, deployed from `8716db0` by run 34477912601.
+All app/domain/SQL checks, existing real UI, four-keeper groups and two-keeper
+partners passed. Preflight at 12:48:15 UTC reported lint 0 and Auth/settings/app
+200. Focused Beacon run 34481864223 passed the actual donation UI, exactly one
+shared stage message, a single debit and lost-response recovery after fixing
+the test client's real async initialization. Cleanup removed all synthetic
+accounts/Conclave data and disabled all four switches. Production remains
+schema 65 / v0.05.29.
 
-Beacon candidate (migration 73): voluntary donations spend 1–5000 owned Shell
+Trade candidate (migration 74, unapplied): one-for-one exchanges reserve one
+item per side, retain the existing one-active-trade, three-per-Amsterdam-day
+and ten-minute limits, and commit both private inventories together. Eggs keep
+their fixed genetics, sex, Special catalog identity, tags and discovered facts.
+Ordinary tradeable chest tiers and the six consumable relic types retain their
+eligibility; cosmetic/Special chests and all four equipable brooches remain
+untradeable. A Chronoshard moves with its exact percentage, without a new roll.
+Unknown egg information stays private in offers, receipts and reveal scenes.
+No chance, reward table, event schedule or redeem-code value changes. Domain,
+Edge and VM/JavaScript parity tests pass; SQL rollback, actual trade UI and
+legacy-trade migration remain open.
+
+Beacon (migration 73, applied only on staging): voluntary donations spend 1–5000 owned Shell
 Fragments, capped by the existing shared goal of 5000. The command seals current
 Conclave membership and remaining capacity, then commits the exact debit,
 project total and existing stage message together. Thresholds remain 500, 2000
@@ -18,11 +29,11 @@ and 5000; no personal reward, achievement reward, probability or code catalog
 changes. A changed project or membership rolls the command back. The legacy
 Altar mutation RPC is fenced for server-owned accounts. Two domain tests and the
 existing Beacon-card test pass, including lost-response recovery and stale
-account reads. SQL rollback and authenticated Beacon UI proof are pending;
-migration 73 is not applied.
+account reads. SQL rollback passed in the full schema-73 drill; authenticated
+Beacon UI proof passed in focused run 34481864223 as described above.
 
 
-Partner lifecycle candidate (migration 72): invitations and acceptance use only
+Partner lifecycle (migration 72, applied only on staging): invitations and acceptance use only
 owned, available server dragons; starting seals both keepers and applies the
 existing 96-hour duration minus 15 minutes per combined Expertise point, with a
 24-hour minimum. A changed/ended event rejects the start atomically. Pending
@@ -30,15 +41,15 @@ invitations or accepted trips can be declined/cancelled before departure,
 releasing both bindings without rewards. Shared reward contents, preview grant
 behavior, odds and the private redeem-code catalog are unchanged. Reconciliation
 of already-existing legacy partner invitations remains part of the migration
-cutover work; this candidate currently creates new canonical pairs only.
+cutover work; this implementation currently creates new canonical pairs only.
 
-Current server verification (10 September): staging schema 70 passed run 34467076186; production remains at schema 65 / v0.05.29. The group lifecycle candidate only seals membership, owned dragon facts and the existing shared chest roll to one receipt. It changes no event content, code catalog, reward pool or probability. Group timing and the 70% Gold / 25% Dragon / 5% Mythical pool are preserved; migration 71 passed rollback rehearsal 34468527520 and awaits full apply/UI verification.
+Group lifecycle (migration 71, applied only on staging): membership, owned dragons, shared timing and the existing 70% Gold / 25% Dragon / 5% Mythical roll are sealed together. Actual four-keeper UI and recovery passed on schema 73. No event content, reward pool or probability changed.
 
 Last verified: 10 September 2026
 
-Ruleset: v0.05.29 / 10079 published; production remains at schema 65; staging is at schema 66 after the verified Academy/Sunwake rehearsal. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
+Ruleset: v0.05.29 / 10079 published; production remains at schema 65; current staging verification is recorded above. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
 
-<!-- reference-source-fingerprint: da9df83f3de6157c -->
+<!-- reference-source-fingerprint: 847028b3fffd30b0 -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 

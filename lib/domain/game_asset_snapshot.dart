@@ -117,7 +117,15 @@ class GameAssetSnapshot {
       // knowledge, while keeping tags, revisions and Oracle discoveries exact.
       final knowledge = _map(data['altarKnowledge'] ?? <String, dynamic>{});
       properties['altarKnowledge'] = {
-        ...knowledge,
+        for (final key in const [
+          'tagged',
+          'tagRevision',
+          'moral',
+          'order',
+          'rarity',
+          'lineage'
+        ])
+          if (knowledge.containsKey(key)) key: knowledge[key],
         'moral': knowledge['moral'] == true ||
             data['moralAxisKnown'] == true ||
             (location == 'egg' && data['lineageId'] == 'sinisterra'),

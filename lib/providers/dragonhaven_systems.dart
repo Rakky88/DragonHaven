@@ -1632,6 +1632,9 @@ extension DragonHavenSystems on HouseholdProvider {
     if (receivedKind == 'egg') {
       receivedEgg = DragonEgg.fromJson({...receivedData, 'id': receivedKey});
       if (ownedDragons.any((dragon) => dragon.id == receivedKey) ||
+          nestEgg?.id == receivedKey ||
+          releasedDragons.any((dragon) => dragon.id == receivedKey) ||
+          eggAltar.returnedIds.contains(receivedKey) ||
           eggStash.any((egg) => egg.id == receivedKey)) {
         return false;
       }
@@ -1661,6 +1664,7 @@ extension DragonHavenSystems on HouseholdProvider {
 
     if (sentEggIndex >= 0) {
       eggStash.removeAt(sentEggIndex);
+      eggRarityRevealedIds.remove(sentKey);
     }
     if (sentChest != null) {
       chestInventory[sentChest] = chestCount(sentChest) - 1;
@@ -1675,7 +1679,12 @@ extension DragonHavenSystems on HouseholdProvider {
         }
       }
     }
-    if (receivedEgg != null) eggStash.add(receivedEgg);
+    if (receivedEgg != null) {
+      eggStash.add(receivedEgg);
+      if (eggKnowledge(receivedEgg.id).rarity) {
+        eggRarityRevealedIds.add(receivedEgg.id);
+      }
+    }
     if (receivedChest != null) {
       chestInventory.update(receivedChest, (value) => value + 1,
           ifAbsent: () => 1);
@@ -1697,7 +1706,7 @@ extension DragonHavenSystems on HouseholdProvider {
       code: ActivityCode.bonusFound,
       subject: tradeId,
     );
-    final completedAt = DateTime.now();
+    final completedAt = _clock();
     _queuePresentation(GamePresentation(
       id: 'trade-$tradeId',
       type: GamePresentationType.trade,

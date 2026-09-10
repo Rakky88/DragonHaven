@@ -25,7 +25,16 @@ abstract final class GameStateEnvelope {
     }
     Map<String, dynamic> merge(Object? value) {
       final next = Map<String, dynamic>.from(value as Map);
-      return {...?entities[next['id']], ...next};
+      final previous = entities[next['id']];
+      return {
+        ...?previous,
+        ...next,
+        if (previous?['altarKnowledge'] is Map && next['altarKnowledge'] is Map)
+          'altarKnowledge': {
+            ...previous!['altarKnowledge'] as Map,
+            ...next['altarKnowledge'] as Map
+          },
+      };
     }
 
     return {

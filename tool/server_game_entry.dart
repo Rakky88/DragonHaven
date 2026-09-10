@@ -28,8 +28,13 @@ String _project(String input) {
     return jsonEncode(GamePublicProjection.project(
       state: data['state'] as Map<String, dynamic>,
       ownerId: data['ownerId'] as String,
+      verifiedTradeReservations:
+          data['verifiedTradeReservations'] as Map<String, dynamic>?,
       verifiedSocialReservations:
           data['verifiedSocialReservations'] as Map<String, dynamic>?,
+      verifiedTradeOffers:
+          data['verifiedTradeOffers'] as Map<String, dynamic>? ??
+              const {'completedToday': 0, 'offers': []},
       verifiedSocialClaims:
           data['verifiedSocialClaims'] as List<dynamic>? ?? const [],
       now: DateTime.parse(data['now'] as String),
@@ -74,6 +79,8 @@ Future<JSString> _execute(String input) async {
       keeperId: data['keeperId'] as String,
       verifiedSocialContext:
           data['verifiedSocialContext'] as Map<String, dynamic>?,
+      verifiedTradeReservations:
+          data['verifiedTradeReservations'] as Map<String, dynamic>?,
       verifiedSocialReservations:
           data['verifiedSocialReservations'] as Map<String, dynamic>?,
     ))

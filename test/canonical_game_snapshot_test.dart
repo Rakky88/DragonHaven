@@ -313,6 +313,31 @@ void main() {
           store.persistFresh(_parse(bad)), _error('game_snapshot_conflict'));
     });
 
+    test(
+        'trade expiry updates reservations, but cannot alter counts or egg identity at the same revision',
+        () async {
+      final initial = _wire();
+      final eggId = initial['data']['eggs'][0]['id'];
+      initial['data']['inventory']['reservedOnlineTradeEggIds'] = [eggId];
+      await store.persistFresh(_parse(initial));
+      final released = jsonDecode(jsonEncode(initial)) as Map<String, dynamic>;
+      released['server_time'] = '2026-09-07T12:00:01Z';
+      released['data']['inventory']['reservedOnlineTradeEggIds'] = [];
+      await store.persistFresh(_parse(released));
+      final corrupted =
+          jsonDecode(jsonEncode(released)) as Map<String, dynamic>;
+      corrupted['server_time'] = '2026-09-07T12:00:02Z';
+      corrupted['data']['inventory']['chestInventory']['gold'] += 1;
+      await expectLater(store.persistFresh(_parse(corrupted)),
+          _error('game_snapshot_conflict'));
+      corrupted['data']['inventory']['chestInventory']['gold'] -= 1;
+      corrupted['data']['eggs'][0]['xp'] += 1;
+      await expectLater(store.persistFresh(_parse(corrupted)),
+          _error('game_snapshot_conflict'));
+      await expectLater(
+          store.persistFresh(_parse(initial)), _error('game_snapshot_stale'));
+    });
+
     test('equal-revision conflicts and account path traversal are refused',
         () async {
       await store.persistFresh(_parse(_wire()));
