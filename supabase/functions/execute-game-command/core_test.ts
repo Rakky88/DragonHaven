@@ -68,7 +68,7 @@ const readSnapshot = { owner_id: owner, server_revision: 3, state_sha256: hash,
   state: { private: "hidden egg identity", seed: "NEVER_RETURN" } };
 const publicData = { projectionVersion: 1, activeDragonId: null, wallet: { coins: 25, gems: 3 },
   eggs: [], dragons: [], inventory: {}, collection: {}, house: {}, progress: {},
-  adventures: {}, trials: {}, presentations: [], activities: [] };
+  adventures: {}, trials: {}, presentations: [], activities: [], trades: {completedToday: 0, offers: []} };
 
 Deno.test("read uses Auth owner and public projection while mutations are disabled", async () => {
   const calls: string[] = [];
@@ -472,4 +472,17 @@ Deno.test("trade counterparty failure commits neither inventory and never accept
   const {deps,calls}=setup();
   assert((await handleCommand(request({...body,action:"confirm_trade",payload:{tradeId:requestId,state:{coins:999}}}),deps)).status===400);
   equal(calls,[]);
+});
+
+Deno.test("Trial resume accepts only its authenticated attempt ID, never caller state or elapsed time", async () => {
+  const accepted = setup();
+  const value = {...body, action: "resume_trial", payload: {attemptId: requestId}};
+  assert((await handleCommand(request(value), accepted.deps)).status === 200);
+  equal(accepted.inputs[0].payload, {attemptId: requestId});
+  assert(accepted.inputs[0].keeperId === owner);
+  for (const extra of [{checkpoint: {score: 9999}}, {elapsedMs: 50000}, {ownerId: other}, {seed: 7}]) {
+    const denied = setup();
+    assert((await handleCommand(request({...value, payload: {...value.payload, ...extra}}), denied.deps)).status === 400);
+    equal(denied.calls, []);
+  }
 });

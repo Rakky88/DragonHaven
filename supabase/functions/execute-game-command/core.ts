@@ -38,6 +38,7 @@ const commandKeys: Record<string, readonly string[]> = {
   claim_group_reward: ["lobbyId"], claim_pair_reward: ["adventureId"], claim_podium_prize: ["prizeId"],
   checkpoint_trial: ["attemptId", "inputs", "elapsedMs", "finish"],
   cancel_trial: ["attemptId"],
+  resume_trial: ["attemptId"],
   start_school: ["gameId", "dragonIds", "mentorId"],
   finish_school: ["attemptId", "inputs"], cancel_school: ["attemptId"],
   graduate_school: ["dragonId"],
@@ -339,7 +340,7 @@ async function readState(owner: string, clientBuild: number, deps: Dependencies)
     }
     if (!object(data) || data.projectionVersion !== 1 ||
       !exactKeys(data, ["projectionVersion", "activeDragonId", "wallet", "eggs", "dragons", "inventory",
-        "collection", "house", "progress", "adventures", "trials", "presentations", "activities"]) ||
+        "collection", "house", "progress", "adventures", "trials", "presentations", "activities", "trades"]) ||
       encoder.encode(JSON.stringify(data)).length > 8 * 1024 * 1024) {
       throw new Error("invalid_projection");
     }

@@ -45,14 +45,16 @@ Future<List<Object?>> trialCommandProbe() async {
     var state = game.exportState();
     final offer = game.trialOffers.firstWhere((o) => o.kind == kind);
     game.dispose();
+    var awayMs = 0;
     Future<Map<String, dynamic>> command(
         String action, Map<String, dynamic> payload, int at) async {
       final result = await GameCommandEngine.execute(
           state: state,
           action: action,
           payload: payload,
-          secretSeed: seed,
-          now: now.add(Duration(milliseconds: at)),
+          secretSeed:
+              action == 'resume_trial' ? List.filled(32, 'b2').join() : seed,
+          now: now.add(Duration(milliseconds: at + awayMs)),
           keeperId: owner);
       state = result['state'];
       return result;
@@ -60,8 +62,8 @@ Future<List<Object?>> trialCommandProbe() async {
 
     final started = await command('start_trial',
         {'offerId': offer.id, 'dragonId': state['pet']['id']}, 0);
-    final attempt = started['result'] as Map;
-    final model = TrialRunModel(
+    var attempt = started['result'] as Map;
+    var model = TrialRunModel(
         kind: kind,
         seed: attempt['seed'] as int,
         training: {for (final focus in TrainingFocus.values) focus: 300});
@@ -74,6 +76,7 @@ Future<List<Object?>> trialCommandProbe() async {
 
     var previous = 0;
     Object? finalResult;
+    Object? resumedResult;
     final checkpoints = <Object?>[];
     for (var at = 0; at <= 145000; at += 20) {
       model.advanceTo(at);
@@ -97,6 +100,19 @@ Future<List<Object?>> trialCommandProbe() async {
           break;
         }
         checkpoints.add(state['_activeGameAttempt']['checkpoint']);
+        if (resumedResult == null) {
+          final oldId = attempt['id'];
+          awayMs = const Duration(hours: 1).inMilliseconds;
+          final resumed =
+              await command('resume_trial', {'attemptId': oldId}, at + 1000);
+          resumedResult = resumed['result'];
+          attempt = (resumedResult as Map)['attempt'] as Map;
+          model = TrialRunModel.fromCheckpoint(
+              Map<String, dynamic>.from(resumedResult['checkpoint'] as Map));
+          if (attempt['id'] == oldId || model.elapsedMs != at) {
+            throw StateError('trial_resume_parity_invalid');
+          }
+        }
       }
     }
     if (finalResult is! Map ||
@@ -109,11 +125,12 @@ Future<List<Object?>> trialCommandProbe() async {
       'kind': kind.name,
       'start': started['result'],
       'checkpoints': checkpoints,
+      'resume': resumedResult,
       'result': finalResult,
       'state': state,
       'public': GamePublicProjection.project(
           state: state,
-          now: now.add(const Duration(minutes: 3)),
+          now: now.add(Duration(milliseconds: awayMs + 180000)),
           ownerId: owner)
     });
   }

@@ -66,6 +66,27 @@ class _Trials extends StatelessWidget {
                       Text(
                           trialDefinitions[active.kind]!.title(s.languageCode)),
                       CanonicalActionButton(
+                          key: const Key('resume-reserved-trial'),
+                          label: s.pick('Continue', 'Doorgaan'),
+                          action: session.canAct
+                              ? () async {
+                                  final offer = TrialOffer(
+                                      id: active.offerId,
+                                      kind: active.kind,
+                                      appearedAt: active.startedAt,
+                                      specialEventKey: active.specialEventKey);
+                                  final source = CanonicalTrialRunSource(
+                                      session, offer, active.dragonId,
+                                      resumeAttemptId: active.id);
+                                  await Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                          builder: (_) => TrialGameScreen(
+                                              offerId: offer.id,
+                                              dragonId: active.dragonId,
+                                              source: source)));
+                                }
+                              : null),
+                      CanonicalActionButton(
                           key: const Key('cancel-reserved-trial'),
                           label: s.pick('Leave Trial', 'Proef verlaten'),
                           confirmation: s.pick(

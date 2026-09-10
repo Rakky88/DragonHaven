@@ -1,5 +1,26 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+2026-09-10 latest staging: run `34485261951` on `ceb07c9` applied schema 74 and
+worker `9000c2b3f70a170201d4a12e6262ade1a5c78b18974d99079e16a61bb139fdd7`
+(1,164,323 bytes). All app/rules/SQL checks passed and preflight at 14:01:46 UTC
+reported lint 0 and Auth/settings/app 200. Actual reads failed before the UI
+probes because the Edge output-key guard omitted `trades`. Synthetic cleanup
+completed and all four switches are off. Production is unchanged. The guard
+is fixed locally and a regression now exercises the real compiled projection
+through the HTTP handler before any deployment, with and without a private
+egg offer. A full staging rerun is required; earlier pending/applied notes below
+are historical.
+
+The Trial resume candidate restores the saved model and held-pointer state,
+rotates its ID to reject an old device, and rebases a private active-time clock
+so time away cannot be submitted as new play. Expired attempts can be left
+without reward. Tests cover process restart, lost resume, stale IDs, time abuse,
+expiry and one reward; all eleven models complete through a resumed checkpoint
+in VM/JavaScript parity (local 1,185,894-byte probe, ~962 ms). Actual resumed UI
+proof is added to the next staging run. Full migration/cutover and lossless APK
+reduction remain open; no release yet.
+
+
 2026-09-10 trade follow-up: rollback-only staging run `34483041422` (`04b7c6a`)
 passed exact two-owner conservation, receipt replay, forged-wallet refusal,
 expiry and legacy fences. Candidate 74 remains unapplied. The UI now has owned

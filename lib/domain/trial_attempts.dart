@@ -39,9 +39,59 @@ abstract final class TrialAttempts {
       'expiresAt': now.toUtc().add(const Duration(hours: 6)).toIso8601String(),
       'elapsedMs': 0,
       'inputCount': 0,
+      'activeClockAt': now.toUtc().toIso8601String(),
+      'activeClockElapsedMs': 0,
       'checkpoint': model.checkpoint(),
     };
   }
+
+  static Map<String, dynamic> resume(
+      {required Map<String, dynamic>? attempt,
+      required String id,
+      required String replacementId,
+      required DateTime now}) {
+    if (attempt == null || attempt['type'] != 'trial' || attempt['id'] != id) {
+      throw const TrialAttemptException('game_attempt_unavailable');
+    }
+    if (!now.isBefore(DateTime.parse(attempt['expiresAt'] as String))) {
+      throw const TrialAttemptException('game_attempt_time_invalid');
+    }
+    final model = TrialRunModel.fromCheckpoint(
+        Map<String, dynamic>.from(attempt['checkpoint'] as Map));
+    final release = !model.ended && model.surfHeld
+        ? TrialControl.releaseDragon
+        : !model.ended && model.trace?.active == true
+            ? TrialControl.releasePath
+            : null;
+    if (release != null) model.apply(TrialInput(model.elapsedMs, release));
+    return {
+      ...attempt,
+      // A previous device cannot append inputs after this device resumes.
+      'id': replacementId,
+      'inputCount': (attempt['inputCount'] as int) + (release == null ? 0 : 1),
+      'checkpoint': model.checkpoint(),
+      'activeClockAt': now.toUtc().toIso8601String(),
+      'activeClockElapsedMs': model.elapsedMs,
+      'expiresAt': now.toUtc().add(const Duration(hours: 6)).toIso8601String(),
+    };
+  }
+
+  static Map<String, dynamic> display(Map<String, dynamic> attempt) => {
+        for (final key in const [
+          'version',
+          'type',
+          'elapsedMs',
+          'id',
+          'seed',
+          'gameId',
+          'offerId',
+          'dragonIds',
+          'specialEventKey',
+          'startedAt',
+          'expiresAt'
+        ])
+          key: attempt[key]
+      };
 
   static Future<({Map<String, dynamic>? attempt, Map<String, dynamic> result})>
       update(
@@ -65,10 +115,14 @@ abstract final class TrialAttempts {
     final started = DateTime.parse(attempt['startedAt'] as String);
     final expires = DateTime.parse(attempt['expiresAt'] as String);
     final previous = attempt['elapsedMs'] as int;
+    final clockAt = DateTime.parse(
+        (attempt['activeClockAt'] ?? attempt['startedAt']) as String);
+    final clockElapsed = (attempt['activeClockElapsedMs'] ?? 0) as int;
     if (!now.isBefore(expires) ||
         elapsedMs < previous ||
         elapsedMs - previous > 60000 ||
-        elapsedMs > now.difference(started).inMilliseconds) {
+        elapsedMs > now.difference(started).inMilliseconds ||
+        elapsedMs > clockElapsed + now.difference(clockAt).inMilliseconds) {
       throw const TrialAttemptException('game_attempt_time_invalid');
     }
     final decoded =

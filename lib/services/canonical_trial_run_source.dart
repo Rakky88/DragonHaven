@@ -3,6 +3,7 @@ import '../models/dragon_emote.dart';
 import '../models/mystic_relic.dart';
 import '../models/pet.dart';
 import '../models/trial.dart';
+import '../models/trial_run_model.dart';
 import 'canonical_game_actions.dart';
 import 'canonical_game_session.dart';
 import 'canonical_game_snapshot.dart';
@@ -10,7 +11,8 @@ import 'canonical_game_snapshot.dart';
 /// The journal retries the original command, including a lost reply. No score,
 /// reward, seed or replay checkpoint is accepted from the player's screen.
 class CanonicalTrialRunSource {
-  CanonicalTrialRunSource(this.session, this.offer, this.dragonId)
+  CanonicalTrialRunSource(this.session, this.offer, this.dragonId,
+      {this.resumeAttemptId})
       : owner = session.connection.currentOwner,
         epoch = session.connection.sessionEpoch;
   final CanonicalGameSession session;
@@ -18,6 +20,9 @@ class CanonicalTrialRunSource {
   final String dragonId;
   final String? owner;
   final int epoch;
+  final String? resumeAttemptId;
+  TrialRunModel? _restoredModel;
+  TrialRunModel? get restoredModel => _restoredModel;
   String? _attemptId;
   bool _startPending = false;
   int _acknowledgedMs = 0;
@@ -36,6 +41,7 @@ class CanonicalTrialRunSource {
 
   Future<CanonicalTrialAttempt> start() async {
     _requireAccount();
+    if (resumeAttemptId != null) return _resumeSaved();
     Object? raw;
     if (_startPending) {
       await session.synchronize();
@@ -56,6 +62,60 @@ class CanonicalTrialRunSource {
       throw const CanonicalGameException('game_attempt_unavailable');
     }
     _attemptId = attempt.id;
+    _startPending = false;
+    return attempt;
+  }
+
+  Future<CanonicalTrialAttempt> _resumeSaved() async {
+    Object? raw;
+    final recovering = _startPending;
+    if (recovering || !session.canAct) {
+      final receipt = await session.synchronize();
+      _requireAccount();
+      final result = receipt?.result;
+      if (recovering && result is Map && result.containsKey('checkpoint')) {
+        raw = result;
+      }
+    }
+    final current = session.snapshot?.trialAttempt;
+    if (current == null ||
+        current.offerId != offer.id ||
+        current.dragonId != dragonId ||
+        current.kind != offer.kind) {
+      throw const CanonicalGameException('game_attempt_unavailable');
+    }
+    if (raw == null) {
+      _startPending = true;
+      raw = await CanonicalGameActions(session).execute('resume_trial',
+          {'attemptId': recovering ? current.id : resumeAttemptId!});
+    }
+    _requireAccount();
+    if (raw is! Map ||
+        raw.length != 2 ||
+        raw['checkpoint'] is! Map ||
+        raw['attempt'] is! Map) {
+      throw const CanonicalGameException('game_result_invalid');
+    }
+    final attempt = CanonicalTrialAttempt.parse(raw['attempt']);
+    final TrialRunModel model;
+    try {
+      model = TrialRunModel.fromCheckpoint(
+          Map<String, dynamic>.from(raw['checkpoint'] as Map));
+    } on Object {
+      throw const CanonicalGameException('game_result_invalid');
+    }
+    if (attempt.id != session.snapshot?.trialAttempt?.id ||
+        attempt.offerId != offer.id ||
+        attempt.dragonId != dragonId ||
+        attempt.kind != offer.kind ||
+        model.kind != attempt.kind ||
+        model.seed != attempt.seed ||
+        model.elapsedMs != attempt.elapsedMs) {
+      throw const CanonicalGameException('game_attempt_unavailable');
+    }
+    _attemptId = attempt.id;
+    _acknowledgedMs = attempt.elapsedMs;
+    _restoredModel = model;
     _startPending = false;
     return attempt;
   }

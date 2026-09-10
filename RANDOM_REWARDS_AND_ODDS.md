@@ -1,15 +1,25 @@
 # DragonHaven Random Rewards and Odds
 
-Latest staging: schema 73, deployed from `8716db0` by run 34477912601.
-All app/domain/SQL checks, existing real UI, four-keeper groups and two-keeper
-partners passed. Preflight at 12:48:15 UTC reported lint 0 and Auth/settings/app
-200. Focused Beacon run 34481864223 passed the actual donation UI, exactly one
-shared stage message, a single debit and lost-response recovery after fixing
-the test client's real async initialization. Cleanup removed all synthetic
-accounts/Conclave data and disabled all four switches. Production remains
-schema 65 / v0.05.29.
+Latest staging: schema 74, deployed from `ceb07c9` by run 34485261951.
+All candidate app/domain/SQL checks passed; preflight at 14:01:46 UTC reported
+74 migrations, lint 0 and Auth/settings/app 200. The first actual inventory read
+then failed: the HTTP guard still expected the pre-trade projection fields.
+All synthetic accounts were removed and all four switches disabled. The guard
+now includes the trade board, with a local compiled-Dart-to-HTTP regression for
+empty/filled offers, exact variants and masked egg DNA. Its staging rerun is
+pending. Production stays schema 65 / v0.05.29. The last verified group, partner
+and Beacon UI evidence remains on schema 73 (Beacon run 34481864223).
 
-Trade candidate (migration 74, unapplied): one-for-one exchanges reserve one
+Trial resume candidate: resuming restores the saved game, score and mistakes,
+releases a previously held pointer and rotates the attempt ID to fence an old
+device. A private clock origin excludes time away. The six-hour expiry remains;
+expired attempts can be abandoned without rewards. No score, clock, seed or
+checkpoint can be uploaded by the player. All eleven games are replayed across
+one saved/resumed checkpoint in the parity fixture. Local restart, lost reply,
+old-ID refusal, elapsed-time refusal, expiry and one-reward checks pass. Event
+schedules, reward amounts, pools, probabilities and redeem codes do not change.
+
+Trade candidate (migration 74, applied only on staging): one-for-one exchanges reserve one
 item per side, retain the existing one-active-trade, three-per-Amsterdam-day
 and ten-minute limits, and commit both private inventories together. Eggs keep
 their fixed genetics, sex, Special catalog identity, tags and discovered facts.
@@ -23,7 +33,7 @@ Edge and VM/JavaScript parity tests pass. Staging rollback run 34483041422 on
 The picker now shows item details before offering, and the existing animated
 trade scene accepts masked server data and acknowledges without another grant.
 Local UI lost-response/account-switch checks pass. The real two-Auth UI probe
-and legacy-trade migration remain open; migration 74 is not deployed.
+and legacy-trade migration remain open; the first read failed as described above.
 
 Beacon (migration 73, applied only on staging): voluntary donations spend 1–5000 owned Shell
 Fragments, capped by the existing shared goal of 5000. The command seals current
@@ -55,7 +65,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: b28ac1b895c57ebe -->
+<!-- reference-source-fingerprint: 0e96e9c6a4493558 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

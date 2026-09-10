@@ -55,10 +55,15 @@ class TrialGameplayController extends ChangeNotifier {
       if (dragon == null) {
         throw const CanonicalGameException('game_account_changed');
       }
-      _model = TrialRunModel(kind: attempt.kind, seed: attempt.seed, training: {
-        for (final f in TrainingFocus.values) f: dragon.trainingFor(f)
-      });
+      _model = source.restoredModel ??
+          TrialRunModel(kind: attempt.kind, seed: attempt.seed, training: {
+            for (final f in TrainingFocus.values) f: dragon.trainingFor(f)
+          });
       _timer = Timer.periodic(const Duration(milliseconds: 16), (_) => tick());
+      if (model.ended) {
+        started = true;
+        await flush();
+      }
     } on CanonicalGameException catch (e) {
       error = e.code;
     } finally {

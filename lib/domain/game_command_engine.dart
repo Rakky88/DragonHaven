@@ -86,6 +86,7 @@ abstract final class GameCommandEngine {
             'finish_school',
             'cancel_school',
             'checkpoint_trial',
+            'resume_trial',
             'cancel_trial'
           }.contains(action)) {
         throw const GameCommandException('game_attempt_in_progress');
@@ -159,21 +160,16 @@ abstract final class GameCommandEngine {
               offerId: args.text('offerId'),
               dragonId: args.text('dragonId'),
               now: now);
+          result = TrialAttempts.display(activeAttempt);
+        case 'resume_trial':
+          activeAttempt = TrialAttempts.resume(
+              attempt: activeAttempt,
+              id: args.text('attemptId'),
+              replacementId: identities.uuid(),
+              now: now);
           result = {
-            for (final key in [
-              'version',
-              'type',
-              'elapsedMs',
-              'id',
-              'seed',
-              'gameId',
-              'offerId',
-              'dragonIds',
-              'specialEventKey',
-              'startedAt',
-              'expiresAt'
-            ])
-              key: activeAttempt[key]
+            'attempt': TrialAttempts.display(activeAttempt),
+            'checkpoint': activeAttempt['checkpoint']
           };
         case 'checkpoint_trial':
         case 'cancel_trial':

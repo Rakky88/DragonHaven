@@ -736,6 +736,27 @@ void main() {
       await tap(key('trial-dragon-${pupil.id}'), networkOnBuild: true);
       await settleCommand();
       stdout.writeln('PROBE: ui_trial_reserved');
+      final previousTrialId = game.snapshot!.trialAttempt!.id;
+      await tap(key('ruin-breaker-game'));
+      for (var n = 0;
+          n < 400 && (game.snapshot!.trialAttempt?.elapsedMs ?? 0) < 5000;
+          n++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 25)));
+        await tester
+            .runAsync(() => tester.pump(const Duration(milliseconds: 25)));
+      }
+      await settleCommand();
+      final savedElapsed = game.snapshot!.trialAttempt?.elapsedMs ?? 0;
+      require(savedElapsed >= 5000, 'client_probe_trial_checkpoint_missing');
+      await mount(const CanonicalTrialsScreen());
+      await tap(key('resume-reserved-trial'), networkOnBuild: true);
+      await settleCommand();
+      require(
+          game.snapshot!.trialAttempt?.id != previousTrialId &&
+              game.snapshot!.trialAttempt?.elapsedMs == savedElapsed,
+          'client_probe_trial_resume_mismatch');
+      stdout.writeln('PROBE: ui_trial_resumed_from_checkpoint');
       for (var i = 0;
           i < 250 && key('trial-result-continue').evaluate().isEmpty;
           i++) {

@@ -24,6 +24,7 @@ abstract final class GameCommandSchema {
     'start_trial': {'offerId', 'dragonId'},
     'checkpoint_trial': {'attemptId', 'inputs', 'elapsedMs', 'finish'},
     'cancel_trial': {'attemptId'},
+    'resume_trial': {'attemptId'},
     'start_school': {'gameId', 'dragonIds', 'mentorId'},
     'finish_school': {'attemptId', 'inputs'},
     'cancel_school': {'attemptId'},

@@ -346,6 +346,7 @@ jobs:
           dart run tool/game_domain_parity.dart "$(command -v deno)"
           mkdir -p staging
           flutter test --no-pub --dart-define=DOMAIN_PARITY_OUTPUT=staging/game-fixture.json test/game_domain_parity_fixture_test.dart
+          deno run --allow-read=staging/game-fixture.json tool/server_projection_contract.ts staging/game-fixture.json
       - name: Apply the detached schema, deploy and probe only staging
         shell: pwsh
         env:
