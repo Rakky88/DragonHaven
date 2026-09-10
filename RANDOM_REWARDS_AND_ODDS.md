@@ -8,9 +8,13 @@ legacy lobby creation use the bound, and only waiting existing lobbies are
 repaired. Owned social/group rows allow cascades after the Auth parent is gone,
 while direct inventory deletion remains forbidden. The rollback rehearsal
 covers all 200 catalog entries and promoted participant/owner deletion without
-changing the other keepers' inventories. It has not run or been applied yet.
-The full schema-76 staging workflow 34491961542 is still in progress on f86870a;
-production remains unchanged and there is no release yet.
+changing the other keepers' inventories. Rollback run 34492695690 passed on
+6f61cf9; migration 77 is not applied yet. Full run 34491961542 applied schema
+75/76 and deployed the worker, then stopped at mandatory database lint: two
+revoked v74 function bodies still return integer columns. Candidate 78 removes
+all seven superseded narrow entry points with RESTRICT; no player data or
+current RPC is removed. Its rollback rehearsal is pending. Production stays
+schema 65 / v0.05.29; no release has been published.
 
 
 Staging readiness update: rollback run 34490598706 (`af103f5`) passed the
@@ -18,7 +22,7 @@ schema-76 seasonal binding contract, including event/Conclave changes, device
 resume, one contribution, closed-event cutoff, old-writer refusal, atomic
 rollback and Auth cleanup. Focused real trade run 34490602505 passed every UI
 and database assertion; cleanup removed all synthetic users and disabled all
-four switches. Schema 75/76 are reviewed but not yet applied. Production stays
+four switches. Schema 75/76 were subsequently applied by run 34491961542. Production stays
 schema 65 / v0.05.29.
 
 The canonical event-end command now clears previews and dismisses only the
@@ -123,7 +127,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 7fcd761a043b6e3a -->
+<!-- reference-source-fingerprint: a537f041e2aa1de7 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

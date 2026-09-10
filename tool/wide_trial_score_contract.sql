@@ -6,7 +6,7 @@ declare keeper uuid:=gen_random_uuid(); friend_id uuid:=gen_random_uuid(); attem
 begin
   if (select enabled or shadow_social_enabled or shadow_projection_enabled or shadow_lifecycle_enabled
       from private.game_engine_runtime where singleton) then raise exception 'wide_score_contract_requires_dormant'; end if;
-  if has_function_privilege('authenticated','public.complete_seasonal_trial_attempt_v74(uuid,text,integer,integer,integer,integer)','execute') or
+  if to_regprocedure('public.complete_seasonal_trial_attempt_v74(uuid,text,integer,integer,integer,integer)') is not null or
       not has_function_privilege('authenticated','public.complete_seasonal_trial_attempt(uuid,text,bigint,bigint,bigint,bigint)','execute') then
     raise exception 'wide_score_contract_permissions'; end if;
   insert into auth.users(id,email,email_confirmed_at) values(keeper,keeper::text||'@wide-score-contract.invalid',now());
