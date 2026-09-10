@@ -772,8 +772,27 @@ void main() {
           !game.snapshot!.trialOffers
               .any((o) => o.id == 'staging-verified-ruin'),
           'client_probe_trial_offer_not_consumed');
-      require(
-          tester.takeException() == null, 'client_probe_trial_render_error');
+      final renderError = tester.takeException();
+      if (renderError != null) {
+        final detail = renderError.toString();
+        // Fixed classifications only; never emit SDK/request/session content.
+        for (final (needle, label) in [
+          ('overflowed', 'overflow'),
+          ('Unable to load asset', 'asset'),
+          ('setState() or markNeedsBuild()', 'build_notification'),
+          ('setState() called after dispose', 'disposed_notification'),
+          ('Multiple exceptions', 'multiple'),
+          ('MissingPluginException', 'plugin'),
+          ('!_debugLocked', 'navigator_locked'),
+          ('Looking up a deactivated', 'deactivated'),
+          ('was disposed', 'disposed'),
+          ('Multiple widgets used the same GlobalKey', 'global_key'),
+        ]) {
+          if (detail.contains(needle))
+            stdout.writeln('PROBE: trial_render_$label');
+        }
+        throw StateError('client_probe_trial_render_error');
+      }
       stdout.writeln(
           'PASS: real Trial selection and sprite game; server replay, consumed offer and exactly one reward.');
       stdout.writeln('PROBE: ui_profile_start');
