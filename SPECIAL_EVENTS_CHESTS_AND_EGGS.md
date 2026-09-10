@@ -1,5 +1,10 @@
 # DragonHaven Special Events, Chests, and Eggs
 
+Account rehearsal 34497019376 reached SQL and rolled back with 42703: the
+historical chest/relic count tables have tier/relic_type keys, not instance IDs.
+Candidate 79 now orders those captured rows by their actual primary keys. The
+next rehearsal must pass before activation is claimed or applied.
+
 Full staging run 34494135615 on 9896857 passed schema-78 apply, strict lint,
 Auth/application health and every real app/Edge/DB probe. This includes the
 new Sunwake three-mistake run with exact ranking/reward and event end, four-player
@@ -193,7 +198,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 23d8ecfd8e228a9b -->
+<!-- reference-source-fingerprint: 861dfc9910024603 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

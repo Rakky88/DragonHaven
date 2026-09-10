@@ -27,8 +27,8 @@ returns text language sql stable security definer set search_path='' as $$
     'wallet',(select to_jsonb(x) from public.player_wallets x where user_id=p_owner),
     'dragons',(select coalesce(jsonb_agg(to_jsonb(x) order by id),'[]') from public.player_dragons x where owner_id=p_owner),
     'eggs',(select coalesce(jsonb_agg(to_jsonb(x) order by id),'[]') from public.player_eggs x where owner_id=p_owner),
-    'chests',(select coalesce(jsonb_agg(to_jsonb(x) order by id),'[]') from public.player_chests x where owner_id=p_owner),
-    'relics',(select coalesce(jsonb_agg(to_jsonb(x) order by id),'[]') from public.player_relics x where owner_id=p_owner),
+    'chests',(select coalesce(jsonb_agg(to_jsonb(x) order by tier),'[]') from public.player_chests x where owner_id=p_owner),
+    'relics',(select coalesce(jsonb_agg(to_jsonb(x) order by relic_type),'[]') from public.player_relics x where owner_id=p_owner),
     'trades',(select coalesce(jsonb_agg(to_jsonb(x) order by id),'[]') from public.trades x
       where p_owner in (initiator_id,recipient_id)),
     'groupParticipants',(select coalesce(jsonb_agg(to_jsonb(x) order by lobby_id),'[]')

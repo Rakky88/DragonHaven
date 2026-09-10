@@ -44,6 +44,9 @@ try {
   if ($detail -match 'constraint[^a-z_]+([a-z_][a-z_0-9]{0,62})') {
     Write-Output "SQL constraint: $($Matches[1])"
   }
+  if ($detail -match 'column[^a-z_]+([a-z_][a-z_0-9.]{0,62})[^a-z_]+does not exist') {
+    Write-Output "Missing SQL column: $($Matches[1])"
+  }
   foreach ($classification in @('does not exist','ambiguous','violates not-null','violates check','syntax error','permission denied','timeout','deadlock')) {
     if ($detail.Contains($classification)) { Write-Output "SQL classification: $classification" }
   }

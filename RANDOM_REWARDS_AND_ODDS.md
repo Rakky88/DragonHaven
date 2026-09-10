@@ -1,5 +1,10 @@
 # DragonHaven Random Rewards and Odds
 
+Account rehearsal 34497019376 reached SQL and rolled back with 42703: the
+historical chest/relic count tables have tier/relic_type keys, not instance IDs.
+Candidate 79 now orders those captured rows by their actual primary keys. The
+next rehearsal must pass before activation is claimed or applied.
+
 Full staging run 34494135615 on 9896857 passed schema-78 apply, strict lint,
 Auth/application health and every real app/Edge/DB probe. This includes the
 new Sunwake three-mistake run with exact ranking/reward and event end, four-player
@@ -172,7 +177,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 2fdeeda57e81304b -->
+<!-- reference-source-fingerprint: 080824d499783203 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

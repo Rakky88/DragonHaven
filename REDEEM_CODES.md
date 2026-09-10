@@ -1,5 +1,10 @@
 # DragonHaven Redeem Codes
 
+Account rehearsal 34497019376 reached SQL and rolled back with 42703: the
+historical chest/relic count tables have tier/relic_type keys, not instance IDs.
+Candidate 79 now orders those captured rows by their actual primary keys. The
+next rehearsal must pass before activation is claimed or applied.
+
 Full staging run 34494135615 on 9896857 passed schema-78 apply, strict lint,
 Auth/application health and every real app/Edge/DB probe. This includes the
 new Sunwake three-mistake run with exact ranking/reward and event end, four-player
@@ -170,7 +175,7 @@ Last verified: 10 September 2026
 
 Ruleset: v0.05.29 / 10079 published; production remains at schema 65; current staging verification is recorded above. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
 
-<!-- reference-source-fingerprint: e013879a101aba67 -->
+<!-- reference-source-fingerprint: cf8d206b4d7d8b2f -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 

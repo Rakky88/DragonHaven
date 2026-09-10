@@ -1,5 +1,10 @@
 # DragonHaven server-authoritative economy contract
 
+Account rehearsal 34497019376 reached SQL and rolled back with 42703: the
+historical chest/relic count tables have tier/relic_type keys, not instance IDs.
+Candidate 79 now orders those captured rows by their actual primary keys. The
+next rehearsal must pass before activation is claimed or applied.
+
 Full staging run 34494135615 on 9896857 passed schema-78 apply, strict lint,
 Auth/application health and every real app/Edge/DB probe. This includes the
 new Sunwake three-mistake run with exact ranking/reward and event end, four-player
