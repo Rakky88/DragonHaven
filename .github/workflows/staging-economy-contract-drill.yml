@@ -203,7 +203,7 @@ jobs:
     if: inputs.contract == 'social-push'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse dormant push migrations and rollback all changes
@@ -271,7 +271,7 @@ jobs:
     if: inputs.contract == 'push-device-probe'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Probe the real staging worker and operator test device
@@ -291,7 +291,7 @@ jobs:
     if: inputs.contract == 'canonical-game'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse the detached game-state transaction and roll everything back
@@ -381,7 +381,7 @@ jobs:
     if: inputs.contract == 'canonical-import'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse immutable import generations and preparation with rollback
@@ -411,7 +411,7 @@ jobs:
     if: inputs.contract == 'canonical-read'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse private game reads with paused mutations with rollback
@@ -441,7 +441,7 @@ jobs:
     if: inputs.contract == 'canonical-social-projection'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse social projection and legacy guards with rollback
@@ -471,7 +471,7 @@ jobs:
     if: inputs.contract == 'canonical-social-reservations'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse social reservations and legacy guards with rollback
@@ -501,7 +501,7 @@ jobs:
     if: inputs.contract == 'canonical-group-lifecycle'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse group membership and shared starts with rollback
@@ -531,7 +531,7 @@ jobs:
     if: inputs.contract == 'canonical-pair-lifecycle'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse partner invitations and shared starts with rollback
@@ -561,7 +561,7 @@ jobs:
     if: inputs.contract == 'canonical-beacon'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse atomic cosmetic Beacon contributions with rollback
@@ -591,7 +591,7 @@ jobs:
     if: inputs.contract == 'canonical-trades'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse two-keeper trades with atomic rollback
@@ -621,7 +621,7 @@ jobs:
     if: inputs.contract == 'wide-trial-scores'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse wide Trial scores with rollback
@@ -651,7 +651,7 @@ jobs:
     if: inputs.contract == 'canonical-seasonal-trials'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse canonical seasonal Trials with rollback
@@ -681,7 +681,7 @@ jobs:
     if: inputs.contract == 'canonical-group-cleanup'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse group requirements and account cleanup with rollback
@@ -711,7 +711,7 @@ jobs:
     if: inputs.contract == 'canonical-account-activation'
     runs-on: ubuntu-latest
     environment: staging
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - name: Rehearse account activation and source fences with rollback

@@ -1,5 +1,17 @@
 # DragonHaven Special Events, Chests, and Eggs
 
+Full staging run 34494135615 on 9896857 passed schema-78 apply, strict lint,
+Auth/application health and every real app/Edge/DB probe. This includes the
+new Sunwake three-mistake run with exact ranking/reward and event end, four-player
+groups, partners, Beacon, atomic trade and both persisted trade presentations.
+Cleanup removed every synthetic account/command and disabled all four switches.
+Staging is schema 78 with bundle 4cf48d7f599a5148b44d164dc6d5f78c48b30cc4251110829e0995ee139d11d3
+(1,165,684 bytes). Production remains schema 65 / v0.05.29.
+Candidate-79 rollback run 34495485146 was cancelled at the five-minute checkout
+timeout, before any SQL ran. Rollback jobs now allow ten minutes for the large
+repository checkout; the SQL request timeout remains 90 seconds. A rerun is
+required, and candidate 79 has not been applied or activated.
+
 The account handoff now has an authenticated Edge action and explicit client
 transport. Only the final cloud revision and a durable request UUID are sent;
 full saves, Altar facts and entropy come from the database. The importer and
