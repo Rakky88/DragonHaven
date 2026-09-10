@@ -1,3 +1,4 @@
+import 'canonical_trials_screen.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -76,6 +77,18 @@ class _AdventuresState extends State<_Adventures> {
                 label: s.pick('Refresh', 'Vernieuwen'),
                 action: session.canAct ? actions.refresh : null),
           ]),
+          OutlinedButton.icon(
+              key: const Key('canonical-open-trials'),
+              onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                      builder: (_) => Scaffold(
+                          appBar: AppBar(
+                              title: Text(
+                                  s.pick('Dragon Trials', 'Drakenproeven'))),
+                          body: const CanonicalTrialsScreen()))),
+              icon: const Icon(Icons.auto_awesome),
+              label: Text(s.pick('Dragon Trials', 'Drakenproeven'))),
           if (view.adventures.runs.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(s.pick('Active Adventures', 'Actieve avonturen'),
@@ -254,7 +267,7 @@ Future<void> _chooseDragon(
                               context,
                               MaterialPageRoute<void>(
                                   builder: (_) =>
-                                      _CanonicalCodex(owner: owner)))),
+                                      CanonicalCodex(owner: owner)))),
                     ]),
                     content: SizedBox(
                         width: 380,
@@ -340,7 +353,7 @@ Future<void> _chooseDragon(
                                                                 'View all Expertise',
                                                                 'Alle Expertises bekijken'),
                                                             onPressed: () =>
-                                                                _expertises(
+                                                                showCanonicalExpertises(
                                                                     context,
                                                                     dragon.id,
                                                                     owner),
@@ -389,7 +402,8 @@ Future<void> _chooseDragon(
               })));
 }
 
-Future<void> _expertises(BuildContext context, String id, String owner) =>
+Future<void> showCanonicalExpertises(
+        BuildContext context, String id, String owner) =>
     showDialog<void>(
         context: context,
         builder: (context) => CanonicalEntityDialog(
@@ -428,8 +442,8 @@ Future<void> _expertises(BuildContext context, String id, String owner) =>
                   ]);
             }));
 
-class _CanonicalCodex extends StatelessWidget {
-  const _CanonicalCodex({required this.owner});
+class CanonicalCodex extends StatelessWidget {
+  const CanonicalCodex({super.key, required this.owner});
   final String owner;
   @override
   Widget build(BuildContext context) {

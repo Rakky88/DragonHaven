@@ -1,3 +1,5 @@
+import 'package:dragon_haven/screens/canonical_trials_screen.dart';
+import 'package:dragon_haven/services/canonical_trial_run_source.dart';
 // Isolated real-network staging test. Credentials exist only in this child
 // process's environment; they are never compiled into an app or written to disk.
 import 'dart:async';
@@ -697,6 +699,38 @@ void main() {
           'client_probe_school_verified_reward');
       stdout.writeln(
           'PASS: real Academy UI; server-issued attempt, twenty-second input replay and one stars/XP reward.');
+      stdout.writeln('PROBE: ui_trial_start');
+      final trialDragon = game.snapshot!.dragon(pupil.id)!;
+      await mount(const CanonicalTrialsScreen());
+      await tap(key('choose-trial-staging-verified-ruin'));
+      await tap(key('trial-dragon-${pupil.id}'));
+      await settleCommand();
+      for (var i = 0;
+          i < 250 && find.text('Continue').evaluate().isEmpty;
+          i++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 100)));
+        await tester.pump(const Duration(milliseconds: 100));
+        final surface = key('ruin-breaker-game');
+        if (surface.evaluate().isNotEmpty &&
+            game.snapshot!.trialAttempt != null) {
+          await tester.runAsync(() => tester.tap(surface));
+        }
+      }
+      await settleCommand();
+      final trialResult = decodeTrialCompletion(
+          game.snapshot!.data['trials']['lastResult']['result']);
+      require(
+          game.snapshot!.trialAttempt == null &&
+              find.text('Continue').evaluate().length == 1 &&
+              game.snapshot!.dragon(pupil.id)!.xp ==
+                  trialDragon.xp + trialResult.reward.xp &&
+              !game.snapshot!.trialOffers
+                  .any((o) => o.id == 'staging-verified-ruin') &&
+              tester.takeException() == null,
+          'client_probe_trial_verified_reward');
+      stdout.writeln(
+          'PASS: real Trial selection and sprite game; server replay, consumed offer and exactly one reward.');
     } finally {
       stdout.writeln('PROBE: ui_cleanup_start');
       await tester.pumpWidget(const SizedBox.shrink());

@@ -1,3 +1,5 @@
+import '../services/trial_gameplay_controller.dart';
+import '../models/trial_input.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -32,8 +34,10 @@ class WitchlightTracePath extends StatefulWidget {
     this.seed = 0,
     required this.tolerance,
     required this.onResult,
+    this.controller,
   });
 
+  final TrialGameplayController? controller;
   final bool enabled;
   final bool mirrored;
   final int seed;
@@ -102,8 +106,19 @@ class _WitchlightTracePathState extends State<WitchlightTracePath>
     widget.onResult(success);
   }
 
+  Offset _quantize(Offset point) => widget.controller == null
+      ? point
+      : Offset((point.dx * 4).round() / 4, (point.dy * 4).round() / 4);
   void _move(Offset next) {
-    _trace!.move(math.Point(next.dx, next.dy));
+    next = _quantize(next);
+    if (widget.controller case final controller?) {
+      controller.input(
+          TrialControl.followPath,
+          (next.dx * 4).round().clamp(-65535, 65535),
+          (next.dy * 4).round().clamp(-65535, 65535));
+    } else {
+      _trace!.move(math.Point(next.dx, next.dy));
+    }
     if (_trace!.result == false) {
       _result(false);
       return;
@@ -118,7 +133,10 @@ class _WitchlightTracePathState extends State<WitchlightTracePath>
   @override
   Widget build(BuildContext context) =>
       LayoutBuilder(builder: (context, constraints) {
-        final size = constraints.biggest;
+        final size = widget.controller == null
+            ? constraints.biggest
+            : Size((constraints.maxWidth * 4).round() / 4,
+                (constraints.maxHeight * 4).round() / 4);
         if (_trace == null ||
             (_traceSize != size && _pointer == null && !_reported)) {
           _traceSize = size;
@@ -139,8 +157,19 @@ class _WitchlightTracePathState extends State<WitchlightTracePath>
           behavior: HitTestBehavior.opaque,
           onPointerDown: (event) {
             if (!widget.enabled || _reported || _pointer != null) return;
-            if (!_trace!.begin(
-                math.Point(event.localPosition.dx, event.localPosition.dy))) {
+            final point = _quantize(event.localPosition);
+            if (widget.controller case final controller?) {
+              if (controller.model.trace == null) {
+                controller.input(
+                    TrialControl.configureTrace,
+                    (_traceSize!.width * 4).round(),
+                    (_traceSize!.height * 4).round());
+              }
+              controller.input(TrialControl.beginPath, (point.dx * 4).round(),
+                  (point.dy * 4).round());
+              _trace = controller.model.trace;
+              if (_trace?.active != true) return;
+            } else if (!_trace!.begin(math.Point(point.dx, point.dy))) {
               return;
             }
             setState(() {
@@ -156,13 +185,21 @@ class _WitchlightTracePathState extends State<WitchlightTracePath>
           },
           onPointerUp: (event) {
             if (event.pointer == _pointer) {
-              _trace!.release();
+              if (widget.controller case final controller?) {
+                controller.input(TrialControl.releasePath);
+              } else {
+                _trace!.release();
+              }
               _result(false);
             }
           },
           onPointerCancel: (event) {
             if (event.pointer == _pointer) {
-              _trace!.release();
+              if (widget.controller case final controller?) {
+                controller.input(TrialControl.releasePath);
+              } else {
+                _trace!.release();
+              }
               _result(false);
             }
           },

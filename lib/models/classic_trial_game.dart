@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'trial.dart';
+import 'trial_random.dart';
 
 class FlightObstacle {
   FlightObstacle(
@@ -21,8 +22,8 @@ class FlightObstacle {
 /// One fixed simulation step on every device and in the server evaluator.
 /// Collision geometry uses a reference arena, independent of physical pixels.
 class CavernFlightGame {
-  CavernFlightGame({required int seed, required int spirit})
-      : _random = Random(seed),
+  CavernFlightGame({required int seed, required int spirit, Random? random})
+      : _random = random ?? Random(seed),
         hitboxScale = cavernFlightHitboxScale(spirit) {
     obstacles.addAll(List.generate(3, (i) => _newObstacle(1.15 + i * .58)));
   }
@@ -34,6 +35,52 @@ class CavernFlightGame {
   bool ended = false;
   double get elapsed => milliseconds / 1000;
   int get score => (elapsed * 10).floor() + passed * 25;
+
+  Map<String, dynamic> checkpoint() => {
+        'random': (_random as TrialRandom).state,
+        'milliseconds': milliseconds,
+        'passed': passed,
+        'dragonY': dragonY,
+        'velocity': velocity,
+        'ended': ended,
+        'obstacles': [
+          for (final obstacle in obstacles)
+            {
+              'x': obstacle.x,
+              'gap': obstacle.gap,
+              'halfGap': obstacle.halfGap,
+              'crystal': obstacle.crystal,
+              'moving': obstacle.moving,
+              'phase': obstacle.phase,
+              'passed': obstacle.passed,
+            }
+        ],
+      };
+
+  factory CavernFlightGame.fromCheckpoint(Map<String, dynamic> state,
+      {required int spirit}) {
+    final random = TrialRandom(state['random'] as int);
+    final game = CavernFlightGame(seed: 1, spirit: spirit, random: random);
+    random.state = state['random'] as int;
+    game.milliseconds = state['milliseconds'] as int;
+    game.passed = state['passed'] as int;
+    game.dragonY = (state['dragonY'] as num).toDouble();
+    game.velocity = (state['velocity'] as num).toDouble();
+    game.ended = state['ended'] as bool;
+    game.obstacles.clear();
+    for (final entry in state['obstacles'] as List) {
+      final obstacle = FlightObstacle(
+          x: (entry['x'] as num).toDouble(),
+          gap: (entry['gap'] as num).toDouble(),
+          halfGap: (entry['halfGap'] as num).toDouble(),
+          crystal: entry['crystal'] as bool,
+          moving: entry['moving'] as bool,
+          phase: (entry['phase'] as num).toDouble());
+      obstacle.passed = entry['passed'] as bool;
+      game.obstacles.add(obstacle);
+    }
+    return game;
+  }
 
   FlightObstacle _newObstacle(double x) => FlightObstacle(
       x: x,
@@ -113,6 +160,35 @@ class RuinBreakerGame {
           2;
   double _struckMeter = 0;
 
+  Map<String, dynamic> checkpoint() => {
+        'milliseconds': milliseconds,
+        'roundStartedAt': roundStartedAt,
+        'round': round,
+        'score': score,
+        'combo': combo,
+        'misses': misses,
+        'lockedUntil': lockedUntil,
+        'ended': ended,
+        'feedback': feedback,
+        'struckMeter': _struckMeter,
+      };
+
+  factory RuinBreakerGame.fromCheckpoint(Map<String, dynamic> state,
+      {required int might}) {
+    final game = RuinBreakerGame(might: might);
+    game.milliseconds = state['milliseconds'] as int;
+    game.roundStartedAt = state['roundStartedAt'] as int;
+    game.round = state['round'] as int;
+    game.score = state['score'] as int;
+    game.combo = state['combo'] as int;
+    game.misses = state['misses'] as int;
+    game.lockedUntil = state['lockedUntil'] as int?;
+    game.ended = state['ended'] as bool;
+    game.feedback = state['feedback'] as String;
+    game._struckMeter = (state['struckMeter'] as num).toDouble();
+    return game;
+  }
+
   void advanceTo(int at) {
     if (at < milliseconds || ended) return;
     milliseconds = at;
@@ -149,8 +225,8 @@ class RuinBreakerGame {
 }
 
 class RuneweaverGame {
-  RuneweaverGame({required int seed, required this.arcana})
-      : _random = Random(seed);
+  RuneweaverGame({required int seed, required this.arcana, Random? random})
+      : _random = random ?? Random(seed);
   final Random _random;
   final int arcana;
   final sequence = <int>[];
@@ -176,6 +252,45 @@ class RuneweaverGame {
           : null;
     }
     return milliseconds < _litUntil ? _pressedRune : null;
+  }
+
+  Map<String, dynamic> checkpoint() => {
+        'random': (_random as TrialRandom).state,
+        'sequence': List.of(sequence),
+        'positions': List.of(positions),
+        'milliseconds': milliseconds,
+        'rounds': rounds,
+        'inputIndex': inputIndex,
+        'wrongRune': wrongRune,
+        'echoRune': echoRune,
+        'ended': ended,
+        'echoUsed': echoUsed,
+        'nextRoundAt': _nextRoundAt,
+        'roundAt': _roundAt,
+        'acceptAt': _acceptAt,
+        'litUntil': _litUntil,
+        'pressedRune': _pressedRune,
+      };
+
+  factory RuneweaverGame.fromCheckpoint(Map<String, dynamic> state,
+      {required int arcana}) {
+    final game = RuneweaverGame(
+        seed: 1, arcana: arcana, random: TrialRandom(state['random'] as int));
+    game.sequence.addAll(List<int>.from(state['sequence'] as List));
+    game.positions = List<int>.from(state['positions'] as List);
+    game.milliseconds = state['milliseconds'] as int;
+    game.rounds = state['rounds'] as int;
+    game.inputIndex = state['inputIndex'] as int;
+    game.wrongRune = state['wrongRune'] as int?;
+    game.echoRune = state['echoRune'] as int?;
+    game.ended = state['ended'] as bool;
+    game.echoUsed = state['echoUsed'] as bool;
+    game._nextRoundAt = state['nextRoundAt'] as int?;
+    game._roundAt = state['roundAt'] as int;
+    game._acceptAt = state['acceptAt'] as int;
+    game._litUntil = state['litUntil'] as int;
+    game._pressedRune = state['pressedRune'] as int?;
+    return game;
   }
 
   void advanceTo(int at) {

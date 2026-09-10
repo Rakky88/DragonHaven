@@ -20,6 +20,9 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const hash = /^[0-9a-f]{64}$/;
 const encoder = new TextEncoder();
 const commandKeys: Record<string, readonly string[]> = {
+  start_trial: ["offerId", "dragonId"],
+  checkpoint_trial: ["attemptId", "inputs", "elapsedMs", "finish"],
+  cancel_trial: ["attemptId"],
   start_school: ["gameId", "dragonIds", "mentorId"],
   finish_school: ["attemptId", "inputs"], cancel_school: ["attemptId"],
   graduate_school: ["dragonId"],
@@ -47,6 +50,7 @@ const commandKeys: Record<string, readonly string[]> = {
 export const domainErrors = new Set([
   "game_action_unavailable", "game_attempt_unavailable", "game_attempt_time_invalid",
   "game_attempt_state_changed", "game_attempt_in_progress",
+  "game_attempt_input_limit", "game_attempt_incomplete",
   "invalid_command", "invalid_argument", "unknown_item", "special_chest_id_required",
   "unknown_adventure", "unknown_room", "game_state_reconciliation_required",
   "game_state_owner_mismatch",

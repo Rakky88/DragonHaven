@@ -1,3 +1,4 @@
+import 'trial_command_probe.dart';
 import 'dart:convert';
 
 import 'trial_model_probe.dart';
@@ -13,7 +14,8 @@ import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 
 /// Synthetic parity fixture only. It never connects to a database or device.
-Future<Map<String, dynamic>> runGameDomainProbe() async {
+Future<Map<String, dynamic>> runGameDomainProbe(
+    {bool includeTrialCommands = false}) async {
   final now = DateTime.utc(2026, 9, 7, 12);
   final seed = List.filled(32, 'a5').join();
   final initialIds = ServerEntropy(seed, stream: 'identities');
@@ -179,6 +181,8 @@ Future<Map<String, dynamic>> runGameDomainProbe() async {
     return {
       'school': school,
       'trialModels': trialModelProbe(),
+      'trialCommands':
+          includeTrialCommands ? await trialCommandProbe() : const [],
       'purchase': purchase.name,
       'state': state,
       'commands': commands,

@@ -1,3 +1,6 @@
+import '../services/trial_gameplay_controller.dart';
+import '../models/trial_input.dart';
+import '../models/trial_dragon.dart';
 import 'dart:async';
 import 'dart:math';
 
@@ -40,10 +43,12 @@ class SeasonalTrialGame extends StatefulWidget {
     this.onStarted,
     this.randomSeed,
     this.clock,
+    this.controller,
   });
 
+  final TrialGameplayController? controller;
   final TrialOffer offer;
-  final Pet dragon;
+  final TrialDragon dragon;
   final SeasonalTrialFinished onFinished;
   final VoidCallback? onStarted;
   final int? randomSeed;
@@ -128,11 +133,15 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
       duration: const Duration(milliseconds: 2200),
     )..repeat(reverse: true);
     _newChallenge(initial: true);
-    _arcadeSeed = _isWitchlight ? 0 : _random.nextInt(1 << 31);
+    _arcadeSeed = widget.controller?.model.arcadeSeed ??
+        (_isWitchlight ? 0 : _random.nextInt(1 << 31));
+    widget.controller?.addListener(_verifiedTick);
+    if (widget.controller != null) _copyVerifiedState();
   }
 
   @override
   void dispose() {
+    widget.controller?.removeListener(_verifiedTick);
     _ticker?.cancel();
     _ambient.dispose();
     super.dispose();
@@ -159,6 +168,46 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
     }
   }
 
+  void _copyVerifiedState() {
+    final m = widget.controller!.model;
+    _score = m.score;
+    _combo = m.combo;
+    _bestCombo = m.bestCombo;
+    _phase = m.phase;
+    _round = m.round;
+    _mistakes = m.mistakes;
+    _correctActions = m.correctActions;
+    _totalActions = m.totalActions;
+    _remainingMilliseconds = m.remainingMs;
+    _pathSeed = m.pathSeed;
+    _target = m.pumpkinTarget;
+    _correctChoicePosition = m.pumpkinPosition;
+    _promptVisible = m.elapsedMs <= m.promptUntilMs;
+    _inputLocked = !m.witchReady;
+  }
+
+  void _verifiedTick() {
+    if (!mounted) return;
+    final controller = widget.controller!;
+    setState(() {
+      _copyVerifiedState();
+      if (_errorFlashUntil?.isBefore(_now()) == true) _errorFlashUntil = null;
+      for (final event in controller.model.takeEvents()) {
+        _status = event.correct
+            ? theme.successText(AppStrings.of(context))
+            : theme.failureText(AppStrings.of(context));
+        if (!event.correct) {
+          _errorFlashUntil = _now().add(const Duration(milliseconds: 300));
+        }
+        if (!event.correct || widget.offer.kind != TrialKind.midnightChime) {
+          unawaited(HavenAudio.playAsset(
+              'event_${theme.soundPrefix}_${event.correct ? 'success' : 'failure'}'));
+        }
+      }
+    });
+    if (controller.model.ended && !_ending) unawaited(_finish());
+  }
+
   void _start() {
     if (_started) return;
     setState(() {
@@ -167,6 +216,10 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
       _newChallenge(initial: true);
     });
     widget.onStarted?.call();
+    if (widget.controller case final controller?) {
+      controller.start();
+      return;
+    }
     var previous = _now();
     _ticker = Timer.periodic(const Duration(milliseconds: 50), (_) {
       if (!mounted || _ending) return;
@@ -410,7 +463,9 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
           ? WishcakeTrial(
               dragon: widget.dragon,
               seed: _arcadeSeed,
-              running: _started && !_ending,
+              controller: widget.controller,
+              running:
+                  _started && !_ending && (widget.controller?.running ?? true),
               clock: _now,
               onAction: _arcadeAction)
           : widget.offer.kind == TrialKind.sunwakeSurf ||
@@ -419,14 +474,20 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                   kind: widget.offer.kind,
                   dragon: widget.dragon,
                   seed: _arcadeSeed,
-                  running: _started && !_ending,
+                  controller: widget.controller,
+                  running: _started &&
+                      !_ending &&
+                      (widget.controller?.running ?? true),
                   clock: _now,
                   onAction: _arcadeAction)
               : SeasonalMinigames(
                   kind: widget.offer.kind,
                   dragon: widget.dragon,
                   seed: _arcadeSeed,
-                  running: _started && !_ending,
+                  controller: widget.controller,
+                  running: _started &&
+                      !_ending &&
+                      (widget.controller?.running ?? true),
                   clock: _now,
                   onAction: _arcadeAction);
 
@@ -559,12 +620,15 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                   color: colored ? theme.palette[_optionColor(position)] : null,
                   onTap: _promptVisible
                       ? null
-                      : () => _answer(
-                            _optionSprite(position, unique: pumpkins) ==
-                                    _target &&
-                                (!colored ||
-                                    _optionColor(position) == _targetColor),
-                          ),
+                      : widget.controller != null
+                          ? () => widget.controller!
+                              .input(TrialControl.choosePumpkin, position)
+                          : () => _answer(
+                                _optionSprite(position, unique: pumpkins) ==
+                                        _target &&
+                                    (!colored ||
+                                        _optionColor(position) == _targetColor),
+                              ),
                 ),
             ],
           ),
@@ -613,11 +677,16 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                   Expanded(
                     child: WitchlightTracePath(
                       key: ValueKey('witchlight-path-$_pathSeed'),
-                      enabled: _started && !_ending && !_inputLocked,
+                      enabled: _started &&
+                          !_ending &&
+                          !_inputLocked &&
+                          (widget.controller?.running ?? true),
                       seed: _pathSeed,
                       tolerance: _spiritTolerance,
-                      onResult: (correct) =>
-                          _answer(correct, completesRound: true),
+                      controller: widget.controller,
+                      onResult: (correct) => widget.controller == null
+                          ? _answer(correct, completesRound: true)
+                          : null,
                     ),
                   ),
                 ],
@@ -877,7 +946,7 @@ class _DragonStudentStrip extends StatelessWidget {
     required this.status,
   });
 
-  final Pet dragon;
+  final TrialDragon dragon;
   final bool success;
   final Color accent;
   final String status;

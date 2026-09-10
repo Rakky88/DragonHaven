@@ -6,7 +6,7 @@ Ruleset: v0.05.29 published and verified; staging and production schema 65 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 51bb771da02003aa -->
+<!-- reference-source-fingerprint: b2fe4dadcdd7fa91 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -987,3 +987,14 @@ checks are now shared with the verifier; shape count, randomness and odds stay
 the same. Input chunks contain control identities and elapsed deltas only,
 never a client reward or score. This foundation has native/JavaScript parity;
 server trial settlement and live cutover remain separate open work.
+
+### Verified Trial inputs and constellation command (10 September 2026)
+
+The canonical command candidate derives all eleven Trial scores from replayed
+controls, then uses the existing grade reward function and private server reward
+entropy once. Public layout seeds and checkpoints never select reward drops.
+The seven-day constellation UI now uses the existing authoritative claim command;
+its 95% Dragon / 5% Mythical chest pool and once-only ready flag are unchanged.
+Abandoning a reserved Trial grants nothing. Existing event-preview Trials retain
+normal permanent Trial rewards. The full command results and private checkpoints
+agree in VM/Deno tests; live social settlement and account cutover are pending.

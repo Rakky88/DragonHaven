@@ -200,23 +200,45 @@ abstract final class GamePublicProjection {
                         'xpByDragon',
                         'graduatedDragonIds',
                         'finalizedDragonIds',
-                        'attemptsByDragon'
+                        'attemptsByDragon',
+                        'kind',
+                        'newDragonBest',
+                        'testEvent',
+                        'simulated',
+                        'durationMs',
+                        'correctActions',
+                        'totalActions',
+                        'specialEventKey',
+                        'grade',
+                        'coins',
+                        'xp',
+                        'statPoints',
+                        'chestTier',
+                        'relic',
+                        'emote',
+                        'expertiseRewards'
                       ]),
                 },
           'attempt': state['_activeGameAttempt'] == null
               ? null
               : _select(
                   Map<String, dynamic>.from(state['_activeGameAttempt'] as Map),
-                  const [
+                  [
                       'version',
                       'type',
                       'id',
                       'seed',
                       'gameId',
                       'dragonIds',
-                      'mentorId',
+                      if (state['_activeGameAttempt']['type'] == 'school')
+                        'mentorId',
                       'startedAt',
-                      'expiresAt'
+                      'expiresAt',
+                      if (state['_activeGameAttempt']['type'] == 'trial') ...[
+                        'offerId',
+                        'specialEventKey',
+                        'elapsedMs',
+                      ]
                     ]),
           ..._select(exported, const [
             'trialRefilledAt',

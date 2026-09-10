@@ -1,3 +1,6 @@
+import '../services/trial_gameplay_controller.dart';
+import '../models/trial_input.dart';
+import '../models/trial_dragon.dart';
 import 'dart:async';
 import 'dart:math';
 
@@ -15,8 +18,10 @@ class WishcakeTrial extends StatefulWidget {
       required this.seed,
       required this.running,
       required this.clock,
-      required this.onAction});
-  final Pet dragon;
+      required this.onAction,
+      this.controller});
+  final TrialGameplayController? controller;
+  final TrialDragon dragon;
   final int seed;
   final bool running;
   final DateTime Function() clock;
@@ -31,7 +36,10 @@ class _WishcakeTrialState extends State<WishcakeTrial> {
   late final WishcakeTower _tower;
   Timer? _ticker;
   DateTime? _lastTick;
-  double _time = 0;
+  double _localTime = 0;
+  double get _time => widget.controller == null
+      ? _localTime
+      : widget.controller!.model.elapsedMs / 1000;
   double _droppedAt = -1;
   WishcakeDrop? _drop;
   bool get _enabled =>
@@ -42,11 +50,13 @@ class _WishcakeTrialState extends State<WishcakeTrial> {
     super.initState();
     double expertise(TrainingFocus focus) =>
         widget.dragon.trainingFor(focus).clamp(0, 400) / 400;
-    _tower = WishcakeTower(
-        seed: widget.seed,
-        might: expertise(TrainingFocus.might),
-        arcana: expertise(TrainingFocus.arcana),
-        spirit: expertise(TrainingFocus.spirit));
+    _tower = widget.controller?.model.cake ??
+        WishcakeTower(
+            seed: widget.seed,
+            might: expertise(TrainingFocus.might),
+            arcana: expertise(TrainingFocus.arcana),
+            spirit: expertise(TrainingFocus.spirit));
+    if (widget.controller != null) return;
     _ticker = Timer.periodic(const Duration(milliseconds: 16), (_) {
       if (!mounted || !widget.running || _tower.finished) return;
       final now = widget.clock();
@@ -54,7 +64,7 @@ class _WishcakeTrialState extends State<WishcakeTrial> {
           ? 0.0
           : max(0.0, now.difference(_lastTick!).inMicroseconds / 1000000);
       _lastTick = now;
-      if (delta > 0) setState(() => _time += delta);
+      if (delta > 0) setState(() => _localTime += delta);
     });
   }
 
@@ -72,13 +82,18 @@ class _WishcakeTrialState extends State<WishcakeTrial> {
 
   void _place() {
     if (!_enabled) return;
-    final result = _tower.drop(_time);
+    final controller = widget.controller;
+    controller?.input(TrialControl.dropCake);
+    final result =
+        controller == null ? _tower.drop(_time) : controller.model.lastCakeDrop;
     if (result == null) return;
     setState(() {
       _drop = result;
       _droppedAt = _time;
     });
-    widget.onAction(result.hit, points: result.points, completesRound: true);
+    if (controller == null) {
+      widget.onAction(result.hit, points: result.points, completesRound: true);
+    }
   }
 
   @override

@@ -1,3 +1,5 @@
+import '../services/trial_gameplay_controller.dart';
+import '../models/trial_dragon.dart';
 import 'dart:async';
 import 'dart:math';
 
@@ -24,14 +26,16 @@ class SeasonalMinigames extends StatefulWidget {
       required this.running,
       required this.clock,
       required this.onAction,
-      this.onInput});
+      this.onInput,
+      this.controller});
   final TrialKind kind;
-  final Pet dragon;
+  final TrialDragon dragon;
   final int seed;
   final bool running;
   final DateTime Function() clock;
   final SeasonalArcadeAction onAction;
   final ValueChanged<TrialInput>? onInput;
+  final TrialGameplayController? controller;
 
   @override
   State<SeasonalMinigames> createState() => _SeasonalMinigamesState();
@@ -65,12 +69,14 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
     super.initState();
     double expertise(TrainingFocus focus) =>
         widget.dragon.trainingFor(focus).clamp(0, 400) / 400;
-    _game = SeasonalArcadeGame(
-        kind: widget.kind,
-        seed: widget.seed,
-        might: expertise(TrainingFocus.might),
-        arcana: expertise(TrainingFocus.arcana),
-        spirit: expertise(TrainingFocus.spirit));
+    _game = widget.controller?.model.arcade ??
+        SeasonalArcadeGame(
+            kind: widget.kind,
+            seed: widget.seed,
+            might: expertise(TrainingFocus.might),
+            arcana: expertise(TrainingFocus.arcana),
+            spirit: expertise(TrainingFocus.spirit));
+    if (widget.controller != null) return;
     _lastTick = widget.clock();
     _ticker = Timer.periodic(const Duration(milliseconds: 40), (_) {
       if (mounted && widget.running && !_lost) setState(_synchronize);
@@ -90,7 +96,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   }
 
   void _synchronize() {
-    if (!widget.running || _lost) return;
+    if (widget.controller != null || !widget.running || _lost) return;
     final now = widget.clock();
     _elapsedMilliseconds += max(0, now.difference(_lastTick!).inMilliseconds);
     _lastTick = now;
@@ -104,21 +110,24 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   }
 
   void _emitActions() {
+    if (widget.controller != null) return;
     for (final action in _game.takeActions()) {
       widget.onAction(action.correct,
           points: action.points, completesRound: action.complete);
     }
   }
 
-  void _record(TrialControl control, [int a = 0, int b = 0]) =>
-      widget.onInput?.call(TrialInput(_elapsedMilliseconds, control, a, b));
+  void _record(TrialControl control, [int a = 0, int b = 0]) {
+    widget.controller?.input(control, a, b);
+    widget.onInput?.call(TrialInput(_elapsedMilliseconds, control, a, b));
+  }
 
   void _hintRequest() {
     if (!_canInput) return;
     setState(() {
       _synchronize();
       _record(TrialControl.requestHint);
-      _game.requestHint();
+      if (widget.controller == null) _game.requestHint();
     });
   }
 
@@ -315,7 +324,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
                 if (isDelivery) {
                   _synchronize();
                   _record(TrialControl.deliverGift, parcel.id, bay);
-                  _game.deliver(parcel.id, bay);
+                  if (widget.controller == null) _game.deliver(parcel.id, bay);
                   _emitActions();
                 }
               });
@@ -331,7 +340,9 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
     setState(() {
       _synchronize();
       _record(TrialControl.strikeChime, lane);
-      correct = _game.strike(lane);
+      correct = widget.controller == null
+          ? _game.strike(lane)
+          : _game.flares[lane] != null && _game.flares[lane]! >= _game.time;
       _emitActions();
     });
     if (correct == true) {
@@ -442,7 +453,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
     setState(() {
       _synchronize();
       _record(TrialControl.moveHearts, direction.index);
-      _game.move(direction);
+      if (widget.controller == null) _game.move(direction);
       _emitActions();
     });
   }
@@ -591,7 +602,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
     setState(() {
       _synchronize();
       _record(TrialControl.rotatePrism, cell);
-      _game.rotatePrism(cell);
+      if (widget.controller == null) _game.rotatePrism(cell);
       _emitActions();
     });
   }

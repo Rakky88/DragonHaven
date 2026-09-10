@@ -4,7 +4,7 @@ Last verified: 10 September 2026
 
 Ruleset: v0.05.29 / 10079 published; production remains at schema 65; staging is at schema 66 after the verified Academy/Sunwake rehearsal. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
 
-<!-- reference-source-fingerprint: ead0631670c84565 -->
+<!-- reference-source-fingerprint: d568ead03259e66b -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 
@@ -112,3 +112,9 @@ end-event and privacy rules. Sunwake/Harvestmoon definitions are version 1 with
 300 coins, 12 gems and a guaranteed own-family egg per Special Chest; production
 previews display those Adventure/Chest rewards without granting them. Code
 values and announcements remain absent from public release notes.
+
+Review 10 September 2026 (verified Trial candidate): the redeem catalog, account
+availability, event-preview activation and rewards are unchanged. The canonical
+Trial screen now replays bounded inputs before granting the existing ordinary
+Trial rewards during a preview; preview Special Adventure/Chest exclusions stay
+as documented. No redeem information is added to public release notes.

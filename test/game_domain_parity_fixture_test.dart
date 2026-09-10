@@ -8,7 +8,7 @@ import '../tool/game_domain_probe.dart' show runGameDomainProbe;
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test('native game produces the portable synthetic fixture', () async {
-    final result = await runGameDomainProbe();
+    final result = await runGameDomainProbe(includeTrialCommands: true);
     expect(result['purchase'], 'purchased');
     expect(result['state']['chestInventory']['sinister'], 0);
     const output = String.fromEnvironment('DOMAIN_PARITY_OUTPUT');

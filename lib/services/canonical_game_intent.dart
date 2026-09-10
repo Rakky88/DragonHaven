@@ -80,9 +80,14 @@ class CanonicalGameIntent {
     if (key == 'inputs') {
       return value is String &&
           value.length <= 3200 &&
-          RegExp(r'^(?:[A-Za-z0-9+/]{4})*$').hasMatch(value);
+          (action == 'checkpoint_trial'
+                  ? RegExp(
+                      r'^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$')
+                  : RegExp(r'^(?:[A-Za-z0-9+/]{4})*$'))
+              .hasMatch(value);
     }
     if (const [
+      'finish',
       'tagged',
       'sinisterConfirmed',
       'fullyViewed',
@@ -90,6 +95,9 @@ class CanonicalGameIntent {
       'enabled'
     ].contains(key)) {
       return value is bool;
+    }
+    if (key == 'elapsedMs') {
+      return value is int && value >= 0 && value <= 9007199254740991;
     }
     if (key == 'x' || key == 'y') {
       return value is num && value.isFinite && value >= 0 && value <= 1;

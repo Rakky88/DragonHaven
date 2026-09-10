@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 7eb8d6256a866dd1 -->
+<!-- reference-source-fingerprint: e18a466e71990331 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -820,3 +820,17 @@ checkpointed every five seconds with exactly the same results and less than
 These are prerequisites for verified trial settlement; the live trial command
 and migration work is still in progress. No production authority switch or
 release has been made for this foundation.
+
+### Verified seasonal Trial input candidate (10 September 2026)
+
+The detached canonical staging lane now routes all eight existing event games
+through server-issued attempts and bounded input chunks. The same seeded rules
+drive their original sprite UI and server replay. Scores, timing, mistakes and
+reward grades are derived; clients cannot supply a score or private checkpoint.
+Sunwake remains endless until its third mistake, and personal bests retain exact
+integer scores above the former one-billion storage cap. Abandoning grants no
+reward; interrupted replies recover the same attempt/receipt. Current grade
+cutoffs, event schedules, eggs, achievements and reward pools are unchanged.
+The eight seasonal sprite screens and the full eleven-Trial VM/Deno command
+comparison pass locally. This candidate is not yet a production economy cutover;
+legacy seasonal ranking/social settlement remains a separate integration gate.

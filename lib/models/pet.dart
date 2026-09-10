@@ -1,3 +1,4 @@
+import 'trial_dragon.dart';
 import 'dart:math';
 
 import '../utils/json_utils.dart';
@@ -88,7 +89,7 @@ const _trialKeys = {
 
 Map<String, int> _normalizedTrialHighScores(Map<String, int>? values) => {
       for (final key in _trialKeys)
-        key: (values?[key] ?? 0).clamp(0, 1000000000).toInt(),
+        key: (values?[key] ?? 0).clamp(0, 9007199254740991).toInt(),
     };
 
 Map<String, int> _normalizedSchoolScores(Map<String, int>? values) => {
@@ -174,7 +175,7 @@ const dragonPersonalityIncompatibilities = <String, String>{
   'Early Bird': 'Night Owl',
 };
 
-class Pet {
+class Pet implements TrialDragon {
   Pet({
     String? id,
     this.name = '',
@@ -253,17 +254,21 @@ class Pet {
                     .remainder(standardDragonLineages.length)]
                 .id;
 
+  @override
   final String id;
   String name;
   int xp;
   int coins;
   int gems;
+  @override
   DragonStage stage;
   bool firstEgg;
+  @override
   bool prismatic;
   final DragonSex? _sex;
   DragonSex get sex => _sex ?? DragonSex.fromSeed(hatchSeed);
   final Set<TrainingFocus> highlightedExpertises;
+  @override
   final bool sinister;
   final LawAxis lawAxis;
   final MoralAxis moralAxis;
@@ -294,7 +299,9 @@ class Pet {
   bool dragonSchoolFinalizedEarly;
   int dragonSchoolMentorLessons;
   final int hatchSeed;
+  @override
   final String lineageId;
+  @override
   String? evolutionPath;
 
   static const hatchXpFirst = 100;
@@ -305,10 +312,12 @@ class Pet {
   static const ascensionExpertiseRequirement = 300;
 
   DragonLineage get lineage => dragonLineageById(lineageId);
+  @override
   bool get spectral => prismatic;
   bool get isEgg => stage == DragonStage.egg;
   bool get isSinisterEgg => isEgg && lineageId == 'sinisterra';
   bool get isSpecialEgg => isEgg && lineage.secret && !isSinisterEgg;
+  @override
   String get displayName => isEgg
       ? (isSinisterEgg
           ? 'Sinister Egg'
@@ -319,6 +328,7 @@ class Pet {
           ? lineage.nameEn
           : name.trim();
 
+  @override
   String get stageKey => switch (stage) {
         DragonStage.egg => 'moonEgg',
         DragonStage.hatchling => 'spark',
@@ -376,6 +386,7 @@ class Pet {
       };
 
   double get wellbeing => (joy + energy + comfort) / 300;
+  @override
   int trainingFor(TrainingFocus focus) => training[focus.name] ?? 0;
   int expertiseMaximum(TrainingFocus focus) => dragonExpertiseMaximum(
         stage: stage,
@@ -385,6 +396,7 @@ class Pet {
       );
   int get maximumTotalExpertise => TrainingFocus.values
       .fold(0, (total, focus) => total + expertiseMaximum(focus));
+  @override
   int trialBest(String trialKey) => trialHighScores[trialKey] ?? 0;
   int schoolBest(String lessonId) => dragonSchoolRecords[lessonId] ?? 0;
   int schoolStars(String lessonId) => dragonSchoolStars[lessonId] ?? 0;
@@ -429,7 +441,7 @@ class Pet {
     if (!_trialKeys.contains(trialKey) || score <= trialBest(trialKey)) {
       return false;
     }
-    trialHighScores[trialKey] = score.clamp(0, 1000000000).toInt();
+    trialHighScores[trialKey] = score.clamp(0, 9007199254740991).toInt();
     return true;
   }
 
@@ -458,6 +470,7 @@ class Pet {
     return ranked.first.name;
   }
 
+  @override
   String get activeEvolutionPath => evolutionPath ?? leadingPath;
   Duration ageAt(DateTime now) => now.isAfter(stageStartedAt)
       ? now.difference(stageStartedAt)

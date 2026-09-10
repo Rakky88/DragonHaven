@@ -635,3 +635,41 @@ above remains the deployed staging component. Production is still unchanged.
 The trial-model foundation also passes the complete 813-test Flutter suite and
 clean analysis. Native/JavaScript probe bundle: 1,082,642 bytes; all gameplay
 outputs, RNG/checkpoint state and route coordinates match exactly.
+
+
+## Verified Trial command and UI candidate (10 September 2026)
+
+All eleven Trials now share the same input-driven simulation in the original
+sprite screens and the command engine. Start reserves the offer and dragon and
+issues a server seed. Bounded timestamp/control chunks update private checkpoints;
+finish derives the score and grants the existing reward exactly once. The public
+view contains no replay checkpoint or hidden dragon genetics. Abandoning consumes
+the offer without a reward. Lost start/checkpoint/finish replies recover the
+original journal entry; account changes fence the former game. Backgrounding or
+failed persistence pauses play, including releasing a held dragon/path safely.
+The seven-day constellation UI uses the existing authoritative claim command.
+
+Sunwake retains faster acceleration, thumb capture and maximum steering speed,
+with no gameplay time/score ceiling and three mistakes to finish. Its stored
+personal high score now uses the protocol's exact-integer range instead of the
+old one-billion cap. Seasonal selection shows all three expertises and groups
+only dragons highlighted in all three; compact codex and expertise details use
+the account-scoped public view. The original animations and artwork are retained.
+
+Seventy focused regression/recovery tests and eight seasonal sprite/input screen
+tests pass. All eleven complete command runs match exactly between the Flutter
+VM and Deno, including every private checkpoint and final reward (probe bundle
+1,123,143 bytes, Deno 872 ms). This caught and fixed JavaScript's 32-bit shift
+behavior when creating the Witchlight seed. The eight loaded sprite screens were
+reviewed in `release/economy-trial-visual/`. The complete 838-test Flutter suite, clean analysis and 17 Edge tests pass.
+Real staging proof for this candidate is pending. The real staging harness now selects a dragon, plays
+Ruin Breaker through its normal UI and checks the consumed offer and exact XP.
+
+Remaining: trusted social settlement/rankings, remaining care/presentation actions,
+legacy timestamp/import reconciliation, full client cutover/recovery and lossless
+APK reduction. Production is unchanged, still schema 65 and legacy authority.
+The user requires this entire trajectory before publishing version 0.05.30.
+
+The expensive eleven-Trial command pilot is included explicitly in the VM/Deno
+parity fixture; unrelated UI fixtures do not rerun it. This keeps parallel UI
+checks from competing with a repeated simulation benchmark.

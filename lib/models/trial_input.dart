@@ -20,6 +20,7 @@ enum TrialControl {
   grabDragon,
   steerDragon,
   releaseDragon,
+  configureTrace,
 }
 
 class TrialInput {

@@ -2,6 +2,102 @@
 ///
 /// The list order is German, Spanish, French, Italian, Portuguese and Japanese.
 const trialPhraseTranslations = <String, List<String>>{
+  "Finish your Trial first.": [
+    "Beende zuerst deine Prüfung.",
+    "Termina primero tu prueba.",
+    "Termine d’abord ton épreuve.",
+    "Completa prima la tua prova.",
+    "Conclui primeiro a tua prova.",
+    "先に試練を終えてください。"
+  ],
+  "An unfinished Trial is reserved.": [
+    "Eine unvollendete Prüfung ist reserviert.",
+    "Hay una prueba sin terminar reservada.",
+    "Une épreuve inachevée est réservée.",
+    "Una prova incompleta è riservata.",
+    "Uma prova inacabada está reservada.",
+    "未完了の試練が予約されています。"
+  ],
+  "Leave Trial": [
+    "Prüfung verlassen",
+    "Salir de la prueba",
+    "Quitter l’épreuve",
+    "Lascia la prova",
+    "Sair da prova",
+    "試練を退出"
+  ],
+  "Leave this Trial without rewards?": [
+    "Diese Prüfung ohne Belohnung verlassen?",
+    "¿Salir de esta prueba sin recompensas?",
+    "Quitter cette épreuve sans récompense ?",
+    "Lasciare questa prova senza ricompense?",
+    "Sair desta prova sem recompensas?",
+    "報酬を受け取らずにこの試練を退出しますか？"
+  ],
+  "Finish your Academy lesson first.": [
+    "Beende zuerst deine Akademielektion.",
+    "Termina primero tu lección de la Academia.",
+    "Termine d’abord ta leçon à l’Académie.",
+    "Completa prima la lezione dell’Accademia.",
+    "Conclui primeiro a tua lição da Academia.",
+    "先にアカデミーのレッスンを終えてください。"
+  ],
+  "Dismiss this Trial?": [
+    "Diese Prüfung verwerfen?",
+    "¿Descartar esta prueba?",
+    "Écarter cette épreuve ?",
+    "Scartare questa prova?",
+    "Descartar esta prova?",
+    "この試練を取り消しますか？"
+  ],
+  "New Trials will appear here.": [
+    "Hier erscheinen neue Prüfungen.",
+    "Aquí aparecerán nuevas pruebas.",
+    "De nouvelles épreuves apparaîtront ici.",
+    "Qui appariranno nuove prove.",
+    "Novas provas aparecerão aqui.",
+    "新しい試練はここに表示されます。"
+  ],
+  "Reconnect to finish saving this Trial.": [
+    "Verbinde dich erneut, um diese Prüfung fertig zu speichern.",
+    "Vuelve a conectarte para terminar de guardar esta prueba.",
+    "Reconnecte-toi pour terminer la sauvegarde de cette épreuve.",
+    "Riconnettiti per completare il salvataggio di questa prova.",
+    "Volta a ligar-te para terminar de guardar esta prova.",
+    "再接続してこの試練の保存を完了してください。"
+  ],
+  "Sign in again to continue.": [
+    "Melde dich erneut an, um fortzufahren.",
+    "Vuelve a iniciar sesión para continuar.",
+    "Reconnecte-toi à ton compte pour continuer.",
+    "Accedi di nuovo per continuare.",
+    "Inicia sessão novamente para continuar.",
+    "続けるには再度ログインしてください。"
+  ],
+  "Your Trial is paused. Reconnect to save and continue.": [
+    "Deine Prüfung ist pausiert. Verbinde dich erneut, um zu speichern und fortzufahren.",
+    "Tu prueba está en pausa. Vuelve a conectarte para guardar y continuar.",
+    "Ton épreuve est en pause. Reconnecte-toi pour sauvegarder et continuer.",
+    "La tua prova è in pausa. Riconnettiti per salvare e continuare.",
+    "A tua prova está em pausa. Volta a ligar-te para guardar e continuar.",
+    "試練は一時停止中です。再接続して保存し、続けてください。"
+  ],
+  "Trial paused": [
+    "Prüfung pausiert",
+    "Prueba en pausa",
+    "Épreuve en pause",
+    "Prova in pausa",
+    "Prova em pausa",
+    "試練を一時停止中"
+  ],
+  "Preparing your Trial...": [
+    "Deine Prüfung wird vorbereitet...",
+    "Preparando tu prueba...",
+    "Préparation de ton épreuve...",
+    "Preparazione della tua prova...",
+    "A preparar a tua prova...",
+    "試練を準備中..."
+  ],
   'Trials': ['Prüfungen', 'Pruebas', 'Épreuves', 'Prove', 'Provas', '試練'],
   'Dragon Trials': [
     'Drachenprüfungen',

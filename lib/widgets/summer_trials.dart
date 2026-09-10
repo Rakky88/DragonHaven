@@ -1,3 +1,6 @@
+import '../services/trial_gameplay_controller.dart';
+import '../models/trial_input.dart';
+import '../models/trial_dragon.dart';
 import 'dart:async';
 import 'dart:math';
 
@@ -18,9 +21,11 @@ class SummerTrials extends StatefulWidget {
       required this.seed,
       required this.running,
       required this.clock,
-      required this.onAction});
+      required this.onAction,
+      this.controller});
+  final TrialGameplayController? controller;
   final TrialKind kind;
-  final Pet dragon;
+  final TrialDragon dragon;
   final int seed;
   final bool running;
   final DateTime Function() clock;
@@ -35,7 +40,10 @@ class _SummerTrialsState extends State<SummerTrials> {
   late final MoonlitOrchard _orchard;
   Timer? _ticker;
   DateTime? _lastTick;
-  double _time = 0, _basketResetAt = 0, _harvestStarted = 0;
+  double _localTime = 0, _basketResetAt = 0, _harvestStarted = 0;
+  double get _time => widget.controller == null
+      ? _localTime
+      : widget.controller!.model.elapsedMs / 1000;
   static const _harvestDuration = .62;
   bool _pendingBasketReset = false;
   OrchardPlacement? _harvest;
@@ -61,16 +69,22 @@ class _SummerTrialsState extends State<SummerTrials> {
     super.initState();
     double stat(TrainingFocus f) =>
         widget.dragon.trainingFor(f).clamp(0, 400) / 400;
-    _surf = SunwakeSurf(
-        seed: widget.seed,
-        might: stat(TrainingFocus.might),
-        arcana: stat(TrainingFocus.arcana),
-        spirit: stat(TrainingFocus.spirit));
-    _orchard = MoonlitOrchard(
-        seed: widget.seed,
-        might: stat(TrainingFocus.might),
-        arcana: stat(TrainingFocus.arcana),
-        spirit: stat(TrainingFocus.spirit));
+    _surf = widget.controller?.model.surf ??
+        SunwakeSurf(
+            seed: widget.seed,
+            might: stat(TrainingFocus.might),
+            arcana: stat(TrainingFocus.arcana),
+            spirit: stat(TrainingFocus.spirit));
+    _orchard = widget.controller?.model.orchard ??
+        MoonlitOrchard(
+            seed: widget.seed,
+            might: stat(TrainingFocus.might),
+            arcana: stat(TrainingFocus.arcana),
+            spirit: stat(TrainingFocus.spirit));
+    if (widget.controller != null) {
+      widget.controller!.addListener(_verifiedTick);
+      return;
+    }
     _ticker = Timer.periodic(const Duration(milliseconds: 16), (_) {
       if (!mounted || !widget.running) return;
       final now = widget.clock();
@@ -81,7 +95,7 @@ class _SummerTrialsState extends State<SummerTrials> {
       if (elapsed <= 0) return;
       final actions = _sunwake ? _surf.advance(elapsed) : <SurfAction>[];
       setState(() {
-        _time += elapsed;
+        _localTime += elapsed;
         if (_harvest != null && _time - _harvestStarted >= _harvestDuration) {
           _harvest = null;
         }
@@ -103,12 +117,32 @@ class _SummerTrialsState extends State<SummerTrials> {
     });
   }
 
+  void _verifiedTick() {
+    if (!mounted) return;
+    setState(() {
+      for (final action in widget.controller!.model.surfVisualActions
+          .where((a) => a.correct)) {
+        _sparkles.add((x: action.x, y: action.y, at: _time));
+      }
+      widget.controller!.model.surfVisualActions.clear();
+      if (_harvest != null && _time - _harvestStarted >= _harvestDuration) {
+        _harvest = null;
+      }
+      if (_pendingBasketReset && widget.controller!.model.orchardReady) {
+        _pendingBasketReset = false;
+        _selected = 0;
+        _hint = '';
+      }
+      _sparkles.removeWhere((s) => _time - s.at > .9);
+    });
+  }
+
   @override
   void didUpdateWidget(SummerTrials oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.running != widget.running) {
       _lastTick = widget.clock();
-      _surf.releaseSteering();
+      if (widget.controller == null) _surf.releaseSteering();
       _surfPointer = _boardPointer = null;
       _preview = null;
     }
@@ -116,6 +150,7 @@ class _SummerTrialsState extends State<SummerTrials> {
 
   @override
   void dispose() {
+    widget.controller?.removeListener(_verifiedTick);
     _ticker?.cancel();
     super.dispose();
   }
@@ -158,8 +193,13 @@ class _SummerTrialsState extends State<SummerTrials> {
         final w = box.maxWidth, h = box.maxHeight;
         void steer(Offset p) {
           if (_enabled) {
-            setState(() => _surf
-                .steer((p.dx - _surfGrabOffset).clamp(38.0, w - 38.0) / w));
+            if (widget.controller case final controller?) {
+              controller.input(TrialControl.steerDragon,
+                  (p.dx / w * 4096).round().clamp(-65535, 65535));
+            } else {
+              setState(() => _surf
+                  .steer((p.dx - _surfGrabOffset).clamp(38.0, w - 38.0) / w));
+            }
           }
         }
 
@@ -173,12 +213,21 @@ class _SummerTrialsState extends State<SummerTrials> {
                   if (!_enabled || _surfPointer != null) return;
                   final dragonBounds = Rect.fromCenter(
                       center: Offset(_surf.x * w, SunwakeSurf.playerY * h),
-                      width: 76,
-                      height: 76);
+                      width: widget.controller == null ? 76 : min(76, w * .32),
+                      height:
+                          widget.controller == null ? 76 : min(76, h * .32));
                   if (!dragonBounds.contains(d.localPosition)) return;
                   _surfPointer = d.pointer;
                   _surfGrabOffset = d.localPosition.dx - _surf.x * w;
-                  _surf.steer(_surf.x);
+                  if (widget.controller case final controller?) {
+                    // Only a hit on the visible dragon can begin steering.
+                    controller.input(
+                        TrialControl.grabDragon,
+                        (d.localPosition.dx / w * 4096).round(),
+                        (d.localPosition.dy / h * 4096).round());
+                  } else {
+                    _surf.steer(_surf.x);
+                  }
                 },
                 onPointerMove: (d) {
                   if (_surfPointer == d.pointer) steer(d.localPosition);
@@ -186,12 +235,20 @@ class _SummerTrialsState extends State<SummerTrials> {
                 onPointerUp: (d) {
                   if (_surfPointer != d.pointer) return;
                   _surfPointer = null;
-                  _surf.releaseSteering();
+                  if (widget.controller case final controller?) {
+                    controller.input(TrialControl.releaseDragon);
+                  } else {
+                    _surf.releaseSteering();
+                  }
                 },
                 onPointerCancel: (d) {
                   if (_surfPointer != d.pointer) return;
                   _surfPointer = null;
-                  _surf.releaseSteering();
+                  if (widget.controller case final controller?) {
+                    controller.input(TrialControl.releaseDragon);
+                  } else {
+                    _surf.releaseSteering();
+                  }
                 },
                 child: ClipRRect(
                     borderRadius: BorderRadius.circular(18),
@@ -277,7 +334,19 @@ class _SummerTrialsState extends State<SummerTrials> {
 
   void _placeFruit(int index, int x, int y) {
     if (!_enabled) return;
-    final result = _orchard.place(index, x, y);
+    final controller = widget.controller;
+    if (controller != null &&
+        (!controller.model.orchardReady ||
+            x < 0 ||
+            y < 0 ||
+            x >= 6 ||
+            y >= 7)) {
+      return;
+    }
+    controller?.input(TrialControl.placeFruit, index, y * 6 + x);
+    final result = controller == null
+        ? _orchard.place(index, x, y)
+        : controller.model.lastOrchardPlacement;
     final s = AppStrings.of(context);
     if (result == null) {
       setState(() {
@@ -292,7 +361,8 @@ class _SummerTrialsState extends State<SummerTrials> {
       _hint = result.rows > 0
           ? s.pick('A beautiful harvest!', 'Een prachtige oogst!')
           : '';
-      if (result.rows > 0 && !MediaQuery.disableAnimationsOf(context)) {
+      if (result.rows > 0 &&
+          (controller != null || !MediaQuery.disableAnimationsOf(context))) {
         _harvest = result;
         _harvestStarted = _time;
       }
@@ -304,10 +374,12 @@ class _SummerTrialsState extends State<SummerTrials> {
         _pendingBasketReset = !_orchard.finished;
       }
     });
-    widget.onAction(true,
-        points: result.rows > 0 ? 130 : 55 + result.fruitCount * 12,
-        completesRound: true);
-    if (result.overflow) {
+    if (controller == null) {
+      widget.onAction(true,
+          points: result.rows > 0 ? 130 : 55 + result.fruitCount * 12,
+          completesRound: true);
+    }
+    if (controller == null && result.overflow) {
       widget.onAction(false, points: 0, completesRound: true);
     }
   }
@@ -619,13 +691,18 @@ class _SummerTrialsState extends State<SummerTrials> {
           IconButton(
               key: const Key('orchard-rotate'),
               tooltip: s.pick('Rotate shape', 'Draai vorm'),
-              onPressed:
-                  _enabled && _boardPointer == null && _draggedIndex == null
-                      ? () => setState(() {
-                            _orchard.rotate(_selected);
-                            _preview = null;
-                          })
-                      : null,
+              onPressed: _enabled &&
+                      _boardPointer == null &&
+                      _draggedIndex == null
+                  ? () => setState(() {
+                        if (widget.controller case final controller?) {
+                          controller.input(TrialControl.rotateFruit, _selected);
+                        } else {
+                          _orchard.rotate(_selected);
+                        }
+                        _preview = null;
+                      })
+                  : null,
               icon: const Icon(Icons.rotate_right, color: Color(0xFFFFDEA7))),
         ]),
         const SizedBox(height: 4),

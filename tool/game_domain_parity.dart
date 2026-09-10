@@ -30,7 +30,9 @@ Future<void> main(List<String> args) async {
     await runner.writeAsString('''
 import './probe.js';
 const started = performance.now();
-const output = await globalThis.dragonhavenProbe();
+let output;
+try { output = await globalThis.dragonhavenProbe(); }
+catch (error) { console.error(String(error.error ?? error), String(error.stack)); throw error; }
 console.log(JSON.stringify({durationMs: performance.now() - started, output: JSON.parse(output)}));
 ''');
     final execution = await Process.run(args.single, ['run', runner.path]);

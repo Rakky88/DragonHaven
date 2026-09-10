@@ -1,3 +1,8 @@
+import '../models/trial_dragon.dart';
+import '../models/trial_input.dart';
+import '../services/canonical_trial_run_source.dart';
+import '../services/canonical_game_snapshot.dart';
+import '../services/trial_gameplay_controller.dart';
 import 'dart:async';
 import 'dart:math';
 
@@ -28,21 +33,168 @@ class TrialGameScreen extends StatefulWidget {
     required this.offerId,
     required this.dragonId,
     this.seasonalSession,
+    this.source,
+    this.elapsedMilliseconds,
   });
 
   final String offerId;
   final String dragonId;
   final SeasonalTrialSession? seasonalSession;
+  final CanonicalTrialRunSource? source;
+  final int Function()? elapsedMilliseconds;
 
   @override
   State<TrialGameScreen> createState() => _TrialGameScreenState();
 }
 
-class _TrialGameScreenState extends State<TrialGameScreen> {
+class _TrialGameScreenState extends State<TrialGameScreen>
+    with WidgetsBindingObserver {
   TrialOffer? _offer;
-  Pet? _dragon;
+  TrialDragon? _dragon;
+  TrialGameplayController? _controller;
+  bool _showingResult = false, _leaving = false;
   Timer? _attemptLease;
   bool _renewingLease = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final source = widget.source;
+    if (source != null) {
+      WidgetsBinding.instance.addObserver(this);
+      _offer = source.offer;
+      _dragon = source.dragon;
+      _controller = TrialGameplayController(source,
+          elapsedMilliseconds: widget.elapsedMilliseconds)
+        ..addListener(_verifiedChanged);
+      unawaited(_controller!.prepare());
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) _controller?.pause();
+  }
+
+  void _verifiedChanged() {
+    if (!mounted) return;
+    setState(() {});
+    final completion = _controller?.completion;
+    if (completion != null && !_showingResult) {
+      _showingResult = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await _showTrialCompletion(context, completion, _dragon!.displayName);
+        if (mounted) {
+          setState(() => _leaving = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) Navigator.pop(context, completion);
+          });
+        }
+      });
+    }
+  }
+
+  Future<void> _cancelVerified() async {
+    final controller = _controller!;
+    controller.pause();
+    final s = AppStrings.of(context);
+    final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+                content: Text(s.pick('Leave this Trial without rewards?',
+                    'Deze proef zonder beloning verlaten?')),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(s.pick('Stay', 'Blijven'))),
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text(s.pick('Leave', 'Verlaten')))
+                ]));
+    if (confirmed != true || !mounted) return;
+    try {
+      await controller.cancel();
+      if (mounted) {
+        setState(() => _leaving = true);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) Navigator.pop(context);
+        });
+      }
+    } on CanonicalGameException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(s.pick('Reconnect to finish saving this Trial.',
+                'Maak opnieuw verbinding om deze proef op te slaan.'))));
+      }
+    }
+  }
+
+  Widget _verifiedBoundary(Widget child) {
+    final controller = _controller!;
+    final s = AppStrings.of(context);
+    final hidden = !controller.source.accountCurrent;
+    final blocked =
+        !controller.ready || controller.paused || controller.error != null;
+    return PopScope(
+        canPop: _leaving,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop && !controller.saving) unawaited(_cancelVerified());
+        },
+        child: Stack(children: [
+          if (!hidden) child else const Scaffold(body: SizedBox.expand()),
+          if (blocked || hidden)
+            Positioned.fill(
+                child: Material(
+                    color: Colors.black87,
+                    child: Center(
+                        child: Padding(
+                            padding: const EdgeInsets.all(28),
+                            child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                      hidden
+                                          ? s.pick('Sign in again to continue.',
+                                              'Meld je opnieuw aan om verder te gaan.')
+                                          : controller.error != null
+                                              ? s.pick(
+                                                  'Your Trial is paused. Reconnect to save and continue.',
+                                                  'Je proef is gepauzeerd. Maak opnieuw verbinding om op te slaan en verder te gaan.')
+                                              : controller.paused
+                                                  ? s.pick('Trial paused',
+                                                      'Proef gepauzeerd')
+                                                  : s.pick(
+                                                      'Preparing your Trial...',
+                                                      'Je proef wordt klaargezet...'),
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 18)),
+                                  const SizedBox(height: 20),
+                                  if (!hidden &&
+                                      (controller.paused ||
+                                          controller.error != null))
+                                    FilledButton(
+                                        key: const Key('resume-verified-trial'),
+                                        onPressed: controller.saving
+                                            ? null
+                                            : controller.resume,
+                                        child:
+                                            Text(s.pick('Continue', 'Verder'))),
+                                  if (controller.saving ||
+                                      !controller.ready &&
+                                          controller.error == null)
+                                    const CircularProgressIndicator(),
+                                  if (!hidden)
+                                    TextButton(
+                                        onPressed: controller.saving
+                                            ? null
+                                            : _cancelVerified,
+                                        child: Text(s.pick(
+                                            'Leave Trial', 'Proef verlaten'))),
+                                ]))))),
+        ]));
+  }
 
   void _keepAttemptAlive() {
     final session = widget.seasonalSession;
@@ -71,6 +223,9 @@ class _TrialGameScreenState extends State<TrialGameScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _controller?.removeListener(_verifiedChanged);
+    _controller?.dispose();
     _attemptLease?.cancel();
     super.dispose();
   }
@@ -78,7 +233,7 @@ class _TrialGameScreenState extends State<TrialGameScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_offer != null && _dragon != null) return;
+    if (widget.source != null || _offer != null && _dragon != null) return;
     final game = context.read<HouseholdProvider>();
     _offer = game.availableTrials.cast<TrialOffer?>().firstWhere(
           (candidate) => candidate?.id == widget.offerId,
@@ -94,13 +249,23 @@ class _TrialGameScreenState extends State<TrialGameScreen> {
   Widget build(BuildContext context) {
     final offer = _offer;
     final dragon = _dragon;
+    if (_controller case final controller?) {
+      if (!controller.ready ||
+          !controller.source.accountCurrent ||
+          dragon == null) {
+        return _verifiedBoundary(const Scaffold(body: SizedBox.expand()));
+      }
+    }
     if (offer == null || dragon == null) {
       return _UnavailableTrial(onClose: () => Navigator.pop(context));
     }
-    return switch (offer.kind) {
-      TrialKind.cavernFlight => _CavernFlightGame(offer: offer, dragon: dragon),
-      TrialKind.ruinBreaker => _RuinBreakerGame(offer: offer, dragon: dragon),
-      TrialKind.runeweaver => _RuneweaverGame(offer: offer, dragon: dragon),
+    final playfield = switch (offer.kind) {
+      TrialKind.cavernFlight => _CavernFlightGame(
+          offer: offer, dragon: dragon, controller: _controller),
+      TrialKind.ruinBreaker =>
+        _RuinBreakerGame(offer: offer, dragon: dragon, controller: _controller),
+      TrialKind.runeweaver =>
+        _RuneweaverGame(offer: offer, dragon: dragon, controller: _controller),
       TrialKind.witchlightWard ||
       TrialKind.hollyfrostGiftforge ||
       TrialKind.midnightChime ||
@@ -113,8 +278,10 @@ class _TrialGameScreenState extends State<TrialGameScreen> {
           offer: offer,
           dragon: dragon,
           randomSeed: widget.seasonalSession?.seed,
+          controller: _controller,
           onStarted: _keepAttemptAlive,
-          onFinished: (result) {
+          onFinished: (result) async {
+            if (_controller != null) return;
             _attemptLease?.cancel();
             return _finishTrial(
               context,
@@ -127,6 +294,7 @@ class _TrialGameScreenState extends State<TrialGameScreen> {
           },
         ),
     };
+    return _controller == null ? playfield : _verifiedBoundary(playfield);
   }
 }
 
@@ -286,7 +454,7 @@ class _HudValue extends StatelessWidget {
 Future<void> _finishTrial(
   BuildContext context, {
   required TrialOffer offer,
-  required Pet dragon,
+  required TrialDragon dragon,
   required int score,
   SeasonalTrialSession? seasonalSession,
   SeasonalTrialRunResult? seasonalResult,
@@ -358,6 +526,14 @@ Future<void> _finishTrial(
       ),
     );
   }
+  await _showTrialCompletion(
+      routeNavigator.context, completion, dragon.displayName);
+  if (routeNavigator.mounted) routeNavigator.pop(completion);
+}
+
+Future<void> _showTrialCompletion(
+    BuildContext context, TrialCompletion completion, String dragonName) async {
+  final routeNavigator = Navigator.of(context);
   unawaited(HavenAudio.play(HavenSound.adventureReturn));
   await showGeneralDialog<void>(
     context: routeNavigator.context,
@@ -383,11 +559,10 @@ Future<void> _finishTrial(
     },
     pageBuilder: (dialogContext, _, __) => _TrialResultCard(
       completion: completion,
-      dragonName: dragon.displayName,
+      dragonName: dragonName,
       onContinue: () => Navigator.pop(dialogContext),
     ),
   );
-  if (routeNavigator.mounted) routeNavigator.pop(completion);
 }
 
 class _TrialResultCard extends StatelessWidget {
@@ -684,10 +859,12 @@ class _EmoteRewardLine extends StatelessWidget {
 }
 
 class _CavernFlightGame extends StatefulWidget {
-  const _CavernFlightGame({required this.offer, required this.dragon});
+  const _CavernFlightGame(
+      {required this.offer, required this.dragon, this.controller});
 
+  final TrialGameplayController? controller;
   final TrialOffer offer;
-  final Pet dragon;
+  final TrialDragon dragon;
 
   @override
   State<_CavernFlightGame> createState() => _CavernFlightGameState();
@@ -711,14 +888,24 @@ class _CavernFlightGameState extends State<_CavernFlightGame>
   @override
   void initState() {
     super.initState();
-    _game = CavernFlightGame(
-        seed: widget.offer.id.hashCode,
-        spirit: widget.dragon.trainingFor(TrainingFocus.spirit));
-    _ticker = createTicker(_tick)..start();
+    _game = widget.controller?.model.cavern ??
+        CavernFlightGame(
+            seed: widget.offer.id.hashCode,
+            spirit: widget.dragon.trainingFor(TrainingFocus.spirit));
+    _ticker = createTicker(_tick);
+    if (widget.controller == null) _ticker.start();
+    widget.controller?.addListener(_verifiedFrame);
+  }
+
+  void _verifiedFrame() {
+    if (!mounted) return;
+    setState(() {});
+    if (_ended) unawaited(_finishAfterCrash());
   }
 
   @override
   void dispose() {
+    widget.controller?.removeListener(_verifiedFrame);
     _ticker.dispose();
     super.dispose();
   }
@@ -747,6 +934,7 @@ class _CavernFlightGameState extends State<_CavernFlightGame>
     setState(() => _crashArcStarted = true);
     await Future<void>.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
+    if (widget.controller != null) return;
     await _finishTrial(
       context,
       offer: widget.offer,
@@ -762,7 +950,12 @@ class _CavernFlightGameState extends State<_CavernFlightGame>
       _lastTick = null;
       unawaited(HavenAudio.play(HavenSound.adventureStart));
     }
-    _game.flap(_runMs);
+    if (widget.controller case final controller?) {
+      controller.start();
+      controller.input(TrialControl.flap);
+    } else {
+      _game.flap(_runMs);
+    }
     unawaited(HavenAudio.play(HavenSound.uiConfirm));
     setState(() {});
   }
@@ -865,7 +1058,7 @@ class _FlightDragonSprite extends StatelessWidget {
     required this.crashed,
   });
 
-  final Pet dragon;
+  final TrialDragon dragon;
   final double elapsed;
   final double velocity;
   final bool flying;
@@ -1098,10 +1291,12 @@ class _StartOverlay extends StatelessWidget {
 }
 
 class _RuinBreakerGame extends StatefulWidget {
-  const _RuinBreakerGame({required this.offer, required this.dragon});
+  const _RuinBreakerGame(
+      {required this.offer, required this.dragon, this.controller});
 
+  final TrialGameplayController? controller;
   final TrialOffer offer;
-  final Pet dragon;
+  final TrialDragon dragon;
 
   @override
   State<_RuinBreakerGame> createState() => _RuinBreakerGameState();
@@ -1136,15 +1331,24 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
   @override
   void initState() {
     super.initState();
-    _game =
+    _game = widget.controller?.model.ruin ??
         RuinBreakerGame(might: widget.dragon.trainingFor(TrainingFocus.might));
-    _ticker = createTicker(_tick)..start();
+    _ticker = createTicker(_tick);
+    if (widget.controller == null) _ticker.start();
+    widget.controller?.addListener(_verifiedFrame);
   }
 
   @override
   void dispose() {
+    widget.controller?.removeListener(_verifiedFrame);
     _ticker.dispose();
     super.dispose();
+  }
+
+  void _verifiedFrame() {
+    if (!mounted) return;
+    setState(() {});
+    if (_ended) unawaited(_finish());
   }
 
   void _tick(Duration elapsed) {
@@ -1161,6 +1365,7 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
     if (_started) return;
     _started = true;
     _lastTick = null;
+    widget.controller?.start();
     unawaited(HavenAudio.play(HavenSound.adventureStart));
     setState(() {});
   }
@@ -1170,7 +1375,12 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
       _start();
       return;
     }
-    if (_locked || _ended || !_game.strike(_runMs)) return;
+    if (_locked || _ended) return;
+    if (widget.controller case final controller?) {
+      controller.input(TrialControl.strikeRuin);
+    } else if (!_game.strike(_runMs)) {
+      return;
+    }
     unawaited(HavenAudio.play(HavenSound.uiConfirm));
     setState(() {});
   }
@@ -1180,6 +1390,7 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
     setState(() => _barFading = true);
     await Future<void>.delayed(const Duration(seconds: 1));
     if (!mounted) return;
+    if (widget.controller != null) return;
     await _finishTrial(context,
         offer: widget.offer, dragon: widget.dragon, score: _score);
   }
@@ -1351,7 +1562,7 @@ class _RuinDragonSprite extends StatelessWidget {
     required this.success,
   });
 
-  final Pet dragon;
+  final TrialDragon dragon;
   final bool impact;
   final bool success;
 
@@ -1441,10 +1652,12 @@ class _PowerMeter extends StatelessWidget {
 }
 
 class _RuneweaverGame extends StatefulWidget {
-  const _RuneweaverGame({required this.offer, required this.dragon});
+  const _RuneweaverGame(
+      {required this.offer, required this.dragon, this.controller});
 
+  final TrialGameplayController? controller;
   final TrialOffer offer;
-  final Pet dragon;
+  final TrialDragon dragon;
 
   @override
   State<_RuneweaverGame> createState() => _RuneweaverGameState();
@@ -1467,13 +1680,16 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
   @override
   void initState() {
     super.initState();
-    _game = RuneweaverGame(
-        seed: widget.offer.id.hashCode ^ widget.dragon.hatchSeed,
-        arcana: widget.dragon.trainingFor(TrainingFocus.arcana));
+    _game = widget.controller?.model.runes ??
+        RuneweaverGame(
+            seed: widget.offer.id.hashCode ^ (widget.dragon as Pet).hatchSeed,
+            arcana: widget.dragon.trainingFor(TrainingFocus.arcana));
+    widget.controller?.addListener(_verifiedFrame);
   }
 
   @override
   void dispose() {
+    widget.controller?.removeListener(_verifiedFrame);
     _ticker?.cancel();
     super.dispose();
   }
@@ -1485,14 +1701,31 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
     setState(() {});
     await Future<void>.delayed(delay);
     if (!mounted) return;
+    if (widget.controller != null) return;
     await _finishTrial(context,
         offer: widget.offer, dragon: widget.dragon, score: _rounds);
   }
 
+  void _verifiedFrame() {
+    if (!mounted) return;
+    if (_showing && _litRune != null && _litRune != _previousLit) {
+      unawaited(HavenAudio.play(HavenSound.uiConfirm));
+    }
+    _previousLit = _litRune;
+    setState(() {});
+    if (_game.ended) unawaited(_finishAfter(const Duration(seconds: 1)));
+  }
+
+  int? _previousLit;
   void _start() {
     if (_started) return;
     _started = true;
     unawaited(HavenAudio.play(HavenSound.adventureStart));
+    if (widget.controller case final controller?) {
+      controller.start();
+      setState(() {});
+      return;
+    }
     _ticker = Timer.periodic(const Duration(milliseconds: 10), (timer) {
       if (!mounted || _game.ended) return;
       final previous = _game.litRune;
@@ -1506,7 +1739,12 @@ class _RuneweaverGameState extends State<_RuneweaverGame> {
   }
 
   void _tapRune(int rune) {
-    if (!_accepting || !_game.tap(rune, _game.milliseconds)) return;
+    if (!_accepting) return;
+    if (widget.controller case final controller?) {
+      controller.input(TrialControl.tapRune, rune);
+    } else if (!_game.tap(rune, _game.milliseconds)) {
+      return;
+    }
     unawaited(HavenAudio.play(HavenSound.uiConfirm));
     setState(() {});
     if (_game.ended) unawaited(_finishAfter(const Duration(seconds: 1)));

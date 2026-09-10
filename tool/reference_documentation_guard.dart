@@ -16,6 +16,8 @@ const specialContentReference = ReferenceDocumentSpec(
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
     'lib/domain/school_attempts.dart',
+    'lib/domain/trial_attempts.dart',
+    'lib/models/trial_run_model.dart',
     'lib/models/school_lesson_game.dart',
     'lib/models/game_input_transcript.dart',
     'lib/models/game_command_schema.dart',
@@ -101,6 +103,8 @@ const randomRewardsReference = ReferenceDocumentSpec(
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
     'lib/domain/school_attempts.dart',
+    'lib/domain/trial_attempts.dart',
+    'lib/models/trial_run_model.dart',
     'lib/models/school_lesson_game.dart',
     'lib/models/game_input_transcript.dart',
     'lib/models/game_command_schema.dart',
@@ -173,6 +177,8 @@ const redeemCodesReference = ReferenceDocumentSpec(
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
     'lib/domain/school_attempts.dart',
+    'lib/domain/trial_attempts.dart',
+    'lib/models/trial_run_model.dart',
     'lib/models/school_lesson_game.dart',
     'lib/models/game_input_transcript.dart',
     'lib/models/game_command_schema.dart',

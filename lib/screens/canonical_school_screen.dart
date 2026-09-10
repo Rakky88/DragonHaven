@@ -19,6 +19,11 @@ class CanonicalSchoolScreen extends StatelessWidget {
           child: Consumer<CanonicalGameSession>(builder: (context, session, _) {
         final view = session.snapshot!;
         final strings = AppStrings.of(context);
+        if (view.trialAttempt != null) {
+          return Center(
+              child: Text(strings.pick(
+                  'Finish your Trial first.', 'Rond eerst je proef af.')));
+        }
         final attempt = view.schoolAttempt;
         if (attempt != null) {
           final actions = CanonicalGameActions(session);

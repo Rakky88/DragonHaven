@@ -106,6 +106,9 @@ def main():
     fixture['damagedTowerRepairFactors'] = {'0': 0.60}
     fixture.setdefault('adventureOptionIds', {})['mini'] = ['mini_1']
     fixture['relicInventory']['wayfinderSigil'] = 1
+    fixture['trialOffers'] = [{'id': 'staging-verified-ruin', 'kind': 'ruinBreaker',
+                               'appearedAt': '2026-09-10T00:00:00.000Z',
+                               'specialEventKey': None, 'startedAt': None}]
     fixture_hex = json.dumps(fixture, separators=(",", ":")).encode("utf-8").hex()
     original_coins = fixture["pet"]["coins"]
     original_title_chests = fixture["chestInventory"].get("title", 0)

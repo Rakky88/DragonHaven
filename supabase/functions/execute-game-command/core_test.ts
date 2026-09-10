@@ -296,3 +296,28 @@ Deno.test("house commands bind to Auth and cannot attach inventory or wallet gra
     }
   }
 });
+
+Deno.test("Trial controls are owner-bound and cannot carry a score or private checkpoint", async () => {
+  for (const [action, payload] of [
+    ["start_trial", {offerId: "trial-offer", dragonId: "owned-dragon"}],
+    ["checkpoint_trial", {attemptId: "attempt", inputs: "AQ==", elapsedMs: 1000, finish: false}],
+    ["cancel_trial", {attemptId: "attempt"}],
+  ] as const) {
+    const {deps, inputs} = setup();
+    assert((await handleCommand(request({...body, action, payload}), deps)).status === 200);
+    assert(inputs[0].keeperId === owner);
+    equal(inputs[0].payload, payload);
+    for (const extra of [{score: 100000}, {seed: 1}, {checkpoint: {}}, {ownerId: other}]) {
+      const denied = setup();
+      assert((await handleCommand(request({...body, action, payload: {...payload, ...extra}}), denied.deps)).status === 400);
+      equal(denied.calls, []);
+    }
+  }
+  for (const code of ["game_attempt_incomplete", "game_attempt_input_limit"]) {
+    const {deps, calls} = setup({evaluate: async () => ({error: code})});
+    const reply = await handleCommand(request({...body, action: "checkpoint_trial",
+      payload: {attemptId: "attempt", inputs: "AQ==", elapsedMs: 1000, finish: true}}), deps);
+    assert(reply.status === 422 && (await reply.json()).error === code);
+    assert(calls[1].name === "fail_canonical_game_command" && calls[1].payload.p_failure_code === code);
+  }
+});

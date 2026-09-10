@@ -12,6 +12,7 @@ import '../providers/household_provider.dart';
 import 'server_entropy.dart';
 import 'game_state_envelope.dart';
 import 'school_attempts.dart';
+import 'trial_attempts.dart';
 
 /// Runs existing game rules against trusted database state. This is an internal
 /// server module, not an HTTP authorization boundary: the worker must verify
@@ -56,8 +57,13 @@ abstract final class GameCommandEngine {
           : Map<String, dynamic>.from(state['_activeGameAttempt'] as Map);
       Object? lastGameResult = state['_lastGameResult'];
       if (activeAttempt != null &&
-          !const {'refresh', 'finish_school', 'cancel_school'}
-              .contains(action)) {
+          !const {
+            'refresh',
+            'finish_school',
+            'cancel_school',
+            'checkpoint_trial',
+            'cancel_trial'
+          }.contains(action)) {
         throw const GameCommandException('game_attempt_in_progress');
       }
       // Scores, reward amounts, paid entitlements, trade settlements and social
@@ -67,6 +73,57 @@ abstract final class GameCommandEngine {
         case 'refresh':
           if (activeAttempt == null) await game.refreshForCurrentDate();
           result = true;
+        case 'start_trial':
+          activeAttempt = await TrialAttempts.start(
+              game: game,
+              id: identities.uuid(),
+              seed: identities.nextInt(1 << 31),
+              offerId: args.text('offerId'),
+              dragonId: args.text('dragonId'),
+              now: now);
+          result = {
+            for (final key in [
+              'version',
+              'type',
+              'elapsedMs',
+              'id',
+              'seed',
+              'gameId',
+              'offerId',
+              'dragonIds',
+              'specialEventKey',
+              'startedAt',
+              'expiresAt'
+            ])
+              key: activeAttempt[key]
+          };
+        case 'checkpoint_trial':
+        case 'cancel_trial':
+          final inputs = action == 'cancel_trial' ? '' : payload['inputs'];
+          if (inputs is! String || inputs.length > 3200) {
+            throw const GameCommandException('invalid_argument');
+          }
+          final finished = await TrialAttempts.update(
+              game: game,
+              attempt: activeAttempt,
+              id: args.text('attemptId'),
+              now: now,
+              inputs: inputs,
+              elapsedMs: action == 'cancel_trial'
+                  ? 0
+                  : args.integer('elapsedMs', min: 0, max: 9007199254740991),
+              finish: action == 'cancel_trial' ? false : args.boolean('finish'),
+              cancel: action == 'cancel_trial');
+          result = finished.result;
+          if (finished.attempt == null) {
+            lastGameResult = {
+              'attemptId': activeAttempt!['id'],
+              'gameId': activeAttempt['gameId'],
+              'type': 'trial',
+              'result': result
+            };
+          }
+          activeAttempt = finished.attempt;
         case 'start_school':
           final rawIds = jsonDecode(args.text('dragonIds', max: 800));
           if (rawIds is! List ||
@@ -279,6 +336,8 @@ abstract final class GameCommandEngine {
             '_lastGameResult': lastGameResult,
         }
       };
+    } on TrialAttemptException catch (error) {
+      throw GameCommandException(error.code);
     } on SchoolAttemptException catch (error) {
       throw GameCommandException(error.code);
     } on FormatException {

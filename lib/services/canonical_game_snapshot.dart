@@ -1,3 +1,4 @@
+import '../models/trial_dragon.dart';
 import 'dart:convert';
 
 import '../models/house.dart';
@@ -7,6 +8,7 @@ import '../models/chest.dart';
 import '../models/egg_altar.dart';
 import '../models/mystic_relic.dart';
 import '../models/pet.dart';
+import '../models/trial.dart';
 
 /// Read-only server display data. It is deliberately incompatible with a local
 /// saved game: an unknown lineage is null, never a guessed DragonEgg/Pet.
@@ -37,9 +39,18 @@ class CanonicalGameSnapshot {
   DateTime get serverTime => DateTime.parse(_wire['server_time'] as String);
   Map<String, dynamic> get data => _wire['data'] as Map<String, dynamic>;
   int get coins => data['wallet']['coins'] as int;
-  CanonicalSchoolAttempt? get schoolAttempt => data['trials']['attempt'] == null
-      ? null
-      : CanonicalSchoolAttempt.parse(data['trials']['attempt']);
+  CanonicalSchoolAttempt? get schoolAttempt =>
+      data['trials']['attempt']?['type'] != 'school'
+          ? null
+          : CanonicalSchoolAttempt.parse(data['trials']['attempt']);
+  CanonicalTrialAttempt? get trialAttempt =>
+      data['trials']['attempt']?['type'] != 'trial'
+          ? null
+          : CanonicalTrialAttempt.parse(data['trials']['attempt']);
+  List<TrialOffer> get trialOffers => List.unmodifiable([
+        for (final offer in data['trials']['offers'])
+          TrialOffer.fromJson(Map<String, dynamic>.from(offer))
+      ]);
   int get gems => data['wallet']['gems'] as int;
   String? get activeDragonId => data['activeDragonId'] as String?;
 
@@ -102,7 +113,32 @@ class CanonicalGameSnapshot {
     }
     final trialData = _map(data['trials']);
     if (trialData['attempt'] != null) {
-      CanonicalSchoolAttempt.parse(trialData['attempt']);
+      if (_map(trialData['attempt'])['type'] == 'trial') {
+        CanonicalTrialAttempt.parse(trialData['attempt']);
+      } else {
+        CanonicalSchoolAttempt.parse(trialData['attempt']);
+      }
+    }
+    if (trialData['offers'] is! List) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
+    for (final raw in trialData['offers'] as List) {
+      final offer = _map(raw);
+      if (!_keys(offer, const [
+            'id',
+            'kind',
+            'appearedAt',
+            'specialEventKey',
+            'startedAt'
+          ]) ||
+          !_text(offer['id']) ||
+          !TrialKind.values.any((k) => k.name == offer['kind']) ||
+          !_date(offer['appearedAt']) ||
+          (offer['startedAt'] != null && !_date(offer['startedAt'])) ||
+          (offer['specialEventKey'] != null &&
+              !_text(offer['specialEventKey']))) {
+        throw const CanonicalGameException('game_snapshot_invalid');
+      }
     }
     final wallet = _map(data['wallet']);
     if (!_keys(wallet, const ['coins', 'gems']) ||
@@ -432,8 +468,13 @@ class CanonicalEggView {
 }
 
 /// Public facts only: no Pet construction, genetics or private save defaults.
-class CanonicalDragonView {
+class CanonicalDragonView implements TrialDragon {
   CanonicalDragonView._parse(this._data) {
+    trialHighScores = CanonicalShopView._counts(_data['trialHighScores']);
+    if (trialHighScores.keys
+        .any((id) => !TrialKind.values.any((k) => k.name == id))) {
+      _invalid();
+    }
     schoolAttempts = CanonicalShopView._counts(_data['dragonSchoolAttempts']);
     schoolStars = CanonicalShopView._counts(_data['dragonSchoolStars']);
     for (final counts in [schoolAttempts, schoolStars]) {
@@ -481,12 +522,33 @@ class CanonicalDragonView {
     personality = traits == null ? null : CanonicalShopView._ids(traits);
   }
   final Map<String, dynamic> _data;
-  late final Map<String, int> schoolAttempts, schoolStars;
+  late final Map<String, int> schoolAttempts, schoolStars, trialHighScores;
   late final Map<String, int> training;
   late final Set<String> highlighted;
   late final Set<String>? personality;
+  @override
   String get id => _data['id'] as String;
+  @override
+  String get displayName => name;
+  @override
+  String get stageKey => switch (stage) {
+        DragonStage.egg => 'moonEgg',
+        DragonStage.hatchling => 'spark',
+        DragonStage.wyrmling => 'nestDragon',
+        DragonStage.ascended => 'homeGuardian',
+      };
+  @override
+  String get activeEvolutionPath => path;
+  @override
+  String? get evolutionPath => _data['evolutionPath'] as String?;
+  @override
+  bool get prismatic => spectral;
+  @override
+  int trainingFor(TrainingFocus focus) => training[focus.name] ?? 0;
+  @override
+  int trialBest(String key) => trialHighScores[key] ?? 0;
   String get name => _data['name'] as String;
+  @override
   String get lineageId => _data['lineageId'] as String;
   String get location => _data['location'] as String;
   bool get owned => location != 'released';
@@ -494,9 +556,12 @@ class CanonicalDragonView {
   int get joy => _data['joy'] as int;
   int get energy => _data['energy'] as int;
   int get comfort => _data['comfort'] as int;
+  @override
   DragonStage get stage => DragonStage.values.byName(_data['stage'] as String);
   DragonSex get sex => DragonSex.values.byName(_data['sex'] as String);
+  @override
   bool get spectral => _data['spectral'] as bool;
+  @override
   bool get sinister => _data['sinister'] as bool;
   bool get favorite => _data['favorite'] as bool;
   bool get roamsTower => _data['roamsTower'] as bool;
@@ -778,6 +843,73 @@ Object? _freeze(Object? value, [int depth = 0]) {
 /// Rendering must never silently repair malformed public coordinates.
 bool _boundedNumber(Object? value, double min, double max) =>
     value is num && value.isFinite && value >= min && value <= max;
+
+class CanonicalTrialAttempt {
+  CanonicalTrialAttempt._(
+      this.id,
+      this.kind,
+      this.seed,
+      this.offerId,
+      this.dragonId,
+      this.specialEventKey,
+      this.startedAt,
+      this.expiresAt,
+      this.elapsedMs);
+  final String id, offerId, dragonId;
+  final String? specialEventKey;
+  final TrialKind kind;
+  final int seed, elapsedMs;
+  final DateTime startedAt, expiresAt;
+  factory CanonicalTrialAttempt.parse(Object? value) {
+    final map = _map(value);
+    if (!_keys(map, const [
+          'version',
+          'type',
+          'id',
+          'seed',
+          'gameId',
+          'dragonIds',
+          'offerId',
+          'specialEventKey',
+          'startedAt',
+          'expiresAt',
+          'elapsedMs'
+        ]) ||
+        map['version'] != 1 ||
+        map['type'] != 'trial' ||
+        !_uuid.hasMatch(map['id'] is String ? map['id'] as String : '') ||
+        !TrialKind.values.any((k) => k.name == map['gameId']) ||
+        !_text(map['offerId']) ||
+        !_count(map['seed']) ||
+        map['seed'] > 2147483647 ||
+        !_count(map['elapsedMs']) ||
+        !_date(map['startedAt']) ||
+        !_date(map['expiresAt']) ||
+        (map['specialEventKey'] != null && !_text(map['specialEventKey']))) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
+    final ids = CanonicalShopView._ids(map['dragonIds']);
+    final start = DateTime.parse(map['startedAt'] as String),
+        expiry = DateTime.parse(map['expiresAt'] as String);
+    final kind = TrialKind.values.byName(map['gameId'] as String);
+    if (ids.length != 1 ||
+        expiry.difference(start) < const Duration(hours: 6) ||
+        trialDefinitions[kind]!.isSeasonal !=
+            (map['specialEventKey'] != null)) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
+    return CanonicalTrialAttempt._(
+        map['id'] as String,
+        kind,
+        map['seed'] as int,
+        map['offerId'] as String,
+        ids.single,
+        map['specialEventKey'] as String?,
+        start,
+        expiry,
+        map['elapsedMs'] as int);
+  }
+}
 
 class CanonicalSchoolAttempt {
   CanonicalSchoolAttempt._(this.id, this.gameId, this.seed, this.dragonIds,
