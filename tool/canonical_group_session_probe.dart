@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:dragon_haven/config/online_config.dart';
+import 'package:dragon_haven/app_info.dart';
 import 'package:dragon_haven/screens/canonical_groups_screen.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_transport.dart';
@@ -16,6 +17,15 @@ import 'canonical_game_session_probe.dart' show LostReplyClient;
 void require(bool condition, String code) {
   if (!condition) throw StateError('client_probe_group_$code');
 }
+
+Object? ordered(Object? value) => switch (value) {
+      Map value => {
+          for (final key in value.keys.cast<String>().toList()..sort())
+            key: ordered(value[key])
+        },
+      List value => value.map(ordered).toList(),
+      _ => value,
+    };
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -93,6 +103,41 @@ void main() {
               : 'unavailable';
           stdout.writeln(
               'PROBE: group_state_${games[active].fresh ? 'fresh' : 'stale'}_${games[active].snapshot == null ? 'no_view' : 'has_view'}_${games[active].snapshot?.mutationsEnabled == true ? 'enabled' : 'paused'}');
+          if (error == 'game_snapshot_conflict') {
+            await tester.runAsync(() async {
+              final game = games[active];
+              final owner = game.connection.currentOwner!;
+              final cached = (await game.snapshots.inspect(owner)).snapshot;
+              final wire = await game.connection.read({
+                'protocol': 2,
+                'clientBuild': AppInfo.buildNumber,
+                'action': 'read_state'
+              }) as Map;
+              stdout.writeln(
+                  'PROBE: group_cache_revision_${cached?.serverRevision == wire['server_revision'] ? 'same' : 'different'}');
+              stdout.writeln(
+                  'PROBE: group_cache_hash_${cached?.stateHash == wire['state_sha256'] ? 'same' : 'different'}');
+              if (cached != null) {
+                for (final key in cached.data.keys) {
+                  if (jsonEncode(ordered(cached.data[key])) !=
+                      jsonEncode(ordered(wire['data'][key]))) {
+                    stdout.writeln('PROBE: group_changed_${key.toLowerCase()}');
+                  }
+                }
+              }
+              final pending = await game.intents.pending(owner);
+              if (pending != null) {
+                final reply = await game.connection.send(pending);
+                final body = reply.body;
+                if (body is Map) {
+                  stdout.writeln(
+                      'PROBE: group_receipt_revision_${body['server_revision'] == wire['server_revision'] ? 'same' : 'different'}');
+                  stdout.writeln(
+                      'PROBE: group_receipt_hash_${body['state_sha256'] == wire['state_sha256'] ? 'same' : 'different'}');
+                }
+              }
+            });
+          }
           throw StateError('client_probe_group_command_$code');
         }
         require(groups[active].error == null, 'read_unavailable');
