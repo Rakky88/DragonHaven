@@ -1,3 +1,4 @@
+import 'package:dragon_haven/domain/game_time_bridge.dart';
 import 'social_claim_probe.dart';
 import 'care_command_probe.dart';
 import 'trial_command_probe.dart';
@@ -181,6 +182,17 @@ Future<Map<String, dynamic>> runGameDomainProbe(
       });
     }
     return {
+      'clockBridge': GameTimeBridge.forUpload({
+        'pet': {'acquiredAt': '2026-07-01T00:15:00.000+05:30'},
+        'adventureRuns': [
+          {
+            'startedAt': '2026-01-01T00:15:00.000-05:00',
+            'endsAt': '2026-07-01T00:15:00.000Z'
+          }
+        ],
+        'trialStreakLastDayKey': '2026-09-07',
+        'futureMetadata': {'createdAt': 'unchanged'},
+      }),
       'school': school,
       'socialClaims':
           includeTrialCommands ? await socialClaimProbe(state, now) : const [],

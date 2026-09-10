@@ -5,6 +5,7 @@ import '../models/egg_altar.dart';
 import '../providers/household_provider.dart';
 import 'game_asset_snapshot.dart';
 import 'game_state_envelope.dart';
+import 'game_time_bridge.dart';
 import 'server_entropy.dart';
 
 /// Prepares an isolated database copy, never a client-supplied migration or a
@@ -29,8 +30,13 @@ abstract final class GameImportPreparation {
     if (source['pendingAltarOperation'] != null) {
       throw const GameImportException('game_import_pending_altar');
     }
+    try {
+      GameTimeBridge.requireExplicitInstants(source);
+    } on FormatException {
+      throw const GameImportException('game_import_device_clock_required');
+    }
     final before = GameAssetSnapshot(source);
-    final candidate = jsonDecode(jsonEncode(source)) as Map<String, dynamic>;
+    final candidate = GameTimeBridge.forUpload(source);
     final saved = Map<String, dynamic>.from(candidate['eggAltar'] as Map);
     if (saved['ownerId'] != null && saved['ownerId'] != ownerId) {
       throw const GameImportException('game_import_foreign_altar');

@@ -191,7 +191,19 @@ class GameAssetSnapshot {
       'dragonSchoolRecords',
       'seasonalPodiumEmoteWinCounts',
     ]) {
-      _assets[key] = _canonical(state[key]);
+      _assets[key] = _canonical(key == 'adventureRuns'
+          ? (state[key] as List).map((raw) {
+              final run = Map<String, dynamic>.from(raw as Map);
+              for (final clock in ['startedAt', 'endsAt']) {
+                final instant = DateTime.tryParse(run[clock]?.toString() ?? '');
+                if (instant == null) {
+                  throw const FormatException('Invalid adventure timestamp');
+                }
+                run[clock] = instant.microsecondsSinceEpoch;
+              }
+              return run;
+            }).toList()
+          : state[key]);
     }
     // Older saves predate the three Expertise brooches. Their empty equipment
     // fields have the same meaning after restoration; retain the Twin marker.

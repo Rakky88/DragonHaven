@@ -101,9 +101,11 @@ void main() {
   }
 
   Future<void> waitForCommand(WidgetTester tester) async {
-    for (var n = 0; n < 200 && session.busy; n++) {
+    // Match the transport's ten-second deadline. Parallel sprite tests can
+    // briefly delay the real filesystem journal on Windows.
+    for (var n = 0; n < 500 && session.busy; n++) {
       await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 10)));
+          () => Future<void>.delayed(const Duration(milliseconds: 20)));
       await tester.pump();
     }
     expect(session.busy, isFalse);

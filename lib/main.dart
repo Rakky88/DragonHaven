@@ -1,3 +1,4 @@
+import 'domain/game_time_bridge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -158,7 +159,7 @@ Future<void> main() async {
       specialChestId: reward.specialChestId,
       simulated: reward.simulated,
     ),
-    gameStateSnapshot: game.exportState,
+    gameStateSnapshot: () => GameTimeBridge.forUpload(game.exportState()),
     applyCloudState: game.restoreCloudState,
     deviceId: StorageService.deviceId,
     clientVersion: AppInfo.version,

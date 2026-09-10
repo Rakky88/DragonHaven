@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: cae2bb1b02adcd22 -->
+<!-- reference-source-fingerprint: f9fd2f5d64cd968b -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -847,3 +847,14 @@ existing brooch/cap and preview policies still apply. Podium placements retain
 the existing fixed chest and seasonal medal emote. Both partner-ready notifications
 are preserved. No event schedule, egg, artwork, chest content or rank cutoff is
 changed by this component. Production remains legacy authority until full cutover.
+
+
+### Explicit legacy clock bridge (10 September 2026)
+
+Cloud uploads now convert known local timer instants to UTC on the device before
+canonical import. Event-preview expiry, dismissal, adventure deadlines, hatch
+clocks and cooldowns keep the same epoch; schedules, durations, saved day credits,
+reward pools and counts are unchanged. A server import refuses unresolved local
+times rather than guessing the device timezone. Unknown metadata is preserved.
+The Trial startup reservation is deferred until its route has finished building;
+this fixes account-consumer notifications during build without altering gameplay.

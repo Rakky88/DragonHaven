@@ -497,3 +497,40 @@ lifecycle and reservations, trades and reveal, Beacon/rankings, normalized mirro
 legacy timestamp/import reconciliation, complete gameplay routing and safe live
 cutover/rollback. Lossless APK reduction follows those gates. App version remains
 0.05.29 / 10079; production remains schema 65, staging currently schema 66.
+
+
+## Clock bridge and Trial build regression — 10 September 2026
+
+The ordinary app now writes known timer instants as explicit UTC when uploading
+a legacy cloud save. Conversion runs on the device using each timestamp's
+historical local rules, preserves its epoch (including microseconds), and leaves
+calendar labels, inventory and unknown metadata intact. Canonical preparation
+refuses unresolved local timestamps instead of interpreting them in the server's
+timezone. Explicit offsets are normalized before preparation; adventure deadline
+fingerprints compare instants rather than ISO spelling. Egg/dragon received dates
+and journal date/time labels continue to display in the device's local timezone;
+journal day labels use DST-safe calendar arithmetic.
+
+Four bridge tests and the import/Trial regression set pass (17 total). Tests cover
+all stored timer locations, immutable input, unchanged assets/day credits, unknown
+metadata, offset/microsecond preservation, invalid dates and rejection before
+migration. Linux staging runs both calendar and bridge tests under Amsterdam and
+New York timezone rules. Local analysis is clean. VM/Deno parity passes including
+explicit-offset conversion and all social/care/Trial paths (probe 1,149,553 bytes,
+Deno about 923 ms). Full-suite and actual staging evidence are pending for this
+candidate; users still require the new app's UTC upload before canonical capture.
+
+Run 34460031303 classified the Trial renderer exception as a session notification
+during ancestor build; it cleaned staging and disabled the worker. A local test
+with the actual account Consumer reproduced the same error. Reserving the Trial
+now starts after the route's first frame, and that regression passes with the
+existing result, artwork and exact reward. This corrects a real UI lifecycle bug;
+no game score, reward or input timing rule is changed. Run 34460608919 exercises
+the preceding social-source candidate (migration 67) and does not yet include
+this fix. Production remains unchanged and no release/version increment is made.
+
+The complete local run passed 857 of 858 tests. The sole failure was the shop
+fixture's two-second filesystem wait under parallel sprite load, followed by a
+locked temporary directory during early teardown. Its wait now matches the
+transport's bounded ten-second deadline; all four focused shop tests pass.
+The staging workflow reruns the entire suite sequentially before deployment.

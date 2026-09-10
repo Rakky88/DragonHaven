@@ -6,7 +6,7 @@ Ruleset: v0.05.29 published and verified; staging and production schema 65 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: d8f28e7deb334fac -->
+<!-- reference-source-fingerprint: b0dc73e2bcc5ab35 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -1013,3 +1013,14 @@ The candidate seals owner/source facts at reservation and atomically commits
 inventory plus the normalized source acknowledgment. A changed source is refused
 without paying. Shadow social claims are disabled except explicit staging tests;
 full social lifecycle, migration and live authority activation remain pending.
+
+
+### Explicit legacy clock bridge (10 September 2026)
+
+Cloud uploads now convert known local timer instants to UTC on the device before
+canonical import. Event-preview expiry, dismissal, adventure deadlines, hatch
+clocks and cooldowns keep the same epoch; schedules, durations, saved day credits,
+reward pools and counts are unchanged. A server import refuses unresolved local
+times rather than guessing the device timezone. Unknown metadata is preserved.
+The Trial startup reservation is deferred until its route has finished building;
+this fixes account-consumer notifications during build without altering gameplay.

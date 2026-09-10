@@ -409,7 +409,7 @@ class _EggInventoryTabState extends State<_EggInventoryTab> {
                     final egg = eggs[index];
                     final reserved = game.isEggReservedForTrade(egg.id);
                     final received = MaterialLocalizations.of(context)
-                        .formatShortDate(egg.acquiredAt);
+                        .formatShortDate(egg.acquiredAt.toLocal());
                     return Card(
                       margin: EdgeInsets.zero,
                       child: ListTile(

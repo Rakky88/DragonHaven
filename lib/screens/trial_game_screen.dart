@@ -67,7 +67,11 @@ class _TrialGameScreenState extends State<TrialGameScreen>
       _controller = TrialGameplayController(source,
           elapsedMilliseconds: widget.elapsedMilliseconds)
         ..addListener(_verifiedChanged);
-      unawaited(_controller!.prepare());
+      // Reserving a Trial notifies the account-wide session. Defer until this
+      // route has finished building so ancestor consumers can rebuild safely.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_controller!.prepare());
+      });
     }
   }
 

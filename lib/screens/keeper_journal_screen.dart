@@ -308,7 +308,7 @@ class _JournalEntryTile extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          TimeOfDay.fromDateTime(entry.createdAt)
+                          TimeOfDay.fromDateTime(entry.createdAt.toLocal())
                               .format(context),
                           style: const TextStyle(
                               color: AppColors.muted, fontSize: 10.5),
@@ -420,8 +420,12 @@ Color _activityColor(ActivityType type) => switch (type) {
       ActivityType.milestone => const Color(0xFF5B4B8A),
     };
 
-bool _sameDay(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
+bool _sameDay(DateTime a, DateTime b) {
+  final left = a.toLocal(), right = b.toLocal();
+  return left.year == right.year &&
+      left.month == right.month &&
+      left.day == right.day;
+}
 
 String _dateLabel(
   BuildContext context,
@@ -429,10 +433,11 @@ String _dateLabel(
   DateTime now,
   AppStrings strings,
 ) {
-  final today = DateTime(now.year, now.month, now.day);
-  final day = DateTime(date.year, date.month, date.day);
+  final localNow = now.toLocal(), localDate = date.toLocal();
+  final today = DateTime.utc(localNow.year, localNow.month, localNow.day);
+  final day = DateTime.utc(localDate.year, localDate.month, localDate.day);
   final difference = today.difference(day).inDays;
   if (difference == 0) return strings.pick('Today', 'Vandaag');
   if (difference == 1) return strings.pick('Yesterday', 'Gisteren');
-  return MaterialLocalizations.of(context).formatMediumDate(date);
+  return MaterialLocalizations.of(context).formatMediumDate(localDate);
 }

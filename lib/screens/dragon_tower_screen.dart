@@ -1909,7 +1909,7 @@ class _OwnedDragonListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final received = MaterialLocalizations.of(context).formatShortDate(
-      dragon.acquiredAt,
+      dragon.acquiredAt.toLocal(),
     );
     return Card(
       color:

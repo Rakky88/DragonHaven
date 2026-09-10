@@ -1,3 +1,4 @@
+import 'package:provider/provider.dart';
 import 'package:dragon_haven/services/trial_gameplay_controller.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -171,12 +172,15 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     var elapsed = 0;
     final initialXp = source.dragon!.xp;
-    await tester.runAsync(() => tester.pumpWidget(MaterialApp(
-        home: TrialGameScreen(
-            offerId: source.offer.id,
-            dragonId: source.dragonId,
-            source: source,
-            elapsedMilliseconds: () => elapsed))));
+    await tester.runAsync(() => tester.pumpWidget(ChangeNotifierProvider.value(
+        value: session,
+        child: MaterialApp(
+            home: Consumer<CanonicalGameSession>(
+                builder: (context, observed, child) => TrialGameScreen(
+                    offerId: source.offer.id,
+                    dragonId: source.dragonId,
+                    source: source,
+                    elapsedMilliseconds: () => elapsed))))));
     for (var i = 0;
         i < 100 &&
             find.byKey(const Key('ruin-breaker-game')).evaluate().isEmpty;

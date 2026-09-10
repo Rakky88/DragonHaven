@@ -442,8 +442,8 @@ class _NestEggListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final received =
-        MaterialLocalizations.of(context).formatShortDate(egg.acquiredAt);
+    final received = MaterialLocalizations.of(context)
+        .formatShortDate(egg.acquiredAt.toLocal());
     return Card(
       clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,

@@ -21,6 +21,11 @@ their existing expiry. Started attempts and adventures retain their provenance.
 The dedicated event-stop and preview RPCs are live. The broader canonical grant
 candidate remains dormant in production; it is not a public grant endpoint yet.
 
+The device clock bridge preserves preview/dismissal instants when a legacy save
+is uploaded for canonical migration. No code value, reward, eligibility or expiry
+length is changed. Unresolved local timestamps cannot be silently interpreted by
+the staging importer.
+
 Codes are case-sensitive, use only `A-Z` and `0-9`, and unknown or retired
 codes return the same inactive result. Seasonal previews are authorized by the
 server rather than trusted from the public app catalog.
