@@ -55,7 +55,7 @@ class _GroupsState extends State<_Groups> {
     final session = context.read<CanonicalGameSession>();
     // Membership can change on another keeper's device. A new canonical read
     // releases removed members' dragons without importing a social snapshot.
-    if (!session.busy && session.fresh) {
+    if (!session.busy && session.connection.currentOwner != null) {
       try {
         await session.synchronize();
       } on Object {/* Session owns status. */}

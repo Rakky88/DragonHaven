@@ -1,5 +1,33 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Group schema applied; focused UI recovery investigation (10 September)
+
+Run 34470547582 on `2173351` passed all 869 app tests, timezone/Edge/parity
+checks, all SQL contracts and applied schema **71**. Lint 0 and all public
+health endpoints 200 were verified at 11:26:04 UTC. The existing real UI suite
+passed through social claims. The new four-keeper group probe recovered its
+lost create reply, then failed with `client_probe_group_command_unavailable`.
+All six synthetic accounts/commands were removed and all four switches disabled
+at 11:29:50 UTC. No production changes occurred. A focused probe now pins the
+already-deployed worker ruleset from that run, applies no DDL or deployment,
+and records fixed error/phase codes for this unresolved group UI case.
+
+Partner command/domain/SQL and screen candidates are local. Three domain tests,
+controller regression, Edge forgery checks and five VM/JS replay cases passed;
+partner SQL rollback and real UI proof remain pending.
+
+## Partner lifecycle candidate (10 September 2026)
+
+Five canonical partner commands now validate sealed creator/partner identities,
+owned dragon reservations and no-grant behavior in three passing domain tests.
+Migration 72 uses ordered locks for both keepers, event-window revalidation,
+atomic occurrence reservation and the existing 96h/15-minute/24h duration rule.
+Cancel/decline is allowed before departure and releases the other keeper on the
+next canonical read. SQL rehearsal, partner UI and real-account proof are still
+pending. Existing legacy pairs need explicit reconciliation during cutover.
+Full group staging run 34470547582 on `2173351` is currently in progress after
+the six-language correction; no production changes have been made.
+
 ## Schema 70 verified; group lifecycle candidate (10 September 2026)
 
 Full group run 34469686044 on `6c73752` stopped before deployment: 868 tests passed and the authored-phrase coverage test found six missing group UI translations. Staging is still schema 70 and no group probe accounts were created. The six-language translations are now added for a new full run.

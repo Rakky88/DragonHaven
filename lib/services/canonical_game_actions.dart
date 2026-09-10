@@ -91,28 +91,58 @@ class CanonicalGameActions {
   Future<void> releaseDragon(String id) =>
       _boolean('release_dragon', {'dragonId': id});
 
+  Future<String> invitePairAdventure(String keeperCode, String dragonId) =>
+      _socialLifecycleAction('invite_pair_adventure', {
+        'keeperCode': keeperCode.trim().toUpperCase(),
+        'dragonId': dragonId
+      });
+  Future<void> acceptPairAdventure(String adventureId, String dragonId) async {
+    await _socialLifecycleAction('accept_pair_adventure',
+        {'adventureId': adventureId, 'dragonId': dragonId},
+        expectedSource: adventureId);
+  }
+
+  Future<void> declinePairAdventure(String adventureId) async {
+    await _socialLifecycleAction(
+        'decline_pair_adventure', {'adventureId': adventureId},
+        expectedSource: adventureId);
+  }
+
+  Future<void> startPairAdventure(String adventureId) async {
+    await _socialLifecycleAction(
+        'start_pair_adventure', {'adventureId': adventureId},
+        expectedSource: adventureId);
+  }
+
+  Future<void> cancelPairAdventure(String adventureId) async {
+    await _socialLifecycleAction(
+        'cancel_pair_adventure', {'adventureId': adventureId},
+        expectedSource: adventureId);
+  }
+
   Future<String> createGroupAdventure(String adventureId, String dragonId) =>
-      _groupAction('create_group_adventure',
+      _socialLifecycleAction('create_group_adventure',
           {'adventureId': adventureId, 'dragonId': dragonId});
   Future<void> joinGroupAdventure(String lobbyId, String dragonId) async {
-    await _groupAction(
+    await _socialLifecycleAction(
         'join_group_adventure', {'lobbyId': lobbyId, 'dragonId': dragonId},
         expectedSource: lobbyId);
   }
 
   Future<void> leaveGroupAdventure(String lobbyId) async {
-    await _groupAction('leave_group_adventure', {'lobbyId': lobbyId},
+    await _socialLifecycleAction('leave_group_adventure', {'lobbyId': lobbyId},
         expectedSource: lobbyId);
   }
 
   Future<void> removeGroupAdventureMember(
       String lobbyId, String memberId) async {
-    await _groupAction('remove_group_adventure_member',
+    await _socialLifecycleAction('remove_group_adventure_member',
         {'lobbyId': lobbyId, 'memberId': memberId},
         expectedSource: lobbyId);
   }
 
-  Future<String> _groupAction(String action, Map<String, dynamic> payload,
+  Future<String> _socialLifecycleAction(
+      String action, Map<String, dynamic> payload,
       {String? expectedSource}) async {
     final result = await execute(action, payload);
     if (result is! Map ||

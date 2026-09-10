@@ -3,6 +3,14 @@
 /// Values are ordered as German, Spanish, French, Italian, Portuguese and
 /// Japanese, matching the shared UI translation registry.
 const socialPhraseTranslations = <String, List<String>>{
+  'Cancel this invitation before departure?': [
+    'Diese Einladung vor der Abreise abbrechen?',
+    '¿Cancelar esta invitación antes de partir?',
+    'Annuler cette invitation avant le départ ?',
+    'Annullare questo invito prima della partenza?',
+    'Cancelar este convite antes da partida?',
+    '出発前にこの招待をキャンセルしますか？',
+  ],
   "No trail is available here right now": [
     "Hier ist gerade kein Pfad verfügbar",
     "Ahora mismo no hay ninguna ruta disponible aquí",

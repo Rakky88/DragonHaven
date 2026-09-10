@@ -1,3 +1,5 @@
+import '../services/canonical_partners.dart';
+import 'canonical_partners_screen.dart';
 import '../services/canonical_groups.dart';
 import 'canonical_groups_screen.dart';
 import '../widgets/canonical_social_rewards.dart';
@@ -105,6 +107,20 @@ class _AdventuresState extends State<_Adventures> {
                             body: const CanonicalGroupsScreen()))),
                 icon: const Icon(Icons.groups_outlined),
                 label: Text(s.pick('Group Adventures', 'Groepsavonturen'))),
+          if (context.watch<CanonicalPartners?>() != null)
+            OutlinedButton.icon(
+                key: const Key('canonical-open-partners'),
+                onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                        builder: (_) => Scaffold(
+                            appBar: AppBar(
+                                title: Text(s.adventureTitle(
+                                    AdventureCatalog.valentineTwoHeartlights))),
+                            body: const CanonicalPartnersScreen()))),
+                icon: const Icon(Icons.favorite_outline),
+                label: Text(s
+                    .adventureTitle(AdventureCatalog.valentineTwoHeartlights))),
           const CanonicalSocialRewards(),
           if (view.adventures.runs.isNotEmpty) ...[
             const SizedBox(height: 16),

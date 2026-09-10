@@ -1,10 +1,7 @@
-import 'dart:async';
-
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/social.dart';
-import 'canonical_game_connection.dart';
+import 'account_scoped_social_reader.dart';
 import 'canonical_game_snapshot.dart';
 
 abstract interface class CanonicalGroupsSource {
@@ -49,86 +46,23 @@ class SupabaseCanonicalGroupsSource implements CanonicalGroupsSource {
           .toList(growable: false);
 }
 
-/// Account-epoch fencing also rejects an old reply after sign-out/sign-in to
-/// the same keeper. Failed refreshes retain no actionable stale offer.
-class CanonicalGroups extends ChangeNotifier {
-  CanonicalGroups({required this.connection, required this.source}) {
-    _owner = connection.currentOwner;
-    _epoch = connection.sessionEpoch;
-    _changes = connection.accountChanges.listen((_) => _reset(),
-        onError: (Object _, StackTrace __) => _reset());
-  }
-  final CanonicalGameConnection connection;
-  final CanonicalGroupsSource source;
-  late final StreamSubscription<int> _changes;
-  String? _owner;
-  int _epoch = 0;
-  bool _disposed = false;
-  Future<void>? _loading;
-  GroupAdventureStatus? _status;
-  List<GroupAdventureLobby> _lobbies = const [];
-  String? _error;
-  bool get _same =>
-      !_disposed &&
-      _owner == connection.currentOwner &&
-      _epoch == connection.sessionEpoch;
-  bool get loading => _same && _loading != null;
-  GroupAdventureStatus? get status => _same ? _status : null;
-  List<GroupAdventureLobby> get lobbies => _same ? _lobbies : const [];
-  String? get error => _same ? _error : null;
-  void _reset() {
-    if (_disposed) return;
-    _owner = connection.currentOwner;
-    _epoch = connection.sessionEpoch;
-    _loading = null;
-    _status = null;
-    _lobbies = const [];
-    _error = null;
-    notifyListeners();
-  }
+typedef CanonicalGroupList = ({
+  GroupAdventureStatus status,
+  List<GroupAdventureLobby> lobbies
+});
 
-  Future<void> refresh() {
-    if (!_same) _reset();
-    if (_disposed || _owner == null) return Future.value();
-    if (_loading != null) return _loading!;
-    final owner = _owner!;
-    final epoch = _epoch;
-    final done = Completer<void>();
-    _loading = done.future;
-    _error = null;
-    notifyListeners();
-    unawaited(() async {
-      bool stillCurrent() => _same && _owner == owner && _epoch == epoch;
-      try {
-        final values = await Future.wait<Object>([
-          source.status(owner),
-          source.lobbies(owner),
-        ]);
-        if (!stillCurrent()) return;
-        _status = values[0] as GroupAdventureStatus;
-        _lobbies = List.unmodifiable(values[1] as List<GroupAdventureLobby>);
-      } on Object catch (error) {
-        if (!stillCurrent()) return;
-        _status = null;
-        _lobbies = const [];
-        _error = error is CanonicalGameException
-            ? error.code
-            : 'game_connection_failed';
-      } finally {
-        if (stillCurrent()) {
-          _loading = null;
-          notifyListeners();
-        }
-        done.complete();
-      }
-    }());
-    return done.future;
-  }
-
-  @override
-  void dispose() {
-    _disposed = true;
-    unawaited(_changes.cancel());
-    super.dispose();
-  }
+class CanonicalGroups extends AccountScopedSocialReader<CanonicalGroupList> {
+  CanonicalGroups(
+      {required super.connection, required CanonicalGroupsSource source})
+      : super(load: (owner) async {
+          final values = await Future.wait<Object>(
+              [source.status(owner), source.lobbies(owner)]);
+          return (
+            status: values[0] as GroupAdventureStatus,
+            lobbies: List<GroupAdventureLobby>.unmodifiable(
+                values[1] as List<GroupAdventureLobby>)
+          );
+        });
+  GroupAdventureStatus? get status => value?.status;
+  List<GroupAdventureLobby> get lobbies => value?.lobbies ?? const [];
 }

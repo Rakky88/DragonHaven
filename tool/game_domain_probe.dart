@@ -194,6 +194,9 @@ Future<Map<String, dynamic>> runGameDomainProbe(
         'futureMetadata': {'createdAt': 'unchanged'},
       }),
       'school': school,
+      'pairLifecycle': includeTrialCommands
+          ? await _pairLifecycleProbe(stored, now, seed)
+          : const [],
       'groupLifecycle': includeTrialCommands
           ? await _groupLifecycleProbe(stored, now, seed)
           : const [],
@@ -302,6 +305,61 @@ Future<List<Map<String, dynamic>>> _groupLifecycleProbe(
             'adventureId': 'group_1',
             'dragonId': removing ? 'other-dragon' : copy['pet']['id'],
             'memberId': removing ? member : null
+          },
+        });
+    results.add({'action': action, 'result': result});
+  }
+  return results;
+}
+
+Future<List<Map<String, dynamic>>> _pairLifecycleProbe(
+    Map<String, dynamic> state, DateTime now, String seed) async {
+  const owner = '11111111-1111-4111-8111-111111111111';
+  const source = '22222222-2222-4222-8222-222222222222';
+  const other = '33333333-3333-4333-8333-333333333333';
+  final results = <Map<String, dynamic>>[];
+  for (final action in [
+    'invite_pair_adventure',
+    'accept_pair_adventure',
+    'decline_pair_adventure',
+    'start_pair_adventure',
+    'cancel_pair_adventure'
+  ]) {
+    final copy = jsonDecode(jsonEncode(state)) as Map<String, dynamic>;
+    final selecting =
+        action == 'invite_pair_adventure' || action == 'accept_pair_adventure';
+    final declining = action == 'decline_pair_adventure';
+    copy['pet']['activeAdventureId'] =
+        selecting || declining ? null : 'online-seasonal:$source';
+    final result = await GameCommandEngine.execute(
+        state: copy,
+        action: action,
+        payload: {
+          if (action == 'invite_pair_adventure')
+            'keeperCode': 'DH-1234ABCD'
+          else
+            'adventureId': source,
+          if (selecting) 'dragonId': copy['pet']['id'],
+        },
+        secretSeed: seed,
+        now: now,
+        keeperId: owner,
+        verifiedSocialContext: {
+          'version': 1,
+          'ownerId': owner,
+          'action': action,
+          'sourceId': source,
+          'fingerprint': 'ab' * 32,
+          'facts': {
+            'eventId': 'valentine_two_heartlights',
+            'dragonId': declining ? null : copy['pet']['id'],
+            'otherId': other,
+            'keeperCode': 'DH-1234ABCD',
+            'occurrenceKey': 'preview:valentine_two_heartlights:$owner',
+            'simulated': true,
+            'role': declining || action == 'accept_pair_adventure'
+                ? 'partner'
+                : 'creator'
           },
         });
     results.add({'action': action, 'result': result});

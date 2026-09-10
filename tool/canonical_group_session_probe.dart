@@ -84,7 +84,25 @@ void main() {
           if (n > 6 && !games[active].busy && !groups[active].loading) break;
         }
         require(!games[active].busy, 'command_timeout');
-        require(permitLost || games[active].canAct, 'command_unavailable');
+        if (!permitLost && !games[active].canAct) {
+          const known = {
+            'game_command_unavailable',
+            'game_social_state_changed',
+            'game_action_unavailable',
+            'game_state_changed',
+            'game_snapshot_invalid',
+            'game_snapshot_stale',
+            'game_result_invalid',
+            'game_refresh_required',
+            'game_storage_unavailable',
+            'game_intent_invalid',
+            'game_state_reconciliation_required'
+          };
+          final code = known.contains(games[active].errorCode)
+              ? games[active].errorCode!
+              : 'unavailable';
+          throw StateError('client_probe_group_command_$code');
+        }
         require(groups[active].error == null, 'read_unavailable');
         require(tester.takeException() == null, 'render');
         await tester.pump(const Duration(milliseconds: 400));
@@ -166,6 +184,7 @@ void main() {
       require(
           own.isWaiting && own.participants.length == 1, 'create_duplicate');
       stdout.writeln('PROBE: group_create_recovered');
+      stdout.writeln('PROBE: group_owner_leave_begin');
       await tap('canonical-leave-group-${own.id}');
       await confirm();
       require(
@@ -176,10 +195,12 @@ void main() {
                   .where((d) => d.owned)
                   .every((d) => d.adventureId == null),
           'owner_leave');
+      stdout.writeln('PROBE: group_owner_recreate_begin');
       await choose(button: 'canonical-create-group');
       own = groups[0].lobbies.singleWhere((l) => l.isOwner);
       final source = own.id;
       final requiredPlayers = own.requiredPlayers;
+      stdout.writeln('PROBE: group_first_member_join_begin');
       await mount(1);
       await choose(button: 'canonical-join-group-$source');
       if (requiredPlayers > 2) {

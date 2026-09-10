@@ -18,6 +18,7 @@ import 'screens/canonical_profile_screen.dart';
 import 'screens/shop_hub_screen.dart';
 import 'services/canonical_game_session.dart';
 import 'services/canonical_groups.dart';
+import 'services/canonical_partners.dart';
 import 'services/canonical_game_snapshot.dart';
 import 'services/canonical_game_transport.dart';
 import 'theme/app_theme.dart';
@@ -52,6 +53,10 @@ Future<void> runCanonicalStaging(OnlineConfig config) async {
         create: (_) => CanonicalGroups(
             connection: session.connection,
             source: SupabaseCanonicalGroupsSource(auth))),
+    ChangeNotifierProvider(
+        create: (_) => CanonicalPartners(
+            connection: session.connection,
+            source: SupabaseCanonicalPartnersSource(auth))),
   ], child: CanonicalStagingApp(session: session, auth: auth)));
 }
 

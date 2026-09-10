@@ -26,6 +26,8 @@ on:
           - canonical-social-projection
           - canonical-social-reservations
           - canonical-group-lifecycle
+          - canonical-pair-lifecycle
+          - canonical-group-probe
 
 permissions:
   contents: read
@@ -64,7 +66,7 @@ jobs:
           retention-days: 30
 
   verify:
-    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply' && inputs.contract != 'push-device-probe' && inputs.contract != 'canonical-game' && inputs.contract != 'canonical-game-apply' && inputs.contract != 'canonical-import' && inputs.contract != 'canonical-read' && inputs.contract != 'canonical-social-projection' && inputs.contract != 'canonical-social-reservations' && inputs.contract != 'canonical-group-lifecycle'
+    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply' && inputs.contract != 'push-device-probe' && inputs.contract != 'canonical-game' && inputs.contract != 'canonical-game-apply' && inputs.contract != 'canonical-import' && inputs.contract != 'canonical-read' && inputs.contract != 'canonical-social-projection' && inputs.contract != 'canonical-social-reservations' && inputs.contract != 'canonical-group-lifecycle' && inputs.contract != 'canonical-pair-lifecycle' && inputs.contract != 'canonical-group-probe'
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 15
@@ -327,7 +329,7 @@ jobs:
         env:
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
-          test "$CONFIRMATION" = APPLY_DRAGONHAVEN_STAGING_GAME_71
+          test "$CONFIRMATION" = APPLY_DRAGONHAVEN_STAGING_GAME_72
           flutter pub get
           dart analyze lib integration_test test tool
           flutter test --no-pub --concurrency=1
@@ -512,5 +514,73 @@ jobs:
         with:
           name: DragonHaven-staging-group-lifecycle
           path: staging/canonical-group-lifecycle.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+  canonical-pair-lifecycle:
+    if: inputs.contract == 'canonical-pair-lifecycle'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Rehearse partner invitations and shared starts with rollback
+        shell: pwsh
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if ($env:CONFIRMATION -cne 'TEST_DRAGONHAVEN_STAGING_ECONOMY_CONTRACT') {
+            throw 'Exact staging rollback scope is required.'
+          }
+          New-Item -ItemType Directory -Path staging -Force | Out-Null
+          ./tool/staging_canonical_pair_lifecycle_contract.ps1 -RehearseMigrations `
+            -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN |
+            Tee-Object -FilePath staging/canonical-pair-lifecycle.txt
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: DragonHaven-staging-pair-lifecycle
+          path: staging/canonical-pair-lifecycle.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+  canonical-group-probe:
+    if: inputs.contract == 'canonical-group-probe'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.3
+          cache: true
+      - name: Build the synthetic group fixture
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          test "$CONFIRMATION" = TEST_DRAGONHAVEN_STAGING_ECONOMY_CONTRACT
+          flutter pub get
+          mkdir -p staging
+          flutter test --no-pub --dart-define=DOMAIN_PARITY_OUTPUT=staging/game-fixture.json test/game_domain_parity_fixture_test.dart
+      - name: Probe the deployed worker with four synthetic keepers
+        shell: pwsh
+        env:
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          python3 tool/staging_group_probe_only.py | Tee-Object -FilePath staging/group-probe.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Focused group probe failed.' }
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: DragonHaven-staging-group-probe
+          path: staging/group-probe.txt
           if-no-files-found: warn
           retention-days: 30

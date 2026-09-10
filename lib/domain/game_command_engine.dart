@@ -1,3 +1,4 @@
+import 'social_pair_lifecycle.dart';
 import 'social_group_lifecycle.dart';
 import 'social_dragon_reservations.dart';
 import 'social_claims.dart';
@@ -83,6 +84,18 @@ abstract final class GameCommandEngine {
       // separately sealed database facts; paid entitlements remain absent.
       final Object? result;
       switch (action) {
+        case 'invite_pair_adventure':
+        case 'accept_pair_adventure':
+        case 'decline_pair_adventure':
+        case 'start_pair_adventure':
+        case 'cancel_pair_adventure':
+          result = SocialPairLifecycle.apply(
+              game: game,
+              ownerId: keeperId,
+              action: action,
+              payload: payload,
+              context: verifiedSocialContext);
+          break;
         case 'create_group_adventure':
         case 'join_group_adventure':
         case 'leave_group_adventure':
@@ -409,6 +422,8 @@ abstract final class GameCommandEngine {
             '_lastGameResult': lastGameResult,
         }
       };
+    } on SocialPairException {
+      throw const GameCommandException('game_action_unavailable');
     } on SocialGroupException {
       throw const GameCommandException('game_action_unavailable');
     } on SocialClaimException catch (error) {
