@@ -238,8 +238,8 @@ class CanonicalGameSnapshot {
   }
 
   /// Read time and the mutation switch may change without a game revision.
-  /// Equal revisions must still identify exactly the same private state and
-  /// display under the same compiled rules, independent of JSON map order.
+  /// This compares the complete display, including external social facts,
+  /// under the same compiled rules, independent of JSON map order.
   bool hasSameState(CanonicalGameSnapshot other) =>
       ownerId == other.ownerId &&
       serverRevision == other.serverRevision &&
@@ -247,6 +247,39 @@ class CanonicalGameSnapshot {
       rulesetHash == other.rulesetHash &&
       rulesetRevision == other.rulesetRevision &&
       jsonEncode(data) == jsonEncode(other.data);
+
+  /// Social reservations and claim offers belong to shared database rows. A
+  /// second keeper can change them without changing this keeper's private game
+  /// revision. Only these explicit fields may differ on a later server read;
+  /// wallet, inventory, ordinary adventures and every other field stay fenced.
+  bool hasSameOwnedState(CanonicalGameSnapshot other) =>
+      ownerId == other.ownerId &&
+      serverRevision == other.serverRevision &&
+      stateHash == other.stateHash &&
+      rulesetHash == other.rulesetHash &&
+      rulesetRevision == other.rulesetRevision &&
+      jsonEncode(_ownedData(data)) == jsonEncode(_ownedData(other.data));
+
+  static Map<String, dynamic> _ownedData(Map<String, dynamic> data) => {
+        ...data,
+        'dragons': [
+          for (final dragon in data['dragons'] as List)
+            {
+              ...dragon as Map<String, dynamic>,
+              if (_externalBinding(dragon['activeAdventureId']))
+                'activeAdventureId': null,
+            }
+        ],
+        'adventures': {
+          ...data['adventures'] as Map<String, dynamic>,
+          'socialClaims': const [],
+        },
+      };
+
+  static bool _externalBinding(Object? value) =>
+      value is String &&
+      RegExp(r'^online-(group|seasonal):[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
+          .hasMatch(value);
 }
 
 /// Public tower facts, including the server's stored repair factor. Repeated

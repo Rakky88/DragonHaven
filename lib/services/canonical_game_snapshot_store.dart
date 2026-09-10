@@ -143,10 +143,22 @@ class CanonicalGameSnapshotStore {
         // A newer compiled projection may legitimately change display fields
         // without changing game state. The independent rules revision orders
         // that update and rejects delayed responses from the previous worker.
-        if (previous.snapshot?.serverRevision == snapshot.serverRevision &&
-            previous.snapshot?.rulesetRevision == snapshot.rulesetRevision &&
-            !previous.snapshot!.hasSameState(snapshot)) {
-          throw const CanonicalGameException('game_snapshot_conflict');
+        final displayed = previous.snapshot;
+        if (displayed?.serverRevision == snapshot.serverRevision &&
+            displayed?.rulesetRevision == snapshot.rulesetRevision) {
+          if (!displayed!.hasSameOwnedState(snapshot)) {
+            throw const CanonicalGameException('game_snapshot_conflict');
+          }
+          // Shared social facts have their own lifetime. Order fresh reads by
+          // the database timestamp so a delayed reply cannot reserve a dragon
+          // again after another keeper has removed it from a lobby.
+          if (snapshot.serverTime.isBefore(displayed.serverTime)) {
+            throw const CanonicalGameException('game_snapshot_stale');
+          }
+          if (snapshot.serverTime == displayed.serverTime &&
+              !displayed.hasSameState(snapshot)) {
+            throw const CanonicalGameException('game_snapshot_conflict');
+          }
         }
         await directory.create(recursive: true);
         await _write(_fenceFile(snapshot.ownerId), {

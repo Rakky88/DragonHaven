@@ -1,32 +1,23 @@
 # DragonHaven server-authoritative economy contract
 
-## Group schema applied; focused UI recovery investigation (10 September)
+## Shared social display ordering and partner rehearsal (10 September)
 
-Run 34470547582 on `2173351` passed all 869 app tests, timezone/Edge/parity
-checks, all SQL contracts and applied schema **71**. Lint 0 and all public
-health endpoints 200 were verified at 11:26:04 UTC. The existing real UI suite
-passed through social claims. The new four-keeper group probe recovered its
-lost create reply, then failed with `client_probe_group_command_unavailable`.
-All six synthetic accounts/commands were removed and all four switches disabled
-at 11:29:50 UTC. No production changes occurred. A focused probe now pins the
-already-deployed worker ruleset from that run, applies no DDL or deployment,
-and records fixed error/phase codes for this unresolved group UI case.
+Focused run 34473198240 on `5b0f51e` narrowed the group failure to a
+same-revision, same-private-hash dragon display change after joining. Owner
+leave/recreate and the join command itself completed; no command was pending.
+The display journal had treated database-owned social reservations as private
+inventory. It now permits only social dragon bindings and social claim offers
+to change on a later authenticated database timestamp, while preserving exact
+wallet/inventory/stat/private-hash fences and rejecting delayed reads. The 46
+local journal/recovery/session/group/partner tests pass. The remote group probe
+must still verify the repair. All synthetic accounts and switches from that
+failed focused run were cleaned up at 11:49:55 UTC; production is unchanged.
 
-Partner command/domain/SQL and screen candidates are local. Three domain tests,
-controller regression, Edge forgery checks and five VM/JS replay cases passed;
-partner SQL rollback and real UI proof remain pending.
-
-## Partner lifecycle candidate (10 September 2026)
-
-Five canonical partner commands now validate sealed creator/partner identities,
-owned dragon reservations and no-grant behavior in three passing domain tests.
-Migration 72 uses ordered locks for both keepers, event-window revalidation,
-atomic occurrence reservation and the existing 96h/15-minute/24h duration rule.
-Cancel/decline is allowed before departure and releases the other keeper on the
-next canonical read. SQL rehearsal, partner UI and real-account proof are still
-pending. Existing legacy pairs need explicit reconciliation during cutover.
-Full group staging run 34470547582 on `2173351` is currently in progress after
-the six-language correction; no production changes have been made.
+Partner schema 72 passed the SQL rollback contract in run 34472112448 on
+`2d60545`; migration 72 is not applied yet. The actual invite/cancel widget test
+also passes. A two-account authenticated partner UI probe now covers lost
+invite recovery, decline, acceptance, cancellation, released reservations and
+one shared departure; its remote execution is pending.
 
 ## Schema 70 verified; group lifecycle candidate (10 September 2026)
 

@@ -251,6 +251,68 @@ void main() {
       expect((await store.inspect(_owner)).needsRepair, isFalse);
     });
 
+    test('shared reservations can change without rewriting private inventory',
+        () async {
+      final initial = _wire();
+      final dragonId = initial['data']['dragons'][0]['id'] as String;
+      initial['data']['dragons'][0]['activeAdventureId'] =
+          'online-group:$_other';
+      await store.persistFresh(_parse(initial));
+      final released = jsonDecode(jsonEncode(initial)) as Map<String, dynamic>;
+      released['server_time'] = '2026-09-07T12:00:01Z';
+      released['data']['dragons'][0]['activeAdventureId'] = null;
+      await store.persistFresh(_parse(released));
+      expect(
+          (await store.inspect(_owner)).snapshot!.dragon(dragonId)!.adventureId,
+          isNull);
+      await expectLater(
+          store.persistFresh(_parse(initial)), _error('game_snapshot_stale'));
+      final reserved = jsonDecode(jsonEncode(released)) as Map<String, dynamic>;
+      reserved['server_time'] = '2026-09-07T12:00:02Z';
+      reserved['data']['dragons'][0]['activeAdventureId'] =
+          'online-seasonal:$_other';
+      await store.persistFresh(_parse(reserved));
+      final corrupt = jsonDecode(jsonEncode(reserved)) as Map<String, dynamic>;
+      corrupt['server_time'] = '2026-09-07T12:00:03Z';
+      corrupt['data']['dragons'][0]['xp'] += 1;
+      await expectLater(store.persistFresh(_parse(corrupt)),
+          _error('game_snapshot_conflict'));
+      corrupt['data']['dragons'][0]['xp'] -= 1;
+      corrupt['data']['dragons'][0]['activeAdventureId'] = 'ordinary-solo-run';
+      await expectLater(store.persistFresh(_parse(corrupt)),
+          _error('game_snapshot_conflict'));
+      final sameTime = jsonDecode(jsonEncode(reserved)) as Map<String, dynamic>;
+      sameTime['data']['dragons'][0]['activeAdventureId'] = null;
+      await expectLater(store.persistFresh(_parse(sameTime)),
+          _error('game_snapshot_conflict'));
+    });
+
+    test(
+        'later social claim offers preserve wallet and private revision fences',
+        () async {
+      final initial = _wire();
+      await store.persistFresh(_parse(initial));
+      final ready = _wire()..['server_time'] = '2026-09-07T12:00:01Z';
+      ready['data']['adventures']['socialClaims'] = [
+        {
+          'id': _other,
+          'kind': 'group',
+          'catalogId': 'group_1',
+          'dragonId': ready['data']['dragons'][0]['id'],
+          'position': null,
+          'readyAt': '2026-09-07T12:00:00Z'
+        }
+      ];
+      await store.persistFresh(_parse(ready));
+      await expectLater(
+          store.persistFresh(_parse(initial)), _error('game_snapshot_stale'));
+      final bad = jsonDecode(jsonEncode(ready)) as Map<String, dynamic>;
+      bad['server_time'] = '2026-09-07T12:00:02Z';
+      bad['data']['wallet']['coins'] += 10;
+      await expectLater(
+          store.persistFresh(_parse(bad)), _error('game_snapshot_conflict'));
+    });
+
     test('equal-revision conflicts and account path traversal are refused',
         () async {
       await store.persistFresh(_parse(_wire()));

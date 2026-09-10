@@ -461,6 +461,9 @@ def main():
         from staging_group_probe import run_group_probe
         run_group_probe(root=ROOT, project=PROJECT, base=BASE, public_key=PUBLIC_KEY,
             run=RUN, fixture=fixture, admin_headers=admin_headers, call=call, query=query, require=require)
+        from staging_pair_probe import run_pair_probe
+        run_pair_probe(root=ROOT, project=PROJECT, base=BASE, public_key=PUBLIC_KEY,
+            run=RUN, fixture=fixture, admin_headers=admin_headers, call=call, query=query, require=require)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"
         # The immutable run marker also finds an account whose admin-create
