@@ -1,5 +1,26 @@
 # DragonHaven Random Rewards and Odds
 
+Verified staging evidence: schema 75 was rehearsed with full rollback in run
+34489515550 (`e77c9a3`): 3-billion scores, 8-billion-ms durations, ordinary/event
+rankings, profile/friend/snapshot readers, podium and exact-number bounds pass.
+It remains unapplied; deployed staging stays schema 74. Focused trade run
+34489538865 confirms both real receipt animations and lost-confirm recovery.
+Its final SQL assertion compared a sparse chest map with a normalized map that
+contains explicit zero counts; that assertion now checks exact counts instead.
+The sender animation assertion also waits for its route to become visible.
+Synthetic cleanup succeeded and all switches are off. Production is unchanged.
+
+Candidate 76 publishes private event preview/dismissal maps and binds each
+server-verified seasonal Trial to its original event, closing time and Conclave.
+Resume rotates a device ID without duplicating the binding. Completion writes
+rankings/contributions atomically; cancellation gives neither. A run finished
+after the pinned closing time retains personal rewards but cannot rewrite the
+closed ranking or Conclave project. Legacy score/activation writers are fenced.
+The rollback rehearsal and actual event UI proof are pending. Cutover, complete
+migration and lossless APK reduction still precede the one authorized release.
+
+Previous staging notes below are historical.
+
 Latest staging: run 34486928336 on `9e2d4f9` deployed schema 74 and the
 repaired worker. Preflight at 14:15:39 UTC passed with lint 0 and
 Auth/settings/app 200. Actual inventory/gameplay, group, partner and Beacon
@@ -71,7 +92,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 78c9b25e1f410661 -->
+<!-- reference-source-fingerprint: 862bf42be7ca97de -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

@@ -96,11 +96,14 @@ def run_trade_probe(*, root, project, base, public_key, run, fixture, admin_head
         state->'eggRarityRevealedIds' ? '{egg_id}'
         from private.canonical_game_states where owner_id='{owners[1]}') as receiver_exact,
       (select bool_and((state->'pet'->>'xp')::integer=3400 and (state->'pet'->>'coins')::integer=1000 and
-        state->'chestInventory'='{{"gold":2}}'::jsonb and state->'pendingPresentations'='[]'::jsonb)
+        (state->'chestInventory'->>'gold')::integer=2 and
+        not exists(select 1 from jsonb_each_text(state->'chestInventory') c where c.key<>'gold' and c.value::integer<>0) and state->'pendingPresentations'='[]'::jsonb)
         from private.canonical_game_states where owner_id=any({owner_array})) as no_unearned_rewards,
       (select count(*)=0 from private.canonical_game_intents where owner_id=any({owner_array}) and status='processing') as no_pending;
     """, True)[0]
-    require(facts == dict.fromkeys(['three_offers','one_rejected','one_cancelled','one_completed',
-        'two_settlements','none_reserved','sender_exact','receiver_exact','no_unearned_rewards','no_pending'], True),
-        'client_probe_trade_atomicity')
+    expected = ['three_offers','one_rejected','one_cancelled','one_completed',
+        'two_settlements','none_reserved','sender_exact','receiver_exact','no_unearned_rewards','no_pending']
+    require(set(facts) == set(expected), 'client_probe_trade_atomicity_shape')
+    for check in expected:
+        require(facts[check] is True, 'client_probe_trade_atomicity_' + check)
     print('PASS: actual two-keeper trade UI; cancellation, rejection, Special egg/knowledge/sex retention, exact Chronoshard, lost reply and both reveals.', flush=True)

@@ -78,8 +78,9 @@ void main() {
               () => Future<void>.delayed(const Duration(milliseconds: 25)));
           await tester
               .runAsync(() => tester.pump(const Duration(milliseconds: 25)));
-          if (n > 28 && !games[active].busy && (until == null || until()))
+          if (n > 28 && !games[active].busy && (until == null || until())) {
             break;
+          }
         }
         require(!games[active].busy, 'command_timeout');
         if (!permitLost &&
