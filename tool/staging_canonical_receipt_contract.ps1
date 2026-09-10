@@ -21,7 +21,7 @@ try {
   $actual = @($history | ForEach-Object { [string]$_.version } | Sort-Object)
   . (Join-Path $PSScriptRoot 'canonical_contract_history.ps1')
   $applied = Test-CanonicalContractHistory -Actual $actual `
-    -FirstAppliedVersion '202609070055' -LastReviewedVersion '202609100078'
+    -FirstAppliedVersion '202609070055' -LastReviewedVersion '202609100079'
   if (-not $applied -and @(Compare-Object $actual $expected).Count -ne 0) { throw 'receipt_contract_baseline_mismatch' }
   $migration = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../supabase/migrations/202609070055_canonical_receipt_recovery.sql') -Raw -Encoding utf8
   $contract = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'canonical_receipt_contract.sql') -Raw -Encoding utf8

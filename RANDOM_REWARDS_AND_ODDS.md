@@ -1,5 +1,15 @@
 # DragonHaven Random Rewards and Odds
 
+Candidate-79 rollback run 34497481683 passed on f2057c1, including ownership,
+source/Altar/social changes, activation replay, real server-mode SQL commands,
+recovery and complete Auth cleanup. The full apply now targets reviewed schema
+79 and the authenticated real-client activation/recovery probe; it has not run
+or activated any player yet. The client handoff coordinator also passes six
+local tests for durable UUID/revision retry, already-active restart, stale-source
+reupload, offline refusal, A/B/A account changes and corrupt local journals.
+Ordinary production boot/UI integration, remaining social publication/migration
+cases and lossless APK reduction are still required before the one release.
+
 Account rehearsal 34497019376 reached SQL and rolled back with 42703: the
 historical chest/relic count tables have tier/relic_type keys, not instance IDs.
 Candidate 79 now orders those captured rows by their actual primary keys. The
