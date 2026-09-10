@@ -1,5 +1,4 @@
 // Guarded real-network group UI probe; all credentials stay in this child.
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dragon_haven/config/online_config.dart';
@@ -118,9 +117,10 @@ void main() {
               .first;
           tester.state<ScrollableState>(scrollable).position.jumpTo(0);
           await tester.pump();
-          if (finder.evaluate().isEmpty)
+          if (finder.evaluate().isEmpty) {
             await tester.scrollUntilVisible(finder, 180,
                 scrollable: scrollable);
+          }
         }
         require(finder.evaluate().length == 1, 'control_missing');
         await tester.ensureVisible(finder);

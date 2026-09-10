@@ -3,6 +3,54 @@
 /// Values are ordered as German, Spanish, French, Italian, Portuguese and
 /// Japanese, matching the shared UI translation registry.
 const socialPhraseTranslations = <String, List<String>>{
+  "No trail is available here right now": [
+    "Hier ist gerade kein Pfad verfügbar",
+    "Ahora mismo no hay ninguna ruta disponible aquí",
+    "Aucun sentier n’est disponible ici pour le moment",
+    "Al momento non è disponibile alcun sentiero qui",
+    "Não há nenhum caminho disponível aqui no momento",
+    "現在、ここで利用できる道はありません"
+  ],
+  "Group Adventure": [
+    "Gruppenabenteuer",
+    "Aventura en grupo",
+    "Aventure de groupe",
+    "Avventura di gruppo",
+    "Aventura em grupo",
+    "グループ冒険"
+  ],
+  "Waiting for friends": [
+    "Warten auf Freunde",
+    "Esperando a tus amigos",
+    "En attente d’amis",
+    "In attesa degli amici",
+    "À espera de amigos",
+    "フレンドを待っています"
+  ],
+  "Leave lobby": [
+    "Lobby verlassen",
+    "Salir de la sala",
+    "Quitter le salon",
+    "Lascia la sala",
+    "Sair da sala",
+    "ロビーを退出"
+  ],
+  "Close this lobby for everyone?": [
+    "Diese Lobby für alle schließen?",
+    "¿Cerrar esta sala para todos?",
+    "Fermer ce salon pour tout le monde ?",
+    "Chiudere questa sala per tutti?",
+    "Fechar esta sala para todos?",
+    "このロビーを全員に対して閉じますか？"
+  ],
+  "Leave this lobby?": [
+    "Diese Lobby verlassen?",
+    "¿Salir de esta sala?",
+    "Quitter ce salon ?",
+    "Lasciare questa sala?",
+    "Sair desta sala?",
+    "このロビーを退出しますか？"
+  ],
   'Aerie stage': [
     'Aerie-Stufe',
     'Etapa del Aerie',

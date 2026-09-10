@@ -2,6 +2,8 @@
 
 ## Schema 70 verified; group lifecycle candidate (10 September 2026)
 
+Full group run 34469686044 on `6c73752` stopped before deployment: 868 tests passed and the authored-phrase coverage test found six missing group UI translations. Staging is still schema 70 and no group probe accounts were created. The six-language translations are now added for a new full run.
+
 Full staging run [34467076186](https://github.com/Rakky88/DragonHaven/actions/runs/34467076186) on `1c93734` passed the repair, compatibility contracts, domain/client checks and real authenticated UI harness. Schema 70 has zero lint errors and healthy Auth/settings/application endpoints; both synthetic accounts and all four worker/social switches were cleaned up. Production remains unchanged on schema 65, release 29.
 
 The next candidate adds server-sealed create/join/leave/remove group actions. Membership and the canonical command receipt commit in one transaction; an expired friendship or changed lobby refuses the whole action. Existing weekly catalog, duration and shared 70% Gold / 25% Dragon / 5% Mythical roll are preserved. The rollback rehearsal passed in run 34468527520 on `395689a` after correcting two synthetic fixture enum values. Six local domain/controller/widget tests cover source binding, account-epoch changes, expertise inspection, creation and leave. The real four-keeper Auth/Edge/UI harness is built but not yet run; this is not production activation.
