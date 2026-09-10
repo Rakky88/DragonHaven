@@ -6,7 +6,7 @@ Ruleset: v0.05.29 published and verified; staging and production schema 65 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: b2fe4dadcdd7fa91 -->
+<!-- reference-source-fingerprint: 6e2727e73c3c8ac4 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -741,7 +741,7 @@ A mentor's one-error protection is deterministic and does not have a success rol
 
 - During game-state roaming updates, a correctly placed idle roaming dragon has a 20% chance to consider moving. A dragon that needs a valid room always moves when space permits.
 - If preferred and non-preferred rooms both exist, the dragon uses its lineage's preferred room pool 65% of the time. Primary rooms appear twice in that preferred pool and secondary rooms once, so primary rooms receive double weight inside the preferred selection.
-- An eligible rare room interaction has a 5% trigger chance, subject to its 12-hour per-dragon cooldown. The eligible dragon is uniform; if furniture-tag interactions match, the interaction is uniform among those matches.
+- An eligible rare room interaction has a 5% trigger chance, subject to its 12-hour per-dragon cooldown. The eligible dragon is uniform; if furniture-tag interactions match, the interaction is uniform among those matches. The room/floor must exist, match the dragon's location and be undamaged. In canonical play the private server roll is recorded in the original command receipt, so retrying a lost response cannot roll again. This is cosmetic and grants no coins, XP or items.
 - While a tower room is visibly open, the controllable dragon's purely visual wander check occurs every five seconds. Its move chance is 12% in Deep Night, 20% at Night, 45% at Dusk, 60% at Dawn, 82% in Morning, and 95% during Day or Golden Hour. The visual destination is random within the room's safe movement area.
 
 None of these ambient rolls grant or remove inventory, XP, currency, or expertise.

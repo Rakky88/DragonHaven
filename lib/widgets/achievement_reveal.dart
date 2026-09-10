@@ -10,8 +10,9 @@ import 'achievement_badge_sprite.dart';
 
 Future<void> showAchievementReveal(
   BuildContext context,
-  AchievementDefinition achievement,
-) async {
+  AchievementDefinition achievement, {
+  Widget Function(Widget)? guard,
+}) async {
   unawaited(HavenAudio.play(HavenSound.achievement));
   if (!context.mounted) return;
   await showGeneralDialog<void>(
@@ -20,7 +21,10 @@ Future<void> showAchievementReveal(
     barrierLabel: AppStrings.of(context).tr('achievements'),
     barrierColor: AppColors.eventColor(context, const Color(0xCC17122F)),
     transitionDuration: const Duration(milliseconds: 250),
-    pageBuilder: (_, __, ___) => _AchievementReveal(achievement: achievement),
+    pageBuilder: (_, __, ___) {
+      final child = _AchievementReveal(achievement: achievement);
+      return guard?.call(child) ?? child;
+    },
     transitionBuilder: (_, animation, __, child) => FadeTransition(
       opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
       child: child,

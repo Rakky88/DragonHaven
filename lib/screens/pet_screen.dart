@@ -1,3 +1,5 @@
+import '../models/dragon_lineage.dart';
+import '../models/dragon_appearance.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -808,15 +810,27 @@ Future<void> showHatchMilestonePresentation(
 ) async {
   final dragon = game.dragonById(presentation.dragonId);
   if (dragon == null || dragon.isEgg) return;
-  await showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) => ChangeNotifierProvider.value(
-      value: game,
-      child: _HatchDialog(dragonId: dragon.id),
-    ),
-  );
+  await showDragonHatch(context, dragon,
+      onContinue: (dialogContext) =>
+          _askForName(dialogContext, dragonId: dragon.id, closeAfter: true),
+      guard: (child) =>
+          ChangeNotifierProvider.value(value: game, child: child));
 }
+
+Future<void> showDragonHatch(BuildContext context, DragonAppearance dragon,
+        {required Future<void> Function(BuildContext) onContinue,
+        String? continueLabel,
+        Widget Function(Widget)? guard}) =>
+    showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) {
+          final child = _HatchDialog(
+              dragon: dragon,
+              onContinue: onContinue,
+              continueLabel: continueLabel);
+          return guard?.call(child) ?? child;
+        });
 
 Future<void> showEvolutionMilestonePresentation(
   BuildContext context,
@@ -825,9 +839,13 @@ Future<void> showEvolutionMilestonePresentation(
 ) async {
   final dragon = game.dragonById(presentation.dragonId);
   if (dragon == null || dragon.isEgg) return;
-  final wasHatchling = presentation.previousStageKey == 'spark';
-  final previousStageKey =
-      presentation.previousStageKey ?? (wasHatchling ? 'spark' : 'nestDragon');
+  await showDragonEvolution(context, dragon,
+      previousStageKey: presentation.previousStageKey ?? 'nestDragon');
+}
+
+Future<void> showDragonEvolution(BuildContext context, DragonAppearance dragon,
+    {required String previousStageKey, Widget Function(Widget)? guard}) async {
+  final wasHatchling = previousStageKey == 'spark';
   final previousArtwork = DragonArtwork.forStage(
     stageKey: previousStageKey,
     lineageId: dragon.lineageId,
@@ -869,16 +887,17 @@ Future<void> showEvolutionMilestonePresentation(
   await showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => _EvolutionDialog(
-      pet: dragon,
-      previousStageKey: previousStageKey,
-    ),
+    builder: (_) {
+      final child =
+          _EvolutionDialog(pet: dragon, previousStageKey: previousStageKey);
+      return guard?.call(child) ?? child;
+    },
   );
 }
 
 class _EvolutionDialog extends StatefulWidget {
   const _EvolutionDialog({required this.pet, required this.previousStageKey});
-  final Pet pet;
+  final DragonAppearance pet;
   final String previousStageKey;
 
   @override
@@ -1103,6 +1122,7 @@ class _EvolutionDialogState extends State<_EvolutionDialog>
                     Text(
                       strings.pick('A new form awakens!',
                           'Een nieuwe vorm is ontwaakt!'),
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 23,
@@ -1113,8 +1133,10 @@ class _EvolutionDialogState extends State<_EvolutionDialog>
                     Text(
                       pet.stage == DragonStage.ascended
                           ? strings.lineageFormName(
-                              pet.lineage, pet.activeEvolutionPath)
+                              dragonLineageById(pet.lineageId),
+                              pet.activeEvolutionPath)
                           : strings.petStageNameByKey('nestDragon'),
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Color(0xFFFFD878),
                         fontSize: 19,
@@ -1202,9 +1224,12 @@ class _EvolutionFrameAtlas extends StatelessWidget {
 }
 
 class _HatchDialog extends StatefulWidget {
-  const _HatchDialog({required this.dragonId});
+  const _HatchDialog(
+      {required this.dragon, required this.onContinue, this.continueLabel});
 
-  final String dragonId;
+  final DragonAppearance dragon;
+  final Future<void> Function(BuildContext) onContinue;
+  final String? continueLabel;
   @override
   State<_HatchDialog> createState() => _HatchDialogState();
 }
@@ -1256,8 +1281,7 @@ class _HatchDialogState extends State<_HatchDialog> {
           HavenAudio.play(HavenSound.hatchCrackThree);
         case 5:
           HavenAudio.play(HavenSound.hatchReveal);
-          final game = context.read<HouseholdProvider>();
-          final pet = game.dragonById(widget.dragonId) ?? game.pet;
+          final pet = widget.dragon;
           if (pet.spectral) HavenAudio.play(HavenSound.spectralReveal);
         default:
           break;
@@ -1279,8 +1303,7 @@ class _HatchDialogState extends State<_HatchDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final game = context.read<HouseholdProvider>();
-    final pet = game.dragonById(widget.dragonId) ?? game.pet;
+    final pet = widget.dragon;
     final strings = AppStrings.of(context);
     final reveal = phase >= 5;
     return Dialog.fullscreen(
@@ -1378,8 +1401,9 @@ class _HatchDialogState extends State<_HatchDialog> {
                               fontSize: 22)),
                     if (phase >= 5 && !pet.spectral)
                       Text(
-                          strings.pick('A ${pet.lineage.nameEn} has hatched!',
-                              'Er is een ${pet.lineage.nameNl} uitgekomen!'),
+                          strings.pick(
+                              'A ${dragonLineageById(pet.lineageId).nameEn} has hatched!',
+                              'Er is een ${dragonLineageById(pet.lineageId).nameNl} uitgekomen!'),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                               color: Colors.white,
@@ -1389,15 +1413,10 @@ class _HatchDialogState extends State<_HatchDialog> {
                       Padding(
                           padding: const EdgeInsets.only(top: 22),
                           child: _HatchNameButton(
-                              onPressed: () async {
-                                await _askForName(
-                                  context,
-                                  dragonId: widget.dragonId,
-                                  closeAfter: true,
-                                );
-                              },
-                              label: strings.pick(
-                                  'Choose a name', 'Kies een naam'))),
+                              onPressed: () => widget.onContinue(context),
+                              label: widget.continueLabel ??
+                                  strings.pick(
+                                      'Choose a name', 'Kies een naam'))),
                   ]))),
     );
   }

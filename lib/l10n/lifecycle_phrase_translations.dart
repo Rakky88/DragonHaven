@@ -1,5 +1,42 @@
 /// German, Spanish, French, Italian, Portuguese, Japanese.
 const lifecyclePhraseTranslations = <String, List<String>>{
+  "Profile": ["Profil", "Perfil", "Profil", "Profilo", "Perfil", "プロフィール"],
+  "Visit": ["Besuchen", "Visitar", "Visiter", "Visita", "Visitar", "訪問"],
+  "No dragons here": [
+    "Hier sind keine Drachen",
+    "No hay dragones aquí",
+    "Aucun dragon ici",
+    "Nessun drago qui",
+    "Não há dragões aqui",
+    "ここにはドラゴンがいません"
+  ],
+  "This room is unavailable.": [
+    "Dieser Raum ist nicht verfügbar.",
+    "Esta habitación no está disponible.",
+    "Cette pièce est indisponible.",
+    "Questa stanza non è disponibile.",
+    "Esta divisão não está disponível.",
+    "この部屋は利用できません。"
+  ],
+  "Call dragon": [
+    "Drachen rufen",
+    "Llamar al dragón",
+    "Appeler le dragon",
+    "Chiama il drago",
+    "Chamar o dragão",
+    "ドラゴンを呼ぶ"
+  ],
+  "Badges": [
+    "Abzeichen",
+    "Insignias",
+    "Insignes",
+    "Distintivi",
+    "Emblemas",
+    "バッジ"
+  ],
+  "Frames": ["Rahmen", "Marcos", "Cadres", "Cornici", "Molduras", "フレーム"],
+  "Portrait": ["Porträt", "Retrato", "Portrait", "Ritratto", "Retrato", "肖像"],
+  "None": ["Keine", "Ninguno", "Aucun", "Nessuno", "Nenhum", "なし"],
   "Tap an expertise to highlight it for training.": [
     "Tippe auf eine Expertise, um sie für das Training hervorzuheben.",
     "Toca una pericia para destacarla para el entrenamiento.",

@@ -1,3 +1,4 @@
+import '../models/tower_interaction.dart';
 import '../models/account_title.dart';
 import '../models/adventure.dart';
 import '../models/chest.dart';
@@ -89,6 +90,38 @@ class CanonicalGameActions {
       _boolean('equip_relic', {'relic': relic.name, 'dragonId': dragonId});
   Future<void> releaseDragon(String id) =>
       _boolean('release_dragon', {'dragonId': id});
+
+  Future<void> selectPortrait(String id) =>
+      _boolean('select_portrait', {'catalogId': id});
+  Future<void> selectTitle(String id) =>
+      _boolean('select_title', {'catalogId': id});
+  Future<void> selectBadge(String? id) =>
+      _boolean('select_badge', {'catalogId': id});
+  Future<void> selectFrame(String? id) =>
+      _boolean('select_frame', {'catalogId': id});
+  Future<void> completePresentation(String id) =>
+      _boolean('complete_presentation', {'presentationId': id});
+  Future<void> callDragonToFloor(String roomId, int index) =>
+      _boolean('call_dragon_to_floor', {'roomId': roomId, 'index': index});
+  Future<({String dragonId, TowerInteractionDefinition interaction})?>
+      visitFloor(String roomId, int index) async {
+    final value =
+        await execute('visit_tower_floor', {'roomId': roomId, 'index': index});
+    if (value == null) return null;
+    if (value is! Map ||
+        value.length != 2 ||
+        value['dragonId'] is! String ||
+        value['interactionId'] is! String) {
+      throw const CanonicalGameException('game_result_invalid');
+    }
+    final interaction = [...towerInteractions, roomOnlyInteraction]
+        .where((i) => i.id == value['interactionId'])
+        .firstOrNull;
+    if (interaction == null) {
+      throw const CanonicalGameException('game_result_invalid');
+    }
+    return (dragonId: value['dragonId'] as String, interaction: interaction);
+  }
 
   Future<void> refresh() => _boolean('refresh', {});
   Future<void> unlockRoom(String id) async {

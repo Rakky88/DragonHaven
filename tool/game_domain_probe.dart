@@ -1,3 +1,4 @@
+import 'care_command_probe.dart';
 import 'trial_command_probe.dart';
 import 'dart:convert';
 
@@ -180,6 +181,8 @@ Future<Map<String, dynamic>> runGameDomainProbe(
     }
     return {
       'school': school,
+      'careCommands':
+          includeTrialCommands ? await careCommandProbe(state, now) : const [],
       'trialModels': trialModelProbe(),
       'trialCommands':
           includeTrialCommands ? await trialCommandProbe() : const [],

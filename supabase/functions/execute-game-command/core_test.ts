@@ -321,3 +321,26 @@ Deno.test("Trial controls are owner-bound and cannot carry a score or private ch
     assert(calls[1].name === "fail_canonical_game_command" && calls[1].payload.p_failure_code === code);
   }
 });
+
+Deno.test("cosmetic and milestone commands cannot import ownership, cooldowns or rewards", async () => {
+  for (const [action, payload] of [
+    ["select_portrait", {catalogId: "portrait_002"}],
+    ["select_title", {catalogId: "owned-title"}],
+    ["select_badge", {catalogId: null}],
+    ["select_frame", {catalogId: null}],
+    ["complete_presentation", {presentationId: "owned-milestone"}],
+    ["call_dragon_to_floor", {roomId: "hearth", index: 0}],
+    ["visit_tower_floor", {roomId: "hearth", index: 0}],
+  ] as const) {
+    const {deps, inputs} = setup();
+    assert((await handleCommand(request({...body, action, payload}), deps)).status === 200);
+    assert(inputs[0].keeperId === owner);
+    equal(inputs[0].payload, payload);
+    for (const extra of [{ownedPortraitIds: ["portrait_002"]}, {cooldown: 0},
+      {interactionId: "book_surprise"}, {reward: 100}, {ownerId: other}]) {
+      const denied = setup();
+      assert((await handleCommand(request({...body, action, payload: {...payload, ...extra}}), denied.deps)).status === 400);
+      equal(denied.calls, []);
+    }
+  }
+});

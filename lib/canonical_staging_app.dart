@@ -1,3 +1,4 @@
+import 'widgets/canonical_milestones.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -13,6 +14,7 @@ import 'screens/canonical_inventory_screen.dart';
 import 'screens/canonical_dragons_screen.dart';
 import 'screens/canonical_adventures_screen.dart';
 import 'screens/canonical_house_screen.dart';
+import 'screens/canonical_profile_screen.dart';
 import 'screens/shop_hub_screen.dart';
 import 'services/canonical_game_session.dart';
 import 'services/canonical_game_snapshot.dart';
@@ -126,6 +128,18 @@ class _CanonicalStagingAppState extends State<CanonicalStagingApp>
                                   child: CanonicalHouseScreen()))))),
             if (signedIn)
               IconButton(
+                  tooltip: strings.pick('Profile', 'Profiel'),
+                  icon: const Icon(Icons.person_outline),
+                  onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                          builder: (_) => Scaffold(
+                              appBar: AppBar(
+                                  title:
+                                      Text(strings.pick('Profile', 'Profiel'))),
+                              body: const SafeArea(
+                                  child: CanonicalProfileScreen()))))),
+            if (signedIn)
+              IconButton(
                   tooltip: strings.pick('Sign out', 'Uitloggen'),
                   icon: const Icon(Icons.logout),
                   onPressed: () async {
@@ -138,12 +152,13 @@ class _CanonicalStagingAppState extends State<CanonicalStagingApp>
           ]),
           body: SafeArea(
               child: signedIn
-                  ? switch (_tab) {
+                  ? CanonicalMilestones(
+                      child: switch (_tab) {
                       0 => const ShopHubScreen(),
                       1 => const CanonicalInventoryScreen(),
                       2 => const CanonicalDragonsScreen(),
                       _ => const CanonicalAdventuresScreen(),
-                    }
+                    })
                   : _StagingSignIn(auth: widget.auth)),
           bottomNavigationBar: signedIn
               ? NavigationBar(

@@ -1,3 +1,6 @@
+import 'package:dragon_haven/models/game_presentation.dart';
+import 'package:dragon_haven/screens/canonical_profile_screen.dart';
+import 'package:dragon_haven/widgets/canonical_milestones.dart';
 import 'package:dragon_haven/screens/canonical_trials_screen.dart';
 import 'package:dragon_haven/services/canonical_trial_run_source.dart';
 // Isolated real-network staging test. Credentials exist only in this child
@@ -247,7 +250,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
     }
 
-    Future<void> tap(Finder finder) async {
+    Future<void> tap(Finder finder, {bool networkOnBuild = false}) async {
       final list = find.byWidgetPredicate((widget) => const [
             Key('canonical-adventures-list'),
             Key('canonical-tower-list'),
@@ -268,9 +271,14 @@ void main() {
       await tester.ensureVisible(finder);
       await tester.pump(const Duration(milliseconds: 400));
       await tester.runAsync(() => tester.tap(finder));
-      // Route construction can start HTTP and filesystem work in initState.
-      // Keep that work on the real clock, like the actual Flutter app.
-      await tester.runAsync(() => tester.pump());
+      // Trial route construction starts HTTP/filesystem work in initState.
+      // Its startup needs real IO timers. Other animation-only routes keep
+      // the widget clock so their transitions still advance with pump().
+      if (networkOnBuild) {
+        await tester.runAsync(() => tester.pump());
+      } else {
+        await tester.pump();
+      }
       await tester.pump(const Duration(milliseconds: 400));
     }
 
@@ -724,7 +732,7 @@ void main() {
       final trialDragon = game.snapshot!.dragon(pupil.id)!;
       await mount(const CanonicalTrialsScreen());
       await tap(key('choose-trial-staging-verified-ruin'));
-      await tap(key('trial-dragon-${pupil.id}'));
+      await tap(key('trial-dragon-${pupil.id}'), networkOnBuild: true);
       await settleCommand();
       stdout.writeln('PROBE: ui_trial_reserved');
       for (var i = 0;
@@ -753,6 +761,48 @@ void main() {
           'client_probe_trial_verified_reward');
       stdout.writeln(
           'PASS: real Trial selection and sprite game; server replay, consumed offer and exactly one reward.');
+      stdout.writeln('PROBE: ui_profile_start');
+      final cosmeticBalance = game.snapshot!.coins;
+      await mount(const CanonicalProfileScreen());
+      await tap(key('canonical-profile-portrait-portrait_002'));
+      await settleCommand();
+      require(game.snapshot!.profile.selected('portrait') == 'portrait_002',
+          'client_probe_profile_selection');
+      final called =
+          game.snapshot!.dragons.firstWhere((d) => d.owned && d.favorite);
+      require(called.roamsTower, 'client_probe_room_resident_required');
+      final destination =
+          (called.floorIndex + 1) % game.snapshot!.house.floorRoomIds.length;
+      await mount(const CanonicalHouseScreen());
+      await tap(key('canonical-visit-floor-$destination'));
+      await settleCommand();
+      await tap(key('canonical-call-dragon'));
+      await settleCommand();
+      require(
+          game.snapshot!.dragon(called.id)!.floorIndex == destination &&
+              game.snapshot!.coins == cosmeticBalance,
+          'client_probe_room_call');
+      stdout.writeln(
+          'PASS: real profile and room UI; owned portrait selected, favorite called, wallet unchanged.');
+      stdout.writeln('PROBE: ui_milestone_start');
+      final event = game.snapshot!.presentations
+          .where((p) => p.type == GamePresentationType.achievement)
+          .firstOrNull;
+      require(event != null, 'client_probe_milestone_required');
+      await mount(Builder(
+          builder: (context) => TextButton(
+              onPressed: () => showCanonicalMilestone(context, event!),
+              child: const Text('Reveal milestone'))));
+      await tap(find.text('Reveal milestone'));
+      await tap(key('achievement-reveal-${event!.achievementId}'));
+      await settleCommand();
+      require(
+          !game.snapshot!.presentations.any((p) => p.id == event.id) &&
+              game.snapshot!.coins == cosmeticBalance &&
+              tester.takeException() == null,
+          'client_probe_milestone_acknowledged');
+      stdout.writeln(
+          'PASS: real milestone UI; existing achievement scene acknowledged without repeating its reward.');
     } finally {
       stdout.writeln('PROBE: ui_cleanup_start');
       await tester.pumpWidget(const SizedBox.shrink());

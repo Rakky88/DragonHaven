@@ -424,3 +424,41 @@ The user requires this entire trajectory before publishing version 0.05.30.
 The expensive eleven-Trial command pilot is included explicitly in the VM/Deno
 parity fixture; unrelated UI fixtures do not rerun it. This keeps parallel UI
 checks from competing with a repeated simulation benchmark.
+
+
+## Care, profile and milestone command candidate — 10 September 2026
+
+Owned portrait/title/badge/frame selections, favorite-dragon room calls,
+cosmetic room visits and milestone acknowledgments now use exact owner-bound
+commands. Public profile/milestone views reject contradictory ownership and
+malformed events. Room identity, damage and capacity are checked on the server;
+the existing 5% cosmetic interaction and 12-hour cooldown are unchanged. A lost
+receipt cannot reroll an interaction. No cosmetic command grants inventory or XP.
+The existing hatch/evolution/achievement scenes consume public dragon appearance
+facts, retain their sprites and audio, and acknowledge already-saved milestones.
+The pending queue survives process death; owner changes clear the old reveal.
+Trade presentation routing remains part of the pending social settlement work.
+
+Five rule/recovery tests and four actual screen tests pass, including lost
+receipts, ownership/capacity refusal, cooldown expiry, one acknowledgment,
+account exit and the original hatch/evolution scenes. Four loaded 320dp Dutch
+screens at 1.35 text scale were reviewed in `release/economy-milestone-visual/`;
+evolution text now centers when it wraps. Full analysis and 18 Edge tests pass.
+The native/JavaScript probe includes the new cosmetic commands and all eleven
+Trials: exact parity, 1,133,288-byte probe bundle, about 855 ms in Deno.
+The complete 847-test Flutter suite also passes, including the reference check.
+Actual staging proof remains to be completed.
+
+Trial staging run 34454679215 passed 838 tests, parity, schema 66/lint 0/health
+and the preceding real server/UI paths, but its Trial command wait failed.
+Run 34456071154 exposed a widget-clock regression in the attempted harness fix.
+Both runs removed synthetic accounts/commands and disabled the worker. The
+harness now restricts real-clock route construction to the Trial startup;
+other scene transitions keep the widget clock. No production state was changed.
+Do not count either failed workflow as complete Trial integration evidence.
+
+Remaining release gates: finish real Trial/care proof, trusted social settlement
+and rankings, trade presentation, import/calendar reconciliation, full gameplay
+routing and migration/cutover recovery, then quality-preserving APK reduction.
+Version remains 0.05.29 / 10079; production remains schema 65 and legacy-owned.
+The user explicitly requested all of this before the next release.

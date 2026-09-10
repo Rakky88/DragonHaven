@@ -112,7 +112,9 @@ class CanonicalGameIntent {
       return value is int && value >= min && value <= max;
     }
     if (value == null) {
-      return key == 'mentorId' ||
+      return (key == 'catalogId' &&
+              (action == 'select_badge' || action == 'select_frame')) ||
+          key == 'mentorId' ||
           key == 'replaceAdventureId' ||
           (action == 'equip_twinstar' || action == 'equip_relic') &&
               key == 'dragonId';

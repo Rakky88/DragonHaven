@@ -51,6 +51,13 @@ abstract final class GameCommandSchema {
     'reorder_tower_floor': {'oldIndex', 'newIndex'},
     'set_dragon_roaming': {'dragonId', 'enabled'},
     'clear_tower_floor': {'index'},
+    'select_portrait': {'catalogId'},
+    'select_title': {'catalogId'},
+    'select_badge': {'catalogId'},
+    'select_frame': {'catalogId'},
+    'complete_presentation': {'presentationId'},
+    'call_dragon_to_floor': {'roomId', 'index'},
+    'visit_tower_floor': {'roomId', 'index'},
     'complete_tutorial': {'fullyViewed'},
     'redeem_code': {'code'},
   };

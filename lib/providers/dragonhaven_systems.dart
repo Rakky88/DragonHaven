@@ -248,7 +248,7 @@ DateTime _nextAmsterdamGroupAdventureAt(DateTime instant) {
 }
 
 extension DragonHavenSystems on HouseholdProvider {
-  static const int maxDragonsPerTowerFloor = 3;
+  static const int maxDragonsPerTowerFloor = towerFloorDragonCapacity;
 
   DateTime get currentTime => _clock();
 
@@ -689,6 +689,26 @@ extension DragonHavenSystems on HouseholdProvider {
 
   Future<String?> maybeTriggerRoomInteraction(
       String roomId, int floorIndex) async {
+    final event = await triggerRoomInteraction(roomId, floorIndex);
+    if (event == null) return null;
+    final dragon = ownedDragons.firstWhere((d) => d.id == event.dragonId);
+    final interaction = [...towerInteractions, roomOnlyInteraction]
+        .firstWhere((i) => i.id == event.interactionId);
+    return GameStrings(languageCode)
+        .pick(interaction.messageEn, interaction.messageNl)
+        .replaceAll('{dragon}', dragon.displayName);
+  }
+
+  /// Public display identities only; no translated text or rewards come from
+  /// the caller. The same private roll and cooldown serve local and server play.
+  Future<({String dragonId, String interactionId})?> triggerRoomInteraction(
+      String roomId, int floorIndex) async {
+    if (floorIndex < 0 ||
+        floorIndex >= towerFloorRoomIds.length ||
+        towerFloorRoomIds[floorIndex] != roomId ||
+        damagedTowerFloors.contains(floorIndex)) {
+      return null;
+    }
     final now = _clock();
     final candidates = ownedDragons.where((dragon) {
       if (dragon.activeAdventureId != null ||
@@ -720,11 +740,7 @@ extension DragonHavenSystems on HouseholdProvider {
         : matching[_random.nextInt(matching.length)];
     rareInteractionAt[dragon.id] = now;
     await _notifyAndSave();
-    final name = dragon.displayName;
-    final strings = GameStrings(languageCode);
-    return strings
-        .pick(interaction.messageEn, interaction.messageNl)
-        .replaceAll('{dragon}', name);
+    return (dragonId: dragon.id, interactionId: interaction.id);
   }
 
   Future<bool> callControllableDragonToRoom(
@@ -736,6 +752,7 @@ extension DragonHavenSystems on HouseholdProvider {
         floorIndex < 0 ||
         floorIndex >= towerFloorRoomIds.length ||
         towerFloorRoomIds[floorIndex] != roomId ||
+        damagedTowerFloors.contains(floorIndex) ||
         dragon.currentFloorIndex == floorIndex ||
         _visibleFloorOccupancy(floorIndex, exceptDragonId: dragon.id) >=
             maxDragonsPerTowerFloor) {

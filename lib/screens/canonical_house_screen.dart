@@ -1,3 +1,6 @@
+import 'canonical_dragons_screen.dart';
+import '../services/canonical_game_snapshot.dart';
+import '../widgets/ui_bits.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -113,6 +116,13 @@ class _HouseContents extends StatelessWidget {
                           room: room,
                           heading: '${i + 1} · ${s.roomName(room)}',
                           extra: Wrap(alignment: WrapAlignment.end, children: [
+                            OutlinedButton.icon(
+                                key: Key('canonical-visit-floor-$i'),
+                                onPressed: house.damagedFloors.contains(i)
+                                    ? null
+                                    : () => _visitFloor(context, room.id, i),
+                                icon: const Icon(Icons.zoom_in),
+                                label: Text(s.pick('Visit', 'Bezoeken'))),
                             IconButton(
                                 key: Key('canonical-floor-up-$i'),
                                 tooltip:
@@ -306,4 +316,99 @@ class _RoomCard extends StatelessWidget {
                   if (control != null) ...[const SizedBox(height: 8), control!],
                 ])),
       ]));
+}
+
+Future<void> _visitFloor(BuildContext context, String roomId, int index) async {
+  final session = context.read<CanonicalGameSession>();
+  final view = session.snapshot!;
+  final owner = view.ownerId;
+  final epoch = session.connection.sessionEpoch;
+  final actions = CanonicalGameActions(session);
+  // Opening a room rolls once. Rebuilds, scrolling and reconnecting the dialog
+  // cannot repeatedly roll the cosmetic interaction.
+  Future<void> visit() async {
+    if (!session.canAct) return;
+    try {
+      final event = await actions.visitFloor(roomId, index);
+      if (!context.mounted ||
+          event == null ||
+          session.connection.sessionEpoch != epoch ||
+          session.snapshot?.ownerId != owner) {
+        return;
+      }
+      final dragon = session.snapshot!.dragon(event.dragonId);
+      if (dragon == null) return;
+      final s = AppStrings.of(context);
+      showAppSnackBar(
+          context,
+          s
+              .pick(event.interaction.messageEn, event.interaction.messageNl)
+              .replaceAll('{dragon}', canonicalDragonName(s, dragon)));
+    } on CanonicalGameException catch (error) {
+      if (context.mounted && session.connection.sessionEpoch == epoch) {
+        showAppSnackBar(
+            context, gameConnectionMessage(AppStrings.of(context), error.code));
+      }
+    }
+  }
+
+  final visitTask = visit();
+  await showDialog<void>(
+      context: context,
+      builder: (context) => CanonicalEntityDialog(
+          ownerId: owner,
+          builder: (context, current, canAct) {
+            final s = AppStrings.of(context);
+            final currentActions = CanonicalGameActions(session);
+            final valid = index < current.house.floorRoomIds.length &&
+                current.house.floorRoomIds[index] == roomId &&
+                !current.house.damagedFloors.contains(index);
+            final dragon = current.dragons
+                    .where((d) => d.owned && d.favorite)
+                    .firstOrNull ??
+                current.dragon(current.activeDragonId ?? '');
+            final residents = current.dragons
+                .where((d) =>
+                    d.owned &&
+                    d.roamsTower &&
+                    d.adventureId == null &&
+                    d.floorIndex == index &&
+                    d.roomId == roomId)
+                .toList();
+            return AlertDialog(
+                title: Text(s.roomName(houseRoomById(roomId)!)),
+                content: SingleChildScrollView(
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  if (valid)
+                    for (final resident in residents)
+                      Column(children: [
+                        CanonicalDragonArt(dragon: resident, height: 100),
+                        Text(canonicalDragonName(s, resident)),
+                      ]),
+                  if (valid && residents.isEmpty)
+                    Text(s.pick('No dragons here', 'Geen draken hier')),
+                  if (!valid)
+                    Text(s.pick('This room is unavailable.',
+                        'Deze kamer is niet beschikbaar.')),
+                  if (valid &&
+                      dragon != null &&
+                      dragon.roamsTower &&
+                      dragon.adventureId == null &&
+                      dragon.floorIndex != index &&
+                      residents.length < towerFloorDragonCapacity)
+                    CanonicalActionButton(
+                        key: const Key('canonical-call-dragon'),
+                        label: s.pick('Call dragon', 'Draak roepen'),
+                        action: canAct
+                            ? () =>
+                                currentActions.callDragonToFloor(roomId, index)
+                            : null),
+                ])),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(s.pick('Close', 'Sluiten')))
+                ]);
+          }));
+  await visitTask;
 }

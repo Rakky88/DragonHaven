@@ -4,6 +4,8 @@ import 'shop_item.dart';
 import 'day_phase.dart';
 import '../utils/json_utils.dart';
 
+const towerFloorDragonCapacity = 3;
+
 // The server evaluator and public UI quote the same existing tower prices.
 const houseTowerPriceMultiplier = 10;
 int towerBuildPrice(int existingFloors) =>

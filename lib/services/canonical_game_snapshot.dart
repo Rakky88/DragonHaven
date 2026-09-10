@@ -1,3 +1,4 @@
+import '../models/game_presentation.dart';
 import '../models/trial_dragon.dart';
 import 'dart:convert';
 
@@ -38,6 +39,20 @@ class CanonicalGameSnapshot {
   bool get mutationsEnabled => _wire['mutations_enabled'] as bool;
   DateTime get serverTime => DateTime.parse(_wire['server_time'] as String);
   Map<String, dynamic> get data => _wire['data'] as Map<String, dynamic>;
+  CanonicalProfileView get profile =>
+      CanonicalProfileView._parse(data['collection']);
+  List<CanonicalPresentationView> get presentations =>
+      List.unmodifiable((data['presentations'] as List)
+          .map((p) => CanonicalPresentationView._parse(p))
+          .toList()
+        ..sort((a, b) {
+          final priority = a.type.index.compareTo(b.type.index);
+          if (priority != 0) return priority;
+          final age = a.sortAt.compareTo(b.sortAt);
+          if (age != 0) return age;
+          final queued = a.createdAt.compareTo(b.createdAt);
+          return queued != 0 ? queued : a.id.compareTo(b.id);
+        }));
   int get coins => data['wallet']['coins'] as int;
   CanonicalSchoolAttempt? get schoolAttempt =>
       data['trials']['attempt']?['type'] != 'school'
@@ -163,6 +178,13 @@ class CanonicalGameSnapshot {
       'activities'
     ]) {
       if (data[name] is! List) {
+        throw const CanonicalGameException('game_snapshot_invalid');
+      }
+    }
+    CanonicalProfileView._parse(data['collection']);
+    final presentationIds = <String>{};
+    for (final raw in data['presentations'] as List) {
+      if (!presentationIds.add(CanonicalPresentationView._parse(raw).id)) {
         throw const CanonicalGameException('game_snapshot_invalid');
       }
     }
@@ -966,4 +988,58 @@ class CanonicalSchoolAttempt {
         start,
         expiry);
   }
+}
+
+/// Owned cosmetics and current choices, without granting catalog ownership.
+class CanonicalProfileView {
+  CanonicalProfileView._parse(Object? raw) {
+    final data = _map(raw);
+    for (final (kind, stock, selected) in const [
+      ('portrait', 'ownedPortraitIds', 'selectedPortraitId'),
+      ('title', 'ownedTitleIds', 'selectedTitleId'),
+      ('badge', 'ownedBadgeIds', 'selectedBadgeId'),
+      ('frame', 'ownedFrameIds', 'selectedFrameId'),
+    ]) {
+      final ids = CanonicalShopView._ids(data[stock]);
+      final id = data[selected];
+      if (id != null && (id is! String || !ids.contains(id))) {
+        throw const CanonicalGameException('game_snapshot_invalid');
+      }
+      _owned[kind] = ids;
+      _selected[kind] = id as String?;
+    }
+  }
+  final _owned = <String, Set<String>>{};
+  final _selected = <String, String?>{};
+  Set<String> owned(String kind) => _owned[kind] ?? const {};
+  String? selected(String kind) => _selected[kind];
+}
+
+/// A committed milestone to display. Acknowledging it never awards anything.
+class CanonicalPresentationView {
+  CanonicalPresentationView._parse(Object? raw) : _data = _map(raw) {
+    if (!_text(_data['id']) ||
+        !_date(_data['createdAt']) ||
+        !_date(_data['sortAt']) ||
+        !GamePresentationType.values.any((t) => t.name == _data['type']) ||
+        ['dragonId', 'achievementId', 'previousStageKey']
+            .any((key) => _data[key] != null && !_text(_data[key]))) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
+    if ((type == GamePresentationType.hatch ||
+                type == GamePresentationType.evolution) &&
+            dragonId == null ||
+        type == GamePresentationType.achievement && achievementId == null) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
+  }
+  final Map<String, dynamic> _data;
+  String get id => _data['id'] as String;
+  GamePresentationType get type =>
+      GamePresentationType.values.byName(_data['type'] as String);
+  DateTime get createdAt => DateTime.parse(_data['createdAt'] as String);
+  DateTime get sortAt => DateTime.parse(_data['sortAt'] as String);
+  String? get dragonId => _data['dragonId'] as String?;
+  String? get achievementId => _data['achievementId'] as String?;
+  String? get previousStageKey => _data['previousStageKey'] as String?;
 }

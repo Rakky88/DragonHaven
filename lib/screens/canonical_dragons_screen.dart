@@ -243,7 +243,7 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                                                     view.inventory.count(AltarRelic
                                                             .nameweaversQuill) >
                                                         0)
-                                            ? () => _name(
+                                            ? () => nameCanonicalDragon(
                                                 context, dragon, owner, actions)
                                             : null,
                                         child: Text(dragon.name.trim().isEmpty
@@ -376,8 +376,11 @@ class _HighlightControl extends StatelessWidget {
   }
 }
 
-Future<void> _name(BuildContext context, CanonicalDragonView dragon,
-    String owner, CanonicalGameActions actions) async {
+Future<void> nameCanonicalDragon(
+    BuildContext context,
+    CanonicalDragonView dragon,
+    String owner,
+    CanonicalGameActions actions) async {
   await showDialog<void>(
       context: context,
       builder: (_) =>

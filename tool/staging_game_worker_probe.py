@@ -92,6 +92,8 @@ def main():
     fixture['twinstarBroochEverObtained'] = True
     fixture['pet']['training'] = {'might': 60, 'arcana': 60, 'spirit': 60}
     fixture['pet']['highlightedExpertises'] = []
+    fixture['ownedPortraitIds'] = ['portrait_001', 'portrait_002']
+    fixture['selectedPortraitId'] = 'portrait_001'
     preference_dragon = json.loads(json.dumps(fixture['pet']))
     preference_dragon.update({'id': '77777777-7777-4777-8777-777777777777',
                              'name': 'Preference Probe', 'favorite': False})
@@ -391,6 +393,10 @@ def main():
         require('PASS: real room editor;' in client_result.stdout, 'client_probe_room_editor_proof_missing')
         require('PASS: real roaming UI;' in client_result.stdout, 'client_probe_roaming_proof_missing')
         require('PASS: real care UI;' in client_result.stdout, 'client_probe_care_proof_missing')
+        require('PASS: real profile and room UI;' in client_result.stdout, 'client_probe_cosmetic_proof_missing')
+        require('PASS: real milestone UI;' in client_result.stdout, 'client_probe_milestone_proof_missing')
+        require('PASS: real Academy UI;' in client_result.stdout, 'client_probe_school_proof_missing')
+        require('PASS: real Trial selection' in client_result.stdout, 'client_probe_trial_proof_missing')
         require('PASS: real preferences UI;' in client_result.stdout, 'client_probe_preferences_proof_missing')
         unchanged = query(f"""select
           (select s.state=i.source_state and s.revision=i.source_revision

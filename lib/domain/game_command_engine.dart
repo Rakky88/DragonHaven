@@ -315,6 +315,43 @@ abstract final class GameCommandEngine {
           final index = args.integer('index', min: 0, max: 19);
           result = index < game.towerFloorRoomIds.length &&
               await game.clearDragonsFromRoom(index);
+        case 'select_portrait':
+          final id = args.text('catalogId');
+          result = game.selectedPortraitId == id ||
+              await game.selectProfilePortrait(id);
+        case 'select_title':
+          final id = args.text('catalogId');
+          result =
+              game.selectedTitleId == id || await game.selectAccountTitle(id);
+        case 'select_badge':
+          final id = args.nullableText('catalogId');
+          result =
+              game.selectedBadgeId == id || await game.selectKeeperBadge(id);
+        case 'select_frame':
+          final id = args.nullableText('catalogId');
+          result =
+              game.selectedFrameId == id || await game.selectKeeperFrame(id);
+        case 'complete_presentation':
+          await game.completePresentation(args.text('presentationId'));
+          result = true;
+        case 'call_dragon_to_floor':
+          result = await game.callControllableDragonToRoom(
+              args.text('roomId'), args.integer('index', min: 0, max: 19));
+        case 'visit_tower_floor':
+          final roomId = args.text('roomId');
+          final index = args.integer('index', min: 0, max: 19);
+          if (index >= game.towerFloorRoomIds.length ||
+              game.towerFloorRoomIds[index] != roomId ||
+              game.damagedTowerFloors.contains(index)) {
+            throw const GameCommandException('game_action_unavailable');
+          }
+          final event = await game.triggerRoomInteraction(roomId, index);
+          result = event == null
+              ? null
+              : {
+                  'dragonId': event.dragonId,
+                  'interactionId': event.interactionId
+                };
         case 'complete_tutorial':
           await game.completeTutorial(fullyViewed: args.boolean('fullyViewed'));
           result = true;
