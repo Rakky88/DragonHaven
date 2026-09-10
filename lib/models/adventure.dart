@@ -698,7 +698,9 @@ abstract final class AdventureCatalog {
         statPoints: 52 + days * 13 + index % 9,
         requirements: AdventureRequirements(
           players: players,
-          combinedLevel: index % 4 == 0 ? 8 + index % 20 : 0,
+          combinedLevel: index % 4 == 0
+              ? (8 + index % 20).clamp(0, players * Pet.levelThresholds.length)
+              : 0,
           focus: index % 3 == 0 ? focus : null,
           combinedStat: index % 3 == 0 ? 50 + index % 150 : 0,
         ),

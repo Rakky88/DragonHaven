@@ -1,3 +1,4 @@
+import 'package:dragon_haven/models/adventure.dart';
 import 'dart:convert';
 
 import 'package:dragon_haven/domain/game_command_engine.dart';
@@ -8,6 +9,18 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('all group requirements fit the available participants and levels', () {
+    for (final adventure in AdventureCatalog.group) {
+      expect(
+          adventure.requirements.combinedLevel,
+          lessThanOrEqualTo(
+              adventure.requirements.players * Pet.levelThresholds.length),
+          reason: adventure.id);
+    }
+    expect(AdventureCatalog.byId['group_13']!.requirements.combinedLevel, 18);
+    expect(AdventureCatalog.byId['group_17']!.requirements.combinedLevel, 24);
+  });
+
   const owner = '11111111-1111-4111-8111-111111111111';
   const source = '22222222-2222-4222-8222-222222222222';
   const member = '33333333-3333-4333-8333-333333333333';

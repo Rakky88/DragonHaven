@@ -104,6 +104,7 @@ const specialContentReference = ReferenceDocumentSpec(
     'supabase/migrations/202609100066_endless_sunwake.sql',
     'supabase/migrations/202609100075_unbounded_trial_score_storage.sql',
     'supabase/migrations/202609100076_canonical_seasonal_trials.sql',
+    'supabase/migrations/202609100077_group_requirements_and_account_cleanup.sql',
     'supabase/migrations/202609070044_sinister_altar_rewards.sql',
     'supabase/migrations/202609070048_halloween_preview_access.sql',
     'supabase/migrations/202609080059_single_active_event_preview.sql',
@@ -197,6 +198,7 @@ const randomRewardsReference = ReferenceDocumentSpec(
     'supabase/migrations/202609100066_endless_sunwake.sql',
     'supabase/migrations/202609100075_unbounded_trial_score_storage.sql',
     'supabase/migrations/202609100076_canonical_seasonal_trials.sql',
+    'supabase/migrations/202609100077_group_requirements_and_account_cleanup.sql',
     'supabase/migrations/202609070044_sinister_altar_rewards.sql',
     'supabase/migrations/202609070045_dormant_chest_opening.sql',
     'supabase/migrations/202609080058_equipment_relic_pool.sql',
@@ -231,6 +233,7 @@ const redeemCodesReference = ReferenceDocumentSpec(
     'supabase/migrations/202609100066_endless_sunwake.sql',
     'supabase/migrations/202609100075_unbounded_trial_score_storage.sql',
     'supabase/migrations/202609100076_canonical_seasonal_trials.sql',
+    'supabase/migrations/202609100077_group_requirements_and_account_cleanup.sql',
   ],
 );
 

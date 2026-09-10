@@ -1,5 +1,18 @@
 # DragonHaven v0.04.06 audit — 28 augustus 2026
 
+Candidate 77: group level requirements are capped at the number of players
+multiplied by the current nine-level progression. A two-keeper group that used
+to demand level 20 or 24 now requires 18; attainable requirements, expertise,
+duration, XP and the stored 70/25/5 chest roll stay the same. Both canonical and
+legacy lobby creation use the bound, and only waiting existing lobbies are
+repaired. Owned social/group rows allow cascades after the Auth parent is gone,
+while direct inventory deletion remains forbidden. The rollback rehearsal
+covers all 200 catalog entries and promoted participant/owner deletion without
+changing the other keepers' inventories. It has not run or been applied yet.
+The full schema-76 staging workflow 34491961542 is still in progress on f86870a;
+production remains unchanged and there is no release yet.
+
+
 Staging readiness update: rollback run 34490598706 (`af103f5`) passed the
 schema-76 seasonal binding contract, including event/Conclave changes, device
 resume, one contribution, closed-event cutoff, old-writer refusal, atomic
