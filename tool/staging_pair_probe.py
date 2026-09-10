@@ -10,6 +10,7 @@ import uuid
 def run_pair_probe(*, root, project, base, public_key, run, fixture, admin_headers, call, query, require):
     sessions = []
     owners = []
+    preview_expiry = query("select now()+interval '2 days' as expires_at", True)[0]['expires_at']
     for ordinal in range(2):
         password = secrets.token_urlsafe(32) + "Dh7!"
         email = f"pair-{run}-{ordinal}@dragonhaven-probe.invalid"
@@ -30,7 +31,8 @@ def run_pair_probe(*, root, project, base, public_key, run, fixture, admin_heade
             'training': {'might': 300, 'arcana': 300, 'spirit': 300}, 'favorite': True,
             'activeAdventureId': None, 'firstEgg': False, 'spectral': False, 'sinister': False})
         state.update({'sanctuaryDragons': [], 'eggStash': [], 'releasedDragons': [],
-                      'pendingPresentations': [], 'adventureRuns': []})
+                      'pendingPresentations': [], 'adventureRuns': [],
+                      'seasonalEventPreviewExpiresAt': {'valentine_two_heartlights': preview_expiry} if ordinal == 0 else {}})
         state['eggAltar']['ownerId'] = owner
         encoded = json.dumps(state, separators=(',', ':')).encode('utf-8').hex()
         query(f"""begin;
@@ -49,8 +51,6 @@ def run_pair_probe(*, root, project, base, public_key, run, fixture, admin_heade
       select set_config('request.jwt.claim.role','service_role',true);
       update private.game_engine_runtime set shadow_projection_enabled=true,shadow_lifecycle_enabled=true where singleton;
       update private.canonical_game_states set is_prepared=true where owner_id=any({owner_array});
-      insert into public.seasonal_event_previews(user_id,event_id,expires_at,activated_at)
-        values('{owners[0]}','valentine_two_heartlights',now()+interval '2 days',now());
       commit;""")
     codes = query(f"select keeper_code from public.profiles where user_id='{owners[1]}';", True)
     require(len(codes)==1 and re.fullmatch(r'DH-[0-9A-F]{8}',codes[0]['keeper_code']) is not None,

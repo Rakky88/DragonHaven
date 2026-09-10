@@ -1,5 +1,23 @@
 # DragonHaven server-authoritative economy contract
 
+Staging readiness update: rollback run 34490598706 (`af103f5`) passed the
+schema-76 seasonal binding contract, including event/Conclave changes, device
+resume, one contribution, closed-event cutoff, old-writer refusal, atomic
+rollback and Auth cleanup. Focused real trade run 34490602505 passed every UI
+and database assertion; cleanup removed all synthetic users and disabled all
+four switches. Schema 75/76 are reviewed but not yet applied. Production stays
+schema 65 / v0.05.29.
+
+The canonical event-end command now clears previews and dismisses only the
+current calendar editions; local tests retain balances/chests and permit next
+year's event. The legacy local provider still uses authenticated online event
+control. The full staging candidate now includes one real Sunwake sprite run,
+its exact server ranking and one personal reward, followed by event end. Partner
+fixtures use the same private activation map that the server publishes. These
+new actual-server checks are pending; the full apply remains staging-only.
+
+Previous checkpoints below are historical.
+
 Verified staging evidence: schema 75 was rehearsed with full rollback in run
 34489515550 (`e77c9a3`): 3-billion scores, 8-billion-ms durations, ordinary/event
 rankings, profile/friend/snapshot readers, podium and exact-number bounds pass.

@@ -1,3 +1,4 @@
+import 'package:dragon_haven/models/redeem_code.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/domain/social_trade_assets.dart';
 import 'package:dragon_haven/domain/game_time_bridge.dart';
@@ -184,6 +185,8 @@ Future<Map<String, dynamic>> runGameDomainProbe(
       });
     }
     return {
+      'endEvent':
+          includeTrialCommands ? await _endEventProbe(stored, seed) : null,
       'clockBridge': GameTimeBridge.forUpload({
         'pet': {'acquiredAt': '2026-07-01T00:15:00.000+05:30'},
         'adventureRuns': [
@@ -503,4 +506,26 @@ Future<List<Map<String, dynamic>>> _tradeLifecycleProbe(
   final second = await command(replied['state'], other, 'confirm_trade',
       {'tradeId': id}, 'awaiting_initiator', 'completed', shard, egg);
   return [offered, rejected, cancelled, replied, first, second];
+}
+
+Future<Map<String, dynamic>> _endEventProbe(
+    Map<String, dynamic> original, String seed) async {
+  final now = DateTime.utc(2027, 7, 21, 12);
+  final state = jsonDecode(jsonEncode(original)) as Map<String, dynamic>;
+  state['seasonalEventPreviewExpiresAt'] = {
+    'valentine_two_heartlights':
+        now.add(const Duration(hours: 48)).toIso8601String()
+  };
+  return GameCommandEngine.execute(
+      state: state,
+      action: 'redeem_code',
+      payload: {
+        'code': redeemCodeCatalog
+            .singleWhere(
+                (c) => c.rewardType == RedeemRewardType.endSeasonalEvent)
+            .code
+      },
+      secretSeed: seed,
+      now: now,
+      keeperId: '11111111-1111-4111-8111-111111111111');
 }

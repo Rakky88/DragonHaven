@@ -15,6 +15,7 @@ import '../models/egg_altar.dart';
 import '../models/house.dart';
 import '../models/mystic_relic.dart';
 import '../models/pet.dart';
+import '../models/redeem_code.dart';
 import '../models/shop_item.dart';
 import '../providers/household_provider.dart';
 import 'server_entropy.dart';
@@ -430,8 +431,20 @@ abstract final class GameCommandEngine {
           await game.completeTutorial(fullyViewed: args.boolean('fullyViewed'));
           result = true;
         case 'redeem_code':
-          result = await game.redeemCode(args.text('code', max: 100),
-              keeperId: keeperId);
+          final code = args.text('code', max: 100);
+          if (redeemCodeDefinition(code)?.rewardType ==
+              RedeemRewardType.endSeasonalEvent) {
+            // This module is entered only after server authentication. The
+            // legacy local provider still requires its authenticated RPC.
+            for (final window in specialAdventureWindowsAt(now)) {
+              game.seasonalEventDismissedUntil[window.event.id] = window.endsAt;
+            }
+            game.seasonalEventPreviewExpiresAt.clear();
+            await game.refreshForCurrentDate();
+            result = 'event_ended';
+          } else {
+            result = await game.redeemCode(code, keeperId: keeperId);
+          }
         default:
           throw const GameCommandException('invalid_command');
       }
