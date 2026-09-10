@@ -11,19 +11,39 @@ import 'canonical_game_intent.dart';
 import 'canonical_game_connection.dart';
 import 'canonical_game_snapshot.dart';
 
-/// Authenticated transport for the detached staging candidate. No service key,
+/// Authenticated transport pinned to an explicitly selected app environment. No service key,
 /// raw save, caller-owned clock or secret seed is ever present in this client.
 /// Each request owns its HTTP client so a timeout can actually close the socket.
 class CanonicalGameTransport implements CanonicalGameConnection {
-  CanonicalGameTransport.staging(this.authClient, OnlineConfig config,
+  CanonicalGameTransport.staging(SupabaseClient authClient, OnlineConfig config,
       {http.Client Function()? httpClientFactory,
-      this.timeout = const Duration(seconds: 10)})
+      Duration timeout = const Duration(seconds: 10)})
+      : this._(authClient, config, OnlineEnvironment.staging,
+            httpClientFactory: httpClientFactory, timeout: timeout);
+
+  CanonicalGameTransport.production(
+      SupabaseClient authClient, OnlineConfig config,
+      {http.Client Function()? httpClientFactory,
+      Duration timeout = const Duration(seconds: 10)})
+      : this._(authClient, config, OnlineEnvironment.production,
+            httpClientFactory: httpClientFactory, timeout: timeout);
+
+  CanonicalGameTransport._(this.authClient, OnlineConfig config,
+      OnlineEnvironment expectedEnvironment,
+      {http.Client Function()? httpClientFactory, required this.timeout})
       : _clientFactory = httpClientFactory ?? (() => http.Client()),
-        _publishableKey = config.publishableKey {
-    if (config.environment != OnlineEnvironment.staging ||
-        config.url != stagingUrl ||
+        _publishableKey = config.publishableKey,
+        _baseUrl = config.url {
+    final expectedUrl = expectedEnvironment == OnlineEnvironment.production
+        ? OnlineConfig.productionUrl
+        : stagingUrl;
+    if (config.environment != expectedEnvironment ||
+        config.url != expectedUrl ||
         !config.isConfigured) {
-      throw const CanonicalGameException('game_staging_required');
+      throw CanonicalGameException(
+          expectedEnvironment == OnlineEnvironment.production
+              ? 'game_production_required'
+              : 'game_staging_required');
     }
     _lastOwner = currentOwner;
     _auth = authClient.auth.onAuthStateChange.listen((event) {
@@ -45,6 +65,7 @@ class CanonicalGameTransport implements CanonicalGameConnection {
   final SupabaseClient authClient;
   final http.Client Function() _clientFactory;
   final String _publishableKey;
+  final String _baseUrl;
   final Duration timeout;
   final _changes = StreamController<int>.broadcast();
   late final StreamSubscription<AuthState> _auth;
@@ -103,6 +124,71 @@ class CanonicalGameTransport implements CanonicalGameConnection {
     return reply.body;
   }
 
+  /// Final local progress must first be uploaded through the existing
+  /// optimistic cloud revision. Only that revision and a durable UUID cross
+  /// this boundary; account capture/preparation/activation happen on the server.
+  Future<int> migrateAccount(
+      {required String requestId,
+      required int sourceRevision,
+      int clientBuild = AppInfo.buildNumber}) async {
+    if (!CanonicalGameIntent.validOwner(requestId) ||
+        sourceRevision < 1 ||
+        sourceRevision > 9007199254740991) {
+      throw const CanonicalGameException('game_request_invalid');
+    }
+    final owner = currentOwner;
+    final epoch = sessionEpoch;
+    final reply = await _invoke({
+      'protocol': 2,
+      'clientBuild': clientBuild,
+      'action': 'migrate_account',
+      'requestId': requestId,
+      'sourceRevision': sourceRevision
+    }, expectedOwner: owner);
+    if (currentOwner != owner || sessionEpoch != epoch) {
+      throw const CanonicalGameException('game_account_changed');
+    }
+    final body = reply.body;
+    if (reply.status != 200) {
+      final code = body is Map<String, dynamic> ? body['error'] : null;
+      throw CanonicalGameException(_migrationErrors.contains(code)
+          ? code as String
+          : 'game_migration_unavailable');
+    }
+    if (body is! Map<String, dynamic> ||
+        body.length != 7 ||
+        body['protocol'] != 2 ||
+        body['owner_id'] != owner ||
+        body['request_id'] != requestId ||
+        body['authority_mode'] != 'server' ||
+        body['phase'] != 'active' ||
+        body['replayed'] is! bool ||
+        body['server_revision'] is! int ||
+        (body['server_revision'] as int) < 1 ||
+        (body['server_revision'] as int) > 9007199254740991) {
+      throw const CanonicalGameException('game_migration_unavailable');
+    }
+    return body['server_revision'] as int;
+  }
+
+  static const _migrationErrors = {
+    'game_migration_disabled',
+    'game_migration_in_progress',
+    'game_migration_trade_pending',
+    'game_migration_social_changed',
+    'game_migration_capture_changed',
+    'game_migration_preparation_changed',
+    'game_migration_authority_conflict',
+    'game_import_source_changed',
+    'game_import_altar_changed',
+    'game_import_device_clock_required',
+    'game_import_pending_altar',
+    'game_idempotency_conflict',
+    'game_client_upgrade_required',
+    'game_ruleset_mismatch',
+    'economy_rate_limited',
+  };
+
   Future<CanonicalGameHttpReply> _invoke(Map<String, dynamic> request,
       {String? expectedOwner}) async {
     final owner = currentOwner;
@@ -146,7 +232,7 @@ class CanonicalGameTransport implements CanonicalGameConnection {
         client = _clientFactory();
         _activeClients.add(client!);
         final outgoing = http.Request(
-            'POST', Uri.parse('$stagingUrl/functions/v1/execute-game-command'))
+            'POST', Uri.parse('$_baseUrl/functions/v1/execute-game-command'))
           ..followRedirects = false
           ..headers.addAll({
             'authorization': 'Bearer ${session.accessToken}',

@@ -83,6 +83,65 @@ void main() {
     await auth.dispose();
   });
 
+  test('production endpoint requires explicit production configuration',
+      () async {
+    expect(() => CanonicalGameTransport.production(auth, _config),
+        _error('game_production_required'));
+    await _signIn(auth, _owner);
+    final client = _TrackingClient((request) async {
+      expect(request.url.origin, OnlineConfig.productionUrl);
+      expect(request.followRedirects, isFalse);
+      return _response({'synthetic': true});
+    });
+    transport = CanonicalGameTransport.production(
+        auth,
+        const OnlineConfig(
+            url: OnlineConfig.productionUrl,
+            publishableKey: 'synthetic-production-public-key'),
+        httpClientFactory: () => client);
+    await transport!.read(_read);
+    expect(client.closed, isTrue);
+  });
+
+  test(
+      'migration sends only a durable ID/revision and requires a live owner receipt',
+      () async {
+    await _signIn(auth, _owner);
+    const migrationId = '33333333-3333-4333-8333-333333333333';
+    var mode = 'server';
+    final requests = <Map<String, dynamic>>[];
+    transport = CanonicalGameTransport.staging(auth, _config,
+        httpClientFactory: () => _TrackingClient((request) async {
+              requests.add(jsonDecode((request as http.Request).body)
+                  as Map<String, dynamic>);
+              return _response({
+                'protocol': 2,
+                'owner_id': _owner,
+                'request_id': migrationId,
+                'authority_mode': mode,
+                'phase': 'active',
+                'server_revision': 7,
+                'replayed': true
+              });
+            }));
+    expect(
+        await transport!
+            .migrateAccount(requestId: migrationId, sourceRevision: 12),
+        7);
+    expect(requests.single, {
+      'protocol': 2,
+      'clientBuild': AppInfo.buildNumber,
+      'action': 'migrate_account',
+      'requestId': migrationId,
+      'sourceRevision': 12
+    });
+    mode = 'shadow';
+    await expectLater(
+        transport!.migrateAccount(requestId: migrationId, sourceRevision: 12),
+        _error('game_migration_unavailable'));
+    expect(requests[1], requests[0]);
+  });
+
   test(
       'uses the confirmed Auth session, fixed staging endpoint and no redirect forwarding',
       () async {

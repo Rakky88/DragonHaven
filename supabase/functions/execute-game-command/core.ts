@@ -14,6 +14,7 @@ export interface Dependencies {
   rpc: (name: string, payload: JsonObject) => Promise<unknown>;
   evaluate: (input: JsonObject) => Promise<unknown>;
   project?: (input: JsonObject) => unknown;
+  prepareImport?: (input: JsonObject) => unknown;
 }
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -89,6 +90,18 @@ const databaseErrors = new Map<string, number>([
   ["game_command_busy", 409], ["game_revision_conflict", 409],
   ["game_pending_command_required", 409], ["game_lease_lost", 409],
   ["economy_rate_limited", 429],
+  ["game_migration_disabled", 503], ["game_migration_in_progress", 409],
+  ["game_migration_authority_conflict", 409], ["game_migration_trade_pending", 409],
+  ["game_migration_capture_changed", 409], ["game_migration_preparation_changed", 409],
+  ["game_migration_social_changed", 409], ["game_import_source_changed", 409],
+  ["game_import_altar_changed", 409], ["game_import_generation_changed", 409],
+  ["game_import_device_clock_required", 409], ["game_import_pending_altar", 409],
+  ["game_import_altar_invalid", 409], ["game_import_altar_snapshot_missing", 409],
+  ["game_import_altar_snapshot_stale", 409], ["game_import_foreign_altar", 409],
+  ["game_import_offline_altar_review", 409], ["game_import_owner_invalid", 409],
+  ["game_import_protected_return_conflict", 409], ["game_import_return_history_conflict", 409],
+  ["game_import_returned_dragon_conflict", 409], ["game_import_returned_nest_conflict", 409],
+  ["game_import_server_metadata_untrusted", 409],
 ]);
 
 // Only exact known SQL exception messages are surfaced. Request bodies, saves,
@@ -188,6 +201,14 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
   let input: unknown;
   try { input = await boundedJson(request.body, 8192); }
   catch { return error("game_request_invalid", 400); }
+  if (object(input) && input.action === "migrate_account") {
+    if (!exactKeys(input, ["protocol", "clientBuild", "action", "requestId", "sourceRevision"]) ||
+      input.protocol !== 2 || !positiveInteger(input.clientBuild) || input.clientBuild > 2147483647 ||
+      !positiveInteger(input.sourceRevision) || typeof input.requestId !== "string" || !uuid.test(input.requestId)) {
+      return error("game_request_invalid", 400);
+    }
+    return migrateAccount(owner, input.requestId, input.sourceRevision, input.clientBuild, deps);
+  }
   if (object(input) && input.action === "read_state") {
     if (!exactKeys(input, ["protocol", "clientBuild", "action"]) || input.protocol !== 2 ||
       !positiveInteger(input.clientBuild) || input.clientBuild > 2147483647) {
@@ -358,5 +379,67 @@ async function readState(owner: string, clientBuild: number, deps: Dependencies)
       return error(failure.code, databaseErrors.get(failure.code)!);
     }
     return error("game_snapshot_unavailable", 503);
+  }
+}
+
+// Auth supplies the owner. Only a database-captured immutable save and Altar
+// ledger enter the importer; the caller supplies a revision, never inventory.
+async function migrateAccount(owner: string, requestId: string, sourceRevision: number,
+  clientBuild: number, deps: Dependencies): Promise<Response> {
+  try {
+    if (!deps.prepareImport) throw new Error("preparation_missing");
+    const captured = await deps.rpc("begin_canonical_account_migration", {
+      p_owner_id:owner, p_request_id:requestId, p_source_revision:sourceRevision,
+      p_client_build:clientBuild, p_ruleset_sha256:deps.ruleset,
+    });
+    if (!object(captured) || captured.owner_id !== owner) throw new Error("invalid_capture");
+    if (captured.phase === "active" && positiveInteger(captured.server_revision)) {
+      return response({protocol:2, owner_id:owner, request_id:requestId, authority_mode:"server",
+        server_revision:captured.server_revision, phase:"active", replayed:true});
+    }
+    if (captured.phase !== "captured" || typeof captured.import_id !== "string" ||
+      !uuid.test(captured.import_id)) throw new Error("invalid_capture");
+    const input = await deps.rpc("get_canonical_game_import", {p_owner_id:owner});
+    if (!object(input) || input.owner_id !== owner || input.import_id !== captured.import_id ||
+      !positiveInteger(input.base_revision) || input.source_revision !== sourceRevision ||
+      typeof input.source_sha256 !== "string" || !hash.test(input.source_sha256) ||
+      typeof input.altar_sha256 !== "string" || !hash.test(input.altar_sha256) ||
+      typeof input.secret_seed !== "string" || !hash.test(input.secret_seed) ||
+      typeof input.now !== "string" || !Number.isFinite(Date.parse(input.now)) || !object(input.source) ||
+      (input.authoritative_altar !== null && !object(input.authoritative_altar))) throw new Error("invalid_import");
+    const prepared = deps.prepareImport({ownerId:owner, source:input.source, authoritativeAltar:input.authoritative_altar,
+      now:input.now, secretSeed:input.secret_seed});
+    if (object(prepared) && typeof prepared.error === "string" && databaseErrors.has(prepared.error)) {
+      throw new RpcFailure(prepared.error);
+    }
+    if (!object(prepared) || prepared.protocol !== 2 || !object(prepared.state) ||
+      !Array.isArray(prepared.changed_asset_kinds) || prepared.changed_asset_kinds.length > 100 ||
+      !prepared.changed_asset_kinds.every((kind) => typeof kind === "string" && /^[a-zA-Z][a-zA-Z0-9_]{0,79}$/.test(kind))) {
+      throw new Error("invalid_preparation");
+    }
+    const receipt = await deps.rpc("commit_canonical_game_preparation", {
+      p_owner_id:owner, p_import_id:input.import_id, p_expected_revision:input.base_revision,
+      p_ruleset_sha256:deps.ruleset, p_state:prepared.state, p_changed_asset_kinds:prepared.changed_asset_kinds,
+    });
+    if (!object(receipt) || receipt.owner_id !== owner || receipt.import_id !== input.import_id ||
+      receipt.authority_mode !== "shadow" || !positiveInteger(receipt.server_revision) ||
+      typeof receipt.state_sha256 !== "string" || !hash.test(receipt.state_sha256) ||
+      typeof receipt.replayed !== "boolean") throw new Error("invalid_preparation_receipt");
+    const activated = await deps.rpc("activate_canonical_account", {
+      p_owner_id:owner, p_request_id:requestId, p_import_id:input.import_id,
+      p_prepared_revision:receipt.server_revision, p_ruleset_sha256:deps.ruleset,
+    });
+    if (!object(activated) || activated.owner_id !== owner || activated.phase !== "active" ||
+      !positiveInteger(activated.server_revision) || activated.server_revision !== receipt.server_revision + 1 ||
+      typeof activated.replayed !== "boolean") throw new Error("invalid_activation");
+    return response({protocol:2, owner_id:owner, request_id:requestId, authority_mode:"server",
+      server_revision:activated.server_revision, phase:"active", replayed:activated.replayed});
+  } catch (failure) {
+    if (failure instanceof RpcFailure && databaseErrors.has(failure.code)) {
+      return error(failure.code, databaseErrors.get(failure.code)!);
+    }
+    // An activation may have committed before the connection was lost. A retry
+    // reads the durable active status and never repeats preparation or spending.
+    return error("game_migration_unavailable", 503);
   }
 }

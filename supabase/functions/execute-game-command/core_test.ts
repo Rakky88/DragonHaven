@@ -512,3 +512,70 @@ Deno.test("database server authority survives execution, replay, reads and recov
   }
   assert(inputs.length === 1);
 });
+
+const migrateBody = {protocol:2, clientBuild:10080, action:"migrate_account", requestId, sourceRevision:12};
+const migrationImport = {owner_id:owner, import_id:lease, base_revision:1, source_revision:12,
+  source_sha256:hash, altar_sha256:hash, secret_seed:hash, now:leased.now,
+  source:{private:"NEVER_EXPOSED_GENETICS"}, authoritative_altar:{private:"ALTAR_PRIVATE"}};
+
+Deno.test("account migration uses captured sources and recovers a lost activation without reimporting", async () => {
+  let active = false;
+  let preparations = 0;
+  const {deps, calls} = setup({
+    prepareImport: (input) => {
+      preparations++;
+      equal(input, {ownerId:owner, source:migrationImport.source,
+        authoritativeAltar:migrationImport.authoritative_altar, now:leased.now, secretSeed:hash});
+      return {protocol:2, state:{private:"PREPARED_GENETICS"}, changed_asset_kinds:["eggAltar"]};
+    },
+    rpc: async (name, payload) => {
+      calls.push({name,payload});
+      assert(payload.p_owner_id === owner);
+      if (name === "begin_canonical_account_migration") {
+        equal(payload, {p_owner_id:owner,p_request_id:requestId,p_source_revision:12,p_client_build:10080,p_ruleset_sha256:hash});
+        return active ? {owner_id:owner,phase:"active",server_revision:3} : {owner_id:owner,phase:"captured",import_id:lease};
+      }
+      if (name === "get_canonical_game_import") return migrationImport;
+      if (name === "commit_canonical_game_preparation") {
+        equal(payload, {p_owner_id:owner,p_import_id:lease,p_expected_revision:1,p_ruleset_sha256:hash,
+          p_state:{private:"PREPARED_GENETICS"},p_changed_asset_kinds:["eggAltar"]});
+        return {owner_id:owner,import_id:lease,authority_mode:"shadow",server_revision:2,state_sha256:hash,replayed:false};
+      }
+      if (name === "activate_canonical_account") {active=true; throw new Error("lost after committed activation");}
+      throw new Error("unexpected RPC");
+    },
+  });
+  assert((await handleCommand(request(migrateBody), deps)).status === 503);
+  const result = await handleCommand(request(migrateBody), deps);
+  assert(result.status === 200);
+  equal(await result.json(), {protocol:2,owner_id:owner,request_id:requestId,authority_mode:"server",
+    server_revision:3,phase:"active",replayed:true});
+  assert(preparations === 1 && calls.filter((c) => c.name === "activate_canonical_account").length === 1);
+});
+
+Deno.test("migration rejects client inventory, foreign imports and failed preparation before activation", async () => {
+  for (const extra of [{ownerId:other}, {state:{coins:999}}, {secretSeed:hash}, {now:leased.now}]) {
+    const {deps,calls} = setup({prepareImport:()=>{throw new Error("must not prepare");}});
+    assert((await handleCommand(request({...migrateBody,...extra}),deps)).status === 400);
+    equal(calls,[]);
+  }
+  for (const issue of ["foreign","stale","invalid-receipt","preparation"]) {
+    const touched:string[]=[];
+    const {deps} = setup({
+      prepareImport:()=> issue === "preparation" ? {error:"game_import_pending_altar"} :
+        {protocol:2,state:{private:true},changed_asset_kinds:[]},
+      rpc: async(name) => {
+        touched.push(name);
+        if (name === "begin_canonical_account_migration") return {owner_id:owner,phase:"captured",import_id:lease};
+        if (name === "get_canonical_game_import") return {...migrationImport,
+          owner_id:issue === "foreign" ? other : owner, source_revision:issue === "stale" ? 13 : 12};
+        if (name === "commit_canonical_game_preparation") return {owner_id:other,import_id:lease};
+        throw new Error("must not activate");
+      },
+    });
+    const result=await handleCommand(request(migrateBody),deps);
+    assert(result.status === (issue === "preparation" ? 409 : 503));
+    assert(!touched.includes("activate_canonical_account"));
+    assert(!(await result.text()).includes("GENETICS"));
+  }
+});

@@ -1,5 +1,15 @@
 # DragonHaven Redeem Codes
 
+The account handoff now has an authenticated Edge action and explicit client
+transport. Only the final cloud revision and a durable request UUID are sent;
+full saves, Altar facts and entropy come from the database. The importer and
+activation run server-side. Local tests cover a lost activation response, one
+retry without a second import, foreign/stale sources, failed preparation, strict
+receipt ownership/mode and fixed environment URLs; 27 Edge tests pass. A real
+staging activation/purchase probe is built (not yet run), including a lost reply
+at both transitions and preservation of the archived save/future metadata.
+The normal app boot still needs the final-upload/status/handoff UI integration.
+
 Candidate 79 adds dormant, service-only account capture/activation. Preparation
 still uses the immutable cloud/Altar generation and shared Dart importer. At
 promotion the source revision/hash, Altar ledger, normalized inventory, pending

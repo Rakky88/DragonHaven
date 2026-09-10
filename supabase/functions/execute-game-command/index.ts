@@ -1,5 +1,5 @@
 import { boundedJson, handleCommand, object, RpcFailure } from "./core.ts";
-import { evaluate, project, ruleset } from "./bundle.generated.ts";
+import { evaluate, project, prepareImport, ruleset } from "./bundle.generated.ts";
 
 const base = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -17,7 +17,7 @@ async function fetchJson(path: string, init: RequestInit, maximum: number) {
 }
 
 Deno.serve((request) => handleCommand(request, {
-  ruleset, evaluate, project,
+  ruleset, evaluate, project, prepareImport,
   authenticate: async (authorization) => {
     // Validate the token against Supabase Auth; never trust a decoded client
     // JWT, a caller-provided owner, or user-editable app/user metadata.

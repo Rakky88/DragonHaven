@@ -473,6 +473,9 @@ def main():
         from staging_seasonal_trial_probe import run_seasonal_trial_probe
         run_seasonal_trial_probe(root=ROOT, project=PROJECT, base=BASE, public_key=PUBLIC_KEY,
             run=RUN, fixture=fixture, admin_headers=admin_headers, call=call, query=query, require=require)
+        from staging_account_activation_probe import run_account_activation_probe
+        run_account_activation_probe(root=ROOT, project=PROJECT, base=BASE, public_key=PUBLIC_KEY,
+            run=RUN, fixture=fixture, admin_headers=admin_headers, call=call, query=query, require=require)
     finally:
         restore = "null" if old_ruleset is None else "'" + old_ruleset + "'"
         # The immutable run marker also finds an account whose admin-create
@@ -487,7 +490,7 @@ def main():
               raise exception 'probe_cleanup_runtime_changed';
             end if;
           end $$;
-          update private.game_engine_runtime set enabled=false, shadow_social_enabled=false, shadow_projection_enabled=false, shadow_lifecycle_enabled=false, ruleset_sha256={restore} where singleton;
+          update private.game_engine_runtime set enabled=false, shadow_social_enabled=false, shadow_projection_enabled=false, shadow_lifecycle_enabled=false, migration_enabled=false, ruleset_sha256={restore} where singleton;
           select set_config('request.jwt.claim.role','service_role',true);
           delete from public.conclaves where created_by in
             (select id from auth.users where raw_app_meta_data->>'dragonhaven_game_probe'='{RUN}'
@@ -499,10 +502,10 @@ def main():
             (select count(*) from private.canonical_game_states) as copies,
             (select count(*) from private.canonical_game_intents) as intents,
             (select count(*) from private.canonical_game_recoveries) as recoveries,
-            (select enabled or shadow_social_enabled or shadow_projection_enabled or shadow_lifecycle_enabled from private.game_engine_runtime where singleton) as enabled;
+            (select enabled or shadow_social_enabled or shadow_projection_enabled or shadow_lifecycle_enabled or migration_enabled from private.game_engine_runtime where singleton) as enabled;
         """)[0]
         require(cleaned == {"accounts": 0, "copies": 0, "intents": 0, "recoveries": 0, "enabled": False}, "probe_cleanup_incomplete")
-        print("CLEANUP: all synthetic accounts and shadow commands removed; all four worker/social switches disabled.", flush=True)
+        print("CLEANUP: all synthetic accounts and shadow commands removed; all five worker/social/migration switches disabled.", flush=True)
 
 
 if __name__ == "__main__":
