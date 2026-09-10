@@ -1,5 +1,13 @@
 /// German, Spanish, French, Italian, Portuguese, Japanese.
 const lifecyclePhraseTranslations = <String, List<String>>{
+  "Rewards ready": [
+    "Belohnungen bereit",
+    "Recompensas listas",
+    "Récompenses disponibles",
+    "Ricompense pronte",
+    "Recompensas prontas",
+    "報酬を受け取れます"
+  ],
   "Profile": ["Profil", "Perfil", "Profil", "Profilo", "Perfil", "プロフィール"],
   "Visit": ["Besuchen", "Visitar", "Visiter", "Visita", "Visitar", "訪問"],
   "No dragons here": [

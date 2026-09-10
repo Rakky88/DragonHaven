@@ -1,8 +1,11 @@
 /// Protocol identities shared by the client journal and server evaluator.
-/// No score, grant, entitlement or settlement command is accepted here.
+/// No score, reward amount, entitlement or unverified grant is accepted here.
 abstract final class GameCommandSchema {
   static const keys = <String, Set<String>>{
     'refresh': {},
+    'claim_group_reward': {'lobbyId'},
+    'claim_pair_reward': {'adventureId'},
+    'claim_podium_prize': {'prizeId'},
     'start_trial': {'offerId', 'dragonId'},
     'checkpoint_trial': {'attemptId', 'inputs', 'elapsedMs', 'finish'},
     'cancel_trial': {'attemptId'},

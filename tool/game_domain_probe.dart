@@ -1,3 +1,4 @@
+import 'social_claim_probe.dart';
 import 'care_command_probe.dart';
 import 'trial_command_probe.dart';
 import 'dart:convert';
@@ -181,6 +182,8 @@ Future<Map<String, dynamic>> runGameDomainProbe(
     }
     return {
       'school': school,
+      'socialClaims':
+          includeTrialCommands ? await socialClaimProbe(state, now) : const [],
       'careCommands':
           includeTrialCommands ? await careCommandProbe(state, now) : const [],
       'trialModels': trialModelProbe(),

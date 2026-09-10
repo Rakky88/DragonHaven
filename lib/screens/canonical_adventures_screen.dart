@@ -1,3 +1,4 @@
+import '../widgets/canonical_social_rewards.dart';
 import 'canonical_trials_screen.dart';
 import 'dart:async';
 
@@ -89,6 +90,7 @@ class _AdventuresState extends State<_Adventures> {
                           body: const CanonicalTrialsScreen()))),
               icon: const Icon(Icons.auto_awesome),
               label: Text(s.pick('Dragon Trials', 'Drakenproeven'))),
+          const CanonicalSocialRewards(),
           if (view.adventures.runs.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(s.pick('Active Adventures', 'Actieve avonturen'),

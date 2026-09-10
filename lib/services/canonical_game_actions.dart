@@ -91,6 +91,23 @@ class CanonicalGameActions {
   Future<void> releaseDragon(String id) =>
       _boolean('release_dragon', {'dragonId': id});
 
+  Future<void> claimGroupReward(String lobbyId) =>
+      _socialClaim('claim_group_reward', {'lobbyId': lobbyId}, lobbyId);
+  Future<void> claimPairReward(String adventureId) => _socialClaim(
+      'claim_pair_reward', {'adventureId': adventureId}, adventureId);
+  Future<void> claimPodiumPrize(String prizeId) =>
+      _socialClaim('claim_podium_prize', {'prizeId': prizeId}, prizeId);
+  Future<void> _socialClaim(
+      String action, Map<String, dynamic> payload, String sourceId) async {
+    final result = await execute(action, payload);
+    if (result is! Map ||
+        result['accepted'] != true ||
+        result['sourceId'] != sourceId ||
+        result['alreadyApplied'] is! bool) {
+      throw const CanonicalGameException('game_result_invalid');
+    }
+  }
+
   Future<void> selectPortrait(String id) =>
       _boolean('select_portrait', {'catalogId': id});
   Future<void> selectTitle(String id) =>

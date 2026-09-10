@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 560434c8f5bc036a -->
+<!-- reference-source-fingerprint: cae2bb1b02adcd22 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -834,3 +834,16 @@ cutoffs, event schedules, eggs, achievements and reward pools are unchanged.
 The eight seasonal sprite screens and the full eleven-Trial VM/Deno command
 comparison pass locally. This candidate is not yet a production economy cutover;
 legacy seasonal ranking/social settlement remains a separate integration gate.
+
+
+### Partner and podium claim authority candidate (10 September 2026)
+
+The canonical staging candidate now reads ready partner/podium claim identities
+from their server records and sends only the selected identity when claiming.
+The server seals the recipient and source facts, derives existing rewards using
+the shared game rules, and commits the grant with its claim acknowledgment in one
+transaction. Valentine remains 650 XP, +8 per expertise and its Twinheart chest;
+existing brooch/cap and preview policies still apply. Podium placements retain
+the existing fixed chest and seasonal medal emote. Both partner-ready notifications
+are preserved. No event schedule, egg, artwork, chest content or rank cutoff is
+changed by this component. Production remains legacy authority until full cutover.

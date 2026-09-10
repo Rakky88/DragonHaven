@@ -118,12 +118,12 @@ def main():
     require(sinister_egg is not None, "fixture_sinister_egg_missing")
     egg_id = sinister_egg["id"]
     require(re.fullmatch(r"[a-zA-Z0-9_-]{1,100}", egg_id) is not None, "fixture_identity_invalid")
-    baseline = query("""select r.enabled, r.ruleset_sha256,
+    baseline = query("""select r.enabled, r.shadow_social_enabled, r.ruleset_sha256,
         (select count(*) from private.canonical_game_states) as copies,
         (select mutations_enabled from private.economy_contract where singleton) as mutations,
         (select count(*) from public.player_economy_authority where authority_mode <> 'legacy_client') as promoted
         from private.game_engine_runtime r where singleton""", True)[0]
-    require(not baseline["enabled"] and baseline["copies"] == 0 and not baseline["mutations"]
+    require(not baseline["enabled"] and not baseline["shadow_social_enabled"] and baseline["copies"] == 0 and not baseline["mutations"]
             and baseline["promoted"] == 0, "probe_requires_empty_dormant_staging")
     old_ruleset = baseline["ruleset_sha256"]
     require(old_ruleset is None or re.fullmatch(r"[a-f0-9]{64}", old_ruleset), "probe_baseline_invalid")
@@ -361,6 +361,34 @@ def main():
             print("PASS: captured authoritative Altar prepared and replayed before game commands; no migration reward grant.", flush=True)
         print("PASS: authenticated public projection hides egg genetics, reflects committed actions and reads while mutations are paused.", flush=True)
         print("PASS: paused worker recovers original success/failure receipts and refuses new mutations.", flush=True)
+        # Separate server-owned, synthetic social sources. They are visible to
+        # this account but are not paid until the final UI claim section.
+        social_dragon = str(uuid.uuid4())
+        partner_dragon = str(uuid.uuid4())
+        group_source, pair_source, podium_source = (str(uuid.uuid4()) for _ in range(3))
+        query(f"""begin;
+          insert into public.player_dragons(id,owner_id,legacy_client_id,name,lineage_id,stage)
+            select '{social_dragon}','{owner}',state->'pet'->>'id','Social Probe',
+              state->'pet'->>'lineageId',state->'pet'->>'stage'
+              from private.canonical_game_states where owner_id='{owner}';
+          insert into public.player_dragons(id,owner_id,legacy_client_id,name,lineage_id,stage)
+            values('{partner_dragon}','{outsider}','synthetic-partner','Partner Probe','copperflame','hatchling');
+          insert into public.group_adventure_lobbies(id,slot,adventure_id,owner_id,status,required_players,
+            focus,base_duration_minutes,xp,stat_points,started_at,ends_at,chest_tier)
+            values('{group_source}',0,'group_1','{owner}','running',2,'spirit',60,400,5,
+              now()-interval '2 hours',now()-interval '1 hour','dragon');
+          insert into public.group_adventure_participants(lobby_id,user_id,dragon_id)
+            values('{group_source}','{owner}','{social_dragon}'),('{group_source}','{outsider}','{partner_dragon}');
+          insert into public.seasonal_pair_adventures(id,occurrence_key,creator_id,partner_id,
+            creator_dragon_id,partner_dragon_id,creator_might,creator_arcana,creator_spirit,
+            partner_might,partner_arcana,partner_spirit,status,started_at,ends_at)
+            select '{pair_source}','valentine_two_heartlights:synthetic:{RUN}','{owner}','{outsider}',
+              state->'pet'->>'id','synthetic-partner',10,10,10,10,10,10,'running',
+              now()-interval '2 hours',now()-interval '1 hour' from private.canonical_game_states where owner_id='{owner}';
+          insert into public.seasonal_event_prizes(id,event_id,occurrence_key,user_id,ranking_position,score,podium_emote_id)
+            values('{podium_source}','sunwake_summer_sea','sunwake_summer_sea:synthetic:{RUN}','{owner}',1,30000,'seasonal_sunwake_gold');
+          update private.game_engine_runtime set shadow_social_enabled=true where singleton;
+          commit;""")
         # Exercise the actual Flutter SDK transport/session and filesystem
         # journals. This child receives no management/service/database secrets.
         query('update private.game_engine_runtime set enabled=true where singleton')
@@ -397,6 +425,20 @@ def main():
         require('PASS: real milestone UI;' in client_result.stdout, 'client_probe_milestone_proof_missing')
         require('PASS: real Academy UI;' in client_result.stdout, 'client_probe_school_proof_missing')
         require('PASS: real Trial selection' in client_result.stdout, 'client_probe_trial_proof_missing')
+        require('PASS: real social claim UI;' in client_result.stdout, 'client_probe_social_proof_missing')
+        social_ack = query(f"""select
+          (select reward_acknowledged_at is not null from public.group_adventure_participants
+            where lobby_id='{group_source}' and user_id='{owner}') as own_group,
+          (select reward_acknowledged_at is null from public.group_adventure_participants
+            where lobby_id='{group_source}' and user_id='{outsider}') as partner_group,
+          (select creator_reward_claimed_at is not null and partner_reward_claimed_at is null and status='reward_ready'
+            from public.seasonal_pair_adventures where id='{pair_source}') as pair,
+          (select claimed_at is not null from public.seasonal_event_prizes where id='{podium_source}') as podium,
+          (select count(*) from public.social_notifications where entity_id='{pair_source}' and kind='seasonal_pair_ready') as notifications
+        """, True)[0]
+        require(social_ack == {'own_group': True, 'partner_group': True, 'pair': True, 'podium': True, 'notifications': 2},
+                'client_probe_social_ack_failed')
+        print('PASS: actual social reward UI; group, partner and podium rewards committed once with their source acknowledgments.', flush=True)
         require('PASS: real preferences UI;' in client_result.stdout, 'client_probe_preferences_proof_missing')
         unchanged = query(f"""select
           (select s.state=i.source_state and s.revision=i.source_revision
@@ -430,7 +472,7 @@ def main():
               raise exception 'probe_cleanup_runtime_changed';
             end if;
           end $$;
-          update private.game_engine_runtime set enabled=false, ruleset_sha256={restore} where singleton;
+          update private.game_engine_runtime set enabled=false, shadow_social_enabled=false, ruleset_sha256={restore} where singleton;
           delete from auth.users where raw_app_meta_data->>'dragonhaven_game_probe'='{RUN}'
             and email like '%@dragonhaven-probe.invalid';
           commit;
@@ -438,7 +480,7 @@ def main():
             (select count(*) from private.canonical_game_states) as copies,
             (select count(*) from private.canonical_game_intents) as intents,
             (select count(*) from private.canonical_game_recoveries) as recoveries,
-            (select enabled from private.game_engine_runtime where singleton) as enabled;
+            (select enabled or shadow_social_enabled from private.game_engine_runtime where singleton) as enabled;
         """)[0]
         require(cleaned == {"accounts": 0, "copies": 0, "intents": 0, "recoveries": 0, "enabled": False}, "probe_cleanup_incomplete")
         print("CLEANUP: both synthetic accounts and shadow commands removed; game worker disabled.", flush=True)

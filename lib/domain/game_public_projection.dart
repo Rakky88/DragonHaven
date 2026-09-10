@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import '../models/adventure.dart';
+import '../models/social_reward_claim.dart';
 import '../models/dragon_egg.dart';
 import '../models/egg_altar.dart';
 import '../models/game_presentation.dart';
@@ -17,6 +18,7 @@ abstract final class GamePublicProjection {
     required Map<String, dynamic> state,
     required String ownerId,
     required DateTime now,
+    List<dynamic> verifiedSocialClaims = const [],
   }) {
     if (state['pendingAltarOperation'] != null) {
       throw const FormatException('Unresolved Altar operation');
@@ -155,6 +157,10 @@ abstract final class GamePublicProjection {
           'seasonalPodiumEmoteWinCounts',
         ]),
         'adventures': {
+          'socialClaims': [
+            for (final c in SocialRewardClaim.parseList(verifiedSocialClaims))
+              c.toJson()
+          ],
           ..._select(exported, const [
             'adventureOptionIds',
             'miniAdventureRefilledAt',

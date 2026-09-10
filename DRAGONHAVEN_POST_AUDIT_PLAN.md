@@ -2457,3 +2457,38 @@ and rankings, trade presentation, import/calendar reconciliation, full gameplay
 routing and migration/cutover recovery, then quality-preserving APK reduction.
 Version remains 0.05.29 / 10079; production remains schema 65 and legacy-owned.
 The user explicitly requested all of this before the next release.
+
+
+## Social source claims candidate — 10 September 2026
+
+Migration 67 and the shared command engine add group/partner/podium claims using
+facts sealed from their normalized server sources. A client supplies only the
+source ID. Commit rechecks the source under lock and stores canonical inventory
+with the source acknowledgment in the same SQL transaction. Changed/claimed or
+foreign sources and early claims fail without a grant. Replays recover the same
+receipt. A known SQL rollback is durably refused; an ambiguous timeout retains
+the original request. Shadow social actions default off. No production authority
+is activated. Ready claim cards use explicitly projected identities, never raw
+source rewards or private lease context, and clear on account change.
+
+Five domain tests, two projection/widget tests, clean analysis and 20 Edge tests
+pass. Six social claim/replay cases join the eleven-Trial/care parity probe:
+VM/Deno outputs match exactly; probe bundle 1,145,723 bytes, Deno about 901 ms.
+The full suite and migration-67 rollback/actual-server rehearsals are still pending.
+The actual staging harness now checks all three claim cards and their exact XP,
+chests/emote, then independently checks the source acknowledgment rows and the
+unchanged partner claim. It retains cleanup of synthetic users and disables both
+worker and shadow-social switches, including on failure.
+
+Trial/care integration is still not signed off: run 34457265872 reached a verified
+Trial result but its combined assertion failed. Run 34458729595 isolated this to
+a renderer exception; reserved attempt, consumed offer, result dialog and exact XP
+passed. Both runs cleaned all synthetic state and disabled the worker. The latest
+harness classifies renderer errors without logging SDK/session data. Run 34459977706
+was cancelled during setup before server work; replacement 34460031303 is pending.
+
+Still open: complete real Trial/care/social evidence, canonical group/partner
+lifecycle and reservations, trades and reveal, Beacon/rankings, normalized mirrors,
+legacy timestamp/import reconciliation, complete gameplay routing and safe live
+cutover/rollback. Lossless APK reduction follows those gates. App version remains
+0.05.29 / 10079; production remains schema 65, staging currently schema 66.

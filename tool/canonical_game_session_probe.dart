@@ -1,3 +1,4 @@
+import 'package:dragon_haven/models/social_reward_claim.dart';
 import 'package:dragon_haven/models/game_presentation.dart';
 import 'package:dragon_haven/screens/canonical_profile_screen.dart';
 import 'package:dragon_haven/widgets/canonical_milestones.dart';
@@ -788,8 +789,9 @@ void main() {
           ('was disposed', 'disposed'),
           ('Multiple widgets used the same GlobalKey', 'global_key'),
         ]) {
-          if (detail.contains(needle))
+          if (detail.contains(needle)) {
             stdout.writeln('PROBE: trial_render_$label');
+          }
         }
         throw StateError('client_probe_trial_render_error');
       }
@@ -837,6 +839,57 @@ void main() {
           'client_probe_milestone_acknowledged');
       stdout.writeln(
           'PASS: real milestone UI; existing achievement scene acknowledged without repeating its reward.');
+      stdout.writeln('PROBE: ui_social_start');
+      await mount(const CanonicalAdventuresScreen());
+      final pendingClaims = game.snapshot!.adventures.socialClaims;
+      require(pendingClaims.length == 3, 'client_probe_social_sources_missing');
+      for (final claim in pendingClaims) {
+        final previous = game.snapshot!;
+        final priorDragon =
+            claim.dragonId == null ? null : previous.dragon(claim.dragonId!);
+        await tap(key('canonical-social-claim-${claim.id}'));
+        await settleCommand();
+        await tester.pump();
+        final current = game.snapshot!;
+        require(!current.adventures.socialClaims.any((c) => c.id == claim.id),
+            'client_probe_social_claim_not_removed');
+        final twinstar =
+            previous.inventory.equipment[MysticRelic.twinstarBrooch] ==
+                    claim.dragonId
+                ? 2
+                : 1;
+        switch (claim.kind) {
+          case SocialRewardKind.group:
+            require(
+                current.dragon(claim.dragonId!)!.xp ==
+                        priorDragon!.xp + 400 * twinstar &&
+                    (current.shop.chests['dragon'] ?? 0) ==
+                        (previous.shop.chests['dragon'] ?? 0) + 1,
+                'client_probe_group_reward');
+          case SocialRewardKind.pair:
+            require(
+                current.dragon(claim.dragonId!)!.xp ==
+                        priorDragon!.xp + 650 * twinstar &&
+                    (current.shop
+                                .specialChests['twinheart_keepsake_chest_v1'] ??
+                            0) ==
+                        (previous.shop.specialChests[
+                                    'twinheart_keepsake_chest_v1'] ??
+                                0) +
+                            1,
+                'client_probe_pair_reward');
+          case SocialRewardKind.podium:
+            require(
+                (current.shop.chests['mythical'] ?? 0) ==
+                        (previous.shop.chests['mythical'] ?? 0) + 1 &&
+                    current.data['collection']['ownedDragonEmoteIds']
+                        .contains('seasonal_sunwake_gold'),
+                'client_probe_podium_reward');
+        }
+      }
+      require(tester.takeException() == null, 'client_probe_social_render');
+      stdout.writeln(
+          'PASS: real social claim UI; three server-owned sources, exact XP/chests and one podium emote.');
     } finally {
       stdout.writeln('PROBE: ui_cleanup_start');
       await tester.pumpWidget(const SizedBox.shrink());

@@ -22,6 +22,8 @@ class CanonicalUiServer {
   Future<void>? hold;
   final receipts = <String, Map<String, dynamic>>{};
   final sent = <CanonicalGameIntent>[];
+  final socialContexts = <String, Map<String, dynamic>>{};
+  final socialOffers = <Map<String, dynamic>>[];
   String get hash => sha256.convert(utf8.encode(jsonEncode(state))).toString();
   Map<String, dynamic> get wire => {
         'protocol': 2,
@@ -34,7 +36,10 @@ class CanonicalUiServer {
         'mutations_enabled': enabled,
         'server_time': now.toIso8601String(),
         'data': GamePublicProjection.project(
-            state: state, ownerId: owner, now: now),
+            state: state,
+            ownerId: owner,
+            now: now,
+            verifiedSocialClaims: socialOffers),
       };
   Future<CanonicalGameHttpReply> send(CanonicalGameIntent intent) async {
     sent.add(intent);
@@ -64,7 +69,11 @@ class CanonicalUiServer {
               .convert(utf8.encode('fixture:${intent.requestId}'))
               .toString(),
           now: now,
-          keeperId: owner);
+          keeperId: owner,
+          verifiedSocialContext:
+              intent.action.startsWith('claim_') && intent.payload.length == 1
+                  ? socialContexts[intent.payload.values.single]
+                  : null);
     } on GameCommandException catch (error) {
       final receipt = receipts[intent.requestId] = {
         'request_id': intent.requestId,
@@ -74,6 +83,12 @@ class CanonicalUiServer {
       return CanonicalGameHttpReply(422, receipt);
     }
     state = result['state'] as Map<String, dynamic>;
+    if (const {'claim_group_reward', 'claim_pair_reward', 'claim_podium_prize'}
+        .contains(intent.action)) {
+      final id = intent.payload.values.single;
+      socialContexts.remove(id);
+      socialOffers.removeWhere((offer) => offer['id'] == id);
+    }
     revision++;
     final receipt = receipts[intent.requestId] = {
       'protocol': 2,

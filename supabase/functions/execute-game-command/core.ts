@@ -21,6 +21,7 @@ const hash = /^[0-9a-f]{64}$/;
 const encoder = new TextEncoder();
 const commandKeys: Record<string, readonly string[]> = {
   start_trial: ["offerId", "dragonId"],
+  claim_group_reward: ["lobbyId"], claim_pair_reward: ["adventureId"], claim_podium_prize: ["prizeId"],
   checkpoint_trial: ["attemptId", "inputs", "elapsedMs", "finish"],
   cancel_trial: ["attemptId"],
   start_school: ["gameId", "dragonIds", "mentorId"],
@@ -52,7 +53,8 @@ const commandKeys: Record<string, readonly string[]> = {
 };
 
 export const domainErrors = new Set([
-  "game_action_unavailable", "game_attempt_unavailable", "game_attempt_time_invalid",
+  "game_action_unavailable", "game_social_claim_unavailable", "game_social_state_changed",
+  "game_attempt_unavailable", "game_attempt_time_invalid",
   "game_attempt_state_changed", "game_attempt_in_progress",
   "game_attempt_input_limit", "game_attempt_incomplete",
   "invalid_command", "invalid_argument", "unknown_item", "special_chest_id_required",
@@ -205,7 +207,8 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
     }
     // These inputs come exclusively from Auth and the private database lease.
     const evaluated = await deps.evaluate({ state: leased.state, action: command.action,
-      payload: command.payload, secretSeed: leased.secret_seed, now: leased.now, keeperId: owner });
+      payload: command.payload, secretSeed: leased.secret_seed, now: leased.now, keeperId: owner,
+      verifiedSocialContext: leased.social_context ?? null });
     if (!object(evaluated)) throw new Error("invalid_evaluation");
     if (typeof evaluated.error === "string" && domainErrors.has(evaluated.error)) {
       const recorded = await deps.rpc("fail_canonical_game_command", {
@@ -218,10 +221,23 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
     if (evaluated.protocol !== 2 || !object(evaluated.state) || !Object.hasOwn(evaluated, "result")) {
       throw new Error("invalid_evaluation");
     }
-    const committed = await deps.rpc("commit_canonical_game_command", {
-      p_owner_id: owner, p_request_id: command.requestId, p_lease_token: leased.lease_token,
-      p_state: evaluated.state, p_result: evaluated.result,
-    });
+    let committed;
+    try {
+      committed = await deps.rpc("commit_canonical_game_command", {
+        p_owner_id: owner, p_request_id: command.requestId, p_lease_token: leased.lease_token,
+        p_state: evaluated.state, p_result: evaluated.result,
+      });
+    } catch (failure) {
+      // This exact SQL refusal rolls the entire commit back. Unlike a timeout,
+      // it proves no reward was granted; fence the now-obsolete social claim.
+      if (!(failure instanceof RpcFailure) || failure.code !== "game_social_state_changed") throw failure;
+      const recorded = await deps.rpc("fail_canonical_game_command", {
+        p_owner_id: owner, p_request_id: command.requestId, p_lease_token: leased.lease_token,
+        p_failure_code: failure.code,
+      });
+      if (recorded !== true) throw new RpcFailure("game_lease_lost");
+      return response({error: failure.code, request_id: command.requestId, replayed: false}, 422);
+    }
     const saved = receipt(committed, owner, command);
     if (saved.server_revision !== leased.base_revision + 1) throw new Error("invalid_committed_revision");
     return response({ ...saved, replayed: false });
@@ -269,7 +285,8 @@ async function readState(owner: string, clientBuild: number, deps: Dependencies)
       typeof snapshot.server_time !== "string" || !Number.isFinite(Date.parse(snapshot.server_time))) {
       throw new Error("invalid_snapshot");
     }
-    const data = deps.project({ state: snapshot.state, ownerId: owner, now: snapshot.server_time });
+    const data = deps.project({ state: snapshot.state, ownerId: owner, now: snapshot.server_time,
+      verifiedSocialClaims: snapshot.social_claims ?? [] });
     if (object(data) && data.error === "game_state_reconciliation_required") {
       return error("game_state_reconciliation_required", 409);
     }

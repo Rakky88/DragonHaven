@@ -28,6 +28,8 @@ String _project(String input) {
     return jsonEncode(GamePublicProjection.project(
       state: data['state'] as Map<String, dynamic>,
       ownerId: data['ownerId'] as String,
+      verifiedSocialClaims:
+          data['verifiedSocialClaims'] as List<dynamic>? ?? const [],
       now: DateTime.parse(data['now'] as String),
     ));
   } on FormatException {
@@ -68,6 +70,8 @@ Future<JSString> _execute(String input) async {
       secretSeed: data['secretSeed'] as String,
       now: DateTime.parse(data['now'] as String),
       keeperId: data['keeperId'] as String,
+      verifiedSocialContext:
+          data['verifiedSocialContext'] as Map<String, dynamic>?,
     ))
         .toJS;
   } on GameCommandException catch (error) {

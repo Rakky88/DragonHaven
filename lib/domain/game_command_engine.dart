@@ -1,3 +1,4 @@
+import 'social_claims.dart';
 import 'dart:convert';
 
 import '../models/adventure.dart';
@@ -28,6 +29,7 @@ abstract final class GameCommandEngine {
     required String secretSeed,
     required DateTime now,
     required String keeperId,
+    Map<String, dynamic>? verifiedSocialContext,
   }) async {
     final keys = GameCommandSchema.keys[action];
     if (keys == null ||
@@ -66,10 +68,23 @@ abstract final class GameCommandEngine {
           }.contains(action)) {
         throw const GameCommandException('game_attempt_in_progress');
       }
-      // Scores, reward amounts, paid entitlements, trade settlements and social
-      // claims are deliberately absent. They need verified server records.
+      // Scores and reward amounts never come from a player. Social claims use
+      // separately sealed database facts; paid entitlements remain absent.
       final Object? result;
       switch (action) {
+        case 'claim_group_reward':
+        case 'claim_pair_reward':
+        case 'claim_podium_prize':
+          result = await SocialClaims.apply(
+              game: game,
+              ownerId: keeperId,
+              action: action,
+              sourceId: args.text(switch (action) {
+                'claim_group_reward' => 'lobbyId',
+                'claim_pair_reward' => 'adventureId',
+                _ => 'prizeId',
+              }),
+              context: verifiedSocialContext);
         case 'refresh':
           if (activeAttempt == null) await game.refreshForCurrentDate();
           result = true;
@@ -373,6 +388,8 @@ abstract final class GameCommandEngine {
             '_lastGameResult': lastGameResult,
         }
       };
+    } on SocialClaimException catch (error) {
+      throw GameCommandException(error.code);
     } on TrialAttemptException catch (error) {
       throw GameCommandException(error.code);
     } on SchoolAttemptException catch (error) {

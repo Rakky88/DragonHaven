@@ -6,7 +6,7 @@ Ruleset: v0.05.29 published and verified; staging and production schema 65 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 6e2727e73c3c8ac4 -->
+<!-- reference-source-fingerprint: d8f28e7deb334fac -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -998,3 +998,18 @@ its 95% Dragon / 5% Mythical chest pool and once-only ready flag are unchanged.
 Abandoning a reserved Trial grants nothing. Existing event-preview Trials retain
 normal permanent Trial rewards. The full command results and private checkpoints
 agree in VM/Deno tests; live social settlement and account cutover are pending.
+
+
+### Atomic social claim candidate (10 September 2026)
+
+Group rewards consume the lobby's stored chest tier; claiming does not reroll
+its 70% Gold / 25% Dragon / 5% Mythical result. The shared command applies the
+stored XP/focus/stat reward and existing equipped-brooch multipliers/caps once.
+Valentine partner claims retain 650 XP, +8 Might/Arcana/Spirit, the Twinheart
+Keepsake chest and the existing preview-reward policy. Podium claims retain
+first/second/third Mythical/Dragon/Gold chests and the corresponding event emote.
+No drop odds, no-duplicate rule, chest contents or redemption reward changes.
+The candidate seals owner/source facts at reservation and atomically commits
+inventory plus the normalized source acknowledgment. A changed source is refused
+without paying. Shadow social claims are disabled except explicit staging tests;
+full social lifecycle, migration and live authority activation remain pending.

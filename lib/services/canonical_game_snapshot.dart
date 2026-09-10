@@ -1,3 +1,4 @@
+import '../models/social_reward_claim.dart';
 import '../models/game_presentation.dart';
 import '../models/trial_dragon.dart';
 import 'dart:convert';
@@ -711,10 +712,12 @@ class CanonicalAdventuresView {
       'miniAdventureRefilledAt',
       'shortAdventureRefilledAt',
       'longAdventureRefillDay',
+      'socialClaims',
       'runs'
     ])) {
       _invalid();
     }
+    socialClaims = SocialRewardClaim.parseList(data['socialClaims']);
     final rawOptions = _map(data['adventureOptionIds']);
     options = Map.unmodifiable({
       for (final entry in rawOptions.entries)
@@ -744,6 +747,7 @@ class CanonicalAdventuresView {
   }
   late final Map<String, List<String>> options;
   late final List<CanonicalAdventureRun> runs;
+  late final List<SocialRewardClaim> socialClaims;
   List<String> offers(AdventureKind kind) => options[kind.name] ?? const [];
   CanonicalAdventureRun? run(String id) =>
       runs.where((r) => r.id == id).firstOrNull;

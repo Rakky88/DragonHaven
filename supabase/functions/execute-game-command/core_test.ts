@@ -79,7 +79,7 @@ Deno.test("read uses Auth owner and public projection while mutations are disabl
       return readSnapshot;
     },
     project: (input) => {
-      equal(input, { state: readSnapshot.state, ownerId: owner, now: readSnapshot.server_time });
+      equal(input, { state: readSnapshot.state, ownerId: owner, now: readSnapshot.server_time, verifiedSocialClaims: [] });
       return publicData;
     },
     evaluate: () => { throw new Error("a read cannot evaluate commands"); },
@@ -126,7 +126,7 @@ Deno.test("a command uses authenticated owner and private lease inputs, and retu
   const text = await result.text();
   assert(!text.includes("private") && !text.includes("secret_seed") && !text.includes("lease_token"));
   equal(inputs, [{ state: leased.state, action: body.action, payload: body.payload,
-    secretSeed: hash, now: leased.now, keeperId: owner }]);
+    secretSeed: hash, now: leased.now, keeperId: owner, verifiedSocialContext: null }]);
   equal(calls.map((call) => call.name), ["begin_revisioned_game_command", "commit_canonical_game_command"]);
   assert(calls.every((call) => call.payload.p_owner_id === owner));
   assert(calls[0].payload.p_expected_revision === 2);
@@ -341,6 +341,51 @@ Deno.test("cosmetic and milestone commands cannot import ownership, cooldowns or
       const denied = setup();
       assert((await handleCommand(request({...body, action, payload: {...payload, ...extra}}), denied.deps)).status === 400);
       equal(denied.calls, []);
+    }
+  }
+});
+
+Deno.test("social claims use only the sealed database context and reject client grants", async () => {
+  for (const [action, payload] of [
+    ["claim_group_reward", {lobbyId: other}], ["claim_pair_reward", {adventureId: other}],
+    ["claim_podium_prize", {prizeId: other}],
+  ] as const) {
+    const context = {version: 1, ownerId: owner, action, sourceId: other, fingerprint: hash, facts: {xp: 400}};
+    const {deps, inputs, calls} = setup();
+    const original = deps.rpc;
+    deps.rpc = async (name, p) => name === "begin_revisioned_game_command"
+      ? {...leased, social_context: context} : original(name, p);
+    const result = await handleCommand(request({...body, action, payload}), deps);
+    assert(result.status === 200);
+    equal(inputs[0].verifiedSocialContext, context);
+    assert(!(await result.text()).includes("fingerprint"));
+    for (const forged of [{...body, action, payload, verifiedSocialContext: context},
+      {...body, action, payload: {...payload, context}},
+      {...body, action, payload: {...payload, xp: 5000}}]) {
+      const before = calls.length;
+      assert((await handleCommand(request(forged), deps)).status === 400);
+      assert(calls.length === before);
+    }
+  }
+});
+
+Deno.test("changed social sources are terminal only after SQL proves rollback", async () => {
+  for (const knownRollback of [true, false]) {
+    const {deps, calls} = setup();
+    const original = deps.rpc;
+    deps.rpc = async (name, p) => {
+      if (name === "commit_canonical_game_command") {
+        if (knownRollback) throw new RpcFailure("game_social_state_changed");
+        throw new Error("network lost after a possible commit");
+      }
+      return original(name, p);
+    };
+    const result = await handleCommand(request({...body, action: "claim_group_reward", payload: {lobbyId: other}}), deps);
+    assert(result.status === (knownRollback ? 422 : 503));
+    assert(calls.some(c => c.name === "fail_canonical_game_command") === knownRollback);
+    if (knownRollback) {
+      equal(await result.json(), {error: "game_social_state_changed", request_id: requestId, replayed: false});
+      assert(calls.at(-1)?.payload.p_lease_token === lease);
     }
   }
 });

@@ -15,6 +15,8 @@ const specialContentReference = ReferenceDocumentSpec(
   documentPath: 'SPECIAL_EVENTS_CHESTS_AND_EGGS.md',
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
+    'lib/domain/social_claims.dart',
+    'supabase/migrations/202609100067_canonical_social_claims.sql',
     'lib/domain/school_attempts.dart',
     'lib/domain/trial_attempts.dart',
     'lib/models/trial_run_model.dart',
@@ -102,6 +104,8 @@ const randomRewardsReference = ReferenceDocumentSpec(
   documentPath: 'RANDOM_REWARDS_AND_ODDS.md',
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
+    'lib/domain/social_claims.dart',
+    'supabase/migrations/202609100067_canonical_social_claims.sql',
     'lib/domain/school_attempts.dart',
     'lib/domain/trial_attempts.dart',
     'lib/models/trial_run_model.dart',
