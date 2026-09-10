@@ -54,7 +54,7 @@ create trigger canonical_showcase_write before insert or update or delete on pub
 create function private.project_canonical_social_state(
   p_owner_id uuid, p_state jsonb, p_revision bigint, p_hash text, p_at timestamptz
 ) returns void language plpgsql security definer set search_path = '' as $$
-declare residents jsonb; dragon jsonb; favorite jsonb; normal_forms text[]; spectral_forms text[];
+declare residents jsonb; dragon jsonb; v_favorite jsonb; normal_forms text[]; spectral_forms text[];
   current_projection private.canonical_social_projections%rowtype;
   cavern bigint; breaker bigint; weaver bigint;
 begin
@@ -99,7 +99,7 @@ begin
         stage=excluded.stage,xp=excluded.xp,might=excluded.might,arcana=excluded.arcana,spirit=excluded.spirit,
         evolution_path=excluded.evolution_path,favorite=excluded.favorite,prismatic=excluded.prismatic,
         sinister=excluded.sinister,canonical_owned=true,updated_at=p_at;
-    if (dragon->>'favorite')::boolean then favorite := dragon; end if;
+    if (dragon->>'favorite')::boolean then v_favorite := dragon; end if;
   end loop;
   insert into public.player_wallets(user_id,coins,gems,revision,updated_at)
     values(p_owner_id,(p_state->'pet'->>'coins')::bigint,(p_state->'pet'->>'gems')::bigint,p_revision,p_at)
@@ -120,12 +120,12 @@ begin
       favorite_dragon_prismatic,favorite_dragon_sinister,favorite_dragon_cavern_flight_best,
       favorite_dragon_ruin_breaker_best,favorite_dragon_runeweaver_best,updated_at)
     values(p_owner_id,cardinality(normal_forms),normal_forms,spectral_forms,cavern,breaker,weaver,
-      favorite->>'id',favorite->>'name',favorite->>'lineageId',favorite->>'stage',(favorite->>'xp')::integer,
-      (favorite->'training'->>'might')::integer,(favorite->'training'->>'arcana')::integer,
-      (favorite->'training'->>'spirit')::integer,coalesce(favorite->>'evolutionPath','spirit'),
-      coalesce((favorite->>'spectral')::boolean,(favorite->>'prismatic')::boolean),
-      (favorite->>'sinister')::boolean,(favorite->'trialHighScores'->>'cavernFlight')::bigint,
-      (favorite->'trialHighScores'->>'ruinBreaker')::bigint,(favorite->'trialHighScores'->>'runeweaver')::bigint,p_at)
+      v_favorite->>'id',v_favorite->>'name',v_favorite->>'lineageId',v_favorite->>'stage',(v_favorite->>'xp')::integer,
+      (v_favorite->'training'->>'might')::integer,(v_favorite->'training'->>'arcana')::integer,
+      (v_favorite->'training'->>'spirit')::integer,coalesce(v_favorite->>'evolutionPath','spirit'),
+      coalesce((v_favorite->>'spectral')::boolean,(v_favorite->>'prismatic')::boolean),
+      (v_favorite->>'sinister')::boolean,(v_favorite->'trialHighScores'->>'cavernFlight')::bigint,
+      (v_favorite->'trialHighScores'->>'ruinBreaker')::bigint,(v_favorite->'trialHighScores'->>'runeweaver')::bigint,p_at)
     on conflict(user_id) do update set discovered_dragon_count=excluded.discovered_dragon_count,
       discovered_forms=excluded.discovered_forms,prismatic_forms=excluded.prismatic_forms,
       cavern_flight_best=excluded.cavern_flight_best,ruin_breaker_best=excluded.ruin_breaker_best,

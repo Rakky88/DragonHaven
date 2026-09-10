@@ -38,6 +38,9 @@ try {
   if ($detail -match '\b(game_[a-z_]+|invalid_profile|invalid_group_dragon|economy_server_inventory_required)\b') {
     Write-Output "Fixed database error: $($Matches[1])"
   }
+  if ($detail -match 'column reference [\\]*"([a-z_][a-z_0-9]{0,62})[\\]*" is ambiguous') {
+    Write-Output "Ambiguous SQL identifier: $($Matches[1])"
+  }
   foreach ($classification in @('does not exist','ambiguous','violates not-null','violates check','syntax error','permission denied','timeout','deadlock')) {
     if ($detail.Contains($classification)) { Write-Output "SQL classification: $classification" }
   }
