@@ -1,6 +1,6 @@
-"""Focused client proof against the already-deployed schema-73 worker.
+"""Focused client proof against the already-deployed schema-74 worker.
 
-The pinned ruleset was built by full staging run 34477912601 on 8716db0.
+The pinned ruleset was built by full staging run 34486928336 on 9e2d4f9.
 This runner deploys no code and applies no migration; all state is synthetic.
 """
 import json
@@ -10,8 +10,9 @@ import staging_game_worker_probe as probe
 from staging_group_probe import run_group_probe
 from staging_pair_probe import run_pair_probe
 from staging_beacon_probe import run_beacon_probe
+from staging_trade_probe import run_trade_probe
 
-RULESET = '643da93847b20c1306bad8d67082c23cbd32767571b602cdde4092b8efe13163'
+RULESET = '8f1bec0ba7f96cafc8fcce85c35ce29821e9ed24c2387ed6883e39b6d3be786c'
 
 def main():
     p = probe
@@ -19,8 +20,8 @@ def main():
       and p.MANAGEMENT and p.PUBLIC_KEY, 'group_probe_registered_staging_required')
     versions = p.query('select version from supabase_migrations.schema_migrations order by version', True)
     expected = sorted(path.name.split('_')[0] for path in (p.ROOT/'supabase/migrations').glob('*.sql')
-      if path.name.split('_')[0] <= '202609100073')
-    p.require([row['version'] for row in versions] == expected and len(expected) == 73, 'group_probe_schema_mismatch')
+      if path.name.split('_')[0] <= '202609100074')
+    p.require([row['version'] for row in versions] == expected and len(expected) == 74, 'group_probe_schema_mismatch')
     baseline=p.query("""select enabled or shadow_social_enabled or shadow_projection_enabled or shadow_lifecycle_enabled as enabled,
       ruleset_sha256,(select count(*) from private.canonical_game_states) as copies,
       (select mutations_enabled from private.economy_contract where singleton) as mutations
@@ -35,8 +36,8 @@ def main():
     try:
       p.query(f"update private.game_engine_runtime set enabled=true,ruleset_sha256='{RULESET}' where singleton")
       mode=p.os.environ.get('STAGING_SOCIAL_PROBE','group')
-      p.require(mode in ('group','pair','beacon'),'social_probe_mode_invalid')
-      run_probe={'group':run_group_probe,'pair':run_pair_probe,'beacon':run_beacon_probe}[mode]
+      p.require(mode in ('group','pair','beacon','trade'),'social_probe_mode_invalid')
+      run_probe={'group':run_group_probe,'pair':run_pair_probe,'beacon':run_beacon_probe,'trade':run_trade_probe}[mode]
       run_probe(root=p.ROOT,project=p.PROJECT,base=p.BASE,public_key=p.PUBLIC_KEY,run=p.RUN,
         fixture=fixture,admin_headers={'Authorization':'Bearer '+admin,'apikey':admin},call=p.call,query=p.query,require=p.require)
     finally:

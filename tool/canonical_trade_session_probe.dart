@@ -71,13 +71,15 @@ void main() {
         }
       });
       stdout.writeln('PROBE: trade_accounts_ready');
-      Future<void> settle({bool permitLost = false}) async {
+      Future<void> settle(
+          {bool permitLost = false, bool Function()? until}) async {
         for (var n = 0; n < 800; n++) {
           await tester.runAsync(
               () => Future<void>.delayed(const Duration(milliseconds: 25)));
           await tester
               .runAsync(() => tester.pump(const Duration(milliseconds: 25)));
-          if (n > 28 && !games[active].busy) break;
+          if (n > 28 && !games[active].busy && (until == null || until()))
+            break;
         }
         require(!games[active].busy, 'command_timeout');
         if (!permitLost &&
@@ -195,6 +197,18 @@ void main() {
               games[0].snapshot!.egg('trade-probe-special-egg') == null &&
               games[0].snapshot!.inventory.chronoshards.single == 60,
           'sender_inventory');
+      require(games[0].snapshot!.presentations.any((e) => e.id == 'trade-$id'),
+          'sender_presentation_missing');
+      final first = games[0].snapshot!.presentations.first;
+      stdout.writeln('PROBE: trade_first_presentation_${first.type.name}');
+      await settle(
+          until: () => find
+              .byKey(const Key('trade-complete-reveal'))
+              .evaluate()
+              .isNotEmpty);
+      require(
+          find.byKey(const Key('trade-complete-reveal')).evaluate().isNotEmpty,
+          'sender_reveal_not_open');
       require(find.text('Chronoshard · 60%').evaluate().isNotEmpty,
           'sender_reveal_missing');
       await tap('trade-reveal-continue');

@@ -33,6 +33,7 @@ on:
           - canonical-group-probe
           - canonical-partner-probe
           - canonical-beacon-probe
+          - canonical-trade-probe
 
 permissions:
   contents: read
@@ -71,7 +72,7 @@ jobs:
           retention-days: 30
 
   verify:
-    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply' && inputs.contract != 'push-device-probe' && inputs.contract != 'canonical-game' && inputs.contract != 'canonical-game-apply' && inputs.contract != 'canonical-import' && inputs.contract != 'canonical-read' && inputs.contract != 'canonical-social-projection' && inputs.contract != 'canonical-social-reservations' && inputs.contract != 'canonical-group-lifecycle' && inputs.contract != 'canonical-pair-lifecycle' && inputs.contract != 'canonical-beacon' && inputs.contract != 'canonical-trades' && inputs.contract != 'wide-trial-scores' && inputs.contract != 'canonical-group-probe' && inputs.contract != 'canonical-partner-probe' && inputs.contract != 'canonical-beacon-probe'
+    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply' && inputs.contract != 'push-device-probe' && inputs.contract != 'canonical-game' && inputs.contract != 'canonical-game-apply' && inputs.contract != 'canonical-import' && inputs.contract != 'canonical-read' && inputs.contract != 'canonical-social-projection' && inputs.contract != 'canonical-social-reservations' && inputs.contract != 'canonical-group-lifecycle' && inputs.contract != 'canonical-pair-lifecycle' && inputs.contract != 'canonical-beacon' && inputs.contract != 'canonical-trades' && inputs.contract != 'wide-trial-scores' && inputs.contract != 'canonical-group-probe' && inputs.contract != 'canonical-partner-probe' && inputs.contract != 'canonical-beacon-probe' && inputs.contract != 'canonical-trade-probe'
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 15
@@ -644,7 +645,7 @@ jobs:
           retention-days: 30
 
   canonical-group-probe:
-    if: inputs.contract == 'canonical-group-probe' || inputs.contract == 'canonical-partner-probe' || inputs.contract == 'canonical-beacon-probe'
+    if: inputs.contract == 'canonical-group-probe' || inputs.contract == 'canonical-partner-probe' || inputs.contract == 'canonical-beacon-probe' || inputs.contract == 'canonical-trade-probe'
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 10
@@ -666,7 +667,7 @@ jobs:
       - name: Probe the deployed worker with synthetic keepers
         shell: pwsh
         env:
-          STAGING_SOCIAL_PROBE: ${{ inputs.contract == 'canonical-partner-probe' && 'pair' || inputs.contract == 'canonical-beacon-probe' && 'beacon' || 'group' }}
+          STAGING_SOCIAL_PROBE: ${{ inputs.contract == 'canonical-trade-probe' && 'trade' || inputs.contract == 'canonical-partner-probe' && 'pair' || inputs.contract == 'canonical-beacon-probe' || inputs.contract == 'canonical-trade-probe' && 'beacon' || 'group' }}
           STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
           STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}

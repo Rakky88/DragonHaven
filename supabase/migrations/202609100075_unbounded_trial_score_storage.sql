@@ -14,6 +14,25 @@ alter table public.social_showcases
   alter column favorite_dragon_ruin_breaker_best type bigint,
   alter column favorite_dragon_runeweaver_best type bigint;
 
+alter table public.social_showcases drop constraint social_showcases_cavern_flight_best_check;
+alter table public.social_showcases add constraint social_showcases_cavern_flight_best_check
+  check (cavern_flight_best between 0 and 9007199254740991);
+alter table public.social_showcases drop constraint social_showcases_ruin_breaker_best_check;
+alter table public.social_showcases add constraint social_showcases_ruin_breaker_best_check
+  check (ruin_breaker_best between 0 and 9007199254740991);
+alter table public.social_showcases drop constraint social_showcases_runeweaver_best_check;
+alter table public.social_showcases add constraint social_showcases_runeweaver_best_check
+  check (runeweaver_best between 0 and 9007199254740991);
+alter table public.social_showcases drop constraint social_showcases_favorite_dragon_cavern_flight_best_check;
+alter table public.social_showcases add constraint social_showcases_favorite_dragon_cavern_flight_best_check
+  check (favorite_dragon_cavern_flight_best between 0 and 9007199254740991);
+alter table public.social_showcases drop constraint social_showcases_favorite_dragon_ruin_breaker_best_check;
+alter table public.social_showcases add constraint social_showcases_favorite_dragon_ruin_breaker_best_check
+  check (favorite_dragon_ruin_breaker_best between 0 and 9007199254740991);
+alter table public.social_showcases drop constraint social_showcases_favorite_dragon_runeweaver_best_check;
+alter table public.social_showcases add constraint social_showcases_favorite_dragon_runeweaver_best_check
+  check (favorite_dragon_runeweaver_best between 0 and 9007199254740991);
+
 alter table public.seasonal_trial_attempts add constraint seasonal_trial_safe_integer
   check(score between 0 and 9007199254740991 and correct_actions between 0 and 9007199254740991
     and total_actions between 0 and 9007199254740991 and duration_ms between 0 and 9007199254740991);

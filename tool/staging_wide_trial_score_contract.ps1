@@ -41,7 +41,7 @@ try {
   if ($detail -match 'column reference [\\]*"([a-z_][a-z_0-9]{0,62})[\\]*" is ambiguous') {
     Write-Output "Ambiguous SQL identifier: $($Matches[1])"
   }
-  if ($detail -match 'violates (?:check|unique|foreign key|not-null) constraint [\\]*"([a-z_][a-z_0-9]{0,62})[\\]*"') {
+  if ($detail -match 'constraint[^a-z_]+([a-z_][a-z_0-9]{0,62})') {
     Write-Output "SQL constraint: $($Matches[1])"
   }
   foreach ($classification in @('does not exist','ambiguous','violates not-null','violates check','syntax error','permission denied','timeout','deadlock')) {
