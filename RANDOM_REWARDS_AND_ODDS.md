@@ -1,5 +1,20 @@
 # DragonHaven Random Rewards and Odds
 
+Candidate 79 adds dormant, service-only account capture/activation. Preparation
+still uses the immutable cloud/Altar generation and shared Dart importer. At
+promotion the source revision/hash, Altar ledger, normalized inventory, pending
+trade acknowledgments and social reward sources must still match. A changed
+source refuses promotion and leaves legacy authority/writes intact. Captured
+copies cannot be played as shadows. Successful activation preserves the private
+prepared state, projects wallet/dragon/showcase reads, and fences old cloud/Altar
+writers; retries return the activation receipt. Server reads/commands/recovery
+preserve their authority mode. A separate migration switch defaults off. The
+rollback contract covers stale cloud/Altar/social changes, ownership, retry,
+server commands/recovery and account deletion; it has not run yet. No account
+has been activated. The production UI handoff, complete social migration edge
+cases and historical normalized inventory readers still need integration.
+Rewards, event dates, probabilities, eggs and code contents are unchanged.
+
 Client/Edge authority validation supports explicit server mode for future player
 migration. Default staging remains shadow-only; live sessions reject shadow
 snapshots/receipts/recovery and have separate display caches. Reward rules,
@@ -135,7 +150,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: a537f041e2aa1de7 -->
+<!-- reference-source-fingerprint: 2fdeeda57e81304b -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

@@ -1,5 +1,20 @@
 # DragonHaven server-authoritative economy contract
 
+Candidate 79 adds dormant, service-only account capture/activation. Preparation
+still uses the immutable cloud/Altar generation and shared Dart importer. At
+promotion the source revision/hash, Altar ledger, normalized inventory, pending
+trade acknowledgments and social reward sources must still match. A changed
+source refuses promotion and leaves legacy authority/writes intact. Captured
+copies cannot be played as shadows. Successful activation preserves the private
+prepared state, projects wallet/dragon/showcase reads, and fences old cloud/Altar
+writers; retries return the activation receipt. Server reads/commands/recovery
+preserve their authority mode. A separate migration switch defaults off. The
+rollback contract covers stale cloud/Altar/social changes, ownership, retry,
+server commands/recovery and account deletion; it has not run yet. No account
+has been activated. The production UI handoff, complete social migration edge
+cases and historical normalized inventory readers still need integration.
+Rewards, event dates, probabilities, eggs and code contents are unchanged.
+
 The client/Edge authority boundary now supports an explicitly configured server
 session. Default staging readers still require shadow mode; live readers require
 server mode for snapshots, receipts and recovery barriers. Separate cache names

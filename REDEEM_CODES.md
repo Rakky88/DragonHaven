@@ -1,5 +1,20 @@
 # DragonHaven Redeem Codes
 
+Candidate 79 adds dormant, service-only account capture/activation. Preparation
+still uses the immutable cloud/Altar generation and shared Dart importer. At
+promotion the source revision/hash, Altar ledger, normalized inventory, pending
+trade acknowledgments and social reward sources must still match. A changed
+source refuses promotion and leaves legacy authority/writes intact. Captured
+copies cannot be played as shadows. Successful activation preserves the private
+prepared state, projects wallet/dragon/showcase reads, and fences old cloud/Altar
+writers; retries return the activation receipt. Server reads/commands/recovery
+preserve their authority mode. A separate migration switch defaults off. The
+rollback contract covers stale cloud/Altar/social changes, ownership, retry,
+server commands/recovery and account deletion; it has not run yet. No account
+has been activated. The production UI handoff, complete social migration edge
+cases and historical normalized inventory readers still need integration.
+Rewards, event dates, probabilities, eggs and code contents are unchanged.
+
 Client/Edge authority validation supports explicit server mode for future player
 migration. Default staging remains shadow-only; live sessions reject shadow
 snapshots/receipts/recovery and have separate display caches. Reward rules,
@@ -133,7 +148,7 @@ Last verified: 10 September 2026
 
 Ruleset: v0.05.29 / 10079 published; production remains at schema 65; current staging verification is recorded above. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
 
-<!-- reference-source-fingerprint: 2805485be0cc1c3b -->
+<!-- reference-source-fingerprint: e013879a101aba67 -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 
