@@ -157,17 +157,21 @@ export async function boundedJson(body: ReadableStream<Uint8Array> | null,
   }
 }
 
+function validAuthority(value: unknown): boolean {
+  return value === "shadow" || value === "server";
+}
+
 function receipt(value: unknown, owner: string, command: Command): JsonObject {
   if (!object(value) || value.owner_id !== owner || value.request_id !== command.requestId ||
     !positiveInteger(value.server_revision) || typeof value.state_sha256 !== "string" ||
-    !hash.test(value.state_sha256) || value.authority_mode !== "shadow" ||
+    !hash.test(value.state_sha256) || !validAuthority(value.authority_mode) ||
     !Object.hasOwn(value, "result") || encoder.encode(JSON.stringify(value.result)).length > 30000) {
     throw new Error("invalid_receipt");
   }
-  // Shadow results and projections must never be applied to a live game.
+  // Preserve the database authority; clients must explicitly require their mode.
   return { protocol: 2, owner_id: owner, request_id: command.requestId,
     server_revision: value.server_revision, state_sha256: value.state_sha256,
-    authority_mode: "shadow", result: value.result };
+    authority_mode: value.authority_mode, result: value.result };
 }
 
 export async function handleCommand(request: Request, deps: Dependencies): Promise<Response> {
@@ -214,7 +218,7 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
       return response({ error: leased.failure_code, request_id: command.requestId, replayed: leased.replayed !== false }, 422);
     }
     if (leased.status !== "processing" || leased.owner_id !== owner || leased.request_id !== command.requestId ||
-      leased.authority_mode !== "shadow" || !positiveInteger(leased.base_revision) ||
+      !validAuthority(leased.authority_mode) || !positiveInteger(leased.base_revision) ||
       typeof leased.lease_token !== "string" || !uuid.test(leased.lease_token) ||
       typeof leased.secret_seed !== "string" || !hash.test(leased.secret_seed) ||
       typeof leased.now !== "string" || !Number.isFinite(Date.parse(leased.now)) || !object(leased.state)) {
@@ -284,7 +288,7 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
       return response({error: failure.code, request_id: command.requestId, replayed: false}, 422);
     }
     const saved = receipt(committed, owner, command);
-    if (saved.server_revision !== leased.base_revision + 1) throw new Error("invalid_committed_revision");
+    if (saved.authority_mode !== leased.authority_mode || saved.server_revision !== leased.base_revision + 1) throw new Error("invalid_committed_revision");
     return response({ ...saved, replayed: false });
   } catch (failure) {
     if (failure instanceof RpcFailure && databaseErrors.has(failure.code)) {
@@ -304,7 +308,7 @@ async function recoverCommands(owner: string, requestId: string, clientBuild: nu
     });
     if (!object(result) || !exactKeys(result, ["protocol", "owner_id", "request_id", "authority_mode",
       "barrier_revision", "cancelled_commands", "replayed"]) || result.protocol !== 2 ||
-      result.owner_id !== owner || result.request_id !== requestId || result.authority_mode !== "shadow" ||
+      result.owner_id !== owner || result.request_id !== requestId || !validAuthority(result.authority_mode) ||
       !positiveInteger(result.barrier_revision) || ![0, 1].includes(result.cancelled_commands as number) ||
       typeof result.replayed !== "boolean") throw new Error("invalid_recovery");
     return response(result);
@@ -325,7 +329,7 @@ async function readState(owner: string, clientBuild: number, deps: Dependencies)
     if (!object(snapshot) || snapshot.owner_id !== owner ||
       !positiveInteger(snapshot.server_revision) || typeof snapshot.state_sha256 !== "string" ||
       !positiveInteger(snapshot.ruleset_revision) ||
-      !hash.test(snapshot.state_sha256) || snapshot.authority_mode !== "shadow" ||
+      !hash.test(snapshot.state_sha256) || !validAuthority(snapshot.authority_mode) ||
       typeof snapshot.mutations_enabled !== "boolean" || !object(snapshot.state) ||
       typeof snapshot.server_time !== "string" || !Number.isFinite(Date.parse(snapshot.server_time))) {
       throw new Error("invalid_snapshot");
@@ -347,7 +351,7 @@ async function readState(owner: string, clientBuild: number, deps: Dependencies)
     return response({ protocol: 2, owner_id: owner, server_revision: snapshot.server_revision,
       state_sha256: snapshot.state_sha256, ruleset_sha256: deps.ruleset,
       ruleset_revision: snapshot.ruleset_revision,
-      authority_mode: "shadow", mutations_enabled: snapshot.mutations_enabled,
+      authority_mode: snapshot.authority_mode, mutations_enabled: snapshot.mutations_enabled,
       server_time: snapshot.server_time, data });
   } catch (failure) {
     if (failure instanceof RpcFailure && databaseErrors.has(failure.code)) {

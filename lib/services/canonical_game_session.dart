@@ -20,8 +20,10 @@ class CanonicalGameSession extends ChangeNotifier {
   CanonicalGameSession(
       {required this.connection,
       required Directory directory,
+      this.expectedAuthority = CanonicalGameAuthority.shadow,
       String Function()? requestIdGenerator})
-      : snapshots = CanonicalGameSnapshotStore(directory),
+      : snapshots = CanonicalGameSnapshotStore(directory,
+            expectedAuthority: expectedAuthority),
         intents = CanonicalGameIntentStore(directory),
         _requestId = requestIdGenerator ?? const Uuid().v4 {
     _owner = connection.currentOwner;
@@ -31,6 +33,7 @@ class CanonicalGameSession extends ChangeNotifier {
   }
 
   final CanonicalGameConnection connection;
+  final CanonicalGameAuthority expectedAuthority;
   final CanonicalGameSnapshotStore snapshots;
   final CanonicalGameIntentStore intents;
   final String Function() _requestId;
@@ -140,6 +143,7 @@ class CanonicalGameSession extends ChangeNotifier {
 
   CanonicalGameReader _reader() => CanonicalGameReader(
       invoke: connection.read,
+      expectedAuthority: expectedAuthority,
       currentOwner: () => connection.currentOwner,
       sessionEpoch: () => connection.sessionEpoch);
 
@@ -157,6 +161,9 @@ class CanonicalGameSession extends ChangeNotifier {
           applyDisplay: apply);
 
   void _accept(CanonicalGameSnapshot value) {
+    if (value.authorityMode != expectedAuthority.name) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
     final current = _snapshot;
     if (current != null &&
         (value.serverRevision < current.serverRevision ||

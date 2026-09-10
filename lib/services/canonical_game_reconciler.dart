@@ -25,7 +25,9 @@ class CanonicalGameReceipt {
   Object? get result => _resultJson == null ? null : jsonDecode(_resultJson);
 
   static CanonicalGameReceipt parse(
-      CanonicalGameHttpReply reply, CanonicalGameIntent intent) {
+      CanonicalGameHttpReply reply, CanonicalGameIntent intent,
+      {CanonicalGameAuthority expectedAuthority =
+          CanonicalGameAuthority.shadow}) {
     final body = reply.body;
     if (body is! Map<String, dynamic> ||
         body['request_id'] != intent.requestId ||
@@ -42,7 +44,7 @@ class CanonicalGameReceipt {
         body.length != 8 ||
         body['protocol'] != 2 ||
         body['owner_id'] != intent.ownerId ||
-        body['authority_mode'] != 'shadow' ||
+        body['authority_mode'] != expectedAuthority.name ||
         body['server_revision'] is! int ||
         (body['server_revision'] as int) <= 0 ||
         (body['server_revision'] as int) > 9007199254740991 ||
@@ -185,7 +187,8 @@ class CanonicalGameReconciler {
       throw const CanonicalGameException('game_command_unavailable');
     }
     requireSession();
-    final receipt = CanonicalGameReceipt.parse(reply, intent);
+    final receipt = CanonicalGameReceipt.parse(reply, intent,
+        expectedAuthority: reader.expectedAuthority);
     final cached = await snapshots.inspect(owner);
     requireSession();
     final minimum = [
@@ -226,7 +229,7 @@ class CanonicalGameReconciler {
         response['protocol'] != 2 ||
         response['owner_id'] != owner ||
         response['request_id'] != requestId ||
-        response['authority_mode'] != 'shadow' ||
+        response['authority_mode'] != reader.expectedAuthority.name ||
         response['barrier_revision'] is! int ||
         (response['barrier_revision'] as int) < 1 ||
         (response['barrier_revision'] as int) > 9007199254740991 ||

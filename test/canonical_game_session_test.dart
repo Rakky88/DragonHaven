@@ -29,6 +29,7 @@ class Connection implements CanonicalGameConnection {
   Stream<int> get accountChanges => changes.stream;
   int revision = 1;
   bool enabled = true;
+  String authority = 'shadow';
   bool online = true;
   bool closed = false;
   bool loseReply = false;
@@ -51,7 +52,7 @@ class Connection implements CanonicalGameConnection {
         'state_sha256': revision.toRadixString(16).padLeft(64, '0'),
         'ruleset_sha256': 'ab' * 32,
         'ruleset_revision': 1,
-        'authority_mode': 'shadow',
+        'authority_mode': authority,
         'mutations_enabled': enabled,
         'server_time': '2026-09-08T12:00:00Z',
         'data': jsonDecode(jsonEncode(data)),
@@ -88,7 +89,7 @@ class Connection implements CanonicalGameConnection {
       'request_id': intent.requestId,
       'server_revision': revision,
       'state_sha256': wire(intent.ownerId)['state_sha256'],
-      'authority_mode': 'shadow',
+      'authority_mode': authority,
       'result': 'purchased',
       'replayed': replayed,
     });
@@ -104,7 +105,7 @@ class Connection implements CanonicalGameConnection {
       'request_id': requestId,
       'barrier_revision': revision,
       'cancelled_commands': 0,
-      'authority_mode': 'shadow',
+      'authority_mode': authority,
       'replayed': false
     };
   }
@@ -136,6 +137,63 @@ void main() {
     session.dispose();
     await directory.delete(recursive: true);
   });
+
+  test('server session rejects shadow replies and resumes a lost live receipt',
+      () async {
+    connection.authority = 'server';
+    await expectLater(session.synchronize(), failure('game_snapshot_invalid'));
+    expect(session.canAct, isFalse);
+    session.dispose();
+    connection = Connection()..authority = 'server';
+    session = CanonicalGameSession(
+        connection: connection,
+        directory: directory,
+        expectedAuthority: CanonicalGameAuthority.server,
+        requestIdGenerator: () => request);
+    await session.synchronize();
+    expect(session.snapshot!.canApplyToLiveGame, isTrue);
+    connection.loseReply = true;
+    await expectLater(session.execute('purchase_title_chest', {}),
+        failure('game_command_unavailable'));
+    expect(connection.applied, {request});
+    connection.loseReply = false;
+    await session.synchronize();
+    expect(connection.applied, {request});
+    expect(await session.intents.pending(owner), isNull);
+    expect(session.snapshot!.serverRevision, 2);
+    connection.authority = 'shadow';
+    await expectLater(session.synchronize(), failure('game_snapshot_invalid'));
+    expect(session.canAct, isFalse);
+    expect(session.snapshot!.authorityMode, 'server');
+  });
+
+  for (final mode in CanonicalGameAuthority.values) {
+    test('corrupt ${mode.name} journal recovers without issuing a purchase',
+        () async {
+      session.dispose();
+      connection = Connection()..authority = mode.name;
+      session = CanonicalGameSession(
+          connection: connection,
+          directory: directory,
+          expectedAuthority: mode,
+          requestIdGenerator: () => request);
+      await session.intents.prepare(CanonicalGameIntent(
+          ownerId: owner,
+          requestId: recovery,
+          action: 'purchase_title_chest',
+          payload: {},
+          minimumRevision: 1));
+      for (final suffix in ['', '.backup']) {
+        await File('${directory.path}/intent-v2-$owner$suffix.json')
+            .writeAsString('broken');
+      }
+      await session.synchronize();
+      expect(connection.recoveries, 1);
+      expect(connection.sent, isEmpty);
+      expect(session.snapshot!.authorityMode, mode.name);
+      expect(session.canAct, isTrue);
+    });
+  }
 
   test(
       'a fresh owner view gates commands, journals before send and applies absolute state',

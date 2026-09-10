@@ -1,5 +1,14 @@
 # DragonHaven server-authoritative economy contract
 
+The client/Edge authority boundary now supports an explicitly configured server
+session. Default staging readers still require shadow mode; live readers require
+server mode for snapshots, receipts and recovery barriers. Separate cache names
+prevent a high-revision shadow copy from hiding real inventory. A lost live
+receipt replays one UUID; downgrade replies keep spending disabled. Local session,
+cache and reconciliation tests and 25 Edge tests pass. This is transport support,
+not player activation: private SQL state still permits shadow only, production
+boot and migration/capture have not switched, and no production flags changed.
+
 Candidate 77: group level requirements are capped at the number of players
 multiplied by the current nine-level progression. A two-keeper group that used
 to demand level 20 or 24 now requires 18; attainable requirements, expertise,

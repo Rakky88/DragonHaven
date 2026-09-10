@@ -12,6 +12,7 @@ class CanonicalGameReader {
       required this.currentOwner,
       required this.sessionEpoch,
       this.clientBuild = AppInfo.buildNumber,
+      this.expectedAuthority = CanonicalGameAuthority.shadow,
       this.timeout = const Duration(seconds: 12)});
 
   final Future<Object?> Function(Map<String, dynamic>) invoke;
@@ -19,6 +20,7 @@ class CanonicalGameReader {
   // Increment on every account/session switch, including A -> B -> A.
   final int Function() sessionEpoch;
   final int clientBuild;
+  final CanonicalGameAuthority expectedAuthority;
   final Duration timeout;
 
   Future<CanonicalGameSnapshot> fetch(String owner,
@@ -45,6 +47,7 @@ class CanonicalGameReader {
     return CanonicalGameSnapshot.parse(response,
         expectedOwner: owner,
         minimumRevision: minimumRevision,
-        minimumRulesetRevision: minimumRulesetRevision);
+        minimumRulesetRevision: minimumRulesetRevision,
+        expectedAuthority: expectedAuthority);
   }
 }

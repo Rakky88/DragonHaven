@@ -19,7 +19,9 @@ class CanonicalGameCache {
 /// a fresh server read at least as new as that fence. Checksums detect corrupt
 /// cache bytes; they are not authentication or mutation authority.
 class CanonicalGameSnapshotStore {
-  CanonicalGameSnapshotStore(this.directory);
+  CanonicalGameSnapshotStore(this.directory,
+      {this.expectedAuthority = CanonicalGameAuthority.shadow});
+  final CanonicalGameAuthority expectedAuthority;
   final Directory directory;
   static final _queues = <String, Future<void>>{};
   static final _uuid =
@@ -41,10 +43,10 @@ class CanonicalGameSnapshotStore {
     return result;
   }
 
-  File _snapshotFile(String owner) =>
-      File('${directory.path}/game-v2-$owner.json');
-  File _fenceFile(String owner) =>
-      File('${directory.path}/game-v2-$owner.revision.json');
+  File _snapshotFile(String owner) => File(
+      '${directory.path}/game-v2-${expectedAuthority == CanonicalGameAuthority.server ? 'server-' : ''}$owner.json');
+  File _fenceFile(String owner) => File(
+      '${directory.path}/game-v2-${expectedAuthority == CanonicalGameAuthority.server ? 'server-' : ''}$owner.revision.json');
 
   Future<Map<String, dynamic>?> _read(File file, int limit) async {
     if (!await file.exists()) return null;
@@ -91,7 +93,8 @@ class CanonicalGameSnapshotStore {
     try {
       final value = await _read(_snapshotFile(owner), 10 * 1024 * 1024);
       if (value != null) {
-        snapshot = CanonicalGameSnapshot.parse(value, expectedOwner: owner);
+        snapshot = CanonicalGameSnapshot.parse(value,
+            expectedOwner: owner, expectedAuthority: expectedAuthority);
       }
     } on FormatException {
       corrupt = true;
@@ -128,6 +131,9 @@ class CanonicalGameSnapshotStore {
   /// A pending command's receipt revision must also fence the caller's read.
   Future<void> persistFresh(CanonicalGameSnapshot snapshot) =>
       _serial(snapshot.ownerId, () async {
+        if (snapshot.authorityMode != expectedAuthority.name) {
+          throw const CanonicalGameException('game_snapshot_invalid');
+        }
         final previous = await _inspect(snapshot.ownerId);
         if (snapshot.serverRevision < previous.cache.minimumRevision ||
             snapshot.rulesetRevision < previous.cache.minimumRulesetRevision) {

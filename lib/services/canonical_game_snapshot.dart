@@ -12,6 +12,8 @@ import '../models/mystic_relic.dart';
 import '../models/pet.dart';
 import '../models/trial.dart';
 
+enum CanonicalGameAuthority { shadow, server }
+
 /// Read-only server display data. It is deliberately incompatible with a local
 /// saved game: an unknown lineage is null, never a guessed DragonEgg/Pet.
 class CanonicalGameSnapshot {
@@ -72,13 +74,16 @@ class CanonicalGameSnapshot {
   String? get activeDragonId => data['activeDragonId'] as String?;
 
   /// No application path may treat a shadow copy as live player inventory.
-  bool get canApplyToLiveGame => false;
+  bool get canApplyToLiveGame =>
+      authorityMode == CanonicalGameAuthority.server.name;
   Map<String, dynamic> toJson() => _wire;
 
   factory CanonicalGameSnapshot.parse(Object? value,
       {required String expectedOwner,
       int minimumRevision = 0,
-      int minimumRulesetRevision = 0}) {
+      int minimumRulesetRevision = 0,
+      CanonicalGameAuthority expectedAuthority =
+          CanonicalGameAuthority.shadow}) {
     final wire = _map(_freeze(value));
     if (!_uuid.hasMatch(expectedOwner) ||
         !_keys(wire, const [
@@ -99,7 +104,7 @@ class CanonicalGameSnapshot {
         !_hashValue(wire['state_sha256']) ||
         !_hashValue(wire['ruleset_sha256']) ||
         !_positive(wire['ruleset_revision']) ||
-        wire['authority_mode'] != 'shadow' ||
+        wire['authority_mode'] != expectedAuthority.name ||
         wire['mutations_enabled'] is! bool ||
         !_date(wire['server_time'])) {
       throw const CanonicalGameException('game_snapshot_invalid');

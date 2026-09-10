@@ -181,6 +181,25 @@ void main() {
       await directory.delete(recursive: true);
     });
 
+    test('server cache is isolated and rejects shadow data at any revision',
+        () async {
+      final live = CanonicalGameSnapshotStore(directory,
+          expectedAuthority: CanonicalGameAuthority.server);
+      final server = CanonicalGameSnapshot.parse(
+          _wire()..['authority_mode'] = 'server',
+          expectedOwner: _owner,
+          expectedAuthority: CanonicalGameAuthority.server);
+      await store.persistFresh(_parse(_wire(revision: 99)));
+      expect((await live.inspect(_owner)).snapshot, isNull);
+      await live.persistFresh(server);
+      expect((await live.inspect(_owner)).snapshot!.serverRevision, 5);
+      expect((await store.inspect(_owner)).snapshot!.serverRevision, 99);
+      await expectLater(live.persistFresh(_parse(_wire(revision: 100))),
+          _error('game_snapshot_invalid'));
+      await expectLater(
+          store.persistFresh(server), _error('game_snapshot_invalid'));
+    });
+
     test('persists across instances, serializes races and rejects rewinds',
         () async {
       await store.persistFresh(_parse(_wire()));

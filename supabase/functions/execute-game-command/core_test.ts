@@ -212,7 +212,7 @@ Deno.test("replay returns the stored receipt without a second evaluation or comm
   assert(value.replayed && !Object.hasOwn(value, "state") && !Object.hasOwn(value, "secret_seed"));
 });
 
-Deno.test("cross-owner lease and receipt, live authority and wrong revision are refused", async () => {
+Deno.test("cross-owner lease and receipt, authority mismatch and wrong revision are refused", async () => {
   for (const [begin, end] of [
     [{ ...leased, owner_id: other }, saved],
     [leased, { ...saved, owner_id: other }],
@@ -485,4 +485,30 @@ Deno.test("Trial resume accepts only its authenticated attempt ID, never caller 
     assert((await handleCommand(request({...value, payload: {...value.payload, ...extra}}), denied.deps)).status === 400);
     equal(denied.calls, []);
   }
+});
+
+Deno.test("database server authority survives execution, replay, reads and recovery", async () => {
+  const liveSaved = {...saved, authority_mode: "server"};
+  let executed = false;
+  const {deps, inputs} = setup({
+    rpc: async (name) => {
+      if (name === "begin_revisioned_game_command") return executed
+        ? {status: "succeeded", response: liveSaved} : {...leased, authority_mode: "server"};
+      if (name === "commit_canonical_game_command") {executed = true; return liveSaved;}
+      if (name === "read_canonical_game_state") return {...readSnapshot, authority_mode: "server"};
+      if (name === "recover_canonical_game_commands") return {protocol:2, owner_id:owner,
+        request_id:requestId, authority_mode:"server", barrier_revision:4,
+        cancelled_commands:0, replayed:false};
+      throw new Error("unexpected RPC");
+    }, project: () => publicData,
+  });
+  for (const input of [body, body, readBody,
+    {protocol:2, clientBuild:10068, action:"recover_commands", requestId}]) {
+    const reply = await handleCommand(request(input), deps);
+    assert(reply.status === 200);
+    const text = await reply.text();
+    assert(JSON.parse(text).authority_mode === "server");
+    assert(!text.includes("hidden egg") && !text.includes("NEVER_RETURN"));
+  }
+  assert(inputs.length === 1);
 });
