@@ -42,11 +42,11 @@ begin
     perform public.ensure_my_online_account();
     source_state:=jsonb_build_object('schemaVersion',54,'pet',jsonb_build_object('id','crew-'||index_value,
       'name','Crew '||index_value,'stage','ascended','lineageId','copperflame','xp',3400,'coins',1000,'gems',10,
-      'training',jsonb_build_object('might',300,'arcana',300,'spirit',300),'evolutionPath','mastery',
+      'training',jsonb_build_object('might',300,'arcana',300,'spirit',300),'evolutionPath','might',
       'favorite',true,'spectral',false,'sinister',false,'trialHighScores','{}'::jsonb,'activeAdventureId',null),
       'eggStash','[]'::jsonb,'sanctuaryDragons','[]'::jsonb,'releasedDragons','[]'::jsonb,
       'chestInventory','{}'::jsonb,'specialChestInventory','{}'::jsonb,'relicInventory','{}'::jsonb,
-      'untradeableRelicInventory','{}'::jsonb,'discoveredForms',jsonb_build_array('copperflame:ascended:mastery'),
+      'untradeableRelicInventory','{}'::jsonb,'discoveredForms',jsonb_build_array('copperflame:ascended:might'),
       'prismaticForms','[]'::jsonb);
     insert into public.cloud_game_saves(user_id,revision,state,device_id,client_version,schema_version)
       values(keeper,1,source_state,'synthetic-group-lifecycle','0.5.30',54);
@@ -113,7 +113,7 @@ begin
   select revision,state into revision_value,current_state from private.canonical_game_states where owner_id=keepers[3];
   request_value:=gen_random_uuid(); payload_value:=jsonb_build_object('lobbyId',target_lobby,'dragonId','crew-3');
   leased:=public.begin_revisioned_game_command(keepers[3],request_value,'join_group_adventure',payload_value,10080,rules,revision_value);
-  update public.friendships set status='declined' where requester_id=keepers[1] and addressee_id=keepers[3];
+  update public.friendships set status='rejected' where requester_id=keepers[1] and addressee_id=keepers[3];
   begin
     perform public.commit_canonical_game_command(keepers[3],request_value,(leased->>'lease_token')::uuid,
       jsonb_set(current_state,'{pet,activeAdventureId}',to_jsonb('online-group:'||target_lobby::text)),
