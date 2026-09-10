@@ -1,6 +1,6 @@
-"""Focused client proof against the already-deployed schema-71 worker.
+"""Focused client proof against the already-deployed schema-72 worker.
 
-The pinned ruleset was built by full staging run 34470547582 on 2173351.
+The pinned ruleset was built by full staging run 34474222373 on 6a2e91e.
 This runner deploys no code and applies no migration; all state is synthetic.
 """
 import json
@@ -8,8 +8,9 @@ import re
 import sys
 import staging_game_worker_probe as probe
 from staging_group_probe import run_group_probe
+from staging_pair_probe import run_pair_probe
 
-RULESET = '9d225ef8e2c5d2bde72bf57a79d2e25bcb1f13165407d5cced019cb78125863a'
+RULESET = 'f482069b22b4f9cbe96bac91bb7aa506378492879f15fba08612824554ec989b'
 
 def main():
     p = probe
@@ -17,8 +18,8 @@ def main():
       and p.MANAGEMENT and p.PUBLIC_KEY, 'group_probe_registered_staging_required')
     versions = p.query('select version from supabase_migrations.schema_migrations order by version', True)
     expected = sorted(path.name.split('_')[0] for path in (p.ROOT/'supabase/migrations').glob('*.sql')
-      if path.name.split('_')[0] <= '202609100071')
-    p.require([row['version'] for row in versions] == expected and len(expected) == 71, 'group_probe_schema_mismatch')
+      if path.name.split('_')[0] <= '202609100072')
+    p.require([row['version'] for row in versions] == expected and len(expected) == 72, 'group_probe_schema_mismatch')
     baseline=p.query("""select enabled or shadow_social_enabled or shadow_projection_enabled or shadow_lifecycle_enabled as enabled,
       ruleset_sha256,(select count(*) from private.canonical_game_states) as copies,
       (select mutations_enabled from private.economy_contract where singleton) as mutations
@@ -32,7 +33,10 @@ def main():
     fixture=json.loads((p.ROOT/'staging/game-fixture.json').read_text(encoding='utf-8'))['state']
     try:
       p.query(f"update private.game_engine_runtime set enabled=true,ruleset_sha256='{RULESET}' where singleton")
-      run_group_probe(root=p.ROOT,project=p.PROJECT,base=p.BASE,public_key=p.PUBLIC_KEY,run=p.RUN,
+      mode=p.os.environ.get('STAGING_SOCIAL_PROBE','group')
+      p.require(mode in ('group','pair'),'social_probe_mode_invalid')
+      run_probe=run_group_probe if mode=='group' else run_pair_probe
+      run_probe(root=p.ROOT,project=p.PROJECT,base=p.BASE,public_key=p.PUBLIC_KEY,run=p.RUN,
         fixture=fixture,admin_headers={'Authorization':'Bearer '+admin,'apikey':admin},call=p.call,query=p.query,require=p.require)
     finally:
       restore='null' if old is None else "'"+old+"'"

@@ -21,6 +21,7 @@ const hash = /^[0-9a-f]{64}$/;
 const encoder = new TextEncoder();
 const commandKeys: Record<string, readonly string[]> = {
 
+  donate_beacon: ["conclaveId", "amount"],
   invite_pair_adventure: ["keeperCode", "dragonId"],
   accept_pair_adventure: ["adventureId", "dragonId"],
   decline_pair_adventure: ["adventureId"],

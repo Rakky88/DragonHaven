@@ -194,6 +194,8 @@ Future<Map<String, dynamic>> runGameDomainProbe(
         'futureMetadata': {'createdAt': 'unchanged'},
       }),
       'school': school,
+      'beacon':
+          includeTrialCommands ? await _beaconProbe(stored, now, seed) : null,
       'pairLifecycle': includeTrialCommands
           ? await _pairLifecycleProbe(stored, now, seed)
           : const [],
@@ -365,4 +367,28 @@ Future<List<Map<String, dynamic>>> _pairLifecycleProbe(
     results.add({'action': action, 'result': result});
   }
   return results;
+}
+
+Future<Map<String, dynamic>> _beaconProbe(
+    Map<String, dynamic> stored, DateTime now, String seed) {
+  const owner = '11111111-1111-4111-8111-111111111111';
+  const conclave = '22222222-2222-4222-8222-222222222222';
+  final state = jsonDecode(jsonEncode(stored)) as Map<String, dynamic>;
+  state['eggAltar']['ownerId'] = owner;
+  state['eggAltar']['wallet'] = {'fragments': 200, 'essence': 7, 'hearts': 2};
+  return GameCommandEngine.execute(
+      state: state,
+      action: 'donate_beacon',
+      payload: {'conclaveId': conclave, 'amount': 25},
+      keeperId: owner,
+      secretSeed: seed,
+      now: now,
+      verifiedSocialContext: {
+        'version': 1,
+        'ownerId': owner,
+        'action': 'donate_beacon',
+        'sourceId': conclave,
+        'fingerprint': 'ab' * 32,
+        'facts': {'beforeFragments': 490, 'amount': 25, 'goal': 5000}
+      });
 }

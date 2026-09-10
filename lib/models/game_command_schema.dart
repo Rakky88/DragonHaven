@@ -3,6 +3,7 @@
 abstract final class GameCommandSchema {
   static const keys = <String, Set<String>>{
     'refresh': {},
+    'donate_beacon': {'conclaveId', 'amount'},
     'invite_pair_adventure': {'keeperCode', 'dragonId'},
     'accept_pair_adventure': {'adventureId', 'dragonId'},
     'decline_pair_adventure': {'adventureId'},

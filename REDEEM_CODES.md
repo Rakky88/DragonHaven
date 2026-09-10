@@ -1,12 +1,26 @@
 # DragonHaven Redeem Codes
 
-Latest staging: schema 71. The full authenticated group lifecycle and lost-reply
-recovery passed run 34473757845 on `d8222bc`; all synthetic accounts and switches
-were cleaned up. Shared reservation/claim display updates are ordered by server
-read time, while private inventory revisions and reward hashes remain fenced.
-This changes no content, duration, reward, probability or code catalog. Partner
-schema 72 passed rollback run 34472112448 and awaits full apply/UI proof.
+Latest staging: schema 72, deployed from `6a2e91e` by run 34474222373.
+All app/domain/SQL checks and the existing real UI suite passed, but the new
+group phase received an unavailable response while leaving its lobby. The
+partner phase was not reached. Schema 72 had lint 0 and all public health
+endpoints 200 at 12:07:38 UTC. Synthetic state and all four switches were cleaned
+up at 12:11:58 UTC. The earlier focused group proof passed on schema 71 in run
+34473757845. Focused group and partner probes now pin the actual schema-72 worker;
+no new DDL or worker deployment is needed for that investigation.
 Production remains schema 65 / v0.05.29.
+
+Beacon candidate (migration 73): voluntary donations spend 1–5000 owned Shell
+Fragments, capped by the existing shared goal of 5000. The command seals current
+Conclave membership and remaining capacity, then commits the exact debit,
+project total and existing stage message together. Thresholds remain 500, 2000
+and 5000; no personal reward, achievement reward, probability or code catalog
+changes. A changed project or membership rolls the command back. The legacy
+Altar mutation RPC is fenced for server-owned accounts. Two domain tests and the
+existing Beacon-card test pass, including lost-response recovery and stale
+account reads. SQL rollback and authenticated Beacon UI proof are pending;
+migration 73 is not applied.
+
 
 Partner lifecycle candidate (migration 72): invitations and acceptance use only
 owned, available server dragons; starting seals both keepers and applies the
@@ -24,7 +38,7 @@ Last verified: 10 September 2026
 
 Ruleset: v0.05.29 / 10079 published; production remains at schema 65; staging is at schema 66 after the verified Academy/Sunwake rehearsal. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
 
-<!-- reference-source-fingerprint: 36361f4b81a78fc7 -->
+<!-- reference-source-fingerprint: da9df83f3de6157c -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 

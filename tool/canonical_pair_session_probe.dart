@@ -95,6 +95,24 @@ void main() {
           if (n > 6 && !games[active].busy && !partners[active].loading) break;
         }
         require(!games[active].busy, 'command_timeout');
+        if (!permitLost &&
+            games[active].errorCode == 'game_command_unavailable') {
+          await tester.runAsync(() async {
+            final pending = await games[active]
+                .intents
+                .pending(games[active].connection.currentOwner!);
+            if (pending != null) {
+              stdout.writeln('PROBE: pair_recover_same_pending_request');
+              try {
+                final receipt = await games[active].synchronize();
+                stdout.writeln(
+                    'PROBE: pair_pending_${receipt?.replayed == true ? 'replayed' : 'resolved'}');
+              } on Object {
+                stdout.writeln('PROBE: pair_pending_still_unavailable');
+              }
+            }
+          });
+        }
         if (!permitLost && !games[active].canAct) {
           final error = games[active].errorCode;
           final code = error != null &&

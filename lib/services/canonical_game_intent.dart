@@ -96,6 +96,9 @@ class CanonicalGameIntent {
     ].contains(key)) {
       return value is bool;
     }
+    if (action == 'donate_beacon' && key == 'amount') {
+      return value is int && value >= 1 && value <= 5000;
+    }
     if (key == 'elapsedMs') {
       return value is int && value >= 0 && value <= 9007199254740991;
     }

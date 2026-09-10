@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
+import '../services/canonical_beacon.dart';
+import '../services/canonical_game_actions.dart';
+import '../services/canonical_game_session.dart';
+import 'shop_economy_scope.dart';
 import '../providers/household_provider.dart';
 import '../screens/egg_altar_screen.dart';
 
@@ -22,6 +26,32 @@ class _WeaveBeaconCardState extends State<WeaveBeaconCard> {
   bool _loading = false;
   bool _failed = false;
   Timer? _timer;
+  int _readGeneration = 0;
+  String? _owner;
+  int _epoch = 0;
+
+  (String?, int) get _account {
+    final server = context.read<CanonicalGameSession?>();
+    return server != null
+        ? (server.connection.currentOwner, server.connection.sessionEpoch)
+        : (context.read<HouseholdProvider>().altarCurrentUserId?.call(), 0);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final account = _account;
+    if (_owner != account.$1 || _epoch != account.$2) {
+      _owner = account.$1;
+      _epoch = account.$2;
+      _readGeneration++;
+      _loading = false;
+      _failed = false;
+      _fragments = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -34,7 +64,12 @@ class _WeaveBeaconCardState extends State<WeaveBeaconCard> {
   @override
   void didUpdateWidget(WeaveBeaconCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.conclaveId != widget.conclaveId) _fragments = null;
+    if (oldWidget.conclaveId != widget.conclaveId) {
+      _fragments = null;
+      _failed = false;
+      _readGeneration++;
+      _loading = false;
+    }
     if (widget.active &&
         (!oldWidget.active || oldWidget.conclaveId != widget.conclaveId)) {
       _refresh();
@@ -49,30 +84,62 @@ class _WeaveBeaconCardState extends State<WeaveBeaconCard> {
 
   Future<void> _refresh() async {
     if (!mounted || _loading) return;
-    final load = context.read<HouseholdProvider>().loadWeaveBeacon;
-    if (load == null) return;
+    final server = context.read<CanonicalGameSession?>();
+    final canonicalSource = context.read<CanonicalBeaconSource?>();
+    final legacyLoad = server == null
+        ? context.read<HouseholdProvider>().loadWeaveBeacon
+        : null;
+    final account = _account;
+    if (server != null && (canonicalSource == null || account.$1 == null) ||
+        server == null && legacyLoad == null) {
+      return;
+    }
     _loading = true;
+    final generation = ++_readGeneration;
     final id = widget.conclaveId;
+    bool current() =>
+        mounted &&
+        generation == _readGeneration &&
+        id == widget.conclaveId &&
+        account == _account;
     try {
-      final data = await load(id);
-      if (mounted && id == widget.conclaveId) {
+      final amount = server != null
+          ? await canonicalSource!.load(account.$1!, id)
+          : ((await legacyLoad!(id))['fragments'] as num).toInt();
+      if (current()) {
         setState(() {
-          _fragments = (data['fragments'] as num).toInt();
+          _fragments = amount;
           _failed = false;
         });
       }
     } on Object {
-      if (mounted) setState(() => _failed = true);
+      if (current()) {
+        setState(() {
+          _failed = true;
+          _fragments = null;
+        });
+      }
     } finally {
-      _loading = false;
+      if (mounted && generation == _readGeneration) _loading = false;
     }
   }
 
   Future<void> _donate() async {
-    final game = context.read<HouseholdProvider>();
+    final server = context.read<CanonicalGameSession?>();
+    final game = server == null ? context.read<HouseholdProvider>() : null;
+    final actions = server == null ? null : CanonicalGameActions(server);
+    final account = _account;
+    final conclave = widget.conclaveId;
     final s = AppStrings.of(context);
-    final maxAmount =
-        min(game.eggAltar.wallet.fragments, 5000 - (_fragments ?? 0));
+    final available = server?.snapshot?.inventory.materials.fragments ??
+        game?.eggAltar.wallet.fragments ??
+        0;
+    final maxAmount = min(available, 5000 - (_fragments ?? 0));
+    if (maxAmount < 1 ||
+        _fragments == null ||
+        (server != null && !server.canAct)) {
+      return;
+    }
     final controller =
         TextEditingController(text: min(25, maxAmount).toString());
     final amount = await showDialog<int>(
@@ -107,16 +174,35 @@ class _WeaveBeaconCardState extends State<WeaveBeaconCard> {
                 ]));
     await WidgetsBinding.instance.endOfFrame;
     controller.dispose();
-    if (!mounted || amount == null) return;
-    await runAltarAction(
-        context, () => game.donateWeaveFragments(widget.conclaveId, amount));
+    if (!mounted ||
+        amount == null ||
+        account != _account ||
+        conclave != widget.conclaveId) {
+      return;
+    }
+    if (actions != null) {
+      await runShopAction(context, () async {
+        await actions.donateBeacon(conclave, amount);
+      });
+    } else {
+      await runAltarAction(
+          context, () => game!.donateWeaveFragments(conclave, amount));
+    }
     await _refresh();
   }
 
   @override
   Widget build(BuildContext context) {
-    final game = context.watch<HouseholdProvider>();
-    if (game.loadWeaveBeacon == null) return const SizedBox.shrink();
+    final server = context.watch<CanonicalGameSession?>();
+    final game = server == null ? context.watch<HouseholdProvider>() : null;
+    if (server == null && game!.loadWeaveBeacon == null ||
+        server != null && context.read<CanonicalBeaconSource?>() == null) {
+      return const SizedBox.shrink();
+    }
+    final available = server?.snapshot?.inventory.materials.fragments ??
+        game?.eggAltar.wallet.fragments ??
+        0;
+    final busy = server != null ? !server.canAct : game!.altarBusy;
     final s = AppStrings.of(context);
     final amount = _fragments ?? 0;
     final stage = amount >= 5000
@@ -141,7 +227,9 @@ class _WeaveBeaconCardState extends State<WeaveBeaconCard> {
               style: TextStyle(fontWeight: FontWeight.w800)),
           subtitle: Text(_failed
               ? s.pick('Tap to reconnect', 'Tik om opnieuw te verbinden')
-              : '$amount / 5000'),
+              : _fragments == null
+                  ? '… / 5000'
+                  : '$amount / 5000'),
           onExpansionChanged: (open) {
             if (open) _refresh();
           },
@@ -177,9 +265,7 @@ class _WeaveBeaconCardState extends State<WeaveBeaconCard> {
             if (stage < 3)
               FilledButton.icon(
                   key: const Key('donate-weave-fragments'),
-                  onPressed: game.altarBusy ||
-                          _fragments == null ||
-                          game.eggAltar.wallet.fragments < 1
+                  onPressed: busy || _fragments == null || available < 1
                       ? null
                       : _donate,
                   icon: const Icon(Icons.volunteer_activism_outlined),

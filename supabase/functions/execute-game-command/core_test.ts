@@ -353,6 +353,7 @@ Deno.test("social actions use only sealed database facts and reject client grant
     ["start_pair_adventure", {adventureId: other}],
     ["cancel_pair_adventure", {adventureId: other}],
     ["create_group_adventure", {adventureId: "group_1", dragonId: "owned-dragon"}],
+    ["donate_beacon", {conclaveId: other, amount: 25}],
     ["join_group_adventure", {lobbyId: other, dragonId: "owned-dragon"}],
     ["leave_group_adventure", {lobbyId: other}],
     ["remove_group_adventure_member", {lobbyId: other, memberId: requestId}],

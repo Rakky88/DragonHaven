@@ -18,6 +18,7 @@ import 'screens/canonical_profile_screen.dart';
 import 'screens/shop_hub_screen.dart';
 import 'services/canonical_game_session.dart';
 import 'services/canonical_groups.dart';
+import 'services/canonical_beacon.dart';
 import 'services/canonical_partners.dart';
 import 'services/canonical_game_snapshot.dart';
 import 'services/canonical_game_transport.dart';
@@ -49,6 +50,8 @@ Future<void> runCanonicalStaging(OnlineConfig config) async {
       directory: Directory('${support.path}/canonical-staging-v1'));
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider.value(value: session),
+    Provider<CanonicalBeaconSource>(
+        create: (_) => SupabaseCanonicalBeaconSource(auth)),
     ChangeNotifierProvider(
         create: (_) => CanonicalGroups(
             connection: session.connection,

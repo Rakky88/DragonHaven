@@ -1,3 +1,4 @@
+import 'conclave_beacon.dart';
 import 'social_pair_lifecycle.dart';
 import 'social_group_lifecycle.dart';
 import 'social_dragon_reservations.dart';
@@ -84,6 +85,13 @@ abstract final class GameCommandEngine {
       // separately sealed database facts; paid entitlements remain absent.
       final Object? result;
       switch (action) {
+        case 'donate_beacon':
+          result = ConclaveBeacon.donate(
+              game: game,
+              ownerId: keeperId,
+              conclaveId: args.text('conclaveId'),
+              amount: args.integer('amount', min: 1, max: 5000),
+              context: verifiedSocialContext);
         case 'invite_pair_adventure':
         case 'accept_pair_adventure':
         case 'decline_pair_adventure':
@@ -422,6 +430,8 @@ abstract final class GameCommandEngine {
             '_lastGameResult': lastGameResult,
         }
       };
+    } on BeaconException catch (error) {
+      throw GameCommandException(error.code);
     } on SocialPairException {
       throw const GameCommandException('game_action_unavailable');
     } on SocialGroupException {

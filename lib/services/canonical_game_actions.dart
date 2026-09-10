@@ -91,6 +91,20 @@ class CanonicalGameActions {
   Future<void> releaseDragon(String id) =>
       _boolean('release_dragon', {'dragonId': id});
 
+  Future<int> donateBeacon(String conclaveId, int amount) async {
+    final result = await execute(
+        'donate_beacon', {'conclaveId': conclaveId, 'amount': amount});
+    if (result is! Map ||
+        result.length != 2 ||
+        result['donated'] != amount ||
+        result['fragments'] is! int ||
+        result['fragments'] < amount ||
+        result['fragments'] > 5000) {
+      throw const CanonicalGameException('game_result_invalid');
+    }
+    return result['fragments'] as int;
+  }
+
   Future<String> invitePairAdventure(String keeperCode, String dragonId) =>
       _socialLifecycleAction('invite_pair_adventure', {
         'keeperCode': keeperCode.trim().toUpperCase(),
