@@ -736,7 +736,7 @@ void main() {
       await settleCommand();
       stdout.writeln('PROBE: ui_trial_reserved');
       for (var i = 0;
-          i < 250 && find.text('Continue').evaluate().isEmpty;
+          i < 250 && key('trial-result-continue').evaluate().isEmpty;
           i++) {
         await tester.runAsync(
             () => Future<void>.delayed(const Duration(milliseconds: 100)));
@@ -748,17 +748,32 @@ void main() {
         }
       }
       await settleCommand();
+      // The command receipt can finish before the controller's post-frame
+      // result dialog has entered the tree. Wait for that specific control;
+      // the pause overlay also has a Continue button.
+      for (var i = 0;
+          i < 20 && key('trial-result-continue').evaluate().isEmpty;
+          i++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 25)));
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      require(game.snapshot!.trialAttempt == null,
+          'client_probe_trial_not_finished');
+      require(key('trial-result-continue').evaluate().length == 1,
+          'client_probe_trial_result_missing');
       final trialResult = decodeTrialCompletion(
           game.snapshot!.data['trials']['lastResult']['result']);
       require(
-          game.snapshot!.trialAttempt == null &&
-              find.text('Continue').evaluate().length == 1 &&
-              game.snapshot!.dragon(pupil.id)!.xp ==
-                  trialDragon.xp + trialResult.reward.xp &&
-              !game.snapshot!.trialOffers
-                  .any((o) => o.id == 'staging-verified-ruin') &&
-              tester.takeException() == null,
-          'client_probe_trial_verified_reward');
+          game.snapshot!.dragon(pupil.id)!.xp ==
+              trialDragon.xp + trialResult.reward.xp,
+          'client_probe_trial_reward_mismatch');
+      require(
+          !game.snapshot!.trialOffers
+              .any((o) => o.id == 'staging-verified-ruin'),
+          'client_probe_trial_offer_not_consumed');
+      require(
+          tester.takeException() == null, 'client_probe_trial_render_error');
       stdout.writeln(
           'PASS: real Trial selection and sprite game; server replay, consumed offer and exactly one reward.');
       stdout.writeln('PROBE: ui_profile_start');
