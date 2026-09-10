@@ -10,6 +10,7 @@ $ErrorActionPreference = 'Stop'
 if ($ProjectRef -cne 'vtmjkhzalalozpfnbvsd') { throw 'Only registered staging is allowed.' }
 if ([string]::IsNullOrWhiteSpace($ManagementAccessToken)) { throw 'Missing protected management configuration.' }
 $query = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'canonical_social_projection_contract.sql') -Raw -Encoding utf8
+$phase = 'history'
 try {
   if ($RehearseMigrations) {
     $history = Invoke-RestMethod -Method Post -Uri "https://api.supabase.com/v1/projects/$ProjectRef/database/query" `
@@ -24,12 +25,23 @@ try {
         [long]$_.BaseName.Split('_')[0] -le 202609100068 } | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw -Encoding utf8 })
     $query = "begin;`n" + ($pending -join "`n") + "`n" + [regex]::Replace($query, '(?m)^begin;\r?\n', '', 1)
   }
+  $phase = 'rollback_query'
   $result = Invoke-RestMethod -Method Post -Uri "https://api.supabase.com/v1/projects/$ProjectRef/database/query" `
     -Headers @{Authorization = "Bearer $ManagementAccessToken"} -ContentType 'application/json' -TimeoutSec 90 `
     -Body (ConvertTo-Json @{query=$query; read_only=$false} -Compress)
 } catch {
   $detail = if ($null -ne $_.ErrorDetails) { [string]$_.ErrorDetails.Message } else { [string]$_.Exception.Message }
   if ($detail -match '\b(social_projection_contract_[a-z_]+)\b') { Write-Output "Failed assertion: $($Matches[1])" }
+  Write-Output "Failed phase: $phase"
+  if ($null -ne $_.Exception.Response) { Write-Output "HTTP status: $([int]$_.Exception.Response.StatusCode)" }
+  if ($detail -match 'ERROR:\s+([0-9A-Z]{5}):') { Write-Output "SQL state: $($Matches[1])" }
+  if ($detail -match '\b(game_[a-z_]+|invalid_profile|invalid_group_dragon|economy_server_inventory_required)\b') {
+    Write-Output "Fixed database error: $($Matches[1])"
+  }
+  foreach ($classification in @('does not exist','ambiguous','violates not-null','violates check','syntax error','permission denied','timeout','deadlock')) {
+    if ($detail.Contains($classification)) { Write-Output "SQL classification: $classification" }
+  }
+
   throw 'Staging social projection rehearsal failed; its transaction must roll back.'
 }
 if ($result.canonical_social_projection_contract_passed -ne $true) { throw 'Social projection contract did not confirm rollback.' }
