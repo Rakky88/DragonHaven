@@ -212,7 +212,26 @@ void main() {
             () => Future<void>.delayed(const Duration(milliseconds: 25)));
         await tester.pump();
       }
-      require(!game.busy && game.canAct, 'client_probe_ui_command_failed');
+      if (game.busy || !game.canAct) {
+        const known = {
+          'game_command_unavailable',
+          'game_snapshot_invalid',
+          'game_snapshot_stale',
+          'game_refresh_required',
+          'game_intent_invalid',
+          'game_attempt_unavailable',
+          'game_attempt_time_invalid',
+          'game_state_reconciliation_required',
+          'game_result_invalid',
+          'economy_rate_limited'
+        };
+        final code = game.busy
+            ? 'busy'
+            : known.contains(game.errorCode)
+                ? game.errorCode!
+                : 'unavailable';
+        throw StateError('client_probe_ui_command_$code');
+      }
     }
 
     Future<void> mount(Widget child) async {
@@ -249,7 +268,9 @@ void main() {
       await tester.ensureVisible(finder);
       await tester.pump(const Duration(milliseconds: 400));
       await tester.runAsync(() => tester.tap(finder));
-      await tester.pump();
+      // Route construction can start HTTP and filesystem work in initState.
+      // Keep that work on the real clock, like the actual Flutter app.
+      await tester.runAsync(() => tester.pump());
       await tester.pump(const Duration(milliseconds: 400));
     }
 
@@ -705,6 +726,7 @@ void main() {
       await tap(key('choose-trial-staging-verified-ruin'));
       await tap(key('trial-dragon-${pupil.id}'));
       await settleCommand();
+      stdout.writeln('PROBE: ui_trial_reserved');
       for (var i = 0;
           i < 250 && find.text('Continue').evaluate().isEmpty;
           i++) {
