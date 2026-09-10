@@ -80,7 +80,7 @@ begin
   delete from public.conclave_members where user_id=keeper;
   leased:=public.begin_revisioned_game_command(keeper,gen_random_uuid(),'donate_beacon',payload,10080,rules,revision_before);
   if leased->>'failure_code'<>'game_action_unavailable' then raise exception 'beacon_contract_membership'; end if;
-  update public.player_economy_authority set authority_mode='server' where user_id=keeper;
+  update public.player_economy_authority set authority_mode='server',activated_at=now() where user_id=keeper;
   perform set_config('request.jwt.claim.role','authenticated',true);
   begin
     perform public.egg_altar_command('legacy-probe','donate',payload);
