@@ -150,4 +150,41 @@ void main() {
     expect(session.snapshot!.trialAttempt, isNull);
     expect(source.dragon!.xp, xp);
   });
+
+  test('a finished saved checkpoint delivers its reward after reopening once',
+      () async {
+    final started = await source.start();
+    final xp = source.dragon!.xp;
+    final model = TrialRunModel(
+        kind: offer.kind,
+        seed: started.seed,
+        training: {
+          for (final f in TrainingFocus.values) f: source.dragon!.trainingFor(f)
+        });
+    final inputs = <TrialInput>[];
+    for (var at = 0; at <= 1600 && !model.ended; at += 400) {
+      model.advanceTo(at);
+      final input = TrialInput(at, TrialControl.strikeRuin);
+      model.apply(input);
+      inputs.add(input);
+    }
+    expect(model.ended, true);
+    server.now = server.now.add(Duration(milliseconds: model.elapsedMs));
+    await source.checkpoint(
+        TrialInputTranscript.encode(inputs, startMilliseconds: 0),
+        model.elapsedMs,
+        finish: false);
+    final restored = CanonicalTrialRunSource(session, offer, source.dragonId,
+        resumeAttemptId: started.id);
+    final controller = TrialGameplayController(restored);
+    addTearDown(controller.dispose);
+    await controller.prepare();
+    expect(controller.error, isNull);
+    expect(controller.completion!.score, model.score);
+    expect(restored.dragon!.xp, xp + controller.completion!.reward.xp);
+    final revision = server.revision;
+    await controller.flush();
+    expect(server.revision, revision);
+    expect(session.snapshot!.trialAttempt, isNull);
+  });
 }

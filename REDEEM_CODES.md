@@ -1,14 +1,20 @@
 # DragonHaven Redeem Codes
 
-Latest staging: schema 74, deployed from `ceb07c9` by run 34485261951.
-All candidate app/domain/SQL checks passed; preflight at 14:01:46 UTC reported
-74 migrations, lint 0 and Auth/settings/app 200. The first actual inventory read
-then failed: the HTTP guard still expected the pre-trade projection fields.
-All synthetic accounts were removed and all four switches disabled. The guard
-now includes the trade board, with a local compiled-Dart-to-HTTP regression for
-empty/filled offers, exact variants and masked egg DNA. Its staging rerun is
-pending. Production stays schema 65 / v0.05.29. The last verified group, partner
-and Beacon UI evidence remains on schema 73 (Beacon run 34481864223).
+Latest staging: run 34486928336 on `9e2d4f9` deployed schema 74 and the
+repaired worker. Preflight at 14:15:39 UTC passed with lint 0 and
+Auth/settings/app 200. Actual inventory/gameplay, group, partner and Beacon
+UI checks passed. The trade probe reached a committed exact exchange and
+recovered a lost reply, then failed its sender-animation assertion. Cleanup
+removed every synthetic account and disabled all four switches at 14:22:04
+UTC. Production remains schema 65 / v0.05.29. Full cutover, migration and
+lossless APK reduction remain open; no release yet.
+
+Candidate 75 widens seasonal score/action/duration storage and ordinary/friend
+score readers to bigint, preserving exact values through JavaScript's safe
+integer ceiling. The rollback probe covers a 3-billion score and 8-billion-ms
+run, profile/friend/snapshot readers, event/ordinary rankings, podium, chronicle,
+replay and out-of-range rejection. It has not yet been rehearsed or applied.
+No event dates, rank cutoffs, reward amounts, probabilities or codes change.
 
 Trial resume candidate: resuming restores the saved game, score and mistakes,
 releases a previously held pointer and rotates the attempt ID to fence an old
@@ -63,7 +69,7 @@ Last verified: 10 September 2026
 
 Ruleset: v0.05.29 / 10079 published; production remains at schema 65; current staging verification is recorded above. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
 
-<!-- reference-source-fingerprint: 01145afbad8ef3c0 -->
+<!-- reference-source-fingerprint: 5c370740265aa64a -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 

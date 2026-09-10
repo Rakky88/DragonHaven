@@ -1,5 +1,23 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+Latest staging: run 34486928336 on `9e2d4f9` deployed schema 74 and the
+repaired worker. Preflight at 14:15:39 UTC passed with lint 0 and
+Auth/settings/app 200. Actual inventory/gameplay, group, partner and Beacon
+UI checks passed. The trade probe reached a committed exact exchange and
+recovered a lost reply, then failed its sender-animation assertion. Cleanup
+removed every synthetic account and disabled all four switches at 14:22:04
+UTC. Production remains schema 65 / v0.05.29. Full cutover, migration and
+lossless APK reduction remain open; no release yet.
+
+Candidate 75 widens seasonal score/action/duration storage and ordinary/friend
+score readers to bigint, preserving exact values through JavaScript's safe
+integer ceiling. The rollback probe covers a 3-billion score and 8-billion-ms
+run, profile/friend/snapshot readers, event/ordinary rankings, podium, chronicle,
+replay and out-of-range rejection. It has not yet been rehearsed or applied.
+No event dates, rank cutoffs, reward amounts, probabilities or codes change.
+
+Earlier entries below are historical checkpoints.
+
 2026-09-10 latest staging: run `34485261951` on `ceb07c9` applied schema 74 and
 worker `9000c2b3f70a170201d4a12e6262ade1a5c78b18974d99079e16a61bb139fdd7`
 (1,164,323 bytes). All app/rules/SQL checks passed and preflight at 14:01:46 UTC
