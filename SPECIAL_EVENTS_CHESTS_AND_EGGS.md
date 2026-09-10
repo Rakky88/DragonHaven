@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: f9fd2f5d64cd968b -->
+<!-- reference-source-fingerprint: e28e666bc2898a68 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -858,3 +858,17 @@ reward pools and counts are unchanged. A server import refuses unresolved local
 times rather than guessing the device timezone. Unknown metadata is preserved.
 The Trial startup reservation is deferred until its route has finished building;
 this fixes account-consumer notifications during build without altering gameplay.
+
+### Social reservation authority candidate (10 September 2026)
+
+The same verified database reservation view now supplies dragon availability
+in command evaluation and display. Waiting/current group lobbies, unfinished
+group rewards and pending/active partner adventures retain their dragon until
+the owner leaves, the source closes or the reward is acknowledged. Obsolete
+social bindings clear without altering solo journeys. Conflicting social,
+Trial, Academy pupil or mentor reservations are refused, and a changed source
+invalidates an in-flight command atomically. The feature is dormant outside
+explicit staging rehearsal until full migration/cutover. Existing event
+schedules, expertise bonuses, reward tables, drop weights and preview rules
+are unchanged. Old authenticated lifecycle/ack RPCs remain available only for
+legacy accounts; promoted accounts must use canonical commands.

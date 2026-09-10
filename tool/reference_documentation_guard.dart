@@ -16,6 +16,8 @@ const specialContentReference = ReferenceDocumentSpec(
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
     'lib/domain/social_claims.dart',
+    'lib/domain/social_dragon_reservations.dart',
+    'supabase/migrations/202609100069_canonical_social_reservations.sql',
     'supabase/migrations/202609100067_canonical_social_claims.sql',
     'lib/domain/school_attempts.dart',
     'lib/domain/trial_attempts.dart',
@@ -106,6 +108,8 @@ const randomRewardsReference = ReferenceDocumentSpec(
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
     'lib/domain/social_claims.dart',
+    'lib/domain/social_dragon_reservations.dart',
+    'supabase/migrations/202609100069_canonical_social_reservations.sql',
     'supabase/migrations/202609100067_canonical_social_claims.sql',
     'lib/domain/school_attempts.dart',
     'lib/domain/trial_attempts.dart',

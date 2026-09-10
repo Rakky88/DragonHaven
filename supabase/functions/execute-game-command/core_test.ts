@@ -79,7 +79,7 @@ Deno.test("read uses Auth owner and public projection while mutations are disabl
       return readSnapshot;
     },
     project: (input) => {
-      equal(input, { state: readSnapshot.state, ownerId: owner, now: readSnapshot.server_time, verifiedSocialClaims: [] });
+      equal(input, { state: readSnapshot.state, ownerId: owner, now: readSnapshot.server_time, verifiedSocialClaims: [], verifiedSocialReservations: null });
       return publicData;
     },
     evaluate: () => { throw new Error("a read cannot evaluate commands"); },
@@ -126,7 +126,7 @@ Deno.test("a command uses authenticated owner and private lease inputs, and retu
   const text = await result.text();
   assert(!text.includes("private") && !text.includes("secret_seed") && !text.includes("lease_token"));
   equal(inputs, [{ state: leased.state, action: body.action, payload: body.payload,
-    secretSeed: hash, now: leased.now, keeperId: owner, verifiedSocialContext: null }]);
+    secretSeed: hash, now: leased.now, keeperId: owner, verifiedSocialContext: null, verifiedSocialReservations: null }]);
   equal(calls.map((call) => call.name), ["begin_revisioned_game_command", "commit_canonical_game_command"]);
   assert(calls.every((call) => call.payload.p_owner_id === owner));
   assert(calls[0].payload.p_expected_revision === 2);
@@ -388,4 +388,29 @@ Deno.test("changed social sources are terminal only after SQL proves rollback", 
       assert(calls.at(-1)?.payload.p_lease_token === lease);
     }
   }
+});
+
+Deno.test("social reservations originate only in the database lease and owner read", async () => {
+  const reservations = {version: 1, ownerId: owner,
+    reservations: [{dragonId: "owned-dragon", kind: "group", sourceId: other}]};
+  const {deps, inputs, calls} = setup();
+  const original = deps.rpc;
+  deps.rpc = async (name, payload) => name === "begin_revisioned_game_command"
+    ? {...leased, social_reservations: reservations} : original(name, payload);
+  const response = await handleCommand(request(), deps);
+  assert(response.status === 200);
+  equal(inputs[0].verifiedSocialReservations, reservations);
+  assert(!(await response.text()).includes("social_reservations"));
+  for (const forged of [{...body, verifiedSocialReservations: reservations},
+    {...body, payload: {...body.payload, reservations}},
+    {...readBody, social_reservations: reservations}]) {
+    const before = calls.length;
+    assert((await handleCommand(request(forged), deps)).status === 400);
+    assert(calls.length === before);
+  }
+  const reader = setup({
+    rpc: async () => ({...readSnapshot, social_reservations: reservations}),
+    project: (input) => {equal(input.verifiedSocialReservations, reservations); return publicData;},
+  });
+  assert((await handleCommand(request(readBody), reader.deps)).status === 200);
 });

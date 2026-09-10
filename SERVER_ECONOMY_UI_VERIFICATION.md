@@ -1,5 +1,31 @@
 # Canonical gameplay integration
 
+## Social projection verified; reservation integration candidate (10 September)
+
+Migration **68** passed its rollback rehearsal in run
+[34464063663](https://github.com/Rakky88/DragonHaven/actions/runs/34464063663)
+and was then applied and verified in full staging run
+[34464193111](https://github.com/Rakky88/DragonHaven/actions/runs/34464193111)
+on `3fc02c1`. All 858 tests, timezone checks, Edge/parity checks and the real
+app/server harness passed. The projection contract passed before and after
+apply. Final health at **10:16:16 UTC**: 68 migrations, lint 0 and all three
+HTTP endpoints 200. Synthetic accounts were removed and worker/social/
+projection switches disabled. Production stays on schema 65, release 29.
+
+The next candidate, migration 69, seals one database-owned group/partner
+dragon-reservation view into each command lease and the public snapshot.
+Changed sources refuse commit with an explicit rollback result; receipt replay
+still returns the original result after a reward releases its dragon. Domain
+and public display share the same ownership/conflict validation. The five
+local reservation tests include real Trial/Academy starts, release refusal,
+ordinary adventure preservation, owner changes and pupil/mentor collisions.
+Legacy social lifecycle/acknowledgment RPCs are fenced for promoted accounts.
+**New canonical create/join/leave/partner action screens are not connected yet;
+this candidate establishes their reservation boundary. Migration 69 is not
+yet rehearsed or applied.** Two-owner trades, Conclave/rankings, full gameplay
+cutover, representative migration and lossless APK reduction remain open.
+
+
 ## Current checkpoint: 10 September 2026
 
 Staging run [34462032107](https://github.com/Rakky88/DragonHaven/actions/runs/34462032107)

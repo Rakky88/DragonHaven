@@ -1,3 +1,4 @@
+import 'social_dragon_reservations.dart';
 import 'social_claims.dart';
 import 'dart:convert';
 
@@ -30,6 +31,7 @@ abstract final class GameCommandEngine {
     required DateTime now,
     required String keeperId,
     Map<String, dynamic>? verifiedSocialContext,
+    Map<String, dynamic>? verifiedSocialReservations,
   }) async {
     final keys = GameCommandSchema.keys[action];
     if (keys == null ||
@@ -52,6 +54,14 @@ abstract final class GameCommandEngine {
       if (game.eggAltar.ownerId != null && game.eggAltar.ownerId != keeperId) {
         throw const GameCommandException('game_state_owner_mismatch');
       }
+      SocialDragonReservations.apply(
+        game: game,
+        ownerId: keeperId,
+        verified: verifiedSocialReservations,
+        activeAttempt: state['_activeGameAttempt'] == null
+            ? null
+            : Map<String, dynamic>.from(state['_activeGameAttempt'] as Map),
+      );
       game.altarCurrentUserId = () => keeperId;
       game.altarRequiresAccount = true;
       Map<String, dynamic>? activeAttempt = state['_activeGameAttempt'] == null

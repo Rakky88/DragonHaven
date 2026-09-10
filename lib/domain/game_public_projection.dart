@@ -1,3 +1,4 @@
+import 'social_dragon_reservations.dart';
 import 'dart:math';
 
 import '../models/adventure.dart';
@@ -19,6 +20,7 @@ abstract final class GamePublicProjection {
     required String ownerId,
     required DateTime now,
     List<dynamic> verifiedSocialClaims = const [],
+    Map<String, dynamic>? verifiedSocialReservations,
   }) {
     if (state['pendingAltarOperation'] != null) {
       throw const FormatException('Unresolved Altar operation');
@@ -29,6 +31,14 @@ abstract final class GamePublicProjection {
       if (game.eggAltar.ownerId != null && game.eggAltar.ownerId != ownerId) {
         throw const FormatException('Wrong Altar owner');
       }
+      SocialDragonReservations.apply(
+        game: game,
+        ownerId: ownerId,
+        verified: verifiedSocialReservations,
+        activeAttempt: state['_activeGameAttempt'] == null
+            ? null
+            : Map<String, dynamic>.from(state['_activeGameAttempt'] as Map),
+      );
       final eggs = <Map<String, dynamic>>[
         for (final egg in game.eggStash) _egg(game, egg, location: 'stash'),
       ];

@@ -194,6 +194,11 @@ Future<Map<String, dynamic>> runGameDomainProbe(
         'futureMetadata': {'createdAt': 'unchanged'},
       }),
       'school': school,
+      'socialReservations': [
+        if (includeTrialCommands)
+          for (final kind in ['group', 'pair'])
+            await _reservationProbe(stored, now, seed, kind),
+      ],
       'socialClaims':
           includeTrialCommands ? await socialClaimProbe(state, now) : const [],
       'careCommands':
@@ -216,4 +221,38 @@ Future<Map<String, dynamic>> runGameDomainProbe(
   } finally {
     game.dispose();
   }
+}
+
+Future<Map<String, dynamic>> _reservationProbe(
+    Map<String, dynamic> state, DateTime now, String seed, String kind) async {
+  const owner = '11111111-1111-4111-8111-111111111111';
+  final reservations = <String, dynamic>{
+    'version': 1,
+    'ownerId': owner,
+    'reservations': [
+      {
+        'dragonId': state['pet']['id'],
+        'kind': kind,
+        'sourceId': '22222222-2222-4222-8222-222222222222'
+      }
+    ]
+  };
+  final command = await GameCommandEngine.execute(
+      state: state,
+      action: 'set_dragon_highlight',
+      payload: {
+        'dragonId': state['pet']['id'],
+        'focus': 'spirit',
+        'highlighted': true
+      },
+      secretSeed: seed,
+      now: now,
+      keeperId: owner,
+      verifiedSocialReservations: reservations);
+  final projected = GamePublicProjection.project(
+      state: command['state'],
+      ownerId: owner,
+      now: now,
+      verifiedSocialReservations: reservations);
+  return {'kind': kind, 'command': command, 'projection': projected};
 }

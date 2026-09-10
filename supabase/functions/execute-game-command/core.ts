@@ -208,7 +208,8 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
     // These inputs come exclusively from Auth and the private database lease.
     const evaluated = await deps.evaluate({ state: leased.state, action: command.action,
       payload: command.payload, secretSeed: leased.secret_seed, now: leased.now, keeperId: owner,
-      verifiedSocialContext: leased.social_context ?? null });
+      verifiedSocialContext: leased.social_context ?? null,
+      verifiedSocialReservations: leased.social_reservations ?? null });
     if (!object(evaluated)) throw new Error("invalid_evaluation");
     if (typeof evaluated.error === "string" && domainErrors.has(evaluated.error)) {
       const recorded = await deps.rpc("fail_canonical_game_command", {
@@ -286,7 +287,8 @@ async function readState(owner: string, clientBuild: number, deps: Dependencies)
       throw new Error("invalid_snapshot");
     }
     const data = deps.project({ state: snapshot.state, ownerId: owner, now: snapshot.server_time,
-      verifiedSocialClaims: snapshot.social_claims ?? [] });
+      verifiedSocialClaims: snapshot.social_claims ?? [],
+      verifiedSocialReservations: snapshot.social_reservations ?? null });
     if (object(data) && data.error === "game_state_reconciliation_required") {
       return error("game_state_reconciliation_required", 409);
     }

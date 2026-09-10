@@ -23,12 +23,13 @@ if ($LASTEXITCODE -ne 0) { throw 'Migration history unavailable.' }
 $remote = @($state.migrations | ForEach-Object { [string]$_.remote } | Where-Object { $_ } | Sort-Object)
 $local = @(Get-ChildItem supabase/migrations -Filter '*.sql' | ForEach-Object { $_.BaseName.Split('_')[0] } | Sort-Object)
 $baseline = @($local | Where-Object { [long]$_ -le 202609090065 })
-if ($local[-1] -cne '202609100068' -or
+if ($local[-1] -cne '202609100069' -or
     (@(Compare-Object $remote $baseline).Count -ne 0 -and
      @(Compare-Object $remote @($baseline + '202609100066')).Count -ne 0 -and
      @(Compare-Object $remote @($baseline + '202609100066' + '202609100067')).Count -ne 0 -and
+     @(Compare-Object $remote @($baseline + '202609100066' + '202609100067' + '202609100068')).Count -ne 0 -and
      @(Compare-Object $remote $local).Count -ne 0)) {
-  throw 'Requires exact registered staging schema 65/66/67/68 and only the reviewed Sunwake/social migrations.'
+  throw 'Requires exact registered staging schema 65/66/67/68/69 and only the reviewed Sunwake/social migrations.'
 }
 ./tool/staging_endless_sunwake_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
@@ -39,6 +40,9 @@ if ($local[-1] -cne '202609100068' -or
 ./tool/staging_canonical_social_projection_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
   -RehearseMigrations:([long]$remote[-1] -lt 202609100068)
+./tool/staging_canonical_social_reservation_contract.ps1 -ProjectRef $projectRef `
+  -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
+  -RehearseMigrations:([long]$remote[-1] -lt 202609100069)
 ./tool/staging_canonical_game_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 ./tool/staging_canonical_import_contract.ps1 -ProjectRef $projectRef `
@@ -62,6 +66,8 @@ if (@(Compare-Object $remote $local).Count -ne 0) {
 ./tool/staging_canonical_social_claim_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 ./tool/staging_canonical_social_projection_contract.ps1 -ProjectRef $projectRef `
+  -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
+./tool/staging_canonical_social_reservation_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 ./tool/staging_canonical_game_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN

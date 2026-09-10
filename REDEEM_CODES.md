@@ -4,7 +4,7 @@ Last verified: 10 September 2026
 
 Ruleset: v0.05.29 / 10079 published; production remains at schema 65; staging is at schema 66 after the verified Academy/Sunwake rehearsal. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
 
-<!-- reference-source-fingerprint: 0a7761137a70dc4e -->
+<!-- reference-source-fingerprint: dbea7d3f10a1a882 -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 
@@ -123,3 +123,7 @@ availability, event-preview activation and rewards are unchanged. The canonical
 Trial screen now replays bounded inputs before granting the existing ordinary
 Trial rewards during a preview; preview Special Adventure/Chest exclusions stay
 as documented. No redeem information is added to public release notes.
+
+Social-reservation integration review (10 September 2026): the command evaluator
+uses separately verified dragon reservations before executing an action.
+No active code, entitlement, reward content or quantity changed in this step.
