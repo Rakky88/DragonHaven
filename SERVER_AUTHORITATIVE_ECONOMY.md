@@ -1,9 +1,38 @@
 # DragonHaven server-authoritative economy contract
 
-Last updated: **9 September 2026**
+## Current checkpoint: 10 September 2026
 
-Release **v0.05.29 / 10079** is published and verified. Production and staging
-have **65 migrations**. Latest production pre/postflight: parity 65, lint 0 and
+Staging run [34462032107](https://github.com/Rakky88/DragonHaven/actions/runs/34462032107)
+on `bd4f548` passed all **858 tests**, clean analysis, Amsterdam/New York timer
+and calendar tests, Edge contracts, native/JavaScript parity and the actual
+Auth/Edge/Postgres app harness. Original Trial, Academy, profile and milestone
+screens completed without render errors. Group, partner and podium rewards
+were claimed once through the UI and acknowledged in the same transaction;
+the partner's own reward remained available. Both synthetic accounts and all
+command journals were removed, both staging switches disabled. Final staging
+preflight: **67 migrations, lint 0, Auth/settings/application HTTP 200 at
+09:52:51 UTC**. Production remains on schema 65 and release v0.05.29 / 10079;
+no player has been promoted or production reward source consumed.
+
+Next candidate: migration 68 projects committed wallet totals, owned dragon
+facts and social showcase data atomically with the canonical revision. It
+preserves historical dragon UUIDs while marking released dragons unavailable.
+A separate, disabled-by-default rehearsal switch isolates shadow copies.
+Old authenticated RPCs cannot overwrite server-owned wallet/dragon/inventory
+or showcase rows. An explicit rollback contract covers projection failure,
+receipt replay, exact balances, stale discoveries, release/return identities
+and old-client refusal. **Migration 68 is not yet applied or verified on
+staging.** Social lifecycle/reservations, two-owner trades, Conclave/rankings,
+full gameplay cutover and representative player migration remain open, then
+lossless APK reduction and the single authorized release.
+
+The dated component sections below are historical evidence, not a claim that
+the full server economy or release is complete.
+
+Last updated: **10 September 2026**
+
+Release **v0.05.29 / 10079** is published and verified. At publication, production and staging
+had **65 migrations**. Latest production pre/postflight: parity 65, lint 0 and
 Auth/settings/application HTTP 200; accounts remain legacy, game/economic
 mutations disabled, zero shadow copies, production push enabled. See
 `RELEASE_V0.05.29_VERIFICATION.md`. The older per-component runs below retain

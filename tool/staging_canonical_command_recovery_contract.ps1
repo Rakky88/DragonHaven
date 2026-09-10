@@ -26,7 +26,8 @@ try {
     @(Compare-Object $actual @($expected + @('202609070057','202609080058','202609080059','202609090060','202609090061','202609090062'))).Count -eq 0 -or
     @(Compare-Object $actual @($expected + @('202609070057','202609080058','202609080059','202609090060','202609090061','202609090062','202609090063','202609090064','202609090065'))).Count -eq 0 -or
     @(Compare-Object $actual @($expected + @('202609070057','202609080058','202609080059','202609090060','202609090061','202609090062','202609090063','202609090064','202609090065','202609100066'))).Count -eq 0 -or
-    @(Compare-Object $actual @($expected + @('202609070057','202609080058','202609080059','202609090060','202609090061','202609090062','202609090063','202609090064','202609090065','202609100066','202609100067'))).Count -eq 0
+    @(Compare-Object $actual @($expected + @('202609070057','202609080058','202609080059','202609090060','202609090061','202609090062','202609090063','202609090064','202609090065','202609100066','202609100067'))).Count -eq 0 -or
+    @(Compare-Object $actual @($expected + @('202609070057','202609080058','202609080059','202609090060','202609090061','202609090062','202609090063','202609090064','202609090065','202609100066','202609100067','202609100068'))).Count -eq 0
   if (-not $applied -and @(Compare-Object $actual $expected).Count -ne 0) { throw 'recovery_contract_baseline_mismatch' }
   $migration = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../supabase/migrations/202609070057_canonical_command_recovery.sql') -Raw -Encoding utf8
   $contract = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'canonical_command_recovery_contract.sql') -Raw -Encoding utf8

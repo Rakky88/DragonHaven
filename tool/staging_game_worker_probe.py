@@ -472,7 +472,7 @@ def main():
               raise exception 'probe_cleanup_runtime_changed';
             end if;
           end $$;
-          update private.game_engine_runtime set enabled=false, shadow_social_enabled=false, ruleset_sha256={restore} where singleton;
+          update private.game_engine_runtime set enabled=false, shadow_social_enabled=false, shadow_projection_enabled=false, ruleset_sha256={restore} where singleton;
           delete from auth.users where raw_app_meta_data->>'dragonhaven_game_probe'='{RUN}'
             and email like '%@dragonhaven-probe.invalid';
           commit;
@@ -480,7 +480,7 @@ def main():
             (select count(*) from private.canonical_game_states) as copies,
             (select count(*) from private.canonical_game_intents) as intents,
             (select count(*) from private.canonical_game_recoveries) as recoveries,
-            (select enabled or shadow_social_enabled from private.game_engine_runtime where singleton) as enabled;
+            (select enabled or shadow_social_enabled or shadow_projection_enabled from private.game_engine_runtime where singleton) as enabled;
         """)[0]
         require(cleaned == {"accounts": 0, "copies": 0, "intents": 0, "recoveries": 0, "enabled": False}, "probe_cleanup_incomplete")
         print("CLEANUP: both synthetic accounts and shadow commands removed; game worker disabled.", flush=True)
