@@ -1,5 +1,17 @@
 # Canonical gameplay integration
 
+## Group, partner and Beacon rollback proofs passed (10 September)
+
+Focused schema-72 social verification now passed: group run 34475939615 and
+partner run 34475956545, both on `053ce4e`. Each synthetic account and all four
+switches were cleaned up. Partner UI proof includes lost invite recovery,
+decline, acceptance, cancellation, released dragons and one shared 24h trip.
+Beacon rollback run 34476614641 on `70b8aba` also passed; the earlier run
+34476221510 failed only because its synthetic server-authority fixture omitted
+the schema-required activation timestamp. Its transaction rolled back.
+Full schema-73 candidate run 34476782241 on `70b8aba` is in progress; its result
+and final cleanup/health are still pending. Production remains unchanged.
+
 ## Schema 72 applied; social recovery and Beacon candidate (10 September)
 
 Latest staging: schema 72, deployed from `6a2e91e` by run 34474222373.

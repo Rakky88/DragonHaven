@@ -574,7 +574,7 @@ jobs:
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: DragonHaven-staging-pair-lifecycle
+          name: DragonHaven-staging-beacon
           path: staging/canonical-beacon.txt
           if-no-files-found: warn
           retention-days: 30
