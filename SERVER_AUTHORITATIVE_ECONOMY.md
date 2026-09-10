@@ -22,7 +22,9 @@ changing the other keepers' inventories. Rollback run 34492695690 passed on
 75/76 and deployed the worker, then stopped at mandatory database lint: two
 revoked v74 function bodies still return integer columns. Candidate 78 removes
 all seven superseded narrow entry points with RESTRICT; no player data or
-current RPC is removed. Its rollback rehearsal is pending. Production stays
+current RPC is removed. Rollback run 34493611476 passed on d0bd287: all current wide RPCs retain exact
+large scores after RESTRICT removes the old functions. Migration 78 is not
+applied yet. The full staging apply now targets reviewed schema 78. Production stays
 schema 65 / v0.05.29; no release has been published.
 
 
