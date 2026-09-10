@@ -127,17 +127,23 @@ void main() {
       await tap('weave-beacon-project');
       await tap('weave-beacon-project');
       await settle();
+      stdout.writeln('PROBE: beacon_final_total_check');
       require(find.text('515 / 5000').evaluate().length == 1,
           'shared_total_not_updated');
       stdout.writeln(
           'PASS: real Beacon UI; one exact donation and shared milestone after lost reply recovery.');
     } finally {
-      await tester.pumpWidget(const SizedBox.shrink());
+      stdout.writeln('PROBE: beacon_cleanup_begin');
+      await tester.runAsync(() => tester.pumpWidget(const SizedBox.shrink()));
+      stdout.writeln('PROBE: beacon_widget_removed');
       await tester.runAsync(() async {
         game?.dispose();
-        await auth.dispose();
+        stdout.writeln('PROBE: beacon_auth_dispose_begin');
+        await auth.dispose().timeout(const Duration(seconds: 15));
+        stdout.writeln('PROBE: beacon_auth_disposed');
         if (directory != null) await directory!.delete(recursive: true);
       });
+      stdout.writeln('PROBE: beacon_cleanup_complete');
       await tester.binding.setSurfaceSize(null);
     }
   }, timeout: const Timeout(Duration(minutes: 4)));

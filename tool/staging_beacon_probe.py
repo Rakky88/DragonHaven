@@ -65,6 +65,7 @@ def run_beacon_probe(*, root, project, base, public_key, run, fixture, admin_hea
         cwd=root,env=child,capture_output=True,text=True,timeout=360)
     del child['STAGING_BEACON_SESSIONS']
     if result.returncode:
+        if 'PASS: real Beacon UI;' in result.stdout: print('PROBE: beacon_assertions_passed_before_cleanup',flush=True)
         for phase in re.findall(r'PROBE: ([a-z_]+)',result.stdout): print('PROBE: '+phase,flush=True)
         failure = re.search(r'client_probe_[a-z_]+',result.stdout+result.stderr)
         require(False, failure.group(0) if failure else 'client_probe_beacon_failed')
