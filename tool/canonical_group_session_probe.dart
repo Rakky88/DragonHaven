@@ -85,22 +85,14 @@ void main() {
         }
         require(!games[active].busy, 'command_timeout');
         if (!permitLost && !games[active].canAct) {
-          const known = {
-            'game_command_unavailable',
-            'game_social_state_changed',
-            'game_action_unavailable',
-            'game_state_changed',
-            'game_snapshot_invalid',
-            'game_snapshot_stale',
-            'game_result_invalid',
-            'game_refresh_required',
-            'game_storage_unavailable',
-            'game_intent_invalid',
-            'game_state_reconciliation_required'
-          };
-          final code = known.contains(games[active].errorCode)
-              ? games[active].errorCode!
+          final error = games[active].errorCode;
+          final code = error != null &&
+                  RegExp(r'^(game|economy|invalid)_[a-z_]{1,70}$')
+                      .hasMatch(error)
+              ? error
               : 'unavailable';
+          stdout.writeln(
+              'PROBE: group_state_${games[active].fresh ? 'fresh' : 'stale'}_${games[active].snapshot == null ? 'no_view' : 'has_view'}_${games[active].snapshot?.mutationsEnabled == true ? 'enabled' : 'paused'}');
           throw StateError('client_probe_group_command_$code');
         }
         require(groups[active].error == null, 'read_unavailable');
@@ -202,6 +194,7 @@ void main() {
       final requiredPlayers = own.requiredPlayers;
       stdout.writeln('PROBE: group_first_member_join_begin');
       await mount(1);
+      stdout.writeln('PROBE: group_first_member_mounted');
       await choose(button: 'canonical-join-group-$source');
       if (requiredPlayers > 2) {
         await mount(0);
