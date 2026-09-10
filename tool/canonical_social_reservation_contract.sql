@@ -10,7 +10,8 @@ begin
   if (select enabled or shadow_social_enabled or shadow_projection_enabled or shadow_lifecycle_enabled
       from private.game_engine_runtime where singleton) then
     raise exception 'social_reservation_contract_requires_dormant'; end if;
-  if has_function_privilege('authenticated','private.canonical_social_reservations(uuid,timestamptz,boolean)','execute')
+  if has_function_privilege('service_role','public.begin_canonical_game_command(uuid,uuid,text,jsonb,integer,text)','execute')
+      or has_function_privilege('authenticated','private.canonical_social_reservations(uuid,timestamptz,boolean)','execute')
       or has_function_privilege('service_role','public.begin_canonical_game_command_v68(uuid,uuid,text,jsonb,integer,text)','execute')
       or has_function_privilege('authenticated','public.respond_seasonal_pair_adventure_v68(uuid,boolean,text,integer,integer,integer)','execute') then
     raise exception 'social_reservation_contract_permissions'; end if;

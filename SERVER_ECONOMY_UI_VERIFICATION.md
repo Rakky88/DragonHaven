@@ -1,5 +1,25 @@
 # Canonical gameplay integration
 
+## Reservation apply stopped at the permission guard (10 September 2026)
+
+The isolated reservation rollback contract passed in run 34465503291.
+Full run 34465696868 on `0fefcc8` compiled and passed its tests, rehearsed and
+applied schema **69** at 10:29:35 UTC. The reservation/projection/claim contracts
+passed after apply, but the original compatibility contract correctly stopped
+on `game_contract_permissions`: replacing the raw begin function had restored
+its service-role EXECUTE grant. Player roles remained denied; the revisioned
+API and expected-revision boundary must also remain the only service entry.
+No worker deployment or real UI probe was reached; staging was already dormant
+and no synthetic persistent accounts were created by this failed apply phase.
+
+Migration **70** restores the revoked grant without editing applied history.
+The reservation rollback test now asserts this exact boundary too, and
+rehearses 69 together with 70 on older baselines. On the known schema-69
+baseline, the verified repair is applied before the historical compatibility
+contracts, which must all pass afterward. This repair is **pending staging
+verification**. Production remains untouched on schema 65, release 29.
+
+
 ## Social projection verified; reservation integration candidate (10 September)
 
 Migration **68** passed its rollback rehearsal in run
