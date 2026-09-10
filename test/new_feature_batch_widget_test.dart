@@ -386,13 +386,16 @@ void main() {
     addTearDown(game.dispose);
     final availableIds = game.ownedDragons.map((dragon) => dragon.id).toList();
 
+    var elapsed = 0;
     for (final definition in dragonSchoolGames) {
+      elapsed = 0;
       await tester.pumpWidget(ChangeNotifierProvider.value(
         value: game,
         child: MaterialApp(
           home: DragonSchoolGameScreen(
             key: ValueKey(definition.id),
             definition: definition,
+            elapsedMilliseconds: () => elapsed,
             dragonIds: availableIds.take(definition.minimumDragons).toList(),
           ),
         ),
@@ -406,6 +409,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 120));
       if (definition.kind == DragonSchoolGameKind.sigilMemory) {
         expect(find.byKey(const Key('school-sigil-preview')), findsOneWidget);
+        elapsed += 850;
         await tester.pump(const Duration(milliseconds: 850));
         expect(find.byKey(const Key('school-sigil-grid')), findsOneWidget);
       }

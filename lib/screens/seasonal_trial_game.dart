@@ -37,6 +37,7 @@ class SeasonalTrialGame extends StatefulWidget {
     required this.offer,
     required this.dragon,
     required this.onFinished,
+    this.onStarted,
     this.randomSeed,
     this.clock,
   });
@@ -44,6 +45,7 @@ class SeasonalTrialGame extends StatefulWidget {
   final TrialOffer offer;
   final Pet dragon;
   final SeasonalTrialFinished onFinished;
+  final VoidCallback? onStarted;
   final int? randomSeed;
   final DateTime Function()? clock;
 
@@ -82,6 +84,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
 
   TrialDefinition get definition => widget.offer.definition;
   DateTime _now() => (widget.clock ?? DateTime.now)();
+  bool get _isEndless => widget.offer.kind == TrialKind.sunwakeSurf;
   bool get _isWitchlight => widget.offer.kind == TrialKind.witchlightWard;
   int? get _mistakeLimit => switch (widget.offer.kind) {
         TrialKind.wishcakeTower => 1,
@@ -163,6 +166,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
       _runStartedAt = _now();
       _newChallenge(initial: true);
     });
+    widget.onStarted?.call();
     var previous = _now();
     _ticker = Timer.periodic(const Duration(milliseconds: 50), (_) {
       if (!mounted || _ending) return;
@@ -171,7 +175,9 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
       previous = now;
       setState(() {
         if (_errorFlashUntil?.isBefore(now) == true) _errorFlashUntil = null;
-        _remainingMilliseconds = max(0, _remainingMilliseconds - elapsed);
+        if (!_isEndless) {
+          _remainingMilliseconds = max(0, _remainingMilliseconds - elapsed);
+        }
         if (_promptHidesAt?.isBefore(now) == true) {
           _promptVisible = false;
           _promptHidesAt = null;
@@ -182,7 +188,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
           _inputLocked = false;
         }
       });
-      if (_remainingMilliseconds <= 0) _finish();
+      if (!_isEndless && _remainingMilliseconds <= 0) _finish();
     });
   }
 
@@ -338,7 +344,9 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                     phase: _isWitchlight ? _phase : -1,
                     phaseLabel: _currentPhaseFocus.name.toUpperCase(),
                     round: _round,
-                    remaining: Duration(milliseconds: _remainingMilliseconds),
+                    remaining: _isEndless
+                        ? null
+                        : Duration(milliseconds: _remainingMilliseconds),
                     accent: theme.accentColor,
                     onClose: _started && !_ending
                         ? null
@@ -424,13 +432,13 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
 
   void _arcadeAction(bool correct,
       {required int points, required bool completesRound}) {
-    if (!_started || _ending || _totalActions >= 200) return;
+    if (!_started || _ending || (!_isEndless && _totalActions >= 200)) return;
     setState(() {
       _totalActions++;
       if (correct) {
         _correctActions++;
-        _score =
-            min(20000, _score + points.clamp(0, 130) + min(90, _combo * 6));
+        _score += points.clamp(0, 130) + min(90, _combo * 6);
+        if (!_isEndless) _score = min(20000, _score);
         if (completesRound) {
           _combo++;
           _bestCombo = max(_bestCombo, _combo);
@@ -451,7 +459,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
       unawaited(HavenAudio.playAsset(
           'event_${theme.soundPrefix}_${correct ? 'success' : 'failure'}'));
     }
-    if (_remainingMilliseconds <= 0 || (_outOfLives)) {
+    if ((!_isEndless && _remainingMilliseconds <= 0) || _outOfLives) {
       unawaited(_finish());
     }
   }
@@ -648,13 +656,13 @@ class _SeasonalHud extends StatelessWidget {
   final int phase;
   final String phaseLabel;
   final int round;
-  final Duration remaining;
+  final Duration? remaining;
   final Color accent;
   final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
-    final seconds = (remaining.inMilliseconds / 1000).ceil();
+    final seconds = ((remaining?.inMilliseconds ?? 0) / 1000).ceil();
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -692,10 +700,11 @@ class _SeasonalHud extends StatelessWidget {
               Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
                 _HudChip(label: 'COMBO', value: '$combo', color: accent),
                 _HudChip(label: 'SCORE', value: '$score', color: accent),
-                _HudChip(
-                    label: 'TIME',
-                    value: '$seconds',
-                    color: seconds <= 5 ? const Color(0xFFFF6464) : accent),
+                if (remaining != null)
+                  _HudChip(
+                      label: 'TIME',
+                      value: '$seconds',
+                      color: seconds <= 5 ? const Color(0xFFFF6464) : accent),
               ]),
             ])
           : Row(

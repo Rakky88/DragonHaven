@@ -96,7 +96,7 @@ def main():
     preference_dragon.update({'id': '77777777-7777-4777-8777-777777777777',
                              'name': 'Preference Probe', 'favorite': False})
     fixture['sanctuaryDragons'] = [preference_dragon]
-    fixture['pet']['coins'] = 10000
+    fixture['pet']['coins'] = 50000
     fixture['towerFloorRoomIds'] = ['hearth']
     fixture['dragonWardLevel'] = 0
     fixture['damagedTowerFloors'] = [0]
@@ -369,7 +369,7 @@ def main():
         })
         client_result = subprocess.run(['flutter', 'test', '--no-pub',
             'tool/canonical_game_session_probe.dart'], cwd=ROOT, env=child_environment,
-            capture_output=True, text=True, timeout=360)
+            capture_output=True, text=True, timeout=600)
         del child_environment['STAGING_GAME_CLIENT_SESSION']
         if client_result.returncode != 0:
             # Only fixed phase markers and timeout status may leave the child.

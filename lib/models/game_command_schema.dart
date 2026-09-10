@@ -3,6 +3,10 @@
 abstract final class GameCommandSchema {
   static const keys = <String, Set<String>>{
     'refresh': {},
+    'start_school': {'gameId', 'dragonIds', 'mentorId'},
+    'finish_school': {'attemptId', 'inputs'},
+    'cancel_school': {'attemptId'},
+    'graduate_school': {'dragonId'},
     'purchase_portrait_chest': {},
     'purchase_title_chest': {},
     'purchase_music_chest': {},

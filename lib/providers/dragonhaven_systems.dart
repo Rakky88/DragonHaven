@@ -448,34 +448,29 @@ extension DragonHavenSystems on HouseholdProvider {
     return true;
   }
 
-  Future<DragonSchoolLessonResult> completeDragonSchoolLesson({
-    required String gameId,
-    required int score,
-    required List<String> dragonIds,
-    String? mentorDragonId,
-  }) async {
+  ({
+    DragonSchoolGameDefinition definition,
+    List<Pet> participants,
+    Pet? mentor
+  })? dragonSchoolEnrollment(
+      {required String gameId,
+      required List<String> dragonIds,
+      String? mentorDragonId}) {
     final definition = dragonSchoolGameById(gameId);
     final uniqueIds = dragonIds.toSet().toList(growable: false);
     if (!dragonSchoolUnlocked ||
         definition == null ||
-        score < 0 ||
         uniqueIds.length != dragonIds.length ||
         uniqueIds.length < definition.minimumDragons ||
         uniqueIds.length > definition.maximumDragons) {
-      return const DragonSchoolLessonResult(
-        accepted: false,
-        keeperBestImproved: false,
-      );
+      return null;
     }
 
     final participants = <Pet>[];
     for (final id in uniqueIds) {
       final matches = ownedDragons.where((dragon) => dragon.id == id);
       if (matches.isEmpty) {
-        return const DragonSchoolLessonResult(
-          accepted: false,
-          keeperBestImproved: false,
-        );
+        return null;
       }
       final dragon = matches.first;
       if (dragon.isEgg ||
@@ -483,10 +478,7 @@ extension DragonHavenSystems on HouseholdProvider {
           dragon.dragonSchoolComplete ||
           dragon.schoolAttempts(definition.id) >=
               dragonSchoolAttemptsPerLesson) {
-        return const DragonSchoolLessonResult(
-          accepted: false,
-          keeperBestImproved: false,
-        );
+        return null;
       }
       participants.add(dragon);
     }
@@ -506,14 +498,27 @@ extension DragonHavenSystems on HouseholdProvider {
             dragon.stage == DragonStage.wyrmling,
       );
       if (matches.isEmpty || !hasYoungPupil) {
-        return const DragonSchoolLessonResult(
-          accepted: false,
-          keeperBestImproved: false,
-        );
+        return null;
       }
       mentor = matches.first;
     }
 
+    return (definition: definition, participants: participants, mentor: mentor);
+  }
+
+  Future<DragonSchoolLessonResult> completeDragonSchoolLesson({
+    required String gameId,
+    required int score,
+    required List<String> dragonIds,
+    String? mentorDragonId,
+  }) async {
+    final enrollment = dragonSchoolEnrollment(
+        gameId: gameId, dragonIds: dragonIds, mentorDragonId: mentorDragonId);
+    if (score < 0 || enrollment == null) {
+      return const DragonSchoolLessonResult(
+          accepted: false, keeperBestImproved: false);
+    }
+    final (:definition, :participants, :mentor) = enrollment;
     final oldKeeperBest = dragonSchoolRecords[definition.id] ?? 0;
     final keeperBestImproved = score > oldKeeperBest;
     if (keeperBestImproved) {

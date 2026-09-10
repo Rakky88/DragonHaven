@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:dragon_haven/domain/server_entropy.dart';
 import 'package:dragon_haven/domain/game_command_engine.dart';
 import 'package:dragon_haven/domain/game_public_projection.dart';
 import 'package:dragon_haven/models/chest.dart';
+import 'package:dragon_haven/models/dragon_school.dart';
+import 'package:dragon_haven/models/school_lesson_game.dart';
+import 'package:dragon_haven/models/game_input_transcript.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 
@@ -111,7 +116,66 @@ Future<Map<String, dynamic>> runGameDomainProbe() async {
       removed,
       resting
     ];
+    final school = <Map<String, dynamic>>[];
+    final schoolBase = jsonDecode(jsonEncode(state)) as Map<String, dynamic>;
+    schoolBase['towerFloorRoomIds'] = List.filled(5, 'hearth');
+    (schoolBase['sanctuaryDragons'] as List).add(Pet(
+            id: 'school-second',
+            stage: DragonStage.hatchling,
+            hatchSeed: 17,
+            acquiredAt: now,
+            stageStartedAt: now,
+            needsUpdatedAt: now)
+        .toJson());
+    for (final definition in dragonSchoolGames) {
+      final started = await command(
+          schoolBase,
+          'start_school',
+          {
+            'gameId': definition.id,
+            'dragonIds': jsonEncode([
+              schoolBase['pet']['id'],
+              if (definition.minimumDragons > 1) 'school-second'
+            ]),
+            'mentorId': null,
+          },
+          40 + definition.kind.index);
+      final attempt = started['result'] as Map<String, dynamic>;
+      final model =
+          SchoolLessonGame(kind: definition.kind, seed: attempt['seed'] as int);
+      for (var ms = 50; ms < 20000; ms += 50) {
+        final count = switch (definition.kind) {
+          DragonSchoolGameKind.runeRush ||
+          DragonSchoolGameKind.crystalChase =>
+            9,
+          DragonSchoolGameKind.cloudWeave => 3,
+          DragonSchoolGameKind.emberReflex ||
+          DragonSchoolGameKind.breathBalance =>
+            1,
+          _ => 6,
+        };
+        model.tap((ms ~/ 50) % count, ms);
+      }
+      final finished = await command(
+          started['state'],
+          'finish_school',
+          {
+            'attemptId': attempt['id'],
+            'inputs': SchoolInputTranscript.encode(model.inputs),
+          },
+          60 + definition.kind.index,
+          at: now.add(const Duration(seconds: 21)));
+      school.add({
+        'game': definition.id,
+        'seed': attempt['seed'],
+        'inputs': SchoolInputTranscript.encode(model.inputs),
+        'clientScore': model.score,
+        'server': finished['result'],
+        'state': finished['state']
+      });
+    }
     return {
+      'school': school,
       'purchase': purchase.name,
       'state': state,
       'commands': commands,

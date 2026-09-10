@@ -6,7 +6,7 @@ Ruleset: v0.05.29 published and verified; staging and production schema 65 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 831368ca7db954c4 -->
+<!-- reference-source-fingerprint: d137005e3e1eb995 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -897,12 +897,14 @@ never produce podium awards or permanent Conclave decorations.
 
 Sunwake uses a seeded uniform choice among three safe lanes per gate. The
 fixed-step movement, hitboxes, currents and score depend on play, not frame
-rate. The first gate is at .20s, speed min(1.4,.42+t*.004+t*t*.00011) arena
-heights/s and gate interval max(.56,1.05-t*.0065)s. Reef collision width is
+rate. The first gate is at .20s, speed min(1.6,.55+t*.004+t*t*.00011) arena
+heights/s and gate interval max(.56,.98-t*.0055)s. Reef collision width is
 .25-.025*normalized Might, plus .026 dragon radius. A grabbed dragon follows a dragged target
 at at most 1.65 arena widths/s; releasing stops pursuit. Passive current
 applies only while not held. Safe-lane odds and points are unchanged; reef
-hitboxes are wider and speed increases continuously through the 75-second run.
+hitboxes remain as approved and speed increases smoothly during the endless run.
+Only the third collision ends Sunwake; no timer, 20,000-point or 200-action limit
+is used by the next app build. Reward grade odds and per-gate points are unchanged.
 Harvestmoon independently chooses fruit among three types and an initial
 rotation among four turns. A single-fruit shape has chance .10 plus .035 times
 each expertise normalized/capped at 400, maximum .205. Otherwise each of seven
@@ -941,3 +943,20 @@ newer glow. A second event after the final rune is ignored. Sequence generation,
 shuffle/Arcana help, display durations, grade cutoffs and reward pools remain
 unchanged. This fixes repeated completion/out-of-range access during fast taps;
 it does not introduce client scores into canonical server commands.
+
+
+### Academy input authority (10 September 2026, next release)
+
+The ten Academy lessons share one seeded input model between app and server.
+Rune/grid targets, shadow variants and shuffled orders retain their uniform
+choices. Cloud Weave now selects its first target from its actual three lanes
+(the old screen could initially pick an invisible fourth, fifth or sixth lane).
+Reflex cues still wait 600–1499 ms; memory previews last 820 ms. The breath phase
+uses elapsed time rather than render-frame count. A mentor protects one mistake.
+At most one tap per 25 ms is recorded, bounding a 20-second transcript to 800
+inputs and 3,200 encoded bytes. Inputs identify buttons and times, never score.
+New stars still grant 5 XP and +1 expertise per pupil; all three official attempts
+and existing graduation outcomes remain. Abandoning an authoritative attempt
+uses a zero-score attempt; expired attempts cannot award XP. Starting, finishing,
+recovery and one atomic reward are implemented in the isolated canonical lane;
+production ownership has not changed.

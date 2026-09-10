@@ -577,3 +577,27 @@ The staging contract covers exact prices, receipt replay, duplicate furniture,
 ledger conservation, prohibited goods, relic tradeability and insufficient funds.
 Starlight Treat and room unlocks depend on the phase 4C dragon lifecycle and are
 not implemented by this RPC. Paid products remain disabled.
+
+## Academy input authority candidate (10 September 2026)
+
+All ten Academy lessons now share a seeded, elapsed-time model between the
+existing game screen and the server. Start reserves pupils and mentor; finish
+accepts bounded timed inputs, replays them and awards the existing stars/XP
+once. The client cannot submit a score. Abandoning consumes a zero-star attempt
+without crediting the mentor. Lost start/finish replies recover the same attempt
+and receipt; account changes hide the former participant data. Graduation is
+also a checked command. These screens remain in the detached staging lane.
+
+Focused domain, recovery and real-sprite widget tests pass. Native Dart and the
+compiled JavaScript agree for all ten lesson command sequences. Dutch narrow
+screens were inspected in `release/economy-school-visual/`. Full-suite and actual
+staging Auth/Edge/Postgres proof are pending for this candidate. Production
+remains schema 65 with legacy authority and disabled game/economy mutations.
+
+The accompanying Sunwake change removes the game timer and 20,000-point cap,
+starts faster, and ends on the third collision. A one-hour actual model run and
+an eight-hour rollback SQL contract pass. Migration 66 adds owned-attempt lease
+renewal and elapsed-time score/action bounds. It has only been rollback-rehearsed
+on staging so far. The app header now keeps the full brand visible and shows
+compact balances, with exact totals on tap. Both changes wait for the complete
+economy and lossless APK work before release. No APK reduction is claimed yet.

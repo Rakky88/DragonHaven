@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 19dffb539f66751e -->
+<!-- reference-source-fingerprint: e7a528322132918a -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -713,19 +713,25 @@ Six approved PNG forms per family use existing evolution and expertise-cap rules
 Both have their own theme, background, icon/launcher/splash, music, effects, hatch
 achievement and gold/silver/bronze podium emotes with established podium rewards.
 
-Sunwake: a 75-second steering game with three lanes. Each gate has one uniformly
+Sunwake (next release): an endless steering game with three lanes. There is no
+play timer or score/action ceiling; only the third collision ends the run. Each gate has one uniformly
 random safe lane/sunpearl and two reefs. Fixed 120Hz simulation preserves collisions
 across render rates. The first gate spawns after .20 seconds. Speed is
-min(1.4, .42 + t*.004 + t*t*.00011), with interval max(.56, 1.05-t*.0065)
+min(1.6, .55 + t*.004 + t*t*.00011), with interval max(.56, .98-t*.0055)
 seconds. Reef collision width is .25-.025*normalized Might, plus the existing
-.026 dragon collision radius. The start speed is unchanged; speed rises smoothly
-through the final stretch (about 1.34 arena heights/s at 75 seconds).
+.026 dragon collision radius. The faster opening is .55 arena heights/s; speed rises smoothly
+to 1.6 while gates stay far enough apart for a full lane crossing.
 Steering must begin by holding the dragon, then dragging horizontally. A tap
 elsewhere never moves it. Speed is capped at 1.65 arena widths per second;
 releasing/cancelling stops pursuit of the previous target. The current only
 drifts the dragon while it is not being held; one active thumb owns steering.
 Might narrows collision width, Arcana widens pearl pickup, Spirit reduces current.
 A clean pearl gives 130 base points, a clean passage without a pearl 70; three hits end.
+A five-minute heartbeat renews the six-hour inactivity lease while playing.
+Migration 66 removes only Sunwake's old 20,000-point, 200-action and 180-second
+submission ceilings, checks gate/score rates and requires three collisions for
+long runs. Legacy timed runs remain accepted during rollout. The migration has
+passed rollback-only staging contracts; it is not deployed yet.
 Harvestmoon: a 75-second 6x7 packing game, three rotatable fruit shapes per tray.
 Seven normal shapes, three uniformly sampled fruits, four uniform orientations.
 Single-piece probability .10 + .035*(normalized Might+Arcana+Spirit), maximum .205.
@@ -782,3 +788,13 @@ newer glow. A second event after the final rune is ignored. Sequence generation,
 shuffle/Arcana help, display durations, grade cutoffs and reward pools remain
 unchanged. This fixes repeated completion/out-of-range access during fast taps;
 it does not introduce client scores into canonical server commands.
+
+
+### Next-release authority work (10 September 2026, in progress)
+
+Academy lesson inputs now use a shared elapsed-time model and server-issued
+attempts in the canonical lane. An active lesson reserves its pupils and blocks
+other economy mutations until completion/cancellation. No reward probabilities,
+Special egg identities, event schedules or drop pools change in this step.
+The full server-economy cutover and final release remain pending; this paragraph
+is implementation status, not production activation evidence.

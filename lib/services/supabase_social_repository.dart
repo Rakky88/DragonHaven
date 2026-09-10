@@ -248,6 +248,15 @@ class SupabaseSocialRepository implements SocialRepository {
       );
 
   @override
+  Future<void> renewSeasonalTrial(
+      {required String attemptId, required String token}) async {
+    await _client.rpc('renew_seasonal_trial_attempt', params: {
+      'p_attempt_id': attemptId,
+      'p_completion_token': token,
+    });
+  }
+
+  @override
   Future<SeasonalTrialSubmissionResult> completeSeasonalTrial({
     required String attemptId,
     required String token,

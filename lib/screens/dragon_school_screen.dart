@@ -6,6 +6,11 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/dragon_school.dart';
+import '../models/school_lesson_game.dart';
+import '../models/game_input_transcript.dart';
+import '../services/school_run_source.dart';
+import '../services/canonical_game_snapshot.dart';
+import '../widgets/shop_economy_scope.dart';
 import '../models/pet.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
@@ -351,7 +356,10 @@ class _AcademyStandingRow extends StatelessWidget {
           ),
           SizedBox.square(
             dimension: 42,
-            child: _DragonImage(dragon: dragon, height: 42, animate: false),
+            child: _DragonImage(
+                dragon: SchoolStudent.fromPet(dragon),
+                height: 42,
+                animate: false),
           ),
           const SizedBox(width: 7),
           Expanded(
@@ -816,7 +824,10 @@ class _EnrollmentDragonTile extends StatelessWidget {
         onTap: onTap,
         leading: SizedBox.square(
           dimension: 54,
-          child: _DragonImage(dragon: dragon, height: 52, animate: false),
+          child: _DragonImage(
+              dragon: SchoolStudent.fromPet(dragon),
+              height: 52,
+              animate: false),
         ),
         title: Text(dragon.displayName,
             style: const TextStyle(fontWeight: FontWeight.w900)),
@@ -851,41 +862,57 @@ class DragonSchoolGameScreen extends StatefulWidget {
     required this.dragonIds,
     this.mentorDragonId,
     this.lessonDuration = const Duration(seconds: 20),
+    this.elapsedMilliseconds,
+    this.source,
   });
 
   final DragonSchoolGameDefinition definition;
   final List<String> dragonIds;
   final String? mentorDragonId;
   final Duration lessonDuration;
+  final int Function()? elapsedMilliseconds;
+  final SchoolRunSource? source;
 
   @override
   State<DragonSchoolGameScreen> createState() => _DragonSchoolGameScreenState();
 }
 
 class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
-  final _random = Random();
   Timer? _ticker;
-  Timer? _challengeTimer;
-  Timer? _reactionTimer;
-  DateTime? _endsAt;
+  Stopwatch? _lessonClock;
+  SchoolLessonGame? _lesson;
   late Duration _remaining;
-  int _score = 0;
-  int _target = 0;
-  int _shadowDifference = 0;
-  int _expected = 1;
-  List<int> _order = [1, 2, 3, 4, 5, 6];
-  List<int> _constellationOrder = [0, 1, 2, 3, 4, 5];
-  bool _cueReady = false;
-  bool _memoryVisible = false;
   bool _started = false;
   bool _ended = false;
   bool _saving = false;
-  bool _mentorShieldUsed = false;
-  double _phase = 0;
-  int _reaction = 0;
-  int _reactionToken = 0;
-  Alignment _runeAlignment = Alignment.center;
   DragonSchoolLessonResult? _result;
+  String? _saveError;
+  bool _leaving = false;
+  int get _elapsed =>
+      widget.elapsedMilliseconds?.call() ?? _lessonClock!.elapsedMilliseconds;
+  int get _score => _lesson?.score ?? 0;
+  int get _target => _lesson?.target ?? 0;
+  int get _shadowDifference => _lesson?.shadowDifference ?? 0;
+  int get _expected => _lesson?.expected ?? 1;
+  List<int> get _order => _lesson?.order ?? const [1, 2, 3, 4, 5, 6];
+  List<int> get _constellationOrder =>
+      _lesson?.constellationOrder ?? const [0, 1, 2, 3, 4, 5];
+  bool get _cueReady => _lesson?.cueReady ?? false;
+  bool get _memoryVisible => _lesson?.memoryVisible ?? false;
+  bool get _mentorShieldUsed => _lesson?.mentorShieldUsed ?? false;
+  double get _phase => _lesson?.phase ?? 0;
+  int get _reaction => _lesson?.reaction ?? 0;
+  Alignment get _runeAlignment => const [
+        Alignment(-.72, -.65),
+        Alignment(0, -.72),
+        Alignment(.72, -.61),
+        Alignment(-.68, .05),
+        Alignment.center,
+        Alignment(.68, .05),
+        Alignment(-.65, .68),
+        Alignment(0, .72),
+        Alignment(.65, .68),
+      ][_lesson?.runePoint ?? 4];
 
   DragonSchoolGameKind get kind => widget.definition.kind;
 
@@ -893,29 +920,40 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
   void initState() {
     super.initState();
     _remaining = widget.lessonDuration;
+    widget.source?.addListener(_sourceChanged);
+  }
+
+  void _sourceChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    widget.source?.removeListener(_sourceChanged);
     _ticker?.cancel();
-    _challengeTimer?.cancel();
-    _reactionTimer?.cancel();
+    _lessonClock?.stop();
     super.dispose();
   }
 
-  List<Pet> _participants(HouseholdProvider game) => game.ownedDragons
-      .where((dragon) => widget.dragonIds.contains(dragon.id))
-      .toList(growable: false);
+  List<SchoolStudent> _participants(HouseholdProvider? game) =>
+      widget.source?.participants ??
+      game!.ownedDragons
+          .where((dragon) => widget.dragonIds.contains(dragon.id))
+          .map(SchoolStudent.fromPet)
+          .toList(growable: false);
 
-  Pet? _mentor(HouseholdProvider game) {
-    if (widget.mentorDragonId == null) return null;
-    final matches =
-        game.ownedDragons.where((dragon) => dragon.id == widget.mentorDragonId);
-    return matches.isEmpty ? null : matches.first;
+  SchoolStudent? _mentor(HouseholdProvider? game) {
+    if (widget.source != null) return widget.source!.mentor;
+    final pet = game!.ownedDragons
+        .where((d) => d.id == widget.mentorDragonId)
+        .firstOrNull;
+    return pet == null ? null : SchoolStudent.fromPet(pet);
   }
 
-  void _start() {
-    final game = context.read<HouseholdProvider>();
+  Future<void> _start() async {
+    if (_saving || (_started && !_ended)) return;
+    final game =
+        widget.source == null ? context.read<HouseholdProvider>() : null;
     final participants = _participants(game);
     if (participants.length != widget.dragonIds.length ||
         participants.any((dragon) =>
@@ -931,341 +969,290 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
       ));
       return;
     }
+    setState(() {
+      _saving = true;
+      _saveError = null;
+    });
+    final int seed;
+    try {
+      seed = widget.source == null
+          ? Random().nextInt(1 << 31)
+          : await widget.source!.start();
+    } on CanonicalGameException catch (error) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _saveError = error.code;
+        });
+      }
+      return;
+    }
+    if (!mounted || widget.source?.accountCurrent == false) return;
     _ticker?.cancel();
-    _challengeTimer?.cancel();
-    _reactionTimer?.cancel();
-    _score = 0;
+    _lesson = SchoolLessonGame(
+        kind: kind,
+        seed: seed,
+        mentor: widget.mentorDragonId != null,
+        durationMs: widget.lessonDuration.inMilliseconds);
+    _lessonClock = Stopwatch()..start();
     _remaining = widget.lessonDuration;
-    _endsAt = DateTime.now().add(widget.lessonDuration);
-    _target =
-        _random.nextInt(kind == DragonSchoolGameKind.crystalChase ? 9 : 6);
-    _shadowDifference = _random.nextInt(4);
-    _expected = kind == DragonSchoolGameKind.constellationTrace ? 0 : 1;
-    _order = [1, 2, 3, 4, 5, 6]..shuffle(_random);
-    _constellationOrder = [0, 1, 2, 3, 4, 5]..shuffle(_random);
-    _cueReady = false;
-    _memoryVisible = false;
-    _phase = 0;
-    _reaction = 0;
-    _mentorShieldUsed = false;
     _result = null;
     _saving = false;
     _started = true;
     _ended = false;
-    _moveRune();
     _ticker = Timer.periodic(const Duration(milliseconds: 45), (_) => _tick());
-    if (kind == DragonSchoolGameKind.emberReflex) _scheduleReflexCue();
-    if (kind == DragonSchoolGameKind.sigilMemory) _scheduleMemoryHide();
     setState(() {});
   }
 
   void _tick() {
     if (!_started || _ended || !mounted) return;
-    final remaining = _endsAt!.difference(DateTime.now());
-    if (remaining <= Duration.zero) {
+    _lesson!.advanceTo(_elapsed);
+    if (_lesson!.finished) {
       unawaited(_finish());
       return;
     }
-    setState(() {
-      _remaining = remaining;
-      _phase = (_phase + .018) % 1;
-    });
+    setState(() => _remaining = Duration(milliseconds: _lesson!.remainingMs));
   }
 
   Future<void> _finish() async {
     if (_ended) return;
     _ended = true;
-    _saving = true;
     _remaining = Duration.zero;
     _ticker?.cancel();
-    _challengeTimer?.cancel();
-    if (mounted) setState(() {});
-    final game = context.read<HouseholdProvider>();
-    game.beginPresentationDeferral();
+    _lessonClock?.stop();
+    await _submitResult();
+  }
+
+  Future<void> _submitResult() async {
+    if (_saving || !mounted) return;
+    setState(() {
+      _saving = true;
+      _saveError = null;
+    });
+    final game =
+        widget.source == null ? context.read<HouseholdProvider>() : null;
+    game?.beginPresentationDeferral();
     try {
-      final result = await game.completeDragonSchoolLesson(
-        gameId: widget.definition.id,
-        score: _score,
-        dragonIds: widget.dragonIds,
-        mentorDragonId: widget.mentorDragonId,
-      );
-      if (!mounted) return;
+      final result = widget.source == null
+          ? await game!.completeDragonSchoolLesson(
+              gameId: widget.definition.id,
+              score: _score,
+              dragonIds: widget.dragonIds,
+              mentorDragonId: widget.mentorDragonId)
+          : await widget.source!
+              .finish(SchoolInputTranscript.encode(_lesson!.inputs));
+      if (!mounted || widget.source?.accountCurrent == false) return;
       setState(() {
         _result = result;
         _saving = false;
       });
-
-      // Academy completion can unlock a graduation or dropout achievement.
-      // Give the final report a full frame before the global presentation
-      // coordinator is allowed to place its reveal above this route.
       await WidgetsBinding.instance.endOfFrame;
       await Future<void>.delayed(const Duration(milliseconds: 350));
+    } on CanonicalGameException catch (error) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _saveError = error.code;
+        });
+      }
     } finally {
-      game.endPresentationDeferral();
+      game?.endPresentationDeferral();
     }
   }
 
-  void _scheduleReflexCue() {
-    _challengeTimer?.cancel();
-    _cueReady = false;
-    _challengeTimer = Timer(
-      Duration(milliseconds: 600 + _random.nextInt(900)),
-      () {
-        if (mounted && !_ended) setState(() => _cueReady = true);
-      },
-    );
-  }
-
-  void _scheduleMemoryHide() {
-    _challengeTimer?.cancel();
-    _target = _random.nextInt(6);
-    _memoryVisible = true;
-    _challengeTimer = Timer(const Duration(milliseconds: 820), () {
-      if (mounted && !_ended) setState(() => _memoryVisible = false);
-    });
-  }
-
-  void _moveRune() {
-    const points = [
-      Alignment(-.72, -.65),
-      Alignment(0, -.72),
-      Alignment(.72, -.61),
-      Alignment(-.68, .05),
-      Alignment.center,
-      Alignment(.68, .05),
-      Alignment(-.65, .68),
-      Alignment(0, .72),
-      Alignment(.65, .68),
-    ];
-    _runeAlignment = points[_random.nextInt(points.length)];
-  }
-
-  void _correct([int points = 1]) {
-    setState(() => _score += points);
-    _react(1);
-  }
-
-  void _mistake({int penalty = 1}) {
-    if (widget.mentorDragonId != null && !_mentorShieldUsed) {
-      setState(() => _mentorShieldUsed = true);
-      _react(2);
-      return;
+  Future<void> _leave(bool didPop, Object? result) async {
+    if (didPop || _leaving || _saving) return;
+    _leaving = true;
+    final strings = AppStrings.of(context);
+    final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+              content: Text(strings.pick(
+                  'Leave this lesson? This attempt will count.',
+                  'Deze les verlaten? Deze poging telt dan mee.')),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text(strings.pick('Stay', 'Blijven'))),
+                FilledButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(strings.pick('Leave', 'Verlaten'))),
+              ],
+            ));
+    try {
+      if (confirmed == true && mounted) {
+        await widget.source!.cancel();
+        if (mounted) {
+          setState(() {
+            _started = false;
+            _ended = true;
+          });
+          Navigator.pop(context);
+        }
+      }
+    } on CanonicalGameException catch (error) {
+      if (mounted) setState(() => _saveError = error.code);
+    } finally {
+      _leaving = false;
     }
-    setState(() => _score = max(0, _score - penalty));
-    _react(-1);
-  }
-
-  void _react(int reaction) {
-    final token = ++_reactionToken;
-    if (mounted) setState(() => _reaction = reaction);
-    _reactionTimer?.cancel();
-    _reactionTimer = Timer(const Duration(milliseconds: 430), () {
-      if (mounted && token == _reactionToken) setState(() => _reaction = 0);
-    });
   }
 
   void _tap(int index) {
     if (!_started || _ended) return;
-    switch (kind) {
-      case DragonSchoolGameKind.runeRush:
-        _correct();
-        setState(_moveRune);
-      case DragonSchoolGameKind.crystalChase:
-        index == _target ? _correct() : _mistake();
-        setState(() => _target = _random.nextInt(9));
-      case DragonSchoolGameKind.emberReflex:
-        if (_cueReady) {
-          _correct();
-          _scheduleReflexCue();
-        } else {
-          _mistake();
-        }
-      case DragonSchoolGameKind.sigilMemory:
-        if (_memoryVisible) return;
-        index == _target ? _correct(2) : _mistake();
-        _scheduleMemoryHide();
-      case DragonSchoolGameKind.scaleOrder:
-        if (_order[index] == _expected) {
-          _correct();
-          setState(() {
-            _expected++;
-            if (_expected > 6) {
-              _expected = 1;
-              _order.shuffle(_random);
-            }
-          });
-        } else {
-          _mistake();
-          setState(() => _expected = 1);
-        }
-      case DragonSchoolGameKind.shadowMatch:
-        index == _target ? _correct(2) : _mistake();
-        setState(() {
-          _target = _differentTarget(_target, 6);
-          _shadowDifference = _random.nextInt(4);
-        });
-      case DragonSchoolGameKind.breathBalance:
-        (_phase - .5).abs() < .12 ? _correct(2) : _mistake();
-      case DragonSchoolGameKind.cloudWeave:
-        index == _target ? _correct() : _mistake();
-        setState(() => _target = _differentTarget(_target, 3));
-      case DragonSchoolGameKind.safeHoard:
-        index == _target ? _mistake(penalty: 2) : _correct();
-        setState(() => _target = _differentTarget(_target, 6));
-      case DragonSchoolGameKind.constellationTrace:
-        if (index == _constellationOrder[_expected]) {
-          _correct();
-          setState(() {
-            _expected++;
-            if (_expected >= _constellationOrder.length) {
-              _expected = 0;
-              _constellationOrder.shuffle(_random);
-            }
-          });
-        } else {
-          _mistake();
-          setState(() => _expected = 0);
-        }
+    _lesson!.tap(index, _elapsed);
+    if (_lesson!.finished) {
+      unawaited(_finish());
+    } else {
+      setState(() {});
     }
-  }
-
-  int _differentTarget(int current, int count) {
-    var next = _random.nextInt(count);
-    while (next == current && count > 1) {
-      next = _random.nextInt(count);
-    }
-    return next;
   }
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final game = context.watch<HouseholdProvider>();
+    final game =
+        widget.source == null ? context.watch<HouseholdProvider>() : null;
     final participants = _participants(game);
     final mentor = _mentor(game);
     final colors = _schoolColors(kind);
-    final keeperBest = game.dragonSchoolRecords[widget.definition.id] ?? 0;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-            strings.pick(widget.definition.titleEn, widget.definition.titleNl)),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [colors.first.withValues(alpha: .18), Colors.white],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+    final keeperBest = widget.source?.keeperBest ??
+        game?.dragonSchoolRecords[widget.definition.id] ??
+        0;
+    if (widget.source?.accountCurrent == false) {
+      return Scaffold(
+          body: Center(
+              child: Text(
+                  gameConnectionMessage(strings, 'game_account_changed'))));
+    }
+    return PopScope(
+        canPop: widget.source == null ||
+            (!_started && !_saving) ||
+            (_ended && _result != null),
+        onPopInvokedWithResult: _leave,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(strings.pick(
+                widget.definition.titleEn, widget.definition.titleNl)),
           ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(13, 10, 13, 13),
-            child: Column(
-              children: [
-                Row(
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [colors.first.withValues(alpha: .18), Colors.white],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(13, 10, 13, 13),
+                child: Column(
                   children: [
-                    _GameScore(
-                        label: strings.pick('SCORE', 'SCORE'), value: _score),
-                    const Spacer(),
-                    _GameScore(
-                      label: strings.pick('TIME', 'TIJD'),
-                      value: (_remaining.inMilliseconds / 1000).ceil(),
-                    ),
-                    const Spacer(),
-                    _GameScore(
-                        label: strings.pick('KEEPER BEST', 'KEEPER BESTE'),
-                        value: keeperBest),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _StudentStrip(
-                  dragons: participants,
-                  mentor: mentor,
-                  reaction: _reaction,
-                  mentorShieldUsed: _mentorShieldUsed,
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: Container(
-                    key: Key('school-session-${widget.definition.id}'),
-                    width: double.infinity,
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: .95),
-                      borderRadius: BorderRadius.circular(27),
-                      border:
-                          Border.all(color: colors.last.withValues(alpha: .35)),
-                      boxShadow: const [
-                        BoxShadow(color: Color(0x142A1E50), blurRadius: 14),
+                    Row(
+                      children: [
+                        _GameScore(
+                            label: strings.pick('SCORE', 'SCORE'),
+                            value: _score),
+                        const Spacer(),
+                        _GameScore(
+                          label: strings.pick('TIME', 'TIJD'),
+                          value: (_remaining.inMilliseconds / 1000).ceil(),
+                        ),
+                        const Spacer(),
+                        _GameScore(
+                            label: strings.pick('KEEPER BEST', 'KEEPER BESTE'),
+                            value: keeperBest),
                       ],
                     ),
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: Image.asset(
-                            widget.definition.backgroundAsset,
-                            key: Key(
-                                'school-background-${widget.definition.id}'),
-                            fit: BoxFit.cover,
-                            alignment: Alignment.center,
-                          ),
+                    const SizedBox(height: 8),
+                    _StudentStrip(
+                      dragons: participants,
+                      mentor: mentor,
+                      reaction: _reaction,
+                      mentorShieldUsed: _mentorShieldUsed,
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: Container(
+                        key: Key('school-session-${widget.definition.id}'),
+                        width: double.infinity,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: .95),
+                          borderRadius: BorderRadius.circular(27),
+                          border: Border.all(
+                              color: colors.last.withValues(alpha: .35)),
+                          boxShadow: const [
+                            BoxShadow(color: Color(0x142A1E50), blurRadius: 14),
+                          ],
                         ),
-                        Positioned.fill(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.black.withValues(alpha: .03),
-                                  Colors.black.withValues(alpha: .15),
-                                ],
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: Image.asset(
+                                widget.definition.backgroundAsset,
+                                key: Key(
+                                    'school-background-${widget.definition.id}'),
+                                fit: BoxFit.cover,
+                                alignment: Alignment.center,
                               ),
                             ),
-                          ),
-                        ),
-                        Positioned.fill(
-                          child: Padding(
-                            padding: const EdgeInsets.all(13),
-                            child: _started && !_ended
-                                ? DefaultTextStyle.merge(
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      shadows: [
-                                        Shadow(
-                                          color: Color(0xCC201638),
-                                          blurRadius: 5,
-                                        ),
-                                      ],
-                                    ),
-                                    child: _gameArea(strings, participants),
-                                  )
-                                : _LessonGlassPanel(
-                                    child: _ended
-                                        ? _resultPanel(
-                                            strings, participants, keeperBest)
-                                        : _intro(strings, participants),
+                            Positioned.fill(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.black.withValues(alpha: .03),
+                                      Colors.black.withValues(alpha: .15),
+                                    ],
                                   ),
-                          ),
+                                ),
+                              ),
+                            ),
+                            Positioned.fill(
+                              child: Padding(
+                                padding: const EdgeInsets.all(13),
+                                child: _started && !_ended
+                                    ? DefaultTextStyle.merge(
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          shadows: [
+                                            Shadow(
+                                              color: Color(0xCC201638),
+                                              blurRadius: 5,
+                                            ),
+                                          ],
+                                        ),
+                                        child: _gameArea(strings, participants),
+                                      )
+                                    : _LessonGlassPanel(
+                                        child: _ended
+                                            ? _resultPanel(strings,
+                                                participants, keeperBest)
+                                            : _intro(strings, participants),
+                                      ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 
-  Widget _intro(AppStrings strings, List<Pet> participants) =>
+  Widget _intro(AppStrings strings, List<SchoolStudent> participants) =>
       SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            if (_saveError != null)
+              Text(gameConnectionMessage(strings, _saveError)),
             Image.asset(widget.definition.iconAsset, width: 82, height: 82),
             const SizedBox(height: 8),
             Wrap(
@@ -1301,9 +1288,10 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
             const SizedBox(height: 18),
             FilledButton.icon(
               key: const Key('start-school-game'),
-              onPressed: participants.length == widget.dragonIds.length
-                  ? _start
-                  : null,
+              onPressed:
+                  !_saving && participants.length == widget.dragonIds.length
+                      ? _start
+                      : null,
               icon: const Icon(Icons.play_arrow_rounded),
               label: Text(strings.pick('Start lesson', 'Start les')),
             ),
@@ -1313,9 +1301,19 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
 
   Widget _resultPanel(
     AppStrings strings,
-    List<Pet> participants,
+    List<SchoolStudent> participants,
     int keeperBest,
   ) {
+    if (_saveError != null) {
+      return Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text(gameConnectionMessage(strings, _saveError),
+            textAlign: TextAlign.center),
+        FilledButton(
+            onPressed: _saving ? null : _submitResult,
+            child: Text(strings.pick('Reconnect', 'Opnieuw verbinden'))),
+      ]));
+    }
     if (_saving || _result == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -1455,13 +1453,13 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
     );
   }
 
-  String _dragonResultLabel(AppStrings strings, Pet dragon) {
+  String _dragonResultLabel(AppStrings strings, SchoolStudent dragon) {
     final stars = _result?.newStarsByDragon[dragon.id];
     if (stars == null) return strings.pick('Best kept', 'Beste behouden');
     return '+$stars ★ · +${_result?.xpByDragon[dragon.id] ?? 0} XP';
   }
 
-  Widget _gameArea(AppStrings strings, List<Pet> participants) =>
+  Widget _gameArea(AppStrings strings, List<SchoolStudent> participants) =>
       switch (kind) {
         DragonSchoolGameKind.runeRush => AnimatedAlign(
             duration: const Duration(milliseconds: 210),
@@ -1470,7 +1468,7 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
             child: InkWell(
               key: const Key('school-rune-rush-target'),
               borderRadius: BorderRadius.circular(70),
-              onTap: () => _tap(0),
+              onTap: () => _tap(_lesson!.runePoint),
               child:
                   _GlowingSprite(asset: widget.definition.iconAsset, size: 118),
             ),
@@ -1649,7 +1647,7 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
         ),
       );
 
-  Widget _shadowChoice(List<Pet> participants, int index) {
+  Widget _shadowChoice(List<SchoolStudent> participants, int index) {
     Widget shadow = ColorFiltered(
       colorFilter: const ColorFilter.mode(Color(0xFF170D28), BlendMode.srcIn),
       child: participants.isEmpty
@@ -1723,7 +1721,7 @@ class _DragonSchoolGameScreenState extends State<DragonSchoolGameScreen> {
         ],
       );
 
-  Widget _cloudWeave(AppStrings strings, List<Pet> participants) {
+  Widget _cloudWeave(AppStrings strings, List<SchoolStudent> participants) {
     final pupil = participants.isEmpty
         ? ''
         : participants[_score.remainder(participants.length)].displayName;
@@ -1864,8 +1862,8 @@ class _StudentStrip extends StatelessWidget {
     required this.mentorShieldUsed,
   });
 
-  final List<Pet> dragons;
-  final Pet? mentor;
+  final List<SchoolStudent> dragons;
+  final SchoolStudent? mentor;
   final int reaction;
   final bool mentorShieldUsed;
 
@@ -1978,7 +1976,7 @@ class _DragonImage extends StatelessWidget {
     this.silhouette = false,
   });
 
-  final Pet dragon;
+  final SchoolStudent dragon;
   final double height;
   final bool animate;
   final bool silhouette;
@@ -2002,19 +2000,19 @@ class _ScoreThresholds extends StatelessWidget {
   final DragonSchoolGameDefinition definition;
 
   @override
-  Widget build(BuildContext context) => Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget build(BuildContext context) => Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 7,
+        runSpacing: 5,
         children: [
           _Threshold(
               label: '★',
               score: definition.bronzeScore,
               color: const Color(0xFFB87333)),
-          const SizedBox(width: 7),
           _Threshold(
               label: '★★',
               score: definition.silverScore,
               color: const Color(0xFF8C92A2)),
-          const SizedBox(width: 7),
           _Threshold(
               label: '★★★',
               score: definition.goldScore,

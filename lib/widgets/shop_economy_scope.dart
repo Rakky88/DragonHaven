@@ -36,6 +36,15 @@ Future<void> runShopAction(
 
 String gameConnectionMessage(AppStrings strings, String? code) =>
     switch (code) {
+      'game_attempt_in_progress' => strings.pick(
+          'Finish your current game first.', 'Rond eerst je huidige spel af.'),
+      'game_attempt_time_invalid' => strings.pick(
+          'This attempt is not ready or has expired. Reconnect to check it.',
+          'Deze poging is nog niet klaar of is verlopen. Verbind opnieuw om dit te controleren.'),
+      'game_attempt_unavailable' ||
+      'game_attempt_state_changed' =>
+        strings.pick('This attempt is no longer available.',
+            'Deze poging is niet meer beschikbaar.'),
       'game_login_required' || 'game_account_changed' => strings.pick(
           'Sign in again to load your inventory.',
           'Log opnieuw in om je inventaris te laden.'),

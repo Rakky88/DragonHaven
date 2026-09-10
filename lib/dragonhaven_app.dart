@@ -32,6 +32,7 @@ import 'theme/event_appearance.dart';
 import 'widgets/seasonal_app_frame.dart';
 import 'widgets/about_sheet.dart';
 import 'widgets/game_icon_sprite.dart';
+import 'widgets/haven_header_title.dart';
 import 'widgets/game_tutorial.dart';
 import 'widgets/achievement_reveal.dart';
 import 'widgets/pull_to_dismiss_sheet.dart';
@@ -735,7 +736,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     ];
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 68,
+        toolbarHeight: HavenHeaderTitle.toolbarHeight(context),
         leadingWidth: 66,
         titleSpacing: 2,
         bottom: PreferredSize(
@@ -789,16 +790,14 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
                   ),
                 ),
         ),
-        title: _DragonHavenBrandTitle(
+        title: HavenHeaderTitle(
+          coins: eggOnly ? null : game.coins,
+          gems: eggOnly ? null : game.gems,
           subtitle: eggOnly
               ? strings.pick('Rooftop Nest', 'Daknest')
               : _screenTitle(_index, strings),
         ),
         actions: [
-          if (!eggOnly) ...[
-            _TopCurrency(kind: GameIconKind.coin, value: game.coins),
-            _TopCurrency(kind: GameIconKind.gem, value: game.gems),
-          ],
           PopupMenuButton<_HavenMenuAction>(
             key: const Key('app-overflow-menu'),
             tooltip: strings.tr('more'),
@@ -1162,70 +1161,6 @@ class _UpdateVersionRow extends StatelessWidget {
       );
 }
 
-class _DragonHavenBrandTitle extends StatelessWidget {
-  const _DragonHavenBrandTitle({required this.subtitle});
-
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(text: 'Dragon'),
-                TextSpan(
-                  text: 'Haven',
-                  style: TextStyle(
-                      color: AppColors.eventColor(context, AppColors.twilight)),
-                ),
-              ],
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.ink,
-              fontSize: 19,
-              height: 1,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -.65,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 5,
-                height: 5,
-                decoration: const BoxDecoration(
-                  color: AppColors.gold,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 5),
-              Flexible(
-                child: Text(
-                  subtitle.toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 9,
-                    height: 1,
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: .75,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-}
-
 class _MenuRow extends StatelessWidget {
   const _MenuRow({required this.icon, required this.label, this.trailing});
   final IconData icon;
@@ -1243,30 +1178,6 @@ class _MenuRow extends StatelessWidget {
               style: const TextStyle(
                   color: AppColors.muted, fontWeight: FontWeight.w800)),
       ]);
-}
-
-class _TopCurrency extends StatelessWidget {
-  const _TopCurrency({required this.kind, required this.value});
-  final GameIconKind kind;
-  final int value;
-  @override
-  Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(right: 5),
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(99),
-          border:
-              Border.all(color: AppColors.eventColor(context, AppColors.mist)),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          GameIconSprite(kind, size: 20),
-          const SizedBox(width: 3),
-          Text('$value',
-              style:
-                  const TextStyle(fontSize: 10, fontWeight: FontWeight.w900)),
-        ]),
-      );
 }
 
 String _screenTitle(int index, AppStrings strings) => switch (index) {

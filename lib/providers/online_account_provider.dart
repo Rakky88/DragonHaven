@@ -775,6 +775,13 @@ class OnlineAccountProvider extends ChangeNotifier {
         ),
       );
 
+  Future<void> renewSeasonalTrial(SeasonalTrialSession session) async {
+    await _run(
+        'seasonal.trial.renew',
+        () => _repository.renewSeasonalTrial(
+            attemptId: session.attemptId, token: session.token));
+  }
+
   Future<SeasonalTrialSubmissionResult?> completeSeasonalTrial({
     required SeasonalTrialSession session,
     required int score,

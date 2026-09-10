@@ -6,6 +6,7 @@ import 'package:dragon_haven/models/seasonal_conclave_project.dart';
 import 'package:dragon_haven/models/trial.dart';
 import 'package:dragon_haven/screens/seasonal_trial_game.dart';
 import 'package:dragon_haven/widgets/seasonal_conclave_project_card.dart';
+import 'package:dragon_haven/widgets/summer_trials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -118,6 +119,45 @@ void main() {
       });
     }
   }
+  testWidgets(
+      'Sunwake score passes 20000 and 200 actions until the third mistake',
+      (tester) async {
+    final results = <SeasonalTrialRunResult>[];
+    final now = DateTime.utc(2026, 9, 10);
+    await tester.pumpWidget(MaterialApp(
+        home: SeasonalTrialGame(
+      offer: TrialOffer(
+          id: 'endless', kind: TrialKind.sunwakeSurf, appearedAt: now),
+      dragon: Pet(id: 'surfer', stage: DragonStage.hatchling),
+      randomSeed: 81,
+      clock: () => now,
+      onFinished: (result) async => results.add(result),
+    )));
+    await tester.tap(find.byKey(const Key('start-seasonal-trial')));
+    await tester.pump();
+    expect(find.text('TIME'), findsNothing);
+    final game = tester.widget<SummerTrials>(find.byType(SummerTrials));
+    // Exercise the real presentation boundary with resolved gate actions.
+    // The separate model test plays an hour of actual deterministic gates.
+    for (var i = 0; i < 250; i++) {
+      game.onAction(true, points: 130, completesRound: true);
+    }
+    await tester.pump();
+    expect(results, isEmpty);
+    for (var i = 0; i < 2; i++) {
+      game.onAction(false, points: 0, completesRound: true);
+    }
+    await tester.pump(const Duration(seconds: 2));
+    expect(results, isEmpty);
+    game.onAction(false, points: 0, completesRound: true);
+    game.onAction(true, points: 130, completesRound: true);
+    await tester.pump(const Duration(seconds: 2));
+    expect(results, hasLength(1));
+    expect(results.single.totalActions, 253);
+    expect(results.single.correctActions, 250);
+    expect(results.single.score, 54190);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   test('new gameplay instructions are translated in all supported languages',
       () {
     for (final language in AppStrings.supportedLanguages.keys) {

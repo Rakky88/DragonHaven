@@ -40,6 +40,39 @@ class TrialGameScreen extends StatefulWidget {
 class _TrialGameScreenState extends State<TrialGameScreen> {
   TrialOffer? _offer;
   Pet? _dragon;
+  Timer? _attemptLease;
+  bool _renewingLease = false;
+
+  void _keepAttemptAlive() {
+    final session = widget.seasonalSession;
+    if (session == null ||
+        _offer?.kind != TrialKind.sunwakeSurf ||
+        _attemptLease != null) {
+      return;
+    }
+    final online = context.read<OnlineAccountProvider>();
+    final owner = online.currentUserId;
+    _attemptLease = Timer.periodic(const Duration(minutes: 5), (_) async {
+      if (!mounted ||
+          owner == null ||
+          online.currentUserId != owner ||
+          _renewingLease) {
+        return;
+      }
+      _renewingLease = true;
+      try {
+        await online.renewSeasonalTrial(session);
+      } finally {
+        _renewingLease = false;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _attemptLease?.cancel();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -79,14 +112,18 @@ class _TrialGameScreenState extends State<TrialGameScreen> {
           offer: offer,
           dragon: dragon,
           randomSeed: widget.seasonalSession?.seed,
-          onFinished: (result) => _finishTrial(
-            context,
-            offer: offer,
-            dragon: dragon,
-            score: result.score,
-            seasonalSession: widget.seasonalSession,
-            seasonalResult: result,
-          ),
+          onStarted: _keepAttemptAlive,
+          onFinished: (result) {
+            _attemptLease?.cancel();
+            return _finishTrial(
+              context,
+              offer: offer,
+              dragon: dragon,
+              score: result.score,
+              seasonalSession: widget.seasonalSession,
+              seasonalResult: result,
+            );
+          },
         ),
     };
   }

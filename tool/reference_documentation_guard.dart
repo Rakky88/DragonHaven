@@ -15,6 +15,9 @@ const specialContentReference = ReferenceDocumentSpec(
   documentPath: 'SPECIAL_EVENTS_CHESTS_AND_EGGS.md',
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
+    'lib/domain/school_attempts.dart',
+    'lib/models/school_lesson_game.dart',
+    'lib/models/game_input_transcript.dart',
     'lib/models/game_command_schema.dart',
     'lib/domain/game_asset_snapshot.dart',
     'lib/domain/game_state_envelope.dart',
@@ -76,6 +79,7 @@ const specialContentReference = ReferenceDocumentSpec(
     'supabase/migrations/202609090063_birthday_trial.sql',
     'supabase/migrations/202609090064_sunwake_harvestmoon.sql',
     'supabase/migrations/202609090065_seasonal_podium_chat.sql',
+    'supabase/migrations/202609100066_endless_sunwake.sql',
     'supabase/migrations/202609070044_sinister_altar_rewards.sql',
     'supabase/migrations/202609070048_halloween_preview_access.sql',
     'supabase/migrations/202609080059_single_active_event_preview.sql',
@@ -91,6 +95,9 @@ const randomRewardsReference = ReferenceDocumentSpec(
   documentPath: 'RANDOM_REWARDS_AND_ODDS.md',
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
+    'lib/domain/school_attempts.dart',
+    'lib/models/school_lesson_game.dart',
+    'lib/models/game_input_transcript.dart',
     'lib/models/game_command_schema.dart',
     'lib/domain/game_asset_snapshot.dart',
     'lib/domain/game_state_envelope.dart',
@@ -141,6 +148,7 @@ const randomRewardsReference = ReferenceDocumentSpec(
     'supabase/migrations/202609090063_birthday_trial.sql',
     'supabase/migrations/202609090064_sunwake_harvestmoon.sql',
     'supabase/migrations/202609090065_seasonal_podium_chat.sql',
+    'supabase/migrations/202609100066_endless_sunwake.sql',
     'supabase/migrations/202609070044_sinister_altar_rewards.sql',
     'supabase/migrations/202609070045_dormant_chest_opening.sql',
     'supabase/migrations/202609080058_equipment_relic_pool.sql',
@@ -154,6 +162,9 @@ const redeemCodesReference = ReferenceDocumentSpec(
   documentPath: 'REDEEM_CODES.md',
   sourcePaths: [
     'lib/domain/game_command_engine.dart',
+    'lib/domain/school_attempts.dart',
+    'lib/models/school_lesson_game.dart',
+    'lib/models/game_input_transcript.dart',
     'lib/models/game_command_schema.dart',
     'lib/models/adventure.dart',
     'lib/models/dragon_emote.dart',
@@ -167,6 +178,7 @@ const redeemCodesReference = ReferenceDocumentSpec(
     'supabase/migrations/202609090063_birthday_trial.sql',
     'supabase/migrations/202609090064_sunwake_harvestmoon.sql',
     'supabase/migrations/202609090065_seasonal_podium_chat.sql',
+    'supabase/migrations/202609100066_endless_sunwake.sql',
   ],
 );
 

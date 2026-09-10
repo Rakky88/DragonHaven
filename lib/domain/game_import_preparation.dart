@@ -22,6 +22,10 @@ abstract final class GameImportPreparation {
         .hasMatch(ownerId)) {
       throw const GameImportException('game_import_owner_invalid');
     }
+    if (source['_activeGameAttempt'] != null ||
+        source['_lastGameResult'] != null) {
+      throw const GameImportException('game_import_server_metadata_untrusted');
+    }
     if (source['pendingAltarOperation'] != null) {
       throw const GameImportException('game_import_pending_altar');
     }

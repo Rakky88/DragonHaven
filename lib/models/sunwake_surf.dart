@@ -42,8 +42,8 @@ class SunwakeSurf {
   int _serial = 0, mistakes = 0;
   bool get finished => mistakes >= 3;
   double get current => sin(time * .85) * .052 * currentScale;
-  double get speed => min(1.4, .42 + time * .004 + time * time * .00011);
-  double get interval => max(.56, 1.05 - time * .0065);
+  double get speed => min(1.6, .55 + time * .004 + time * time * .00011);
+  double get interval => max(.56, .98 - time * .0055);
 
   void steer(double position) {
     if (finished || !position.isFinite) return;

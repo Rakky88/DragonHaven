@@ -65,6 +65,11 @@ class CanonicalGameReceipt {
   }
 
   static const _durableFailures = {
+    'game_action_unavailable',
+    'game_attempt_unavailable',
+    'game_attempt_time_invalid',
+    'game_attempt_state_changed',
+    'game_attempt_in_progress',
     'invalid_command',
     'invalid_argument',
     'unknown_item',

@@ -53,6 +53,8 @@ abstract interface class SocialRepository {
     required String eventId,
     required String trialKey,
   });
+  Future<void> renewSeasonalTrial(
+      {required String attemptId, required String token});
   Future<SeasonalTrialSubmissionResult> completeSeasonalTrial({
     required String attemptId,
     required String token,
@@ -220,6 +222,10 @@ class DisabledSocialRepository implements SocialRepository {
     required String eventId,
     required String trialKey,
   }) async =>
+      _disabled();
+  @override
+  Future<void> renewSeasonalTrial(
+          {required String attemptId, required String token}) async =>
       _disabled();
   @override
   Future<SeasonalTrialSubmissionResult> completeSeasonalTrial({

@@ -5,6 +5,7 @@ import '../l10n/app_strings.dart';
 import '../models/house.dart';
 import '../models/pet.dart';
 import 'canonical_room_editor.dart';
+import 'canonical_school_screen.dart';
 import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
 import '../widgets/canonical_game_controls.dart';
@@ -48,6 +49,21 @@ class _HouseContents extends StatelessWidget {
                         key: const Key('canonical-house-balance'),
                         style: Theme.of(context).textTheme.titleMedium),
                   ])),
+          if (house.floorRoomIds.length >= 5)
+            TextButton.icon(
+                key: const Key('canonical-open-school'),
+                onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                        builder: (_) => Scaffold(
+                            appBar: AppBar(
+                                title: Text(s.pick(
+                                    'Dragon Academy', 'Drakenacademie'))),
+                            body: const CanonicalSchoolScreen()))),
+                icon: Image.asset(
+                    'assets/images/ui/dragon_school/school_graduate.png',
+                    width: 28,
+                    height: 28),
+                label: Text(s.pick('Dragon Academy', 'Drakenacademie'))),
           TabBar(tabs: [
             Tab(text: s.pick('Tower', 'Toren')),
             Tab(text: s.pick('Rooms', 'Kamers')),

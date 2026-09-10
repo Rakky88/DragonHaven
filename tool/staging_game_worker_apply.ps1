@@ -22,14 +22,14 @@ $state = (supabase migration list --linked --output-format json | Out-String) | 
 if ($LASTEXITCODE -ne 0) { throw 'Migration history unavailable.' }
 $remote = @($state.migrations | ForEach-Object { [string]$_.remote } | Where-Object { $_ } | Sort-Object)
 $local = @(Get-ChildItem supabase/migrations -Filter '*.sql' | ForEach-Object { $_.BaseName.Split('_')[0] } | Sort-Object)
-$baseline = @($local | Where-Object { [long]$_ -le 202609090064 })
-if ($local[-1] -cne '202609090065' -or
+$baseline = @($local | Where-Object { [long]$_ -le 202609090065 })
+if ($local[-1] -cne '202609100066' -or
     (@(Compare-Object $remote $baseline).Count -ne 0 -and @(Compare-Object $remote $local).Count -ne 0)) {
-  throw 'Requires exact registered staging schema 64/65 and only podium chat migration 65.'
+  throw 'Requires exact registered staging schema 65/66 and only endless Sunwake migration 66.'
 }
-./tool/staging_podium_feature_contract.ps1 -ProjectRef $projectRef `
+./tool/staging_endless_sunwake_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
-  -RehearseMigrations:($remote[-1] -ceq '202609090064')
+  -RehearseMigrations:($remote[-1] -ceq '202609090065')
 ./tool/staging_canonical_game_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 ./tool/staging_canonical_import_contract.ps1 -ProjectRef $projectRef `
@@ -63,6 +63,8 @@ if (@(Compare-Object $remote $local).Count -ne 0) {
 ./tool/staging_canonical_command_recovery_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 ./tool/staging_podium_feature_contract.ps1 -ProjectRef $projectRef `
+  -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
+./tool/staging_endless_sunwake_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN
 supabase functions deploy execute-game-command --project-ref $projectRef --no-verify-jwt --use-api
 if ($LASTEXITCODE -ne 0) { throw 'Staging game worker deployment failed.' }

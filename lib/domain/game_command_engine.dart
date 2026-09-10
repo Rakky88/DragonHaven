@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../models/adventure.dart';
 import '../models/game_command_schema.dart';
 import '../models/chest.dart';
@@ -9,6 +11,7 @@ import '../models/shop_item.dart';
 import '../providers/household_provider.dart';
 import 'server_entropy.dart';
 import 'game_state_envelope.dart';
+import 'school_attempts.dart';
 
 /// Runs existing game rules against trusted database state. This is an internal
 /// server module, not an HTTP authorization boundary: the worker must verify
@@ -48,13 +51,62 @@ abstract final class GameCommandEngine {
       }
       game.altarCurrentUserId = () => keeperId;
       game.altarRequiresAccount = true;
+      Map<String, dynamic>? activeAttempt = state['_activeGameAttempt'] == null
+          ? null
+          : Map<String, dynamic>.from(state['_activeGameAttempt'] as Map);
+      Object? lastGameResult = state['_lastGameResult'];
+      if (activeAttempt != null &&
+          !const {'refresh', 'finish_school', 'cancel_school'}
+              .contains(action)) {
+        throw const GameCommandException('game_attempt_in_progress');
+      }
       // Scores, reward amounts, paid entitlements, trade settlements and social
       // claims are deliberately absent. They need verified server records.
       final Object? result;
       switch (action) {
         case 'refresh':
-          await game.refreshForCurrentDate();
+          if (activeAttempt == null) await game.refreshForCurrentDate();
           result = true;
+        case 'start_school':
+          final rawIds = jsonDecode(args.text('dragonIds', max: 800));
+          if (rawIds is! List ||
+              rawIds.isEmpty ||
+              rawIds.length > 3 ||
+              rawIds.any(
+                  (id) => id is! String || id.isEmpty || id.length > 200)) {
+            throw const GameCommandException('invalid_argument');
+          }
+          activeAttempt = SchoolAttempts.start(
+              game: game,
+              id: identities.uuid(),
+              seed: identities.nextInt(1 << 31),
+              gameId: args.text('gameId'),
+              dragonIds: List<String>.from(rawIds),
+              mentorId: args.nullableText('mentorId'),
+              now: now);
+          result = activeAttempt;
+        case 'finish_school':
+        case 'cancel_school':
+          final inputs = action == 'cancel_school' ? '' : payload['inputs'];
+          if (inputs is! String || inputs.length > 3200) {
+            throw const GameCommandException('invalid_argument');
+          }
+          result = await SchoolAttempts.finish(
+              game: game,
+              attempt: activeAttempt,
+              id: args.text('attemptId'),
+              now: now,
+              inputs: inputs,
+              cancel: action == 'cancel_school');
+          lastGameResult = {
+            'attemptId': activeAttempt!['id'],
+            'gameId': activeAttempt['gameId'],
+            'type': 'school',
+            'result': result
+          };
+          activeAttempt = null;
+        case 'graduate_school':
+          result = await game.graduateDragonFromAcademy(args.text('dragonId'));
         case 'purchase_portrait_chest':
           result = (await game.purchasePortraitChest()).name;
         case 'purchase_title_chest':
@@ -218,9 +270,19 @@ abstract final class GameCommandEngine {
       return {
         'protocol': protocol,
         'result': result,
-        'state':
-            GameStateEnvelope.preserveUnknownMetadata(state, game.exportState())
+        'state': {
+          ...GameStateEnvelope.preserveUnknownMetadata(
+              state, game.exportState()),
+          if (state.containsKey('_activeGameAttempt') || activeAttempt != null)
+            '_activeGameAttempt': activeAttempt,
+          if (state.containsKey('_lastGameResult') || lastGameResult != null)
+            '_lastGameResult': lastGameResult,
+        }
       };
+    } on SchoolAttemptException catch (error) {
+      throw GameCommandException(error.code);
+    } on FormatException {
+      throw const GameCommandException('invalid_argument');
     } on EggAltarException catch (error) {
       throw GameCommandException(error.code);
     } finally {

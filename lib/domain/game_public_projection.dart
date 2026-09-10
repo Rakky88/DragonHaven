@@ -181,6 +181,43 @@ abstract final class GamePublicProjection {
           ],
         },
         'trials': {
+          'lastResult': state['_lastGameResult'] == null
+              ? null
+              : {
+                  ..._select(
+                      Map<String, dynamic>.from(
+                          state['_lastGameResult'] as Map),
+                      const ['attemptId', 'gameId', 'type']),
+                  'result': _select(
+                      Map<String, dynamic>.from(
+                          state['_lastGameResult']['result'] as Map),
+                      const [
+                        'score',
+                        'cancelled',
+                        'accepted',
+                        'keeperBestImproved',
+                        'newStarsByDragon',
+                        'xpByDragon',
+                        'graduatedDragonIds',
+                        'finalizedDragonIds',
+                        'attemptsByDragon'
+                      ]),
+                },
+          'attempt': state['_activeGameAttempt'] == null
+              ? null
+              : _select(
+                  Map<String, dynamic>.from(state['_activeGameAttempt'] as Map),
+                  const [
+                      'version',
+                      'type',
+                      'id',
+                      'seed',
+                      'gameId',
+                      'dragonIds',
+                      'mentorId',
+                      'startedAt',
+                      'expiresAt'
+                    ]),
           ..._select(exported, const [
             'trialRefilledAt',
             'trialStreakCount',

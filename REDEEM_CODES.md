@@ -1,10 +1,10 @@
 # DragonHaven Redeem Codes
 
-Last verified: 9 September 2026
+Last verified: 10 September 2026
 
-Ruleset: v0.05.27 candidate; Sunwake/Harvestmoon and stop mappings in forward migration 64, rehearsed on staging. Production remains schema 63 until rollout.
+Ruleset: v0.05.29 / 10079 published; production and staging are at schema 65. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
 
-<!-- reference-source-fingerprint: 33e3121f6f75d457 -->
+<!-- reference-source-fingerprint: ead0631670c84565 -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 

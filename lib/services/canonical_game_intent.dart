@@ -77,6 +77,11 @@ class CanonicalGameIntent {
       RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
           .hasMatch(value);
   static bool _argument(String action, String key, Object? value) {
+    if (key == 'inputs') {
+      return value is String &&
+          value.length <= 3200 &&
+          RegExp(r'^(?:[A-Za-z0-9+/]{4})*$').hasMatch(value);
+    }
     if (const [
       'tagged',
       'sinisterConfirmed',
@@ -99,15 +104,18 @@ class CanonicalGameIntent {
       return value is int && value >= min && value <= max;
     }
     if (value == null) {
-      return key == 'replaceAdventureId' ||
+      return key == 'mentorId' ||
+          key == 'replaceAdventureId' ||
           (action == 'equip_twinstar' || action == 'equip_relic') &&
               key == 'dragonId';
     }
-    final maxLength = key == 'name'
-        ? 24
-        : key == 'code'
-            ? 100
-            : 200;
+    final maxLength = key == 'dragonIds'
+        ? 800
+        : key == 'name'
+            ? 24
+            : key == 'code'
+                ? 100
+                : 200;
     return value is String &&
         value.trim().isNotEmpty &&
         value.runes.length <= maxLength &&

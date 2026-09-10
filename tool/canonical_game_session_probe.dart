@@ -14,6 +14,8 @@ import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
 import 'package:dragon_haven/screens/canonical_dragons_screen.dart';
 import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
 import 'package:dragon_haven/screens/canonical_house_screen.dart';
+import 'package:dragon_haven/screens/canonical_school_screen.dart';
+import 'package:dragon_haven/services/canonical_game_actions.dart';
 import 'package:dragon_haven/widgets/expertise_score_badge.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/adventure.dart';
@@ -647,6 +649,54 @@ void main() {
           'client_probe_care_treat');
       stdout.writeln(
           'PASS: real care UI; one treat debit, earned XP and bounded needs.');
+      await tap(find.widgetWithText(TextButton, 'Close'));
+      stdout.writeln('PROBE: ui_school_start');
+      while (game.snapshot!.house.floorRoomIds.length < 5) {
+        await tester
+            .runAsync(() => CanonicalGameActions(game).buildFloor('hearth'));
+        await tester.pump();
+      }
+      final pupil = game.snapshot!.dragon(game.snapshot!.activeDragonId!)!;
+      final schoolXp =
+          game.snapshot!.inventory.equipment[MysticRelic.twinstarBrooch] ==
+                  pupil.id
+              ? 30
+              : 15;
+      await mount(const CanonicalSchoolScreen());
+      await tap(key('canonical-school-runeRush'));
+      await tap(key('canonical-pupil-${pupil.id}'));
+      await tap(key('canonical-school-enroll'));
+      await tap(key('start-school-game'));
+      await settleCommand();
+      require(game.snapshot!.schoolAttempt?.gameId == 'runeRush',
+          'client_probe_school_attempt');
+      for (var i = 0; i < 30; i++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 90)));
+        await tap(key('school-rune-rush-target'));
+      }
+      for (var i = 0;
+          i < 400 &&
+              (game.snapshot!.schoolAttempt != null ||
+                  game.busy ||
+                  find.text('Lesson complete').evaluate().isEmpty);
+          i++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 100)));
+        await tester.pump();
+      }
+      require(
+          game.snapshot!.schoolAttempt == null &&
+              game.canAct &&
+              find.text('Lesson complete').evaluate().length == 1 &&
+              game.snapshot!.dragon(pupil.id)!.schoolStars['runeRush'] == 3 &&
+              game.snapshot!.dragon(pupil.id)!.schoolAttempts['runeRush'] ==
+                  1 &&
+              game.snapshot!.dragon(pupil.id)!.xp == pupil.xp + schoolXp &&
+              tester.takeException() == null,
+          'client_probe_school_verified_reward');
+      stdout.writeln(
+          'PASS: real Academy UI; server-issued attempt, twenty-second input replay and one stars/XP reward.');
     } finally {
       stdout.writeln('PROBE: ui_cleanup_start');
       await tester.pumpWidget(const SizedBox.shrink());
@@ -658,5 +708,5 @@ void main() {
       await tester.binding.setSurfaceSize(null);
       stdout.writeln('PROBE: ui_cleanup_finished');
     }
-  }, timeout: const Timeout(Duration(minutes: 3)));
+  }, timeout: const Timeout(Duration(minutes: 5)));
 }

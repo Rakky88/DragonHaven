@@ -23,7 +23,7 @@ void main() {
     expect(crossesAt(.16), true);
     expect(crossesAt(.14, might: 1), true);
   });
-  test('surf gradually accelerates through the final stretch', () {
+  test('surf gradually accelerates without sudden difficulty jumps', () {
     final game = SunwakeSurf(seed: 1);
     var previousSpeed = 0.0, previousInterval = 2.0;
     for (var second = 0; second <= 75; second++) {
@@ -42,7 +42,7 @@ void main() {
   test('surf starts promptly, accelerates, and dragging cannot teleport', () {
     final game = SunwakeSurf(seed: 42);
     final startSpeed = game.speed;
-    expect(startSpeed, greaterThanOrEqualTo(.4));
+    expect(startSpeed, greaterThanOrEqualTo(.55));
     game.steer(.85);
     expect(game.x, .5);
     game.advance(.1);
@@ -98,6 +98,27 @@ void main() {
       routes.add(route.join());
     }
     expect(routes.length, 20);
+  });
+  test('surf can continue for an hour, then stops on exactly the third hit',
+      () {
+    final game = SunwakeSurf(seed: 918);
+    var actions = 0;
+    for (var frame = 0; frame < 3600 * 30; frame++) {
+      final next = game.gates.where((g) => !g.resolved).firstOrNull;
+      if (next != null) game.steer(next.pearlX);
+      actions += game.advance(1 / 30).where((a) => a.correct).length;
+    }
+    expect(game.finished, false);
+    expect(game.mistakes, 0);
+    expect(actions, greaterThan(6000));
+    expect(game.gates.length, lessThan(10));
+    for (var frame = 0; frame < 10 * 30 && !game.finished; frame++) {
+      final next = game.gates.where((g) => !g.resolved).firstOrNull;
+      if (next != null) game.steer(((next.safeLane + 1) % 3 + .5) / 3);
+      game.advance(1 / 30);
+    }
+    expect(game.mistakes, 3);
+    expect(game.advance(3600), isEmpty);
   });
   test('rotation preserves every shape, placement respects bounds and overlap',
       () {
