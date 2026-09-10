@@ -39,8 +39,8 @@ void main() {
         url: CanonicalGameTransport.stagingUrl,
         publishableKey: env['STAGING_SUPABASE_PUBLISHABLE_KEY']!,
         environment: OnlineEnvironment.staging);
-    final auth = SupabaseClient(config.url, config.publishableKey,
-        authOptions: const AuthClientOptions(autoRefreshToken: false));
+    late final SupabaseClient auth;
+    var hasAuth = false;
     Directory? directory;
     CanonicalGameSession? game;
     var loseReply = true;
@@ -48,6 +48,9 @@ void main() {
     try {
       stdout.writeln('PROBE: beacon_auth_begin');
       await tester.runAsync(() async {
+        auth = SupabaseClient(config.url, config.publishableKey,
+            authOptions: const AuthClientOptions(autoRefreshToken: false));
+        hasAuth = true;
         await auth.auth.recoverSession(jsonEncode(signed));
         require((await auth.auth.getUser()).user?.id == signed['user']['id'],
             'auth_mismatch');
@@ -127,6 +130,9 @@ void main() {
       await tap('weave-beacon-project');
       await tap('weave-beacon-project');
       await settle();
+      for (var i = 0; i < 20 && find.text('515 / 5000').evaluate().isEmpty; i++) {
+        await settle();
+      }
       stdout.writeln('PROBE: beacon_final_total_check');
       require(find.text('515 / 5000').evaluate().length == 1,
           'shared_total_not_updated');
@@ -139,7 +145,7 @@ void main() {
       await tester.runAsync(() async {
         game?.dispose();
         stdout.writeln('PROBE: beacon_auth_dispose_begin');
-        await auth.dispose().timeout(const Duration(seconds: 15));
+        if (hasAuth) await auth.dispose().timeout(const Duration(seconds: 15));
         stdout.writeln('PROBE: beacon_auth_disposed');
         if (directory != null) await directory!.delete(recursive: true);
       });
