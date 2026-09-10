@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 import '../models/pet.dart';
 import '../models/seasonal_minigame.dart';
+import '../models/seasonal_arcade_game.dart';
 import '../models/trial.dart';
+import '../models/trial_input.dart';
 import '../services/audio_service.dart';
 
 typedef SeasonalArcadeAction = void Function(bool correct,
@@ -21,81 +23,58 @@ class SeasonalMinigames extends StatefulWidget {
       required this.seed,
       required this.running,
       required this.clock,
-      required this.onAction});
+      required this.onAction,
+      this.onInput});
   final TrialKind kind;
   final Pet dragon;
   final int seed;
   final bool running;
   final DateTime Function() clock;
   final SeasonalArcadeAction onAction;
+  final ValueChanged<TrialInput>? onInput;
 
   @override
   State<SeasonalMinigames> createState() => _SeasonalMinigamesState();
 }
 
-class _ChimeNote {
-  _ChimeNote(this.id, this.lane, this.strikeAt, this.travel);
-  final int id;
-  final int lane;
-  final double strikeAt;
-  final double travel;
-}
-
-class _GiftParcel {
-  _GiftParcel(this.id, this.type, this.born, this.duration);
-  final int id;
-  final int type;
-  final double born;
-  final double duration;
-}
-
 class _SeasonalMinigamesState extends State<SeasonalMinigames> {
-  late final Random _random;
+  late final SeasonalArcadeGame _game;
   Timer? _ticker;
   DateTime? _lastTick;
-  double _time = 0;
-  double _readyAt = 0;
-  int? _errorCell;
-  late HeartMaze _maze;
-  late PrismCircuit _prisms;
-  int _hints = 0;
-  HeartDirection? _hint;
-  int? _prismHint;
-  final _parcels = <_GiftParcel>[];
-  int _parcelId = 0;
-  double _nextParcel = 0;
+  int _elapsedMilliseconds = 0;
   int? _draggingParcel;
   Offset? _drag;
-  int _mistakes = 0;
-  bool _lost = false;
   final _surface = GlobalKey();
-  final _notes = <_ChimeNote>[];
-  double _nextNote = 0;
-  int _noteId = 0;
-  int _beat = 0;
-  late final int _melodyPhrase;
-  final Map<int, double> _laneReadyAt = {};
-  final Map<int, double> _flares = {};
-
-  double get _spirit =>
-      widget.dragon.trainingFor(TrainingFocus.spirit).clamp(0, 400) / 400;
-  double get _might =>
-      widget.dragon.trainingFor(TrainingFocus.might).clamp(0, 400) / 400;
-  double get _arcana =>
-      widget.dragon.trainingFor(TrainingFocus.arcana).clamp(0, 400) / 400;
-  double get _chimeWindow => .18 + _might * .07;
-  bool get _canInput => widget.running && !_lost && _time >= _readyAt;
+  double get _time => _game.time;
+  double get _spirit => _game.spirit;
+  bool get _lost => _game.lost;
+  bool get _canInput => widget.running && _game.canInput;
   bool get _reducedMotion => MediaQuery.disableAnimationsOf(context);
+  HeartMaze get _maze => _game.maze;
+  PrismCircuit get _prisms => _game.prisms;
+  int get _hints => _game.hints;
+  HeartDirection? get _hint => _game.hint;
+  int? get _prismHint => _game.prismHint;
+  int? get _errorCell => _game.errorCell;
+  List<GiftParcel> get _parcels => _game.parcels;
+  List<ChimeNote> get _notes => _game.notes;
+  Map<int, double> get _flares => _game.flares;
 
   @override
   void initState() {
     super.initState();
-    _random = Random(widget.seed);
-    _melodyPhrase =
-        widget.kind == TrialKind.midnightChime ? _random.nextInt(4) : 0;
-    _hints = 1 + (_arcana * 2).floor();
-    _newPuzzle();
-    _ticker = Timer.periodic(const Duration(milliseconds: 40), (_) => _tick());
+    double expertise(TrainingFocus focus) =>
+        widget.dragon.trainingFor(focus).clamp(0, 400) / 400;
+    _game = SeasonalArcadeGame(
+        kind: widget.kind,
+        seed: widget.seed,
+        might: expertise(TrainingFocus.might),
+        arcana: expertise(TrainingFocus.arcana),
+        spirit: expertise(TrainingFocus.spirit));
+    _lastTick = widget.clock();
+    _ticker = Timer.periodic(const Duration(milliseconds: 40), (_) {
+      if (mounted && widget.running && !_lost) setState(_synchronize);
+    });
   }
 
   @override
@@ -110,90 +89,36 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
     super.dispose();
   }
 
-  void _newPuzzle() {
-    _hint = null;
-    _prismHint = null;
-    _errorCell = null;
-    final symbol = _random.nextInt(3);
-    if (widget.kind == TrialKind.hollyfrostGiftforge) {
-      _spawnParcel(_time, type: symbol);
-    }
-    _draggingParcel = null;
-    _drag = null;
-    if (widget.kind == TrialKind.rosevowRelay) {
-      _maze = HeartMaze.generate(_random);
-    }
-    if (widget.kind == TrialKind.prismaticParade) {
-      _prisms = PrismCircuit.generate(_random);
-    }
-  }
-
-  void _spawnParcel(double born, {int? type}) {
-    _parcels.add(_GiftParcel(_parcelId++, type ?? _random.nextInt(3), born,
-        SeasonalArcadePacing.parcelLifetime(born, _might)));
-    _nextParcel = born + SeasonalArcadePacing.parcelInterval(born);
-  }
-
-  void _report(bool correct, {int points = 100, bool complete = true}) {
+  void _synchronize() {
     if (!widget.running || _lost) return;
-    if (!correct &&
-        (widget.kind == TrialKind.hollyfrostGiftforge ||
-            widget.kind == TrialKind.midnightChime)) {
-      // Stop synchronously, including several expiries in one render frame.
-      _lost = ++_mistakes >= 3;
+    final now = widget.clock();
+    _elapsedMilliseconds += max(0, now.difference(_lastTick!).inMilliseconds);
+    _lastTick = now;
+    _game.advanceTo(_elapsedMilliseconds);
+    if (_draggingParcel != null &&
+        !_parcels.any((p) => p.id == _draggingParcel)) {
+      _draggingParcel = null;
+      _drag = null;
     }
-    widget.onAction(correct, points: points, completesRound: complete);
+    _emitActions();
   }
 
-  void _tick() {
-    if (!mounted || !widget.running || _lost) return;
-    final now = widget.clock();
-    final delta = _lastTick == null
-        ? 0.0
-        : max(0.0, now.difference(_lastTick!).inMilliseconds / 1000);
-    _lastTick = now;
-    if (delta <= 0) return;
+  void _emitActions() {
+    for (final action in _game.takeActions()) {
+      widget.onAction(action.correct,
+          points: action.points, completesRound: action.complete);
+    }
+  }
+
+  void _record(TrialControl control, [int a = 0, int b = 0]) =>
+      widget.onInput?.call(TrialInput(_elapsedMilliseconds, control, a, b));
+
+  void _hintRequest() {
+    if (!_canInput) return;
     setState(() {
-      _time += delta;
-      _flares.removeWhere((_, until) => until <= _time);
-      if (_time >= _readyAt) _errorCell = null;
-      if (widget.kind == TrialKind.hollyfrostGiftforge) {
-        // Scheduled arrivals never wait for a delivery. Bound catch-up after
-        // a suspended frame; three expired parcels will end the game anyway.
-        while (_nextParcel <= _time && _parcels.length < 8) {
-          _spawnParcel(_nextParcel);
-        }
-        final missed =
-            _parcels.where((p) => _time > p.born + p.duration).toList();
-        for (final parcel in missed) {
-          _parcels.remove(parcel);
-          if (_draggingParcel == parcel.id) {
-            _draggingParcel = null;
-            _drag = null;
-          }
-          _report(false);
-          if (_lost) break;
-        }
-      }
-      if (widget.kind == TrialKind.midnightChime) {
-        final missed =
-            _notes.where((n) => _time > n.strikeAt + _chimeWindow).toList();
-        for (final note in missed) {
-          _notes.remove(note);
-          _report(false);
-        }
-        if (!_lost && _time >= _nextNote) {
-          final travel = SeasonalArcadePacing.chimeTravel(_time, _spirit);
-          for (final lane
-              in SeasonalArcadePacing.chimeLanes(_beat, _time, _melodyPhrase)) {
-            _notes.add(_ChimeNote(_noteId++, lane, _time + travel, travel));
-          }
-          _nextNote = _time +
-              SeasonalArcadePacing.chimeBeat(_time) *
-                  (_beat % 16 == 15 ? 1.5 : 1);
-          _beat++;
-        }
-      }
+      _synchronize();
+      _record(TrialControl.requestHint);
+      _game.requestHint();
     });
   }
 
@@ -330,7 +255,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
       );
 
   Widget _giftParcel(
-      AppStrings s, _GiftParcel parcel, Size size, double giftSize) {
+      AppStrings s, GiftParcel parcel, Size size, double giftSize) {
     final progress = ((_time - parcel.born) / parcel.duration).clamp(0.0, 1.0);
     final held = _draggingParcel == parcel.id;
     final center = held && _drag != null
@@ -388,8 +313,10 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
                 _draggingParcel = null;
                 _drag = null;
                 if (isDelivery) {
-                  _parcels.remove(parcel);
-                  _report(bay == parcel.type, points: 120);
+                  _synchronize();
+                  _record(TrialControl.deliverGift, parcel.id, bay);
+                  _game.deliver(parcel.id, bay);
+                  _emitActions();
                 }
               });
             },
@@ -399,24 +326,15 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   }
 
   void _strike(int lane) {
-    if (!_canInput || _time < (_laneReadyAt[lane] ?? 0)) return;
-    final candidates = _notes.where((n) => n.lane == lane).toList()
-      ..sort((a, b) =>
-          (_time - a.strikeAt).abs().compareTo((_time - b.strikeAt).abs()));
-    final target = candidates.firstOrNull;
-    final correct =
-        target != null && (_time - target.strikeAt).abs() <= _chimeWindow;
+    if (!_canInput) return;
+    bool? correct;
     setState(() {
-      // A wrong strike consumes the nearest note once; it cannot also expire.
-      if (target != null) _notes.remove(target);
-      _report(correct,
-          points: correct && (_time - target.strikeAt).abs() < .09 ? 130 : 100);
-      _flares[lane] = _time + .35;
-      _errorCell = correct ? null : lane;
-      // Different lanes can be struck together, including with two fingers.
-      _laneReadyAt[lane] = _time + .12;
+      _synchronize();
+      _record(TrialControl.strikeChime, lane);
+      correct = _game.strike(lane);
+      _emitActions();
     });
-    if (correct) {
+    if (correct == true) {
       unawaited(HavenAudio.playAsset('event_firstlight_note_${lane + 1}'));
     }
   }
@@ -522,18 +440,10 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   void _move(HeartDirection direction) {
     if (!_canInput) return;
     setState(() {
-      _hint = null;
-      final fresh = _maze.move(direction);
-      if (fresh == null) {
-        _report(false, complete: false);
-        _errorCell = 0;
-      } else if (_maze.solved) {
-        _report(true, points: 120);
-        _newPuzzle();
-      } else if (fresh) {
-        _report(true, points: 55, complete: false);
-      }
-      _readyAt = _time + .13;
+      _synchronize();
+      _record(TrialControl.moveHearts, direction.index);
+      _game.move(direction);
+      _emitActions();
     });
   }
 
@@ -672,32 +582,17 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
                         Icons.arrow_back_rounded
                       ][direction.index]))),
           ]),
-          _hintButton(
-              s,
-              () => setState(() {
-                    _hints--;
-                    _hint = _maze.solution()?.firstOrNull;
-                  })),
+          _hintButton(s, _hintRequest),
         ]),
       );
 
   void _rotatePrism(int cell) {
     if (!_canInput) return;
     setState(() {
-      _prismHint = null;
-      _prisms.rotate(cell);
-      for (final lit in _prisms.litCells) {
-        if (_prisms.credited.add(lit)) {
-          _report(true, points: 70, complete: false);
-        }
-      }
-      if (_prisms.solved) {
-        _report(true, points: 120);
-        _newPuzzle();
-        _readyAt = _time + .35;
-      } else {
-        _readyAt = _time + .1;
-      }
+      _synchronize();
+      _record(TrialControl.rotatePrism, cell);
+      _game.rotatePrism(cell);
+      _emitActions();
     });
   }
 
@@ -794,15 +689,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
                       ),
                   ]);
                 }))),
-        controls: _hintButton(
-            s,
-            () => setState(() {
-                  _hints--;
-                  _prismHint = _prisms.solutionMasks.keys
-                      .where((i) =>
-                          _prisms.connectors[i] != _prisms.solutionMasks[i])
-                      .firstOrNull;
-                })),
+        controls: _hintButton(s, _hintRequest),
       );
 }
 

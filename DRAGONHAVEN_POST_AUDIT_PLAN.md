@@ -2345,3 +2345,37 @@ de bestaande weigering van podium-emotes in beide chats, met behoud van
 lidmaatschap, vriendencontrole, ontvangersvoorkeur en berichtlimieten.
 Staging staat op 65: lint 0, rollbackproeven voor chat, acht event-/economie-
 contracten geslaagd, mutaties uit en geen resterende synthetische speldata.
+
+
+Academy staging proof completed in run
+[34446694129](https://github.com/Rakky88/DragonHaven/actions/runs/34446694129)
+on `b56d71827fa2f7fb471a37f2b106797ce603da34`: clean analysis, 801 Flutter
+tests, both timezone suites, 16 Edge tests and native/JavaScript parity.
+The actual UI harness built five floors, enrolled a pupil, played the real
+20-second Rune Rush lesson, and verified one three-star attempt and the exact
+XP reward. All preceding shop/Altar/dragon/Adventure/house/care probes also pass.
+Migration 66 was rehearsed, applied on staging, and rechecked with both old
+summer and new eight-hour Sunwake rollback contracts. The worker bundle is
+1,057,115 bytes, ruleset `5998021ddc6ce477fc998af67720069c2cacbe06e6517a6a271a4c84def558c6`.
+Both synthetic accounts and shadow commands were removed and the worker disabled
+at 06:56:41 UTC; final staging schema 66, lint 0, Auth/settings/application 200
+at 06:56:47 UTC on 10 September. Production remains schema 65 and unchanged.
+This proves the Academy component; verified Trials, remaining care/social
+settlement and migration/cutover are still open. The user explicitly requires
+all economy work and quality-preserving APK reduction before the next release.
+
+
+Trial verification foundation now has shared pure models for the three classic
+games and four puzzle/rhythm events, plus shared Witchlight route geometry and
+checkpointable Sunwake simulation. Existing art/controls are retained. Local
+widget regressions, twelve input/model tests and native/JavaScript parity pass;
+a one-hour Sunwake run restored every five seconds preserves every action and
+uses bounded snapshots. No trial finish command is enabled by this foundation.
+Remaining trial work: complete the shared score/session adapter, wire all eleven
+screens to bounded input chunks, validate rewards/reservations on the server,
+and prove actual staging replay/recovery before cutover. Existing Academy proof
+above remains the deployed staging component. Production is still unchanged.
+
+The trial-model foundation also passes the complete 813-test Flutter suite and
+clean analysis. Native/JavaScript probe bundle: 1,082,642 bytes; all gameplay
+outputs, RNG/checkpoint state and route coordinates match exactly.

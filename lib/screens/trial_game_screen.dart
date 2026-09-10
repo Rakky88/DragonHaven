@@ -11,6 +11,7 @@ import '../models/social.dart';
 import '../models/dragon_emote.dart';
 import '../models/mystic_relic.dart';
 import '../models/trial.dart';
+import '../models/classic_trial_game.dart';
 import '../providers/household_provider.dart';
 import '../providers/online_account_provider.dart';
 import '../services/audio_service.dart';
@@ -695,28 +696,24 @@ class _CavernFlightGame extends StatefulWidget {
 class _CavernFlightGameState extends State<_CavernFlightGame>
     with SingleTickerProviderStateMixin {
   late final Ticker _ticker;
-  late final Random _random;
+  late final CavernFlightGame _game;
   Duration? _lastTick;
   Size _gameSize = Size.zero;
-  final List<_FlightObstacle> _obstacles = [];
-  bool _started = false;
-  bool _ended = false;
-  bool _finishing = false;
-  bool _crashArcStarted = false;
-  double _dragonY = .5;
-  double _velocity = 0;
-  double _elapsed = 0;
-  int _score = 0;
-  int _passed = 0;
+  bool _started = false, _finishing = false, _crashArcStarted = false;
+  int _runMs = 0;
+  List<FlightObstacle> get _obstacles => _game.obstacles;
+  bool get _ended => _game.ended;
+  double get _dragonY => _game.dragonY;
+  double get _velocity => _started ? _game.velocity : 0;
+  double get _elapsed => _game.elapsed;
+  int get _score => _game.score;
 
   @override
   void initState() {
     super.initState();
-    _random = Random(widget.offer.id.hashCode);
-    _obstacles.addAll(List.generate(
-      3,
-      (index) => _newObstacle(1.15 + index * .58),
-    ));
+    _game = CavernFlightGame(
+        seed: widget.offer.id.hashCode,
+        spirit: widget.dragon.trainingFor(TrainingFocus.spirit));
     _ticker = createTicker(_tick)..start();
   }
 
@@ -726,70 +723,18 @@ class _CavernFlightGameState extends State<_CavernFlightGame>
     super.dispose();
   }
 
-  _FlightObstacle _newObstacle(double x) => _FlightObstacle(
-        x: x,
-        gap: .30 + _random.nextDouble() * .40,
-        halfGap: .19 - min(_passed, 10) * .0035,
-        crystal: _random.nextBool(),
-        moving: _passed >= 4 && _random.nextInt(4) == 0,
-        phase: _random.nextDouble() * pi * 2,
-      );
-
   void _tick(Duration elapsed) {
     final previous = _lastTick;
     _lastTick = elapsed;
     if (!_started || _ended || previous == null || _gameSize.isEmpty) return;
-    final dt = min((elapsed - previous).inMicroseconds / 1000000, .035);
-    _elapsed += dt;
-    _velocity += 1.55 * dt;
-    _dragonY += _velocity * dt;
-    final speed = .27 + min(_elapsed / 120, .12);
-    for (final obstacle in _obstacles) {
-      obstacle.x -= speed * dt;
-      if (!obstacle.passed && obstacle.x < .20) {
-        obstacle.passed = true;
-        _passed++;
-        unawaited(HavenAudio.play(HavenSound.uiConfirm));
-      }
-    }
-    if (_obstacles.first.x < -.20) _obstacles.removeAt(0);
-    if (_obstacles.last.x < .82) {
-      _obstacles.add(_newObstacle(_obstacles.last.x + .58));
-    }
-    _score = (_elapsed * 10).floor() + _passed * 25;
-    if (_collides()) {
-      _ended = true;
+    _runMs += (elapsed - previous).inMilliseconds;
+    final passed = _game.passed;
+    _game.advanceTo(_runMs);
+    if (_game.passed != passed || _ended) {
       unawaited(HavenAudio.play(HavenSound.uiConfirm));
-      setState(() {});
-      unawaited(_finishAfterCrash());
-      return;
     }
     setState(() {});
-  }
-
-  bool _collides() {
-    final hitboxScale = cavernFlightHitboxScale(
-      widget.dragon.trainingFor(TrainingFocus.spirit),
-    );
-    final center = Offset(_gameSize.width * .24, _gameSize.height * _dragonY);
-    final dragonBox = Rect.fromCenter(
-      center: center,
-      width: 43 * hitboxScale,
-      height: 31 * hitboxScale,
-    );
-    if (dragonBox.top <= 0 || dragonBox.bottom >= _gameSize.height) return true;
-    for (final obstacle in _obstacles) {
-      final left = obstacle.x * _gameSize.width;
-      final right = left + _gameSize.width * .13;
-      if (dragonBox.right < left || dragonBox.left > right) continue;
-      final gap = obstacle.gapAt(_elapsed);
-      final topBottom = (gap - obstacle.halfGap) * _gameSize.height;
-      final bottomTop = (gap + obstacle.halfGap) * _gameSize.height;
-      if (dragonBox.top < topBottom || dragonBox.bottom > bottomTop) {
-        return true;
-      }
-    }
-    return false;
+    if (_ended) unawaited(_finishAfterCrash());
   }
 
   Future<void> _finishAfterCrash() async {
@@ -817,7 +762,7 @@ class _CavernFlightGameState extends State<_CavernFlightGame>
       _lastTick = null;
       unawaited(HavenAudio.play(HavenSound.adventureStart));
     }
-    _velocity = -.58;
+    _game.flap(_runMs);
     unawaited(HavenAudio.play(HavenSound.uiConfirm));
     setState(() {});
   }
@@ -1011,28 +956,6 @@ class _FlightWingFrame extends StatelessWidget {
       );
 }
 
-class _FlightObstacle {
-  _FlightObstacle({
-    required this.x,
-    required this.gap,
-    required this.halfGap,
-    required this.crystal,
-    required this.moving,
-    required this.phase,
-  });
-
-  double x;
-  final double gap;
-  final double halfGap;
-  final bool crystal;
-  final bool moving;
-  final double phase;
-  bool passed = false;
-
-  double gapAt(double elapsed) =>
-      (gap + (moving ? sin(elapsed * 1.4 + phase) * .045 : 0)).clamp(.23, .77);
-}
-
 class _CavernPainter extends CustomPainter {
   const _CavernPainter({
     required this.elapsed,
@@ -1072,7 +995,7 @@ class _CavernObstacleSprites extends StatelessWidget {
     required this.elapsed,
   });
 
-  final List<_FlightObstacle> obstacles;
+  final List<FlightObstacle> obstacles;
   final double elapsed;
 
   @override
@@ -1188,18 +1111,19 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
     with SingleTickerProviderStateMixin {
   late final Ticker _ticker;
   Duration? _lastTick;
-  double _time = 0;
-  double _meter = 0;
-  bool _started = false;
-  bool _locked = false;
-  bool _ended = false;
-  bool _impact = false;
-  bool _barFading = false;
-  int _round = 0;
-  int _score = 0;
-  int _combo = 0;
-  int _misses = 0;
-  String _feedback = '';
+  late final RuinBreakerGame _game;
+  int _runMs = 0;
+  bool _started = false, _barFading = false;
+  bool get _locked => _game.locked;
+  bool get _ended => _game.ended;
+  bool get _impact => _game.locked;
+  bool get _isGap => _game.isGap;
+  int get _round => _game.round;
+  int get _score => _game.score;
+  int get _combo => _game.combo;
+  int get _misses => _game.misses;
+  double get _meter => _game.meter;
+  String get _feedback => _game.feedback;
 
   static const _obstacles = [
     ('Rock', 'Rots', 100),
@@ -1212,6 +1136,8 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
   @override
   void initState() {
     super.initState();
+    _game =
+        RuinBreakerGame(might: widget.dragon.trainingFor(TrainingFocus.might));
     _ticker = createTicker(_tick)..start();
   }
 
@@ -1221,17 +1147,14 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
     super.dispose();
   }
 
-  bool get _isGap => _round > 0 && (_round + 1) % 6 == 0;
-
   void _tick(Duration elapsed) {
     final previous = _lastTick;
     _lastTick = elapsed;
-    if (!_started || _ended || _locked || previous == null) return;
-    final dt = min((elapsed - previous).inMicroseconds / 1000000, .04);
-    _time += dt;
-    final speed = 1.8 + min(_round * .10, 2.2);
-    _meter = (sin(_time * speed - pi / 2) + 1) / 2;
+    if (!_started || _ended || previous == null) return;
+    _runMs += (elapsed - previous).inMilliseconds;
+    _game.advanceTo(_runMs);
     setState(() {});
+    if (_ended) unawaited(_finish());
   }
 
   void _start() {
@@ -1242,58 +1165,23 @@ class _RuinBreakerGameState extends State<_RuinBreakerGame>
     setState(() {});
   }
 
-  Future<void> _strike() async {
+  void _strike() {
     if (!_started) {
       _start();
       return;
     }
-    if (_locked || _ended) return;
-    _locked = true;
-    final distance = (_meter - .5).abs();
-    final might = widget.dragon.trainingFor(TrainingFocus.might);
-    final perfectHalf = .045 * ruinBreakerPerfectZoneScale(might);
-    final successHalf = .18 * ruinBreakerSuccessZoneScale(might);
-    final base = _isGap ? 210 : _obstacles[_round % _obstacles.length].$3;
-    if (distance <= perfectHalf) {
-      _combo++;
-      _score += (base * (1 + min(_combo, 8) * .15)).round();
-      _feedback = _combo >= 4 ? 'SMASH STREAK x$_combo!' : 'PERFECT x$_combo!';
-      unawaited(HavenAudio.play(HavenSound.uiConfirm));
-    } else if (distance <= successHalf) {
-      _combo = 0;
-      _score += (base * .60).round();
-      _feedback = _isGap ? 'CLEAR!' : 'SMASH!';
-      unawaited(HavenAudio.play(HavenSound.uiConfirm));
-    } else {
-      _combo = 0;
-      _misses++;
-      _feedback = _isGap ? 'MISSED JUMP!' : 'GLANCING HIT!';
-      unawaited(HavenAudio.play(HavenSound.uiConfirm));
-    }
-    _impact = true;
+    if (_locked || _ended || !_game.strike(_runMs)) return;
+    unawaited(HavenAudio.play(HavenSound.uiConfirm));
     setState(() {});
-    await Future<void>.delayed(const Duration(milliseconds: 330));
+  }
+
+  Future<void> _finish() async {
+    if (_barFading) return;
+    setState(() => _barFading = true);
+    await Future<void>.delayed(const Duration(seconds: 1));
     if (!mounted) return;
-    _impact = false;
-    _round++;
-    _time = 0;
-    _meter = 0;
-    if (_misses >= 3 || _round >= 30) {
-      _ended = true;
-      _barFading = true;
-      setState(() {});
-      await Future<void>.delayed(const Duration(seconds: 1));
-      if (!mounted) return;
-      await _finishTrial(
-        context,
-        offer: widget.offer,
-        dragon: widget.dragon,
-        score: _score,
-      );
-      return;
-    }
-    _locked = false;
-    setState(() {});
+    await _finishTrial(context,
+        offer: widget.offer, dragon: widget.dragon, score: _score);
   }
 
   @override
@@ -1563,122 +1451,65 @@ class _RuneweaverGame extends StatefulWidget {
 }
 
 class _RuneweaverGameState extends State<_RuneweaverGame> {
-  late final Random _random;
-  final List<int> _sequence = [];
-  List<int> _positions = [0, 1, 2, 3, 4];
-  bool _started = false;
-  bool _showing = false;
-  bool _accepting = false;
-  bool _ended = false;
-  bool _echoUsed = false;
-  int? _litRune;
-  int? _echoRune;
-  int? _wrongRune;
-  int _inputIndex = 0;
-  int _rounds = 0;
-  bool _resultStarting = false;
-
+  late final RuneweaverGame _game;
+  Timer? _ticker;
+  bool _started = false, _resultStarting = false;
+  List<int> get _sequence => _game.sequence;
+  List<int> get _positions => _game.positions;
+  bool get _showing => _game.showing;
+  bool get _accepting => _started && _game.accepting;
+  int? get _litRune => _game.litRune;
+  int? get _echoRune => _showing ? null : _game.echoRune;
+  int? get _wrongRune => _game.wrongRune;
+  int get _rounds => _game.rounds;
   static const _runeKeys = ['fire', 'water', 'moon', 'star', 'wind'];
 
   @override
   void initState() {
     super.initState();
-    _random = Random(widget.offer.id.hashCode ^ widget.dragon.hatchSeed);
+    _game = RuneweaverGame(
+        seed: widget.offer.id.hashCode ^ widget.dragon.hatchSeed,
+        arcana: widget.dragon.trainingFor(TrainingFocus.arcana));
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
   }
 
   Future<void> _finishAfter(Duration delay) async {
     if (_resultStarting) return;
     _resultStarting = true;
-    _ended = true;
-    _accepting = false;
-    _showing = false;
-    if (mounted) setState(() {});
+    _ticker?.cancel();
+    setState(() {});
     await Future<void>.delayed(delay);
     if (!mounted) return;
-    await _finishTrial(
-      context,
-      offer: widget.offer,
-      dragon: widget.dragon,
-      score: _rounds,
-    );
+    await _finishTrial(context,
+        offer: widget.offer, dragon: widget.dragon, score: _rounds);
   }
 
-  Future<void> _start() async {
+  void _start() {
     if (_started) return;
     _started = true;
     unawaited(HavenAudio.play(HavenSound.adventureStart));
-    setState(() {});
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    if (mounted) await _nextRound();
-  }
-
-  Future<void> _nextRound() async {
-    if (_ended) return;
-    _sequence.add(_random.nextInt(_runeKeys.length));
-    _inputIndex = 0;
-    _showing = true;
-    _accepting = false;
-    _echoRune = null;
-    setState(() {});
-    final visible = runeweaverRuneDuration(
-      widget.dragon.trainingFor(TrainingFocus.arcana),
-    );
-    for (final rune in _sequence) {
-      if (!mounted || _ended) return;
-      setState(() => _litRune = rune);
-      unawaited(HavenAudio.play(HavenSound.uiConfirm));
-      await Future<void>.delayed(visible);
-      if (!mounted || _ended) return;
-      setState(() => _litRune = null);
-      await Future<void>.delayed(const Duration(milliseconds: 150));
-    }
-    if (_rounds >= 6) {
-      _positions = [..._positions]..shuffle(_random);
-    }
-    if (!_echoUsed &&
-        _rounds >= 3 &&
-        widget.dragon.trainingFor(TrainingFocus.arcana) >= 240) {
-      _echoRune = _sequence.last;
-      _echoUsed = true;
-    }
-    _showing = false;
-    _accepting = true;
+    _ticker = Timer.periodic(const Duration(milliseconds: 10), (timer) {
+      if (!mounted || _game.ended) return;
+      final previous = _game.litRune;
+      _game.advanceTo(timer.tick * 10);
+      if (_showing && _game.litRune != null && _game.litRune != previous) {
+        unawaited(HavenAudio.play(HavenSound.uiConfirm));
+      }
+      setState(() {});
+    });
     setState(() {});
   }
 
-  Future<void> _tapRune(int rune) async {
-    if (!_accepting || _ended) return;
-    _echoRune = null;
-    if (rune != _sequence[_inputIndex]) {
-      _litRune = rune;
-      _wrongRune = rune;
-      unawaited(HavenAudio.play(HavenSound.uiConfirm));
-      await _finishAfter(const Duration(seconds: 1));
-      return;
-    }
-    _litRune = rune;
-    _inputIndex++;
-    final inputIndex = _inputIndex;
-    final roundComplete = inputIndex == _sequence.length;
-    // Close the round before yielding. Another pointer can arrive during the
-    // tap glow, even before disabled buttons have been rebuilt.
-    if (roundComplete) {
-      _accepting = false;
-      _rounds++;
-    }
+  void _tapRune(int rune) {
+    if (!_accepting || !_game.tap(rune, _game.milliseconds)) return;
     unawaited(HavenAudio.play(HavenSound.uiConfirm));
     setState(() {});
-    await Future<void>.delayed(const Duration(milliseconds: 150));
-    // An older tap's animation must not clear a newer glow or finish its round.
-    if (!mounted || _ended || inputIndex != _inputIndex) return;
-    _litRune = null;
-    if (roundComplete) {
-      setState(() {});
-      await Future<void>.delayed(const Duration(milliseconds: 650));
-      if (mounted && !_ended) await _nextRound();
-    } else {
-      setState(() {});
-    }
+    if (_game.ended) unawaited(_finishAfter(const Duration(seconds: 1)));
   }
 
   @override

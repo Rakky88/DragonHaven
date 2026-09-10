@@ -6,7 +6,7 @@ Ruleset: v0.05.29 published and verified; staging and production schema 65 verif
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: d137005e3e1eb995 -->
+<!-- reference-source-fingerprint: 51bb771da02003aa -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -960,3 +960,30 @@ and existing graduation outcomes remain. Abandoning an authoritative attempt
 uses a zero-score attempt; expired attempts cannot award XP. Starting, finishing,
 recovery and one atomic reward are implemented in the isolated canonical lane;
 production ownership has not changed.
+
+
+## Shared trial input models (next release, in progress)
+
+The public Sunwake lane generator now uses checkpointable xorshift32 with
+rejection sampling for `nextInt`; reward rolls still use private server entropy.
+The seed determines layout only. Simulation runs on integer 120 Hz steps, with
+the existing three uniform lane choices and all existing expertise assistance.
+Checkpoint/restore retains the generator state, active gates, position, current,
+steering target and timing without rerolling any gate.
+
+Cavern Flight, Ruin Breaker and Runeweaver now expose pure gameplay models.
+Cavern uses fixed 10 ms steps and the same 43-by-31 hitbox in a 360-by-600
+reference arena, adjusted by Spirit, rather than changing collision difficulty
+with device pixels. Ruin retains its 330 ms impact pause, all point values,
+Might zones, thirty turns and three misses. Runeweaver retains its seeded
+sequence, five symbols, later position shuffling, one Arcana echo, existing
+show durations and no idle timeout. Rapid final-rune taps still count once.
+
+Christmas and New Year arrivals use fixed 10 ms scheduling; their progression,
+melody/chords, assistance and three-error limit are unchanged. Valentine and
+Pride keep their generated solvable puzzles, hints, cooldowns, once-only cell
+credit and existing points. Witchlight route generation and whole-segment edge
+checks are now shared with the verifier; shape count, randomness and odds stay
+the same. Input chunks contain control identities and elapsed deltas only,
+never a client reward or score. This foundation has native/JavaScript parity;
+server trial settlement and live cutover remain separate open work.

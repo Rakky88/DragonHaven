@@ -1,6 +1,6 @@
 # DragonHaven Special Events, Chests, and Eggs
 
-Last reviewed: 9 September 2026; v0.05.29 is published with the approved Sunwake/Harvestmoon content and subsequent control refinements. Staging and production are at schema 65; database lint and public health checks pass.
+Last reviewed: 10 September 2026; v0.05.29 is published with the approved Sunwake/Harvestmoon content and subsequent control refinements. Staging is at schema 66 and production remains at schema 65; database lint and public health checks pass.
 
 The four redesigned Trial introductions use their clean standalone event icons,
 avoiding adjacent-frame remnants in the older sprite-sheet cutouts. Halloween now alternates memory and tracing; the former Might timing phase is removed.
@@ -27,7 +27,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: e7a528322132918a -->
+<!-- reference-source-fingerprint: 7eb8d6256a866dd1 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -731,7 +731,8 @@ A five-minute heartbeat renews the six-hour inactivity lease while playing.
 Migration 66 removes only Sunwake's old 20,000-point, 200-action and 180-second
 submission ceilings, checks gate/score rates and requires three collisions for
 long runs. Legacy timed runs remain accepted during rollout. The migration has
-passed rollback-only staging contracts; it is not deployed yet.
+passed rollback-only contracts and was applied on staging in run 34446694129.
+Production remains at schema 65 until the complete release is ready.
 Harvestmoon: a 75-second 6x7 packing game, three rotatable fruit shapes per tray.
 Seven normal shapes, three uniformly sampled fruits, four uniform orientations.
 Single-piece probability .10 + .035*(normalized Might+Arcana+Spirit), maximum .205.
@@ -798,3 +799,24 @@ other economy mutations until completion/cancellation. No reward probabilities,
 Special egg identities, event schedules or drop pools change in this step.
 The full server-economy cutover and final release remain pending; this paragraph
 is implementation status, not production activation evidence.
+
+
+## Verified-input trial foundation (next release, in progress)
+
+Christmas, New Year, Valentine and Pride now use shared deterministic models.
+The existing sprites, controls, per-event games, limits and reward thresholds
+are retained. Arrivals and note timing advance in fixed 10 ms steps, so late
+render frames cannot delay the schedule or award duplicate expiries. Halloween
+uses one pure route/edge model for rendering and replay, including validation of
+the whole swipe between input samples. It retains equal-length randomized paths
+and the sparkle artwork. A path already held remains stable through transient
+layout changes from its entry animation.
+
+Sunwake uses a checkpointable 32-bit challenge PRNG and integer 120 Hz simulation
+steps. The uniform three-lane choice, acceleration, steering limits and rewards
+are unchanged from the next-release specification above. A one-hour run can be
+checkpointed every five seconds with exactly the same results and less than
+2,400 bytes per simulation snapshot. Native/JavaScript model parity passes.
+These are prerequisites for verified trial settlement; the live trial command
+and migration work is still in progress. No production authority switch or
+release has been made for this foundation.

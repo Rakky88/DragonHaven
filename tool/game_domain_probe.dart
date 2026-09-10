@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'trial_model_probe.dart';
+
 import 'package:dragon_haven/domain/server_entropy.dart';
 import 'package:dragon_haven/domain/game_command_engine.dart';
 import 'package:dragon_haven/domain/game_public_projection.dart';
@@ -176,6 +178,7 @@ Future<Map<String, dynamic>> runGameDomainProbe() async {
     }
     return {
       'school': school,
+      'trialModels': trialModelProbe(),
       'purchase': purchase.name,
       'state': state,
       'commands': commands,

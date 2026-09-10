@@ -2,7 +2,7 @@
 
 Last verified: 10 September 2026
 
-Ruleset: v0.05.29 / 10079 published; production and staging are at schema 65. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
+Ruleset: v0.05.29 / 10079 published; production remains at schema 65; staging is at schema 66 after the verified Academy/Sunwake rehearsal. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
 
 <!-- reference-source-fingerprint: ead0631670c84565 -->
 
