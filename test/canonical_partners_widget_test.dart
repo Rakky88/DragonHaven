@@ -47,6 +47,19 @@ class Source implements CanonicalPartnersSource {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('server reward_ready pairs are ready rather than new invitations', () {
+    final pair = SeasonalPairAdventure.fromJson({
+      'id': lobby,
+      'event_id': 'valentine_two_heartlights',
+      'occurrence_key': 'test',
+      'status': 'reward_ready',
+      'creator': {},
+      'partner': {},
+      'created_at': '2026-09-10T12:00:00Z'
+    });
+    expect(pair.status, SeasonalPairAdventureStatus.rewardReady);
+    expect(pair.isIncomingInvite, isFalse);
+  });
   testWidgets(
       'partner picker shows three expertise scores and invites/cancels through the real engine',
       (tester) async {

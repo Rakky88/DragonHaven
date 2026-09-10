@@ -9,15 +9,17 @@ The display journal had treated database-owned social reservations as private
 inventory. It now permits only social dragon bindings and social claim offers
 to change on a later authenticated database timestamp, while preserving exact
 wallet/inventory/stat/private-hash fences and rejecting delayed reads. The 46
-local journal/recovery/session/group/partner tests pass. The remote group probe
-must still verify the repair. All synthetic accounts and switches from that
+local journal/recovery/session/group/partner tests pass. The complete authenticated group probe passed run 34473757845 on `d8222bc`,
+including leave, removal/rejoin, lost-reply recovery and shared departure. All synthetic accounts and switches from that
 failed focused run were cleaned up at 11:49:55 UTC; production is unchanged.
 
 Partner schema 72 passed the SQL rollback contract in run 34472112448 on
 `2d60545`; migration 72 is not applied yet. The actual invite/cancel widget test
 also passes. A two-account authenticated partner UI probe now covers lost
 invite recovery, decline, acceptance, cancellation, released reservations and
-one shared departure; its remote execution is pending.
+one shared departure; its remote execution is pending. Full run 34474034634
+was cancelled during app checks to synchronize the reviewed display reference
+fingerprint before deployment; it applied no DDL or worker changes.
 
 ## Schema 70 verified; group lifecycle candidate (10 September 2026)
 

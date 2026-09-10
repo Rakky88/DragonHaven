@@ -1,6 +1,12 @@
 # DragonHaven Random Rewards and Odds
 
-Latest staging: schema 71 applied by run 34470547582; compatibility and existing UI proofs passed. The new four-keeper group recovery case is still under investigation; all synthetic state was cleaned up. Production remains schema 65 / v0.05.29. Partner schema 72 is an unreleased candidate.
+Latest staging: schema 71. The full authenticated group lifecycle and lost-reply
+recovery passed run 34473757845 on `d8222bc`; all synthetic accounts and switches
+were cleaned up. Shared reservation/claim display updates are ordered by server
+read time, while private inventory revisions and reward hashes remain fenced.
+This changes no content, duration, reward, probability or code catalog. Partner
+schema 72 passed rollback run 34472112448 and awaits full apply/UI proof.
+Production remains schema 65 / v0.05.29.
 
 Partner lifecycle candidate (migration 72): invitations and acceptance use only
 owned, available server dragons; starting seals both keepers and applies the

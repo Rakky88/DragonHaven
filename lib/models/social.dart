@@ -218,7 +218,9 @@ class SeasonalPairAdventure {
       eventId: json['event_id']?.toString() ?? '',
       occurrenceKey: json['occurrence_key']?.toString() ?? '',
       status: SeasonalPairAdventureStatus.values.firstWhere(
-        (value) => value.name == json['status'],
+        (value) =>
+            value.name ==
+            (json['status'] == 'reward_ready' ? 'rewardReady' : json['status']),
         orElse: () => SeasonalPairAdventureStatus.invited,
       ),
       creator: KeeperProfile.fromJson(rawCreator),
