@@ -37,4 +37,10 @@ Signature verification passes with the existing certificate:
 [Version-specific APK](https://github.com/Rakky88/DragonHaven/releases/download/v0.05.31/DragonHaven.apk)
 [Permanent latest APK](https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk)
 
-Publication API, digest and permanent link must be checked after upload.
+Publication verified: GitHub latest resolves to v0.05.31; asset size and SHA-256
+match the local APK, and the permanent download responds HTTP 200. Tag source:
+`9ee41daabc73de0ca421718d08bf8c836a06c014`.
+
+The public APK was installed over the existing emulator app. About displays
+v0.05.31; one floor, 25 coins, 3 gems and the saved English language remain.
+The Play bundle workflow runs separately from the verified public APK upload.
