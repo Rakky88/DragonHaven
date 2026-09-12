@@ -372,7 +372,7 @@ void main() {
 
   for (final event in specialAdventureEventCatalog) {
     testWidgets(
-        '${event.id} picker shows three scores, requires all highlights and sorts by total',
+        '${event.id} Trial picker shows three scores, requires all highlights and sorts by total',
         (tester) async {
       final birthday = event.id == 'golden_wings_birthday';
       final game = await mount(tester,
@@ -397,17 +397,21 @@ void main() {
           firstEgg: false,
           training: {'might': 10, 'arcana': 10, 'spirit': 100})
         ..highlightedExpertises.add(TrainingFocus.spirit));
-      final adventure = game.adventuresFor(AdventureKind.special).single;
-      final card = find.byKey(Key('adventure-card-${adventure.id}'));
+      expect(game.adventuresFor(AdventureKind.special), isEmpty);
+      await tester.tap(find.byKey(const Key('adventure-tab-trials')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      final offer =
+          game.availableTrials.firstWhere((o) => o.definition.isSeasonal);
+      final card = find.byKey(Key('trial-offer-${offer.id}'));
       await reveal(tester, card);
-      await tester.tap(find.descendant(
-          of: card, matching: find.byKey(const Key('start-adventure-button'))));
+      await tester.tap(card);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 450));
 
-      final marked = find.byKey(const Key('adventure-dragon-marked'));
-      final unmarked = find.byKey(const Key('adventure-dragon-unmarked'));
-      final partial = find.byKey(const Key('adventure-dragon-spirit-only'));
+      final marked = find.byKey(const Key('trial-dragon-marked'));
+      final unmarked = find.byKey(const Key('trial-dragon-unmarked'));
+      final partial = find.byKey(const Key('trial-dragon-spirit-only'));
       expect(tester.getTopLeft(marked).dy,
           lessThan(tester.getTopLeft(find.text('AVAILABLE DRAGONS')).dy));
       expect(tester.getTopLeft(unmarked).dy,
@@ -416,7 +420,7 @@ void main() {
       expect(tester.getTopLeft(unmarked).dy,
           lessThan(tester.getTopLeft(partial).dy));
       for (final dragon in game.ownedDragons) {
-        final tile = find.byKey(Key('adventure-dragon-${dragon.id}'));
+        final tile = find.byKey(Key('trial-dragon-${dragon.id}'));
         await reveal(tester, tile);
         final badges = tester.widgetList<ExpertiseScoreBadge>(find.descendant(
             of: tile, matching: find.byType(ExpertiseScoreBadge)));
@@ -437,7 +441,8 @@ void main() {
       await tester.tap(find.text('Close'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
-      await reveal(tester, find.text('Choose a dragon'), towardTop: true);
+      await reveal(tester, find.text('Choose your Trial dragon'),
+          towardTop: true);
       await capture(tester, 'special-picker-${event.id}');
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());

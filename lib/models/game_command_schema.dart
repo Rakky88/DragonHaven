@@ -3,6 +3,7 @@
 abstract final class GameCommandSchema {
   static const keys = <String, Set<String>>{
     'refresh': {},
+    'claim_event_reward': {'eventKey'},
     'offer_trade': {'keeperCode', 'kind', 'key', 'variant'},
     'reply_trade': {'tradeId', 'kind', 'key', 'variant'},
     'confirm_trade': {'tradeId'},
@@ -68,6 +69,7 @@ abstract final class GameCommandSchema {
     'move_house_item': {'itemId', 'x', 'y'},
     'remove_house_item': {'itemId'},
     'reorder_tower_floor': {'oldIndex', 'newIndex'},
+    'change_tower_floor_room': {'index', 'roomId'},
     'set_dragon_roaming': {'dragonId', 'enabled'},
     'clear_tower_floor': {'index'},
     'select_portrait': {'catalogId'},

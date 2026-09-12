@@ -1,3 +1,4 @@
+import 'event_points_phrase_translations.dart';
 import 'school_authority_phrase_translations.dart';
 import 'summer_phrase_translations.dart';
 import 'birthday_phrase_translations.dart';
@@ -45,6 +46,8 @@ String? translatedUiPhrase(String english, String languageCode) {
       tradePhraseTranslations[english] ??
       eggAltarPhraseTranslations[english];
   if (index == null) return null;
+  final eventPoints = translatedEventPointsPhrase(english, index);
+  if (eventPoints != null) return eventPoints;
   if (values != null && values.length == 6) return values[index];
   return _translatedDynamicUiPhrase(english, languageCode);
 }

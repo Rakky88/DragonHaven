@@ -5,6 +5,7 @@ import '../l10n/app_strings.dart';
 import '../models/social.dart';
 import '../models/trial.dart';
 import '../providers/online_account_provider.dart';
+import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
 import 'online_account_access.dart';
 import 'trial_icon_sprite.dart';
@@ -13,6 +14,7 @@ Future<void> showTrialRankingsSheet(
   BuildContext context, {
   required List<TrialRankingScope> scopes,
   required TrialRankingScope initialScope,
+  TrialKind? initialKind,
 }) {
   assert(scopes.isNotEmpty && scopes.contains(initialScope));
   return showModalBottomSheet<void>(
@@ -23,6 +25,7 @@ Future<void> showTrialRankingsSheet(
     builder: (_) => _TrialRankingsSheet(
       scopes: scopes,
       initialScope: initialScope,
+      initialKind: initialKind,
     ),
   );
 }
@@ -31,10 +34,12 @@ class _TrialRankingsSheet extends StatefulWidget {
   const _TrialRankingsSheet({
     required this.scopes,
     required this.initialScope,
+    this.initialKind,
   });
 
   final List<TrialRankingScope> scopes;
   final TrialRankingScope initialScope;
+  final TrialKind? initialKind;
 
   @override
   State<_TrialRankingsSheet> createState() => _TrialRankingsSheetState();
@@ -55,6 +60,7 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
   void initState() {
     super.initState();
     _scope = widget.initialScope;
+    _kind = widget.initialKind ?? TrialKind.cavernFlight;
   }
 
   @override
@@ -69,6 +75,22 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
         if (mounted) _load();
       });
     }
+    final now = DateTime.now();
+    final game = context.watch<HouseholdProvider>();
+    final eventIds = {
+      for (final window in specialAdventureRankingWindowsAt(now))
+        window.event.id,
+      for (final preview in online.seasonalEventPreviews)
+        if (now.isBefore(preview.expiresAt.add(const Duration(days: 3))))
+          preview.eventId,
+      for (final event in game.eventProgress.values)
+        if (event.preview &&
+            !now.isBefore(event.startsAt) &&
+            now.isBefore(event.endsAt.add(const Duration(days: 3))))
+          event.eventId,
+    };
+    final seasonalKinds = trialDefinitions.values
+        .where((d) => eventIds.contains(d.specialEventId));
     final height = MediaQuery.sizeOf(context).height * .88;
     return Container(
       key: const Key('trial-rankings-sheet'),
@@ -136,6 +158,42 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
               ],
             ),
           ),
+          if (seasonalKinds.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+              child: SizedBox(
+                  height: 60 + MediaQuery.textScalerOf(context).scale(24),
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      for (final trial in seasonalKinds)
+                        SizedBox(
+                            width: 126,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 7),
+                              child: _TrialChoice(
+                                  kind: trial.kind,
+                                  selected: _kind == trial.kind,
+                                  label: _trialLabel(strings, trial.kind),
+                                  onTap: () {
+                                    if (_loading || _kind == trial.kind) return;
+                                    setState(() => _kind = trial.kind);
+                                    _load();
+                                  }),
+                            )),
+                    ],
+                  )),
+            ),
+          if (trialDefinitions[_kind]!.isSeasonal)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+              child: Text(
+                  strings.pick(
+                      'Best Trial score. Results stay visible for 3 days after the event.',
+                      'Beste Trialscore. Resultaten blijven tot 3 dagen na het event zichtbaar.'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 11)),
+            ),
           Expanded(
             child: !online.isSignedIn
                 ? ListView(

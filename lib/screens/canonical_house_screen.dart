@@ -123,6 +123,14 @@ class _HouseContents extends StatelessWidget {
                                     : () => _visitFloor(context, room.id, i),
                                 icon: const Icon(Icons.zoom_in),
                                 label: Text(s.pick('Visit', 'Bezoeken'))),
+                            OutlinedButton.icon(
+                                key: Key('canonical-change-floor-$i'),
+                                onPressed: session.canAct
+                                    ? () => _chooseFloor(context, floorIndex: i)
+                                    : null,
+                                icon: const Icon(Icons.swap_horiz_rounded),
+                                label: Text(s.pick('Change room (free)',
+                                    'Kamer wijzigen (gratis)'))),
                             IconButton(
                                 key: Key('canonical-floor-up-$i'),
                                 tooltip:
@@ -237,7 +245,7 @@ class _HouseContents extends StatelessWidget {
         ]));
   }
 
-  Future<void> _chooseFloor(BuildContext context) async {
+  Future<void> _chooseFloor(BuildContext context, {int? floorIndex}) async {
     final session = context.read<CanonicalGameSession>();
     final owner = session.snapshot!.ownerId;
     final epoch = session.connection.sessionEpoch;
@@ -267,17 +275,30 @@ class _HouseContents extends StatelessWidget {
                               room: room,
                               heading: s.roomName(room),
                               control: CanonicalActionButton(
-                                  key: Key('canonical-build-${room.id}'),
-                                  label:
-                                      '${s.pick('Build', 'Bouwen')} · ${price ?? '—'}',
-                                  confirmation:
-                                      '${s.pick('Build', 'Bouwen')} ${s.roomName(room)} · $price ${s.pick('coins', 'munten')}?',
+                                  key: Key(floorIndex == null
+                                      ? 'canonical-build-${room.id}'
+                                      : 'canonical-convert-${room.id}'),
+                                  label: floorIndex != null
+                                      ? s.pick(
+                                          'Choose (free)', 'Kiezen (gratis)')
+                                      : '${s.pick('Build', 'Bouwen')} · ${price ?? '—'}',
+                                  confirmation: floorIndex != null
+                                      ? null
+                                      : '${s.pick('Build', 'Bouwen')} ${s.roomName(room)} · $price ${s.pick('coins', 'munten')}?',
                                   action: canAct &&
                                           sameAccount &&
-                                          price != null &&
-                                          view.coins >= price
+                                          (floorIndex != null
+                                              ? floorIndex <
+                                                  view.house.floorRoomIds.length
+                                              : price != null &&
+                                                  view.coins >= price)
                                       ? () async {
-                                          await actions.buildFloor(room.id);
+                                          if (floorIndex != null) {
+                                            await actions.changeFloorRoom(
+                                                floorIndex, room.id);
+                                          } else {
+                                            await actions.buildFloor(room.id);
+                                          }
                                           if (context.mounted) {
                                             Navigator.pop(context);
                                           }

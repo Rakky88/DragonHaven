@@ -1,4 +1,23 @@
-# DragonHaven v0.00.09 — final specification audit
+# DragonHaven current release audit ? v0.05.30 / 10080
+
+Verified 12 September 2026: 928 Flutter tests, clean analysis, 27 Edge tests,
+MIDI checks and Android native tests pass. Staging and production are schema 82;
+19 rollback-only server contracts pass in each environment. The production
+preflight confirms matching migrations, zero lint errors and HTTP 200 for Auth
+health/settings and application health. Economy/game/migration switches remain
+disabled and no player account is promoted. The signed APK updates the existing
+emulator installation while retaining Quietstar, one floor, 25 coins, 3 gems
+and English. About shows v0.05.30.
+
+Events use points from ordinary Adventures and Trials, not new seasonal
+Adventures. Christmas is December 20?26 (7,000 points); Valentine is February
+12?16 (10,000 points), both annually in Europe/Amsterdam. Server calendar
+queries confirm the upcoming dates. Historical notes below describe earlier
+states; the current release evidence takes precedence.
+
+See [v0.05.30 verification](RELEASE_V0.05.30_VERIFICATION.md).
+
+## Historical v0.00.09 — final specification audit
 
 Audited against
 `DragonHaven_Codex_Spec_With_Achievements_Rooms_Personalities_DayNight_Audio_Two_Sliders.md`
@@ -51,3 +70,28 @@ backend phase.
 - the Language sheet uses the same pinned-handle/pull-to-dismiss behavior and
   presents all visible language names alphabetically;
 - release uses the permanent `nl.dragonhaven.app` ID and signing key.
+
+## Event points verification
+
+Test exact point tables, Amsterdam boundaries and recurrence, full day-one completion, late claims and duplicate prevention, independent partner claims, legacy-save compatibility, compact/tall UI, text scaling and reduced motion. Rehearse the new invitation migration in isolated staging before deployment.
+
+
+Event/social polish (source only): migration 81 adds original-deadline invitation
+expiry, creator cancellation of legacy Valentine test invites, raw score event
+rankings with regular Trial scopes and a three-day results window, and Conclave
+message receipts. Chat refresh/send lanes are independent, reconnect on resume,
+preserve messages on read failure and discard stale responses. Existing Tower
+floors can change room type for free, including all 20 floors; residents, damage
+and saved furniture layouts are preserved. Title Chests cost 500 coins; Inventory
+starts with Chests followed by Eggs. Isolated PostgreSQL and client regression
+checks cover the changed behavior. Production deployment completed on 12 September 2026 as part of schema 82.
+
+## Release v0.05.30 preparation ? 12 September 2026
+
+After a 30-minute unchanged code/database observation, the annual point-event
+calendar was extended: Christmas December 20?26 (7,000 points), Valentine
+February 12?16 (10,000 points). Both close at Amsterdam midnight on the
+following day. These are event progress bars, not new Special Adventures.
+Migration 82 aligns the server calendar. First-year and recurring boundary,
+point target, and claim-threshold regressions cover both events. Staging and production rollout, boundary tests and server preflight passed.
+Publication verification is recorded in the release evidence.

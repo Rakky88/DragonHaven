@@ -7,6 +7,9 @@ import 'package:dragon_haven/services/canonical_game_actions.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
 
 import '../tool/game_domain_probe.dart';
 import 'support/canonical_ui_server.dart';
@@ -49,6 +52,32 @@ void main() {
         connection: CanonicalUiConnection(server), directory: directory);
     await session.synchronize();
   }
+
+  testWidgets('event replaces its adventure offer with points progress',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.runAsync(() async {
+      server.state['seasonalEventPreviewExpiresAt'] = {
+        'sunwake_summer_sea':
+            server.now.add(const Duration(days: 2)).toIso8601String()
+      };
+      server.revision++;
+      await session.synchronize();
+    });
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+        value: session,
+        child: const MaterialApp(
+            home: Scaffold(body: CanonicalAdventuresScreen()))));
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Special'));
+    await tester.pump(const Duration(milliseconds: 1200));
+    expect(
+        find.byKey(Key(
+            'canonical-select-adventure-${AdventureCatalog.sunwakeFestival.id}')),
+        findsNothing);
+    expect(find.text('0 / 2000 points'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
 
   test('start and reward recover lost replies; no early claim or second grant',
       () async {

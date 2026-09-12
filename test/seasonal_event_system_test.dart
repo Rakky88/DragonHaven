@@ -13,6 +13,27 @@ import 'package:image/image.dart' as image;
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  test('event rankings include the event and exactly three days of results',
+      () {
+    for (final time in [
+      DateTime.utc(2027, 1, 1),
+      DateTime.utc(2027, 1, 9, 22, 59)
+    ]) {
+      expect(
+          specialAdventureRankingWindowsAt(time)
+              .any((w) => w.event.id == 'new_year_first_dawn'),
+          isTrue);
+    }
+    expect(
+        specialAdventureRankingWindowsAt(DateTime.utc(2027, 1, 9, 23))
+            .any((w) => w.event.id == 'new_year_first_dawn'),
+        isFalse);
+    expect(
+        specialAdventureRankingWindowsAt(DateTime.utc(2026, 12, 31, 22, 59))
+            .any((w) => w.event.id == 'new_year_first_dawn'),
+        isFalse);
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -66,7 +87,7 @@ void main() {
       expect(event.previewHours, 48, reason: event.id);
       expect(event.previewRewardsSimulatedInProduction, isTrue,
           reason: event.id);
-      expect(event.rankingVisibleAfterEvent, const Duration(days: 5),
+      expect(event.rankingVisibleAfterEvent, const Duration(days: 3),
           reason: event.id);
     }
   });
@@ -82,16 +103,16 @@ void main() {
         DateTime.utc(2026, 11, 1, 23),
       ),
       'christmas_winter_hearth': (
-        DateTime.utc(2026, 12, 24, 23),
+        DateTime.utc(2026, 12, 19, 23),
         DateTime.utc(2026, 12, 26, 23),
       ),
       'new_year_first_dawn': (
-        DateTime.utc(2026, 12, 31, 17),
-        DateTime.utc(2027, 1, 1, 23),
+        DateTime.utc(2026, 12, 31, 23),
+        DateTime.utc(2027, 1, 6, 23),
       ),
       'valentine_two_heartlights': (
-        DateTime.utc(2027, 2, 13, 23),
-        DateTime.utc(2027, 2, 14, 23),
+        DateTime.utc(2027, 2, 11, 23),
+        DateTime.utc(2027, 2, 16, 23),
       ),
       'pride_every_color': (
         DateTime.utc(2027, 5, 31, 22),

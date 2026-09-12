@@ -14,6 +14,7 @@ import '../l10n/game_strings.dart';
 import '../models/account_title.dart';
 import '../models/achievement.dart';
 import '../models/adventure.dart';
+import '../models/event_progress.dart';
 import '../models/activity_entry.dart';
 import '../models/chest.dart';
 import '../models/day_phase.dart';
@@ -45,6 +46,7 @@ import '../services/notification_service.dart'
 import '../utils/json_utils.dart';
 
 part 'dragonhaven_systems.dart';
+part 'event_points_systems.dart';
 part 'egg_altar_systems.dart';
 
 enum PurchaseResult {
@@ -316,6 +318,8 @@ class HouseholdProvider extends ChangeNotifier {
   DateTime? returningSpecialAvailableUntil;
   Set<String> startedSeasonalSpecialEventKeys = {};
   Set<String> notifiedSeasonalSpecialEventKeys = {};
+  Map<String, EventProgress> eventProgress = {};
+  Set<String> eventPointGroupIds = {};
   Map<String, DateTime> seasonalEventPreviewExpiresAt = {};
   Map<String, DateTime> seasonalEventDismissedUntil = {};
   String? lastTrialEventActivationKey;
@@ -1340,6 +1344,13 @@ class HouseholdProvider extends ChangeNotifier {
             .toSet();
     lastTrialEventActivationKey =
         data['lastTrialEventActivationKey'] as String?;
+    eventPointGroupIds =
+        Set<String>.from(data['eventPointGroupIds'] as List? ?? const []);
+    eventProgress = {
+      for (final e in mapFromJson(data['eventProgress']).entries)
+        e.key:
+            EventProgress.fromJson(Map<String, dynamic>.from(e.value as Map)),
+    };
     seasonalEventDismissedUntil = {};
     for (final entry
         in mapFromJson(data['seasonalEventDismissedUntil']).entries) {
@@ -2981,6 +2992,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<void> refreshForCurrentDate() async {
+    final eventProgressChanged = initializeEventProgress();
     final specialNotificationsChanged =
         await refreshSpecialAdventureNotifications();
     final adventureOptionsBefore = [
@@ -3017,7 +3029,8 @@ class HouseholdProvider extends ChangeNotifier {
     ].join('|');
     final roamingAssignmentsChanged = _normalizeRoamingState();
     final streakChanged = _normalizeTrialStreakForDate(_clock());
-    final changed = specialNotificationsChanged |
+    final changed = eventProgressChanged |
+        specialNotificationsChanged |
         (adventureOptionsBefore != adventureOptionsAfter) |
         (trialsBefore != trialsAfter) |
         pet.applyTimeDecay(_clock()) |
@@ -3385,6 +3398,10 @@ class HouseholdProvider extends ChangeNotifier {
             startedSeasonalSpecialEventKeys.toList(),
         'notifiedSeasonalSpecialEventKeys':
             notifiedSeasonalSpecialEventKeys.toList(),
+        'eventPointGroupIds': eventPointGroupIds.toList(),
+        'eventProgress': {
+          for (final e in eventProgress.entries) e.key: e.value.toJson()
+        },
         'seasonalEventPreviewExpiresAt': {
           for (final entry in seasonalEventPreviewExpiresAt.entries)
             entry.key: entry.value.toIso8601String(),

@@ -337,7 +337,9 @@ class SpecialAdventureEventDefinition {
     required this.temporaryMusicTrackId,
     this.previewOwnerKeeperId,
     this.previewRewardsSimulatedInProduction = true,
-    this.rankingVisibleAfterEvent = const Duration(days: 5),
+    this.rankingVisibleAfterEvent = const Duration(days: 3),
+    this.pointsPerDay = 1000,
+    this.allowsPointPartner = false,
   });
 
   final String id;
@@ -365,6 +367,8 @@ class SpecialAdventureEventDefinition {
   final String? previewOwnerKeeperId;
   final bool previewRewardsSimulatedInProduction;
   final Duration rankingVisibleAfterEvent;
+  final int pointsPerDay;
+  final bool allowsPointPartner;
 }
 
 abstract final class AdventureCatalog {
@@ -1083,12 +1087,12 @@ const specialAdventureEventCatalog = <SpecialAdventureEventDefinition>[
     adventureId: 'special_christmas_winter_hearth',
     initialYear: 2026,
     initialMonth: DateTime.december,
-    initialDay: 25,
-    initialAvailability: Duration(days: 2),
+    initialDay: 20,
+    initialAvailability: Duration(days: 7),
     recursYearlyFrom: 2027,
     recurrenceMonth: DateTime.december,
-    recurrenceDay: 25,
-    recurrenceAvailability: Duration(days: 2),
+    recurrenceDay: 20,
+    recurrenceAvailability: Duration(days: 7),
     rewards: SpecialAdventureRewardBundle(
       chestTier: ChestTier.special,
       specialChestId: 'starlight_gift_chest_v1',
@@ -1113,16 +1117,16 @@ const specialAdventureEventCatalog = <SpecialAdventureEventDefinition>[
   SpecialAdventureEventDefinition(
     id: 'new_year_first_dawn',
     adventureId: 'special_new_year_first_dawn',
-    initialYear: 2026,
-    initialMonth: DateTime.december,
-    initialDay: 31,
-    initialHour: 18,
-    initialAvailability: Duration(hours: 30),
-    recursYearlyFrom: 2027,
-    recurrenceMonth: DateTime.december,
-    recurrenceDay: 31,
-    recurrenceHour: 18,
-    recurrenceAvailability: Duration(hours: 30),
+    initialYear: 2027,
+    initialMonth: DateTime.january,
+    initialDay: 1,
+    initialHour: 0,
+    initialAvailability: Duration(days: 6),
+    recursYearlyFrom: 2028,
+    recurrenceMonth: DateTime.january,
+    recurrenceDay: 1,
+    recurrenceHour: 0,
+    recurrenceAvailability: Duration(days: 6),
     rewards: SpecialAdventureRewardBundle(
       chestTier: ChestTier.special,
       specialChestId: 'firstlight_celebration_chest_v1',
@@ -1146,15 +1150,17 @@ const specialAdventureEventCatalog = <SpecialAdventureEventDefinition>[
   ),
   SpecialAdventureEventDefinition(
     id: 'valentine_two_heartlights',
+    pointsPerDay: 2000,
+    allowsPointPartner: true,
     adventureId: 'special_valentine_two_heartlights',
     initialYear: 2027,
     initialMonth: DateTime.february,
-    initialDay: 14,
-    initialAvailability: Duration(days: 1),
+    initialDay: 12,
+    initialAvailability: Duration(days: 5),
     recursYearlyFrom: 2028,
     recurrenceMonth: DateTime.february,
-    recurrenceDay: 14,
-    recurrenceAvailability: Duration(days: 1),
+    recurrenceDay: 12,
+    recurrenceAvailability: Duration(days: 5),
     rewards: SpecialAdventureRewardBundle(
       chestTier: ChestTier.special,
       specialChestId: 'twinheart_keepsake_chest_v1',

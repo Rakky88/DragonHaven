@@ -25,6 +25,7 @@ const commandKeys: Record<string, readonly string[]> = {
   offer_trade: ["keeperCode", "kind", "key", "variant"],
   reply_trade: ["tradeId", "kind", "key", "variant"],
   confirm_trade: ["tradeId"], cancel_trade: ["tradeId"], reject_trade: ["tradeId"],
+  claim_event_reward: ["eventKey"],
   donate_beacon: ["conclaveId", "amount"],
   invite_pair_adventure: ["keeperCode", "dragonId"],
   accept_pair_adventure: ["adventureId", "dragonId"],
@@ -64,6 +65,7 @@ const commandKeys: Record<string, readonly string[]> = {
   complete_presentation: ["presentationId"],
   call_dragon_to_floor: ["roomId", "index"], visit_tower_floor: ["roomId", "index"],
   place_house_item: ["itemId", "roomId", "x", "y"], move_house_item: ["itemId", "x", "y"],
+  change_tower_floor_room: ["index", "roomId"],
   remove_house_item: ["itemId"], reorder_tower_floor: ["oldIndex", "newIndex"],
   set_dragon_roaming: ["dragonId", "enabled"], clear_tower_floor: ["index"],
 };
@@ -260,6 +262,8 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
     const evaluated = await deps.evaluate({ state: leased.state, action: command.action,
       payload: command.payload, secretSeed: leased.secret_seed, now: leased.now, keeperId: owner,
       verifiedSocialContext: leased.social_context ?? null,
+      verifiedEventProgress: leased.event_progress ?? null,
+      verifiedSocialClaims: leased.social_claims ?? [],
       verifiedSocialReservations: leased.social_reservations ?? null,
       verifiedTradeReservations: leased.trade_reservations ?? null });
     if (!object(evaluated)) throw new Error("invalid_evaluation");
@@ -358,6 +362,7 @@ async function readState(owner: string, clientBuild: number, deps: Dependencies)
     const data = deps.project({ state: snapshot.state, ownerId: owner, now: snapshot.server_time,
       verifiedSocialClaims: snapshot.social_claims ?? [],
       verifiedTradeOffers: snapshot.trade_offers ?? {completedToday: 0, offers: []},
+      verifiedEventProgress: snapshot.event_progress ?? null,
       verifiedSocialReservations: snapshot.social_reservations ?? null,
       verifiedTradeReservations: snapshot.trade_reservations ?? null });
     if (object(data) && data.error === "game_state_reconciliation_required") {

@@ -1,5 +1,76 @@
 # DragonHaven Special Events, Chests, and Eggs
 
+## Event points (current rules)
+
+Calendar events no longer offer an Event Adventure. During the event, Mini
+Adventures award 5 points, Small/Short Adventures 20, and Large/Long or Group
+Adventures 50. Ordinary and seasonal Trials award D=0, C=5, B=10, A=15, S=20,
+S+=25. School lessons and returning-dragon Specials award no event points.
+Adventure completion time determines eligibility, including when the app resumes
+later; Trials must finish before closing. Completion IDs prevent duplicate points.
+
+The target is 1,000 points per full scheduled calendar day, with no daily cap or
+reset. Valentine uses 2,000 per day. One accepted friend invitation combines both
+Keepers' existing and future points for that occurrence. An invitation alone
+shares nothing; a pending invitation may be cancelled or declined. Pending
+invitations automatically expire at event close and release both partner slots.
+Legacy Valentine test invitations can also be cancelled by their creator; their
+original preview deadline is pinned, so a later preview cannot extend an old
+invitation. Expired unstarted legacy trips release their dragons, while running
+trips and completed rewards remain intact. Each Keeper
+has one reserved partner slot per occurrence, and accepted partners cannot be
+swapped. No dragon is reserved. Both Keepers can independently claim one chest.
+Legacy accounts synchronize contributions through their existing cloud-save
+contract; canonical accounts use database-owned state. Cross-authority pairings
+are refused. Offline contributions synchronize on reconnect; conflicts never
+silently replace another device's save.
+
+The animated event bar is shown at the top of Adventures, with event colors,
+flowing lights and a glowing reward seal. Reduced-motion settings stop ambient
+animation and make fill changes immediate. A full seal says Claim and opens
+Completed Adventures. Claiming awards the event's existing versioned Special
+Chest only, keeps the bar full, removes Claim and disables its link. Completed
+unclaimed rewards remain in Completed Adventures indefinitely after closing;
+unfinished progress does not carry to a later occurrence. Existing started
+seasonal adventures retain their original rewards as a legacy compatibility path.
+Historical journey XP, expertise, random relics, Music Chests, titles and badges
+below describe only those old runs; they are not added to the new points prize.
+Chest contents and egg genetics/odds remain unchanged.
+
+| Event | Amsterdam availability | Target | Points prize |
+|---|---|---:|---|
+| Golden Wings launch | 1-2 September 2026 | 2,000 | Golden Wings Chest |
+| Golden Wings recurring | 13 May, from 2027 | 1,000 | Golden Wings Chest |
+| Halloween | 25 October-1 November, from 2026 | 8,000 | Witchlight Chest |
+| Christmas | 20-26 December, from 2026 | 7,000 | Starlight Gift Chest |
+| New Year | 1-6 January inclusive, from 2027 | 6,000 | Firstlight Celebration Chest |
+| Valentine | 12-16 February, from 2027 | 10,000 shared or solo | Twinheart Keepsake Chest per Keeper |
+| Pride | 1-7 June, from 2027 | 7,000 | Radiant Festival Chest |
+| Sunwake | 20-26 July, from 2027 | 7,000 | Sunwake Chest |
+| Harvestmoon | 7-13 September, from 2027 | 7,000 | Harvestmoon Chest |
+
+Christmas opens December 20 00:00 and closes December 27 00:00; Valentine
+opens February 12 00:00 and closes February 17 00:00, every year in
+Europe/Amsterdam. Migration `202609120082_extended_event_windows.sql` keeps
+the server calendar aligned with these point-event windows. Preview durations
+and chest contents are unchanged.
+
+New Year closes at January 7 00:00 Europe/Amsterdam. Calendar days determine
+points targets across daylight-saving transitions. Existing 48-hour personal
+previews use 2,000 points (4,000 for Valentine) and retain the existing production
+simulation policy: claiming a preview never grants permanent chest inventory.
+
+Migration `202609120080_event_points.sql` adds the invitation contract and shared
+canonical progress read/command input. It also updates New Year on the server.
+Migration `202609120081_social_event_polish.sql` adds invitation expiry on reads
+and in minute-by-minute maintenance, and event highscores in the standard Trial
+World/Friends/Conclave ranking selector. Canonical launch/year keys are normalized
+only when checking the server occurrence, so live event Trials can enter the
+correct ranking without changing saved event identities. It must be rehearsed in isolated staging
+before deployment. No production
+migration or release is part of this source change.
+
+
 Candidate-79 rollback run 34497481683 passed on f2057c1, including ownership,
 source/Altar/social changes, activation replay, real server-mode SQL commands,
 recovery and complete Auth cleanup. The full apply now targets reviewed schema
@@ -208,7 +279,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 861dfc9910024603 -->
+<!-- reference-source-fingerprint: 20455d4c0e066e79 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -328,7 +399,7 @@ and event rewards are unchanged by preparation.
   rarity label **Special**. It cannot unlock a Common through Mythical rarity
   achievement.
 
-## 2. Implemented scheduled events
+## 2. Legacy adventure definitions (retained for already-started runs)
 
 All schedule boundaries are Europe/Amsterdam wall time, including daylight
 saving transitions. Every Adventure may finish after its event closes when it
@@ -340,7 +411,7 @@ started once per account per occurrence with one available owned dragon.
 | `golden_wings_birthday` | A Wish on Golden Wings (`special_golden_wings_birthday`) | Launch: 1–3 Sep 2026; then every 13 May 00:00–14 May 00:00 from 2027 | 10 days | 500 XP; +25 Might/Spirit/Arcana; Golden Wings Chest; one random Moral Prism, Order Compass, Soul Mirror, or Astral Lens; one Music Chest if collection capacity remains |
 | `halloween_witchlight` | Night of the Witchlight / Roots Beneath the Lanterns (`special_halloween_witchlight`) | 25 Oct 00:00–2 Nov 00:00, annually from 2026 | 72 hours | 500 XP; +13 Might/Spirit/Arcana; Witchlight Chest |
 | `christmas_winter_hearth` | A Star for the Winter Hearth / The Starlight Sleigh (`special_christmas_winter_hearth`) | 25 Dec 00:00–27 Dec 00:00, annually from 2026 | 96 hours | 600 XP; +12 Might/Spirit/Arcana; Starlight Gift Chest |
-| `new_year_first_dawn` | When the New Dawn Rings / The Bell Beyond Midnight (`special_new_year_first_dawn`) | 31 Dec 18:00–2 Jan 00:00, annually from 2026 | 72 hours | 700 XP; +10 Might/Spirit/Arcana; Firstlight Celebration Chest |
+| `new_year_first_dawn` | When the New Dawn Rings / The Bell Beyond Midnight (`special_new_year_first_dawn`) | 1 Jan 00:00–7 Jan 00:00, annually from 2027 | 72 hours | 700 XP; +10 Might/Spirit/Arcana; Firstlight Celebration Chest |
 | `valentine_two_heartlights` | Where Two Heartlights Meet / The Rosebound Crossing (`special_valentine_two_heartlights`) | 14 Feb 00:00–15 Feb 00:00, annually from 2027 | 96 hours | Per Keeper: 650 XP; +8 Might/Spirit/Arcana; Twinheart Keepsake Chest; unique Heartbound Pair badge |
 | `pride_every_color` | The Haven of Every Color / The Aurora We Weave (`special_pride_every_color`) | 1 Jun 00:00–8 Jun 00:00, annually from 2027 | 84 hours | 700 XP; +10 Might/Spirit/Arcana; Radiant Festival Chest; unique True Colors title |
 
@@ -348,7 +419,7 @@ For the five new events, every combined Might, Spirit, and Arcana point removes
 15 minutes from the journey, down to an absolute minimum of 24 hours. Golden
 Wings retains its earlier one-hour-per-point rule and one-day minimum.
 
-### Valentine two-Keeper contract
+### Legacy Valentine journey contract (existing runs only)
 
 - Exactly two registered Keepers participate, each with one available dragon.
 - The creator may invite via friends, Conclave, or Keeper ID; friendship is not
@@ -504,10 +575,12 @@ the same maximum of one credited completion per local date.
   validated action bound.
 - There is no per-event attempt cap or separate practice mode: each naturally
   offered Trial is one rewarded attempt.
-- Best verified score wins; ties use accuracy, then shortest duration, then
-  earliest submission.
+- Rankings show each Keeper's best verified raw Trial score, with equal scores
+  sharing a rank, alongside the ordinary Trial rankings. Event reward progress
+  remains a separate total. For the three distinct podium prizes only, tied
+  scores use accuracy, shortest duration, then earliest submission.
 - New starts stop at event close. The full frozen ranking remains visible for
-  five days; its top three remain permanently in the Seasonal Chronicle.
+  three days; its top three remain permanently in the Seasonal Chronicle.
 - First place receives a Mythical Chest and the event's gold podium emote;
   second receives a Dragon Chest and silver emote; third receives a Gold Chest
   and bronze emote.

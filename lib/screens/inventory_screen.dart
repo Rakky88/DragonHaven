@@ -41,19 +41,19 @@ class InventoryScreen extends StatelessWidget {
           tabAlignment: TabAlignment.center,
           tabs: [
             Tab(
-              key: const Key('inventory-tab-eggs'),
-              height: 70,
-              icon: const GameIconSprite(GameIconKind.inventoryEggs, size: 35),
-              iconMargin: const EdgeInsets.only(bottom: 1),
-              text: strings.pick('Eggs', 'Eieren'),
-            ),
-            Tab(
               key: const Key('inventory-tab-chests'),
               height: 70,
               icon:
                   const GameIconSprite(GameIconKind.inventoryChests, size: 35),
               iconMargin: const EdgeInsets.only(bottom: 1),
               text: strings.pick('Chests', 'Kisten'),
+            ),
+            Tab(
+              key: const Key('inventory-tab-eggs'),
+              height: 70,
+              icon: const GameIconSprite(GameIconKind.inventoryEggs, size: 35),
+              iconMargin: const EdgeInsets.only(bottom: 1),
+              text: strings.pick('Eggs', 'Eieren'),
             ),
             Tab(
               key: const Key('inventory-tab-altar'),
@@ -86,8 +86,8 @@ class InventoryScreen extends StatelessWidget {
         ),
         const Expanded(
             child: TabBarView(children: [
-          _EggInventoryTab(),
           _ChestInventoryTab(),
+          _EggInventoryTab(),
           EggAltarScreen(embedded: true),
           _RelicInventoryTab(),
           _FurnitureInventoryTab(),

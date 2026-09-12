@@ -27,7 +27,7 @@ void main() {
     final now = switch (kind) {
       TrialKind.witchlightWard => DateTime.utc(2026, 10, 25, 12),
       TrialKind.hollyfrostGiftforge => DateTime.utc(2026, 12, 25, 12),
-      TrialKind.midnightChime => DateTime.utc(2026, 12, 31, 20),
+      TrialKind.midnightChime => DateTime.utc(2027, 1, 1, 12),
       TrialKind.rosevowRelay => DateTime.utc(2027, 2, 14, 12),
       TrialKind.prismaticParade => DateTime.utc(2027, 6, 2, 12),
       _ => DateTime.now(),

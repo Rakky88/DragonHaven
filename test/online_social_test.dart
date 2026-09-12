@@ -1562,6 +1562,145 @@ void main() {
     online.dispose();
   });
 
+  test(
+      'chat refresh notifies listeners and preserves messages on connection failure',
+      () async {
+    final game = HouseholdProvider(persistenceEnabled: false);
+    final repo = _FakeSocialRepository(inventoryImported: true)
+      ..conclaveSnapshot = unreadSnapshot([]);
+    final online = OnlineAccountProvider(
+        repository: repo,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
+    await online.initialize();
+    var notifications = 0;
+    online.addListener(() => notifications++);
+    repo.conclaveSnapshot =
+        unreadSnapshot([badgeMessage('new-message', DateTime.now())]);
+    expect(await online.refreshConclave(background: true), isTrue);
+    expect(online.conclave!.messages.single.id, 'new-message');
+    expect(notifications, greaterThan(0));
+    repo.conclaveReadFails = true;
+    expect(await online.refreshConclave(background: true), isFalse);
+    expect(online.conclave!.messages.single.id, 'new-message');
+    expect(online.conclaveConnectionError, 'online_timeout');
+    repo.conclaveReadFails = false;
+    expect(await online.refreshConclave(background: true), isTrue);
+    expect(online.conclaveConnectionError, isNull);
+    online.dispose();
+    game.dispose();
+  });
+
+  test(
+      'chat sends during unrelated work and ignores a read started before delivery',
+      () async {
+    final game = HouseholdProvider(persistenceEnabled: false);
+    final old = unreadSnapshot([]);
+    final repo = _FakeSocialRepository(inventoryImported: true)
+      ..conclaveSnapshot = old;
+    final online = OnlineAccountProvider(
+        repository: repo,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
+    await online.initialize();
+    final gate = Completer<ConclaveSnapshot?>();
+    repo.conclaveReadGate = gate;
+    final pending = online.refreshConclave(background: true);
+    final coalesced = online.refreshConclave(background: true);
+    expect(identical(pending, coalesced), isTrue);
+    online.busy = true;
+    repo.conclaveReadGate = null;
+    repo.conclaveSnapshot =
+        unreadSnapshot([badgeMessage('delivered', DateTime.now())]);
+    expect(
+        await online.sendConclaveMessage(kind: 'text', body: 'Hello'), isTrue);
+    await Future<void>.delayed(Duration.zero);
+    gate.complete(old);
+    await pending;
+    expect(online.conclave!.messages.single.id, 'delivered');
+    expect(repo.conclaveSendCount, 1);
+    online.busy = false;
+    repo.conclaveReadFails = true;
+    expect(
+        await online.sendConclaveMessage(kind: 'text', body: 'Again'), isTrue);
+    await Future<void>.delayed(Duration.zero);
+    expect(online.errorCode, isNull,
+        reason:
+            'A read failure must not report a delivered message as unsent.');
+    online.dispose();
+    game.dispose();
+  });
+
+  test(
+      'chat retry reuses the delivery receipt and a later message gets a new one',
+      () async {
+    final game = HouseholdProvider(persistenceEnabled: false);
+    final repo = _FakeSocialRepository(inventoryImported: true)
+      ..conclaveSnapshot = unreadSnapshot([])
+      ..conclaveSendFails = true;
+    final online = OnlineAccountProvider(
+        repository: repo,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
+    await online.initialize();
+    expect(
+        await online.sendConclaveMessage(kind: 'text', body: 'Hello'), isFalse);
+    final receipt = repo.sentConclavePayload!['client_message_id'];
+    repo.conclaveSendFails = false;
+    expect(
+        await online.sendConclaveMessage(kind: 'text', body: 'Hello'), isTrue);
+    expect(repo.sentConclavePayload!['client_message_id'], receipt);
+    expect(
+        await online.sendConclaveMessage(kind: 'text', body: 'Hello'), isTrue);
+    expect(repo.sentConclavePayload!['client_message_id'], isNot(receipt));
+    await Future<void>.delayed(Duration.zero);
+    online.dispose();
+    game.dispose();
+  });
+
+  testWidgets('event highscores appear in the ordinary Trial ranking selector',
+      (tester) async {
+    final repo = _FakeSocialRepository(inventoryImported: true)
+      ..trialRankingRows['world:rosevowRelay'] = const [
+        TrialRankingEntry(
+            position: 1,
+            entryKey: 'event-score',
+            displayName: 'Rose Keeper',
+            title: 'title_001',
+            portraitKey: 'portrait_001',
+            score: 123456,
+            isCurrentUser: false)
+      ];
+    final game = HouseholdProvider(persistenceEnabled: false);
+    final online = OnlineAccountProvider(
+        repository: repo,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
+    await online.initialize();
+    online.seasonalEventPreviews = [
+      SeasonalEventPreviewEntitlement(
+          eventId: 'valentine_two_heartlights',
+          expiresAt: DateTime.now().add(const Duration(hours: 1)))
+    ];
+    await tester.pumpWidget(MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: game),
+          ChangeNotifierProvider.value(value: online)
+        ],
+        child: const MaterialApp(
+            home: Scaffold(body: AdventureHubScreen(initialTab: 1)))));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byKey(const Key('open-trial-rankings')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('trial-ranking-kind-rosevowRelay')));
+    await tester.pumpAndSettle();
+    expect(find.text('123456'), findsOneWidget);
+    expect(find.text('Rose Keeper'), findsOneWidget);
+    expect(repo.trialRankingRequests,
+        contains(('rosevowRelay', TrialRankingScope.world)));
+    expect(find.textContaining('3 days after the event'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+    game.dispose();
+  });
+
   testWidgets('Trial rankings switch between world, friends and Trial types',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(360, 640));
@@ -2150,7 +2289,8 @@ void main() {
     await tester.tap(find.byKey(Key('pick-dragon-emote-${emote.id}')));
     await tester.pumpAndSettle();
     expect(repository.sentConclaveKind, 'emote');
-    expect(repository.sentConclavePayload, {'emote_id': emote.id});
+    expect(repository.sentConclavePayload, containsPair('emote_id', emote.id));
+    expect(repository.sentConclavePayload!['client_message_id'], isNotEmpty);
     expect(tester.takeException(), isNull);
     await tester.enterText(
       find.byKey(const Key('conclave-message-field')),
@@ -2881,8 +3021,18 @@ class _FakeSocialRepository implements SocialRepository {
   bool signedIn = true;
   CloudGameSave? cloudSave;
   ConclaveSnapshot? conclaveSnapshot;
+  Completer<ConclaveSnapshot?>? conclaveReadGate;
+  bool conclaveReadFails = false;
+  bool conclaveSendFails = false;
+  int conclaveReadCount = 0;
+  int conclaveSendCount = 0;
   @override
-  Future<ConclaveSnapshot?> loadConclaveSnapshot() async => conclaveSnapshot;
+  Future<ConclaveSnapshot?> loadConclaveSnapshot() async {
+    conclaveReadCount++;
+    if (conclaveReadFails) throw const SocialException('online_timeout');
+    return conclaveReadGate?.future ?? Future.value(conclaveSnapshot);
+  }
+
   final List<CloudGameSave> cloudSaveRevisions = [];
   String? deletedWithPassword;
 
@@ -3055,8 +3205,10 @@ class _FakeSocialRepository implements SocialRepository {
     required String body,
     Map<String, dynamic> payload = const {},
   }) async {
+    conclaveSendCount++;
     sentConclaveKind = kind;
     sentConclavePayload = Map.of(payload);
+    if (conclaveSendFails) throw const SocialException('online_timeout');
   }
 
   @override

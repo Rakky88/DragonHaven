@@ -1,11 +1,24 @@
 begin;
+-- Migration 80 retires new paired seasonal Adventures. The revoked pre-80
+-- entry below constructs historical fixtures as the database owner only;
+-- cancellation and stored-run compatibility remain covered by this contract.
+do $$ declare action_name text; begin
+  perform set_config('request.jwt.claim.role','service_role',true);
+  foreach action_name in array array['invite_pair_adventure','accept_pair_adventure','start_pair_adventure'] loop
+    begin
+      perform public.begin_revisioned_game_command(gen_random_uuid(),gen_random_uuid(),action_name,'{}',10080,repeat('b2',32),0);
+      raise exception 'retired_pair_entry_allowed';
+    exception when others then if sqlerrm<>'game_action_unavailable' then raise; end if; end;
+  end loop;
+  if has_function_privilege('service_role','public.begin_revisioned_game_command_v79(uuid,uuid,text,jsonb,integer,text,bigint)','execute') then raise exception 'historical_pair_entry_exposed';end if;
+end $$;
 set local statement_timeout='45s';
 create function pg_temp.pair_step(p_owner uuid,p_action text,p_payload jsonb)
 returns jsonb language plpgsql as $$
 declare g private.canonical_game_states%rowtype; leased jsonb; request_id uuid:=gen_random_uuid(); next_state jsonb;
 begin
   select * into g from private.canonical_game_states where owner_id=p_owner;
-  leased:=public.begin_revisioned_game_command(p_owner,request_id,p_action,p_payload,10080,repeat('b2',32),g.revision);
+  leased:=public.begin_revisioned_game_command_v79(p_owner,request_id,p_action,p_payload,10080,repeat('b2',32),g.revision);
   if leased->>'status'<>'processing' then return leased; end if;
   next_state:=g.state;
   if p_action in ('invite_pair_adventure','accept_pair_adventure') then
@@ -73,7 +86,7 @@ begin
   begin
     perform public.respond_seasonal_pair_adventure(source_id,true,'crew-2',1,2,3);
     raise exception 'pair_lifecycle_contract_legacy_accept';
-  exception when others then if sqlerrm<>'economy_server_inventory_required' then raise; end if; end;
+  exception when others then if sqlerrm<>'seasonal_pair_not_found' then raise; end if; end;
   perform set_config('request.jwt.claim.role','service_role',true);
   result_value:=pg_temp.pair_step(keepers[2],'decline_pair_adventure',jsonb_build_object('adventureId',source_id));
   if result_value->'result'->>'accepted'<>'true'
@@ -95,7 +108,7 @@ begin
   result_value:=pg_temp.pair_step(keepers[2],'accept_pair_adventure',jsonb_build_object('adventureId',source_id,'dragonId','crew-2'));
   request_id:=gen_random_uuid();
   select state,revision into before_state,before_revision from private.canonical_game_states where owner_id=keepers[1];
-  leased:=public.begin_revisioned_game_command(keepers[1],request_id,'start_pair_adventure',jsonb_build_object('adventureId',source_id),10080,rules,before_revision);
+  leased:=public.begin_revisioned_game_command_v79(keepers[1],request_id,'start_pair_adventure',jsonb_build_object('adventureId',source_id),10080,rules,before_revision);
   if leased->>'status'<>'processing' then raise exception 'pair_lifecycle_contract_start_lease'; end if;
   update public.seasonal_event_previews set expires_at=now()-interval '1 minute' where user_id=keepers[1];
   begin

@@ -858,6 +858,7 @@ class _ConclaveChatState extends State<_ConclaveChat>
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   String? _latestMessageId;
+  Timer? _chatPoll;
   bool _hasDraft = false;
   bool _nearBottom = true;
   bool _scrollScheduled = false;
@@ -876,12 +877,18 @@ class _ConclaveChatState extends State<_ConclaveChat>
   }
 
   void _chatVisibilityChanged() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      _refreshVisibleChat();
+      setState(() {});
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && mounted) setState(() {});
+    if (state == AppLifecycleState.resumed && mounted) {
+      _refreshVisibleChat();
+      setState(() {});
+    }
   }
 
   void _markDisplayedRead(ConclaveSnapshot snapshot) {
@@ -907,6 +914,33 @@ class _ConclaveChatState extends State<_ConclaveChat>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _controller.addListener(_handleDraftChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshVisibleChat());
+    _chatPoll = Timer.periodic(
+        const Duration(seconds: 5), (_) => _refreshVisibleChat());
+  }
+
+  @override
+  void didUpdateWidget(covariant _ConclaveChat oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.active && widget.active) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _refreshVisibleChat());
+    }
+  }
+
+  void _refreshVisibleChat() {
+    if (!mounted ||
+        !widget.active ||
+        _chatTabs?.index != 0 ||
+        _chatTabs?.animation?.value != 0 ||
+        ModalRoute.of(context)?.isCurrent == false) {
+      return;
+    }
+    final state = WidgetsBinding.instance.lifecycleState;
+    if (state != null && state != AppLifecycleState.resumed) return;
+    unawaited(context
+        .read<OnlineAccountProvider>()
+        .refreshConclave(background: true));
   }
 
   void _handleDraftChanged() {
@@ -918,6 +952,7 @@ class _ConclaveChatState extends State<_ConclaveChat>
 
   @override
   void dispose() {
+    _chatPoll?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _chatTabs?.animation?.removeListener(_chatVisibilityChanged);
     _controller.removeListener(_handleDraftChanged);
@@ -934,8 +969,9 @@ class _ConclaveChatState extends State<_ConclaveChat>
               kind: 'text',
               body: body,
             );
+    if (!mounted) return;
     if (sent) {
-      _controller.clear();
+      if (_controller.text.trim() == body) _controller.clear();
       _nearBottom = true;
       _scrollToBottom();
     }
@@ -1108,6 +1144,14 @@ class _ConclaveChatState extends State<_ConclaveChat>
                   ],
                 ),
         ),
+        if (online.conclaveConnectionError != null)
+          TextButton.icon(
+            key: const Key('conclave-reconnect'),
+            onPressed: () => online.refreshConclave(),
+            icon: const Icon(Icons.sync_rounded, size: 16),
+            label: Text(strings.pick('Reconnecting to chat. Tap to retry.',
+                'Chatverbinding herstellen. Tik om opnieuw te proberen.')),
+          ),
         SafeArea(
           top: false,
           child: Padding(
@@ -1145,8 +1189,9 @@ class _ConclaveChatState extends State<_ConclaveChat>
                               key: const Key('share-to-conclave-button'),
                               tooltip: strings.pick('Share', 'Delen'),
                               icon: Icons.add_rounded,
-                              onPressed:
-                                  online.busy ? null : () => _share(context),
+                              onPressed: online.sendingConclaveMessage
+                                  ? null
+                                  : () => _share(context),
                             ),
                             _ConclaveComposerAction(
                               key: const Key('conclave-emote-picker'),
@@ -1155,13 +1200,15 @@ class _ConclaveChatState extends State<_ConclaveChat>
                                 'Drakenemotes',
                               ),
                               icon: Icons.emoji_emotions_rounded,
-                              onPressed: online.busy ? null : _sendEmote,
+                              onPressed: online.sendingConclaveMessage
+                                  ? null
+                                  : _sendEmote,
                             ),
                             Expanded(
                               child: TextField(
                                 key: const Key('conclave-message-field'),
                                 controller: _controller,
-                                enabled: !online.busy,
+                                enabled: !online.sendingConclaveMessage,
                                 maxLength: 500,
                                 minLines: 1,
                                 maxLines: 4,
@@ -1217,7 +1264,9 @@ class _ConclaveChatState extends State<_ConclaveChat>
                         child: IconButton.filled(
                           key: const Key('send-conclave-message'),
                           tooltip: strings.pick('Send', 'Versturen'),
-                          onPressed: online.busy || !_hasDraft ? null : _send,
+                          onPressed: online.sendingConclaveMessage || !_hasDraft
+                              ? null
+                              : _send,
                           style: IconButton.styleFrom(
                             disabledBackgroundColor: AppColors.eventColor(
                                 context, const Color(0xFFE4DDEC)),

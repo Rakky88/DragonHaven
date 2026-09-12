@@ -142,6 +142,11 @@ class OnlineAccountProvider extends ChangeNotifier {
   String? _lastShowcaseFingerprint;
   String? _lastConclaveAchievementFingerprint;
   DateTime? _lastPresenceUpdate;
+  Future<bool>? _conclaveRefreshInFlight;
+  int _conclaveReadGeneration = 0;
+  bool sendingConclaveMessage = false;
+  String? conclaveConnectionError;
+  final Map<String, String> _pendingConclaveMessages = {};
   bool _operationInFlight = false;
   bool _disposed = false;
   String? _cloudBaseUserId;
@@ -902,12 +907,49 @@ class OnlineAccountProvider extends ChangeNotifier {
             adventure.myDragonId: adventure.id,
       });
 
-  Future<bool> refreshConclave({bool background = false}) async =>
-      await _run('conclave.refresh', () async {
-        conclave = await _repository.loadConclaveSnapshot();
-        return true;
-      }, background: background) ??
-      false;
+  Future<bool> refreshConclave({bool background = false}) {
+    if (_disposed || !isSignedIn) return Future.value(false);
+    final existing = _conclaveRefreshInFlight;
+    if (existing != null) return existing;
+    late final Future<bool> request;
+    request = _readConclave().whenComplete(() {
+      if (identical(_conclaveRefreshInFlight, request)) {
+        _conclaveRefreshInFlight = null;
+      }
+    });
+    return _conclaveRefreshInFlight = request;
+  }
+
+  Future<bool> _readConclave() async {
+    final owner = currentUserId;
+    final id = conclave?.conclave.id;
+    final generation = _conclaveReadGeneration;
+    try {
+      final snapshot = await _repository
+          .loadConclaveSnapshot()
+          .timeout(const Duration(seconds: 12));
+      if (_disposed ||
+          owner != currentUserId ||
+          generation != _conclaveReadGeneration ||
+          id != conclave?.conclave.id) {
+        return false;
+      }
+      _conclaveReadGeneration++;
+      conclave = snapshot;
+      conclaveConnectionError = null;
+      _notify();
+      return true;
+    } on Object catch (error) {
+      if (!_disposed &&
+          owner == currentUserId &&
+          generation == _conclaveReadGeneration) {
+        conclaveConnectionError =
+            error is SocialException ? error.code : 'online_timeout';
+        _notify();
+      }
+      return false;
+    }
+  }
 
   Future<bool> createConclave({
     required String name,
@@ -975,17 +1017,44 @@ class OnlineAccountProvider extends ChangeNotifier {
     required String kind,
     required String body,
     Map<String, dynamic> payload = const {},
-  }) async =>
-      await _run('conclave.message', () async {
-        await _repository.sendConclaveMessage(
-          kind: kind,
-          body: body,
-          payload: payload,
-        );
-        await _refreshData();
-        return true;
-      }) ??
-      false;
+  }) async {
+    if (_disposed || !isSignedIn || sendingConclaveMessage) return false;
+    final owner = currentUserId;
+    final conclaveId = conclave?.conclave.id;
+    final fingerprint = jsonEncode([owner, conclaveId, kind, body, payload]);
+    // Keep the same receipt for a manual retry after a lost acknowledgement.
+    final receipt =
+        _pendingConclaveMessages.putIfAbsent(fingerprint, DiagnosticIds.create);
+    sendingConclaveMessage = true;
+    errorCode = null;
+    _notify();
+    try {
+      await _repository.sendConclaveMessage(kind: kind, body: body, payload: {
+        ...payload,
+        'client_message_id': receipt
+      }).timeout(const Duration(seconds: 15));
+      if (_disposed ||
+          owner != currentUserId ||
+          conclaveId != conclave?.conclave.id) {
+        return false;
+      }
+      _pendingConclaveMessages.remove(fingerprint);
+      // Delivery succeeded even if the following read loses its connection.
+      // Invalidate an older read so it cannot replace the post-send snapshot.
+      _conclaveReadGeneration++;
+      _conclaveRefreshInFlight = null;
+      unawaited(refreshConclave(background: true));
+      return true;
+    } on Object catch (error) {
+      if (!_disposed && owner == currentUserId) {
+        errorCode = error is SocialException ? error.code : 'online_timeout';
+      }
+      return false;
+    } finally {
+      sendingConclaveMessage = false;
+      _notify();
+    }
+  }
 
   Future<bool> leaveConclave() async =>
       await _run('conclave.leave', () async {
@@ -1201,8 +1270,11 @@ class OnlineAccountProvider extends ChangeNotifier {
       _lastPresenceUpdate = now;
     }
     var serverChanged = false;
+    var conclaveGeneration = _conclaveReadGeneration;
     var onlineSnapshot = await _repository.loadOnlineSnapshot();
-    _applyOnlineSnapshot(onlineSnapshot);
+    _applyOnlineSnapshot(onlineSnapshot,
+        conclaveGeneration: conclaveGeneration);
+    conclaveGeneration = _conclaveReadGeneration;
     // Seasonal RPCs are additive maintenance. A temporarily unavailable or
     // not-yet-migrated seasonal endpoint must never hide a valid Friends,
     // Conclave, trade, or Group Adventure snapshot.
@@ -1335,11 +1407,13 @@ class OnlineAccountProvider extends ChangeNotifier {
       await _runRefreshMaintenanceStep(
         'social.refresh.snapshot_reload',
         () async {
+          conclaveGeneration = _conclaveReadGeneration;
           onlineSnapshot = await _repository.loadOnlineSnapshot();
         },
       );
     }
-    _applyOnlineSnapshot(onlineSnapshot);
+    _applyOnlineSnapshot(onlineSnapshot,
+        conclaveGeneration: conclaveGeneration);
     await _runRefreshMaintenanceStep(
       'social.refresh.group_reservations',
       () => _synchronizeGroupReservations({
@@ -1357,7 +1431,8 @@ class OnlineAccountProvider extends ChangeNotifier {
     );
   }
 
-  void _applyOnlineSnapshot(OnlineSocialSnapshot snapshot) {
+  void _applyOnlineSnapshot(OnlineSocialSnapshot snapshot,
+      {required int conclaveGeneration}) {
     profile = snapshot.profile;
     friends = snapshot.friends;
     requests = snapshot.requests;
@@ -1371,7 +1446,10 @@ class OnlineAccountProvider extends ChangeNotifier {
     friendMessagesAllowed = snapshot.friendMessagesAllowed;
     shareAchievementsWithConclave = snapshot.shareAchievementsWithConclave;
     friendConversations = snapshot.friendConversations;
-    conclave = snapshot.conclave;
+    if (conclaveGeneration == _conclaveReadGeneration) {
+      _conclaveReadGeneration++;
+      conclave = snapshot.conclave;
+    }
     conclaveInvites = snapshot.conclaveInvites;
   }
 
@@ -1623,6 +1701,9 @@ class OnlineAccountProvider extends ChangeNotifier {
     _appInForeground = visible;
     if (visible) {
       _ensureRefreshTimer();
+      if (isSignedIn && conclave != null) {
+        unawaited(refreshConclave(background: true));
+      }
     } else {
       _refreshTimer?.cancel();
       _refreshTimer = null;
@@ -1649,7 +1730,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     _conclaveBadgeTimer ??= Timer.periodic(const Duration(seconds: 30), (_) {
       if (isSignedIn && conclave != null) {
         _notify(); // Expire badges even when the next network refresh fails.
-        if (!busy) unawaited(refreshConclave(background: true));
+        unawaited(refreshConclave(background: true));
       }
     });
     _notificationPollTimer ??=
@@ -1756,6 +1837,10 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   void _clearAccountData() {
+    _conclaveReadGeneration++;
+    _pendingConclaveMessages.clear();
+    _conclaveRefreshInFlight = null;
+    conclaveConnectionError = null;
     _conclaveBadgeTimer?.cancel();
     _conclaveBadgeTimer = null;
     _refreshTimer?.cancel();

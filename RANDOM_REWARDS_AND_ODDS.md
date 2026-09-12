@@ -1,5 +1,8 @@
 # DragonHaven Random Rewards and Odds
 
+The current calendar-event points prize is exactly one existing event-specific Special Chest. Chest and egg contents and odds remain unchanged. Historical Golden Wings direct random relic rewards and other direct Adventure bundles apply only to already-started Event Adventures; points claims award only the chest.
+
+
 Candidate-79 rollback run 34497481683 passed on f2057c1, including ownership,
 source/Altar/social changes, activation replay, real server-mode SQL commands,
 recovery and complete Auth cleanup. The full apply now targets reviewed schema
@@ -187,7 +190,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 080824d499783203 -->
+<!-- reference-source-fingerprint: 1be41fbd94ba853e -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -419,6 +422,9 @@ A fresh account already owns one randomly selected Common portrait. Before any o
 The Founding Supporter portrait is separate and never affects these odds.
 
 ### 1.6 Title Chest
+
+A Title Chest costs **500 gold (coins)** in the shop, in both local and canonical
+economies. This price change does not alter the title pool or opening odds.
 
 The standard title catalog contains 500 titles: every combination of 25 prefixes and 20 roles. One unowned title is selected uniformly at chest opening.
 

@@ -167,6 +167,25 @@ List<SpecialAdventureWindow> specialAdventureWindowsAt(DateTime instant) {
   return windows;
 }
 
+/// Includes the event itself and the three-day results window.
+List<SpecialAdventureWindow> specialAdventureRankingWindowsAt(
+    DateTime instant) {
+  final utc = instant.toUtc();
+  final year = utc.add(_amsterdamOffsetAtUtc(utc)).year;
+  final candidates = [
+    for (final event in specialAdventureEventCatalog) ...[
+      _initialSpecialWindow(event),
+      for (final y in [year - 1, year])
+        if (_annualSpecialWindow(event, y) case final window?) window,
+    ],
+  ];
+  return candidates
+      .where((w) =>
+          !utc.isBefore(w.startsAt) &&
+          utc.isBefore(w.endsAt.add(w.event.rankingVisibleAfterEvent)))
+      .toList();
+}
+
 SpecialAdventureWindow? specialAdventureWindowAt(DateTime instant) {
   final windows = specialAdventureWindowsAt(instant);
   return windows.isEmpty ? null : windows.first;
@@ -292,6 +311,11 @@ extension DragonHavenSystems on HouseholdProvider {
       List.unmodifiable(_activeSpecialAdventureWindows(_clock()));
 
   Future<bool> refreshSpecialAdventureNotifications() async {
+    // Retire IDs from the old December-start schedule.
+    await HavenNotifications.cancel(
+        'special-adventure-new_year_first_dawn:launch:2026');
+    await HavenNotifications.cancel(
+        'special-adventure-new_year_first_dawn:year:2027');
     if (!notificationEnabled(HavenNotificationCategory.specialEvents)) {
       return false;
     }
@@ -308,12 +332,12 @@ extension DragonHavenSystems on HouseholdProvider {
         await HavenNotifications.specialAdventureAvailable(
           id: 'special-adventure-${current.key}',
           title: strings.pick(
-            'A Special Adventure has appeared',
-            'Er is een Speciaal Avontuur verschenen',
+            'An event has begun',
+            'Er is een event begonnen',
           ),
           body: strings.pick(
-            '${adventure?.titleEn ?? 'A rare route'} is waiting in Adventures for a limited time.',
-            '${adventure?.titleNl ?? 'Een zeldzame route'} wacht tijdelijk bij Adventures.',
+            '${adventure?.titleEn ?? 'A rare route'} is live. Complete Trials and Adventures to earn your event chest.',
+            '${adventure?.titleNl ?? 'Een zeldzame route'} is begonnen. Voltooi proeven en avonturen voor je eventkist.',
           ),
         );
         notifiedSeasonalSpecialEventKeys.add(current.key);
@@ -330,12 +354,12 @@ extension DragonHavenSystems on HouseholdProvider {
         id: 'special-adventure-${next.key}',
         at: next.startsAt,
         title: strings.pick(
-          'A Special Adventure has appeared',
-          'Er is een Speciaal Avontuur verschenen',
+          'An event has begun',
+          'Er is een event begonnen',
         ),
         body: strings.pick(
-          '${adventure?.titleEn ?? 'A rare route'} is waiting in Adventures for a limited time.',
-          '${adventure?.titleNl ?? 'Een zeldzame route'} wacht tijdelijk bij Adventures.',
+          '${adventure?.titleEn ?? 'A rare route'} is live. Complete Trials and Adventures to earn your event chest.',
+          '${adventure?.titleNl ?? 'Een zeldzame route'} is begonnen. Voltooi proeven en avonturen voor je eventkist.',
         ),
       );
     }
@@ -903,15 +927,6 @@ extension DragonHavenSystems on HouseholdProvider {
     final now = _clock();
     if (kind == AdventureKind.special) {
       final available = <AdventureDefinition>[];
-      for (final seasonalWindow in _activeSpecialAdventureWindows(now)) {
-        if (!startedSeasonalSpecialEventKeys.contains(seasonalWindow.key)) {
-          final definition =
-              AdventureCatalog.byId[seasonalWindow.event.adventureId];
-          if (definition != null && !available.contains(definition)) {
-            available.add(definition);
-          }
-        }
-      }
       final returningId = returningSpecialAdventureId;
       if (returningId != null &&
           returningSpecialAvailableUntil?.isAfter(now) == true) {
@@ -1231,6 +1246,7 @@ extension DragonHavenSystems on HouseholdProvider {
     if (relic != null) {
       _grantRelic(relic);
     }
+    awardEventPoints(eventTrialPoints(grade));
     trialOffers.removeAt(offerIndex);
     _recordTrialStreakCompletion(_clock());
     _scheduleTrialsFullNotification();
@@ -1934,19 +1950,7 @@ extension DragonHavenSystems on HouseholdProvider {
       return AdventureStartResult.dragonBusy;
     }
     final now = _clock();
-    SpecialAdventureWindow? specialWindow;
-    if (adventure.seasonalSpecial) {
-      final matches = _activeSpecialAdventureWindows(now)
-          .where((window) =>
-              window.event.adventureId == adventure.id &&
-              !startedSeasonalSpecialEventKeys.contains(window.key))
-          .toList(growable: false);
-      if (matches.isEmpty) {
-        return AdventureStartResult.unavailable;
-      }
-      specialWindow = matches.first;
-      startedSeasonalSpecialEventKeys.add(specialWindow.key);
-    }
+    if (adventure.seasonalSpecial) return AdventureStartResult.unavailable;
     final duration = expertiseAdjustedAdventureDuration(adventure, [dragon]);
     final run = AdventureRun(
       id: _newId(),
@@ -1960,8 +1964,6 @@ extension DragonHavenSystems on HouseholdProvider {
       // cannot silently change after an app restart.
       rewardTier: adventure.knownChest ?? _rollAdventureChest(adventure.kind),
       participantCount: participantCount,
-      specialEventId: specialWindow?.event.id,
-      specialEventKey: specialWindow?.key,
     );
     dragon.activeAdventureId = run.id;
     adventureRuns.add(run);
@@ -2148,6 +2150,10 @@ extension DragonHavenSystems on HouseholdProvider {
         final reward = run.rewardTier ??
             definition?.knownChest ??
             _rollAdventureChest(definition?.kind ?? AdventureKind.short);
+        if (definition != null) {
+          awardEventPoints(eventAdventurePoints(definition.kind),
+              completedAt: run.endsAt);
+        }
         adventureRuns[index] = run.copyWith(
           status: AdventureRunStatus.rewardReady,
           rewardTier: reward,
@@ -2238,6 +2244,26 @@ extension DragonHavenSystems on HouseholdProvider {
     _evaluateAchievements();
     await _notifyAndSave();
     return TowerBuildResult.built;
+  }
+
+  /// Changes the scenery of an existing floor for free. Occupants and damage
+  /// stay attached to the floor; furniture layouts remain saved per room type.
+  Future<bool> changeTowerFloorRoom(int index, String roomId) async {
+    final room = houseRoomById(roomId);
+    if (index < 0 ||
+        index >= towerFloorRoomIds.length ||
+        room == null ||
+        room.id == 'nest') {
+      return false;
+    }
+    if (towerFloorRoomIds[index] == room.id) return true;
+    towerFloorRoomIds[index] = room.id;
+    unlockedRoomIds.add(room.id);
+    for (final dragon in {...ownedDragons, ...releasedDragons}) {
+      if (dragon.currentFloorIndex == index) dragon.currentRoomId = room.id;
+    }
+    await _notifyAndSave();
+    return true;
   }
 
   /// Reorders the visible Tower floors from top to bottom. The Rooftop Nest
@@ -2814,8 +2840,8 @@ extension DragonHavenSystems on HouseholdProvider {
     unawaited(HavenNotifications.specialAdventureAvailable(
       id: 'returning-special-${definition.id}-${now.millisecondsSinceEpoch}',
       title: strings.pick(
-        'A Special Adventure has appeared',
-        'Er is een Speciaal Avontuur verschenen',
+        'An event has begun',
+        'Er is een event begonnen',
       ),
       body: strings.pick(
         '${dragon.displayName} revealed a rare route. It is available for 48 hours.',

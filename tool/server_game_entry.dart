@@ -30,6 +30,8 @@ String _project(String input) {
       ownerId: data['ownerId'] as String,
       verifiedTradeReservations:
           data['verifiedTradeReservations'] as Map<String, dynamic>?,
+      verifiedEventProgress:
+          data['verifiedEventProgress'] as Map<String, dynamic>?,
       verifiedSocialReservations:
           data['verifiedSocialReservations'] as Map<String, dynamic>?,
       verifiedTradeOffers:
@@ -77,10 +79,14 @@ Future<JSString> _execute(String input) async {
       secretSeed: data['secretSeed'] as String,
       now: DateTime.parse(data['now'] as String),
       keeperId: data['keeperId'] as String,
+      verifiedSocialClaims:
+          data['verifiedSocialClaims'] as List<dynamic>? ?? const [],
       verifiedSocialContext:
           data['verifiedSocialContext'] as Map<String, dynamic>?,
       verifiedTradeReservations:
           data['verifiedTradeReservations'] as Map<String, dynamic>?,
+      verifiedEventProgress:
+          data['verifiedEventProgress'] as Map<String, dynamic>?,
       verifiedSocialReservations:
           data['verifiedSocialReservations'] as Map<String, dynamic>?,
     ))

@@ -1466,7 +1466,7 @@ void main() {
       initialize: false,
       persistenceEnabled: false,
       random: Random(810),
-    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, coins: 150);
+    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, coins: 550);
 
     expect(await game.purchaseTitleChest(), TitleChestPurchaseResult.purchased);
     expect(game.pet.coins, 50);
@@ -1672,7 +1672,7 @@ void main() {
     final game = HouseholdProvider(
       initialize: false,
       random: Random(811),
-    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, coins: 150);
+    )..pet = Pet(stage: DragonStage.hatchling, firstEgg: false, coins: 550);
     expect(await game.purchaseTitleChest(), TitleChestPurchaseResult.purchased);
     final reward = await game.openChest(ChestTier.title);
     expect(reward?.titleFound, isNotNull);
@@ -1932,6 +1932,40 @@ void main() {
     expect(data.containsKey('tasks'), isFalse);
     expect(data.containsKey('completedQuestTotal'), isFalse);
     expect(raw.toLowerCase().contains('complete quest'), isFalse);
+  });
+
+  test(
+      'all 20 Tower floors can change type freely and retain residents and damage',
+      () async {
+    final game = HouseholdProvider();
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..coins = 0
+      ..currentFloorIndex = 8
+      ..currentRoomId = 'hearth';
+    game.towerFloorRoomIds = List.filled(20, 'hearth');
+    game.damagedTowerFloors = {19};
+    game.damagedTowerRepairFactors = {19: .4};
+    expect(await game.changeTowerFloorRoom(8, 'sunforge'), isTrue);
+    expect(game.pet.currentFloorIndex, 8);
+    expect(game.pet.currentRoomId, 'sunforge');
+    expect(await game.changeTowerFloorRoom(19, 'crystal'), isTrue);
+    expect(await game.changeTowerFloorRoom(8, 'hearth'), isTrue);
+    expect(await game.changeTowerFloorRoom(8, 'sunforge'), isTrue);
+    expect(await game.changeTowerFloorRoom(8, 'sunforge'), isTrue);
+    expect(await game.changeTowerFloorRoom(-1, 'hearth'), isFalse);
+    expect(await game.changeTowerFloorRoom(20, 'hearth'), isFalse);
+    expect(await game.changeTowerFloorRoom(8, 'nest'), isFalse);
+    expect(await game.changeTowerFloorRoom(8, 'unknown'), isFalse);
+    final restored = await HouseholdProvider.loadFromStorage();
+    expect(restored.towerFloorRoomIds, hasLength(20));
+    expect(restored.towerFloorRoomIds[8], 'sunforge');
+    expect(restored.towerFloorRoomIds[19], 'crystal');
+    expect(restored.pet.coins, 0);
+    expect(restored.damagedTowerFloors, {19});
+    expect(restored.damagedTowerRepairFactors[19], .4);
+    game.dispose();
+    restored.dispose();
   });
 
   test('Tower room reorder keeps dragons and damage attached to rooms',

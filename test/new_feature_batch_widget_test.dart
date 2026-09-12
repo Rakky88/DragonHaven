@@ -162,95 +162,34 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Special Event keeps its timer in details and its offer concise',
+  testWidgets('Special Event shows points and removes its old adventure offer',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(360, 640));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     var now = DateTime.utc(2026, 8, 31, 22);
     final game = HouseholdProvider(
-      random: Random(269),
-      clock: () => now,
-      persistenceEnabled: false,
-    )
+        random: Random(269), clock: () => now, persistenceEnabled: false)
       ..onboardingComplete = true
       ..pet.stage = DragonStage.hatchling;
     final online = OnlineAccountProvider(
-      repository: const DisabledSocialRepository(),
-      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
-    );
+        repository: const DisabledSocialRepository(),
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
     addTearDown(game.dispose);
     addTearDown(online.dispose);
-    await tester.pumpWidget(MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: game),
-        ChangeNotifierProvider.value(value: online),
-      ],
-      child: const MaterialApp(home: Scaffold(body: AdventureHubScreen())),
-    ));
+    await tester.pumpWidget(MultiProvider(providers: [
+      ChangeNotifierProvider.value(value: game),
+      ChangeNotifierProvider.value(value: online),
+    ], child: const MaterialApp(home: Scaffold(body: AdventureHubScreen()))));
     await tester.pump(const Duration(milliseconds: 400));
-    expect(tester.takeException(), isNull);
-
-    final adventure = game.adventuresFor(AdventureKind.special).single;
-    final card = find.byKey(Key('adventure-card-${adventure.id}'));
-    final list = find.byKey(
-      const PageStorageKey('available-adventures-scroll'),
-    );
-    for (var attempt = 0; attempt < 12 && card.evaluate().isEmpty; attempt++) {
-      await tester.drag(list, const Offset(0, -420));
-      await tester.pump();
-    }
-    expect(card, findsOneWidget);
-    expect(tester.takeException(), isNull);
-    final compactCountdown = find.byKey(
-      const Key('special-event-availability-countdown-compact'),
-    );
-    expect(compactCountdown, findsNothing);
-    expect(
-      find.descendant(
-        of: card,
-        matching: find.byKey(const Key('start-adventure-button')),
-      ),
-      findsOneWidget,
-    );
-    expect(tester.takeException(), isNull);
-
-    await tester.tap(card);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 350));
-    expect(
-      find.byKey(const Key('special-event-availability-countdown-detail')),
-      findsOneWidget,
-    );
-    final countdownText = find.descendant(
-      of: find.byKey(const Key('special-event-availability-countdown-detail')),
-      matching: find.byType(Text),
-    );
-    String displayedTime() => tester
-        .widgetList<Text>(countdownText)
-        .map((text) => text.data)
-        .whereType<String>()
-        .join(' ');
-    final beforeTick = displayedTime();
-    now = now.add(const Duration(seconds: 1));
+    expect(game.adventuresFor(AdventureKind.special), isEmpty);
+    expect(find.text('0 / 2000 points'), findsOneWidget);
+    expect(find.text('1 random relic'), findsNothing);
+    expect(find.text('1 Music Chest'), findsNothing);
+    now = DateTime.utc(2026, 9, 3);
     await tester.pump(const Duration(seconds: 1));
-    expect(displayedTime(), isNot(beforeTick));
-
-    final event = specialAdventureEventCatalog.singleWhere(
-      (entry) => entry.id == 'golden_wings_birthday',
-    );
-    expect(find.text(event.storyEn), findsNothing);
-    expect(find.text(adventure.descriptionEn), findsNothing);
-    expect(find.text('+25 Might'), findsOneWidget);
-    expect(find.text('+25 Spirit'), findsOneWidget);
-    expect(find.text('+25 Arcana'), findsOneWidget);
-    expect(find.text('Golden Wings Chest'), findsOneWidget);
-    expect(find.text('1 random relic'), findsOneWidget);
-    expect(find.text('1 Music Chest'), findsOneWidget);
-    expect(find.textContaining('269 coins'), findsNothing);
-    expect(find.textContaining('event dragon'), findsNothing);
-    expect(find.textContaining('rolled only'), findsNothing);
-    expect(find.textContaining('surprise until'), findsNothing);
+    expect(find.text('0 / 2000 points'), findsNothing);
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
   });
 
   testWidgets('Dragon Academy enrolls a pupil and starts its visual lesson',

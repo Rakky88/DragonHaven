@@ -645,8 +645,8 @@ List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
         strings.pick(
             'Group and Special Adventures', 'Group- en Special Adventures'),
         strings.pick(
-          'Join friends in a Group Adventure: the party starts when every place is filled and the combined requirements are met. Event Adventures remain finishable if started in time. Test Event Adventures and their Special Chests only preview rewards. Test Event Trials do give their normal permanent rewards; their event rankings stay separate.',
-          'Ga met vrienden op Group Adventure: de groep vertrekt zodra alle plekken gevuld zijn en de gezamenlijke eisen zijn gehaald. Event Adventures blijven afmaakbaar als je op tijd begon. Test-eventadventures en hun Special Chests tonen alleen voorbeeldbeloningen. Test-eventtrials geven wel hun normale blijvende beloningen; hun eventranglijsten blijven apart.',
+          'Join friends in a Group Adventure: the party starts when every place is filled and the combined requirements are met. Complete Adventures and Trials during events to fill the points bar. Claim the event chest in Completed Adventures, even after closing. Test event chests only preview rewards. Test Event Trials do give their normal permanent rewards; their event rankings stay separate.',
+          'Ga met vrienden op Group Adventure: de groep vertrekt zodra alle plekken gevuld zijn en de gezamenlijke eisen zijn gehaald. Voltooi tijdens events avonturen en proeven om de puntenbalk te vullen. Haal je eventkist op bij Voltooid, ook na afloop. Test-eventkisten tonen alleen voorbeeldbeloningen. Test-eventtrials geven wel hun normale blijvende beloningen; hun eventranglijsten blijven apart.',
         ),
         targetKey: const Key('tutorial-adventure-section-group'),
         scrollKey: const PageStorageKey('available-adventures-scroll'),

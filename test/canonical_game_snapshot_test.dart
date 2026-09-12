@@ -38,6 +38,29 @@ void main() {
     _data = fixture['projections'].first as Map<String, dynamic>;
   });
 
+  test('partner points may update at the same private game revision', () {
+    final before = _wire();
+    final progress = {
+      'eventId': 'valentine_two_heartlights',
+      'key': 'valentine_two_heartlights:launch:2027',
+      'chestId': 'twinheart_keepsake_chest_v1',
+      'startsAt': '2027-02-13T23:00:00Z',
+      'endsAt': '2027-02-14T23:00:00Z',
+      'target': 2000,
+      'points': 100,
+      'partnerPoints': 500,
+      'claimed': false,
+      'preview': false,
+    };
+    before['data']['adventures']['eventProgress'] = [progress];
+    final after = jsonDecode(jsonEncode(before)) as Map<String, dynamic>;
+    after['data']['adventures']['eventProgress'][0]['partnerPoints'] = 1900;
+    expect(_parse(before).hasSameOwnedState(_parse(after)), true);
+    expect(_parse(after).adventures.eventProgress.single.canClaim, true);
+    after['data']['wallet']['coins']++;
+    expect(_parse(before).hasSameOwnedState(_parse(after)), false);
+  });
+
   test('parses real server projection without inventing hidden egg information',
       () {
     final snapshot = _parse(_wire());
@@ -198,6 +221,35 @@ void main() {
           _error('game_snapshot_invalid'));
       await expectLater(
           store.persistFresh(server), _error('game_snapshot_invalid'));
+    });
+
+    test(
+        'event expiration can refresh availability without changing owned stock',
+        () async {
+      final first = _wire();
+      first['data']['adventures']['activeEvents'] = [
+        {
+          'eventId': 'sunwake_summer_sea',
+          'key': 'sunwake_summer_sea:preview:1',
+          'startsAt': '2026-09-05T12:00:00Z',
+          'endsAt': '2026-09-07T12:00:01Z'
+        }
+      ];
+      first['data']['adventures']['adventureOptionIds']
+          ['special'] = ['special_sunwake_summer_sea'];
+      await store.persistFresh(_parse(first));
+      final closed = jsonDecode(jsonEncode(first)) as Map<String, dynamic>;
+      closed['server_time'] = '2026-09-07T12:00:02Z';
+      closed['data']['adventures']['activeEvents'] = [];
+      closed['data']['adventures']['adventureOptionIds']['special'] = [];
+      await store.persistFresh(_parse(closed));
+      expect((await store.inspect(_owner)).snapshot!.adventures.activeEvents,
+          isEmpty);
+      final altered = jsonDecode(jsonEncode(closed)) as Map<String, dynamic>;
+      altered['server_time'] = '2026-09-07T12:00:03Z';
+      altered['data']['wallet']['coins'] += 1;
+      await expectLater(store.persistFresh(_parse(altered)),
+          _error('game_snapshot_conflict'));
     });
 
     test('persists across instances, serializes races and rejects rewinds',

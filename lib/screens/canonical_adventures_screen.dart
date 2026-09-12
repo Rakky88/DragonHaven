@@ -1,5 +1,5 @@
-import '../services/canonical_partners.dart';
-import 'canonical_partners_screen.dart';
+import '../widgets/event_progress_bar.dart';
+import '../widgets/event_partner_control.dart';
 import '../services/canonical_groups.dart';
 import 'canonical_groups_screen.dart';
 import '../widgets/canonical_social_rewards.dart';
@@ -37,6 +37,7 @@ class _Adventures extends StatefulWidget {
 
 class _AdventuresState extends State<_Adventures> {
   AdventureKind _kind = AdventureKind.mini;
+  bool _completed = false;
   DateTime? _anchor;
   final _elapsed = Stopwatch();
   late final Timer _timer;
@@ -107,26 +108,57 @@ class _AdventuresState extends State<_Adventures> {
                             body: const CanonicalGroupsScreen()))),
                 icon: const Icon(Icons.groups_outlined),
                 label: Text(s.pick('Group Adventures', 'Groepsavonturen'))),
-          if (context.watch<CanonicalPartners?>() != null)
-            OutlinedButton.icon(
-                key: const Key('canonical-open-partners'),
-                onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                        builder: (_) => Scaffold(
-                            appBar: AppBar(
-                                title: Text(s.adventureTitle(
-                                    AdventureCatalog.valentineTwoHeartlights))),
-                            body: const CanonicalPartnersScreen()))),
-                icon: const Icon(Icons.favorite_outline),
-                label: Text(s
-                    .adventureTitle(AdventureCatalog.valentineTwoHeartlights))),
-          const CanonicalSocialRewards(),
-          if (view.adventures.runs.isNotEmpty) ...[
+          for (final progress in view.adventures.eventProgress.where((p) =>
+              view.adventures.activeEvents.any((w) => w.key == p.key) &&
+              p.activeAt(now)))
+            EventProgressBar(
+                progress: progress,
+                onClaim: () => setState(() => _completed = true),
+                partnerAction: progress.eventId == 'valentine_two_heartlights'
+                    ? EventPartnerControl(
+                        eventKey: progress.key,
+                        beforeSync: () async {
+                          if (!session.canAct) return false;
+                          await CanonicalGameActions(session).refresh();
+                          return true;
+                        },
+                        applyShared: (_, owner) async {
+                          if (session.connection.currentOwner == owner) {
+                            await session.synchronize();
+                          }
+                        })
+                    : null),
+          Wrap(spacing: 8, children: [
+            ChoiceChip(
+                label: Text(s.pick('Adventures', 'Avonturen')),
+                selected: !_completed,
+                onSelected: (_) => setState(() => _completed = false)),
+            ChoiceChip(
+                key: const Key('canonical-tab-completed'),
+                label: Text(s.pick('Completed', 'Voltooid')),
+                selected: _completed,
+                onSelected: (_) => setState(() => _completed = true)),
+          ]),
+          if (_completed) ...[
+            for (final progress
+                in view.adventures.eventProgress.where((p) => p.canClaim))
+              EventRewardCard(
+                  progress: progress,
+                  claim: session.canAct
+                      ? () => actions.claimEventReward(progress.key)
+                      : null),
+            const CanonicalSocialRewards(),
+          ],
+          if (view.adventures.runs
+              .any((r) => _completed == !r.endsAt.isAfter(now))) ...[
             const SizedBox(height: 16),
-            Text(s.pick('Active Adventures', 'Actieve avonturen'),
+            Text(
+                _completed
+                    ? s.pick('Completed', 'Voltooid')
+                    : s.pick('Active Adventures', 'Actieve avonturen'),
                 style: Theme.of(context).textTheme.titleMedium),
-            for (final run in view.adventures.orderedRuns)
+            for (final run in view.adventures.orderedRuns
+                .where((r) => _completed == !r.endsAt.isAfter(now)))
               Card(
                   margin: const EdgeInsets.only(top: 8),
                   child: Padding(
@@ -173,23 +205,27 @@ class _AdventuresState extends State<_Adventures> {
                           ]))),
           ],
           const SizedBox(height: 20),
-          Wrap(spacing: 8, children: [
-            for (final kind in [
-              AdventureKind.mini,
-              AdventureKind.short,
-              AdventureKind.long
-            ])
-              ChoiceChip(
-                  label: Text(switch (kind) {
-                    AdventureKind.mini => s.pick('Mini', 'Mini'),
-                    AdventureKind.short => s.pick('Short', 'Kort'),
-                    _ => s.pick('Long', 'Lang'),
-                  }),
-                  selected: _kind == kind,
-                  onSelected: (_) => setState(() => _kind = kind)),
-          ]),
+          if (!_completed)
+            Wrap(spacing: 8, children: [
+              for (final kind in [
+                AdventureKind.mini,
+                AdventureKind.short,
+                AdventureKind.long,
+                AdventureKind.special
+              ])
+                ChoiceChip(
+                    label: Text(switch (kind) {
+                      AdventureKind.mini => s.pick('Mini', 'Mini'),
+                      AdventureKind.short => s.pick('Short', 'Kort'),
+                      AdventureKind.special => s.pick('Special', 'Speciaal'),
+                      _ => s.pick('Long', 'Lang'),
+                    }),
+                    selected: _kind == kind,
+                    onSelected: (_) => setState(() => _kind = kind)),
+            ]),
           const SizedBox(height: 8),
-          for (final id in view.adventures.offers(_kind))
+          for (final id
+              in _completed ? <String>[] : view.adventures.offers(_kind))
             if (AdventureCatalog.byId[id] case final definition?)
               Card(
                   margin: const EdgeInsets.only(bottom: 10),
@@ -211,29 +247,30 @@ class _AdventuresState extends State<_Adventures> {
                                     : null,
                                 child: Text(
                                     s.pick('Choose dragon', 'Kies een draak'))),
-                            Wrap(spacing: 8, runSpacing: 8, children: [
-                              CanonicalActionButton(
-                                  key: Key('canonical-dismiss-$id'),
-                                  label: s.pick('Dismiss', 'Wegsturen'),
-                                  confirmation: s.pick(
-                                      'Dismiss this adventure?',
-                                      'Dit avontuur wegsturen?'),
-                                  action: session.canAct
-                                      ? () => actions.dismissAdventure(id)
-                                      : null),
-                              if (sigils > 0)
+                            if (_kind != AdventureKind.special)
+                              Wrap(spacing: 8, runSpacing: 8, children: [
                                 CanonicalActionButton(
-                                    key: Key('canonical-wayfinder-$id'),
-                                    label:
-                                        s.relicName(MysticRelic.wayfinderSigil),
+                                    key: Key('canonical-dismiss-$id'),
+                                    label: s.pick('Dismiss', 'Wegsturen'),
                                     confirmation: s.pick(
-                                        'Use one Wayfinder Sigil to replace this adventure?',
-                                        'Eén Wayfinder Sigil gebruiken om dit avontuur te vervangen?'),
+                                        'Dismiss this adventure?',
+                                        'Dit avontuur wegsturen?'),
                                     action: session.canAct
-                                        ? () => actions.useWayfinder(_kind,
-                                            replaceAdventureId: id)
+                                        ? () => actions.dismissAdventure(id)
                                         : null),
-                            ]),
+                                if (sigils > 0)
+                                  CanonicalActionButton(
+                                      key: Key('canonical-wayfinder-$id'),
+                                      label: s.relicName(
+                                          MysticRelic.wayfinderSigil),
+                                      confirmation: s.pick(
+                                          'Use one Wayfinder Sigil to replace this adventure?',
+                                          'Eén Wayfinder Sigil gebruiken om dit avontuur te vervangen?'),
+                                      action: session.canAct
+                                          ? () => actions.useWayfinder(_kind,
+                                              replaceAdventureId: id)
+                                          : null),
+                              ]),
                           ])))
             else
               Text(s.pick('Update the app to use this item.',
@@ -241,7 +278,9 @@ class _AdventuresState extends State<_Adventures> {
           if (view.adventures.offers(_kind).isEmpty)
             Text(s.pick('Refresh to check for adventures.',
                 'Vernieuw om avonturen te controleren.')),
-          if (sigils > 0 && view.adventures.offers(_kind).length < 3)
+          if (_kind != AdventureKind.special &&
+              sigils > 0 &&
+              view.adventures.offers(_kind).length < 3)
             CanonicalActionButton(
                 key: const Key('canonical-wayfinder-add'),
                 label: s.relicName(MysticRelic.wayfinderSigil),
@@ -263,6 +302,10 @@ String _focusLabel(AppStrings s, TrainingFocus focus) => switch (focus) {
 Future<void> _chooseDragon(
     BuildContext context, AdventureDefinition definition) async {
   final owner = context.read<CanonicalGameSession>().snapshot!.ownerId;
+  final focuses =
+      definition.combinedExpertise ? TrainingFocus.values : [definition.focus];
+  bool highlighted(Set<String> values) =>
+      focuses.every((focus) => values.contains(focus.name));
   String? selected;
   await showDialog<void>(
       context: context,
@@ -275,11 +318,8 @@ Future<void> _chooseDragon(
                     CanonicalGameActions(context.read<CanonicalGameSession>());
                 final dragons = view.dragons.where((d) => d.owned).toList()
                   ..sort((a, b) {
-                    final highlight = (b.highlighted
-                                .contains(definition.focus.name)
-                            ? 1
-                            : 0) -
-                        (a.highlighted.contains(definition.focus.name) ? 1 : 0);
+                    final highlight = (highlighted(b.highlighted) ? 1 : 0) -
+                        (highlighted(a.highlighted) ? 1 : 0);
                     return highlight == 0 ? a.id.compareTo(b.id) : highlight;
                   });
                 final choice = view.dragon(selected ?? '');
@@ -308,8 +348,8 @@ Future<void> _chooseDragon(
                             child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                              if (dragons.any((d) => d.highlighted
-                                  .contains(definition.focus.name)))
+                              if (dragons
+                                  .any((d) => highlighted(d.highlighted)))
                                 Text(s.pick('Highlighted for this path',
                                     'Gemarkeerd voor dit pad')),
                               for (final dragon in dragons)
@@ -355,30 +395,38 @@ Future<void> _chooseDragon(
                                                       ]),
                                                       Row(children: [
                                                         Expanded(
-                                                            child: ExpertiseScoreBadge(
-                                                                dragonId:
-                                                                    dragon.id,
-                                                                focus: definition
-                                                                    .focus,
-                                                                focusLabel:
-                                                                    _focusLabel(
-                                                                        s,
-                                                                        definition
-                                                                            .focus),
-                                                                score: dragon
-                                                                        .training[
-                                                                    definition
-                                                                        .focus
-                                                                        .name]!,
-                                                                maximum: dragon.maximum(
-                                                                    definition
-                                                                        .focus),
-                                                                highlighted: dragon
-                                                                    .highlighted
-                                                                    .contains(definition
-                                                                        .focus
-                                                                        .name),
-                                                                expand: true)),
+                                                            child: Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .stretch,
+                                                                children: [
+                                                              for (final focus
+                                                                  in focuses)
+                                                                Padding(
+                                                                    padding: const EdgeInsets.symmetric(
+                                                                        vertical:
+                                                                            2),
+                                                                    child: ExpertiseScoreBadge(
+                                                                        dragonId:
+                                                                            dragon
+                                                                                .id,
+                                                                        focus:
+                                                                            focus,
+                                                                        focusLabel: _focusLabel(
+                                                                            s,
+                                                                            focus),
+                                                                        score: dragon.trainingFor(
+                                                                            focus),
+                                                                        maximum:
+                                                                            dragon.maximum(
+                                                                                focus),
+                                                                        highlighted: dragon
+                                                                            .highlighted
+                                                                            .contains(focus
+                                                                                .name),
+                                                                        expand:
+                                                                            true)),
+                                                            ])),
                                                         IconButton(
                                                             key: Key(
                                                                 'canonical-expertise-info-${dragon.id}'),

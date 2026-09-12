@@ -360,6 +360,7 @@ void main() {
     await tester.runAsync(() => session.synchronize());
     await tester.pump();
     server.loseReply = true;
+    await tap(tester, key('canonical-tab-completed'));
     await tap(tester, key('canonical-claim-${run.id}'));
     await command(tester);
     await tap(tester, key('economy-reconnect'));

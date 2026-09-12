@@ -25,6 +25,7 @@ abstract final class GamePublicProjection {
       'completedToday': 0,
       'offers': []
     },
+    Map<String, dynamic>? verifiedEventProgress,
     Map<String, dynamic>? verifiedSocialReservations,
     Map<String, dynamic>? verifiedTradeReservations,
   }) {
@@ -37,6 +38,12 @@ abstract final class GamePublicProjection {
       if (game.eggAltar.ownerId != null && game.eggAltar.ownerId != ownerId) {
         throw const FormatException('Wrong Altar owner');
       }
+      for (final claim in SocialRewardClaim.parseList(verifiedSocialClaims)) {
+        if (claim.kind == SocialRewardKind.group) {
+          game.recordGroupEventCompletion(claim.id, claim.readyAt);
+        }
+      }
+      game.applyEventPartnerPoints(verifiedEventProgress, ownerId);
       SocialDragonReservations.apply(
         game: game,
         ownerId: ownerId,
@@ -94,6 +101,17 @@ abstract final class GamePublicProjection {
         resident(dragon, 'released');
       }
       final exported = game.exportState();
+      final eventWindows = game.activeSpecialAdventureWindows;
+      // Availability is display data. Do not call adventuresFor here: it also
+      // advances running journeys and could expose their preselected reward.
+      final specialOptions = <String>{
+        if (game.returningSpecialAdventureId != null &&
+            game.returningSpecialAvailableUntil?.isAfter(now) == true)
+          game.returningSpecialAdventureId!,
+      }
+          .where(
+              (id) => AdventureCatalog.byId[id]?.requiresOnlinePartner == false)
+          .toList();
       return {
         'projectionVersion': version,
         'activeDragonId': game.pet.isEgg ? null : game.pet.id,
@@ -126,6 +144,7 @@ abstract final class GamePublicProjection {
           },
         },
         'collection': _select(exported, const [
+          'accountName',
           'ownedPortraitIds',
           'selectedPortraitId',
           'ownedTitleIds',
@@ -179,6 +198,22 @@ abstract final class GamePublicProjection {
           'seasonalPodiumEmoteWinCounts',
         ]),
         'adventures': {
+          'eventProgress': [
+            for (final p in game.visibleEventProgress) p.toJson()
+          ],
+          'activeEvents': [
+            for (final window in eventWindows)
+              {
+                'eventId': window.event.id,
+                'key': window.key,
+                'startsAt': window.startsAt.toUtc().toIso8601String(),
+                'endsAt': window.endsAt.toUtc().toIso8601String(),
+              }
+          ],
+          'dismissedEvents': {
+            for (final entry in game.seasonalEventDismissedUntil.entries)
+              entry.key: entry.value.toUtc().toIso8601String()
+          },
           'socialClaims': [
             for (final c in SocialRewardClaim.parseList(verifiedSocialClaims))
               c.toJson()
@@ -189,6 +224,10 @@ abstract final class GamePublicProjection {
             'shortAdventureRefilledAt',
             'longAdventureRefillDay',
           ]),
+          'adventureOptionIds': {
+            ...Map<String, dynamic>.from(exported['adventureOptionIds'] as Map),
+            'special': specialOptions,
+          },
           'runs': [
             for (final run in game.adventureRuns)
               {

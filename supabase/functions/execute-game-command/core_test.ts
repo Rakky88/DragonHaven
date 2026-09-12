@@ -79,7 +79,7 @@ Deno.test("read uses Auth owner and public projection while mutations are disabl
       return readSnapshot;
     },
     project: (input) => {
-      equal(input, { state: readSnapshot.state, ownerId: owner, now: readSnapshot.server_time, verifiedSocialClaims: [], verifiedTradeOffers: {completedToday: 0, offers: []}, verifiedSocialReservations: null, verifiedTradeReservations: null });
+      equal(input, { state: readSnapshot.state, ownerId: owner, now: readSnapshot.server_time, verifiedSocialClaims: [], verifiedTradeOffers: {completedToday: 0, offers: []}, verifiedEventProgress: null, verifiedSocialReservations: null, verifiedTradeReservations: null });
       return publicData;
     },
     evaluate: () => { throw new Error("a read cannot evaluate commands"); },
@@ -126,7 +126,7 @@ Deno.test("a command uses authenticated owner and private lease inputs, and retu
   const text = await result.text();
   assert(!text.includes("private") && !text.includes("secret_seed") && !text.includes("lease_token"));
   equal(inputs, [{ state: leased.state, action: body.action, payload: body.payload,
-    secretSeed: hash, now: leased.now, keeperId: owner, verifiedSocialContext: null, verifiedSocialReservations: null, verifiedTradeReservations: null }]);
+    secretSeed: hash, now: leased.now, keeperId: owner, verifiedSocialContext: null, verifiedEventProgress: null, verifiedSocialClaims: [], verifiedSocialReservations: null, verifiedTradeReservations: null }]);
   equal(calls.map((call) => call.name), ["begin_revisioned_game_command", "commit_canonical_game_command"]);
   assert(calls.every((call) => call.payload.p_owner_id === owner));
   assert(calls[0].payload.p_expected_revision === 2);
@@ -282,6 +282,7 @@ Deno.test("house commands bind to Auth and cannot attach inventory or wallet gra
     ["move_house_item", {itemId: "moss_cushion", x: .6, y: .8}],
     ["remove_house_item", {itemId: "moss_cushion"}],
     ["reorder_tower_floor", {oldIndex: 1, newIndex: 0}],
+    ["change_tower_floor_room", {index: 19, roomId: "sunforge"}],
     ["set_dragon_roaming", {dragonId: "owned-dragon", enabled: false}],
     ["clear_tower_floor", {index: 0}],
   ] as const) {

@@ -161,7 +161,9 @@ void main() {
   test(
       'spending is bounded by the canonical wallet, including subsequent commands',
       () async {
-    final purchased = await _execute(_fixture(), 'purchase_title_chest');
+    final state = _fixture();
+    state['pet']['coins'] = 550;
+    final purchased = await _execute(state, 'purchase_title_chest');
     expect(purchased['result'], 'purchased');
     final saved = purchased['state'] as Map<String, dynamic>;
     expect(saved['pet']['coins'], 50);

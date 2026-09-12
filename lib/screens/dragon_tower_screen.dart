@@ -117,7 +117,10 @@ class DragonTowerScreen extends StatelessWidget {
         const _TowerRoof(),
         const SizedBox(height: 9),
         for (var index = game.towerFloorRoomIds.length - 1; index >= 0; index--)
-          _TowerFloor(index: index, roomId: game.towerFloorRoomIds[index]),
+          _TowerFloor(
+              index: index,
+              roomId: game.towerFloorRoomIds[index],
+              onChangeRoom: () => _addFloor(context, floorIndex: index)),
         const SizedBox(height: 12),
         _BuildFloorButton(
           key: const Key('add-tower-floor'),
@@ -148,7 +151,7 @@ class DragonTowerScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _addFloor(BuildContext context) async {
+  Future<void> _addFloor(BuildContext context, {int? floorIndex}) async {
     final strings = AppStrings.of(context);
     final room = await showModalBottomSheet<HouseRoomDefinition>(
       context: context,
@@ -161,6 +164,10 @@ class DragonTowerScreen extends StatelessWidget {
           children: [
             Text(strings.pick('Choose a room type', 'Kies een kamertype'),
                 style: Theme.of(sheetContext).textTheme.titleLarge),
+            if (floorIndex != null)
+              Text(strings.pick(
+                  'Change this room as often as you like, for free.',
+                  'Verander deze kamer zo vaak je wilt, gratis.')),
             const SizedBox(height: 8),
             for (final definition
                 in houseRoomCatalog.where((room) => room.id != 'nest'))
@@ -184,6 +191,12 @@ class DragonTowerScreen extends StatelessWidget {
       ),
     );
     if (room == null || !context.mounted) return;
+    if (floorIndex != null) {
+      await context
+          .read<HouseholdProvider>()
+          .changeTowerFloorRoom(floorIndex, room.id);
+      return;
+    }
     final result =
         await context.read<HouseholdProvider>().buildTowerFloor(room.id);
     if (!context.mounted || result == TowerBuildResult.built) return;
@@ -554,7 +567,9 @@ class _DragonSchoolEntrance extends StatelessWidget {
 }
 
 class _TowerFloor extends StatelessWidget {
-  const _TowerFloor({required this.index, required this.roomId});
+  const _TowerFloor(
+      {required this.index, required this.roomId, required this.onChangeRoom});
+  final VoidCallback onChangeRoom;
   final int index;
   final String roomId;
 
@@ -627,6 +642,13 @@ class _TowerFloor extends StatelessWidget {
                 _TowerFloorDragons(dragons: floorDragons),
                 const SizedBox(width: 6),
               ],
+              IconButton.filledTonal(
+                key: Key('change-tower-room-$index'),
+                tooltip: strings.pick(
+                    'Change room type (free)', 'Kamertype wijzigen (gratis)'),
+                onPressed: onChangeRoom,
+                icon: const Icon(Icons.swap_horiz_rounded),
+              ),
               if (damaged)
                 FilledButton.tonalIcon(
                   onPressed: () => game.repairTowerFloor(index),

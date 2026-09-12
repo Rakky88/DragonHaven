@@ -9,6 +9,7 @@ import 'social_claims.dart';
 import 'dart:convert';
 
 import '../models/adventure.dart';
+import '../models/social_reward_claim.dart';
 import '../models/game_command_schema.dart';
 import '../models/chest.dart';
 import '../models/egg_altar.dart';
@@ -38,6 +39,8 @@ abstract final class GameCommandEngine {
     required DateTime now,
     required String keeperId,
     Map<String, dynamic>? verifiedSocialContext,
+    List<dynamic> verifiedSocialClaims = const [],
+    Map<String, dynamic>? verifiedEventProgress,
     Map<String, dynamic>? verifiedSocialReservations,
     Map<String, dynamic>? verifiedTradeReservations,
   }) async {
@@ -62,6 +65,13 @@ abstract final class GameCommandEngine {
       if (game.eggAltar.ownerId != null && game.eggAltar.ownerId != keeperId) {
         throw const GameCommandException('game_state_owner_mismatch');
       }
+      for (final claim in SocialRewardClaim.parseList(verifiedSocialClaims)) {
+        if (claim.kind == SocialRewardKind.group) {
+          game.recordGroupEventCompletion(claim.id, claim.readyAt);
+        }
+      }
+      game.applyEventPartnerPoints(verifiedEventProgress, keeperId);
+      game.initializeEventProgress();
       SocialDragonReservations.apply(
         game: game,
         ownerId: keeperId,
@@ -150,6 +160,8 @@ abstract final class GameCommandEngine {
                 _ => 'prizeId',
               }),
               context: verifiedSocialContext);
+        case 'claim_event_reward':
+          result = await game.claimEventReward(args.text('eventKey'));
         case 'refresh':
           if (activeAttempt == null) await game.refreshForCurrentDate();
           result = true;
@@ -378,6 +390,9 @@ abstract final class GameCommandEngine {
               args.number('y', min: 0, max: 1));
         case 'remove_house_item':
           result = await game.removeHouseItem(args.text('itemId'));
+        case 'change_tower_floor_room':
+          result = await game.changeTowerFloorRoom(
+              args.integer('index', min: 0, max: 19), args.text('roomId'));
         case 'reorder_tower_floor':
           result = await game.reorderTowerFloor(
               args.integer('oldIndex', min: 0, max: 19),

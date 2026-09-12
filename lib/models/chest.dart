@@ -5,7 +5,7 @@ import 'music_track.dart';
 import 'dragon_emote.dart';
 
 const portraitChestGemPrice = 100;
-const titleChestCoinPrice = 100;
+const titleChestCoinPrice = 500;
 const musicChestGemPrice = 250;
 
 enum ChestTier {

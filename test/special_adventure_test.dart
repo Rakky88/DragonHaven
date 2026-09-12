@@ -50,36 +50,21 @@ void main() {
     expect(birthday.endsAt, DateTime.utc(2027, 5, 13, 22));
   });
 
-  test('event can start once per instance and remains active after expiry',
-      () async {
-    var now = DateTime.utc(2026, 8, 31, 22);
+  test('event points replace the seasonal adventure entry', () async {
     final game = HouseholdProvider(
-      persistenceEnabled: false,
-      random: Random(269),
-      clock: () => now,
-    );
-    game.pet
-      ..stage = DragonStage.hatchling
-      ..training.addAll({'might': 24, 'arcana': 24, 'spirit': 24});
-
-    final adventure = game.adventuresFor(AdventureKind.special).single;
-    expect(adventure.id, AdventureCatalog.goldenWingsBirthday.id);
-    expect(
-      await game.startAdventure(adventure, dragonId: game.pet.id),
-      AdventureStartResult.started,
-    );
-    expect(game.adventureRuns.single.endsAt, now.add(const Duration(days: 7)));
+        persistenceEnabled: false, clock: () => DateTime.utc(2026, 8, 31, 22));
     expect(game.adventuresFor(AdventureKind.special), isEmpty);
-
-    now = DateTime.utc(2026, 9, 3);
-    expect(game.adventureRuns, hasLength(1));
-    expect(
-      game.exportState()['startedSeasonalSpecialEventKeys'],
-      contains('golden_wings_birthday:launch:2026'),
-    );
+    final progress = game.visibleEventProgress.single;
+    expect(progress.target, 2000);
+    game.awardEventPoints(2000);
+    expect(await game.claimEventReward(progress.key), true);
+    expect(game.chestCount(ChestTier.special), 1);
+    expect(game.chestCount(ChestTier.music), 0);
+    expect(game.totalRelicCount, 0);
+    game.dispose();
   });
 
-  test('claim grants bundle and Special Chest yields exact egg contents',
+  test('legacy run retains its bundle and Special Chest exact egg contents',
       () async {
     var now = DateTime.utc(2026, 8, 31, 22);
     final game = HouseholdProvider(
@@ -93,8 +78,17 @@ void main() {
       TrainingFocus.spirit.name: 50,
       TrainingFocus.arcana.name: 60,
     });
-    final adventure = game.adventuresFor(AdventureKind.special).single;
-    await game.startAdventure(adventure, dragonId: game.pet.id);
+    final adventure = AdventureCatalog.goldenWingsBirthday;
+    game.adventureRuns.add(AdventureRun(
+        id: 'legacy-birthday',
+        adventureId: adventure.id,
+        dragonId: game.pet.id,
+        startedAt: now,
+        endsAt: now.add(const Duration(days: 5)),
+        status: AdventureRunStatus.running,
+        specialEventId: 'golden_wings_birthday',
+        specialEventKey: 'golden_wings_birthday:launch:2026'));
+    game.pet.activeAdventureId = 'legacy-birthday';
     now = game.adventureRuns.single.endsAt;
 
     expect(await game.claimAdventure(game.adventureRuns.single.id),
@@ -155,7 +149,8 @@ void main() {
       'beneath_the_harvest_moon'
     ),
   ]) {
-    test('$family adventure survives event end and grants its own egg once',
+    test(
+        '$family completed points reward survives event end and grants its own egg once',
         () async {
       var now = date;
       final game = HouseholdProvider(
@@ -163,15 +158,13 @@ void main() {
       addTearDown(game.dispose);
       game.pet.stage = DragonStage.hatchling;
       game.pet.training.addAll({'might': 100, 'arcana': 100, 'spirit': 100});
-      final offer = game.adventuresFor(AdventureKind.special).single;
-      expect(offer.id, 'special_$eventId');
-      await game.startAdventure(offer, dragonId: game.pet.id);
-      final run = game.adventureRuns.single;
-      expect(run.endsAt.difference(now), const Duration(hours: 24));
+      final progress = game.visibleEventProgress.single;
+      expect(progress.eventId, eventId);
+      game.awardEventPoints(progress.target);
       now = now.add(const Duration(days: 8));
-      expect(await game.claimAdventure(run.id), ChestTier.special);
-      expect(await game.claimAdventure(run.id), isNull);
-      expect(game.pet.trainingFor(TrainingFocus.might), 110);
+      expect(await game.claimEventReward(progress.key), true);
+      expect(await game.claimEventReward(progress.key), false);
+      expect(game.pet.trainingFor(TrainingFocus.might), 100);
       final reward = await game.openChest(ChestTier.special);
       expect(reward!.coins, 300);
       expect(reward.gems, 12);

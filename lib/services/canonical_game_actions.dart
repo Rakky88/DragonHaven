@@ -65,6 +65,9 @@ class CanonicalGameActions {
     if (!result) throw const CanonicalGameException('game_action_unavailable');
   }
 
+  Future<void> claimEventReward(String key) =>
+      _boolean('claim_event_reward', {'eventKey': key});
+
   Future<void> tagEgg(String id, bool tagged) =>
       _boolean('tag_egg', {'eggId': id, 'tagged': tagged});
   Future<void> activateEgg(String id) =>
@@ -296,6 +299,8 @@ class CanonicalGameActions {
       _boolean('remove_house_item', {'itemId': itemId});
   Future<void> reorderFloor(int oldIndex, int newIndex) => _boolean(
       'reorder_tower_floor', {'oldIndex': oldIndex, 'newIndex': newIndex});
+  Future<void> changeFloorRoom(int index, String roomId) =>
+      _boolean('change_tower_floor_room', {'index': index, 'roomId': roomId});
   Future<void> clearFloor(int index) =>
       _boolean('clear_tower_floor', {'index': index});
   Future<void> setDragonRoaming(String dragonId, bool enabled) async {

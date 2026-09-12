@@ -14,6 +14,11 @@ class ReferenceDocumentSpec {
 const specialContentReference = ReferenceDocumentSpec(
   documentPath: 'SPECIAL_EVENTS_CHESTS_AND_EGGS.md',
   sourcePaths: [
+    'lib/models/event_progress.dart',
+    'lib/providers/event_points_systems.dart',
+    'supabase/migrations/202609120080_event_points.sql',
+    'supabase/migrations/202609120082_extended_event_windows.sql',
+    'supabase/migrations/202609120081_social_event_polish.sql',
     'lib/domain/game_command_engine.dart',
     'lib/domain/social_claims.dart',
     'lib/domain/social_dragon_reservations.dart',
@@ -121,6 +126,7 @@ const specialContentReference = ReferenceDocumentSpec(
 const randomRewardsReference = ReferenceDocumentSpec(
   documentPath: 'RANDOM_REWARDS_AND_ODDS.md',
   sourcePaths: [
+    'supabase/migrations/202609120081_social_event_polish.sql',
     'lib/domain/game_command_engine.dart',
     'lib/domain/social_claims.dart',
     'lib/domain/social_dragon_reservations.dart',

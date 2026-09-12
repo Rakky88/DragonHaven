@@ -154,7 +154,7 @@ void main() {
     expect(server.receipts, hasLength(1));
     await tester.tap(find.byKey(const Key('economy-reconnect')));
     await waitForCommand(tester);
-    expect(session.snapshot!.coins, coins - 100);
+    expect(session.snapshot!.coins, coins - 500);
     expect(find.text('1 unopened chests'), findsOneWidget);
     expect(jsonEncode(legacy.exportState()), localBefore);
     expect(server.receipts, hasLength(1));

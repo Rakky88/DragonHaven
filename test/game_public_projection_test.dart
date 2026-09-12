@@ -60,6 +60,43 @@ Map<String, dynamic> _project(Map<String, dynamic> state) =>
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test(
+      'seasonal display keeps points and occurrence without an adventure offer',
+      () {
+    final source = _fixture();
+    final end = _now.add(const Duration(days: 2));
+    source['seasonalEventPreviewExpiresAt'] = {
+      'sunwake_summer_sea': end.toIso8601String()
+    };
+    source['seasonalEventDismissedUntil'] = {};
+    source['startedSeasonalSpecialEventKeys'] = [];
+    final key = 'sunwake_summer_sea:preview:${end.millisecondsSinceEpoch}';
+    final before = jsonEncode(source);
+    final adventures = _project(source)['adventures'] as Map;
+    expect(adventures['adventureOptionIds']['special'], isEmpty);
+    expect(adventures['eventProgress'].single['target'], 2000);
+    expect(adventures['activeEvents'], [
+      {
+        'eventId': 'sunwake_summer_sea',
+        'key': key,
+        'startsAt': _now.toIso8601String(),
+        'endsAt': end.toIso8601String()
+      }
+    ]);
+    expect(jsonEncode(source), before);
+    source['startedSeasonalSpecialEventKeys'] = [key];
+    final started = _project(source)['adventures'] as Map;
+    expect(started['adventureOptionIds']['special'], isEmpty);
+    expect(started['activeEvents'], adventures['activeEvents']);
+    source['seasonalEventPreviewExpiresAt'] = {
+      'valentine_two_heartlights': end.toIso8601String()
+    };
+    expect(
+        (_project(source)['adventures'] as Map)['adventureOptionIds']
+            ['special'],
+        isEmpty);
+  });
+
   test('unknown egg, seed and future nested metadata never enter the display',
       () {
     final source = _fixture();

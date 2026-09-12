@@ -51,6 +51,29 @@ void main() {
     await session.synchronize();
   }
 
+  test('free room changes work at maximum floors and recover a lost response',
+      () async {
+    server.state['towerFloorRoomIds'] = List.filled(20, 'hearth');
+    server.state['pet']['coins'] = 0;
+    server.revision++;
+    await session.synchronize();
+    server.loseReply = true;
+    await expectLater(actions().changeFloorRoom(19, 'sunforge'),
+        error('game_command_unavailable'));
+    await restart();
+    expect(session.snapshot!.house.floorRoomIds[19], 'sunforge');
+    expect(session.snapshot!.house.floorRoomIds, hasLength(20));
+    expect(session.snapshot!.coins, 0);
+    expect(session.snapshot!.house.damagedFloors, {0});
+    await actions().changeFloorRoom(19, 'crystal');
+    await actions().changeFloorRoom(19, 'hearth');
+    expect(session.snapshot!.coins, 0);
+    await expectLater(actions().changeFloorRoom(19, 'nest'),
+        error('game_action_unavailable'));
+    await expectLater(actions().changeFloorRoom(19, 'unknown'),
+        error('game_action_unavailable'));
+  });
+
   test('lost floor purchase recovers once and stale quotes cannot buy again',
       () async {
     final old = actions();

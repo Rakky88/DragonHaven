@@ -1758,7 +1758,7 @@ void main() {
       ChangeNotifierProvider.value(
         value: game,
         child: const MaterialApp(
-          home: Scaffold(body: InventoryScreen()),
+          home: Scaffold(body: InventoryScreen(initialTab: 1)),
         ),
       ),
     );
@@ -1875,7 +1875,7 @@ void main() {
       ChangeNotifierProvider.value(
         value: game,
         child: const MaterialApp(
-          home: Scaffold(body: InventoryScreen(initialTab: 1)),
+          home: Scaffold(body: InventoryScreen(initialTab: 0)),
         ),
       ),
     );
@@ -1918,7 +1918,7 @@ void main() {
       ChangeNotifierProvider.value(
         value: game,
         child: const MaterialApp(
-          home: Scaffold(body: InventoryScreen(initialTab: 1)),
+          home: Scaffold(body: InventoryScreen(initialTab: 0)),
         ),
       ),
     );
@@ -2071,7 +2071,7 @@ void main() {
       ChangeNotifierProvider.value(
         value: game,
         child: const MaterialApp(
-          home: Scaffold(body: InventoryScreen(initialTab: 1)),
+          home: Scaffold(body: InventoryScreen(initialTab: 0)),
         ),
       ),
     );
@@ -2105,7 +2105,7 @@ void main() {
       ChangeNotifierProvider.value(
         value: game,
         child: const MaterialApp(
-          home: Scaffold(body: InventoryScreen(initialTab: 1)),
+          home: Scaffold(body: InventoryScreen(initialTab: 0)),
         ),
       ),
     );
@@ -2682,7 +2682,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.05.29'), findsOneWidget);
+    expect(find.text('v0.05.30'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-copy-iphone-link')), findsNothing);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);

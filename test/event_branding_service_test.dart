@@ -65,17 +65,18 @@ void main() {
 
   test('recurring New Year keeps the same window and logo across midnight', () {
     for (final year in [2027, 2028, 2030]) {
-      final start = DateTime.utc(year, 12, 31, 17);
-      final end = DateTime.utc(year + 1, 1, 1, 23);
+      final start = DateTime.utc(year - 1, 12, 31, 23);
+      final end = DateTime.utc(year, 1, 6, 23);
       for (final now in [
         start,
-        DateTime.utc(year, 12, 31, 23),
+        DateTime.utc(year, 1, 1, 23),
         end.subtract(const Duration(milliseconds: 1))
       ]) {
         final active = specialAdventureWindowsAt(now);
         final event =
             active.singleWhere((w) => w.event.id == 'new_year_first_dawn');
-        expect(event.key, 'new_year_first_dawn:year:$year');
+        expect(event.key,
+            'new_year_first_dawn:${year == 2027 ? 'launch' : 'year'}:$year');
         expect(event.startsAt, start);
         expect(event.endsAt, end);
         final scheduled = eventBrandingSchedule(now, active)

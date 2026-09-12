@@ -1,3 +1,5 @@
+import '../widgets/event_partner_control.dart';
+import '../widgets/event_progress_bar.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -44,6 +46,8 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   Timer? _clock;
+  int? _eventUploadedRevision;
+  String? _eventUploadedOwner;
 
   @override
   void initState() {
@@ -90,40 +94,89 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
         groupRuns
             .where((lobby) => !lobby.rewardReadyAt(game.currentTime))
             .length;
-    final completedCount = localRuns
-            .where((run) => run.status == AdventureRunStatus.rewardReady)
-            .length +
-        groupRuns
-            .where((lobby) => lobby.rewardReadyAt(game.currentTime))
-            .length;
+    final completedCount =
+        game.visibleEventProgress.where((p) => p.canClaim).length +
+            localRuns
+                .where((run) => run.status == AdventureRunStatus.rewardReady)
+                .length +
+            groupRuns
+                .where((lobby) => lobby.rewardReadyAt(game.currentTime))
+                .length;
     final trialCount = game.availableTrials.length;
     return Column(
       children: [
-        Padding(
-          key: const Key('tutorial-adventure-header'),
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Row(
-            children: [
-              const GameIconSprite(GameIconKind.adventureShort, size: 52),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        ConstrainedBox(
+          constraints:
+              BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .5),
+          child: SingleChildScrollView(
+            key: const Key('event-progress-region'),
+            child: Column(children: [
+              Padding(
+                key: const Key('tutorial-adventure-header'),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Row(
                   children: [
-                    Text(strings.tr('adventure'),
-                        style: Theme.of(context).textTheme.displaySmall),
-                    Text(
-                      strings.pick(
-                        'Choose a path. Bring back stories, training and treasure.',
-                        'Kies een route. Breng verhalen, training en schatten mee terug.',
+                    const GameIconSprite(GameIconKind.adventureShort, size: 52),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(strings.tr('adventure'),
+                              style: Theme.of(context).textTheme.displaySmall),
+                          Text(
+                            strings.pick(
+                              'Choose a path. Bring back stories, training and treasure.',
+                              'Kies een route. Breng verhalen, training en schatten mee terug.',
+                            ),
+                            style: const TextStyle(
+                                color: AppColors.muted, fontSize: 12),
+                          ),
+                        ],
                       ),
-                      style:
-                          const TextStyle(color: AppColors.muted, fontSize: 12),
                     ),
                   ],
                 ),
               ),
-            ],
+              for (final progress in game.activeEventProgress)
+                Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: EventProgressBar(
+                        progress: progress, onClaim: () => _tabs.animateTo(3))),
+              if (game.eventProgress.values
+                      .where((p) => p.eventId == 'valentine_two_heartlights')
+                      .lastOrNull
+                  case final valentine?)
+                Container(
+                    color: const Color(0xFF763853),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: EventPartnerControl(
+                        eventKey: valentine.key,
+                        showControls: valentine.activeAt(game.currentTime),
+                        beforeSync: () async {
+                          if (!online.isSignedIn || online.busy) return false;
+                          if (_eventUploadedOwner == online.currentUserId &&
+                              _eventUploadedRevision ==
+                                  game.localMutationRevision) {
+                            return true;
+                          }
+                          final revision = game.localMutationRevision;
+                          final owner = online.currentUserId;
+                          final success =
+                              await online.backupToCloud(automatic: true);
+                          if (success && online.currentUserId == owner) {
+                            _eventUploadedOwner = owner;
+                            _eventUploadedRevision = revision;
+                          }
+                          return success;
+                        },
+                        applyShared: (shared, owner) async {
+                          if (online.currentUserId == owner) {
+                            await game.synchronizeEventPartnerPoints(
+                                shared, owner);
+                          }
+                        })),
+            ]),
           ),
         ),
         Material(
@@ -1161,7 +1214,21 @@ class _SeasonalPairAdventureCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (adventure.isIncomingInvite)
+            if (adventure.isCreator &&
+                adventure.status == SeasonalPairAdventureStatus.invited)
+              IconButton(
+                key: Key('cancel-seasonal-pair-${adventure.id}'),
+                tooltip:
+                    strings.pick('Cancel invitation', 'Uitnodiging annuleren'),
+                onPressed: context.watch<OnlineAccountProvider>().busy
+                    ? null
+                    : () => context
+                        .read<OnlineAccountProvider>()
+                        .respondSeasonalPairAdventure(
+                            adventureId: adventure.id, accept: false),
+                icon: const Icon(Icons.close_rounded),
+              )
+            else if (adventure.isIncomingInvite)
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1334,7 +1401,7 @@ class _SeasonalPartnerPickerState extends State<_SeasonalPartnerPicker> {
                   ),
                   title: Text(entry.value.name,
                       style: const TextStyle(fontWeight: FontWeight.w800)),
-                  subtitle: Text('${entry.value.source} Â· ${entry.key}'),
+                  subtitle: Text('${entry.value.source} · ${entry.key}'),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => Navigator.pop(context, entry.key),
                 ),
@@ -3076,7 +3143,8 @@ class _CompletedAdventures extends StatelessWidget {
             .where((lobby) => lobby.rewardReadyAt(now))
             .toList(growable: false)
         : const <GroupAdventureLobby>[];
-    if (runs.isEmpty && groupRuns.isEmpty) {
+    final events = game.visibleEventProgress.where((p) => p.canClaim).toList();
+    if (runs.isEmpty && groupRuns.isEmpty && events.isEmpty) {
       return Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(30),
@@ -3106,18 +3174,27 @@ class _CompletedAdventures extends StatelessWidget {
         ),
       );
     }
-    final itemCount = groupRuns.length + runs.length;
+    final itemCount = groupRuns.length + runs.length + events.length;
     return ListView.separated(
       key: const PageStorageKey('completed-adventures-scroll'),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
       itemCount: itemCount,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (context, index) => index < groupRuns.length
-          ? _ActiveGroupAdventureCard(lobby: groupRuns[index], now: now)
-          : _ActiveAdventureCard(
-              run: runs[index - groupRuns.length],
-              now: now,
-            ),
+      itemBuilder: (context, index) {
+        if (index < events.length) {
+          final p = events[index];
+          return EventRewardCard(
+              progress: p,
+              claim: () async {
+                await game.claimEventReward(p.key);
+              });
+        }
+        index -= events.length;
+        return index < groupRuns.length
+            ? _ActiveGroupAdventureCard(lobby: groupRuns[index], now: now)
+            : _ActiveAdventureCard(
+                run: runs[index - groupRuns.length], now: now);
+      },
     );
   }
 }

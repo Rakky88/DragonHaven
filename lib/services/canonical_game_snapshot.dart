@@ -6,6 +6,7 @@ import 'dart:convert';
 import '../models/house.dart';
 import '../models/dragon_school.dart';
 import '../models/adventure.dart';
+import '../models/event_progress.dart';
 import '../models/chest.dart';
 import '../models/egg_altar.dart';
 import '../models/mystic_relic.dart';
@@ -298,6 +299,12 @@ class CanonicalGameSnapshot {
         'adventures': {
           ...data['adventures'] as Map<String, dynamic>,
           'socialClaims': const [],
+          'activeEvents': const [],
+          // A partner can contribute without changing this owner's revision.
+          'eventProgress': const [],
+          'adventureOptionIds': Map<String, dynamic>.from(
+              data['adventures']['adventureOptionIds'] as Map)
+            ..remove('special'),
         },
       };
 
@@ -776,19 +783,67 @@ class CanonicalInventoryView {
           (reservedRelics['chronoshard:$reduction'] ?? 0);
 }
 
+class CanonicalSeasonalWindow {
+  CanonicalSeasonalWindow._parse(Object? raw) {
+    final data = _map(raw);
+    if (!_keys(data, const ['eventId', 'key', 'startsAt', 'endsAt']) ||
+        !_text(data['eventId']) ||
+        !_text(data['key']) ||
+        !_date(data['startsAt']) ||
+        !_date(data['endsAt'])) {
+      _invalid();
+    }
+    eventId = data['eventId'] as String;
+    key = data['key'] as String;
+    startsAt = DateTime.parse(data['startsAt'] as String);
+    endsAt = DateTime.parse(data['endsAt'] as String);
+    if (!endsAt.isAfter(startsAt) || !key.startsWith('$eventId:')) {
+      _invalid();
+    }
+  }
+  late final String eventId, key;
+  late final DateTime startsAt, endsAt;
+  SpecialAdventureEventDefinition? get definition =>
+      specialAdventureEventById(eventId);
+  bool contains(DateTime now) =>
+      !now.isBefore(startsAt) && now.isBefore(endsAt);
+}
+
 class CanonicalAdventuresView {
   CanonicalAdventuresView._parse(
       Map<String, dynamic> data, List<CanonicalDragonView> dragons) {
-    if (!_keys(data, const [
-      'adventureOptionIds',
-      'miniAdventureRefilledAt',
-      'shortAdventureRefilledAt',
-      'longAdventureRefillDay',
-      'socialClaims',
-      'runs'
-    ])) {
+    if (!_keys(
+        Map<String, dynamic>.from(data)
+          ..remove('eventProgress')
+          ..remove('activeEvents')
+          ..remove('dismissedEvents'),
+        const [
+          'adventureOptionIds',
+          'miniAdventureRefilledAt',
+          'shortAdventureRefilledAt',
+          'longAdventureRefillDay',
+          'socialClaims',
+          'runs'
+        ])) {
       _invalid();
     }
+    eventProgress = List.unmodifiable([
+      for (final raw in data['eventProgress'] as List? ?? const [])
+        EventProgress.fromJson(Map<String, dynamic>.from(raw as Map))
+    ]);
+    final rawWindows = data['activeEvents'] ?? const [];
+    if (rawWindows is! List || rawWindows.length > 1) {
+      _invalid();
+    }
+    activeEvents =
+        List.unmodifiable(rawWindows.map(CanonicalSeasonalWindow._parse));
+    final rawDismissals =
+        _map(data['dismissedEvents'] ?? const <String, dynamic>{});
+    if (rawDismissals.entries.any((e) => !_text(e.key) || !_date(e.value))) {
+      _invalid();
+    }
+    dismissedEvents = Map.unmodifiable(rawDismissals
+        .map((key, value) => MapEntry(key, DateTime.parse(value as String))));
     socialClaims = SocialRewardClaim.parseList(data['socialClaims']);
     final rawOptions = _map(data['adventureOptionIds']);
     options = Map.unmodifiable({
@@ -817,6 +872,9 @@ class CanonicalAdventuresView {
       _invalid();
     }
   }
+  late final List<EventProgress> eventProgress;
+  late final List<CanonicalSeasonalWindow> activeEvents;
+  late final Map<String, DateTime> dismissedEvents;
   late final Map<String, List<String>> options;
   late final List<CanonicalAdventureRun> runs;
   late final List<SocialRewardClaim> socialClaims;
