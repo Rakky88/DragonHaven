@@ -51,4 +51,6 @@ Existing signing certificate verified:
 [Version APK](https://github.com/Rakky88/DragonHaven/releases/download/v0.05.33/DragonHaven.apk)
 [Permanent APK](https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk)
 
-Publication API, digest and permanent link must be checked after upload.
+Publication verified: GitHub latest resolves to v0.05.33; asset size and SHA-256
+match the local APK, and the permanent download responds HTTP 200. Tag source:
+`dc8ef9d4dcf4c53f66ebd148318b88a65faf3396`.
