@@ -1,3 +1,4 @@
+import 'keeper_list_row.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -5,8 +6,44 @@ import '../l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 import '../models/social.dart';
 import '../providers/online_account_provider.dart';
-import 'online_account_access.dart';
 import '../theme/event_appearance.dart';
+import '../services/social_repository.dart';
+import 'online_account_access.dart';
+
+String eventPartnerErrorMessage(AppStrings s, Object error) {
+  final code = error is PostgrestException
+      ? error.message
+      : error is SocialException
+          ? error.code
+          : error is StateError
+              ? error.message.toString()
+              : '';
+  return switch (code) {
+    'sign_in' || 'online_login_required' => s.pick(
+        'Sign in to invite a friend.', 'Log in om een vriend uit te nodigen.'),
+    'event_partner_already_selected' => s.pick(
+        'One of you already has a partner or pending invitation for this event.',
+        'Een van jullie heeft al een partner of openstaande uitnodiging voor dit event.'),
+    'event_friend_required' => s.pick(
+        'You must be accepted friends before sharing event points.',
+        'Jullie moeten eerst geaccepteerde vrienden zijn om eventpunten te delen.'),
+    'event_partner_unavailable' || 'event_invitation_unavailable' => s.pick(
+        'This event or invitation is no longer available. Refresh the event and try again.',
+        'Dit event of deze uitnodiging is niet meer beschikbaar. Vernieuw het event en probeer opnieuw.'),
+    'cloud_save_conflict' => s.pick(
+        'Resolve the cloud-save conflict in Account Info before inviting a friend. Your progress has not been overwritten.',
+        'Los eerst het cloudconflict op bij Account Info voordat je een vriend uitnodigt. Je voortgang is niet overschreven.'),
+    'email_not_verified' ||
+    'online_timeout' ||
+    'cloud_save_too_large' ||
+    'cloud_save_unavailable' ||
+    'cloud_save_invalid' =>
+      socialMessage(s, code),
+    _ => s.pick(
+        'The invitation could not be synchronized. Check your connection and try again.',
+        'De uitnodiging kon niet worden gesynchroniseerd. Controleer je verbinding en probeer opnieuw.'),
+  };
+}
 
 /// The server owns invitations and the accepted two-keeper membership.
 class EventPartnerControl extends StatefulWidget {
@@ -29,7 +66,6 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
   List<Map<String, dynamic>> _pairs = [];
   bool _busy = false;
   String? _pairsOwner;
-  String? _error;
   Completer<void>? _idle;
   @override
   void initState() {
@@ -59,7 +95,6 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
     _idle = Completer<void>();
     setState(() {
       _busy = true;
-      _error = null;
     });
     try {
       final client = Supabase.instance.client;
@@ -97,15 +132,9 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
     } on Object catch (e) {
       if (!mounted) return;
       if (action != 'list') {
-        _error = e is StateError && e.message == 'sign_in' ? 'sign_in' : 'sync';
         final s = AppStrings.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(_error == 'sign_in'
-                ? s.pick('Sign in to invite a friend.',
-                    'Log in om een vriend uit te nodigen.')
-                : s.pick(
-                    'Invitation could not be saved. Let syncing finish and try again.',
-                    'De uitnodiging kon niet worden opgeslagen. Laat synchroniseren afronden en probeer opnieuw.'))));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(eventPartnerErrorMessage(s, e))));
       }
     } finally {
       _idle?.complete();
@@ -237,19 +266,15 @@ class EventFriendPicker extends StatelessWidget {
                     'Je vrienden verschijnen hier. Voeg eerst een vriend toe via Friends.'))),
           Expanded(
               child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: sorted.length,
                   itemBuilder: (context, index) {
                     final f = sorted[index];
-                    return ListTile(
+                    return KeeperListRow(
                         key: Key('event-friend-${f.userId}'),
-                        leading: KeeperPortrait(
-                            portraitKey: f.portraitKey,
-                            displayName: f.displayName,
-                            frameKey: f.frameKey,
-                            badgeKey: f.badgeKey,
-                            radius: 20),
-                        title: Text(f.displayName),
-                        trailing: const Icon(Icons.add_circle_outline),
+                        keeper: f,
+                        trailing: Icon(Icons.add_circle_outline,
+                            color: Theme.of(context).colorScheme.primary),
                         onTap: () => Navigator.pop(context, f));
                   })),
         ]));

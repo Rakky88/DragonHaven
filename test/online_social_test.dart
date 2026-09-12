@@ -2537,12 +2537,9 @@ void main() {
     expect(find.text(friendTitle), findsOneWidget);
     final friendTitleFinder = find.byKey(const Key('friend-title-friend-user'));
     final friendTitleText = tester.widget<Text>(friendTitleFinder);
-    expect(friendTitleText.maxLines, 2);
-    expect(tester.getSize(friendTitleFinder).width, greaterThan(190));
-    expect(
-      tester.getTopLeft(find.byKey(const Key('friend-message-friend-user'))).dy,
-      greaterThan(tester.getTopLeft(friendTitleFinder).dy),
-    );
+    expect(friendTitleText.maxLines, 1);
+    expect(tester.getSize(find.byKey(const Key('friend-friend-user'))).height,
+        lessThan(100));
     expect(find.byKey(const Key('friend-trade-friend-user')), findsOneWidget);
     expect(find.byKey(const Key('friend-message-friend-user')), findsOneWidget);
     expect(
@@ -2730,6 +2727,29 @@ void main() {
     online.dispose();
   });
 
+  test(
+      'event invitation waits for an in-flight backup without losing the request',
+      () async {
+    final game = HouseholdProvider(persistenceEnabled: false);
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    final gate = Completer<String>();
+    final online = OnlineAccountProvider(
+        repository: repository,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+        gameStateSnapshot: game.exportState,
+        deviceId: () => gate.future);
+    await online.initialize();
+    final saving = online.backupToCloud(automatic: true);
+    expect(online.busy, true);
+    final preparing = online.prepareEventPartnerSync();
+    gate.complete('test-device');
+    expect(await saving, true);
+    expect(await preparing, true);
+    expect(repository.cloudSave?.revision, 2);
+    online.dispose();
+    game.dispose();
+  });
+
   test('automatic backup coalesces progress to a fifteen-minute cadence',
       () async {
     var now = DateTime.utc(2026, 8, 28, 12);
@@ -2815,6 +2835,12 @@ void main() {
     expect(repository.cloudSave?.state['accountName'], 'Cloud Keeper');
     expect(game.accountName, 'Local Keeper');
     expect(storedBaseRevision, isNull);
+
+    await expectLater(
+        online.prepareEventPartnerSync(),
+        throwsA(isA<SocialException>()
+            .having((e) => e.code, 'code', 'cloud_save_conflict')));
+    expect(repository.cloudSave?.state['accountName'], 'Cloud Keeper');
 
     expect(await online.restoreFromCloud(), isTrue);
     expect(game.accountName, 'Cloud Keeper');

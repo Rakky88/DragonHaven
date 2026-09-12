@@ -1,3 +1,4 @@
+import 'package:dragon_haven/widgets/event_point_flight.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:dragon_haven/models/event_progress.dart';
@@ -68,12 +69,53 @@ void main() {
       await tester.pump();
       final button =
           find.byKey(const Key('event-claim-halloween_witchlight:launch:2026'));
-      expect(tester.widget<FilledButton>(button).onPressed != null, enabled);
+      if (points >= 8000) {
+        expect(tester.widget<FilledButton>(button).onPressed != null, enabled);
+      } else {
+        expect(button, findsNothing);
+      }
       if (enabled) await tester.tap(button);
       expect(find.text('Claim'), findsNothing);
       expect(tester.takeException(), isNull);
     }
     expect(clicks, 1);
+  });
+
+  testWidgets('Trial return sends credited points to the meter once',
+      (tester) async {
+    await tester.pumpWidget(app(progress(points: 100), () {}));
+    await tester.pump();
+    final context = tester.element(find.byType(EventProgressBar));
+    EventPointFlight.returnFromTrial(context, {progress().key: 5});
+    await tester.pump();
+    expect(find.text('+5'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+    EventPointFlight.returnFromTrial(context, {progress().key: 0});
+    await tester.pump();
+    expect(find.text('+0'), findsNothing);
+    expect(find.text('+5'), findsNothing);
+    await tester.pumpWidget(app(progress(points: 100), () {}, reduced: true));
+    await tester.pump();
+    EventPointFlight.returnFromTrial(
+        tester.element(find.byType(EventProgressBar)), {progress().key: 25});
+    await tester.pump();
+    expect(find.text('+25'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets(
+      'reward button appears only after the last visible fill completes',
+      (tester) async {
+    await tester.pumpWidget(app(progress(points: 7900), () {}));
+    await tester.pump();
+    final button = find.byKey(Key('event-claim-${progress().key}'));
+    expect(button, findsNothing);
+    await tester.pumpWidget(app(progress(points: 8000), () {}));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(button, findsNothing);
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(button, findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
   });
 
   testWidgets(

@@ -1,3 +1,6 @@
+import 'dart:async';
+import '../widgets/event_point_flight.dart';
+import '../widgets/event_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -24,12 +27,42 @@ class CanonicalTrialsScreen extends StatelessWidget {
       const ShopEconomyBoundary(child: _Trials());
 }
 
-class _Trials extends StatelessWidget {
+class _Trials extends StatefulWidget {
   const _Trials();
+  @override
+  State<_Trials> createState() => _TrialsState();
+}
+
+class _TrialsState extends State<_Trials> {
+  DateTime? _anchor;
+  final _elapsed = Stopwatch();
+  late final Timer _timer;
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    _elapsed.stop();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final session = context.watch<CanonicalGameSession>();
     final view = session.snapshot!;
+    if (_anchor != view.serverTime) {
+      _anchor = view.serverTime;
+      _elapsed
+        ..reset()
+        ..start();
+    }
+    final now = _anchor!.add(_elapsed.elapsed);
     final s = AppStrings.of(context);
     final actions = CanonicalGameActions(session);
     final active = view.trialAttempt;
@@ -43,6 +76,17 @@ class _Trials extends StatelessWidget {
             label: s.pick('Refresh', 'Vernieuwen'),
             action: session.canAct && !reserved ? actions.refresh : null)
       ]),
+      for (final progress in view.adventures.eventProgress.where((p) =>
+          p.activeAt(now) &&
+          view.adventures.activeEvents.any((w) => w.key == p.key)))
+        EventProgressBar(
+            key: ValueKey(progress.key),
+            progress: progress,
+            onClaim: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                    builder: (_) =>
+                        const Scaffold(body: CanonicalAdventuresScreen())))),
       const SizedBox(height: 8),
       Text(
           '${s.pick('7-day constellation', '7-daagse constellatie')} · ${view.data['trials']['trialStreakCount']}/7'),
@@ -78,12 +122,16 @@ class _Trials extends StatelessWidget {
                                   final source = CanonicalTrialRunSource(
                                       session, offer, active.dragonId,
                                       resumeAttemptId: active.id);
-                                  await Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                          builder: (_) => TrialGameScreen(
-                                              offerId: offer.id,
-                                              dragonId: active.dragonId,
-                                              source: source)));
+                                  await _withEventPointReturn(
+                                      context,
+                                      session,
+                                      () => Navigator.of(context).push<
+                                              TrialCompletion>(
+                                          MaterialPageRoute<TrialCompletion>(
+                                              builder: (_) => TrialGameScreen(
+                                                  offerId: offer.id,
+                                                  dragonId: active.dragonId,
+                                                  source: source))));
                                 }
                               : null),
                       CanonicalActionButton(
@@ -290,10 +338,34 @@ class _Trials extends StatelessWidget {
       return;
     }
     final source = CanonicalTrialRunSource(session, offer, id);
-    await Navigator.push(
+    await _withEventPointReturn(
         context,
-        MaterialPageRoute<void>(
-            builder: (_) => TrialGameScreen(
-                offerId: offer.id, dragonId: id, source: source)));
+        session,
+        () => Navigator.push<TrialCompletion>(
+            context,
+            MaterialPageRoute<TrialCompletion>(
+                builder: (_) => TrialGameScreen(
+                    offerId: offer.id, dragonId: id, source: source))));
   }
+}
+
+Future<void> _withEventPointReturn(
+    BuildContext context,
+    CanonicalGameSession session,
+    Future<TrialCompletion?> Function() play) async {
+  final owner = session.snapshot?.ownerId;
+  final before = {
+    for (final p in session.snapshot!.adventures.eventProgress) p.key: p.points
+  };
+  final completion = await play();
+  await Future<void>.delayed(const Duration(milliseconds: 350));
+  if (!context.mounted ||
+      completion == null ||
+      session.snapshot?.ownerId != owner) {
+    return;
+  }
+  EventPointFlight.returnFromTrial(context, {
+    for (final p in session.snapshot!.adventures.eventProgress)
+      if (before.containsKey(p.key)) p.key: p.points - before[p.key]!,
+  });
 }

@@ -483,7 +483,29 @@ class OnlineAccountProvider extends ChangeNotifier {
       }) ??
       false;
 
-  Future<bool> backupToCloud({bool automatic = false}) async =>
+  /// Wait for the current social/save operation instead of dropping an invite.
+  Future<bool> prepareEventPartnerSync() async {
+    final owner = currentUserId;
+    if (owner == null) return false;
+    final deadline = DateTime.now().add(_operationTimeout);
+    while (busy || _operationInFlight) {
+      final remaining = deadline.difference(DateTime.now());
+      if (remaining <= Duration.zero) {
+        throw const SocialException('online_timeout');
+      }
+      await _settledOperation.timeout(remaining,
+          onTimeout: () => throw const SocialException('online_timeout'));
+      if (currentUserId != owner) return false;
+    }
+    final success = await backupToCloud(automatic: true, reportErrors: true);
+    if (!success) throw SocialException(errorCode ?? 'online_unexpected_error');
+    return currentUserId == owner;
+  }
+
+  Future<void> _settledOperation = Future<void>.value();
+
+  Future<bool> backupToCloud(
+          {bool automatic = false, bool reportErrors = false}) async =>
       await _run('cloud_save.backup', () async {
         final snapshot = _gameStateSnapshot;
         final loadDeviceId = _deviceId;
@@ -522,7 +544,7 @@ class OnlineAccountProvider extends ChangeNotifier {
         cloudSaveHistory = const [];
         if (!automatic) noticeCode = 'cloud_save_backed_up';
         return true;
-      }, background: automatic) ??
+      }, background: automatic && !reportErrors) ??
       false;
 
   Future<bool> replaceCloudWithLocal() async =>
@@ -1765,6 +1787,8 @@ class OnlineAccountProvider extends ChangeNotifier {
       _notify();
     }
     final operationFuture = Future<T>.sync(operation);
+    _settledOperation = operationFuture.then<void>((_) {},
+        onError: (Object _, StackTrace __) {});
     unawaited(operationFuture.then<void>(
       (_) => _operationInFlight = false,
       onError: (Object _, StackTrace __) => _operationInFlight = false,

@@ -1,4 +1,21 @@
-# DragonHaven current release audit - v0.05.32 / 10082
+# DragonHaven current release audit - v0.05.33 / 10083
+
+All 939 Flutter tests pass and analysis is clean. Trial returns animate only
+credited event points, including legacy and canonical paths. Meter end icons
+no longer hide the liquid: the chest appears after the filling animation ends.
+Compact friend rows reserve identical portrait space with and without frames.
+
+Invitation preparation waits for ongoing social/cloud operations; revision
+conflicts remain protected and are explained explicitly. Real staging Auth/RPC
+tests confirm invitations work without the recipient having an active event
+save or open client, and independent preview keys still share correct points.
+All temporary probe accounts were removed. Production preflight is healthy
+with 83 matching migrations and zero lint errors. The generated worker is
+unchanged; no server deployment or authority changes are needed.
+
+See [v0.05.33 verification](RELEASE_V0.05.33_VERIFICATION.md).
+
+## Previous release audit - v0.05.32 / 10082
 
 The event header now contains only the current event's 58dp themed glass meter.
 Expiry, server end-event synchronization and switching/restarting previews remove

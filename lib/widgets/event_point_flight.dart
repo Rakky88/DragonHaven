@@ -4,6 +4,18 @@ import 'package:flutter/gestures.dart';
 
 /// Presentation only: the saved reward never depends on animation completion.
 class EventPointFlight {
+  static final trialRewards = ValueNotifier<Map<String, int>>({});
+
+  /// Called after the Trial result route has left the screen.
+  static void returnFromTrial(BuildContext context, Map<String, int> earned) {
+    if (!earned.values.any((points) => points > 0)) return;
+    _origin = Offset(MediaQuery.sizeOf(context).width / 2,
+        MediaQuery.sizeOf(context).height * .72);
+    _claimedAt = DateTime.now();
+    trialRewards.value = Map.of(earned);
+    _claimedAt = null;
+  }
+
   static Offset? _pointer;
   static Offset? _origin;
   static DateTime? _claimedAt;

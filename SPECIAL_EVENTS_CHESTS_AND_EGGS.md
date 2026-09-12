@@ -1,5 +1,9 @@
 # DragonHaven Special Events, Chests, and Eggs
 
+The existing-friend picker shares compact, theme-tinted keeper rows with the
+Friends screen. Each portrait has a fixed 64dp slot with a 40dp portrait, so
+vanity frames and badges do not change row height or name alignment.
+
 ## Event points (current rules)
 
 Calendar events no longer offer an Event Adventure. During the event, Mini
@@ -30,7 +34,9 @@ are refused. Offline contributions synchronize on reconnect; conflicts never
 silently replace another device's save.
 
 The active event uses a 58dp-high glass reservoir with engraved metalwork,
-event-colored liquid, small themed motifs and the actual chest sprite. There
+event-colored liquid and small themed motifs. The whole liquid chamber is
+visible, with no logo or chest covering low or nearly-full progress. The actual
+chest button appears only once the animated fill reaches the end. There
 is no visible event name or numerical point counter in the meter. Its progress
 remains available to screen readers. The friend action is a single compact
 icon beside the tube; it opens the existing-friend picker directly, or the
@@ -43,12 +49,20 @@ Pending Adventure claims never keep a retired meter on screen. Stored points
 and already-earned chest entitlements remain intact: Completed Adventures is
 the place to claim a completed event reward after its meter disappears.
 
-Claimed Adventure points still fly into an active meter. Reduced-motion settings
+Claimed Adventure points still fly into an active meter. Trials with C or better
+also send their credited points into the meter after the result screen closes;
+D, cancellation and rejected/uncredited results do not animate a reward.
+Reduced-motion settings
 stop ambient liquid effects and particles and apply fill changes immediately.
 A full unclaimed chest glows and opens Completed Adventures; claimed chests show
-a check. Calendar events still award only their versioned Special Chest. Existing
+their opened sprite. Calendar events still award only their versioned Special Chest. Existing
 started seasonal Adventures retain their original rewards as a legacy path.
 Chest contents and egg genetics/odds remain unchanged.
+
+Event invitations wait for an in-flight social/save operation before uploading
+the sender's progress. Cloud revision conflicts remain protected and are shown
+explicitly. The recipient need not have the app or event open when invited;
+the existing server friendship, eligibility and partner-exclusivity rules apply.
 
 | Event | Amsterdam availability | Target | Points prize |
 |---|---|---:|---|
@@ -299,7 +313,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: c302e659f909df42 -->
+<!-- reference-source-fingerprint: 1e22951900d188fc -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

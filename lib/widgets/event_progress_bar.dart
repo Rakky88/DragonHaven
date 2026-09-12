@@ -38,6 +38,19 @@ class _EventProgressBarState extends State<EventProgressBar>
     super.initState();
     _points = widget.progress.points;
     EventPointFlight.attach();
+    EventPointFlight.trialRewards.addListener(_trialReward);
+  }
+
+  void _trialReward() {
+    final points =
+        EventPointFlight.trialRewards.value[widget.progress.key] ?? 0;
+    if (points <= 0 || !mounted) return;
+    EventPointFlight.show(
+        context,
+        _destination,
+        EventAppearance.logoForEvent(widget.progress.eventId),
+        EventAppearance.forEvent(widget.progress.eventId).accent,
+        points);
   }
 
   @override
@@ -61,6 +74,7 @@ class _EventProgressBarState extends State<EventProgressBar>
   @override
   void dispose() {
     EventPointFlight.detach();
+    EventPointFlight.trialRewards.removeListener(_trialReward);
     _glimmer.dispose();
     super.dispose();
   }
@@ -80,61 +94,47 @@ class _EventProgressBarState extends State<EventProgressBar>
           height: 58,
           child: Row(children: [
             Expanded(
-                child: Stack(alignment: Alignment.center, children: [
-              Positioned.fill(
-                  child: TweenAnimationBuilder<double>(
-                      key: _destination,
-                      tween: Tween(end: p.fraction),
-                      duration: reduced
-                          ? Duration.zero
-                          : const Duration(milliseconds: 1100),
-                      curve: Curves.easeInOutCubic,
-                      builder: (context, fill, child) => AnimatedBuilder(
-                          animation: _glimmer,
-                          builder: (context, child) => CustomPaint(
-                              painter: _ElixirPainter(fill, _glimmer.value,
-                                  theme, p.eventId, p.canClaim))))),
-              Row(children: [
-                const SizedBox(width: 5),
-                Image.asset(EventAppearance.logoForEvent(p.eventId),
-                    width: 36, height: 44, excludeFromSemantics: true),
-                const Spacer(),
-                Tooltip(
-                    message: p.claimed
-                        ? s.pick('Claimed', 'Opgehaald')
-                        : p.canClaim
-                            ? s.pick('Claim', 'Ophalen')
-                            : s.pick('Event reward', 'Eventbeloning'),
-                    child: SizedBox(
-                        width: 52,
-                        height: 52,
-                        child: FilledButton(
-                            key: Key('event-claim-${p.key}'),
-                            style: FilledButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                backgroundColor: Colors.transparent,
-                                disabledBackgroundColor: Colors.transparent,
-                                shape: const CircleBorder()),
-                            onPressed: p.canClaim ? widget.onClaim : null,
-                            child:
-                                Stack(alignment: Alignment.center, children: [
-                              Image.asset(
+                child: TweenAnimationBuilder<double>(
+              key: _destination,
+              tween: Tween(end: p.fraction),
+              duration:
+                  reduced ? Duration.zero : const Duration(milliseconds: 1100),
+              curve: Curves.easeInOutCubic,
+              builder: (context, fill, child) =>
+                  Stack(alignment: Alignment.center, children: [
+                Positioned.fill(
+                    child: AnimatedBuilder(
+                        animation: _glimmer,
+                        builder: (context, child) => CustomPaint(
+                            painter: _ElixirPainter(fill, _glimmer.value, theme,
+                                p.eventId, fill >= 1 && p.canClaim)))),
+                if (fill >= 1 && p.complete)
+                  Align(
+                      alignment: Alignment.centerRight,
+                      child: Tooltip(
+                        message: p.claimed
+                            ? s.pick('Claimed', 'Opgehaald')
+                            : s.pick('Claim', 'Ophalen'),
+                        child: SizedBox.square(
+                            dimension: 52,
+                            child: FilledButton(
+                              key: Key('event-claim-${p.key}'),
+                              style: FilledButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  backgroundColor: theme.primary,
+                                  shape: const CircleBorder()),
+                              onPressed: p.canClaim ? widget.onClaim : null,
+                              child: Image.asset(
                                   p.claimed
                                       ? chest.openedAssetPath
                                       : chest.closedAssetPath,
-                                  height: 42,
                                   width: 46,
+                                  height: 42,
                                   excludeFromSemantics: true),
-                              if (p.claimed)
-                                const Positioned(
-                                    right: 1,
-                                    bottom: 0,
-                                    child: Icon(Icons.check_circle,
-                                        size: 14, color: Colors.white)),
-                            ])))),
-                const SizedBox(width: 3),
+                            )),
+                      )),
               ]),
-            ])),
+            )),
             if (widget.partnerAction != null)
               SizedBox(width: 48, child: widget.partnerAction!),
           ])),
@@ -153,7 +153,7 @@ class _ElixirPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final mid = size.height / 2;
-    final left = 25.0, right = size.width - 29;
+    final left = 5.0, right = size.width - 5;
     if (right <= left) return;
     final gold = Color.lerp(theme.accent, const Color(0xFFD7B970), .65)!;
     final outer = RRect.fromRectAndRadius(
@@ -269,22 +269,6 @@ class _ElixirPainter extends CustomPainter {
         canvas.drawPath(vine, line);
         _motif(canvas, Offset(56, mid + sign * 20), gold, sign);
       }
-      canvas.drawCircle(
-          Offset(23, mid),
-          19,
-          Paint()
-            ..shader = RadialGradient(colors: [
-              theme.primary,
-              Color.lerp(theme.primary, Colors.black, .55)!
-            ]).createShader(
-                Rect.fromCircle(center: Offset(23, mid), radius: 19)));
-      canvas.drawCircle(Offset(23, mid), 19, line..strokeWidth = 1.4);
-      canvas.drawCircle(
-          Offset(23, mid),
-          16,
-          line
-            ..color = gold.withValues(alpha: .3)
-            ..strokeWidth = .7);
       canvas.restore();
     }
     if (ready) {

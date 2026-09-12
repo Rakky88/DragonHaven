@@ -13,6 +13,7 @@ import '../widgets/dragon_art.dart';
 import '../widgets/dragon_trial_records.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
+import '../widgets/keeper_list_row.dart';
 import 'draconomicon_screen.dart';
 import 'conclave_screen.dart';
 import 'friend_messages_screen.dart';
@@ -495,235 +496,45 @@ class _FriendTile extends StatelessWidget {
     final online = context.watch<OnlineAccountProvider>();
     final activeTrades = online.tradesWith(friend.userId);
     final conversation = online.conversationWith(friend.userId);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        key: Key('friend-${friend.userId}'),
-        onTap: () => _showFriendProfile(context, friend),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(11, 11, 8, 11),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.white, Color(0xFFFFF8E8)],
-            ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  KeeperPortrait(
-                    portraitKey: friend.portraitKey,
-                    displayName: friend.displayName,
-                    frameKey: friend.frameKey,
-                    badgeKey: friend.badgeKey,
-                    radius: 29,
-                  ),
-                  const SizedBox(width: 11),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 3, right: 3),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            friend.displayName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            keeperTitleLabel(strings, friend.title),
-                            key: Key('friend-title-${friend.userId}'),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.muted,
-                              height: 1.18,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 9),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.eventColor(
-                              context, const Color(0xFFEDE8FF)),
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            '${friend.discoveredDragonFormCount} ${strings.pick('dragons discovered', 'draken ontdekt')}',
-                            key: Key(
-                              'friend-dragons-discovered-${friend.userId}',
-                            ),
-                            maxLines: 1,
-                            softWrap: false,
-                            style: TextStyle(
-                              color: AppColors.eventColor(
-                                  context, AppColors.twilight),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 7),
-                  _FriendMessageButton(
-                    key: Key('friend-message-${friend.userId}'),
-                    tooltip: strings.pick('Messages', 'Berichten'),
-                    unreadCount: conversation?.unreadCount ?? 0,
-                    unreadKey: Key('friend-message-unread-${friend.userId}'),
-                    onPressed: () => _openFriendMessages(context, friend),
-                  ),
-                  const SizedBox(width: 7),
-                  _FriendTradeButton(
-                    key: Key('friend-trade-${friend.userId}'),
-                    activeCount: activeTrades.length,
-                    tooltip: activeTrades.isEmpty
-                        ? strings.pick('Start trade', 'Ruil starten')
-                        : strings.pick('Open trade', 'Ruil openen'),
-                    onPressed: () => activeTrades.isEmpty
-                        ? _startTrade(context, friend)
-                        : _showTrade(context, activeTrades.first),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FriendMessageButton extends StatelessWidget {
-  const _FriendMessageButton({
-    super.key,
-    required this.tooltip,
-    required this.unreadCount,
-    required this.unreadKey,
-    required this.onPressed,
-  });
-
-  final String tooltip;
-  final int unreadCount;
-  final Key unreadKey;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final strings = AppStrings.of(context);
-    return Semantics(
-      button: true,
-      label: tooltip,
-      child: Tooltip(
-        message: tooltip,
-        child: Material(
-          color: Colors.transparent,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: onPressed,
-                child: Ink(
-                  width: 58,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white,
-                          AppColors.eventColor(
-                              context, const Color(0xFFF1ECFF)),
-                        ]),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.eventColor(
-                          context, const Color(0xFF7654AE)),
-                      width: 1.4,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x292D195F),
-                        blurRadius: 7,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const GameIconSprite(
-                        GameIconKind.friendsMessage,
-                        size: 34,
-                      ),
-                      Text(
-                        strings.pick('CHAT', 'CHAT'),
-                        style: const TextStyle(
-                          color: AppColors.ink,
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              if (unreadCount > 0)
-                Positioned(
-                  right: -4,
-                  top: -5,
-                  child: Container(
-                    key: unreadKey,
-                    constraints: const BoxConstraints(minWidth: 20),
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    child: Text(
-                      '$unreadCount',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
+    return KeeperListRow(
+      key: Key('friend-${friend.userId}'),
+      keeper: friend,
+      onTap: () => _showFriendProfile(context, friend),
+      subtitle: Text(keeperTitleLabel(strings, friend.title),
+          key: Key('friend-title-${friend.userId}'),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis),
+      detail: Text(
+          '${friend.discoveredDragonFormCount} ${strings.pick('dragons discovered', 'draken ontdekt')}',
+          key: Key('friend-dragons-discovered-${friend.userId}'),
+          softWrap: false,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis),
+      trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+        IconButton(
+            key: Key('friend-message-${friend.userId}'),
+            tooltip: strings.pick('Messages', 'Berichten'),
+            onPressed: () => _openFriendMessages(context, friend),
+            icon: Badge.count(
+                key: Key('friend-message-unread-${friend.userId}'),
+                count: conversation?.unreadCount ?? 0,
+                isLabelVisible: (conversation?.unreadCount ?? 0) > 0,
+                child: const GameIconSprite(GameIconKind.friendsMessage,
+                    size: 30))),
+        IconButton(
+            key: Key('friend-trade-${friend.userId}'),
+            tooltip: activeTrades.isEmpty
+                ? strings.pick('Start trade', 'Ruil starten')
+                : strings.pick('Open trade', 'Ruil openen'),
+            onPressed: () => activeTrades.isEmpty
+                ? _startTrade(context, friend)
+                : _showTrade(context, activeTrades.first),
+            icon: Badge.count(
+                count: activeTrades.length,
+                isLabelVisible: activeTrades.isNotEmpty,
+                child:
+                    const GameIconSprite(GameIconKind.friendsTrade, size: 30))),
+      ]),
     );
   }
 }
@@ -1071,90 +882,6 @@ class _FavoriteDragonCard extends StatelessWidget {
             runeweaverBest: dragon.runeweaverBest,
           ),
         ]),
-      ),
-    );
-  }
-}
-
-class _FriendTradeButton extends StatelessWidget {
-  const _FriendTradeButton({
-    super.key,
-    required this.activeCount,
-    required this.tooltip,
-    required this.onPressed,
-  });
-
-  final int activeCount;
-  final String tooltip;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final strings = AppStrings.of(context);
-    final active = activeCount > 0;
-    return Semantics(
-      button: true,
-      label: tooltip,
-      child: Tooltip(
-        message: tooltip,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(18),
-            onTap: onPressed,
-            child: Ink(
-              width: 58,
-              height: 60,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: active
-                      ? const [Color(0xFF5C3C99), Color(0xFF32205F)]
-                      : const [Color(0xFFFFF4B3), Color(0xFFE7C763)],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: active
-                      ? const Color(0xFFF3D77A)
-                      : const Color(0xFF9A6A21),
-                  width: 1.5,
-                ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x332D195F),
-                    blurRadius: 8,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Badge(
-                    isLabelVisible: active,
-                    label: Text('$activeCount'),
-                    child: const GameIconSprite(
-                      GameIconKind.friendsTrade,
-                      size: 34,
-                    ),
-                  ),
-                  Text(
-                    active
-                        ? strings.pick('OPEN', 'OPEN')
-                        : strings.pick('TRADE', 'RUIL'),
-                    style: TextStyle(
-                      color: active ? Colors.white : const Color(0xFF4A2D11),
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: .5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

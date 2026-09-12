@@ -1,5 +1,48 @@
 // German, Spanish, French, Italian, Portuguese, Japanese.
 const eventPointsPhraseTranslations = <String, List<String>>{
+  'One of you already has a partner or pending invitation for this event.': [
+    'Einer von euch hat bereits einen Partner oder eine offene Einladung für dieses Event.',
+    'Uno de vosotros ya tiene pareja o una invitación pendiente para este evento.',
+    'L’un de vous a déjà un partenaire ou une invitation en attente pour cet événement.',
+    'Uno di voi ha già un compagno o un invito in sospeso per questo evento.',
+    'Um de vocês já tem um parceiro ou um convite pendente para este evento.',
+    'どちらかに、このイベントのパートナーまたは保留中の招待がすでにあります。'
+  ],
+  'You must be accepted friends before sharing event points.': [
+    'Ihr müsst erst eine bestätigte Freundschaft haben, um Eventpunkte zu teilen.',
+    'Debéis aceptar la amistad antes de compartir puntos del evento.',
+    'Vous devez accepter votre demande d’amitié avant de partager les points d’événement.',
+    'Dovete accettare l’amicizia prima di condividere i punti evento.',
+    'Têm de aceitar a amizade antes de partilhar os pontos do evento.',
+    'イベントポイントを共有するには、先にフレンド申請を承認する必要があります。'
+  ],
+  'This event or invitation is no longer available. Refresh the event and try again.':
+      [
+    'Dieses Event oder diese Einladung ist nicht mehr verfügbar. Aktualisiere das Event und versuche es erneut.',
+    'Este evento o invitación ya no está disponible. Actualiza el evento e inténtalo de nuevo.',
+    'Cet événement ou cette invitation n’est plus disponible. Actualise l’événement et réessaie.',
+    'Questo evento o invito non è più disponibile. Aggiorna l’evento e riprova.',
+    'Este evento ou convite já não está disponível. Atualiza o evento e tenta novamente.',
+    'このイベントまたは招待は利用できなくなりました。イベントを更新して、もう一度お試しください。'
+  ],
+  'Resolve the cloud-save conflict in Account Info before inviting a friend. Your progress has not been overwritten.':
+      [
+    'Löse zuerst den Cloud-Speicherkonflikt in den Kontoinformationen, bevor du einen Freund einlädst. Dein Fortschritt wurde nicht überschrieben.',
+    'Resuelve el conflicto de guardado en la nube en Información de cuenta antes de invitar a un amigo. Tu progreso no se ha sobrescrito.',
+    'Résous le conflit de sauvegarde cloud dans les informations du compte avant d’inviter un ami. Ta progression n’a pas été écrasée.',
+    'Risolvi il conflitto del salvataggio cloud nelle informazioni dell’account prima di invitare un amico. I tuoi progressi non sono stati sovrascritti.',
+    'Resolve o conflito de gravação na nuvem nas informações da conta antes de convidar um amigo. O teu progresso não foi substituído.',
+    '友達を招待する前に、アカウント情報でクラウドセーブの競合を解決してください。進行状況は上書きされていません。'
+  ],
+  'The invitation could not be synchronized. Check your connection and try again.':
+      [
+    'Die Einladung konnte nicht synchronisiert werden. Prüfe deine Verbindung und versuche es erneut.',
+    'No se pudo sincronizar la invitación. Comprueba tu conexión e inténtalo de nuevo.',
+    'Impossible de synchroniser l’invitation. Vérifie ta connexion et réessaie.',
+    'Impossibile sincronizzare l’invito. Controlla la connessione e riprova.',
+    'Não foi possível sincronizar o convite. Verifica a ligação e tenta novamente.',
+    '招待を同期できませんでした。接続を確認して、もう一度お試しください。'
+  ],
   'Sign in to invite a friend.': [
     'Melde dich an, um einen Freund einzuladen.',
     'Inicia sesión para invitar a un amigo.',

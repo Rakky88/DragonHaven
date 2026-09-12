@@ -88,7 +88,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
           eventKey: progress.key,
           showControls: progress.activeAt(game.currentTime),
           beforeSync: () async {
-            if (!online.isSignedIn || online.busy) {
+            if (!online.isSignedIn) {
               return false;
             }
             if (_eventUploadedOwner == online.currentUserId &&
@@ -97,7 +97,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
             }
             final revision = game.localMutationRevision;
             final owner = online.currentUserId;
-            final success = await online.backupToCloud(automatic: true);
+            final success = await online.prepareEventPartnerSync();
             if (success && online.currentUserId == owner) {
               _eventUploadedOwner = owner;
               _eventUploadedRevision = revision;
@@ -836,9 +836,13 @@ Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
     return;
   }
   if (!context.mounted) return;
+  final eventPointsBefore = {
+    for (final p in game.activeEventProgress) p.key: p.points
+  };
+  TrialCompletion? completion;
   game.beginPresentationDeferral();
   try {
-    await Navigator.of(context).push<TrialCompletion>(
+    completion = await Navigator.of(context).push<TrialCompletion>(
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => TrialGameScreen(
@@ -854,6 +858,13 @@ Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
     // the result/reward flow cannot remain visible underneath a reveal.
     await Future<void>.delayed(const Duration(milliseconds: 350));
     game.endPresentationDeferral();
+    if (context.mounted && completion != null) {
+      EventPointFlight.returnFromTrial(context, {
+        for (final p in game.activeEventProgress)
+          if (eventPointsBefore.containsKey(p.key))
+            p.key: p.points - eventPointsBefore[p.key]!,
+      });
+    }
   }
 }
 
