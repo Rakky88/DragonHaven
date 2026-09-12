@@ -1,3 +1,4 @@
+import '../widgets/event_point_flight.dart';
 import '../widgets/event_progress_bar.dart';
 import '../widgets/event_partner_control.dart';
 import '../services/canonical_groups.dart';
@@ -199,7 +200,10 @@ class _AdventuresState extends State<_Adventures> {
                                   label: s.pick('Claim', 'Ophalen'),
                                   action: session.canAct
                                       ? () async {
-                                          await actions.claimAdventure(run.id);
+                                          await EventPointFlight.claim(
+                                              context,
+                                              () => actions
+                                                  .claimAdventure(run.id));
                                         }
                                       : null),
                           ]))),

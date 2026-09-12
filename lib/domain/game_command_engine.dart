@@ -65,11 +65,6 @@ abstract final class GameCommandEngine {
       if (game.eggAltar.ownerId != null && game.eggAltar.ownerId != keeperId) {
         throw const GameCommandException('game_state_owner_mismatch');
       }
-      for (final claim in SocialRewardClaim.parseList(verifiedSocialClaims)) {
-        if (claim.kind == SocialRewardKind.group) {
-          game.recordGroupEventCompletion(claim.id, claim.readyAt);
-        }
-      }
       game.applyEventPartnerPoints(verifiedEventProgress, keeperId);
       game.initializeEventProgress();
       SocialDragonReservations.apply(
@@ -160,6 +155,17 @@ abstract final class GameCommandEngine {
                 _ => 'prizeId',
               }),
               context: verifiedSocialContext);
+          if (action == 'claim_group_reward' &&
+              (result as Map)['alreadyApplied'] == false) {
+            final claim = SocialRewardClaim.parseList(verifiedSocialClaims)
+                .where((c) =>
+                    c.kind == SocialRewardKind.group &&
+                    c.id == args.text('lobbyId'))
+                .firstOrNull;
+            if (claim != null) {
+              game.recordGroupEventCompletion(claim.id, claim.readyAt);
+            }
+          }
         case 'claim_event_reward':
           result = await game.claimEventReward(args.text('eventKey'));
         case 'refresh':

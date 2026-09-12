@@ -6,8 +6,12 @@ Calendar events no longer offer an Event Adventure. During the event, Mini
 Adventures award 5 points, Small/Short Adventures 20, and Large/Long or Group
 Adventures 50. Ordinary and seasonal Trials award D=0, C=5, B=10, A=15, S=20,
 S+=25. School lessons and returning-dragon Specials award no event points.
-Adventure completion time determines eligibility, including when the app resumes
-later; Trials must finish before closing. Completion IDs prevent duplicate points.
+Adventure points are credited only when the reward is claimed. The original
+completion time determines eligibility: a journey that finished during the event
+still earns those points when claimed after closing. Refreshing timers grants no
+points. Saved pre-v0.05.31 reward-ready runs keep their already-credited points
+and cannot credit them again. Group claims use the same rule and retained IDs.
+Trials still award points when they finish before closing.
 
 The target is 1,000 points per full scheduled calendar day, with no daily cap or
 reset. Valentine uses 2,000 per day. One accepted friend invitation combines both
@@ -26,8 +30,11 @@ are refused. Offline contributions synchronize on reconnect; conflicts never
 silently replace another device's save.
 
 The animated event bar is shown at the top of Adventures, with event colors,
-flowing lights and a glowing reward seal. Reduced-motion settings stop ambient
-animation and make fill changes immediate. A full seal says Claim and opens
+flowing lights, a small event illustration and the actual event chest sprite.
+Claimed Adventure points fly from the claim button into the compact bar. The
+Valentine invite control sits inside that panel and opens an alphabetized list
+of existing friends with portraits; it does not ask for a Keeper code. Reduced-motion settings stop ambient
+animation and flying particles and make fill changes immediate. A full seal says Claim and opens
 Completed Adventures. Claiming awards the event's existing versioned Special
 Chest only, keeps the bar full, removes Claim and disables its link. Completed
 unclaimed rewards remain in Completed Adventures indefinitely after closing;
@@ -59,6 +66,13 @@ New Year closes at January 7 00:00 Europe/Amsterdam. Calendar days determine
 points targets across daylight-saving transitions. Existing 48-hour personal
 previews use 2,000 points (4,000 for Valentine) and retain the existing production
 simulation policy: claiming a preview never grants permanent chest inventory.
+
+Migration `202609120083_event_claim_partner_windows.sql` maps each friend's
+independently activated Valentine preview to its own progress key. Invitation
+visibility and shared totals use those member keys; production occurrences are
+never combined with previews or a different year. Existing points and chest
+entitlements are preserved. Busy background backup polling no longer displays
+a false invitation error; explicit actions still report a failed sync.
 
 Migration `202609120080_event_points.sql` adds the invitation contract and shared
 canonical progress read/command input. It also updates New Year on the server.
@@ -279,7 +293,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 20455d4c0e066e79 -->
+<!-- reference-source-fingerprint: cfa95b5f7814c565 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

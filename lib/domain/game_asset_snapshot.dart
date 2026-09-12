@@ -202,6 +202,8 @@ class GameAssetSnapshot {
       _assets[key] = _canonical(key == 'adventureRuns'
           ? (state[key] as List).map((raw) {
               final run = Map<String, dynamic>.from(raw as Map);
+              run.putIfAbsent(
+                  'eventPointsAwarded', () => run['status'] == 'rewardReady');
               for (final clock in ['startedAt', 'endsAt']) {
                 final instant = DateTime.tryParse(run[clock]?.toString() ?? '');
                 if (instant == null) {

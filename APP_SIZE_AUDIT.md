@@ -1,5 +1,10 @@
 # DragonHaven Android-appgrootteaudit
 
+## Meting v0.05.31 - 12 september 2026
+
+De universele APK meet **628178046 bytes**, SHA-256 `dcd12aea08e277970a0415841483a1affd59502934bb6e7f27b0419e338d84b5`.
+Bestaande sprites zijn hergebruikt; artwork- en audiokwaliteit zijn behouden.
+
 ## Meting v0.05.30 ? 12 september 2026
 
 De universele release-APK meet **628.161.582 bytes** (628,16 MB / 599,06 MiB),

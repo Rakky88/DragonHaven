@@ -1,5 +1,8 @@
 # DragonHaven Random Rewards and Odds
 
+v0.05.31 changes Adventure event-point credit timing to reward claim. The chest
+roll still occurs when a journey finishes; no reward amounts or odds change.
+
 The current calendar-event points prize is exactly one existing event-specific Special Chest. Chest and egg contents and odds remain unchanged. Historical Golden Wings direct random relic rewards and other direct Adventure bundles apply only to already-started Event Adventures; points claims award only the chest.
 
 
@@ -190,7 +193,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 1be41fbd94ba853e -->
+<!-- reference-source-fingerprint: 8bf30ab9de4597fb -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

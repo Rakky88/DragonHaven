@@ -1142,11 +1142,15 @@ class OnlineAccountProvider extends ChangeNotifier {
 
   Future<GroupAdventureReward?> claimGroupReward(String lobbyId) =>
       _run('group.claim_reward', () async {
+        final completedAt = myGroupAdventures
+            .where((lobby) => lobby.id == lobbyId)
+            .firstOrNull
+            ?.endsAt;
         final reward = await _repository.claimGroupReward(lobbyId);
         if (reward == null) {
           throw const SocialException('group_reward_not_ready');
         }
-        if (!await _applyGroupReward(reward)) {
+        if (!await _applyGroupReward(reward.withCompletion(completedAt))) {
           throw const SocialException('group_reward_apply_failed');
         }
         await _repository.acknowledgeGroupReward(lobbyId);

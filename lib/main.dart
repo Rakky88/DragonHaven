@@ -123,6 +123,7 @@ Future<void> main() async {
       statPoints: reward.statPoints,
       chestTier: reward.chestTier,
       participantCount: reward.participantCount,
+      completedAt: reward.completedAt,
     ),
     synchronizeTradeReservations: game.synchronizeOnlineTradeReservations,
     applyTradeSettlement: (settlement) => game.applyOnlineTradeSettlement(

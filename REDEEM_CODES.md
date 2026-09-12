@@ -1,5 +1,9 @@
 # DragonHaven Redeem Codes
 
+v0.05.31 keeps the active catalog and preview reward policy unchanged. Adventure
+points in previews now arrive at reward claim, with a compact sprite bar and an
+existing-friend picker for Valentine.
+
 Event previews now show a points bar instead of offering an Event Adventure. The 48-hour preview requires 2,000 points, or 4,000 for Valentine. The existing production simulation policy and each event chest remain unchanged. New Year production dates are January 1-6 inclusive, from 2027.
 
 
@@ -188,7 +192,7 @@ Last verified: 10 September 2026
 
 Ruleset: v0.05.29 / 10079 published; production remains at schema 65; current staging verification is recorded above. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
 
-<!-- reference-source-fingerprint: 60ccd392e9bda604 -->
+<!-- reference-source-fingerprint: 9a8b459aa0832c04 -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 

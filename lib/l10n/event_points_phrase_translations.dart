@@ -1,5 +1,85 @@
 // German, Spanish, French, Italian, Portuguese, Japanese.
 const eventPointsPhraseTranslations = <String, List<String>>{
+  'Sign in to invite a friend.': [
+    'Melde dich an, um einen Freund einzuladen.',
+    'Inicia sesión para invitar a un amigo.',
+    'Connecte-toi pour inviter un ami.',
+    'Accedi per invitare un amico.',
+    'Inicia sessão para convidar um amigo.',
+    'ログインして友達を招待しましょう。'
+  ],
+  'Invitation could not be saved. Let syncing finish and try again.': [
+    'Die Einladung konnte nicht gespeichert werden. Warte auf die Synchronisierung und versuche es erneut.',
+    'No se pudo guardar la invitación. Espera a que termine la sincronización e inténtalo de nuevo.',
+    'Impossible de sauvegarder l’invitation. Attends la fin de la synchronisation et réessaie.',
+    'Impossibile salvare l’invito. Attendi la sincronizzazione e riprova.',
+    'Não foi possível guardar o convite. Aguarda a sincronização e tenta novamente.',
+    '招待を保存できませんでした。同期が完了してからもう一度お試しください。'
+  ],
+  'your friend': [
+    'deinem Freund',
+    'tu amigo',
+    'ton ami',
+    'il tuo amico',
+    'o teu amigo',
+    '友達'
+  ],
+  'Invite a friend': [
+    'Freund einladen',
+    'Invitar a un amigo',
+    'Inviter un ami',
+    'Invita un amico',
+    'Convidar um amigo',
+    '友達を招待'
+  ],
+  'Choose a friend': [
+    'Freund auswählen',
+    'Elige un amigo',
+    'Choisis un ami',
+    'Scegli un amico',
+    'Escolhe um amigo',
+    '友達を選ぶ'
+  ],
+  'Combine your event points and each earn a chest.': [
+    'Sammelt gemeinsam Eventpunkte und verdient jeweils eine Truhe.',
+    'Combinad vuestros puntos del evento y ganad un cofre cada uno.',
+    'Cumulez vos points d’événement et gagnez chacun un coffre.',
+    'Unite i punti evento e ottenete un forziere ciascuno.',
+    'Juntem os pontos do evento e ganhem um baú cada um.',
+    'イベントポイントを合算して、それぞれ宝箱を獲得しましょう。'
+  ],
+  'Your friends will appear here. Add a friend in Friends first.': [
+    'Deine Freunde erscheinen hier. Füge zuerst unter Freunde einen Freund hinzu.',
+    'Tus amigos aparecerán aquí. Primero añade un amigo en Amigos.',
+    'Tes amis apparaîtront ici. Ajoute d’abord un ami dans Amis.',
+    'I tuoi amici appariranno qui. Aggiungi prima un amico in Amici.',
+    'Os teus amigos aparecem aqui. Adiciona primeiro um amigo em Amigos.',
+    '友達がここに表示されます。まず「友達」で友達を追加してください。'
+  ],
+  'Event reward': [
+    'Eventbelohnung',
+    'Recompensa del evento',
+    'Récompense d’événement',
+    'Ricompensa evento',
+    'Recompensa do evento',
+    'イベント報酬'
+  ],
+  'Together with {value}': [
+    'Zusammen mit {value}',
+    'Junto a {value}',
+    'Avec {value}',
+    'Insieme a {value}',
+    'Junto com {value}',
+    '{value}と一緒に'
+  ],
+  'Friend +{value}': [
+    'Freund +{value}',
+    'Amigo +{value}',
+    'Ami +{value}',
+    'Amico +{value}',
+    'Amigo +{value}',
+    '友達 +{value}'
+  ],
   'Change room (free)': [
     'Raum ändern (kostenlos)',
     'Cambiar sala (gratis)',

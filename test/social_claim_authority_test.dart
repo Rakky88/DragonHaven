@@ -69,12 +69,48 @@ void main() {
                   _ => 'prizeId',
                 }: source
               },
-          secretSeed: (128 + commandSequence++).toRadixString(16).padLeft(64, '0'),
+          secretSeed:
+              (128 + commandSequence++).toRadixString(16).padLeft(64, '0'),
           now: now,
           keeperId: owner,
           verifiedSocialContext: verified);
   Matcher failure(String code) => throwsA(isA<GameCommandException>()
       .having((e) => e.code, 'server refusal', code));
+
+  test(
+      'verified group offers credit only at claim, including after event close',
+      () async {
+    final offers = [
+      {
+        'id': source,
+        'kind': 'group',
+        'catalogId': 'group_1',
+        'dragonId': dragonId,
+        'position': null,
+        'readyAt': DateTime.utc(2027, 1, 2).toIso8601String(),
+      }
+    ];
+    Future<Map<String, dynamic>> run(String action) =>
+        GameCommandEngine.execute(
+            state: state,
+            action: action,
+            payload: action == 'refresh' ? {} : {'lobbyId': source},
+            secretSeed: 'a1' * 32,
+            now: DateTime.utc(2027, 1, 8),
+            keeperId: owner,
+            verifiedSocialClaims: offers,
+            verifiedSocialContext: action == 'refresh' ? null : group());
+    final refreshed = await run('refresh');
+    state = refreshed['state'] as Map<String, dynamic>;
+    expect(state['eventPointGroupIds'], isEmpty);
+    final claimed = await run('claim_group_reward');
+    state = claimed['state'] as Map<String, dynamic>;
+    expect((state['eventProgress'] as Map).values.single['points'], 50);
+    expect(state['eventPointGroupIds'], contains(source));
+    final repeated = await run('claim_group_reward');
+    expect((repeated['state']['eventProgress'] as Map).values.single['points'],
+        50);
+  });
 
   test(
       'group claim requires a sealed owner/source and retains brooch bonuses once',

@@ -1872,6 +1872,7 @@ extension DragonHavenSystems on HouseholdProvider {
     required int statPoints,
     required String chestTier,
     required int participantCount,
+    DateTime? completedAt,
   }) async {
     if (appliedOnlineGroupRewardIds.contains(lobbyId)) return true;
     final definition = AdventureCatalog.byId[adventureId];
@@ -1905,6 +1906,7 @@ extension DragonHavenSystems on HouseholdProvider {
     totalAdventuresCompleted++;
     if (participantCount >= 4) totalGroupFourCompleted++;
     appliedOnlineGroupRewardIds.add(lobbyId);
+    if (completedAt != null) recordGroupEventCompletion(lobbyId, completedAt);
     if (appliedOnlineGroupRewardIds.length > 500) {
       appliedOnlineGroupRewardIds =
           appliedOnlineGroupRewardIds.skip(100).toSet();
@@ -2095,6 +2097,10 @@ extension DragonHavenSystems on HouseholdProvider {
         ownedBadgeIds.add(keeperBadgeId);
       }
     }
+    if (!run.eventPointsAwarded) {
+      awardEventPoints(eventAdventurePoints(definition.kind),
+          completedAt: run.endsAt);
+    }
     adventureRuns.removeAt(index);
     totalAdventuresCompleted++;
     if (definition.kind == AdventureKind.short) totalShortAdventuresCompleted++;
@@ -2150,10 +2156,6 @@ extension DragonHavenSystems on HouseholdProvider {
         final reward = run.rewardTier ??
             definition?.knownChest ??
             _rollAdventureChest(definition?.kind ?? AdventureKind.short);
-        if (definition != null) {
-          awardEventPoints(eventAdventurePoints(definition.kind),
-              completedAt: run.endsAt);
-        }
         adventureRuns[index] = run.copyWith(
           status: AdventureRunStatus.rewardReady,
           rewardTier: reward,

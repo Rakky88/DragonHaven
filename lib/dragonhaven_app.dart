@@ -278,11 +278,6 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   }
 
   void _handleOnlineChanged() {
-    unawaited(_game.saveGroupEventCompletions({
-      for (final lobby in _online.myGroupAdventures)
-        if (lobby.endsAt != null && lobby.rewardReadyAt(_game.currentTime))
-          lobby.id: lobby.endsAt!,
-    }));
     _syncAdventureCompletionBadgeTimer();
     _maybeStartUpdateCheck();
   }
@@ -460,11 +455,6 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   }
 
   Future<void> _refreshAdventureCompletionBadge() async {
-    await _game.saveGroupEventCompletions({
-      for (final lobby in _online.myGroupAdventures)
-        if (lobby.endsAt != null && lobby.rewardReadyAt(_game.currentTime))
-          lobby.id: lobby.endsAt!,
-    });
     await _game.refreshForCurrentDate();
     if (!mounted) return;
     setState(() {});

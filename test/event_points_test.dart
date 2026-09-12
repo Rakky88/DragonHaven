@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/domain/game_command_engine.dart';
 import 'package:dragon_haven/domain/game_public_projection.dart';
 import 'package:dragon_haven/models/adventure.dart';
@@ -113,12 +114,16 @@ void main() {
     claimed.dispose();
   });
 
-  test('adventure finishing before close earns points on late resume once',
+  test('adventure finishing before close earns points only on late claim once',
       () async {
     var now = DateTime.utc(2027, 1, 6, 22, 59);
     final game = HouseholdProvider(persistenceEnabled: false, clock: () => now);
     final p = game.visibleEventProgress.single;
     p.points = 5995;
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..firstEgg = false
+      ..favorite = true;
     game.adventureRuns.add(AdventureRun(
         id: 'mini-before-close',
         adventureId: AdventureCatalog.mini.first.id,
@@ -129,12 +134,51 @@ void main() {
     now = DateTime.utc(2027, 1, 8);
     final restored = restore(game.exportState(), now);
     await restored.refreshForCurrentDate();
-    expect(restored.eventProgress[p.key]!.points, 6000);
+    expect(restored.eventProgress[p.key]!.points, 5995);
     await restored.refreshForCurrentDate();
+    expect(restored.eventProgress[p.key]!.points, 5995);
+    expect(await restored.claimAdventure('mini-before-close'), isNotNull);
+    expect(await restored.claimAdventure('mini-before-close'), isNull);
     expect(restored.eventProgress[p.key]!.points, 6000);
     expect(restored.eventProgress[p.key]!.canClaim, true);
     game.dispose();
     restored.dispose();
+  });
+
+  test(
+      'ready save round trip defers points, while old ready saves do not double credit',
+      () async {
+    final at = DateTime.utc(2027, 1, 2);
+    for (final legacy in [false, true]) {
+      final game =
+          HouseholdProvider(persistenceEnabled: false, clock: () => at);
+      game.pet
+        ..stage = DragonStage.hatchling
+        ..firstEgg = false
+        ..favorite = true;
+      final p = game.visibleEventProgress.single;
+      p.points = legacy ? 5 : 0;
+      game.adventureRuns.add(AdventureRun(
+          id: 'claim-once',
+          adventureId: AdventureCatalog.mini.first.id,
+          dragonId: game.pet.id,
+          startedAt: at.subtract(const Duration(minutes: 5)),
+          endsAt: at,
+          status: AdventureRunStatus.running));
+      await game.refreshForCurrentDate();
+      expect(p.points, legacy ? 5 : 0);
+      final state = game.exportState();
+      if (legacy) {
+        (state['adventureRuns'] as List).single.remove('eventPointsAwarded');
+      }
+      final loaded = restore(state, at);
+      expect(await loaded.claimAdventure('claim-once'), isNotNull);
+      expect(loaded.eventProgress[p.key]!.points, 5);
+      expect(await loaded.claimAdventure('claim-once'), isNull);
+      expect(loaded.eventProgress[p.key]!.points, 5);
+      loaded.dispose();
+      game.dispose();
+    }
   });
 
   test('closing boundary excludes new points and group completions deduplicate',

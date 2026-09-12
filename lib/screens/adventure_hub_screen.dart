@@ -1,3 +1,5 @@
+import '../models/event_progress.dart';
+import '../widgets/event_point_flight.dart';
 import '../widgets/event_partner_control.dart';
 import '../widgets/event_progress_bar.dart';
 import 'dart:async';
@@ -48,6 +50,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
   Timer? _clock;
   int? _eventUploadedRevision;
   String? _eventUploadedOwner;
+  final _claimEventKeys = <String>{};
 
   @override
   void initState() {
@@ -79,6 +82,35 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
     super.dispose();
   }
 
+  Widget _partner(EventProgress progress, HouseholdProvider game,
+          OnlineAccountProvider online) =>
+      EventPartnerControl(
+          key: ValueKey('partner-${progress.key}'),
+          eventKey: progress.key,
+          showControls: progress.activeAt(game.currentTime),
+          beforeSync: () async {
+            if (!online.isSignedIn || online.busy) {
+              return false;
+            }
+            if (_eventUploadedOwner == online.currentUserId &&
+                _eventUploadedRevision == game.localMutationRevision) {
+              return true;
+            }
+            final revision = game.localMutationRevision;
+            final owner = online.currentUserId;
+            final success = await online.backupToCloud(automatic: true);
+            if (success && online.currentUserId == owner) {
+              _eventUploadedOwner = owner;
+              _eventUploadedRevision = revision;
+            }
+            return success;
+          },
+          applyShared: (shared, owner) async {
+            if (online.currentUserId == owner) {
+              await game.synchronizeEventPartnerPoints(shared, owner);
+            }
+          });
+
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
@@ -103,151 +135,147 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
                 .where((lobby) => lobby.rewardReadyAt(game.currentTime))
                 .length;
     final trialCount = game.availableTrials.length;
-    return Column(
-      children: [
-        ConstrainedBox(
-          constraints:
-              BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .5),
-          child: SingleChildScrollView(
-            key: const Key('event-progress-region'),
-            child: Column(children: [
-              Padding(
-                key: const Key('tutorial-adventure-header'),
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Row(
-                  children: [
-                    const GameIconSprite(GameIconKind.adventureShort, size: 52),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(strings.tr('adventure'),
-                              style: Theme.of(context).textTheme.displaySmall),
-                          Text(
-                            strings.pick(
-                              'Choose a path. Bring back stories, training and treasure.',
-                              'Kies een route. Breng verhalen, training en schatten mee terug.',
-                            ),
-                            style: const TextStyle(
-                                color: AppColors.muted, fontSize: 12),
+    final activeEventKeys = game.activeEventProgress.map((p) => p.key).toSet();
+    for (final p in game.eventProgress.values) {
+      if (localRuns.any((r) =>
+          !r.endsAt.isAfter(game.currentTime) &&
+          !r.endsAt.isBefore(p.startsAt) &&
+          r.endsAt.isBefore(p.endsAt))) {
+        _claimEventKeys.add(p.key);
+      }
+    }
+    return Listener(
+        onPointerDown: EventPointFlight.remember,
+        child: Column(
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * .5),
+              child: SingleChildScrollView(
+                key: const Key('event-progress-region'),
+                child: Column(children: [
+                  Padding(
+                    key: const Key('tutorial-adventure-header'),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: Row(
+                      children: [
+                        const GameIconSprite(GameIconKind.adventureShort,
+                            size: 52),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(strings.tr('adventure'),
+                                  style:
+                                      Theme.of(context).textTheme.displaySmall),
+                              Text(
+                                strings.pick(
+                                  'Choose a path. Bring back stories, training and treasure.',
+                                  'Kies een route. Breng verhalen, training en schatten mee terug.',
+                                ),
+                                style: const TextStyle(
+                                    color: AppColors.muted, fontSize: 12),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  for (final progress in game.eventProgress.values.where((p) =>
+                      activeEventKeys.contains(p.key) ||
+                      _claimEventKeys.contains(p.key)))
+                    Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        child: EventProgressBar(
+                            key: ValueKey(progress.key),
+                            progress: progress,
+                            onClaim: () => _tabs.animateTo(3),
+                            partnerAction:
+                                progress.eventId == 'valentine_two_heartlights'
+                                    ? _partner(progress, game, online)
+                                    : null)),
+                  if (game.eventProgress.values
+                          .where(
+                              (p) => p.eventId == 'valentine_two_heartlights')
+                          .lastOrNull
+                      case final old?)
+                    if (!activeEventKeys.contains(old.key) &&
+                        !_claimEventKeys.contains(old.key))
+                      _partner(old, game, online),
+                ]),
               ),
-              for (final progress in game.activeEventProgress)
-                Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: EventProgressBar(
-                        progress: progress, onClaim: () => _tabs.animateTo(3))),
-              if (game.eventProgress.values
-                      .where((p) => p.eventId == 'valentine_two_heartlights')
-                      .lastOrNull
-                  case final valentine?)
-                Container(
-                    color: const Color(0xFF763853),
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: EventPartnerControl(
-                        eventKey: valentine.key,
-                        showControls: valentine.activeAt(game.currentTime),
-                        beforeSync: () async {
-                          if (!online.isSignedIn || online.busy) return false;
-                          if (_eventUploadedOwner == online.currentUserId &&
-                              _eventUploadedRevision ==
-                                  game.localMutationRevision) {
-                            return true;
-                          }
-                          final revision = game.localMutationRevision;
-                          final owner = online.currentUserId;
-                          final success =
-                              await online.backupToCloud(automatic: true);
-                          if (success && online.currentUserId == owner) {
-                            _eventUploadedOwner = owner;
-                            _eventUploadedRevision = revision;
-                          }
-                          return success;
-                        },
-                        applyShared: (shared, owner) async {
-                          if (online.currentUserId == owner) {
-                            await game.synchronizeEventPartnerPoints(
-                                shared, owner);
-                          }
-                        })),
-            ]),
-          ),
-        ),
-        Material(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          child: TabBar(
-            controller: _tabs,
-            isScrollable: true,
-            tabAlignment: TabAlignment.center,
-            labelPadding: const EdgeInsets.symmetric(horizontal: 10),
-            tabs: [
-              Tab(
-                child: Text(
-                  strings.pick('Available', 'Beschikbaar'),
-                  key: const Key('adventure-tab-available'),
-                ),
+            ),
+            Material(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: TabBar(
+                controller: _tabs,
+                isScrollable: true,
+                tabAlignment: TabAlignment.center,
+                labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+                tabs: [
+                  Tab(
+                    child: Text(
+                      strings.pick('Available', 'Beschikbaar'),
+                      key: const Key('adventure-tab-available'),
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      key: const Key('adventure-tab-trials'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(strings.pick('Trials', 'Proeven')),
+                        if (trialCount > 0) ...[
+                          const SizedBox(width: 6),
+                          _TabCount(value: trialCount, gold: true),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      key: const Key('adventure-tab-active'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(strings.pick('Active', 'Actief')),
+                        if (activeCount > 0) ...[
+                          const SizedBox(width: 7),
+                          _TabCount(value: activeCount),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      key: const Key('adventure-tab-completed'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(strings.pick('Completed', 'Voltooid')),
+                        if (completedCount > 0) ...[
+                          const SizedBox(width: 7),
+                          _TabCount(value: completedCount, gold: true),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              Tab(
-                child: Row(
-                  key: const Key('adventure-tab-trials'),
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(strings.pick('Trials', 'Proeven')),
-                    if (trialCount > 0) ...[
-                      const SizedBox(width: 6),
-                      _TabCount(value: trialCount, gold: true),
-                    ],
-                  ],
-                ),
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: _tabs,
+                children: [
+                  _AvailableAdventures(now: game.currentTime),
+                  _TrialsTab(now: game.currentTime),
+                  _ActiveAdventures(now: game.currentTime),
+                  _CompletedAdventures(now: game.currentTime),
+                ],
               ),
-              Tab(
-                child: Row(
-                  key: const Key('adventure-tab-active'),
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(strings.pick('Active', 'Actief')),
-                    if (activeCount > 0) ...[
-                      const SizedBox(width: 7),
-                      _TabCount(value: activeCount),
-                    ],
-                  ],
-                ),
-              ),
-              Tab(
-                child: Row(
-                  key: const Key('adventure-tab-completed'),
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(strings.pick('Completed', 'Voltooid')),
-                    if (completedCount > 0) ...[
-                      const SizedBox(width: 7),
-                      _TabCount(value: completedCount, gold: true),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: TabBarView(
-            controller: _tabs,
-            children: [
-              _AvailableAdventures(now: game.currentTime),
-              _TrialsTab(now: game.currentTime),
-              _ActiveAdventures(now: game.currentTime),
-              _CompletedAdventures(now: game.currentTime),
-            ],
-          ),
-        ),
-      ],
-    );
+            ),
+          ],
+        ));
   }
 }
 
@@ -3446,8 +3474,8 @@ Future<void> _showGroupLobbyDetails(
                     onPressed: online.busy
                         ? null
                         : () async {
-                            final reward =
-                                await online.claimGroupReward(lobby.id);
+                            final reward = await EventPointFlight.claim(context,
+                                () => online.claimGroupReward(lobby.id));
                             if (!sheetContext.mounted || reward == null) {
                               if (sheetContext.mounted) {
                                 _showOnlineAdventureMessage(
@@ -3546,7 +3574,8 @@ Future<void> _confirmRemoveGroupParticipant(
 
 Future<void> _claimGroupReward(BuildContext context, String lobbyId) async {
   final online = context.read<OnlineAccountProvider>();
-  final reward = await online.claimGroupReward(lobbyId);
+  final reward = await EventPointFlight.claim(
+      context, () => online.claimGroupReward(lobbyId));
   if (!context.mounted) return;
   if (reward == null) {
     _showOnlineAdventureMessage(context, online);
@@ -3854,7 +3883,8 @@ Future<void> _showRunDetails(
                 width: double.infinity,
                 child: FilledButton.icon(
                   onPressed: () async {
-                    final tier = await game.claimAdventure(run.id);
+                    final tier = await EventPointFlight.claim(
+                        context, () => game.claimAdventure(run.id));
                     if (!sheetContext.mounted || tier == null) return;
                     HavenAudio.play(HavenSound.adventureReturn);
                     Navigator.pop(sheetContext);
@@ -4300,7 +4330,8 @@ String adventureRemainingLabel(
 Future<void> _claimAdventure(BuildContext context, String runId) async {
   final game = context.read<HouseholdProvider>();
   final strings = AppStrings.of(context);
-  final tier = await game.claimAdventure(runId);
+  final tier =
+      await EventPointFlight.claim(context, () => game.claimAdventure(runId));
   if (!context.mounted || tier == null) return;
   unawaited(HavenAudio.play(HavenSound.adventureReturn));
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(

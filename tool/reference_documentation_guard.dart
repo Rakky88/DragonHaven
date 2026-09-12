@@ -18,6 +18,7 @@ const specialContentReference = ReferenceDocumentSpec(
     'lib/providers/event_points_systems.dart',
     'supabase/migrations/202609120080_event_points.sql',
     'supabase/migrations/202609120082_extended_event_windows.sql',
+    'supabase/migrations/202609120083_event_claim_partner_windows.sql',
     'supabase/migrations/202609120081_social_event_polish.sql',
     'lib/domain/game_command_engine.dart',
     'lib/domain/social_claims.dart',

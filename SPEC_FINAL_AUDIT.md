@@ -1,4 +1,21 @@
-# DragonHaven current release audit ? v0.05.30 / 10080
+# DragonHaven current release audit - v0.05.31 / 10081
+
+Verified 12 September 2026: 932 Flutter tests, clean analysis and 27 Edge tests.
+Staging and production are schema 83, each with 19 passing rollback-only server
+contracts. Production preflight reports matching migrations, zero lint errors
+and HTTP 200 for Auth health/settings and application health. Game and economy
+authority switches remain disabled; no player was promoted.
+
+Adventure event points arrive only on claim, including late claims for journeys
+completed during an event. Legacy ready saves retain their existing credit.
+Compact event bars use themed sprites, flying claim particles and reduced-motion
+support. Valentine invitations select existing friends; independent preview
+keys share progress correctly. All previous event dates and reward odds remain.
+
+See [v0.05.31 verification](RELEASE_V0.05.31_VERIFICATION.md).
+
+## Previous release audit - v0.05.30 / 10080
+
 
 Verified 12 September 2026: 928 Flutter tests, clean analysis, 27 Edge tests,
 MIDI checks and Android native tests pass. Staging and production are schema 82;

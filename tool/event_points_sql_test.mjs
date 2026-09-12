@@ -22,8 +22,15 @@ await db.exec(`
 `);
 await db.exec(readFileSync('supabase/migrations/202609120080_event_points.sql','utf8'));
 await db.exec(readFileSync('supabase/migrations/202609120082_extended_event_windows.sql','utf8'));
+await db.exec('alter function public.event_point_partner(text,text,text,uuid) rename to event_point_partner_v80');
+await db.exec(readFileSync('supabase/migrations/202609120083_event_claim_partner_windows.sql','utf8'));
+await db.exec(`create function public.event_point_partner(p_action text default 'list',p_event_key text default null,
+  p_keeper_code text default null,p_pair_id uuid default null) returns jsonb language sql security definer set search_path='' as
+  $$ select public.event_point_partner_v80(p_action,p_event_key,p_keeper_code,p_pair_id) $$;
+  revoke all on function public.event_point_partner(text,text,text,uuid) from public,anon;
+  grant execute on function public.event_point_partner(text,text,text,uuid) to authenticated;`);
 const owners = ['11111111','22222222','33333333'].map(x => `${x}-1111-4111-8111-111111111111`);
-const key = 'valentine_two_heartlights:year:2030';
+let key = 'valentine_two_heartlights:year:2030';
 const now = Date.now();
 function progress(points) { return {eventId:'valentine_two_heartlights',key,
   startsAt:new Date(now-3600000).toISOString(), endsAt:new Date(now+3600000).toISOString(),
@@ -80,5 +87,27 @@ for (const [id, firstYear, month, startDay, endDay] of [
     assert.equal(new Date(row.results_end_at)-new Date(row.ends_at),3*86400000);
   }
 }
+// Independently activated previews use each member's own progress key.
+await db.exec('delete from private.event_point_pairs');
+const previewKeys=owners.map((_,i)=>`valentine_two_heartlights:preview:${now+i}`);
+for (const [i,owner] of owners.entries()) {
+  const p={...progress(100+i*50),key:previewKeys[i],preview:true};
+  await db.query('update public.cloud_game_saves set state=$2 where user_id=$1',
+    [owner,{eventProgress:{[previewKeys[i]]:p}}]);
+}
+key=previewKeys[0];
+const previewInvite=await as(owners[0],'invite','DH-00000002');
+key=previewKeys[1];
+const incoming=await as(owners[1]);
+assert.equal(incoming.pairs[0].eventKey,previewKeys[1]);
+assert.equal(incoming.pairs[0].incoming,true);
+const combined=await as(owners[1],'accept',null,previewInvite.pairs[0].id);
+assert.equal(combined.shared.progress[0].key,previewKeys[1]);
+assert.equal(combined.shared.progress[0].points,150);
+assert.equal(combined.shared.progress[0].partnerPoints,100);
+assert.equal((await as(owners[0])).shared.progress[0].partnerPoints,150);
+key=previewKeys[2];
+await rejects(()=>as(owners[2],'invite','DH-00000002'),'event_partner_already_selected');
+console.log('PASS: distinct preview keys, incoming visibility, own points retained, shared totals and one-partner reservation.');
 console.log('PASS: isolated PostgreSQL migration, invitation acceptance/decline, one partner, existing/future totals, post-close retention, New Year dates, private grants.');
 await db.close();

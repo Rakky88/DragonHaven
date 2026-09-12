@@ -2,6 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../l10n/app_strings.dart';
+import 'package:provider/provider.dart';
+import '../models/social.dart';
+import '../providers/online_account_provider.dart';
+import 'online_account_access.dart';
 
 /// The server owns invitations and the accepted two-keeper membership.
 class EventPartnerControl extends StatefulWidget {
@@ -25,6 +29,7 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
   bool _busy = false;
   String? _pairsOwner;
   String? _error;
+  Completer<void>? _idle;
   @override
   void initState() {
     super.initState();
@@ -45,7 +50,12 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
   }
 
   Future<void> _sync({String action = 'list', String? code, String? id}) async {
-    if (_busy) return;
+    while (_busy) {
+      if (action == 'list') return;
+      await _idle?.future;
+      if (!mounted) return;
+    }
+    _idle = Completer<void>();
     setState(() {
       _busy = true;
       _error = null;
@@ -63,6 +73,7 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
       if (action != 'cancel' &&
           action != 'decline' &&
           !await widget.beforeSync()) {
+        if (action == 'list') return;
         throw StateError('sync');
       }
       if (!mounted || client.auth.currentUser?.id != owner) return;
@@ -84,41 +95,36 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
       ];
     } on Object catch (e) {
       if (!mounted) return;
-      _error = e is StateError && e.message == 'sign_in' ? 'sign_in' : 'sync';
+      if (action != 'list') {
+        _error = e is StateError && e.message == 'sign_in' ? 'sign_in' : 'sync';
+        final s = AppStrings.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(_error == 'sign_in'
+                ? s.pick('Sign in to invite a friend.',
+                    'Log in om een vriend uit te nodigen.')
+                : s.pick(
+                    'Invitation could not be saved. Let syncing finish and try again.',
+                    'De uitnodiging kon niet worden opgeslagen. Laat synchroniseren afronden en probeer opnieuw.'))));
+      }
     } finally {
+      _idle?.complete();
       if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _invite() async {
-    final s = AppStrings.of(context);
-    final controller = TextEditingController();
-    final code = await showDialog<String>(
+    final online = context.read<OnlineAccountProvider?>();
+    final refresh = online?.refreshIfStale();
+    final friend = await showModalBottomSheet<KeeperProfile>(
         context: context,
-        builder: (context) => AlertDialog(
-                title:
-                    Text(s.pick('Invite one friend', 'Nodig één vriend uit')),
-                content: TextField(
-                    controller: controller,
-                    textCapitalization: TextCapitalization.characters,
-                    decoration: InputDecoration(
-                        labelText: s.pick(
-                            'Friend’s Keeper code', 'Hoedercode van je vriend'),
-                        hintText: 'DH-…')),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(s.pick('Cancel', 'Annuleren'))),
-                  FilledButton(
-                      onPressed: () =>
-                          Navigator.pop(context, controller.text.trim()),
-                      child: Text(s.pick('Invite', 'Uitnodigen')))
-                ]));
-    // The closing route may still animate with its TextField attached.
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-    controller.dispose();
-    if (mounted && code != null && code.isNotEmpty) {
-      await _sync(action: 'invite', code: code);
+        isScrollControlled: true,
+        useSafeArea: true,
+        showDragHandle: true,
+        builder: (_) => EventFriendPicker(online: online));
+    if (mounted && friend != null) {
+      if (refresh != null) await refresh;
+      if (!mounted) return;
+      await _sync(action: 'invite', code: friend.keeperCode);
     }
   }
 
@@ -131,51 +137,115 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
       currentOwner = Supabase.instance.client.auth.currentUser?.id;
     } on Object {/* Offline installation. */}
     final pair = currentOwner == _pairsOwner ? _pairs.firstOrNull : null;
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      if (pair == null)
-        TextButton.icon(
-            onPressed: _busy ? null : _invite,
-            icon: const Icon(Icons.favorite_outline, color: Colors.white),
-            label: Text(
-                s.pick('Invite one friend · combine your points',
-                    'Nodig één vriend uit · verzamel samen punten'),
-                style: const TextStyle(color: Colors.white)))
-      else ...[
-        Text(
-            pair['status'] == 'accepted'
-                ? s.pick('Collecting together with ${pair['partnerCode']}',
-                    'Samen verzamelen met ${pair['partnerCode']}')
-                : s.pick('Invitation · ${pair['partnerCode']}',
-                    'Uitnodiging · ${pair['partnerCode']}'),
-            style: const TextStyle(color: Colors.white)),
-        if (pair['status'] == 'invited')
-          Wrap(spacing: 8, children: [
-            if (pair['incoming'] == true)
-              FilledButton(
+    final friends = context.watch<OnlineAccountProvider?>()?.friends ??
+        const <KeeperProfile>[];
+    final friend =
+        friends.where((f) => f.keeperCode == pair?['partnerCode']).firstOrNull;
+    final name = friend?.displayName ?? s.pick('your friend', 'je vriend');
+    return Wrap(
+        alignment: WrapAlignment.start,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 4,
+        children: [
+          TextButton.icon(
+              key: const Key('event-invite-friend'),
+              style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  minimumSize: const Size(48, 48),
+                  textStyle: const TextStyle(
+                      fontSize: 11, fontWeight: FontWeight.w600)),
+              onPressed: pair == null ? _invite : null,
+              icon: Icon(
+                  pair?['status'] == 'accepted'
+                      ? Icons.favorite
+                      : Icons.person_add_alt_1,
+                  size: 16,
+                  color: Colors.white70),
+              label: Text(
+                  pair == null
+                      ? s.pick('Invite a friend', 'Nodig een vriend uit')
+                      : pair['status'] == 'accepted'
+                          ? s.pick('Together with $name', 'Samen met $name')
+                          : s.pick('Invitation ? $name', 'Uitnodiging ? $name'),
+                  style: const TextStyle(color: Colors.white))),
+          if (pair?['status'] == 'invited') ...[
+            if (pair?['incoming'] == true)
+              TextButton(
                   onPressed: _busy
                       ? null
-                      : () => _sync(action: 'accept', id: pair['id'] as String),
+                      : () =>
+                          _sync(action: 'accept', id: pair!['id'] as String),
+                  style: TextButton.styleFrom(foregroundColor: Colors.white),
                   child: Text(s.pick('Accept', 'Accepteren'))),
-            TextButton(
+            IconButton(
+                tooltip: s.pick('Cancel invitation', 'Uitnodiging annuleren'),
                 onPressed: _busy
                     ? null
                     : () => _sync(
-                        action: pair['incoming'] == true ? 'decline' : 'cancel',
-                        id: pair['id'] as String),
-                child: Text(
-                    s.pick('Cancel invitation', 'Uitnodiging annuleren'),
-                    style: const TextStyle(color: Colors.white))),
-          ]),
-      ],
-      if (_error != null)
-        Text(
-            _error == 'sign_in'
-                ? s.pick('Sign in to collect points with a friend.',
-                    'Log in om samen met een vriend punten te verzamelen.')
-                : s.pick(
-                    'Could not sync the invitation. Check your connection and make sure you are friends.',
-                    'De uitnodiging kon niet worden gesynchroniseerd. Controleer je verbinding en of jullie vrienden zijn.'),
-            style: const TextStyle(color: Colors.white, fontSize: 12)),
-    ]);
+                        action:
+                            pair?['incoming'] == true ? 'decline' : 'cancel',
+                        id: pair!['id'] as String),
+                icon: const Icon(Icons.close_rounded,
+                    size: 18, color: Colors.white70)),
+          ],
+        ]);
+  }
+}
+
+/// Opens directly on existing friends; Keeper codes stay an RPC detail.
+class EventFriendPicker extends StatelessWidget {
+  const EventFriendPicker({super.key, this.online, this.friends = const []});
+  final OnlineAccountProvider? online;
+  final List<KeeperProfile> friends;
+  @override
+  Widget build(BuildContext context) => online == null
+      ? _content(context, friends)
+      : ListenableBuilder(
+          listenable: online!,
+          builder: (context, _) => _content(context, online!.friends));
+  Widget _content(BuildContext context, List<KeeperProfile> source) {
+    final s = AppStrings.of(context);
+    final sorted = [...source]..sort((a, b) =>
+        a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
+    return SizedBox(
+        height: MediaQuery.sizeOf(context).height * .6,
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(s.pick('Choose a friend', 'Kies een vriend'),
+                        style: Theme.of(context).textTheme.titleLarge),
+                    Text(s.pick(
+                        'Combine your event points and each earn a chest.',
+                        'Verzamel samen eventpunten en verdien allebei een kist.'))
+                  ])),
+          if (sorted.isEmpty)
+            Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(s.pick(
+                    'Your friends will appear here. Add a friend in Friends first.',
+                    'Je vrienden verschijnen hier. Voeg eerst een vriend toe via Friends.'))),
+          Expanded(
+              child: ListView.builder(
+                  itemCount: sorted.length,
+                  itemBuilder: (context, index) {
+                    final f = sorted[index];
+                    return ListTile(
+                        key: Key('event-friend-${f.userId}'),
+                        leading: KeeperPortrait(
+                            portraitKey: f.portraitKey,
+                            displayName: f.displayName,
+                            frameKey: f.frameKey,
+                            badgeKey: f.badgeKey,
+                            radius: 20),
+                        title: Text(f.displayName),
+                        trailing: const Icon(Icons.add_circle_outline),
+                        onTap: () => Navigator.pop(context, f));
+                  })),
+        ]));
   }
 }

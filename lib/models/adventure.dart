@@ -170,6 +170,7 @@ class AdventureRun {
     this.participantCount = 1,
     this.specialEventId,
     this.specialEventKey,
+    this.eventPointsAwarded = false,
   });
 
   final String id;
@@ -182,6 +183,9 @@ class AdventureRun {
   final int participantCount;
   final String? specialEventId;
   final String? specialEventKey;
+
+  /// Pre-claim saves used to credit points as soon as the timer expired.
+  final bool eventPointsAwarded;
 
   AdventureRun copyWith({
     AdventureRunStatus? status,
@@ -198,6 +202,7 @@ class AdventureRun {
         participantCount: participantCount,
         specialEventId: specialEventId,
         specialEventKey: specialEventKey,
+        eventPointsAwarded: eventPointsAwarded,
       );
 
   Map<String, dynamic> toJson() => {
@@ -211,6 +216,7 @@ class AdventureRun {
         'participantCount': participantCount,
         'specialEventId': specialEventId,
         'specialEventKey': specialEventKey,
+        'eventPointsAwarded': eventPointsAwarded,
       };
 
   factory AdventureRun.fromJson(Map<String, dynamic> json) => AdventureRun(
@@ -232,6 +238,8 @@ class AdventureRun {
         participantCount: (json['participantCount'] as num?)?.toInt() ?? 1,
         specialEventId: json['specialEventId'] as String?,
         specialEventKey: json['specialEventKey'] as String?,
+        eventPointsAwarded: json['eventPointsAwarded'] as bool? ??
+            (json['status'] == 'rewardReady'),
       );
 }
 

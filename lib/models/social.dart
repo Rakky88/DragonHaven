@@ -1213,6 +1213,7 @@ class GroupAdventureReward {
     required this.statPoints,
     required this.chestTier,
     required this.participantCount,
+    this.completedAt,
   });
 
   final String lobbyId;
@@ -1223,6 +1224,18 @@ class GroupAdventureReward {
   final int statPoints;
   final String chestTier;
   final int participantCount;
+  final DateTime? completedAt;
+
+  GroupAdventureReward withCompletion(DateTime? at) => GroupAdventureReward(
+      lobbyId: lobbyId,
+      adventureId: adventureId,
+      dragonId: dragonId,
+      xp: xp,
+      focus: focus,
+      statPoints: statPoints,
+      chestTier: chestTier,
+      participantCount: participantCount,
+      completedAt: at);
 
   factory GroupAdventureReward.fromJson(Map<String, dynamic> json) =>
       GroupAdventureReward(

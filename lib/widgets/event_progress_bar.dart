@@ -4,8 +4,9 @@ import '../l10n/app_strings.dart';
 import '../models/adventure.dart';
 import '../models/event_progress.dart';
 import '../theme/event_appearance.dart';
+import 'event_point_flight.dart';
 
-/// A liquid starlight trail and orbiting reward seal, themed for each event.
+/// A compact event keepsake, with a luminous trail leading to its real chest.
 class EventProgressBar extends StatefulWidget {
   const EventProgressBar(
       {super.key, required this.progress, this.onClaim, this.partnerAction});
@@ -18,21 +19,49 @@ class EventProgressBar extends StatefulWidget {
 
 class _EventProgressBarState extends State<EventProgressBar>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _orbit =
+  final _destination = GlobalKey();
+  late int _points;
+  late final AnimationController _glimmer =
       AnimationController(vsync: this, duration: const Duration(seconds: 5));
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (MediaQuery.disableAnimationsOf(context)) {
-      _orbit.stop();
+      _glimmer.stop();
     } else {
-      _orbit.repeat();
+      _glimmer.repeat();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _points = widget.progress.points;
+    EventPointFlight.attach();
+  }
+
+  @override
+  void didUpdateWidget(covariant EventProgressBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final delta = widget.progress.points - _points;
+    _points = widget.progress.points;
+    if (oldWidget.progress.key == widget.progress.key && delta > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        EventPointFlight.show(
+            context,
+            _destination,
+            EventAppearance.logoForEvent(widget.progress.eventId),
+            EventAppearance.forEvent(widget.progress.eventId).accent,
+            delta);
+      });
     }
   }
 
   @override
   void dispose() {
-    _orbit.dispose();
+    EventPointFlight.detach();
+    _glimmer.dispose();
     super.dispose();
   }
 
@@ -42,100 +71,125 @@ class _EventProgressBarState extends State<EventProgressBar>
     final s = AppStrings.of(context);
     final event = specialAdventureEventById(p.eventId)!;
     final theme = EventAppearance.forEvent(p.eventId);
+    final chest = specialChestById(p.chestId)!;
     final reduced = MediaQuery.disableAnimationsOf(context);
     return Semantics(
         label:
             '${s.pick(event.titleEn, event.titleNl)}: ${p.total} / ${p.target}',
         child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 6),
-            padding: const EdgeInsets.all(14),
+            margin: const EdgeInsets.symmetric(vertical: 5),
+            padding: const EdgeInsets.fromLTRB(10, 9, 10, 8),
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                gradient: LinearGradient(colors: theme.panelColors),
-                border: Border.all(color: theme.accent.withValues(alpha: .65)),
+                borderRadius: BorderRadius.circular(18),
+                gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: theme.panelColors),
+                border: Border.all(color: theme.accent.withValues(alpha: .5)),
                 boxShadow: [
                   BoxShadow(
-                      color: theme.primary.withValues(alpha: .25),
-                      blurRadius: 18,
-                      offset: const Offset(0, 5))
+                      color: theme.primary.withValues(alpha: .18),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3))
                 ]),
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                      '${p.preview ? "TEST · " : ""}${s.pick(event.titleEn, event.titleNl)}',
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold)),
-                  Text(
-                      '${math.min(p.total, p.target)} / ${p.target} ${s.pick('points', 'punten')}',
-                      style: TextStyle(color: theme.paper)),
-                  Row(children: [
+                  Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                    Image.asset(EventAppearance.logoForEvent(p.eventId),
+                        width: 32, height: 42, excludeFromSemantics: true),
+                    const SizedBox(width: 8),
                     Expanded(
-                        child: TweenAnimationBuilder<double>(
-                      tween: Tween(end: p.fraction),
-                      duration: reduced
-                          ? Duration.zero
-                          : const Duration(milliseconds: 1100),
-                      curve: Curves.easeOutCubic,
-                      builder: (context, fill, _) => AnimatedBuilder(
-                        animation: _orbit,
-                        builder: (context, _) => CustomPaint(
-                            painter: _StarlightPainter(
-                                fill, _orbit.value, theme.accent),
-                            child: const SizedBox(height: 42)),
-                      ),
-                    )),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                          Text(
+                              '${p.preview ? "TEST ? " : ""}${s.pick(event.titleEn, event.titleNl)}',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  height: 1.15,
+                                  fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 4),
+                          Text(
+                              '${math.min(p.total, p.target)} / ${p.target} ${s.pick('points', 'punten')}',
+                              style: TextStyle(
+                                  color: theme.paper,
+                                  fontSize: 11,
+                                  height: 1.15,
+                                  fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 5),
+                          TweenAnimationBuilder<double>(
+                              key: _destination,
+                              tween: Tween(end: p.fraction),
+                              duration: reduced
+                                  ? Duration.zero
+                                  : const Duration(milliseconds: 1100),
+                              curve: Curves.easeInOutCubic,
+                              builder: (context, fill, child) =>
+                                  AnimatedBuilder(
+                                      animation: _glimmer,
+                                      builder: (context, child) => CustomPaint(
+                                          painter: _StarlightPainter(fill,
+                                              _glimmer.value, theme.accent),
+                                          child: const SizedBox(
+                                              height: 12,
+                                              width: double.infinity)))),
+                        ])),
                     const SizedBox(width: 6),
-                    AnimatedBuilder(
-                        animation: _orbit,
-                        builder: (context, _) => Container(
-                              decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    if (p.complete)
-                                      BoxShadow(
-                                          color: theme.accent.withValues(
-                                              alpha: .25 +
-                                                  .15 *
-                                                      math.sin(_orbit.value *
-                                                          math.pi *
-                                                          2)),
-                                          blurRadius: 18)
-                                  ]),
-                              child: SizedBox(
-                                  width: 72,
-                                  height: 72,
-                                  child: FilledButton(
-                                      key: Key('event-claim-${p.key}'),
-                                      style: FilledButton.styleFrom(
-                                          shape: const CircleBorder(),
-                                          padding: const EdgeInsets.all(4),
-                                          backgroundColor: theme.accent,
-                                          foregroundColor: Colors.black87,
-                                          disabledBackgroundColor: theme.accent
-                                              .withValues(alpha: .8),
-                                          disabledForegroundColor:
-                                              Colors.black87),
-                                      onPressed:
-                                          p.canClaim ? widget.onClaim : null,
-                                      child: p.canClaim
-                                          ? FittedBox(
-                                              child: Text(
-                                                  s.pick('Claim', 'Ophalen')))
-                                          : Icon(
-                                              p.claimed
-                                                  ? Icons.check_rounded
-                                                  : Icons.redeem_rounded,
-                                              size: 30))),
-                            )),
+                    Tooltip(
+                        message: p.claimed
+                            ? s.pick('Claimed', 'Opgehaald')
+                            : s.pick('Event reward', 'Eventbeloning'),
+                        child: SizedBox(
+                            width: 56,
+                            child: FilledButton(
+                                key: Key('event-claim-${p.key}'),
+                                style: FilledButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(48, 48),
+                                    backgroundColor: Colors.transparent,
+                                    disabledBackgroundColor: Colors.transparent,
+                                    foregroundColor: theme.paper,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12))),
+                                onPressed: p.canClaim ? widget.onClaim : null,
+                                child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Image.asset(
+                                          p.claimed
+                                              ? chest.openedAssetPath
+                                              : chest.closedAssetPath,
+                                          height: 46,
+                                          width: 52,
+                                          excludeFromSemantics: true),
+                                      if (p.canClaim)
+                                        Text(s.pick('Claim', 'Ophalen'),
+                                            style: TextStyle(
+                                                fontSize: 10,
+                                                color: theme.paper)),
+                                      if (p.claimed)
+                                        const Icon(Icons.check_rounded,
+                                            size: 14, color: Colors.white70),
+                                    ])))),
                   ]),
+                  if (widget.partnerAction != null) ...[
+                    const SizedBox(height: 5),
+                    Divider(
+                        height: 1, color: theme.accent.withValues(alpha: .2)),
+                    widget.partnerAction!,
+                  ],
                   if (p.partnerPoints > 0)
                     Text(
-                        s.pick(
-                            'Together: your friend contributed ${p.partnerPoints} points.',
-                            'Samen: je vriend droeg ${p.partnerPoints} punten bij.'),
-                        style: TextStyle(color: theme.paper, fontSize: 12)),
-                  if (widget.partnerAction != null) widget.partnerAction!,
+                        s.pick('Friend +${p.partnerPoints}',
+                            'Vriend +${p.partnerPoints}'),
+                        style: TextStyle(color: theme.paper, fontSize: 10)),
                 ])));
   }
 }
@@ -146,35 +200,36 @@ class _StarlightPainter extends CustomPainter {
   final Color color;
   @override
   void paint(Canvas canvas, Size size) {
-    final track = RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 12, size.width, 18), const Radius.circular(12));
+    final bounds = Rect.fromLTWH(0, 1, size.width, 10);
+    final track = RRect.fromRectAndRadius(bounds, const Radius.circular(6));
     canvas.drawRRect(
-        track, Paint()..color = Colors.black.withValues(alpha: .35));
+        track, Paint()..color = Colors.black.withValues(alpha: .3));
     canvas.drawRRect(
         track,
         Paint()
           ..color = Colors.white24
           ..style = PaintingStyle.stroke);
     if (fill <= 0) return;
-    final rect = Rect.fromLTWH(0, 12, size.width * fill, 18);
+    final rect = Rect.fromLTWH(0, 1, size.width * fill, 10);
     canvas.save();
-    canvas.clipRRect(RRect.fromRectAndRadius(rect, const Radius.circular(12)));
+    canvas.clipRRect(RRect.fromRectAndRadius(rect, const Radius.circular(6)));
     canvas.drawRect(
         rect,
         Paint()
           ..shader = LinearGradient(
-                  colors: [color.withValues(alpha: .5), color, Colors.white])
+                  colors: [color.withValues(alpha: .55), color, Colors.white])
               .createShader(rect));
-    for (var i = 0; i < 12; i++) {
-      final x = ((i / 12 + phase) % 1) * size.width;
-      final y = 21 + math.sin(i * 2 + phase * math.pi * 2) * 5;
+    for (var i = 0; i < 7; i++) {
       canvas.drawCircle(
-          Offset(x, y), i.isEven ? 1.8 : 1, Paint()..color = Colors.white70);
+          Offset(((i / 7 + phase) % 1) * size.width,
+              6 + math.sin(i * 2 + phase * math.pi * 2) * 2),
+          i.isEven ? 1 : .6,
+          Paint()..color = Colors.white70);
     }
     canvas.restore();
     canvas.drawCircle(
-        Offset(math.max(3, rect.right - 4), 21),
-        4,
+        Offset(math.max(3, rect.right - 3), 6),
+        3,
         Paint()
           ..color = Colors.white
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
