@@ -29,19 +29,25 @@ contract; canonical accounts use database-owned state. Cross-authority pairings
 are refused. Offline contributions synchronize on reconnect; conflicts never
 silently replace another device's save.
 
-The animated event bar is shown at the top of Adventures, with event colors,
-flowing lights, a small event illustration and the actual event chest sprite.
-Claimed Adventure points fly from the claim button into the compact bar. The
-Valentine invite control sits inside that panel and opens an alphabetized list
-of existing friends with portraits; it does not ask for a Keeper code. Reduced-motion settings stop ambient
-animation and flying particles and make fill changes immediate. A full seal says Claim and opens
-Completed Adventures. Claiming awards the event's existing versioned Special
-Chest only, keeps the bar full, removes Claim and disables its link. Completed
-unclaimed rewards remain in Completed Adventures indefinitely after closing;
-unfinished progress does not carry to a later occurrence. Existing started
-seasonal adventures retain their original rewards as a legacy compatibility path.
-Historical journey XP, expertise, random relics, Music Chests, titles and badges
-below describe only those old runs; they are not added to the new points prize.
+The active event uses a 58dp-high glass reservoir with engraved metalwork,
+event-colored liquid, small themed motifs and the actual chest sprite. There
+is no visible event name or numerical point counter in the meter. Its progress
+remains available to screen readers. The friend action is a single compact
+icon beside the tube; it opens the existing-friend picker directly, or the
+current invitation/partnership controls when already paired.
+
+Only the currently active occurrence has a meter. Ending an event through the
+authenticated end-event operation, natural expiry of a test or real event,
+switching previews, or restarting the same preview removes the previous meter.
+Pending Adventure claims never keep a retired meter on screen. Stored points
+and already-earned chest entitlements remain intact: Completed Adventures is
+the place to claim a completed event reward after its meter disappears.
+
+Claimed Adventure points still fly into an active meter. Reduced-motion settings
+stop ambient liquid effects and particles and apply fill changes immediately.
+A full unclaimed chest glows and opens Completed Adventures; claimed chests show
+a check. Calendar events still award only their versioned Special Chest. Existing
+started seasonal Adventures retain their original rewards as a legacy path.
 Chest contents and egg genetics/odds remain unchanged.
 
 | Event | Amsterdam availability | Target | Points prize |
@@ -293,7 +299,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: cfa95b5f7814c565 -->
+<!-- reference-source-fingerprint: c302e659f909df42 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

@@ -74,170 +74,286 @@ class _EventProgressBarState extends State<EventProgressBar>
     final chest = specialChestById(p.chestId)!;
     final reduced = MediaQuery.disableAnimationsOf(context);
     return Semantics(
-        label:
-            '${s.pick(event.titleEn, event.titleNl)}: ${p.total} / ${p.target}',
-        child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 5),
-            padding: const EdgeInsets.fromLTRB(10, 9, 10, 8),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: theme.panelColors),
-                border: Border.all(color: theme.accent.withValues(alpha: .5)),
-                boxShadow: [
-                  BoxShadow(
-                      color: theme.primary.withValues(alpha: .18),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3))
-                ]),
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                    Image.asset(EventAppearance.logoForEvent(p.eventId),
-                        width: 32, height: 42, excludeFromSemantics: true),
-                    const SizedBox(width: 8),
-                    Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                          Text(
-                              '${p.preview ? "TEST ? " : ""}${s.pick(event.titleEn, event.titleNl)}',
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  height: 1.15,
-                                  fontWeight: FontWeight.w700)),
-                          const SizedBox(height: 4),
-                          Text(
-                              '${math.min(p.total, p.target)} / ${p.target} ${s.pick('points', 'punten')}',
-                              style: TextStyle(
-                                  color: theme.paper,
-                                  fontSize: 11,
-                                  height: 1.15,
-                                  fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 5),
-                          TweenAnimationBuilder<double>(
-                              key: _destination,
-                              tween: Tween(end: p.fraction),
-                              duration: reduced
-                                  ? Duration.zero
-                                  : const Duration(milliseconds: 1100),
-                              curve: Curves.easeInOutCubic,
-                              builder: (context, fill, child) =>
-                                  AnimatedBuilder(
-                                      animation: _glimmer,
-                                      builder: (context, child) => CustomPaint(
-                                          painter: _StarlightPainter(fill,
-                                              _glimmer.value, theme.accent),
-                                          child: const SizedBox(
-                                              height: 12,
-                                              width: double.infinity)))),
-                        ])),
-                    const SizedBox(width: 6),
-                    Tooltip(
-                        message: p.claimed
-                            ? s.pick('Claimed', 'Opgehaald')
+      label:
+          '${s.pick(event.titleEn, event.titleNl)}: ${p.total} / ${p.target}',
+      child: SizedBox(
+          height: 58,
+          child: Row(children: [
+            Expanded(
+                child: Stack(alignment: Alignment.center, children: [
+              Positioned.fill(
+                  child: TweenAnimationBuilder<double>(
+                      key: _destination,
+                      tween: Tween(end: p.fraction),
+                      duration: reduced
+                          ? Duration.zero
+                          : const Duration(milliseconds: 1100),
+                      curve: Curves.easeInOutCubic,
+                      builder: (context, fill, child) => AnimatedBuilder(
+                          animation: _glimmer,
+                          builder: (context, child) => CustomPaint(
+                              painter: _ElixirPainter(fill, _glimmer.value,
+                                  theme, p.eventId, p.canClaim))))),
+              Row(children: [
+                const SizedBox(width: 5),
+                Image.asset(EventAppearance.logoForEvent(p.eventId),
+                    width: 36, height: 44, excludeFromSemantics: true),
+                const Spacer(),
+                Tooltip(
+                    message: p.claimed
+                        ? s.pick('Claimed', 'Opgehaald')
+                        : p.canClaim
+                            ? s.pick('Claim', 'Ophalen')
                             : s.pick('Event reward', 'Eventbeloning'),
-                        child: SizedBox(
-                            width: 56,
-                            child: FilledButton(
-                                key: Key('event-claim-${p.key}'),
-                                style: FilledButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: const Size(48, 48),
-                                    backgroundColor: Colors.transparent,
-                                    disabledBackgroundColor: Colors.transparent,
-                                    foregroundColor: theme.paper,
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12))),
-                                onPressed: p.canClaim ? widget.onClaim : null,
-                                child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Image.asset(
-                                          p.claimed
-                                              ? chest.openedAssetPath
-                                              : chest.closedAssetPath,
-                                          height: 46,
-                                          width: 52,
-                                          excludeFromSemantics: true),
-                                      if (p.canClaim)
-                                        Text(s.pick('Claim', 'Ophalen'),
-                                            style: TextStyle(
-                                                fontSize: 10,
-                                                color: theme.paper)),
-                                      if (p.claimed)
-                                        const Icon(Icons.check_rounded,
-                                            size: 14, color: Colors.white70),
-                                    ])))),
-                  ]),
-                  if (widget.partnerAction != null) ...[
-                    const SizedBox(height: 5),
-                    Divider(
-                        height: 1, color: theme.accent.withValues(alpha: .2)),
-                    widget.partnerAction!,
-                  ],
-                  if (p.partnerPoints > 0)
-                    Text(
-                        s.pick('Friend +${p.partnerPoints}',
-                            'Vriend +${p.partnerPoints}'),
-                        style: TextStyle(color: theme.paper, fontSize: 10)),
-                ])));
+                    child: SizedBox(
+                        width: 52,
+                        height: 52,
+                        child: FilledButton(
+                            key: Key('event-claim-${p.key}'),
+                            style: FilledButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                backgroundColor: Colors.transparent,
+                                disabledBackgroundColor: Colors.transparent,
+                                shape: const CircleBorder()),
+                            onPressed: p.canClaim ? widget.onClaim : null,
+                            child:
+                                Stack(alignment: Alignment.center, children: [
+                              Image.asset(
+                                  p.claimed
+                                      ? chest.openedAssetPath
+                                      : chest.closedAssetPath,
+                                  height: 42,
+                                  width: 46,
+                                  excludeFromSemantics: true),
+                              if (p.claimed)
+                                const Positioned(
+                                    right: 1,
+                                    bottom: 0,
+                                    child: Icon(Icons.check_circle,
+                                        size: 14, color: Colors.white)),
+                            ])))),
+                const SizedBox(width: 3),
+              ]),
+            ])),
+            if (widget.partnerAction != null)
+              SizedBox(width: 48, child: widget.partnerAction!),
+          ])),
+    );
   }
 }
 
-class _StarlightPainter extends CustomPainter {
-  _StarlightPainter(this.fill, this.phase, this.color);
+/// A glass reservoir in engraved metal, with event-colored liquid and motifs.
+/// The whole instrument is painted at its final size; no oversized card surface.
+class _ElixirPainter extends CustomPainter {
+  _ElixirPainter(this.fill, this.phase, this.theme, this.eventId, this.ready);
   final double fill, phase;
-  final Color color;
+  final EventAppearance theme;
+  final String eventId;
+  final bool ready;
   @override
   void paint(Canvas canvas, Size size) {
-    final bounds = Rect.fromLTWH(0, 1, size.width, 10);
-    final track = RRect.fromRectAndRadius(bounds, const Radius.circular(6));
+    final mid = size.height / 2;
+    final left = 25.0, right = size.width - 29;
+    if (right <= left) return;
+    final gold = Color.lerp(theme.accent, const Color(0xFFD7B970), .65)!;
+    final outer = RRect.fromRectAndRadius(
+        Rect.fromLTRB(left, mid - 14, right, mid + 14),
+        const Radius.circular(14));
     canvas.drawRRect(
-        track, Paint()..color = Colors.black.withValues(alpha: .3));
-    canvas.drawRRect(
-        track,
+        outer.shift(const Offset(0, 3)),
         Paint()
-          ..color = Colors.white24
-          ..style = PaintingStyle.stroke);
-    if (fill <= 0) return;
-    final rect = Rect.fromLTWH(0, 1, size.width * fill, 10);
-    canvas.save();
-    canvas.clipRRect(RRect.fromRectAndRadius(rect, const Radius.circular(6)));
-    canvas.drawRect(
-        rect,
+          ..color = theme.primary.withValues(alpha: .35)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
+    canvas.drawRRect(
+        outer,
         Paint()
           ..shader = LinearGradient(
-                  colors: [color.withValues(alpha: .55), color, Colors.white])
-              .createShader(rect));
-    for (var i = 0; i < 7; i++) {
-      canvas.drawCircle(
-          Offset(((i / 7 + phase) % 1) * size.width,
-              6 + math.sin(i * 2 + phase * math.pi * 2) * 2),
-          i.isEven ? 1 : .6,
-          Paint()..color = Colors.white70);
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                const Color(0xFFF9E9B8),
+                gold,
+                const Color(0xFF655032),
+                gold
+              ]).createShader(outer.outerRect));
+    final chamber = Rect.fromLTRB(left + 3, mid - 10, right - 3, mid + 10);
+    final glass = RRect.fromRectAndRadius(chamber, const Radius.circular(10));
+    canvas.drawRRect(
+        glass,
+        Paint()
+          ..shader = LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color.lerp(theme.primary, Colors.black, .65)!,
+                theme.primary,
+                Color.lerp(theme.primary, Colors.black, .4)!
+              ]).createShader(chamber));
+    canvas.save();
+    canvas.clipRRect(glass);
+    final liquidEnd = chamber.left + chamber.width * fill;
+    if (fill > 0) {
+      final liquid = Path()
+        ..moveTo(chamber.left, chamber.top)
+        ..lineTo(liquidEnd, chamber.top);
+      for (var y = 0.0; y <= chamber.height; y += 1) {
+        liquid.lineTo(liquidEnd + math.sin(y * .24 + phase * math.pi * 2) * 1.6,
+            chamber.top + y);
+      }
+      liquid
+        ..lineTo(chamber.left, chamber.bottom)
+        ..close();
+      canvas.drawPath(
+          liquid,
+          Paint()
+            ..shader = LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color.lerp(theme.accent, Colors.white, .85)!,
+                  theme.accent,
+                  Color.lerp(theme.accent, theme.primary, .5)!
+                ]).createShader(chamber));
+      canvas.save();
+      canvas.clipPath(liquid);
+      for (var i = 0; i < 9; i++) {
+        final x = chamber.left + ((i / 9 + phase * .22) % 1) * chamber.width;
+        final y = mid + math.sin(i * 2 + phase * math.pi * 2) * 5;
+        canvas.drawCircle(Offset(x, y), i.isEven ? 1.2 : .65,
+            Paint()..color = Colors.white60);
+      }
+      canvas.restore();
+      canvas.drawOval(
+          Rect.fromCenter(center: Offset(liquidEnd, mid), width: 4, height: 15),
+          Paint()
+            ..color = Colors.white.withValues(alpha: .65)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2));
+    }
+    // The glass reflection spans empty and full sections alike.
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            Rect.fromLTRB(chamber.left + 6, chamber.top + 2, chamber.right - 6,
+                chamber.top + 5),
+            const Radius.circular(3)),
+        Paint()
+          ..shader = const LinearGradient(
+                  colors: [Colors.white10, Colors.white38, Colors.white10])
+              .createShader(chamber));
+    for (var i = 1; i < 10; i++) {
+      final x = chamber.left + chamber.width * i / 10;
+      canvas.drawLine(
+          Offset(x, chamber.bottom - 1),
+          Offset(x, chamber.bottom - (i == 5 ? 5 : 3)),
+          Paint()
+            ..color = gold.withValues(alpha: .45)
+            ..strokeWidth = 1);
     }
     canvas.restore();
-    canvas.drawCircle(
-        Offset(math.max(3, rect.right - 3), 6),
-        3,
-        Paint()
-          ..color = Colors.white
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
+    // Symmetric engraved tendrils frame the instrument without adding height.
+    for (final flip in [false, true]) {
+      canvas.save();
+      if (flip) {
+        canvas.translate(size.width, 0);
+        canvas.scale(-1, 1);
+      }
+      final line = Paint()
+        ..color = gold
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.1;
+      for (final sign in [-1.0, 1.0]) {
+        final vine = Path()
+          ..moveTo(19, mid + sign * 17)
+          ..cubicTo(
+              40, mid + sign * 28, 49, mid + sign * 13, 68, mid + sign * 18)
+          ..quadraticBezierTo(83, mid + sign * 22, 95, mid + sign * 17);
+        canvas.drawPath(vine, line);
+        _motif(canvas, Offset(56, mid + sign * 20), gold, sign);
+      }
+      canvas.drawCircle(
+          Offset(23, mid),
+          19,
+          Paint()
+            ..shader = RadialGradient(colors: [
+              theme.primary,
+              Color.lerp(theme.primary, Colors.black, .55)!
+            ]).createShader(
+                Rect.fromCircle(center: Offset(23, mid), radius: 19)));
+      canvas.drawCircle(Offset(23, mid), 19, line..strokeWidth = 1.4);
+      canvas.drawCircle(
+          Offset(23, mid),
+          16,
+          line
+            ..color = gold.withValues(alpha: .3)
+            ..strokeWidth = .7);
+      canvas.restore();
+    }
+    if (ready) {
+      canvas.drawCircle(
+          Offset(size.width - 27, mid),
+          22,
+          Paint()
+            ..color = theme.accent
+                .withValues(alpha: .2 + .1 * math.sin(phase * math.pi * 2))
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
+    }
+  }
+
+  void _motif(Canvas canvas, Offset at, Color color, double sign) {
+    canvas.save();
+    canvas.translate(at.dx, at.dy);
+    final p = Paint()..color = color.withValues(alpha: .9);
+    final path = Path();
+    if (eventId.contains('valentine')) {
+      path
+        ..moveTo(0, 3)
+        ..cubicTo(-9, -2, -3, -6, 0, -2)
+        ..cubicTo(3, -6, 9, -2, 0, 3);
+    } else if (eventId.contains('halloween')) {
+      path
+        ..moveTo(-6, 1)
+        ..lineTo(-5, -3)
+        ..lineTo(-1, -1)
+        ..lineTo(0, -3)
+        ..lineTo(1, -1)
+        ..lineTo(5, -3)
+        ..lineTo(6, 1)
+        ..lineTo(2, 0)
+        ..lineTo(0, 3)
+        ..lineTo(-2, 0)
+        ..close();
+    } else if (eventId.contains('christmas')) {
+      p
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1;
+      for (var i = 0; i < 3; i++) {
+        canvas.save();
+        canvas.rotate(i * math.pi / 3);
+        canvas.drawLine(const Offset(-4, 0), const Offset(4, 0), p);
+        canvas.restore();
+      }
+    } else {
+      path
+        ..moveTo(0, -4)
+        ..lineTo(1.4, -1.4)
+        ..lineTo(4, 0)
+        ..lineTo(1.4, 1.4)
+        ..lineTo(0, 4)
+        ..lineTo(-1.4, 1.4)
+        ..lineTo(-4, 0)
+        ..lineTo(-1.4, -1.4)
+        ..close();
+    }
+    canvas.drawPath(path, p);
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(_StarlightPainter old) =>
-      fill != old.fill || phase != old.phase || color != old.color;
+  bool shouldRepaint(_ElixirPainter old) =>
+      fill != old.fill ||
+      phase != old.phase ||
+      theme != old.theme ||
+      ready != old.ready ||
+      eventId != old.eventId;
 }
 
 class EventRewardCard extends StatefulWidget {

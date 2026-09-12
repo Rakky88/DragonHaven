@@ -1,5 +1,9 @@
 # DragonHaven Random Rewards and Odds
 
+v0.05.32 replaces the points panel with an active-occurrence-only glass meter.
+Retired previews no longer remain on screen; saved rewards, code catalog,
+point values, chest contents and random odds are unchanged.
+
 v0.05.31 changes Adventure event-point credit timing to reward claim. The chest
 roll still occurs when a journey finishes; no reward amounts or odds change.
 
@@ -193,7 +197,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 8bf30ab9de4597fb -->
+<!-- reference-source-fingerprint: f3cfc4b2207ff6b8 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

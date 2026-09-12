@@ -50,7 +50,6 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
   Timer? _clock;
   int? _eventUploadedRevision;
   String? _eventUploadedOwner;
-  final _claimEventKeys = <String>{};
 
   @override
   void initState() {
@@ -136,14 +135,6 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
                 .length;
     final trialCount = game.availableTrials.length;
     final activeEventKeys = game.activeEventProgress.map((p) => p.key).toSet();
-    for (final p in game.eventProgress.values) {
-      if (localRuns.any((r) =>
-          !r.endsAt.isAfter(game.currentTime) &&
-          !r.endsAt.isBefore(p.startsAt) &&
-          r.endsAt.isBefore(p.endsAt))) {
-        _claimEventKeys.add(p.key);
-      }
-    }
     return Listener(
         onPointerDown: EventPointFlight.remember,
         child: Column(
@@ -183,9 +174,8 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
                       ],
                     ),
                   ),
-                  for (final progress in game.eventProgress.values.where((p) =>
-                      activeEventKeys.contains(p.key) ||
-                      _claimEventKeys.contains(p.key)))
+                  for (final progress in game.eventProgress.values
+                      .where((p) => activeEventKeys.contains(p.key)))
                     Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         child: EventProgressBar(
@@ -201,8 +191,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
                               (p) => p.eventId == 'valentine_two_heartlights')
                           .lastOrNull
                       case final old?)
-                    if (!activeEventKeys.contains(old.key) &&
-                        !_claimEventKeys.contains(old.key))
+                    if (!activeEventKeys.contains(old.key))
                       _partner(old, game, online),
                 ]),
               ),

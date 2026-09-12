@@ -1,3 +1,4 @@
+import 'package:dragon_haven/widgets/event_progress_bar.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -75,7 +76,14 @@ void main() {
         find.byKey(Key(
             'canonical-select-adventure-${AdventureCatalog.sunwakeFestival.id}')),
         findsNothing);
-    expect(find.text('0 / 2000 points'), findsOneWidget);
+    expect(find.text('0 / 2000 points'), findsNothing);
+    expect(find.byType(EventProgressBar), findsOneWidget);
+    expect(
+        tester
+            .widget<EventProgressBar>(find.byType(EventProgressBar))
+            .progress
+            .fraction,
+        0);
     await tester.pumpWidget(const SizedBox());
   });
 

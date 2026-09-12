@@ -1,3 +1,4 @@
+import 'package:dragon_haven/widgets/event_progress_bar.dart';
 import 'dart:math';
 
 import 'package:dragon_haven/models/adventure.dart';
@@ -182,7 +183,8 @@ void main() {
     ], child: const MaterialApp(home: Scaffold(body: AdventureHubScreen()))));
     await tester.pump(const Duration(milliseconds: 400));
     expect(game.adventuresFor(AdventureKind.special), isEmpty);
-    expect(find.text('0 / 2000 points'), findsOneWidget);
+    expect(find.text('0 / 2000 points'), findsNothing);
+    expect(find.byType(EventProgressBar), findsOneWidget);
     expect(find.text('1 random relic'), findsNothing);
     expect(find.text('1 Music Chest'), findsNothing);
     now = DateTime.utc(2026, 9, 3);

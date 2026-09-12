@@ -1,5 +1,12 @@
 # DragonHaven Android-appgrootteaudit
 
+## Meting v0.05.32 - 12 september 2026
+
+De universele APK meet **628260150 bytes**, SHA-256
+`7c5d1709267856cf412b35f7ef2ff50c6eabe988154ac8ec95432cc46fc2fa7a`.
+De nieuwe glazen eventmeter wordt getekend; bestaande logo- en kistsprites
+zijn hergebruikt. Artwork- en audiokwaliteit zijn behouden.
+
 ## Meting v0.05.31 - 12 september 2026
 
 De universele APK meet **628178046 bytes**, SHA-256 `dcd12aea08e277970a0415841483a1affd59502934bb6e7f27b0419e338d84b5`.

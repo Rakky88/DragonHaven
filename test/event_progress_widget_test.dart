@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:dragon_haven/models/event_progress.dart';
+import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/providers/online_account_provider.dart';
@@ -69,7 +70,7 @@ void main() {
           find.byKey(const Key('event-claim-halloween_witchlight:launch:2026'));
       expect(tester.widget<FilledButton>(button).onPressed != null, enabled);
       if (enabled) await tester.tap(button);
-      expect(find.text('Claim'), enabled ? findsOneWidget : findsNothing);
+      expect(find.text('Claim'), findsNothing);
       expect(tester.takeException(), isNull);
     }
     expect(clicks, 1);
@@ -83,7 +84,8 @@ void main() {
     await tester.pumpWidget(
         app(progress(points: 6400), () {}, reduced: true, scale: 2));
     await tester.pumpAndSettle();
-    expect(find.text('6400 / 8000 points'), findsOneWidget);
+    expect(find.text('6400 / 8000 points'), findsNothing);
+    expect(tester.getSize(find.byType(EventProgressBar)).height, 58);
     expect(tester.takeException(), isNull);
   });
 
@@ -132,6 +134,76 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(game.specialChestInventory['witchlight_chest_v1'], 1);
     expect(find.byType(EventRewardCard), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    online.dispose();
+    game.dispose();
+  });
+
+  testWidgets(
+      'only the active meter survives switches, expiry and server end-event sync',
+      (tester) async {
+    var now = DateTime.utc(2026, 9, 12);
+    final game = HouseholdProvider(persistenceEnabled: false, clock: () => now);
+    final online = OnlineAccountProvider(
+        repository: const DisabledSocialRepository(),
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
+    await tester.runAsync(() => game.synchronizeSeasonalEventPreviews(
+        {'halloween_witchlight': now.add(const Duration(days: 2))}));
+    game.activeEventProgress.single.points = 80;
+    // This pending claim caused expired meters to linger in the previous UI.
+    game.adventureRuns.add(AdventureRun(
+        id: 'pending',
+        adventureId: AdventureCatalog.mini.first.id,
+        dragonId: game.pet.id,
+        startedAt: now.subtract(const Duration(minutes: 5)),
+        endsAt: now,
+        status: AdventureRunStatus.rewardReady));
+    await tester.pumpWidget(MultiProvider(providers: [
+      ChangeNotifierProvider.value(value: game),
+      ChangeNotifierProvider.value(value: online),
+    ], child: const MaterialApp(home: Scaffold(body: AdventureHubScreen()))));
+    await tester.pump();
+    expect(find.byType(EventProgressBar), findsOneWidget);
+    await tester.runAsync(() => game.synchronizeSeasonalEventPreviews(
+        {'valentine_two_heartlights': now.add(const Duration(days: 2))}));
+    await tester.pump();
+    expect(find.byType(EventProgressBar), findsOneWidget);
+    expect(
+        tester
+            .widget<EventProgressBar>(find.byType(EventProgressBar))
+            .progress
+            .eventId,
+        'valentine_two_heartlights');
+    now = now.add(const Duration(hours: 1));
+    await tester.runAsync(() => game.synchronizeSeasonalEventPreviews(
+        {'valentine_two_heartlights': now.add(const Duration(days: 2))}));
+    await tester.pump();
+    expect(game.eventProgress.length, 3);
+    expect(find.byType(EventProgressBar), findsOneWidget);
+    // Authenticated ENDEVENT returns an empty personal-preview snapshot.
+    await tester.runAsync(() => game.synchronizeSeasonalEventPreviews({}));
+    await tester.pump();
+    expect(find.byType(EventProgressBar), findsNothing);
+    await tester.runAsync(() => game.synchronizeSeasonalEventPreviews(
+        {'halloween_witchlight': now.add(const Duration(days: 2))}));
+    await tester.pump();
+    now = now.add(const Duration(days: 2));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(EventProgressBar), findsNothing);
+    now = DateTime.utc(2026, 10, 26);
+    await tester.runAsync(() => game.refreshForCurrentDate());
+    await tester.pump();
+    expect(find.byType(EventProgressBar), findsOneWidget);
+    await tester.runAsync(() => game.synchronizeSeasonalEventDismissals(
+        {'halloween_witchlight': DateTime.utc(2026, 11, 2)}));
+    await tester.pump();
+    expect(find.byType(EventProgressBar), findsNothing);
+    await tester.runAsync(() => game.synchronizeSeasonalEventDismissals({}));
+    await tester.pump();
+    now = DateTime.utc(2026, 11, 2);
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(EventProgressBar), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     online.dispose();

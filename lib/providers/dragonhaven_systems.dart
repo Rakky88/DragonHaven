@@ -2422,6 +2422,9 @@ extension DragonHavenSystems on HouseholdProvider {
     if (mapEquals(normalized, seasonalEventDismissedUntil)) return;
     seasonalEventDismissedUntil = normalized;
     await refreshForCurrentDate();
+    // An end-event response must repaint and persist even when no timer,
+    // daily reward or offer changed during the refresh.
+    await _notifyAndSave();
   }
 
   Future<void> synchronizeSeasonalEventPreviews(

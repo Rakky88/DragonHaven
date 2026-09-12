@@ -1,4 +1,24 @@
-# DragonHaven current release audit - v0.05.31 / 10081
+# DragonHaven current release audit - v0.05.32 / 10082
+
+The event header now contains only the current event's 58dp themed glass meter.
+Expiry, server end-event synchronization and switching/restarting previews remove
+retired meters. Historical points and earned rewards remain stored, with late
+claim eligibility still determined by the adventure completion time. Calendar
+dismissals now persist and notify listeners immediately after synchronization.
+
+Flutter analysis is clean. The final full suite passes all 933 tests at
+concurrency two. Two school timing failures in an earlier heavily loaded run
+also passed on independent rerun, without unrelated gameplay changes.
+Event lifecycle, reduced motion and presentation checks pass.
+Android emulator review covered Halloween, Valentine, existing-friend selection
+and a 320dp viewport with 1.6 text scaling and reduced motion.
+
+Production preflight: 83 matching migrations, zero database lint errors, and
+Auth/settings/application health HTTP 200. The generated worker is byte-identical
+to v0.05.31; no server deployment, schema or authority-switch change is needed.
+See [v0.05.32 verification](RELEASE_V0.05.32_VERIFICATION.md).
+
+## Previous release audit - v0.05.31 / 10081
 
 Verified 12 September 2026: 932 Flutter tests, clean analysis and 27 Edge tests.
 Staging and production are schema 83, each with 19 passing rollback-only server

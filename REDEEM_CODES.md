@@ -1,5 +1,9 @@
 # DragonHaven Redeem Codes
 
+v0.05.32 replaces the points panel with an active-occurrence-only glass meter.
+Retired previews no longer remain on screen; saved rewards, code catalog,
+point values, chest contents and random odds are unchanged.
+
 v0.05.31 keeps the active catalog and preview reward policy unchanged. Adventure
 points in previews now arrive at reward claim, with a compact sprite bar and an
 existing-friend picker for Valentine.

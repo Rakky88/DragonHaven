@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/social.dart';
 import '../providers/online_account_provider.dart';
 import 'online_account_access.dart';
+import '../theme/event_appearance.dart';
 
 /// The server owns invitations and the accepted two-keeper membership.
 class EventPartnerControl extends StatefulWidget {
@@ -142,54 +143,59 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
     final friend =
         friends.where((f) => f.keeperCode == pair?['partnerCode']).firstOrNull;
     final name = friend?.displayName ?? s.pick('your friend', 'je vriend');
-    return Wrap(
-        alignment: WrapAlignment.start,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 4,
-        children: [
-          TextButton.icon(
-              key: const Key('event-invite-friend'),
-              style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  minimumSize: const Size(48, 48),
-                  textStyle: const TextStyle(
-                      fontSize: 11, fontWeight: FontWeight.w600)),
-              onPressed: pair == null ? _invite : null,
-              icon: Icon(
-                  pair?['status'] == 'accepted'
-                      ? Icons.favorite
-                      : Icons.person_add_alt_1,
-                  size: 16,
-                  color: Colors.white70),
-              label: Text(
-                  pair == null
-                      ? s.pick('Invite a friend', 'Nodig een vriend uit')
-                      : pair['status'] == 'accepted'
-                          ? s.pick('Together with $name', 'Samen met $name')
-                          : s.pick('Invitation ? $name', 'Uitnodiging ? $name'),
-                  style: const TextStyle(color: Colors.white))),
-          if (pair?['status'] == 'invited') ...[
-            if (pair?['incoming'] == true)
-              TextButton(
-                  onPressed: _busy
-                      ? null
-                      : () =>
-                          _sync(action: 'accept', id: pair!['id'] as String),
-                  style: TextButton.styleFrom(foregroundColor: Colors.white),
-                  child: Text(s.pick('Accept', 'Accepteren'))),
-            IconButton(
-                tooltip: s.pick('Cancel invitation', 'Uitnodiging annuleren'),
-                onPressed: _busy
-                    ? null
-                    : () => _sync(
-                        action:
-                            pair?['incoming'] == true ? 'decline' : 'cancel',
-                        id: pair!['id'] as String),
-                icon: const Icon(Icons.close_rounded,
-                    size: 18, color: Colors.white70)),
-          ],
-        ]);
+    final label = pair == null
+        ? s.pick('Invite a friend', 'Nodig een vriend uit')
+        : pair['status'] == 'accepted'
+            ? s.pick('Together with $name', 'Samen met $name')
+            : s.pick('Invitation · $name', 'Uitnodiging · $name');
+    final color = EventAppearance.forEvent('valentine_two_heartlights').primary;
+    return IconButton(
+      key: const Key('event-invite-friend'),
+      tooltip: label,
+      style: IconButton.styleFrom(
+          foregroundColor: color,
+          backgroundColor: color.withValues(alpha: .08)),
+      icon: Icon(
+          pair == null
+              ? Icons.person_add_alt_1
+              : pair['status'] == 'accepted'
+                  ? Icons.favorite
+                  : Icons.mark_email_unread_outlined,
+          size: 22),
+      onPressed: pair == null
+          ? _invite
+          : () async {
+              final action = await showModalBottomSheet<String>(
+                  context: context,
+                  useSafeArea: true,
+                  showDragHandle: true,
+                  builder: (context) => Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Text(label,
+                            style: Theme.of(context).textTheme.titleMedium),
+                        if (pair['status'] == 'invited') ...[
+                          if (pair['incoming'] == true)
+                            ListTile(
+                                leading: const Icon(Icons.check_circle_outline),
+                                title: Text(s.pick('Accept', 'Accepteren')),
+                                onTap: () => Navigator.pop(context, 'accept')),
+                          ListTile(
+                              leading: const Icon(Icons.close),
+                              title: Text(s.pick('Cancel invitation',
+                                  'Uitnodiging annuleren')),
+                              onTap: () => Navigator.pop(
+                                  context,
+                                  pair['incoming'] == true
+                                      ? 'decline'
+                                      : 'cancel')),
+                        ],
+                      ])));
+              if (mounted && action != null) {
+                await _sync(action: action, id: pair['id'] as String);
+              }
+            },
+    );
   }
 }
 
