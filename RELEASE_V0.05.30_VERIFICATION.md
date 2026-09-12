@@ -42,5 +42,13 @@ unchanged code/database observation (13:08?13:38 Europe/Amsterdam).
 - Version download: https://github.com/Rakky88/DragonHaven/releases/download/v0.05.30/DragonHaven.apk
 - Permanent download: https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk
 
-Publication verification is pending. Local evidence: .tools/release30-*,
+Published and verified 2026-09-12T12:02:14Z. GitHub tag and latest both resolve
+to v0.05.30. Remote asset size and SHA-256 match the local APK; the permanent
+download returns HTTP 200 with the expected content length. Release source
+commit: `28066e5ae596633f019b74b8a2a4524800919173`.
+
+On the emulator, the free room picker and Chests-first Inventory were exercised
+at 320dp with 130% text and reduced motion. All eight language names remain
+alphabetized; the saved English choice was preserved. Display settings were
+restored afterwards. Local evidence: .tools/release30-*,
 release/v0.05.30-artifact.json and release/release30-*.png.
