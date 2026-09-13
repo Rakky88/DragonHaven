@@ -49,4 +49,18 @@ visual review: the captured Android frame shows the themed flying sprites and
 reduced-motion check also passed again. The review uses an isolated debug
 package; its temporary harness and package suffix are not in the release APK.
 
-Remote publication verification is pending.
+## Publication
+
+Published and independently verified at **20:45:59 UTC on 13 September 2026**.
+Tag source: `889f76711ae6a1b7adac9ecffae3b088b0cbd20f`.
+The publisher dry run and publication succeeded. GitHub latest resolves to
+v0.05.36; asset size and GitHub SHA-256 match the local signed APK. The permanent
+download responds HTTP 200 with the expected content length.
+
+Production postflight at **20:46:03 UTC** passed again: 83 matching migrations,
+zero database lint errors, Auth/settings/application health all HTTP 200.
+No production database, worker or runtime switch was changed for this release.
+
+[Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.36)
+[Version APK](https://github.com/Rakky88/DragonHaven/releases/download/v0.05.36/DragonHaven.apk)
+[Permanent APK](https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk)
