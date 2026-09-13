@@ -13,10 +13,35 @@ import '../services/social_repository.dart';
 
 class OnlineAccountProvider extends ChangeNotifier {
   static const maxSuccessfulTradesPerDay = 3;
+  static const _serverSocialOperations = {
+    'social.refresh',
+    'social.preferences',
+    'friends.send_request',
+    'friends.respond_request',
+    'friends.remove',
+    'friends.block',
+    'friends.unblock',
+    'messages.open',
+    'messages.send',
+    'conclave.directory',
+    'conclave.create',
+    'conclave.join',
+    'conclave.respond_request',
+    'conclave.invite',
+    'conclave.respond_invite',
+    'conclave.leave',
+    'conclave.role',
+    'conclave.transfer',
+    'conclave.remove_member',
+    'conclave.dissolve',
+    'seasonal.chronicle',
+    'seasonal.community',
+  };
 
   OnlineAccountProvider({
     required SocialRepository repository,
     required OnlineInventorySnapshot Function() inventorySnapshot,
+    this.serverOwned = false,
     OnlineProfileSnapshot Function()? profileSnapshot,
     Future<void> Function()? synchronizeEggAltar,
     Future<void> Function(Map<String, String> reservations)?
@@ -87,6 +112,11 @@ class OnlineAccountProvider extends ChangeNotifier {
         _operationTimeout = operationTimeout;
 
   final SocialRepository _repository;
+
+  /// Server sessions may read and manage social relationships, but never
+  /// publish a legacy inventory or acknowledge rewards through local state.
+  final bool serverOwned;
+  int _authGeneration = 0;
   final Future<void> Function()? _synchronizeEggAltar;
   final OnlineInventorySnapshot Function() _inventorySnapshot;
   final OnlineProfileSnapshot Function() _profileSnapshot;
@@ -302,6 +332,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     _readPreferences = await SharedPreferences.getInstance();
     _authSubscription = _repository.authStateChanges.listen(
       (signedIn) {
+        _authGeneration++;
         if (signedIn) {
           _ensureRefreshTimer();
           unawaited(refresh());
@@ -311,6 +342,7 @@ class OnlineAccountProvider extends ChangeNotifier {
         }
       },
       onError: (Object error) {
+        _authGeneration++;
         final correlationId = DiagnosticIds.create();
         errorCode =
             error is SocialException ? error.code : 'online_unexpected_error';
@@ -1275,6 +1307,20 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   Future<void> _refreshDataOnce() async {
+    if (serverOwned) {
+      final owner = currentUserId;
+      final authGeneration = _authGeneration;
+      final generation = _conclaveReadGeneration;
+      final snapshot = await _repository.loadOnlineSnapshot();
+      if (_disposed ||
+          owner == null ||
+          owner != currentUserId ||
+          authGeneration != _authGeneration) {
+        throw const SocialException('online_login_required');
+      }
+      _applyOnlineSnapshot(snapshot, conclaveGeneration: generation);
+      return;
+    }
     await _repository.ensureAccount();
     final snapshot = _inventorySnapshot();
     final localProfile = _profileSnapshot();
@@ -1790,7 +1836,14 @@ class OnlineAccountProvider extends ChangeNotifier {
       supportCode = null;
       _notify();
     }
-    final operationFuture = Future<T>.sync(operation);
+    final operationFuture = Future<T>.sync(() {
+      if (serverOwned &&
+          !operationName.startsWith('auth.') &&
+          !_serverSocialOperations.contains(operationName)) {
+        throw const SocialException('game_server_authority_required');
+      }
+      return operation();
+    });
     _settledOperation = operationFuture.then<void>((_) {},
         onError: (Object _, StackTrace __) {});
     unawaited(operationFuture.then<void>(

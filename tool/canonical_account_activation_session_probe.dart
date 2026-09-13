@@ -11,6 +11,8 @@ import 'package:dragon_haven/services/supabase_social_repository.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/services/social_repository.dart';
+import 'package:dragon_haven/providers/online_account_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -44,6 +46,9 @@ class _LostCloudReplyRepository extends SupabaseSocialRepository {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  // This guarded tool is executed by flutter test, outside the unit-test tree.
+  // ignore: invalid_use_of_visible_for_testing_member
+  SharedPreferences.setMockInitialValues({});
   HttpOverrides.global = null;
   test('real account activation survives lost migration and purchase replies',
       () async {
@@ -69,6 +74,7 @@ void main() {
     CanonicalGameSession? game;
     CanonicalGameTransport? migration;
     CanonicalAccountHandoff? handoff;
+    OnlineAccountProvider? socialReads;
     try {
       await auth.auth.recoverSession(jsonEncode(raw));
       require((await auth.auth.getUser()).user?.id == owner, 'auth_mismatch');
@@ -146,6 +152,22 @@ void main() {
       require(
           status.ownerId == owner && status.phase == 'active', 'live_status');
       stdout.writeln('PROBE: account_activation_replayed');
+      socialReads = OnlineAccountProvider(
+          repository: social,
+          serverOwned: true,
+          inventorySnapshot: () =>
+              throw StateError('client_probe_activation_legacy_inventory'),
+          profileSnapshot: () =>
+              throw StateError('client_probe_activation_legacy_profile'));
+      await socialReads.initialize();
+      require(
+          socialReads.errorCode == null && socialReads.profile?.userId == owner,
+          'server_social_read');
+      require(
+          !await socialReads.backupToCloud() &&
+              socialReads.errorCode == 'game_server_authority_required',
+          'server_social_legacy_write_fenced');
+      stdout.writeln('PROBE: server_social_read_and_write_fence');
       var dropPurchase = true;
       game = CanonicalGameSession(
           directory: directory,
@@ -193,6 +215,7 @@ void main() {
       stdout.writeln(
           'PASS: real account activation; lost activation/purchase replies, private import, live inventory and one debit.');
     } finally {
+      socialReads?.dispose();
       handoff?.dispose();
       game?.dispose();
       await migration?.dispose();

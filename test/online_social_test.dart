@@ -33,6 +33,47 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  test('server social refresh never exports or acknowledges legacy inventory',
+      () async {
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    final online = OnlineAccountProvider(
+        repository: repository,
+        serverOwned: true,
+        inventorySnapshot: () => throw StateError('legacy inventory accessed'),
+        profileSnapshot: () => throw StateError('legacy profile accessed'));
+    addTearDown(online.dispose);
+    await online.initialize();
+    expect(online.friends, hasLength(1));
+    expect(repository.snapshotLoadCount, 1);
+    expect(repository.ensureAccountCount, 0);
+    expect(repository.updateProfileCount, 0);
+    expect(repository.importCount, 0);
+    expect(repository.acknowledgeCount, 0);
+    expect(repository.acknowledgeTradeCount, 0);
+    expect(online.errorCode, isNull);
+    expect(await online.removeFriend(online.friends.single.userId), isTrue);
+    expect(repository.removeCount, 1);
+  });
+
+  test('server social adapter refuses legacy cloud writes and reward claims',
+      () async {
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    final online = OnlineAccountProvider(
+        repository: repository,
+        serverOwned: true,
+        inventorySnapshot: () => throw StateError('legacy inventory accessed'));
+    addTearDown(online.dispose);
+    await online.initialize();
+    expect(await online.backupToCloud(), isFalse);
+    expect(online.errorCode, 'game_server_authority_required');
+    expect(await online.replaceCloudWithLocal(), isFalse);
+    expect(await online.restoreFromCloud(), isFalse);
+    expect(await online.contributeToConclave(), isFalse);
+    expect(repository.cloudSave, isNull);
+    expect(repository.acknowledgeCount, 0);
+    expect(repository.acknowledgeTradeCount, 0);
+  });
+
   ConclaveSnapshot unreadSnapshot(List<ConclaveMessage> messages,
           {String id = 'badge-conclave'}) =>
       ConclaveSnapshot.fromJson({
@@ -1679,9 +1720,9 @@ void main() {
           expiresAt: DateTime.now().add(const Duration(hours: 1)))
     ];
     await tester.runAsync(() => game.synchronizeSeasonalEventPreviews({
-      for (final preview in online.seasonalEventPreviews)
-        preview.eventId: preview.expiresAt,
-    }));
+          for (final preview in online.seasonalEventPreviews)
+            preview.eventId: preview.expiresAt,
+        }));
     await tester.pumpWidget(MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: game),
