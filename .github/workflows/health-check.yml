@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: dragonhaven-production-health
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   public-health:
@@ -20,12 +20,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            tool
+            lib/config
+
+      - name: Verify health reporting and contract checks
+        shell: pwsh
+        run: |
+          ./tool/test_public_health_report.ps1
+          ./tool/test_public_application_health.ps1
 
       - name: Check public production Auth and application endpoints
+        id: health
         shell: pwsh
         run: |
           ./tool/public_server_health_check.ps1 `
             -Environment production `
+            -MaximumAttempts 2 `
+            -RetryDelaySeconds 15 `
             -OutputPath health/public-health.json
 
       - name: Upload health evidence
@@ -37,40 +50,42 @@ jobs:
           retention-days: 30
 
       - name: Alert Rick on production health failure
-        if: failure()
+        if: failure() && steps.health.outcome == 'failure'
         uses: actions/github-script@v8
         with:
           script: |
-            const title = 'SEV-1: DragonHaven production health check failed';
+            const title = 'DragonHaven production health check needs attention';
+            const legacyTitle = 'SEV-1: DragonHaven production health check failed';
             const { data: issues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
               per_page: 100,
             });
-            if (!issues.some(issue => issue.title === title)) {
+            if (!issues.some(issue => !issue.pull_request && issue.user.login === 'github-actions[bot]' && [title, legacyTitle].includes(issue.title))) {
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title,
-                body: `The scheduled production health check failed. Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nFollow INCIDENT_RUNBOOK.md. No credentials or player data are included.`,
+                body: `The scheduled production health check did not pass its confirmation checks. Inspect the sanitized health artifact for endpoint statuses and both attempts; this alert alone does not establish a SEV-1 incident. Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nFollow INCIDENT_RUNBOOK.md. No credentials or player data are included.`,
                 assignees: ['Rakky88'],
               });
             }
 
       - name: Close recovered production health alert
-        if: success()
+        if: always() && steps.health.outcome == 'success'
         uses: actions/github-script@v8
         with:
           script: |
-            const title = 'SEV-1: DragonHaven production health check failed';
+            const title = 'DragonHaven production health check needs attention';
+            const legacyTitle = 'SEV-1: DragonHaven production health check failed';
             const { data: issues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
               per_page: 100,
             });
-            for (const issue of issues.filter(issue => issue.title === title)) {
+            for (const issue of issues.filter(issue => !issue.pull_request && issue.user.login === 'github-actions[bot]' && [title, legacyTitle].includes(issue.title))) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
