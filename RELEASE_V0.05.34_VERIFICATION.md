@@ -39,4 +39,11 @@ Existing signing certificate verified:
 [Version APK](https://github.com/Rakky88/DragonHaven/releases/download/v0.05.34/DragonHaven.apk)
 [Permanent APK](https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk)
 
-Publication API, digest and permanent link must be checked after upload.
+Publication verified on 13 September 2026: GitHub latest resolves to v0.05.34;
+asset size and SHA-256 match the local APK, and the permanent download responds
+HTTP 200. Tag source: `ea622d8127b470b73bbf4b35dbc5345c87ffddb3`.
+
+The publisher dry run passed. Windows PowerShell encountered the documented
+ShouldProcess failure before mutation; release/tag state was checked again and
+the checksum-verified portable GitHub CLI completed publication. The uploaded
+asset was assigned the permanent `DragonHaven.apk` name before link verification.
