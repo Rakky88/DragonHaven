@@ -89,6 +89,7 @@ class CanonicalGameSession extends ChangeNotifier {
     if (minimumServerRevision < 0 || minimumServerRevision > 9007199254740991) {
       return Future.error(ArgumentError.value(minimumServerRevision));
     }
+    if (!_sameSession) _accountChanged();
     if (minimumServerRevision > _minimumServerRevision) {
       _minimumServerRevision = minimumServerRevision;
       _fresh = false;

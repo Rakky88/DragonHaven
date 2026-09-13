@@ -156,6 +156,18 @@ void main() {
     expect(session.canAct, isTrue);
   });
 
+  test('handoff bound survives an account change before its stream event', () async {
+    connection.currentOwner = other;
+    connection.sessionEpoch++;
+    await expectLater(session.synchronize(minimumServerRevision: 3),
+        failure('game_snapshot_stale'));
+    expect(session.canAct, isFalse);
+    connection.revision = 3;
+    await session.synchronize();
+    expect(session.snapshot!.ownerId, other);
+    expect(session.canAct, isTrue);
+  });
+
   test('higher handoff revision also fences an in-flight synchronization',
       () async {
     final held = Completer<void>();
