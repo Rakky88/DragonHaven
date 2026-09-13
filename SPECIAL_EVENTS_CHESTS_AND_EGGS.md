@@ -65,6 +65,10 @@ the place to claim a completed event reward after its meter disappears.
 Claimed Adventure points still fly into an active meter. Trials with C or better
 also send their credited points into the meter after the result screen closes;
 D, cancellation and rejected/uncredited results do not animate a reward.
+The return animation uses the surviving navigation route, because completing
+a Trial removes its offer card before the result screen closes. The canonical
+screen also checks that the account and session epoch still match. Regression
+tests cover credited C results for all three ordinary Trials after card removal.
 Reduced-motion settings
 stop ambient liquid effects and particles and apply fill changes immediately.
 A full unclaimed chest glows and opens Completed Adventures; claimed chests show
@@ -275,7 +279,7 @@ trade scene accepts masked server data and acknowledges without another grant.
 Local UI lost-response/account-switch checks pass. The real two-Auth UI probe
 and legacy-trade migration remain open; the first read failed as described above.
 
-Beacon (migration 73, applied only on staging): voluntary donations spend 1–5000 owned Shell
+Beacon (migration 73, applied only on staging): voluntary donations spend 1â€“5000 owned Shell
 Fragments, capped by the existing shared goal of 5000. The command seals current
 Conclave membership and remaining capacity, then commits the exact debit,
 project total and existing stage message together. Thresholds remain 500, 2000
@@ -455,12 +459,12 @@ started once per account per occurrence with one available owned dragon.
 
 | Event ID | Event and Adventure | Window and recurrence | Base journey | Direct completion reward |
 |---|---|---|---:|---|
-| `golden_wings_birthday` | A Wish on Golden Wings (`special_golden_wings_birthday`) | Launch: 1–3 Sep 2026; then every 13 May 00:00–14 May 00:00 from 2027 | 10 days | 500 XP; +25 Might/Spirit/Arcana; Golden Wings Chest; one random Moral Prism, Order Compass, Soul Mirror, or Astral Lens; one Music Chest if collection capacity remains |
-| `halloween_witchlight` | Night of the Witchlight / Roots Beneath the Lanterns (`special_halloween_witchlight`) | 25 Oct 00:00–2 Nov 00:00, annually from 2026 | 72 hours | 500 XP; +13 Might/Spirit/Arcana; Witchlight Chest |
-| `christmas_winter_hearth` | A Star for the Winter Hearth / The Starlight Sleigh (`special_christmas_winter_hearth`) | 25 Dec 00:00–27 Dec 00:00, annually from 2026 | 96 hours | 600 XP; +12 Might/Spirit/Arcana; Starlight Gift Chest |
-| `new_year_first_dawn` | When the New Dawn Rings / The Bell Beyond Midnight (`special_new_year_first_dawn`) | 1 Jan 00:00–7 Jan 00:00, annually from 2027 | 72 hours | 700 XP; +10 Might/Spirit/Arcana; Firstlight Celebration Chest |
-| `valentine_two_heartlights` | Where Two Heartlights Meet / The Rosebound Crossing (`special_valentine_two_heartlights`) | 14 Feb 00:00–15 Feb 00:00, annually from 2027 | 96 hours | Per Keeper: 650 XP; +8 Might/Spirit/Arcana; Twinheart Keepsake Chest; unique Heartbound Pair badge |
-| `pride_every_color` | The Haven of Every Color / The Aurora We Weave (`special_pride_every_color`) | 1 Jun 00:00–8 Jun 00:00, annually from 2027 | 84 hours | 700 XP; +10 Might/Spirit/Arcana; Radiant Festival Chest; unique True Colors title |
+| `golden_wings_birthday` | A Wish on Golden Wings (`special_golden_wings_birthday`) | Launch: 1â€“3 Sep 2026; then every 13 May 00:00â€“14 May 00:00 from 2027 | 10 days | 500 XP; +25 Might/Spirit/Arcana; Golden Wings Chest; one random Moral Prism, Order Compass, Soul Mirror, or Astral Lens; one Music Chest if collection capacity remains |
+| `halloween_witchlight` | Night of the Witchlight / Roots Beneath the Lanterns (`special_halloween_witchlight`) | 25 Oct 00:00â€“2 Nov 00:00, annually from 2026 | 72 hours | 500 XP; +13 Might/Spirit/Arcana; Witchlight Chest |
+| `christmas_winter_hearth` | A Star for the Winter Hearth / The Starlight Sleigh (`special_christmas_winter_hearth`) | 25 Dec 00:00â€“27 Dec 00:00, annually from 2026 | 96 hours | 600 XP; +12 Might/Spirit/Arcana; Starlight Gift Chest |
+| `new_year_first_dawn` | When the New Dawn Rings / The Bell Beyond Midnight (`special_new_year_first_dawn`) | 1 Jan 00:00â€“7 Jan 00:00, annually from 2027 | 72 hours | 700 XP; +10 Might/Spirit/Arcana; Firstlight Celebration Chest |
+| `valentine_two_heartlights` | Where Two Heartlights Meet / The Rosebound Crossing (`special_valentine_two_heartlights`) | 14 Feb 00:00â€“15 Feb 00:00, annually from 2027 | 96 hours | Per Keeper: 650 XP; +8 Might/Spirit/Arcana; Twinheart Keepsake Chest; unique Heartbound Pair badge |
+| `pride_every_color` | The Haven of Every Color / The Aurora We Weave (`special_pride_every_color`) | 1 Jun 00:00â€“8 Jun 00:00, annually from 2027 | 84 hours | 700 XP; +10 Might/Spirit/Arcana; Radiant Festival Chest; unique True Colors title |
 
 For the five new events, every combined Might, Spirit, and Arcana point removes
 15 minutes from the journey, down to an absolute minimum of 24 hours. Golden
@@ -499,7 +503,7 @@ streak rules or rewards.
 | Christmas | `hollyfrostGiftforge` | Hollyfrost Giftforge | Drag moving parcels from a conveyor into matching symbol bays |
 | New Year | `midnightChime` | Midnight Chime | Four-lane falling-star rhythm game; strike each chime at the golden line |
 | Valentine | `rosevowRelay` | Rosevow Relay | Guide two horizontally mirrored hearts through different, jointly solvable mazes |
-| Pridefest | `prismaticParade` | Prismatic Parade | Rotate channels in a 4×4 prism circuit to connect the rainbow source and star |
+| Pridefest | `prismaticParade` | Prismatic Parade | Rotate channels in a 4Ã—4 prism circuit to connect the rainbow source and star |
 
 The six Trials retain their own full-screen backgrounds, icons, sounds and
 themes. Halloween uses a two-phase memory/trace loop. The other five use separate
@@ -523,7 +527,7 @@ frame. Feedback text changes directly without stacking repeated fade-out labels.
 New Year beats shorten from 1.10s to a .42s floor at .0105s per active second;
 every 16th beat has a 1.5x phrase pause. Note travel shortens from 2.1s to .9s
 at .018s per active second, plus up to .4s from Spirit. Travel time is fixed
-at spawn. The hit window remains ±180–250ms (Might). After 22 active seconds,
+at spawn. The hit window remains Â±180â€“250ms (Might). After 22 active seconds,
 every fourth beat has two notes; after 45 seconds, every second beat does.
 Chords always use two distinct lanes and accept two fingers. Each lane has its
 own 120ms repeat guard. Four synthesized chimes (C5, D5, E5, G5) play the original
@@ -531,7 +535,7 @@ own 120ms repeat guard. Four synthesized chimes (C5, D5, E5, G5) play the origin
 Valentine moves both hearts simultaneously, mirroring horizontal direction;
 a blocked heart waits. Every maze pair is checked for a shared solution before
 play. Pride rotates two-ended prism channels and traces the connected beam;
-each newly lit cell scores only once per board. Both puzzle games offer 1–3
+each newly lit cell scores only once per board. Both puzzle games offer 1â€“3
 hints for the whole run based on Arcana. Revisiting a maze state awards nothing.
 
 The five independent arcade games retain the full timer on a mistake, deduct 30 points
@@ -586,7 +590,7 @@ Special Adventure cards/details, illustrated empty/error ranking states, and
 event-colored ranking headers backed by the corresponding Trial scene. The
 Pride Haven Spectrum uses seven actual festival sprites instead of generic
 symbols. All five nested event asset directories are declared explicitly in
-Flutter's asset bundle. Compact-phone widget coverage at 320×640 and an outer-
+Flutter's asset bundle. Compact-phone widget coverage at 320Ã—640 and an outer-
 edge alpha gate protect the layout and prevent visibly clipped cutouts.
 
 Starting a new event occurrence fills every currently empty slot with that
@@ -681,12 +685,12 @@ starter-only tap acceleration.
 
 Hatch achievements:
 
-- Cluckatrice: `winner_chicken_dinner` — Winner, Winner, Chicken Dinner
-- Gloamgourd: `warden_of_witchlight` — Warden of the Witchlight
-- Hollyfrost: `star_in_every_hearth` — A Star in Every Hearth
-- Dawnchime: `first_light_first_flight` — First Light, First Flight
-- Rosevow: `two_hearts_one_flight` — Two Hearts, One Flight
-- Spectrumplume: `every_color_takes_flight` — Every Color Takes Flight
+- Cluckatrice: `winner_chicken_dinner` â€” Winner, Winner, Chicken Dinner
+- Gloamgourd: `warden_of_witchlight` â€” Warden of the Witchlight
+- Hollyfrost: `star_in_every_hearth` â€” A Star in Every Hearth
+- Dawnchime: `first_light_first_flight` â€” First Light, First Flight
+- Rosevow: `two_hearts_one_flight` â€” Two Hearts, One Flight
+- Spectrumplume: `every_color_takes_flight` â€” Every Color Takes Flight
 
 ## 6. Temporary event music and notifications
 
@@ -787,10 +791,10 @@ The complete chest enum remains:
 
 The complete egg categories remain:
 
-- **Starter Egg** — first account egg, one standard Common family.
-- **Mysterious Egg** — ordinary standard family using its source-chest curve.
-- **Sinister Egg** — Sinisterra only, always Evil.
-- **Special Egg** — versioned event-bound family and rules from this document.
+- **Starter Egg** â€” first account egg, one standard Common family.
+- **Mysterious Egg** â€” ordinary standard family using its source-chest curve.
+- **Sinister Egg** â€” Sinisterra only, always Evil.
+- **Special Egg** â€” versioned event-bound family and rules from this document.
 
 Every egg fixes a permanent male/female value when its hatch seed and other
 properties are created, with 50/50 chances. New seed draws use the full 31-bit
@@ -804,8 +808,8 @@ dragons, and unknown eggs do not expose sex or their private seed in projections
 
 The daily released-dragon system still owns 100 separate non-calendar routes:
 
-- `special_1`–`special_90`, A Strange Invitation, fixed visible ordinary chest;
-- `special_91`–`special_100`, The Crooked Shadow, fixed visible Sinister Chest.
+- `special_1`â€“`special_90`, A Strange Invitation, fixed visible ordinary chest;
+- `special_91`â€“`special_100`, The Crooked Shadow, fixed visible Sinister Chest.
 
 They wait for 48 hours, use their existing duration/XP/expertise formulas, do
 not enter an event Trial rotation, and never consume a scheduled event
@@ -874,7 +878,7 @@ Every Special-family egg is excluded, including legacy eggs with no specialEggId
 Nest eggs and trade-reserved eggs are excluded. Sinisterra is Mythical and may be
 returned: hold the return button and accept an additional Sinister confirmation.
 The confirmation describes the permanent return without listing rewards.
-Sinister always gives 25 Shell Fragments and 3–5 Draconic Essence (uniform), with
+Sinister always gives 25 Shell Fragments and 3â€“5 Draconic Essence (uniform), with
 an independent 10% chance of one Weaveheart. No hidden
 rarity, Spectral state or source affects the reward table. Exact probabilities
 and the account-wide Weaveheart guarantee are in RANDOM_REWARDS_AND_ODDS.md.
@@ -956,7 +960,7 @@ known as Happy Birthday. No lyrics or third-party performance are imported.
 shuffle/repeat and master setting survive expiry, replacement and manual stop.
 This temporary track is outside the 80 collectible songs.
 
-Wishcake Tower runs for 75 seconds plus the established 0–3 seconds of assistance.
+Wishcake Tower runs for 75 seconds plus the established 0â€“3 seconds of assistance.
 Tap the board or Drop layer to place the moving cake. Only overlap of at least
 7% of board width survives; smaller overlaps count as misses. Within 1.8% of
 board width, alignment is perfect (Arcana adds up to .7 percentage points).

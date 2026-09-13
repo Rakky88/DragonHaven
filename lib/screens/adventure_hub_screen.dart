@@ -765,6 +765,9 @@ class _TrialOfferCard extends StatelessWidget {
 }
 
 Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
+  // Completing a Trial removes its offer card (and this caller's context).
+  // Keep the route owner for the return animation, not the disposable card.
+  final trialNavigator = Navigator.of(context);
   final game = context.read<HouseholdProvider>();
   final strings = AppStrings.of(context);
   final dragons = game.ownedDragons
@@ -843,7 +846,7 @@ Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
   TrialCompletion? completion;
   game.beginPresentationDeferral();
   try {
-    completion = await Navigator.of(context).push<TrialCompletion>(
+    completion = await trialNavigator.push<TrialCompletion>(
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => TrialGameScreen(
@@ -859,8 +862,8 @@ Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
     // the result/reward flow cannot remain visible underneath a reveal.
     await Future<void>.delayed(const Duration(milliseconds: 350));
     game.endPresentationDeferral();
-    if (context.mounted && completion != null) {
-      EventPointFlight.returnFromTrial(context, {
+    if (trialNavigator.mounted && completion != null) {
+      EventPointFlight.returnFromTrial(trialNavigator.context, {
         for (final p in game.activeEventProgress)
           if (eventPointsBefore.containsKey(p.key))
             p.key: p.points - eventPointsBefore[p.key]!,
