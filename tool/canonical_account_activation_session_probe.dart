@@ -6,6 +6,9 @@ import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:dragon_haven/services/canonical_game_transport.dart';
 import 'package:dragon_haven/services/canonical_account_handoff.dart';
+import 'package:dragon_haven/services/canonical_legacy_upload.dart';
+import 'package:dragon_haven/services/supabase_social_repository.dart';
+import 'package:dragon_haven/models/chest.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -53,17 +56,31 @@ void main() {
                 dropMigration = false;
                 return true;
               }, action: 'migrate_account'));
+      final social = SupabaseSocialRepository(auth);
+      final source = await social.loadCloudGameSave();
+      require(source?.revision == 1, 'legacy_source');
+      int? baseRevision =
+          1; // The synthetic fixture owns this exact cloud base.
+      final upload = CanonicalLegacyUpload(
+          repository: social,
+          currentOwner: () => migration!.currentOwner,
+          sessionEpoch: () => migration!.sessionEpoch,
+          settleLegacySources: (_) async {},
+          exportState: () => source!.state,
+          localRevision: () => 1,
+          loadBaseRevision: (_) async => baseRevision,
+          saveBaseRevision: (_, revision) async => baseRevision = revision,
+          deviceId: () async => 'synthetic-activation-probe',
+          clientVersion: '0.05.35');
       var preparations = 0;
       CanonicalAccountHandoff createHandoff() => CanonicalAccountHandoff(
           directory: directory,
           currentOwner: () => migration!.currentOwner,
           sessionEpoch: () => migration!.sessionEpoch,
           readStatus: (_) => migration!.readAccountStatus(),
-          prepareAndUploadLegacy: (_) async {
-            // This fixture was uploaded before the probe; never import a save
-            // from the public projection or duplicate a settled migration.
+          prepareAndUploadLegacy: (owner) async {
             preparations++;
-            return 1;
+            return upload.upload(owner);
           },
           activate: (_, request, revision) => migration!
               .migrateAccount(requestId: request, sourceRevision: revision));
@@ -88,7 +105,7 @@ void main() {
               !await journal.exists(),
           'handoff_restart');
       final revision =
-          await migration.migrateAccount(requestId: request, sourceRevision: 1);
+          await migration.migrateAccount(requestId: request, sourceRevision: 2);
       require(revision == 3, 'activation_replayed');
       final status = await migration.readAccountStatus();
       require(
@@ -130,13 +147,14 @@ void main() {
           connection: CanonicalGameTransport.staging(auth, config));
       final receipt = await game.synchronize();
       require(
-          receipt?.requestId == pending!.requestId &&
-              receipt?.replayed == true &&
-              game.snapshot!.coins == 900 &&
-              game.snapshot!.shop.chests['title'] == titles + 1 &&
-              await game.intents.pending(owner) == null &&
-              game.canAct,
-          'purchase_replayed');
+          receipt?.requestId == pending!.requestId && receipt?.replayed == true,
+          'purchase_receipt_replayed');
+      require(game.snapshot!.coins == before.coins - titleChestCoinPrice,
+          'purchase_exact_debit');
+      require(game.snapshot!.shop.chests['title'] == titles + 1,
+          'purchase_exact_chest');
+      require(await game.intents.pending(owner) == null && game.canAct,
+          'purchase_journal_settled');
       stdout.writeln(
           'PASS: real account activation; lost activation/purchase replies, private import, live inventory and one debit.');
     } finally {

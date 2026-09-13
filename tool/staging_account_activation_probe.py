@@ -64,12 +64,12 @@ def run_account_activation_probe(*, root, project, base, public_key, run, fixtur
       (select count(*)=1 from private.canonical_account_migrations where owner_id='{owner}' and activated_at is not null
         and activated_revision=3) as one_activation,
       (select authority_mode='server' and protocol_version=2 from public.player_economy_authority where user_id='{owner}') as authority,
-      (select g.state#>>'{{pet,coins}}'='900' and g.state#>>'{{pet,gems}}'='10' and
+      (select g.state#>>'{{pet,coins}}'='500' and g.state#>>'{{pet,gems}}'='10' and
         g.state#>>'{{chestInventory,title}}'='1' and g.state#>>'{{futureMigrationMetadata,preserved}}'='true'
         from private.canonical_game_states g where owner_id='{owner}') as exact_inventory,
       (select count(*)=1 from private.canonical_game_intents where owner_id='{owner}'
         and action='purchase_title_chest' and status='succeeded') as one_purchase,
-      (select revision=1 and state#>>'{{pet,coins}}'='1000' from public.cloud_game_saves where user_id='{owner}') as source_preserved,
+      (select revision=2 and state#>>'{{pet,coins}}'='1000' from public.cloud_game_saves where user_id='{owner}') as source_preserved,
       (select count(*)=0 from private.canonical_game_intents where owner_id='{owner}' and status='processing') as no_pending
       """, True)[0]
     expected = ['one_activation', 'authority', 'exact_inventory', 'one_purchase', 'source_preserved', 'no_pending']
