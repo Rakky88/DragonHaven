@@ -178,7 +178,8 @@ void main() {
                     dropPurchase = false;
                     return true;
                   })));
-      await game.synchronize();
+      await game.synchronize(
+          minimumServerRevision: handoff.minimumServerRevision!);
       final before = game.snapshot!;
       require(
           before.authorityMode == 'server' &&

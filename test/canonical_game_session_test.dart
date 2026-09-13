@@ -138,6 +138,38 @@ void main() {
     await directory.delete(recursive: true);
   });
 
+  test('handoff revision blocks stale inventory and remains required on retry',
+      () async {
+    await expectLater(session.synchronize(minimumServerRevision: 3),
+        failure('game_snapshot_stale'));
+    expect(session.canAct, isFalse);
+    connection.revision = 2;
+    await expectLater(session.synchronize(), failure('game_snapshot_stale'));
+    connection.revision = 3;
+    await session.synchronize();
+    expect(session.canAct, isTrue);
+    expect(session.snapshot!.serverRevision, 3);
+    connection.switchAccount(other);
+    connection.revision = 1;
+    await session.synchronize();
+    expect(session.snapshot!.ownerId, other);
+    expect(session.canAct, isTrue);
+  });
+
+  test('higher handoff revision also fences an in-flight synchronization',
+      () async {
+    final held = Completer<void>();
+    connection.holdRead = held.future;
+    final first = session.synchronize();
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    final second = session.synchronize(minimumServerRevision: 3);
+    final checkedFirst = expectLater(first, failure('game_snapshot_stale'));
+    final checkedSecond = expectLater(second, failure('game_snapshot_stale'));
+    held.complete();
+    await Future.wait([checkedFirst, checkedSecond]);
+    expect(session.canAct, isFalse);
+  });
+
   test('server session rejects shadow replies and resumes a lost live receipt',
       () async {
     connection.authority = 'server';

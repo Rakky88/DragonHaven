@@ -40,6 +40,7 @@ class CanonicalGameSession extends ChangeNotifier {
   late final StreamSubscription<int> _changes;
   String? _owner;
   int _epoch = 0;
+  int _minimumServerRevision = 0;
   bool _disposed = false;
   bool _fresh = false;
   bool _foreground = true;
@@ -74,6 +75,7 @@ class CanonicalGameSession extends ChangeNotifier {
     _epoch = connection.sessionEpoch;
     _fresh = false;
     _snapshot = null;
+    _minimumServerRevision = 0;
     _errorCode = null;
     _operation = null;
     _operationKey = null;
@@ -81,34 +83,46 @@ class CanonicalGameSession extends ChangeNotifier {
   }
 
   /// Resume a pending command/recovery first, then obtain a fresh server view.
-  Future<CanonicalGameReceipt?> synchronize() =>
-      _run('synchronize', (owner, epoch, requireSession) async {
-        final cached = await snapshots.inspect(owner);
+  /// The handoff supplies its confirmed revision before opening server UI.
+  /// Retain this lower bound for retries, including an already-pending read.
+  Future<CanonicalGameReceipt?> synchronize({int minimumServerRevision = 0}) {
+    if (minimumServerRevision < 0 || minimumServerRevision > 9007199254740991) {
+      return Future.error(ArgumentError.value(minimumServerRevision));
+    }
+    if (minimumServerRevision > _minimumServerRevision) {
+      _minimumServerRevision = minimumServerRevision;
+      _fresh = false;
+    }
+    return _run('synchronize', (owner, epoch, requireSession) async {
+      final cached = await snapshots.inspect(owner);
+      requireSession();
+      if (_snapshot == null && cached.snapshot != null) {
+        _snapshot = cached.snapshot;
+        notifyListeners();
+      }
+      var applied = false;
+      final reader = _reader();
+      final reconciler = _reconciler(reader, (value) async {
         requireSession();
-        if (_snapshot == null && cached.snapshot != null) {
-          _snapshot = cached.snapshot;
-          notifyListeners();
-        }
-        var applied = false;
-        final reader = _reader();
-        final reconciler = _reconciler(reader, (value) async {
-          requireSession();
-          _accept(value);
-          applied = true;
-        });
-        final receipt = await reconciler.resume(owner);
-        requireSession();
-        if (!applied) {
-          final value = await reader.fetch(owner,
-              minimumRevision: cached.minimumRevision,
-              minimumRulesetRevision: cached.minimumRulesetRevision);
-          requireSession();
-          await snapshots.persistFresh(value);
-          requireSession();
-          _accept(value);
-        }
-        return receipt;
+        _accept(value);
+        applied = true;
       });
+      final receipt = await reconciler.resume(owner);
+      requireSession();
+      if (!applied) {
+        final value = await reader.fetch(owner,
+            minimumRevision: cached.minimumRevision > _minimumServerRevision
+                ? cached.minimumRevision
+                : _minimumServerRevision,
+            minimumRulesetRevision: cached.minimumRulesetRevision);
+        requireSession();
+        await snapshots.persistFresh(value);
+        requireSession();
+        _accept(value);
+      }
+      return receipt;
+    });
+  }
 
   /// Duplicate taps share the original request. A different action while one
   /// is pending is refused; economic actions are never queued against stale UI.
@@ -163,6 +177,9 @@ class CanonicalGameSession extends ChangeNotifier {
   void _accept(CanonicalGameSnapshot value) {
     if (value.authorityMode != expectedAuthority.name) {
       throw const CanonicalGameException('game_snapshot_invalid');
+    }
+    if (value.serverRevision < _minimumServerRevision) {
+      throw const CanonicalGameException('game_snapshot_stale');
     }
     final current = _snapshot;
     if (current != null &&
