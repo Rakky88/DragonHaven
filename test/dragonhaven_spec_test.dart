@@ -916,6 +916,8 @@ void main() {
     ).readAsStringSync();
     final publicCheck =
         File('tool/public_server_health_check.ps1').readAsStringSync();
+    final publicReport =
+        File('tool/lib/public_health_report.ps1').readAsStringSync();
     final preflight =
         File('tool/release_server_preflight.ps1').readAsStringSync();
     final helper = File('tool/lib/public_auth_health.ps1').readAsStringSync();
@@ -949,13 +951,17 @@ void main() {
     expect(migration, isNot(contains('from public.')));
     expect(migration, isNot(contains('auth.uid')));
 
-    for (final script in [publicCheck, preflight]) {
+    expect(publicCheck.replaceAll(r'\', '/'),
+        contains('lib/public_health_report.ps1'));
+    expect(publicCheck, contains('Invoke-DragonHavenPublicHealthCheck'));
+    for (final script in [publicReport, preflight]) {
       expect(script, contains('/rest/v1/rpc/dragonhaven_public_health'));
       expect(script, contains('ConvertFrom-DragonHavenApplicationHealth'));
-      expect(script, contains('ApplicationHealthStatus'));
       expect(script, contains('ApplicationContractVersion'));
       expect(script, contains('ApplicationClockSkewMs'));
     }
+    expect(preflight, contains('ApplicationHealthStatus'));
+    expect(publicReport, contains("Name = 'ApplicationHealth'"));
     expect(helper, contains("[ValidateSet('GET', 'POST')]"));
     expect(helper, contains('MaximumClockSkewSeconds'));
     expect(
