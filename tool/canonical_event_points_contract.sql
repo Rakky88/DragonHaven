@@ -26,6 +26,20 @@ begin
       'target',4000,'chestId','twinheart_keepsake_chest_v1','points',idx*100,
       'partnerPoints',0,'claimed',false,'preview',true);
     source:=jsonb_build_object('schemaVersion',54,'eventProgress',jsonb_build_object(event_keys[idx],progress));
+    -- Reuse the validated minimal social projection shape for trigger coverage.
+    source:='{"schemaVersion":54,
+    "pet":{"id":"mirror-one","name":"Mirror One","stage":"ascended","lineageId":"copperflame",
+      "xp":1000,"coins":12345,"gems":987,"training":{"might":310,"arcana":32,"spirit":43},
+      "evolutionPath":"might","favorite":true,"spectral":true,"sinister":false,
+      "trialHighScores":{"cavernFlight":234,"ruinBreaker":345,"runeweaver":456}},
+    "sanctuaryDragons":[{"id":"mirror-two","name":"Mirror Two","stage":"hatchling","lineageId":"copperflame",
+      "xp":25,"coins":999999,"gems":999999,"training":{"might":1,"arcana":2,"spirit":3},
+      "evolutionPath":null,"favorite":false,"spectral":false,"sinister":false,
+      "trialHighScores":{"cavernFlight":567,"ruinBreaker":45,"runeweaver":67}}],
+    "eggStash":[],"releasedDragons":[],"chestInventory":{},"specialChestInventory":{},
+    "relicInventory":{},"untradeableRelicInventory":{},
+    "discoveredForms":["copperflame:hatchling","copperflame:ascended:might"],
+    "prismaticForms":["copperflame:ascended:might"]}'::jsonb || source;
     insert into public.cloud_game_saves(user_id,revision,state,device_id,client_version,schema_version)
       values(keeper,1,jsonb_set(source,array['eventProgress',event_keys[idx],'points'],'999999'),
         'event-points-contract','0.05.35',54);
