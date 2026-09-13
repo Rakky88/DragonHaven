@@ -1,5 +1,43 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Current verification checkpoint - 13 September 2026
+
+The full app gate in run 34771396189 on e95f85f passed clean analysis,
+961 tests (one intentional skip), both nine-test timezone runs, 27 Edge tests,
+and the shared-rules parity/projection checks. Its compiled ruleset is
+5351941e66f749f69fa123e585039cadbc363ac8b6428ed7d8bc819300088b23
+(1,194,355 bytes). Deployment was blocked before changes by an old summer
+contract expecting five result days; the current schema and app use three.
+That expectation, the corresponding birthday boundary, and old 100-coin
+purchase fixtures now match the existing three-day window and 500-coin price.
+No schedule, price, reward or probability was changed in the game.
+
+Run 34772002849 on d3bcdf8 passed all 19 current economy contract runners on
+schema 83 with rollback and without deploying code or migrations. The exact
+migration-prefix guards now recognize schema 83 while rejecting gaps,
+duplicates and future versions. Full current-candidate staging verification
+is running as 34772080531; its outcome is not yet claimed.
+
+Run 34771742742 on aa97b8a passed real final-upload, activation and purchase
+recovery plus server-owned social reads. SQL additionally verifies the
+original cloud revision is archived and the final legacy source is preserved.
+The social provider's server mode never exports a legacy inventory, publishes
+local progress, acknowledges a local reward, or permits old cloud write paths.
+All 60 local social tests pass and focused analysis is clean. The uploader now
+also requires an established owner for the loaded legacy source; authenticated
+identity alone is insufficient. Nine dedicated uploader tests pass.
+Every synthetic account and command from the focused probe was removed and
+all five staging switches were disabled. Production health at 17:12:42 UTC
+returned HTTP 200 for Auth health, Auth settings and application health.
+
+This is not a production cutover: ordinary main.dart still needs the authority
+gate, source-owner reconciliation, paused legacy writers, full server UI
+routing and foreground/account-change recovery. No real player is promoted,
+and no release/version increment is made by this work. The monitoring fix
+from main is included so a future release retains confirmed-failure alerts.
+
+Earlier checkpoints below document the preceding work.
+
 ## Verified handoff recovery - 13 September 2026
 
 Run 34770616598 on fcb8875 passed against the deployed schema-83 staging worker.
