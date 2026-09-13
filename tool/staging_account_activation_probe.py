@@ -70,9 +70,11 @@ def run_account_activation_probe(*, root, project, base, public_key, run, fixtur
       (select count(*)=1 from private.canonical_game_intents where owner_id='{owner}'
         and action='purchase_title_chest' and status='succeeded') as one_purchase,
       (select revision=2 and state#>>'{{pet,coins}}'='1000' from public.cloud_game_saves where user_id='{owner}') as source_preserved,
+      (select count(*)=1 from public.cloud_game_save_history where user_id='{owner}'
+        and revision=1 and state#>>'{{pet,coins}}'='1000') as original_archived,
       (select count(*)=0 from private.canonical_game_intents where owner_id='{owner}' and status='processing') as no_pending
       """, True)[0]
-    expected = ['one_activation', 'authority', 'exact_inventory', 'one_purchase', 'source_preserved', 'no_pending']
+    expected = ['one_activation', 'authority', 'exact_inventory', 'one_purchase', 'source_preserved', 'original_archived', 'no_pending']
     require(set(facts) == set(expected), 'client_probe_activation_facts_shape')
     for check in expected:
         require(facts[check] is True, 'client_probe_activation_' + check)

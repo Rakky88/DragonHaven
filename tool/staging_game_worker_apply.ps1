@@ -24,10 +24,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Migration history unavailable.' }
 $remote = @($state.migrations | ForEach-Object { [string]$_.remote } | Where-Object { $_ } | Sort-Object)
 $local = @(Get-ChildItem supabase/migrations -Filter '*.sql' | ForEach-Object { $_.BaseName.Split('_')[0] } | Sort-Object)
 $expectedRemote = @($local | Where-Object { [long]$_ -le [long]$remote[-1] })
-if ($local[-1] -cne '202609100079' -or $local.Count -ne 79 -or
-    $remote[-1] -notin @('202609090065','202609100066','202609100067','202609100068','202609100069','202609100070','202609100071','202609100072','202609100073','202609100074','202609100075','202609100076','202609100077','202609100078','202609100079') -or
+if ($local[-1] -cne '202609120083' -or $local.Count -ne 83 -or
+    $remote[-1] -notin @('202609090065','202609100066','202609100067','202609100068','202609100069','202609100070','202609100071','202609100072','202609100073','202609100074','202609100075','202609100076','202609100077','202609100078','202609100079','202609120080','202609120081','202609120082','202609120083') -or
     @(Compare-Object $remote $expectedRemote).Count -ne 0) {
-  throw 'Requires exact registered staging schema 65 through 79 and the reviewed canonical migrations.'
+  throw 'Requires exact registered staging schema 65 through 83 and the reviewed canonical migrations.'
 }
 ./tool/staging_endless_sunwake_contract.ps1 -ProjectRef $projectRef `
   -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN `
