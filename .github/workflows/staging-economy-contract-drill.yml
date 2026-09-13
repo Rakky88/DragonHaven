@@ -34,6 +34,7 @@ on:
           - canonical-group-cleanup
           - canonical-account-activation
           - canonical-account-handoff
+          - canonical-current-contracts
           - canonical-group-probe
           - canonical-partner-probe
           - canonical-beacon-probe
@@ -76,7 +77,7 @@ jobs:
           retention-days: 30
 
   verify:
-    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply' && inputs.contract != 'push-device-probe' && inputs.contract != 'canonical-game' && inputs.contract != 'canonical-game-apply' && inputs.contract != 'canonical-import' && inputs.contract != 'canonical-read' && inputs.contract != 'canonical-social-projection' && inputs.contract != 'canonical-social-reservations' && inputs.contract != 'canonical-group-lifecycle' && inputs.contract != 'canonical-pair-lifecycle' && inputs.contract != 'canonical-beacon' && inputs.contract != 'canonical-trades' && inputs.contract != 'wide-trial-scores' && inputs.contract != 'canonical-seasonal-trials' && inputs.contract != 'canonical-group-cleanup' && inputs.contract != 'canonical-account-activation' && inputs.contract != 'canonical-account-handoff' && inputs.contract != 'canonical-group-probe' && inputs.contract != 'canonical-partner-probe' && inputs.contract != 'canonical-beacon-probe' && inputs.contract != 'canonical-trade-probe'
+    if: inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply' && inputs.contract != 'push-device-probe' && inputs.contract != 'canonical-game' && inputs.contract != 'canonical-game-apply' && inputs.contract != 'canonical-import' && inputs.contract != 'canonical-read' && inputs.contract != 'canonical-social-projection' && inputs.contract != 'canonical-social-reservations' && inputs.contract != 'canonical-group-lifecycle' && inputs.contract != 'canonical-pair-lifecycle' && inputs.contract != 'canonical-beacon' && inputs.contract != 'canonical-trades' && inputs.contract != 'wide-trial-scores' && inputs.contract != 'canonical-seasonal-trials' && inputs.contract != 'canonical-group-cleanup' && inputs.contract != 'canonical-account-activation' && inputs.contract != 'canonical-account-handoff' && inputs.contract != 'canonical-current-contracts' && inputs.contract != 'canonical-group-probe' && inputs.contract != 'canonical-partner-probe' && inputs.contract != 'canonical-beacon-probe' && inputs.contract != 'canonical-trade-probe'
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 15
@@ -775,6 +776,35 @@ jobs:
           name: DragonHaven-staging-group-probe
           path: staging/group-probe.txt
           if-no-files-found: warn
+          retention-days: 30
+
+  canonical-current-contracts:
+    if: inputs.contract == 'canonical-current-contracts' && inputs.confirmation == 'TEST_DRAGONHAVEN_STAGING_ECONOMY_CONTRACT'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            tool
+            supabase
+      - name: Run current economy rollback contracts without deployment
+        shell: pwsh
+        env:
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          New-Item -ItemType Directory -Path staging -Force | Out-Null
+          ./tool/staging_current_economy_contracts.ps1 `
+            -ProjectRef $env:STAGING_SUPABASE_PROJECT_REF `
+            -ManagementAccessToken $env:STAGING_SUPABASE_ACCESS_TOKEN |
+            Tee-Object -FilePath staging/current-economy-contracts.txt
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: DragonHaven-staging-current-economy-contracts
+          path: staging/current-economy-contracts.txt
           retention-days: 30
 
   canonical-account-handoff:

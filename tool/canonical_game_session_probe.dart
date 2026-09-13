@@ -1,3 +1,4 @@
+import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/social_reward_claim.dart';
 import 'package:dragon_haven/models/game_presentation.dart';
 import 'package:dragon_haven/screens/canonical_profile_screen.dart';
@@ -108,7 +109,8 @@ void main() {
       final before = game.snapshot!;
       final titles =
           (before.data['inventory']['chestInventory']['title'] as int?) ?? 0;
-      require(before.coins >= 100, 'client_probe_fixture_balance');
+      require(
+          before.coins >= titleChestCoinPrice, 'client_probe_fixture_balance');
       var lost = false;
       try {
         final first = game.execute('purchase_title_chest', {});
@@ -132,7 +134,7 @@ void main() {
           receipt?.requestId == pending!.requestId &&
               receipt?.replayed == true &&
               receipt?.result == 'purchased' &&
-              after.coins == before.coins - 100 &&
+              after.coins == before.coins - titleChestCoinPrice &&
               after.data['inventory']['chestInventory']['title'] ==
                   titles + 1 &&
               await game.intents.pending(owner) == null &&
@@ -305,7 +307,7 @@ void main() {
       await settleCommand();
       stdout.writeln('PROBE: ui_purchase_settled');
       require(
-          game.snapshot!.coins == before.coins - 100 &&
+          game.snapshot!.coins == before.coins - titleChestCoinPrice &&
               game.snapshot!.shop.chests['title'] == initialChests + 1,
           'client_probe_ui_purchase_failed');
       await mount(const CanonicalInventoryScreen());
@@ -331,7 +333,7 @@ void main() {
           find.byKey(const Key('chest-rewards')).evaluate().length == 1 &&
               game.snapshot!.shop.chests['title'] == initialChests &&
               game.snapshot!.shop.titles.length == initialTitles + 1 &&
-              game.snapshot!.coins == before.coins - 100 &&
+              game.snapshot!.coins == before.coins - titleChestCoinPrice &&
               tester.takeException() == null,
           'client_probe_ui_reveal_failed');
       stdout.writeln(

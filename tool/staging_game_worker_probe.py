@@ -345,7 +345,7 @@ def main():
           (select mutations_enabled from private.economy_contract where singleton) as mutations
           from private.canonical_game_states c where owner_id='{owner}'""", True)[0]
         reward_coins = sum(reward["coins"] for reward in opened["result"]["rewards"])
-        require(int(final["coins"]) == original_coins - 100 + reward_coins and
+        require(int(final["coins"]) == original_coins - 500 + reward_coins and
                 int(final["titles"]) == original_title_chests + 1 and int(final["wooden"]) == 0,
                 "probe_wallet_or_stock_changed_twice")
         require(final["altar_wallet"]["fragments"] == 35 and 4 <= final["altar_wallet"]["essence"] <= 6

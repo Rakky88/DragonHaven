@@ -63,7 +63,7 @@ begin
     raise exception 'birthday_contract_launch_calendar'; end if;
   select * into w from public.seasonal_event_window('golden_wings_birthday','2027-07-01Z');
   if w.occurrence_key <> 'golden_wings_birthday:2027' or w.starts_at <> '2027-05-12T22:00:00Z'
-      or w.ends_at <> '2027-05-13T22:00:00Z' or w.results_end_at <> '2027-05-18T22:00:00Z' then
+      or w.ends_at <> '2027-05-13T22:00:00Z' or w.results_end_at <> '2027-05-16T22:00:00Z' then
     raise exception 'birthday_contract_recurring_calendar'; end if;
   perform set_config('request.jwt.claim.sub',keeper::text,true);
   perform public.redeem_seasonal_event_preview('BDAYEVENT');

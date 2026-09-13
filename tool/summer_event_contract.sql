@@ -23,7 +23,7 @@ begin
       raise exception 'summer_contract_before_initial_year'; end if;
     select * into w from public.seasonal_event_window(eid,'2027-08-01Z');
     if w.occurrence_key<>eid||':2027' or w.ends_at-w.starts_at<>interval '7 days'
-       or w.results_end_at-w.ends_at<>interval '5 days' then
+       or w.results_end_at-w.ends_at<>interval '3 days' then
       raise exception 'summer_contract_window'; end if;
     if (eid='sunwake_summer_sea' and (w.starts_at<>'2027-07-19T22:00:00Z'
          or w.ends_at<>'2027-07-26T22:00:00Z'))
