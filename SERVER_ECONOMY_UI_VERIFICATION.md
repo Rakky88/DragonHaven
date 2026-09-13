@@ -1,5 +1,22 @@
 # Canonical gameplay integration
 
+## v0.05.36 / 10086: Trial event animation hotfix
+
+This release starts from published v0.05.35 and carries only the Trial return
+animation correction, version increment and supporting verification. Completing
+a Trial removes its offer card; the return flight now uses the surviving
+Navigator instead of that disposed card context. Credited points, grades,
+reward rules and saved progress are unchanged. Canonical UI additionally
+checks the account/session epoch before presenting the flight.
+
+The server-economy cutover remains separate work on fix/server-economy-cutover.
+No migration, worker deployment, runtime activation or player conversion is
+included. Production remains schema 83. Pending migration 84 and incomplete
+normal-boot integration are not part of this release.
+
+See RELEASE_V0.05.36_VERIFICATION.md for completed release checks.
+
+
 Candidate-79 rollback run 34497481683 passed on f2057c1, including ownership,
 source/Altar/social changes, activation replay, real server-mode SQL commands,
 recovery and complete Auth cleanup. The full apply now targets reviewed schema

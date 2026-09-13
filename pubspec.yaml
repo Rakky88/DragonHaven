@@ -1,7 +1,7 @@
 name: dragon_haven
 description: Collect dragons, grow the Dragon Tower and fill the Draconomicon.
 publish_to: 'none'
-version: 0.5.35+10085
+version: 0.5.36+10086
 environment:
   sdk: '>=3.3.0 <4.0.0'
 
