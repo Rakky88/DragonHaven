@@ -493,16 +493,24 @@ void main() {
       require(remaining <= const Duration(seconds: 65),
           'client_probe_adventure_wait_unbounded');
       final elapsed = Stopwatch()..start();
-      while (elapsed.elapsed < remaining) {
-        await tester
-            .runAsync(() => Future<void>.delayed(const Duration(seconds: 1)));
-        await tester.pump(const Duration(seconds: 1));
+      // Observe the authoritative deadline instead of assuming one client wait
+      // guarantees that a later read has crossed it. Keep the rehearsal bounded.
+      var polls = 0;
+      while (game.snapshot!.serverTime.isBefore(run.endsAt) &&
+          elapsed.elapsed < const Duration(seconds: 80)) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(seconds: 2)));
+        await tester.pump(const Duration(seconds: 2));
+        await tester.runAsync(() => game.synchronize());
+        await tester.pump();
+        polls++;
       }
       elapsed.stop();
-      stdout.writeln('PROBE: ui_adventure_deadline_wait_finished');
-      await tester.runAsync(() => game.synchronize());
-      stdout.writeln('PROBE: ui_adventure_deadline_synchronized');
-      await tester.pump();
+      stdout.writeln('METRIC: adventure_wait_polls=$polls');
+      stdout.writeln(
+          'METRIC: adventure_wait_ms=${elapsed.elapsedMilliseconds}');
+      stdout.writeln(
+          'METRIC: adventure_remaining_ms=${run.endsAt.difference(game.snapshot!.serverTime).inMilliseconds}');
       require(!game.snapshot!.serverTime.isBefore(run.endsAt),
           'client_probe_adventure_not_due');
       await tap(key('canonical-tab-completed'));

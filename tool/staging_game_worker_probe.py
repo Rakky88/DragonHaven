@@ -404,6 +404,10 @@ def main():
             'tool/canonical_game_session_probe.dart'], cwd=ROOT, env=child_environment,
             capture_output=True, text=True, timeout=600)
         del child_environment['STAGING_GAME_CLIENT_SESSION']
+        for metric, value in re.findall(
+                r'METRIC: (adventure_wait_polls|adventure_wait_ms|adventure_remaining_ms)=(-?[0-9]{1,9})',
+                client_result.stdout):
+            print('METRIC: '+metric+'='+value, flush=True)
         if client_result.returncode != 0:
             # Only fixed phase markers and timeout status may leave the child.
             # Never print arbitrary SDK exceptions, state or session tokens.
