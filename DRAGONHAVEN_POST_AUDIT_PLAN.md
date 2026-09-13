@@ -3,8 +3,9 @@
 ## Current scope: v0.05.35 APK reduction
 
 The owner explicitly selected APK reduction and its related audit items for
-this release. The published baseline is v0.05.34 / 10084; v0.05.35 / 10085 is
-being validated. The old canonical-transition notes below are historical work
+this release. The measured baseline is v0.05.34 / 10084; v0.05.35 / 10085 is
+published and verified, with a 55.43 MB (8.8234%) smaller universal APK and all
+946 tests passing. The old canonical-transition notes below are historical work
 records, not release gates or permission to activate server-owned progress.
 
 This pass covers lossless image encodings, runtime asset selection, removal of

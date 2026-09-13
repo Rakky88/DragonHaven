@@ -1,6 +1,6 @@
 # DragonHaven audit
 
-## Release candidate v0.05.35 / 10085 - lossless APK reduction
+## Current published release v0.05.35 / 10085 - lossless APK reduction
 
 The owner scoped this release to APK reduction and its related audit items.
 845 runtime images now use smaller encodings with identical dimensions, source
@@ -32,6 +32,11 @@ database mutation or authority cutover is part of this release.
 
 See `APP_SIZE_AUDIT.md`, `tool/asset_manifests/lossless_v35.json` and the final
 `RELEASE_V0.05.35_VERIFICATION.md` for the signed artifact and publication evidence.
+
+Publication is verified: the signed universal APK is 572826231 bytes, down
+55433883 bytes (8.8234%). GitHub latest is v0.05.35, the permanent download returns
+HTTP 200, and remote size/SHA-256 match the local artifact. All 145 audio resources
+are byte-identical to v0.05.34 and the three ABI libraries are retained.
 
 ## Previous published release v0.05.34 / 10084
 

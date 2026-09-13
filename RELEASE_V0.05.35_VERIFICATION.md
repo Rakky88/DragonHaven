@@ -38,7 +38,15 @@ The final ZIP contains the reviewed runtime bytes and excludes every retired
 asset, prompt document and source archive. All 145 native audio resources match
 the baseline bytes. The three ABI libraries remain: arm64-v8a, armeabi-v7a, x86_64.
 
-Publication verification is pending.
+Publication verified on 13 September 2026 at 11:59:55 UTC. GitHub latest resolves
+to v0.05.35; remote asset size and SHA-256 match the signed local file. The
+permanent download returns HTTP 200 with the expected content length.
+Tag source: `d8e6dc8f8645bf57ac621c0ac5c5ad6a0dd02f23`.
+
+The publisher dry run passed. Windows PowerShell encountered its documented
+ShouldProcess failure before mutation. Release and tag state were checked again;
+the checksum-verified official portable GitHub CLI completed the publication
+with the permanent `DragonHaven.apk` filename.
 
 [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.35)
 [Version APK](https://github.com/Rakky88/DragonHaven/releases/download/v0.05.35/DragonHaven.apk)

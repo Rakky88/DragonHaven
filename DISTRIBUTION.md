@@ -1,8 +1,9 @@
 # DragonHaven publiceren en updaten
 
-Laatste geverifieerde GitHub-release: **v0.05.34 / 10084**, 13 september 2026.
-De vaste APK-download, dezelfde ondertekening, 944 tests en productiehealth
-zijn gecontroleerd; zie [releasebewijs](RELEASE_V0.05.34_VERIFICATION.md).
+Laatste geverifieerde GitHub-release: **v0.05.35 / 10085**, 13 september 2026.
+De APK is 55,43 MB kleiner zonder wijziging van de beeldpixels of audio.
+De vaste APK-download, dezelfde ondertekening, 946 tests en productiehealth
+zijn gecontroleerd; zie [releasebewijs](RELEASE_V0.05.35_VERIFICATION.md).
 
 Voor de complete Google Play/App Store-checklist, verantwoordelijkheden,
 productiebeveiliging en kostenramingen: [PUBLIC_LAUNCH.md](PUBLIC_LAUNCH.md).

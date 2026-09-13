@@ -7,6 +7,9 @@ SHA-256 `ee31e4e7a0e89d4ae61b9f1b0816ff6284600ce1deb7d7075272085726b95044`.
 De daadwerkelijke downloadbesparing tegenover v0.05.34 is **55433883 bytes**
 (55,43 MB / **8,8234%**). Alle 145 native audiobestanden zijn in beide APK's
 byte voor byte gelijk, en arm64-v8a, armeabi-v7a en x86_64 blijven aanwezig.
+Publicatie is geverifieerd: de GitHub-asset heeft dezelfde grootte en SHA-256,
+en de vaste downloadlink levert deze versie met HTTP 200. Zie het
+[releasebewijs](RELEASE_V0.05.35_VERIFICATION.md).
 
 De gepubliceerde v0.05.34 APK van **628260114 bytes** is de exacte nulmeting.
 Alle 1220 gebundelde PNG/WebP-afbeeldingen zijn onderzocht. Alleen kleinere
