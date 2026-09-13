@@ -49,6 +49,7 @@ void main() {
   var epoch = 1;
   var local = 1;
   var coins = 100;
+  String? loadedOwner;
   Future<void> Function(String)? settle;
   setUp(() async {
     directory = await Directory.systemTemp.createTemp('dh-final-upload-');
@@ -57,11 +58,13 @@ void main() {
     epoch = 1;
     local = 1;
     coins = 100;
+    loadedOwner = keeper;
     settle = null;
     upload = CanonicalLegacyUpload(
         repository: repository,
         directory: directory,
         currentOwner: () => repository.currentUserId,
+        sourceOwner: () => loadedOwner,
         sessionEpoch: () => epoch,
         settleLegacySources: (owner) async {
           await settle?.call(owner);
@@ -103,6 +106,15 @@ void main() {
         upload.upload(keeper),
         throwsA(isA<SocialException>()
             .having((e) => e.code, 'code', 'cloud_save_conflict')));
+    expect(repository.pushes, 0);
+  });
+  test('signed-in authority does not establish ownership of a local save',
+      () async {
+    loadedOwner = null;
+    await expectLater(
+        upload.upload(keeper),
+        throwsA(isA<CanonicalGameException>()
+            .having((e) => e.code, 'code', 'game_account_changed')));
     expect(repository.pushes, 0);
   });
   test('ABA account switch during source settlement refuses upload', () async {

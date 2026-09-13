@@ -16,6 +16,7 @@ class CanonicalLegacyUpload {
     required this.repository,
     required this.directory,
     required this.currentOwner,
+    required this.sourceOwner,
     required this.sessionEpoch,
     required this.settleLegacySources,
     required this.exportState,
@@ -29,6 +30,10 @@ class CanonicalLegacyUpload {
   final SocialRepository repository;
   final Directory directory;
   final String? Function() currentOwner;
+
+  /// Owner of the loaded legacy save, established when it was loaded or
+  /// explicitly reconciled. Auth alone does not prove ownership of local data.
+  final String? Function() sourceOwner;
   final int Function() sessionEpoch;
   final Future<void> Function(String owner) settleLegacySources;
   final Map<String, dynamic> Function() exportState;
@@ -43,6 +48,7 @@ class CanonicalLegacyUpload {
     void requireOwner() {
       if (!CanonicalGameIntent.validOwner(owner) ||
           currentOwner() != owner ||
+          sourceOwner() != owner ||
           sessionEpoch() != epoch ||
           repository.currentUserId != owner ||
           !repository.isSignedIn) {

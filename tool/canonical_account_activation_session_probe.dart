@@ -88,6 +88,7 @@ void main() {
       final upload = CanonicalLegacyUpload(
           repository: social,
           directory: directory,
+          sourceOwner: () => owner,
           currentOwner: () => migration!.currentOwner,
           sessionEpoch: () => migration!.sessionEpoch,
           settleLegacySources: (_) async {},
