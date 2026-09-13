@@ -35,7 +35,8 @@ foreach ($contract in $contracts) {
 foreach ($case in @(
     @{ File = 'extended_event_windows_contract'; Result = 'extended_event_windows_passed' },
     @{ File = 'single_event_preview_contract'; Result = 'single_event_preview_contract_passed' },
-    @{ File = 'end_event_contract'; Result = 'end_event_contract_passed' }
+    @{ File = 'end_event_contract'; Result = 'end_event_contract_passed' },
+    @{ File = 'canonical_event_points_contract'; Result = 'canonical_event_points_passed' }
 )) {
   $query = Get-Content -LiteralPath (Join-Path $PSScriptRoot ($case.File + '.sql')) -Raw -Encoding utf8
   $result = Invoke-RestMethod -Method Post `
