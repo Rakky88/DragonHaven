@@ -73,8 +73,11 @@ def query(sql, read_only=False):
 
 
 def main():
-    prepare_import = sys.argv[1:] == ['--prepare-import']
-    require(not sys.argv[1:] or prepare_import, "probe_arguments_invalid")
+    arguments = sys.argv[1:]
+    require(arguments in ([], ['--prepare-import'], ['--prepare-import', '--client-only']),
+            'probe_arguments_invalid')
+    prepare_import = '--prepare-import' in arguments
+    client_only = '--client-only' in arguments
     require(PROJECT == "vtmjkhzalalozpfnbvsd" and BASE == "https://" + PROJECT + ".supabase.co"
             and MANAGEMENT and PUBLIC_KEY, "registered_staging_required")
     bridge = (ROOT / "supabase/functions/execute-game-command/bundle.generated.ts").read_text(encoding="utf-8")
@@ -468,6 +471,9 @@ def main():
         print('PASS: actual preferences UI; expertise highlights, adventure information and one favorite.', flush=True)
         print('PASS: actual house editor, roaming and care UI; layout and needs preserved, one treat debit.', flush=True)
         print('PASS: actual Flutter client, Supabase Auth, filesystem journals and server; one charge after lost reply; corrupt request recovery without another purchase.', flush=True)
+        if client_only:
+            print('PASS: focused client rehearsal complete; social lifecycle probes are separate gates.', flush=True)
+            return
         from staging_group_probe import run_group_probe
         run_group_probe(root=ROOT, project=PROJECT, base=BASE, public_key=PUBLIC_KEY,
             run=RUN, fixture=fixture, admin_headers=admin_headers, call=call, query=query, require=require)

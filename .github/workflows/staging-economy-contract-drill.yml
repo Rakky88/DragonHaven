@@ -888,7 +888,7 @@ jobs:
           STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
         run: |
           set -o pipefail
-          python3 tool/staging_game_worker_probe.py --prepare-import | tee staging/game-worker-probe.txt
+          python3 tool/staging_game_worker_probe.py --prepare-import --client-only | tee staging/game-worker-probe.txt
       - uses: actions/upload-artifact@v6
         if: always()
         with:
