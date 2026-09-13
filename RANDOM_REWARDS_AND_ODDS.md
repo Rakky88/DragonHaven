@@ -1,5 +1,9 @@
 # DragonHaven Random Rewards and Odds
 
+v0.05.35 changes only lossless artwork encodings and asset-path resolution.
+Shared model source fingerprints may change for those paths; no reward amount,
+pool, probability, pity rule, duplicate rule or server authority is changed.
+
 v0.05.32 replaces the points panel with an active-occurrence-only glass meter.
 Retired previews no longer remain on screen; saved rewards, code catalog,
 point values, chest contents and random odds are unchanged.
@@ -197,7 +201,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 93f14a43949dd99f -->
+<!-- reference-source-fingerprint: 689cbd05ee35c3d0 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

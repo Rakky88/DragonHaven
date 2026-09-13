@@ -15,7 +15,7 @@ class EggAltarScene extends StatelessWidget {
   /// with invented hidden genetics. Legacy callers keep their existing model.
   final Widget? eggArtwork;
   final double? progress;
-  static const backdrop = 'assets/images/egg_altar/altar_grove.png';
+  static const backdrop = 'assets/images/egg_altar/altar_grove.webp';
   static const altar = 'assets/images/egg_altar/altar_empty.png';
 
   @override

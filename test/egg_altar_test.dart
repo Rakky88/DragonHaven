@@ -27,16 +27,16 @@ class FixedRoll implements Random {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
-      'Altar assets are bundled real transparent PNGs and server eligibility matches the family catalog',
+      'Altar artwork keeps its dimensions and transparency and server eligibility matches the family catalog',
       () {
     final files = Directory('assets/images/egg_altar')
         .listSync()
         .whereType<File>()
-        .where((f) => f.path.endsWith('.png'));
+        .where((f) => f.path.endsWith('.png') || f.path.endsWith('.webp'));
     expect(files.length, 16);
     for (final file in files) {
-      final decoded = image.decodePng(file.readAsBytesSync())!;
-      if (file.path.endsWith('altar_grove.png')) {
+      final decoded = image.decodeImage(file.readAsBytesSync())!;
+      if (file.path.endsWith('altar_grove.webp')) {
         expect(decoded.width / decoded.height, 1.5);
         expect(decoded.getPixel(0, 0).a, 255);
         continue;

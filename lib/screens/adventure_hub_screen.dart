@@ -572,9 +572,9 @@ class _TrialOfferCard extends StatelessWidget {
         TrialKind.rosevowRelay =>
           'assets/images/events/valentine/trial_background.webp',
         TrialKind.sunwakeSurf =>
-          'assets/images/events/sunwake/trial_background.png',
+          'assets/images/events/sunwake/trial_background.webp',
         TrialKind.moonlitOrchard =>
-          'assets/images/events/harvestmoon/trial_background.png',
+          'assets/images/events/harvestmoon/trial_background.webp',
         TrialKind.wishcakeTower =>
           'assets/images/events/golden_wings/trial_background.webp',
         TrialKind.prismaticParade =>

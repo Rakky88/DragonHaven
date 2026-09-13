@@ -1,5 +1,23 @@
 # DragonHaven — artwork audit
 
+## Lossless runtime encoding review - 13 September 2026
+
+v0.05.35 preserves the existing artwork, dimensions, transparency and selected
+forms. The smaller encodings pass exact pixel comparison through both Pillow
+and Flutter. No sprites were generated, redrawn, resized or mirrored.
+
+Twelve first-pass `_safe.webp` dragon assets were still bundled even though
+`DragonArtwork.secondPassStandaloneForms` selects their `_safe_v2.webp`
+replacements. Only those superseded files move out of the runtime directory;
+the complete dynamic catalog remains covered by the asset inventory and bounds
+tests. Originals are preserved locally and in the v0.05.34 source history.
+
+See `APP_SIZE_AUDIT.md` and `tool/asset_manifests/lossless_v35.json` for the
+per-file provenance and decoder evidence. The earlier composition audit below
+remains a historical record; the encoding change does not replace its checks.
+
+## Original composition audit
+
 Date: 5 September 2026
 App version: v0.05.14
 

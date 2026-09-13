@@ -1,5 +1,10 @@
 # DragonHaven Special Events, Chests, and Eggs
 
+The v0.05.35 size reduction changes only artwork encodings and runtime asset
+paths. Event schedules, eligibility, point targets, partners, chest contents and
+egg relationships remain as documented below. Original artwork is preserved;
+every replacement must retain exact pixels in both image and Flutter decoders.
+
 The existing-friend picker shares compact, theme-tinted keeper rows with the
 Friends screen. Each portrait has a fixed 64dp slot with a 40dp portrait, so
 vanity frames and badges do not change row height or name alignment.
@@ -321,7 +326,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: e5d27b6ad464eebd -->
+<!-- reference-source-fingerprint: 46531f6937e9ddf0 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

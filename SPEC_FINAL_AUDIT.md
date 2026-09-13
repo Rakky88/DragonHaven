@@ -1,6 +1,39 @@
 # DragonHaven audit
 
-## Current published release v0.05.34 / 10084
+## Release candidate v0.05.35 / 10085 - lossless APK reduction
+
+The owner scoped this release to APK reduction and its related audit items.
+845 runtime images now use smaller encodings with identical dimensions, source
+RGBA pixels, ICC profiles and Flutter-decoded premultiplied RGBA output. Only
+four PNGs change extension; catalog IDs, progression, rewards and animation
+timing remain intact. Twelve superseded dragon sprites and three source prompt
+documents are excluded from the bundle. Original bytes remain archived locally
+and reproducible from the v0.05.34 source commit recorded in the manifest.
+
+All **946 Flutter tests pass**. The opt-in image review is skipped in the normal
+suite but was run separately against all 845 applied files, with zero differing
+pixels. The two new inventory checks verify runtime hashes, dynamic catalog
+paths and the actual Flutter asset manifest. Analysis is clean, and the living
+reference guard is synchronized. The Altar test now decodes both runtime formats
+while retaining the existing dimensions and transparency assertions.
+
+The initial concurrent build/test run exposed the existing Trial test's short
+startup wait and the old PNG-only Altar assertion. After the assertion update,
+all 16 affected tests pass; the complete suite passes with two test workers and
+no concurrent Gradle build. No canonical gameplay code was changed for that run.
+
+Android artwork review confirms dragons, event backgrounds, closed/open chests,
+Altar materials/relics and school sprites through their real runtime paths.
+The signed production APK installs over the previous app, shows v0.05.35 in
+About, and retains the saved English language, 25 coins, 3 gems and tower floor.
+Production preflight has 83 matching migrations, zero database lint errors and
+HTTP 200 for Auth health, Auth settings and app health. No server deployment,
+database mutation or authority cutover is part of this release.
+
+See `APP_SIZE_AUDIT.md`, `tool/asset_manifests/lossless_v35.json` and the final
+`RELEASE_V0.05.35_VERIFICATION.md` for the signed artifact and publication evidence.
+
+## Previous published release v0.05.34 / 10084
 
 The Valentine invite control now follows the active occurrence, including when
 old Valentine progress synchronizes behind another event. Background cloud

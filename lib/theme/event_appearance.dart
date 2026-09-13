@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../runtime_image_assets.dart';
+
 class EventAppearance extends ThemeExtension<EventAppearance> {
   static const logoKeys = <String, String>{
     'halloween_witchlight': 'halloween',
@@ -62,7 +64,8 @@ class EventAppearance extends ThemeExtension<EventAppearance> {
 
   String? get background => folder == null
       ? null
-      : 'assets/images/events/$folder/trial_background.$_extension';
+      : runtimeImageAsset(
+          'assets/images/events/$folder/trial_background.$_extension');
   String? get emblem => folder == null || folder == 'golden_wings'
       ? null
       : 'assets/images/events/$folder/trial_icon.$_extension';

@@ -335,7 +335,7 @@ void main() {
   });
 
   test('repository versions are derived without runtime credentials', () {
-    expect(discoverAppVersion(), 'v0.05.34');
+    expect(discoverAppVersion(), 'v0.05.35');
     expect(discoverMigrationVersion(), '202609120083');
   });
 }

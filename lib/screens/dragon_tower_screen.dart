@@ -480,7 +480,7 @@ class _DragonSchoolEntrance extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: Image.asset(
-                  'assets/images/ui/dragon_school.png',
+                  'assets/images/ui/dragon_school.webp',
                   fit: BoxFit.cover,
                   color: unlocked ? null : const Color(0x99605B67),
                   colorBlendMode: unlocked ? null : BlendMode.saturation,

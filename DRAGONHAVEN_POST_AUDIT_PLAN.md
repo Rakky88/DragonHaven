@@ -1,5 +1,25 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Current scope: v0.05.35 APK reduction
+
+The owner explicitly selected APK reduction and its related audit items for
+this release. The published baseline is v0.05.34 / 10084; v0.05.35 / 10085 is
+being validated. The old canonical-transition notes below are historical work
+records, not release gates or permission to activate server-owned progress.
+
+This pass covers lossless image encodings, runtime asset selection, removal of
+superseded artwork from the bundle, reproducible provenance, pixel equality in
+Flutter, and signed universal APK measurement. Audio and ABI compatibility are
+retained. WAV-to-FLAC remains a separate opportunity requiring native playback
+validation; it is not counted as a completed saving. Production migrations,
+authority switches and saved player data are not part of this asset change.
+
+Current size and verification evidence is maintained in `APP_SIZE_AUDIT.md`
+and `SPEC_FINAL_AUDIT.md`. The historical canonical rollout still requires its
+own complete validation and is not declared finished by this release.
+
+## Historical canonical migration work
+
 Candidate-79 rollback run 34497481683 passed on f2057c1, including ownership,
 source/Altar/social changes, activation replay, real server-mode SQL commands,
 recovery and complete Auth cleanup. The full apply now targets reviewed schema

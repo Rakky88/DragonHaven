@@ -1,5 +1,49 @@
 # DragonHaven Android-appgrootteaudit
 
+## Lossless optimalisatie v0.05.35 - 13 september 2026
+
+De ondertekende universele APK meet **572826231 bytes** (572,83 MB / 546,29 MiB),
+SHA-256 `ee31e4e7a0e89d4ae61b9f1b0816ff6284600ce1deb7d7075272085726b95044`.
+De daadwerkelijke downloadbesparing tegenover v0.05.34 is **55433883 bytes**
+(55,43 MB / **8,8234%**). Alle 145 native audiobestanden zijn in beide APK's
+byte voor byte gelijk, en arm64-v8a, armeabi-v7a en x86_64 blijven aanwezig.
+
+De gepubliceerde v0.05.34 APK van **628260114 bytes** is de exacte nulmeting.
+Alle 1220 gebundelde PNG/WebP-afbeeldingen zijn onderzocht. Alleen kleinere
+bestanden met gelijke afmetingen, RGBA-pixels en kleurprofielen zijn kandidaat.
+Een tweede controle decodeert beide varianten met Flutter zelf en vergelijkt
+alle premultiplied RGBA-bytes; 362 WebP-kandidaten zijn daarop afgewezen.
+Dit voorkomt ook subtiele verschillen in de afronding van transparante pixels.
+
+De toegepaste set bevat **845 afbeeldingen**: 490 kleinere WebP-bestanden
+(waarvan slechts vier uit PNG) en 355 opnieuw gecomprimeerde PNG-bestanden.
+Alle 845 toegepaste bestanden zijn opnieuw met hun originelen vergeleken:
+**geen verschil in Flutter**. De pixels worden niet verkleind of opnieuw getekend.
+
+| Aanpassing | Bespaarde assetbytes |
+| --- | ---: |
+| Goedgekeurde WebP-varianten | 38264035 |
+| PNG-compressie binnen hetzelfde formaat | 8325418 |
+| Twaalf vervangen drakensprites en drie promptdocumenten uit de bundel | 8841045 |
+| Totaal op assetniveau, gemeten ZIP-entrybytes | 55430498 |
+
+De twaalf drakensprites zijn al vervangen door de bestaande `_safe_v2`-selectie.
+Ze worden niet meer dynamisch gekozen. Het archief blijft lokaal beschikbaar in
+`artwork_sources/lossless_v35/`; alle oorspronkelijke bytes zijn ook te herstellen
+uit broncommit `ea622d8127b470b73bbf4b35dbc5345c87ffddb3`. Het versiebeheer bevat
+het [volledige manifest](tool/asset_manifests/lossless_v35.json) met paden,
+bron- en runtimehashes, afmetingen, pixelbewijs en de exacte nulmeting.
+
+De assetinventaristest controleert dynamische catalogi en Flutter's bundelmanifest,
+de runtimehashes en de afwezigheid van vervangen bestanden en bronarchieven.
+De ondertekende APK wordt afzonderlijk gemeten: assetbesparing is niet automatisch
+gelijk aan de uiteindelijke downloadbesparing door code- en ZIP-uitlijning.
+
+Audio blijft byte voor byte gelijk. Alle drie Android-ABI's blijven aanwezig.
+WAV-naar-FLAC is nog een mogelijke vervolgstap, maar vereist eerst eigen native
+afspeelcontroles en is niet meegeteld als besparing. Volledig servergestuurde
+voortgang valt buiten de door de eigenaar gekozen scope van deze release.
+
 ## Meting v0.05.34 - 13 september 2026
 
 De universele APK meet **628260114 bytes**, SHA-256
@@ -33,7 +77,7 @@ Deze release wijzigt eventregels en app-/servercode; er zijn voor deze release
 geen artworkresoluties of audiokwaliteit verlaagd. Oudere metingen hieronder
 blijven als historische vergelijking staan.
 
-## Actuele meting: v0.05.28, 9 september 2026
+## Historische nulmeting: v0.05.28, 9 september 2026
 
 Vraag van de gebruiker: kan de app kleiner **zonder kwaliteitsverlies**?
 Deze actuele eis vervangt het eerdere voorstel om resolutie te verlagen of

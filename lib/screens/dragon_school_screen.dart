@@ -134,7 +134,7 @@ class _SchoolHero extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.asset(
-            'assets/images/ui/dragon_school.png',
+            'assets/images/ui/dragon_school.webp',
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => const DecoratedBox(
               decoration: BoxDecoration(

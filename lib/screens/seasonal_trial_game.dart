@@ -1403,7 +1403,7 @@ class _SeasonalTheme {
 _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
       TrialKind.sunwakeSurf => const _SeasonalTheme(
           soundPrefix: 'sunwake',
-          backgroundAsset: 'assets/images/events/sunwake/trial_background.png',
+          backgroundAsset: 'assets/images/events/sunwake/trial_background.webp',
           assetDirectory: 'assets/images/events/sunwake',
           deepColor: Color(0xFF123744),
           panelColor: Color(0xFF238B91),
@@ -1424,7 +1424,7 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
       TrialKind.moonlitOrchard => const _SeasonalTheme(
           soundPrefix: 'harvestmoon',
           backgroundAsset:
-              'assets/images/events/harvestmoon/trial_background.png',
+              'assets/images/events/harvestmoon/trial_background.webp',
           assetDirectory: 'assets/images/events/harvestmoon',
           deepColor: Color(0xFF2F231C),
           panelColor: Color(0xFF806038),
