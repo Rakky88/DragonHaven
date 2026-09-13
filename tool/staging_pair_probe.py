@@ -1,9 +1,8 @@
-"""Synthetic two-keeper partner lifecycle phase of the guarded staging drill."""
+"""Verify retired event-Adventure starts cannot return after the schema-80 cutover.
+Existing reward claims are exercised by the full canonical client probe.
+"""
 import json
-import os
-import re
 import secrets
-import subprocess
 import uuid
 
 
@@ -52,33 +51,30 @@ def run_pair_probe(*, root, project, base, public_key, run, fixture, admin_heade
       update private.game_engine_runtime set shadow_projection_enabled=true,shadow_lifecycle_enabled=true where singleton;
       update private.canonical_game_states set is_prepared=true where owner_id=any({owner_array});
       commit;""")
-    codes = query(f"select keeper_code from public.profiles where user_id='{owners[1]}';", True)
-    require(len(codes)==1 and re.fullmatch(r'DH-[0-9A-F]{8}',codes[0]['keeper_code']) is not None,
-            'pair_probe_keeper_code')
-    child = {key: value for key, value in os.environ.items()
-        if not any(part in key.upper() for part in ('SECRET','TOKEN','PASSWORD','SUPABASE','KEY'))}
-    child.update({'STAGING_SUPABASE_PROJECT_REF': project, 'STAGING_SUPABASE_URL': base,
-      'STAGING_SUPABASE_PUBLISHABLE_KEY': public_key, 'STAGING_PAIR_SESSIONS': json.dumps(sessions),
-      'STAGING_GAME_PROBE_RUN': run, 'STAGING_PAIR_TARGET_CODE': codes[0]['keeper_code']})
-    result = subprocess.run(['flutter','test','--no-pub','tool/canonical_pair_session_probe.dart'],
-        cwd=root,env=child,capture_output=True,text=True,timeout=360)
-    del child['STAGING_PAIR_SESSIONS']
-    if result.returncode:
-        for phase in re.findall(r'PROBE: ([a-z_]+)',result.stdout): print('PROBE: '+phase,flush=True)
-        failure = re.search(r'client_probe_[a-z_]+',result.stdout+result.stderr)
-        require(False, failure.group(0) if failure else 'client_probe_pair_failed')
-    require('PASS: real partner UI;' in result.stdout, 'client_probe_pair_proof_missing')
-    facts=query(f"""select
-      (select count(*)=3 from public.seasonal_pair_adventures where creator_id='{owners[0]}') as three_invitations,
-      (select count(*)=2 from public.seasonal_pair_adventures where creator_id='{owners[0]}' and status='declined') as two_closed,
-      (select count(*)=1 from public.seasonal_pair_adventures where creator_id='{owners[0]}' and canonical_owned
-        and status='running' and ends_at-started_at=interval '24 hours') as one_shared_start,
-      (select count(*)=2 from public.seasonal_pair_occurrences where user_id=any({owner_array})
-        and event_id='valentine_two_heartlights') as two_occurrences,
-      (select bool_and((state->'pet'->>'xp')::integer=3400 and (state->'pet'->>'coins')::integer=1000)
-        from private.canonical_game_states where owner_id=any({owner_array})) as no_unearned_rewards,
-      (select count(*)=0 from private.canonical_game_intents where owner_id=any({owner_array}) and status='processing') as no_pending;
-    """,True)[0]
-    require(facts == dict.fromkeys(['three_invitations','two_closed','one_shared_start','two_occurrences',
-        'no_unearned_rewards','no_pending'],True), 'client_probe_pair_atomicity')
-    print('PASS: actual two-keeper partner UI; lost invite recovery, decline, accept, cancel, released dragons and one shared start.',flush=True)
+    facts = query(f"""begin;
+      select set_config('request.jwt.claim.role','service_role',true);
+      do $$
+      declare before_state jsonb; after_state jsonb; action_name text; rules text;
+      begin
+        select jsonb_agg(to_jsonb(g) order by owner_id) into before_state
+          from private.canonical_game_states g where owner_id=any({owner_array});
+        select ruleset_sha256 into rules from private.game_engine_runtime where singleton;
+        foreach action_name in array array['invite_pair_adventure','accept_pair_adventure','start_pair_adventure'] loop
+          begin
+            perform public.begin_revisioned_game_command('{owners[0]}',gen_random_uuid(),action_name,
+              '{{}}',10085,rules,1);
+            raise exception 'retired_pair_probe_action_accepted';
+          exception when others then if sqlerrm<>'game_action_unavailable' then raise; end if; end;
+        end loop;
+        select jsonb_agg(to_jsonb(g) order by owner_id) into after_state
+          from private.canonical_game_states g where owner_id=any({owner_array});
+        if before_state is distinct from after_state or
+          exists(select 1 from private.canonical_game_intents where owner_id=any({owner_array})) or
+          exists(select 1 from public.seasonal_pair_adventures where creator_id=any({owner_array})) then
+          raise exception 'retired_pair_probe_state_changed'; end if;
+      end $$;
+      rollback;
+      select true as retired_pair_actions_refused;
+    """)
+    require(facts == [{'retired_pair_actions_refused': True}], 'retired_pair_probe_failed')
+    print('PASS: retired event Adventure invite/accept/start refused; both inventories unchanged, no command or invitation created.', flush=True)
