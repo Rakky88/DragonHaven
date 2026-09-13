@@ -561,15 +561,22 @@ void main() {
           'client_probe_adventure_abort_reward');
       final offers =
           game.snapshot!.adventures.offers(AdventureKind.short).length;
+      require(game.snapshot!.shop.relics['wayfinderSigil'] == 1,
+          'client_probe_adventure_wayfinder_fixture');
       await tap(key('canonical-wayfinder-add'));
       await confirm();
       await settleCommand();
+      stdout.writeln('METRIC: wayfinder_short_offers_before=$offers');
+      stdout.writeln('METRIC: wayfinder_short_offers_after=${game.snapshot!.adventures.offers(AdventureKind.short).length}');
+      stdout.writeln('METRIC: wayfinder_sigils_after=${game.snapshot!.shop.relics['wayfinderSigil'] ?? 0}');
+      require(tester.takeException() == null,
+          'client_probe_adventure_wayfinder_render');
+      require(game.snapshot!.shop.relics['wayfinderSigil'] == 0,
+          'client_probe_adventure_wayfinder_debit');
       require(
-          game.snapshot!.shop.relics['wayfinderSigil'] == 0 &&
-              game.snapshot!.adventures.offers(AdventureKind.short).length ==
-                  offers + 1 &&
-              tester.takeException() == null,
-          'client_probe_adventure_wayfinder_failed');
+          game.snapshot!.adventures.offers(AdventureKind.short).length ==
+              offers + 1,
+          'client_probe_adventure_wayfinder_offer');
       stdout.writeln(
           'PASS: real adventure UI; server deadline, early refusal, lost claim recovery, one reward, abort and Wayfinder.');
       final houseBalance = game.snapshot!.coins;
