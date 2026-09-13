@@ -1,5 +1,12 @@
 # DragonHaven Android-appgrootteaudit
 
+## Meting v0.05.34 - 13 september 2026
+
+De universele APK meet **628260114 bytes**, SHA-256
+`042d2734b22693aaa727a48fa69251ed9ffbf60cc7358d88392945d9d679062d`.
+De bestandsgrootte is gelijk aan v0.05.33. De nieuwe eventkaart hergebruikt
+bestaande Trial-achtergronden en sprites; beeld- en audiokwaliteit zijn behouden.
+
 ## Meting v0.05.33 - 12 september 2026
 
 De universele APK meet **628260114 bytes**, SHA-256

@@ -1,6 +1,6 @@
 # DragonHaven audit
 
-## Unreleased event UI and synchronization corrections
+## Release candidate v0.05.34 / 10084
 
 The Valentine invite control now follows the active occurrence, including when
 old Valentine progress synchronizes behind another event. Background cloud
@@ -22,8 +22,15 @@ the global error/support banner empty. Point/reward schedules and odds are
 unchanged; the odds reference fingerprint changed only because its shared
 provider source includes the new presentation-retirement code.
 
-No release, server deployment, database migration or production data mutation
-has been performed for these corrections.
+The version increased once from v0.05.33 / 10083. All 73 version, updater,
+language-order, screen and reference checks pass after the bump. Android emulator
+review confirms the Halloween/Valentine ranking cards and invite visibility at
+normal width and 320dp with large text and reduced motion. Production preflight
+passes with 83 matching migrations, zero lint errors and all three public health
+checks returning HTTP 200. No server deployment or database mutation is needed.
+
+See [v0.05.34 verification](RELEASE_V0.05.34_VERIFICATION.md) for artifact and
+publication checks.
 
 ## Current published release - v0.05.33 / 10083
 
