@@ -69,6 +69,10 @@ the place to claim a completed event reward after its meter disappears.
 Claimed Adventure points still fly into an active meter. Trials with C or better
 also send their credited points into the meter after the result screen closes;
 D, cancellation and rejected/uncredited results do not animate a reward.
+The return animation uses the surviving navigation route, because completing
+a Trial removes its offer card before the result screen closes. The canonical
+screen also checks that the account and session epoch still match. Regression
+tests cover credited C results for all three ordinary Trials after card removal.
 Reduced-motion settings
 stop ambient liquid effects and particles and apply fill changes immediately.
 A full unclaimed chest glows and opens Completed Adventures; claimed chests show
@@ -330,7 +334,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: c499c0b497eb75fd -->
+<!-- reference-source-fingerprint: 4aa1dbe66c8a551e -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

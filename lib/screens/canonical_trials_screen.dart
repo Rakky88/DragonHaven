@@ -353,18 +353,21 @@ Future<void> _withEventPointReturn(
     BuildContext context,
     CanonicalGameSession session,
     Future<TrialCompletion?> Function() play) async {
+  final trialNavigator = Navigator.of(context);
+  final epoch = session.connection.sessionEpoch;
   final owner = session.snapshot?.ownerId;
   final before = {
     for (final p in session.snapshot!.adventures.eventProgress) p.key: p.points
   };
   final completion = await play();
   await Future<void>.delayed(const Duration(milliseconds: 350));
-  if (!context.mounted ||
+  if (!trialNavigator.mounted ||
       completion == null ||
+      session.connection.sessionEpoch != epoch ||
       session.snapshot?.ownerId != owner) {
     return;
   }
-  EventPointFlight.returnFromTrial(context, {
+  EventPointFlight.returnFromTrial(trialNavigator.context, {
     for (final p in session.snapshot!.adventures.eventProgress)
       if (before.containsKey(p.key)) p.key: p.points - before[p.key]!,
   });
