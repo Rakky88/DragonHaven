@@ -179,6 +179,8 @@ class OnlineAccountProvider extends ChangeNotifier {
   final Map<String, String> _pendingConclaveMessages = {};
   bool _operationInFlight = false;
   bool _disposed = false;
+  bool _legacyOperationsStopped = false;
+  Future<void>? _legacyStop;
   String? _cloudBaseUserId;
   int? _cloudBaseRevision;
 
@@ -330,6 +332,7 @@ class OnlineAccountProvider extends ChangeNotifier {
 
   Future<void> initialize({bool waitForFirstRefresh = true}) async {
     _readPreferences = await SharedPreferences.getInstance();
+    if (_legacyOperationsStopped || _disposed) return;
     _authSubscription = _repository.authStateChanges.listen(
       (signedIn) {
         _authGeneration++;
@@ -534,6 +537,24 @@ class OnlineAccountProvider extends ChangeNotifier {
         automatic: true, onFailure: (code) => failure = code);
     if (!success) throw SocialException(failure ?? 'online_unexpected_error');
     return currentUserId == owner;
+  }
+
+  /// Irreversibly retire this provider before the final legacy upload. The
+  /// caller first removes legacy gameplay and separately drains local storage.
+  /// A UI timeout is not completion: wait for the original economic operation,
+  /// including its local reward callbacks, before allowing authority transfer.
+  /// Dispose/recreate the provider if the confirmed route remains legacy.
+  Future<void> stopLegacyOperations() {
+    if (_legacyStop != null) return _legacyStop!;
+    _legacyOperationsStopped = true;
+    _refreshTimer?.cancel();
+    _conclaveBadgeTimer?.cancel();
+    _notificationPollTimer?.cancel();
+    _authRecoveryTimer?.cancel();
+    final cancelled = _authSubscription?.cancel() ?? Future<void>.value();
+    _authSubscription = null;
+    return _legacyStop = Future.wait<void>([cancelled, _settledOperation])
+        .then<void>((_) {});
   }
 
   Future<void> _settledOperation = Future<void>.value();
@@ -1799,7 +1820,10 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   void _ensureRefreshTimer() {
-    if (!isConfigured || !isSignedIn || !_appInForeground || _disposed) return;
+    if (!isConfigured || !isSignedIn || !_appInForeground || _disposed ||
+        _legacyOperationsStopped) {
+      return;
+    }
     _refreshTimer ??= Timer.periodic(const Duration(minutes: 2), (_) {
       if (isSignedIn && !busy) unawaited(refreshIfStale());
     });
@@ -1820,7 +1844,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     // Future.timeout does not cancel its source future. Keep the single-flight
     // guard active until that source really settles, so a retry after a timeout
     // cannot overlap the original server mutation.
-    if (busy || _operationInFlight) return null;
+    if (_legacyOperationsStopped || busy || _operationInFlight) return null;
     final correlationId = DiagnosticIds.create();
     final startedAt = DateTime.now();
     final stopwatch = Stopwatch()..start();
@@ -1829,6 +1853,8 @@ class OnlineAccountProvider extends ChangeNotifier {
       (reporter as DiagnosticTracingReporter)
           .operationStarted(operationName, correlationId);
     }
+    final operationSettled = Completer<void>();
+    _settledOperation = operationSettled.future;
     _operationInFlight = true;
     busy = true;
     if (!background) {
@@ -1837,6 +1863,9 @@ class OnlineAccountProvider extends ChangeNotifier {
       _notify();
     }
     final operationFuture = Future<T>.sync(() {
+      if (_legacyOperationsStopped) {
+        throw const SocialException('game_server_authority_required');
+      }
       if (serverOwned &&
           !operationName.startsWith('auth.') &&
           !_serverSocialOperations.contains(operationName)) {
@@ -1844,11 +1873,15 @@ class OnlineAccountProvider extends ChangeNotifier {
       }
       return operation();
     });
-    _settledOperation = operationFuture.then<void>((_) {},
-        onError: (Object _, StackTrace __) {});
     unawaited(operationFuture.then<void>(
-      (_) => _operationInFlight = false,
-      onError: (Object _, StackTrace __) => _operationInFlight = false,
+      (_) {
+        _operationInFlight = false;
+        operationSettled.complete();
+      },
+      onError: (Object _, StackTrace __) {
+        _operationInFlight = false;
+        operationSettled.complete();
+      },
     ));
     try {
       final result = await operationFuture.timeout(

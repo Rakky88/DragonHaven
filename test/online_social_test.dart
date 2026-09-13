@@ -967,6 +967,60 @@ void main() {
     online.dispose();
   });
 
+  test('authority retirement drains a timed-out source and refuses new legacy operations', () async {
+    final game = HouseholdProvider(random: Random(403));
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..signedIn = false;
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+      operationTimeout: const Duration(milliseconds: 10),
+    );
+    addTearDown(online.dispose);
+    addTearDown(game.dispose);
+    await online.initialize();
+    repository
+      ..signedIn = true
+      ..ensureAccountGate = Completer<void>();
+    expect(await online.refresh(), isFalse);
+    expect(online.errorCode, 'online_timeout');
+    var drained = false;
+    final stopped = online.stopLegacyOperations();
+    expect(identical(stopped, online.stopLegacyOperations()), isTrue);
+    final observed = stopped.then((_) => drained = true);
+    await Future<void>.delayed(const Duration(milliseconds: 15));
+    expect(drained, isFalse);
+    expect(await online.backupToCloud(), isFalse);
+    expect(await online.refresh(), isFalse);
+    expect(repository.ensureAccountCount, 1);
+    repository.ensureAccountGate!.complete();
+    await observed;
+    expect(repository.snapshotLoadCount, greaterThan(0));
+    expect(await online.refresh(), isFalse);
+    expect(await online.backupToCloud(), isFalse);
+    expect(repository.ensureAccountCount, 1);
+  });
+
+  test('retirement from a busy listener prevents the admitted operation from starting', () async {
+    final game = HouseholdProvider(random: Random(404));
+    final repository = _FakeSocialRepository(inventoryImported: true)..signedIn = false;
+    final online = OnlineAccountProvider(repository: repository,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
+    addTearDown(online.dispose);
+    addTearDown(game.dispose);
+    await online.initialize();
+    repository.signedIn = true;
+    Future<void>? stopped;
+    online.addListener(() {
+      if (online.busy) stopped ??= online.stopLegacyOperations();
+    });
+    expect(await online.refresh(), isFalse);
+    expect(stopped, isNotNull);
+    await stopped;
+    expect(repository.ensureAccountCount, 0);
+    expect(repository.snapshotLoadCount, 0);
+  });
+
   test('rapid duplicate trade actions create only one server request',
       () async {
     final game = HouseholdProvider(random: Random(406))

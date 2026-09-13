@@ -143,8 +143,14 @@ def main():
                 "email": address, "password": password, "email_confirm": True,
                 "app_metadata": {"dragonhaven_game_probe": RUN},
             })
-            require(status in (200, 201) and created.get("email") == address
-                    and created.get("email_confirmed_at"), "probe_account_creation_failed")
+            known_auth_codes = {'over_request_rate_limit', 'over_email_send_rate_limit',
+                                'unexpected_failure', 'email_exists', 'validation_failed',
+                                'weak_password', 'user_already_exists'}
+            auth_code = created.get('error_code') if isinstance(created, dict) else None
+            safe_auth_code = auth_code if auth_code in known_auth_codes else 'unclassified'
+            require(status in (200, 201) and isinstance(created, dict)
+                    and created.get("email") == address and created.get("email_confirmed_at"),
+                    f"probe_account_creation_failed_http_{status}_{safe_auth_code}")
             owner = str(uuid.UUID(created["id"]))
             status, signed_in = call(BASE + "/auth/v1/token?grant_type=password", {"apikey": PUBLIC_KEY},
                                      {"email": address, "password": password})
