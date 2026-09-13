@@ -6,6 +6,7 @@ import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:dragon_haven/services/canonical_game_transport.dart';
 import 'package:dragon_haven/services/canonical_account_handoff.dart';
+import 'package:dragon_haven/services/canonical_account_bootstrap.dart';
 import 'package:dragon_haven/services/canonical_legacy_upload.dart';
 import 'package:dragon_haven/services/supabase_social_repository.dart';
 import 'package:dragon_haven/models/chest.dart';
@@ -74,6 +75,7 @@ void main() {
     CanonicalGameSession? game;
     CanonicalGameTransport? migration;
     CanonicalAccountHandoff? handoff;
+    CanonicalAccountBootstrap<CanonicalGameSession>? bootstrap;
     OnlineAccountProvider? socialReads;
     try {
       await auth.auth.recoverSession(jsonEncode(raw));
@@ -152,6 +154,62 @@ void main() {
       require(
           status.ownerId == owner && status.phase == 'active', 'live_status');
       stdout.writeln('PROBE: account_activation_replayed');
+      var openedRoots = 0;
+      var closedRoots = 0;
+      bootstrap = CanonicalAccountBootstrap<CanonicalGameSession>(
+          directory: directory,
+          currentOwner: () => migration!.currentOwner,
+          sessionEpoch: () => migration!.sessionEpoch,
+          accountChanges: migration.accountChanges,
+          readStatus: (_) => migration!.readAccountStatus(),
+          prepareAndUploadLegacy: (_) => throw StateError(
+              'client_probe_activation_bootstrap_legacy_upload'),
+          activate: (_, __, ___) => throw StateError(
+              'client_probe_activation_bootstrap_reactivation'),
+          openLegacy: (_) =>
+              throw StateError('client_probe_activation_bootstrap_legacy_load'),
+          openServer: (_, minimumRevision) async {
+            require(minimumRevision >= 3, 'bootstrap_revision_floor');
+            final connection = CanonicalGameTransport.staging(auth, config);
+            final session = CanonicalGameSession(
+                directory: directory,
+                connection: connection,
+                expectedAuthority: CanonicalGameAuthority.server);
+            try {
+              await session.synchronize(minimumServerRevision: minimumRevision);
+            } on Object {
+              session.dispose();
+              await connection.dispose();
+              rethrow;
+            }
+            openedRoots++;
+            return CanonicalGameplayLease(session, close: () async {
+              session.dispose();
+              await connection.dispose();
+              closedRoots++;
+            });
+          });
+      await bootstrap.synchronize();
+      require(
+          bootstrap.phase == CanonicalBootstrapPhase.server &&
+              bootstrap.gameplay?.snapshot?.coins == 1000 &&
+              bootstrap.gameplay?.canAct == true &&
+              openedRoots == 1,
+          'bootstrap_server_root');
+      await bootstrap.setForeground(false);
+      require(bootstrap.gameplay == null && closedRoots == 1,
+          'bootstrap_background_retired');
+      await bootstrap.setForeground(true);
+      require(
+          bootstrap.phase == CanonicalBootstrapPhase.server &&
+              bootstrap.gameplay?.snapshot?.coins == 1000 &&
+              openedRoots == 2,
+          'bootstrap_resume_rechecked');
+      await bootstrap.shutdown();
+      bootstrap.dispose();
+      bootstrap = null;
+      require(closedRoots == 2, 'bootstrap_all_roots_retired');
+      stdout.writeln('PROBE: authority_first_bootstrap_and_resume');
       socialReads = OnlineAccountProvider(
           repository: social,
           serverOwned: true,
@@ -216,6 +274,8 @@ void main() {
       stdout.writeln(
           'PASS: real account activation; lost activation/purchase replies, private import, live inventory and one debit.');
     } finally {
+      await bootstrap?.shutdown();
+      bootstrap?.dispose();
       socialReads?.dispose();
       handoff?.dispose();
       game?.dispose();

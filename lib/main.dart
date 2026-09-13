@@ -103,6 +103,7 @@ Future<void> main() async {
       ..altarRequiresAccount = true
       ..altarCurrentUserId = (() =>
           socialRepository.isSignedIn ? socialRepository.currentUserId : null)
+      ..altarSessionEpoch = (() => altar.sessionEpoch)
       ..altarCommand = altar.command
       ..loadWeaveBeacon = altar.beacon
       ..refreshEggAltar = altar.refresh;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 // Native defaults also let the analyzer retain Flutter's actual notifier type.
@@ -179,6 +180,8 @@ class HouseholdProvider extends ChangeNotifier {
   /// Test Trials always grant their normal rewards, including in production.
   bool persistentSeasonalPreviewRewards = false;
   Future<void> _saveQueue = Future<void>.value();
+  bool _legacyWritesStopped = false;
+  Future<({String json, int revision})>? _sealedLegacySave;
   Timer? _starterEggTapPersistenceTimer;
   int _localMutationRevision = 0;
   int _presentationDeferralDepth = 0;
@@ -229,6 +232,9 @@ class HouseholdProvider extends ChangeNotifier {
   Future<Map<String, dynamic>> Function(String conclaveId)? loadWeaveBeacon;
   Future<void> Function()? refreshEggAltar;
   String? Function()? altarCurrentUserId;
+  int Function()? altarSessionEpoch;
+  bool _altarOperationsStopped = false;
+  Future<void> _settledAltarOperation = Future<void>.value();
   bool altarBusy = false;
   bool altarRequiresAccount = false;
   Map<String, dynamic>? pendingAltarOperation;
@@ -3253,6 +3259,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<void> _notifyAndSave() async {
+    if (_legacyWritesStopped) throw StateError('Legacy save is sealed.');
     _localMutationRevision++;
     notifyListeners();
     await _save();
@@ -3474,9 +3481,36 @@ class HouseholdProvider extends ChangeNotifier {
     }
   }
 
+  /// Called only after removing gameplay and draining online/Altar refreshes.
+  /// Preserve the last admitted Altar receipt, flush local storage, and return
+  /// an immutable upload source. Late callbacks cannot rewrite that source.
+  /// This instance cannot be reopened; retry from its preserved save/journal.
+  Future<({String json, int revision})> sealLegacySave() {
+    if (_sealedLegacySave != null) return _sealedLegacySave!;
+    _starterEggTapPersistenceTimer?.cancel();
+    _starterEggTapPersistenceTimer = null;
+    final settled = stopAltarOperations();
+    return _sealedLegacySave = (() async {
+      await settled;
+      if (pendingAltarOperation != null) {
+        throw const EggAltarException('altar_pending');
+      }
+      final json = jsonEncode(exportState());
+      final revision = _localMutationRevision;
+      final saved = _enqueueSave(Map<String, dynamic>.from(jsonDecode(json) as Map));
+      _legacyWritesStopped = true;
+      await saved;
+      return (json: json, revision: revision);
+    })();
+  }
+
   Future<void> _save() {
+    if (_legacyWritesStopped) return Future.error(StateError('Legacy save is sealed.'));
+    return _enqueueSave(exportState());
+  }
+
+  Future<void> _enqueueSave(Map<String, dynamic> state) {
     if (!_persistenceEnabled) return Future<void>.value();
-    final state = exportState();
     final operation = _saveQueue.then((_) => StorageService.save(state),
         onError: (_) => StorageService.save(state));
     _saveQueue = operation;

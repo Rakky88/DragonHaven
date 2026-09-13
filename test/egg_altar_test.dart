@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dragon_haven/models/dragon_egg.dart';
@@ -8,6 +10,7 @@ import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
+import 'package:dragon_haven/services/storage_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image/image.dart' as image;
@@ -291,5 +294,115 @@ void main() {
     await expectLater(g.returnEggToWeave('one'), failure('egg_tagged'));
     expect(g.pendingAltarOperation, isNull);
     expect(g.eggStash, hasLength(2));
+  });
+
+  test('sealing drains an admitted Altar receipt and refuses new commands',
+      () async {
+    final g = game()..altarCurrentUserId = () => 'keeper';
+    final sent = Completer<void>();
+    final reply = Completer<Map<String, dynamic>>();
+    g.altarCommand = (_, __, ___) {
+      sent.complete();
+      return reply.future;
+    };
+    final operation = g.returnEggToWeave('one');
+    await sent.future;
+    var sealed = false;
+    final sealing = g.sealLegacySave().then((value) {
+      sealed = true;
+      return value;
+    });
+    await Future<void>.delayed(Duration.zero);
+    expect(sealed, isFalse);
+    await expectLater(g.returnEggToWeave('two'), failure('altar_unavailable'));
+    reply.complete({
+      'state': EggAltarState(
+          ownerId: 'keeper',
+          revision: 2,
+          wallet: const WeaveWallet(5, 0, 0),
+          totalReturned: 1,
+          returnedIds: {'one'}).toJson(),
+      'receipt': {'reward': const WeaveWallet(5, 0, 0).toJson()},
+    });
+    await operation;
+    final source = await sealing;
+    final state = jsonDecode(source.json) as Map;
+    expect((state['eggAltar'] as Map)['revision'], 2);
+    expect(state['pendingAltarOperation'], isNull);
+    expect(g.eggStash.map((egg) => egg.id), ['two']);
+    g.pet.coins += 999;
+    expect((await g.sealLegacySave()).json, source.json);
+    await expectLater(g.setLanguage('nl'), throwsStateError);
+    g.dispose();
+  });
+
+  test('retirement from the busy listener cannot dispatch an Altar command',
+      () async {
+    final g = game()..altarCurrentUserId = () => 'keeper';
+    var calls = 0;
+    Future<void>? stopped;
+    g.altarCommand = (_, __, ___) async {
+      calls++;
+      return {};
+    };
+    g.addListener(() {
+      if (g.altarBusy) stopped = g.stopAltarOperations();
+    });
+    await expectLater(g.returnEggToWeave('one'), failure('altar_unavailable'));
+    await stopped;
+    expect(calls, 0);
+    expect(g.eggStash, hasLength(2));
+    expect(g.pendingAltarOperation, isNull);
+    g.dispose();
+  });
+
+  test('sealing flushes queued local writes and late saves cannot overwrite it',
+      () async {
+    final g = HouseholdProvider();
+    final change = g.setLanguage('nl');
+    final sealed = g.sealLegacySave();
+    await change;
+    final source = await sealed;
+    final prefs = await SharedPreferences.getInstance();
+    expect(jsonDecode(prefs.getString(StorageService.currentKey)!),
+        jsonDecode(source.json));
+    expect((jsonDecode(source.json) as Map)['languageCode'], 'nl');
+    final stored = prefs.getString(StorageService.currentKey);
+    await expectLater(g.setLanguage('de'), throwsStateError);
+    expect(prefs.getString(StorageService.currentKey), stored);
+    expect((await g.sealLegacySave()).json, source.json);
+    g.dispose();
+  });
+
+  test(
+      'an A-B-A session change retains the Altar journal and rejects its late receipt',
+      () async {
+    final g = game()..altarCurrentUserId = () => 'keeper';
+    var epoch = 1;
+    g.altarSessionEpoch = () => epoch;
+    final sent = Completer<void>();
+    final reply = Completer<Map<String, dynamic>>();
+    g.altarCommand = (_, __, ___) {
+      sent.complete();
+      return reply.future;
+    };
+    final operation = g.returnEggToWeave('one');
+    final rejected = expectLater(operation, failure('altar_unavailable'));
+    await sent.future;
+    epoch += 2;
+    reply.complete({
+      'state': EggAltarState(
+          ownerId: 'keeper',
+          revision: 2,
+          wallet: const WeaveWallet(5, 0, 0),
+          returnedIds: {'one'}).toJson(),
+      'receipt': {'reward': const WeaveWallet(5, 0, 0).toJson()},
+    });
+    await rejected;
+    expect(g.eggStash, hasLength(2));
+    expect(g.eggAltar.wallet.fragments, 0);
+    expect(g.pendingAltarOperation?['id'], 'return:one');
+    await expectLater(g.sealLegacySave(), failure('altar_pending'));
+    g.dispose();
   });
 }

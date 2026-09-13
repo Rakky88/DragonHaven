@@ -1,5 +1,11 @@
 # DragonHaven Special Events, Chests, and Eggs
 
+The pending server-economy handoff now drains Altar operations and preserves
+unresolved request IDs before freezing a legacy save. Late responses are bound
+to the original account/session, including during retirement. The reviewed egg
+eligibility, return rewards, pity counter, crafting costs, chest pools and event
+rules below are unchanged. This does not enable the production cutover.
+
 The v0.05.35 size reduction changes only artwork encodings and runtime asset
 paths. Event schedules, eligibility, point targets, partners, chest contents and
 egg relationships remain as documented below. Original artwork is preserved;
@@ -334,7 +340,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 4aa1dbe66c8a551e -->
+<!-- reference-source-fingerprint: 047e82c6f43b4889 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

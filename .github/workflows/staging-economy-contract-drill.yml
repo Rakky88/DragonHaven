@@ -830,7 +830,7 @@ jobs:
       - name: Verify handoff and build synthetic fixture
         run: |
           flutter pub get
-          flutter test --no-pub test/canonical_account_handoff_test.dart test/canonical_game_transport_test.dart test/canonical_legacy_upload_test.dart test/online_social_test.dart
+          flutter test --no-pub test/canonical_account_bootstrap_test.dart test/canonical_account_handoff_test.dart test/canonical_game_transport_test.dart test/canonical_legacy_upload_test.dart test/egg_altar_repository_test.dart test/egg_altar_test.dart test/online_social_test.dart
           mkdir -p staging
           flutter test --no-pub --dart-define=DOMAIN_PARITY_OUTPUT=staging/game-fixture.json test/game_domain_parity_fixture_test.dart
       - name: Rehearse SQL and recover real test-account commands

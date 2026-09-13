@@ -1,5 +1,55 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Account retirement checkpoint - 13 September 2026
+
+Release v0.05.36 (10086) is published separately from this unfinished economy
+branch. Its asset digest, installed package version, latest download and
+production health were verified; see the release branch's
+RELEASE_V0.05.36_VERIFICATION.md. Production remained at schema 83.
+
+The Altar now binds admitted commands and refreshes to the captured account and
+session epoch, including switching away and back. Retirement blocks admission,
+drains the actual response/local receipt, and keeps observing authentication
+until those responses settle. A late response cannot credit the next session;
+its original pending operation remains available for recovery.
+HouseholdProvider.sealLegacySave waits for admitted Altar work, rejects an
+unresolved operation, flushes queued storage writes and returns immutable JSON
+with its mutation revision. The retired instance cannot save again. The caller
+must first remove gameplay and drain online/repository refreshes; source
+ownership must still be independently established before upload.
+
+CanonicalAccountBootstrap resolves authority before opening either gameplay
+lease and carries the activation minimum revision into the server session.
+Account/lifecycle changes hide the old lease immediately and await its close;
+failed drains, unknown authority and stale account responses cannot open a
+replacement game. This coordinator is tested but is NOT yet connected to the
+normal app startup. Account-scoped legacy ownership/reconciliation and complete
+production UI routing remain open; no production cutover is claimed.
+
+Local verification covers 69 targeted tests across bootstrap, handoff, final
+upload, Altar repository/provider/widgets, lifecycle and command engine. Eight
+bootstrap cases include stale loads, pause/resume races, failed drains and
+missing source ownership; four repository cases include A -> B -> A during
+retirement. Reward amounts, probabilities, crafting costs and event calendars
+are unchanged. Migration 84 remains unapplied outside rollback rehearsals.
+
+The complete local run initially passed 982 tests with one intentional skip
+and five failures: two sparse-checkout omissions, two CRLF-sensitive SQL text
+assertions and the source-discovery expectation still pointing at migration 83.
+Required art/iOS source files are now included locally, SQL assertion inputs
+normalize line endings, and source discovery expects pending migration 84.
+All 35 tests in the four affected files pass on rerun; analysis is clean and
+all five reference-documentation tests pass. The deployment guards are unchanged.
+The shared worker compiles to 1,195,518 bytes with digest
+c7928b2fe461e26caf35e4f05aa33f37755226a03b597a0dc0c31900364b8c74;
+this candidate bundle has NOT been deployed.
+
+The real handoff rehearsal now also opens a server session through
+CanonicalAccountBootstrap, refuses any legacy loader/upload/reactivation,
+retires the root on backgrounding and rechecks authority before reopening.
+Its current staging outcome will be recorded after execution; local unit tests
+do not stand in for that real-network result.
+
 ## Current verification checkpoint - 13 September 2026
 
 The full app gate in run 34771396189 on e95f85f passed clean analysis,
@@ -15,8 +65,74 @@ No schedule, price, reward or probability was changed in the game.
 Run 34772002849 on d3bcdf8 passed all 19 current economy contract runners on
 schema 83 with rollback and without deploying code or migrations. The exact
 migration-prefix guards now recognize schema 83 while rejecting gaps,
-duplicates and future versions. Full current-candidate staging verification
-is running as 34772080531; its outcome is not yet claimed.
+duplicates and future versions. Run 34772080531 on d3bcdf8 subsequently passed
+its app gate, deployed the compiled ruleset above to staging, and passed schema
+83 preflight. Its full client probe failed at Adventure UI deadline/navigation;
+cleanup confirmed all synthetic accounts/copies/intents removed and all five
+switches disabled. It is not a complete gameplay pass.
+
+Run 34773088726 on a39d9be passed the expanded rollback suite: 20 PowerShell
+runners and three additional event-calendar/lifecycle SQL contracts. The old
+preview contract expected a restriction removed by migration 62; it now checks
+verified switching, unverified refusal, and preservation of the other account.
+No game access policy changed. Run 34773087482 on a39d9be confirmed the remaining
+Adventure deadline assertion failure and complete cleanup. Its successor uses
+bounded server-clock polling rather than a single inferred client delay.
+
+CanonicalGameSession now accepts the confirmed handoff minimum revision and
+retains it through retries/in-flight reads. A stale response cannot open spending.
+The real handoff probe supplies that revision. Fourteen session tests and the
+other 71 handoff/upload/transport/reconciliation/snapshot tests pass locally;
+focused analysis is clean. Run 34773319617 on d6bae68 passed real current-worker
+handoff, social read/write fencing and lost-reply recovery, with full cleanup.
+Run 34773409609 on 342d196 crossed the actual Adventure deadline and recovered
+its claim, then exercised house, Academy, Trial restart, profile and milestones;
+it stopped at an outdated social-claim tab selection. That fixture now opens
+the Completed tab. Cleanup again removed all synthetic records and disabled
+all five switches. Run 34773895309 then failed creating a synthetic Auth account before gameplay;
+cleanup succeeded. Safe status/category diagnostics now identify such failures
+without logging Auth bodies or credentials. Run 34774240064 passed the actual
+client and four-keeper group UI, then failed at the obsolete pair-creation probe.
+That probe now checks refusal of retired entry points, but its revised full
+lifecycle rehearsal is not yet claimed. Run 34774411393 failed a combined
+Wayfinder assertion. The assertion is now split into stock, debit and offer
+checks; no gameplay rule was changed and the earlier root cause is unproven.
+Run 34781933760 on 4cba907 passed the focused real-client probe against the
+existing staging worker, including all Wayfinder checks. Cleanup at 20:55:08 UTC
+removed all synthetic accounts/commands and disabled all five switches. This
+focused run does not replace the separate social lifecycle gates.
+
+Review of schema 83 found that an already-accepted event-point partnership
+could still read the other keeper's legacy cloud after only one keeper migrated.
+Pending migration 84 fences both shared-progress reads and invitation acceptance
+across authority modes. It preserves memberships and already credited points.
+The new rollback-only contract checks server totals against deliberately inflated
+legacy-cloud values, personal preview keys, mixed-authority invite/accept/read
+refusals, and restored sharing once both members use server authority. Run
+34773730630 stopped at a missing service-role setting in this synthetic fixture;
+that setup is corrected. Run 34773893751 identified the additional required
+social-projection fields in the synthetic state; those now reuse the validated
+projection fixture. Run 34774004411 on acf11d3 passed all 20 original runners
+and four additional SQL contracts, including the complete migration-84 rehearsal
+inside a rolled-back transaction. No persistent schema-84 application is made.
+Normal preflight/apply guards remain pinned to deployed schema 83 until that
+migration's verification and rollout are separately completed.
+
+OnlineAccountProvider.stopLegacyOperations now blocks new economic operations
+and drains the actual source future even after a UI timeout. Its drain is
+registered before busy listeners run, so a listener-triggered retirement cannot
+miss an admitted operation. All 62 social tests pass, including both retirement
+races; focused analysis and reference-documentation checks are clean. Root must
+still remove gameplay, drain local/Altar writers, reconcile source ownership and
+connect this API before final upload. This is not a complete startup integration.
+
+The old full social rehearsal still tried to create retired event Adventures.
+Its pair phase now verifies all three retired SQL entry points are refused with
+unchanged inventory and no new command/invitation. Existing pair reward claims
+remain in the real client UI probe. The focused client job records only client
+proof; group/beacon/trade/seasonal/handoff lifecycle jobs remain separate gates.
+Production Auth health, settings and application health returned HTTP 200 at
+18:13:20 UTC on 13 September 2026 (one attempt).
 
 Run 34771742742 on aa97b8a passed real final-upload, activation and purchase
 recovery plus server-owned social reads. SQL additionally verifies the
@@ -32,7 +148,12 @@ returned HTTP 200 for Auth health, Auth settings and application health.
 
 This is not a production cutover: ordinary main.dart still needs the authority
 gate, source-owner reconciliation, paused legacy writers, full server UI
-routing and foreground/account-change recovery. No real player is promoted,
+routing and foreground/account-change recovery. StorageService.currentKey is
+still device-global: sourceOwner must come from a known-owner load or explicit
+save reconciliation, never just the currently signed-in Auth identity. The
+server social adapter also requires canonical routes for trades, profile edits
+and rewards before being exposed through the complete production UI.
+No real player is promoted,
 and no release/version increment is made by this work. The monitoring fix
 from main is included so a future release retains confirmed-failure alerts.
 
