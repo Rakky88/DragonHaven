@@ -39,6 +39,12 @@ foreach ($case in @(
     @{ File = 'canonical_event_points_contract'; Result = 'canonical_event_points_passed' }
 )) {
   $query = Get-Content -LiteralPath (Join-Path $PSScriptRoot ($case.File + '.sql')) -Raw -Encoding utf8
+  if ($case.File -eq 'canonical_event_points_contract') {
+    # Rehearse the pending function-only migration in this transaction. The
+    # contract's ROLLBACK removes both fixture state and function replacements.
+    $migration = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../supabase/migrations/202609130084_server_event_partner_authority.sql') -Raw -Encoding utf8
+    $query = "begin;`n" + $migration + "`n" + [regex]::Replace($query, '(?m)^begin;\r?\n', '', 1)
+  }
   $result = Invoke-RestMethod -Method Post `
     -Uri "https://api.supabase.com/v1/projects/$ProjectRef/database/query" `
     -Headers @{Authorization = "Bearer $ManagementAccessToken"} -ContentType 'application/json' -TimeoutSec 90 `

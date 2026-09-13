@@ -43,7 +43,11 @@ has one reserved partner slot per occurrence, and accepted partners cannot be
 swapped. No dragon is reserved. Both Keepers can independently claim one chest.
 Legacy accounts synchronize contributions through their existing cloud-save
 contract; canonical accounts use database-owned state. Cross-authority pairings
-are refused. Offline contributions synchronize on reconnect; conflicts never
+are refused, including acceptance after only one account has migrated. During
+an account-by-account migration, existing accepted pair memberships and already
+credited points are retained, but fresh shared contributions pause until both
+accounts use the same authority. No legacy cloud total can mint new server-owned
+rewards. Offline contributions synchronize on reconnect; conflicts never
 silently replace another device's save.
 
 The active event uses a 58dp-high glass reservoir with engraved metalwork,
@@ -326,7 +330,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 46531f6937e9ddf0 -->
+<!-- reference-source-fingerprint: c499c0b497eb75fd -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

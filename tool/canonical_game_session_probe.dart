@@ -876,6 +876,7 @@ void main() {
           'PASS: real milestone UI; existing achievement scene acknowledged without repeating its reward.');
       stdout.writeln('PROBE: ui_social_start');
       await mount(const CanonicalAdventuresScreen());
+      await tap(key('canonical-tab-completed'));
       final pendingClaims = game.snapshot!.adventures.socialClaims;
       require(pendingClaims.length == 3, 'client_probe_social_sources_missing');
       for (final claim in pendingClaims) {

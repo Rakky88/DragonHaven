@@ -6,6 +6,7 @@ declare keepers uuid[]:=array[gen_random_uuid(),gen_random_uuid(),gen_random_uui
   keeper uuid; idx integer; source jsonb; progress jsonb; imported uuid;
   event_keys text[]; codes text[]; response jsonb; pair_id uuid; shared jsonb;
 begin
+  perform set_config('request.jwt.claim.role','service_role',true);
   if (select enabled or migration_enabled or shadow_projection_enabled or
       shadow_social_enabled or shadow_lifecycle_enabled from private.game_engine_runtime where singleton) then
     raise exception 'event_points_contract_requires_dormant'; end if;
@@ -49,6 +50,12 @@ begin
   if response->'pairs'->0->>'eventKey'<>event_keys[2] or
       (response->'pairs'->0->>'incoming')::boolean is not true then
     raise exception 'event_points_contract_personal_preview_missing'; end if;
+  update private.canonical_game_states set authority_mode='shadow' where owner_id=keepers[2];
+  begin
+    perform public.event_point_partner('accept',event_keys[2],null,pair_id);
+    raise exception 'event_points_contract_mixed_accept_accepted';
+  exception when others then if sqlerrm<>'event_partner_unavailable' then raise; end if; end;
+  update private.canonical_game_states set authority_mode='server' where owner_id=keepers[2];
   response:=public.event_point_partner('accept',event_keys[2],null,pair_id);
   shared:=response->'shared'->'progress'->0;
   if shared is null or shared->>'key'<>event_keys[2] or (shared->>'points')::bigint<>200 or
@@ -65,6 +72,16 @@ begin
   shared:=response->'shared'->'progress'->0;
   if shared is null or (shared->>'points')::bigint<>100 or (shared->>'partnerPoints')::bigint<>300 then
     raise exception 'event_points_contract_server_refresh_missing'; end if;
+  -- Existing accepted membership must not bypass authority fencing after one
+  -- member migrates. Its stale cloud contains deliberately inflated points.
+  update private.canonical_game_states set authority_mode='shadow' where owner_id=keepers[2];
+  response:=public.event_point_partner('list',event_keys[1]);
+  if jsonb_array_length(response->'shared'->'progress') is distinct from 0 then
+    raise exception 'event_points_contract_mixed_existing_pair_credited'; end if;
+  update private.canonical_game_states set authority_mode='server' where owner_id=keepers[2];
+  response:=public.event_point_partner('list',event_keys[1]);
+  if (response->'shared'->'progress'->0->>'partnerPoints')::bigint is distinct from 300 then
+    raise exception 'event_points_contract_migrated_pair_not_resumed'; end if;
   if (select count(*) from private.event_point_pair_members where owner_id=any(keepers[1:2])) <> 2 then
     raise exception 'event_points_contract_members_missing'; end if;
   if exists(select 1 from private.event_point_pair_members where owner_id=keepers[3]) then
