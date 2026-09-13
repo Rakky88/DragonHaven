@@ -42,7 +42,10 @@ All 35 tests in the four affected files pass on rerun; analysis is clean and
 all five reference-documentation tests pass. The deployment guards are unchanged.
 The shared worker compiles to 1,195,518 bytes with digest
 c7928b2fe461e26caf35e4f05aa33f37755226a03b597a0dc0c31900364b8c74;
-this candidate bundle has NOT been deployed.
+this candidate bundle has NOT been deployed. VM/JavaScript shared-domain parity
+and all 27 Edge command tests pass; the Edge entry point type-checks. The
+focused Beacon workflow selector now supplies the intended beacon mode rather
+than a boolean; this selector fix changes no game or database behavior.
 
 The real handoff rehearsal now also opens a server session through
 CanonicalAccountBootstrap, refuses any legacy loader/upload/reactivation,

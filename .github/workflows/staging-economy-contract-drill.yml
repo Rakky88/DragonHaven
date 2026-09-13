@@ -763,7 +763,7 @@ jobs:
       - name: Probe the deployed worker with synthetic keepers
         shell: pwsh
         env:
-          STAGING_SOCIAL_PROBE: ${{ inputs.contract == 'canonical-trade-probe' && 'trade' || inputs.contract == 'canonical-partner-probe' && 'pair' || inputs.contract == 'canonical-beacon-probe' || inputs.contract == 'canonical-trade-probe' && 'beacon' || 'group' }}
+          STAGING_SOCIAL_PROBE: ${{ inputs.contract == 'canonical-trade-probe' && 'trade' || inputs.contract == 'canonical-partner-probe' && 'pair' || inputs.contract == 'canonical-beacon-probe' && 'beacon' || 'group' }}
           STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
           STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
           STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
