@@ -2413,13 +2413,22 @@ extension DragonHavenSystems on HouseholdProvider {
   Future<void> synchronizeSeasonalEventDismissals(
       Map<String, DateTime> dismissals) async {
     final now = _clock();
+    var retired = false;
+    for (final window in specialAdventureRankingWindowsAt(now)) {
+      final until = dismissals[window.event.id];
+      if (until != null && !until.isBefore(window.endsAt)) {
+        final progress = _progressForWindow(window);
+        retired = retired || !progress.rankingHidden;
+        progress.rankingHidden = true;
+      }
+    }
     final normalized = <String, DateTime>{
       for (final entry in dismissals.entries)
         if (specialAdventureEventById(entry.key) != null &&
             entry.value.isAfter(now))
           entry.key: entry.value,
     };
-    if (mapEquals(normalized, seasonalEventDismissedUntil)) return;
+    if (!retired && mapEquals(normalized, seasonalEventDismissedUntil)) return;
     seasonalEventDismissedUntil = normalized;
     await refreshForCurrentDate();
     // An end-event response must repaint and persist even when no timer,
@@ -2452,9 +2461,17 @@ extension DragonHavenSystems on HouseholdProvider {
                   seasonalEventPreviewExpiresAt[entry.key] == entry.value,
             );
     if (unchanged) return;
+    for (final progress in eventProgress.values) {
+      if (progress.preview &&
+          progress.endsAt.isAfter(now) &&
+          normalized[progress.eventId] != progress.endsAt) {
+        progress.rankingHidden = true;
+      }
+    }
     seasonalEventPreviewExpiresAt = normalized;
     trialRefilledAt = null;
     await refreshForCurrentDate();
+    await _notifyAndSave();
   }
 
   Map<TrainingFocus, int> _grantSeasonalTrialExpertise(

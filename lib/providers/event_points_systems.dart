@@ -40,10 +40,57 @@ extension EventPointsSystems on HouseholdProvider {
 
   bool initializeEventProgress() {
     final before = eventProgress.length;
+    var retired = false;
+    // Migrate obsolete preview cards from older saves without discarding rewards.
+    for (final progress in eventProgress.values) {
+      if (progress.preview &&
+          progress.activeAt(_clock()) &&
+          seasonalEventPreviewExpiresAt[progress.eventId] != progress.endsAt &&
+          !progress.rankingHidden) {
+        progress.rankingHidden = true;
+        retired = true;
+      }
+    }
     for (final window in activeSpecialAdventureWindows) {
       _progressForWindow(window);
     }
-    return before != eventProgress.length;
+    return retired || before != eventProgress.length;
+  }
+
+  /// Exactly one occurrence, with a three-day grace period after natural expiry.
+  /// Select before filtering retirement so ending the newest event cannot revive
+  /// an older test event underneath it.
+  SpecialAdventureWindow? get trialRankingEventWindow {
+    final now = _clock();
+    final active = activeSpecialAdventureWindows;
+    if (active.isNotEmpty) return active.first;
+    final candidates = <String, SpecialAdventureWindow>{
+      for (final window in specialAdventureRankingWindowsAt(now))
+        window.key: window,
+      for (final progress in eventProgress.values)
+        if (!now.isBefore(progress.startsAt))
+          progress.key: SpecialAdventureWindow(
+              event: specialAdventureEventById(progress.eventId)!,
+              key: progress.key,
+              startsAt: progress.startsAt,
+              endsAt: progress.endsAt),
+    }.values.toList()
+      ..sort((a, b) {
+        final start = b.startsAt.compareTo(a.startsAt);
+        return start == 0 ? b.key.compareTo(a.key) : start;
+      });
+    if (candidates.isEmpty) return null;
+    final window = candidates.first;
+    if (!now.isBefore(window.endsAt.add(window.event.rankingVisibleAfterEvent))) {
+      return null;
+    }
+    if (eventProgress[window.key]?.rankingHidden == true) return null;
+    if (window.key.contains(':preview:') && now.isBefore(window.endsAt)) {
+      return null; // An unregistered preview was ended or replaced.
+    }
+    final dismissed = seasonalEventDismissedUntil[window.event.id];
+    if (dismissed != null && !dismissed.isBefore(window.endsAt)) return null;
+    return window;
   }
 
   List<EventProgress> get activeEventProgress => [

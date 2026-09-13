@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,6 +8,7 @@ import '../models/trial.dart';
 import '../providers/online_account_provider.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/event_appearance.dart';
 import 'online_account_access.dart';
 import 'trial_icon_sprite.dart';
 
@@ -55,18 +57,52 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
   bool _loadScheduledForAccount = false;
   String? _errorCode;
   int _requestRevision = 0;
+  String? _eventWindowKey;
+  Timer? _expiryTimer;
 
   @override
   void initState() {
     super.initState();
     _scope = widget.initialScope;
     _kind = widget.initialKind ?? TrialKind.cavernFlight;
+    _expiryTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted &&
+          context.read<HouseholdProvider>().trialRankingEventWindow?.key !=
+              _eventWindowKey) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _expiryTimer?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final online = context.watch<OnlineAccountProvider>();
+    final game = context.watch<HouseholdProvider>();
+    final eventWindow = game.trialRankingEventWindow;
+    final seasonalKinds = trialDefinitions.values.where(
+        (d) => d.isSeasonal && d.specialEventId == eventWindow?.event.id);
+    if (_eventWindowKey != eventWindow?.key ||
+        (trialDefinitions[_kind]!.isSeasonal &&
+            !seasonalKinds.any((d) => d.kind == _kind))) {
+      _eventWindowKey = eventWindow?.key;
+      _cache.clear();
+      _entries = const [];
+      _errorCode = null;
+      _requestRevision++;
+      _loading = false;
+      _loadScheduledForAccount = false;
+      if (trialDefinitions[_kind]!.isSeasonal &&
+          !seasonalKinds.any((d) => d.kind == _kind)) {
+        _kind = TrialKind.cavernFlight;
+      }
+    }
     if (!online.isSignedIn) {
       _loadScheduledForAccount = false;
     } else if (!_loadScheduledForAccount) {
@@ -75,22 +111,6 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
         if (mounted) _load();
       });
     }
-    final now = DateTime.now();
-    final game = context.watch<HouseholdProvider>();
-    final eventIds = {
-      for (final window in specialAdventureRankingWindowsAt(now))
-        window.event.id,
-      for (final preview in online.seasonalEventPreviews)
-        if (now.isBefore(preview.expiresAt.add(const Duration(days: 3))))
-          preview.eventId,
-      for (final event in game.eventProgress.values)
-        if (event.preview &&
-            !now.isBefore(event.startsAt) &&
-            now.isBefore(event.endsAt.add(const Duration(days: 3))))
-          event.eventId,
-    };
-    final seasonalKinds = trialDefinitions.values
-        .where((d) => eventIds.contains(d.specialEventId));
     final height = MediaQuery.sizeOf(context).height * .88;
     return Container(
       key: const Key('trial-rankings-sheet'),
@@ -107,95 +127,90 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
             subtitle: _scopeSubtitle(strings, _scope),
             onClose: () => Navigator.pop(context),
           ),
-          if (widget.scopes.length > 1)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 13, 14, 0),
-              child: SizedBox(
-                width: double.infinity,
-                child: SegmentedButton<TrialRankingScope>(
-                  key: const Key('trial-ranking-scope-selector'),
-                  showSelectedIcon: false,
-                  segments: [
-                    for (final scope in widget.scopes)
-                      ButtonSegment(
-                        value: scope,
-                        icon: Icon(_scopeIcon(scope), size: 17),
-                        label: Text(_scopeLabel(strings, scope)),
+          Expanded(
+              child: NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) => [
+              SliverToBoxAdapter(
+                  child: Column(children: [
+                if (widget.scopes.length > 1)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 13, 14, 0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<TrialRankingScope>(
+                        key: const Key('trial-ranking-scope-selector'),
+                        showSelectedIcon: false,
+                        segments: [
+                          for (final scope in widget.scopes)
+                            ButtonSegment(
+                              value: scope,
+                              icon: Icon(_scopeIcon(scope), size: 17),
+                              label: Text(_scopeLabel(strings, scope)),
+                            ),
+                        ],
+                        selected: {_scope},
+                        onSelectionChanged: _loading
+                            ? null
+                            : (selection) {
+                                final next = selection.first;
+                                if (next == _scope) return;
+                                setState(() => _scope = next);
+                                _load();
+                              },
                       ),
-                  ],
-                  selected: {_scope},
-                  onSelectionChanged: _loading
-                      ? null
-                      : (selection) {
-                          final next = selection.first;
-                          if (next == _scope) return;
-                          setState(() => _scope = next);
-                          _load();
-                        },
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 13, 14, 11),
+                  child: Row(
+                    children: [
+                      for (final kind in standardTrialKinds) ...[
+                        if (kind != standardTrialKinds.first)
+                          const SizedBox(width: 7),
+                        Expanded(
+                          child: _TrialChoice(
+                            kind: kind,
+                            selected: kind == _kind,
+                            label: _trialLabel(strings, kind),
+                            onTap: () {
+                              if (_loading || kind == _kind) return;
+                              setState(() => _kind = kind);
+                              _load();
+                            },
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 13, 14, 11),
-            child: Row(
-              children: [
-                for (final kind in standardTrialKinds) ...[
-                  if (kind != standardTrialKinds.first)
-                    const SizedBox(width: 7),
-                  Expanded(
-                    child: _TrialChoice(
-                      kind: kind,
-                      selected: kind == _kind,
-                      label: _trialLabel(strings, kind),
+                for (final trial in seasonalKinds)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                    child: _EventTrialChoice(
+                      kind: trial.kind,
+                      eventId: trial.specialEventId!,
+                      selected: _kind == trial.kind,
+                      label: _trialLabel(strings, trial.kind),
                       onTap: () {
-                        if (_loading || kind == _kind) return;
-                        setState(() => _kind = kind);
+                        if (_loading || _kind == trial.kind) return;
+                        setState(() => _kind = trial.kind);
                         _load();
                       },
                     ),
                   ),
-                ],
-              ],
-            ),
-          ),
-          if (seasonalKinds.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
-              child: SizedBox(
-                  height: 60 + MediaQuery.textScalerOf(context).scale(24),
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      for (final trial in seasonalKinds)
-                        SizedBox(
-                            width: 126,
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 7),
-                              child: _TrialChoice(
-                                  kind: trial.kind,
-                                  selected: _kind == trial.kind,
-                                  label: _trialLabel(strings, trial.kind),
-                                  onTap: () {
-                                    if (_loading || _kind == trial.kind) return;
-                                    setState(() => _kind = trial.kind);
-                                    _load();
-                                  }),
-                            )),
-                    ],
-                  )),
-            ),
-          if (trialDefinitions[_kind]!.isSeasonal)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
-              child: Text(
-                  strings.pick(
-                      'Best Trial score. Results stay visible for 3 days after the event.',
-                      'Beste Trialscore. Resultaten blijven tot 3 dagen na het event zichtbaar.'),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 11)),
-            ),
-          Expanded(
-            child: !online.isSignedIn
+                if (trialDefinitions[_kind]!.isSeasonal)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                    child: Text(
+                        strings.pick(
+                            'Best Trial score. Results stay visible for 3 days after the event.',
+                            'Beste Trialscore. Resultaten blijven tot 3 dagen na het event zichtbaar.'),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 11)),
+                  ),
+              ])),
+            ],
+            body: !online.isSignedIn
                 ? ListView(
                     padding: const EdgeInsets.fromLTRB(14, 2, 14, 24),
                     children: const [OnlineAccountAccessCard()],
@@ -209,7 +224,7 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
                     scope: _scope,
                     kind: _kind,
                   ),
-          ),
+          )),
         ],
       ),
     );
@@ -218,6 +233,10 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
   Future<void> _load({bool force = false}) async {
     final online = context.read<OnlineAccountProvider>();
     if (!online.isSignedIn || _loading) return;
+    if (online.busy) {
+      _loadScheduledForAccount = false;
+      return;
+    }
     final key = (_scope, _kind);
     final cached = _cache[key];
     if (!force && cached != null) {
@@ -318,6 +337,84 @@ class _RankingsHeader extends StatelessWidget {
           ],
         ),
       );
+}
+
+class _EventTrialChoice extends StatelessWidget {
+  const _EventTrialChoice(
+      {required this.kind,
+      required this.eventId,
+      required this.selected,
+      required this.label,
+      required this.onTap});
+
+  final TrialKind kind;
+  final String eventId, label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = EventAppearance.forEvent(eventId);
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: Material(
+        color: theme.primary,
+        borderRadius: BorderRadius.circular(18),
+        clipBehavior: Clip.antiAlias,
+        child: Ink(
+          decoration: BoxDecoration(
+            image: theme.background == null
+                ? null
+                : DecorationImage(
+                    image: AssetImage(theme.background!),
+                    fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(
+                        Colors.black.withValues(alpha: .35), BlendMode.darken)),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+                color: selected
+                    ? AppColors.gold
+                    : theme.accent.withValues(alpha: .6),
+                width: 2),
+            gradient: LinearGradient(colors: theme.panelColors),
+          ),
+          child: InkWell(
+            key: Key('trial-ranking-kind-${kind.name}'),
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [
+                theme.primary.withValues(alpha: .9),
+                Colors.transparent
+              ])),
+              child: Row(children: [
+                TrialIconSprite(kind: kind, size: 46),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: Text(label,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            shadows: [
+                              Shadow(blurRadius: 5, color: Colors.black54)
+                            ]))),
+                const SizedBox(width: 8),
+                Icon(
+                    selected
+                        ? Icons.check_circle_rounded
+                        : Icons.leaderboard_rounded,
+                    color: AppColors.gold,
+                    size: 26),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _TrialChoice extends StatelessWidget {
@@ -454,6 +551,27 @@ class _RankingRow extends StatelessWidget {
       3 => const Color(0xFFD69B70),
       _ => AppColors.eventColor(context, const Color(0xFFE9E0F5)),
     };
+    final stackScore = MediaQuery.sizeOf(context).width /
+            MediaQuery.textScalerOf(context).scale(1) <
+        300;
+    final score = Column(
+      crossAxisAlignment:
+          stackScore ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+      children: [
+        Text('${entry.score}',
+            key: Key('trial-ranking-score-${entry.entryKey}'),
+            style: TextStyle(
+                color: AppColors.eventColor(context, AppColors.twilight),
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+                fontFeatures: [FontFeature.tabularFigures()])),
+        Text(strings.pick('points', 'punten'),
+            style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 8.5,
+                fontWeight: FontWeight.w800)),
+      ],
+    );
     return Semantics(
       label:
           '${entry.position}. ${entry.displayName}, ${entry.score} ${strings.pick('points', 'punten')}',
@@ -560,33 +678,11 @@ class _RankingRow extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+                  if (stackScore) ...[const SizedBox(height: 4), score],
                 ],
               ),
             ),
-            const SizedBox(width: 7),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${entry.score}',
-                  key: Key('trial-ranking-score-${entry.entryKey}'),
-                  style: TextStyle(
-                    color: AppColors.eventColor(context, AppColors.twilight),
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900,
-                    fontFeatures: [FontFeature.tabularFigures()],
-                  ),
-                ),
-                Text(
-                  strings.pick('points', 'punten'),
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
+            if (!stackScore) ...[const SizedBox(width: 7), score],
           ],
         ),
       ),

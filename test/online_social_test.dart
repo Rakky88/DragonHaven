@@ -1678,13 +1678,20 @@ void main() {
           eventId: 'valentine_two_heartlights',
           expiresAt: DateTime.now().add(const Duration(hours: 1)))
     ];
+    await tester.runAsync(() => game.synchronizeSeasonalEventPreviews({
+      for (final preview in online.seasonalEventPreviews)
+        preview.eventId: preview.expiresAt,
+    }));
     await tester.pumpWidget(MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: game),
           ChangeNotifierProvider.value(value: online)
         ],
-        child: const MaterialApp(
-            home: Scaffold(body: AdventureHubScreen(initialTab: 1)))));
+        child: MaterialApp(
+            builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(disableAnimations: true),
+                child: child!),
+            home: const Scaffold(body: AdventureHubScreen(initialTab: 1)))));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.byKey(const Key('open-trial-rankings')));
     await tester.pumpAndSettle();
@@ -2836,10 +2843,13 @@ void main() {
     expect(game.accountName, 'Local Keeper');
     expect(storedBaseRevision, isNull);
 
+    online.clearMessages();
     await expectLater(
         online.prepareEventPartnerSync(),
         throwsA(isA<SocialException>()
             .having((e) => e.code, 'code', 'cloud_save_conflict')));
+    expect(online.errorCode, isNull);
+    expect(online.supportCode, isNull);
     expect(repository.cloudSave?.state['accountName'], 'Cloud Keeper');
 
     expect(await online.restoreFromCloud(), isTrue);

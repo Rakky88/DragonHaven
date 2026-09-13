@@ -86,7 +86,8 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
       EventPartnerControl(
           key: ValueKey('partner-${progress.key}'),
           eventKey: progress.key,
-          showControls: progress.activeAt(game.currentTime),
+          showControls: game.activeSpecialAdventureWindows
+              .any((window) => window.key == progress.key),
           beforeSync: () async {
             if (!online.isSignedIn) {
               return false;

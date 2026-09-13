@@ -1,4 +1,31 @@
-# DragonHaven current release audit - v0.05.33 / 10083
+# DragonHaven audit
+
+## Unreleased event UI and synchronization corrections
+
+The Valentine invite control now follows the active occurrence, including when
+old Valentine progress synchronizes behind another event. Background cloud
+conflicts no longer publish unrelated Conclave/Friends errors; explicit partner
+actions open the existing guarded resolution dialog. Divergent progress still
+requires a player's choice and is never silently replaced.
+
+Trial ranking selection contains three standard Trials plus one themed event
+card. Natural expiry has an exact three-day grace period; replacement and
+explicit ending retire old choices across save reload. Earned points and chest
+claims remain intact. An open sheet expires its selection and cached rows, and
+its controls scroll on short displays with enlarged text.
+
+Validation: all 944 Flutter tests pass; Flutter analysis and the reference
+documentation guard are clean. Widget renders were reviewed at 390x844 and
+320x568 with 1.6x text, including scrolling to results. The cloud test verifies
+that event synchronization still rejects a divergent revision while leaving
+the global error/support banner empty. Point/reward schedules and odds are
+unchanged; the odds reference fingerprint changed only because its shared
+provider source includes the new presentation-retirement code.
+
+No release, server deployment, database migration or production data mutation
+has been performed for these corrections.
+
+## Current published release - v0.05.33 / 10083
 
 All 939 Flutter tests pass and analysis is clean. Trial returns animate only
 credited event points, including legacy and canonical paths. Meter end icons

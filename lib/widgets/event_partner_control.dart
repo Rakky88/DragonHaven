@@ -6,6 +6,7 @@ import '../l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 import '../models/social.dart';
 import '../providers/online_account_provider.dart';
+import '../screens/account_screen.dart';
 import '../theme/event_appearance.dart';
 import '../services/social_repository.dart';
 import 'online_account_access.dart';
@@ -132,6 +133,11 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
     } on Object catch (e) {
       if (!mounted) return;
       if (action != 'list') {
+        if (e is SocialException && e.code == 'cloud_save_conflict') {
+          final online = context.read<OnlineAccountProvider>();
+          await const AccountScreen().showCloudSaveConflict(context, online);
+          return;
+        }
         final s = AppStrings.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(eventPartnerErrorMessage(s, e))));

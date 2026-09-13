@@ -497,15 +497,19 @@ class OnlineAccountProvider extends ChangeNotifier {
           onTimeout: () => throw const SocialException('online_timeout'));
       if (currentUserId != owner) return false;
     }
-    final success = await backupToCloud(automatic: true, reportErrors: true);
-    if (!success) throw SocialException(errorCode ?? 'online_unexpected_error');
+    String? failure;
+    final success = await backupToCloud(
+        automatic: true, onFailure: (code) => failure = code);
+    if (!success) throw SocialException(failure ?? 'online_unexpected_error');
     return currentUserId == owner;
   }
 
   Future<void> _settledOperation = Future<void>.value();
 
   Future<bool> backupToCloud(
-          {bool automatic = false, bool reportErrors = false}) async =>
+          {bool automatic = false,
+          bool reportErrors = false,
+          void Function(String)? onFailure}) async =>
       await _run('cloud_save.backup', () async {
         final snapshot = _gameStateSnapshot;
         final loadDeviceId = _deviceId;
@@ -544,7 +548,7 @@ class OnlineAccountProvider extends ChangeNotifier {
         cloudSaveHistory = const [];
         if (!automatic) noticeCode = 'cloud_save_backed_up';
         return true;
-      }, background: automatic && !reportErrors) ??
+      }, background: automatic && !reportErrors, onFailure: onFailure) ??
       false;
 
   Future<bool> replaceCloudWithLocal() async =>
@@ -1766,7 +1770,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   Future<T?> _run<T>(String operationName, Future<T> Function() operation,
-      {bool background = false}) async {
+      {bool background = false, void Function(String)? onFailure}) async {
     // Future.timeout does not cancel its source future. Keep the single-flight
     // guard active until that source really settles, so a retry after a timeout
     // cannot overlap the original server mutation.
@@ -1809,6 +1813,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       return result;
     } on SocialException catch (error) {
       stopwatch.stop();
+      onFailure?.call(error.code);
       if (!background) {
         errorCode = error.code;
         supportCode = DiagnosticIds.supportCode(correlationId);
@@ -1824,6 +1829,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       return null;
     } on Object {
       stopwatch.stop();
+      onFailure?.call('online_unexpected_error');
       if (!background) {
         errorCode = 'online_unexpected_error';
         supportCode = DiagnosticIds.supportCode(correlationId);

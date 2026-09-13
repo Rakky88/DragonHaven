@@ -538,7 +538,7 @@ class AccountScreen extends StatelessWidget {
     final success = await online.backupToCloud();
     if (!context.mounted) return;
     if (!success && online.errorCode == 'cloud_save_conflict') {
-      await _showCloudSaveConflict(context, online);
+      await showCloudSaveConflict(context, online);
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -571,7 +571,7 @@ class AccountScreen extends StatelessWidget {
     ));
   }
 
-  Future<void> _showCloudSaveConflict(
+  Future<void> showCloudSaveConflict(
     BuildContext context,
     OnlineAccountProvider online,
   ) async {

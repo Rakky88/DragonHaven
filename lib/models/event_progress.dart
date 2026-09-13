@@ -13,6 +13,7 @@ class EventProgress {
       this.points = 0,
       this.partnerPoints = 0,
       this.claimed = false,
+      this.rankingHidden = false,
       this.preview = false});
 
   final String eventId, key, chestId;
@@ -20,6 +21,8 @@ class EventProgress {
   final int target;
   int points, partnerPoints;
   bool claimed;
+  // Presentation retirement only: earned points and chest claims are preserved.
+  bool rankingHidden;
   final bool preview;
   int get total => points + partnerPoints;
   bool get complete => total >= target;
@@ -38,6 +41,7 @@ class EventProgress {
         'points': points,
         'partnerPoints': partnerPoints,
         'claimed': claimed,
+        'rankingHidden': rankingHidden,
         'preview': preview,
       };
   factory EventProgress.fromJson(Map<String, dynamic> json) {
@@ -59,6 +63,7 @@ class EventProgress {
         points: json['points'] as int,
         partnerPoints: json['partnerPoints'] as int,
         claimed: json['claimed'] as bool,
+        rankingHidden: json['rankingHidden'] == true,
         preview: json['preview'] as bool);
     if (!value.key.startsWith('${value.eventId}:') ||
         !value.startsAt.isUtc ||

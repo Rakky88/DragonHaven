@@ -4,6 +4,14 @@ The existing-friend picker shares compact, theme-tinted keeper rows with the
 Friends screen. Each portrait has a fixed 64dp slot with a 40dp portrait, so
 vanity frames and badges do not change row height or name alignment.
 
+The invite control is visible only for the authoritative active Valentine
+occurrence. Retained Valentine contributions can synchronize in the background
+without showing an invite control beneath another event. Background save failures
+remain local to event synchronization rather than becoming Conclave/Friends
+status banners. An explicit invite/accept with divergent cloud progress opens
+the existing guarded cloud-conflict chooser; it never overwrites either copy
+automatically. The recipient does not need an open client or an active event save.
+
 ## Event points (current rules)
 
 Calendar events no longer offer an Event Adventure. During the event, Mini
@@ -313,7 +321,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 1e22951900d188fc -->
+<!-- reference-source-fingerprint: e5d27b6ad464eebd -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -615,6 +623,14 @@ the same maximum of one credited completion per local date.
   scores use accuracy, shortest duration, then earliest submission.
 - New starts stop at event close. The full frozen ranking remains visible for
   three days; its top three remain permanently in the Seasonal Chronicle.
+- The ordinary ranking selector shows the three standard Trials and at most one
+  event occurrence, using a full-width themed Trial-scene card. The active event
+  takes priority. Natural expiry retains that event for exactly three days;
+  replacement by a newer event or explicit ending removes the old choice.
+  Retirement is persisted as `EventProgress.rankingHidden`, independently of
+  earned points, partner contributions and chest claims. Expiry while the sheet
+  is open resets a removed selection and its cached rows to a standard Trial.
+  Controls and results scroll together on short screens with large text.
 - First place receives a Mythical Chest and the event's gold podium emote;
   second receives a Dragon Chest and silver emote; third receives a Gold Chest
   and bronze emote.

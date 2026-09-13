@@ -223,12 +223,16 @@ void main() {
     await tester.pump();
     expect(game.eventProgress.length, 3);
     expect(find.byType(EventProgressBar), findsOneWidget);
+    expect(find.byKey(const Key('event-invite-friend')), findsOneWidget);
     // Authenticated ENDEVENT returns an empty personal-preview snapshot.
     await tester.runAsync(() => game.synchronizeSeasonalEventPreviews({}));
     await tester.pump();
     expect(find.byType(EventProgressBar), findsNothing);
+    expect(find.byKey(const Key('event-invite-friend')), findsNothing);
     await tester.runAsync(() => game.synchronizeSeasonalEventPreviews(
         {'halloween_witchlight': now.add(const Duration(days: 2))}));
+    await tester.pump();
+    expect(find.byKey(const Key('event-invite-friend')), findsNothing);
     await tester.pump();
     now = now.add(const Duration(days: 2));
     await tester.pump(const Duration(seconds: 1));
