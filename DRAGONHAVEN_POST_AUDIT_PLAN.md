@@ -1,5 +1,30 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Verified handoff recovery - 13 September 2026
+
+Run 34770616598 on fcb8875 passed against the deployed schema-83 staging worker.
+The real authenticated client loses replies after its final cloud upload,
+account activation and title-chest purchase, restarts the coordinator/session,
+and recovers exactly one activation and one 500-coin purchase. Private inventory
+ends at 500 coins, 10 gems and one title chest; the legacy source remains at
+1,000 coins with unknown future metadata preserved. Cleanup proves zero probe
+accounts, canonical copies and pending intents, with all five switches off.
+
+The original schema-79 probe expected a historical 100-coin title price. Runs
+34770130889 and 34770380909 on 02e6dfc passed activation but failed that stale
+purchase assertion; both cleaned staging. The current assertion uses the
+existing 500-coin catalog price. No gameplay price, reward or probability was
+changed. The final-upload journal stores only owner/base/device/digest and can
+recover its exact commit; other-device, newer-save and damaged-journal cases
+refuse speculative replacement. Eight upload tests and the handoff/transport,
+session/reconciliation/snapshot suite pass: 81 tests total, clean analysis.
+
+Normal app boot and full production gameplay routing remain open; these tests
+exercise the real components with an explicitly synthetic account, not the
+released app's startup. The reviewed-prefix tooling is being updated from 79
+to the current schema 83 for a full staging regression. No production player
+has been activated, and no release has been published for this work.
+
 ## Active server economy work - 13 September 2026
 
 The owner has resumed the complete server economy transition after v0.05.35.
