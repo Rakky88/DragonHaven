@@ -118,7 +118,7 @@ def main():
     require(sinister_egg is not None, "fixture_sinister_egg_missing")
     egg_id = sinister_egg["id"]
     require(re.fullmatch(r"[a-zA-Z0-9_-]{1,100}", egg_id) is not None, "fixture_identity_invalid")
-    baseline = query("""select r.enabled, r.shadow_social_enabled, r.ruleset_sha256,
+    baseline = query("""select (r.enabled or r.shadow_projection_enabled or r.shadow_lifecycle_enabled or r.migration_enabled) as enabled, r.shadow_social_enabled, r.ruleset_sha256,
         (select count(*) from private.canonical_game_states) as copies,
         (select mutations_enabled from private.economy_contract where singleton) as mutations,
         (select count(*) from public.player_economy_authority where authority_mode <> 'legacy_client') as promoted

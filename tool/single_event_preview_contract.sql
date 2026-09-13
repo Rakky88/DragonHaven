@@ -35,11 +35,18 @@ begin
   if not completed.accepted or not exists(select 1 from public.seasonal_trial_bests
       where user_id = keeper and event_id = 'christmas_winter_hearth' and score = 100) then
     raise exception 'event_contract_started_attempt_lost'; end if;
+  -- Migration 62 permits every verified keeper to switch catalog previews.
+  select * into activated from public.redeem_seasonal_event_preview('CHRISTMASEVENT');
+  if activated.event_id <> 'christmas_winter_hearth' or
+    (select count(*) from public.list_my_seasonal_event_previews()) <> 1 or
+    (select event_id from public.list_my_seasonal_event_previews()) <> 'christmas_winter_hearth' then
+    raise exception 'event_contract_verified_switch_failed'; end if;
+  update auth.users set email_confirmed_at = null where id = keeper;
   begin
-    perform public.redeem_seasonal_event_preview('CHRISTMASEVENT');
-    raise exception 'event_contract_restriction_missing';
-  exception when others then if sqlerrm <> 'seasonal_preview_restricted' then raise; end if; end;
-  if (select event_id from public.list_my_seasonal_event_previews()) <> 'halloween_witchlight' then
+    perform public.redeem_seasonal_event_preview('HALLOWEENEVENT');
+    raise exception 'event_contract_verification_missing';
+  exception when others then if sqlerrm <> 'email_not_verified' then raise; end if; end;
+  if (select event_id from public.seasonal_event_previews where user_id = keeper) <> 'christmas_winter_hearth' then
     raise exception 'event_contract_refusal_changed_event'; end if;
 end;
 $$;

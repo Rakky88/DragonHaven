@@ -1,6 +1,6 @@
 """Focused client proof against the already-deployed schema-83 worker.
 
-The pinned ruleset is recorded in RELEASE_V0.05.31_VERIFICATION.md.
+The pinned ruleset was deployed to staging by run 34772080531 (schema 83).
 This runner deploys no code and applies no migration; all state is synthetic.
 """
 import json
@@ -13,7 +13,7 @@ from staging_beacon_probe import run_beacon_probe
 from staging_trade_probe import run_trade_probe
 from staging_account_activation_probe import run_account_activation_probe
 
-RULESET = 'af09b2bb4266893fb67de2337f23a5327aca08b0ac36f64a700069f67f4b4e15'
+RULESET = '5351941e66f749f69fa123e585039cadbc363ac8b6428ed7d8bc819300088b23'
 
 def main():
     p = probe

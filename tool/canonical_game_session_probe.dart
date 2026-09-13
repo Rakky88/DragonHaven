@@ -499,10 +499,13 @@ void main() {
         await tester.pump(const Duration(seconds: 1));
       }
       elapsed.stop();
+      stdout.writeln('PROBE: ui_adventure_deadline_wait_finished');
       await tester.runAsync(() => game.synchronize());
+      stdout.writeln('PROBE: ui_adventure_deadline_synchronized');
       await tester.pump();
       require(!game.snapshot!.serverTime.isBefore(run.endsAt),
           'client_probe_adventure_not_due');
+      await tap(key('canonical-tab-completed'));
       loseAdventureClaim = true;
       await tap(key('canonical-claim-${run.id}'));
       for (var n = 0; n < 500 && game.busy; n++) {
@@ -529,6 +532,7 @@ void main() {
                       2 * definition.statPoints,
           'client_probe_adventure_reward_wrong');
       stdout.writeln('PROBE: ui_adventure_claim_recovered');
+      await tap(find.widgetWithText(ChoiceChip, 'Adventures'));
       await tap(find.widgetWithText(ChoiceChip, 'Short'));
       final shortId =
           game.snapshot!.adventures.offers(AdventureKind.short).first;
@@ -913,6 +917,19 @@ void main() {
       require(tester.takeException() == null, 'client_probe_social_render');
       stdout.writeln(
           'PASS: real social claim UI; three server-owned sources, exact XP/chests and one podium emote.');
+    } catch (error) {
+      // Fixed categories only; never print network exceptions or session data.
+      final category = error is TimeoutException
+          ? 'timeout'
+          : error is TestFailure
+              ? 'test_failure'
+              : error is StateError
+                  ? 'state_error'
+                  : error is FlutterError
+                      ? 'flutter_error'
+                      : 'unexpected_error';
+      stdout.writeln('PROBE: ui_failure_$category');
+      rethrow;
     } finally {
       stdout.writeln('PROBE: ui_cleanup_start');
       await tester.pumpWidget(const SizedBox.shrink());
