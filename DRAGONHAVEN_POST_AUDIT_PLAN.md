@@ -50,8 +50,23 @@ than a boolean; this selector fix changes no game or database behavior.
 The real handoff rehearsal now also opens a server session through
 CanonicalAccountBootstrap, refuses any legacy loader/upload/reactivation,
 retires the root on backgrounding and rechecks authority before reopening.
-Its current staging outcome will be recorded after execution; local unit tests
-do not stand in for that real-network result.
+Run 34783570767 on f5d896b passed this real-network bootstrap/resume proof,
+source/Altar/social SQL fences, final-upload and activation replay, and a single
+purchase after lost replies. Cleanup at 21:23:13 UTC removed every synthetic
+account/command and disabled all five switches. The existing staging worker
+remained in place; the normal production startup is still not connected.
+
+Runs 34783690740 and 34783717008 were invoked with an incorrect confirmation
+value and stopped before fixture creation or database probing. They made no
+database changes. The corrected focused partner run 34783812482 passed refusal
+of retired invite/accept/start actions with unchanged inventories and no new
+commands/invitations; synthetic accounts were cleaned and all five switches
+disabled. Existing event partnership points and reward claims remain covered
+by their separate contracts/client probes, not by this retired-action check.
+Run 34783813831 on 7c1b31f also passed the actual Beacon UI: one voluntary
+debit, one shared-stage message and lost-reply recovery. Cleanup at 21:30:17 UTC
+removed all synthetic accounts/commands and disabled all five switches. No
+production schema or worker deployment was performed in these rehearsals.
 
 ## Current verification checkpoint - 13 September 2026
 
@@ -96,8 +111,9 @@ all five switches. Run 34773895309 then failed creating a synthetic Auth account
 cleanup succeeded. Safe status/category diagnostics now identify such failures
 without logging Auth bodies or credentials. Run 34774240064 passed the actual
 client and four-keeper group UI, then failed at the obsolete pair-creation probe.
-That probe now checks refusal of retired entry points, but its revised full
-lifecycle rehearsal is not yet claimed. Run 34774411393 failed a combined
+That probe now checks refusal of retired entry points. The focused replacement
+passed in run 34783812482 on 7c1b31f; this does not claim a single combined
+end-to-end lifecycle run. Run 34774411393 failed a combined
 Wayfinder assertion. The assertion is now split into stock, debit and offer
 checks; no gameplay rule was changed and the earlier root cause is unproven.
 Run 34781933760 on 4cba907 passed the focused real-client probe against the
