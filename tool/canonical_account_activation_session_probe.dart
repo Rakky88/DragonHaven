@@ -9,6 +9,8 @@ import 'package:dragon_haven/services/canonical_account_handoff.dart';
 import 'package:dragon_haven/services/canonical_legacy_upload.dart';
 import 'package:dragon_haven/services/supabase_social_repository.dart';
 import 'package:dragon_haven/models/chest.dart';
+import 'package:dragon_haven/models/social.dart';
+import 'package:dragon_haven/services/social_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -16,6 +18,28 @@ import 'canonical_game_session_probe.dart' show LostReplyClient;
 
 void require(bool condition, String code) {
   if (!condition) throw StateError('client_probe_activation_$code');
+}
+
+class _LostCloudReplyRepository extends SupabaseSocialRepository {
+  _LostCloudReplyRepository(super.client);
+  bool dropUpload = true;
+  @override
+  Future<CloudGameSave> pushCloudGameSave(
+      {required int expectedRevision,
+      required Map<String, dynamic> state,
+      required String deviceId,
+      required String clientVersion}) async {
+    final saved = await super.pushCloudGameSave(
+        expectedRevision: expectedRevision,
+        state: state,
+        deviceId: deviceId,
+        clientVersion: clientVersion);
+    if (dropUpload) {
+      dropUpload = false;
+      throw const SocialException('online_timeout');
+    }
+    return saved;
+  }
 }
 
 void main() {
@@ -56,13 +80,14 @@ void main() {
                 dropMigration = false;
                 return true;
               }, action: 'migrate_account'));
-      final social = SupabaseSocialRepository(auth);
+      final social = _LostCloudReplyRepository(auth);
       final source = await social.loadCloudGameSave();
       require(source?.revision == 1, 'legacy_source');
       int? baseRevision =
           1; // The synthetic fixture owns this exact cloud base.
       final upload = CanonicalLegacyUpload(
           repository: social,
+          directory: directory,
           currentOwner: () => migration!.currentOwner,
           sessionEpoch: () => migration!.sessionEpoch,
           settleLegacySources: (_) async {},
@@ -85,6 +110,15 @@ void main() {
           activate: (_, request, revision) => migration!
               .migrateAccount(requestId: request, sourceRevision: revision));
       handoff = createHandoff();
+      var lostUpload = false;
+      try {
+        await handoff.synchronize();
+      } on SocialException catch (error) {
+        lostUpload = error.code == 'online_timeout';
+      }
+      require(lostUpload && !social.dropUpload, 'lost_final_upload');
+      handoff.dispose();
+      handoff = createHandoff();
       var lost = false;
       try {
         await handoff.synchronize();
@@ -101,7 +135,7 @@ void main() {
       require(
           handoff.phase == CanonicalHandoffPhase.server &&
               handoff.minimumServerRevision == 3 &&
-              preparations == 1 &&
+              preparations == 2 &&
               !await journal.exists(),
           'handoff_restart');
       final revision =
