@@ -1,6 +1,6 @@
 # DragonHaven audit
 
-## Release candidate v0.05.34 / 10084
+## Current published release v0.05.34 / 10084
 
 The Valentine invite control now follows the active occurrence, including when
 old Valentine progress synchronizes behind another event. Background cloud
@@ -32,7 +32,11 @@ checks returning HTTP 200. No server deployment or database mutation is needed.
 See [v0.05.34 verification](RELEASE_V0.05.34_VERIFICATION.md) for artifact and
 publication checks.
 
-## Current published release - v0.05.33 / 10083
+Publication verified on 13 September 2026: latest resolves to v0.05.34,
+the permanent APK URL returns HTTP 200, and remote size/SHA-256 match the
+signed local APK. The existing signing certificate is retained.
+
+## Previous release - v0.05.33 / 10083
 
 All 939 Flutter tests pass and analysis is clean. Trial returns animate only
 credited event points, including legacy and canonical paths. Meter end icons
