@@ -1,6 +1,6 @@
 # DragonHaven incident- en diagnoserunbook
 
-Laatst bijgewerkt: **31 augustus 2026**
+Laatst bijgewerkt: **13 september 2026**
 Uitgangsversie: **v0.05.01 / productieschema 32; applicatiehealth actief**
 
 ## Doel
@@ -25,8 +25,13 @@ databasewachtwoorden of volledige saves in een ticket of incidentlog.
   alleen statussen, timings, contractversie en klokafwijking.
 - De GitHub-workflow **Public server health check** voert dezelfde check ieder
   uur en handmatig uit zonder private secrets en bewaart het artifact dertig
-  dagen. Een mislukking opent één aan `Rakky88` toegewezen SEV-1-issue; een
-  geslaagde herstelrun sluit die melding met een herstelnotitie.
+  dagen. Na een mislukte meting volgt na vijftien seconden één volledige
+  bevestigingscontrole. Beide metingen blijven in het rapport staan. Pas als
+  ook die controle faalt, opent de workflow één aan `Rakky88` toegewezen
+  healthmelding. Dit is niet automatisch een SEV-1-incident: bepaal de ernst
+  aan de hand van bereikbaarheid en impact. Een geslaagde herstelrun sluit de
+  melding met een herstelnotitie. Checkout-, test- of artifactfouten worden
+  niet als bewezen serveruitval gemeld; de workflow blijft daarvoor wel rood.
 - [Healthrun 33194121092](https://github.com/Rakky88/DragonHaven/actions/runs/33194121092)
   bewees op 28 augustus 2026 dat deze productiecheck en artifactopslag groen
   werken met de actuele CI-runtime.
@@ -41,6 +46,30 @@ databasewachtwoorden of volledige saves in een ticket of incidentlog.
   [OBSERVABILITY_BASELINE.md](OBSERVABILITY_BASELINE.md).
 
 ## Bekend free-tiergedrag
+
+### Monitoringmelding van 13 september 2026
+
+Run `34755664852` faalde om 11:55 UTC bij de Auth-controle en opende issue #4.
+De oude checker stopte vóór het schrijven van het rapport; daardoor zijn de
+exacte HTTP-status en oorzaak niet achteraf vast te stellen. Run `34768197011`
+was om 16:18 UTC weer geslaagd en sloot het issue automatisch. Onafhankelijke
+controles rond de APK-publicatie en de latere incidentcontrole gaven HTTP 200
+voor Auth health, Auth settings en de applicatie-RPC. Dit bewijst geen continue
+bereikbaarheid tussen de metingen, maar evenmin een urenlange storing.
+
+De checker bewaart nu ook mislukte pogingen: HTTP-status, duur en vaste veilige
+foutcodes, zonder keys, responsebodies of exceptionteksten. Status 0 betekent
+dat geen HTTP-resultaat beschikbaar was. Een herstel binnen dezelfde check
+staat expliciet als `RecoveredDuringCheck` in het rapport. Het script schrijft
+het bewijs vóór een bevestigingspoging en vóór een fout-exit.
+
+Regressietests: `tool/test_public_health_report.ps1` (succes, herstel, blijvende
+HTTP-fout, transportfout, ongeldig contract en privacy) en
+`tool/test_public_application_health.ps1` (contract en serverklok). Ook de CLI
+is getest op een niet-bereikbare lokale endpoint: exitcode ongelijk aan nul,
+twee opgeslagen pogingen en geen sleutel in het rapport.
+
+### Cold starts
 
 Een weinig gebruikte gratis Supabase-instance kan na rust traag op gang komen
 of wegens inactiviteit worden gepauzeerd. Op 28 augustus 2026 is bij een
