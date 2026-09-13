@@ -83,6 +83,53 @@ void main() {
     await auth.dispose();
   });
 
+  test('authority status uses the authenticated fixed RPC without a save',
+      () async {
+    await _signIn(auth, _owner);
+    final client = _TrackingClient((request) async {
+      expect(request.url.path, '/rest/v1/rpc/get_my_canonical_account_status');
+      expect(request.followRedirects, isFalse);
+      expect(request.headers['authorization'], startsWith('Bearer '));
+      expect(jsonDecode((request as http.Request).body), isEmpty);
+      return _response({
+        'owner_id': _owner,
+        'phase': 'active',
+        'migration_enabled': false,
+        'source_revision': 42,
+        'server_revision': 3
+      });
+    });
+    transport = CanonicalGameTransport.staging(auth, _config,
+        httpClientFactory: () => client);
+    final status = await transport!.readAccountStatus();
+    expect(status.phase, 'active');
+    expect(status.migrationEnabled, isFalse);
+    expect(client.closed, isTrue);
+  });
+
+  test('foreign authority status cannot authorize local play', () async {
+    await _signIn(auth, _owner);
+    transport = CanonicalGameTransport.staging(auth, _config,
+        httpClientFactory: () => _TrackingClient((_) async => _response({
+              'owner_id': _other,
+              'phase': 'legacy',
+              'migration_enabled': false,
+              'source_revision': null,
+              'server_revision': null
+            })));
+    await expectLater(transport!.readAccountStatus(),
+        _error('game_migration_status_invalid'));
+  });
+
+  test('unavailable authority status never defaults to legacy', () async {
+    await _signIn(auth, _owner);
+    transport = CanonicalGameTransport.staging(auth, _config,
+        httpClientFactory: () =>
+            _TrackingClient((_) async => _response({}, status: 503)));
+    await expectLater(
+        transport!.readAccountStatus(), _error('game_migration_unavailable'));
+  });
+
   test('production endpoint requires explicit production configuration',
       () async {
     expect(() => CanonicalGameTransport.production(auth, _config),

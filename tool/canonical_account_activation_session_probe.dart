@@ -5,9 +5,9 @@ import 'package:dragon_haven/config/online_config.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:dragon_haven/services/canonical_game_transport.dart';
+import 'package:dragon_haven/services/canonical_account_handoff.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
 
 import 'canonical_game_session_probe.dart' show LostReplyClient;
 
@@ -41,6 +41,7 @@ void main() {
         await Directory.systemTemp.createTemp('dh-activation-probe-');
     CanonicalGameSession? game;
     CanonicalGameTransport? migration;
+    CanonicalAccountHandoff? handoff;
     try {
       await auth.auth.recoverSession(jsonEncode(raw));
       require((await auth.auth.getUser()).user?.id == owner, 'auth_mismatch');
@@ -52,20 +53,46 @@ void main() {
                 dropMigration = false;
                 return true;
               }, action: 'migrate_account'));
-      final request = const Uuid().v4();
+      var preparations = 0;
+      CanonicalAccountHandoff createHandoff() => CanonicalAccountHandoff(
+          directory: directory,
+          currentOwner: () => migration!.currentOwner,
+          sessionEpoch: () => migration!.sessionEpoch,
+          readStatus: (_) => migration!.readAccountStatus(),
+          prepareAndUploadLegacy: (_) async {
+            // This fixture was uploaded before the probe; never import a save
+            // from the public projection or duplicate a settled migration.
+            preparations++;
+            return 1;
+          },
+          activate: (_, request, revision) => migration!
+              .migrateAccount(requestId: request, sourceRevision: revision));
+      handoff = createHandoff();
       var lost = false;
       try {
-        await migration.migrateAccount(requestId: request, sourceRevision: 1);
+        await handoff.synchronize();
       } on CanonicalGameException catch (error) {
         lost = error.code == 'game_command_unavailable';
       }
       require(lost && !dropMigration, 'lost_activation');
+      final journal = File('${directory.path}/migration-v1-$owner.json');
+      final request = (jsonDecode(await journal.readAsString())
+          as Map)['requestId'] as String;
+      handoff.dispose();
+      handoff = createHandoff();
+      await handoff.synchronize();
+      require(
+          handoff.phase == CanonicalHandoffPhase.server &&
+              handoff.minimumServerRevision == 3 &&
+              preparations == 1 &&
+              !await journal.exists(),
+          'handoff_restart');
       final revision =
           await migration.migrateAccount(requestId: request, sourceRevision: 1);
       require(revision == 3, 'activation_replayed');
-      final status = await auth.rpc('get_my_canonical_account_status') as Map;
-      require(status['owner_id'] == owner && status['phase'] == 'active',
-          'live_status');
+      final status = await migration.readAccountStatus();
+      require(
+          status.ownerId == owner && status.phase == 'active', 'live_status');
       stdout.writeln('PROBE: account_activation_replayed');
       var dropPurchase = true;
       game = CanonicalGameSession(
@@ -113,6 +140,7 @@ void main() {
       stdout.writeln(
           'PASS: real account activation; lost activation/purchase replies, private import, live inventory and one debit.');
     } finally {
+      handoff?.dispose();
       game?.dispose();
       await migration?.dispose();
       await auth.dispose();

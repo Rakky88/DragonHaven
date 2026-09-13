@@ -1,5 +1,36 @@
 # DragonHaven server-authoritative economy contract
 
+## Active server economy work - 13 September 2026
+
+The owner has resumed the complete server economy transition after v0.05.35.
+Current released baseline: v0.05.35 / 10085, schema 83 on staging and
+production. The v0.05.31 verification records dormant authority switches and
+no promoted player accounts; older schema-65/79 notes below are historical.
+APK reduction is already completed and is not an outstanding cutover gate.
+
+The handoff now persists an account-specific server-authority fence, refuses
+a later downgrade across restarts, and retains an ambiguous activation request
+when rollout is disabled. Authenticated status reads use the fixed account RPC
+with the same session, timeout, redirect and response validation as commands.
+Twenty-two focused local handoff/transport tests pass. Real staging proof is
+pending: the focused runner now targets the deployed schema-83 ruleset and
+checks coordinator restart, activation replay and exactly one purchase after
+lost replies. Its cleanup includes all five runtime switches and synthetic
+accounts. It deploys no worker or schema and cannot target production.
+
+Remaining cutover gates:
+- Integrate authority checking and the final optimistic legacy upload into
+  ordinary app boot, account changes and foreground recovery.
+- Route every gameplay mutation and social publication through server-owned
+  state; preserve the production presentation and account features.
+- Verify legacy social claims, trade acknowledgments, normalized readers and
+  calendar/import compatibility against current schema 83.
+- Pass real staging activation, restart/lost-reply and gameplay UI probes,
+  then the complete analysis, test, rules parity and server preflight gates.
+- Roll out only the verified client/server combination, retaining archived
+  legacy saves and refusing unsupported older writers. No production account
+  activation or new release is claimed by this checkpoint.
+
 Candidate-79 rollback run 34497481683 passed on f2057c1, including ownership,
 source/Altar/social changes, activation replay, real server-mode SQL commands,
 recovery and complete Auth cleanup. The full apply now targets reviewed schema

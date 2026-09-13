@@ -126,6 +126,49 @@ void main() {
     expect(sent[0], isNot(sent[1]));
   });
 
+  test('confirmed server authority survives restart and refuses downgrade',
+      () async {
+    await handoff.synchronize();
+    handoff.dispose();
+    handoff = build();
+    read = (id) async => status(id, enabled: false);
+    await expectLater(
+        handoff.synchronize(), error('game_migration_authority_conflict'));
+    expect(handoff.phase, CanonicalHandoffPhase.failed);
+    expect(uploads, 1);
+    read = (id) async => status(id, phase: 'active', enabled: false);
+    await handoff.synchronize();
+    expect(handoff.phase, CanonicalHandoffPhase.server);
+    expect(uploads, 1);
+  });
+
+  test('disabled rollout cannot clear an ambiguous activation request',
+      () async {
+    activate = (_, __, ___) async =>
+        throw const CanonicalGameException('game_command_unavailable');
+    await expectLater(handoff.synchronize(), error('game_command_unavailable'));
+    final saved = await getIntent().readAsString();
+    handoff.dispose();
+    handoff = build();
+    read = (id) async => status(id, enabled: false);
+    await expectLater(
+        handoff.synchronize(), error('game_migration_in_progress'));
+    expect(handoff.phase, CanonicalHandoffPhase.failed);
+    expect(await getIntent().readAsString(), saved);
+    expect(uploads, 1);
+  });
+
+  test('server authority fence belongs to only its own account', () async {
+    read = (id) async => status(id, phase: 'active');
+    await handoff.synchronize();
+    owner = other;
+    epoch++;
+    read = (id) async => status(id, enabled: false);
+    await handoff.synchronize();
+    expect(handoff.phase, CanonicalHandoffPhase.legacy);
+    expect(uploads, 0);
+  });
+
   test('unknown offline authority never permits legacy play or an upload',
       () async {
     read = (_) async =>
