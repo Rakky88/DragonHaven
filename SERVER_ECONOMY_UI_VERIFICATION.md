@@ -1,5 +1,30 @@
 # Canonical gameplay integration
 
+## Account-owned legacy sources - 14 September 2026
+
+Legacy gameplay now accepts a captured storage destination. The existing device
+adapter preserves normal behavior; account storage uses owner-validated envelopes
+and separate current/backup/recovery keys. A new account source requires a cloud
+read fenced by authenticated owner and session epoch. It never claims ownership
+of the device-global save or silently replaces an existing account save.
+Queued writes freeze their bytes and keep their original account. Unknown
+metadata survives both persistence and the sealed final-upload snapshot.
+Invalid account progress cannot fall back to a fresh dragon. Backup validation
+no longer writes over the valid backup before promotion.
+
+Root retirement may retain an unresolved Altar journal in its own account save,
+allowing the next account to open independently. Migration sealing still rejects
+that journal until it is recovered. CanonicalLegacyAccountSource composes the
+online/Altar drain, immutable provider snapshot and optimistic uploader, validates
+that the game uses the proven storage, waits for in-flight uploads on close,
+and recovers a lost upload without another revision.
+
+All 131 storage/provider/Altar/bootstrap regression tests and two composed-source
+tests pass; focused analysis is clean. The real staging handoff probe now uses
+this composed source and actual legacy provider restoration. Its result is not
+yet claimed. The normal startup/source-choice UI and complete production routing
+remain open; no production activation or deployment is performed here.
+
 ## Event target decision reversed - 14 September 2026
 
 The owner withdrew the unreleased 700/day proposal and its 1,400/day Valentine

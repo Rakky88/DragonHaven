@@ -7,7 +7,10 @@ import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:dragon_haven/services/canonical_game_transport.dart';
 import 'package:dragon_haven/services/canonical_account_handoff.dart';
 import 'package:dragon_haven/services/canonical_account_bootstrap.dart';
-import 'package:dragon_haven/services/canonical_legacy_upload.dart';
+import 'package:dragon_haven/services/canonical_legacy_account_source.dart';
+import 'package:dragon_haven/services/account_legacy_game_storage.dart';
+import 'package:dragon_haven/services/egg_altar_repository.dart';
+import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/services/supabase_social_repository.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/social.dart';
@@ -77,6 +80,7 @@ void main() {
     CanonicalAccountHandoff? handoff;
     CanonicalAccountBootstrap<CanonicalGameSession>? bootstrap;
     OnlineAccountProvider? socialReads;
+    CanonicalLegacyAccountSource? legacySource;
     try {
       await auth.auth.recoverSession(jsonEncode(raw));
       require((await auth.auth.getUser()).user?.id == owner, 'auth_mismatch');
@@ -91,19 +95,27 @@ void main() {
       final social = _LostCloudReplyRepository(auth);
       final source = await social.loadCloudGameSave();
       require(source?.revision == 1, 'legacy_source');
-      int? baseRevision =
-          1; // The synthetic fixture owns this exact cloud base.
-      final upload = CanonicalLegacyUpload(
+      final storage = await AccountLegacyGameStorage.importCloud(
+          repository: social,
+          owner: owner,
+          currentOwner: () => migration!.currentOwner,
+          sessionEpoch: () => migration!.sessionEpoch);
+      final legacyGame =
+          await HouseholdProvider.loadFromStorage(storage: storage);
+      final legacyOnline = OnlineAccountProvider(
+          repository: social,
+          inventorySnapshot: () =>
+              OnlineInventorySnapshot.fromGame(legacyGame));
+      final legacyAltar = EggAltarRepository(auth, social, legacyGame);
+      legacySource = CanonicalLegacyAccountSource(
+          storage: storage,
+          game: legacyGame,
+          online: legacyOnline,
+          altar: legacyAltar,
           repository: social,
           directory: directory,
-          sourceOwner: () => owner,
           currentOwner: () => migration!.currentOwner,
           sessionEpoch: () => migration!.sessionEpoch,
-          settleLegacySources: (_) async {},
-          exportState: () => source!.state,
-          localRevision: () => 1,
-          loadBaseRevision: (_) async => baseRevision,
-          saveBaseRevision: (_, revision) async => baseRevision = revision,
           deviceId: () async => 'synthetic-activation-probe',
           clientVersion: '0.05.35');
       var preparations = 0;
@@ -114,7 +126,7 @@ void main() {
           readStatus: (_) => migration!.readAccountStatus(),
           prepareAndUploadLegacy: (owner) async {
             preparations++;
-            return upload.upload(owner);
+            return legacySource!.upload();
           },
           activate: (_, request, revision) => migration!
               .migrateAccount(requestId: request, sourceRevision: revision));
@@ -274,6 +286,7 @@ void main() {
       stdout.writeln(
           'PASS: real account activation; lost activation/purchase replies, private import, live inventory and one debit.');
     } finally {
+      await legacySource?.close();
       await bootstrap?.shutdown();
       bootstrap?.dispose();
       socialReads?.dispose();

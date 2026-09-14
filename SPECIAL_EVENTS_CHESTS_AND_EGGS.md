@@ -1,5 +1,10 @@
 # DragonHaven Special Events, Chests, and Eggs
 
+Account-scoped legacy persistence now preserves egg/reward metadata and pending
+Altar request IDs during account retirement. Final migration still requires a
+resolved journal. The reviewed event targets (1,000/day; Valentine 2,000/day),
+chest/egg contents, earning rates, random odds and pity rules are unchanged.
+
 The pending server-economy handoff now drains Altar operations and preserves
 unresolved request IDs before freezing a legacy save. Late responses are bound
 to the original account/session, including during retirement. The reviewed egg
@@ -340,7 +345,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 047e82c6f43b4889 -->
+<!-- reference-source-fingerprint: 5fff3de9ed5fa8a2 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

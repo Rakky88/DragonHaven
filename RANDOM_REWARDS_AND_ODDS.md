@@ -1,5 +1,10 @@
 # DragonHaven Random Rewards and Odds
 
+Account-scoped legacy persistence now preserves egg/reward metadata and pending
+Altar request IDs during account retirement. Final migration still requires a
+resolved journal. The reviewed event targets (1,000/day; Valentine 2,000/day),
+chest/egg contents, earning rates, random odds and pity rules are unchanged.
+
 The pending server-economy handoff now drains Altar operations and preserves
 unresolved request IDs before freezing a legacy save. Late responses are bound
 to the original account/session, including during retirement. The reviewed egg
@@ -207,7 +212,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 9cd1a47431f9852b -->
+<!-- reference-source-fingerprint: 7df907a40508a3e0 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
