@@ -56,6 +56,39 @@ void main() {
     }
   });
 
+  test('every calendar and preview target survives an old-client round trip',
+      () {
+    for (final event in specialAdventureEventCatalog) {
+      for (final duration in [
+        event.initialAvailability,
+        if (event.recurrenceAvailability != null) event.recurrenceAvailability!,
+        Duration(hours: event.previewHours),
+      ]) {
+        final oldRate = event.allowsPointPartner ? 2000 : 1000;
+        final oldTarget =
+            (duration.inMinutes * oldRate / Duration.minutesPerDay).ceil();
+        final expected =
+            (duration.inMinutes * event.pointsPerDay / Duration.minutesPerDay)
+                .ceil();
+        final start = DateTime.utc(2027);
+        final old = EventProgress(
+                eventId: event.id,
+                key: '${event.id}:2027',
+                startsAt: start,
+                endsAt: start.add(duration),
+                target: oldTarget,
+                chestId: event.rewards.specialChestId!)
+            .toJson()
+          ..remove('targetPolicyVersion');
+        final upgraded = EventProgress.fromJson(old);
+        expect(upgraded.target, expected, reason: event.id);
+        final rewritten = upgraded.toJson()..remove('targetPolicyVersion');
+        expect(EventProgress.fromJson(rewritten).target, expected,
+            reason: event.id);
+      }
+    }
+  });
+
   test('New Year runs six Amsterdam calendar days and recurs', () {
     for (final year in [2027, 2028, 2029]) {
       final start = DateTime.utc(year - 1, 12, 31, 23);

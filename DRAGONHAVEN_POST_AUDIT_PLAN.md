@@ -10,7 +10,15 @@ client dropping the version marker. Point earnings and random rewards do not
 change. Pending function-only migration 85 matches equivalent old/new Valentine
 preview goals while retaining the migration-84 authority fences. No runtime
 switch, balance or persistent production database is changed here. Deployment
-and release are not part of this change's completed verification yet.
+and release have not been performed for this change.
+
+Verification: the initial 61 focused event/model/widget tests passed, followed
+by all 12 event-point tests including every catalog window and preview surviving
+an older client's missing version marker. All 16 reference/load-profile tests
+pass; analysis is clean and VM/JavaScript shared-domain parity passes. Staging
+run 34811508700 on 6b48bdb passed all 20 economy runners and four SQL contracts,
+including migration 84+85 rehearsal and mixed old/new Valentine preview goals.
+Everything was rolled back; no persistent schema or worker was deployed.
 
 ## Account retirement checkpoint - 13 September 2026
 
