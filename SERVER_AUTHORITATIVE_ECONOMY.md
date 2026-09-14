@@ -1,5 +1,17 @@
 # DragonHaven server-authoritative economy contract
 
+## Event target change - 14 September 2026
+
+Requested daily goals are 700 points and 1,400 for Valentine. The shared Dart
+rules and serialized progress use target policy v2. Old standard goals reduce
+once; personal/partner points, prior chest claims and original occurrence
+lengths survive. Already reduced current-calendar goals also survive an older
+client dropping the version marker. Point earnings and random rewards do not
+change. Pending function-only migration 85 matches equivalent old/new Valentine
+preview goals while retaining the migration-84 authority fences. No runtime
+switch, balance or persistent production database is changed here. Deployment
+and release are not part of this change's completed verification yet.
+
 ## Account retirement checkpoint - 13 September 2026
 
 Release v0.05.36 (10086) is published separately from this unfinished economy

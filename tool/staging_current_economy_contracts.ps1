@@ -43,7 +43,8 @@ foreach ($case in @(
     # Rehearse the pending function-only migration in this transaction. The
     # contract's ROLLBACK removes both fixture state and function replacements.
     $migration = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../supabase/migrations/202609130084_server_event_partner_authority.sql') -Raw -Encoding utf8
-    $query = "begin;`n" + $migration + "`n" + [regex]::Replace($query, '(?m)^begin;\r?\n', '', 1)
+    $targets = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../supabase/migrations/202609140085_event_point_targets.sql') -Raw -Encoding utf8
+    $query = "begin;`n" + $migration + "`n" + $targets + "`n" + [regex]::Replace($query, '(?m)^begin;\r?\n', '', 1)
   }
   $result = Invoke-RestMethod -Method Post `
     -Uri "https://api.supabase.com/v1/projects/$ProjectRef/database/query" `

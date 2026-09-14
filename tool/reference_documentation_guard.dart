@@ -20,6 +20,7 @@ const specialContentReference = ReferenceDocumentSpec(
     'supabase/migrations/202609120082_extended_event_windows.sql',
     'supabase/migrations/202609120083_event_claim_partner_windows.sql',
     'supabase/migrations/202609130084_server_event_partner_authority.sql',
+    'supabase/migrations/202609140085_event_point_targets.sql',
     'supabase/migrations/202609120081_social_event_polish.sql',
     'lib/domain/game_command_engine.dart',
     'lib/domain/social_claims.dart',

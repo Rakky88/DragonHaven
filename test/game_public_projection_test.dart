@@ -74,7 +74,7 @@ void main() {
     final before = jsonEncode(source);
     final adventures = _project(source)['adventures'] as Map;
     expect(adventures['adventureOptionIds']['special'], isEmpty);
-    expect(adventures['eventProgress'].single['target'], 2000);
+    expect(adventures['eventProgress'].single['target'], 1400);
     expect(adventures['activeEvents'], [
       {
         'eventId': 'sunwake_summer_sea',
