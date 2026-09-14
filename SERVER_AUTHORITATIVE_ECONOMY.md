@@ -20,10 +20,21 @@ that the game uses the proven storage, waits for in-flight uploads on close,
 and recovers a lost upload without another revision.
 
 All 131 storage/provider/Altar/bootstrap regression tests and two composed-source
-tests pass; focused analysis is clean. The real staging handoff probe now uses
-this composed source and actual legacy provider restoration. Its result is not
-yet claimed. The normal startup/source-choice UI and complete production routing
-remain open; no production activation or deployment is performed here.
+tests pass; focused analysis is clean. Run 34874953349 on 2eb345e passed the
+real staging handoff with this composed source and actual legacy provider
+restoration, including lost upload/activation/purchase recovery and bootstrap
+resume. Cleanup at 17:30:37 UTC removed all synthetic accounts/commands and
+disabled all five switches. VM/JavaScript shared-domain parity and the five
+reference tests pass. No worker or migration was deployed.
+
+CanonicalAccountGate now owns the whole gameplay subtree/Navigator and supplies
+a render barrier before retirement. The widget test confirms an open private
+route disappears before the old writers close and the next account cannot pop
+back into that route. All nine gate/bootstrap tests and focused analysis pass.
+The initial widget test's filesystem/shutdown waits stalled under Flutter's fake
+async clock; bounded real-I/O/frame pumping fixes the harness. This widget is
+not yet connected to main. Normal startup/source-choice UI and complete
+production routing remain open; no production activation is claimed.
 
 ## Event target decision reversed - 14 September 2026
 

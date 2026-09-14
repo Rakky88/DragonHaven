@@ -34,6 +34,7 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
     required this.activate,
     required this.openLegacy,
     required this.openServer,
+    this.beforeRetire,
   }) {
     _accounts = accountChanges.listen((_) {
       unawaited(synchronize());
@@ -43,6 +44,9 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
   }
 
   final Directory directory;
+
+  /// A UI root waits until its old gameplay subtree is removed before draining.
+  final Future<void> Function()? beforeRetire;
   final String? Function() currentOwner;
   final int Function() sessionEpoch;
   final Future<CanonicalAccountStatus> Function(String owner) readStatus;
@@ -143,6 +147,7 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
     try {
       // Retain a failed close: losing that reference could open a second root
       // while the previous root still has unconfirmed writes in progress.
+      if (_lease != null) await beforeRetire?.call();
       await _lease?.close();
       _lease = null;
       _handoff?.dispose();
