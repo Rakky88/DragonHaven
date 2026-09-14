@@ -55,7 +55,7 @@ void main() {
         persistenceEnabled: false, clock: () => DateTime.utc(2026, 8, 31, 22));
     expect(game.adventuresFor(AdventureKind.special), isEmpty);
     final progress = game.visibleEventProgress.single;
-    expect(progress.target, 1400);
+    expect(progress.target, 2000);
     game.awardEventPoints(2000);
     expect(await game.claimEventReward(progress.key), true);
     expect(game.chestCount(ChestTier.special), 1);

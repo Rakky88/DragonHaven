@@ -346,7 +346,7 @@ class SpecialAdventureEventDefinition {
     this.previewOwnerKeeperId,
     this.previewRewardsSimulatedInProduction = true,
     this.rankingVisibleAfterEvent = const Duration(days: 3),
-    this.pointsPerDay = 700,
+    this.pointsPerDay = 1000,
     this.allowsPointPartner = false,
   });
 
@@ -1158,7 +1158,7 @@ const specialAdventureEventCatalog = <SpecialAdventureEventDefinition>[
   ),
   SpecialAdventureEventDefinition(
     id: 'valentine_two_heartlights',
-    pointsPerDay: 1400,
+    pointsPerDay: 2000,
     allowsPointPartner: true,
     adventureId: 'special_valentine_two_heartlights',
     initialYear: 2027,

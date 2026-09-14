@@ -38,7 +38,6 @@ class EventProgress {
         'startsAt': startsAt.toUtc().toIso8601String(),
         'endsAt': endsAt.toUtc().toIso8601String(),
         'target': target,
-        'targetPolicyVersion': 2,
         'points': points,
         'partnerPoints': partnerPoints,
         'claimed': claimed,
@@ -54,27 +53,13 @@ class EventProgress {
         json['preview'] is! bool) {
       throw const FormatException('Invalid event progress');
     }
-    final policy = json['targetPolicyVersion'] ?? 1;
-    if (policy is! int || (policy != 1 && policy != 2)) {
-      throw const FormatException('Invalid event target policy');
-    }
-    final storedTarget = json['target'] as int;
-    // Upgrade the former 1,000/day (Valentine 2,000/day) exactly once.
-    // Stored durations may predate calendar extensions; preserve that window.
-    final oldDailyTarget =
-        json['eventId'] == 'valentine_two_heartlights' ? 2000 : 1000;
-    // Older app builds omit unknown fields when saving. Already lowered goals
-    // in the current calendar must survive that round trip without a new cut.
-    final target = policy == 1 && storedTarget % oldDailyTarget == 0
-        ? (storedTarget * 7 + 9) ~/ 10
-        : storedTarget;
     final value = EventProgress(
         eventId: json['eventId'] as String,
         key: json['key'] as String,
         chestId: json['chestId'] as String,
         startsAt: DateTime.parse(json['startsAt'] as String),
         endsAt: DateTime.parse(json['endsAt'] as String),
-        target: target,
+        target: json['target'] as int,
         points: json['points'] as int,
         partnerPoints: json['partnerPoints'] as int,
         claimed: json['claimed'] as bool,

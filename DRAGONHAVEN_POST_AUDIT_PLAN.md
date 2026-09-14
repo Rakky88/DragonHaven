@@ -1,24 +1,17 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
-## Event target change - 14 September 2026
+## Event target decision reversed - 14 September 2026
 
-Requested daily goals are 700 points and 1,400 for Valentine. The shared Dart
-rules and serialized progress use target policy v2. Old standard goals reduce
-once; personal/partner points, prior chest claims and original occurrence
-lengths survive. Already reduced current-calendar goals also survive an older
-client dropping the version marker. Point earnings and random rewards do not
-change. Pending function-only migration 85 matches equivalent old/new Valentine
-preview goals while retaining the migration-84 authority fences. No runtime
-switch, balance or persistent production database is changed here. Deployment
-and release have not been performed for this change.
-
-Verification: the initial 61 focused event/model/widget tests passed, followed
-by all 12 event-point tests including every catalog window and preview surviving
-an older client's missing version marker. All 16 reference/load-profile tests
-pass; analysis is clean and VM/JavaScript shared-domain parity passes. Staging
-run 34811508700 on 6b48bdb passed all 20 economy runners and four SQL contracts,
-including migration 84+85 rehearsal and mixed old/new Valentine preview goals.
-Everything was rolled back; no persistent schema or worker was deployed.
+The owner withdrew the unreleased 700/day proposal and its 1,400/day Valentine
+variant. Goals are again 1,000/day and 2,000/day for Valentine. Commits 6b48bdb
+and ba3fe14 are reverted, including target-policy conversion and pending
+migration 85. Their only database exercise was rolled back in staging run
+34811508700; no production/staging persistent schema or player saves were
+converted. Therefore no reverse data migration or player balance changes are
+needed. Migration 84 and the existing server-economy work remain pending as
+before. The boss-battle reward discussion is a proposal, not implemented rules.
+All 42 focused event/projection/reference/load-profile tests pass; reference
+fingerprints verify. Source code exactly matches the pre-reduction checkpoint.
 
 ## Account retirement checkpoint - 13 September 2026
 

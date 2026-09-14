@@ -13,11 +13,6 @@ begin
   if has_function_privilege('authenticated','private.event_point_state(uuid)','execute') or
       has_table_privilege('authenticated','private.event_point_pair_members','insert') then
     raise exception 'event_points_contract_permissions'; end if;
-  if private.event_point_target('{"eventId":"valentine_two_heartlights","target":4000}')<>2800
-      or private.event_point_target('{"eventId":"valentine_two_heartlights","target":2800,"targetPolicyVersion":2}')<>2800
-      or private.event_point_target('{"eventId":"valentine_two_heartlights","target":2800}')<>2800
-      or has_function_privilege('authenticated','private.event_point_target(jsonb)','execute') then
-    raise exception 'event_points_target_policy_invalid'; end if;
   for idx in 1..3 loop
     keeper:=keepers[idx];
     insert into auth.users(id,email,email_confirmed_at) values
@@ -30,7 +25,6 @@ begin
       'startsAt',now()-interval '1 hour','endsAt',now()+interval '1 hour',
       'target',4000,'chestId','twinheart_keepsake_chest_v1','points',idx*100,
       'partnerPoints',0,'claimed',false,'preview',true);
-    if idx=1 then progress:=progress||jsonb_build_object('target',2800,'targetPolicyVersion',2); end if;
     source:=jsonb_build_object('schemaVersion',54,'eventProgress',jsonb_build_object(event_keys[idx],progress));
     -- Reuse the validated minimal social projection shape for trigger coverage.
     source:='{"schemaVersion":54,

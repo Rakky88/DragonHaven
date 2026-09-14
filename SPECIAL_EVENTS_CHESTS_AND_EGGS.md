@@ -36,16 +36,8 @@ points. Saved pre-v0.05.31 reward-ready runs keep their already-credited points
 and cannot credit them again. Group claims use the same rule and retained IDs.
 Trials still award points when they finish before closing.
 
-Daily target policy v2 lowers goals by 30%: 700 per day, or 1,400 for
-Valentine. Existing saved occurrences without a policy version are upgraded
-exactly once using their saved target, preserving old window lengths, personal
-and partner points, retirement flags and claimed rewards. Earn rates do not
-change. Pending migration 85 compares equivalent old/new targets when matching
-personal Valentine previews, so rolling client updates can still pair keepers.
-No balances or runtime switches are changed by that function-only migration.
-
-The target is 700 points per full scheduled calendar day, with no daily cap or
-reset. Valentine uses 1,400 per day. One accepted friend invitation combines both
+The target is 1,000 points per full scheduled calendar day, with no daily cap or
+reset. Valentine uses 2,000 per day. One accepted friend invitation combines both
 Keepers' existing and future points for that occurrence. An invitation alone
 shares nothing; a pending invitation may be cancelled or declined. Pending
 invitations automatically expire at event close and release both partner slots.
@@ -101,15 +93,15 @@ the existing server friendship, eligibility and partner-exclusivity rules apply.
 
 | Event | Amsterdam availability | Target | Points prize |
 |---|---|---:|---|
-| Golden Wings launch | 1-2 September 2026 | 1,400 | Golden Wings Chest |
-| Golden Wings recurring | 13 May, from 2027 | 700 | Golden Wings Chest |
-| Halloween | 25 October-1 November, from 2026 | 5,600 | Witchlight Chest |
-| Christmas | 20-26 December, from 2026 | 4,900 | Starlight Gift Chest |
-| New Year | 1-6 January inclusive, from 2027 | 4,200 | Firstlight Celebration Chest |
-| Valentine | 12-16 February, from 2027 | 7,000 shared or solo | Twinheart Keepsake Chest per Keeper |
-| Pride | 1-7 June, from 2027 | 4,900 | Radiant Festival Chest |
-| Sunwake | 20-26 July, from 2027 | 4,900 | Sunwake Chest |
-| Harvestmoon | 7-13 September, from 2027 | 4,900 | Harvestmoon Chest |
+| Golden Wings launch | 1-2 September 2026 | 2,000 | Golden Wings Chest |
+| Golden Wings recurring | 13 May, from 2027 | 1,000 | Golden Wings Chest |
+| Halloween | 25 October-1 November, from 2026 | 8,000 | Witchlight Chest |
+| Christmas | 20-26 December, from 2026 | 7,000 | Starlight Gift Chest |
+| New Year | 1-6 January inclusive, from 2027 | 6,000 | Firstlight Celebration Chest |
+| Valentine | 12-16 February, from 2027 | 10,000 shared or solo | Twinheart Keepsake Chest per Keeper |
+| Pride | 1-7 June, from 2027 | 7,000 | Radiant Festival Chest |
+| Sunwake | 20-26 July, from 2027 | 7,000 | Sunwake Chest |
+| Harvestmoon | 7-13 September, from 2027 | 7,000 | Harvestmoon Chest |
 
 Christmas opens December 20 00:00 and closes December 27 00:00; Valentine
 opens February 12 00:00 and closes February 17 00:00, every year in
@@ -119,7 +111,7 @@ and chest contents are unchanged.
 
 New Year closes at January 7 00:00 Europe/Amsterdam. Calendar days determine
 points targets across daylight-saving transitions. Existing 48-hour personal
-previews use 1,400 points (2,800 for Valentine) and retain the existing production
+previews use 2,000 points (4,000 for Valentine) and retain the existing production
 simulation policy: claiming a preview never grants permanent chest inventory.
 
 Migration `202609120083_event_claim_partner_windows.sql` maps each friend's
@@ -348,7 +340,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: a8f7dfc3df693d29 -->
+<!-- reference-source-fingerprint: 047e82c6f43b4889 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

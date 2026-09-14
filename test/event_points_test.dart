@@ -29,66 +29,6 @@ void main() {
     }
   });
 
-  test('saved goals reduce once while points and claimed prizes survive', () {
-    for (final claimed in [false, true]) {
-      final old = EventProgress(
-              eventId: 'valentine_two_heartlights',
-              key: 'valentine_two_heartlights:2027',
-              startsAt: DateTime.utc(2027, 2, 11, 23),
-              endsAt: DateTime.utc(2027, 2, 16, 23),
-              target: 10000,
-              chestId: 'twinheart_keepsake_chest_v1',
-              points: 3500,
-              partnerPoints: 3500,
-              claimed: claimed)
-          .toJson()
-        ..remove('targetPolicyVersion');
-      final migrated = EventProgress.fromJson(old);
-      expect(migrated.target, 7000);
-      expect(migrated.points, 3500);
-      expect(migrated.partnerPoints, 3500);
-      expect(migrated.canClaim, !claimed);
-      expect(migrated.claimed, claimed);
-      final reloaded = EventProgress.fromJson(migrated.toJson());
-      expect(reloaded.toJson(), migrated.toJson());
-      final oldClientSave = migrated.toJson()..remove('targetPolicyVersion');
-      expect(EventProgress.fromJson(oldClientSave).target, 7000);
-    }
-  });
-
-  test('every calendar and preview target survives an old-client round trip',
-      () {
-    for (final event in specialAdventureEventCatalog) {
-      for (final duration in [
-        event.initialAvailability,
-        if (event.recurrenceAvailability != null) event.recurrenceAvailability!,
-        Duration(hours: event.previewHours),
-      ]) {
-        final oldRate = event.allowsPointPartner ? 2000 : 1000;
-        final oldTarget =
-            (duration.inMinutes * oldRate / Duration.minutesPerDay).ceil();
-        final expected =
-            (duration.inMinutes * event.pointsPerDay / Duration.minutesPerDay)
-                .ceil();
-        final start = DateTime.utc(2027);
-        final old = EventProgress(
-                eventId: event.id,
-                key: '${event.id}:2027',
-                startsAt: start,
-                endsAt: start.add(duration),
-                target: oldTarget,
-                chestId: event.rewards.specialChestId!)
-            .toJson()
-          ..remove('targetPolicyVersion');
-        final upgraded = EventProgress.fromJson(old);
-        expect(upgraded.target, expected, reason: event.id);
-        final rewritten = upgraded.toJson()..remove('targetPolicyVersion');
-        expect(EventProgress.fromJson(rewritten).target, expected,
-            reason: event.id);
-      }
-    }
-  });
-
   test('New Year runs six Amsterdam calendar days and recurs', () {
     for (final year in [2027, 2028, 2029]) {
       final start = DateTime.utc(year - 1, 12, 31, 23);
@@ -101,7 +41,7 @@ void main() {
       expect(active(end), false);
       final game =
           HouseholdProvider(persistenceEnabled: false, clock: () => start);
-      expect(game.visibleEventProgress.single.target, 4200);
+      expect(game.visibleEventProgress.single.target, 6000);
       game.dispose();
     }
   });
@@ -114,7 +54,7 @@ void main() {
         month: 12,
         day: 20,
         days: 7,
-        target: 4900
+        target: 7000
       ),
       (
         id: 'valentine_two_heartlights',
@@ -122,7 +62,7 @@ void main() {
         month: 2,
         day: 12,
         days: 5,
-        target: 7000
+        target: 10000
       ),
     ]) {
       for (final year in [spec.year, spec.year + 1, spec.year + 2]) {
@@ -168,7 +108,7 @@ void main() {
     final claimed = restore(after.exportState(), DateTime.utc(2028, 1, 1));
     expect(claimed.eventProgress[key]!.fraction, 1);
     expect(claimed.eventProgress[key]!.canClaim, false);
-    expect(claimed.visibleEventProgress.first.target, 4200);
+    expect(claimed.visibleEventProgress.first.target, 6000);
     expect(claimed.visibleEventProgress.first.points, 0);
     after.dispose();
     claimed.dispose();
@@ -265,13 +205,13 @@ void main() {
     final game = HouseholdProvider(persistenceEnabled: false, clock: () => at);
     game.awardEventPoints(750);
     final p = game.visibleEventProgress.single;
-    expect(p.target, 7000);
+    expect(p.target, 10000);
     expect(p.canClaim, false);
     final shared = {
       'version': 1,
       'ownerId': owner,
       'progress': [
-        {...p.toJson(), 'partnerPoints': 6250}
+        {...p.toJson(), 'partnerPoints': 9250}
       ]
     };
     game.applyEventPartnerPoints(shared, owner);
@@ -321,7 +261,7 @@ void main() {
     game.seasonalEventPreviewExpiresAt['valentine_two_heartlights'] =
         at.add(const Duration(days: 2));
     final p = game.visibleEventProgress.single;
-    expect(p.target, 2800);
+    expect(p.target, 4000);
     game.awardEventPoints(4000);
     expect(await game.claimEventReward(p.key), true);
     expect(game.specialChestInventory, isEmpty);

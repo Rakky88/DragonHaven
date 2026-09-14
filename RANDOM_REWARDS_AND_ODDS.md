@@ -1,9 +1,5 @@
 # DragonHaven Random Rewards and Odds
 
-The daily event goal is now 700 points (Valentine 1,400 shared), with a
-one-time 30% reduction of saved targets. Earned points and prior claims survive;
-reward quantities, chest pools, egg odds, pity and duplicate rules are unchanged.
-
 The pending server-economy handoff now drains Altar operations and preserves
 unresolved request IDs before freezing a legacy save. Late responses are bound
 to the original account/session, including during retirement. The reviewed egg
@@ -211,7 +207,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 715bda822aef0662 -->
+<!-- reference-source-fingerprint: 9cd1a47431f9852b -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
