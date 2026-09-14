@@ -330,7 +330,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: e6ede3ec0c1368dd -->
+<!-- reference-source-fingerprint: 3cf4dce5c5f24c50 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -1185,3 +1185,14 @@ explicit staging rehearsal until full migration/cutover. Existing event
 schedules, expertise bonuses, reward tables, drop weights and preview rules
 are unchanged. Old authenticated lifecycle/ack RPCs remain available only for
 legacy accounts; promoted accounts must use canonical commands.
+
+
+### Cloud-restore safety correction (2026-09-14, unpublished)
+
+The restore path now preserves an account-labelled local checkpoint before
+replacing device progress. Event invitation errors no longer offer a direct
+cloud restore. This changes neither event schedules/targets nor reward tables,
+probabilities, chest contents, egg generation or Altar ownership rules.
+
+The correction also merges exact server-retained Draconomicon form keys back
+into local discovery sets. This creates no dragons and grants no currency.

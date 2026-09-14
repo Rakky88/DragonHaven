@@ -218,3 +218,31 @@ incidenten aantonen dat automatische alerts, langere retentie, logdrains,
 back-ups of gegarandeerd niet-pauzeren nodig zijn. Leg dan eerst huidige kosten,
 free-tiergrens, concrete meerwaarde en terugvaloptie vast; alleen de eigenaar
 activeert de betaalde dienst.
+
+
+## Cloud rollback incident: v0.05.37 correction (2026-09-14)
+
+The v0.05.36 conflict UI promised a local recovery copy, but the actual
+`HouseholdProvider.restoreCloudState` path did not create one. Its rolling
+autosave backup can be replaced by subsequent saves. Do not claim that an
+older installation has a recoverable local copy without inspecting it.
+
+For an accidental restore: close the app, do not reinstall/clear storage, and
+keep any other device offline. Preserve current/history snapshots privately
+before investigating; never log full saves or attach them to public artifacts.
+The five retained cloud revisions may all already contain the restored state;
+the thirty-day maximum is not a promise of thirty days of distinct progress.
+Check import snapshots and database backup availability without rolling back
+the shared database. Restore only a verified source for the affected account.
+If none exists, report the limitation and obtain surviving device evidence;
+do not fabricate progress or compensate by editing unrelated inventory tables.
+
+The v0.05.37 correction preserves original device slots before startup
+rotation and creates separate pre-restore checkpoints labelled with account
+ownership. A failed checkpoint prevents the restore. The first checkpoint and
+four recent ones survive autosaves; Account Info provides an explicit undo.
+Undo pauses cloud uploads persistently until an explicit cloud replacement.
+Old device slots remain evidence with unknown ownership and are never silently
+imported into an account. Cloud restore requires history selection, comparison
+and a second confirmation. Event invitations show an explanation instead of
+opening the destructive conflict workflow. No production schema change.

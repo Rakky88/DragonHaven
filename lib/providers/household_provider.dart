@@ -524,6 +524,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   static Future<HouseholdProvider> loadFromStorage() async {
+    await StorageService.preserveLegacyRecoveryEvidence();
     var provider = HouseholdProvider(initialize: false);
     final data = await StorageService.load();
     if (data == null) {
@@ -3425,9 +3426,27 @@ class HouseholdProvider extends ChangeNotifier {
         'activities': activities.map((entry) => entry.toJson()).toList(),
       };
 
+  /// The server permanently retains previously published form discoveries.
+  /// Reconcile those exact keys, never infer dragon ownership or award currency.
+  Future<void> mergeKnownDiscoveries(
+    Iterable<String> forms,
+    Iterable<String> prismatic,
+  ) async {
+    var changed = false;
+    for (final form in forms) {
+      changed = discoveredForms.add(form) || changed;
+    }
+    for (final form in prismatic) {
+      changed = prismaticForms.add(form) || changed;
+    }
+    if (changed) await _notifyAndSave();
+  }
+
   Future<bool> restoreCloudState(
     Map<String, dynamic> state, {
     bool preserveServerOwnedWalletAndChests = false,
+    String? recoveryOwner,
+    bool Function()? canApplyRestore,
   }) async {
     final candidate = HouseholdProvider(
       initialize: false,
@@ -3435,6 +3454,13 @@ class HouseholdProvider extends ChangeNotifier {
     );
     try {
       await _restoreStoredState(candidate, state);
+      if (_persistenceEnabled) {
+        await StorageService.preserveBeforeCloudRestore(
+          exportState(),
+          ownerId: recoveryOwner,
+        );
+      }
+      if (canApplyRestore != null && !canApplyRestore()) return false;
       final preservedCoins = pet.coins;
       final preservedAltar = eggAltar;
       final preservedPending = pendingAltarOperation;
@@ -3471,6 +3497,8 @@ class HouseholdProvider extends ChangeNotifier {
       return true;
     } on Object {
       return false;
+    } finally {
+      candidate.dispose();
     }
   }
 

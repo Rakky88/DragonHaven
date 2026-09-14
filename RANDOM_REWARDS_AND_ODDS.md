@@ -201,7 +201,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 689cbd05ee35c3d0 -->
+<!-- reference-source-fingerprint: d9c66b4c4f460f8b -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -1236,3 +1236,14 @@ explicit staging rehearsal until full migration/cutover. Existing event
 schedules, expertise bonuses, reward tables, drop weights and preview rules
 are unchanged. Old authenticated lifecycle/ack RPCs remain available only for
 legacy accounts; promoted accounts must use canonical commands.
+
+
+### Cloud-restore safety correction (2026-09-14, unpublished)
+
+The restore path now preserves an account-labelled local checkpoint before
+replacing device progress. Event invitation errors no longer offer a direct
+cloud restore. This changes neither event schedules/targets nor reward tables,
+probabilities, chest contents, egg generation or Altar ownership rules.
+
+The correction also merges exact server-retained Draconomicon form keys back
+into local discovery sets. This creates no dragons and grants no currency.

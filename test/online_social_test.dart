@@ -21,6 +21,8 @@ import 'package:dragon_haven/screens/friends_screen.dart';
 import 'package:dragon_haven/services/diagnostic_reporter.dart';
 import 'package:dragon_haven/services/automatic_cloud_backup.dart';
 import 'package:dragon_haven/services/social_repository.dart';
+import 'package:dragon_haven/services/storage_service.dart';
+import 'package:dragon_haven/screens/account_screen.dart';
 import 'package:dragon_haven/widgets/online_account_access.dart';
 import 'package:dragon_haven/widgets/profile_portrait_sprite.dart';
 import 'package:flutter/material.dart';
@@ -1679,9 +1681,9 @@ void main() {
           expiresAt: DateTime.now().add(const Duration(hours: 1)))
     ];
     await tester.runAsync(() => game.synchronizeSeasonalEventPreviews({
-      for (final preview in online.seasonalEventPreviews)
-        preview.eventId: preview.expiresAt,
-    }));
+          for (final preview in online.seasonalEventPreviews)
+            preview.eventId: preview.expiresAt,
+        }));
     await tester.pumpWidget(MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: game),
@@ -2709,6 +2711,321 @@ void main() {
     }
   });
 
+  test(
+      'cloud restore keeps the pre-restore state through autosaves and restart',
+      () async {
+    final game = HouseholdProvider(random: Random(994));
+    await game.updateAccountName('Latest local progress');
+    game.pet.coins = 12345;
+    final older = game.exportState()..['accountName'] = 'Old cloud';
+    older['pet'] = Map<String, dynamic>.from(older['pet'] as Map)
+      ..['coins'] = 123;
+    expect(
+        await game.restoreCloudState(older, recoveryOwner: 'my-user'), isTrue);
+    for (var i = 0; i < 7; i++) {
+      await game.updateAccountName('After restore $i');
+    }
+    final copies = await StorageService.loadRestoreCheckpoints('my-user');
+    expect(copies.single['state']['accountName'], 'Latest local progress');
+    expect(copies.single['state']['pet']['coins'], 12345);
+    final reloaded = await HouseholdProvider.loadFromStorage();
+    expect(reloaded.accountName, 'After restore 6');
+    expect(
+        (await StorageService.loadRestoreCheckpoints('my-user')).single['state']
+            ['pet']['coins'],
+        12345);
+    expect(await StorageService.loadRestoreCheckpoints('other-user'), isEmpty);
+    game.dispose();
+    reloaded.dispose();
+  });
+
+  test('repeated restores retain the first recovery checkpoint', () async {
+    final game = HouseholdProvider(random: Random(992));
+    await game.updateAccountName('Original progress');
+    for (var i = 0; i < 8; i++) {
+      final next = game.exportState()..['accountName'] = 'Restore $i';
+      expect(
+          await game.restoreCloudState(next, recoveryOwner: 'my-user'), isTrue);
+    }
+    final entries = await StorageService.loadRestoreCheckpoints('my-user');
+    expect(entries, hasLength(5));
+    expect(entries.last['state']['accountName'], 'Original progress');
+    expect(entries.first['state']['accountName'], 'Restore 6');
+    game.dispose();
+  });
+
+  test('restore refused after the checkpoint does not replace local progress',
+      () async {
+    final game = HouseholdProvider(random: Random(992));
+    await game.updateAccountName('Original progress');
+    final older = game.exportState()..['accountName'] = 'Old cloud';
+    expect(
+        await game.restoreCloudState(older,
+            recoveryOwner: 'my-user', canApplyRestore: () => false),
+        isFalse);
+    expect(game.accountName, 'Original progress');
+    expect((await StorageService.load()).toString(),
+        contains('Original progress'));
+    game.dispose();
+  });
+
+  test(
+      'local recovery survives restart and blocks uploads until explicit replacement',
+      () async {
+    final game = HouseholdProvider(random: Random(991));
+    await game.updateAccountName('Latest local');
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    OnlineAccountProvider createOnline() => OnlineAccountProvider(
+          repository: repository,
+          inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+          gameStateSnapshot: game.exportState,
+          applyCloudState: (state) =>
+              game.restoreCloudState(state, recoveryOwner: 'my-user'),
+          deviceId: () async => 'device',
+          loadCloudBaseRevision: StorageService.loadCloudBaseRevision,
+          saveCloudBaseRevision: StorageService.saveCloudBaseRevision,
+        );
+    var online = createOnline();
+    await online.initialize();
+    expect(await online.backupToCloud(), isTrue);
+    await game.updateAccountName('More local progress');
+    expect(await online.restoreFromCloud(), isTrue);
+    final checkpoint =
+        (await StorageService.loadRestoreCheckpoints('my-user')).single;
+    expect(await online.restoreLocalCheckpoint(checkpoint['id'] as String),
+        isTrue);
+    expect(game.accountName, 'More local progress');
+    expect(await online.backupToCloud(automatic: true), isFalse);
+    expect(repository.cloudSave!.revision, 1);
+    online.dispose();
+    online = createOnline();
+    await online.initialize();
+    expect(await online.backupToCloud(), isFalse);
+    expect(repository.cloudSave!.revision, 1);
+    expect(await online.replaceCloudWithLocal(), isTrue);
+    expect(repository.cloudSave!.state['accountName'], 'More local progress');
+    expect(await online.backupToCloud(), isTrue);
+    online.dispose();
+    game.dispose();
+  });
+
+  test('a changed cloud revision is not applied after a reviewed selection',
+      () async {
+    final game = HouseholdProvider(persistenceEnabled: false);
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..cloudSave = CloudGameSave(
+          saveId: 'new-save',
+          revision: 2,
+          state: game.exportState(),
+          updatedAt: DateTime.now(),
+          deviceId: 'other');
+    var applies = 0;
+    final online = OnlineAccountProvider(
+        repository: repository,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+        applyCloudState: (_) async {
+          applies++;
+          return true;
+        });
+    await online.initialize();
+    expect(await online.restoreFromCloud(expectedSaveId: 'reviewed-save'),
+        isFalse);
+    expect(applies, 0);
+    online.dispose();
+    game.dispose();
+  });
+
+  test('a cloud reply after sign-out never replaces local progress', () async {
+    final game = HouseholdProvider(persistenceEnabled: false);
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    var applies = 0;
+    final online = OnlineAccountProvider(
+        repository: repository,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+        applyCloudState: (_) async {
+          applies++;
+          return true;
+        });
+    await online.initialize();
+    final remote = Completer<CloudGameSave?>();
+    repository.cloudSaveLoader = () => remote.future;
+    final restoring = online.restoreFromCloud();
+    await Future<void>.delayed(Duration.zero);
+    repository.signedIn = false;
+    remote.complete(CloudGameSave(
+        saveId: 'old',
+        revision: 1,
+        state: game.exportState(),
+        updatedAt: DateTime.now(),
+        deviceId: 'other'));
+    expect(await restoring, isFalse);
+    expect(applies, 0);
+    online.dispose();
+    game.dispose();
+  });
+
+  test('a timed-out cloud restore cannot apply a late reply', () async {
+    final game = HouseholdProvider(persistenceEnabled: false);
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    var applies = 0;
+    final online = OnlineAccountProvider(
+        repository: repository,
+        operationTimeout: const Duration(milliseconds: 30),
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+        applyCloudState: (_) async {
+          applies++;
+          return true;
+        });
+    await online.initialize();
+    final remote = Completer<CloudGameSave?>();
+    repository.cloudSaveLoader = () => remote.future;
+    expect(await online.restoreFromCloud(), isFalse);
+    remote.complete(CloudGameSave(
+        saveId: 'old',
+        revision: 1,
+        state: game.exportState(),
+        updatedAt: DateTime.now(),
+        deviceId: 'other'));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(applies, 0);
+    online.dispose();
+    game.dispose();
+  });
+
+  testWidgets('cloud conflict has no direct restore action', (tester) async {
+    final game = HouseholdProvider(persistenceEnabled: false);
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    final online = OnlineAccountProvider(
+        repository: repository,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
+    await online.initialize();
+    await tester.pumpWidget(MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: game),
+          ChangeNotifierProvider.value(value: online),
+        ],
+        child: MaterialApp(
+            home: Scaffold(
+                body: Builder(
+                    builder: (context) => TextButton(
+                          onPressed: () => const AccountScreen()
+                              .showCloudSaveConflict(context, online),
+                          child: const Text('Open conflict'),
+                        ))))));
+    await tester.tap(find.text('Open conflict'));
+    await tester.pumpAndSettle();
+    expect(find.text('Restore cloud'), findsNothing);
+    expect(find.text('Keep local for now'), findsOneWidget);
+    expect(find.textContaining('cloud copy may be older'), findsOneWidget);
+    await tester.tap(find.text('Keep local for now'));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+    game.dispose();
+  });
+
+  test('upgrade preserves the surviving raw backup before load rotates it',
+      () async {
+    final game = HouseholdProvider(persistenceEnabled: false);
+    final state = game.exportState();
+    final before =
+        jsonEncode({...state, 'accountName': 'Before accidental restore'});
+    SharedPreferences.setMockInitialValues({
+      StorageService.currentKey:
+          jsonEncode({...state, 'accountName': 'Old cloud'}),
+      StorageService.backupKey: before,
+      StorageService.recoveryKey: 'older damaged bytes',
+    });
+    final loaded = await HouseholdProvider.loadFromStorage();
+    await loaded.updateAccountName('Autosave after update');
+    final prefs = await SharedPreferences.getInstance();
+    final evidence =
+        jsonDecode(prefs.getString(StorageService.legacyRecoveryEvidenceKey)!);
+    expect(evidence[StorageService.backupKey], before);
+    expect(evidence[StorageService.recoveryKey], 'older damaged bytes');
+    final summaries = await StorageService.legacyRecoverySummaries();
+    expect(summaries.map((e) => e['slot']), [1, 2]);
+    expect(summaries.last['accountName'], 'Before accidental restore');
+    expect(summaries.last.containsKey('state'), isFalse);
+    await StorageService.preserveLegacyRecoveryEvidence();
+    expect(
+        jsonDecode(prefs.getString(StorageService.legacyRecoveryEvidenceKey)!)[
+            StorageService.backupKey],
+        before);
+    loaded.dispose();
+    game.dispose();
+  });
+
+  testWidgets(
+      'compact cloud restore compares both copies and cancellation preserves local progress',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final game = HouseholdProvider(persistenceEnabled: false);
+    game.pet.coins = 12345;
+    final old = game.exportState();
+    old['pet'] = Map<String, dynamic>.from(old['pet'] as Map)..['coins'] = 123;
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..cloudSave = CloudGameSave(
+          saveId: 'save-1',
+          revision: 1,
+          state: old,
+          updatedAt: DateTime(2026, 9, 10),
+          deviceId: 'other');
+    final online = OnlineAccountProvider(
+        repository: repository,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+        applyCloudState: game.restoreCloudState);
+    await online.initialize();
+    await tester.pumpWidget(MultiProvider(providers: [
+      ChangeNotifierProvider.value(value: game),
+      ChangeNotifierProvider.value(value: online),
+    ], child: const MaterialApp(home: AccountScreen())));
+    await tester.ensureVisible(find.byKey(const Key('cloud-restore-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('cloud-restore-button')));
+    await tester.pumpAndSettle();
+    expect(find.text('Backup history'), findsWidgets);
+    expect(game.pet.coins, 12345);
+    await tester.tap(find.text('Revision 1'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('On this device: 12345 coins'), findsOneWidget);
+    expect(find.textContaining('Cloud backup: 123 coins'), findsOneWidget);
+    expect(game.pet.coins, 12345);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(game.pet.coins, 12345);
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+    game.dispose();
+  });
+
+  test(
+      'refresh recovers exact server discoveries without inventing dragons or currency',
+      () async {
+    final game = HouseholdProvider(persistenceEnabled: false);
+    final coins = game.pet.coins;
+    final gems = game.pet.gems;
+    final dragons = game.ownedDragons.length;
+    game.discoveredForms.add('local:hatchling');
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..knownForms = ['old:hatchling', 'old:wyrmling'];
+    final online = OnlineAccountProvider(
+        repository: repository,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+        synchronizeKnownDiscoveries: (profile) => game.mergeKnownDiscoveries(
+            profile.discoveredForms, profile.prismaticForms));
+    await online.initialize();
+    expect(game.discoveredForms,
+        containsAll(['local:hatchling', 'old:hatchling', 'old:wyrmling']));
+    expect(game.pet.coins, coins);
+    expect(game.pet.gems, gems);
+    expect(game.ownedDragons.length, dragons);
+    online.dispose();
+    game.dispose();
+  });
+
   test('cloud backup uses revisions and can safely restore local progress',
       () async {
     final game = HouseholdProvider(random: Random(991));
@@ -3135,8 +3452,10 @@ class _FakeSocialRepository implements SocialRepository {
     alreadyCompleted: false,
   );
 
+  List<String> knownForms = const [];
   KeeperProfile get _profile => KeeperProfile(
         userId: 'my-user',
+        discoveredForms: knownForms,
         keeperCode: 'DH-AABBCCDD',
         displayName: updatedDisplayName ?? 'Rick',
         title: updatedTitle ?? 'title_001',
@@ -3248,7 +3567,9 @@ class _FakeSocialRepository implements SocialRepository {
   }
 
   @override
-  Future<CloudGameSave?> loadCloudGameSave() async => cloudSave;
+  Future<CloudGameSave?> loadCloudGameSave() async =>
+      cloudSaveLoader == null ? cloudSave : await cloudSaveLoader!();
+  Future<CloudGameSave?> Function()? cloudSaveLoader;
   @override
   Future<List<CloudGameSaveSummary>> loadCloudGameSaveHistory() async {
     final saves = [

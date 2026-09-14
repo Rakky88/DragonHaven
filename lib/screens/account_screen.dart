@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../app_info.dart';
 import '../l10n/app_strings.dart';
 import '../models/account_title.dart';
+import '../services/storage_service.dart';
 import '../models/profile_portrait.dart';
 import '../models/supporter_pack.dart';
 import '../providers/household_provider.dart';
@@ -16,7 +17,7 @@ import '../widgets/game_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
 import '../widgets/profile_portrait_sprite.dart';
 
-enum _CloudConflictChoice { viewCloud, keepLocal, replaceCloud, restoreCloud }
+enum _CloudConflictChoice { viewCloud, keepLocal, replaceCloud }
 
 const _noFrameSelection = '__no_frame__';
 const _noBadgeSelection = '__no_badge__';
@@ -275,6 +276,15 @@ class AccountScreen extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                    TextButton.icon(
+                      key: const Key('local-restore-checkpoints-button'),
+                      onPressed: online.busy
+                          ? null
+                          : () => _showLocalRecovery(context, online),
+                      icon: const Icon(Icons.restore_rounded),
+                      label: Text(strings.pick(
+                          'Undo a cloud restore', 'Cloudherstel terugdraaien')),
                     ),
                     if (online.cloudGameSave != null) ...[
                       const SizedBox(height: 4),
@@ -590,8 +600,8 @@ class AccountScreen extends StatelessWidget {
               'Andere cloudvoortgang gevonden',
             )),
             content: Text(strings.pick(
-              'This device is not based on the latest cloud revision${remote == null ? '' : ' ${remote.revision} from $updated'}. Nothing was overwritten. Restore the cloud copy, or keep playing locally for now.',
-              'Dit apparaat is niet gebaseerd op de nieuwste cloudrevisie${remote == null ? '' : ' ${remote.revision} van $updated'}. Er is niets overschreven. Herstel de cloudkopie, of speel voorlopig lokaal verder.',
+              'This device is not based on the latest cloud revision${remote == null ? '' : ' ${remote.revision} from $updated'}. Nothing was overwritten. The cloud copy may be older than this device. Keep local progress unless you have compared the backups.',
+              'Dit apparaat is niet gebaseerd op de nieuwste cloudrevisie${remote == null ? '' : ' ${remote.revision} van $updated'}. Er is niets overschreven. De cloudkopie kan ouder zijn dan dit apparaat. Behoud je lokale voortgang totdat je de back-ups hebt vergeleken.',
             )),
             actions: [
               TextButton(
@@ -621,18 +631,6 @@ class AccountScreen extends StatelessWidget {
                   'Cloud vervangen',
                 )),
               ),
-              FilledButton(
-                onPressed: remote == null
-                    ? null
-                    : () => Navigator.pop(
-                          dialogContext,
-                          _CloudConflictChoice.restoreCloud,
-                        ),
-                child: Text(strings.pick(
-                  'Restore cloud',
-                  'Cloud herstellen',
-                )),
-              ),
             ],
           ),
         ) ??
@@ -646,20 +644,6 @@ class AccountScreen extends StatelessWidget {
       await _replaceCloudWithLocal(context, online);
       return;
     }
-    final success = await online.restoreFromCloud();
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(success
-          ? strings.pick(
-              'Cloud progress restored. A local recovery copy was kept.',
-              'Cloudvoortgang hersteld. Er is een lokale herstelkopie bewaard.',
-            )
-          : socialMessage(
-              strings,
-              online.errorCode ?? 'cloud_save_failed',
-              supportCode: online.supportCode,
-            )),
-    ));
   }
 
   Future<void> _replaceCloudWithLocal(
@@ -715,9 +699,10 @@ class AccountScreen extends StatelessWidget {
     BuildContext context,
     OnlineAccountProvider online,
   ) async {
+    final owner = online.currentUserId;
     final strings = AppStrings.of(context);
     final loaded = await online.loadCloudSaveHistory();
-    if (!context.mounted) return;
+    if (!context.mounted || online.currentUserId != owner) return;
     if (!loaded) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(socialMessage(
@@ -802,17 +787,36 @@ class AccountScreen extends StatelessWidget {
         ],
       ),
     );
-    if (selectedSaveId == null || !context.mounted) return;
+    if (selectedSaveId == null ||
+        !context.mounted ||
+        online.currentUserId != owner) {
+      return;
+    }
+    final preview = await online.previewCloudRevision(selectedSaveId);
+    if (!context.mounted || online.currentUserId != owner) return;
+    if (preview == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(socialMessage(
+              strings, online.errorCode ?? 'cloud_save_failed'))));
+      return;
+    }
+    final cloudSummary = _recoverySummary(strings, preview.state);
+    final selected =
+        history.firstWhere((save) => save.saveId == selectedSaveId);
+    final selectedDate = material.formatFullDate(selected.updatedAt.toLocal());
+    final localSummary = _recoverySummary(
+        strings, context.read<HouseholdProvider>().exportState());
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
+            scrollable: true,
             title: Text(strings.pick(
               'Restore this revision?',
               'Deze revisie herstellen?',
             )),
             content: Text(strings.pick(
-              'Your local progress will be replaced by this cloud revision. A local recovery copy is kept.',
-              'Je lokale voortgang wordt vervangen door deze cloudrevisie. Er blijft een lokale herstelkopie bewaard.',
+              'Replace this device with revision ${selected.revision} from $selectedDate? This backup may be older than your local progress.\n\nOn this device: $localSummary\nCloud backup: $cloudSummary\n\nA separate recovery copy is saved first. You can undo this in Account Info.',
+              'Dit apparaat vervangen door revisie ${selected.revision} van $selectedDate? Deze back-up kan ouder zijn dan je lokale voortgang.\n\nOp dit apparaat: $localSummary\nCloudback-up: $cloudSummary\n\nEerst wordt een aparte herstelkopie bewaard. Je kunt dit terugdraaien bij Account Info.',
             )),
             actions: [
               TextButton(
@@ -830,9 +834,9 @@ class AccountScreen extends StatelessWidget {
           ),
         ) ??
         false;
-    if (!confirmed || !context.mounted) return;
+    if (!confirmed || !context.mounted || online.currentUserId != owner) return;
     final success = await online.restoreCloudRevision(selectedSaveId);
-    if (!context.mounted) return;
+    if (!context.mounted || online.currentUserId != owner) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(success
           ? strings.pick(
@@ -847,45 +851,115 @@ class AccountScreen extends StatelessWidget {
     ));
   }
 
-  Future<void> _restoreFromCloud(BuildContext context) async {
+  Future<void> _restoreFromCloud(BuildContext context) =>
+      _showCloudHistory(context, context.read<OnlineAccountProvider>());
+
+  Future<void> _showLocalRecovery(
+      BuildContext context, OnlineAccountProvider online) async {
+    final owner = online.currentUserId;
+    if (owner == null) return;
+    final entries = await StorageService.loadRestoreCheckpoints(owner);
+    final legacy = await StorageService.legacyRecoverySummaries();
+    if (!context.mounted || online.currentUserId != owner) return;
     final strings = AppStrings.of(context);
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        scrollable: true,
+        title: Text(strings.pick('Before cloud restore', 'Vóór cloudherstel')),
+        content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              entries.isEmpty
+                  ? Text(strings.pick(
+                      'No separate recovery copy is available on this device. Older app versions did not keep one when restoring cloud progress.',
+                      'Op dit apparaat is geen aparte herstelkopie beschikbaar. Oudere appversies bewaarden die niet bij cloudherstel.'))
+                  : Column(mainAxisSize: MainAxisSize.min, children: [
+                      Text(strings.pick(
+                          'Choose the local progress from before a restore. Cloud uploads stay paused until you review the cloud backup.',
+                          'Kies de lokale voortgang van vóór een herstelactie. Clouduploads blijven gepauzeerd totdat je de cloudback-up beoordeelt.')),
+                      for (final entry in entries)
+                        ListTile(
+                          title: Text(
+                              DateTime.parse(entry['createdAt'] as String)
+                                  .toLocal()
+                                  .toString()
+                                  .split('.')
+                                  .first),
+                          subtitle: Text(_recoverySummary(
+                              strings,
+                              Map<String, dynamic>.from(
+                                  entry['state'] as Map))),
+                          onTap: () => Navigator.pop(
+                              dialogContext, entry['id'] as String),
+                        ),
+                    ]),
+              if (legacy.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(
+                    strings.pick(
+                        'Older device copies', 'Oudere apparaatkopieën'),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(strings.pick(
+                    'Inspection only: account ownership is unknown. Tell support which copy matches your missing progress.',
+                    'Alleen ter inzage: het bijbehorende account is onbekend. Geef aan support door welke kopie overeenkomt met je ontbrekende voortgang.')),
+                for (final copy in legacy)
+                  Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                          '#${copy['slot']} · ${copy['accountName']}\n${_recoverySummary(strings, copy)}')),
+              ],
+            ]),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(strings.tr('cancel')))
+        ],
+      ),
+    );
+    if (selected == null || !context.mounted || online.currentUserId != owner) {
+      return;
+    }
     final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(strings.pick(
-              'Restore cloud progress?',
-              'Cloudvoortgang herstellen?',
-            )),
-            content: Text(strings.pick(
-              'Your current local progress will be replaced by the latest cloud backup. A local recovery copy is kept.',
-              'Je huidige lokale voortgang wordt vervangen door de nieuwste cloudback-up. Er blijft een lokale herstelkopie bewaard.',
-            )),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(strings.tr('cancel')),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(strings.pick('Restore', 'Herstellen')),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-    if (!confirmed || !context.mounted) return;
-    final online = context.read<OnlineAccountProvider>();
-    final success = await online.restoreFromCloud();
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+              title: Text(strings.pick('Recover this local copy?',
+                  'Deze lokale kopie terugzetten?')),
+              content: Text(strings.pick(
+                  'This replaces the progress on this device. A copy of the current progress is kept too.',
+                  'Dit vervangt de voortgang op dit apparaat. Ook van de huidige voortgang wordt een kopie bewaard.')),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(dialogContext, false),
+                    child: Text(strings.tr('cancel'))),
+                FilledButton(
+                    onPressed: () => Navigator.pop(dialogContext, true),
+                    child: Text(strings.pick('Recover', 'Terugzetten'))),
+              ],
+            ));
+    if (confirmed != true ||
+        !context.mounted ||
+        online.currentUserId != owner) {
+      return;
+    }
+    final success = await online.restoreLocalCheckpoint(selected);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(success
-          ? strings.pick('Cloud progress restored.', 'Cloudvoortgang hersteld.')
-          : socialMessage(
-              strings,
-              online.errorCode ?? 'cloud_save_missing',
-              supportCode: online.supportCode,
-            )),
-    ));
+        content: Text(success
+            ? strings.pick(
+                'Local progress recovered. Compare the cloud backup before replacing it.',
+                'Lokale voortgang teruggezet. Vergelijk de cloudback-up voordat je die vervangt.')
+            : socialMessage(
+                strings, online.errorCode ?? 'cloud_save_failed'))));
+  }
+
+  String _recoverySummary(AppStrings strings, Map<String, dynamic> state) {
+    final pet = state['pet'] as Map? ?? {};
+    return strings.pick(
+      '${pet['coins'] ?? 0} coins · ${pet['gems'] ?? 0} gems · ${state['totalAdventuresCompleted'] ?? 0} adventures',
+      '${pet['coins'] ?? 0} munten · ${pet['gems'] ?? 0} edelstenen · ${state['totalAdventuresCompleted'] ?? 0} avonturen',
+    );
   }
 
   Future<void> _editName(BuildContext context, String current) async {

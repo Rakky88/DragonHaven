@@ -5,26 +5,28 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final migration = File(
     'supabase/migrations/202609050037_economy_authority_foundation.sql',
-  ).readAsStringSync();
+  ).readAsStringSync().replaceAll('\r\n', '\n');
   final timestampFix = File(
     'supabase/migrations/202609050038_economy_rate_limit_timestamp_fix.sql',
-  ).readAsStringSync();
+  ).readAsStringSync().replaceAll('\r\n', '\n');
   final vanityPurchase = File(
     'supabase/migrations/202609050039_dormant_vanity_chest_purchase.sql',
-  ).readAsStringSync();
-  final contract = File('SERVER_AUTHORITATIVE_ECONOMY.md').readAsStringSync();
+  ).readAsStringSync().replaceAll('\r\n', '\n');
+  final contract = File('SERVER_AUTHORITATIVE_ECONOMY.md')
+      .readAsStringSync()
+      .replaceAll('\r\n', '\n');
   final stagingWorkflow = File(
     '.github/workflows/staging-economy-foundation.yml',
-  ).readAsStringSync();
+  ).readAsStringSync().replaceAll('\r\n', '\n');
   final stagingE2e = File(
     'tool/staging_economy_foundation_e2e.ps1',
-  ).readAsStringSync();
+  ).readAsStringSync().replaceAll('\r\n', '\n');
   final contractDrillWorkflow = File(
     '.github/workflows/staging-economy-contract-drill.yml',
-  ).readAsStringSync();
+  ).readAsStringSync().replaceAll('\r\n', '\n');
   final vanityWorkflow = File(
     '.github/workflows/staging-vanity-chest-purchase.yml',
-  ).readAsStringSync();
+  ).readAsStringSync().replaceAll('\r\n', '\n');
 
   test('migration 37 is dormant and preserves all existing economy tables', () {
     expect(

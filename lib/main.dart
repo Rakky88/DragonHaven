@@ -108,11 +108,17 @@ Future<void> main() async {
       ..refreshEggAltar = altar.refresh;
   }
   FirebasePushCoordinator? push;
-  final online = OnlineAccountProvider(
+  late final OnlineAccountProvider online;
+  online = OnlineAccountProvider(
     repository: socialRepository,
     inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
     profileSnapshot: () => OnlineProfileSnapshot.fromGame(game),
     synchronizeEggAltar: game.refreshEggAltar,
+    synchronizeKnownDiscoveries: (profile) async {
+      if (socialRepository.currentUserId != profile.userId) return;
+      await game.mergeKnownDiscoveries(
+          profile.discoveredForms, profile.prismaticForms);
+    },
     synchronizeGroupReservations: game.synchronizeOnlineGroupReservations,
     applyGroupReward: (reward) => game.applyOnlineGroupReward(
       lobbyId: reward.lobbyId,
@@ -161,7 +167,19 @@ Future<void> main() async {
       simulated: reward.simulated,
     ),
     gameStateSnapshot: () => GameTimeBridge.forUpload(game.exportState()),
-    applyCloudState: game.restoreCloudState,
+    applyCloudState: (state) {
+      final owner = socialRepository.currentUserId;
+      final epoch = online.restoreSessionEpoch;
+      return game.restoreCloudState(
+        state,
+        recoveryOwner: owner,
+        canApplyRestore: () =>
+            online.cloudRestoreStillAllowed &&
+            socialRepository.isSignedIn &&
+            socialRepository.currentUserId == owner &&
+            online.restoreSessionEpoch == epoch,
+      );
+    },
     deviceId: StorageService.deviceId,
     clientVersion: AppInfo.version,
     loadCloudBaseRevision: StorageService.loadCloudBaseRevision,

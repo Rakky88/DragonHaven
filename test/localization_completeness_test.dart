@@ -60,6 +60,8 @@ void main() {
 
   test('variable UI phrases preserve values in every language', () {
     const samples = [
+      '12345 coins · 100 gems · 519 adventures',
+      'Replace this device with revision 4 from 2026-09-10? This backup may be older than your local progress.\n\nOn this device: 12345 coins · 100 gems · 519 adventures\nCloud backup: 123 coins · 10 gems · 100 adventures\n\nA separate recovery copy is saved first. You can undo this in Account Info.',
       '17 items · 8 of 20 rooms built',
       'Moon fern already has a place in the house.',
       'Moon fern is now in Moon garden.',

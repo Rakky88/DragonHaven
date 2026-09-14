@@ -1,3 +1,4 @@
+import 'cloud_restore_phrase_translations.dart';
 import 'event_points_phrase_translations.dart';
 import 'school_authority_phrase_translations.dart';
 import 'summer_phrase_translations.dart';
@@ -43,9 +44,12 @@ String? translatedUiPhrase(String english, String languageCode) {
       eventTrainingPhraseTranslations[english] ??
       economyEquipmentPhraseTranslations[english] ??
       lifecyclePhraseTranslations[english] ??
+      cloudRestorePhraseTranslations[english] ??
       tradePhraseTranslations[english] ??
       eggAltarPhraseTranslations[english];
   if (index == null) return null;
+  final restore = translatedCloudRestorePhrase(english, index);
+  if (restore != null) return restore;
   final eventPoints = translatedEventPointsPhrase(english, index);
   if (eventPoints != null) return eventPoints;
   if (values != null && values.length == 6) return values[index];

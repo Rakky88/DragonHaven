@@ -1484,7 +1484,7 @@ werkt Codex zowel deze tabel als het voortgangslog onderaan bij.
 | Fase 0 — releasepipeline en secrets | circa 95% | Zes productiesecrets, negen stagingsecrets, APK/AAB-gates, hash- en signingbewijs en openbare release v0.05.21 zijn groen; productie staat gecontroleerd op 57 migraties | Gates per release onderhouden en externe acties periodiek op runtime/security-updates controleren | Repositorytoegang periodiek controleren; originele keystore/recovery veilig dubbel bewaren en mogelijk blootgestelde ontwikkelcredentials roteren |
 | Fase 1 — monitoring en incidenten | circa 96% | Firebase Core, Crashlytics, Performance en FCM zijn ingebouwd. Echte stagingcrash/nonfatal gevonden; Performance-trace door Rick bevestigd; gesloten-app push ontvangen en inbox bleef ongelezen. Productieconfiguratie en releasegates zijn bewezen | Representatieve latency-/foutbaseline over een testperiode afronden en persoonlijke alertvoorkeuren verifiëren | Privacy-/Data Safety-verklaringen afronden; gratis projecten blijven onder eigen account zonder billing |
 | Fase 2 — staging en E2E | gedeeltelijk | Productie staat op 48 en staging op 49. Sociale, back-up-, trade-, seasonal- en dormant-economycontracten zijn getest. De herziende 100-accountbaseline is groen; de 1000-accountmeting faalt met 47,998% read-time-outs. Alle tijdelijke accounts zijn verwijderd | Time-outfase en belastingoorzaak isoleren; opnieuw 100 en daarna 1000 op het actuele schema meten. De gewone signup-mailbevestigingsflow blijft apart | Piekverbindingen, providerbelasting/egress en representatieve inventarissen ontbreken nog. Meer dan 1000 valt buiten de begrensde workflow |
-| Fase 3 — back-up en multi-device | circa 98% | Optimistische revision lock, lokale recovery copy en conflictvenster bestaan; vijf revisies/dertig dagen, automatische 15-minutenback-up plus achtergrondflush zijn gebouwd. De eerste automatisch geplande zondagrestore is groen en rondde de actieve account/back-up/restorerondgang in circa 7,3 seconden af | Later server-owned economievelden van restores afschermen en na fase 4 het terugrol-/duplicatiecontract opnieuw bewijzen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
+| Fase 3 — back-up en multi-device | circa 98% | Optimistische revision lock en conflictvenster bestaan; de eerdere claim over een aparte lokale recovery copy bij cloudrestore is op 14 september weerlegd (zie incidentcorrectie onderaan); vijf revisies/dertig dagen, automatische 15-minutenback-up plus achtergrondflush zijn gebouwd. De eerste automatisch geplande zondagrestore is groen en rondde de actieve account/back-up/restorerondgang in circa 7,3 seconden af | Later server-owned economievelden van restores afschermen en na fase 4 het terugrol-/duplicatiecontract opnieuw bewijzen | Rick controleert maandelijks het restorebewijs; alleen bij een mislukking of overschrijding van RPO/RTO is een nieuw besluit nodig |
 | Fase 4 — server-authoritative economie | gedeeltelijk | Schema 57, gedeelde regels, importvoorbereiding, private eifeiten, duurzame receipt-/snapshotopslag en beschadigd-journalherstel zijn op staging bewezen. De gewone shop en kistweergave zijn lokaal aan de serversessie gekoppeld | De schermkoppeling op staging bewijzen; volledige gameplay, gevalideerde Trials, sociale afwikkeling en migratie/herstel afronden | Vóór live omschakeling migratievenster, spelerscommunicatie en compensatie-/storingsbeleid bevestigen |
 | Fase 5 — Google Play Billing | circa 8%, bewust uitgesteld | Product-ID-contract voor valuta en het eenmalige Supporter Pack, idempotente lokale entitlementgrens en uitgeschakelde nepimplementatie houden de architectuur upgradebaar zonder nu kosten te maken | Pas na fase 4 de Billing-SDK, servervalidatie, acknowledgement, refunds/retries en Play-tracktests bouwen | Pas later beslissen wanneer verkoop actief mag worden; merchantprofiel, producten/prijzen/landen, service-identiteit, testers en beleid beheren |
 | Fase 6 — support en privacy | circa 68% | Accountverwijdering, veilige supportdiagnostiek en incidentrunbook bestaan. Migratie 33 met service-role-only supportlookup, 30-dagen-inzagelog zonder namen/e-mail/save en dagelijkse fysieke importback-upcleanup is na volledige staging-E2E begrensd op productie toegepast. De testsupportworkflow bewees clientweigering, minimale response, inzagelog/retentie en cleanup | De operationele koppeling van een aangeleverde privacyarme correlation ID aan dezelfde supportcasus oefenen. Na beleid akkoord notification-/Chronicle-retentie migreren en verwijder-E2E uitbreiden | Publiek supportadres, verantwoordelijken/reactietijden, privacy- en verwijderpagina en productietoegang beheren; termijnen voor sociale notificaties en Conclave Chronicle kiezen |
@@ -2895,3 +2895,30 @@ fixture's two-second filesystem wait under parallel sprite load, followed by a
 locked temporary directory during early teardown. Its wait now matches the
 transport's bounded ten-second deadline; all four focused shop tests pass.
 The staging workflow reruns the entire suite sequentially before deployment.
+
+
+## 2026-09-14 — accidental cloud rollback correction (v0.05.37)
+
+Correction to the earlier phase-3 assessment: the released restore dialog
+promised a recovery copy that the actual restore path did not persist. Only a
+rolling autosave backup existed. Treat device restore recoverability as an
+production defect addressed by the v0.05.37 checkpoint and comparison changes.
+
+The isolated `fix/cloud-restore-recovery` branch starts from v0.05.36, without
+unreleased server-economy changes. It adds durable pre-restore checkpoints,
+owner/session guards, revision comparison and explicit recovery with a
+persistent cloud-upload hold. Valentine invitation failures cannot directly
+launch a restore. Surviving legacy device slots are captured before startup
+rotation, without assuming their account ownership. Production account data
+has not been changed directly. Full recovery of the reported missing progress
+remains unresolved: retained server and device saves did not contain the
+pre-restore snapshot. Exact server-retained discoveries were reconciled and
+verified in the device save, without inventing currency or dragon ownership.
+Private evidence is stored locally with Windows DPAPI encryption, outside Git.
+No player identifiers or snapshots belong in this public audit.
+
+Validation: Flutter analysis is clean; focused recovery/version/widget tests
+pass. Compact restore comparison was exercised on an Android emulator. The
+signed non-debuggable APK is v0.05.37/build 10087 and retains the previous
+release's 1,218 assets unchanged. Production preflight confirms 83 matching
+migrations, zero database lint errors and three healthy HTTP endpoints.
