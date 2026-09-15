@@ -285,6 +285,34 @@ class OnlineAccountProvider extends ChangeNotifier {
   bool get currentGroupOfferConsumed =>
       groupAdventureStatus?.alreadyCompleted == true ||
       groupLobbies.any((lobby) => lobby.isCurrentOffer && lobby.isParticipant);
+
+  /// Account-level eligibility before asking the keeper to select a dragon.
+  /// The server still validates the eventual join/create transaction.
+  String? groupEntryIssue(String adventureId, {String? lobbyId}) {
+    final offer = groupAdventureStatus;
+    if (offer == null || offer.adventureId != adventureId) {
+      return 'group_lobby_closed';
+    }
+    if (offer.alreadyCompleted) return 'group_adventure_already_completed';
+    for (final lobby in groupLobbies) {
+      if (lobby.slot != offer.slot || !lobby.isParticipant) continue;
+      if (lobby.isRewardReady) return 'group_adventure_already_completed';
+      return lobby.isRunning
+          ? 'group_already_running'
+          : 'group_already_waiting';
+    }
+    if (lobbyId != null) {
+      final lobby = groupLobbies.where((l) => l.id == lobbyId).firstOrNull;
+      if (lobby == null || !lobby.isWaiting || lobby.slot != offer.slot) {
+        return 'group_lobby_closed';
+      }
+      if (lobby.participants.length >= lobby.requiredPlayers) {
+        return 'group_lobby_full';
+      }
+    }
+    return null;
+  }
+
   List<TradeOffer> tradesWith(String userId) => trades
       .where((trade) => trade.otherKeeper.userId == userId && trade.isActive)
       .toList(growable: false);

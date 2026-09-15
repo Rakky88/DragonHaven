@@ -1509,6 +1509,43 @@ void main() {
     online.dispose();
   });
 
+  test(
+      'group entry distinguishes waiting, running and completed membership per slot',
+      () async {
+    final game = HouseholdProvider(persistenceEnabled: false);
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    final online = OnlineAccountProvider(
+        repository: repository,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
+    await online.initialize();
+    for (final (status, expected) in [
+      ('waiting', 'group_already_waiting'),
+      ('running', 'group_already_running'),
+      ('completed', 'group_adventure_already_completed'),
+    ]) {
+      online.groupLobbies = [
+        GroupAdventureLobby.fromJson({
+          'lobby_id': 'existing',
+          'slot': 1,
+          'adventure_id': 'group_1',
+          'status': status,
+          'is_participant': true,
+        })
+      ];
+      expect(online.groupEntryIssue('group_1'), expected);
+      expect(
+          online.groupEntryIssue('group_1', lobbyId: 'invitation'), expected);
+    }
+    online.groupAdventureStatus = const GroupAdventureStatus(
+        slot: 2, adventureId: 'group_1', alreadyCompleted: false);
+    expect(online.groupEntryIssue('group_1'), isNull,
+        reason: 'previous weeks must not block the new offer');
+    expect(online.groupEntryIssue('group_1', lobbyId: 'expired'),
+        'group_lobby_closed');
+    online.dispose();
+    game.dispose();
+  });
+
   testWidgets(
       'Group Adventure card follows the global server offer and hides after completion',
       (tester) async {
@@ -1556,9 +1593,11 @@ void main() {
       adventureId: 'group_120',
       alreadyCompleted: true,
     );
-    await online.refresh();
-    await tester.pump();
+    await tester.tap(offer);
+    await tester.pumpAndSettle();
     expect(offer, findsNothing);
+    expect(find.text("You have already completed this week's Group Adventure."),
+        findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     online.dispose();
@@ -2441,6 +2480,84 @@ void main() {
     online.dispose();
   });
 
+  testWidgets('trade reveal waits for settlement and sheet dismissal',
+      (tester) async {
+    final game = HouseholdProvider(persistenceEnabled: false)
+      ..accountName = 'Keeper'
+      ..onboardingComplete = true
+      ..tutorialCompleted = true;
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Ember';
+    final repo = _FakeSocialRepository(inventoryImported: true);
+    final trade =
+        _testTrade(status: 'awaiting_initiator', updatedAt: DateTime.now());
+    repo.tradeRows.add(trade);
+    final settled = Completer<void>();
+    repo.onCompleteTrade = () async {
+      game.pendingPresentations.add(GamePresentation(
+          id: 'settled-trade',
+          type: GamePresentationType.trade,
+          createdAt: DateTime.now(),
+          sortAt: DateTime.now(),
+          payload: const {
+            'sentKind': 'chest',
+            'sentKey': 'gold',
+            'sentData': <String, dynamic>{},
+            'receivedKind': 'relic',
+            'receivedKey': 'moralPrism',
+            'receivedData': <String, dynamic>{},
+          }));
+      await game.updateAccountName('Keeper');
+      await settled.future;
+    };
+    final online = OnlineAccountProvider(
+        repository: repo,
+        inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
+    await online.initialize();
+    await tester.pumpWidget(MultiProvider(providers: [
+      ChangeNotifierProvider.value(value: game),
+      ChangeNotifierProvider.value(value: online),
+    ], child: const DragonHavenApp()));
+    await tester.pump(const Duration(milliseconds: 450));
+    await tester.tap(find.text('Friends').last);
+    await tester.pump(const Duration(milliseconds: 350));
+    final open = find.byKey(const Key('friend-trade-friend-user'));
+    await tester.ensureVisible(open);
+    await tester.tap(open);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(game.presentationsDeferred, isTrue);
+    final complete = find.byKey(const Key('complete-trade-button'));
+    await tester.ensureVisible(complete);
+    await tester.tap(complete);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.tap(find.byKey(const Key('confirm-complete-trade')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(find.byKey(const Key('trade-complete-reveal')), findsNothing);
+    expect(
+        game.pendingPresentations.any((p) => p.id == 'settled-trade'), isTrue);
+    settled.complete();
+    await tester.pump();
+    for (var i = 0; i < 12; i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)));
+      await tester.pump(const Duration(milliseconds: 250));
+    }
+    expect(find.byKey(Key('trade-detail-${trade.id}')), findsNothing);
+    expect(find.byKey(const Key('trade-complete-reveal')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('trade-reveal-continue')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(
+        game.pendingPresentations.any((p) => p.id == 'settled-trade'), isFalse);
+    await tester.pumpWidget(const SizedBox());
+    online.dispose();
+    game.dispose();
+  });
+
   testWidgets(
       'friend profile shows favorite dragon and removal requires confirmation',
       (tester) async {
@@ -3070,6 +3187,11 @@ void main() {
     expect(await saving, true);
     expect(await preparing, true);
     expect(repository.cloudSave?.revision, 2);
+    // A new invitation must also preserve a fresh checkpoint when gameplay
+    // has not changed since the previous synchronization.
+    expect(await online.prepareEventPartnerSync(), true);
+    expect(repository.cloudSave?.revision, 3);
+    expect(repository.cloudSave?.state, game.exportState());
     online.dispose();
     game.dispose();
   });
@@ -3371,6 +3493,7 @@ class _FakeSocialRepository implements SocialRepository {
   String? resentConfirmationEmail;
   GroupAdventureReward? groupReward;
   String? createGroupError;
+  Future<void> Function()? onCompleteTrade;
   bool signedIn = true;
   CloudGameSave? cloudSave;
   ConclaveSnapshot? conclaveSnapshot;
@@ -3786,7 +3909,10 @@ class _FakeSocialRepository implements SocialRepository {
   @override
   Future<void> respondToTrade(String tradeId, TradeItem item) async {}
   @override
-  Future<void> completeTrade(String tradeId) async {}
+  Future<void> completeTrade(String tradeId) async {
+    await onCompleteTrade?.call();
+  }
+
   @override
   Future<void> cancelTrade(String tradeId) async {}
   @override

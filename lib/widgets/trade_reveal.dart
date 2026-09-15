@@ -32,33 +32,47 @@ Future<void> showCanonicalTradeReveal(BuildContext context,
         guard: guard);
 
 Future<void> _showTradeReveal(BuildContext context,
-        {required _RevealItem sent,
-        required _RevealItem received,
-        HouseholdProvider? game,
-        Widget Function(Widget)? guard}) =>
-    showGeneralDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: AppColors.eventColor(context, const Color(0xE8110923)),
-      transitionDuration: const Duration(milliseconds: 650),
-      transitionBuilder: (_, animation, __, child) => FadeTransition(
-        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-        child: ScaleTransition(
-          scale: Tween(begin: .72, end: 1.0).animate(
-            CurvedAnimation(parent: animation, curve: Curves.elasticOut),
-          ),
-          child: child,
+    {required _RevealItem sent,
+    required _RevealItem received,
+    HouseholdProvider? game,
+    Widget Function(Widget)? guard}) async {
+  // Decode cold-cache item art before starting its entrance animation.
+  await Future.wait([
+    for (final item in [sent, received])
+      if (item.kind == 'chest' || item.kind == 'relic')
+        precacheImage(
+            AssetImage(item.kind == 'chest'
+                ? (item.chest ?? ChestTier.wooden).assetPath
+                : (item.relic ?? MysticRelic.moralPrism).assetPath),
+            context),
+  ]);
+  if (!context.mounted) return;
+  await showGeneralDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: AppColors.eventColor(context, const Color(0xE8110923)),
+    transitionDuration: MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 650),
+    transitionBuilder: (_, animation, __, child) => FadeTransition(
+      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+      child: ScaleTransition(
+        scale: Tween(begin: .72, end: 1.0).animate(
+          CurvedAnimation(parent: animation, curve: Curves.elasticOut),
         ),
+        child: child,
       ),
-      pageBuilder: (dialogContext, _, __) {
-        final child = _TradeReveal(
-            game: game,
-            sent: sent,
-            received: received,
-            onContinue: () => Navigator.pop(dialogContext));
-        return guard?.call(child) ?? child;
-      },
-    );
+    ),
+    pageBuilder: (dialogContext, _, __) {
+      final child = _TradeReveal(
+          game: game,
+          sent: sent,
+          received: received,
+          onContinue: () => Navigator.pop(dialogContext));
+      return guard?.call(child) ?? child;
+    },
+  );
+}
 
 class _TradeReveal extends StatefulWidget {
   const _TradeReveal({
@@ -86,7 +100,18 @@ class _TradeRevealState extends State<_TradeReveal>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1700),
-    )..repeat(reverse: true);
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.stop();
+      _controller.value = 1;
+    } else {
+      _controller.forward();
+    }
   }
 
   @override
@@ -163,11 +188,13 @@ class _TradeRevealState extends State<_TradeReveal>
                     Row(
                       children: [
                         Expanded(
-                          child: _TradeItemCard(
-                            eyebrow: strings.pick('YOU SENT', 'JIJ GAF'),
-                            item: sent,
-                            game: widget.game,
-                          ),
+                          child: _arrive(
+                              _TradeItemCard(
+                                eyebrow: strings.pick('YOU SENT', 'JIJ GAF'),
+                                item: sent,
+                                game: widget.game,
+                              ),
+                              incoming: false),
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -188,12 +215,15 @@ class _TradeRevealState extends State<_TradeReveal>
                           ),
                         ),
                         Expanded(
-                          child: _TradeItemCard(
-                            eyebrow: strings.pick('YOU RECEIVED', 'JIJ KREEG'),
-                            item: received,
-                            game: widget.game,
-                            received: true,
-                          ),
+                          child: _arrive(
+                              _TradeItemCard(
+                                eyebrow:
+                                    strings.pick('YOU RECEIVED', 'JIJ KREEG'),
+                                item: received,
+                                game: widget.game,
+                                received: true,
+                              ),
+                              incoming: true),
                         ),
                       ],
                     ),
@@ -216,6 +246,19 @@ class _TradeRevealState extends State<_TradeReveal>
       ),
     );
   }
+
+  Widget _arrive(Widget child, {required bool incoming}) => AnimatedBuilder(
+      animation: _controller,
+      child: child,
+      builder: (_, child) {
+        final t = Curves.easeOutCubic.transform(
+            ((_controller.value - (incoming ? .18 : 0)) / .65).clamp(0.0, 1.0));
+        return Opacity(
+            opacity: t,
+            child: Transform.translate(
+                offset: Offset((incoming ? 44 : -44) * (1 - t), 0),
+                child: child));
+      });
 }
 
 class _TradeItemCard extends StatelessWidget {

@@ -21,6 +21,7 @@ class _EventProgressBarState extends State<EventProgressBar>
     with SingleTickerProviderStateMixin {
   final _destination = GlobalKey();
   late int _points;
+  late bool _wasComplete;
   late final AnimationController _glimmer =
       AnimationController(vsync: this, duration: const Duration(seconds: 5));
   @override
@@ -37,6 +38,7 @@ class _EventProgressBarState extends State<EventProgressBar>
   void initState() {
     super.initState();
     _points = widget.progress.points;
+    _wasComplete = widget.progress.complete || widget.progress.claimed;
     EventPointFlight.attach();
     EventPointFlight.trialRewards.addListener(_trialReward);
   }
@@ -44,7 +46,12 @@ class _EventProgressBarState extends State<EventProgressBar>
   void _trialReward() {
     final points =
         EventPointFlight.trialRewards.value[widget.progress.key] ?? 0;
-    if (points <= 0 || !mounted) return;
+    if (points <= 0 ||
+        !mounted ||
+        widget.progress.claimed ||
+        widget.progress.total - points >= widget.progress.target) {
+      return;
+    }
     EventPointFlight.show(
         context,
         _destination,
@@ -57,8 +64,13 @@ class _EventProgressBarState extends State<EventProgressBar>
   void didUpdateWidget(covariant EventProgressBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     final delta = widget.progress.points - _points;
+    final alreadyComplete = _wasComplete;
     _points = widget.progress.points;
-    if (oldWidget.progress.key == widget.progress.key && delta > 0) {
+    _wasComplete = widget.progress.complete || widget.progress.claimed;
+    if (oldWidget.progress.key == widget.progress.key &&
+        delta > 0 &&
+        !alreadyComplete &&
+        !widget.progress.claimed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         EventPointFlight.show(

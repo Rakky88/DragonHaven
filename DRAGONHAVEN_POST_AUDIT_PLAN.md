@@ -2922,3 +2922,28 @@ pass. Compact restore comparison was exercised on an Android emulator. The
 signed non-debuggable APK is v0.05.37/build 10087 and retains the previous
 release's 1,218 assets unchanged. Production preflight confirms 83 matching
 migrations, zero database lint errors and three healthy HTTP endpoints.
+
+
+## v0.05.38 — social and event feedback
+
+Group entry checks fresh account status before the dragon picker, including
+stale invitations and offers. Waiting, running and completed membership have
+distinct explanations; the server still revalidates the final transaction.
+Trade presentations are deferred through sheet dismissal, preventing the sheet's
+pop from dismissing the reveal. Motion is finite and supports reduced motion.
+Full/claimed event meters suppress further flights, including shared partner
+totals; the contribution reaching the target remains visible. Reward accounting
+is unchanged. No server schema or authority rollout accompanies this UI release.
+Account-bound startup and migration integration remain a separate follow-up.
+
+Valentine invitations require a fresh successful cloud checkpoint, bypassing
+the background-sync cache. Save conflicts still block the invitation without
+automatically restoring an older save or overwriting a conflicting cloud copy.
+
+Validation: clean Flutter analysis and 94 passing focused social, event,
+trade, canonical Trial and documentation tests. The broader suite reached
+965 passes and one optional skip; its single Trial startup timing failure was
+resolved with a bounded 15-second initialization wait and all four Trial tests
+then passed. Trade artwork and reduced motion were exercised on a compact
+Android emulator. Production preflight confirms 83 matching migrations, no
+database lint errors and healthy Auth/application endpoints.

@@ -86,6 +86,7 @@ class _AdventureHubScreenState extends State<AdventureHubScreen>
       EventPartnerControl(
           key: ValueKey('partner-${progress.key}'),
           eventKey: progress.key,
+          beforeInvite: online.prepareEventPartnerSync,
           showControls: game.activeSpecialAdventureWindows
               .any((window) => window.key == progress.key),
           beforeSync: () async {
@@ -841,7 +842,8 @@ Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
   }
   if (!context.mounted) return;
   final eventPointsBefore = {
-    for (final p in game.activeEventProgress) p.key: p.points
+    for (final p in game.activeEventProgress)
+      if (!p.complete && !p.claimed) p.key: p.points
   };
   TrialCompletion? completion;
   game.beginPresentationDeferral();
@@ -1845,6 +1847,9 @@ Future<void> _createGroupLobby(
   BuildContext context,
   AdventureDefinition adventure,
 ) async {
+  if (!await _checkGroupEntry(context, adventure.id) || !context.mounted) {
+    return;
+  }
   final dragon = await _pickGroupDragon(context, adventure);
   if (dragon == null || !context.mounted) return;
   final online = context.read<OnlineAccountProvider>();
@@ -1863,6 +1868,10 @@ Future<void> _joinGroupLobby(
 ) async {
   final adventure = AdventureCatalog.byId[lobby.adventureId];
   if (adventure == null) return;
+  if (!await _checkGroupEntry(context, adventure.id, lobbyId: lobby.id) ||
+      !context.mounted) {
+    return;
+  }
   final dragon = await _pickGroupDragon(context, adventure);
   if (dragon == null || !context.mounted) return;
   final online = context.read<OnlineAccountProvider>();
@@ -1875,10 +1884,33 @@ Future<void> _joinGroupLobby(
   _showOnlineAdventureMessage(context, online);
 }
 
-void _showAdventureDetailsForGroup(
+Future<bool> _checkGroupEntry(BuildContext context, String adventureId,
+    {String? lobbyId}) async {
+  final online = context.read<OnlineAccountProvider>();
+  final owner = online.currentUserId;
+  final epoch = online.restoreSessionEpoch;
+  final refreshed = await online.refresh();
+  if (!context.mounted ||
+      owner != online.currentUserId ||
+      epoch != online.restoreSessionEpoch) {
+    return false;
+  }
+  final issue = refreshed
+      ? online.groupEntryIssue(adventureId, lobbyId: lobbyId)
+      : (online.errorCode ?? 'online_timeout');
+  if (issue == null) return true;
+  ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(socialMessage(AppStrings.of(context), issue))));
+  return false;
+}
+
+Future<void> _showAdventureDetailsForGroup(
   BuildContext context,
   AdventureDefinition adventure,
-) {
+) async {
+  if (!await _checkGroupEntry(context, adventure.id) || !context.mounted) {
+    return;
+  }
   final strings = AppStrings.of(context);
   showModalBottomSheet<void>(
     context: context,
@@ -3336,6 +3368,12 @@ Future<void> _showGroupLobbyDetails(
   BuildContext context,
   GroupAdventureLobby originalLobby,
 ) async {
+  if (!originalLobby.isParticipant &&
+      (!await _checkGroupEntry(context, originalLobby.adventureId,
+              lobbyId: originalLobby.id) ||
+          !context.mounted)) {
+    return;
+  }
   final rootContext = context;
   final strings = AppStrings.of(context);
   await showModalBottomSheet<void>(

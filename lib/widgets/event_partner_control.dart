@@ -51,11 +51,13 @@ class EventPartnerControl extends StatefulWidget {
       {super.key,
       required this.eventKey,
       required this.beforeSync,
+      this.beforeInvite,
       required this.applyShared,
       this.showControls = true});
   final String eventKey;
   final bool showControls;
   final Future<bool> Function() beforeSync;
+  final Future<bool> Function()? beforeInvite;
   final Future<void> Function(Map<String, dynamic>, String) applyShared;
   @override
   State<EventPartnerControl> createState() => _EventPartnerControlState();
@@ -108,7 +110,9 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
       }
       if (action != 'cancel' &&
           action != 'decline' &&
-          !await widget.beforeSync()) {
+          !await (action == 'invite'
+              ? (widget.beforeInvite ?? widget.beforeSync)()
+              : widget.beforeSync())) {
         if (action == 'list') return;
         throw StateError('sync');
       }
