@@ -1205,3 +1205,13 @@ to find a lazily built button before scrolling. The harness now scrolls until
 the button exists; both comparison tests pass without custom fonts as on CI.
 The run stopped before any SQL/server fixture step and changed no server state.
 The updated real handoff rehearsal is still pending.
+
+Staging run 34936735808 on 3430512 succeeded. All 168 selected tests passed.
+The actual network probe confirms explicit account source selection, final
+upload recovery, one replayable activation, authority-first bootstrap/resume,
+server social read/write fencing and one purchase after lost replies. The
+separate SQL contract confirms source/Altar/social fences, old-writer refusal
+and shadow isolation with rollback. No migrations were applied. Cleanup
+removed all synthetic accounts/commands and disabled all five staging switches.
+This closes the updated handoff rehearsal gate; it does not claim completion
+of signed-out/offline compatibility, all production gameplay routes or rollout.
