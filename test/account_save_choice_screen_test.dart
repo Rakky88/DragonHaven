@@ -114,7 +114,8 @@ void main() {
             .writeAsBytes(bytes!.buffer.asUint8List()));
         image!.dispose();
       }
-      await tester.ensureVisible(find.byKey(const Key('choose-cloud-save')));
+      await tester.scrollUntilVisible(find.byKey(const Key('choose-cloud-save')),
+          200, scrollable: find.byType(Scrollable).first);
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('choose-cloud-save')));
       await tester.pumpAndSettle();

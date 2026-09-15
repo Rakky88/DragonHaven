@@ -1198,3 +1198,10 @@ release. Remaining release gates include signed-out/offline entry compatibility,
 complete production gameplay navigation, the updated actual staging rehearsal,
 production checks and a controlled authority rollout. Pending migration 84 and
 the worker/authority switches have not been deployed or enabled by this change.
+
+Staging run 34936527332 on 28abb49 passed 167 tests, including the actual
+normal root and account-scoped opening, but its narrow comparison test tried
+to find a lazily built button before scrolling. The harness now scrolls until
+the button exists; both comparison tests pass without custom fonts as on CI.
+The run stopped before any SQL/server fixture step and changed no server state.
+The updated real handoff rehearsal is still pending.
