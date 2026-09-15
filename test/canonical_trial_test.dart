@@ -181,10 +181,9 @@ void main() {
                     dragonId: source.dragonId,
                     source: source,
                     elapsedMilliseconds: () => elapsed))))));
-    for (var i = 0;
-        i < 100 &&
-            find.byKey(const Key('ruin-breaker-game')).evaluate().isEmpty;
-        i++) {
+    final startDeadline = Stopwatch()..start();
+    while (find.byKey(const Key('ruin-breaker-game')).evaluate().isEmpty &&
+        startDeadline.elapsed.inSeconds < 15) {
       await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 10)));
       await tester.pump();

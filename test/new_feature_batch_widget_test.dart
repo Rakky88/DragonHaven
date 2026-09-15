@@ -104,10 +104,7 @@ void main() {
     game.pet
       ..stage = DragonStage.hatchling
       ..firstEgg = false;
-    final online = OnlineAccountProvider(
-      repository: const _SignedInSocialRepository(),
-      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
-    );
+    final OnlineAccountProvider online = _OfferPreviewOnline(game);
     addTearDown(game.dispose);
     addTearDown(online.dispose);
     await tester.pumpWidget(MultiProvider(
@@ -750,6 +747,20 @@ void main() {
     expect(game.selectedBadgeId, supporterBadge.id);
     expect(tester.takeException(), isNull);
   });
+}
+
+class _OfferPreviewOnline extends OnlineAccountProvider {
+  _OfferPreviewOnline(HouseholdProvider game)
+      : super(
+            repository: const _SignedInSocialRepository(),
+            inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game)) {
+    groupAdventureStatus = GroupAdventureStatus(
+        slot: 1,
+        adventureId: game.adventuresFor(AdventureKind.group).first.id,
+        alreadyCompleted: false);
+  }
+  @override
+  Future<bool> refresh() async => true;
 }
 
 class _SignedInSocialRepository implements SocialRepository {

@@ -1,3 +1,4 @@
+import 'cloud_restore_phrase_translations.dart';
 import 'event_points_phrase_translations.dart';
 import 'school_authority_phrase_translations.dart';
 import 'summer_phrase_translations.dart';
@@ -43,9 +44,12 @@ String? translatedUiPhrase(String english, String languageCode) {
       eventTrainingPhraseTranslations[english] ??
       economyEquipmentPhraseTranslations[english] ??
       lifecyclePhraseTranslations[english] ??
+      cloudRestorePhraseTranslations[english] ??
       tradePhraseTranslations[english] ??
       eggAltarPhraseTranslations[english];
   if (index == null) return null;
+  final restore = translatedCloudRestorePhrase(english, index);
+  if (restore != null) return restore;
   final eventPoints = translatedEventPointsPhrase(english, index);
   if (eventPoints != null) return eventPoints;
   if (values != null && values.length == 6) return values[index];
@@ -584,6 +588,22 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
 }
 
 const uiPhraseTranslations = <String, List<String>>{
+  'You are already in a group waiting to start this adventure.': [
+    'Du bist bereits in einer Gruppe, die auf den Start dieses Abenteuers wartet.',
+    'Ya estás en un grupo esperando para iniciar esta aventura.',
+    'Tu es déjà dans un groupe qui attend de commencer cette aventure.',
+    'Sei già in un gruppo in attesa di iniziare questa avventura.',
+    'Você já está em um grupo aguardando o início desta aventura.',
+    'この冒険の開始を待っているグループにすでに参加しています。',
+  ],
+  'You already have this Group Adventure running.': [
+    'Dieses Gruppenabenteuer läuft bereits für dich.',
+    'Ya tienes esta aventura de grupo en curso.',
+    'Cette aventure de groupe est déjà en cours pour toi.',
+    'Hai già questa avventura di gruppo in corso.',
+    'Esta aventura em grupo já está em andamento para você.',
+    'このグループ冒険にはすでに参加中です。',
+  ],
   ...notificationPhraseTranslations,
   ...releasePhraseTranslations,
   'Start trade': [

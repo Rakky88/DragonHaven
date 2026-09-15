@@ -212,7 +212,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 7df907a40508a3e0 -->
+<!-- reference-source-fingerprint: e64be68f9605d15a -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -1247,3 +1247,27 @@ explicit staging rehearsal until full migration/cutover. Existing event
 schedules, expertise bonuses, reward tables, drop weights and preview rules
 are unchanged. Old authenticated lifecycle/ack RPCs remain available only for
 legacy accounts; promoted accounts must use canonical commands.
+
+
+### Cloud-restore safety correction (v0.05.37)
+
+The restore path now preserves an account-labelled local checkpoint before
+replacing device progress. Event invitation errors no longer offer a direct
+cloud restore. This changes neither event schedules/targets nor reward tables,
+probabilities, chest contents, egg generation or Altar ownership rules.
+
+The correction also merges exact server-retained Draconomicon form keys back
+into local discovery sets. This creates no dragons and grants no currency.
+
+
+### Social and event presentation correction (v0.05.38)
+
+Event point flights stop after the shared progress meter is full or its prize
+has been claimed. The final contribution that fills the meter still animates.
+This applies to Adventure claims and eligible Trial results, including partner
+points. Credited points, reward thresholds, dates and prize contents are unchanged.
+Group entry refreshes account eligibility before dragon selection and reports
+completed, waiting or running membership. The server remains the final authority.
+Trade completion reveals wait for the trade sheet to close and respect reduced
+motion. Trade contents, settlement, reward odds and duplicate protection do not
+change.

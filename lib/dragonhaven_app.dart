@@ -568,6 +568,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     _presentationBusy = true;
     try {
       while (mounted) {
+        if (_game.presentationsDeferred) break;
         final presentation = _game.nextPresentation;
         if (presentation == null) break;
         if (!mounted) break;

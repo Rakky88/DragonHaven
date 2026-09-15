@@ -357,7 +357,8 @@ Future<void> _withEventPointReturn(
   final epoch = session.connection.sessionEpoch;
   final owner = session.snapshot?.ownerId;
   final before = {
-    for (final p in session.snapshot!.adventures.eventProgress) p.key: p.points
+    for (final p in session.snapshot!.adventures.eventProgress)
+      if (!p.complete && !p.claimed) p.key: p.points
   };
   final completion = await play();
   await Future<void>.delayed(const Duration(milliseconds: 350));

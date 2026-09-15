@@ -1154,149 +1154,160 @@ Future<TradeItem?> _pickTradeItem(BuildContext context) async {
 Future<void> _showTrade(BuildContext context, TradeOffer trade) async {
   final strings = AppStrings.of(context);
   final online = context.read<OnlineAccountProvider>();
-  await showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    builder: (sheetContext) => SafeArea(
-      child: FractionallySizedBox(
-        heightFactor: .82,
-        child: ListView(
-          key: Key('trade-detail-${trade.id}'),
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
-          children: [
-            const Center(
-              child: GameIconSprite(GameIconKind.friendsTrade, size: 76),
-            ),
-            Text(
-              strings.pick('Trade with ${trade.otherKeeper.displayName}',
-                  'Ruil met ${trade.otherKeeper.displayName}'),
-              textAlign: TextAlign.center,
-              style: Theme.of(sheetContext).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              _tradeStatusLabel(strings, trade),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: AppColors.eventColor(context, AppColors.twilight),
-                  fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 18),
-            _TradeOfferItemCard(
-              title: trade.amInitiator
-                  ? strings.pick('You offer', 'Jij biedt aan')
-                  : strings.pick('${trade.otherKeeper.displayName} offers',
-                      '${trade.otherKeeper.displayName} biedt aan'),
-              item: trade.initiatorItem,
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Icon(Icons.swap_vert_rounded,
-                  size: 34,
-                  color: AppColors.eventColor(context, AppColors.twilight)),
-            ),
-            if (trade.recipientItem case final item?)
+  final game = context.read<HouseholdProvider>();
+  game.beginPresentationDeferral();
+  try {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: FractionallySizedBox(
+          heightFactor: .82,
+          child: ListView(
+            key: Key('trade-detail-${trade.id}'),
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+            children: [
+              const Center(
+                child: GameIconSprite(GameIconKind.friendsTrade, size: 76),
+              ),
+              Text(
+                strings.pick('Trade with ${trade.otherKeeper.displayName}',
+                    'Ruil met ${trade.otherKeeper.displayName}'),
+                textAlign: TextAlign.center,
+                style: Theme.of(sheetContext).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _tradeStatusLabel(strings, trade),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: AppColors.eventColor(context, AppColors.twilight),
+                    fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 18),
               _TradeOfferItemCard(
                 title: trade.amInitiator
-                    ? strings.pick('${trade.otherKeeper.displayName} offers',
-                        '${trade.otherKeeper.displayName} biedt aan')
-                    : strings.pick('You offer', 'Jij biedt aan'),
-                item: item,
-              )
-            else
-              Card(
-                color: AppColors.eventColor(context, const Color(0xFFF4F0FA)),
-                child: Padding(
-                  padding: const EdgeInsets.all(22),
-                  child: Text(
-                    strings.pick('Waiting for a return item.',
-                        'Wachten op een tegenaanbod.'),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.muted),
+                    ? strings.pick('You offer', 'Jij biedt aan')
+                    : strings.pick('${trade.otherKeeper.displayName} offers',
+                        '${trade.otherKeeper.displayName} biedt aan'),
+                item: trade.initiatorItem,
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Icon(Icons.swap_vert_rounded,
+                    size: 34,
+                    color: AppColors.eventColor(context, AppColors.twilight)),
+              ),
+              if (trade.recipientItem case final item?)
+                _TradeOfferItemCard(
+                  title: trade.amInitiator
+                      ? strings.pick('${trade.otherKeeper.displayName} offers',
+                          '${trade.otherKeeper.displayName} biedt aan')
+                      : strings.pick('You offer', 'Jij biedt aan'),
+                  item: item,
+                )
+              else
+                Card(
+                  color: AppColors.eventColor(context, const Color(0xFFF4F0FA)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(22),
+                    child: Text(
+                      strings.pick('Waiting for a return item.',
+                          'Wachten op een tegenaanbod.'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppColors.muted),
+                    ),
                   ),
                 ),
-              ),
-            const SizedBox(height: 20),
-            if (!trade.amInitiator && trade.status == 'awaiting_recipient')
-              FilledButton.icon(
-                key: const Key('answer-trade-button'),
-                onPressed: () async {
-                  final item = await _pickTradeItem(sheetContext);
-                  if (item == null || !sheetContext.mounted) return;
-                  final accepted = await online.respondToTrade(trade.id, item);
-                  if (accepted && sheetContext.mounted) {
-                    Navigator.pop(sheetContext);
-                  }
-                },
-                icon: const Icon(Icons.add_circle_outline_rounded),
-                label: Text(strings.pick('Choose my item', 'Kies mijn item')),
-              ),
-            if (trade.amInitiator && trade.status == 'awaiting_initiator')
-              FilledButton.icon(
-                key: const Key('complete-trade-button'),
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                        context: sheetContext,
-                        builder: (dialogContext) => AlertDialog(
-                          title: Text(strings.pick(
-                              'Complete this trade?', 'Deze ruil afronden?')),
-                          content: Text(strings.pick(
-                            'This is the final confirmation. Both items will change owner immediately.',
-                            'Dit is de laatste bevestiging. Beide items wisselen direct van eigenaar.',
-                          )),
-                          actions: [
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.pop(dialogContext, false),
-                              child: Text(strings.tr('cancel')),
-                            ),
-                            FilledButton(
-                              key: const Key('confirm-complete-trade'),
-                              onPressed: () =>
-                                  Navigator.pop(dialogContext, true),
-                              child: Text(strings.pick('Trade', 'Ruilen')),
-                            ),
-                          ],
-                        ),
-                      ) ??
-                      false;
-                  if (!confirmed) return;
-                  final completed = await online.completeTrade(trade.id);
-                  if (completed && sheetContext.mounted) {
-                    Navigator.pop(sheetContext);
-                  }
-                },
-                icon: const Icon(Icons.handshake_rounded),
-                label: Text(strings.pick(
-                    'Final confirmation', 'Definitief bevestigen')),
-              ),
-            if (trade.isActive) ...[
-              const SizedBox(height: 8),
-              TextButton.icon(
-                key: const Key('stop-trade-button'),
-                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-                onPressed: () async {
-                  final stopped = trade.amInitiator
-                      ? await online.cancelTrade(trade.id)
-                      : await online.rejectTrade(trade.id);
-                  if (stopped && sheetContext.mounted) {
-                    Navigator.pop(sheetContext);
-                  }
-                },
-                icon: Icon(trade.amInitiator
-                    ? Icons.cancel_outlined
-                    : Icons.thumb_down_alt_outlined),
-                label: Text(trade.amInitiator
-                    ? strings.pick('Cancel trade', 'Ruil annuleren')
-                    : strings.pick('Reject trade', 'Ruil weigeren')),
-              ),
+              const SizedBox(height: 20),
+              if (!trade.amInitiator && trade.status == 'awaiting_recipient')
+                FilledButton.icon(
+                  key: const Key('answer-trade-button'),
+                  onPressed: () async {
+                    final item = await _pickTradeItem(sheetContext);
+                    if (item == null || !sheetContext.mounted) return;
+                    final accepted =
+                        await online.respondToTrade(trade.id, item);
+                    if (accepted && sheetContext.mounted) {
+                      Navigator.pop(sheetContext);
+                    }
+                  },
+                  icon: const Icon(Icons.add_circle_outline_rounded),
+                  label: Text(strings.pick('Choose my item', 'Kies mijn item')),
+                ),
+              if (trade.amInitiator && trade.status == 'awaiting_initiator')
+                FilledButton.icon(
+                  key: const Key('complete-trade-button'),
+                  onPressed: () async {
+                    final confirmed = await showDialog<bool>(
+                          context: sheetContext,
+                          builder: (dialogContext) => AlertDialog(
+                            title: Text(strings.pick(
+                                'Complete this trade?', 'Deze ruil afronden?')),
+                            content: Text(strings.pick(
+                              'This is the final confirmation. Both items will change owner immediately.',
+                              'Dit is de laatste bevestiging. Beide items wisselen direct van eigenaar.',
+                            )),
+                            actions: [
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(dialogContext, false),
+                                child: Text(strings.tr('cancel')),
+                              ),
+                              FilledButton(
+                                key: const Key('confirm-complete-trade'),
+                                onPressed: () =>
+                                    Navigator.pop(dialogContext, true),
+                                child: Text(strings.pick('Trade', 'Ruilen')),
+                              ),
+                            ],
+                          ),
+                        ) ??
+                        false;
+                    if (!confirmed) return;
+                    final completed = await online.completeTrade(trade.id);
+                    if (completed && sheetContext.mounted) {
+                      Navigator.pop(sheetContext);
+                    }
+                  },
+                  icon: const Icon(Icons.handshake_rounded),
+                  label: Text(strings.pick(
+                      'Final confirmation', 'Definitief bevestigen')),
+                ),
+              if (trade.isActive) ...[
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  key: const Key('stop-trade-button'),
+                  style:
+                      TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                  onPressed: () async {
+                    final stopped = trade.amInitiator
+                        ? await online.cancelTrade(trade.id)
+                        : await online.rejectTrade(trade.id);
+                    if (stopped && sheetContext.mounted) {
+                      Navigator.pop(sheetContext);
+                    }
+                  },
+                  icon: Icon(trade.amInitiator
+                      ? Icons.cancel_outlined
+                      : Icons.thumb_down_alt_outlined),
+                  label: Text(trade.amInitiator
+                      ? strings.pick('Cancel trade', 'Ruil annuleren')
+                      : strings.pick('Reject trade', 'Ruil weigeren')),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  } finally {
+    // A settlement may finish while the sheet is open. Its reveal must wait
+    // until both the sheet and its pop transition have left the navigator.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    game.endPresentationDeferral();
+  }
   if (context.mounted) _showProviderMessage(context, online);
 }
 

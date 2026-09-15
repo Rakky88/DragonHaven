@@ -6,7 +6,6 @@ import '../l10n/app_strings.dart';
 import 'package:provider/provider.dart';
 import '../models/social.dart';
 import '../providers/online_account_provider.dart';
-import '../screens/account_screen.dart';
 import '../theme/event_appearance.dart';
 import '../services/social_repository.dart';
 import 'online_account_access.dart';
@@ -32,8 +31,8 @@ String eventPartnerErrorMessage(AppStrings s, Object error) {
         'This event or invitation is no longer available. Refresh the event and try again.',
         'Dit event of deze uitnodiging is niet meer beschikbaar. Vernieuw het event en probeer opnieuw.'),
     'cloud_save_conflict' => s.pick(
-        'Resolve the cloud-save conflict in Account Info before inviting a friend. Your progress has not been overwritten.',
-        'Los eerst het cloudconflict op bij Account Info voordat je een vriend uitnodigt. Je voortgang is niet overschreven.'),
+        'Your device and cloud have different progress. Keep playing locally and compare backups in Account Info before trying again. Do not restore an older copy just to send an invitation.',
+        'Je apparaat en de cloud hebben verschillende voortgang. Speel lokaal verder en vergelijk back-ups bij Account Info. Herstel geen oudere kopie alleen om een uitnodiging te versturen.'),
     'email_not_verified' ||
     'online_timeout' ||
     'cloud_save_too_large' ||
@@ -52,11 +51,13 @@ class EventPartnerControl extends StatefulWidget {
       {super.key,
       required this.eventKey,
       required this.beforeSync,
+      this.beforeInvite,
       required this.applyShared,
       this.showControls = true});
   final String eventKey;
   final bool showControls;
   final Future<bool> Function() beforeSync;
+  final Future<bool> Function()? beforeInvite;
   final Future<void> Function(Map<String, dynamic>, String) applyShared;
   @override
   State<EventPartnerControl> createState() => _EventPartnerControlState();
@@ -109,7 +110,9 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
       }
       if (action != 'cancel' &&
           action != 'decline' &&
-          !await widget.beforeSync()) {
+          !await (action == 'invite'
+              ? (widget.beforeInvite ?? widget.beforeSync)()
+              : widget.beforeSync())) {
         if (action == 'list') return;
         throw StateError('sync');
       }
@@ -133,11 +136,6 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
     } on Object catch (e) {
       if (!mounted) return;
       if (action != 'list') {
-        if (e is SocialException && e.code == 'cloud_save_conflict') {
-          final online = context.read<OnlineAccountProvider>();
-          await const AccountScreen().showCloudSaveConflict(context, online);
-          return;
-        }
         final s = AppStrings.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(eventPartnerErrorMessage(s, e))));

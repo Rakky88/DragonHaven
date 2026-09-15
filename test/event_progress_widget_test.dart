@@ -90,29 +90,43 @@ void main() {
     (TrialKind.ruinBreaker, 900),
     (TrialKind.runeweaver, 3),
   ]) {
-    testWidgets('completed ${kind.name} flies points after its offer card is removed', (tester) async {
+    testWidgets(
+        'completed ${kind.name} flies points after its offer card is removed',
+        (tester) async {
       SharedPreferences.setMockInitialValues({});
       await tester.binding.setSurfaceSize(const Size(430, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       final now = DateTime.utc(2026, 10, 25, 12);
-      final game = HouseholdProvider(persistenceEnabled: false, clock: () => now)
-        ..onboardingComplete = true
-        ..tutorialCompleted = true
-        ..pet = Pet(id: 'flight-dragon', name: 'Moss', stage: DragonStage.hatchling,
-            firstEgg: false, training: const {'might': 300, 'arcana': 300, 'spirit': 300},
-            acquiredAt: now, needsUpdatedAt: now, stageStartedAt: now);
+      final game =
+          HouseholdProvider(persistenceEnabled: false, clock: () => now)
+            ..onboardingComplete = true
+            ..tutorialCompleted = true
+            ..pet = Pet(
+                id: 'flight-dragon',
+                name: 'Moss',
+                stage: DragonStage.hatchling,
+                firstEgg: false,
+                training: const {'might': 300, 'arcana': 300, 'spirit': 300},
+                acquiredAt: now,
+                needsUpdatedAt: now,
+                stageStartedAt: now);
       game.availableTrials;
-      final offer = TrialOffer(id: 'flight-${kind.name}', kind: kind, appearedAt: now);
+      final offer =
+          TrialOffer(id: 'flight-${kind.name}', kind: kind, appearedAt: now);
       game.trialOffers = [offer];
       game.trialRefilledAt = now;
-      final online = OnlineAccountProvider(repository: const DisabledSocialRepository(),
+      final online = OnlineAccountProvider(
+          repository: const DisabledSocialRepository(),
           inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
       final navigation = GlobalKey<NavigatorState>();
-      await tester.pumpWidget(MultiProvider(providers: [
-        ChangeNotifierProvider.value(value: game),
-        ChangeNotifierProvider.value(value: online),
-      ], child: MaterialApp(navigatorKey: navigation,
-          home: const Scaffold(body: AdventureHubScreen()))));
+      await tester.pumpWidget(MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: game),
+            ChangeNotifierProvider.value(value: online),
+          ],
+          child: MaterialApp(
+              navigatorKey: navigation,
+              home: const Scaffold(body: AdventureHubScreen()))));
       await tester.pump();
       await tester.tap(find.byKey(const Key('adventure-tab-trials')));
       await tester.pump();
@@ -125,8 +139,11 @@ void main() {
       final dragonTile = find.byKey(Key('trial-dragon-${game.pet.id}'));
       await tester.tapAt(tester.getTopLeft(dragonTile) + const Offset(35, 30));
       await tester.pump();
-      for (var attempt = 0; attempt < 30 && find.byType(TrialGameScreen).evaluate().isEmpty; attempt++) {
-        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      for (var attempt = 0;
+          attempt < 30 && find.byType(TrialGameScreen).evaluate().isEmpty;
+          attempt++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)));
         await tester.pump(const Duration(milliseconds: 50));
       }
       await tester.pump(const Duration(milliseconds: 500));
@@ -136,7 +153,8 @@ void main() {
       expect(completion?.reward.grade, TrialGrade.c);
       expect(game.activeEventProgress.single.points, 5);
       await tester.pump();
-      expect(find.byKey(Key('trial-offer-${offer.id}'), skipOffstage: false), findsNothing);
+      expect(find.byKey(Key('trial-offer-${offer.id}'), skipOffstage: false),
+          findsNothing);
       navigation.currentState!.pop(completion);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
@@ -151,6 +169,50 @@ void main() {
       game.dispose();
     });
   }
+
+  testWidgets(
+      'full and claimed meters suppress flights but final fill still flies',
+      (tester) async {
+    for (final (start, claimed, flies) in [
+      (7995, false, true),
+      (8000, false, false),
+      (8000, true, false),
+    ]) {
+      final p = progress(points: start, claimed: claimed);
+      await tester.pumpWidget(app(p, () {}));
+      await tester.pump();
+      final context = tester.element(find.byType(EventProgressBar));
+      await EventPointFlight.claim(context, () async {
+        p.points += 5;
+      });
+      await tester.pumpWidget(app(p, () {}));
+      await tester.pump();
+      expect(find.text('+5'), flies ? findsOneWidget : findsNothing);
+      await tester.pump(const Duration(seconds: 2));
+      EventPointFlight.returnFromTrial(context, {p.key: 5});
+      await tester.pump();
+      expect(find.text('+5'), flies ? findsOneWidget : findsNothing);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpWidget(const SizedBox());
+    }
+  });
+
+  testWidgets('partner points also make a full meter stop accepting flights',
+      (tester) async {
+    final p = progress(points: 3000)..partnerPoints = 5000;
+    await tester.pumpWidget(app(p, () {}));
+    await tester.pump();
+    final context = tester.element(find.byType(EventProgressBar));
+    await EventPointFlight.claim(context, () async {
+      p.points += 5;
+    });
+    await tester.pumpWidget(app(p, () {}));
+    await tester.pump();
+    EventPointFlight.returnFromTrial(context, {p.key: 5});
+    await tester.pump();
+    expect(find.text('+5'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
 
   testWidgets('Trial return sends credited points to the meter once',
       (tester) async {
@@ -364,4 +426,3 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 }
-

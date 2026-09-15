@@ -543,6 +543,12 @@ String socialMessage(
     'group_already_joined' => strings.pick(
         'You already used this weekly Group Adventure.',
         'Je hebt dit wekelijkse groepsavontuur al gebruikt.'),
+    'group_already_waiting' => strings.pick(
+        'You are already in a group waiting to start this adventure.',
+        'Je zit al in een groep die wacht om dit avontuur te starten.'),
+    'group_already_running' => strings.pick(
+        'You already have this Group Adventure running.',
+        'Dit groepsavontuur loopt al voor jouw account.'),
     'group_adventure_already_completed' => strings.pick(
         "You have already completed this week's Group Adventure.",
         'Je hebt het groepsavontuur van deze week al voltooid.'),

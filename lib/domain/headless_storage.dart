@@ -26,9 +26,13 @@ abstract final class StorageService {
   static Never _unavailable() => throw UnsupportedError(
       'Device storage is unavailable in the game domain');
 
+  static Future<void> preserveLegacyRecoveryEvidence() async => _unavailable();
   static Future<Map<String, dynamic>?> load() async => _unavailable();
   static Future<Map<String, dynamic>?> loadBackup() async => _unavailable();
   static Future<void> preserveCurrentForRecovery() async => _unavailable();
+  static Future<void> preserveBeforeCloudRestore(Map<String, dynamic> state,
+          {String? ownerId}) async =>
+      _unavailable();
   static Future<bool> promoteBackup() async => _unavailable();
   static Future<void> save(Map<String, dynamic> state) async => _unavailable();
 }

@@ -538,6 +538,9 @@ class HouseholdProvider extends ChangeNotifier {
   static Future<HouseholdProvider> loadFromStorage({
     LegacyGameStorage storage = const DeviceLegacyGameStorage(),
   }) async {
+    if (storage is DeviceLegacyGameStorage) {
+      await StorageService.preserveLegacyRecoveryEvidence();
+    }
     var provider = HouseholdProvider(initialize: false, storage: storage);
     final data = await storage.load();
     if (data == null) {
@@ -556,9 +559,11 @@ class HouseholdProvider extends ChangeNotifier {
       final backup = await storage.loadBackup();
       var recovered = false;
       if (backup != null) {
-        final backupProvider = HouseholdProvider(initialize: false, storage: storage);
+        final backupProvider =
+            HouseholdProvider(initialize: false, storage: storage);
         try {
-          await _restoreStoredState(backupProvider, backup, persistChanges: false);
+          await _restoreStoredState(backupProvider, backup,
+              persistChanges: false);
           if (await storage.promoteBackup()) {
             await backupProvider._save();
             provider.dispose();
@@ -3453,9 +3458,27 @@ class HouseholdProvider extends ChangeNotifier {
         'activities': activities.map((entry) => entry.toJson()).toList(),
       };
 
+  /// The server permanently retains previously published form discoveries.
+  /// Reconcile those exact keys, never infer dragon ownership or award currency.
+  Future<void> mergeKnownDiscoveries(
+    Iterable<String> forms,
+    Iterable<String> prismatic,
+  ) async {
+    var changed = false;
+    for (final form in forms) {
+      changed = discoveredForms.add(form) || changed;
+    }
+    for (final form in prismatic) {
+      changed = prismaticForms.add(form) || changed;
+    }
+    if (changed) await _notifyAndSave();
+  }
+
   Future<bool> restoreCloudState(
     Map<String, dynamic> state, {
     bool preserveServerOwnedWalletAndChests = false,
+    String? recoveryOwner,
+    bool Function()? canApplyRestore,
   }) async {
     final candidate = HouseholdProvider(
       initialize: false,
@@ -3463,6 +3486,13 @@ class HouseholdProvider extends ChangeNotifier {
     );
     try {
       await _restoreStoredState(candidate, state);
+      if (_persistenceEnabled) {
+        await StorageService.preserveBeforeCloudRestore(
+          exportState(),
+          ownerId: recoveryOwner,
+        );
+      }
+      if (canApplyRestore != null && !canApplyRestore()) return false;
       final preservedCoins = pet.coins;
       final preservedAltar = eggAltar;
       final preservedPending = pendingAltarOperation;
@@ -3499,6 +3529,8 @@ class HouseholdProvider extends ChangeNotifier {
       return true;
     } on Object {
       return false;
+    } finally {
+      candidate.dispose();
     }
   }
 
@@ -3529,7 +3561,8 @@ class HouseholdProvider extends ChangeNotifier {
       await settled;
       final json = jsonEncode(_storage.prepareSave(exportState()));
       final revision = _localMutationRevision;
-      final saved = _enqueueSave(Map<String, dynamic>.from(jsonDecode(json) as Map));
+      final saved =
+          _enqueueSave(Map<String, dynamic>.from(jsonDecode(json) as Map));
       _legacyWritesStopped = true;
       await saved;
       return (json: json, revision: revision);
@@ -3537,7 +3570,9 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<void> _save() {
-    if (_legacyWritesStopped) return Future.error(StateError('Legacy save is sealed.'));
+    if (_legacyWritesStopped) {
+      return Future.error(StateError('Legacy save is sealed.'));
+    }
     return _enqueueSave(_storage.prepareSave(exportState()));
   }
 

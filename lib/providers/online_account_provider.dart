@@ -10,6 +10,7 @@ import '../models/social.dart';
 import '../services/diagnostic_reporter.dart';
 import '../services/notification_service.dart';
 import '../services/social_repository.dart';
+import '../services/storage_service.dart';
 
 class OnlineAccountProvider extends ChangeNotifier {
   static const maxSuccessfulTradesPerDay = 3;
@@ -44,6 +45,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     this.serverOwned = false,
     OnlineProfileSnapshot Function()? profileSnapshot,
     Future<void> Function()? synchronizeEggAltar,
+    Future<void> Function(KeeperProfile profile)? synchronizeKnownDiscoveries,
     Future<void> Function(Map<String, String> reservations)?
         synchronizeGroupReservations,
     Future<bool> Function(GroupAdventureReward reward)? applyGroupReward,
@@ -82,6 +84,7 @@ class OnlineAccountProvider extends ChangeNotifier {
         _inventorySnapshot = inventorySnapshot,
         _profileSnapshot = profileSnapshot ?? _fallbackProfileSnapshot,
         _synchronizeEggAltar = synchronizeEggAltar,
+        _synchronizeKnownDiscoveries = synchronizeKnownDiscoveries,
         _synchronizeGroupReservations =
             synchronizeGroupReservations ?? _ignoreGroupReservations,
         _applyGroupReward = applyGroupReward ?? _rejectGroupReward,
@@ -118,6 +121,8 @@ class OnlineAccountProvider extends ChangeNotifier {
   final bool serverOwned;
   int _authGeneration = 0;
   final Future<void> Function()? _synchronizeEggAltar;
+  final Future<void> Function(KeeperProfile profile)?
+      _synchronizeKnownDiscoveries;
   final OnlineInventorySnapshot Function() _inventorySnapshot;
   final OnlineProfileSnapshot Function() _profileSnapshot;
   final Future<void> Function(Map<String, String> reservations)
@@ -181,6 +186,12 @@ class OnlineAccountProvider extends ChangeNotifier {
   bool _disposed = false;
   bool _legacyOperationsStopped = false;
   Future<void>? _legacyStop;
+  int get restoreSessionEpoch => _authGeneration;
+  DateTime? _operationDeadline;
+  bool get cloudRestoreStillAllowed =>
+      !_disposed &&
+      _operationDeadline != null &&
+      DateTime.now().isBefore(_operationDeadline!);
   String? _cloudBaseUserId;
   int? _cloudBaseRevision;
 
@@ -305,6 +316,34 @@ class OnlineAccountProvider extends ChangeNotifier {
   bool get currentGroupOfferConsumed =>
       groupAdventureStatus?.alreadyCompleted == true ||
       groupLobbies.any((lobby) => lobby.isCurrentOffer && lobby.isParticipant);
+
+  /// Account-level eligibility before asking the keeper to select a dragon.
+  /// The server still validates the eventual join/create transaction.
+  String? groupEntryIssue(String adventureId, {String? lobbyId}) {
+    final offer = groupAdventureStatus;
+    if (offer == null || offer.adventureId != adventureId) {
+      return 'group_lobby_closed';
+    }
+    if (offer.alreadyCompleted) return 'group_adventure_already_completed';
+    for (final lobby in groupLobbies) {
+      if (lobby.slot != offer.slot || !lobby.isParticipant) continue;
+      if (lobby.isRewardReady) return 'group_adventure_already_completed';
+      return lobby.isRunning
+          ? 'group_already_running'
+          : 'group_already_waiting';
+    }
+    if (lobbyId != null) {
+      final lobby = groupLobbies.where((l) => l.id == lobbyId).firstOrNull;
+      if (lobby == null || !lobby.isWaiting || lobby.slot != offer.slot) {
+        return 'group_lobby_closed';
+      }
+      if (lobby.participants.length >= lobby.requiredPlayers) {
+        return 'group_lobby_full';
+      }
+    }
+    return null;
+  }
+
   List<TradeOffer> tradesWith(String userId) => trades
       .where((trade) => trade.otherKeeper.userId == userId && trade.isActive)
       .toList(growable: false);
@@ -553,8 +592,8 @@ class OnlineAccountProvider extends ChangeNotifier {
     _authRecoveryTimer?.cancel();
     final cancelled = _authSubscription?.cancel() ?? Future<void>.value();
     _authSubscription = null;
-    return _legacyStop = Future.wait<void>([cancelled, _settledOperation])
-        .then<void>((_) {});
+    return _legacyStop =
+        Future.wait<void>([cancelled, _settledOperation]).then<void>((_) {});
   }
 
   Future<void> _settledOperation = Future<void>.value();
@@ -573,7 +612,11 @@ class OnlineAccountProvider extends ChangeNotifier {
         cloudGameSave = remote;
         final baseRevision = await _currentCloudBaseRevision();
         final remoteRevision = remote?.revision ?? 0;
-        if ((baseRevision == null && remote != null) ||
+        final prefs = await SharedPreferences.getInstance();
+        if ((prefs.getBool(
+                    '${StorageService.recoveryReviewPrefix}$currentUserId') ??
+                false) ||
+            (baseRevision == null && remote != null) ||
             (baseRevision != null && baseRevision != remoteRevision)) {
           cloudConflictSave = remote;
           throw const SocialException('cloud_save_conflict');
@@ -606,17 +649,22 @@ class OnlineAccountProvider extends ChangeNotifier {
 
   Future<bool> replaceCloudWithLocal() async =>
       await _run('cloud_save.replace_with_local', () async {
+        final owner = currentUserId;
+        final epoch = _authGeneration;
         final snapshot = _gameStateSnapshot;
         final loadDeviceId = _deviceId;
         if (!isSignedIn || snapshot == null || loadDeviceId == null) {
           throw const SocialException('cloud_save_unavailable');
         }
         final remote = await _repository.loadCloudGameSave();
+        _requireAccountSession(owner, epoch);
+        final deviceId = await loadDeviceId();
+        _requireAccountSession(owner, epoch);
         try {
           cloudGameSave = await _repository.pushCloudGameSave(
             expectedRevision: remote?.revision ?? 0,
             state: snapshot(),
-            deviceId: await loadDeviceId(),
+            deviceId: deviceId,
             clientVersion: _clientVersion,
           );
         } on SocialException catch (error) {
@@ -626,7 +674,10 @@ class OnlineAccountProvider extends ChangeNotifier {
           }
           rethrow;
         }
+        _requireAccountSession(owner, epoch);
         await _rememberCloudBaseRevision(cloudGameSave!.revision);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('${StorageService.recoveryReviewPrefix}$owner');
         cloudConflictSave = null;
         cloudSaveHistory = const [];
         noticeCode = 'cloud_save_backed_up';
@@ -634,17 +685,24 @@ class OnlineAccountProvider extends ChangeNotifier {
       }) ??
       false;
 
-  Future<bool> restoreFromCloud() async =>
+  Future<bool> restoreFromCloud({String? expectedSaveId}) async =>
       await _run('cloud_save.restore', () async {
+        final owner = currentUserId;
+        final epoch = _authGeneration;
         final apply = _applyCloudState;
         if (!isSignedIn || apply == null) {
           throw const SocialException('cloud_save_unavailable');
         }
         final remote = await _repository.loadCloudGameSave();
         if (remote == null) throw const SocialException('cloud_save_missing');
+        _requireAccountSession(owner, epoch);
+        if (expectedSaveId != null && remote.saveId != expectedSaveId) {
+          throw const SocialException('cloud_save_conflict');
+        }
         if (!await apply(remote.state)) {
           throw const SocialException('cloud_save_invalid');
         }
+        _requireAccountSession(owner, epoch);
         cloudGameSave = remote;
         await _rememberCloudBaseRevision(remote.revision);
         cloudConflictSave = null;
@@ -656,25 +714,85 @@ class OnlineAccountProvider extends ChangeNotifier {
       }) ??
       false;
 
+  Future<CloudGameSave?> previewCloudRevision(String saveId) =>
+      _run('cloud_save.preview_revision', () async {
+        final owner = currentUserId;
+        final epoch = _authGeneration;
+        _requireAccountSession(owner, epoch);
+        final selected = await _repository.loadCloudGameSaveRevision(saveId);
+        _requireAccountSession(owner, epoch);
+        if (selected == null) throw const SocialException('cloud_save_missing');
+        return selected;
+      });
+
   Future<bool> restoreCloudRevision(String saveId) async =>
       await _run('cloud_save.restore_revision', () async {
+        final owner = currentUserId;
+        final epoch = _authGeneration;
         final apply = _applyCloudState;
         if (!isSignedIn || apply == null || saveId.isEmpty) {
           throw const SocialException('cloud_save_unavailable');
         }
         final current = await _repository.loadCloudGameSave();
         if (current == null) throw const SocialException('cloud_save_missing');
+        _requireAccountSession(owner, epoch);
         final selected = await _repository.loadCloudGameSaveRevision(saveId);
         if (selected == null) throw const SocialException('cloud_save_missing');
+        _requireAccountSession(owner, epoch);
         if (!await apply(selected.state)) {
           throw const SocialException('cloud_save_invalid');
         }
+        _requireAccountSession(owner, epoch);
         cloudGameSave = current;
         await _rememberCloudBaseRevision(current.revision);
         cloudConflictSave = null;
         _lastTradeInventoryFingerprint = null;
         _lastShowcaseFingerprint = null;
         await _refreshData();
+        noticeCode = 'cloud_save_restored';
+        return true;
+      }) ??
+      false;
+
+  void _requireAccountSession(String? owner, int epoch) {
+    if (!cloudRestoreStillAllowed) {
+      throw const SocialException('online_timeout');
+    }
+    if (_disposed ||
+        !isSignedIn ||
+        owner == null ||
+        currentUserId != owner ||
+        epoch != _authGeneration) {
+      throw const SocialException('online_session_expired');
+    }
+  }
+
+  Future<bool> restoreLocalCheckpoint(String checkpointId) async =>
+      await _run('cloud_save.undo_restore', () async {
+        final owner = currentUserId;
+        final epoch = _authGeneration;
+        final apply = _applyCloudState;
+        _requireAccountSession(owner, epoch);
+        if (apply == null) {
+          throw const SocialException('cloud_save_unavailable');
+        }
+        final entries = await StorageService.loadRestoreCheckpoints(owner!);
+        final entry = entries.where((e) => e['id'] == checkpointId).firstOrNull;
+        if (entry == null) throw const SocialException('cloud_save_missing');
+        final prefs = await SharedPreferences.getInstance();
+        _requireAccountSession(owner, epoch);
+        // Persist the hold before applying. Automatic/event-triggered uploads
+        // must not replace the cloud until the player reviews both copies.
+        if (!await prefs.setBool(
+            '${StorageService.recoveryReviewPrefix}$owner', true)) {
+          throw const SocialException('cloud_save_unavailable');
+        }
+        _requireAccountSession(owner, epoch);
+        if (!await apply(Map<String, dynamic>.from(entry['state'] as Map))) {
+          throw const SocialException('cloud_save_invalid');
+        }
+        _requireAccountSession(owner, epoch);
+        cloudConflictSave = cloudGameSave;
         noticeCode = 'cloud_save_restored';
         return true;
       }) ??
@@ -1342,6 +1460,8 @@ class OnlineAccountProvider extends ChangeNotifier {
       _applyOnlineSnapshot(snapshot, conclaveGeneration: generation);
       return;
     }
+    final refreshOwner = currentUserId;
+    final refreshEpoch = _authGeneration;
     await _repository.ensureAccount();
     final snapshot = _inventorySnapshot();
     final localProfile = _profileSnapshot();
@@ -1371,6 +1491,16 @@ class OnlineAccountProvider extends ChangeNotifier {
     var onlineSnapshot = await _repository.loadOnlineSnapshot();
     _applyOnlineSnapshot(onlineSnapshot,
         conclaveGeneration: conclaveGeneration);
+    final synchronize = _synchronizeKnownDiscoveries;
+    if (synchronize != null &&
+        !_disposed &&
+        isSignedIn &&
+        refreshOwner == currentUserId &&
+        refreshEpoch == _authGeneration &&
+        onlineSnapshot.profile.userId == refreshOwner) {
+      await _runRefreshMaintenanceStep('social.refresh.known_discoveries',
+          () => synchronize(onlineSnapshot.profile));
+    }
     conclaveGeneration = _conclaveReadGeneration;
     // Seasonal RPCs are additive maintenance. A temporarily unavailable or
     // not-yet-migrated seasonal endpoint must never hide a valid Friends,
@@ -1820,7 +1950,10 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   void _ensureRefreshTimer() {
-    if (!isConfigured || !isSignedIn || !_appInForeground || _disposed ||
+    if (!isConfigured ||
+        !isSignedIn ||
+        !_appInForeground ||
+        _disposed ||
         _legacyOperationsStopped) {
       return;
     }
@@ -1862,6 +1995,7 @@ class OnlineAccountProvider extends ChangeNotifier {
       supportCode = null;
       _notify();
     }
+    _operationDeadline = DateTime.now().add(_operationTimeout);
     final operationFuture = Future<T>.sync(() {
       if (_legacyOperationsStopped) {
         throw const SocialException('game_server_authority_required');
@@ -1873,6 +2007,8 @@ class OnlineAccountProvider extends ChangeNotifier {
       }
       return operation();
     });
+    _settledOperation = operationFuture.then<void>((_) {},
+        onError: (Object _, StackTrace __) {});
     unawaited(operationFuture.then<void>(
       (_) {
         _operationInFlight = false;

@@ -335,7 +335,7 @@ void main() {
   });
 
   test('repository versions are derived without runtime credentials', () {
-    expect(discoverAppVersion(), 'v0.05.35');
+    expect(discoverAppVersion(), 'v0.05.38');
     // Source discovery includes the pending migration; deployed guards stay at 83.
     expect(discoverMigrationVersion(), '202609130084');
   });

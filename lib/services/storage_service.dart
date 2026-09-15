@@ -32,6 +32,49 @@ abstract final class StorageService {
   static const automaticCloudBackupPrefix =
       'dragon_haven_automatic_cloud_backup_v1_';
 
+  static const legacyRecoveryEvidenceKey =
+      'dragon_haven_pre_recovery_upgrade_v1';
+
+  /// Capture older installations' surviving slots before startup migrations or
+  /// autosaves rotate them. Unknown account ownership is intentionally retained;
+  /// these bytes are evidence, never silently imported into a signed-in account.
+  static Future<void> preserveLegacyRecoveryEvidence() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.containsKey(legacyRecoveryEvidenceKey)) return;
+    final slots = <String, String>{
+      for (final key in [currentKey, backupKey, recoveryKey])
+        if (prefs.getString(key) case final raw?) key: raw,
+    };
+    if (slots.isEmpty) return;
+    if (!await prefs.setString(legacyRecoveryEvidenceKey, jsonEncode(slots))) {
+      throw StateError('Existing recovery evidence could not be preserved.');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> legacyRecoverySummaries() async {
+    final prefs = await SharedPreferences.getInstance();
+    final evidence = _decode(prefs.getString(legacyRecoveryEvidenceKey));
+    if (evidence == null) return const [];
+    final result = <Map<String, dynamic>>[];
+    for (final key in [currentKey, backupKey, recoveryKey]) {
+      final raw = evidence[key];
+      final state = raw is String ? _decode(raw) : null;
+      if (state == null || state['pet'] is! Map) continue;
+      final pet = state['pet'] as Map;
+      result.add({
+        'slot': key == currentKey
+            ? 1
+            : key == backupKey
+                ? 2
+                : 3,
+        'accountName': state['accountName']?.toString() ?? '',
+        'pet': {'coins': pet['coins'], 'gems': pet['gems']},
+        'totalAdventuresCompleted': state['totalAdventuresCompleted'],
+      });
+    }
+    return result;
+  }
+
   static bool lastLoadRecoveredFromBackup = false;
 
   static Future<void> save(Map<String, dynamic> state) async {
@@ -73,6 +116,49 @@ abstract final class StorageService {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(currentKey);
     if (raw != null) await prefs.setString(recoveryKey, raw);
+  }
+
+  static const restoreCheckpointPrefix = 'dragon_haven_restore_checkpoints_v1_';
+  static const recoveryReviewPrefix = 'dragon_haven_recovery_review_v1_';
+
+  /// Separate from rolling autosave/corruption backups. Retain the first
+  /// checkpoint and four recent ones, so repeated restores cannot erase it.
+  static Future<void> preserveBeforeCloudRestore(Map<String, dynamic> state,
+      {String? ownerId}) async {
+    final encoded = jsonEncode(state); // Freeze before the first await.
+    final prefs = await SharedPreferences.getInstance();
+    final key = '$restoreCheckpointPrefix${ownerId ?? "local"}';
+    final existing = prefs.getStringList(key) ?? <String>[];
+    final entry = jsonEncode({
+      'id': const Uuid().v4(),
+      'createdAt': DateTime.now().toUtc().toIso8601String(),
+      'ownerId': ownerId,
+      'state': jsonDecode(encoded),
+    });
+    final next = [...existing, entry];
+    if (next.length > 5) next.removeRange(1, next.length - 4);
+    if (!await prefs.setStringList(key, next)) {
+      throw StateError('Pre-restore checkpoint could not be saved.');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> loadRestoreCheckpoints(
+      String ownerId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return [
+      for (final raw
+          in (prefs.getStringList('$restoreCheckpointPrefix$ownerId') ??
+                  <String>[])
+              .reversed)
+        if (_decode(raw) case final entry?)
+          if (entry['ownerId'] == ownerId &&
+              entry['state'] is Map &&
+              entry['id'] is String &&
+              (entry['id'] as String).isNotEmpty &&
+              entry['createdAt'] is String &&
+              DateTime.tryParse(entry['createdAt'] as String) != null)
+            entry,
+    ];
   }
 
   static Future<bool> promoteBackup() async {
