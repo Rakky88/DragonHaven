@@ -3,10 +3,59 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/game_state_envelope.dart';
+import '../models/social.dart';
 import 'canonical_game_intent.dart';
 import 'canonical_game_snapshot.dart';
 import 'legacy_game_storage.dart';
 import 'social_repository.dart';
+import 'storage_service.dart';
+
+enum AccountSaveChoice { local, cloud }
+
+/// An immutable comparison, tied to the authenticated session and exact local
+/// bytes that were shown. Re-reading either source invalidates a stale choice.
+class AccountSaveReview {
+  AccountSaveReview._(
+      this.owner,
+      this.epoch,
+      this._accountRaw,
+      this._deviceRaw,
+      this._deviceOwner,
+      this._localJson,
+      this._cloudJson,
+      this.cloudRevision,
+      this.cloudUpdatedAt,
+      this.needsChoice);
+  final String owner;
+  final int epoch;
+  final String? _accountRaw, _deviceRaw, _deviceOwner, _localJson, _cloudJson;
+  final int cloudRevision;
+  final DateTime? cloudUpdatedAt;
+  final bool needsChoice;
+  Map<String, dynamic>? get local => _localJson == null
+      ? null
+      : jsonDecode(_localJson) as Map<String, dynamic>;
+  Map<String, dynamic>? get cloud => _cloudJson == null
+      ? null
+      : jsonDecode(_cloudJson) as Map<String, dynamic>;
+  bool get unassignedLocal => _accountRaw == null && _localJson != null;
+
+  /// A fresh game may be proposed only when neither source exists. The caller
+  /// must still show the explicit start action and use chooseSource afterward.
+  AccountSaveReview withFreshState(Map<String, dynamic> state) {
+    if (_localJson != null ||
+        _cloudJson != null ||
+        _accountRaw != null ||
+        state['pet'] is! Map) {
+      throw const CanonicalGameException('game_legacy_source_exists');
+    }
+    return AccountSaveReview._(owner, epoch, _accountRaw, _deviceRaw,
+        _deviceOwner, jsonEncode(state), null, 0, null, true);
+  }
+
+  bool get canChooseCloud =>
+      cloud != null && local?['pendingAltarOperation'] == null;
+}
 
 /// Owner-scoped storage. Only an authenticated cloud read can establish a new
 /// source here; signing in does not assign ownership of the device-global save.
@@ -19,6 +68,148 @@ class AccountLegacyGameStorage implements LegacyGameStorage {
   String get _key => 'dragon_haven_account_legacy_v1_$owner';
   @override
   bool get allowsFreshState => false;
+  static const deviceSourceOwnerKey = 'dragon_haven_device_source_owner_v1';
+
+  static void _requireSession(SocialRepository repository, String owner,
+      String? Function() currentOwner, int Function() sessionEpoch, int epoch) {
+    if (!CanonicalGameIntent.validOwner(owner) ||
+        currentOwner() != owner ||
+        sessionEpoch() != epoch ||
+        !repository.isSignedIn ||
+        repository.currentUserId != owner) {
+      throw const CanonicalGameException('game_account_changed');
+    }
+  }
+
+  static Future<AccountSaveReview> reviewSources({
+    required SocialRepository repository,
+    required String owner,
+    required String? Function() currentOwner,
+    required int Function() sessionEpoch,
+  }) async {
+    final epoch = sessionEpoch();
+    void check() =>
+        _requireSession(repository, owner, currentOwner, sessionEpoch, epoch);
+    check();
+    final store = await open(owner);
+    check();
+    final remote = await repository.loadCloudGameSave();
+    check();
+    final prefs = await SharedPreferences.getInstance();
+    check();
+    final scoped = store == null ? null : prefs.getString(store._key);
+    final device = prefs.getString(StorageService.currentKey);
+    final deviceOwner = prefs.getString(deviceSourceOwnerKey);
+    final local = scoped != null
+        ? store!._decode(scoped)!['state']
+        : (deviceOwner == null || deviceOwner == owner) && device != null
+            ? jsonDecode(device)
+            : null;
+    if (local != null &&
+        (local is! Map<String, dynamic> || local['pet'] is! Map)) {
+      throw const CanonicalGameException('game_legacy_source_invalid');
+    }
+    return AccountSaveReview._(
+        owner,
+        epoch,
+        scoped,
+        device,
+        deviceOwner,
+        local == null ? null : jsonEncode(local),
+        remote == null ? null : jsonEncode(remote.state),
+        remote?.revision ?? 0,
+        remote?.updatedAt,
+        scoped == null ||
+            store!._decode(scoped)!['cloudBaseRevision'] !=
+                (remote?.revision ?? 0) ||
+            (prefs.getBool('${StorageService.recoveryReviewPrefix}$owner') ??
+                false));
+  }
+
+  /// Called only after an explicit source choice, while all gameplay writers
+  /// are closed. This changes local storage only; the next cloud write still
+  /// uses optimistic revision checking. Both compared copies are preserved.
+  static Future<AccountLegacyGameStorage> chooseSource({
+    required AccountSaveReview review,
+    required AccountSaveChoice choice,
+    required SocialRepository repository,
+    required String? Function() currentOwner,
+    required int Function() sessionEpoch,
+  }) async {
+    void check() => _requireSession(
+        repository, review.owner, currentOwner, sessionEpoch, review.epoch);
+    check();
+    if (choice == AccountSaveChoice.cloud && !review.canChooseCloud) {
+      throw const CanonicalGameException('game_legacy_source_invalid');
+    }
+    final selected =
+        choice == AccountSaveChoice.cloud ? review.cloud : review.local;
+    if (selected == null) {
+      throw const CanonicalGameException('game_legacy_source_missing');
+    }
+    final CloudGameSave? remote = await repository.loadCloudGameSave();
+    check();
+    if ((remote?.revision ?? 0) != review.cloudRevision ||
+        (remote == null ? null : jsonEncode(remote.state)) !=
+            review._cloudJson) {
+      throw const SocialException('cloud_save_conflict');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final store = AccountLegacyGameStorage._(review.owner, prefs);
+    void checkLocal() {
+      check();
+      if (prefs.getString(store._key) != review._accountRaw ||
+          prefs.getString(StorageService.currentKey) != review._deviceRaw ||
+          prefs.getString(deviceSourceOwnerKey) != review._deviceOwner) {
+        throw const CanonicalGameException('game_import_source_changed');
+      }
+    }
+
+    checkLocal();
+    // Keep the first comparison independently from rolling autosave backups.
+    final checkpoint = '${store._key}_source_review';
+    if (!prefs.containsKey(checkpoint)) {
+      await store._write(
+          checkpoint,
+          jsonEncode({
+            'owner': review.owner,
+            'local': review.local,
+            'cloud': review.cloud,
+            'cloudRevision': review.cloudRevision,
+          }));
+    }
+    checkLocal();
+    if (review.local != null) {
+      await StorageService.preserveBeforeCloudRestore(review.local!,
+          ownerId: review.owner);
+    }
+    checkLocal();
+    if (review._accountRaw != null) {
+      await store._write('${store._key}_backup', review._accountRaw);
+    }
+    checkLocal();
+    if (choice == AccountSaveChoice.local &&
+        review.unassignedLocal &&
+        review._deviceRaw != null &&
+        (review._deviceOwner == null || review._deviceOwner == review.owner)) {
+      // Mark before adoption. A failed write can be retried by this owner, but
+      // a different sign-in cannot adopt the same legacy source afterward.
+      await store._write(deviceSourceOwnerKey, review.owner);
+    }
+    check();
+    final record = jsonEncode({
+      'version': 1,
+      'owner': review.owner,
+      'cloudBaseRevision': review.cloudRevision,
+      'state': selected
+    });
+    await store._write(store._key, record);
+    check();
+    store._original = selected;
+    await prefs.remove('${StorageService.recoveryReviewPrefix}${review.owner}');
+    check();
+    return store;
+  }
 
   static Future<AccountLegacyGameStorage?> open(String owner) async {
     if (!CanonicalGameIntent.validOwner(owner)) {
@@ -88,7 +279,8 @@ class AccountLegacyGameStorage implements LegacyGameStorage {
           value['owner'] != owner ||
           value['state'] is! Map<String, dynamic> ||
           value['cloudBaseRevision'] is! int ||
-          value['cloudBaseRevision'] < 1) {
+          value['cloudBaseRevision'] < 0 ||
+          value['cloudBaseRevision'] > 9007199254740991) {
         return null;
       }
       return value;

@@ -47,6 +47,10 @@ class CanonicalGameSession extends ChangeNotifier {
   CanonicalGameSnapshot? _snapshot;
   String? _errorCode;
   Future<CanonicalGameReceipt?>? _operation;
+  final _admitted = <Future<CanonicalGameReceipt?>>{};
+  bool _retiring = false;
+  Future<void>? _closing;
+  Future<void>? _connectionClosing;
   String? _operationKey;
 
   bool get _sameSession =>
@@ -200,7 +204,7 @@ class CanonicalGameSession extends ChangeNotifier {
     if (!_sameSession) _accountChanged();
     final owner = _owner;
     final epoch = _epoch;
-    if (_disposed || owner == null) {
+    if (_disposed || _retiring || owner == null) {
       return Future.error(const CanonicalGameException('game_login_required'));
     }
     if (_operation != null) {
@@ -220,6 +224,7 @@ class CanonicalGameSession extends ChangeNotifier {
     _operationKey = key;
     final completion = Completer<CanonicalGameReceipt?>();
     _operation = completion.future;
+    _admitted.add(completion.future);
     notifyListeners();
     unawaited(() async {
       try {
@@ -240,6 +245,7 @@ class CanonicalGameSession extends ChangeNotifier {
         }
         completion.completeError(safeError, stack);
       } finally {
+        _admitted.remove(completion.future);
         if (!_disposed && identical(_operation, completion.future)) {
           _operation = null;
           _operationKey = null;
@@ -250,6 +256,20 @@ class CanonicalGameSession extends ChangeNotifier {
     return completion.future;
   }
 
+  /// Hide gameplay first, then drain admitted receipts before another lease
+  /// opens the same journals. Account changes cannot lose this drain barrier.
+  Future<void> close() => _closing ??= (() async {
+        _retiring = true;
+        setForeground(false);
+        await Future.wait(_admitted.toList().map((future) async {
+          try {
+            await future;
+          } on Object {/* Durable recovery owns failures. */}
+        }));
+        dispose();
+        await _connectionClosing;
+      })();
+
   @override
   void dispose() {
     if (_disposed) return;
@@ -257,7 +277,8 @@ class CanonicalGameSession extends ChangeNotifier {
     _snapshot = null;
     _fresh = false;
     unawaited(_changes.cancel());
-    unawaited(connection.dispose());
+    _connectionClosing ??= connection.dispose();
+    unawaited(_connectionClosing);
     super.dispose();
   }
 }

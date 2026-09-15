@@ -6,7 +6,8 @@ import '../models/social.dart';
 import 'social_repository.dart';
 
 class SupabaseSocialRepository implements SocialRepository {
-  SupabaseSocialRepository(this._client) {
+  SupabaseSocialRepository(this._client, {bool Function()? sessionIsCurrent})
+      : _sessionIsCurrent = sessionIsCurrent {
     _authSubscription = _client.auth.onAuthStateChange.listen(
       (event) => _authController.add(
         event.session != null && event.session?.user.emailConfirmedAt != null,
@@ -20,6 +21,13 @@ class SupabaseSocialRepository implements SocialRepository {
   }
 
   final SupabaseClient _client;
+  final bool Function()? _sessionIsCurrent;
+  void _requireBoundSession() {
+    if (_sessionIsCurrent?.call() == false) {
+      throw const SocialException('online_login_required');
+    }
+  }
+
   final _authController = StreamController<bool>.broadcast();
   late final StreamSubscription<AuthState> _authSubscription;
   Future<void>? _sessionRefreshInFlight;
@@ -27,7 +35,10 @@ class SupabaseSocialRepository implements SocialRepository {
   @override
   bool get isConfigured => true;
   @override
-  bool get isSignedIn => _client.auth.currentSession != null && isEmailVerified;
+  bool get isSignedIn =>
+      _sessionIsCurrent?.call() != false &&
+      _client.auth.currentSession != null &&
+      isEmailVerified;
   @override
   bool get isEmailVerified =>
       _client.auth.currentUser?.emailConfirmedAt != null;
@@ -93,6 +104,7 @@ class SupabaseSocialRepository implements SocialRepository {
   @override
   Future<void> signOut() async {
     try {
+      _requireBoundSession();
       await _client.auth.signOut();
     } on Object catch (error) {
       throw _socialError(error);
@@ -250,7 +262,7 @@ class SupabaseSocialRepository implements SocialRepository {
   @override
   Future<void> renewSeasonalTrial(
       {required String attemptId, required String token}) async {
-    await _client.rpc('renew_seasonal_trial_attempt', params: {
+    await _rpc('renew_seasonal_trial_attempt', params: {
       'p_attempt_id': attemptId,
       'p_completion_token': token,
     });
@@ -762,8 +774,12 @@ class SupabaseSocialRepository implements SocialRepository {
 
   Future<dynamic> _rpc(String function, {Map<String, dynamic>? params}) async {
     try {
+      _requireBoundSession();
       await _ensureFreshSession();
-      return await _client.rpc(function, params: params);
+      _requireBoundSession();
+      final result = await _client.rpc(function, params: params);
+      _requireBoundSession();
+      return result;
     } on Object catch (error) {
       throw _socialError(error);
     }

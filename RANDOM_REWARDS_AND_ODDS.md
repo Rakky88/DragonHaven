@@ -212,7 +212,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: e64be68f9605d15a -->
+<!-- reference-source-fingerprint: ec4c07a8b833f258 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -1271,3 +1271,13 @@ completed, waiting or running membership. The server remains the final authority
 Trade completion reveals wait for the trade sheet to close and respect reduced
 motion. Trade contents, settlement, reward odds and duplicate protection do not
 change.
+
+
+### Account startup candidate (15 September 2026, not released)
+
+Normal configured startup resolves account authority before loading gameplay.
+Legacy source selection preserves both compared copies and any pending Altar
+request. It changes no event goals, schedules, rewards, chances or inventory
+rules. A server-owned account opens its server session instead of restoring a
+legacy save. Source selection does not grant rewards. Production activation
+remains subject to the staging and complete gameplay routing gates.

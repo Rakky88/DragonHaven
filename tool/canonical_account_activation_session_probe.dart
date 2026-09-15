@@ -95,11 +95,25 @@ void main() {
       final social = _LostCloudReplyRepository(auth);
       final source = await social.loadCloudGameSave();
       require(source?.revision == 1, 'legacy_source');
-      final storage = await AccountLegacyGameStorage.importCloud(
+      final review = await AccountLegacyGameStorage.reviewSources(
           repository: social,
           owner: owner,
           currentOwner: () => migration!.currentOwner,
           sessionEpoch: () => migration!.sessionEpoch);
+      require(
+          review.needsChoice &&
+              review.local == null &&
+              review.cloudRevision == 1,
+          'source_comparison');
+      final storage = await AccountLegacyGameStorage.chooseSource(
+          review: review,
+          choice: AccountSaveChoice.cloud,
+          repository: social,
+          currentOwner: () => migration!.currentOwner,
+          sessionEpoch: () => migration!.sessionEpoch);
+      require(
+          await storage.cloudBaseRevision() == 1, 'selected_source_revision');
+      stdout.writeln('PROBE: explicit_account_source_selection');
       final legacyGame =
           await HouseholdProvider.loadFromStorage(storage: storage);
       final legacyOnline = OnlineAccountProvider(
@@ -190,14 +204,12 @@ void main() {
             try {
               await session.synchronize(minimumServerRevision: minimumRevision);
             } on Object {
-              session.dispose();
-              await connection.dispose();
+              await session.close();
               rethrow;
             }
             openedRoots++;
             return CanonicalGameplayLease(session, close: () async {
-              session.dispose();
-              await connection.dispose();
+              await session.close();
               closedRoots++;
             });
           });

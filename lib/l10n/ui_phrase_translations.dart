@@ -1,6 +1,7 @@
 import 'cloud_restore_phrase_translations.dart';
 import 'event_points_phrase_translations.dart';
 import 'school_authority_phrase_translations.dart';
+import 'account_startup_phrase_translations.dart';
 import 'summer_phrase_translations.dart';
 import 'birthday_phrase_translations.dart';
 import 'event_refresh_phrase_translations.dart';
@@ -32,7 +33,8 @@ const _languageIndex = <String, int>{
 
 String? translatedUiPhrase(String english, String languageCode) {
   final index = _languageIndex[languageCode];
-  final values = schoolAuthorityPhraseTranslations[english] ??
+  final values = accountStartupPhraseTranslations[english] ??
+      schoolAuthorityPhraseTranslations[english] ??
       summerPhraseTranslations[english] ??
       birthdayPhraseTranslations[english] ??
       eventRefreshPhraseTranslations[english] ??

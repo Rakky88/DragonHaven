@@ -156,7 +156,29 @@ void main() {
     expect(session.canAct, isTrue);
   });
 
-  test('handoff bound survives an account change before its stream event', () async {
+  test('root close drains an admitted read even after its account changes',
+      () async {
+    final held = Completer<void>();
+    connection.holdRead = held.future;
+    final reading = session.synchronize();
+    final refused = expectLater(reading, failure('game_account_changed'));
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    connection.switchAccount(other);
+    var closed = false;
+    final closing = session.close().then((_) => closed = true);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(closed, false);
+    expect(connection.closed, false);
+    await expectLater(session.synchronize(), failure('game_login_required'));
+    held.complete();
+    await refused;
+    await closing;
+    expect(connection.closed, true);
+    expect(session.snapshot, isNull);
+  });
+
+  test('handoff bound survives an account change before its stream event',
+      () async {
     connection.currentOwner = other;
     connection.sessionEpoch++;
     await expectLater(session.synchronize(minimumServerRevision: 3),

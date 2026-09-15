@@ -62,6 +62,111 @@ void main() {
     expect(prefs.getString(StorageService.currentKey), before);
   });
 
+  Future<AccountSaveReview> review() => AccountLegacyGameStorage.reviewSources(
+      repository: repository,
+      owner: repository.owner,
+      currentOwner: () => repository.owner,
+      sessionEpoch: () => epoch);
+  Future<AccountLegacyGameStorage> choose(
+          AccountSaveReview comparison, AccountSaveChoice choice) =>
+      AccountLegacyGameStorage.chooseSource(
+          review: comparison,
+          choice: choice,
+          repository: repository,
+          currentOwner: () => repository.owner,
+          sessionEpoch: () => epoch);
+
+  test('explicit local choice retains both copies and binds only this account',
+      () async {
+    final local = {
+      ...source,
+      'accountName': 'Latest device',
+      'futureField': 42
+    };
+    await StorageService.save(local);
+    final comparison = await review();
+    expect(comparison.needsChoice, true);
+    expect(await AccountLegacyGameStorage.open(a), isNull);
+    comparison.local!['accountName'] = 'Mutated preview';
+    final selected = await choose(comparison, AccountSaveChoice.local);
+    expect(await selected.load(), local);
+    expect(await selected.cloudBaseRevision(), 7);
+    final prefs = await SharedPreferences.getInstance();
+    expect(jsonDecode(prefs.getString(StorageService.currentKey)!), local);
+    final evidence = jsonDecode(prefs.getString('${key(a)}_source_review')!);
+    expect(evidence['local'], local);
+    expect(evidence['cloud'], source);
+    repository.owner = b;
+    final other = await review();
+    expect(other.local, isNull);
+    expect(await AccountLegacyGameStorage.open(b), isNull);
+  });
+
+  test(
+      'changed cloud or device refuses a stale comparison without replacing progress',
+      () async {
+    await StorageService.save(source);
+    final comparison = await review();
+    await StorageService.save({...source, 'accountName': 'Newer'});
+    await expectLater(choose(comparison, AccountSaveChoice.cloud),
+        throwsA(isA<CanonicalGameException>()));
+    expect(await AccountLegacyGameStorage.open(a), isNull);
+    final updated = await review();
+    repository.read = () async => CloudGameSave(
+        revision: 8,
+        state: source,
+        updatedAt: DateTime.now(),
+        deviceId: 'other');
+    await expectLater(choose(updated, AccountSaveChoice.local),
+        throwsA(isA<SocialException>()));
+    expect(await AccountLegacyGameStorage.open(a), isNull);
+  });
+
+  test('cloud choice cannot discard an unresolved local Altar request',
+      () async {
+    final local = {
+      ...source,
+      'pendingAltarOperation': {'id': 'original', 'action': 'tag'}
+    };
+    await StorageService.save(local);
+    final comparison = await review();
+    expect(comparison.canChooseCloud, false);
+    await expectLater(choose(comparison, AccountSaveChoice.cloud),
+        throwsA(isA<CanonicalGameException>()));
+    final selected = await choose(comparison, AccountSaveChoice.local);
+    expect((await selected.load())!['pendingAltarOperation'],
+        local['pendingAltarOperation']);
+  });
+
+  test(
+      'cloud choice preserves the old owner save and cannot be reused after A-B-A',
+      () async {
+    final store = await import();
+    final local = {...source, 'accountName': 'Newer local'};
+    await store.save(local);
+    final comparison = await review();
+    epoch += 2;
+    await expectLater(choose(comparison, AccountSaveChoice.cloud),
+        throwsA(isA<CanonicalGameException>()));
+    expect(await store.load(), local);
+    final selected = await choose(await review(), AccountSaveChoice.cloud);
+    expect(await selected.load(), source);
+    expect(await selected.loadBackup(), local);
+  });
+
+  test(
+      'an account without cloud can explicitly adopt local progress at revision zero',
+      () async {
+    await StorageService.save(source);
+    repository.read = () async => null;
+    final selected = await choose(await review(), AccountSaveChoice.local);
+    expect(await selected.cloudBaseRevision(), 0);
+    await selected.save({...source, 'languageCode': 'nl'});
+    expect((await selected.load())!['languageCode'], 'nl');
+    await selected.saveCloudBaseRevision(1);
+    expect(await selected.cloudBaseRevision(), 1);
+  });
+
   test(
       'retiring A preserves its journal while B can open; migration still refuses',
       () async {

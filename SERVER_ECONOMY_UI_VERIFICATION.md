@@ -1162,3 +1162,39 @@ fixture's two-second filesystem wait under parallel sprite load, followed by a
 locked temporary directory during early teardown. Its wait now matches the
 transport's bounded ten-second deadline; all four focused shop tests pass.
 The staging workflow reruns the entire suite sequentially before deployment.
+
+
+## Normal startup source selection candidate - 15 September 2026
+
+The configured non-demo entry point now resolves authenticated account authority
+before loading any gameplay save. Legacy construction is shared with the normal
+app, but its cloud revision callbacks use the captured account store. Signed-in
+source comparisons show local/cloud balances, dragon/form counts and Adventure
+completion counts. The first comparison and pre-switch progress are preserved
+separately. Choosing local explicitly binds an unassigned device source; another
+account cannot silently adopt it. Changed local bytes, cloud revision/content or
+authentication epoch reject a stale choice. Pending Altar requests block a cloud
+replacement. No choice automatically restores older progress or grants rewards.
+
+The entire status Navigator also changes with the account. Delayed callbacks
+from its old comparison cannot confirm the next account's choice. The actual
+root widget test covers authority-before-source reads, A-to-B while comparing,
+a stale callback and opening the real legacy app against B's selected store.
+Bound social repositories reject requests and responses from retired sessions.
+Server session retirement drains admitted operations even after account changes
+clear the current UI operation. Account-scoped recovery copies remain available.
+
+Validation: clean analysis; 31 source/session/composed-upload tests, the normal
+root test and both compact Dutch comparison tests pass. The complete suite
+reached 1,022 passes and one optional skip; its only failure was missing new UI
+translations. Those translations are now supplied for all six additional
+languages, and all ten localization tests pass. Documentation fingerprints
+verify. The updated real staging probe selects its source through the same
+review/choice API before testing lost upload, activation and purchase replies;
+that updated staging result is pending.
+
+This is not a production cutover or a new release. v0.05.38 remains the published
+release. Remaining release gates include signed-out/offline entry compatibility,
+complete production gameplay navigation, the updated actual staging rehearsal,
+production checks and a controlled authority rollout. Pending migration 84 and
+the worker/authority switches have not been deployed or enabled by this change.

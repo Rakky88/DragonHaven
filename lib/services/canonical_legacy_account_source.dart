@@ -22,6 +22,7 @@ class CanonicalLegacyAccountSource {
     required int Function() sessionEpoch,
     required Future<String> Function() deviceId,
     required String clientVersion,
+    this.beforeClose,
   }) {
     if (!identical(game.legacyStorage, storage) ||
         !identical(altar.game, game)) {
@@ -52,6 +53,7 @@ class CanonicalLegacyAccountSource {
   final HouseholdProvider game;
   final OnlineAccountProvider online;
   final EggAltarRepository altar;
+  final void Function()? beforeClose;
   late final CanonicalLegacyUpload _upload;
   Future<void>? _retiring;
   Future<int>? _uploading;
@@ -84,6 +86,7 @@ class CanonicalLegacyAccountSource {
     } on Object {/* The upload caller owns the error. */}
     if (_disposed) return;
     _disposed = true;
+    beforeClose?.call();
     online.dispose();
     game.dispose();
   }
