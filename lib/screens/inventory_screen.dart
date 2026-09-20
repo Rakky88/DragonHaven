@@ -1493,6 +1493,7 @@ Future<void> _useRelic(BuildContext context, MysticRelic relic) async {
       return _equipBrooch(context, relic);
     case MysticRelic.moralPrism:
     case MysticRelic.orderCompass:
+    case MysticRelic.sparkAstrolabe:
     case MysticRelic.soulMirror:
       break;
   }
@@ -1958,7 +1959,9 @@ class _AnimatedRelicRevealDialogState
     super.didChangeDependencies();
     if (_precached) return;
     _precached = true;
-    for (var frame = 0; frame < 20; frame++) {
+    for (var frame = 0;
+        frame < (widget.relic.usesFrameSequence ? 20 : 1);
+        frame++) {
       precacheImage(
           AssetImage(widget.relic.animationFrameAsset(frame)), context);
     }
@@ -1994,6 +1997,8 @@ class _AnimatedRelicRevealDialogState
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final value = switch (widget.relic) {
+      MysticRelic.sparkAstrolabe =>
+        "${strings.pick('Dragon Spark', 'Drakenvonk')}: +${widget.dragon.dragonSpark}",
       MysticRelic.moralPrism => strings.moralAxisName(widget.dragon.moralAxis),
       MysticRelic.orderCompass => strings.lawAxisName(widget.dragon.lawAxis),
       MysticRelic.soulMirror =>
@@ -2027,16 +2032,36 @@ class _AnimatedRelicRevealDialogState
                 children: [
                   SizedBox.square(
                     dimension: 284,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 115),
-                      child: Image.asset(
-                        widget.relic.animationFrameAsset(_frame),
-                        key: ValueKey(_frame),
-                        fit: BoxFit.contain,
-                        gaplessPlayback: true,
-                        filterQuality: FilterQuality.high,
-                      ),
-                    ),
+                    child: widget.relic == MysticRelic.sparkAstrolabe
+                        ? AnimatedScale(
+                            scale: _revealed ? 1 : .84 + _frame / 19 * .16,
+                            duration: const Duration(milliseconds: 120),
+                            child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 120),
+                                decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                          color: const Color(0xFFDAA7FF)
+                                              .withValues(
+                                                  alpha:
+                                                      .08 + _frame / 19 * .20),
+                                          blurRadius: 35 + _frame * 2,
+                                          spreadRadius: 4)
+                                    ]),
+                                child: Image.asset(widget.relic.assetPath,
+                                    fit: BoxFit.contain,
+                                    filterQuality: FilterQuality.high)))
+                        : AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 115),
+                            child: Image.asset(
+                              widget.relic.animationFrameAsset(_frame),
+                              key: ValueKey(_frame),
+                              fit: BoxFit.contain,
+                              gaplessPlayback: true,
+                              filterQuality: FilterQuality.high,
+                            ),
+                          ),
                   ),
                   AnimatedOpacity(
                     opacity: _revealed ? 1 : 0,

@@ -1934,6 +1934,7 @@ class HouseholdProvider extends ChangeNotifier {
         MysticRelic.moralPrism => dragon.moralAxisKnown,
         MysticRelic.orderCompass => dragon.lawAxisKnown,
         MysticRelic.soulMirror => dragon.personalityKnown,
+        MysticRelic.sparkAstrolabe => dragon.dragonSparkKnown,
         MysticRelic.twinstarBrooch ||
         MysticRelic.emberheartBrooch ||
         MysticRelic.moonweaveBrooch ||
@@ -2006,6 +2007,9 @@ class HouseholdProvider extends ChangeNotifier {
         break;
       case MysticRelic.orderCompass:
         dragon.lawAxisKnown = true;
+        break;
+      case MysticRelic.sparkAstrolabe:
+        dragon.dragonSparkKnown = true;
         break;
       case MysticRelic.soulMirror:
         dragon.revealPersonality();

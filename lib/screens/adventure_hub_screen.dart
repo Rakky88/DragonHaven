@@ -2619,8 +2619,7 @@ class _AdventureCard extends StatelessWidget {
                   size: 34,
                 ),
                 title: strings.pick('Expertise training', 'Expertisetraining'),
-                value:
-                    '+${definition.statPoints} ${_focusName(strings, definition.focus)} · '
+                value: '${_expertiseRewardLabel(strings, definition)} · '
                     '${_focusExplanation(strings, definition.focus)}',
               ),
             if (definition.combinedExpertise)
@@ -3022,7 +3021,9 @@ class _DragonPickerTile extends StatelessWidget {
       color: highlighted ? const Color(0xFFFFFAE9) : Colors.white,
       child: InkWell(
         key: Key('adventure-dragon-${dragon.id}'),
-        onTap: () => Navigator.pop(context, dragon),
+        onTap: adventure.canAffordExpertiseCost(dragon.trainingFor)
+            ? () => Navigator.pop(context, dragon)
+            : null,
         borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
@@ -3097,6 +3098,11 @@ class _DragonPickerTile extends StatelessWidget {
                   ],
                 ),
               ),
+              if (!adventure.canAffordExpertiseCost(dragon.trainingFor))
+                Tooltip(
+                    message: strings.pick('Not enough expertise for this path.',
+                        'Niet genoeg expertise voor dit pad.'),
+                    child: const Icon(Icons.lock_outline_rounded, size: 18)),
               Icon(Icons.chevron_right_rounded,
                   color: AppColors.eventColor(context, AppColors.twilight)),
             ],
@@ -3773,6 +3779,7 @@ class _ActiveAdventureCard extends StatelessWidget {
                 const SizedBox(height: 10),
                 _CompletedAdventureRewards(
                   key: Key('completed-adventure-rewards-${run.id}'),
+                  retraining: run.retraining,
                   definition: definition,
                   chestTier: run.rewardTier ?? definition.knownChest,
                   specialEvent: specialEvent,
@@ -3864,8 +3871,8 @@ Future<void> _showRunDetails(
                       GameIconSprite.forTrainingFocus(definition.focus),
                       size: 34),
                   title: strings.pick('Training reward', 'Trainingsbeloning'),
-                  value:
-                      '+${definition.statPoints} ${_focusName(strings, definition.focus)}'),
+                  value: _expertiseRewardLabel(strings, definition,
+                      retraining: run.retraining)),
             if (specialEvent != null)
               for (final reward
                   in specialEvent.rewards.expertiseRewards.entries)
@@ -4019,6 +4026,7 @@ class _CompletedAdventureRewards extends StatelessWidget {
     this.includeMusicChest = false,
     this.groupChestRange = false,
     this.approximate = false,
+    this.retraining = false,
   });
 
   final AdventureDefinition definition;
@@ -4027,6 +4035,7 @@ class _CompletedAdventureRewards extends StatelessWidget {
   final bool includeMusicChest;
   final bool groupChestRange;
   final bool approximate;
+  final bool retraining;
 
   @override
   Widget build(BuildContext context) {
@@ -4069,8 +4078,8 @@ class _CompletedAdventureRewards extends StatelessWidget {
                     GameIconSprite.forTrainingFocus(definition.focus),
                     size: 24,
                   ),
-                  label:
-                      '+${definition.statPoints} ${_focusName(strings, definition.focus)}',
+                  label: _expertiseRewardLabel(strings, definition,
+                      retraining: retraining),
                 ),
               if (specialEvent != null)
                 for (final reward
@@ -4400,11 +4409,21 @@ Future<void> _showStartResult(
         'Connect online friends before joining a Group Adventure.',
         'Koppel online vrienden voordat je aan een Group Adventure meedoet.'),
     AdventureStartResult.requirementsNotMet => strings.pick(
-        'The group does not meet the requirements.',
-        'De groep voldoet niet aan de eisen.'),
+        'The adventure requirements are not met. Check the expertise cost.',
+        'Er wordt niet aan de vereisten voldaan. Controleer de expertisekosten.'),
     AdventureStartResult.unavailable => strings.pick(
         'This offer is no longer available.',
         'Deze optie is niet meer beschikbaar.'),
   };
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
+
+String _expertiseRewardLabel(AppStrings strings, AdventureDefinition definition,
+        {bool retraining = true}) =>
+    (retraining
+            ? definition.expertiseRewards
+            : {definition.focus: definition.statPoints})
+        .entries
+        .map((e) =>
+            '${e.value >= 0 ? '+' : ''}${e.value} ${_focusName(strings, e.key)}')
+        .join(' / ');

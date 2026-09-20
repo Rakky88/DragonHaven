@@ -15,6 +15,12 @@ enum TrainingFocus { might, arcana, spirit }
 const int maxDragonExpertise = 300;
 const int ascendedDragonExpertise = 350;
 const int infernalSpecialistExpertise = 400;
+const int ordinaryExpertiseBudget = 950;
+const int sinisterExpertiseBudget = 1100;
+const int masteryExpertiseBonus = 50;
+const int maximumDragonSpark = 50;
+const int largestExpertiseBudget =
+    sinisterExpertiseBudget + masteryExpertiseBonus + maximumDragonSpark;
 const int dragonSchoolAttemptsPerLesson = 3;
 const int dragonSchoolLessonCount = 10;
 const int dragonSchoolMaximumAttempts =
@@ -32,46 +38,29 @@ const Set<String> dragonSchoolLessonIds = {
   'constellationTrace',
 };
 
-int dragonExpertiseMaximum({
+int dragonExpertiseBudget({
   required DragonStage stage,
   required bool sinister,
   required String? evolutionPath,
-  required TrainingFocus focus,
 }) {
-  if (sinister) {
-    if (stage == DragonStage.ascended &&
-        (evolutionPath == 'mastery' || evolutionPath == focus.name)) {
-      return infernalSpecialistExpertise;
-    }
-    return ascendedDragonExpertise;
-  }
-  if (stage != DragonStage.ascended) return maxDragonExpertise;
-  if (evolutionPath == 'mastery' || evolutionPath == focus.name) {
-    return ascendedDragonExpertise;
-  }
-  return maxDragonExpertise;
+  return (sinister ? sinisterExpertiseBudget : ordinaryExpertiseBudget) +
+      (stage == DragonStage.ascended && evolutionPath == 'mastery'
+          ? masteryExpertiseBonus
+          : 0);
 }
 
-Map<String, int> _normalizedTraining(
-  Map<String, int>? values, {
-  required DragonStage stage,
-  required bool sinister,
-  required String? evolutionPath,
-}) =>
-    {
-      for (final focus in TrainingFocus.values)
-        focus.name: (values?[focus.name] ?? 0)
-            .clamp(
-              0,
-              dragonExpertiseMaximum(
-                stage: stage,
-                sinister: sinister,
-                evolutionPath: evolutionPath,
-                focus: focus,
-              ),
-            )
-            .toInt(),
-    };
+Map<String, int> _normalizedTraining(Map<String, int>? values) {
+  // Old legitimate totals can exceed a new individual budget. Preserve those,
+  // but reject impossible overflow during the canonical import fingerprint.
+  var available = largestExpertiseBudget;
+  final training = <String, int>{};
+  for (final focus in TrainingFocus.values) {
+    final value = (values?[focus.name] ?? 0).clamp(0, available);
+    training[focus.name] = value;
+    available -= value;
+  }
+  return training;
+}
 
 const _trialKeys = {
   'cavernFlight',
@@ -194,6 +183,8 @@ class Pet implements TrialDragon {
     this.altarKnowledge = const AltarEggKnowledge(),
     bool moralAxisKnown = false,
     this.personalityKnown = false,
+    int? dragonSpark,
+    this.dragonSparkKnown = false,
     this.sizeFactor = 1,
     int incubationMinutes = 60,
     int? incubationSeconds,
@@ -219,7 +210,8 @@ class Pet implements TrialDragon {
     int? hatchSeed,
     String? lineageId,
     this.evolutionPath,
-  })  : id = id ?? 'dragon-${DateTime.now().microsecondsSinceEpoch}',
+  })  : _storedDragonSpark = dragonSpark?.clamp(0, 50),
+        id = id ?? 'dragon-${DateTime.now().microsecondsSinceEpoch}',
         _sex = sex,
         highlightedExpertises = {...?highlightedExpertises},
         sinister = sinister || lineageId == 'sinisterra',
@@ -232,12 +224,7 @@ class Pet implements TrialDragon {
         acquiredAt = acquiredAt ?? DateTime.now(),
         stageStartedAt = stageStartedAt ?? acquiredAt ?? DateTime.now(),
         needsUpdatedAt = needsUpdatedAt ?? DateTime.now(),
-        training = _normalizedTraining(
-          training,
-          stage: stage,
-          sinister: sinister || lineageId == 'sinisterra',
-          evolutionPath: evolutionPath,
-        ),
+        training = _normalizedTraining(training),
         trialHighScores = _normalizedTrialHighScores(trialHighScores),
         dragonSchoolRecords = _normalizedSchoolScores(dragonSchoolRecords),
         dragonSchoolStars = _normalizedSchoolStars(dragonSchoolStars),
@@ -257,6 +244,13 @@ class Pet implements TrialDragon {
   @override
   final String id;
   String name;
+  final int? _storedDragonSpark;
+
+  /// Generated once from the persisted hatch seed for old and new dragons.
+  /// Stored explicitly on the next save; never rerolled by evolution or trade.
+  late final int dragonSpark =
+      _storedDragonSpark ?? Random(hatchSeed ^ 0x48a391).nextInt(51);
+  bool dragonSparkKnown;
   int xp;
   int coins;
   int gems;
@@ -388,14 +382,17 @@ class Pet implements TrialDragon {
   double get wellbeing => (joy + energy + comfort) / 300;
   @override
   int trainingFor(TrainingFocus focus) => training[focus.name] ?? 0;
-  int expertiseMaximum(TrainingFocus focus) => dragonExpertiseMaximum(
+  int expertiseMaximum(TrainingFocus focus) =>
+      trainingFor(focus) + remainingExpertise;
+  int get maximumTotalExpertise =>
+      dragonExpertiseBudget(
         stage: stage,
         sinister: sinister,
         evolutionPath: evolutionPath,
-        focus: focus,
-      );
-  int get maximumTotalExpertise => TrainingFocus.values
-      .fold(0, (total, focus) => total + expertiseMaximum(focus));
+      ) +
+      dragonSpark;
+  int get remainingExpertise => max(0, maximumTotalExpertise - totalTraining);
+  bool get expertiseMaxed => remainingExpertise == 0;
   @override
   int trialBest(String trialKey) => trialHighScores[trialKey] ?? 0;
   int schoolBest(String lessonId) => dragonSchoolRecords[lessonId] ?? 0;
@@ -507,13 +504,21 @@ class Pet implements TrialDragon {
   }
 
   void addTraining(TrainingFocus focus, int amount) {
-    if (amount <= 0) return;
-    final maximum = expertiseMaximum(focus);
-    training.update(
-      focus.name,
-      (value) => (value + amount).clamp(0, maximum).toInt(),
-      ifAbsent: () => amount.clamp(0, maximum).toInt(),
-    );
+    if (amount <= 0 || remainingExpertise == 0) return;
+    training[focus.name] = trainingFor(focus) + min(amount, remainingExpertise);
+  }
+
+  /// Costs are applied before gains so a full dragon can retrain. Invalid
+  /// costs fail atomically; existing over-budget saves keep earned points.
+  bool applyExpertiseCosts(Map<TrainingFocus, int> rewards) {
+    if (rewards.entries
+        .any((e) => e.value < 0 && trainingFor(e.key) + e.value < 0)) {
+      return false;
+    }
+    for (final entry in rewards.entries.where((e) => e.value < 0)) {
+      training[entry.key.name] = trainingFor(entry.key) + entry.value;
+    }
+    return true;
   }
 
   void hatch(DateTime now) {
@@ -588,6 +593,8 @@ class Pet implements TrialDragon {
         'altarKnowledge': altarKnowledge.toJson(),
         'moralAxisKnown': moralAxisKnown,
         'personalityKnown': personalityKnown,
+        'dragonSpark': dragonSpark,
+        'dragonSparkKnown': dragonSparkKnown,
         'sizeFactor': sizeFactor,
         'incubationMinutes': incubationMinutes,
         'incubationSeconds': incubationSeconds,
@@ -680,6 +687,8 @@ class Pet implements TrialDragon {
           json['moralAxisKnown'] is bool && json['moralAxisKnown'] as bool,
       personalityKnown:
           json['personalityKnown'] is bool && json['personalityKnown'] as bool,
+      dragonSpark: (json['dragonSpark'] as num?)?.toInt(),
+      dragonSparkKnown: json['dragonSparkKnown'] == true,
       sizeFactor: ((json['sizeFactor'] as num?)?.toDouble() ?? 1)
           .clamp(.5, 1.5)
           .toDouble(),

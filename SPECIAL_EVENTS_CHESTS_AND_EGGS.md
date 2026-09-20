@@ -1,5 +1,19 @@
 # DragonHaven Special Events, Chests, and Eggs
 
+## Shared expertise candidate ? 20 September 2026
+
+Training now uses the shared 950/1100 budget, +50 for Mastery and a permanent
+private 0?50 Dragon Spark. Existing event expertise rewards use remaining total
+capacity; their amounts, distribution, schedules, rank thresholds and assistance
+curves are unchanged. Event S+ Trials use the ordinary weighted relic pool with
+one new weight-1 consumable, Spark Astrolabe. Ordinary/Special chest gates and
+Special egg DNA remain unchanged. The bonus remains fixed from egg seed through
+hatch/import/trade and is disclosed only by consuming the Astrolabe. There are no
+new Special Adventures or event assets. See RANDOM_REWARDS_AND_ODDS.md and
+TRIAL_EXPERTISE.md for the exact budget/drop rules and all eleven trial effects.
+Migration 85 is a forward candidate; production application is not yet claimed.
+
+
 Account-scoped legacy persistence now preserves egg/reward metadata and pending
 Altar request IDs during account retirement. Final migration still requires a
 resolved journal. The reviewed event targets (1,000/day; Valentine 2,000/day),
@@ -345,7 +359,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 233828924f6f285b -->
+<!-- reference-source-fingerprint: 5ec573951f22cf52 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

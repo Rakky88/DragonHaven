@@ -43,10 +43,10 @@ void main() {
       'each brooch has one tenth the ordinary weight and owned brooches are excluded',
       () {
     final pool = mysticRelicDropPool();
-    expect(pool, hasLength(64));
+    expect(pool, hasLength(65));
     for (final r in MysticRelic.values) {
-      expect(
-          pool.where((entry) => entry == r), hasLength(r.isEquipable ? 1 : 10));
+      expect(pool.where((entry) => entry == r),
+          hasLength(r.isEquipable || r == MysticRelic.sparkAstrolabe ? 1 : 10));
       if (r.isEquipable) {
         expect(r.isShopAvailable, isFalse);
         expect(r.isConsumable, isFalse);
@@ -54,8 +54,8 @@ void main() {
       }
     }
     final excluded = MysticRelic.values.where((r) => r.isEquipable).toSet();
-    expect(mysticRelicDropPool(excluded: excluded), hasLength(60));
-    for (var i = 0; i < 64; i++) {
+    expect(mysticRelicDropPool(excluded: excluded), hasLength(61));
+    for (var i = 0; i < pool.length; i++) {
       expect(
           trialRewardForGrade(TrialGrade.sPlus, 0, relicRoll: 0, relicChoice: i)
               .relic,

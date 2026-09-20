@@ -57,7 +57,7 @@ void main() {
       'catalog snapshot matches real client collections and Special definitions',
       () {
     final catalog = economyChestCatalog();
-    final sql = File('supabase/migrations/202609090064_sunwake_harvestmoon.sql')
+    final sql = File('supabase/migrations/202609200085_shared_expertise_budget.sql')
         .readAsStringSync();
     final embedded = sql.split(r'$catalog$')[1];
     expect(jsonDecode(embedded), catalog);

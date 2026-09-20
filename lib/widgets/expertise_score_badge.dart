@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 
 import '../models/pet.dart';
@@ -26,8 +27,6 @@ class ExpertiseScoreBadge extends StatelessWidget {
   final double iconSize;
   final bool expand;
   final bool highlighted;
-
-  bool get isMaxed => score >= maximum;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -63,21 +62,33 @@ class ExpertiseScoreBadge extends StatelessWidget {
               ),
             ],
           ),
-          if (isMaxed) ...[
-            const SizedBox(height: 2),
-            Align(
-                alignment: Alignment.centerRight,
-                widthFactor: expand ? null : 1,
-                child: Image.asset(
-                  maxAsset,
-                  key: Key('expertise-max-$dragonId-${focus.name}'),
-                  width: 52,
-                  height: 17,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
-                  semanticLabel: '$focusLabel maximum',
-                )),
-          ],
         ],
       );
+}
+
+/// Whole-dragon budget state; unrevealed capacity is never printed.
+class DragonExpertiseStatus extends StatelessWidget {
+  const DragonExpertiseStatus(
+      {super.key, required this.dragonId, required this.maxed, this.spark});
+  final String dragonId;
+  final bool maxed;
+  final int? spark;
+  @override
+  Widget build(BuildContext context) {
+    if (!maxed && spark == null) return const SizedBox.shrink();
+    final s = AppStrings.of(context);
+    return Row(children: [
+      if (spark != null)
+        Expanded(
+            child: Text('${s.pick('Dragon Spark', 'Drakenvonk')}: +$spark',
+                key: Key('dragon-spark-$dragonId'),
+                style: const TextStyle(fontWeight: FontWeight.w700))),
+      if (maxed)
+        Image.asset(ExpertiseScoreBadge.maxAsset,
+            key: Key('expertise-max-$dragonId'),
+            width: 62,
+            height: 22,
+            semanticLabel: s.pick('Fully trained', 'Volledig getraind')),
+    ]);
+  }
 }

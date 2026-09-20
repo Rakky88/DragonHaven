@@ -292,7 +292,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 450));
     expect(
       find.byKey(Key('expertise-max-${game.pet.id}-${first.focus.name}')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(tester.takeException(), isNull);
   });
@@ -481,7 +481,7 @@ void main() {
         'expertise-max-trial-widget-dragon-'
         '${offers.first.definition.focus.name}',
       )),
-      findsOneWidget,
+      findsNothing,
     );
     expect(
       find.byKey(const Key('trial-score-multiplier-trial-widget-dragon')),
@@ -1854,9 +1854,14 @@ void main() {
     for (final focus in TrainingFocus.values) {
       expect(
         find.byKey(Key('expertise-max-${game.pet.id}-${focus.name}')),
-        findsOneWidget,
+        findsNothing,
       );
     }
+    expect(find.byKey(Key('expertise-max-${game.pet.id}')), findsNothing);
+    game.pet.addTraining(TrainingFocus.spirit, 5000);
+    game.notifyListeners();
+    await tester.pump();
+    expect(find.byKey(Key('expertise-max-${game.pet.id}')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

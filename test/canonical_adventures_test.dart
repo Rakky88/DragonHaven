@@ -30,6 +30,7 @@ void main() {
     server = CanonicalUiServer(
         jsonDecode(jsonEncode(fixture)) as Map<String, dynamic>);
     server.state['relicInventory']['wayfinderSigil'] = 2;
+    server.state['pet']['training'] = {'might': 50, 'arcana': 50, 'spirit': 50};
     final second =
         jsonDecode(jsonEncode(server.state['pet'])) as Map<String, dynamic>;
     second['id'] = '22222222-2222-4222-8222-222222222222';

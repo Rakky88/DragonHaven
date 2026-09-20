@@ -75,6 +75,8 @@ class AdventureDefinition {
     required this.xp,
     required this.focus,
     required this.statPoints,
+    this.expertiseCostFocus,
+    this.expertiseCost = 0,
     this.requirements = const AdventureRequirements(),
     this.knownChest,
     this.sinister = false,
@@ -85,7 +87,9 @@ class AdventureDefinition {
     this.minimumDuration,
     this.requiredDragonCount = 1,
     this.requiresOnlinePartner = false,
-  });
+  })  : assert(expertiseCost >= 0),
+        assert(expertiseCost == 0 ||
+            (expertiseCostFocus != null && expertiseCostFocus != focus));
 
   final String id;
   final AdventureKind kind;
@@ -97,6 +101,14 @@ class AdventureDefinition {
   final int xp;
   final TrainingFocus focus;
   final int statPoints;
+  final TrainingFocus? expertiseCostFocus;
+  final int expertiseCost;
+  Map<TrainingFocus, int> get expertiseRewards => {
+        if (expertiseCostFocus != null) expertiseCostFocus!: -expertiseCost,
+        focus: statPoints + expertiseCost,
+      };
+  bool canAffordExpertiseCost(int Function(TrainingFocus) score) =>
+      expertiseCostFocus == null || score(expertiseCostFocus!) >= expertiseCost;
   final AdventureRequirements requirements;
   final ChestTier? knownChest;
   final bool sinister;
@@ -171,6 +183,7 @@ class AdventureRun {
     this.specialEventId,
     this.specialEventKey,
     this.eventPointsAwarded = false,
+    this.retraining = false,
   });
 
   final String id;
@@ -186,6 +199,9 @@ class AdventureRun {
 
   /// Pre-claim saves used to credit points as soon as the timer expired.
   final bool eventPointsAwarded;
+
+  /// Old runs retain their originally promised rewards, without new costs.
+  final bool retraining;
 
   AdventureRun copyWith({
     AdventureRunStatus? status,
@@ -203,6 +219,7 @@ class AdventureRun {
         specialEventId: specialEventId,
         specialEventKey: specialEventKey,
         eventPointsAwarded: eventPointsAwarded,
+        retraining: retraining,
       );
 
   Map<String, dynamic> toJson() => {
@@ -217,6 +234,7 @@ class AdventureRun {
         'specialEventId': specialEventId,
         'specialEventKey': specialEventKey,
         'eventPointsAwarded': eventPointsAwarded,
+        'retraining': retraining,
       };
 
   factory AdventureRun.fromJson(Map<String, dynamic> json) => AdventureRun(
@@ -240,6 +258,7 @@ class AdventureRun {
         specialEventKey: json['specialEventKey'] as String?,
         eventPointsAwarded: json['eventPointsAwarded'] as bool? ??
             (json['status'] == 'rewardReady'),
+        retraining: json['retraining'] == true,
       );
 }
 
@@ -647,6 +666,10 @@ abstract final class AdventureCatalog {
         xp: 4 + index % 8,
         focus: TrainingFocus.values[index % 3],
         statPoints: 1 + index % 2,
+        expertiseCostFocus: index.isOdd
+            ? TrainingFocus.values[(index + 1 + (index ~/ 6) % 2) % 3]
+            : null,
+        expertiseCost: index.isOdd ? 1 : 0,
         knownChest: ChestTier.wooden,
       );
     }),
@@ -668,6 +691,10 @@ abstract final class AdventureCatalog {
         xp: 35 + hours * 18 + index % 13,
         focus: TrainingFocus.values[index % 3],
         statPoints: 4 + hours + index % 3,
+        expertiseCostFocus: index.isOdd
+            ? TrainingFocus.values[(index + 1 + (index ~/ 6) % 2) % 3]
+            : null,
+        expertiseCost: index.isOdd ? 3 + index % 3 : 0,
       );
     }),
   );
@@ -687,6 +714,10 @@ abstract final class AdventureCatalog {
         xp: 260 + days * 150 + index % 41,
         focus: TrainingFocus.values[(index + 1) % 3],
         statPoints: 35 + days * 11 + index % 7,
+        expertiseCostFocus: index.isOdd
+            ? TrainingFocus.values[(index + 2 + (index ~/ 6) % 2) % 3]
+            : null,
+        expertiseCost: index.isOdd ? 15 + index % 11 : 0,
       );
     }),
   );

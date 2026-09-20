@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 import '../models/pet.dart';
 import 'dragon_expertise_row.dart';
+import 'expertise_score_badge.dart';
 
 /// A separate tap target: inspecting a dragon never selects it for an adventure.
 class DragonExpertiseInfo extends StatelessWidget {
@@ -31,6 +32,11 @@ class DragonExpertiseInfo extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(s.pick('Expertise', 'Expertise')),
+                  DragonExpertiseStatus(
+                      dragonId: dragon.id,
+                      maxed: dragon.expertiseMaxed,
+                      spark:
+                          dragon.dragonSparkKnown ? dragon.dragonSpark : null),
                   const SizedBox(height: 12),
                   for (final focus in TrainingFocus.values)
                     DragonExpertiseRow(dragon: dragon, focus: focus),

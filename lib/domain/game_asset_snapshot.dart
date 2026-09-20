@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import '../models/dragon_sex.dart';
+import '../models/pet.dart';
 
 /// A semantic inventory fingerprint used before evaluating canonical state.
 /// It tolerates map order and explicit zero counts, but detects discarded
@@ -72,6 +72,9 @@ class GameAssetSnapshot {
       // Old saves acquire the same stable value as the model, without rerolls.
       properties['sex'] = DragonSex.fromJson(data).name;
       if (location != 'egg') {
+        final dragon = Pet.fromJson(data);
+        properties['dragonSpark'] = dragon.dragonSpark;
+        properties['dragonSparkKnown'] = dragon.dragonSparkKnown;
         properties['highlightedExpertises'] =
             (data['highlightedExpertises'] as List? ?? []).toSet().toList()
               ..sort();
@@ -202,6 +205,7 @@ class GameAssetSnapshot {
       _assets[key] = _canonical(key == 'adventureRuns'
           ? (state[key] as List).map((raw) {
               final run = Map<String, dynamic>.from(raw as Map);
+              run.putIfAbsent('retraining', () => false);
               run.putIfAbsent(
                   'eventPointsAwarded', () => run['status'] == 'rewardReady');
               for (final clock in ['startedAt', 'endsAt']) {

@@ -4,30 +4,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('MAX follows the dragon-specific expertise maximum',
+  testWidgets('MAX belongs to the whole dragon and hidden Spark leaves no hint',
       (tester) async {
-    Future<void> pumpScore(int score) => tester.pumpWidget(MaterialApp(
-          home: Scaffold(
-            body: ExpertiseScoreBadge(
-              dragonId: 'specialist',
+    Future<void> show({bool maxed = false, int? spark}) =>
+        tester.pumpWidget(MaterialApp(
+            home: Scaffold(
+                body: Column(children: [
+          DragonExpertiseStatus(dragonId: 'dragon', maxed: maxed, spark: spark),
+          const ExpertiseScoreBadge(
+              dragonId: 'dragon',
               focus: TrainingFocus.arcana,
               focusLabel: 'Arcana',
-              score: score,
-              maximum: 350,
-            ),
-          ),
-        ));
-
-    await pumpScore(300);
-    expect(
-      find.byKey(const Key('expertise-max-specialist-arcana')),
-      findsNothing,
-    );
-
-    await pumpScore(350);
-    expect(
-      find.byKey(const Key('expertise-max-specialist-arcana')),
-      findsOneWidget,
-    );
+              score: 950,
+              maximum: 950),
+        ]))));
+    await show();
+    expect(find.byKey(const Key('expertise-max-dragon')), findsNothing);
+    expect(find.textContaining('Spark'), findsNothing);
+    await show(maxed: true);
+    expect(find.byKey(const Key('expertise-max-dragon')), findsOneWidget);
+    expect(find.byKey(const Key('expertise-max-dragon-arcana')), findsNothing);
+    expect(find.textContaining('Spark'), findsNothing);
+    await show(maxed: true, spark: 0);
+    expect(find.text('Dragon Spark: +0'), findsOneWidget);
+    await show(spark: 50);
+    expect(find.text('Dragon Spark: +50'), findsOneWidget);
+    expect(find.byKey(const Key('expertise-max-dragon')), findsNothing);
   });
 }

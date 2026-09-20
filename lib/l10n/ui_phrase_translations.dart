@@ -16,6 +16,7 @@ import 'event_training_phrase_translations.dart';
 import 'economy_equipment_phrase_translations.dart';
 import 'lifecycle_phrase_translations.dart';
 import 'trade_phrase_translations.dart';
+import 'expertise_budget_phrase_translations.dart';
 
 /// Offline translations for complete, user-visible UI phrases.
 ///
@@ -45,6 +46,7 @@ String? translatedUiPhrase(String english, String languageCode) {
       seasonalPhraseTranslations[english] ??
       eventTrainingPhraseTranslations[english] ??
       economyEquipmentPhraseTranslations[english] ??
+      expertiseBudgetPhraseTranslations[english] ??
       lifecyclePhraseTranslations[english] ??
       cloudRestorePhraseTranslations[english] ??
       tradePhraseTranslations[english] ??

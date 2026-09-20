@@ -11,12 +11,14 @@ enum MysticRelic {
   emberheartBrooch,
   moonweaveBrooch,
   soulbloomBrooch,
+  sparkAstrolabe,
 }
 
 const relicShopGemPrice = 500;
 
 extension MysticRelicPresentation on MysticRelic {
   String get nameEn => switch (this) {
+        MysticRelic.sparkAstrolabe => 'Spark Astrolabe',
         MysticRelic.moralPrism => 'Moral Prism',
         MysticRelic.orderCompass => 'Order Compass',
         MysticRelic.soulMirror => 'Soul Mirror',
@@ -30,6 +32,7 @@ extension MysticRelicPresentation on MysticRelic {
       };
 
   String get nameNl => switch (this) {
+        MysticRelic.sparkAstrolabe => 'Vonkastrolabium',
         MysticRelic.moralPrism => 'Moreel Prisma',
         MysticRelic.orderCompass => 'Ordekompas',
         MysticRelic.soulMirror => 'Zielenspiegel',
@@ -43,6 +46,8 @@ extension MysticRelicPresentation on MysticRelic {
       };
 
   String get descriptionEn => switch (this) {
+        MysticRelic.sparkAstrolabe =>
+          'Reveals the Dragon Spark of one dragon: its hidden extra expertise capacity.',
         MysticRelic.moralPrism =>
           'Reveals whether one dragon leans toward Good, Neutral or Evil.',
         MysticRelic.orderCompass =>
@@ -66,6 +71,8 @@ extension MysticRelicPresentation on MysticRelic {
       };
 
   String get descriptionNl => switch (this) {
+        MysticRelic.sparkAstrolabe =>
+          'Onthult de Drakenvonk van een draak: zijn verborgen extra expertisecapaciteit.',
         MysticRelic.moralPrism =>
           'Onthult of één draak naar Goed, Neutraal of Kwaad neigt.',
         MysticRelic.orderCompass =>
@@ -89,6 +96,7 @@ extension MysticRelicPresentation on MysticRelic {
       };
 
   String get assetPath => 'assets/images/relics/${switch (this) {
+        MysticRelic.sparkAstrolabe => 'spark_astrolabe',
         MysticRelic.moralPrism => 'moral_prism',
         MysticRelic.orderCompass => 'order_compass',
         MysticRelic.soulMirror => 'soul_mirror',
@@ -102,6 +110,7 @@ extension MysticRelicPresentation on MysticRelic {
       }}.png';
 
   bool get isShopAvailable => switch (this) {
+        MysticRelic.sparkAstrolabe => false,
         MysticRelic.moralPrism ||
         MysticRelic.orderCompass ||
         MysticRelic.soulMirror ||
@@ -117,12 +126,16 @@ extension MysticRelicPresentation on MysticRelic {
       };
 
   bool get hasUseAnimation => switch (this) {
+        MysticRelic.sparkAstrolabe => true,
         MysticRelic.moralPrism ||
         MysticRelic.orderCompass ||
         MysticRelic.soulMirror =>
           true,
         _ => false,
       };
+
+  bool get usesFrameSequence =>
+      hasUseAnimation && this != MysticRelic.sparkAstrolabe;
 
   bool get isEquipable => switch (this) {
         MysticRelic.twinstarBrooch ||
@@ -140,14 +153,17 @@ extension MysticRelicPresentation on MysticRelic {
         _ => null,
       };
 
-  int get dropWeight => isEquipable ? 1 : 10;
+  int get dropWeight =>
+      isEquipable || this == MysticRelic.sparkAstrolabe ? 1 : 10;
 
   bool get isConsumable => !isEquipable;
 
-  bool get isAlwaysUntradeable => isEquipable;
+  bool get isAlwaysUntradeable =>
+      isEquipable || this == MysticRelic.sparkAstrolabe;
 
-  String animationFrameAsset(int frame) =>
-      'assets/images/relics/animations/$name/frame_${frame.toString().padLeft(2, '0')}.webp';
+  String animationFrameAsset(int frame) => this == MysticRelic.sparkAstrolabe
+      ? assetPath
+      : 'assets/images/relics/animations/$name/frame_${frame.toString().padLeft(2, '0')}.webp';
 }
 
 /// Conditional pool after the unchanged chest / S+ relic-drop gate succeeds.

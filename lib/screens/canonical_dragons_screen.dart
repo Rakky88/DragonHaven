@@ -177,6 +177,10 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                                     Text(strings.pick(
                                         'Tap an expertise to highlight it for training.',
                                         'Tik op een expertise om deze voor training te markeren.')),
+                                    DragonExpertiseStatus(
+                                        dragonId: dragon.id,
+                                        maxed: dragon.expertiseMaxed,
+                                        spark: dragon.dragonSpark),
                                     for (final focus in TrainingFocus.values)
                                       _HighlightControl(
                                           dragon: dragon, focus: focus),
