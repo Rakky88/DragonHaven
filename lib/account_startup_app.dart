@@ -39,6 +39,7 @@ import 'services/release_service.dart';
 import 'services/platform_actions.dart';
 import 'services/canonical_account_handoff.dart';
 import 'screens/privacy_screen.dart';
+import 'widgets/startup_splash.dart';
 
 Future<void> runAccountStartup(OnlineConfig config) async {
   if (!config.isConfigured) {
@@ -55,6 +56,9 @@ Future<void> runAccountStartup(OnlineConfig config) async {
   }
   final firebase =
       await HavenFirebase.initialize(HavenFirebaseConfig.fromEnvironment());
+  if (firebase.available) {
+    unawaited(FirebaseNotificationNavigation.initialize());
+  }
   await Supabase.initialize(
       url: config.url, publishableKey: config.publishableKey);
   final support = await getApplicationSupportDirectory();
@@ -600,6 +604,9 @@ class _StartupStatusState extends State<_StartupStatus> {
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
     final signedOut = widget.phase == CanonicalBootstrapPhase.signedOut;
+    if (!signedOut && widget.phase != CanonicalBootstrapPhase.failed) {
+      return const StartupSplash();
+    }
     return Scaffold(
         appBar: AppBar(title: const Text('DragonHaven')),
         body: SafeArea(

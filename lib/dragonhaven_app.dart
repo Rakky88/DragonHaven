@@ -33,6 +33,7 @@ import 'widgets/seasonal_app_frame.dart';
 import 'widgets/about_sheet.dart';
 import 'widgets/game_icon_sprite.dart';
 import 'widgets/haven_header_title.dart';
+import 'widgets/notification_destination_listener.dart';
 import 'widgets/game_tutorial.dart';
 import 'widgets/achievement_reveal.dart';
 import 'widgets/pull_to_dismiss_sheet.dart';
@@ -155,8 +156,6 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   late final HouseholdProvider _game;
   late final OnlineAccountProvider _online;
   late final AutomaticCloudBackupCoordinator _automaticCloudBackup;
-  late final StreamSubscription<HavenNotificationDestination>
-      _notificationNavigation;
   Timer? _presentationRetry;
   Timer? _gameClock;
   Timer? _adventureCompletionBadgeTimer;
@@ -185,12 +184,6 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       online: _online,
     );
     unawaited(_automaticCloudBackup.initialize());
-    _notificationNavigation = HavenNotifications.navigationEvents.listen(
-      (_) {
-        final destination = HavenNotifications.takePendingNavigation();
-        if (destination != null) _openNotificationDestination(destination);
-      },
-    );
     _game.addListener(_handleGameChanged);
     _online.addListener(_handleOnlineChanged);
     _syncNestHatchTimer();
@@ -242,8 +235,6 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       _maybeStartUpdateCheck();
       _syncNestHatchTimer();
       _schedulePresentations();
-      final destination = HavenNotifications.takePendingNavigation();
-      if (destination != null) _openNotificationDestination(destination);
     });
   }
 
@@ -266,7 +257,6 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
     _game.removeListener(_handleGameChanged);
     _online.removeListener(_handleOnlineChanged);
     _automaticCloudBackup.dispose();
-    unawaited(_notificationNavigation.cancel());
     _lifecycle.dispose();
     super.dispose();
   }
@@ -666,6 +656,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
 
   void _openNotificationDestination(HavenNotificationDestination destination) {
     if (!mounted) return;
+    Navigator.of(context).popUntil((route) => route.isFirst);
     switch (destination) {
       case HavenNotificationDestination.adventureCompleted:
         setState(() {
@@ -736,7 +727,7 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
       const InventoryScreen(),
       const ShopHubScreen(),
     ];
-    return Scaffold(
+    final scaffold = Scaffold(
       appBar: AppBar(
         toolbarHeight: HavenHeaderTitle.toolbarHeight(context),
         leadingWidth: 66,
@@ -939,6 +930,8 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
               ],
             ),
     );
+    return NotificationDestinationListener(
+        onDestination: _openNotificationDestination, child: scaffold);
   }
 
   void _handleMenuAction(_HavenMenuAction action) {

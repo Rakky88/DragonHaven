@@ -102,7 +102,9 @@ class MainActivity : FlutterActivity() {
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nl.dragonhaven.app/event_branding")
             .setMethodCallHandler { call, result ->
-                if (call.method != "setSchedule") {
+                if (call.method == "getSelectedLogo") {
+                    result.success(EventBranding.selectedLogo(this))
+                } else if (call.method != "setSchedule") {
                     result.notImplemented()
                 } else {
                     try {
@@ -337,8 +339,14 @@ class MainActivity : FlutterActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         val kind = intent.getStringExtra(NOTIFICATION_KIND_EXTRA) ?: return
-        intent.removeExtra(NOTIFICATION_KIND_EXTRA)
-        notificationChannel?.invokeMethod("notificationTap", mapOf("kind" to kind))
+        notificationChannel?.invokeMethod("notificationTap", mapOf("kind" to kind),
+            object : MethodChannel.Result {
+                override fun success(result: Any?) {
+                    if (getIntent() === intent) intent.removeExtra(NOTIFICATION_KIND_EXTRA)
+                }
+                override fun error(code: String, message: String?, details: Any?) {}
+                override fun notImplemented() {}
+            })
     }
 
     // Keep these references explicit. Android's release resource shrinker

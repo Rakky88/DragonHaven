@@ -39,6 +39,7 @@ import 'widgets/about_sheet.dart';
 import 'widgets/game_icon_sprite.dart';
 import 'widgets/game_tutorial.dart';
 import 'widgets/haven_header_title.dart';
+import 'widgets/notification_destination_listener.dart';
 import 'widgets/rooftop_egg_nest.dart';
 import 'widgets/haven_lighting.dart';
 import 'widgets/seasonal_app_frame.dart';
@@ -232,28 +233,18 @@ class _ServerShellState extends State<_ServerShell> {
   final _visited = <int>{2};
   bool _tutorialShowing = false;
   bool _showCompleted = false;
+  int _adventureNavigationRevision = 0;
   Timer? _updateRetry;
-  late final StreamSubscription<HavenNotificationDestination> _notifications;
 
   @override
   void initState() {
     super.initState();
     unawaited(_checkForUpdate());
-    _notifications = HavenNotifications.navigationEvents.listen((_) {
-      final destination = HavenNotifications.takePendingNavigation();
-      if (mounted && destination != null) _notification(destination);
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final destination = HavenNotifications.takePendingNavigation();
-      if (destination != null) _notification(destination);
-    });
   }
 
   @override
   void dispose() {
     _updateRetry?.cancel();
-    unawaited(_notifications.cancel());
     super.dispose();
   }
 
@@ -310,6 +301,8 @@ class _ServerShellState extends State<_ServerShell> {
 
   void _notification(HavenNotificationDestination destination) {
     if (!mounted) return;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    _adventureNavigationRevision++;
     if (destination == HavenNotificationDestination.achievements) {
       Navigator.push(context,
           MaterialPageRoute<void>(builder: (_) => const AchievementsScreen()));
@@ -397,7 +390,7 @@ class _ServerShellState extends State<_ServerShell> {
       s.pick('Inventory', 'Inventaris'),
       s.tr('shop')
     ];
-    return Scaffold(
+    final scaffold = Scaffold(
       appBar: AppBar(
         toolbarHeight: HavenHeaderTitle.toolbarHeight(context),
         leadingWidth: 58,
@@ -460,7 +453,10 @@ class _ServerShellState extends State<_ServerShell> {
               ? FriendsScreen(active: _index == 0)
               : const SizedBox.shrink(),
           _visited.contains(1)
-              ? CanonicalAdventuresScreen(showCompleted: _showCompleted)
+              ? CanonicalAdventuresScreen(
+                  key: ValueKey(
+                      'adventures-notification-$_adventureNavigationRevision'),
+                  showCompleted: _showCompleted)
               : const SizedBox.shrink(),
           const _ServerTower(),
           _visited.contains(3)
@@ -472,32 +468,34 @@ class _ServerShellState extends State<_ServerShell> {
         ]))),
       ])),
       bottomNavigationBar: MediaQuery.withClampedTextScaling(
-        // Keep the five fixed-width destinations readable on a small phone;
-        // page content retains the keeper's full accessibility text scale.
-        maxScaleFactor: MediaQuery.sizeOf(context).width < 360 ? 1.1 : 1.3,
-        child: NavigationBar(
-          selectedIndex: _index,
-          onDestinationSelected: _navigate,
-          destinations: [
-            for (final (i, kind) in const [
-              GameIconKind.navFriends,
-              GameIconKind.navAdventure,
-              GameIconKind.navTower,
-              GameIconKind.navInventory,
-              GameIconKind.navShop
-            ].indexed)
-              NavigationDestination(
-                  key: Key('nav-${[
-                    'friends',
-                    'adventure',
-                    'tower',
-                    'inventory',
-                    'shop'
-                  ][i]}'),
-                  icon: GameIconSprite(kind, size: 34),
-                  label: labels[i])
-          ])),
+          // Keep the five fixed-width destinations readable on a small phone;
+          // page content retains the keeper's full accessibility text scale.
+          maxScaleFactor: MediaQuery.sizeOf(context).width < 360 ? 1.1 : 1.3,
+          child: NavigationBar(
+              selectedIndex: _index,
+              onDestinationSelected: _navigate,
+              destinations: [
+                for (final (i, kind) in const [
+                  GameIconKind.navFriends,
+                  GameIconKind.navAdventure,
+                  GameIconKind.navTower,
+                  GameIconKind.navInventory,
+                  GameIconKind.navShop
+                ].indexed)
+                  NavigationDestination(
+                      key: Key('nav-${[
+                        'friends',
+                        'adventure',
+                        'tower',
+                        'inventory',
+                        'shop'
+                      ][i]}'),
+                      icon: GameIconSprite(kind, size: 34),
+                      label: labels[i])
+              ])),
     );
+    return NotificationDestinationListener(
+        onDestination: _notification, child: scaffold);
   }
 }
 

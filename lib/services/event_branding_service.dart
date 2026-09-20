@@ -39,6 +39,23 @@ List<Map<String, Object>> eventBrandingSchedule(
 
 class EventBrandingService {
   static const channel = MethodChannel('nl.dragonhaven.app/event_branding');
+  static String _launchLogoAsset = 'assets/images/dragonhaven_logo.png';
+  static String get launchLogoAsset => _launchLogoAsset;
+
+  static Future<String> readLaunchLogoAsset() async {
+    try {
+      final logo = await channel.invokeMethod<String>('getSelectedLogo');
+      _launchLogoAsset = EventAppearance.logoKeys.values.contains(logo)
+          ? 'assets/images/event_logos/$logo.png'
+          : 'assets/images/dragonhaven_logo.png';
+    } on MissingPluginException {
+      // Unsupported hosts use the ordinary DragonHaven launch art.
+    } on PlatformException {
+      // A cosmetic lookup must not delay the authenticated server check.
+    }
+    return _launchLogoAsset;
+  }
+
   String? _lastSchedule;
 
   Future<void> synchronize(List<Map<String, Object>> schedule) async {

@@ -7,13 +7,25 @@ import '../models/notification_settings.dart';
 
 export '../models/notification_settings.dart';
 
+class HavenNotificationNavigation {
+  HavenNotificationNavigation(this.destination);
+  final HavenNotificationDestination destination;
+}
+
 abstract final class HavenNotifications {
   static const _channel = MethodChannel('nl.dragonhaven.app/notifications');
   static final _navigationEvents =
       StreamController<HavenNotificationDestination>.broadcast();
   static Set<HavenNotificationCategory> _enabled =
       HavenNotificationCategory.values.toSet();
-  static HavenNotificationDestination? _pendingNavigation;
+  static HavenNotificationNavigation? _pendingNavigation;
+
+  static HavenNotificationNavigation? get pendingNavigation =>
+      _pendingNavigation;
+
+  static void acknowledgeNavigation(HavenNotificationNavigation request) {
+    if (identical(request, _pendingNavigation)) _pendingNavigation = null;
+  }
 
   static Stream<HavenNotificationDestination> get navigationEvents =>
       _navigationEvents.stream;
@@ -38,7 +50,7 @@ abstract final class HavenNotifications {
   static HavenNotificationDestination? takePendingNavigation() {
     final destination = _pendingNavigation;
     _pendingNavigation = null;
-    return destination;
+    return destination?.destination;
   }
 
   static void openRemoteDestination(String kind) => _recordNavigation(kind);
@@ -49,14 +61,21 @@ abstract final class HavenNotifications {
 
   static void _recordNavigation(String? kind, {bool emit = true}) {
     final destination = switch (kind) {
-      'adventure_complete' => HavenNotificationDestination.adventureCompleted,
-      'special_adventure_available' =>
+      'adventure_complete' ||
+      'seasonal_pair_ready' =>
+        HavenNotificationDestination.adventureCompleted,
+      'special_adventure_available' ||
+      'seasonal_pair_invite' ||
+      'seasonal_pair_accepted' =>
         HavenNotificationDestination.adventureAvailable,
       'trials_full' => HavenNotificationDestination.adventureTrials,
       'friend_request' ||
       'friend_accepted' ||
       'friend_message' ||
-      'trade' =>
+      'trade' ||
+      'trade_request' ||
+      'trade_return' ||
+      'trade_completed' =>
         HavenNotificationDestination.friends,
       'achievement' => HavenNotificationDestination.achievements,
       'egg' ||
@@ -66,7 +85,7 @@ abstract final class HavenNotifications {
         HavenNotificationDestination.tower,
       _ => HavenNotificationDestination.tower,
     };
-    _pendingNavigation = destination;
+    _pendingNavigation = HavenNotificationNavigation(destination);
     if (emit) _navigationEvents.add(destination);
   }
 

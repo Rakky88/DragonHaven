@@ -12,6 +12,33 @@ import '../providers/online_account_provider.dart';
 import 'notification_service.dart';
 import 'push_device_controller.dart';
 
+/// Kept for the entire process, including login and foreground server checks.
+/// Gameplay-scoped subscriptions disappear exactly when a tap can arrive.
+abstract final class FirebaseNotificationNavigation {
+  static StreamSubscription<RemoteMessage>? _opened;
+
+  static Future<void> initialize() async {
+    if (_opened != null) return;
+    _opened = FirebaseMessaging.onMessageOpenedApp.listen(_open);
+    try {
+      final initial = await FirebaseMessaging.instance
+          .getInitialMessage()
+          .timeout(const Duration(seconds: 8));
+      if (initial != null) _open(initial);
+    } on Object {
+      // Local notifications and normal online startup remain available.
+    }
+  }
+
+  static void _open(RemoteMessage message) {
+    final kind = message.data['kind'];
+    if (kind is String &&
+        FirebasePushCoordinator.kindCategories.containsKey(kind)) {
+      HavenNotifications.openRemoteDestination(kind);
+    }
+  }
+}
+
 class FirebasePushTokenClient implements PushTokenClient {
   @override
   Future<String?> token() =>
@@ -100,8 +127,7 @@ class FirebasePushCoordinator {
     _subscriptions.add(FirebaseMessaging.onMessage.listen(
       (_) => unawaited(online.pollSocialNotifications()),
     ));
-    _subscriptions.add(FirebaseMessaging.onMessageOpenedApp.listen(_open));
-    unawaited(_initial());
+    unawaited(FirebaseNotificationNavigation.initialize());
     _schedule();
   }
 
@@ -128,26 +154,6 @@ class FirebasePushCoordinator {
     'seasonal_pair_accepted': HavenNotificationCategory.specialEvents,
     'seasonal_pair_ready': HavenNotificationCategory.specialEvents,
   };
-
-  Future<void> _initial() async {
-    try {
-      final message = await FirebaseMessaging.instance.getInitialMessage();
-      if (message != null && !_disposed) _open(message);
-    } on Object {
-      // The durable inbox is still refreshed at normal startup.
-    }
-  }
-
-  void _open(RemoteMessage message) {
-    final kind = message.data['kind'];
-    if (kind is! String || !kindCategories.containsKey(kind)) return;
-    HavenNotifications.openRemoteDestination(kind.startsWith('seasonal_pair_')
-        ? 'special_adventure_available'
-        : kind.startsWith('trade_')
-            ? 'trade'
-            : kind);
-    unawaited(online.pollSocialNotifications());
-  }
 
   void _schedule({bool force = false}) {
     if (_disposed || _signingOut) return;

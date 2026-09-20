@@ -381,7 +381,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: e3eca10ab6d50c92 -->
+<!-- reference-source-fingerprint: 5cd038d5f02220d2 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -750,6 +750,14 @@ Hatch achievements:
 - Spectrumplume: `every_color_takes_flight` â€” Every Color Takes Flight
 
 ## 6. Temporary event music and notifications
+
+The authenticated startup/foreground check reuses the launch screen's current
+event logo on white, without a separate title or visible progress spinner. This
+is cosmetic: failures still expose the existing reconnect/update controls.
+Notification destinations survive the account gate and open only in the current
+gameplay session. Completed journeys (including ready seasonal pairs) open the
+Completed view; opening-event and invitation reminders open Adventures. Event
+schedules, contribution targets and reward eligibility are unchanged.
 
 Each of the six events temporarily exposes one verified CC0/Public Domain or original-synthesis jukebox
 alias while its real or private preview occurrence is active. It disappears

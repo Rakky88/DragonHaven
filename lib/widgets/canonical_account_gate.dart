@@ -22,6 +22,14 @@ class CanonicalAccountGate<T> extends StatefulWidget {
           BuildContext context, CanonicalAccountBootstrap<T> bootstrap)
       statusBuilder;
 
+  /// The old subtree can still be mounted until the next frame after a lease
+  /// is retired. Async navigation must check current authority, not just mounted.
+  static bool isCurrentGameplay(BuildContext context) =>
+      context
+          .getInheritedWidgetOfExactType<_GameplayAuthority>()
+          ?.isCurrent() ??
+      true;
+
   @override
   State<CanonicalAccountGate<T>> createState() =>
       _CanonicalAccountGateState<T>();
@@ -99,6 +107,17 @@ class _CanonicalAccountGateState<T> extends State<CanonicalAccountGate<T>>
     final game = _bootstrap.gameplay;
     if (game == null) return widget.statusBuilder(context, _bootstrap);
     return KeyedSubtree(
-        key: ObjectKey(game), child: widget.gameplayBuilder(context, game));
+        key: ObjectKey(game),
+        child: _GameplayAuthority(
+          isCurrent: () => mounted && identical(_bootstrap.gameplay, game),
+          child: widget.gameplayBuilder(context, game),
+        ));
   }
+}
+
+class _GameplayAuthority extends InheritedWidget {
+  const _GameplayAuthority({required this.isCurrent, required super.child});
+  final bool Function() isCurrent;
+  @override
+  bool updateShouldNotify(_GameplayAuthority oldWidget) => false;
 }

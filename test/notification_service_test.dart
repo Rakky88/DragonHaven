@@ -21,6 +21,9 @@ void main() {
   test('notification kinds map to their logical in-app destinations', () {
     final cases = <String, HavenNotificationDestination>{
       'adventure_complete': HavenNotificationDestination.adventureCompleted,
+      'seasonal_pair_ready': HavenNotificationDestination.adventureCompleted,
+      'seasonal_pair_invite': HavenNotificationDestination.adventureAvailable,
+      'trade_completed': HavenNotificationDestination.friends,
       'special_adventure_available':
           HavenNotificationDestination.adventureAvailable,
       'trials_full': HavenNotificationDestination.adventureTrials,
@@ -56,6 +59,15 @@ void main() {
     );
 
     expect(calls, isEmpty);
+  });
+
+  test('acknowledging an older tap cannot discard a newer destination', () {
+    HavenNotifications.openRemoteDestination('adventure_complete');
+    final first = HavenNotifications.pendingNavigation!;
+    HavenNotifications.openRemoteDestination('friend_message');
+    HavenNotifications.acknowledgeNavigation(first);
+    expect(HavenNotifications.pendingNavigation!.destination,
+        HavenNotificationDestination.friends);
   });
 
   test('Android permission status and explicit requests use distinct methods',

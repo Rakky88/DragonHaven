@@ -1,5 +1,29 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Prepared after v0.05.42: startup logo and notification routing
+
+The server-check screen now matches the white native launch screen, using the
+ordinary DragonHaven logo or the active event logo read from the native schedule.
+The visible heading/spinner are removed; accessible checking status and existing
+connection failure, retry, login and privacy controls remain available.
+
+Notification navigation stays pending across retirement of the old game root,
+server checks, an offline failure and retry. Only the current foreground gameplay
+lease may acknowledge it. Both legacy and server shells share this routing rule;
+the Firebase tap listener lives outside the gameplay lease. Native intents are
+retained until Flutter accepts them. Notification routing dismisses covering
+routes and always selects Completed again for an adventure return, including
+repeated taps after manually selecting another tab. Seasonal-pair completion
+pushes also select Completed instead of the available-adventure view.
+
+Verification: 56 focused Flutter tests passed, including the old-mounted-root
+race, offline/retry, background/resume, repeated Completed selection and route
+replacement. Eight native tests passed and the Android debug code compiled.
+The ordinary and Pride startup screens were rendered and visually checked at
+320x640 with 1.5 text scale and reduced motion. Living reference checks passed.
+This is prepared source for the next release; no production deployment is part
+of this change.
+
 ## Prepared after v0.05.42: notification cleanup
 
 Android's activity resume now clears all delivered local and push notifications

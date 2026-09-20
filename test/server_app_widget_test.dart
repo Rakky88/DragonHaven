@@ -9,6 +9,7 @@ import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/providers/online_account_provider.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/social_repository.dart';
+import 'package:dragon_haven/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -37,6 +38,7 @@ void main() {
     testWidgets(
         'all five production tabs and account pages render from server facts without a local game (starter=$starter)',
         (tester) async {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       tester.view.physicalSize =
           starter ? const Size(320, 640) : const Size(390, 900);
       tester.view.devicePixelRatio = 1;
@@ -133,6 +135,45 @@ void main() {
         Navigator.of(tester.element(find.byType(Scaffold).last)).pop();
         await tester.pumpAndSettle();
       }
+      HavenNotifications.openRemoteDestination('adventure_complete');
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(
+          tester
+              .widget<ChoiceChip>(
+                  find.byKey(const Key('canonical-tab-completed')))
+              .selected,
+          true);
+      final available = find.widgetWithText(ChoiceChip, 'Adventures');
+      await tester.ensureVisible(available);
+      await tester.tap(available);
+      await tester.pump();
+      expect(
+          tester
+              .widget<ChoiceChip>(
+                  find.byKey(const Key('canonical-tab-completed')))
+              .selected,
+          false);
+      HavenNotifications.openRemoteDestination('adventure_complete');
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(
+          tester
+              .widget<ChoiceChip>(
+                  find.byKey(const Key('canonical-tab-completed')))
+              .selected,
+          true);
+      HavenNotifications.openRemoteDestination('trials_full');
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(find.text('Dragon Trials'), findsWidgets);
+      HavenNotifications.openRemoteDestination('egg');
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(find.text('Dragon Tower'), findsOneWidget);
+      expect(Navigator.of(tester.element(find.byType(Scaffold).first)).canPop(),
+          false);
+      expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
       online.dispose();
