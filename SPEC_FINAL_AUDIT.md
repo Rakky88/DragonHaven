@@ -1,6 +1,6 @@
 # DragonHaven audit
 
-## v0.05.40 candidate ? 20 September 2026
+## v0.05.40 ? 20 September 2026
 
 - All eleven trial assists now use actual expertise points and the requested
   formulas (`TRIAL_EXPERTISE.md`); no 300/400-point assist clamp remains.
@@ -17,7 +17,9 @@
   Tag/untag was checked on the physical device and repaired progress backed up.
 - General canonical startup/cutover remains separate unfinished work. This
   narrow repair does not claim a general reconciliation of historical saves.
-- Verification and rollout evidence: `RELEASE_V0.05.40_VERIFICATION.md`.
+- Production schema 87 is verified; authority remains dormant. 985 tests pass
+  after the two documented fixes, plus native/JavaScript parity and device review.
+  Verification and rollout evidence: `RELEASE_V0.05.40_VERIFICATION.md`.
 
 
 ## Published release v0.05.39 / 10089
