@@ -9,6 +9,9 @@ import '../providers/household_provider.dart';
 import '../providers/online_account_provider.dart';
 import '../services/platform_actions.dart';
 import '../services/release_service.dart';
+import '../services/canonical_game_actions.dart';
+import '../services/canonical_game_session.dart';
+import 'shop_economy_scope.dart';
 import '../theme/app_theme.dart';
 import 'pull_to_dismiss_sheet.dart';
 
@@ -439,28 +442,43 @@ class _AboutSheetState extends State<_AboutSheet> {
         ],
       ),
     );
+    await Future<void>.delayed(const Duration(milliseconds: 300));
     controller.dispose();
     if (code == null || !mounted) return;
     final definition = redeemCodeDefinition(code);
-    final result = definition?.rewardType == RedeemRewardType.endSeasonalEvent
-        ? await context.read<OnlineAccountProvider>().endSeasonalEvent(code)
-            ? 'ended_seasonal_event'
-            : 'event_end_failed'
-        : definition?.rewardType == RedeemRewardType.seasonalEventPreview
-            ? await context
-                        .read<OnlineAccountProvider>()
-                        .redeemSeasonalPreview(code) ==
-                    null
-                ? 'inactive'
-                : 'redeemed_event_preview'
-            : await context.read<HouseholdProvider>().redeemCode(
-                  code,
-                  keeperId:
-                      context.read<OnlineAccountProvider>().profile?.keeperCode,
-                );
+    final session = context.read<CanonicalGameSession?>();
+    Object? serverResult;
+    if (session != null) {
+      await runShopAction(context, () async {
+        serverResult = await CanonicalGameActions(session)
+            .execute('redeem_code', {'code': code});
+      });
+      if (serverResult == null) return;
+    }
+    if (!mounted) return;
+    final result = session != null
+        ? serverResult
+        : definition?.rewardType == RedeemRewardType.endSeasonalEvent
+            ? await context.read<OnlineAccountProvider>().endSeasonalEvent(code)
+                ? 'ended_seasonal_event'
+                : 'event_end_failed'
+            : definition?.rewardType == RedeemRewardType.seasonalEventPreview
+                ? await context
+                            .read<OnlineAccountProvider>()
+                            .redeemSeasonalPreview(code) ==
+                        null
+                    ? 'inactive'
+                    : 'redeemed_event_preview'
+                : await context.read<HouseholdProvider>().redeemCode(
+                      code,
+                      keeperId: context
+                          .read<OnlineAccountProvider>()
+                          .profile
+                          ?.keeperCode,
+                    );
     if (!mounted) return;
     final message = switch (result) {
-      'ended_seasonal_event' => strings.pick(
+      'ended_seasonal_event' || 'event_ended' => strings.pick(
           'Your active event has ended. Adventures already underway can still finish.',
           'Je actieve event is beëindigd. Adventures die al onderweg zijn kunnen nog afgemaakt worden.'),
       'event_end_failed' || 'online_login_required' => strings.pick(

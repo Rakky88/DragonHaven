@@ -1,3 +1,15 @@
+## Account restoration candidate - 20 September 2026
+
+Server account initialization reuses the existing starter egg rules with a
+private, durable database seed and capture time. Retrying a lost reply retains
+the same egg rather than rerolling. Naming starts incubation once. Starter taps
+still remove one second per tap and preserve the final real second; the server
+accepts bounded batches only for the owned starter. Existing eggs, Altar
+materials, crafted/drop relic ownership and tradeability are retained during
+migration. The public read hides seeds and unrevealed traits. No event dates,
+rarity weights, reward amounts or drop pools change. Production activation is
+still gated by SERVER_GAMEPLAY_ROLLOUT.md.
+
 ## Online account startup ? 20 September 2026
 
 Normal play now requires a verified online account and the current 16+ privacy
@@ -369,7 +381,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: ddf762b7d166bd7d -->
+<!-- reference-source-fingerprint: e3eca10ab6d50c92 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

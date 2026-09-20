@@ -7,7 +7,7 @@ import '../l10n/app_strings.dart';
 import '../models/achievement.dart';
 import '../models/dragon_emote.dart';
 import '../models/social.dart';
-import '../providers/household_provider.dart';
+import '../widgets/social_game_facts.dart';
 import '../providers/online_account_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/online_account_access.dart';
@@ -978,9 +978,13 @@ class _ConclaveChatState extends State<_ConclaveChat>
   }
 
   Future<void> _sendEmote() async {
-    final game = context.read<HouseholdProvider>();
-    final emote = await showDragonEmotePicker(context, game.ownedDragonEmotes);
-    if (!mounted || emote == null || !game.ownsDragonEmote(emote.id)) return;
+    final game = SocialGameFacts.read(context);
+    final emote = await showDragonEmotePicker(context, game.emotes);
+    if (!mounted ||
+        emote == null ||
+        !SocialGameFacts.read(context).emotes.any((e) => e.id == emote.id)) {
+      return;
+    }
     final sent =
         await context.read<OnlineAccountProvider>().sendConclaveMessage(
       kind: 'emote',
@@ -1317,10 +1321,10 @@ class _ConclaveChatState extends State<_ConclaveChat>
       ),
     );
     if (!context.mounted || choice == null) return;
-    final game = context.read<HouseholdProvider>();
+    final game = SocialGameFacts.read(context);
     switch (choice) {
       case 'achievement':
-        final ids = game.unlockedAchievementIds.toList();
+        final ids = game.achievementIds.toList();
         if (ids.isEmpty) return;
         await context.read<OnlineAccountProvider>().sendConclaveMessage(
           kind: 'achievement',
@@ -1329,28 +1333,18 @@ class _ConclaveChatState extends State<_ConclaveChat>
           payload: {'achievement_id': ids.last},
         );
       case 'dragon':
-        final dragon = [game.pet, ...game.sanctuaryDragons]
-            .where((candidate) => !candidate.isEgg)
-            .cast<dynamic>()
-            .firstWhere((candidate) => candidate.favorite, orElse: () => null);
+        final dragon = game.favorite;
         if (dragon == null) return;
         await context.read<OnlineAccountProvider>().sendConclaveMessage(
           kind: 'dragon',
           body: strings.pick(
-            'Meet ${dragon.displayName}, my favorite dragon!',
-            'Dit is ${dragon.displayName}, mijn favoriete draak!',
+            'Meet ${dragon.name}, my favorite dragon!',
+            'Dit is ${dragon.name}, mijn favoriete draak!',
           ),
-          payload: {'name': dragon.displayName, 'lineage_id': dragon.lineageId},
+          payload: {'name': dragon.name, 'lineage_id': dragon.lineageId},
         );
       case 'trial':
-        final dragons = [game.pet, ...game.sanctuaryDragons]
-            .where((dragon) => !dragon.isEgg);
-        int best(String key) => dragons.fold(
-              0,
-              (score, dragon) => score > (dragon.trialHighScores[key] ?? 0)
-                  ? score
-                  : dragon.trialHighScores[key] ?? 0,
-            );
+        int best(String key) => game.records[key] ?? 0;
         await context.read<OnlineAccountProvider>().sendConclaveMessage(
           kind: 'trial',
           body: strings.pick(
@@ -2520,7 +2514,7 @@ Future<bool> _showCreateConclave(BuildContext context) async {
   final name = TextEditingController();
   final description = TextEditingController();
   var emblem = 'conclave_emblem_01';
-  var language = context.read<HouseholdProvider>().languageCode;
+  var language = SocialGameFacts.read(context).languageCode;
   var visibility = ConclaveVisibility.public;
   var limit = 20.0;
   final created = await showDialog<bool>(

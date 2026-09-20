@@ -3,6 +3,8 @@ import 'social_dragon_reservations.dart';
 import 'dart:math';
 
 import '../models/adventure.dart';
+import '../models/account_preferences.dart';
+import '../models/achievement.dart';
 import '../models/social_reward_claim.dart';
 import '../models/dragon_egg.dart';
 import '../models/egg_altar.dart';
@@ -143,24 +145,35 @@ abstract final class GamePublicProjection {
             'totalReturned': game.eggAltar.totalReturned,
           },
         },
-        'collection': _select(exported, const [
-          'accountName',
-          'ownedPortraitIds',
-          'selectedPortraitId',
-          'ownedTitleIds',
-          'selectedTitleId',
-          'ownedMusicTrackIds',
-          'supporterPackOwned',
-          'ownedBadgeIds',
-          'selectedBadgeId',
-          'ownedFrameIds',
-          'selectedFrameId',
-          'ownedDragonEmoteIds',
-          'ownedDragonEmotePackIds',
-          'discoveredForms',
-          'prismaticForms',
-          'achievements',
-        ]),
+        'collection': {
+          'onboardingComplete': game.onboardingComplete,
+          'tutorialCompleted': game.tutorialCompleted,
+          'preferences': AccountPreferences.fromState(exported),
+          'achievementProgress': {
+            for (final achievement in achievementCatalog)
+              achievement.id: game
+                  .achievementProgress(achievement.id)
+                  .clamp(0, achievement.target),
+          },
+          ..._select(exported, const [
+            'accountName',
+            'ownedPortraitIds',
+            'selectedPortraitId',
+            'ownedTitleIds',
+            'selectedTitleId',
+            'ownedMusicTrackIds',
+            'supporterPackOwned',
+            'ownedBadgeIds',
+            'selectedBadgeId',
+            'ownedFrameIds',
+            'selectedFrameId',
+            'ownedDragonEmoteIds',
+            'ownedDragonEmotePackIds',
+            'discoveredForms',
+            'prismaticForms',
+            'achievements',
+          ])
+        },
         'house': {
           ..._select(exported, const [
             'ownedItemIds',
@@ -359,6 +372,9 @@ abstract final class GamePublicProjection {
     return {
       'id': egg.id,
       'location': location,
+      'firstEgg': location == 'nest' &&
+          game.nestEgg?.id == egg.id &&
+          game.nestEgg!.firstEgg,
       'kind': egg.isSinisterEgg
           ? 'sinister'
           : egg.isSpecialEgg

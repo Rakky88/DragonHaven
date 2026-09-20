@@ -8,7 +8,8 @@ import '../theme/app_theme.dart';
 import '../widgets/rooftop_egg_nest.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({super.key, this.completeOnboarding});
+  final Future<void> Function(String name)? completeOnboarding;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -125,9 +126,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _continue() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _submitting = true);
-    await context
-        .read<HouseholdProvider>()
-        .completeOnboarding(_controller.text);
-    if (mounted) setState(() => _submitting = false);
+    try {
+      if (widget.completeOnboarding != null) {
+        await widget.completeOnboarding!(_controller.text);
+      } else {
+        await context
+            .read<HouseholdProvider>()
+            .completeOnboarding(_controller.text);
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 }

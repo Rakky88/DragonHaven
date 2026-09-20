@@ -7,6 +7,9 @@ import '../l10n/app_strings.dart';
 import '../models/adventure.dart';
 import '../models/chest.dart';
 import '../models/mystic_relic.dart';
+import '../models/shop_item.dart';
+import '../widgets/furniture_art.dart';
+import 'canonical_house_screen.dart';
 import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
 import '../widgets/chest_reveal.dart';
@@ -34,13 +37,14 @@ class _InventoryContents extends StatelessWidget {
     final view = session.snapshot!;
     final strings = AppStrings.of(context);
     return DefaultTabController(
-        length: 4,
+        length: 5,
         child: Column(children: [
           TabBar(isScrollable: true, tabAlignment: TabAlignment.start, tabs: [
             Tab(text: strings.pick('Chests', 'Kisten')),
             Tab(text: strings.pick('Eggs', 'Eieren')),
             Tab(text: strings.pick('Relics', 'Relieken')),
             const Tab(text: 'Altar'),
+            Tab(text: strings.pick('Furniture', 'Meubels')),
           ]),
           Expanded(
               child: TabBarView(children: [
@@ -101,6 +105,30 @@ class _InventoryContents extends StatelessWidget {
                     'Je relieken komen hier te staan.')),
             ]),
             const CanonicalAltarScreen(),
+            ListView(padding: const EdgeInsets.all(16), children: [
+              for (final id in view.shop.ownedItems)
+                if (shopItemById(id) case final item?)
+                  Card(
+                      child: ListTile(
+                    leading: SizedBox.square(
+                        dimension: 48, child: FurnitureArt(item: item)),
+                    title: Text(strings.pick(item.name, item.nameNl)),
+                    subtitle: Text(view.shop.placedItems.contains(id)
+                        ? strings.pick(
+                            'Placed in your tower', 'In je toren geplaatst')
+                        : strings.pick(
+                            'Ready to place', 'Klaar om te plaatsen')),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                            builder: (_) => Scaffold(
+                                appBar: AppBar(
+                                    title:
+                                        Text(strings.pick('Tower', 'Toren'))),
+                                body: const CanonicalHouseScreen()))),
+                  )),
+            ]),
           ])),
         ]));
   }

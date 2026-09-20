@@ -1,3 +1,4 @@
+import '../services/canonical_game_session.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,17 +23,29 @@ class _KeeperJournalScreenState extends State<KeeperJournalScreen> {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final game = context.watch<HouseholdProvider>();
-    final entries = game.activities
+    final server = context.watch<CanonicalGameSession?>();
+    final game = server == null ? context.watch<HouseholdProvider>() : null;
+    final view = server?.snapshot;
+    final now = view?.serverTime ?? game!.currentTime;
+    final activities = view == null
+        ? game!.activities
+        : [
+            for (final raw in view.data['activities'] as List)
+              ActivityEntry.fromJson(Map<String, dynamic>.from(raw as Map))
+          ];
+    final discoveredCount =
+        view?.shop.discoveredForms.length ?? game!.discoveredForms.length;
+    final acquired = view == null
+        ? game!.ownedDragons.map((d) => d.acquiredAt)
+        : view.dragons.where((d) => d.owned).map((d) => d.acquiredAt);
+    final oldestDragon = acquired.isEmpty
+        ? now
+        : acquired.reduce((a, b) => a.isBefore(b) ? a : b);
+    final keeperDays = now.difference(oldestDragon).inDays + 1;
+    final entries = activities
         .where((entry) => _matches(entry, _filter))
-        .toList(growable: false)
+        .toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final oldestDragon = game.ownedDragons.isEmpty
-        ? game.currentTime
-        : game.ownedDragons
-            .map((dragon) => dragon.acquiredAt)
-            .reduce((a, b) => a.isBefore(b) ? a : b);
-    final keeperDays = game.currentTime.difference(oldestDragon).inDays + 1;
 
     return Scaffold(
       appBar: AppBar(
@@ -46,8 +59,8 @@ class _KeeperJournalScreenState extends State<KeeperJournalScreen> {
             sliver: SliverToBoxAdapter(
               child: _JournalHeader(
                 keeperDays: keeperDays,
-                moments: game.activities.length,
-                discoveredForms: game.discoveredForms.length,
+                moments: activities.length,
+                discoveredForms: discoveredCount,
               ),
             ),
           ),
@@ -96,8 +109,7 @@ class _KeeperJournalScreenState extends State<KeeperJournalScreen> {
                         Padding(
                           padding: const EdgeInsets.only(left: 49, bottom: 5),
                           child: Text(
-                            _dateLabel(context, entry.createdAt,
-                                game.currentTime, strings),
+                            _dateLabel(context, entry.createdAt, now, strings),
                             style: TextStyle(
                               color: AppColors.eventColor(
                                   context, AppColors.twilight),

@@ -58,6 +58,42 @@ void main() {
   });
 
   test(
+      'fresh server initialization retains its request across a lost reply without a local save',
+      () async {
+    var prepared = 0;
+    final requests = <String>[];
+    CanonicalAccountHandoff fresh() => CanonicalAccountHandoff(
+        directory: directory,
+        currentOwner: () => keeper,
+        sessionEpoch: () => 1,
+        readStatus: (_) async => status(keeper),
+        prepareAndUploadLegacy: (_) async {
+          prepared++;
+          return 0;
+        },
+        activate: (_, request, revision) async {
+          expect(revision, 0);
+          requests.add(request);
+          if (requests.length == 1) {
+            throw const CanonicalGameException('game_command_unavailable');
+          }
+          return 3;
+        });
+    final first = fresh();
+    await expectLater(first.synchronize(), error('game_command_unavailable'));
+    first.dispose();
+    final second = fresh();
+    try {
+      await second.synchronize();
+      expect(second.phase, CanonicalHandoffPhase.server);
+      expect(prepared, 1);
+      expect(requests, [requests.first, requests.first]);
+    } finally {
+      second.dispose();
+    }
+  });
+
+  test(
       'lost committed activation resumes through status without another upload',
       () async {
     var active = false;

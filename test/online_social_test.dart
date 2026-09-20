@@ -36,8 +36,9 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   ConclaveSnapshot unreadSnapshot(List<ConclaveMessage> messages,
-          {String id = 'badge-conclave'}) =>
+          {String id = 'badge-conclave', List<String>? readIds}) =>
       ConclaveSnapshot.fromJson({
+        if (readIds != null) 'read_message_ids': readIds,
         'conclave': {'conclave_id': id, 'name': 'Badge Aerie'},
         'messages': messages
             .map((m) => {
@@ -63,6 +64,36 @@ void main() {
         payload: const {},
         createdAt: createdAt,
       );
+
+  test('Conclave reads follow the account onto an empty second device',
+      () async {
+    final now = DateTime.now().subtract(const Duration(minutes: 1));
+    final messages = [badgeMessage('seen', now), badgeMessage('new', now)];
+    final repository = _ReadSocialRepository()
+      ..conclaveSnapshot = unreadSnapshot(messages, readIds: []);
+    final online = OnlineAccountProvider(
+        repository: repository,
+        serverOwned: true,
+        inventorySnapshot: () => throw StateError('No local game'));
+    await online.initialize();
+    expect(online.unreadConclaveMessageCount, 2);
+    await online.markConclaveMessagesRead(
+        unreadSnapshot([messages.first], readIds: []));
+    expect(repository.readIds, {'seen'});
+    expect(online.unreadConclaveMessageCount, 1);
+    online.dispose();
+
+    SharedPreferences.setMockInitialValues({});
+    final second = OnlineAccountProvider(
+        repository: _ReadSocialRepository()
+          ..conclaveSnapshot =
+              unreadSnapshot(messages, readIds: repository.readIds.toList()),
+        serverOwned: true,
+        inventorySnapshot: () => throw StateError('No local game'));
+    await second.initialize();
+    expect(second.unreadConclaveMessageCount, 1);
+    second.dispose();
+  });
 
   test(
       'Conclave unread count filters age and own messages and persists per Conclave',
@@ -3929,4 +3960,13 @@ class _FakeSocialRepository implements SocialRepository {
 
   @override
   void dispose() {}
+}
+
+class _ReadSocialRepository extends _FakeSocialRepository
+    implements ConclaveReadRepository {
+  _ReadSocialRepository() : super(inventoryImported: true);
+  final readIds = <String>{};
+  @override
+  Future<void> markConclaveMessagesRead(List<String> messageIds) async =>
+      readIds.addAll(messageIds);
 }

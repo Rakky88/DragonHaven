@@ -21,6 +21,7 @@ const specialContentReference = ReferenceDocumentSpec(
     'supabase/migrations/202609120083_event_claim_partner_windows.sql',
     'supabase/migrations/202609120081_social_event_polish.sql',
     'lib/domain/game_command_engine.dart',
+    'lib/domain/game_account_initialization.dart',
     'lib/domain/social_claims.dart',
     'lib/domain/social_dragon_reservations.dart',
     'lib/domain/social_group_lifecycle.dart',
@@ -134,6 +135,7 @@ const randomRewardsReference = ReferenceDocumentSpec(
   sourcePaths: [
     'supabase/migrations/202609120081_social_event_polish.sql',
     'lib/domain/game_command_engine.dart',
+    'lib/domain/game_account_initialization.dart',
     'lib/domain/social_claims.dart',
     'lib/domain/social_dragon_reservations.dart',
     'lib/domain/social_group_lifecycle.dart',

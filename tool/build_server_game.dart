@@ -53,6 +53,12 @@ export function project(input: Record<string, unknown>): unknown {
   };
   return JSON.parse(domain.dragonhavenProjectGame(JSON.stringify(input)));
 }
+export function initializeGame(input: Record<string, unknown>): unknown {
+  const domain = globalThis as unknown as {
+    dragonhavenInitializeGame: (value: string) => string;
+  };
+  return JSON.parse(domain.dragonhavenInitializeGame(JSON.stringify(input)));
+}
 ''');
   stdout.writeln(jsonEncode(
       {'protocol': 2, 'rulesetSha256': digest, 'bundleBytes': bytes.length}));

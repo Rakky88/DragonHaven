@@ -3,6 +3,9 @@
 abstract final class GameCommandSchema {
   static const keys = <String, Set<String>>{
     'refresh': {},
+    'complete_onboarding': {'name'},
+    'set_account_name': {'name'},
+    'set_preferences': {'changes'},
     'claim_event_reward': {'eventKey'},
     'offer_trade': {'keeperCode', 'kind', 'key', 'variant'},
     'reply_trade': {'tradeId', 'kind', 'key', 'variant'},
@@ -49,6 +52,7 @@ abstract final class GameCommandSchema {
     'equip_relic': {'relic', 'dragonId'},
     'activate_egg': {'eggId'},
     'hatch_egg': {'eggId'},
+    'tap_starter_egg': {'eggId', 'taps'},
     'name_dragon': {'dragonId', 'name'},
     'set_dragon_highlight': {'dragonId', 'focus', 'highlighted'},
     'set_favorite_dragon': {'dragonId'},

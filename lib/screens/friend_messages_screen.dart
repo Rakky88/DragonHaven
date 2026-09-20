@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_strings.dart';
 import '../models/social.dart';
 import '../models/dragon_emote.dart';
-import '../providers/household_provider.dart';
+import '../widgets/social_game_facts.dart';
 import '../providers/online_account_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/online_account_access.dart';
@@ -74,9 +74,13 @@ class _FriendMessagesScreenState extends State<FriendMessagesScreen> {
   }
 
   Future<void> _sendEmote() async {
-    final game = context.read<HouseholdProvider>();
-    final emote = await showDragonEmotePicker(context, game.ownedDragonEmotes);
-    if (!mounted || emote == null || !game.ownsDragonEmote(emote.id)) return;
+    final game = SocialGameFacts.read(context);
+    final emote = await showDragonEmotePicker(context, game.emotes);
+    if (!mounted ||
+        emote == null ||
+        !SocialGameFacts.read(context).emotes.any((e) => e.id == emote.id)) {
+      return;
+    }
     final sent = await context.read<OnlineAccountProvider>().sendFriendMessage(
       widget.friend.userId,
       emote.label(game.languageCode),

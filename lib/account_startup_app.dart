@@ -6,12 +6,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_info.dart';
-import 'canonical_staging_app.dart';
+import 'server_dragonhaven_app.dart';
 import 'config/firebase_config.dart';
 import 'config/online_config.dart';
 import 'dragonhaven_app.dart';
 import 'l10n/app_strings.dart';
 import 'providers/household_provider.dart';
+import 'providers/online_account_provider.dart';
 import 'screens/account_save_choice_screen.dart';
 import 'services/account_legacy_game_storage.dart';
 import 'services/canonical_account_bootstrap.dart';
@@ -23,6 +24,8 @@ import 'services/canonical_groups.dart';
 import 'services/canonical_legacy_account_source.dart';
 import 'services/canonical_partners.dart';
 import 'services/firebase_monitoring.dart';
+import 'services/firebase_push.dart';
+import 'services/server_game_notifications.dart';
 import 'services/diagnostic_reporter.dart';
 import 'services/legacy_app_runtime.dart';
 import 'services/storage_service.dart';
@@ -32,6 +35,8 @@ import 'widgets/canonical_account_gate.dart';
 import 'widgets/online_account_access.dart';
 import 'services/social_repository.dart';
 import 'services/privacy_notice.dart';
+import 'services/release_service.dart';
+import 'services/platform_actions.dart';
 import 'services/canonical_account_handoff.dart';
 import 'screens/privacy_screen.dart';
 
@@ -237,6 +242,16 @@ class _AccountStartupAppState extends State<AccountStartupApp>
       AccountLegacyGameStorage storage;
       if (!review.needsChoice) {
         storage = (await AccountLegacyGameStorage.open(owner))!;
+      } else if (review.local == null && review.cloud != null) {
+        // A new installation has no competing progress. Load its account's
+        // confirmed server copy without presenting a needless save chooser.
+        // chooseSource rechecks owner, session and revision before writing.
+        storage = await AccountLegacyGameStorage.chooseSource(
+            review: review,
+            choice: AccountSaveChoice.cloud,
+            repository: repository,
+            currentOwner: () => _authority.currentOwner,
+            sessionEpoch: () => _authority.sessionEpoch);
       } else {
         _fresh = review.local == null && review.cloud == null;
         if (_fresh) {
@@ -325,6 +340,21 @@ class _AccountStartupAppState extends State<AccountStartupApp>
   }
 
   Future<int> _upload(String owner) async {
+    final epoch = _authority.sessionEpoch;
+    final repository = SupabaseSocialRepository(widget.auth);
+    try {
+      final review = await AccountLegacyGameStorage.reviewSources(
+          repository: repository,
+          owner: owner,
+          currentOwner: () => _authority.currentOwner,
+          sessionEpoch: () => _authority.sessionEpoch);
+      _requireOwner(owner, epoch);
+      // Zero is a handoff-only marker for trusted server creation, never an
+      // upload revision. A failed cloud read cannot reach this branch.
+      if (review.local == null && review.cloud == null) return 0;
+    } finally {
+      repository.dispose();
+    }
     final source = await _legacy(owner);
     try {
       return await source.upload();
@@ -340,35 +370,70 @@ class _AccountStartupAppState extends State<AccountStartupApp>
         connection: connection,
         directory: widget.directory,
         expectedAuthority: CanonicalGameAuthority.server);
+    OnlineAccountProvider? online;
+    CanonicalGroups? groups;
+    CanonicalPartners? partners;
+    FirebasePushCoordinator? push;
+    ServerGameNotifications? notifications;
     try {
       await session.synchronize(minimumServerRevision: minimum);
       if (session.snapshot == null || connection.currentOwner != owner) {
         throw const CanonicalGameException('game_snapshot_unavailable');
       }
-      final groups = CanonicalGroups(
+      groups = CanonicalGroups(
           connection: connection,
           source: SupabaseCanonicalGroupsSource(widget.auth));
-      final partners = CanonicalPartners(
+      partners = CanonicalPartners(
           connection: connection,
           source: SupabaseCanonicalPartnersSource(widget.auth));
+      online = OnlineAccountProvider(
+          repository: SupabaseSocialRepository(widget.auth),
+          serverOwned: true,
+          inventorySnapshot: () =>
+              throw const SocialException('game_server_authority_required'),
+          languageCode: () =>
+              session.snapshot?.profile.preferences['languageCode']
+                  as String? ??
+              'en',
+          prepareAccountExit: () async {
+            await push?.unregisterBeforeSignOut();
+          },
+          accountExitFinished: () => push?.afterSignOutAttempt(),
+          diagnostics: widget.diagnostics);
+      await online.initialize();
+      if (connection.currentOwner != owner || session.snapshot == null) {
+        throw const CanonicalGameException('game_account_changed');
+      }
+      notifications = ServerGameNotifications(session);
+      if (widget.firebaseAvailable) {
+        push = FirebasePushCoordinator.server(session, online, widget.auth);
+      }
+      final ownedOnline = online,
+          ownedGroups = groups,
+          ownedPartners = partners;
       return CanonicalGameplayLease(
-          MultiProvider(
-              providers: [
-                ChangeNotifierProvider.value(value: session),
-                Provider<CanonicalBeaconSource>.value(
-                    value: SupabaseCanonicalBeaconSource(widget.auth)),
-                ChangeNotifierProvider.value(value: groups),
-                ChangeNotifierProvider.value(value: partners),
-              ],
-              child: CanonicalStagingApp(
-                  session: session,
-                  auth: widget.auth,
-                  stagingLabel: false)), close: () async {
-        groups.dispose();
-        partners.dispose();
+          MultiProvider(providers: [
+            ChangeNotifierProvider.value(value: session),
+            Provider<CanonicalBeaconSource>.value(
+                value: SupabaseCanonicalBeaconSource(widget.auth)),
+            ChangeNotifierProvider.value(value: groups),
+            ChangeNotifierProvider.value(value: partners),
+            ChangeNotifierProvider.value(value: online),
+          ], child: ServerDragonHavenApp(auth: widget.auth)), close: () async {
+        push?.dispose();
+        await notifications?.close();
+        await ownedOnline.stopLegacyOperations();
+        ownedOnline.dispose();
+        ownedGroups.dispose();
+        ownedPartners.dispose();
         await session.close();
       });
     } on Object {
+      push?.dispose();
+      await notifications?.close();
+      online?.dispose();
+      groups?.dispose();
+      partners?.dispose();
       await session.close();
       rethrow;
     }
@@ -449,13 +514,18 @@ class _AccountStartupAppState extends State<AccountStartupApp>
                     : _StartupStatus(
                         auth: widget.auth,
                         phase: bootstrap.phase,
+                        errorCode: bootstrap.errorCode,
                         retry: () => unawaited(bootstrap.synchronize()))),
       );
 }
 
 class _StartupStatus extends StatefulWidget {
   const _StartupStatus(
-      {required this.auth, required this.phase, required this.retry});
+      {required this.auth,
+      required this.phase,
+      required this.retry,
+      this.errorCode});
+  final String? errorCode;
   final SupabaseClient auth;
   final CanonicalBootstrapPhase phase;
   final VoidCallback retry;
@@ -648,9 +718,27 @@ class _StartupStatusState extends State<_StartupStatus> {
                                       'Bevestigingsmail opnieuw sturen'))),
                           ] else if (widget.phase ==
                               CanonicalBootstrapPhase.failed) ...[
-                            Text(s.pick(
-                                'DragonHaven needs a connection to the server. Your saved progress is kept. Check your internet connection; we will try again automatically.',
-                                'DragonHaven heeft verbinding met de server nodig. Je opgeslagen voortgang blijft bewaard. Controleer je internetverbinding; we proberen het automatisch opnieuw.')),
+                            if (widget.errorCode ==
+                                'game_client_upgrade_required') ...[
+                              Text(s.pick(
+                                  'A newer version of DragonHaven is ready.',
+                                  'Er staat een nieuwere versie van DragonHaven klaar.')),
+                              FilledButton.icon(
+                                  icon: const Icon(Icons.download_rounded),
+                                  label: Text(s.pick('Update', 'Updaten')),
+                                  onPressed: () async {
+                                    try {
+                                      await PlatformActions.openUrl(
+                                          ReleaseConfig.downloadUrl);
+                                    } catch (_) {
+                                      await PlatformActions.copyText(
+                                          ReleaseConfig.downloadUrl);
+                                    }
+                                  }),
+                            ] else
+                              Text(s.pick(
+                                  'DragonHaven needs a connection to the server. Your saved progress is kept. Check your internet connection; we will try again automatically.',
+                                  'DragonHaven heeft verbinding met de server nodig. Je opgeslagen voortgang blijft bewaard. Controleer je internetverbinding; we proberen het automatisch opnieuw.')),
                             FilledButton(
                                 onPressed: widget.retry,
                                 child: Text(

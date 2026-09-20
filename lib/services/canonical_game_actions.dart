@@ -1,3 +1,5 @@
+import 'dart:convert';
+import '../models/account_preferences.dart';
 import '../models/tower_interaction.dart';
 import '../models/account_title.dart';
 import '../models/adventure.dart';
@@ -67,6 +69,14 @@ class CanonicalGameActions {
 
   Future<void> claimEventReward(String key) =>
       _boolean('claim_event_reward', {'eventKey': key});
+
+  Future<void> completeOnboarding(String name) =>
+      _boolean('complete_onboarding', {'name': name.trim()});
+  Future<void> setAccountName(String name) =>
+      _boolean('set_account_name', {'name': name.trim()});
+  Future<void> setPreferences(Map<String, dynamic> changes) => _boolean(
+      'set_preferences',
+      {'changes': jsonEncode(AccountPreferences.validateChanges(changes))});
 
   Future<void> tagEgg(String id, bool tagged) =>
       _boolean('tag_egg', {'eggId': id, 'tagged': tagged});

@@ -1,4 +1,5 @@
 import '../models/social_reward_claim.dart';
+import '../models/account_preferences.dart';
 import '../models/game_presentation.dart';
 import '../models/trial_dragon.dart';
 import 'dart:convert';
@@ -474,6 +475,7 @@ class CanonicalEggView {
   String get id => _data['id'] as String;
   String get location => _data['location'] as String;
   String get kind => _data['kind'] as String;
+  bool get firstEgg => _data['firstEgg'] == true;
   String? get specialEggId => _data['specialEggId'] as String?;
   String? get revealedLineageId => _data['lineageId'] as String?;
   String? get revealedRarity => _data['rarity'] as String?;
@@ -501,9 +503,10 @@ class CanonicalEggView {
 
   static CanonicalEggView _parse(Map<String, dynamic> data,
       {bool trade = false}) {
-    if (!_keys(data, const [
+    if (!_keys(data, [
           'id',
           'location',
+          if (data.containsKey('firstEgg')) 'firstEgg',
           'kind',
           'specialEggId',
           'acquiredAt',
@@ -518,6 +521,7 @@ class CanonicalEggView {
           'lawAxis',
           'moralAxis'
         ]) ||
+        (data.containsKey('firstEgg') && data['firstEgg'] is! bool) ||
         !_text(data['id']) ||
         !(trade ? const ['trade'] : const ['stash', 'nest'])
             .contains(data['location']) ||
@@ -654,6 +658,7 @@ class CanonicalDragonView implements TrialDragon {
   @override
   int trialBest(String key) => trialHighScores[key] ?? 0;
   String get name => _data['name'] as String;
+  DateTime get acquiredAt => DateTime.parse(_data['acquiredAt'] as String);
   @override
   String get lineageId => _data['lineageId'] as String;
   String get location => _data['location'] as String;
@@ -1147,6 +1152,16 @@ class CanonicalSchoolAttempt {
 class CanonicalProfileView {
   CanonicalProfileView._parse(Object? raw) {
     final data = _map(raw);
+    name = data['accountName'] is String ? data['accountName'] as String : '';
+    onboardingComplete = data['onboardingComplete'] == true;
+    tutorialCompleted = data['tutorialCompleted'] == true;
+    final rawPreferences = data['preferences'];
+    try {
+      preferences = AccountPreferences.fromState(
+          rawPreferences == null ? const {} : _map(rawPreferences));
+    } on FormatException {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
     for (final (kind, stock, selected) in const [
       ('portrait', 'ownedPortraitIds', 'selectedPortraitId'),
       ('title', 'ownedTitleIds', 'selectedTitleId'),
@@ -1163,6 +1178,10 @@ class CanonicalProfileView {
     }
   }
   final _owned = <String, Set<String>>{};
+  late final String name;
+  late final bool onboardingComplete;
+  late final bool tutorialCompleted;
+  late final Map<String, dynamic> preferences;
   final _selected = <String, String?>{};
   Set<String> owned(String kind) => _owned[kind] ?? const {};
   String? selected(String kind) => _selected[kind];

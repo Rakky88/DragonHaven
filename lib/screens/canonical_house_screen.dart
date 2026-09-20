@@ -17,14 +17,18 @@ import '../widgets/shop_economy_scope.dart';
 /// The tower's economic controls consume public facts and durable commands.
 /// Prices are quotes from shared rules; the server checks funds and eligibility.
 class CanonicalHouseScreen extends StatelessWidget {
-  const CanonicalHouseScreen({super.key});
+  const CanonicalHouseScreen({super.key, this.header, this.showHeading = true});
+  final Widget? header;
+  final bool showHeading;
   @override
-  Widget build(BuildContext context) =>
-      const ShopEconomyBoundary(child: _HouseContents());
+  Widget build(BuildContext context) => ShopEconomyBoundary(
+      child: _HouseContents(header: header, showHeading: showHeading));
 }
 
 class _HouseContents extends StatelessWidget {
-  const _HouseContents();
+  const _HouseContents({this.header, required this.showHeading});
+  final Widget? header;
+  final bool showHeading;
   @override
   Widget build(BuildContext context) {
     final session = context.watch<CanonicalGameSession>();
@@ -39,19 +43,20 @@ class _HouseContents extends StatelessWidget {
     return DefaultTabController(
         length: 2,
         child: Column(children: [
-          Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  spacing: 16,
-                  runSpacing: 8,
-                  children: [
-                    Text(s.pick('Haven', 'Haven'),
-                        style: Theme.of(context).textTheme.titleLarge),
-                    Text('${view.coins} ${s.pick('coins', 'munten')}',
-                        key: const Key('canonical-house-balance'),
-                        style: Theme.of(context).textTheme.titleMedium),
-                  ])),
+          if (showHeading)
+            Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    spacing: 16,
+                    runSpacing: 8,
+                    children: [
+                      Text(s.pick('Haven', 'Haven'),
+                          style: Theme.of(context).textTheme.titleLarge),
+                      Text('${view.coins} ${s.pick('coins', 'munten')}',
+                          key: const Key('canonical-house-balance'),
+                          style: Theme.of(context).textTheme.titleMedium),
+                    ])),
           if (house.floorRoomIds.length >= 5)
             TextButton.icon(
                 key: const Key('canonical-open-school'),
@@ -77,6 +82,7 @@ class _HouseContents extends StatelessWidget {
                 key: const Key('canonical-tower-list'),
                 padding: const EdgeInsets.all(16),
                 children: [
+                  if (header != null) header!,
                   Card(
                       child: Padding(
                           padding: const EdgeInsets.all(12),

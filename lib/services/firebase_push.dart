@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../providers/household_provider.dart';
+import 'canonical_game_session.dart';
 import '../providers/online_account_provider.dart';
 import 'notification_service.dart';
 import 'push_device_controller.dart';
@@ -58,7 +59,29 @@ class SupabasePushDeviceBackend implements PushDeviceBackend {
 /// App-lifetime coordinator. FCM carries generic text and a routing kind only;
 /// private message bodies and player names are fetched through authenticated RPCs.
 class FirebasePushCoordinator {
-  FirebasePushCoordinator(this.game, this.online, SupabaseClient client) {
+  FirebasePushCoordinator(HouseholdProvider game, OnlineAccountProvider online,
+      SupabaseClient client)
+      : this._(game, () => game.languageCode, game.notificationEnabled, online,
+            client);
+
+  FirebasePushCoordinator.server(CanonicalGameSession session,
+      OnlineAccountProvider online, SupabaseClient client)
+      : this._(
+            session,
+            () =>
+                session.snapshot?.profile.preferences['languageCode']
+                    as String? ??
+                'en',
+            (category) => (session.snapshot?.profile
+                            .preferences['enabledNotificationCategories']
+                        as List? ??
+                    const [])
+                .contains(category.name),
+            online,
+            client);
+
+  FirebasePushCoordinator._(this.game, this.languageCode,
+      this.notificationEnabled, this.online, SupabaseClient client) {
     _controller = PushDeviceController(
       messaging: FirebasePushTokenClient(),
       backend: SupabasePushDeviceBackend(client),
@@ -82,7 +105,9 @@ class FirebasePushCoordinator {
     _schedule();
   }
 
-  final HouseholdProvider game;
+  final Listenable game;
+  final String Function() languageCode;
+  final bool Function(HavenNotificationCategory) notificationEnabled;
   final OnlineAccountProvider online;
   late final PushDeviceController _controller;
   late final AppLifecycleListener _lifecycle;
@@ -156,9 +181,9 @@ class FirebasePushCoordinator {
         PushDeviceIntent(
           ownerId: owner,
           installationId: installation,
-          languageCode: game.languageCode,
+          languageCode: languageCode(),
           enabledKinds: kindCategories.entries
-              .where((entry) => game.notificationEnabled(entry.value))
+              .where((entry) => notificationEnabled(entry.value))
               .map((entry) => entry.key),
         ),
         force: force,

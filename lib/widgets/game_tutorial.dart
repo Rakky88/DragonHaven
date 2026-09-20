@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
-import '../models/pet.dart';
+import '../models/trial_dragon.dart';
 import '../theme/app_theme.dart';
 import 'dragon_art.dart';
 
 Future<bool> showDragonHavenTutorial(
   BuildContext context, {
-  required Pet dragon,
+  required TrialDragon dragon,
   required ValueChanged<int> onNavigate,
 }) async {
   return await showGeneralDialog<bool>(
@@ -37,7 +37,7 @@ class _DragonHavenTutorial extends StatefulWidget {
     required this.onNavigate,
   });
 
-  final Pet dragon;
+  final TrialDragon dragon;
   final ValueChanged<int> onNavigate;
 
   @override

@@ -24,14 +24,16 @@ import 'canonical_dragons_screen.dart';
 import 'draconomicon_screen.dart';
 
 class CanonicalAdventuresScreen extends StatelessWidget {
-  const CanonicalAdventuresScreen({super.key});
+  const CanonicalAdventuresScreen({super.key, this.showCompleted = false});
+  final bool showCompleted;
   @override
   Widget build(BuildContext context) =>
-      const ShopEconomyBoundary(child: _Adventures());
+      ShopEconomyBoundary(child: _Adventures(showCompleted: showCompleted));
 }
 
 class _Adventures extends StatefulWidget {
-  const _Adventures();
+  const _Adventures({required this.showCompleted});
+  final bool showCompleted;
   @override
   State<_Adventures> createState() => _AdventuresState();
 }
@@ -45,9 +47,18 @@ class _AdventuresState extends State<_Adventures> {
   @override
   void initState() {
     super.initState();
+    _completed = widget.showCompleted;
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant _Adventures oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.showCompleted != widget.showCompleted) {
+      _completed = widget.showCompleted;
+    }
   }
 
   @override

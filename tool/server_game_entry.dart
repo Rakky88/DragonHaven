@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:js_interop';
 
 import 'package:dragon_haven/domain/game_command_engine.dart';
+import 'package:dragon_haven/domain/game_account_initialization.dart';
 import 'package:dragon_haven/domain/game_import_preparation.dart';
 import 'package:dragon_haven/domain/game_public_projection.dart';
 
@@ -14,12 +15,22 @@ external set _prepareImport(JSFunction value);
 @JS('dragonhavenProjectGame')
 external set _projectGame(JSFunction value);
 
+@JS('dragonhavenInitializeGame')
+external set _initializeGame(JSFunction value);
+
 /// Loaded only inside the trusted Edge worker. There is no network listener
 /// here and no public path accepting a saved game, entropy seed or clock.
 void main() {
   _command = ((JSString input) => _execute(input.toDart).toJS).toJS;
   _prepareImport = ((JSString input) => _prepare(input.toDart).toJS).toJS;
   _projectGame = ((JSString input) => _project(input.toDart).toJS).toJS;
+  _initializeGame = ((JSString input) {
+    final data = jsonDecode(input.toDart) as Map<String, dynamic>;
+    return jsonEncode(GameAccountInitialization.create(
+            secretSeed: data['secretSeed'] as String,
+            now: DateTime.parse(data['now'] as String)))
+        .toJS;
+  }).toJS;
 }
 
 String _project(String input) {

@@ -1,0 +1,655 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'l10n/app_strings.dart';
+import 'models/music_track.dart';
+import 'models/day_phase.dart';
+import 'providers/household_provider.dart' show SpecialAdventureWindow;
+import 'providers/online_account_provider.dart';
+import 'screens/achievements_screen.dart';
+import 'screens/canonical_adventures_screen.dart';
+import 'screens/canonical_dragons_screen.dart';
+import 'screens/canonical_eggs.dart';
+import 'screens/canonical_house_screen.dart';
+import 'screens/canonical_inventory_screen.dart';
+import 'screens/canonical_trials_screen.dart';
+import 'screens/draconomicon_screen.dart';
+import 'screens/friends_screen.dart';
+import 'screens/keeper_journal_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'screens/server_account_screen.dart';
+import 'screens/shop_hub_screen.dart';
+import 'services/audio_service.dart';
+import 'services/canonical_game_actions.dart';
+import 'services/canonical_game_session.dart';
+import 'services/canonical_game_snapshot.dart';
+import 'services/event_branding_service.dart';
+import 'services/notification_service.dart';
+import 'services/release_service.dart';
+import 'services/platform_actions.dart';
+import 'theme/app_theme.dart';
+import 'theme/event_appearance.dart';
+import 'widgets/canonical_milestones.dart';
+import 'widgets/about_sheet.dart';
+import 'widgets/game_icon_sprite.dart';
+import 'widgets/game_tutorial.dart';
+import 'widgets/haven_header_title.dart';
+import 'widgets/rooftop_egg_nest.dart';
+import 'widgets/haven_lighting.dart';
+import 'widgets/seasonal_app_frame.dart';
+import 'widgets/shop_economy_scope.dart';
+
+/// The ordinary five-tab app over confirmed account state. No device save is
+/// constructed or mutated here; all changes use durable server commands.
+class ServerDragonHavenApp extends StatefulWidget {
+  const ServerDragonHavenApp({super.key, required this.auth});
+  final SupabaseClient auth;
+  @override
+  State<ServerDragonHavenApp> createState() => _ServerDragonHavenAppState();
+}
+
+class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
+    with WidgetsBindingObserver {
+  final _branding = EventBrandingService();
+  final _elapsed = Stopwatch()..start();
+  CanonicalGameSnapshot? _observed;
+  Timer? _clock, _refresh;
+  String? _eventKey, _audioConfiguration;
+
+  DateTime get _now =>
+      (_observed?.serverTime ?? DateTime.now().toUtc()).add(_elapsed.elapsed);
+  List<SpecialAdventureWindow> _windows(CanonicalGameSnapshot view) => [
+        for (final window in view.adventures.activeEvents)
+          if (window.definition case final definition?)
+            SpecialAdventureWindow(
+                event: definition,
+                key: window.key,
+                startsAt: window.startsAt,
+                endsAt: window.endsAt)
+      ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(HavenAudio.setAppInForeground(true));
+    _clock = Timer.periodic(const Duration(seconds: 1), (_) {
+      final view = context.read<CanonicalGameSession>().snapshot;
+      if (view != null &&
+          appEventWindow(_windows(view), _now)?.key != _eventKey &&
+          mounted) {
+        setState(() {});
+      }
+    });
+    _refresh = Timer.periodic(
+        const Duration(minutes: 1), (_) => unawaited(_advance()));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_advance());
+    });
+  }
+
+  Future<void> _advance() async {
+    final session = context.read<CanonicalGameSession>();
+    final view = session.snapshot;
+    if (!session.canAct ||
+        view == null ||
+        !view.profile.onboardingComplete ||
+        view.trialAttempt != null ||
+        view.schoolAttempt != null) {
+      return;
+    }
+    try {
+      await CanonicalGameActions(session).execute('refresh', const {});
+    } on CanonicalGameException {
+      // The account gate and session recovery own connection errors.
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final foreground = state == AppLifecycleState.resumed;
+    if (state == AppLifecycleState.inactive) {
+      return;
+    }
+    context.read<OnlineAccountProvider>().setAppInForeground(foreground);
+    context.read<CanonicalGameSession>().setForeground(foreground);
+    if (foreground) {
+      unawaited(_resume());
+    }
+    unawaited(HavenAudio.setAppInForeground(foreground));
+  }
+
+  Future<void> _resume() async {
+    final session = context.read<CanonicalGameSession>();
+    try {
+      await session.synchronize();
+      if (mounted) await _advance();
+    } on CanonicalGameException {
+      // The account gate and reconnect controls handle expired or lost sessions.
+    }
+  }
+
+  @override
+  void dispose() {
+    _clock?.cancel();
+    _refresh?.cancel();
+    _elapsed.stop();
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(HavenAudio.setAppInForeground(false));
+    super.dispose();
+  }
+
+  Future<void> _configureAudio(
+      CanonicalGameSnapshot view, SpecialAdventureWindow? event) async {
+    final prefs = view.profile.preferences;
+    final tracks = [
+      ...seasonalMusicCatalog.where((t) =>
+          t.temporaryEventId == event?.event.id &&
+          !(prefs['disabledSeasonalMusicTrackIds'] as List).contains(t.id)),
+      ...musicCatalog.where((t) =>
+          view.shop.music.contains(t.id) &&
+          (prefs['enabledMusicTrackIds'] as List).contains(t.id)),
+    ];
+    final configuration = jsonEncode([prefs, tracks.map((t) => t.id).toList()]);
+    if (configuration == _audioConfiguration) return;
+    _audioConfiguration = configuration;
+    await HavenAudio.configureJukebox(
+        trackIds: tracks.map((t) => t.rawResourceId),
+        shuffle: prefs['jukeboxShuffle'] as bool,
+        repeat: prefs['jukeboxRepeat'] as bool);
+    await HavenAudio.applyPreferences(
+        musicEnabled: prefs['musicEnabled'] as bool,
+        soundEffectsEnabled: prefs['soundEffectsEnabled'] as bool,
+        musicStyle:
+            HavenMusicStyle.values.byName(prefs['musicStyle'] as String));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = context.watch<CanonicalGameSession>();
+    final view = session.snapshot;
+    if (view == null) return const SizedBox.shrink();
+    if (!identical(view, _observed)) {
+      _observed = view;
+      _elapsed.reset();
+    }
+    final windows = _windows(view);
+    final event = appEventWindow(windows, _now);
+    _eventKey = event?.key;
+    final appearance =
+        event == null ? null : EventAppearance.forEvent(event.event.id);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      unawaited(_configureAudio(view, event));
+      unawaited(_branding.synchronize(eventBrandingSchedule(_now, windows,
+          dismissedUntil: view.adventures.dismissedEvents)));
+    });
+    return MaterialApp(
+      title: 'DragonHaven',
+      debugShowCheckedModeBanner: false,
+      theme: buildAppTheme(event: appearance),
+      locale: Locale(view.profile.preferences['languageCode'] as String),
+      supportedLocales: AppStrings.supportedLanguages.keys.map(Locale.new),
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      builder: (context, child) => SeasonalAppFrame(
+          window: event,
+          child: appearance == null
+              ? child!
+              : EventBackdrop(appearance: appearance, child: child!)),
+      home: Builder(
+          builder: (context) => view.profile.onboardingComplete
+              ? _ServerShell(auth: widget.auth, now: () => _now)
+              : OnboardingScreen(
+                  completeOnboarding: (name) =>
+                      runShopAction(context, () async {
+                        await CanonicalGameActions(session)
+                            .completeOnboarding(name);
+                        if (mounted) await _advance();
+                      }))),
+    );
+  }
+}
+
+class _ServerShell extends StatefulWidget {
+  const _ServerShell({required this.auth, required this.now});
+  final SupabaseClient auth;
+  final DateTime Function() now;
+  @override
+  State<_ServerShell> createState() => _ServerShellState();
+}
+
+enum _Menu { account, journal, achievements, tutorial, about }
+
+class _ServerShellState extends State<_ServerShell> {
+  int _index = 2;
+  final _visited = <int>{2};
+  bool _tutorialShowing = false;
+  bool _showCompleted = false;
+  Timer? _updateRetry;
+  late final StreamSubscription<HavenNotificationDestination> _notifications;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_checkForUpdate());
+    _notifications = HavenNotifications.navigationEvents.listen((_) {
+      final destination = HavenNotifications.takePendingNavigation();
+      if (mounted && destination != null) _notification(destination);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final destination = HavenNotifications.takePendingNavigation();
+      if (destination != null) _notification(destination);
+    });
+  }
+
+  @override
+  void dispose() {
+    _updateRetry?.cancel();
+    unawaited(_notifications.cancel());
+    super.dispose();
+  }
+
+  Future<void> _checkForUpdate() async {
+    try {
+      final release = await ReleaseService.fetchLatest();
+      if (mounted && release.hasApk && release.isNewerThanInstalled) {
+        _offerUpdate(release);
+      }
+    } catch (_) {
+      // A failed update lookup never blocks account restoration.
+    }
+  }
+
+  void _offerUpdate(LatestRelease release) {
+    _updateRetry?.cancel();
+    _updateRetry = Timer(const Duration(seconds: 2), () async {
+      if (!mounted) return;
+      final view = context.read<CanonicalGameSession>().snapshot;
+      if (view == null) return;
+      if (_tutorialShowing ||
+          view.presentations.isNotEmpty ||
+          view.trialAttempt != null ||
+          view.schoolAttempt != null ||
+          ModalRoute.of(context)?.isCurrent != true) {
+        _offerUpdate(release);
+        return;
+      }
+      final s = AppStrings.of(context);
+      final update = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: Text(s.pick('Update available', 'Update beschikbaar')),
+                content: Text(
+                    '${s.pick('A newer version of DragonHaven is ready.', 'Er staat een nieuwere versie van DragonHaven klaar.')}\n\nv${release.version}'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(s.pick('Later', 'Later'))),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text(s.pick('Update', 'Updaten'))),
+                ],
+              ));
+      if (update == true && mounted) {
+        try {
+          await PlatformActions.openUrl(release.downloadUrl);
+        } catch (_) {
+          if (mounted) await showDragonHavenAboutSheet(context);
+        }
+      }
+    });
+  }
+
+  void _notification(HavenNotificationDestination destination) {
+    if (!mounted) return;
+    if (destination == HavenNotificationDestination.achievements) {
+      Navigator.push(context,
+          MaterialPageRoute<void>(builder: (_) => const AchievementsScreen()));
+    } else if (destination == HavenNotificationDestination.adventureTrials) {
+      _navigate(1);
+      Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+              builder: (_) => Scaffold(
+                  appBar: AppBar(title: const Text('Dragon Trials')),
+                  body: const CanonicalTrialsScreen())));
+    } else {
+      _showCompleted =
+          destination == HavenNotificationDestination.adventureCompleted;
+      _navigate(switch (destination) {
+        HavenNotificationDestination.friends => 0,
+        HavenNotificationDestination.adventureAvailable ||
+        HavenNotificationDestination.adventureCompleted =>
+          1,
+        _ => 2,
+      });
+    }
+  }
+
+  void _navigate(int index) {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _visited.add(index);
+      _index = index;
+    });
+    final hour = DateTime.now().hour;
+    unawaited(HavenAudio.setMusicScene(index == 2
+        ? (hour >= 21 || hour < 7
+            ? HavenMusicScene.towerNight
+            : HavenMusicScene.towerDay)
+        : HavenMusicScene.towerDay));
+  }
+
+  Future<void> _tutorial() async {
+    final session = context.read<CanonicalGameSession>();
+    final dragon = session.snapshot?.dragons.where((d) => d.owned).firstOrNull;
+    if (dragon == null || _tutorialShowing) return;
+    _tutorialShowing = true;
+    try {
+      final fully = await showDragonHavenTutorial(context,
+          dragon: dragon, onNavigate: _navigate);
+      if (mounted) {
+        await runShopAction(context, () async {
+          await CanonicalGameActions(session)
+              .execute('complete_tutorial', {'fullyViewed': fully});
+        });
+      }
+    } finally {
+      _tutorialShowing = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final view = context.watch<CanonicalGameSession>().snapshot!;
+    final session = context.read<CanonicalGameSession>();
+    if (!_tutorialShowing &&
+        !view.profile.tutorialCompleted &&
+        view.presentations.isEmpty &&
+        view.trialAttempt == null &&
+        view.schoolAttempt == null &&
+        view.dragons.any((d) => d.owned && d.name.trim().isNotEmpty) &&
+        (view.data['collection']['achievements'] as List)
+            .contains('hello_little_one') &&
+        session.canAct) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+          unawaited(_tutorial());
+        }
+      });
+    }
+    final s = AppStrings.of(context);
+    final event = SeasonalAppFrame.windowOf(context);
+    final labels = [
+      s.tr('friends'),
+      s.pick('Adventure', 'Avontuur'),
+      s.pick('Tower', 'Toren'),
+      s.pick('Inventory', 'Inventaris'),
+      s.tr('shop')
+    ];
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: HavenHeaderTitle.toolbarHeight(context),
+        leadingWidth: 58,
+        leading: Padding(
+            padding: const EdgeInsets.all(7),
+            child: event == null
+                ? Image.asset('assets/images/dragonhaven_logo.png')
+                : SeasonalAppLogo(eventId: event.event.id)),
+        titleSpacing: 0,
+        title: HavenHeaderTitle(
+            subtitle: labels[_index], coins: view.coins, gems: view.gems),
+        actions: [
+          PopupMenuButton<_Menu>(
+              key: const Key('haven-menu-button'),
+              onSelected: (choice) {
+                if (choice == _Menu.tutorial) {
+                  unawaited(_tutorial());
+                  return;
+                }
+                if (choice == _Menu.about) {
+                  unawaited(showDragonHavenAboutSheet(context));
+                  return;
+                }
+                Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                        builder: (_) => switch (choice) {
+                              _Menu.account =>
+                                ServerAccountScreen(auth: widget.auth),
+                              _Menu.achievements => const AchievementsScreen(),
+                              _ => const KeeperJournalScreen(),
+                            }));
+              },
+              itemBuilder: (_) => [
+                    PopupMenuItem(
+                        value: _Menu.account, child: Text(s.tr('account'))),
+                    PopupMenuItem(
+                        value: _Menu.journal,
+                        child: Text(s.pick('Keeper Journal', 'Keeperdagboek'))),
+                    PopupMenuItem(
+                        value: _Menu.achievements,
+                        child: Text(s.tr('achievements'))),
+                    PopupMenuItem(
+                        value: _Menu.tutorial,
+                        child: Text(s.pick('Tutorial', 'Uitleg'))),
+                    PopupMenuItem(
+                        value: _Menu.about,
+                        child: Text(
+                            s.pick('About DragonHaven', 'Over DragonHaven'))),
+                  ])
+        ],
+      ),
+      body: SafeArea(
+          child: Column(children: [
+        if (event != null) EventCountdownBanner(window: event, now: widget.now),
+        Expanded(
+            child: CanonicalMilestones(
+                child: IndexedStack(index: _index, children: [
+          _visited.contains(0)
+              ? FriendsScreen(active: _index == 0)
+              : const SizedBox.shrink(),
+          _visited.contains(1)
+              ? CanonicalAdventuresScreen(showCompleted: _showCompleted)
+              : const SizedBox.shrink(),
+          const _ServerTower(),
+          _visited.contains(3)
+              ? const CanonicalInventoryScreen()
+              : const SizedBox.shrink(),
+          _visited.contains(4)
+              ? const ShopHubScreen()
+              : const SizedBox.shrink(),
+        ]))),
+      ])),
+      bottomNavigationBar: MediaQuery.withClampedTextScaling(
+        // Keep the five fixed-width destinations readable on a small phone;
+        // page content retains the keeper's full accessibility text scale.
+        maxScaleFactor: MediaQuery.sizeOf(context).width < 360 ? 1.1 : 1.3,
+        child: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: _navigate,
+          destinations: [
+            for (final (i, kind) in const [
+              GameIconKind.navFriends,
+              GameIconKind.navAdventure,
+              GameIconKind.navTower,
+              GameIconKind.navInventory,
+              GameIconKind.navShop
+            ].indexed)
+              NavigationDestination(
+                  key: Key('nav-${[
+                    'friends',
+                    'adventure',
+                    'tower',
+                    'inventory',
+                    'shop'
+                  ][i]}'),
+                  icon: GameIconSprite(kind, size: 34),
+                  label: labels[i])
+          ])),
+    );
+  }
+}
+
+class _ServerTower extends StatelessWidget {
+  const _ServerTower();
+  @override
+  Widget build(BuildContext context) {
+    final view = context.watch<CanonicalGameSession>().snapshot!;
+    final s = AppStrings.of(context);
+    return Column(children: [
+      Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Row(children: [
+            Expanded(
+                child: Text(s.pick('Dragon Tower', 'Drakentoren'),
+                    style: Theme.of(context).textTheme.headlineSmall)),
+            IconButton(
+                key: const Key('my-dragons-button'),
+                tooltip: s.pick('My dragons', 'Mijn draken'),
+                icon: const GameIconSprite(GameIconKind.myDragons, size: 40),
+                onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                        builder: (_) => Scaffold(
+                            appBar: AppBar(
+                                title:
+                                    Text(s.pick('My dragons', 'Mijn draken'))),
+                            body: const CanonicalDragonsScreen())))),
+            IconButton(
+                tooltip: 'Draconomicon',
+                icon: const GameIconSprite(GameIconKind.draconomicon, size: 40),
+                onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                        builder: (_) => Scaffold(
+                            appBar: AppBar(),
+                            body: DraconomiconScreen(
+                                discoveredForms: view.shop.discoveredForms,
+                                prismaticForms: view.shop.prismaticForms))))),
+          ])),
+      Expanded(
+          child: CanonicalHouseScreen(
+              showHeading: false,
+              header: view.nest == null
+                  ? const _EmptyServerNest()
+                  : _ServerNest(egg: view.nest!, view: view))),
+    ]);
+  }
+}
+
+class _EmptyServerNest extends StatelessWidget {
+  const _EmptyServerNest();
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: InkWell(
+        key: const Key('server-empty-nest'),
+        borderRadius: BorderRadius.circular(24),
+        onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+                builder: (_) => Scaffold(
+                    appBar: AppBar(title: Text(s.pick('Eggs', 'Eieren'))),
+                    body:
+                        const ShopEconomyBoundary(child: CanonicalEggList())))),
+        child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: SizedBox(
+              height: 215,
+              child: Stack(fit: StackFit.expand, children: [
+                HavenPhaseImage(
+                    assetFor: (phase) =>
+                        'assets/images/tower_nest_${phase.assetKey}.webp'),
+                Positioned(
+                    left: 14,
+                    right: 14,
+                    top: 13,
+                    child: Row(children: [
+                      Expanded(
+                          child: Text(s.pick('Rooftop Nest', 'Daknest'),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 18,
+                                  shadows: [
+                                    Shadow(blurRadius: 6, color: Colors.black54)
+                                  ]))),
+                      const Icon(Icons.chevron_right_rounded,
+                          color: Colors.white),
+                    ])),
+              ]),
+            )),
+      ),
+    );
+  }
+}
+
+class _ServerNest extends StatefulWidget {
+  const _ServerNest({required this.egg, required this.view});
+  final CanonicalEggView egg;
+  final CanonicalGameSnapshot view;
+  @override
+  State<_ServerNest> createState() => _ServerNestState();
+}
+
+class _ServerNestState extends State<_ServerNest> {
+  Timer? _batch;
+  int _taps = 0;
+  @override
+  void dispose() {
+    _batch?.cancel();
+    super.dispose();
+  }
+
+  void _tap() {
+    final session = context.read<CanonicalGameSession>();
+    if (!widget.egg.firstEgg || !session.canAct || _taps >= 30) return;
+    _taps++;
+    _batch ??= Timer(const Duration(milliseconds: 300), () async {
+      _batch = null;
+      final taps = _taps;
+      _taps = 0;
+      if (!mounted || !session.canAct) return;
+      await runShopAction(context, () async {
+        await CanonicalGameActions(session)
+            .execute('tap_starter_egg', {'eggId': widget.egg.id, 'taps': taps});
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    return Column(children: [
+      SizedBox(
+          height: 150,
+          child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: GestureDetector(
+                  key: const Key('server-nest-egg'),
+                  onTap: widget.egg.firstEgg
+                      ? _tap
+                      : () => showCanonicalEggDetails(context, widget.egg.id),
+                  child: const RooftopEggNest()))),
+      if (widget.egg.firstEgg)
+        Text(
+            s.pick('Tap the egg to shorten the wait.',
+                'Tik op het ei om de wachttijd te verkorten.'),
+            style: Theme.of(context).textTheme.bodySmall),
+      CanonicalNestClock(egg: widget.egg, view: widget.view),
+    ]);
+  }
+}

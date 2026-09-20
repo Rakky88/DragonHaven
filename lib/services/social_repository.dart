@@ -1,5 +1,9 @@
 import '../models/social.dart';
 
+abstract interface class ConclaveReadRepository {
+  Future<void> markConclaveMessagesRead(List<String> messageIds);
+}
+
 class SocialException implements Exception {
   const SocialException(this.code);
 

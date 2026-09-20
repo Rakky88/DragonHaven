@@ -15,12 +15,14 @@ export interface Dependencies {
   evaluate: (input: JsonObject) => Promise<unknown>;
   project?: (input: JsonObject) => unknown;
   prepareImport?: (input: JsonObject) => unknown;
+  initializeGame?: (input: JsonObject) => unknown;
 }
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const hash = /^[0-9a-f]{64}$/;
 const encoder = new TextEncoder();
 const commandKeys: Record<string, readonly string[]> = {
+  complete_onboarding: ["name"], set_account_name: ["name"], set_preferences: ["changes"],
 
   offer_trade: ["keeperCode", "kind", "key", "variant"],
   reply_trade: ["tradeId", "kind", "key", "variant"],
@@ -52,6 +54,7 @@ const commandKeys: Record<string, readonly string[]> = {
   craft_altar_relic: ["relic"], use_altar_relic: ["relic", "eggId"],
   use_chronoshard: ["reductionPercent"], use_wayfinder: ["kind", "replaceAdventureId"],
   equip_twinstar: ["dragonId"], equip_relic: ["relic", "dragonId"], activate_egg: ["eggId"], hatch_egg: ["eggId"],
+  tap_starter_egg: ["eggId", "taps"],
   name_dragon: ["dragonId", "name"], evolve_dragon: ["dragonId"],
   set_dragon_highlight: ["dragonId", "focus", "highlighted"], set_favorite_dragon: ["dragonId"],
   buy_starlight_treat: ["dragonId"], release_dragon: ["dragonId"],
@@ -85,6 +88,7 @@ export const domainErrors = new Set([
   "game_state_changed", "game_command_recovered",
 ]);
 const databaseErrors = new Map<string, number>([
+  ["game_existing_progress_requires_migration", 409], ["privacy_confirmation_required", 403],
   ["game_engine_disabled", 503], ["game_client_upgrade_required", 426],
   ["game_ruleset_mismatch", 503], ["game_import_required", 409],
   ["game_import_preparation_required", 409],
@@ -203,6 +207,12 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
   let input: unknown;
   try { input = await boundedJson(request.body, 8192); }
   catch { return error("game_request_invalid", 400); }
+  if (object(input) && input.action === "initialize_account") {
+    if (!exactKeys(input, ["protocol", "clientBuild", "action", "requestId"]) ||
+      input.protocol !== 2 || !positiveInteger(input.clientBuild) || input.clientBuild > 2147483647 ||
+      typeof input.requestId !== "string" || !uuid.test(input.requestId)) return error("game_request_invalid", 400);
+    return initializeAccount(owner, input.requestId, input.clientBuild, deps);
+  }
   if (object(input) && input.action === "migrate_account") {
     if (!exactKeys(input, ["protocol", "clientBuild", "action", "requestId", "sourceRevision"]) ||
       input.protocol !== 2 || !positiveInteger(input.clientBuild) || input.clientBuild > 2147483647 ||
@@ -445,6 +455,36 @@ async function migrateAccount(owner: string, requestId: string, sourceRevision: 
     }
     // An activation may have committed before the connection was lost. A retry
     // reads the durable active status and never repeats preparation or spending.
+    return error("game_migration_unavailable", 503);
+  }
+}
+
+async function initializeAccount(owner: string, requestId: string, clientBuild: number,
+  deps: Dependencies): Promise<Response> {
+  try {
+    if (!deps.initializeGame) throw new Error("initialization_missing");
+    const captured = await deps.rpc("begin_server_account_initialization", {
+      p_owner_id: owner, p_client_build: clientBuild, p_ruleset_sha256: deps.ruleset,
+    });
+    if (!object(captured) || captured.owner_id !== owner) throw new Error("invalid_initialization");
+    let revision = captured.source_revision;
+    if (revision === null) {
+      if (typeof captured.secret_seed !== "string" || !hash.test(captured.secret_seed) ||
+        typeof captured.now !== "string" || !Number.isFinite(Date.parse(captured.now))) throw new Error("invalid_initialization");
+      const state = deps.initializeGame({secretSeed: captured.secret_seed, now: captured.now});
+      if (!object(state) || state.onboardingComplete !== false || encoder.encode(JSON.stringify(state)).length > 8 * 1024 * 1024) {
+        throw new Error("invalid_initial_state");
+      }
+      revision = await deps.rpc("commit_server_account_initialization", {
+        p_owner_id: owner, p_ruleset_sha256: deps.ruleset, p_state: state,
+      });
+    }
+    if (!positiveInteger(revision)) throw new Error("invalid_initial_revision");
+    return await migrateAccount(owner, requestId, revision, clientBuild, deps);
+  } catch (failure) {
+    if (failure instanceof RpcFailure && databaseErrors.has(failure.code)) {
+      return error(failure.code, databaseErrors.get(failure.code)!);
+    }
     return error("game_migration_unavailable", 503);
   }
 }

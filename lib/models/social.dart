@@ -823,9 +823,13 @@ class ConclaveSnapshot {
     required this.chronicle,
     required this.joinRequests,
     this.seasonalProjects = const [],
+    this.readMessageIds,
   });
 
   final List<SeasonalConclaveProject> seasonalProjects;
+
+  /// Null is an older server; an empty set is a confirmed unread account.
+  final Set<String>? readMessageIds;
   final ConclaveSummary conclave;
   final ConclaveRole myRole;
   final bool contributedToday;
@@ -857,6 +861,9 @@ class ConclaveSnapshot {
       joinRequests: parse('join_requests', ConclaveJoinRequest.fromJson),
       seasonalProjects:
           parse('seasonal_projects', SeasonalConclaveProject.fromJson),
+      readMessageIds: json['read_message_ids'] is List
+          ? (json['read_message_ids'] as List).whereType<String>().toSet()
+          : null,
     );
   }
 }

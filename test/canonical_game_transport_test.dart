@@ -104,6 +104,35 @@ void main() {
   });
 
   test(
+      'fresh initialization sends no inventory, seed, timestamp or zero revision',
+      () async {
+    await _signIn(auth, _owner);
+    const requestId = '33333333-3333-4333-8333-333333333333';
+    transport = CanonicalGameTransport.staging(auth, _config,
+        httpClientFactory: () => _TrackingClient((request) async {
+              expect(jsonDecode((request as http.Request).body), {
+                'protocol': 2,
+                'clientBuild': AppInfo.buildNumber,
+                'action': 'initialize_account',
+                'requestId': requestId,
+              });
+              return _response({
+                'protocol': 2,
+                'owner_id': _owner,
+                'request_id': requestId,
+                'authority_mode': 'server',
+                'phase': 'active',
+                'server_revision': 3,
+                'replayed': false
+              });
+            }));
+    expect(
+        await transport!
+            .migrateAccount(requestId: requestId, sourceRevision: 0),
+        3);
+  });
+
+  test(
       'migration sends only a durable ID/revision and requires a live owner receipt',
       () async {
     await _signIn(auth, _owner);

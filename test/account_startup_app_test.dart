@@ -9,6 +9,12 @@ import 'package:dragon_haven/screens/privacy_screen.dart';
 import 'package:dragon_haven/services/account_legacy_game_storage.dart';
 import 'package:dragon_haven/services/canonical_game_transport.dart';
 import 'package:dragon_haven/services/storage_service.dart';
+import 'package:dragon_haven/server_dragonhaven_app.dart';
+import 'package:dragon_haven/services/canonical_game_intent.dart';
+import 'support/canonical_ui_server.dart';
+import 'package:provider/provider.dart';
+import 'package:dragon_haven/services/canonical_game_session.dart';
+import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -134,6 +140,135 @@ void main() {
     await closing;
     await tester.runAsync(() => directory.delete(recursive: true));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'two empty installations enter the server shell without importing a local game',
+      (tester) async {
+    final game = HouseholdProvider(persistenceEnabled: false)
+      ..onboardingComplete = true
+      ..accountName = 'Restored Keeper';
+    final state = game.exportState();
+    state['pet']['coins'] = 12993;
+    final server = CanonicalUiServer(state);
+    game.dispose();
+    final calls = <String>[];
+    http.Response reply(http.Request request, Object? body,
+            [int status = 200]) =>
+        http.Response(jsonEncode(body), status,
+            request: request, headers: {'content-type': 'application/json'});
+    final auth = SupabaseClient(config.url, config.publishableKey,
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+        httpClient: MockClient((request) async {
+      calls.add(request.url.path);
+      if (request.url.path.endsWith('get_my_privacy_acknowledgement')) {
+        return reply(request, true);
+      }
+      if (request.url.path.endsWith('ensure_my_online_account')) {
+        return reply(request, null);
+      }
+      if (request.url.path.endsWith('get_online_snapshot')) {
+        return reply(request, {
+          'profile': {
+            'user_id': a,
+            'display_name': 'Restored Keeper',
+            'keeper_code': 'DH-SYNTH',
+            'inventory_imported': true
+          },
+          'group_status': {},
+        });
+      }
+      throw StateError('Unexpected legacy/social write: ${request.url.path}');
+    }));
+    CanonicalGameTransport transport() =>
+        CanonicalGameTransport.staging(auth, config,
+            httpClientFactory: () => MockClient((request) async {
+                  if (request.url.path
+                      .endsWith('get_my_server_gameplay_status')) {
+                    return reply(request, {
+                      'owner_id': a,
+                      'phase': 'active',
+                      'migration_enabled': true,
+                      'source_revision': null,
+                      'server_revision': server.revision,
+                    });
+                  }
+                  final input =
+                      jsonDecode(request.body) as Map<String, dynamic>;
+                  calls.add('edge:${input['action']}');
+                  if (input['action'] == 'read_state') {
+                    final wire = {...server.wire, 'authority_mode': 'server'};
+                    try {
+                      CanonicalGameSnapshot.parse(wire,
+                          expectedOwner: a,
+                          expectedAuthority: CanonicalGameAuthority.server);
+                    } catch (e) {
+                      calls.add('parser:$e');
+                      rethrow;
+                    }
+                    return reply(request, wire);
+                  }
+                  final result = await server.send(CanonicalGameIntent(
+                      ownerId: a,
+                      requestId: input['requestId'],
+                      action: input['action'],
+                      payload: input['payload'],
+                      minimumRevision: input['expectedRevision']));
+                  return reply(
+                      request,
+                      {
+                        ...result.body as Map<String, dynamic>,
+                        'authority_mode': 'server'
+                      },
+                      result.status);
+                }));
+    for (var phone = 0; phone < 2; phone++) {
+      SharedPreferences.setMockInitialValues({});
+      final directory = (await tester.runAsync(
+          () => Directory.systemTemp.createTemp('dh-server-startup-')))!;
+      await tester.runAsync(() => _signIn(auth, a));
+      await tester.runAsync(() => tester.pumpWidget(AccountStartupApp(
+          config: config,
+          auth: auth,
+          directory: directory,
+          connectionFactory: transport)));
+      await until(tester, () {
+        if (find.text('Try again').evaluate().isNotEmpty) {
+          throw StateError(
+              'Startup failed: $calls; ${tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).toList()}');
+        }
+        return find.byType(ServerDragonHavenApp).evaluate().isNotEmpty;
+      });
+      expect(find.byType(DragonHavenApp), findsNothing);
+      expect(find.byType(AccountSaveChoiceScreen), findsNothing);
+      expect(find.byKey(const Key('account-name-field')), findsNothing);
+      expect(await StorageService.load(), isNull);
+      expect(await AccountLegacyGameStorage.open(a), isNull);
+      expect(server.state['pet']['coins'], 12993);
+      final activeSession = tester
+          .element(find.byType(ServerDragonHavenApp))
+          .read<CanonicalGameSession>();
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      for (var i = 0; i < 12; i++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      var closed = false;
+      final close = activeSession.close().then((_) => closed = true);
+      await until(tester, () => closed);
+      await close;
+      await tester.runAsync(() => directory.delete(recursive: true));
+    }
+    expect(
+        calls.where(
+            (c) => c.contains('cloud_game_save') || c.contains('import')),
+        isEmpty);
+    var disposed = false;
+    final closing = auth.dispose().then((_) => disposed = true);
+    await until(tester, () => disposed);
+    await closing;
   });
 
   testWidgets(

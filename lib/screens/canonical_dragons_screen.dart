@@ -66,17 +66,79 @@ class _DragonList extends StatelessWidget {
   Widget build(BuildContext context) {
     final view = context.watch<CanonicalGameSession>().snapshot!;
     final strings = AppStrings.of(context);
+    final session = context.read<CanonicalGameSession>();
+    final prefs = view.profile.preferences;
+    final compact = prefs['myDragonsViewMode'] == 'compact';
+    final descending = prefs['myDragonsSortDescending'] == true;
+    final sort = prefs['myDragonsSortMode'] as String;
+    final dragons = view.dragons.where((d) => d.owned).toList()
+      ..sort((a, b) {
+        final compared = switch (sort) {
+          'name' => canonicalDragonName(strings, a)
+              .toLowerCase()
+              .compareTo(canonicalDragonName(strings, b).toLowerCase()),
+          'rarity' => dragonLineages
+              .firstWhere((l) => l.id == a.lineageId)
+              .rarity
+              .index
+              .compareTo(dragonLineages
+                  .firstWhere((l) => l.id == b.lineageId)
+                  .rarity
+                  .index),
+          _ => a.acquiredAt.compareTo(b.acquiredAt),
+        };
+        return compared == 0
+            ? a.id.compareTo(b.id)
+            : descending
+                ? -compared
+                : compared;
+      });
+    void change(Map<String, dynamic> values) => runShopAction(
+        context, () => CanonicalGameActions(session).setPreferences(values));
     return ListView(padding: const EdgeInsets.all(16), children: [
       Text(strings.pick('My dragons', 'Mijn draken'),
           style: Theme.of(context).textTheme.titleLarge),
       const SizedBox(height: 12),
-      for (final dragon in view.dragons.where((d) => d.owned))
+      Row(children: [
+        Expanded(
+            child: DropdownButton<String>(
+                isExpanded: true,
+                value: sort,
+                items: [
+                  for (final entry in {
+                    'acquiredAt': strings.pick('Date acquired', 'Verkregen op'),
+                    'name': strings.pick('Name', 'Naam'),
+                    'rarity': strings.pick('Rarity', 'Zeldzaamheid'),
+                  }.entries)
+                    DropdownMenuItem(value: entry.key, child: Text(entry.value))
+                ],
+                onChanged: session.canAct
+                    ? (value) {
+                        if (value != null) change({'myDragonsSortMode': value});
+                      }
+                    : null)),
+        IconButton(
+            tooltip: strings.pick('Reverse order', 'Volgorde omkeren'),
+            icon: Icon(descending ? Icons.arrow_downward : Icons.arrow_upward),
+            onPressed: session.canAct
+                ? () => change({'myDragonsSortDescending': !descending})
+                : null),
+        IconButton(
+            tooltip: strings.pick('Change view', 'Weergave wijzigen'),
+            icon: Icon(compact ? Icons.grid_view : Icons.view_list),
+            onPressed: session.canAct
+                ? () => change(
+                    {'myDragonsViewMode': compact ? 'gallery' : 'compact'})
+                : null),
+      ]),
+      for (final dragon in dragons)
         Card(
             child: ListTile(
                 key: Key('canonical-dragon-${dragon.id}'),
                 leading: SizedBox(
-                    width: 64,
-                    child: CanonicalDragonArt(dragon: dragon, height: 64)),
+                    width: compact ? 48 : 80,
+                    child: CanonicalDragonArt(
+                        dragon: dragon, height: compact ? 48 : 80)),
                 title: Text(canonicalDragonName(strings, dragon)),
                 subtitle: Text(
                     '${_stageName(strings, dragon.stage)} · ${dragon.xp} XP'),

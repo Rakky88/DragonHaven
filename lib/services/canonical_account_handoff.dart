@@ -178,7 +178,7 @@ class CanonicalAccountHandoff extends ChangeNotifier {
                   saved['requestId'] is! String ||
                   !CanonicalGameIntent.validOwner(saved['requestId']) ||
                   saved['sourceRevision'] is! int ||
-                  saved['sourceRevision'] < 1 ||
+                  saved['sourceRevision'] < 0 ||
                   saved['sourceRevision'] > 9007199254740991) {
                 throw const FormatException();
               }
@@ -194,7 +194,7 @@ class CanonicalAccountHandoff extends ChangeNotifier {
             setPhase(CanonicalHandoffPhase.preparing);
             sourceRevision = await prepareAndUploadLegacy(owner);
             requireSession();
-            if (sourceRevision < 1 || sourceRevision > 9007199254740991) {
+            if (sourceRevision < 0 || sourceRevision > 9007199254740991) {
               throw const CanonicalGameException('game_import_source_changed');
             }
             requestId = newRequestId();
@@ -236,6 +236,7 @@ class CanonicalAccountHandoff extends ChangeNotifier {
           // Next try must settle/re-upload current legacy progress, not loop on
           // the obsolete capture. Network failures retain the original intent.
           if (const {
+            'game_existing_progress_requires_migration',
             'game_import_source_changed',
             'game_import_altar_changed',
             'game_migration_social_changed',

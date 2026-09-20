@@ -57,24 +57,28 @@ class CanonicalEggList extends StatefulWidget {
 }
 
 class _CanonicalEggListState extends State<CanonicalEggList> {
-  String _kind = 'all', _order = 'newest';
+  String _kind = 'all';
   bool _tagged = false;
   @override
   Widget build(BuildContext context) {
     final view = context.watch<CanonicalGameSession>().snapshot;
     if (view == null) return const SizedBox.shrink();
     final strings = AppStrings.of(context);
+    final prefs = view.profile.preferences;
+    final compact = prefs['eggInventoryViewMode'] == 'list';
     final eggs = view.eggs
         .where((e) =>
             (_kind == 'all' || e.kind == _kind) && (!_tagged || e.tagged))
         .toList()
       ..sort((a, b) {
-        final order = switch (_order) {
-          'oldest' => a.acquiredAt.compareTo(b.acquiredAt),
-          'shortest' => a.incubation.compareTo(b.incubation),
-          _ => b.acquiredAt.compareTo(a.acquiredAt),
-        };
-        return order != 0 ? order : a.id.compareTo(b.id);
+        final order = prefs['eggInventorySortMode'] == 'hatchTime'
+            ? a.incubation.compareTo(b.incubation)
+            : a.acquiredAt.compareTo(b.acquiredAt);
+        return order == 0
+            ? a.id.compareTo(b.id)
+            : prefs['eggInventorySortDescending'] == true
+                ? -order
+                : order;
       });
     return ListView(padding: const EdgeInsets.all(16), children: [
       Row(children: [
@@ -90,19 +94,47 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
             onPressed: () => _filter(context),
             icon: const Icon(Icons.tune_rounded))
       ]),
-      for (final egg in eggs)
-        Card(
-            child: ListTile(
-          key: Key('canonical-egg-${egg.id}'),
-          leading:
-              SizedBox(width: 48, child: CanonicalEggArt(egg: egg, height: 48)),
-          title: Text(canonicalEggName(strings, egg)),
-          subtitle: Text(egg.hint(strings.languageCode)),
-          trailing:
-              Icon(egg.tagged ? Icons.bookmark_rounded : Icons.info_outline),
-          onTap: () =>
-              showCanonicalEggDetails(context, egg.id, onPlace: widget.onPlace),
-        )),
+      if (!compact)
+        LayoutBuilder(
+            builder: (context, constraints) =>
+                Wrap(spacing: 8, runSpacing: 8, children: [
+                  for (final egg in eggs)
+                    SizedBox(
+                        width: constraints.maxWidth < 290
+                            ? constraints.maxWidth
+                            : (constraints.maxWidth - 8) / 2,
+                        child: Card(
+                            child: InkWell(
+                                key: Key('canonical-egg-${egg.id}'),
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () => showCanonicalEggDetails(
+                                    context, egg.id,
+                                    onPlace: widget.onPlace),
+                                child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(children: [
+                                      CanonicalEggArt(egg: egg, height: 90),
+                                      Text(canonicalEggName(strings, egg),
+                                          textAlign: TextAlign.center),
+                                      if (egg.tagged)
+                                        const Icon(Icons.bookmark_rounded,
+                                            size: 20),
+                                    ]))))),
+                ])),
+      if (compact)
+        for (final egg in eggs)
+          Card(
+              child: ListTile(
+            key: Key('canonical-egg-${egg.id}'),
+            leading: SizedBox(
+                width: 48, child: CanonicalEggArt(egg: egg, height: 48)),
+            title: Text(canonicalEggName(strings, egg)),
+            subtitle: Text(egg.hint(strings.languageCode)),
+            trailing:
+                Icon(egg.tagged ? Icons.bookmark_rounded : Icons.info_outline),
+            onTap: () => showCanonicalEggDetails(context, egg.id,
+                onPlace: widget.onPlace),
+          )),
       if (eggs.isEmpty)
         Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
@@ -112,11 +144,34 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
   }
 
   Future<void> _filter(BuildContext context) async {
+    final original = context.read<CanonicalGameSession>().snapshot;
+    if (original == null) return;
     await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
         builder: (context) => StatefulBuilder(builder: (context, update) {
               final strings = AppStrings.of(context);
+              final session = context.watch<CanonicalGameSession>();
+              final current = session.snapshot?.ownerId == original.ownerId;
+              final prefs = current
+                  ? session.snapshot!.profile.preferences
+                  : original.profile.preferences;
+              final order = prefs['eggInventorySortMode'] == 'hatchTime'
+                  ? 'shortest'
+                  : prefs['eggInventorySortDescending'] == true
+                      ? 'newest'
+                      : 'oldest';
+              void preference(Map<String, dynamic> changes) {
+                if (!mounted || !current) {
+                  Navigator.pop(context);
+                  return;
+                }
+                runShopAction(
+                    context,
+                    () =>
+                        CanonicalGameActions(session).setPreferences(changes));
+              }
+
               void change(VoidCallback action) {
                 if (!mounted) {
                   Navigator.pop(context);
@@ -153,6 +208,22 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                                         onSelected: (_) =>
                                             change(() => _kind = entry.key))
                                 ]),
+                                IconButton(
+                                    tooltip: strings.pick(
+                                        'Change view', 'Weergave wijzigen'),
+                                    icon: Icon(
+                                        prefs['eggInventoryViewMode'] == 'list'
+                                            ? Icons.grid_view
+                                            : Icons.view_list),
+                                    onPressed: session.canAct
+                                        ? () => preference({
+                                              'eggInventoryViewMode':
+                                                  prefs['eggInventoryViewMode'] ==
+                                                          'list'
+                                                      ? 'tiles'
+                                                      : 'list'
+                                            })
+                                        : null),
                                 SwitchListTile(
                                     contentPadding: EdgeInsets.zero,
                                     title: Text(strings.pick(
@@ -171,11 +242,19 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                                 }.entries)
                                   ListTile(
                                       title: Text(entry.value),
-                                      trailing: _order == entry.key
+                                      trailing: order == entry.key
                                           ? const Icon(Icons.check)
                                           : null,
-                                      onTap: () =>
-                                          change(() => _order = entry.key)),
+                                      onTap: session.canAct
+                                          ? () => preference({
+                                                'eggInventorySortMode':
+                                                    entry.key == 'shortest'
+                                                        ? 'hatchTime'
+                                                        : 'acquiredAt',
+                                                'eggInventorySortDescending':
+                                                    entry.key == 'newest',
+                                              })
+                                          : null),
                                 TextButton(
                                     onPressed: () => Navigator.pop(context),
                                     child: Text(strings.pick('Done', 'Klaar'))),

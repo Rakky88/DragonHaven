@@ -108,10 +108,17 @@ class CanonicalGameIntent {
     if (key == 'x' || key == 'y') {
       return value is num && value.isFinite && value >= 0 && value <= 1;
     }
-    if (const ['count', 'reductionPercent', 'index', 'oldIndex', 'newIndex']
-        .contains(key)) {
+    if (const [
+      'count',
+      'taps',
+      'reductionPercent',
+      'index',
+      'oldIndex',
+      'newIndex'
+    ].contains(key)) {
       final (min, max) = switch (key) {
         'count' => (1, 10),
+        'taps' => (1, 30),
         'index' || 'oldIndex' || 'newIndex' => (0, 19),
         _ => (1, 100)
       };
@@ -125,13 +132,15 @@ class CanonicalGameIntent {
           (action == 'equip_twinstar' || action == 'equip_relic') &&
               key == 'dragonId';
     }
-    final maxLength = key == 'dragonIds'
-        ? 800
-        : key == 'name'
-            ? 24
-            : key == 'code'
-                ? 100
-                : 200;
+    final maxLength = key == 'changes'
+        ? 3000
+        : key == 'dragonIds'
+            ? 800
+            : key == 'name'
+                ? 24
+                : key == 'code'
+                    ? 100
+                    : 200;
     return value is String &&
         value.trim().isNotEmpty &&
         value.runes.length <= maxLength &&

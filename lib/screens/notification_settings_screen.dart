@@ -279,7 +279,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 for (var index = 0;
                     index < HavenNotificationCategory.values.length;
                     index++) ...[
-                  _NotificationToggle(
+                  NotificationPreferenceToggle(
                     category: HavenNotificationCategory.values[index],
                     enabled: _platformPermissionStatus ==
                             HavenNotificationPermissionStatus.granted &&
@@ -305,8 +305,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
   }
 }
 
-class _NotificationToggle extends StatelessWidget {
-  const _NotificationToggle({
+class NotificationPreferenceToggle extends StatelessWidget {
+  const NotificationPreferenceToggle({
+    super.key,
     required this.category,
     required this.enabled,
     required this.onChanged,

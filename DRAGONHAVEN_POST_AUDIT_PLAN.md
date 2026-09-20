@@ -1,5 +1,22 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Server-owned account restoration candidate ? 20 September 2026
+
+The normal five-tab app now consumes confirmed server snapshots and durable
+commands, including account settings, onboarding, social views, notifications
+and the existing gameplay screens. No HouseholdProvider or writable device game
+is installed in the server UI. Complete restoration coverage is tracked in
+[SERVER_GAMEPLAY_ROLLOUT.md](SERVER_GAMEPLAY_ROLLOUT.md).
+
+Staging schema 92 and the current worker passed fresh and legacy account
+activation, reply replay, second-login restoration, private-property redaction,
+profile projection, Conclave reads and stale-client fencing. All synthetic
+accounts were removed and runtime switches restored. Four database contracts
+and PostgreSQL lint passed; the same four migrations were rehearsed and rolled
+back against production schema 88 without changing player authority. Production schema 92 is now applied with authority switches still off.
+The signed v0.05.42 APK and all 1,041 tests are verified; publication and
+activation remain the final steps. See RELEASE_V0.05.42_VERIFICATION.md.
+
 ## Current update: online-only account start and 16+ ? 20 September 2026
 
 The owner supplied Rick Groot / groot.rick+Dragonhaven@hotmail.com as public

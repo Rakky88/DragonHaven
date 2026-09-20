@@ -1664,9 +1664,8 @@ class _AccountIdentityCard extends StatelessWidget {
                 children: [
                   TextButton.icon(
                     key: const Key('delete-online-account'),
-                    onPressed: online.busy
-                        ? null
-                        : () => _deleteOnlineAccount(context),
+                    onPressed:
+                        online.busy ? null : () => deleteOnlineAccount(context),
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFFB3261E),
                     ),
@@ -1690,7 +1689,7 @@ class _AccountIdentityCard extends StatelessWidget {
   }
 }
 
-Future<void> _deleteOnlineAccount(BuildContext context) async {
+Future<void> deleteOnlineAccount(BuildContext context) async {
   final strings = AppStrings.of(context);
   final passwordController = TextEditingController();
   final password = await showDialog<String>(
@@ -1705,8 +1704,8 @@ Future<void> _deleteOnlineAccount(BuildContext context) async {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(strings.pick(
-            'This permanently deletes your online profile, friends, trades and cloud backup. Your current offline save stays on this device.',
-            'Hiermee verwijder je permanent je online profiel, vrienden, trades en cloudback-up. Je huidige offline save blijft op dit apparaat staan.',
+            'This permanently deletes your account and its game progress, inventory, profile, friends, trades and saved backups. This cannot be undone.',
+            'Hiermee verwijder je permanent je account met je spelvoortgang, inventaris, profiel, vrienden, ruilen en opgeslagen back-ups. Dit kan niet ongedaan worden gemaakt.',
           )),
           const SizedBox(height: 14),
           TextField(
@@ -1741,6 +1740,7 @@ Future<void> _deleteOnlineAccount(BuildContext context) async {
       ],
     ),
   );
+  await Future<void>.delayed(const Duration(milliseconds: 300));
   passwordController.dispose();
   if (password == null || !context.mounted) return;
   final success =

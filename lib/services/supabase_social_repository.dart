@@ -5,7 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/social.dart';
 import 'social_repository.dart';
 
-class SupabaseSocialRepository implements SocialRepository {
+class SupabaseSocialRepository
+    implements SocialRepository, ConclaveReadRepository {
   SupabaseSocialRepository(this._client, {bool Function()? sessionIsCurrent})
       : _sessionIsCurrent = sessionIsCurrent {
     _authSubscription = _client.auth.onAuthStateChange.listen(
@@ -21,6 +22,16 @@ class SupabaseSocialRepository implements SocialRepository {
   }
 
   final SupabaseClient _client;
+  @override
+  Future<void> markConclaveMessagesRead(List<String> messageIds) async {
+    for (var start = 0; start < messageIds.length; start += 200) {
+      final end = (start + 200).clamp(0, messageIds.length);
+      await _rpc('mark_my_conclave_messages_read', params: {
+        'p_message_ids': messageIds.sublist(start, end),
+      });
+    }
+  }
+
   final bool Function()? _sessionIsCurrent;
   void _requireBoundSession() {
     if (_sessionIsCurrent?.call() == false) {

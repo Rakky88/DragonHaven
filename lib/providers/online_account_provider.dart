@@ -259,8 +259,10 @@ class OnlineAccountProvider extends ChangeNotifier {
   int unreadConclaveMessagesAt(DateTime now) {
     final key = _conclaveReadKey;
     if (key == null || _readPreferences == null) return 0;
-    final seen =
-        (_readPreferences!.getStringList(key) ?? const <String>[]).toSet();
+    final seen = {
+      ...?_readPreferences!.getStringList(key),
+      ...?conclave?.readMessageIds,
+    };
     final cutoff = now.subtract(const Duration(hours: 24));
     return conclave!.messages
         .where((message) =>
@@ -291,6 +293,33 @@ class OnlineAccountProvider extends ChangeNotifier {
             !message.createdAt.isAfter(now))
         .map((message) => message.id)
         .toSet();
+    final repository = _repository;
+    if (repository is ConclaveReadRepository &&
+        conclave?.readMessageIds != null) {
+      final pending = recent.difference(
+          {...?conclave?.readMessageIds, ...?_confirmedConclaveReads[key]});
+      if (pending.isNotEmpty) {
+        if (!_pendingConclaveReads.add(key)) return;
+        final owner = currentUserId;
+        final epoch = _conclaveReadGeneration;
+        try {
+          await (repository as ConclaveReadRepository)
+              .markConclaveMessagesRead(pending.toList());
+          if (_disposed ||
+              owner != currentUserId ||
+              key != _conclaveReadKey ||
+              epoch != _conclaveReadGeneration) {
+            return;
+          }
+          (_confirmedConclaveReads[key] ??= {}).addAll(pending);
+        } catch (_) {
+          // Keep the visible message IDs retryable after a connection failure.
+          return;
+        } finally {
+          _pendingConclaveReads.remove(key);
+        }
+      }
+    }
     if (recent.every(previous.contains)) return;
     // Keep IDs from the current snapshot as well when an older frame is marked.
     final retained = conclave!.messages.map((message) => message.id).toSet();
@@ -299,6 +328,9 @@ class OnlineAccountProvider extends ChangeNotifier {
     _notify();
     await write;
   }
+
+  final _confirmedConclaveReads = <String, Set<String>>{};
+  final _pendingConclaveReads = <String>{};
 
   List<FriendshipRequest> get incomingRequests => requests
       .where((request) => request.direction == FriendRequestDirection.incoming)
@@ -2093,6 +2125,8 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   void _clearAccountData() {
+    _confirmedConclaveReads.clear();
+    _pendingConclaveReads.clear();
     _conclaveReadGeneration++;
     _pendingConclaveMessages.clear();
     _conclaveRefreshInFlight = null;

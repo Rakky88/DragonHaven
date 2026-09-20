@@ -92,11 +92,18 @@ class CanonicalGameTransport implements CanonicalGameConnection {
   Future<CanonicalAccountStatus> readAccountStatus() async {
     final owner = currentOwner;
     final epoch = sessionEpoch;
-    final reply = await _invoke(const {}, accountStatus: true);
+    final reply = await _invoke(const {
+      'p_client_build': AppInfo.buildNumber,
+      'p_gameplay_protocol': 1,
+    }, accountStatus: true);
     if (currentOwner != owner || sessionEpoch != epoch) {
       throw const CanonicalGameException('game_account_changed');
     }
     if (reply.status != 200 || owner == null) {
+      if (reply.body is Map &&
+          (reply.body as Map)['message'] == 'game_client_upgrade_required') {
+        throw const CanonicalGameException('game_client_upgrade_required');
+      }
       throw const CanonicalGameException('game_migration_unavailable');
     }
     return CanonicalAccountStatus.parse(reply.body, owner);
@@ -148,7 +155,7 @@ class CanonicalGameTransport implements CanonicalGameConnection {
       required int sourceRevision,
       int clientBuild = AppInfo.buildNumber}) async {
     if (!CanonicalGameIntent.validOwner(requestId) ||
-        sourceRevision < 1 ||
+        sourceRevision < 0 ||
         sourceRevision > 9007199254740991) {
       throw const CanonicalGameException('game_request_invalid');
     }
@@ -157,9 +164,9 @@ class CanonicalGameTransport implements CanonicalGameConnection {
     final reply = await _invoke({
       'protocol': 2,
       'clientBuild': clientBuild,
-      'action': 'migrate_account',
+      'action': sourceRevision == 0 ? 'initialize_account' : 'migrate_account',
       'requestId': requestId,
-      'sourceRevision': sourceRevision
+      if (sourceRevision != 0) 'sourceRevision': sourceRevision
     }, expectedOwner: owner);
     if (currentOwner != owner || sessionEpoch != epoch) {
       throw const CanonicalGameException('game_account_changed');
@@ -188,6 +195,7 @@ class CanonicalGameTransport implements CanonicalGameConnection {
   }
 
   static const _migrationErrors = {
+    'game_existing_progress_requires_migration',
     'game_migration_disabled',
     'game_migration_in_progress',
     'game_migration_trade_pending',
@@ -248,7 +256,7 @@ class CanonicalGameTransport implements CanonicalGameConnection {
         client = _clientFactory();
         _activeClients.add(client!);
         final path = accountStatus
-            ? '/rest/v1/rpc/get_my_online_session_status'
+            ? '/rest/v1/rpc/get_my_server_gameplay_status'
             : '/functions/v1/execute-game-command';
         final outgoing = http.Request('POST', Uri.parse('$_baseUrl$path'))
           ..followRedirects = false

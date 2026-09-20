@@ -9,6 +9,9 @@ import 'social_claims.dart';
 import 'dart:convert';
 
 import '../models/adventure.dart';
+import '../models/account_preferences.dart';
+import '../models/audio_settings.dart';
+import '../models/notification_settings.dart';
 import '../models/social_reward_claim.dart';
 import '../models/game_command_schema.dart';
 import '../models/chest.dart';
@@ -101,6 +104,17 @@ abstract final class GameCommandEngine {
       // separately sealed database facts; paid entitlements remain absent.
       final Object? result;
       switch (action) {
+        case 'complete_onboarding':
+          await game.completeOnboarding(_accountName(args));
+          result = game.onboardingComplete;
+        case 'set_account_name':
+          await game.updateAccountName(_accountName(args));
+          result = true;
+        case 'set_preferences':
+          final changes = AccountPreferences.validateChanges(
+              jsonDecode(args.text('changes', max: 3000)));
+          _applyPreferences(game, changes);
+          result = true;
         case 'offer_trade':
         case 'reply_trade':
         case 'confirm_trade':
@@ -325,6 +339,18 @@ abstract final class GameCommandEngine {
         case 'hatch_egg':
           result = game.nestEgg?.id == args.text('eggId') &&
               await game.hatchActiveDragon();
+        case 'tap_starter_egg':
+          final taps = args.integer('taps', min: 1, max: 30);
+          final egg = game.nestEgg;
+          if (!game.onboardingComplete ||
+              egg?.id != args.text('eggId') ||
+              egg?.firstEgg != true) {
+            throw const GameCommandException('game_action_unavailable');
+          }
+          for (var i = 0; i < taps; i++) {
+            if (!game.accelerateStarterEgg()) break;
+          }
+          result = true;
         case 'name_dragon':
           result = await game.nameDragon(
               args.text('dragonId'), args.text('name', max: 24));
@@ -504,6 +530,53 @@ abstract final class GameCommandEngine {
     } finally {
       game.dispose();
     }
+  }
+
+  static String _accountName(_Arguments args) {
+    final name = args.text('name', max: 24).trim();
+    if (name.isEmpty ||
+        name.length > 24 ||
+        RegExp(r'[\x00-\x1f\x7f]').hasMatch(name)) {
+      throw const GameCommandException('invalid_argument');
+    }
+    return name;
+  }
+
+  static void _applyPreferences(
+      HouseholdProvider game, Map<String, dynamic> changes) {
+    final values = {
+      ...AccountPreferences.fromState(game.exportState()),
+      ...changes
+    };
+    final enabled = (values['enabledMusicTrackIds'] as List).cast<String>();
+    if (enabled.any((id) => !game.ownedMusicTrackIds.contains(id))) {
+      throw const GameCommandException('game_action_unavailable');
+    }
+    game
+      ..languageCode = values['languageCode'] as String
+      ..musicEnabled = values['musicEnabled'] as bool
+      ..musicStyle =
+          HavenMusicStyle.values.byName(values['musicStyle'] as String)
+      ..soundEffectsEnabled = values['soundEffectsEnabled'] as bool
+      ..enabledMusicTrackIds = enabled.toSet()
+      ..disabledSeasonalMusicTrackIds =
+          (values['disabledSeasonalMusicTrackIds'] as List)
+              .cast<String>()
+              .toSet()
+      ..jukeboxShuffle = values['jukeboxShuffle'] as bool
+      ..jukeboxRepeat = values['jukeboxRepeat'] as bool
+      ..enabledNotificationCategories =
+          (values['enabledNotificationCategories'] as List)
+              .map((v) => HavenNotificationCategory.values.byName(v as String))
+              .toSet()
+      ..achievementsCompact = values['achievementsCompact'] as bool
+      ..myDragonsViewMode = values['myDragonsViewMode'] as String
+      ..myDragonsSortMode = values['myDragonsSortMode'] as String
+      ..myDragonsSortDescending = values['myDragonsSortDescending'] as bool
+      ..eggInventoryViewMode = values['eggInventoryViewMode'] as String
+      ..eggInventorySortMode = values['eggInventorySortMode'] as String
+      ..eggInventorySortDescending =
+          values['eggInventorySortDescending'] as bool;
   }
 
   static Object? _bundle(ChestRewardBundle? bundle) => bundle == null

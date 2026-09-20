@@ -1,3 +1,6 @@
+import '../services/canonical_game_session.dart';
+import '../services/canonical_game_actions.dart';
+import '../widgets/shop_economy_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -16,16 +19,24 @@ class AchievementsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final game = context.watch<HouseholdProvider>();
+    final server = context.watch<CanonicalGameSession?>();
+    final game = server == null ? context.watch<HouseholdProvider>() : null;
+    final unlockedIds = server == null
+        ? game!.unlockedAchievementIds
+        : (server.snapshot!.data['collection']['achievements'] as List)
+            .cast<String>()
+            .toSet();
+
+    final compact = server == null
+        ? game!.achievementsCompact
+        : server.snapshot!.profile.preferences['achievementsCompact'] as bool;
     // Keep catalog order within each group, including revealed secret badges.
     final achievements = [
       for (final achievement in achievementCatalog)
-        if (!achievement.secret ||
-            game.unlockedAchievementIds.contains(achievement.id))
+        if (!achievement.secret || unlockedIds.contains(achievement.id))
           achievement,
       for (final achievement in achievementCatalog)
-        if (achievement.secret &&
-            !game.unlockedAchievementIds.contains(achievement.id))
+        if (achievement.secret && !unlockedIds.contains(achievement.id))
           achievement,
     ];
     return Scaffold(
@@ -34,15 +45,19 @@ class AchievementsScreen extends StatelessWidget {
         actions: [
           IconButton(
             key: const Key('achievements-view-toggle'),
-            tooltip: game.achievementsCompact
+            tooltip: compact
                 ? strings.pick('List view', 'Lijstweergave')
                 : strings.pick('Compact view', 'Compacte weergave'),
             onPressed: readOnly
                 ? null
-                : () => game.setAchievementsCompact(!game.achievementsCompact),
-            icon: Icon(game.achievementsCompact
-                ? Icons.view_list_rounded
-                : Icons.grid_view_rounded),
+                : () => server == null
+                    ? game!.setAchievementsCompact(!compact)
+                    : runShopAction(
+                        context,
+                        () => CanonicalGameActions(server)
+                            .setPreferences({'achievementsCompact': !compact})),
+            icon: Icon(
+                compact ? Icons.view_list_rounded : Icons.grid_view_rounded),
           ),
           const SizedBox(width: 6),
         ],
@@ -64,8 +79,8 @@ class AchievementsScreen extends StatelessWidget {
                 Expanded(
                   child: Text(
                     strings.pick(
-                      '${game.unlockedAchievementIds.length} / ${achievementCatalog.length} unlocked',
-                      '${game.unlockedAchievementIds.length} / ${achievementCatalog.length} behaald',
+                      '${unlockedIds.length} / ${achievementCatalog.length} unlocked',
+                      '${unlockedIds.length} / ${achievementCatalog.length} behaald',
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -80,7 +95,7 @@ class AchievementsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          if (game.achievementsCompact)
+          if (compact)
             _CompactAchievementGrid(
                 strings: strings, achievements: achievements)
           else
@@ -101,7 +116,14 @@ class _CompactAchievementGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final game = context.watch<HouseholdProvider>();
+    final server = context.watch<CanonicalGameSession?>();
+    final game = server == null ? context.watch<HouseholdProvider>() : null;
+    final unlockedIds = server == null
+        ? game!.unlockedAchievementIds
+        : (server.snapshot!.data['collection']['achievements'] as List)
+            .cast<String>()
+            .toSet();
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= 360 ? 4 : 3;
@@ -117,8 +139,7 @@ class _CompactAchievementGrid extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final achievement = achievements[index];
-            final unlocked =
-                game.unlockedAchievementIds.contains(achievement.id);
+            final unlocked = unlockedIds.contains(achievement.id);
             final name = achievement.secret && !unlocked
                 ? strings.pick('Secret achievement', 'Geheime achievement')
                 : strings.achievementTitle(achievement);
@@ -178,10 +199,20 @@ class _AchievementTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final game = context.watch<HouseholdProvider>();
-    final unlocked = game.unlockedAchievementIds.contains(achievement.id);
-    final progress = game
-        .achievementProgress(achievement.id)
+    final server = context.watch<CanonicalGameSession?>();
+    final game = server == null ? context.watch<HouseholdProvider>() : null;
+    final unlockedIds = server == null
+        ? game!.unlockedAchievementIds
+        : (server.snapshot!.data['collection']['achievements'] as List)
+            .cast<String>()
+            .toSet();
+
+    final unlocked = unlockedIds.contains(achievement.id);
+    final progress = (server == null
+            ? game!.achievementProgress(achievement.id)
+            : server.snapshot!.data['collection']['achievementProgress']
+                    ?[achievement.id] as int? ??
+                0)
         .clamp(0, achievement.target)
         .toInt();
     final hidden = achievement.secret && !unlocked;

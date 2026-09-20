@@ -47,6 +47,56 @@ function setup(overrides: Partial<Dependencies> = {}) {
 
 const readBody = { protocol: 2, clientBuild: 10068, action: "read_state" };
 
+Deno.test("fresh account creation accepts no client save, owner, clock or seed", async () => {
+  const init = {protocol: 2, clientBuild: 10091, action: "initialize_account", requestId};
+  for (const extra of [{ownerId: other}, {seed: hash}, {now: "2026-01-01"}, {state: {}}, {sourceRevision: 1}]) {
+    const {deps, calls} = setup();
+    assert((await handleCommand(request({...init, ...extra}), deps)).status === 400);
+    equal(calls, []);
+  }
+  const {deps, calls} = setup();
+  assert((await handleCommand(request(init, "Bearer invalid"), deps)).status === 401);
+  equal(calls, []);
+});
+
+Deno.test("fresh initialization uses database entropy and reuses its source on retry", async () => {
+  const init = {protocol: 2, clientBuild: 10091, action: "initialize_account", requestId};
+  const inputs: JsonObject[] = [];
+  let source: number | null = null;
+  let commits = 0;
+  const {deps} = setup({
+    prepareImport: () => { throw new Error("already migrated"); },
+    initializeGame: (input) => { inputs.push(input); return {onboardingComplete: false, privateSeed: hash}; },
+    rpc: async (name, payload) => {
+      assert(payload.p_owner_id === owner);
+      if (name === "begin_server_account_initialization") return {owner_id: owner, source_revision: source,
+        secret_seed: hash, now: "2026-09-20T12:00:00Z"};
+      if (name === "commit_server_account_initialization") { commits++; source = 1; return source; }
+      if (name === "begin_canonical_account_migration") {
+        assert(payload.p_source_revision === 1);
+        return {owner_id: owner, phase: "active", server_revision: 3};
+      }
+      throw new Error("Unexpected RPC");
+    },
+  });
+  for (let i = 0; i < 2; i++) {
+    const result = await handleCommand(request(init), deps);
+    assert(result.status === 200);
+    assert(!(await result.text()).includes(hash));
+  }
+  equal(inputs, [{secretSeed: hash, now: "2026-09-20T12:00:00Z"}]);
+  assert(commits === 1);
+});
+
+Deno.test("existing progress blocks fresh initialization without committing anything", async () => {
+  const {deps} = setup({initializeGame: () => {throw new Error("must not run");},
+    rpc: async () => {throw new RpcFailure("game_existing_progress_requires_migration");}});
+  const result = await handleCommand(request({protocol: 2, clientBuild: 10091,
+    action: "initialize_account", requestId}), deps);
+  assert(result.status === 409);
+  assert((await result.json()).error === "game_existing_progress_requires_migration");
+});
+
 Deno.test("dragon preferences use the authenticated lease and reject extra grants", async () => {
   for (const [action, payload] of [
     ["set_dragon_highlight", { dragonId: "owned-dragon", focus: "might", highlighted: true }],

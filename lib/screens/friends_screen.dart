@@ -1,3 +1,5 @@
+import 'canonical_trades_screen.dart';
+import '../widgets/social_game_facts.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -593,7 +595,21 @@ Future<void> _showFriendProfile(
                     fontWeight: FontWeight.w900,
                     letterSpacing: .8)),
             const SizedBox(height: 13),
-            if (!ownProfile)
+            if (!ownProfile && online.serverOwned)
+              FilledButton.icon(
+                  key: const Key('start-trade-button'),
+                  onPressed: () => Navigator.of(sheetContext).push(
+                      MaterialPageRoute<void>(
+                          builder: (_) => Scaffold(
+                              appBar: AppBar(
+                                  title:
+                                      Text(strings.pick('Trades', 'Ruilen'))),
+                              body: CanonicalTradesScreen(
+                                  keeperCode: friend.keeperCode)))),
+                  icon:
+                      const GameIconSprite(GameIconKind.friendsTrade, size: 28),
+                  label: Text(strings.pick('Trade', 'Ruilen'))),
+            if (!ownProfile && !online.serverOwned)
               Consumer<OnlineAccountProvider>(
                 builder: (context, liveOnline, _) {
                   final activeTrades = liveOnline.tradesWith(friend.userId);
@@ -645,7 +661,7 @@ Future<void> _showFriendProfile(
               icon: Icons.emoji_events_rounded,
               label: strings.pick('Achievements', 'Prestaties'),
               value:
-                  '${ownProfile ? context.read<HouseholdProvider>().unlockedAchievementIds.length : friend.achievementCount}',
+                  '${ownProfile ? SocialGameFacts.read(context).achievementIds.length : friend.achievementCount}',
             ),
             if (!ownProfile) ...[
               const SizedBox(height: 10),
