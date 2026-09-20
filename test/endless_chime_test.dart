@@ -30,9 +30,10 @@ void main() {
         expect(jsonEncode(before).length, lessThan(12000));
         game = restored;
       }
-      if (game.ended)
+      if (game.ended) {
         fail(
             'Unexpected game over at $milliseconds with ${game.mistakes} errors');
+      }
     }
     expect(game.correctActions, greaterThanOrEqualTo(6500));
     expect(game.score, greaterThan(20000));
