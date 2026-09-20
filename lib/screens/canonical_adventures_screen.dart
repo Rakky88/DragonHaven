@@ -1,3 +1,7 @@
+import '../widgets/restored_collection_cards.dart';
+import '../models/chest.dart';
+import '../services/canonical_game_snapshot.dart';
+import '../theme/app_theme.dart';
 import '../widgets/event_point_flight.dart';
 import '../widgets/event_progress_bar.dart';
 import '../widgets/event_partner_control.dart';
@@ -148,18 +152,11 @@ class _AdventuresState extends State<_Adventures> {
                       child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(
-                                run.definition == null
-                                    ? s.pick('Adventure', 'Avontuur')
-                                    : s.adventureTitle(run.definition!),
-                                style: Theme.of(context).textTheme.titleMedium),
-                            Text(canonicalDragonName(
-                                s, view.dragon(run.dragonId)!)),
-                            Text(run.endsAt.isAfter(now)
-                                ? s.remainingDuration(
-                                    run.endsAt.difference(now))
-                                : s.pick(
-                                    'Ready to claim', 'Klaar om op te halen')),
+                            _RunSummary(
+                                run: run,
+                                now: now,
+                                dragon: view.dragon(run.dragonId)),
+                            const SizedBox(height: 10),
                             if (run.endsAt.isAfter(now))
                               CanonicalActionButton(
                                   key: Key('canonical-abort-${run.id}'),
@@ -208,25 +205,13 @@ class _AdventuresState extends State<_Adventures> {
                         details: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Row(children: [
-                                GameIconSprite(
-                                    switch (definition.kind) {
-                                      AdventureKind.long =>
-                                        GameIconKind.adventureLong,
-                                      AdventureKind.special =>
-                                        GameIconKind.adventureSpecial,
-                                      AdventureKind.group =>
-                                        GameIconKind.adventureGroup,
-                                      _ => GameIconKind.adventureShort,
-                                    },
-                                    size: 54),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                    child: Text(s.adventureTitle(definition),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium)),
-                              ]),
+                              GameIconSprite(_adventureIcon(definition.kind),
+                                  size: 128),
+                              Text(s.adventureTitle(definition),
+                                  textAlign: TextAlign.center,
+                                  style:
+                                      Theme.of(context).textTheme.titleLarge),
+                              const SizedBox(height: 12),
                               Text(s.adventureDescription(definition)),
                               Text(definition.expertiseRewards.entries
                                   .map((e) =>
@@ -328,12 +313,30 @@ class _AdventuresState extends State<_Adventures> {
                 Tab(
                     key: const Key('canonical-open-trials'),
                     text: s.pick('Trials', 'Proeven')),
-                Tab(text: s.pick('Active', 'Actief')),
+                Tab(
+                    child: _AdventureTabCount(
+                        label: s.pick('Active', 'Actief'),
+                        count: view.adventures.runs
+                            .where((r) => r.endsAt.isAfter(now))
+                            .length)),
                 Tab(
                     key: const Key('canonical-tab-completed'),
-                    text: s.pick('Completed', 'Voltooid')),
+                    child: _AdventureTabCount(
+                        label: s.pick('Completed', 'Voltooid'),
+                        count: view.adventures.runs
+                            .where((r) => !r.endsAt.isAfter(now))
+                            .length)),
               ])),
-      Expanded(child: _tab == 1 ? const CanonicalTrialsScreen() : content),
+      Expanded(
+          child: GestureDetector(
+              onHorizontalDragEnd: (details) {
+                final velocity = details.primaryVelocity ?? 0;
+                if (velocity.abs() > 250) {
+                  setState(() =>
+                      _tab = (_tab + (velocity < 0 ? 1 : -1)).clamp(0, 3));
+                }
+              },
+              child: _tab == 1 ? const CanonicalTrialsScreen() : content)),
     ]);
   }
 }
@@ -352,7 +355,10 @@ Future<void> _chooseDragon(
   bool highlighted(Set<String> values) =>
       focuses.every((focus) => values.contains(focus.name));
   String? selected;
-  await showDialog<void>(
+  await showModalBottomSheet<void>(
+      showDragHandle: true,
+      isScrollControlled: true,
+      useSafeArea: true,
       context: context,
       builder: (context) => StatefulBuilder(
           builder: (context, update) => CanonicalEntityDialog(
@@ -371,11 +377,7 @@ Future<void> _chooseDragon(
                 final available = view.adventures
                     .offers(definition.kind)
                     .contains(definition.id);
-                return AlertDialog(
-                    insetPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 24),
-                    titlePadding: const EdgeInsets.fromLTRB(16, 16, 12, 8),
-                    contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                return RestoredDetailSheet(
                     title: Row(children: [
                       Expanded(
                           child: Text(s.adventureTitle(definition),
@@ -703,5 +705,122 @@ class _AdventureSection extends StatelessWidget {
           const SizedBox(height: 5),
           ...children,
         ]));
+  }
+}
+
+GameIconKind _adventureIcon(AdventureKind kind) => switch (kind) {
+      AdventureKind.mini => GameIconKind.adventureMini,
+      AdventureKind.short => GameIconKind.adventureShort,
+      AdventureKind.long => GameIconKind.adventureLong,
+      AdventureKind.group => GameIconKind.adventureGroup,
+      AdventureKind.special => GameIconKind.adventureSpecial,
+    };
+
+class _AdventureTabCount extends StatelessWidget {
+  const _AdventureTabCount({required this.label, required this.count});
+  final String label;
+  final int count;
+  @override
+  Widget build(BuildContext context) =>
+      Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(label),
+        if (count > 0) ...[
+          const SizedBox(width: 5),
+          Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                  color: AppColors.twilight,
+                  borderRadius: BorderRadius.circular(99)),
+              child: Text('$count',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900)))
+        ],
+      ]);
+}
+
+class _RunSummary extends StatelessWidget {
+  const _RunSummary(
+      {required this.run, required this.now, required this.dragon});
+  final CanonicalAdventureRun run;
+  final CanonicalDragonView? dragon;
+  final DateTime now;
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    final definition = run.definition;
+    final ready = !run.endsAt.isAfter(now);
+    final total = run.endsAt.difference(run.startedAt).inMilliseconds;
+    final progress = total <= 0
+        ? 1.0
+        : (now.difference(run.startedAt).inMilliseconds / total)
+            .clamp(0.0, 1.0);
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Row(children: [
+        Container(
+            width: 82,
+            height: 82,
+            decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                    colors: [Color(0xFFF2E9FF), Color(0xFFE5D7FA)]),
+                borderRadius: BorderRadius.circular(20)),
+            child: GameIconSprite(
+                _adventureIcon(definition?.kind ?? AdventureKind.short),
+                size: 74)),
+        const SizedBox(width: 11),
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(
+              definition == null
+                  ? s.pick('Adventure', 'Avontuur')
+                  : s.adventureTitle(definition),
+              style: const TextStyle(fontWeight: FontWeight.w900)),
+          const SizedBox(height: 4),
+          if (dragon != null)
+            Text(canonicalDragonName(s, dragon!),
+                style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+          const SizedBox(height: 7),
+          Row(children: [
+            const GameIconSprite(GameIconKind.clock, size: 22),
+            const SizedBox(width: 4),
+            Expanded(
+                child: Text(
+                    ready
+                        ? s.pick('Ready to return', 'Klaar om terug te keren')
+                        : s.remainingDuration(run.endsAt.difference(now)),
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w900)))
+          ]),
+        ])),
+        if (ready)
+          const Icon(Icons.check_circle_rounded, color: AppColors.twilight),
+      ]),
+      const SizedBox(height: 10),
+      ClipRRect(
+          borderRadius: BorderRadius.circular(99),
+          child: LinearProgressIndicator(value: progress, minHeight: 6)),
+      if (definition != null) ...[
+        const SizedBox(height: 8),
+        Wrap(
+            spacing: 10,
+            runSpacing: 5,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text('${definition.xp} XP',
+                  style: const TextStyle(fontWeight: FontWeight.w900)),
+              if (run.revealedReward ?? definition.knownChest case final chest?)
+                Image.asset(chest.assetPath,
+                    width: 38, height: 38, semanticLabel: s.chestLabel(chest)),
+              for (final reward in definition.expertiseRewards.entries)
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  GameIconSprite(GameIconSprite.forTrainingFocus(reward.key),
+                      size: 21),
+                  Text('${reward.value >= 0 ? '+' : ''}${reward.value}')
+                ]),
+            ]),
+      ],
+    ]);
   }
 }

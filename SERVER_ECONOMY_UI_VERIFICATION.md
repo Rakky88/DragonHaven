@@ -1,5 +1,20 @@
 # Canonical gameplay integration
 
+## Historical UI follow-up - 20 September 2026 (candidate)
+
+The user reported incomplete restoration in v0.06.00. Compared the actual
+published v0.05.39 source against retained legacy screens and restored original
+collection cards, Tower layout, Altar/Academy cards, detail sheets, filters and
+Trial constellation. See [UI_HISTORY_RESTORATION.md](UI_HISTORY_RESTORATION.md)
+for the comparison, preserved later changes and verification. Canonical server
+authority and hidden-data rules are unchanged; no backend deployment is needed.
+The published v0.06.00 APK is unchanged. Final verification: 1,051 tests pass
+(one existing optional skip), Flutter analysis is clean, and real Android /
+compact large-text captures were reviewed. Publication is explicitly deferred
+by the owner. See the comparison document for the initial timing-test retry
+and the added same-account reauthentication regression.
+
+
 
 ## v0.06.00 UI restoration released - 20 September 2026
 

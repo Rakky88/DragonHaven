@@ -1,3 +1,4 @@
+import '../widgets/restored_collection_cards.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -100,7 +101,7 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                 Wrap(spacing: 8, runSpacing: 8, children: [
                   for (final egg in eggs)
                     SizedBox(
-                        width: constraints.maxWidth < 290
+                        width: constraints.maxWidth < 240
                             ? constraints.maxWidth
                             : (constraints.maxWidth - 8) / 2,
                         child: Card(
@@ -113,9 +114,26 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                                 child: Padding(
                                     padding: const EdgeInsets.all(12),
                                     child: Column(children: [
-                                      CanonicalEggArt(egg: egg, height: 90),
+                                      CanonicalEggArt(egg: egg, height: 125),
                                       Text(canonicalEggName(strings, egg),
-                                          textAlign: TextAlign.center),
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w900)),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                          strings.remainingDuration(
+                                              egg.incubation),
+                                          style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w900)),
+                                      const SizedBox(height: 5),
+                                      Text(egg.hint(strings.languageCode),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                              fontSize: 10.5,
+                                              fontStyle: FontStyle.italic)),
                                       if (egg.tagged)
                                         const Icon(Icons.bookmark_rounded,
                                             size: 20),
@@ -267,7 +285,10 @@ Future<void> showCanonicalEggDetails(BuildContext context, String id,
     {void Function(String)? onPlace}) async {
   final owner = context.read<CanonicalGameSession>().snapshot?.ownerId;
   if (owner == null) return;
-  await showDialog<void>(
+  await showModalBottomSheet<void>(
+      showDragHandle: true,
+      isScrollControlled: true,
+      useSafeArea: true,
       context: context,
       builder: (context) => CanonicalEntityDialog(
           ownerId: owner,
@@ -281,7 +302,7 @@ Future<void> showCanonicalEggDetails(BuildContext context, String id,
             final lineage = dragonLineages
                 .where((l) => l.id == egg?.revealedLineageId)
                 .firstOrNull;
-            return AlertDialog(
+            return RestoredDetailSheet(
               title: Text(egg == null
                   ? strings.pick('Egg', 'Ei')
                   : canonicalEggName(strings, egg)),

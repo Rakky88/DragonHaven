@@ -475,6 +475,7 @@ void main() {
     await command(tester);
     expect(session.snapshot!.house.damagedFloors, isEmpty);
     expect(session.snapshot!.coins, 9580);
+    await tap(tester, key('close-floor-options'));
     await tap(tester, key('canonical-add-floor'));
     await shot(tester, 'house-floor-picker-nl-large');
     await tap(tester, key('canonical-build-hearth'));
@@ -560,6 +561,7 @@ void main() {
     expect(session.snapshot!.house.floorRoomIds, ['crystal', 'hearth']);
     expect(session.snapshot!.house.damagedFloors, {1});
     await shot(tester, 'house-reordered');
+    await tap(tester, key('close-floor-options'));
     await tap(tester, find.widgetWithText(Tab, 'Rooms'));
     await tap(tester, key('canonical-edit-room-hearth'));
     await tap(tester, key('canonical-select-furniture-moss_cushion'));
@@ -614,5 +616,59 @@ void main() {
     expect(session.snapshot!.dragon(id)!.xp, before.dragon(id)!.xp + 25);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+  testWidgets(
+      'restored relic and furniture collections use public stock without commands',
+      (tester) async {
+    await setup(tester, const CanonicalInventoryScreen(),
+        language: 'nl', scale: 1.35, prepare: (server) {
+      server.state['ownedItemIds'] = ['moss_cushion', 'moon_fern'];
+    });
+    await tap(tester, find.text('Relieken'));
+    expect(find.byKey(const Key('altar-use-nameweaversQuill')), findsOneWidget);
+    await shot(tester, 'restored-relics-nl-large');
+    await tap(tester, find.text('Meubels'));
+    await shot(tester, 'restored-furniture-nl-large');
+    await tap(tester, key('furniture-inventory-filter'));
+    await tap(tester, key('furniture-filter-placed'));
+    await tap(tester, find.text('Meubels tonen'));
+    await tap(tester, key('furniture-inventory-view-toggle'));
+    expect(server.sent, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'restored dragon filters and report sheet do not mutate the collection',
+      (tester) async {
+    await setup(tester, const CanonicalDragonsScreen(),
+        language: 'nl', scale: 1.35);
+    await shot(tester, 'restored-dragons-nl-large');
+    await tap(tester, key('canonical-dragon-filter'));
+    await shot(tester, 'restored-dragon-filters-nl-large');
+    Navigator.of(tester.element(find.byType(SwitchListTile).last)).pop();
+    await tester.pumpAndSettle();
+    final dragon = session.snapshot!.dragons.firstWhere((d) => d.owned);
+    await tap(tester, key('canonical-dragon-${dragon.id}'));
+    await shot(tester, 'restored-dragon-details-nl-large');
+    expect(
+        find.byKey(Key('dragon-school-diploma-${dragon.id}')), findsOneWidget);
+    expect(server.sent, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets(
+      'restored room options cannot survive reauthentication of the same owner',
+      (tester) async {
+    await setup(tester, const CanonicalHouseScreen(), prepare: prepareEditor);
+    await tap(tester, key('canonical-floor-options-0'));
+    final sent = server.sent.length;
+    final connection = session.connection as CanonicalUiConnection;
+    connection.signOut();
+    await tester.pump();
+    connection.currentOwner = CanonicalUiServer.owner;
+    await tester.runAsync(session.synchronize);
+    await tester.pump();
+    expect(key('canonical-floor-up-0'), findsNothing);
+    expect(key('canonical-clear-floor-0'), findsNothing);
+    expect(server.sent, hasLength(sent));
   });
 }

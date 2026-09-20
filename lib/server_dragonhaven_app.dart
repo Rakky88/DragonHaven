@@ -508,25 +508,29 @@ class _ServerTower extends StatelessWidget {
   Widget build(BuildContext context) {
     final view = context.watch<CanonicalGameSession>().snapshot!;
     final s = AppStrings.of(context);
-    return Column(children: [
-      Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+    return CanonicalHouseScreen(
+      showHeading: false,
+      header: view.nest == null
+          ? const _EmptyServerNest()
+          : _ServerNest(egg: view.nest!, view: view),
+      toolbar: Padding(
+          padding: const EdgeInsets.only(bottom: 4),
           child: Row(children: [
             Expanded(
-                child: Text(s.pick('Dragon Tower', 'Drakentoren'),
-                    style: Theme.of(context).textTheme.headlineSmall)),
+                child: Text(s.tr('tower'),
+                    style: Theme.of(context).textTheme.displaySmall)),
             IconButton(
                 key: const Key('my-dragons-button'),
                 tooltip: s.pick('My dragons', 'Mijn draken'),
                 icon: const GameIconSprite(GameIconKind.myDragons, size: 40),
-                onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                        builder: (_) => Scaffold(
-                            appBar: AppBar(
-                                title:
-                                    Text(s.pick('My dragons', 'Mijn draken'))),
-                            body: const CanonicalDragonsScreen())))),
+                onPressed: () => showModalBottomSheet<void>(
+                    context: context,
+                    showDragHandle: true,
+                    isScrollControlled: true,
+                    useSafeArea: true,
+                    builder: (_) => SizedBox(
+                        height: MediaQuery.sizeOf(context).height * .78,
+                        child: const CanonicalDragonsScreen()))),
             IconButton(
                 tooltip: 'Draconomicon',
                 icon: const GameIconSprite(GameIconKind.draconomicon, size: 40),
@@ -539,13 +543,7 @@ class _ServerTower extends StatelessWidget {
                                 discoveredForms: view.shop.discoveredForms,
                                 prismaticForms: view.shop.prismaticForms))))),
           ])),
-      Expanded(
-          child: CanonicalHouseScreen(
-              showHeading: false,
-              header: view.nest == null
-                  ? const _EmptyServerNest()
-                  : _ServerNest(egg: view.nest!, view: view))),
-    ]);
+    );
   }
 }
 
@@ -636,7 +634,7 @@ class _ServerNestState extends State<_ServerNest> {
     final s = AppStrings.of(context);
     return Column(children: [
       SizedBox(
-          height: 150,
+          height: 215,
           child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
               child: GestureDetector(

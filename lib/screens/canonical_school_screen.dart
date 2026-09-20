@@ -1,3 +1,4 @@
+import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -115,19 +116,16 @@ class CanonicalSchoolScreen extends StatelessWidget {
                       await CanonicalGameActions(session)
                           .execute('graduate_school', {'dragonId': dragon.id});
                     })),
-          for (final definition in dragonSchoolGames)
-            Card(
-                child: ListTile(
-              leading: Image.asset(definition.iconAsset, width: 42, height: 42),
-              title: Text(strings.pick(definition.titleEn, definition.titleNl)),
-              subtitle: Text(strings.pick(
-                  definition.descriptionEn, definition.descriptionNl)),
-              trailing: const Icon(Icons.chevron_right),
-              key: ValueKey('canonical-school-${definition.id}'),
-              onTap: session.canAct
-                  ? () => _enroll(context, session, definition)
-                  : null,
-            )),
+          for (final (index, definition) in dragonSchoolGames.indexed)
+            _SchoolLessonCard(
+                number: index + 1,
+                definition: definition,
+                keeperRecord: (view.data['progress']['dragonSchoolRecords']
+                        [definition.id] as int?) ??
+                    0,
+                onTap: session.canAct
+                    ? () => _enroll(context, session, definition)
+                    : null),
         ]);
       }));
 
@@ -259,3 +257,134 @@ class CanonicalSchoolScreen extends StatelessWidget {
     }
   }
 }
+
+class _SchoolLessonCard extends StatelessWidget {
+  const _SchoolLessonCard({
+    required this.number,
+    required this.definition,
+    required this.keeperRecord,
+    required this.onTap,
+  });
+
+  final int number;
+  final DragonSchoolGameDefinition definition;
+  final int keeperRecord;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final colors = _schoolColors(definition.kind);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      child: InkWell(
+        key: Key('canonical-school-${definition.id}'),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              Container(
+                width: 59,
+                height: 59,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: colors),
+                  borderRadius: BorderRadius.circular(17),
+                ),
+                child: Image.asset(definition.iconAsset),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '$number. ${strings.pick(definition.titleEn, definition.titleNl)}',
+                            style: const TextStyle(fontWeight: FontWeight.w900),
+                          ),
+                        ),
+                        if (definition.isTeamLesson)
+                          Icon(Icons.groups_rounded,
+                              size: 17,
+                              color: AppColors.eventColor(
+                                  context, AppColors.twilight)),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      strings.pick(
+                          definition.descriptionEn, definition.descriptionNl),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          const TextStyle(color: AppColors.muted, fontSize: 11),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _lessonFocusLabel(strings, definition),
+                      style: TextStyle(
+                        color: colors.last,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 7),
+              Column(
+                children: [
+                  Text('$keeperRecord',
+                      style: TextStyle(
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 17)),
+                  Text(strings.pick('KEEPER BEST', 'KEEPER BESTE'),
+                      style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 7,
+                          fontWeight: FontWeight.w900)),
+                ],
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _lessonFocusLabel(
+  AppStrings strings,
+  DragonSchoolGameDefinition definition,
+) {
+  final team = definition.isTeamLesson
+      ? strings.pick(' · TEAMWORK', ' · SAMENWERKING')
+      : '';
+  return '${_focusName(strings, definition.focus).toUpperCase()}$team · '
+      '${definition.minimumDragons == definition.maximumDragons ? definition.minimumDragons : '1–${definition.maximumDragons}'} '
+      '${strings.pick(definition.maximumDragons == 1 ? 'DRAGON' : 'DRAGONS', definition.maximumDragons == 1 ? 'DRAAK' : 'DRAKEN')}';
+}
+
+String _focusName(AppStrings strings, TrainingFocus? focus) => switch (focus) {
+      TrainingFocus.might => strings.pick('Might', 'Kracht'),
+      TrainingFocus.arcana => strings.pick('Arcana', 'Arcana'),
+      TrainingFocus.spirit => strings.pick('Spirit', 'Geest'),
+      null => strings.pick('lowest expertise', 'laagste expertise'),
+    };
+
+List<Color> _schoolColors(DragonSchoolGameKind kind) =>
+    switch (kind.index % 5) {
+      0 => const [Color(0xFF5B3D91), Color(0xFF9A66C7)],
+      1 => const [Color(0xFF246C8C), Color(0xFF55A9BB)],
+      2 => const [Color(0xFF9B3C38), Color(0xFFE17743)],
+      3 => const [Color(0xFF4D598E), Color(0xFF7F78C5)],
+      _ => const [Color(0xFF47765A), Color(0xFF75A966)],
+    };

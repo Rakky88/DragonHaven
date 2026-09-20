@@ -1,3 +1,6 @@
+import '../widgets/restored_collection_cards.dart';
+import 'canonical_dragons_screen.dart';
+import '../widgets/shop_economy_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -188,73 +191,44 @@ class _CanonicalAltarScreenState extends State<CanonicalAltarScreen>
             AltarRelic.nameweaversQuill,
             ...AltarRelic.values.where((r) => r != AltarRelic.nameweaversQuill)
           ])
-            Card(
-                child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(children: [
-                            Image.asset(relic.asset, width: 50, height: 50),
-                            const SizedBox(width: 12),
-                            Expanded(
-                                child: Text(relic.label,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium)),
-                            const SizedBox(width: 8),
-                            Text('${view.inventory.count(relic)}')
-                          ]),
-                          Text(switch (relic) {
-                            AltarRelic.nameweaversQuill => strings.pick(
-                                'Rename one dragon.', 'Hernoem één draak.'),
-                            AltarRelic.moralEcho => strings.pick(
-                                'Reveal an egg’s moral nature.',
-                                'Onthul de morele aard van een ei.'),
-                            AltarRelic.orderSigil => strings.pick(
-                                'Reveal an egg’s order nature.',
-                                'Onthul de orde-aard van een ei.'),
-                            AltarRelic.astralLens => strings.pick(
-                                'Reveal the rarity inside an egg.',
-                                'Onthul de zeldzaamheid in een ei.'),
-                            AltarRelic.weaveOracle => strings.pick(
-                                'Reveal the dragon inside an egg.',
-                                'Onthul de draak in een ei.'),
-                          }),
-                          _Materials(wallet: relic.cost, compact: true),
-                          CanonicalActionButton(
-                              key: Key('canonical-craft-${relic.name}'),
-                              label: strings.pick('Craft', 'Maken'),
-                              action: session.canAct &&
-                                      view.inventory.materials
-                                          .covers(relic.cost)
-                                  ? () => actions.craft(relic)
-                                  : null),
-                        ]))),
+            RestoredAltarRecipeCard(
+                relic: relic,
+                owned: view.inventory.count(relic),
+                onCraft: session.canAct &&
+                        view.inventory.materials.covers(relic.cost)
+                    ? () => runShopAction(context, () => actions.craft(relic))
+                    : null,
+                onUse: view.inventory.count(relic) > 0
+                    ? () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                            builder: (_) => Scaffold(
+                                appBar: AppBar(title: Text(relic.label)),
+                                body: relic == AltarRelic.nameweaversQuill
+                                    ? const CanonicalDragonsScreen()
+                                    : const ShopEconomyBoundary(
+                                        child: CanonicalEggList()))))
+                    : null),
         ]);
   }
 }
 
 class _Materials extends StatelessWidget {
-  const _Materials(
-      {required this.wallet, this.reward = false, this.compact = false});
+  const _Materials({required this.wallet, this.reward = false});
   final WeaveWallet wallet;
-  final bool reward, compact;
+  final bool reward;
   @override
   Widget build(BuildContext context) =>
       Wrap(spacing: 14, runSpacing: 8, children: [
         for (final material in WeaveMaterial.values)
-          if (!compact || wallet.count(material) > 0)
-            Tooltip(
-                message: material.label,
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Image.asset(material.asset,
-                      width: compact ? 28 : 38,
-                      height: compact ? 28 : 38,
-                      semanticLabel: material.label),
-                  const SizedBox(width: 4),
-                  Text('${reward ? '+' : ''}${wallet.count(material)}',
-                      style: Theme.of(context).textTheme.titleMedium)
-                ])),
+          Tooltip(
+              message: material.label,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Image.asset(material.asset,
+                    width: 38, height: 38, semanticLabel: material.label),
+                const SizedBox(width: 4),
+                Text('${reward ? '+' : ''}${wallet.count(material)}',
+                    style: Theme.of(context).textTheme.titleMedium)
+              ])),
       ]);
 }

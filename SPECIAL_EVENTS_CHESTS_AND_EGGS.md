@@ -1,3 +1,11 @@
+## Historical presentation follow-up - 20 September 2026
+
+Restored the v0.05.39 chest rows (including existing Open 10), crafted Altar
+relic visibility/recipe cards and public egg hints/incubation details in the
+server UI. Event rewards are displayed from public definitions/confirmed
+snapshots. No egg identities, probabilities, chest contents, crafting costs,
+protection rules, event dates or rewards change. See UI_HISTORY_RESTORATION.md.
+
 ## Account restoration candidate - 20 September 2026
 
 Server account initialization reuses the existing starter egg rules with a
@@ -381,7 +389,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: c3ba5d42c221c45e -->
+<!-- reference-source-fingerprint: ab2ad31a70b80bae -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

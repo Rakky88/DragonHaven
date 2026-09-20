@@ -271,4 +271,27 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+  testWidgets(
+      'restored Open 10 waits for one durable batch and never grants locally',
+      (tester) async {
+    await prepare(tester);
+    server.state['chestInventory']['wooden'] = 12;
+    server.revision++;
+    await tester.runAsync(session.synchronize);
+    final localBefore = jsonEncode(legacy.exportState());
+    await mount(tester, const CanonicalInventoryScreen());
+    await tester.tap(find.byKey(const Key('canonical-open-ten-wooden')));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(server.sent, isEmpty);
+    await tester.tap(find.byKey(const Key('chest-reveal-tap-target')));
+    await tester.tap(find.byKey(const Key('chest-reveal-tap-target')));
+    await waitForCommand(tester);
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(session.snapshot!.shop.chests['wooden'], 2);
+    expect(server.receipts, hasLength(1));
+    expect(jsonEncode(legacy.exportState()), localBefore);
+    expect(tester.takeException(), isNull);
+  });
 }

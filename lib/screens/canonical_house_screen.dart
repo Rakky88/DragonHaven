@@ -1,3 +1,4 @@
+import '../widgets/restored_collection_cards.dart';
 import 'canonical_dragons_screen.dart';
 import '../services/canonical_game_snapshot.dart';
 import '../widgets/ui_bits.dart';
@@ -22,17 +23,19 @@ import '../widgets/shop_economy_scope.dart';
 /// The tower's economic controls consume public facts and durable commands.
 /// Prices are quotes from shared rules; the server checks funds and eligibility.
 class CanonicalHouseScreen extends StatelessWidget {
-  const CanonicalHouseScreen({super.key, this.header, this.showHeading = true});
-  final Widget? header;
+  const CanonicalHouseScreen(
+      {super.key, this.header, this.toolbar, this.showHeading = true});
+  final Widget? header, toolbar;
   final bool showHeading;
   @override
   Widget build(BuildContext context) => ShopEconomyBoundary(
-      child: _HouseContents(header: header, showHeading: showHeading));
+      child: _HouseContents(
+          header: header, toolbar: toolbar, showHeading: showHeading));
 }
 
 class _HouseContents extends StatelessWidget {
-  const _HouseContents({this.header, required this.showHeading});
-  final Widget? header;
+  const _HouseContents({this.header, this.toolbar, required this.showHeading});
+  final Widget? header, toolbar;
   final bool showHeading;
   @override
   Widget build(BuildContext context) {
@@ -62,219 +65,158 @@ class _HouseContents extends StatelessWidget {
                           key: const Key('canonical-house-balance'),
                           style: Theme.of(context).textTheme.titleMedium),
                     ])),
-          if (house.floorRoomIds.length >= 5)
-            TextButton.icon(
-                key: const Key('canonical-open-school'),
-                onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                        builder: (_) => Scaffold(
-                            appBar: AppBar(
-                                title: Text(s.pick(
-                                    'Dragon Academy', 'Drakenacademie'))),
-                            body: const CanonicalSchoolScreen()))),
-                icon: Image.asset(
-                    'assets/images/ui/dragon_school/school_graduate.png',
-                    width: 28,
-                    height: 28),
-                label: Text(s.pick('Dragon Academy', 'Drakenacademie'))),
           if (showHeading)
             TabBar(tabs: [
               Tab(text: s.pick('Tower', 'Toren')),
               Tab(text: s.pick('Rooms', 'Kamers')),
             ]),
           Expanded(
-              child: TabBarView(children: [
-            ListView(
-                key: const Key('canonical-tower-list'),
-                padding: const EdgeInsets.all(16),
-                children: [
-                  Row(children: [
-                    const GameIconSprite(GameIconKind.clock, size: 21),
-                    const SizedBox(width: 5),
-                    Expanded(
-                        child: HavenClockBuilder(
-                            builder: (_, __, phase) => Text(s.dayPhase(phase),
-                                style: const TextStyle(
-                                    color: AppColors.muted,
-                                    fontWeight: FontWeight.w700)))),
-                    Flexible(
-                        child: Text(
-                            '${house.floorRoomIds.length}/20 ${s.pick('floors', 'verdiepingen')}',
-                            textAlign: TextAlign.end)),
-                  ]),
-                  const SizedBox(height: 10),
-                  if (header != null) header!,
-                  if (showHeading ||
-                      house.damagedFloors.isNotEmpty ||
-                      house.wardLevel > 0)
-                    Card(
-                        child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Text(
-                                      '${s.pick('Dragon Ward', 'Drakenward')} · ${house.wardLevel}/3',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium),
-                                  if (wardPrice != null) ...[
-                                    if (house.damagedFloors.isEmpty)
-                                      Text(s.pick(
-                                          'Available after a floor is damaged.',
-                                          'Beschikbaar wanneer een verdieping beschadigd is.')),
-                                    CanonicalActionButton(
-                                        key:
-                                            const Key('canonical-upgrade-ward'),
-                                        label:
-                                            '${s.pick('Upgrade ward', 'Ward verbeteren')} · $wardPrice',
-                                        confirmation:
-                                            '${s.pick('Upgrade ward', 'Ward verbeteren')} · $wardPrice ${s.pick('coins', 'munten')}?',
-                                        action: session.canAct &&
-                                                house
-                                                    .damagedFloors.isNotEmpty &&
-                                                view.coins >= wardPrice
-                                            ? actions.upgradeWard
-                                            : null),
-                                  ],
-                                ]))),
-                  const SizedBox(height: 12),
-                  Text(
-                      '${house.floorRoomIds.length}/20 ${s.pick('floors', 'verdiepingen')}',
-                      style: Theme.of(context).textTheme.titleMedium),
-                  for (var i = house.floorRoomIds.length - 1; i >= 0; i--)
-                    if (houseRoomById(house.floorRoomIds[i]) case final room?)
-                      _RoomCard(
-                          room: room,
-                          floorIndex: i,
-                          heading: '${i + 1} · ${s.roomName(room)}',
-                          extra: Wrap(alignment: WrapAlignment.end, children: [
-                            OutlinedButton.icon(
-                                key: Key('canonical-visit-floor-option-$i'),
-                                onPressed: house.damagedFloors.contains(i)
-                                    ? null
-                                    : () => _visitFloor(context, room.id, i),
-                                icon: const Icon(Icons.zoom_in),
-                                label: Text(s.pick('Visit', 'Bezoeken'))),
-                            OutlinedButton.icon(
-                                key: Key('canonical-change-floor-$i'),
-                                onPressed: session.canAct
-                                    ? () => _chooseFloor(context, floorIndex: i)
+              child: TabBarView(
+                  physics:
+                      showHeading ? null : const NeverScrollableScrollPhysics(),
+                  children: [
+                ListView(
+                    key: const Key('canonical-tower-list'),
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      if (toolbar != null) toolbar!,
+                      Row(children: [
+                        const GameIconSprite(GameIconKind.clock, size: 21),
+                        const SizedBox(width: 5),
+                        Expanded(
+                            child: HavenClockBuilder(
+                                builder: (_, __, phase) => Text(
+                                    s.dayPhase(phase),
+                                    style: const TextStyle(
+                                        color: AppColors.muted,
+                                        fontWeight: FontWeight.w700)))),
+                        Flexible(
+                            child: Text(
+                                '${house.floorRoomIds.length}/20 ${s.pick('floors', 'verdiepingen')}',
+                                textAlign: TextAlign.end)),
+                      ]),
+                      const SizedBox(height: 10),
+                      if (header != null) header!,
+                      if (showHeading ||
+                          house.damagedFloors.isNotEmpty ||
+                          house.wardLevel > 0)
+                        Card(
+                            child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Text(
+                                          '${s.pick('Dragon Ward', 'Drakenward')} · ${house.wardLevel}/3',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium),
+                                      if (wardPrice != null) ...[
+                                        if (house.damagedFloors.isEmpty)
+                                          Text(s.pick(
+                                              'Available after a floor is damaged.',
+                                              'Beschikbaar wanneer een verdieping beschadigd is.')),
+                                        CanonicalActionButton(
+                                            key: const Key(
+                                                'canonical-upgrade-ward'),
+                                            label:
+                                                '${s.pick('Upgrade ward', 'Ward verbeteren')} · $wardPrice',
+                                            confirmation:
+                                                '${s.pick('Upgrade ward', 'Ward verbeteren')} · $wardPrice ${s.pick('coins', 'munten')}?',
+                                            action: session.canAct &&
+                                                    house.damagedFloors
+                                                        .isNotEmpty &&
+                                                    view.coins >= wardPrice
+                                                ? actions.upgradeWard
+                                                : null),
+                                      ],
+                                    ]))),
+                      const SizedBox(height: 12),
+                      for (var i = house.floorRoomIds.length - 1; i >= 0; i--)
+                        if (houseRoomById(house.floorRoomIds[i])
+                            case final room?)
+                          _RoomCard(
+                              room: room,
+                              floorIndex: i,
+                              heading: '${i + 1} · ${s.roomName(room)}',
+                              extra: _floorControls(context, i),
+                              control: _floorRepair(context, i)),
+                      if (floorPrice != null)
+                        OutlinedButton(
+                            key: const Key('canonical-add-floor'),
+                            onPressed:
+                                session.canAct && view.coins >= floorPrice
+                                    ? () => _chooseFloor(context)
                                     : null,
-                                icon: const Icon(Icons.swap_horiz_rounded),
-                                label: Text(s.pick('Change room (free)',
-                                    'Kamer wijzigen (gratis)'))),
-                            IconButton(
-                                key: Key('canonical-floor-up-$i'),
-                                tooltip:
-                                    s.pick('Move up', 'Omhoog verplaatsen'),
-                                constraints: const BoxConstraints(
-                                    minWidth: 48, minHeight: 48),
-                                onPressed: session.canAct &&
-                                        i < house.floorRoomIds.length - 1
-                                    ? () => runShopAction(
-                                        context,
-                                        () => actions.reorderFloor(
-                                            house.floorRoomIds.length - i - 1,
-                                            house.floorRoomIds.length - i - 2))
-                                    : null,
-                                icon: const Icon(Icons.arrow_upward_rounded)),
-                            IconButton(
-                                key: Key('canonical-floor-down-$i'),
-                                tooltip:
-                                    s.pick('Move down', 'Omlaag verplaatsen'),
-                                constraints: const BoxConstraints(
-                                    minWidth: 48, minHeight: 48),
-                                onPressed: session.canAct && i > 0
-                                    ? () => runShopAction(
-                                        context,
-                                        () => actions.reorderFloor(
-                                            house.floorRoomIds.length - i - 1,
-                                            house.floorRoomIds.length - i))
-                                    : null,
-                                icon: const Icon(Icons.arrow_downward_rounded)),
-                            CanonicalActionButton(
-                                key: Key('canonical-clear-floor-$i'),
-                                label: s.pick('Clear room', 'Kamer leegmaken'),
-                                action: session.canAct &&
-                                        house.floorRoomIds.length > 1
-                                    ? () => actions.clearFloor(i)
-                                    : null),
-                          ]),
-                          control: switch (house.repairPrice(i)) {
-                            final price? => CanonicalActionButton(
-                                key: Key('canonical-repair-$i'),
-                                label:
-                                    '${s.pick('Repair', 'Repareer')} · $price',
-                                confirmation:
-                                    '${s.pick('Repair', 'Repareer')} ${i + 1} · ${s.roomName(room)} · $price ${s.pick('coins', 'munten')}?',
-                                action: session.canAct && view.coins >= price
-                                    ? () => actions.repairFloor(i)
-                                    : null),
-                            null => null,
-                          }),
-                  if (floorPrice != null)
-                    OutlinedButton(
-                        key: const Key('canonical-add-floor'),
-                        onPressed: session.canAct && view.coins >= floorPrice
-                            ? () => _chooseFloor(context)
-                            : null,
-                        child: Text(
-                            '${s.pick('Add a floor', 'Verdieping toevoegen')} · $floorPrice ${s.pick('coins', 'munten')}',
-                            textAlign: TextAlign.center))
-                  else
-                    Text(s.pick(
-                        'Maximum height reached', 'Maximale hoogte bereikt')),
-                ]),
-            ListView(
-                key: const Key('canonical-rooms-list'),
-                padding: const EdgeInsets.all(16),
-                children: [
-                  for (final room in houseRoomCatalog)
-                    _RoomCard(
-                        room: room,
-                        heading: s.roomName(room),
-                        extra: house.unlockedRooms.contains(room.id)
-                            ? OutlinedButton(
-                                key: Key('canonical-edit-room-${room.id}'),
-                                onPressed: () =>
-                                    openCanonicalRoomEditor(context, room.id),
-                                child: Text(s.pick(
-                                    'Arrange your room', 'Richt je kamer in')))
-                            : null,
-                        control: house.unlockedRooms.contains(room.id)
-                            ? CanonicalActionButton(
-                                key: Key('canonical-room-${room.id}'),
-                                label: s.pick(
-                                    house.activeRoomId == room.id
-                                        ? 'Selected'
-                                        : 'Select',
-                                    house.activeRoomId == room.id
-                                        ? 'Geselecteerd'
-                                        : 'Selecteren'),
-                                action: session.canAct &&
-                                        house.activeRoomId != room.id
-                                    ? () => actions.unlockRoom(room.id)
-                                    : null)
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                    Text(
-                                        '${s.pick('Level', 'Level')} ${room.unlockLevel}'),
-                                    CanonicalActionButton(
-                                        key: Key('canonical-room-${room.id}'),
-                                        label:
-                                            '${s.pick('Unlock', 'Ontgrendelen')} · ${room.price}',
-                                        confirmation:
-                                            '${s.pick('Unlock', 'Ontgrendelen')} ${s.roomName(room)} · ${room.price} ${s.pick('coins', 'munten')}?',
-                                        action: session.canAct &&
-                                                level >= room.unlockLevel &&
-                                                view.coins >= room.price
-                                            ? () => actions.unlockRoom(room.id)
-                                            : null),
-                                  ])),
-                ]),
-          ])),
+                            child: Text(
+                                '${s.pick('Add a floor', 'Verdieping toevoegen')} · $floorPrice ${s.pick('coins', 'munten')}',
+                                textAlign: TextAlign.center))
+                      else
+                        Text(s.pick('Maximum height reached',
+                            'Maximale hoogte bereikt')),
+                      const SizedBox(height: 12),
+                      RestoredAcademyEntrance(
+                          unlocked: house.floorRoomIds.length >= 5,
+                          onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                  builder: (_) => Scaffold(
+                                      appBar: AppBar(
+                                          title: Text(s.pick('Dragon Academy',
+                                              'Drakenacademie'))),
+                                      body: const CanonicalSchoolScreen())))),
+                    ]),
+                ListView(
+                    key: const Key('canonical-rooms-list'),
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      for (final room in houseRoomCatalog)
+                        _RoomCard(
+                            room: room,
+                            heading: s.roomName(room),
+                            extra: house.unlockedRooms.contains(room.id)
+                                ? OutlinedButton(
+                                    key: Key('canonical-edit-room-${room.id}'),
+                                    onPressed: () => openCanonicalRoomEditor(
+                                        context, room.id),
+                                    child: Text(s.pick(
+                                        'Arrange your room', 'Richt je kamer in')))
+                                : null,
+                            control: house.unlockedRooms.contains(room.id)
+                                ? CanonicalActionButton(
+                                    key: Key('canonical-room-${room.id}'),
+                                    label: s.pick(
+                                        house.activeRoomId == room.id
+                                            ? 'Selected'
+                                            : 'Select',
+                                        house.activeRoomId == room.id
+                                            ? 'Geselecteerd'
+                                            : 'Selecteren'),
+                                    action: session.canAct &&
+                                            house.activeRoomId != room.id
+                                        ? () => actions.unlockRoom(room.id)
+                                        : null)
+                                : Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                        Text(
+                                            '${s.pick('Level', 'Level')} ${room.unlockLevel}'),
+                                        CanonicalActionButton(
+                                            key: Key(
+                                                'canonical-room-${room.id}'),
+                                            label:
+                                                '${s.pick('Unlock', 'Ontgrendelen')} · ${room.price}',
+                                            confirmation:
+                                                '${s.pick('Unlock', 'Ontgrendelen')} ${s.roomName(room)} · ${room.price} ${s.pick('coins', 'munten')}?',
+                                            action: session.canAct &&
+                                                    level >= room.unlockLevel &&
+                                                    view.coins >= room.price
+                                                ? () =>
+                                                    actions.unlockRoom(room.id)
+                                                : null),
+                                      ])),
+                    ]),
+              ])),
         ]));
   }
 
@@ -360,7 +302,9 @@ class _RoomCard extends StatelessWidget {
   final Widget? control, extra;
   @override
   Widget build(BuildContext context) {
-    final view = context.watch<CanonicalGameSession>().snapshot!;
+    final session = context.watch<CanonicalGameSession>();
+    final view = session.snapshot!;
+    final epoch = session.connection.sessionEpoch;
     final residents = view.dragons
         .where((d) =>
             d.owned &&
@@ -410,27 +354,92 @@ class _RoomCard extends StatelessWidget {
                                       color: Colors.white,
                                       fontWeight: FontWeight.w900,
                                       fontSize: 16))),
-                          for (final dragon in residents)
+                          if (residents.isNotEmpty)
                             SizedBox(
-                                width: 38,
-                                child: CanonicalDragonArt(
-                                    dragon: dragon, height: 56)),
-                          const Icon(Icons.zoom_in_rounded,
+                                width: 36 + (residents.length - 1) * 18,
+                                height: 56,
+                                child: Stack(children: [
+                                  for (final (index, dragon)
+                                      in residents.indexed)
+                                    Positioned(
+                                        left: index * 18,
+                                        top: index.isOdd ? 3 : 0,
+                                        child: Container(
+                                            width: 36,
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                                color: const Color(0xD9FFF9ED),
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                    color: const Color(
+                                                        0xFFFFD86B))),
+                                            child: CanonicalDragonArt(
+                                                dragon: dragon, height: 46)))
+                                ])),
+                          if (floorIndex != null)
+                            IconButton.filledTonal(
+                                key: Key('canonical-floor-options-$floorIndex'),
+                                tooltip: AppStrings.of(context)
+                                    .pick('Room options', 'Kameropties'),
+                                icon: const Icon(Icons.swap_horiz_rounded),
+                                onPressed: () => showModalBottomSheet<void>(
+                                    context: context,
+                                    showDragHandle: true,
+                                    isScrollControlled: true,
+                                    useSafeArea: true,
+                                    builder: (_) => CanonicalEntityDialog(
+                                        ownerId: view.ownerId,
+                                        builder: (context, current, canAct) =>
+                                            SingleChildScrollView(
+                                                padding:
+                                                    const EdgeInsets.all(16),
+                                                child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Text(heading,
+                                                          style:
+                                                              Theme.of(context)
+                                                                  .textTheme
+                                                                  .titleLarge),
+                                                      if (session.connection.sessionEpoch ==
+                                                              epoch &&
+                                                          floorIndex! <
+                                                              current
+                                                                  .house
+                                                                  .floorRoomIds
+                                                                  .length &&
+                                                          current.house
+                                                                      .floorRoomIds[
+                                                                  floorIndex!] ==
+                                                              room.id) ...[
+                                                        _floorControls(context,
+                                                            floorIndex!),
+                                                        if (_floorRepair(
+                                                                context,
+                                                                floorIndex!)
+                                                            case final repair?)
+                                                          repair,
+                                                      ],
+                                                      TextButton(
+                                                          key: const Key(
+                                                              'close-floor-options'),
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                  context),
+                                                          child: Text(AppStrings
+                                                                  .of(context)
+                                                              .pick('Close',
+                                                                  'Sluiten'))),
+                                                    ]))))),
+                          Icon(
+                              view.house.damagedFloors.contains(floorIndex)
+                                  ? Icons.construction_rounded
+                                  : Icons.zoom_in_rounded,
                               color: Colors.white),
                         ])),
                   ]))),
-          if (floorIndex != null)
-            ExpansionTile(
-                key: Key('canonical-floor-options-$floorIndex'),
-                dense: true,
-                title: Text(
-                    AppStrings.of(context).pick('Room options', 'Kameropties')),
-                childrenPadding: const EdgeInsets.all(10),
-                children: [
-                  if (extra != null) extra!,
-                  if (control != null) control!
-                ])
-          else
+          if (floorIndex == null)
             Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -502,7 +511,7 @@ Future<void> _visitFloor(BuildContext context, String roomId, int index) async {
                     d.floorIndex == index &&
                     d.roomId == roomId)
                 .toList();
-            return AlertDialog(
+            return _RoomVisitView(
                 title: Text(s.roomName(houseRoomById(roomId)!)),
                 content: SingleChildScrollView(
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -585,4 +594,90 @@ Future<void> _visitFloor(BuildContext context, String roomId, int index) async {
                 ]);
           }));
   await visitTask;
+}
+
+Widget _floorControls(BuildContext context, int i) {
+  final session = context.watch<CanonicalGameSession>();
+  final view = session.snapshot!;
+  final house = view.house;
+  final s = AppStrings.of(context);
+  final actions = CanonicalGameActions(session);
+  final room = houseRoomById(house.floorRoomIds[i])!;
+  return Wrap(alignment: WrapAlignment.end, children: [
+    OutlinedButton.icon(
+        key: Key('canonical-visit-floor-option-$i'),
+        onPressed: house.damagedFloors.contains(i)
+            ? null
+            : () => _visitFloor(context, room.id, i),
+        icon: const Icon(Icons.zoom_in),
+        label: Text(s.pick('Visit', 'Bezoeken'))),
+    OutlinedButton.icon(
+        key: Key('canonical-change-floor-$i'),
+        onPressed: session.canAct
+            ? () => const _HouseContents(showHeading: true)
+                ._chooseFloor(context, floorIndex: i)
+            : null,
+        icon: const Icon(Icons.swap_horiz_rounded),
+        label: Text(s.pick('Change room (free)', 'Kamer wijzigen (gratis)'))),
+    IconButton(
+        key: Key('canonical-floor-up-$i'),
+        tooltip: s.pick('Move up', 'Omhoog verplaatsen'),
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        onPressed: session.canAct && i < house.floorRoomIds.length - 1
+            ? () => runShopAction(
+                context,
+                () => actions.reorderFloor(house.floorRoomIds.length - i - 1,
+                    house.floorRoomIds.length - i - 2))
+            : null,
+        icon: const Icon(Icons.arrow_upward_rounded)),
+    IconButton(
+        key: Key('canonical-floor-down-$i'),
+        tooltip: s.pick('Move down', 'Omlaag verplaatsen'),
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        onPressed: session.canAct && i > 0
+            ? () => runShopAction(
+                context,
+                () => actions.reorderFloor(house.floorRoomIds.length - i - 1,
+                    house.floorRoomIds.length - i))
+            : null,
+        icon: const Icon(Icons.arrow_downward_rounded)),
+    CanonicalActionButton(
+        key: Key('canonical-clear-floor-$i'),
+        label: s.pick('Clear room', 'Kamer leegmaken'),
+        action: session.canAct && house.floorRoomIds.length > 1
+            ? () => actions.clearFloor(i)
+            : null),
+  ]);
+}
+
+Widget? _floorRepair(BuildContext context, int i) {
+  final session = context.watch<CanonicalGameSession>();
+  final view = session.snapshot!;
+  final house = view.house;
+  final s = AppStrings.of(context);
+  final actions = CanonicalGameActions(session);
+  final room = houseRoomById(house.floorRoomIds[i])!;
+  return switch (house.repairPrice(i)) {
+    final price? => CanonicalActionButton(
+        key: Key('canonical-repair-$i'),
+        label: '${s.pick('Repair', 'Repareer')} · $price',
+        confirmation:
+            '${s.pick('Repair', 'Repareer')} ${i + 1} · ${s.roomName(room)} · $price ${s.pick('coins', 'munten')}?',
+        action: session.canAct && view.coins >= price
+            ? () => actions.repairFloor(i)
+            : null),
+    null => null,
+  };
+}
+
+class _RoomVisitView extends StatelessWidget {
+  const _RoomVisitView(
+      {required this.title, required this.content, required this.actions});
+  final Widget title, content;
+  final List<Widget> actions;
+  @override
+  Widget build(BuildContext context) => Dialog.fullscreen(
+      child: Scaffold(
+          appBar: AppBar(title: title, actions: actions),
+          body: SizedBox(width: double.infinity, child: content)));
 }
