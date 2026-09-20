@@ -57,7 +57,8 @@ Device display and animation settings were restored afterward.
 
 The signed production APK was installed as an update over 0.05.37 / 10087 on
 the emulator, without clearing application data; installed version is
-0.05.39 / 10089.
+0.05.39 / 10089. The existing English game opens with its dragon, first floor,
+25 coins and 3 gems visible.
 
 ## Server
 
@@ -70,6 +71,8 @@ the emulator, without clearing application data; installed version is
 - Mandatory `tool/release_server_preflight.ps1` passed in production: database
   lint zero errors; Auth health, Auth settings and app health all HTTP 200.
   Application contract version 1, observed clock skew 1,052 ms.
+- Public Auth health, Auth settings and application health rechecked at
+  01:42:49 UTC after rollout: all HTTP 200.
 
 ## Artifact
 
@@ -83,5 +86,18 @@ the emulator, without clearing application data; installed version is
 
 ## Publication
 
-Pending final publisher dry run and upload. This record is updated after the
-release API, remote asset size/digest and permanent download URL are verified.
+Publisher dry run passed, followed by one successful upload. Verified at
+01:47:38 UTC on 20 September 2026:
+
+- Release/tag: `v0.05.39`, non-draft, non-prerelease; release ID `392277926`.
+- Tag commit: `d71cc8e1f2b09d61684a54d87824be6c8ea631d9`.
+- Asset ID `575873448`, state `uploaded`; byte size and GitHub SHA-256 digest
+  exactly match the local artifact recorded above.
+- GitHub latest resolves to `v0.05.39`; permanent download returns HTTP 200.
+- [Release page](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.39).
+- [Version-specific APK](https://github.com/Rakky88/DragonHaven/releases/download/v0.05.39/DragonHaven.apk).
+- [Permanent latest APK](https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk).
+
+The tag-triggered Android workflow separately builds a Play Store bundle; it
+does not publish or replace the verified APK asset. No account cutover or
+trusted-worker deployment was included in this release.

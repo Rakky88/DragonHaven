@@ -13,7 +13,7 @@ Sunwake en New Year hebben geen tijdslimiet en gebruiken deze tijdsbonus dus nie
 
 | Trial | Might | Arcana | Spirit |
 |---|---|---|---|
-| **Cavern Flight** | Geen effect | Geen effect | Verkleint de afmetingen van de botsingszone tot 10% bij 300 punten. |
+| **Cavern Flight** | Geen effect | Geen effect | Verkleint de afmetingen van de botsingszone met maximaal 10% bij 300 punten. |
 | **Ruin Breaker** | Maakt de gewone raakzone tot 15% en de perfecte raakzone tot 5% breder bij 300 punten. | Geen effect | Geen effect |
 | **Runeweaver** | Geen effect | Runen blijven 500–600 ms zichtbaar. Vanaf 240 punten krijg je één extra herinnering aan de laatste rune, vanaf de vierde ronde. | Geen effect |
 | **Witchlight Ward — Halloween** | Draagt bij aan de gezamenlijke tijdsbonus. | Laat de pompoen bij volgende rondes maximaal 800 ms langer zien. De eerste preview blijft 2,9 seconden. Ook de tijdsbonus. | Vergroot de toegestane afstand tot het midden van het pad van 12 tot 16 schermpunten. Ook de tijdsbonus. |

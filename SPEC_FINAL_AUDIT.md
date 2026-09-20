@@ -1,6 +1,6 @@
 # DragonHaven audit
 
-## Release candidate v0.05.39 / 10089
+## Published release v0.05.39 / 10089
 
 Built from public v0.05.38 with the shared-expertise feature backported. The
 unfinished account startup/cutover remains on its separate working branch.
@@ -18,7 +18,11 @@ SQL contracts passed with all synthetic changes rolled back and authority
 flags unchanged. Flutter analysis, gameplay/reward tests, VM/JavaScript parity,
 worker type checking and documentation guards pass. The signed APK is version
 0.05.39 / 10089. See `RELEASE_V0.05.39_VERIFICATION.md` for exact checks and
-publication status.
+publication evidence. Release tag `v0.05.39` points to
+`d71cc8e1f2b09d61684a54d87824be6c8ea631d9`. GitHub's APK size and SHA-256 match
+the local artifact, latest resolves to this release and the stable APK URL
+returns HTTP 200. Production public health was rechecked after the rollout:
+all three endpoints still return HTTP 200.
 
 ## Earlier shared expertise candidate - 20 September 2026 (superseded)
 
