@@ -1,6 +1,6 @@
 # Canonical gameplay integration
 
-## Server-owned account restoration candidate ? 20 September 2026
+## Released server-owned account restoration - 20 September 2026
 
 The normal five-tab app now consumes confirmed server snapshots and durable
 commands, including account settings, onboarding, social views, notifications
@@ -13,9 +13,18 @@ activation, reply replay, second-login restoration, private-property redaction,
 profile projection, Conclave reads and stale-client fencing. All synthetic
 accounts were removed and runtime switches restored. Four database contracts
 and PostgreSQL lint passed; the same four migrations were rehearsed and rolled
-back against production schema 88 without changing player authority. Production schema 92 is now applied with authority switches still off.
-The signed v0.05.42 APK and all 1,041 tests are verified; publication and
-activation remain the final steps. See RELEASE_V0.05.42_VERIFICATION.md.
+back against production schema 88 without changing player authority.
+
+**v0.05.42 / 10092 is published and production authority is active.** The public
+APK digest was verified before enabling commands/migration for compatible clients.
+Production initialization replay and second-login restoration passed; its one
+marked synthetic account was removed. Post-activation preflight at 16:04:19 UTC
+reports 92 matching migrations, zero lint errors and healthy Auth/app endpoints.
+All 1,041 Flutter tests passed (one existing optional skip). See
+[RELEASE_V0.05.42_VERIFICATION.md](RELEASE_V0.05.42_VERIFICATION.md).
+Existing accounts migrate on first compatible login; complete this on the old
+installation before uninstalling. Older rollout/status statements below are
+historical and superseded by this section.
 
 ## v0.05.36 / 10086: Trial event animation hotfix
 

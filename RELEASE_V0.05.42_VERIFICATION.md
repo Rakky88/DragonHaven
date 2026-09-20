@@ -33,7 +33,7 @@ restoration matrix and migration/recovery invariants.
 
 ## Server
 
-Additive migrations 89?92 were rehearsed and applied to staging, then rehearsed
+Additive migrations 89-92 were rehearsed and applied to staging, then rehearsed
 and applied to production. All four rollback contracts and targeted PostgreSQL
 lint passed; schema apply changed no authority switches or player authority.
 
@@ -55,8 +55,33 @@ Auth health/settings and app health all HTTP 200; clock skew 1 ms.
 
 ## Publication and activation
 
-Pending at this preparation commit. Activation requires the latest public APK
-and its exact hash, schema parity and all shadow switches off. The final
-`tool/server_account_activate.py` step also creates/reopens/removes one marked
-synthetic production account; a failed smoke check pauses commands/migrations
-while retaining any canonical player states.
+- Published [v0.05.42](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.42),
+  release ID **392486128**, asset ID **577100838**. Public release creation time:
+  **2026-09-20 15:58:51 UTC**; the asset completed afterward, before activation.
+- Tag resolves to tested commit
+  `ba6b935f5fff0a3d3779867866b307eb7a3c9349`.
+- The GitHub asset size and SHA-256 exactly match the artifact above. The latest
+  release resolves to v0.05.42 and its permanent download URL responds successfully.
+  [Version-specific APK](https://github.com/Rakky88/DragonHaven/releases/download/v0.05.42/DragonHaven.apk)
+  and [permanent latest APK](https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk).
+- `tool/server_account_activate.py` verified the public artifact, schema and
+  reviewed worker hash, then enabled commands and migration for minimum client
+  build **10092**. All three shadow switches remain off. The separate legacy
+  economy mutation switch remains off.
+- One marked synthetic production account passed creation, durable initialization
+  retry, onboarding and second-login restore with an identical full public
+  snapshot and private state hash. The synthetic account was removed. No real
+  player account was edited by the rollout tooling.
+- Post-activation mandatory server preflight passed at
+  **2026-09-20 16:04:19 UTC**: **92** matching migrations, **0** database lint
+  errors, Auth health/settings and application health all **HTTP 200**, clock
+  skew **18 ms**.
+- Existing players transfer through the compatible app on their next login.
+  They should complete that first transfer on the existing installation before
+  uninstalling it; subsequent installations restore confirmed server progress.
+  Genuine conflicting legacy copies remain reviewable instead of being merged.
+
+Recovery preserves canonical states and receipts: pause new migrations and, if
+needed, commands; repair/redeploy the worker and resume. Never return a migrated
+account to its stale device save. Activation tooling applies this pause if its
+synthetic smoke check fails; no such pause was required for this release.

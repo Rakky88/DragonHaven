@@ -52,12 +52,21 @@ copy is silently overwritten by signing in. Pending Altar requests and unknown
 save metadata survive retirement and retry. Existing player inventories,
 highscores, event rules and reward probabilities are unchanged.
 
-This is an online access boundary for the normal client. It does **not** finish
-the separate authoritative server-economy rollout or prevent modified old clients
-from bypassing client rules. Existing production clients remain compatible.
-Canonical runtime and migration switches stay off; no player is promoted.
+As of **v0.05.42 / build 10092**, normal gameplay also uses authoritative server
+snapshots and commands. Production commands and migration are enabled with the
+reviewed worker and minimum compatible build. Startup reads account authority
+before considering device progress. Fresh accounts initialize on the server;
+existing accounts complete a protected transfer before entering the server game.
+Old clients cannot enter the handoff or overwrite a migrated account.
 
-## Server change
+Install this update and finish the first sign-in on the existing installation
+before removing it. After transfer, an empty installation restores confirmed
+progress from the account, including inventory, materials, relic tradeability,
+active timers, collections, settings and Conclave read receipts. See
+[SERVER_GAMEPLAY_ROLLOUT.md](SERVER_GAMEPLAY_ROLLOUT.md) for complete coverage.
+Diagnostics consent, push registration and OS permissions remain device-specific.
+
+## Original online-access server change (v0.05.41)
 
 Additive migration **202609200088** adds a private acknowledgement table and three
 verified-account RPCs. It changes no existing economy RPCs. The table has RLS and
@@ -76,7 +85,7 @@ Release v0.05.41 / 10091 packages this implementation. Publication evidence is
 recorded in [RELEASE_V0.05.41_VERIFICATION.md](RELEASE_V0.05.41_VERIFICATION.md).
 The review APK uses a separate emulator-only package.
 
-## Verification
+## Original online-access verification (v0.05.41)
 
 - Complete Flutter suite: **1,025 passed, one existing optional test skipped**.
   Two additional focused tests passed for password-confirmed account deletion:
@@ -92,3 +101,13 @@ The review APK uses a separate emulator-only package.
 - Migration 88, rollback-only SQL contract tests and lint of all three new RPCs
   passed on staging and production. Public production health was verified at
   **2026-09-20 13:02 UTC** (Auth, Auth settings and app health: HTTP 200).
+
+## Server ownership rollout (v0.05.42)
+
+Schema 92 and the tested worker are deployed. Production initialization replay,
+onboarding and a fresh authentication session restored an identical full account
+snapshot; the synthetic probe account was deleted. Final server preflight at
+**2026-09-20 16:04:19 UTC** reports 92 matching migrations, zero lint errors and
+healthy Auth/application endpoints. The complete Flutter suite passed 1,041
+tests with one existing optional skip. Publication, signing, artifact and
+activation evidence: [RELEASE_V0.05.42_VERIFICATION.md](RELEASE_V0.05.42_VERIFICATION.md).

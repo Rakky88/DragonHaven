@@ -32,15 +32,17 @@ device-specific. They must not overwrite account preferences on a new device.
   compatible-client gate. Old clients must not enter or overwrite migrated play.
 - [x] Verify current rules/worker parity, all domain tests and real staging
   migration, two-device, reinstall, interrupted-reply and recovery scenarios.
-- [ ] Deploy the verified compatible server package with controlled activation,
+- [x] Deploy the verified compatible server package with controlled activation,
   health checks, evidence and a rollback path that cannot duplicate assets.
 
-Production started at schema 88 with authoritative rollout disabled. Schema 92
-is now applied and verified with authority still disabled at preparation time. This file
-records work in progress, not evidence that the gates have passed. No player
-authority is enabled merely because the account-start screen is online.
+Production is active on schema 92 for v0.05.42 / build 10092 and newer compatible
+clients. The signed public APK was verified before enabling commands and
+migration with the exact reviewed worker hash. All shadow switches remain off.
+Each existing account transfers when the compatible client opens; no operator
+bulk-converted or edited real player accounts. Keep the old installation until
+that first protected transfer has completed.
 
-## Candidate verification
+## Completed verification
 
 - Both fresh and legacy synthetic staging accounts survive a new authentication
   session with an identical full public projection and private state hash.
@@ -52,7 +54,7 @@ authority is enabled merely because the account-start screen is online.
   furniture coordinates, purchased packs, selected profile decorations and
   jukebox choices. Normal AccountStartupApp also opens two empty installations
   directly into ServerDragonHavenApp without a local save or import.
-- Staging schema 89?92 is applied. All four SQL contracts and targeted function
+- Staging migrations 89-92 are applied. All four SQL contracts and targeted function
   lint pass. Production rehearsal passed and rolled back at schema 88, then schema 92
   was applied without changing authority. Mandatory full database lint and
   public health checks passed before publication.
@@ -62,6 +64,12 @@ authority is enabled merely because the account-start screen is online.
 - Source saves, fixed egg properties and original timers survive the migration.
   A genuine legacy local/cloud conflict still requires selecting a source; the
   implementation never guesses by adding two inventories together.
+- The public release asset matches the signed APK byte-for-byte by GitHub's
+  SHA-256 digest. Production initialization replay, onboarding and second-login
+  restoration passed using one marked synthetic account, which was removed.
+  Post-activation preflight at **2026-09-20 16:04:19 UTC** reports 92 matching
+  migrations, zero database lint errors and HTTP 200 for all health endpoints.
+  See [RELEASE_V0.05.42_VERIFICATION.md](RELEASE_V0.05.42_VERIFICATION.md).
 
 ## Rollout and recovery procedure
 
