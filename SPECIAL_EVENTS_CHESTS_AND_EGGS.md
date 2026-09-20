@@ -1,5 +1,30 @@
 # DragonHaven Special Events, Chests, and Eggs
 
+## Shared expertise candidate ? 20 September 2026
+
+Training now uses the shared 950/1100 budget, +50 for Mastery and a permanent
+private 0?50 Dragon Spark. Existing event expertise rewards use remaining total
+capacity; their amounts, distribution, schedules, rank thresholds and assistance
+curves are unchanged. Event S+ Trials use the ordinary weighted relic pool with
+one new weight-1 consumable, Spark Astrolabe. Ordinary/Special chest gates and
+Special egg DNA remain unchanged. The bonus remains fixed from egg seed through
+hatch/import/trade and is disclosed only by consuming the Astrolabe. There are no
+new Special Adventures or event assets. See RANDOM_REWARDS_AND_ODDS.md and
+TRIAL_EXPERTISE.md for the exact budget/drop rules and all eleven trial effects.
+Migration 85 is a forward candidate; production application is not yet claimed.
+
+
+Account-scoped legacy persistence now preserves egg/reward metadata and pending
+Altar request IDs during account retirement. Final migration still requires a
+resolved journal. The reviewed event targets (1,000/day; Valentine 2,000/day),
+chest/egg contents, earning rates, random odds and pity rules are unchanged.
+
+The pending server-economy handoff now drains Altar operations and preserves
+unresolved request IDs before freezing a legacy save. Late responses are bound
+to the original account/session, including during retirement. The reviewed egg
+eligibility, return rewards, pity counter, crafting costs, chest pools and event
+rules below are unchanged. This does not enable the production cutover.
+
 The v0.05.35 size reduction changes only artwork encodings and runtime asset
 paths. Event schedules, eligibility, point targets, partners, chest contents and
 egg relationships remain as documented below. Original artwork is preserved;
@@ -43,7 +68,11 @@ has one reserved partner slot per occurrence, and accepted partners cannot be
 swapped. No dragon is reserved. Both Keepers can independently claim one chest.
 Legacy accounts synchronize contributions through their existing cloud-save
 contract; canonical accounts use database-owned state. Cross-authority pairings
-are refused. Offline contributions synchronize on reconnect; conflicts never
+are refused, including acceptance after only one account has migrated. During
+an account-by-account migration, existing accepted pair memberships and already
+credited points are retained, but fresh shared contributions pause until both
+accounts use the same authority. No legacy cloud total can mint new server-owned
+rewards. Offline contributions synchronize on reconnect; conflicts never
 silently replace another device's save.
 
 The active event uses a 58dp-high glass reservoir with engraved metalwork,
@@ -330,7 +359,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 7167c3b1814062a7 -->
+<!-- reference-source-fingerprint: 5ec573951f22cf52 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -1214,3 +1243,13 @@ completed, waiting or running membership. The server remains the final authority
 Trade completion reveals wait for the trade sheet to close and respect reduced
 motion. Trade contents, settlement, reward odds and duplicate protection do not
 change.
+
+
+### Account startup candidate (15 September 2026, not released)
+
+Normal configured startup resolves account authority before loading gameplay.
+Legacy source selection preserves both compared copies and any pending Altar
+request. It changes no event goals, schedules, rewards, chances or inventory
+rules. A server-owned account opens its server session instead of restoring a
+legacy save. Source selection does not grant rewards. Production activation
+remains subject to the staging and complete gameplay routing gates.

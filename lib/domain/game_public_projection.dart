@@ -238,6 +238,7 @@ abstract final class GamePublicProjection {
                 'endsAt': run.endsAt.toUtc().toIso8601String(),
                 'status': run.status.name,
                 'participantCount': run.participantCount,
+                'retraining': run.retraining,
                 'specialEventId': run.specialEventId,
                 'specialEventKey': run.specialEventKey,
                 // A running adventure's preselected reward is not a UI hint.
@@ -422,6 +423,8 @@ abstract final class GamePublicProjection {
         'evolutionPath',
       ]),
       'location': location,
+      'expertiseMaxed': dragon.expertiseMaxed,
+      'dragonSpark': dragon.dragonSparkKnown ? dragon.dragonSpark : null,
       'lawAxis':
           known.order || dragon.lawAxisKnown ? dragon.lawAxis.name : null,
       'moralAxis':

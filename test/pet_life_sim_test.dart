@@ -83,106 +83,102 @@ void main() {
     expect(dragon.evolutionPath, 'arcana');
 
     dragon.addTraining(TrainingFocus.might, 500);
-    expect(dragon.trainingFor(TrainingFocus.might), maxDragonExpertise);
+    expect(dragon.trainingFor(TrainingFocus.might), 580);
     expect(dragon.activeEvolutionPath, 'arcana');
   });
 
-  test('pre-Ascension expertise is capped at 300 including migrated saves', () {
+  test('all stages share one budget and specialization has no separate cap',
+      () {
+    for (final stage in DragonStage.values) {
+      final dragon = Pet(stage: stage, dragonSpark: 0);
+      dragon.addTraining(TrainingFocus.arcana, 5000);
+      dragon.addTraining(TrainingFocus.might, 200);
+      expect(dragon.trainingFor(TrainingFocus.arcana), 950);
+      expect(dragon.trainingFor(TrainingFocus.might), 0);
+      expect(dragon.expertiseMaxed, isTrue);
+    }
+  });
+
+  test('Mastery adds 50 to each type and retains its form after retraining',
+      () {
+    for (final sinister in [false, true]) {
+      final dragon = Pet(
+          stage: DragonStage.wyrmling,
+          xp: Pet.ascendedXp,
+          sinister: sinister,
+          dragonSpark: 0,
+          training: const {'might': 100, 'arcana': 100, 'spirit': 100});
+      final before = sinister ? 1100 : 950;
+      expect(dragon.maximumTotalExpertise, before);
+      dragon.evolve(start);
+      expect(dragon.isMastery, isTrue);
+      expect(dragon.maximumTotalExpertise, before + 50);
+      expect(dragon.applyExpertiseCosts({TrainingFocus.spirit: -100}), isTrue);
+      dragon.addTraining(TrainingFocus.might, 5000);
+      expect(dragon.totalTraining, before + 50);
+      expect(dragon.trainingFor(TrainingFocus.spirit), 0);
+      expect(dragon.isMastery, isTrue);
+      expect(Pet.fromJson(dragon.toJson()).isMastery, isTrue);
+    }
+  });
+
+  test('migration preserves earned over-budget points but never adds more', () {
+    for (final sinister in [false, true]) {
+      final old = sinister ? 400 : 350;
+      final dragon = Pet.fromJson({
+        'id': 'old',
+        'hatchSeed': 42,
+        'stage': 'ascended',
+        'evolutionPath': 'mastery',
+        'sinister': sinister,
+        'dragonSpark': 0,
+        'training': {'might': old, 'arcana': old, 'spirit': old}
+      });
+      expect(dragon.totalTraining, old * 3);
+      dragon.addTraining(TrainingFocus.might, 100);
+      expect(dragon.totalTraining, old * 3);
+      expect(dragon.expertiseMaxed, isTrue);
+      expect(dragon.applyExpertiseCosts({TrainingFocus.arcana: -100}), isTrue);
+      dragon.addTraining(TrainingFocus.spirit, 200);
+      expect(dragon.totalTraining, sinister ? 1150 : 1000);
+    }
+  });
+
+  test('negative input cannot reduce training and invalid costs change nothing',
+      () {
     final dragon = Pet(
-      training: const {'might': 999, 'arcana': 300, 'spirit': -5},
-    );
-    expect(dragon.trainingFor(TrainingFocus.might), maxDragonExpertise);
-    expect(dragon.trainingFor(TrainingFocus.arcana), maxDragonExpertise);
-    expect(dragon.trainingFor(TrainingFocus.spirit), 0);
-
-    dragon
-      ..addTraining(TrainingFocus.might, 100)
-      ..addTraining(TrainingFocus.spirit, 500);
-    expect(dragon.trainingFor(TrainingFocus.might), maxDragonExpertise);
-    expect(dragon.trainingFor(TrainingFocus.spirit), maxDragonExpertise);
-
-    final restored = Pet.fromJson({
-      'training': {'might': 301, 'arcana': 900, 'spirit': 450},
-    });
+        dragonSpark: 0,
+        training: const {'might': 12, 'arcana': -5, 'spirit': 1});
+    dragon.addTraining(TrainingFocus.might, -50);
+    expect(dragon.trainingFor(TrainingFocus.might), 12);
+    expect(dragon.trainingFor(TrainingFocus.arcana), 0);
     expect(
-      TrainingFocus.values.map(restored.trainingFor),
-      everyElement(maxDragonExpertise),
-    );
+        dragon.applyExpertiseCosts(
+            {TrainingFocus.might: -1, TrainingFocus.spirit: -2}),
+        isFalse);
+    expect(dragon.training, {'might': 12, 'arcana': 0, 'spirit': 1});
   });
 
-  test('Ascension paths raise only their intended expertise maximum', () {
-    final might = Pet(
-      stage: DragonStage.ascended,
-      evolutionPath: 'might',
-      training: const {'might': 999, 'arcana': 999, 'spirit': 999},
-    );
-    expect(might.trainingFor(TrainingFocus.might), 350);
-    expect(might.trainingFor(TrainingFocus.arcana), 300);
-    expect(might.trainingFor(TrainingFocus.spirit), 300);
-
-    final arcana = Pet(
-      stage: DragonStage.ascended,
-      evolutionPath: 'arcana',
-      training: const {'might': 999, 'arcana': 999, 'spirit': 999},
-    );
-    expect(arcana.trainingFor(TrainingFocus.might), 300);
-    expect(arcana.trainingFor(TrainingFocus.arcana), 350);
-    expect(arcana.trainingFor(TrainingFocus.spirit), 300);
-
-    final spirit = Pet(
-      stage: DragonStage.ascended,
-      evolutionPath: 'spirit',
-      training: const {'might': 999, 'arcana': 999, 'spirit': 999},
-    );
-    expect(spirit.trainingFor(TrainingFocus.might), 300);
-    expect(spirit.trainingFor(TrainingFocus.arcana), 300);
-    expect(spirit.trainingFor(TrainingFocus.spirit), 350);
-
-    final mastery = Pet(
-      stage: DragonStage.ascended,
-      evolutionPath: 'mastery',
-      training: const {'might': 999, 'arcana': 999, 'spirit': 999},
-    );
-    expect(
-      TrainingFocus.values.map(mastery.trainingFor),
-      everyElement(350),
-    );
-    expect(mastery.maximumTotalExpertise, 1050);
-  });
-
-  test('Infernal dragons have 350 base and 400 Ascension maximums', () {
-    final hatchling = Pet(
-      sinister: true,
-      stage: DragonStage.hatchling,
-      training: const {'might': 999, 'arcana': 999, 'spirit': 999},
-    );
-    expect(
-      TrainingFocus.values.map(hatchling.trainingFor),
-      everyElement(350),
-    );
-
-    final specialist = Pet(
-      sinister: true,
-      stage: DragonStage.ascended,
-      evolutionPath: 'spirit',
-      training: const {'might': 999, 'arcana': 999, 'spirit': 999},
-    );
-    expect(specialist.trainingFor(TrainingFocus.might), 350);
-    expect(specialist.trainingFor(TrainingFocus.arcana), 350);
-    expect(specialist.trainingFor(TrainingFocus.spirit), 400);
-    expect(specialist.maximumTotalExpertise, 1100);
-
-    final mastery = Pet(
-      sinister: true,
-      stage: DragonStage.ascended,
-      evolutionPath: 'mastery',
-      training: const {'might': 999, 'arcana': 999, 'spirit': 999},
-    );
-    expect(
-      TrainingFocus.values.map(mastery.trainingFor),
-      everyElement(400),
-    );
-    expect(mastery.maximumTotalExpertise, 1200);
+  test('Dragon Spark is stable, inclusive 0 to 50, and survives evolution', () {
+    final seen = <int>{};
+    for (var seed = 0; seed < 1000; seed++) {
+      final dragon = Pet(hatchSeed: seed);
+      final rolled = dragon.dragonSpark;
+      seen.add(rolled);
+      expect(rolled, inInclusiveRange(0, 50));
+      expect(Pet.fromJson(dragon.toJson()).dragonSpark, rolled);
+      final legacy = dragon.toJson()..remove('dragonSpark');
+      expect(Pet.fromJson(legacy).dragonSpark, rolled);
+      dragon.stage = DragonStage.wyrmling;
+      dragon.xp = Pet.ascendedXp;
+      for (final focus in TrainingFocus.values) {
+        dragon.addTraining(focus, 100);
+      }
+      dragon.evolve(start);
+      expect(dragon.dragonSpark, rolled);
+      expect(dragon.maximumTotalExpertise, 1000 + rolled);
+    }
+    expect(seen, Set<int>.from(List.generate(51, (i) => i)));
   });
 
   test('equal expertises unlock the secret Mastery form', () {

@@ -598,6 +598,12 @@ class CanonicalDragonView implements TrialDragon {
         !_text(_data['currentRoomId'])) {
       _invalid();
     }
+    if ((_data['dragonSpark'] != null &&
+            (!_count(_data['dragonSpark']) ||
+                _data['dragonSpark'] > maximumDragonSpark)) ||
+        (_data['expertiseMaxed'] != null && _data['expertiseMaxed'] is! bool)) {
+      _invalid();
+    }
     training = CanonicalShopView._counts(_data['training']);
     highlighted = CanonicalShopView._ids(_data['highlightedExpertises']);
     if (training.keys
@@ -605,7 +611,7 @@ class CanonicalDragonView implements TrialDragon {
             .difference(TrainingFocus.values.map((f) => f.name).toSet())
             .isNotEmpty ||
         training.length != 3 ||
-        training.values.any((v) => v > 400) ||
+        training.values.fold(0, (a, b) => a + b) > largestExpertiseBudget ||
         highlighted
             .any((id) => !TrainingFocus.values.any((f) => f.name == id))) {
       _invalid();
@@ -671,11 +677,12 @@ class CanonicalDragonView implements TrialDragon {
   String? get lawAxis => _data['lawAxis'] as String?;
   String? get moralAxis => _data['moralAxis'] as String?;
   String? get adventureId => _data['activeAdventureId'] as String?;
-  int maximum(TrainingFocus focus) => dragonExpertiseMaximum(
+  bool get expertiseMaxed => _data['expertiseMaxed'] == true;
+  int? get dragonSpark => _data['dragonSpark'] as int?;
+  int maximum(TrainingFocus focus) => dragonExpertiseBudget(
       stage: stage,
       sinister: sinister,
-      evolutionPath: _data['evolutionPath'] as String?,
-      focus: focus);
+      evolutionPath: _data['evolutionPath'] as String?);
   int get schoolStarTotal => schoolStars.values.fold(0, (a, b) => a + b);
   bool get schoolPassing =>
       dragonSchoolLessonIds.every((id) => (schoolAttempts[id] ?? 0) > 0) &&
@@ -704,6 +711,7 @@ class CanonicalDragonView implements TrialDragon {
         MysticRelic.moralPrism => moralAxis != null,
         MysticRelic.orderCompass => lawAxis != null,
         MysticRelic.soulMirror => personality != null,
+        MysticRelic.sparkAstrolabe => dragonSpark != null,
         _ => false,
       };
 }
@@ -890,7 +898,7 @@ class CanonicalAdventuresView {
 
 class CanonicalAdventureRun {
   CanonicalAdventureRun._parse(Map<String, dynamic> data) {
-    if (!_keys(data, const [
+    if (!_keys({...data}..remove('retraining'), const [
           'id',
           'adventureId',
           'dragonId',
@@ -927,11 +935,16 @@ class CanonicalAdventureRun {
       _invalid();
     }
     status = AdventureRunStatus.values.byName(data['status'] as String);
+    if (data['retraining'] != null && data['retraining'] is! bool) {
+      _invalid();
+    }
+    retraining = data['retraining'] == true;
     revealedRewardId = data['rewardTier'] as String?;
   }
   late final String id, adventureId, dragonId;
   late final DateTime startedAt, endsAt;
   late final AdventureRunStatus status;
+  late final bool retraining;
   late final String? revealedRewardId;
   AdventureDefinition? get definition => AdventureCatalog.byId[adventureId];
   ChestTier? get revealedReward =>

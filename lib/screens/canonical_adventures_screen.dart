@@ -241,6 +241,10 @@ class _AdventuresState extends State<_Adventures> {
                             Text(s.adventureTitle(definition),
                                 style: Theme.of(context).textTheme.titleMedium),
                             Text(s.adventureDescription(definition)),
+                            Text(definition.expertiseRewards.entries
+                                .map((e) =>
+                                    '${e.value >= 0 ? '+' : ''}${e.value} ${_focusLabel(s, e.key)}')
+                                .join(' / ')),
                             const SizedBox(height: 8),
                             Text(
                                 '${s.adventureDuration(definition.duration)} · ${definition.xp} XP'),
@@ -365,7 +369,11 @@ Future<void> _chooseDragon(
                                             key: Key(
                                                 'canonical-adventure-dragon-${dragon.id}'),
                                             onTap: enabled &&
-                                                    dragon.adventureId == null
+                                                    dragon.adventureId ==
+                                                        null &&
+                                                    definition
+                                                        .canAffordExpertiseCost(
+                                                            dragon.trainingFor)
                                                 ? () => update(
                                                     () => selected = dragon.id)
                                                 : null,
@@ -447,6 +455,19 @@ Future<void> _chooseDragon(
                                                                     .info_outline_rounded,
                                                                 size: 19)),
                                                       ]),
+                                                      if (!definition
+                                                          .canAffordExpertiseCost(
+                                                              dragon
+                                                                  .trainingFor))
+                                                        Text(
+                                                            s.pick(
+                                                                'Not enough expertise for this path.',
+                                                                'Niet genoeg expertise voor dit pad.'),
+                                                            style: TextStyle(
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .colorScheme
+                                                                    .error)),
                                                       Text(dragon.adventureId != null
                                                           ? s.pick(
                                                               'On adventure',
@@ -476,7 +497,9 @@ Future<void> _chooseDragon(
                           action: enabled &&
                                   available &&
                                   choice?.owned == true &&
-                                  choice!.adventureId == null
+                                  choice!.adventureId == null &&
+                                  definition.canAffordExpertiseCost(
+                                      choice.trainingFor)
                               ? () async {
                                   await actions.startAdventure(
                                       definition.id, choice.id);
@@ -505,6 +528,10 @@ Future<void> showCanonicalExpertises(
                           child:
                               Column(mainAxisSize: MainAxisSize.min, children: [
                             Text(canonicalDragonName(s, dragon)),
+                            DragonExpertiseStatus(
+                                dragonId: id,
+                                maxed: dragon.expertiseMaxed,
+                                spark: dragon.dragonSpark),
                             for (final focus in TrainingFocus.values)
                               Padding(
                                   padding:

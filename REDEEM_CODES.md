@@ -1,5 +1,14 @@
 # DragonHaven Redeem Codes
 
+## Expertise candidate compatibility ? 20 September 2026
+
+No code, eligibility or direct reward changes. Existing chest rewards can later
+yield the Spark Astrolabe under chest catalog v4; no code grants it directly.
+Event activation, end-event behavior and rank cutoffs are unchanged. Dragon Spark
+is fixed by each saved hatch seed; code use does not reroll it. The shared
+expertise budget is described in RANDOM_REWARDS_AND_ODDS.md.
+
+
 v0.05.32 replaces the points panel with an active-occurrence-only glass meter.
 Retired previews no longer remain on screen; saved rewards, code catalog,
 point values, chest contents and random odds are unchanged.
@@ -196,7 +205,7 @@ Last verified: 10 September 2026
 
 Ruleset: v0.05.29 / 10079 published; production remains at schema 65; current staging verification is recorded above. The next candidate adds Sunwake long-run validation and Academy input authority without changing this code catalog or its rewards. Canonical redemptions wait while a lesson is reserved.
 
-<!-- reference-source-fingerprint: 9a8b459aa0832c04 -->
+<!-- reference-source-fingerprint: adbbf3d354c0f8d8 -->
 
 The server command identity allowlist is shared with the durable client journal. A retried redemption retains its original request identity; receipt recovery during a mutation pause does not repeat a grant. This changes no code value, eligibility or catalog reward below.
 

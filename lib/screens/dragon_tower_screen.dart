@@ -1,3 +1,4 @@
+import '../widgets/expertise_score_badge.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -1362,6 +1363,11 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                         const TextStyle(fontSize: 11, color: AppColors.muted),
                   ),
                   const SizedBox(height: 3),
+                  DragonExpertiseStatus(
+                      dragonId: dragon.id,
+                      maxed: dragon.expertiseMaxed,
+                      spark:
+                          dragon.dragonSparkKnown ? dragon.dragonSpark : null),
                   for (final focus in TrainingFocus.values)
                     DragonExpertiseRow(
                       dragon: dragon,

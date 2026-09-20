@@ -4,6 +4,7 @@ import 'package:dragon_haven/domain/game_import_preparation.dart';
 import 'package:dragon_haven/domain/game_asset_snapshot.dart';
 import 'package:dragon_haven/domain/server_entropy.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
+import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/egg_altar.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/shop_item.dart';
@@ -58,6 +59,35 @@ PreparedGameImport prepare(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test(
+      'older saves gain stable hidden Spark without changing promised adventure rewards',
+      () {
+    final state = source();
+    state['pet'].remove('dragonSpark');
+    state['pet'].remove('dragonSparkKnown');
+    state['pet']['activeAdventureId'] = 'old-run';
+    state['adventureRuns'] = [
+      {
+        'id': 'old-run',
+        'adventureId': AdventureCatalog.mini[1].id,
+        'dragonId': state['pet']['id'],
+        'startedAt': now.toIso8601String(),
+        'endsAt': now.add(const Duration(minutes: 5)).toIso8601String(),
+        'status': 'running',
+        'rewardTier': 'wooden',
+        'participantCount': 1,
+        'specialEventId': null,
+        'specialEventKey': null,
+        'eventPointsAwarded': false,
+      }
+    ];
+    final prepared = prepare(state, altar());
+    expect(prepared.state['pet']['dragonSpark'],
+        Pet.fromJson(state['pet']).dragonSpark);
+    expect(prepared.state['pet']['dragonSparkKnown'], isFalse);
+    expect(prepared.state['adventureRuns'].single['retraining'], isFalse);
+  });
 
   Map<String, dynamic> furnishedSource() {
     final saved = source();

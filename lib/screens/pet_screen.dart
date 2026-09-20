@@ -1,3 +1,4 @@
+import '../widgets/expertise_score_badge.dart';
 import '../models/dragon_lineage.dart';
 import '../models/dragon_appearance.dart';
 import 'dart:async';
@@ -667,11 +668,14 @@ class _TrainingPanel extends StatelessWidget {
                   'Het hoogst getrainde pad legt de eindvorm vast. Activiteiten in Verkennen verhogen deze waarden.'),
               style: const TextStyle(color: AppColors.muted, height: 1.35)),
           const SizedBox(height: 14),
+          DragonExpertiseStatus(
+              dragonId: pet.id,
+              maxed: pet.expertiseMaxed,
+              spark: pet.dragonSparkKnown ? pet.dragonSpark : null),
           for (final focus in TrainingFocus.values)
             _TrainingBar(
                 focus: focus,
                 value: pet.trainingFor(focus),
-                maximum: pet.expertiseMaximum(focus),
                 leading: pet.leadingPath == focus.name),
         ]),
       ),
@@ -681,22 +685,12 @@ class _TrainingPanel extends StatelessWidget {
 
 class _TrainingBar extends StatelessWidget {
   const _TrainingBar(
-      {required this.focus,
-      required this.value,
-      required this.maximum,
-      required this.leading});
+      {required this.focus, required this.value, required this.leading});
   final TrainingFocus focus;
   final int value;
-  final int maximum;
   final bool leading;
   @override
   Widget build(BuildContext context) {
-    final color = switch (focus) {
-      TrainingFocus.might => const Color(0xFFD96852),
-      TrainingFocus.arcana =>
-        AppColors.eventColor(context, const Color(0xFF7A63D1)),
-      TrainingFocus.spirit => const Color(0xFF3FA37C)
-    };
     final name = focus.name[0].toUpperCase() + focus.name.substring(1);
     return Padding(
         padding: const EdgeInsets.only(bottom: 12),
@@ -713,13 +707,6 @@ class _TrainingBar extends StatelessWidget {
             const Spacer(),
             Text('$value', style: const TextStyle(fontWeight: FontWeight.w900))
           ]),
-          const SizedBox(height: 6),
-          LinearProgressIndicator(
-              value: (value / maximum).clamp(0, 1),
-              minHeight: 8,
-              color: color,
-              backgroundColor: AppColors.eventColor(context, AppColors.mist),
-              borderRadius: BorderRadius.circular(99))
         ]));
   }
 }

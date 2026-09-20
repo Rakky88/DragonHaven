@@ -1,6 +1,22 @@
 # DragonHaven audit
 
-## Release candidate v0.05.35 / 10085 - lossless APK reduction
+## Shared expertise candidate ? 20 September 2026
+
+Implemented shared budgets (950 ordinary / 1100 Sinister, +50 Mastery), private
+stable Dragon Spark 0?50, full-dragon MAX, rare consumable Spark Astrolabe and
+half-catalog Mini/Short/Long retraining. Costs are checked before starting and
+paid before gains; legacy runs keep original rewards and existing over-budget
+points are preserved. App and trusted evaluator share the same rules. Public DTOs
+hide the Spark until revealed and retain larger specialized scores. Migration
+85 widens social/group/partner transport and updates the versioned chest catalog.
+The new artwork is reused in a glow/scale reveal; all eight app languages are
+covered. Exact trial assistance is documented in TRIAL_EXPERTISE.md.
+
+Verification is in progress; no new release or production schema application
+is claimed here. Existing server-economy startup/cutover work remains separate.
+
+
+## Current published release v0.05.35 / 10085 - lossless APK reduction
 
 The owner scoped this release to APK reduction and its related audit items.
 845 runtime images now use smaller encodings with identical dimensions, source
@@ -32,6 +48,11 @@ database mutation or authority cutover is part of this release.
 
 See `APP_SIZE_AUDIT.md`, `tool/asset_manifests/lossless_v35.json` and the final
 `RELEASE_V0.05.35_VERIFICATION.md` for the signed artifact and publication evidence.
+
+Publication is verified: the signed universal APK is 572826231 bytes, down
+55433883 bytes (8.8234%). GitHub latest is v0.05.35, the permanent download returns
+HTTP 200, and remote size/SHA-256 match the local artifact. All 145 audio resources
+are byte-identical to v0.05.34 and the three ABI libraries are retained.
 
 ## Previous published release v0.05.34 / 10084
 

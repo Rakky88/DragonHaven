@@ -1,5 +1,16 @@
 # DragonHaven Random Rewards and Odds
 
+Account-scoped legacy persistence now preserves egg/reward metadata and pending
+Altar request IDs during account retirement. Final migration still requires a
+resolved journal. The reviewed event targets (1,000/day; Valentine 2,000/day),
+chest/egg contents, earning rates, random odds and pity rules are unchanged.
+
+The pending server-economy handoff now drains Altar operations and preserves
+unresolved request IDs before freezing a legacy save. Late responses are bound
+to the original account/session, including during retirement. The reviewed egg
+eligibility, return rewards, pity counter, crafting costs, chest pools and event
+rules below are unchanged. This does not enable the production cutover.
+
 v0.05.35 changes only lossless artwork encodings and asset-path resolution.
 Shared model source fingerprints may change for those paths; no reward amount,
 pool, probability, pity rule, duplicate rule or server authority is changed.
@@ -201,7 +212,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: d9c66b4c4f460f8b -->
+<!-- reference-source-fingerprint: 7708701926fc37ec -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -368,11 +379,13 @@ When a relic drop succeeds, selection uses this weighted pool:
 | Emberheart Brooch | 1 | Double earned Might in Adventures and Trials for its wearer |
 | Moonweave Brooch | 1 | Double earned Arcana in Adventures and Trials for its wearer |
 | Soulbloom Brooch | 1 | Double earned Spirit in Adventures and Trials for its wearer |
+| Spark Astrolabe | 1 | Consume to reveal one dragon's permanent hidden Dragon Spark |
 
-With no brooch acquired, each ordinary relic has `10/64` (15.625%) and each
-brooch `1/64` (1.5625%) of a successful relic drop. Each brooch is therefore ten
-times rarer than one ordinary relic. A previously acquired brooch is removed
-permanently; with `b` still eligible brooches the denominator is `60 + b`.
+With no brooch acquired, each ordinary relic has `10/65` (15.3846%) and each
+brooch or Spark Astrolabe `1/65` (1.53846%) of a successful relic drop. Each
+rare item is therefore ten times rarer than one ordinary relic. An acquired
+brooch is removed permanently; the consumable Astrolabe stays eligible. With
+`b` still eligible brooches the denominator is `61 + b`.
 The overall chest relic-drop chance above remains unchanged. The same weighted
 pool applies to the independent 1% S+ Trial relic roll.
 
@@ -380,13 +393,47 @@ All four brooches are unique, permanent, untradeable, and available only from
 eligible ordinary chests or S+ Trials. They cannot be bought or crafted. A dragon
 can equip only one of the four: replacing it leaves the previous brooch owned
 and unequipped. Each brooch can be worn by only one dragon at a time. Expertise
-bonuses apply once at claim, within that dragon's Expertise cap, and do not
+bonuses apply once at claim, within that dragon's remaining shared Expertise budget, and do not
 multiply scores, chest odds, School gains or the other two Expertises. Seasonal
 Trials allocate their ordinary balanced reward first, then double only the
 matching Expertise actually earned. Twinstar keeps its existing all-XP effect.
 
-Other gameplay-dropped relics remain tradeable. A Chronoshard's permanent
+The Spark Astrolabe is untradeable, cannot be bought or crafted, and drops only
+from these chests or S+ Trials. Repeated use on an already revealed dragon
+consumes nothing. Other gameplay-dropped relics remain tradeable. A Chronoshard's permanent
 reduction is uniformly selected from whole percentages 10–90: `1/81` each.
+
+### Shared expertise and Dragon Spark (20 September 2026 candidate)
+
+Every dragon has one total training budget: ordinary 950, Sinister 1100,
+plus 50 after Mastery evolution, plus its permanent **Dragon Spark** (Dutch:
+**Drakenvonk**), uniformly 0 through 50 inclusive (1/51 per value). The private
+value is derived once from the persisted hatch seed using a separate fixed
+salt and stored explicitly on save. Existing eggs/dragons keep that same value
+through hatch, evolution, restore, trade and import. This uses no chest reward
+random draw and never rerolls on Astrolabe use. Public snapshots expose only
+null until revealed; the UI offers no undiscovered bonus hint or capacity bar.
+
+Individual expertise scores have no independent training ceiling. Gains stop
+when the shared total is full; scores cannot become negative. MAX is displayed
+once for the dragon. Existing earned over-budget totals are preserved without
+further growth until retraining creates capacity. Mastery never reverts when
+its initially balanced expertise is later redistributed.
+
+Exactly 150/300 Mini, 150/300 Short and 100/200 Long adventures retrain. Their
+original focus earns its original reward plus the transferred amount; a different
+expertise pays first: Mini 1 point, Short 3?5, Long 15?25 (fixed per adventure,
+not a random roll). Both transfer directions exist for each target expertise.
+Starting requires enough of the paying expertise; claim applies negatives before
+positive rewards and equipment bonuses. Original net rewards, XP, duration and
+chest odds remain unchanged. Runs started before this feature retain their
+original positive-only rewards. Group and Special rewards are unchanged.
+
+Trial assistance retains its existing 300/400-point gameplay bounds, separately
+from training capacity. See [the per-trial explanation](TRIAL_EXPERTISE.md).
+The forward database candidate is `202609200085_shared_expertise_budget.sql`;
+it changes transport/projection ceilings and chest catalog v4 without activating
+any account or altering a balance.
 
 ### 1.4 Collectible emotes from chests
 
@@ -1260,3 +1307,13 @@ completed, waiting or running membership. The server remains the final authority
 Trade completion reveals wait for the trade sheet to close and respect reduced
 motion. Trade contents, settlement, reward odds and duplicate protection do not
 change.
+
+
+### Account startup candidate (15 September 2026, not released)
+
+Normal configured startup resolves account authority before loading gameplay.
+Legacy source selection preserves both compared copies and any pending Altar
+request. It changes no event goals, schedules, rewards, chances or inventory
+rules. A server-owned account opens its server session instead of restoring a
+legacy save. Source selection does not grant rewards. Production activation
+remains subject to the staging and complete gameplay routing gates.

@@ -1951,6 +1951,9 @@ extension DragonHavenSystems on HouseholdProvider {
     if (dragon.activeAdventureId != null) {
       return AdventureStartResult.dragonBusy;
     }
+    if (!adventure.canAffordExpertiseCost(dragon.trainingFor)) {
+      return AdventureStartResult.requirementsNotMet;
+    }
     final now = _clock();
     if (adventure.seasonalSpecial) return AdventureStartResult.unavailable;
     final duration = expertiseAdjustedAdventureDuration(adventure, [dragon]);
@@ -1966,6 +1969,7 @@ extension DragonHavenSystems on HouseholdProvider {
       // cannot silently change after an app restart.
       rewardTier: adventure.knownChest ?? _rollAdventureChest(adventure.kind),
       participantCount: participantCount,
+      retraining: adventure.expertiseCost > 0,
     );
     dragon.activeAdventureId = run.id;
     adventureRuns.add(run);
@@ -2057,9 +2061,14 @@ extension DragonHavenSystems on HouseholdProvider {
       await _notifyAndSave();
       return tier;
     }
+    final expertiseRewards = run.retraining
+        ? definition.expertiseRewards
+        : {definition.focus: definition.statPoints};
+    if (!dragon.applyExpertiseCosts(expertiseRewards)) return null;
     final grantedXp = _grantDragonXp(dragon, definition.xp);
-    _grantAdventureTrialExpertise(
-        dragon, definition.focus, definition.statPoints);
+    for (final reward in expertiseRewards.entries.where((e) => e.value > 0)) {
+      _grantAdventureTrialExpertise(dragon, reward.key, reward.value);
+    }
     _evolveReadyDragons(_clock());
     dragon.activeAdventureId = null;
     final event = specialAdventureEventById(run.specialEventId);
