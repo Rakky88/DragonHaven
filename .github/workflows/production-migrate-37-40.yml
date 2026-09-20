@@ -1,4 +1,4 @@
-name: Production inventory snapshot 49
+name: Bounded production schema migration
 
 on:
   workflow_dispatch:
@@ -12,6 +12,12 @@ on:
         required: true
         type: string
 
+      scope:
+        description: Exact bounded migration package
+        type: choice
+        default: snapshot49
+        options: [snapshot49, release39]
+
 permissions:
   contents: read
   actions: read
@@ -22,6 +28,7 @@ concurrency:
 
 jobs:
   migrate-production:
+    if: inputs.scope != 'release39'
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 15
@@ -73,4 +80,63 @@ jobs:
         with:
           name: DragonHaven-inventory-snapshot-production-49
           path: production-migration/
+          retention-days: 30
+
+  release39-schema:
+    if: inputs.scope == 'release39'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Require bounded scope and matching staging evidence
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ENVIRONMENT: production
+          CONFIRMATION: ${{ inputs.confirmation }}
+          STAGING_RUN_ID: ${{ inputs.staging_run_id }}
+        run: |
+          if ($env:RELEASE_ENVIRONMENT -notin @('staging','production') -or
+              $env:CONFIRMATION -cne "APPLY_$($env:RELEASE_ENVIRONMENT.ToUpperInvariant())_RELEASE39_SCHEMA_84_86") {
+            throw 'The exact release-39 schema scope is missing.'
+          }
+          if ($env:RELEASE_ENVIRONMENT -ceq 'production') {
+            if ($env:STAGING_RUN_ID -notmatch '^\d+$') { throw 'Staging evidence is required.' }
+            $run = gh api "repos/Rakky88/DragonHaven/actions/runs/$env:STAGING_RUN_ID" | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0 -or $run.conclusion -cne 'success' -or
+                $run.path -cne '.github/workflows/staging-economy-contract-drill.yml' -or
+                $run.head_repository.full_name -cne 'Rakky88/DragonHaven') {
+              throw 'Successful staging evidence is required.'
+            }
+            git fetch --depth=1 origin $run.head_sha
+            if ($LASTEXITCODE -ne 0) { throw 'Staging source could not be resolved.' }
+            git diff --exit-code $run.head_sha -- supabase/migrations tool/release39_schema_apply.ps1 tool/release39_schema_contract.py tool/shared_expertise_contract.sql tool/endless_chime_contract.sql tool/canonical_event_points_contract.sql tool/release_server_preflight.ps1 tool/lib/public_auth_health.ps1 lib/config/online_config.dart .github/workflows/staging-economy-contract-drill.yml
+            if ($LASTEXITCODE -ne 0) { throw 'Production server content differs from tested staging.' }
+            gh run download $env:STAGING_RUN_ID --name release39-schema-staging --dir staging-evidence
+            if ($LASTEXITCODE -ne 0) { throw 'The staging apply evidence is missing.' }
+            $evidence = Get-Content staging-evidence/after.json -Raw | ConvertFrom-Json
+            if ($evidence.environment -cne 'staging' -or $evidence.migrationCount -ne 86 -or
+                -not $evidence.authorityUnchanged -or -not $evidence.syntheticChangesRolledBack) {
+              throw 'The staging schema/contract evidence is incomplete.'
+            }
+          }
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.116.0
+      - name: Rehearse, apply only migrations 84-86, and verify
+        shell: pwsh
+        env:
+          RELEASE_ENVIRONMENT: production
+          RELEASE_PROJECT_REF: tnzathhutuwmohmjfrlo
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          ./tool/release39_schema_apply.ps1 -Confirmation $env:CONFIRMATION
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: release39-schema-production
+          path: release39-schema/
           retention-days: 30
