@@ -43,7 +43,18 @@ No server worker deployment, authority switch or player migration is required.
 - Publisher WhatIf passed: no existing v0.05.41 release or asset. All 70 public
   release-note files passed the private redeem-code content check.
 
-## Publication status
+## Publication
 
-Artifact, publisher dry run and production-APK installation verified. Ready for
-authorized publication; final URLs and remote integrity evidence follow.
+Published and independently verified **2026-09-20 13:34:07 UTC**.
+
+- Public latest: **v0.05.41**; release ID 392441073; asset ID 576867524.
+- Tag resolves to `5a4a1ef9b9a0e269b89cbeeae2b4cee0d5d07067`.
+- GitHub's asset size and SHA-256 exactly match the signed APK above.
+- Release page, versioned APK and permanent latest download all return HTTP 200.
+- [Release page](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.41),
+  [versioned APK](https://github.com/Rakky88/DragonHaven/releases/download/v0.05.41/DragonHaven.apk),
+  [permanent latest APK](https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk).
+- Publisher script completed successfully without a replacement or retry.
+  Tag-triggered automation only builds an AAB; it cannot publish or replace this APK.
+- Production Auth health/settings and app health rechecked after publication at
+  **13:34:08 UTC**, all HTTP 200; clock skew 145 ms.
