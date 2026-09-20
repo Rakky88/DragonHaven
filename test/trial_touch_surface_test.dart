@@ -24,6 +24,8 @@ void main() {
             onFinished: (result) async => results.add(result))));
     await tester.tap(find.byKey(const Key('start-seasonal-trial')));
     await tester.pump();
+    expect(find.text('TIME'), findsNothing);
+    expect(find.text('Midnight Chime'), findsOneWidget);
     Offset aboveLane(int lane) =>
         Offset(tester.getCenter(find.byKey(Key('midnight-chime-$lane'))).dx, 8);
     await tester.tapAt(aboveLane(0));

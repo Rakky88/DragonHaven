@@ -13,6 +13,7 @@ release/*.apk
 android/.gradle/
 android/local.properties
 android/key.properties
+android/.kotlin/
 *.jks
 *.keystore
 .idea/

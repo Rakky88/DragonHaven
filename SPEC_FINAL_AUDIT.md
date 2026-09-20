@@ -11,9 +11,21 @@ Its finite checkpoint survives long runs without storing the whole input log.
 New Year lanes, Birthday taps and Valentine swipes extend across the screen.
 Migration 84 preserves partner authority boundaries, 85 supports expertise and
 the rare reveal relic, and 86 extends only New Year validation/lease renewal.
-All account authority flags remain off. Release validation is in progress.
+All account authority flags remain off. Migrations 84-86 are now applied in
+production: all 86 migrations match, database lint has zero errors, and Auth,
+Auth settings and application health return HTTP 200. The staged and production
+SQL contracts passed with all synthetic changes rolled back and authority
+flags unchanged. Flutter analysis, gameplay/reward tests, VM/JavaScript parity,
+worker type checking and documentation guards pass. The signed APK is version
+0.05.39 / 10089. See `RELEASE_V0.05.39_VERIFICATION.md` for exact checks and
+publication status.
 
-## Shared expertise candidate - 20 September 2026
+## Earlier shared expertise candidate - 20 September 2026 (superseded)
+
+This section records the earlier branch verification. Release 0.05.39 above
+supersedes its affordability rule and pending-deployment status: retraining
+now accepts dragons with insufficient source points, floors losses at zero,
+and awards the planned positive gain within the shared budget.
 
 Implemented shared budgets (950 ordinary / 1100 Sinister, +50 Mastery), private
 stable Dragon Spark 0-50, full-dragon MAX, rare consumable Spark Astrolabe and

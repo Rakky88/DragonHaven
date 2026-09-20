@@ -756,7 +756,7 @@ class _SeasonalHud extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: accent.withValues(alpha: .70)),
       ),
-      child: const ['birthday', 'sunwake', 'harvestmoon']
+      child: const ['birthday', 'sunwake', 'harvestmoon', 'firstlight']
               .contains(theme.soundPrefix)
           ? Column(children: [
               Row(children: [

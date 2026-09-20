@@ -1,5 +1,11 @@
 # Shared expertise budget verification
 
+Historical candidate record. Release 0.05.39 backports this feature without the
+unfinished startup/cutover and changes retraining to allow every otherwise
+eligible dragon, flooring losses at zero before the full positive gain. The
+release schema is now deployed in production. Current verification and
+publication status: `RELEASE_V0.05.39_VERIFICATION.md`.
+
 Verified on 20 September 2026 on `fix/server-economy-cutover`.
 Implementation commit: `15a7fe413ab7305c2b7219ec70876e023bdda215`.
 The only subsequent executable change is the test assertion for the latest
