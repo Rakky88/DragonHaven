@@ -40,15 +40,6 @@ on:
           - canonical-beacon-probe
           - canonical-trade-probe
 
-      release_environment:
-        description: Only used by the bounded release39-schema apply
-        type: choice
-        default: staging
-        options: [staging, production]
-      staging_run_id:
-        description: Successful release39-schema staging run on the same commit
-        type: string
-        default: ''
 
 permissions:
   contents: read
@@ -56,7 +47,7 @@ permissions:
 
 concurrency:
   # Never contaminate a capacity measurement with a restore rehearsal.
-  group: ${{ inputs.contract == 'release39-schema' && format('dragonhaven-{0}-migrations', inputs.release_environment) || inputs.contract == 'load-observer' && 'dragonhaven-staging-observer' || 'dragonhaven-staging-load' }}
+  group: ${{ inputs.contract == 'load-observer' && 'dragonhaven-staging-observer' || 'dragonhaven-staging-load' }}
   cancel-in-progress: false
 
 jobs:
@@ -817,74 +808,26 @@ jobs:
   release39-schema:
     if: inputs.contract == 'release39-schema'
     runs-on: ubuntu-latest
-    environment: ${{ inputs.release_environment }}
+    environment: staging
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
-      - name: Require bounded scope and matching staging evidence
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_ENVIRONMENT: ${{ inputs.release_environment }}
-          CONFIRMATION: ${{ inputs.confirmation }}
-          STAGING_RUN_ID: ${{ inputs.staging_run_id }}
-        run: |
-          if ($env:RELEASE_ENVIRONMENT -notin @('staging','production') -or
-              $env:CONFIRMATION -cne "APPLY_$($env:RELEASE_ENVIRONMENT.ToUpperInvariant())_RELEASE39_SCHEMA_84_86") {
-            throw 'The exact release-39 schema scope is missing.'
-          }
-          if ($env:RELEASE_ENVIRONMENT -ceq 'production') {
-            if ($env:STAGING_RUN_ID -notmatch '^\d+$') { throw 'Staging evidence is required.' }
-            $run = gh api "repos/Rakky88/DragonHaven/actions/runs/$env:STAGING_RUN_ID" | ConvertFrom-Json
-            if ($LASTEXITCODE -ne 0 -or $run.conclusion -cne 'success' -or
-                $run.head_sha -cne $env:GITHUB_SHA -or
-                $run.path -cne '.github/workflows/staging-economy-contract-drill.yml' -or
-                $run.head_repository.full_name -cne 'Rakky88/DragonHaven') {
-              throw 'Staging must pass on exactly this release commit.'
-            }
-            gh run download $env:STAGING_RUN_ID --name release39-schema-staging --dir staging-evidence
-            if ($LASTEXITCODE -ne 0) { throw 'The staging apply evidence is missing.' }
-            $evidence = Get-Content staging-evidence/after.json -Raw | ConvertFrom-Json
-            if ($evidence.environment -cne 'staging' -or $evidence.migrationCount -ne 86 -or
-                -not $evidence.authorityUnchanged -or -not $evidence.syntheticChangesRolledBack) {
-              throw 'The staging schema/contract evidence is incomplete.'
-            }
-          }
       - uses: supabase/setup-cli@v3
         with:
           version: 2.116.0
-      - name: Rehearse, apply only migrations 84-86, and verify
+      - name: Rehearse, apply only migrations 84-86, and verify staging
         shell: pwsh
         env:
-          RELEASE_ENVIRONMENT: ${{ inputs.release_environment }}
-          RELEASE_PROJECT_REF: ${{ inputs.release_environment == 'production' && 'tnzathhutuwmohmjfrlo' || 'vtmjkhzalalozpfnbvsd' }}
-          SUPABASE_ACCESS_TOKEN: ${{ inputs.release_environment == 'production' && secrets.SUPABASE_ACCESS_TOKEN || secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ inputs.release_environment == 'production' && secrets.SUPABASE_DB_PASSWORD || secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          RELEASE_ENVIRONMENT: staging
+          RELEASE_PROJECT_REF: vtmjkhzalalozpfnbvsd
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
           STAGING_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Force release39-schema | Out-Null
-          python3 tool/release39_schema_contract.py --phase before | Tee-Object release39-schema/rehearsal.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Release-39 rehearsal failed.' }
-          supabase link --project-ref $env:RELEASE_PROJECT_REF --password $env:SUPABASE_DB_PASSWORD
-          if ($LASTEXITCODE -ne 0) { throw 'Project link failed.' }
-          supabase db lint --linked --level error --fail-on error --output-format json | Tee-Object release39-schema/lint-before.json
-          if ($LASTEXITCODE -ne 0) { throw 'Pre-apply database lint failed.' }
-          supabase db push --linked --include-all --dry-run | Tee-Object release39-schema/dry-run.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Release-39 dry run failed.' }
-          supabase db push --linked --include-all --yes | Tee-Object release39-schema/apply.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Release-39 apply failed.' }
-          python3 tool/release39_schema_contract.py --phase after | Tee-Object release39-schema/contract.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Post-apply contract failed.' }
-          $key = if ($env:RELEASE_ENVIRONMENT -ceq 'production') {
-            [regex]::Match((Get-Content lib/config/online_config.dart -Raw), 'sb_publishable_[A-Za-z0-9_-]+').Value
-          } else { $env:STAGING_PUBLISHABLE_KEY }
-          ./tool/release_server_preflight.ps1 -ExpectedProjectRef $env:RELEASE_PROJECT_REF `
-            -ExpectedUrl "https://$($env:RELEASE_PROJECT_REF).supabase.co" -ExpectedPublishableKey $key |
-            ConvertTo-Json | Tee-Object release39-schema/preflight.json
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: ./tool/release39_schema_apply.ps1 -Confirmation $env:CONFIRMATION
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: release39-schema-${{ inputs.release_environment }}
+          name: release39-schema-staging
           path: release39-schema/
           retention-days: 30

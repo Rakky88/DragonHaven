@@ -167,7 +167,7 @@ void main() {
       Map<String, dynamic>? finalResult, finalPayload;
       for (var at = 0; at <= 145000; at += 20) {
         model.advanceTo(at);
-        if (!model.ended) {
+        if (!model.ended && !(kind == TrialKind.midnightChime && at >= 130000)) {
           pilotTrial(model, at, press);
         }
         model.takeEvents();
@@ -198,7 +198,7 @@ void main() {
       expect(finalResult, isNotNull);
       expect(finalResult!['score'], model.score);
       expect(model.score, greaterThan(0));
-      if (kind == TrialKind.sunwakeSurf) {
+      if (trialDefinitions[kind]!.isEndless) {
         expect(model.score, greaterThan(20000));
       }
       expect(state['_activeGameAttempt'], isNull);

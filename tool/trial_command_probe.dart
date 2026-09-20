@@ -11,7 +11,7 @@ import 'package:dragon_haven/providers/household_provider.dart';
 import 'trial_input_pilot.dart';
 
 /// Full commands and private checkpoints must agree on the phone VM and Deno,
-/// including a Sunwake run above 20,000 points and its one final reward.
+/// including endless Sunwake/New Year runs above 20,000 and one final reward.
 Future<List<Object?>> trialCommandProbe() async {
   final results = <Object?>[];
   final now = DateTime.utc(2026, 9, 10, 12);
@@ -80,7 +80,12 @@ Future<List<Object?>> trialCommandProbe() async {
     final checkpoints = <Object?>[];
     for (var at = 0; at <= 145000; at += 20) {
       model.advanceTo(at);
-      if (!model.ended) pilotTrial(model, at, press);
+      // Finish the endless rhythm fixture by missing three notes after proving
+      // it continues past its old 78-second limit. Other pilots keep their
+      // existing natural ending conditions.
+      if (!model.ended && !(kind == TrialKind.midnightChime && at >= 130000)) {
+        pilotTrial(model, at, press);
+      }
       model.takeEvents();
       if (model.ended || at - previous >= 5000) {
         final updated = await command(
@@ -118,7 +123,7 @@ Future<List<Object?>> trialCommandProbe() async {
     if (finalResult is! Map ||
         finalResult['score'] != model.score ||
         model.score <= 0 ||
-        kind == TrialKind.sunwakeSurf && model.score <= 20000) {
+        trialDefinitions[kind]!.isEndless && model.score <= 20000) {
       throw StateError('trial_command_parity_incomplete_${kind.name}');
     }
     results.add({
