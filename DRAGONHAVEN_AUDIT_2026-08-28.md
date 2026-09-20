@@ -1,7 +1,7 @@
 # DragonHaven v0.04.06 audit — 28 augustus 2026
 
 
-## v0.06.00 UI restoration candidate - 20 September 2026
+## v0.06.00 UI restoration released - 20 September 2026
 
 The server shell restores the previous illustrated Adventure sections and
 four tabs, Trial scenery, Tower room scenes, Inventory galleries/tabs and
@@ -16,7 +16,10 @@ Coin/Gem Video Chest cards are disabled previews (200 coins / 20 gems, three
 per day per shop planned). The owner explicitly deferred activation. No ads,
 claim counters or reward grants are shipped. See REWARDED_CHESTS_SETUP.md for
 remaining external and implementation work. Release verification is recorded
-in RELEASE_V0.06.00_VERIFICATION.md; candidate status is not publication proof.
+in RELEASE_V0.06.00_VERIFICATION.md. Publication was verified at 17:08:13 UTC:
+release 392505341, asset 577204510, matching SHA-256 and 577,720,199 bytes;
+version and permanent download URLs return HTTP 200. Final production preflight
+passed with 92 migrations and healthy Auth/application endpoints.
 
 
 ## Current update: online-only account start and 16+ ? 20 September 2026
