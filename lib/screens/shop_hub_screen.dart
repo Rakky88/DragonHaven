@@ -1025,6 +1025,8 @@ class _ChestShop extends StatelessWidget {
           const SizedBox(height: 18),
           const _MusicChestShopCard(),
         ],
+        const SizedBox(height: 18),
+        _RewardedChestPreview(currency: currency),
       ],
     );
   }
@@ -1616,5 +1618,44 @@ class _CurrencyPackArt extends StatelessWidget {
       fit: BoxFit.contain,
       filterQuality: FilterQuality.medium,
     );
+  }
+}
+
+/// Unavailable until the production ad account and server-verified rewards exist.
+class _RewardedChestPreview extends StatelessWidget {
+  const _RewardedChestPreview({required this.currency});
+  final ItemCurrency currency;
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    final gems = currency == ItemCurrency.gems;
+    return Card(
+        key: Key('rewarded-chest-${currency.name}'),
+        child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(children: [
+              Image.asset(ChestTier.gold.assetPath, height: 110),
+              Text(s.pick('Video Chest', 'Reclamekist'),
+                  style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                GameIconSprite(gems ? GameIconKind.gem : GameIconKind.coin,
+                    size: 28),
+                const SizedBox(width: 6),
+                Text(gems ? '20' : '200',
+                    style: Theme.of(context).textTheme.titleLarge),
+              ]),
+              const SizedBox(height: 8),
+              Text(
+                  s.pick(
+                      'Watch a video to open a chest instantly. Up to 3 per day in this shop.',
+                      'Bekijk een reclame en open meteen een kist. Maximaal 3 per dag in deze shop.'),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                  onPressed: null,
+                  icon: const Icon(Icons.ondemand_video_rounded),
+                  label: Text(s.pick('Coming later', 'Later beschikbaar'))),
+            ])));
   }
 }

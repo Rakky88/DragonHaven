@@ -19,6 +19,7 @@ import '../services/canonical_game_session.dart';
 import '../widgets/canonical_game_controls.dart';
 import '../widgets/draconomicon_shortcut.dart';
 import '../widgets/expertise_score_badge.dart';
+import '../widgets/game_icon_sprite.dart';
 import '../widgets/shop_economy_scope.dart';
 import 'canonical_dragons_screen.dart';
 import 'draconomicon_screen.dart';
@@ -39,15 +40,15 @@ class _Adventures extends StatefulWidget {
 }
 
 class _AdventuresState extends State<_Adventures> {
-  AdventureKind _kind = AdventureKind.mini;
-  bool _completed = false;
+  int _tab = 0;
+  bool get _completed => _tab == 3;
   DateTime? _anchor;
   final _elapsed = Stopwatch();
   late final Timer _timer;
   @override
   void initState() {
     super.initState();
-    _completed = widget.showCompleted;
+    _tab = widget.showCompleted ? 3 : 0;
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
@@ -57,7 +58,7 @@ class _AdventuresState extends State<_Adventures> {
   void didUpdateWidget(covariant _Adventures oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.showCompleted != widget.showCompleted) {
-      _completed = widget.showCompleted;
+      _tab = widget.showCompleted ? 3 : 0;
     }
   }
 
@@ -82,31 +83,10 @@ class _AdventuresState extends State<_Adventures> {
     final s = AppStrings.of(context);
     final actions = CanonicalGameActions(session);
     final sigils = view.inventory.usableRelics[MysticRelic.wayfinderSigil] ?? 0;
-    return ListView(
+    final content = ListView(
         key: const Key('canonical-adventures-list'),
         padding: const EdgeInsets.all(16),
         children: [
-          Row(children: [
-            Expanded(
-                child: Text(s.pick('Adventures', 'Avonturen'),
-                    style: Theme.of(context).textTheme.titleLarge)),
-            CanonicalActionButton(
-                key: const Key('canonical-refresh-adventures'),
-                label: s.pick('Refresh', 'Vernieuwen'),
-                action: session.canAct ? actions.refresh : null),
-          ]),
-          OutlinedButton.icon(
-              key: const Key('canonical-open-trials'),
-              onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                      builder: (_) => Scaffold(
-                          appBar: AppBar(
-                              title: Text(
-                                  s.pick('Dragon Trials', 'Drakenproeven'))),
-                          body: const CanonicalTrialsScreen()))),
-              icon: const Icon(Icons.auto_awesome),
-              label: Text(s.pick('Dragon Trials', 'Drakenproeven'))),
           if (context.watch<CanonicalGroups?>() != null)
             OutlinedButton.icon(
                 key: const Key('canonical-open-groups'),
@@ -125,7 +105,7 @@ class _AdventuresState extends State<_Adventures> {
               p.activeAt(now)))
             EventProgressBar(
                 progress: progress,
-                onClaim: () => setState(() => _completed = true),
+                onClaim: () => setState(() => _tab = 3),
                 partnerAction: progress.eventId == 'valentine_two_heartlights'
                     ? EventPartnerControl(
                         eventKey: progress.key,
@@ -140,17 +120,6 @@ class _AdventuresState extends State<_Adventures> {
                           }
                         })
                     : null),
-          Wrap(spacing: 8, children: [
-            ChoiceChip(
-                label: Text(s.pick('Adventures', 'Avonturen')),
-                selected: !_completed,
-                onSelected: (_) => setState(() => _completed = false)),
-            ChoiceChip(
-                key: const Key('canonical-tab-completed'),
-                label: Text(s.pick('Completed', 'Voltooid')),
-                selected: _completed,
-                onSelected: (_) => setState(() => _completed = true)),
-          ]),
           if (_completed) ...[
             for (final progress
                 in view.adventures.eventProgress.where((p) => p.canClaim))
@@ -161,8 +130,9 @@ class _AdventuresState extends State<_Adventures> {
                       : null),
             const CanonicalSocialRewards(),
           ],
-          if (view.adventures.runs
-              .any((r) => _completed == !r.endsAt.isAfter(now))) ...[
+          if ((_tab == 2 || _tab == 3) &&
+              view.adventures.runs
+                  .any((r) => _completed == !r.endsAt.isAfter(now))) ...[
             const SizedBox(height: 16),
             Text(
                 _completed
@@ -219,96 +189,152 @@ class _AdventuresState extends State<_Adventures> {
                                       : null),
                           ]))),
           ],
-          const SizedBox(height: 20),
-          if (!_completed)
-            Wrap(spacing: 8, children: [
-              for (final kind in [
-                AdventureKind.mini,
-                AdventureKind.short,
-                AdventureKind.long,
-                AdventureKind.special
-              ])
-                ChoiceChip(
-                    label: Text(switch (kind) {
-                      AdventureKind.mini => s.pick('Mini', 'Mini'),
-                      AdventureKind.short => s.pick('Short', 'Kort'),
-                      AdventureKind.special => s.pick('Special', 'Speciaal'),
-                      _ => s.pick('Long', 'Lang'),
-                    }),
-                    selected: _kind == kind,
-                    onSelected: (_) => setState(() => _kind = kind)),
-            ]),
-          const SizedBox(height: 8),
-          for (final id
-              in _completed ? <String>[] : view.adventures.offers(_kind))
-            if (AdventureCatalog.byId[id] case final definition?)
-              Card(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(s.adventureTitle(definition),
-                                style: Theme.of(context).textTheme.titleMedium),
-                            Text(s.adventureDescription(definition)),
-                            Text(definition.expertiseRewards.entries
-                                .map((e) =>
-                                    '${e.value >= 0 ? '+' : ''}${e.value} ${_focusLabel(s, e.key)}')
-                                .join(' / ')),
-                            const SizedBox(height: 8),
-                            Text(
-                                '${s.adventureDuration(definition.duration)} · ${definition.xp} XP'),
-                            OutlinedButton(
-                                key: Key('canonical-select-adventure-$id'),
-                                onPressed: session.canAct
-                                    ? () => _chooseDragon(context, definition)
-                                    : null,
-                                child: Text(
-                                    s.pick('Choose dragon', 'Kies een draak'))),
-                            if (_kind != AdventureKind.special)
-                              Wrap(spacing: 8, runSpacing: 8, children: [
-                                CanonicalActionButton(
-                                    key: Key('canonical-dismiss-$id'),
-                                    label: s.pick('Dismiss', 'Wegsturen'),
-                                    confirmation: s.pick(
-                                        'Dismiss this adventure?',
-                                        'Dit avontuur wegsturen?'),
-                                    action: session.canAct
-                                        ? () => actions.dismissAdventure(id)
-                                        : null),
-                                if (sigils > 0)
-                                  CanonicalActionButton(
-                                      key: Key('canonical-wayfinder-$id'),
-                                      label: s.relicName(
-                                          MysticRelic.wayfinderSigil),
-                                      confirmation: s.pick(
-                                          'Use one Wayfinder Sigil to replace this adventure?',
-                                          'Eén Wayfinder Sigil gebruiken om dit avontuur te vervangen?'),
-                                      action: session.canAct
-                                          ? () => actions.useWayfinder(_kind,
-                                              replaceAdventureId: id)
-                                          : null),
+          if (_tab == 0)
+            for (final kind in [
+              AdventureKind.mini,
+              AdventureKind.short,
+              AdventureKind.long,
+              AdventureKind.special
+            ])
+              _AdventureSection(kind: kind, children: [
+                for (final id
+                    in _tab != 0 ? <String>[] : view.adventures.offers(kind))
+                  if (AdventureCatalog.byId[id] case final definition?)
+                    _AdventureOffer(
+                        definition: definition,
+                        onStart: session.canAct
+                            ? () => _chooseDragon(context, definition)
+                            : null,
+                        details: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(children: [
+                                GameIconSprite(
+                                    switch (definition.kind) {
+                                      AdventureKind.long =>
+                                        GameIconKind.adventureLong,
+                                      AdventureKind.special =>
+                                        GameIconKind.adventureSpecial,
+                                      AdventureKind.group =>
+                                        GameIconKind.adventureGroup,
+                                      _ => GameIconKind.adventureShort,
+                                    },
+                                    size: 54),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                    child: Text(s.adventureTitle(definition),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium)),
                               ]),
-                          ])))
-            else
-              Text(s.pick('Update the app to use this item.',
-                  'Werk de app bij om dit voorwerp te gebruiken.')),
-          if (view.adventures.offers(_kind).isEmpty)
-            Text(s.pick('Refresh to check for adventures.',
-                'Vernieuw om avonturen te controleren.')),
-          if (_kind != AdventureKind.special &&
-              sigils > 0 &&
-              view.adventures.offers(_kind).length < 3)
-            CanonicalActionButton(
-                key: const Key('canonical-wayfinder-add'),
-                label: s.relicName(MysticRelic.wayfinderSigil),
-                confirmation: s.pick(
-                    'Use one Wayfinder Sigil to find an adventure?',
-                    'Eén Wayfinder Sigil gebruiken om een avontuur te vinden?'),
-                action:
-                    session.canAct ? () => actions.useWayfinder(_kind) : null),
+                              Text(s.adventureDescription(definition)),
+                              Text(definition.expertiseRewards.entries
+                                  .map((e) =>
+                                      '${e.value >= 0 ? '+' : ''}${e.value} ${_focusLabel(s, e.key)}')
+                                  .join(' / ')),
+                              const SizedBox(height: 8),
+                              Text(
+                                  '${s.adventureDuration(definition.duration)} · ${definition.xp} XP'),
+                              OutlinedButton(
+                                  key: Key(
+                                      'canonical-select-adventure-details-$id'),
+                                  onPressed: session.canAct
+                                      ? () => _chooseDragon(context, definition)
+                                      : null,
+                                  child: Text(s.pick(
+                                      'Choose dragon', 'Kies een draak'))),
+                              if (kind != AdventureKind.special)
+                                Wrap(spacing: 8, runSpacing: 8, children: [
+                                  CanonicalActionButton(
+                                      key: Key('canonical-dismiss-$id'),
+                                      label: s.pick('Dismiss', 'Wegsturen'),
+                                      confirmation: s.pick(
+                                          'Dismiss this adventure?',
+                                          'Dit avontuur wegsturen?'),
+                                      action: session.canAct
+                                          ? () => actions.dismissAdventure(id)
+                                          : null),
+                                  if (sigils > 0)
+                                    CanonicalActionButton(
+                                        key: Key('canonical-wayfinder-$id'),
+                                        label: s.relicName(
+                                            MysticRelic.wayfinderSigil),
+                                        confirmation: s.pick(
+                                            'Use one Wayfinder Sigil to replace this adventure?',
+                                            'Eén Wayfinder Sigil gebruiken om dit avontuur te vervangen?'),
+                                        action: session.canAct
+                                            ? () => actions.useWayfinder(kind,
+                                                replaceAdventureId: id)
+                                            : null),
+                                ]),
+                            ]))
+                  else
+                    Text(s.pick('Update the app to use this item.',
+                        'Werk de app bij om dit voorwerp te gebruiken.')),
+                if (_tab == 0 && view.adventures.offers(kind).isEmpty)
+                  Text(s.pick('Refresh to check for adventures.',
+                      'Vernieuw om avonturen te controleren.')),
+                if (_tab == 0 &&
+                    kind != AdventureKind.special &&
+                    sigils > 0 &&
+                    view.adventures.offers(kind).length < 3)
+                  CanonicalActionButton(
+                      key: const Key('canonical-wayfinder-add'),
+                      label: s.relicName(MysticRelic.wayfinderSigil),
+                      confirmation: s.pick(
+                          'Use one Wayfinder Sigil to find an adventure?',
+                          'Eén Wayfinder Sigil gebruiken om een avontuur te vinden?'),
+                      action: session.canAct
+                          ? () => actions.useWayfinder(kind)
+                          : null),
+              ]),
         ]);
+    return Column(children: [
+      Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Row(children: [
+            const GameIconSprite(GameIconKind.adventureShort, size: 52),
+            const SizedBox(width: 10),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(s.tr('adventure'),
+                      style: Theme.of(context).textTheme.displaySmall),
+                  Text(
+                      s.pick(
+                          'Choose a path. Bring back stories, training and treasure.',
+                          'Kies een route. Breng verhalen, training en schatten mee terug.'),
+                      style: Theme.of(context).textTheme.bodySmall),
+                ])),
+            IconButton(
+                key: const Key('canonical-refresh-adventures'),
+                tooltip: s.pick('Refresh', 'Vernieuwen'),
+                icon: const Icon(Icons.refresh),
+                onPressed: session.canAct
+                    ? () => runShopAction(context, actions.refresh)
+                    : null),
+          ])),
+      DefaultTabController(
+          length: 4,
+          initialIndex: _tab,
+          key: ValueKey(_tab),
+          child: TabBar(
+              isScrollable: true,
+              tabAlignment: TabAlignment.center,
+              onTap: (value) => setState(() => _tab = value),
+              tabs: [
+                Tab(text: s.pick('Available', 'Beschikbaar')),
+                Tab(
+                    key: const Key('canonical-open-trials'),
+                    text: s.pick('Trials', 'Proeven')),
+                Tab(text: s.pick('Active', 'Actief')),
+                Tab(
+                    key: const Key('canonical-tab-completed'),
+                    text: s.pick('Completed', 'Voltooid')),
+              ])),
+      Expanded(child: _tab == 1 ? const CanonicalTrialsScreen() : content),
+    ]);
   }
 }
 
@@ -560,5 +586,122 @@ class CanonicalCodex extends StatelessWidget {
                 : DraconomiconScreen(
                     discoveredForms: view!.shop.discoveredForms,
                     prismaticForms: view.shop.prismaticForms)));
+  }
+}
+
+class _AdventureOffer extends StatelessWidget {
+  const _AdventureOffer(
+      {required this.definition, required this.details, this.onStart});
+  final AdventureDefinition definition;
+  final Widget details;
+  final VoidCallback? onStart;
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    return Card(
+        margin: const EdgeInsets.only(bottom: 7),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+            onTap: () => showModalBottomSheet<void>(
+                context: context,
+                showDragHandle: true,
+                isScrollControlled: true,
+                useSafeArea: true,
+                builder: (_) => Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                            maxHeight: MediaQuery.sizeOf(context).height * .78),
+                        child: SingleChildScrollView(child: details)))),
+            child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+                child: Row(children: [
+                  Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                        Text(s.adventureTitle(definition),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w900, fontSize: 13.5)),
+                        const SizedBox(height: 5),
+                        Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 5,
+                            children: [
+                              const GameIconSprite(GameIconKind.clock,
+                                  size: 19),
+                              Text(s.adventureDuration(definition.duration),
+                                  style: const TextStyle(fontSize: 11)),
+                              GameIconSprite(
+                                  GameIconSprite.forTrainingFocus(
+                                      definition.focus),
+                                  size: 19),
+                              Text(
+                                  definition.combinedExpertise
+                                      ? s.pick(
+                                          'All Expertises', 'Alle Expertises')
+                                      : _focusLabel(s, definition.focus),
+                                  style: const TextStyle(fontSize: 11)),
+                            ]),
+                      ])),
+                  IconButton(
+                      key: Key('canonical-select-adventure-${definition.id}'),
+                      tooltip: s.pick('Choose dragon', 'Kies een draak'),
+                      onPressed: onStart,
+                      icon: const GameIconSprite(GameIconKind.adventureStart,
+                          size: 36)),
+                ]))));
+  }
+}
+
+class _AdventureSection extends StatelessWidget {
+  const _AdventureSection({required this.kind, required this.children});
+  final AdventureKind kind;
+  final List<Widget> children;
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    final colors = switch (kind) {
+      AdventureKind.mini => const [Color(0xFFFFF4E8), Color(0xFFFFDFC4)],
+      AdventureKind.short => const [Color(0xFFFFF8DC), Color(0xFFFFEDB7)],
+      AdventureKind.long => const [Color(0xFFE9F2FF), Color(0xFFD9E6FF)],
+      _ => const [Color(0xFFF2E9FF), Color(0xFFE5D7FA)],
+    };
+    return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.fromLTRB(10, 9, 10, 2),
+        decoration: BoxDecoration(
+            gradient: LinearGradient(colors: colors),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: colors.last)),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            GameIconSprite(
+                switch (kind) {
+                  AdventureKind.mini => GameIconKind.adventureMini,
+                  AdventureKind.short => GameIconKind.adventureShort,
+                  AdventureKind.long => GameIconKind.adventureLong,
+                  _ => GameIconKind.adventureSpecial,
+                },
+                size: 46),
+            const SizedBox(width: 7),
+            Expanded(
+                child: Text(
+                    switch (kind) {
+                      AdventureKind.mini =>
+                        s.pick('Mini Adventures', 'Mini-avonturen'),
+                      AdventureKind.short =>
+                        s.pick('Short Adventures', 'Korte avonturen'),
+                      AdventureKind.long =>
+                        s.pick('Long Adventures', 'Lange avonturen'),
+                      _ => s.pick('Special Adventures', 'Speciale avonturen'),
+                    },
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w900))),
+          ]),
+          const SizedBox(height: 5),
+          ...children,
+        ]));
   }
 }

@@ -384,6 +384,14 @@ void main() {
     await tap(tester, key('canonical-select-adventure-$id'));
     await shot(tester, 'adventure-picker-nl-large');
     await tap(tester, find.widgetWithText(TextButton, 'Annuleren'));
+    await tap(
+        tester,
+        find
+            .ancestor(
+                of: key('canonical-select-adventure-$id'),
+                matching: find.byType(InkWell))
+            .last);
+    await tester.pumpAndSettle();
     await tap(tester, key('canonical-wayfinder-$id'));
     expect(session.snapshot!.shop.relics['wayfinderSigil'], 1);
     await tap(tester, find.widgetWithText(FilledButton, 'Bevestigen'));
@@ -459,6 +467,8 @@ void main() {
     await command(tester);
     expect(session.snapshot!.house.wardLevel, 1);
     expect(session.snapshot!.coins, 9850);
+    await tap(tester, key('canonical-floor-options-0'));
+    await tester.pumpAndSettle();
     await tap(tester, key('canonical-repair-0'));
     expect(find.textContaining('270 munten?'), findsOneWidget);
     await tap(tester, find.widgetWithText(FilledButton, 'Bevestigen'));
@@ -543,6 +553,8 @@ void main() {
       'floor arrows persist order and an old room editor cannot act after account reentry',
       (tester) async {
     await setup(tester, const CanonicalHouseScreen(), prepare: prepareEditor);
+    await tap(tester, key('canonical-floor-options-0'));
+    await tester.pumpAndSettle();
     await tap(tester, key('canonical-floor-up-0'));
     await command(tester);
     expect(session.snapshot!.house.floorRoomIds, ['crystal', 'hearth']);

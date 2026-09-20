@@ -71,7 +71,7 @@ void main() {
         value: session,
         child: const MaterialApp(
             home: Scaffold(body: CanonicalAdventuresScreen()))));
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Special'));
+    // All adventure kinds are visible in the restored section layout.
     await tester.pump(const Duration(milliseconds: 1200));
     expect(
         find.byKey(Key(

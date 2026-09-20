@@ -1,6 +1,46 @@
 /// Fixed UI translations added for the 0.04.06 release.
 /// Order: German, Spanish, French, Italian, Portuguese and Japanese.
 const releasePhraseTranslations = <String, List<String>>{
+  'Mini Adventures': [
+    'Mini-Abenteuer',
+    'Miniaventuras',
+    'Mini-aventures',
+    'Mini avventure',
+    'Miniaventuras',
+    'ミニ冒険'
+  ],
+  'Room options': [
+    'Zimmeroptionen',
+    'Opciones de habitación',
+    'Options de la pièce',
+    'Opzioni della stanza',
+    'Opções do cômodo',
+    '部屋の設定'
+  ],
+  'Video Chest': [
+    'Videotruhe',
+    'Cofre de vídeo',
+    'Coffre vidéo',
+    'Forziere video',
+    'Baú de vídeo',
+    '動画の宝箱'
+  ],
+  'Watch a video to open a chest instantly. Up to 3 per day in this shop.': [
+    'Sieh dir ein Video an, um sofort eine Truhe zu öffnen. Bis zu 3 pro Tag in diesem Shop.',
+    'Mira un vídeo para abrir un cofre al instante. Hasta 3 al día en esta tienda.',
+    'Regarde une vidéo pour ouvrir un coffre immédiatement. Jusqu’à 3 par jour dans cette boutique.',
+    'Guarda un video per aprire subito un forziere. Fino a 3 al giorno in questo negozio.',
+    'Assista a um vídeo para abrir um baú imediatamente. Até 3 por dia nesta loja.',
+    '動画を見ると宝箱がすぐに開きます。このショップで1日3回まで。',
+  ],
+  'Coming later': [
+    'Später verfügbar',
+    'Disponible más adelante',
+    'Disponible plus tard',
+    'Disponibile in seguito',
+    'Disponível mais tarde',
+    '後日登場'
+  ],
   'This dragon is currently away on an Adventure.': [
     'Dieser Drache ist gerade auf einem Abenteuer.',
     'Este dragón está actualmente en una Aventura.',

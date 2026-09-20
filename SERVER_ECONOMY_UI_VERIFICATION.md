@@ -1,5 +1,24 @@
 # Canonical gameplay integration
 
+
+## v0.06.00 UI restoration candidate - 20 September 2026
+
+The server shell restores the previous illustrated Adventure sections and
+four tabs, Trial scenery, Tower room scenes, Inventory galleries/tabs and
+My Dragons gallery. The top-left logo opens About again. Public facts and
+CanonicalGameActions remain the only gameplay data/action boundary; no
+HouseholdProvider is installed in the server UI and no old device save is
+reactivated. Existing server receipts, account fences, prices and reward rules
+are retained. No migration, worker deployment or authority-switch change is
+part of this release.
+
+Coin/Gem Video Chest cards are disabled previews (200 coins / 20 gems, three
+per day per shop planned). The owner explicitly deferred activation. No ads,
+claim counters or reward grants are shipped. See REWARDED_CHESTS_SETUP.md for
+remaining external and implementation work. Release verification is recorded
+in RELEASE_V0.06.00_VERIFICATION.md; candidate status is not publication proof.
+
+
 ## Released server-owned account restoration - 20 September 2026
 
 The normal five-tab app now consumes confirmed server snapshots and durable

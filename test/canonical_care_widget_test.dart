@@ -171,7 +171,12 @@ void main() {
       (tester) async {
     await setup(tester, const CanonicalHouseScreen());
     final visit = find.byKey(const Key('canonical-visit-floor-1'));
-    await tester.ensureVisible(visit);
+    await tester.scrollUntilVisible(visit, 200,
+        scrollable: find
+            .descendant(
+                of: find.byKey(const Key('canonical-tower-list')),
+                matching: find.byType(Scrollable))
+            .first);
     await tester.runAsync(() => tester.tap(visit));
     await tester.pump();
     await settled(tester);

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_strings.dart';
 import '../models/dragon_lineage.dart';
 import '../models/egg_altar.dart';
+import '../models/dragon_school.dart';
 import '../models/mystic_relic.dart';
 import '../models/pet.dart';
 import '../services/canonical_game_actions.dart';
@@ -96,7 +97,7 @@ class _DragonList extends StatelessWidget {
     void change(Map<String, dynamic> values) => runShopAction(
         context, () => CanonicalGameActions(session).setPreferences(values));
     return ListView(padding: const EdgeInsets.all(16), children: [
-      Text(strings.pick('My dragons', 'Mijn draken'),
+      Text('${dragons.length} ${strings.pick('dragons', 'draken')}',
           style: Theme.of(context).textTheme.titleLarge),
       const SizedBox(height: 12),
       Row(children: [
@@ -131,23 +132,77 @@ class _DragonList extends StatelessWidget {
                     {'myDragonsViewMode': compact ? 'gallery' : 'compact'})
                 : null),
       ]),
-      for (final dragon in dragons)
-        Card(
-            child: ListTile(
-                key: Key('canonical-dragon-${dragon.id}'),
-                leading: SizedBox(
-                    width: compact ? 48 : 80,
-                    child: CanonicalDragonArt(
-                        dragon: dragon, height: compact ? 48 : 80)),
-                title: Text(canonicalDragonName(strings, dragon)),
-                subtitle: Text(
-                    '${_stageName(strings, dragon.stage)} · ${dragon.xp} XP'),
-                trailing: switch (view.inventory.equippedOn(dragon.id)) {
-                  final relic? =>
-                    Image.asset(relic.assetPath, width: 32, height: 32),
-                  null => const Icon(Icons.info_outline),
-                },
-                onTap: () => showCanonicalDragonDetails(context, dragon.id))),
+      if (!compact)
+        LayoutBuilder(
+            builder: (context, box) =>
+                Wrap(spacing: 10, runSpacing: 10, children: [
+                  for (final dragon in dragons)
+                    SizedBox(
+                        width: (box.maxWidth - 10) / 2,
+                        child: Card(
+                            margin: EdgeInsets.zero,
+                            clipBehavior: Clip.antiAlias,
+                            color: dragon.highlighted.isEmpty
+                                ? null
+                                : const Color(0xFFFFFAE9),
+                            child: InkWell(
+                                key: Key('canonical-dragon-${dragon.id}'),
+                                onTap: () => showCanonicalDragonDetails(
+                                    context, dragon.id),
+                                child: Padding(
+                                    padding: const EdgeInsets.all(10),
+                                    child: Column(children: [
+                                      Stack(children: [
+                                        CanonicalDragonArt(
+                                            dragon: dragon, height: 145),
+                                        if (dragon.favorite)
+                                          const Positioned(
+                                              top: 0,
+                                              right: 0,
+                                              child: Icon(
+                                                  Icons.favorite_rounded,
+                                                  color: Color(0xFFE05A78),
+                                                  size: 22)),
+                                        if (view.inventory.equippedOn(dragon.id)
+                                            case final relic?)
+                                          Positioned(
+                                              top: 0,
+                                              left: 0,
+                                              child: Image.asset(
+                                                  relic.assetPath,
+                                                  width: 28,
+                                                  height: 28)),
+                                      ]),
+                                      Text(canonicalDragonName(strings, dragon),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w900)),
+                                      Text(_stageName(strings, dragon.stage),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall),
+                                    ]))))),
+                ])),
+      if (compact)
+        for (final dragon in dragons)
+          Card(
+              child: ListTile(
+                  key: Key('canonical-dragon-${dragon.id}'),
+                  leading: SizedBox(
+                      width: compact ? 48 : 80,
+                      child: CanonicalDragonArt(
+                          dragon: dragon, height: compact ? 48 : 80)),
+                  title: Text(canonicalDragonName(strings, dragon)),
+                  subtitle: Text(
+                      '${_stageName(strings, dragon.stage)} · ${dragon.xp} XP'),
+                  trailing: switch (view.inventory.equippedOn(dragon.id)) {
+                    final relic? =>
+                      Image.asset(relic.assetPath, width: 32, height: 32),
+                    null => const Icon(Icons.info_outline),
+                  },
+                  onTap: () => showCanonicalDragonDetails(context, dragon.id))),
       if (!view.dragons.any((d) => d.owned))
         Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
@@ -212,6 +267,41 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                                         icon: dragon.sex == DragonSex.male
                                             ? Icons.male
                                             : Icons.female),
+                                    const SizedBox(height: 12),
+                                    Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                                colors: [
+                                                  Color(0xFFFFF4C7),
+                                                  Color(0xFFF0E4FF)
+                                                ]),
+                                            borderRadius:
+                                                BorderRadius.circular(19)),
+                                        child: Row(children: [
+                                          Image.asset(
+                                              dragon.schoolOutcome.badgeAsset,
+                                              width: 48,
+                                              height: 48),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                              child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                Text(
+                                                    strings.pick(
+                                                        dragon.schoolOutcome
+                                                            .titleEn,
+                                                        dragon.schoolOutcome
+                                                            .titleNl),
+                                                    style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w900)),
+                                                Text(
+                                                    '${dragon.schoolStarTotal}/30 ${strings.pick('stars', 'sterren')}'),
+                                              ])),
+                                        ])),
                                     const Divider(height: 24),
                                     Wrap(spacing: 12, runSpacing: 4, children: [
                                       Text(

@@ -394,9 +394,12 @@ class _ServerShellState extends State<_ServerShell> {
       appBar: AppBar(
         toolbarHeight: HavenHeaderTitle.toolbarHeight(context),
         leadingWidth: 58,
-        leading: Padding(
+        leading: IconButton(
+            key: const Key('about-logo-button'),
+            tooltip: s.pick('About DragonHaven', 'Over DragonHaven'),
             padding: const EdgeInsets.all(7),
-            child: event == null
+            onPressed: () => showDragonHavenAboutSheet(context),
+            icon: event == null
                 ? Image.asset('assets/images/dragonhaven_logo.png')
                 : SeasonalAppLogo(eventId: event.event.id)),
         titleSpacing: 0,

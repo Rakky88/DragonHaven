@@ -122,6 +122,12 @@ void main() {
           });
         }
       }
+      await tester.tap(find.byKey(const Key('about-logo-button')));
+      await tester.pumpAndSettle();
+      expect(find.text('About DragonHaven'), findsWidgets);
+      expect(find.textContaining('v0.06.00'), findsWidgets);
+      Navigator.of(tester.element(find.byType(Scaffold).last)).pop();
+      await tester.pumpAndSettle();
       for (final page in ['Account Info', 'Keeper Journal', 'Achievements']) {
         await tester.tap(find.byKey(const Key('haven-menu-button')));
         await tester.pump();
@@ -139,29 +145,29 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
       expect(
-          tester
-              .widget<ChoiceChip>(
-                  find.byKey(const Key('canonical-tab-completed')))
-              .selected,
+          DefaultTabController.of(tester.element(
+                      find.byKey(const Key('canonical-tab-completed'))))
+                  .index ==
+              3,
           true);
-      final available = find.widgetWithText(ChoiceChip, 'Adventures');
+      final available = find.widgetWithText(Tab, 'Available');
       await tester.ensureVisible(available);
       await tester.tap(available);
       await tester.pump();
       expect(
-          tester
-              .widget<ChoiceChip>(
-                  find.byKey(const Key('canonical-tab-completed')))
-              .selected,
+          DefaultTabController.of(tester.element(
+                      find.byKey(const Key('canonical-tab-completed'))))
+                  .index ==
+              3,
           false);
       HavenNotifications.openRemoteDestination('adventure_complete');
       await tester.pump();
       await tester.pumpAndSettle();
       expect(
-          tester
-              .widget<ChoiceChip>(
-                  find.byKey(const Key('canonical-tab-completed')))
-              .selected,
+          DefaultTabController.of(tester.element(
+                      find.byKey(const Key('canonical-tab-completed'))))
+                  .index ==
+              3,
           true);
       HavenNotifications.openRemoteDestination('trials_full');
       await tester.pump();

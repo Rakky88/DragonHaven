@@ -1,11 +1,16 @@
 import 'canonical_dragons_screen.dart';
 import '../services/canonical_game_snapshot.dart';
 import '../widgets/ui_bits.dart';
+import '../widgets/haven_lighting.dart';
+import '../widgets/game_icon_sprite.dart';
+import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/house.dart';
+import '../models/shop_item.dart';
+import '../widgets/furniture_art.dart';
 import '../models/pet.dart';
 import 'canonical_room_editor.dart';
 import 'canonical_school_screen.dart';
@@ -72,46 +77,67 @@ class _HouseContents extends StatelessWidget {
                     width: 28,
                     height: 28),
                 label: Text(s.pick('Dragon Academy', 'Drakenacademie'))),
-          TabBar(tabs: [
-            Tab(text: s.pick('Tower', 'Toren')),
-            Tab(text: s.pick('Rooms', 'Kamers')),
-          ]),
+          if (showHeading)
+            TabBar(tabs: [
+              Tab(text: s.pick('Tower', 'Toren')),
+              Tab(text: s.pick('Rooms', 'Kamers')),
+            ]),
           Expanded(
               child: TabBarView(children: [
             ListView(
                 key: const Key('canonical-tower-list'),
                 padding: const EdgeInsets.all(16),
                 children: [
+                  Row(children: [
+                    const GameIconSprite(GameIconKind.clock, size: 21),
+                    const SizedBox(width: 5),
+                    Expanded(
+                        child: HavenClockBuilder(
+                            builder: (_, __, phase) => Text(s.dayPhase(phase),
+                                style: const TextStyle(
+                                    color: AppColors.muted,
+                                    fontWeight: FontWeight.w700)))),
+                    Flexible(
+                        child: Text(
+                            '${house.floorRoomIds.length}/20 ${s.pick('floors', 'verdiepingen')}',
+                            textAlign: TextAlign.end)),
+                  ]),
+                  const SizedBox(height: 10),
                   if (header != null) header!,
-                  Card(
-                      child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Text(
-                                    '${s.pick('Dragon Ward', 'Drakenward')} · ${house.wardLevel}/3',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium),
-                                if (wardPrice != null) ...[
-                                  if (house.damagedFloors.isEmpty)
-                                    Text(s.pick(
-                                        'Available after a floor is damaged.',
-                                        'Beschikbaar wanneer een verdieping beschadigd is.')),
-                                  CanonicalActionButton(
-                                      key: const Key('canonical-upgrade-ward'),
-                                      label:
-                                          '${s.pick('Upgrade ward', 'Ward verbeteren')} · $wardPrice',
-                                      confirmation:
-                                          '${s.pick('Upgrade ward', 'Ward verbeteren')} · $wardPrice ${s.pick('coins', 'munten')}?',
-                                      action: session.canAct &&
-                                              house.damagedFloors.isNotEmpty &&
-                                              view.coins >= wardPrice
-                                          ? actions.upgradeWard
-                                          : null),
-                                ],
-                              ]))),
+                  if (showHeading ||
+                      house.damagedFloors.isNotEmpty ||
+                      house.wardLevel > 0)
+                    Card(
+                        child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                      '${s.pick('Dragon Ward', 'Drakenward')} · ${house.wardLevel}/3',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium),
+                                  if (wardPrice != null) ...[
+                                    if (house.damagedFloors.isEmpty)
+                                      Text(s.pick(
+                                          'Available after a floor is damaged.',
+                                          'Beschikbaar wanneer een verdieping beschadigd is.')),
+                                    CanonicalActionButton(
+                                        key:
+                                            const Key('canonical-upgrade-ward'),
+                                        label:
+                                            '${s.pick('Upgrade ward', 'Ward verbeteren')} · $wardPrice',
+                                        confirmation:
+                                            '${s.pick('Upgrade ward', 'Ward verbeteren')} · $wardPrice ${s.pick('coins', 'munten')}?',
+                                        action: session.canAct &&
+                                                house
+                                                    .damagedFloors.isNotEmpty &&
+                                                view.coins >= wardPrice
+                                            ? actions.upgradeWard
+                                            : null),
+                                  ],
+                                ]))),
                   const SizedBox(height: 12),
                   Text(
                       '${house.floorRoomIds.length}/20 ${s.pick('floors', 'verdiepingen')}',
@@ -120,10 +146,11 @@ class _HouseContents extends StatelessWidget {
                     if (houseRoomById(house.floorRoomIds[i]) case final room?)
                       _RoomCard(
                           room: room,
+                          floorIndex: i,
                           heading: '${i + 1} · ${s.roomName(room)}',
                           extra: Wrap(alignment: WrapAlignment.end, children: [
                             OutlinedButton.icon(
-                                key: Key('canonical-visit-floor-$i'),
+                                key: Key('canonical-visit-floor-option-$i'),
                                 onPressed: house.damagedFloors.contains(i)
                                     ? null
                                     : () => _visitFloor(context, room.id, i),
@@ -322,27 +349,100 @@ class _HouseContents extends StatelessWidget {
 
 class _RoomCard extends StatelessWidget {
   const _RoomCard(
-      {required this.room, required this.heading, this.control, this.extra});
+      {required this.room,
+      required this.heading,
+      this.control,
+      this.extra,
+      this.floorIndex});
   final HouseRoomDefinition room;
+  final int? floorIndex;
   final String heading;
   final Widget? control, extra;
   @override
-  Widget build(BuildContext context) => Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      clipBehavior: Clip.antiAlias,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Image.asset(room.backgroundAsset,
-            height: 108, fit: BoxFit.cover, excludeFromSemantics: true),
-        Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context) {
+    final view = context.watch<CanonicalGameSession>().snapshot!;
+    final residents = view.dragons
+        .where((d) =>
+            d.owned &&
+            d.roamsTower &&
+            d.adventureId == null &&
+            d.floorIndex == floorIndex)
+        .take(3);
+    return Card(
+        margin: const EdgeInsets.only(bottom: 7),
+        clipBehavior: Clip.antiAlias,
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          InkWell(
+              key: floorIndex == null
+                  ? null
+                  : Key('canonical-visit-floor-$floorIndex'),
+              onTap: floorIndex == null ||
+                      view.house.damagedFloors.contains(floorIndex)
+                  ? null
+                  : () => _visitFloor(context, room.id, floorIndex!),
+              child: SizedBox(
+                  height: floorIndex == null ? 130 : 92,
+                  child: Stack(fit: StackFit.expand, children: [
+                    Image.asset(room.backgroundAsset,
+                        fit: BoxFit.cover, excludeFromSemantics: true),
+                    const DecoratedBox(
+                        decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: [
+                      Color(0xB5201C3F),
+                      Color(0x18201C3F)
+                    ]))),
+                    Padding(
+                        padding: const EdgeInsets.all(13),
+                        child: Row(children: [
+                          if (floorIndex != null) ...[
+                            CircleAvatar(
+                                backgroundColor: Colors.white,
+                                foregroundColor: AppColors.twilight,
+                                child: Text('${floorIndex! + 1}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w900))),
+                            const SizedBox(width: 11),
+                          ],
+                          Expanded(
+                              child: Text(AppStrings.of(context).roomName(room),
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 16))),
+                          for (final dragon in residents)
+                            SizedBox(
+                                width: 38,
+                                child: CanonicalDragonArt(
+                                    dragon: dragon, height: 56)),
+                          const Icon(Icons.zoom_in_rounded,
+                              color: Colors.white),
+                        ])),
+                  ]))),
+          if (floorIndex != null)
+            ExpansionTile(
+                key: Key('canonical-floor-options-$floorIndex'),
+                dense: true,
+                title: Text(
+                    AppStrings.of(context).pick('Room options', 'Kameropties')),
+                childrenPadding: const EdgeInsets.all(10),
                 children: [
-                  Text(heading, style: Theme.of(context).textTheme.titleMedium),
                   if (extra != null) extra!,
-                  if (control != null) ...[const SizedBox(height: 8), control!],
-                ])),
-      ]));
+                  if (control != null) control!
+                ])
+          else
+            Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(heading,
+                          style: Theme.of(context).textTheme.titleMedium),
+                      if (extra != null) extra!,
+                      if (control != null) control!,
+                    ])),
+        ]));
+  }
 }
 
 Future<void> _visitFloor(BuildContext context, String roomId, int index) async {
@@ -407,11 +507,58 @@ Future<void> _visitFloor(BuildContext context, String roomId, int index) async {
                 content: SingleChildScrollView(
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                   if (valid)
-                    for (final resident in residents)
-                      Column(children: [
-                        CanonicalDragonArt(dragon: resident, height: 100),
-                        Text(canonicalDragonName(s, resident)),
-                      ]),
+                    SizedBox(
+                        width: 420,
+                        child: AspectRatio(
+                            aspectRatio: 1.25,
+                            child: ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: LayoutBuilder(
+                                    builder: (context, box) =>
+                                        Stack(fit: StackFit.expand, children: [
+                                          Image.asset(
+                                              houseRoomById(roomId)!
+                                                  .backgroundAsset,
+                                              fit: BoxFit.cover),
+                                          for (final placement in current
+                                              .house.placements
+                                              .where((p) => p.roomId == roomId))
+                                            if (shopItemById(placement.itemId)
+                                                case final item?)
+                                              Positioned(
+                                                  left: placement.x *
+                                                          box.maxWidth -
+                                                      30,
+                                                  top: placement.y *
+                                                          box.maxHeight -
+                                                      30,
+                                                  width: 60,
+                                                  height: 60,
+                                                  child:
+                                                      FurnitureArt(item: item)),
+                                          for (final (i, resident)
+                                              in residents.indexed)
+                                            Positioned(
+                                                left: 10 + i * box.maxWidth / 3,
+                                                bottom: 10,
+                                                width: box.maxWidth / 3,
+                                                child: InkWell(
+                                                    onTap: () =>
+                                                        showCanonicalDragonDetails(
+                                                            context,
+                                                            resident.id),
+                                                    child: CanonicalDragonArt(
+                                                        dragon: resident,
+                                                        height: 90))),
+                                        ]))))),
+                  if (valid)
+                    TextButton.icon(
+                        icon: const GameIconSprite(GameIconKind.roomDecorate,
+                            size: 28),
+                        label: Text(
+                            s.pick('Arrange your room', 'Richt je kamer in')),
+                        onPressed: () =>
+                            openCanonicalRoomEditor(context, roomId)),
                   if (valid && residents.isEmpty)
                     Text(s.pick('No dragons here', 'Geen draken hier')),
                   if (!valid)

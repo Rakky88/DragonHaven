@@ -381,7 +381,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 5cd038d5f02220d2 -->
+<!-- reference-source-fingerprint: c3ba5d42c221c45e -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -1294,3 +1294,15 @@ request. It changes no event goals, schedules, rewards, chances or inventory
 rules. A server-owned account opens its server session instead of restoring a
 legacy save. Source selection does not grant rewards. Production activation
 remains subject to the staging and complete gameplay routing gates.
+
+
+## v0.06.00 presentation restoration (20 September 2026)
+
+The server-owned UI restores illustrated inventory tabs, collection cards and
+Adventure navigation. Public egg facts remain redacted until revealed by the
+server. Special event windows, requirements, chest contents and egg rules are
+unchanged. The Coin/Gem shops show a disabled Video Chest preview: planned
+rewards are 200 coins / 20 gems, three per day per shop, opening immediately.
+These are not Special Chests and are not obtainable in this release. Activation
+is deferred by the owner until advertising onboarding and server verification
+are implemented; no extra reward source or random pool exists yet.

@@ -57,6 +57,50 @@ class CanonicalSchoolScreen extends StatelessWidget {
                   'De Drakenacademie opent bij vijf verdiepingen.')));
         }
         return ListView(padding: const EdgeInsets.all(16), children: [
+          ClipRRect(
+              borderRadius: BorderRadius.circular(28),
+              child: Stack(children: [
+                Image.asset('assets/images/ui/dragon_school.webp',
+                    height: 226, width: double.infinity, fit: BoxFit.cover),
+                Positioned.fill(
+                    child: DecoratedBox(
+                        decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                      Colors.transparent,
+                      Color(0xF21D1436)
+                    ])))),
+                Positioned(
+                    right: 10,
+                    top: 8,
+                    child: Image.asset(
+                        'assets/images/ui/dragon_school/dragon_school_icon.png',
+                        width: 92,
+                        height: 92)),
+                Positioned(
+                    left: 18,
+                    right: 18,
+                    bottom: 16,
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                              strings.pick('Practice makes legends',
+                                  'Oefening baart legenden'),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900)),
+                          const SizedBox(height: 6),
+                          Text(
+                              strings.pick('3 attempts per lesson',
+                                  '3 pogingen per les'),
+                              style: const TextStyle(color: Colors.white)),
+                        ])),
+              ])),
+          const SizedBox(height: 14),
           for (final dragon in view.dragons
               .where((d) => d.owned && !d.schoolComplete && d.schoolPassing))
             ListTile(

@@ -158,13 +158,41 @@ class _TrialsState extends State<_Trials> {
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Row(children: [
-                        TrialIconSprite(kind: offer.kind, size: 42),
-                        const SizedBox(width: 10),
-                        Expanded(
-                            child: Text(offer.definition.title(s.languageCode),
-                                style: Theme.of(context).textTheme.titleMedium))
-                      ]),
+                      ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: SizedBox(
+                              height: 148,
+                              child: Stack(fit: StackFit.expand, children: [
+                                Image.asset(_trialArtwork(offer.kind),
+                                    fit: BoxFit.cover),
+                                const DecoratedBox(
+                                    decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                            colors: [
+                                      Colors.transparent,
+                                      Color(0xD9231746)
+                                    ]))),
+                                Positioned(
+                                    left: 15,
+                                    right: 15,
+                                    bottom: 12,
+                                    child: Row(children: [
+                                      TrialIconSprite(
+                                          kind: offer.kind, size: 42),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                          child: Text(
+                                              offer.definition
+                                                  .title(s.languageCode),
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 21,
+                                                  fontWeight:
+                                                      FontWeight.w900))),
+                                    ])),
+                              ]))),
                       const SizedBox(height: 8),
                       FilledButton(
                           key: Key('choose-trial-${offer.id}'),
@@ -373,3 +401,27 @@ Future<void> _withEventPointReturn(
       if (before.containsKey(p.key)) p.key: p.points - before[p.key]!,
   });
 }
+
+String _trialArtwork(TrialKind kind) => switch (kind) {
+      TrialKind.cavernFlight =>
+        'assets/images/ui/trials/trial_cavern_flight.webp',
+      TrialKind.ruinBreaker =>
+        'assets/images/ui/trials/trial_ruin_breaker.webp',
+      TrialKind.runeweaver => 'assets/images/ui/trials/trial_runeweaver.webp',
+      TrialKind.witchlightWard =>
+        'assets/images/events/halloween/trial_background.webp',
+      TrialKind.hollyfrostGiftforge =>
+        'assets/images/events/christmas/trial_background.webp',
+      TrialKind.midnightChime =>
+        'assets/images/events/new_year/trial_background.webp',
+      TrialKind.rosevowRelay =>
+        'assets/images/events/valentine/trial_background.webp',
+      TrialKind.sunwakeSurf =>
+        'assets/images/events/sunwake/trial_background.webp',
+      TrialKind.moonlitOrchard =>
+        'assets/images/events/harvestmoon/trial_background.webp',
+      TrialKind.wishcakeTower =>
+        'assets/images/events/golden_wings/trial_background.webp',
+      TrialKind.prismaticParade =>
+        'assets/images/events/pride/trial_background.webp',
+    };

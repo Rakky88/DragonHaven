@@ -243,4 +243,32 @@ void main() {
     expect(find.byKey(const Key('chest-reveal-tap-target')), findsNothing);
     expect(tester.takeException(), isNull);
   });
+  for (final gems in [false, true]) {
+    testWidgets(
+        'video chest is a disabled preview with no reward command (gems=$gems)',
+        (tester) async {
+      await prepare(tester);
+      await mount(
+          tester,
+          ShopHubScreen(
+              initialCurrencyTab: gems ? 1 : 0,
+              initialCategoryTab: gems ? 2 : 1));
+      final card = find.byKey(Key('rewarded-chest-${gems ? 'gems' : 'coins'}'));
+      await tester.scrollUntilVisible(card, 250,
+          scrollable: find
+              .descendant(
+                  of: find.byKey(PageStorageKey(
+                      'shop-${gems ? 'gems' : 'coins'}-chests-scroll')),
+                  matching: find.byType(Scrollable))
+              .first);
+      final button =
+          find.descendant(of: card, matching: find.byType(FilledButton));
+      expect(tester.widget<FilledButton>(button).onPressed, isNull);
+      expect(
+          find.descendant(of: card, matching: find.text(gems ? '20' : '200')),
+          findsOneWidget);
+      expect(server.sent, isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+  }
 }
