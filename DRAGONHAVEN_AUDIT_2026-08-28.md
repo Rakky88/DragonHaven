@@ -1,5 +1,25 @@
 # DragonHaven v0.04.06 audit — 28 augustus 2026
 
+## v0.06.01 publication verification - 20 September 2026
+
+Published v0.06.01 / build 10094 from
+`0687ba4f5b38647494076346aad8cadbaa274afa`. GitHub release 392534011,
+asset 577352755: 578,080,707 bytes and SHA-256
+`95c05abaadb6620353e2e16866fe6688a0f7c919f4c744eacd38a3bcab2bc8d4`.
+Release, versioned APK and permanent latest-download URL return HTTP 200;
+latest resolves to v0.06.01 and the remote digest matches the signed local APK.
+The initial PowerShell upload lost its connection and stalled. Stopped that
+specific publisher, confirmed the release had no asset and the correct tag,
+then attached the APK with official GitHub CLI. No release/asset was replaced.
+
+The original pending hatch now has a successful receipt at revision 59;
+subsequent naming and presentation completion also succeeded. No save rewrite,
+reward grant, seed reset or pending-command deletion was used. Post-publication
+production preflight at 18:44 UTC: 93 matching migrations, zero lint errors,
+Auth health/settings and application health all HTTP 200. Audit evidence:
+`.tools/release61-published-verification.json` and
+`.tools/release61-server-postflight.json`.
+
 ## v0.06.01 hatch recovery and three UI passes - 20 September 2026
 
 Found a pending hatch blocked by `player_dragons_name_check`: a newly hatched

@@ -191,3 +191,8 @@ The signed universal release APK is package `nl.dragonhaven.app`, version
 `0.06.01`, build `10094`, non-debuggable and uses the existing signing key.
 Size: 578,080,707 bytes. SHA-256:
 `95c05abaadb6620353e2e16866fe6688a0f7c919f4c744eacd38a3bcab2bc8d4`.
+
+A later read-only production check confirms the original pending hatch is now
+`succeeded` at revision 59, and subsequent naming and presentation completion
+also succeeded. Recovery used the original pending command; no save rewrite,
+manual reward grant or command reset was necessary.
