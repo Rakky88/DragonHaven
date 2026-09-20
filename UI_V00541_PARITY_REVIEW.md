@@ -71,3 +71,6 @@ Tower/Nest/Dragons/Academy, Inventory/Altar, Shop and menu). Detailed findings:
 - Ad chests remain disabled as previously requested. No migrations, production
   ruleset changes, odds changes, saved-game rewrites or reward grants in this UI
   release.
+
+Published as v0.06.02 / build 10095; final publication and production-health
+evidence is recorded in `SERVER_ECONOMY_UI_VERIFICATION.md`.

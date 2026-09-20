@@ -1,5 +1,27 @@
 # DragonHaven v0.04.06 audit — 28 augustus 2026
 
+## v0.06.02 publication verification - 20 September 2026
+
+Published v0.06.02 / build 10095 from `d441ccf109fc7c7016758b097052bca7bed781cb`.
+Release 392558378, asset 577480579: 578,261,011 bytes; SHA-256
+`b77f2fa96eff3b5b88083910089e932de81a5cf259e98752594f82a67f9700e1`. Release page, versioned APK and permanent
+latest-download URL all return HTTP 200. Latest resolves to v0.06.02; remote
+digest matches the signed, non-debuggable universal APK (arm64/armv7/x86_64).
+Flutter analysis reports no issues. All corrected test suites, ten main-route
+sweeps and the final reference check pass. Final Dutch compact device capture
+confirms the Trials title, original countdown and rankings control.
+
+PowerShell's upload lost its peer connection before completion. Stopped only
+that publisher, re-queried the existing release/tag and confirmed no asset,
+then uploaded through the official GitHub CLI. No asset or release was replaced.
+Post-publication production preflight at 20:13 UTC: 93 matching migrations,
+zero database lint errors, Auth health/settings and application health HTTP 200.
+The production ruleset, minimum build 10092 and authority flags are unchanged.
+Evidence: `.tools/release62-published-verification.json`,
+`.tools/release62-artifact.json`, `.tools/release62-server-postflight.json`,
+`.tools/release62-analysis-release.log`, `.tools/release62-final-layout-tests.log`.
+
+
 ## v0.06.02 UI parity and server verification - 20 September 2026
 
 Restored v0.05.41 interactions and presentation while retaining canonical
