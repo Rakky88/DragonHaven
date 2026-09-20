@@ -54,5 +54,25 @@ rules: TRIAL_EXPERTISE.md. Authority cutover remains dormant and out of scope.
 - APK signature verifies with the existing release certificate
   `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`.
 - Publisher dry run passed; no existing v0.05.40 release or asset.
-- Publication verification will be appended after upload.
+
+## Publication
+
+Published and independently verified at 12:14:05 UTC on 20 September 2026.
+
+- Release ID 392419844, asset ID 576752833; normal public latest v0.05.40.
+- Tag resolves to `104eaa025e52564fa838536952086464a48f2c95`.
+- GitHub asset size and SHA-256 exactly match the signed APK above.
+- Release page, versioned APK and permanent latest link all return HTTP 200.
+- [Release](https://github.com/Rakky88/DragonHaven/releases/tag/v0.05.40),
+  [APK](https://github.com/Rakky88/DragonHaven/releases/download/v0.05.40/DragonHaven.apk),
+  [latest APK](https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk).
+- Publisher WhatIf succeeded. The documented Windows PowerShell 5 ShouldProcess
+  failure occurred before mutation. After checking that no release/tag existed,
+  official GitHub CLI uploaded once to a draft; the verified asset was named
+  DragonHaven.apk before publication by release ID. No duplicate release or
+  replacement of a public artifact occurred.
+- Production Auth health/settings and app health were rechecked at 12:11:03 UTC,
+  all HTTP 200. Tag-triggered automation builds the AAB separately and cannot
+  publish or replace this APK.
+
 
