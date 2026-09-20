@@ -1,9 +1,9 @@
 # DragonHaven audit
 
-## Shared expertise candidate ? 20 September 2026
+## Shared expertise candidate - 20 September 2026
 
 Implemented shared budgets (950 ordinary / 1100 Sinister, +50 Mastery), private
-stable Dragon Spark 0?50, full-dragon MAX, rare consumable Spark Astrolabe and
+stable Dragon Spark 0-50, full-dragon MAX, rare consumable Spark Astrolabe and
 half-catalog Mini/Short/Long retraining. Costs are checked before starting and
 paid before gains; legacy runs keep original rewards and existing over-budget
 points are preserved. App and trusted evaluator share the same rules. Public DTOs
@@ -12,11 +12,23 @@ hide the Spark until revealed and retain larger specialized scores. Migration
 The new artwork is reused in a glow/scale reveal; all eight app languages are
 covered. Exact trial assistance is documented in TRIAL_EXPERTISE.md.
 
-Verification is in progress; no new release or production schema application
-is claimed here. Existing server-economy startup/cutover work remains separate.
+Verification is complete for this candidate: analysis is clean; the full suite
+passed 1,032 tests with one opt-in skip and one stale migration-version assertion.
+After updating that assertion from 84 to 85, all 11 load-profile tests pass,
+covering the remaining failure (1,033 passing tests in total). VM/JavaScript
+domain parity, worker compilation/type checking and reference guards pass.
+Staging run [35479746214](https://github.com/Rakky88/DragonHaven/actions/runs/35479746214)
+on commit `15a7fe4` passed the SQL contract, including 1,200-point concentrated
+scores, negative/oversized refusal, partner transport, the 65-ticket relic pool,
+hidden Spark fields and unchanged RPC fences. All synthetic changes and schema
+changes were rolled back. See `EXPERTISE_BUDGET_VERIFICATION.md`.
+
+This candidate is not published or applied to production. The public release
+remains v0.05.38; migration 85 and the existing server-economy startup/cutover
+work remain pending deployment.
 
 
-## Current published release v0.05.35 / 10085 - lossless APK reduction
+## Published release v0.05.35 / 10085 - lossless APK reduction
 
 The owner scoped this release to APK reduction and its related audit items.
 845 runtime images now use smaller encodings with identical dimensions, source
