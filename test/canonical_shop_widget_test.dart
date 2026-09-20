@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
+import 'package:dragon_haven/screens/canonical_eggs.dart';
 import 'package:dragon_haven/screens/shop_hub_screen.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
@@ -291,6 +292,45 @@ void main() {
     }
     expect(session.snapshot!.shop.chests['wooden'], 2);
     expect(server.receipts, hasLength(1));
+    expect(jsonEncode(legacy.exportState()), localBefore);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets(
+      'egg collection restores tags and waits for server view preference at large text',
+      (tester) async {
+    await prepare(tester);
+    final localBefore = jsonEncode(legacy.exportState());
+    final total = session.snapshot!.eggs.length;
+    final tagged = session.snapshot!.eggs.where((e) => e.tagged).length;
+    await mount(tester, const CanonicalEggList(), locale: 'nl', scale: 1.35);
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Niet getagd'));
+    await tester.pump();
+    expect(
+        tester.widget<Text>(find.byKey(const Key('egg-inventory-count'))).data,
+        startsWith('${total - tagged} '));
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Getagd'));
+    await tester.pump();
+    expect(
+        tester.widget<Text>(find.byKey(const Key('egg-inventory-count'))).data,
+        startsWith('$tagged '));
+    expect(server.sent, isEmpty);
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Alle'));
+    await tester.pump();
+    await screenshot(tester, 'v0540-eggs-nl-large');
+    final before =
+        session.snapshot!.profile.preferences['eggInventoryViewMode'];
+    final held = Completer<void>();
+    server.hold = held.future;
+    await tester.tap(find.byKey(const Key('egg-inventory-view-toggle')));
+    await tester.pump();
+    expect(
+        session.snapshot!.profile.preferences['eggInventoryViewMode'], before);
+    held.complete();
+    await waitForCommand(tester);
+    expect(session.snapshot!.profile.preferences['eggInventoryViewMode'],
+        before == 'list' ? 'tiles' : 'list');
+    expect(server.receipts, hasLength(1));
+    await screenshot(tester, 'v0540-eggs-list-nl-large');
     expect(jsonEncode(legacy.exportState()), localBefore);
     expect(tester.takeException(), isNull);
   });

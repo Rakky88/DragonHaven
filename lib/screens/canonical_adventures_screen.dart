@@ -1,5 +1,7 @@
 import '../widgets/restored_collection_cards.dart';
 import '../models/chest.dart';
+import '../models/trial.dart';
+import '../widgets/trial_icon_sprite.dart';
 import '../services/canonical_game_snapshot.dart';
 import '../theme/app_theme.dart';
 import '../widgets/event_point_flight.dart';
@@ -600,7 +602,11 @@ class _AdventureOffer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
+    final event = specialAdventureEventForAdventure(definition.id);
+    final trialKind = trialKindByName(event?.trialKindName);
     return Card(
+        color: Colors.white.withValues(alpha: .96),
+        elevation: 0,
         margin: const EdgeInsets.only(bottom: 7),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -618,13 +624,32 @@ class _AdventureOffer extends StatelessWidget {
             child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
                 child: Row(children: [
+                  if (trialKind != null) ...[
+                    Container(
+                        width: 48,
+                        height: 48,
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFFF3EAFD),
+                            border: Border.all(color: const Color(0xFFD9C5F0))),
+                        child: TrialIconSprite(kind: trialKind, size: 44)),
+                    const SizedBox(width: 8),
+                  ],
                   Expanded(
                       child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                        Text(s.adventureTitle(definition),
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w900, fontSize: 13.5)),
+                        Row(children: [
+                          Expanded(
+                              child: Text(s.adventureTitle(definition),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 13.5))),
+                          if (definition.sinister)
+                            const Icon(Icons.visibility_rounded,
+                                size: 16, color: Color(0xFF8A285E)),
+                        ]),
                         const SizedBox(height: 5),
                         Wrap(
                             crossAxisAlignment: WrapCrossAlignment.center,
@@ -675,7 +700,7 @@ class _AdventureSection extends StatelessWidget {
         decoration: BoxDecoration(
             gradient: LinearGradient(colors: colors),
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: colors.last)),
+            border: Border.all(color: colors.last.withValues(alpha: .55))),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
@@ -689,18 +714,31 @@ class _AdventureSection extends StatelessWidget {
                 size: 46),
             const SizedBox(width: 7),
             Expanded(
-                child: Text(
-                    switch (kind) {
-                      AdventureKind.mini =>
-                        s.pick('Mini Adventures', 'Mini-avonturen'),
-                      AdventureKind.short =>
-                        s.pick('Short Adventures', 'Korte avonturen'),
-                      AdventureKind.long =>
-                        s.pick('Long Adventures', 'Lange avonturen'),
-                      _ => s.pick('Special Adventures', 'Speciale avonturen'),
-                    },
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w900))),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(
+                      switch (kind) {
+                        AdventureKind.mini => s.pick('Mini', 'Mini'),
+                        AdventureKind.short => s.pick('Short', 'Kort'),
+                        AdventureKind.long => s.pick('Long', 'Lang'),
+                        _ => s.pick('Special', 'Speciaal'),
+                      },
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w900)),
+                  Text(
+                      switch (kind) {
+                        AdventureKind.mini =>
+                          s.pick('Tiny outings', 'Kleine uitstapjes'),
+                        AdventureKind.short =>
+                          s.pick('Quick routes', 'Snelle routes'),
+                        AdventureKind.long =>
+                          s.pick('Patient journeys', 'Geduldige reizen'),
+                        _ => s.pick('Rare trails', 'Zeldzame routes'),
+                      },
+                      style: const TextStyle(
+                          color: AppColors.muted, fontSize: 10)),
+                ])),
           ]),
           const SizedBox(height: 5),
           ...children,

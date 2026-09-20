@@ -168,10 +168,27 @@ class CanonicalSchoolScreen extends StatelessWidget {
                 height: MediaQuery.sizeOf(context).height * .75,
                 child: Column(children: [
                   Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(
-                          strings.pick('Choose pupils', 'Kies leerlingen'),
-                          style: Theme.of(context).textTheme.titleLarge)),
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+                      child: Row(children: [
+                        Image.asset(definition.iconAsset,
+                            width: 58, height: 58),
+                        const SizedBox(width: 10),
+                        Expanded(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text(
+                                  strings.pick(
+                                      definition.titleEn, definition.titleNl),
+                                  style:
+                                      Theme.of(context).textTheme.titleLarge),
+                              Text(
+                                  strings.pick(
+                                      'Choose pupils', 'Kies leerlingen'),
+                                  style:
+                                      const TextStyle(color: AppColors.muted)),
+                            ])),
+                      ])),
                   Expanded(
                       child: ListView(children: [
                     for (final dragon in available)

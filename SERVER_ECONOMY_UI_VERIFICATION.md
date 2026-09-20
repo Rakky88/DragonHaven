@@ -1,5 +1,15 @@
 # Canonical gameplay integration
 
+## v0.05.40 comparison - 20 September 2026 (unpublished candidate)
+
+A second comparison with published v0.05.40 restored additional egg collection
+controls, reservation labels, clue panels, Adventure subtitles/event icons and
+the illustrated Academy enrollment header. All data/actions remain canonical;
+no backend, version or production changes. Analysis and targeted UI/lifecycle
+checks pass. See [UI_HISTORY_RESTORATION.md](UI_HISTORY_RESTORATION.md) for
+historical evidence, verification details and the retained server adaptations.
+The owner has explicitly deferred publication.
+
 ## Historical UI follow-up - 20 September 2026 (candidate)
 
 The user reported incomplete restoration in v0.06.00. Compared the actual

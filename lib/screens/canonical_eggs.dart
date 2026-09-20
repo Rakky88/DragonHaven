@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/adventure.dart';
+import '../theme/app_theme.dart';
+import '../widgets/game_icon_sprite.dart';
 import '../models/dragon_lineage.dart';
 import '../models/egg_altar.dart';
 import '../models/mystic_relic.dart';
@@ -59,17 +61,25 @@ class CanonicalEggList extends StatefulWidget {
 
 class _CanonicalEggListState extends State<CanonicalEggList> {
   String _kind = 'all';
-  bool _tagged = false;
+  int _tagFilter = 0;
   @override
   Widget build(BuildContext context) {
     final view = context.watch<CanonicalGameSession>().snapshot;
     if (view == null) return const SizedBox.shrink();
     final strings = AppStrings.of(context);
+    final session = context.read<CanonicalGameSession>();
     final prefs = view.profile.preferences;
+    final sort = prefs['eggInventorySortMode'] == 'hatchTime'
+        ? 'hatchTime'
+        : 'acquiredAt';
+    final descending = prefs['eggInventorySortDescending'] == true;
+    void preference(Map<String, dynamic> changes) => runShopAction(
+        context, () => CanonicalGameActions(session).setPreferences(changes));
     final compact = prefs['eggInventoryViewMode'] == 'list';
     final eggs = view.eggs
         .where((e) =>
-            (_kind == 'all' || e.kind == _kind) && (!_tagged || e.tagged))
+            (_kind == 'all' || e.kind == _kind) &&
+            (_tagFilter == 0 || e.tagged == (_tagFilter == 1)))
         .toList()
       ..sort((a, b) {
         final order = prefs['eggInventorySortMode'] == 'hatchTime'
@@ -82,19 +92,102 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                 : order;
       });
     return ListView(padding: const EdgeInsets.all(16), children: [
-      Row(children: [
-        Expanded(
-            child: Text(
-                widget.onPlace == null
-                    ? strings.pick('Eggs', 'Eieren')
-                    : strings.pick('Choose an egg', 'Kies een ei'),
-                style: Theme.of(context).textTheme.titleLarge)),
-        IconButton(
-            key: const Key('canonical-egg-filter'),
-            tooltip: strings.pick('Filter and sort', 'Filteren en sorteren'),
-            onPressed: () => _filter(context),
-            icon: const Icon(Icons.tune_rounded))
+      if (widget.onPlace != null)
+        Text(strings.pick('Choose an egg', 'Kies een ei'),
+            style: Theme.of(context).textTheme.titleLarge),
+      Wrap(alignment: WrapAlignment.center, spacing: 6, children: [
+        for (var i = 0; i < 3; i++)
+          ChoiceChip(
+              label: Text([
+                strings.pick('All', 'Alle'),
+                strings.pick('Tagged', 'Getagd'),
+                strings.pick('Untagged', 'Niet getagd')
+              ][i]),
+              selected: _tagFilter == i,
+              onSelected: (_) => setState(() => _tagFilter = i)),
       ]),
+      const SizedBox(height: 8),
+      Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 7,
+          children: [
+            Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                decoration: BoxDecoration(
+                    color: const Color(0xFFF1ECFB),
+                    borderRadius: BorderRadius.circular(99)),
+                child: Text(
+                    '${eggs.length} ${strings.pick(eggs.length == 1 ? 'egg' : 'eggs', eggs.length == 1 ? 'ei' : 'eieren')}',
+                    key: const Key('egg-inventory-count'),
+                    style: const TextStyle(
+                        color: AppColors.twilight,
+                        fontWeight: FontWeight.w900))),
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              PopupMenuButton<String>(
+                  key: const Key('egg-inventory-sort'),
+                  enabled: session.canAct,
+                  initialValue: sort,
+                  onSelected: (value) => preference({
+                        'eggInventorySortMode': value,
+                        'eggInventorySortDescending':
+                            value == sort ? !descending : value == 'acquiredAt',
+                      }),
+                  itemBuilder: (_) => [
+                        PopupMenuItem(
+                            value: 'acquiredAt',
+                            child: Text(strings.pick('Received', 'Ontvangen'))),
+                        PopupMenuItem(
+                            value: 'hatchTime',
+                            child:
+                                Text(strings.pick('Hatch time', 'Broedtijd'))),
+                      ],
+                  child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                          color: const Color(0xFFF1ECFB),
+                          borderRadius: BorderRadius.circular(99)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(
+                            descending
+                                ? Icons.arrow_downward_rounded
+                                : Icons.arrow_upward_rounded,
+                            size: 16,
+                            color: AppColors.twilight),
+                        const SizedBox(width: 4),
+                        Text(
+                            sort == 'acquiredAt'
+                                ? strings.pick('Received', 'Ontvangen')
+                                : strings.pick('Hatch time', 'Broedtijd'),
+                            style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.twilight)),
+                      ]))),
+              IconButton.filledTonal(
+                  key: const Key('egg-inventory-view-toggle'),
+                  tooltip: compact
+                      ? strings.pick('Show tiles', 'Tegels tonen')
+                      : strings.pick('Show list', 'Lijst tonen'),
+                  onPressed: session.canAct
+                      ? () => preference(
+                          {'eggInventoryViewMode': compact ? 'tiles' : 'list'})
+                      : null,
+                  icon: Icon(compact
+                      ? Icons.grid_view_rounded
+                      : Icons.view_list_rounded)),
+              IconButton(
+                  key: const Key('canonical-egg-filter'),
+                  tooltip:
+                      strings.pick('Filter and sort', 'Filteren en sorteren'),
+                  onPressed: () => _filter(context),
+                  icon: const Icon(Icons.tune_rounded)),
+            ]),
+          ]),
+      const SizedBox(height: 8),
       if (!compact)
         LayoutBuilder(
             builder: (context, constraints) =>
@@ -114,7 +207,19 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                                 child: Padding(
                                     padding: const EdgeInsets.all(12),
                                     child: Column(children: [
-                                      CanonicalEggArt(egg: egg, height: 125),
+                                      Stack(children: [
+                                        Center(
+                                            child: CanonicalEggArt(
+                                                egg: egg, height: 125)),
+                                        if (egg.tagged)
+                                          const Positioned(
+                                              top: 0,
+                                              right: 0,
+                                              child: Icon(
+                                                  Icons.bookmark_rounded,
+                                                  size: 20,
+                                                  color: AppColors.twilight)),
+                                      ]),
                                       Text(canonicalEggName(strings, egg),
                                           textAlign: TextAlign.center,
                                           style: const TextStyle(
@@ -134,9 +239,18 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                                           style: const TextStyle(
                                               fontSize: 10.5,
                                               fontStyle: FontStyle.italic)),
-                                      if (egg.tagged)
-                                        const Icon(Icons.bookmark_rounded,
-                                            size: 20),
+                                      if (view.inventory.reservedEggIds
+                                          .contains(egg.id)) ...[
+                                        const SizedBox(height: 5),
+                                        Text(
+                                            strings.pick('Reserved for trade',
+                                                'Gereserveerd voor ruil'),
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                                fontSize: 10,
+                                                color: AppColors.twilight,
+                                                fontWeight: FontWeight.w800)),
+                                      ],
                                     ]))))),
                 ])),
       if (compact)
@@ -147,7 +261,9 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
             leading: SizedBox(
                 width: 48, child: CanonicalEggArt(egg: egg, height: 48)),
             title: Text(canonicalEggName(strings, egg)),
-            subtitle: Text(egg.hint(strings.languageCode)),
+            subtitle: Text('${strings.remainingDuration(egg.incubation)} · '
+                '${strings.pick('Received', 'Ontvangen')} ${MaterialLocalizations.of(context).formatShortDate(egg.acquiredAt.toLocal())}'
+                '${view.inventory.reservedEggIds.contains(egg.id) ? strings.pick(' · Reserved', ' · Gereserveerd') : ''}'),
             trailing:
                 Icon(egg.tagged ? Icons.bookmark_rounded : Icons.info_outline),
             onTap: () => showCanonicalEggDetails(context, egg.id,
@@ -156,8 +272,18 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
       if (eggs.isEmpty)
         Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Text(strings.pick('No eggs match these filters.',
-                'Geen eieren met deze filters.'))),
+            child: Column(children: [
+              const GameIconSprite(GameIconKind.inventoryEggs, size: 88),
+              const SizedBox(height: 10),
+              Text(
+                  view.eggs.isEmpty
+                      ? strings.pick('No Eggs in your inventory yet.',
+                          'Nog geen Eieren in je inventaris.')
+                      : strings.pick('No eggs match these filters.',
+                          'Geen eieren met deze filters.'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.muted)),
+            ])),
     ]);
   }
 
@@ -246,9 +372,9 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                                     contentPadding: EdgeInsets.zero,
                                     title: Text(strings.pick(
                                         'Tagged only', 'Alleen getagd')),
-                                    value: _tagged,
-                                    onChanged: (value) =>
-                                        change(() => _tagged = value)),
+                                    value: _tagFilter == 1,
+                                    onChanged: (value) => change(
+                                        () => _tagFilter = value ? 1 : 0)),
                                 for (final entry in {
                                   'newest': strings.pick(
                                       'Newest first', 'Nieuwste eerst'),
@@ -318,7 +444,19 @@ Future<void> showCanonicalEggDetails(BuildContext context, String id,
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                   CanonicalEggArt(egg: egg, height: 120),
-                                  Text(egg.hint(strings.languageCode)),
+                                  Container(
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                          color: const Color(0xFFF5F0FC),
+                                          borderRadius:
+                                              BorderRadius.circular(18)),
+                                      child: Text(
+                                          egg.hint(strings.languageCode),
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                              color: AppColors.muted,
+                                              height: 1.35,
+                                              fontStyle: FontStyle.italic))),
                                   const SizedBox(height: 14),
                                   Text(
                                       '${strings.pick('Dragon', 'Draak')}: ${lineage == null ? unknown : strings.lineageName(lineage)}'),

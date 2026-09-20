@@ -1,3 +1,12 @@
+## v0.05.40 presentation comparison - 20 September 2026
+
+The additional historical comparison restores egg collection tag chips, count,
+sort/view controls, reservation labels and the hint panel; Special Adventure
+cards regain their event Trial icon and Sinister indicator; section headings
+again use the original short names and descriptive subtitles. These are public
+presentation facts only. Egg knowledge, rewards, odds, events and costs remain
+unchanged. See UI_HISTORY_RESTORATION.md.
+
 ## Historical presentation follow-up - 20 September 2026
 
 Restored the v0.05.39 chest rows (including existing Open 10), crafted Altar
@@ -389,7 +398,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: ab2ad31a70b80bae -->
+<!-- reference-source-fingerprint: 8270f44ea88723b5 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

@@ -79,3 +79,58 @@ reviewed at 320 logical pixels, 1.3 text scale and reduced motion. The emulator'
 size, density, font scale and motion settings were restored afterwards. The
 review build's temporary application ID/manifest edits are restored and the
 reference guard still verifies. No release build/upload was performed.
+
+
+## Second comparison: v0.05.40
+
+At the owner's request, checked published v0.05.40 commit
+`104eaa025e52564fa838536952086464a48f2c95` separately. Its Adventure,
+Tower, Inventory, Academy and Altar sources still match the retained legacy
+screens exactly. Theme, dragon art and game icon sources also have no changes
+against that release. The v0.05.39 -> v0.05.40 delta concerns minigame rules,
+expertise and game presentation; those later changes have not been reverted.
+
+This second pass found and restored further presentation details:
+
+- Eggs: All / Tagged / Untagged chips, lavender collection counter, directly
+  accessible Received / Hatch time sorting and list/gallery toggle; tagged
+  markers overlay the artwork. Public trade reservations are visible on cards
+  and rows, and list rows again show incubation time and received date.
+- Empty egg collections show the original illustrated inventory icon; egg
+  detail clues use the original padded lavender panel.
+- Adventure sections use the original short names and small descriptive
+  subtitles with the softer border. Special Adventure cards show their event
+  Trial icon again, with the Sinister marker where applicable and the original
+  nearly-white, flat card surface.
+- Academy enrollment again shows the lesson's 58px artwork and title above
+  the pupil selection, matching the historical header.
+
+Server actions and public snapshots still supply all state. Sort/view changes
+wait for confirmation; tag filtering does not mutate gameplay. Server-hidden
+egg identities remain hidden. Legacy per-slot refresh countdowns are not
+invented from client time when the public view does not expose their schedule.
+No backend, version, signing or release changes were made.
+
+Second-pass verification:
+
+- Flutter analysis: no issues (`.tools/v0540-final-analyze.log`).
+- Inventory/shop/lifecycle/reference checks: 32 passed, including a new
+  320px Dutch 1.35-text test for tag filters, delayed server preference
+  confirmation and an unchanged local save (`.tools/v0540-tests.log`).
+- Adventure/Academy/Trial/lifecycle checks: passed. That run reported a stale
+  reference fingerprint after the final section-heading edit; the content
+  note was reviewed and updated, then the reference guard verified and all
+  five reference tests passed (`.tools/v0540-reference-tests.log`).
+- Reviewed the new egg gallery/list screenshots with real font rendering in
+  `.tools/v0540-captures/`. They fit the compact large-text surface.
+- The 1,051-test full-suite result above belongs to the preceding restoration
+  commit; this smaller second pass uses targeted checks for its changed UI.
+
+Publication remains deferred, as explicitly requested by the owner.
+
+The second-pass Android debug preview compiled successfully (125.6 seconds).
+Reviewed Adventure sections and egg gallery/list in the full app shell on the
+Android emulator (`.tools/history-device-v0540-*.png`). The isolated synthetic
+review package was reinstalled to make space; the actual game package and
+account were untouched. Temporary build configuration edits were restored;
+there is no Android configuration diff and the reference guard still passes.
