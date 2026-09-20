@@ -1,5 +1,14 @@
 /// Event refresh translations: German, Spanish, French, Italian, Portuguese, Japanese.
 const eventRefreshPhraseTranslations = <String, List<String>>{
+  'Tap anywhere in the matching lane as stars reach the gold line. Keep going as the melody speeds up. Three mistakes end the Trial; sound is optional.':
+      [
+    'Tippe irgendwo in der passenden Bahn, wenn Sterne die goldene Linie erreichen. Die Melodie wird immer schneller. Drei Fehler beenden die Prüfung; Ton ist optional.',
+    'Toca en cualquier parte del carril correcto cuando las estrellas lleguen a la línea dorada. La melodía sigue acelerando. Tres errores terminan la prueba; el sonido es opcional.',
+    'Touche n’importe où dans la bonne piste quand les étoiles atteignent la ligne dorée. La mélodie accélère sans arrêt. Trois erreurs terminent l’épreuve ; le son est facultatif.',
+    'Tocca ovunque nella corsia giusta quando le stelle raggiungono la linea dorata. La melodia continua ad accelerare. Tre errori terminano la prova; il suono è facoltativo.',
+    'Toca em qualquer ponto da pista certa quando as estrelas chegam à linha dourada. A melodia continua a acelerar. Três erros terminam a prova; o som é opcional.',
+    '星が金色の線に届いたら、対応する列のどこでもタップ。メロディーは速くなり続けます。3回ミスで終了。音なしでも遊べます。',
+  ],
   "Remember the pumpkin face, then guide the Witchlight along the path. Stay within the edges. Three mistakes end the Trial.":
       [
     "Merke dir das Kürbisgesicht und führe das Hexenlicht am Pfad entlang. Bleibe innerhalb der Ränder. Drei Fehler beenden die Prüfung.",

@@ -42,6 +42,8 @@ class TrialDefinition {
   final Duration duration;
 
   bool get isSeasonal => specialEventId != null;
+  bool get isEndless =>
+      kind == TrialKind.sunwakeSurf || kind == TrialKind.midnightChime;
   List<TrainingFocus> get assistingExpertises =>
       isSeasonal ? TrainingFocus.values : [focus];
 

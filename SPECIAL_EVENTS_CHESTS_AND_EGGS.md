@@ -359,7 +359,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 5ec573951f22cf52 -->
+<!-- reference-source-fingerprint: 5b55444e0ba30c1a -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -553,13 +553,15 @@ another parcel. Spirit extends delivery tolerance by up to 8px. There is no
 shared delivery cooldown. Catch-up work is bounded to eight queued parcels;
 three misses stop play synchronously, including expiry batches after a stalled
 frame. Feedback text changes directly without stacking repeated fade-out labels.
-New Year beats shorten from 1.10s to a .42s floor at .0105s per active second;
-every 16th beat has a 1.5x phrase pause. Note travel shortens from 2.1s to .9s
-at .018s per active second, plus up to .4s from Spirit. Travel time is fixed
-at spawn. The hit window remains Â±180â€“250ms (Might). After 22 active seconds,
-every fourth beat has two notes; after 45 seconds, every second beat does.
-Chords always use two distinct lanes and accept two fingers. Each lane has its
-own 120ms repeat guard. Four synthesized chimes (C5, D5, E5, G5) play the original
+New Year keeps its familiar opening minute: beat spacing `1.10 - t*.0105`
+and travel `2.1 - t*.018` seconds. After 60 seconds these keep shrinking as
+`.47/(1+(t-60)*.0105/.47)` and `1.02/(1+(t-60)*.018/1.02)`; Spirit adds up to .4
+seconds of travel. Every 16th beat has a 1.5x phrase pause. Travel is fixed at
+spawn. There is no fixed speed ceiling, timer, action limit or gameplay score
+cap. Might retains its 180-250 ms timing window. Chords start every fourth beat
+after 22 seconds and every second beat after 45 seconds. Two fingers can play
+two distinct lanes anywhere on screen, aligned with the visible lanes. Each
+lane's repeat guard is min(120 ms, 45% of the current beat). Four synthesized chimes (C5, D5, E5, G5) play the original
 32-note melody; missed notes retain the existing failure sound. Sound is optional.
 Valentine moves both hearts simultaneously, mirroring horizontal direction;
 a blocked heart waits. Every maze pair is checked for a shared solution before
@@ -568,9 +570,11 @@ each newly lit cell scores only once per board. Both puzzle games offer 1â€�
 hints for the whole run based on Arcana. Revisiting a maze state awards nothing.
 
 The five independent arcade games retain the full timer on a mistake, deduct 30 points
-without going below zero, reset combo and flash red. They record at most 200
-scoring actions and cap score at 20,000, matching the existing server bounds.
-Christmas and New Year end after exactly three mistakes, or on timeout.
+without going below zero, reset combo and flash red. The timed games record at most 200
+scoring actions and cap score at 20,000. New Year is endless and stops only on
+its third mistake; Christmas also ends when its timer runs out. S+ for New Year
+remains inclusive at 20,000. Migration 86 widens only New Year validation, keeps
+old timed clients compatible and extends its renewable inactivity lease.
 Christmas deliveries award 120 base points; New Year 130 within 90ms and 100
 otherwise; new maze states 55 and a paired finish 120; new lit prisms 70 and a
 finished circuit 120. Each scoring action adds the existing capped combo bonus

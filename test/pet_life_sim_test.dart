@@ -113,7 +113,7 @@ void main() {
       dragon.evolve(start);
       expect(dragon.isMastery, isTrue);
       expect(dragon.maximumTotalExpertise, before + 50);
-      expect(dragon.applyExpertiseCosts({TrainingFocus.spirit: -100}), isTrue);
+      dragon.applyExpertiseCosts({TrainingFocus.spirit: -100});
       dragon.addTraining(TrainingFocus.might, 5000);
       expect(dragon.totalTraining, before + 50);
       expect(dragon.trainingFor(TrainingFocus.spirit), 0);
@@ -138,25 +138,22 @@ void main() {
       dragon.addTraining(TrainingFocus.might, 100);
       expect(dragon.totalTraining, old * 3);
       expect(dragon.expertiseMaxed, isTrue);
-      expect(dragon.applyExpertiseCosts({TrainingFocus.arcana: -100}), isTrue);
+      dragon.applyExpertiseCosts({TrainingFocus.arcana: -100});
       dragon.addTraining(TrainingFocus.spirit, 200);
       expect(dragon.totalTraining, sinister ? 1150 : 1000);
     }
   });
 
-  test('negative input cannot reduce training and invalid costs change nothing',
-      () {
+  test('negative grants do nothing; adventure reductions stop at zero', () {
     final dragon = Pet(
         dragonSpark: 0,
         training: const {'might': 12, 'arcana': -5, 'spirit': 1});
     dragon.addTraining(TrainingFocus.might, -50);
     expect(dragon.trainingFor(TrainingFocus.might), 12);
     expect(dragon.trainingFor(TrainingFocus.arcana), 0);
-    expect(
-        dragon.applyExpertiseCosts(
-            {TrainingFocus.might: -1, TrainingFocus.spirit: -2}),
-        isFalse);
-    expect(dragon.training, {'might': 12, 'arcana': 0, 'spirit': 1});
+    dragon.applyExpertiseCosts(
+        {TrainingFocus.might: -1, TrainingFocus.spirit: -2});
+    expect(dragon.training, {'might': 11, 'arcana': 0, 'spirit': 0});
   });
 
   test('Dragon Spark is stable, inclusive 0 to 50, and survives evolution', () {

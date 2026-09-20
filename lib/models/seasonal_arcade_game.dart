@@ -69,6 +69,52 @@ class SeasonalArcadeGame {
   bool get lost => mistakes >= 3;
   bool get canInput => !lost && time >= readyAt;
 
+  /// Endless rhythm runs persist only their active notes, never their entire
+  /// input history. The melody is derived from the same constructor seed.
+  Map<String, dynamic> chimeCheckpoint() {
+    if (kind != TrialKind.midnightChime) throw StateError('not_chimes');
+    return {
+      'milliseconds': _milliseconds,
+      'noteId': _noteId,
+      'beat': _beat,
+      'nextNote': _nextNote,
+      'mistakes': mistakes,
+      'readyAt': readyAt,
+      'errorCell': errorCell,
+      'lanes': {for (final e in laneReadyAt.entries) '${e.key}': e.value},
+      'flares': {for (final e in flares.entries) '${e.key}': e.value},
+      'notes': [
+        for (final n in notes) [n.id, n.lane, n.strikeAt, n.travel]
+      ],
+    };
+  }
+
+  void restoreChimeCheckpoint(Map<String, dynamic> state) {
+    if (kind != TrialKind.midnightChime) throw StateError('not_chimes');
+    _milliseconds = state['milliseconds'] as int;
+    _noteId = state['noteId'] as int;
+    _beat = state['beat'] as int;
+    _nextNote = (state['nextNote'] as num).toDouble();
+    mistakes = state['mistakes'] as int;
+    readyAt = (state['readyAt'] as num).toDouble();
+    errorCell = state['errorCell'] as int?;
+    void restoreMap(Map<int, double> target, String key) {
+      target.clear();
+      for (final e in (state[key] as Map).entries) {
+        target[int.parse(e.key as String)] = (e.value as num).toDouble();
+      }
+    }
+
+    restoreMap(laneReadyAt, 'lanes');
+    restoreMap(flares, 'flares');
+    notes.clear();
+    for (final n in state['notes'] as List) {
+      notes.add(ChimeNote(n[0] as int, n[1] as int, (n[2] as num).toDouble(),
+          (n[3] as num).toDouble()));
+    }
+    _actions.clear();
+  }
+
   List<ArcadeAction> takeActions() {
     final result = List<ArcadeAction>.of(_actions);
     _actions.clear();
@@ -104,8 +150,11 @@ class SeasonalArcadeGame {
   }
 
   void advanceTo(int milliseconds) {
-    // These four games end by 78 s, including maximum expertise assistance.
-    final target = min(milliseconds, 78000) ~/ 10 * 10;
+    final target = (kind == TrialKind.midnightChime
+            ? milliseconds
+            : min(milliseconds, 78000)) ~/
+        10 *
+        10;
     while (_milliseconds < target && !lost) {
       _milliseconds += 10;
       flares.removeWhere((_, until) => until <= time);
@@ -216,7 +265,8 @@ class SeasonalArcadeGame {
         points: correct && (time - target.strikeAt).abs() < .09 ? 130 : 100);
     flares[lane] = time + .35;
     errorCell = correct ? null : lane;
-    laneReadyAt[lane] = time + .12;
+    laneReadyAt[lane] =
+        time + min(.12, SeasonalArcadePacing.chimeBeat(time) * .45);
     return correct;
   }
 
@@ -237,7 +287,10 @@ class SeasonalArcadeGame {
   }
 
   void rotatePrism(int cell) {
-    if (!canInput || kind != TrialKind.prismaticParade || cell < 0 || cell > 15) {
+    if (!canInput ||
+        kind != TrialKind.prismaticParade ||
+        cell < 0 ||
+        cell > 15) {
       return;
     }
     prismHint = null;

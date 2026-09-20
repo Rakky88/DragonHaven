@@ -98,7 +98,11 @@ class TrialRunModel {
   final _events = <ArcadeAction>[];
   final _history = <TrialInput>[];
   bool get _directCheckpoint =>
-      cavern != null || ruin != null || runes != null || surf != null;
+      cavern != null ||
+      ruin != null ||
+      runes != null ||
+      surf != null ||
+      kind == TrialKind.midnightChime;
   CavernFlightGame? cavern;
   RuinBreakerGame? ruin;
   RuneweaverGame? runes;
@@ -110,7 +114,7 @@ class TrialRunModel {
   OrchardPlacement? lastOrchardPlacement;
   WitchlightTrace? trace;
   bool get seasonal => trialDefinitions[kind]!.isSeasonal;
-  bool get endless => kind == TrialKind.sunwakeSurf;
+  bool get endless => trialDefinitions[kind]!.isEndless;
   int stat(TrainingFocus focus) => training[focus] ?? 0;
   double assistance(TrainingFocus focus) => stat(focus).clamp(0, 400) / 400;
   int get remainingMs => max(0, durationMs - elapsedMs - _witchPenaltyMs);
@@ -160,6 +164,8 @@ class TrialRunModel {
         if (ruin != null) 'ruin': ruin!.checkpoint(),
         if (runes != null) 'runes': runes!.checkpoint(),
         if (surf != null) 'surf': surf!.checkpoint(),
+        if (kind == TrialKind.midnightChime)
+          'chimes': arcade!.chimeCheckpoint(),
         if (!_directCheckpoint)
           'history': [
             for (final input in _history)
@@ -178,7 +184,9 @@ class TrialRunModel {
           for (final entry in (state['training'] as Map).entries)
             TrainingFocus.values.byName(entry.key as String): entry.value as int
         });
-    if (model._directCheckpoint) {
+    // Older timed New Year checkpoints still contain a replay transcript.
+    if (model._directCheckpoint &&
+        (model.kind != TrialKind.midnightChime || state['chimes'] != null)) {
       model.elapsedMs = state['elapsedMs'] as int;
       model._score = state['score'] as int;
       model.correctActions = state['correctActions'] as int;
@@ -207,6 +215,10 @@ class TrialRunModel {
       if (model.surf != null) {
         model.surf = SunwakeSurf.fromCheckpoint(
             Map<String, dynamic>.from(state['surf']));
+      }
+      if (model.kind == TrialKind.midnightChime) {
+        model.arcade!
+            .restoreChimeCheckpoint(Map<String, dynamic>.from(state['chimes']));
       }
     } else {
       for (final input in state['history'] as List) {

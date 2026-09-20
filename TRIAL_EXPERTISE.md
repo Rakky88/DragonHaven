@@ -9,7 +9,7 @@ avonturen, maar versterken deze trialhulp niet verder.
 Bij alle eventtrials met een tijdslimiet geven **Might + Arcana + Spirit samen**
 ook maximaal 3 extra seconden: `round(totaal / 300)`, begrensd op 0–3.
 Dat is +1 seconde vanaf 150, +2 vanaf 450 en +3 vanaf 750 punten.
-Sunwake heeft geen tijdslimiet en gebruikt deze tijdsbonus dus niet.
+Sunwake en New Year hebben geen tijdslimiet en gebruiken deze tijdsbonus dus niet.
 
 | Trial | Might | Arcana | Spirit |
 |---|---|---|---|
@@ -18,7 +18,7 @@ Sunwake heeft geen tijdslimiet en gebruikt deze tijdsbonus dus niet.
 | **Runeweaver** | Geen effect | Runen blijven 500–600 ms zichtbaar. Vanaf 240 punten krijg je één extra herinnering aan de laatste rune, vanaf de vierde ronde. | Geen effect |
 | **Witchlight Ward — Halloween** | Draagt bij aan de gezamenlijke tijdsbonus. | Laat de pompoen bij volgende rondes maximaal 800 ms langer zien. De eerste preview blijft 2,9 seconden. Ook de tijdsbonus. | Vergroot de toegestane afstand tot het midden van het pad van 12 tot 16 schermpunten. Ook de tijdsbonus. |
 | **Hollyfrost Giftforge — kerst** | Geeft elk cadeau maximaal 0,35 seconde extra voordat het van de band valt. Ook de tijdsbonus. | Alleen de tijdsbonus. | Alleen de tijdsbonus. |
-| **Midnight Chime — oud en nieuw** | Vergroot het toegestane tikvenster van ±0,18 tot ±0,25 seconde. Ook de tijdsbonus. | Alleen de tijdsbonus. | Geeft vallende noten tot 0,4 seconde extra reistijd, zodat je ze eerder ziet. Ook de tijdsbonus. |
+| **Midnight Chime — oud en nieuw** | Vergroot het toegestane tikvenster van ±0,18 tot ±0,25 seconde. Ook de tijdsbonus. | Geen effect. | Geeft vallende noten tot 0,4 seconde extra reistijd, zodat je ze eerder ziet. |
 | **Rosevow Relay — Valentijn** | Alleen de tijdsbonus. | 1 hint bij minder dan 200 punten, 2 vanaf 200 en 3 vanaf 400. Ook de tijdsbonus. | Alleen de tijdsbonus. |
 | **Prismatic Parade — Pride** | Alleen de tijdsbonus. | 1 hint bij minder dan 200 punten, 2 vanaf 200 en 3 vanaf 400. Ook de tijdsbonus. | Alleen de tijdsbonus. |
 | **Wishcake Tower — verjaardag** | Vergroot de beginbreedte van de taart van 44% tot 48% van het speelveld. | Vergroot de marge voor perfect stapelen van 1,8% tot 2,5% van de speelveldbreedte. | Geeft bewegende lagen tot 8% meer tijd om over te steken. Alle drie tellen ook mee voor de tijdsbonus. |

@@ -9,11 +9,17 @@ abstract final class SeasonalArcadePacing {
   static double parcelInterval(double seconds) =>
       max(.36, 2.4 - (35 + max(0, seconds)) * .031);
 
-  static double chimeBeat(double seconds) =>
-      max(.42, 1.10 - max(0, seconds) * .0105);
+  // Keep the familiar opening minute, then continue accelerating smoothly.
+  // No fixed speed ceiling: the positive tail keeps shrinking with play time.
+  static double chimeBeat(double seconds) => seconds <= 60
+      ? 1.10 - max(0, seconds) * .0105
+      : .47 / (1 + (seconds - 60) * .0105 / .47);
 
   static double chimeTravel(double seconds, double spirit) =>
-      max(.9, 2.1 - max(0, seconds) * .018) + spirit.clamp(0, 1) * .4;
+      (seconds <= 60
+          ? 2.1 - max(0, seconds) * .018
+          : 1.02 / (1 + (seconds - 60) * .018 / 1.02)) +
+      spirit.clamp(0, 1) * .4;
 
   // Original four-pitch melody: C, D, E and G. One phrase repeats with a
   // seed-selected starting phrase; pitch, timing and harmony stay coordinated.

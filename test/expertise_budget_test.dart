@@ -69,9 +69,6 @@ void main() {
     final a = AdventureCatalog.mini.firstWhere((a) => a.expertiseCost > 0);
     game.adventureOptionIds[AdventureKind.mini] = [a.id];
     game.pet.training[a.focus.name] = 999;
-    expect(
-        await game.startAdventure(a), AdventureStartResult.requirementsNotMet);
-    expect(game.adventureRuns, isEmpty);
     game.pet.training[a.expertiseCostFocus!.name] = 1;
     expect(game.pet.expertiseMaxed, isTrue);
     expect(await game.startAdventure(a), AdventureStartResult.started);
@@ -86,6 +83,23 @@ void main() {
     expect(game.pet.isMastery, isTrue);
     expect(await game.claimAdventure(run.id), isNull);
   });
+
+  for (final available in [0, 2, 7]) {
+    test(
+        'retraining accepts $available source points and floors the loss at zero',
+        () async {
+      final a = AdventureCatalog.short.firstWhere((a) => a.expertiseCost > 2);
+      game.adventureOptionIds[AdventureKind.short] = [a.id];
+      game.pet.training[a.expertiseCostFocus!.name] = available;
+      expect(await game.startAdventure(a), AdventureStartResult.started);
+      final run = game.adventureRuns.single;
+      now = run.endsAt.add(const Duration(seconds: 1));
+      expect(await game.claimAdventure(run.id), isNotNull);
+      expect(game.pet.trainingFor(a.expertiseCostFocus!),
+          max(0, available - a.expertiseCost));
+      expect(game.pet.trainingFor(a.focus), a.statPoints + a.expertiseCost);
+    });
+  }
 
   test('adventures started on an older app retain their positive-only reward',
       () async {

@@ -1951,9 +1951,6 @@ extension DragonHavenSystems on HouseholdProvider {
     if (dragon.activeAdventureId != null) {
       return AdventureStartResult.dragonBusy;
     }
-    if (!adventure.canAffordExpertiseCost(dragon.trainingFor)) {
-      return AdventureStartResult.requirementsNotMet;
-    }
     final now = _clock();
     if (adventure.seasonalSpecial) return AdventureStartResult.unavailable;
     final duration = expertiseAdjustedAdventureDuration(adventure, [dragon]);
@@ -2064,7 +2061,7 @@ extension DragonHavenSystems on HouseholdProvider {
     final expertiseRewards = run.retraining
         ? definition.expertiseRewards
         : {definition.focus: definition.statPoints};
-    if (!dragon.applyExpertiseCosts(expertiseRewards)) return null;
+    dragon.applyExpertiseCosts(expertiseRewards);
     final grantedXp = _grantDragonXp(dragon, definition.xp);
     for (final reward in expertiseRewards.entries.where((e) => e.value > 0)) {
       _grantAdventureTrialExpertise(dragon, reward.key, reward.value);

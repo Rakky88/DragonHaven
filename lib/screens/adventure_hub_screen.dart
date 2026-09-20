@@ -3021,9 +3021,7 @@ class _DragonPickerTile extends StatelessWidget {
       color: highlighted ? const Color(0xFFFFFAE9) : Colors.white,
       child: InkWell(
         key: Key('adventure-dragon-${dragon.id}'),
-        onTap: adventure.canAffordExpertiseCost(dragon.trainingFor)
-            ? () => Navigator.pop(context, dragon)
-            : null,
+        onTap: () => Navigator.pop(context, dragon),
         borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
@@ -3098,11 +3096,6 @@ class _DragonPickerTile extends StatelessWidget {
                   ],
                 ),
               ),
-              if (!adventure.canAffordExpertiseCost(dragon.trainingFor))
-                Tooltip(
-                    message: strings.pick('Not enough expertise for this path.',
-                        'Niet genoeg expertise voor dit pad.'),
-                    child: const Icon(Icons.lock_outline_rounded, size: 18)),
               Icon(Icons.chevron_right_rounded,
                   color: AppColors.eventColor(context, AppColors.twilight)),
             ],

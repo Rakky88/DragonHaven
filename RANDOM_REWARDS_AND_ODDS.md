@@ -212,7 +212,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 7708701926fc37ec -->
+<!-- reference-source-fingerprint: 3610c875946a44ac -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -422,11 +422,13 @@ its initially balanced expertise is later redistributed.
 
 Exactly 150/300 Mini, 150/300 Short and 100/200 Long adventures retrain. Their
 original focus earns its original reward plus the transferred amount; a different
-expertise pays first: Mini 1 point, Short 3?5, Long 15?25 (fixed per adventure,
+expertise pays first: Mini 1 point, Short 3-5, Long 15-25 (fixed per adventure,
 not a random roll). Both transfer directions exist for each target expertise.
-Starting requires enough of the paying expertise; claim applies negatives before
-positive rewards and equipment bonuses. Original net rewards, XP, duration and
-chest odds remain unchanged. Runs started before this feature retain their
+Every otherwise eligible dragon may start, even with zero in the paying
+expertise. Claim subtracts first, flooring each stat at zero, then applies the
+full positive reward and equipment bonus within the shared total budget.
+Consequently the net gain is larger when the dragon cannot pay the full loss.
+XP, duration and chest odds remain unchanged. Runs started before this feature retain their
 original positive-only rewards. Group and Special rewards are unchanged.
 
 Trial assistance retains its existing 300/400-point gameplay bounds, separately
@@ -753,9 +755,10 @@ Valentine uses 650 / 1600 / 2600 / 3900 / 10000; Pride uses
 1200 / 2900 / 4800 / 7200 / 12000. New Year uses
 500 / 1200 / 2000 / 3000 / 20000. Christmas keeps
 500 / 1200 / 2000 / 3000 / 7500. All boundaries are inclusive. Only S+ changes
-for New Year, Valentine and Pride. New Year's S+ equals the existing 20000 score
-cap. Calibration still records raw scores and never adjusts cutoffs automatically.
-Reward pools and the existing server score/action limits remain unchanged.
+for New Year, Valentine and Pride. New Year's S+ starts at 20000; v0.05.39 removes its score, action and time caps.
+Three mistakes end its endlessly accelerating rhythm. Calibration still records raw scores and never adjusts cutoffs automatically.
+Reward pools remain unchanged. Migration 86 removes only the New Year score,
+action and time caps, retaining token, rate, elapsed-time and single-claim checks.
 The birthday addition after v0.05.25 uses 600 / 1500 / 2800 / 4200 / 10000.
 
 

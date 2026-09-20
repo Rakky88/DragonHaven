@@ -107,8 +107,6 @@ class AdventureDefinition {
         if (expertiseCostFocus != null) expertiseCostFocus!: -expertiseCost,
         focus: statPoints + expertiseCost,
       };
-  bool canAffordExpertiseCost(int Function(TrainingFocus) score) =>
-      expertiseCostFocus == null || score(expertiseCostFocus!) >= expertiseCost;
   final AdventureRequirements requirements;
   final ChestTier? knownChest;
   final bool sinister;

@@ -51,9 +51,16 @@ void main() {
     expect(SeasonalArcadePacing.parcelInterval(180), .36);
     expect(SeasonalArcadePacing.parcelInterval(0),
         lessThan(SeasonalArcadePacing.parcelLifetime(0, 0)));
-    expect(SeasonalArcadePacing.chimeBeat(180), .42);
-    expect(SeasonalArcadePacing.chimeTravel(180, 0), .9);
-    expect(SeasonalArcadePacing.chimeTravel(180, 100), 1.3);
+    expect(SeasonalArcadePacing.chimeBeat(180), lessThan(.42));
+    expect(SeasonalArcadePacing.chimeTravel(180, 0), lessThan(.9));
+    expect(SeasonalArcadePacing.chimeTravel(180, 100),
+        closeTo(SeasonalArcadePacing.chimeTravel(180, 0) + .4, .0001));
+    for (final seconds in [60.0, 180.0, 600.0, 3600.0, 21600.0]) {
+      expect(SeasonalArcadePacing.chimeBeat(seconds + 60),
+          inExclusiveRange(0, SeasonalArcadePacing.chimeBeat(seconds)));
+      expect(SeasonalArcadePacing.chimeTravel(seconds + 60, 0),
+          inExclusiveRange(0, SeasonalArcadePacing.chimeTravel(seconds, 0)));
+    }
     for (final seconds in [0.0, 21.9, 22.0, 45.0, 100.0]) {
       for (var phrase = 0; phrase < 4; phrase++) {
         final beats = List.generate(32,

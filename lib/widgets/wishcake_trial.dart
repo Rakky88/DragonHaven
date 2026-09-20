@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'trial_touch_surface.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/pet.dart';
@@ -19,8 +20,10 @@ class WishcakeTrial extends StatefulWidget {
       required this.running,
       required this.clock,
       required this.onAction,
+      this.touchControls,
       this.controller});
   final TrialGameplayController? controller;
+  final TrialTouchControls? touchControls;
   final TrialDragon dragon;
   final int seed;
   final bool running;
@@ -48,6 +51,7 @@ class _WishcakeTrialState extends State<WishcakeTrial> {
   @override
   void initState() {
     super.initState();
+    widget.touchControls?.dropCake = _place;
     double expertise(TrainingFocus focus) =>
         widget.dragon.trainingFor(focus).clamp(0, 400) / 400;
     _tower = widget.controller?.model.cake ??
@@ -76,6 +80,7 @@ class _WishcakeTrialState extends State<WishcakeTrial> {
 
   @override
   void dispose() {
+    widget.touchControls?.dropCake = null;
     _ticker?.cancel();
     super.dispose();
   }

@@ -15,6 +15,7 @@ import '../widgets/witchlight_trial_widgets.dart';
 import '../widgets/seasonal_minigames.dart';
 import '../widgets/wishcake_trial.dart';
 import '../widgets/summer_trials.dart';
+import '../widgets/trial_touch_surface.dart';
 
 class SeasonalTrialRunResult {
   const SeasonalTrialRunResult({
@@ -61,6 +62,7 @@ class SeasonalTrialGame extends StatefulWidget {
 class _SeasonalTrialGameState extends State<SeasonalTrialGame>
     with SingleTickerProviderStateMixin {
   late final Random _random;
+  final _touchControls = TrialTouchControls();
   Timer? _ticker;
   late final AnimationController _ambient;
   late int _remainingMilliseconds;
@@ -89,7 +91,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
 
   TrialDefinition get definition => widget.offer.definition;
   DateTime _now() => (widget.clock ?? DateTime.now)();
-  bool get _isEndless => widget.offer.kind == TrialKind.sunwakeSurf;
+  bool get _isEndless => definition.isEndless;
   bool get _isWitchlight => widget.offer.kind == TrialKind.witchlightWard;
   int? get _mistakeLimit => switch (widget.offer.kind) {
         TrialKind.wishcakeTower => 1,
@@ -364,95 +366,102 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
       canPop: !_started || _ending,
       child: Scaffold(
         backgroundColor: theme.deepColor,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(theme.backgroundAsset, fit: BoxFit.cover),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: .18),
-                    theme.deepColor.withValues(alpha: .70),
-                    theme.deepColor.withValues(alpha: .92),
-                  ],
-                  stops: const [0, .58, 1],
+        body: TrialTouchSurface(
+            kind: widget.offer.kind,
+            active:
+                _started && !_ending && (widget.controller?.running ?? true),
+            controls: _touchControls,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(theme.backgroundAsset, fit: BoxFit.cover),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: .18),
+                        theme.deepColor.withValues(alpha: .70),
+                        theme.deepColor.withValues(alpha: .92),
+                      ],
+                      stops: const [0, .58, 1],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            _SeasonalAmbientOrnaments(
-              theme: theme,
-              animation: _ambient,
-            ),
-            SafeArea(
-              child: Column(
-                children: [
-                  _SeasonalHud(
+                _SeasonalAmbientOrnaments(
+                  theme: theme,
+                  animation: _ambient,
+                ),
+                SafeArea(
+                  child: Column(
+                    children: [
+                      _SeasonalHud(
+                        theme: theme,
+                        title: definition.title(strings.languageCode),
+                        score: _score,
+                        combo: _combo,
+                        phase: _isWitchlight ? _phase : -1,
+                        phaseLabel: _currentPhaseFocus.name.toUpperCase(),
+                        round: _round,
+                        remaining: _isEndless
+                            ? null
+                            : Duration(milliseconds: _remainingMilliseconds),
+                        accent: theme.accentColor,
+                        onClose: _started && !_ending
+                            ? null
+                            : () => Navigator.pop(context),
+                      ),
+                      if (_mistakeLimit != null)
+                        Text(
+                          '${strings.pick('Mistakes', 'Fouten')}: $_mistakes / $_mistakeLimit',
+                          key: const Key('witchlight-mistakes'),
+                          style: TextStyle(
+                              color: _mistakes > 0
+                                  ? Colors.redAccent
+                                  : Colors.white70,
+                              fontWeight: FontWeight.w700),
+                        ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                          child: _buildGame(strings),
+                        ),
+                      ),
+                      _DragonStudentStrip(
+                        dragon: widget.dragon,
+                        success: _combo > 0,
+                        accent: theme.accentColor,
+                        status: _status,
+                      ),
+                    ],
+                  ),
+                ),
+                if (!_started) _IntroOverlay(theme: theme, onStart: _start),
+                if (_ending)
+                  _EndingVeil(
                     theme: theme,
-                    title: definition.title(strings.languageCode),
                     score: _score,
-                    combo: _combo,
-                    phase: _isWitchlight ? _phase : -1,
-                    phaseLabel: _currentPhaseFocus.name.toUpperCase(),
-                    round: _round,
-                    remaining: _isEndless
-                        ? null
-                        : Duration(milliseconds: _remainingMilliseconds),
-                    accent: theme.accentColor,
-                    onClose: _started && !_ending
-                        ? null
-                        : () => Navigator.pop(context),
+                    combo: _bestCombo,
+                    accuracy: _totalActions == 0
+                        ? 0
+                        : _correctActions / _totalActions,
+                    elapsed: _runStartedAt == null
+                        ? Duration.zero
+                        : _now().difference(_runStartedAt!),
                   ),
-                  if (_mistakeLimit != null)
-                    Text(
-                      '${strings.pick('Mistakes', 'Fouten')}: $_mistakes / $_mistakeLimit',
-                      key: const Key('witchlight-mistakes'),
-                      style: TextStyle(
-                          color:
-                              _mistakes > 0 ? Colors.redAccent : Colors.white70,
-                          fontWeight: FontWeight.w700),
-                    ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                      child: _buildGame(strings),
+                if (_errorFlashUntil != null)
+                  IgnorePointer(
+                    child: TweenAnimationBuilder<double>(
+                      key: ValueKey('witchlight-error-flash-$_mistakes'),
+                      tween: Tween(begin: .48, end: 0),
+                      duration: const Duration(milliseconds: 300),
+                      builder: (_, alpha, __) => ColoredBox(
+                          color: Colors.red.withValues(alpha: alpha)),
                     ),
                   ),
-                  _DragonStudentStrip(
-                    dragon: widget.dragon,
-                    success: _combo > 0,
-                    accent: theme.accentColor,
-                    status: _status,
-                  ),
-                ],
-              ),
-            ),
-            if (!_started) _IntroOverlay(theme: theme, onStart: _start),
-            if (_ending)
-              _EndingVeil(
-                theme: theme,
-                score: _score,
-                combo: _bestCombo,
-                accuracy:
-                    _totalActions == 0 ? 0 : _correctActions / _totalActions,
-                elapsed: _runStartedAt == null
-                    ? Duration.zero
-                    : _now().difference(_runStartedAt!),
-              ),
-            if (_errorFlashUntil != null)
-              IgnorePointer(
-                child: TweenAnimationBuilder<double>(
-                  key: ValueKey('witchlight-error-flash-$_mistakes'),
-                  tween: Tween(begin: .48, end: 0),
-                  duration: const Duration(milliseconds: 300),
-                  builder: (_, alpha, __) =>
-                      ColoredBox(color: Colors.red.withValues(alpha: alpha)),
-                ),
-              ),
-          ],
-        ),
+              ],
+            )),
       ),
     );
   }
@@ -461,6 +470,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
       ? _buildWitchlight(strings)
       : widget.offer.kind == TrialKind.wishcakeTower
           ? WishcakeTrial(
+              touchControls: _touchControls,
               dragon: widget.dragon,
               seed: _arcadeSeed,
               controller: widget.controller,
@@ -481,6 +491,7 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
                   clock: _now,
                   onAction: _arcadeAction)
               : SeasonalMinigames(
+                  touchControls: _touchControls,
                   kind: widget.offer.kind,
                   dragon: widget.dragon,
                   seed: _arcadeSeed,
@@ -1519,9 +1530,9 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
           introEn: 'Ring in the First Dawn',
           introNl: 'Luid de Eerste Dageraad in',
           instructionsEn:
-              'Tap 1–4 as stars reach the gold line. The melody speeds up and later plays two notes together. Three mistakes end the Trial; sound is optional.',
+              'Tap anywhere in the matching lane as stars reach the gold line. Keep going as the melody speeds up. Three mistakes end the Trial; sound is optional.',
           instructionsNl:
-              'Tik op 1–4 als sterren de gouden lijn raken. De melodie versnelt en speelt later twee noten tegelijk. Bij drie fouten stopt de proef; geluid is optioneel.',
+              'Tik ergens in de juiste baan als sterren de gouden lijn raken. De melodie blijft versnellen. Bij drie fouten eindigt de proef; geluid is optioneel.',
           successEn: 'A perfect midnight note!',
           successNl: 'Een perfecte middernachttoon!',
           failureEn: 'Missed chime · −30 points',

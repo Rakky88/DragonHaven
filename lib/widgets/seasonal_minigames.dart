@@ -12,6 +12,7 @@ import '../models/seasonal_arcade_game.dart';
 import '../models/trial.dart';
 import '../models/trial_input.dart';
 import '../services/audio_service.dart';
+import 'trial_touch_surface.dart';
 
 typedef SeasonalArcadeAction = void Function(bool correct,
     {required int points, required bool completesRound});
@@ -27,6 +28,7 @@ class SeasonalMinigames extends StatefulWidget {
       required this.clock,
       required this.onAction,
       this.onInput,
+      this.touchControls,
       this.controller});
   final TrialKind kind;
   final TrialDragon dragon;
@@ -36,6 +38,7 @@ class SeasonalMinigames extends StatefulWidget {
   final SeasonalArcadeAction onAction;
   final ValueChanged<TrialInput>? onInput;
   final TrialGameplayController? controller;
+  final TrialTouchControls? touchControls;
 
   @override
   State<SeasonalMinigames> createState() => _SeasonalMinigamesState();
@@ -49,6 +52,15 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   int? _draggingParcel;
   Offset? _drag;
   final _surface = GlobalKey();
+  final _chimeSurface = GlobalKey();
+
+  int _chimeLaneAt(Offset globalPosition) {
+    final box = _chimeSurface.currentContext!.findRenderObject()! as RenderBox;
+    return (box.globalToLocal(globalPosition).dx / box.size.width * 4)
+        .floor()
+        .clamp(0, 3);
+  }
+
   double get _time => _game.time;
   double get _spirit => _game.spirit;
   bool get _lost => _game.lost;
@@ -67,6 +79,9 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   @override
   void initState() {
     super.initState();
+    widget.touchControls?.strikeChime = _strike;
+    widget.touchControls?.chimeLaneAt = _chimeLaneAt;
+    widget.touchControls?.moveHearts = _move;
     double expertise(TrainingFocus focus) =>
         widget.dragon.trainingFor(focus).clamp(0, 400) / 400;
     _game = widget.controller?.model.arcade ??
@@ -91,6 +106,9 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
 
   @override
   void dispose() {
+    widget.touchControls?.strikeChime = null;
+    widget.touchControls?.chimeLaneAt = null;
+    widget.touchControls?.moveHearts = null;
     _ticker?.cancel();
     super.dispose();
   }
@@ -134,7 +152,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   @override
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
-    return IgnorePointer(
+    final game = IgnorePointer(
         ignoring: !widget.running || _lost,
         child: switch (widget.kind) {
           TrialKind.hollyfrostGiftforge => _giftforge(s),
@@ -143,6 +161,17 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
           TrialKind.prismaticParade => _circuit(s),
           _ => const SizedBox.shrink(),
         });
+    if (widget.kind != TrialKind.midnightChime ||
+        widget.touchControls != null) {
+      return game;
+    }
+    return TrialTouchSurface(
+        kind: widget.kind,
+        active: _canInput,
+        controls: TrialTouchControls()
+          ..strikeChime = _strike
+          ..chimeLaneAt = _chimeLaneAt,
+        child: game);
   }
 
   Widget _panel(
@@ -354,97 +383,103 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
         instruction:
             s.pick('Play the midnight sky', 'Bespeel de middernachthemel'),
         detail: s.pick(
-            'Tap 1–4 as stars reach the gold line. The melody speeds up and later plays two notes together. Three mistakes end the Trial; sound is optional.',
-            'Tik op 1–4 als sterren de gouden lijn raken. De melodie versnelt en speelt later twee noten tegelijk. Bij drie fouten stopt de proef; geluid is optioneel.'),
+            'Tap anywhere in the matching lane as stars reach the gold line. Keep going as the melody speeds up. Three mistakes end the Trial; sound is optional.',
+            'Tik ergens in de juiste baan als sterren de gouden lijn raken. De melodie blijft versnellen. Bij drie fouten eindigt de proef; geluid is optioneel.'),
         child: LayoutBuilder(builder: (context, box) {
           final laneWidth = box.maxWidth / 4;
           final strikeY = max(70.0, box.maxHeight - 68);
-          return Stack(clipBehavior: Clip.hardEdge, children: [
-            for (var i = 0; i < 4; i++)
-              Positioned(
-                  left: i * laneWidth + 3,
-                  top: 0,
-                  bottom: 0,
-                  width: laneWidth - 6,
-                  child: DecoratedBox(
-                      decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.white.withValues(alpha: .02),
-                                const Color(0xFF90BFFF).withValues(alpha: .12)
+          return Stack(
+              key: _chimeSurface,
+              clipBehavior: Clip.hardEdge,
+              children: [
+                for (var i = 0; i < 4; i++)
+                  Positioned(
+                      left: i * laneWidth + 3,
+                      top: 0,
+                      bottom: 0,
+                      width: laneWidth - 6,
+                      child: DecoratedBox(
+                          decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.white.withValues(alpha: .02),
+                                    const Color(0xFF90BFFF)
+                                        .withValues(alpha: .12)
+                                  ]),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.white12)))),
+                Positioned(
+                    top: strikeY - 5,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                        key: const Key('midnight-strike-line'),
+                        height: 10,
+                        decoration: BoxDecoration(
+                            color: const Color(0x55FFDA84),
+                            border: Border.symmetric(
+                                horizontal: BorderSide(
+                                    color: const Color(0xFFFFDA84),
+                                    width: 2))))),
+                for (final note in _notes)
+                  Positioned(
+                      key: Key('midnight-note-${note.id}'),
+                      left: note.lane * laneWidth + laneWidth / 2 - 20,
+                      top: strikeY *
+                              (1 - (note.strikeAt - _time) / note.travel) -
+                          20,
+                      child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFFFCDE99),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: const Color(0xFF81BFFF)
+                                        .withValues(alpha: .65),
+                                    blurRadius: _reducedMotion ? 0 : 18)
                               ]),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white12)))),
-            Positioned(
-                top: strikeY - 5,
-                left: 0,
-                right: 0,
-                child: Container(
-                    key: const Key('midnight-strike-line'),
-                    height: 10,
-                    decoration: BoxDecoration(
-                        color: const Color(0x55FFDA84),
-                        border: Border.symmetric(
-                            horizontal: BorderSide(
-                                color: const Color(0xFFFFDA84), width: 2))))),
-            for (final note in _notes)
-              Positioned(
-                  key: Key('midnight-note-${note.id}'),
-                  left: note.lane * laneWidth + laneWidth / 2 - 20,
-                  top: strikeY * (1 - (note.strikeAt - _time) / note.travel) -
-                      20,
-                  child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const Color(0xFFFCDE99),
-                          boxShadow: [
-                            BoxShadow(
-                                color: const Color(0xFF81BFFF)
-                                    .withValues(alpha: .65),
-                                blurRadius: _reducedMotion ? 0 : 18)
-                          ]),
-                      child: const Icon(Icons.star_rounded,
-                          color: Color(0xFF3C5488), size: 30))),
-            for (var i = 0; i < 4; i++)
-              Positioned(
-                  left: i * laneWidth + 3,
-                  bottom: 3,
-                  width: laneWidth - 6,
-                  height: 54,
-                  child: Material(
-                      color: _flares.containsKey(i)
-                          ? _errorCell == i
-                              ? const Color(0xFFB62E48)
-                              : const Color(0xFF567EA8)
-                          : const Color(0xFF263F6C),
-                      borderRadius: BorderRadius.circular(14),
-                      child: InkWell(
-                          key: Key('midnight-chime-$i'),
+                          child: const Icon(Icons.star_rounded,
+                              color: Color(0xFF3C5488), size: 30))),
+                for (var i = 0; i < 4; i++)
+                  Positioned(
+                      left: i * laneWidth + 3,
+                      bottom: 3,
+                      width: laneWidth - 6,
+                      height: 54,
+                      child: Material(
+                          color: _flares.containsKey(i)
+                              ? _errorCell == i
+                                  ? const Color(0xFFB62E48)
+                                  : const Color(0xFF567EA8)
+                              : const Color(0xFF263F6C),
                           borderRadius: BorderRadius.circular(14),
-                          onTap: () => _strike(i),
-                          child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                    'assets/images/events/new_year/arcade_chime.png',
-                                    cacheWidth: 192,
-                                    width: 28,
-                                    height: 46,
-                                    fit: BoxFit.contain,
-                                    filterQuality: FilterQuality.high,
-                                    excludeFromSemantics: true),
-                                const SizedBox(width: 2),
-                                Text('${i + 1}',
-                                    style: const TextStyle(
-                                        color: Color(0xFFFFE8A6),
-                                        fontSize: 19,
-                                        fontWeight: FontWeight.w900)),
-                              ])))),
-          ]);
+                          child: Semantics(
+                              key: Key('midnight-chime-$i'),
+                              button: true,
+                              onTap: () => _strike(i),
+                              child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.asset(
+                                        'assets/images/events/new_year/arcade_chime.png',
+                                        cacheWidth: 192,
+                                        width: 28,
+                                        height: 46,
+                                        fit: BoxFit.contain,
+                                        filterQuality: FilterQuality.high,
+                                        excludeFromSemantics: true),
+                                    const SizedBox(width: 2),
+                                    Text('${i + 1}',
+                                        style: const TextStyle(
+                                            color: Color(0xFFFFE8A6),
+                                            fontSize: 19,
+                                            fontWeight: FontWeight.w900)),
+                                  ])))),
+              ]);
         }),
       );
 

@@ -203,7 +203,7 @@ class _TrialGameScreenState extends State<TrialGameScreen>
   void _keepAttemptAlive() {
     final session = widget.seasonalSession;
     if (session == null ||
-        _offer?.kind != TrialKind.sunwakeSurf ||
+        _offer?.definition.isEndless != true ||
         _attemptLease != null) {
       return;
     }

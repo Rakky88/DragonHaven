@@ -1,5 +1,18 @@
 # DragonHaven audit
 
+## Release candidate v0.05.39 / 10089
+
+Built from public v0.05.38 with the shared-expertise feature backported. The
+unfinished account startup/cutover remains on its separate working branch.
+All otherwise eligible dragons can take retraining adventures; losses stop at
+zero and precede gains. New Year now continues without time/score/action caps,
+keeps accelerating, ends after three errors and grants S+ from 20,000.
+Its finite checkpoint survives long runs without storing the whole input log.
+New Year lanes, Birthday taps and Valentine swipes extend across the screen.
+Migration 84 preserves partner authority boundaries, 85 supports expertise and
+the rare reveal relic, and 86 extends only New Year validation/lease renewal.
+All account authority flags remain off. Release validation is in progress.
+
 ## Shared expertise candidate - 20 September 2026
 
 Implemented shared budgets (950 ordinary / 1100 Sinister, +50 Mastery), private

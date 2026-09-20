@@ -369,11 +369,7 @@ Future<void> _chooseDragon(
                                             key: Key(
                                                 'canonical-adventure-dragon-${dragon.id}'),
                                             onTap: enabled &&
-                                                    dragon.adventureId ==
-                                                        null &&
-                                                    definition
-                                                        .canAffordExpertiseCost(
-                                                            dragon.trainingFor)
+                                                    dragon.adventureId == null
                                                 ? () => update(
                                                     () => selected = dragon.id)
                                                 : null,
@@ -455,19 +451,6 @@ Future<void> _chooseDragon(
                                                                     .info_outline_rounded,
                                                                 size: 19)),
                                                       ]),
-                                                      if (!definition
-                                                          .canAffordExpertiseCost(
-                                                              dragon
-                                                                  .trainingFor))
-                                                        Text(
-                                                            s.pick(
-                                                                'Not enough expertise for this path.',
-                                                                'Niet genoeg expertise voor dit pad.'),
-                                                            style: TextStyle(
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .colorScheme
-                                                                    .error)),
                                                       Text(dragon.adventureId != null
                                                           ? s.pick(
                                                               'On adventure',
@@ -497,9 +480,7 @@ Future<void> _chooseDragon(
                           action: enabled &&
                                   available &&
                                   choice?.owned == true &&
-                                  choice!.adventureId == null &&
-                                  definition.canAffordExpertiseCost(
-                                      choice.trainingFor)
+                                  choice!.adventureId == null
                               ? () async {
                                   await actions.startAdventure(
                                       definition.id, choice.id);

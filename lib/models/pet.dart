@@ -508,17 +508,11 @@ class Pet implements TrialDragon {
     training[focus.name] = trainingFor(focus) + min(amount, remainingExpertise);
   }
 
-  /// Costs are applied before gains so a full dragon can retrain. Invalid
-  /// costs fail atomically; existing over-budget saves keep earned points.
-  bool applyExpertiseCosts(Map<TrainingFocus, int> rewards) {
-    if (rewards.entries
-        .any((e) => e.value < 0 && trainingFor(e.key) + e.value < 0)) {
-      return false;
-    }
+  /// Pay reductions before gains, stopping at zero for each expertise.
+  void applyExpertiseCosts(Map<TrainingFocus, int> rewards) {
     for (final entry in rewards.entries.where((e) => e.value < 0)) {
-      training[entry.key.name] = trainingFor(entry.key) + entry.value;
+      training[entry.key.name] = max(0, trainingFor(entry.key) + entry.value);
     }
-    return true;
   }
 
   void hatch(DateTime now) {
