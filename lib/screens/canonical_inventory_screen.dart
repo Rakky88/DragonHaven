@@ -101,8 +101,10 @@ class _InventoryContents extends StatelessWidget {
                           label: strings.pick('Chest', 'Kist')),
                   if (view.shop.chests.values.every((n) => n == 0) &&
                       view.shop.specialChests.values.every((n) => n == 0))
-                    Text(strings.pick('Your chests will appear here.',
-                        'Je kisten komen hier te staan.')),
+                    RestoredCollectionEmpty(
+                        icon: GameIconKind.inventoryChests,
+                        text: strings.pick('Your chests will appear here.',
+                            'Je kisten komen hier te staan.')),
                 ]),
             const CanonicalEggList(),
             const CanonicalAltarScreen(),

@@ -137,6 +137,41 @@ class _AdventuresState extends State<_Adventures> {
             const CanonicalSocialRewards(),
           ],
           if ((_tab == 2 || _tab == 3) &&
+              !view.adventures.runs
+                  .any((r) => _completed == !r.endsAt.isAfter(now)) &&
+              (!_completed ||
+                  (!view.adventures.eventProgress.any((p) => p.canClaim) &&
+                      (view.data['adventures']['socialClaims'] as List)
+                          .isEmpty)))
+            Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(children: [
+                  GameIconSprite(
+                      _completed
+                          ? GameIconKind.chest
+                          : GameIconKind.adventureActive,
+                      size: 142),
+                  Text(
+                      _completed
+                          ? s.pick('No completed adventures',
+                              'Geen voltooide avonturen')
+                          : s.pick('No adventures are active',
+                              'Er zijn geen actieve avonturen'),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 6),
+                  Text(
+                      _completed
+                          ? s.pick(
+                              'Finished journeys wait here until you collect their rewards.',
+                              'Afgeronde reizen wachten hier tot je hun beloningen ophaalt.')
+                          : s.pick(
+                              'Send a dragon out and its journey will appear here.',
+                              'Stuur een draak op pad en zijn reis verschijnt hier.'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppColors.muted)),
+                ])),
+          if ((_tab == 2 || _tab == 3) &&
               view.adventures.runs
                   .any((r) => _completed == !r.endsAt.isAfter(now))) ...[
             const SizedBox(height: 16),

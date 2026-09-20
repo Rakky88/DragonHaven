@@ -595,7 +595,12 @@ Future<void> showCanonicalEggDetails(BuildContext context, String id,
 /// Elapsed display time comes from a monotonic clock anchored to the server.
 /// The hatch command still uses the database clock, never this estimate.
 class CanonicalNestClock extends StatefulWidget {
-  const CanonicalNestClock({super.key, required this.egg, required this.view});
+  const CanonicalNestClock(
+      {super.key,
+      required this.egg,
+      required this.view,
+      this.showHatchButton = true});
+  final bool showHatchButton;
   final CanonicalEggView egg;
   final CanonicalGameSnapshot view;
   @override
@@ -639,10 +644,11 @@ class _CanonicalNestClockState extends State<CanonicalNestClock> {
           child: Text(ready
               ? strings.pick('Ready to hatch', 'Klaar om uit te komen')
               : '${strings.pick('In the nest', 'In het nest')} · ${remaining.inHours}h ${remaining.inMinutes % 60}m ${remaining.inSeconds % 60}s')),
-      CanonicalActionButton(
-          key: const Key('canonical-hatch-egg'),
-          label: strings.pick('Hatch', 'Uitbroeden'),
-          action: ready ? () => actions.hatchEgg(widget.egg.id) : null),
+      if (widget.showHatchButton)
+        CanonicalActionButton(
+            key: const Key('canonical-hatch-egg'),
+            label: strings.pick('Hatch', 'Uitbroeden'),
+            action: ready ? () => actions.hatchEgg(widget.egg.id) : null),
     ]);
   }
 }

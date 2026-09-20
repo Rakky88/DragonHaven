@@ -1,4 +1,5 @@
 import '../models/egg_altar.dart';
+import 'game_icon_sprite.dart';
 // Presentation restored from published v0.05.39 (d71cc8e). No player state or mutations.
 import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
@@ -513,4 +514,78 @@ class RestoredDetailSheet extends StatelessWidget {
                     child: SizedBox(width: double.infinity, child: content)),
                 Wrap(spacing: 8, children: actions),
               ]))));
+}
+
+/// Original collection empty-state panel, sized by its scrolling parent.
+class RestoredCollectionEmpty extends StatelessWidget {
+  const RestoredCollectionEmpty(
+      {super.key, required this.icon, required this.text});
+  final GameIconKind icon;
+  final String text;
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Center(
+          child: Container(
+              constraints: const BoxConstraints(maxWidth: 390),
+              padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
+              decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Colors.white, Color(0xFFF0EAFF)]),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                      color: AppColors.eventColor(context, AppColors.mist)),
+                  boxShadow: const [
+                    BoxShadow(
+                        color: Color(0x145B4B8A),
+                        blurRadius: 24,
+                        offset: Offset(0, 10))
+                  ]),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                GameIconSprite(icon, size: 116),
+                const SizedBox(height: 12),
+                Text(text,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 15,
+                        height: 1.35,
+                        fontWeight: FontWeight.w700)),
+              ]))));
+}
+
+/// The original wellbeing icons, colors and meters with room for large text.
+class RestoredNeedBar extends StatelessWidget {
+  const RestoredNeedBar(
+      {super.key,
+      required this.icon,
+      required this.label,
+      required this.value,
+      required this.color});
+  final IconData icon;
+  final String label;
+  final int value;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(children: [
+        Row(children: [
+          Icon(icon, color: color, size: 19),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(label,
+                  style: const TextStyle(fontWeight: FontWeight.w800))),
+          Text('$value%', style: const TextStyle(fontWeight: FontWeight.w900))
+        ]),
+        const SizedBox(height: 5),
+        LinearProgressIndicator(
+            value: value / 100,
+            minHeight: 8,
+            color: color,
+            backgroundColor: AppColors.eventColor(context, AppColors.mist),
+            borderRadius: BorderRadius.circular(99)),
+      ]));
 }

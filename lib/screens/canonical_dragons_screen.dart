@@ -14,6 +14,7 @@ import '../services/canonical_game_session.dart';
 import '../services/canonical_game_snapshot.dart';
 import '../widgets/canonical_game_controls.dart';
 import '../widgets/dragon_art.dart';
+import '../widgets/game_icon_sprite.dart';
 import '../widgets/expertise_score_badge.dart';
 import '../widgets/shop_economy_scope.dart';
 
@@ -253,11 +254,10 @@ class _DragonListState extends State<_DragonList> {
                   equippedRelic: view.inventory.equippedOn(dragon.id),
                   onTap: () => showCanonicalDragonDetails(context, dragon.id))),
       if (!view.dragons.any((d) => d.owned))
-        Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Text(strings.pick(
-                'Your dragons will appear here after hatching.',
-                'Je draken komen hier na het uitbroeden.'))),
+        RestoredCollectionEmpty(
+            icon: GameIconKind.myDragons,
+            text: strings.pick('Your dragons will appear here after hatching.',
+                'Je draken komen hier na het uitbroeden.')),
     ]);
   }
 }
@@ -322,14 +322,24 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                                     const SizedBox(height: 12),
                                     _DragonSchoolDiplomaCard(dragon: dragon),
                                     const Divider(height: 24),
-                                    Wrap(spacing: 12, runSpacing: 4, children: [
-                                      Text(
-                                          '${strings.pick('Joy', 'Vreugde')}: ${dragon.joy}%'),
-                                      Text(
-                                          '${strings.pick('Energy', 'Energie')}: ${dragon.energy}%'),
-                                      Text(
-                                          '${strings.pick('Comfort', 'Comfort')}: ${dragon.comfort}%'),
-                                    ]),
+                                    RestoredNeedBar(
+                                        icon: Icons
+                                            .sentiment_very_satisfied_rounded,
+                                        label: strings.pick('Joy', 'Plezier'),
+                                        value: dragon.joy,
+                                        color: AppColors.coral),
+                                    RestoredNeedBar(
+                                        icon: Icons.bolt_rounded,
+                                        label:
+                                            strings.pick('Energy', 'Energie'),
+                                        value: dragon.energy,
+                                        color: AppColors.gold),
+                                    RestoredNeedBar(
+                                        icon: Icons.shield_moon_rounded,
+                                        label:
+                                            strings.pick('Comfort', 'Comfort'),
+                                        value: dragon.comfort,
+                                        color: AppColors.mint),
                                     if (view.activeDragonId == id)
                                       CanonicalActionButton(
                                           key: const Key(

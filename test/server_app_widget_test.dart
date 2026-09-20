@@ -125,7 +125,7 @@ void main() {
       await tester.tap(find.byKey(const Key('about-logo-button')));
       await tester.pumpAndSettle();
       expect(find.text('About DragonHaven'), findsWidgets);
-      expect(find.textContaining('v0.06.00'), findsWidgets);
+      expect(find.textContaining('v0.06.01'), findsWidgets);
       Navigator.of(tester.element(find.byType(Scaffold).last)).pop();
       await tester.pumpAndSettle();
       for (final page in ['Account Info', 'Keeper Journal', 'Achievements']) {

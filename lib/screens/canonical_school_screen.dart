@@ -12,6 +12,7 @@ import '../widgets/canonical_game_controls.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/shop_economy_scope.dart';
 import 'dragon_school_screen.dart';
+import 'canonical_dragons_screen.dart';
 
 class CanonicalSchoolScreen extends StatelessWidget {
   const CanonicalSchoolScreen({super.key});
@@ -105,7 +106,8 @@ class CanonicalSchoolScreen extends StatelessWidget {
           for (final dragon in view.dragons
               .where((d) => d.owned && !d.schoolComplete && d.schoolPassing))
             ListTile(
-                title: Text(dragon.name),
+                title: Text(canonicalDragonName(strings, dragon),
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
                 subtitle: Text('${dragon.schoolStarTotal}/30'),
                 trailing: CanonicalActionButton(
                     label: strings.pick('Graduate', 'Afstuderen'),
@@ -192,37 +194,64 @@ class CanonicalSchoolScreen extends StatelessWidget {
                   Expanded(
                       child: ListView(children: [
                     for (final dragon in available)
-                      CheckboxListTile(
-                        key: ValueKey('canonical-pupil-${dragon.id}'),
-                        value: selected.contains(dragon.id),
-                        title: Text(dragon.name),
-                        subtitle: Text(
-                            '${dragon.schoolAttempts[definition.id] ?? 0}/3 · ${dragon.schoolStars[definition.id] ?? 0} ★'),
-                        secondary: SizedBox(
-                            width: 48,
-                            child: DragonArt(
-                                height: 48,
-                                stageKey:
-                                    canonicalSchoolStudent(dragon).stageKey,
-                                lineageId: dragon.lineageId,
-                                evolutionPath: dragon.path,
-                                prismatic: dragon.spectral,
-                                sinister: dragon.sinister,
-                                animate: false)),
-                        onChanged: (enabled) => setState(() {
-                          if (enabled == false) {
-                            selected.remove(dragon.id);
-                          } else if (definition.maximumDragons == 1) {
-                            selected
-                              ..clear()
-                              ..add(dragon.id);
-                          } else if (selected.length <
-                              definition.maximumDragons) {
-                            selected.add(dragon.id);
-                          }
-                          if (selected.contains(mentorId)) mentorId = null;
-                        }),
-                      ),
+                      Card(
+                          margin: const EdgeInsets.fromLTRB(14, 0, 14, 7),
+                          color: selected.contains(dragon.id)
+                              ? AppColors.eventColor(
+                                  context, const Color(0xFFF0E8FA))
+                              : Colors.white,
+                          child: CheckboxListTile(
+                            key: ValueKey('canonical-pupil-${dragon.id}'),
+                            value: selected.contains(dragon.id),
+                            title: Text(canonicalDragonName(strings, dragon),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w900)),
+                            subtitle: Wrap(
+                                spacing: 8,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  Text(
+                                      '${dragon.schoolAttempts[definition.id] ?? 0}/3 ${strings.pick('attempts', 'pogingen')}'),
+                                  Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        for (var star = 0; star < 3; star++)
+                                          Icon(
+                                              star <
+                                                      (dragon.schoolStars[
+                                                              definition.id] ??
+                                                          0)
+                                                  ? Icons.star_rounded
+                                                  : Icons.star_outline_rounded,
+                                              size: 17,
+                                              color: AppColors.gold)
+                                      ]),
+                                ]),
+                            secondary: SizedBox(
+                                width: 48,
+                                child: DragonArt(
+                                    height: 48,
+                                    stageKey:
+                                        canonicalSchoolStudent(dragon).stageKey,
+                                    lineageId: dragon.lineageId,
+                                    evolutionPath: dragon.path,
+                                    prismatic: dragon.spectral,
+                                    sinister: dragon.sinister,
+                                    animate: false)),
+                            onChanged: (enabled) => setState(() {
+                              if (enabled == false) {
+                                selected.remove(dragon.id);
+                              } else if (definition.maximumDragons == 1) {
+                                selected
+                                  ..clear()
+                                  ..add(dragon.id);
+                              } else if (selected.length <
+                                  definition.maximumDragons) {
+                                selected.add(dragon.id);
+                              }
+                              if (selected.contains(mentorId)) mentorId = null;
+                            }),
+                          )),
                     if (young && mentors.isNotEmpty) ...[
                       Padding(
                           padding: const EdgeInsets.all(12),

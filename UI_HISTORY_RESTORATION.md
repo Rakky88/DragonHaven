@@ -134,3 +134,60 @@ Android emulator (`.tools/history-device-v0540-*.png`). The isolated synthetic
 review package was reinstalled to make space; the actual game package and
 account were untouched. Temporary build configuration edits were restored;
 there is no Android configuration diff and the reference guard still passes.
+
+
+## Three additional passes for v0.06.01
+
+Requested v0.05.50 does not exist. GitHub's last v0.05 release is v0.05.42,
+so the requested one-before-highest reference is v0.05.41
+(`5a4a1ef9b9a0e269b89cbeeae2b4cee0d5d07067`). Compared its retained
+Adventure/Tower/Inventory/Academy/Pet sources; these historical presentation
+sources have no differences in the current tree. Its account/privacy changes
+and later server migration remain intact.
+
+1. Inventory and My Dragons: checked tab spacing, row/gallery controls,
+   filters, details and empty collections. Restored the missing illustrated,
+   lavender empty-collection panels for chests and dragons.
+2. Tower and Academy: checked roof/floors/room scenes, entrance, lesson list,
+   enrollment and dragon details. Restored the selected-pupil lavender card,
+   bold display name and actual earned star icons. Replaced plain wellbeing
+   percentages with the original colored icons and meters, allowing labels
+   to wrap at large text sizes. Retained confirmed server commands.
+3. Adventure and lifecycle: checked categories, offer cards, run/reward tabs,
+   selection sheets, Trials and incubation/reveals. Restored the original
+   illustrated Active/Completed empty-state messages. Added automatic hatch
+   scheduling in the server shell, using the confirmed server deadline and
+   existing durable command; the roof no longer requires pressing Hatch.
+   Full-screen Trial/Academy attempts defer automatic hatching. The detail
+   sheet retains the existing manual fallback.
+
+The hatch incident was independent of the internet connection: the social
+projection rejected an unnamed hatchling because player_dragons requires a
+nonempty name. Migration 93 supplies only a temporary social display label;
+canonical names, seeds, outcomes and free first naming remain unchanged.
+The contract reproduces the old SQL failure, then verifies atomic hatch commit,
+receipt replay, stable dragon identity, unchanged wallet and subsequent naming.
+The production fix never rewrites an existing save or resets a pending command.
+
+Validation for v0.06.01: the final complete Flutter suite passes **1,055 tests**
+with one existing optional skip (`.tools/release61-final-tests.log`). Flutter
+analysis is clean. The automatic hatch regressions cover one command/reveal,
+lost reply and replay without duplicates, and no hatch before readiness or
+after sign-out. The first complete run found a non-catalog wording and an old
+migration expectation; both were corrected before the successful final suite.
+The required production preflight confirms **93 matching migrations, zero
+lint errors, healthy Auth endpoints and healthy app endpoint**. No server
+runtime/ruleset or existing game state was changed by migration 93.
+
+Android verification: reviewed the restored screens on an emulator, including
+320dp width, 1.3 text scale and reduced animations. About displays v0.06.01.
+The automatic hatch opens the original illustrated egg animation without a
+Hatch-button tap using a synthetic server test session, then reaches the
+original dragon reveal and Choose a name button. The first
+extra probe used invalid hand-built fixture state; the corrected probe uses
+the same valid provider export as the passing scheduler regression tests.
+
+The signed universal release APK is package `nl.dragonhaven.app`, version
+`0.06.01`, build `10094`, non-debuggable and uses the existing signing key.
+Size: 578,080,707 bytes. SHA-256:
+`95c05abaadb6620353e2e16866fe6688a0f7c919f4c744eacd38a3bcab2bc8d4`.

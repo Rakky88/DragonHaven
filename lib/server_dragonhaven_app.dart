@@ -26,6 +26,7 @@ import 'screens/server_account_screen.dart';
 import 'screens/shop_hub_screen.dart';
 import 'services/audio_service.dart';
 import 'services/canonical_game_actions.dart';
+import 'services/canonical_hatch_scheduler.dart';
 import 'services/canonical_game_session.dart';
 import 'services/canonical_game_snapshot.dart';
 import 'services/event_branding_service.dart';
@@ -60,6 +61,7 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
   final _elapsed = Stopwatch()..start();
   CanonicalGameSnapshot? _observed;
   Timer? _clock, _refresh;
+  CanonicalHatchScheduler? _hatchScheduler;
   String? _eventKey, _audioConfiguration;
 
   DateTime get _now =>
@@ -78,6 +80,8 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _hatchScheduler =
+        CanonicalHatchScheduler(context.read<CanonicalGameSession>());
     unawaited(HavenAudio.setAppInForeground(true));
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       final view = context.read<CanonicalGameSession>().snapshot;
@@ -137,6 +141,7 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
 
   @override
   void dispose() {
+    _hatchScheduler?.dispose();
     _clock?.cancel();
     _refresh?.cancel();
     _elapsed.stop();
@@ -648,7 +653,8 @@ class _ServerNestState extends State<_ServerNest> {
             s.pick('Tap the egg to shorten the wait.',
                 'Tik op het ei om de wachttijd te verkorten.'),
             style: Theme.of(context).textTheme.bodySmall),
-      CanonicalNestClock(egg: widget.egg, view: widget.view),
+      CanonicalNestClock(
+          egg: widget.egg, view: widget.view, showHatchButton: false),
     ]);
   }
 }

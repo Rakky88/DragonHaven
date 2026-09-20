@@ -1,3 +1,13 @@
+## v0.06.01 hatch recovery and historical UI - 20 September 2026
+
+Ready nest eggs again dispatch the existing server hatch command automatically.
+The hatch outcome, seed, Golden Hour roll, inventory and first naming remain
+server-owned and unchanged. SQL migration 93 gives unnamed dragons a temporary
+social display name only; their saved name stays empty until the keeper names
+them. Retrying a pending hatch uses its existing receipt/seed, without rerolling.
+The additional v0.05.41 UI review restores empty-state art, Academy pupil cards,
+and wellbeing meters. Reward values, event dates and probabilities are unchanged.
+
 ## v0.05.40 presentation comparison - 20 September 2026
 
 The additional historical comparison restores egg collection tag chips, count,
@@ -398,7 +408,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 8270f44ea88723b5 -->
+<!-- reference-source-fingerprint: 28b8408f5d07392e -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

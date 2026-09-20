@@ -1,3 +1,4 @@
+import 'widgets/shop_economy_scope.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -742,7 +743,15 @@ class _StartupStatusState extends State<_StartupStatus> {
                                           ReleaseConfig.downloadUrl);
                                     }
                                   }),
-                            ] else
+                            ] else if (widget.errorCode != null &&
+                                !const {
+                                  'game_command_unavailable',
+                                  'game_read_unavailable',
+                                  'game_auth_unavailable',
+                                  'game_migration_unavailable'
+                                }.contains(widget.errorCode))
+                              Text(gameConnectionMessage(s, widget.errorCode!))
+                            else
                               Text(s.pick(
                                   'DragonHaven needs a connection to the server. Your saved progress is kept. Check your internet connection; we will try again automatically.',
                                   'DragonHaven heeft verbinding met de server nodig. Je opgeslagen voortgang blijft bewaard. Controleer je internetverbinding; we proberen het automatisch opnieuw.')),

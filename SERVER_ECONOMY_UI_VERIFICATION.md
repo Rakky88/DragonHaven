@@ -1,5 +1,43 @@
 # Canonical gameplay integration
 
+## v0.06.01 hatch recovery and three UI passes - 20 September 2026
+
+Found a pending hatch blocked by `player_dragons_name_check`: a newly hatched
+dragon is intentionally unnamed until its reveal. Migration 93 uses a fallback
+in the social display only and leaves the canonical name empty. Reproduced the
+failure on staging; verified hatch commit/replay and first naming with rolled-
+back synthetic accounts before applying the narrow function replacement to
+staging and production. Runtime flags, ruleset, authority and existing saves
+are unchanged. The blocked request can replay with its original captured seed.
+
+Added a server-time automatic hatch scheduler with account/background fences,
+Trial/Academy deferral and durable lost-reply recovery. Restored more v0.05.41
+presentation details in three documented passes; see UI_HISTORY_RESTORATION.md.
+Version is v0.06.01 / Android build 10094. Release checks are recorded below.
+
+Validation for v0.06.01: the final complete Flutter suite passes **1,055 tests**
+with one existing optional skip (`.tools/release61-final-tests.log`). Flutter
+analysis is clean. The automatic hatch regressions cover one command/reveal,
+lost reply and replay without duplicates, and no hatch before readiness or
+after sign-out. The first complete run found a non-catalog wording and an old
+migration expectation; both were corrected before the successful final suite.
+The required production preflight confirms **93 matching migrations, zero
+lint errors, healthy Auth endpoints and healthy app endpoint**. No server
+runtime/ruleset or existing game state was changed by migration 93.
+
+Android verification: reviewed the restored screens on an emulator, including
+320dp width, 1.3 text scale and reduced animations. About displays v0.06.01.
+The automatic hatch opens the original illustrated egg animation without a
+Hatch-button tap using a synthetic server test session, then reaches the
+original dragon reveal and Choose a name button. The first
+extra probe used invalid hand-built fixture state; the corrected probe uses
+the same valid provider export as the passing scheduler regression tests.
+
+The signed universal release APK is package `nl.dragonhaven.app`, version
+`0.06.01`, build `10094`, non-debuggable and uses the existing signing key.
+Size: 578,080,707 bytes. SHA-256:
+`95c05abaadb6620353e2e16866fe6688a0f7c919f4c744eacd38a3bcab2bc8d4`.
+
 ## v0.05.40 comparison - 20 September 2026 (unpublished candidate)
 
 A second comparison with published v0.05.40 restored additional egg collection
