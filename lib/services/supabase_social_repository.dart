@@ -6,7 +6,8 @@ import '../models/social.dart';
 import 'social_repository.dart';
 
 class SupabaseSocialRepository implements SocialRepository {
-  SupabaseSocialRepository(this._client) {
+  SupabaseSocialRepository(this._client, {bool Function()? sessionIsCurrent})
+      : _sessionIsCurrent = sessionIsCurrent {
     _authSubscription = _client.auth.onAuthStateChange.listen(
       (event) => _authController.add(
         event.session != null && event.session?.user.emailConfirmedAt != null,
@@ -20,6 +21,13 @@ class SupabaseSocialRepository implements SocialRepository {
   }
 
   final SupabaseClient _client;
+  final bool Function()? _sessionIsCurrent;
+  void _requireBoundSession() {
+    if (_sessionIsCurrent?.call() == false) {
+      throw const SocialException('online_login_required');
+    }
+  }
+
   final _authController = StreamController<bool>.broadcast();
   late final StreamSubscription<AuthState> _authSubscription;
   Future<void>? _sessionRefreshInFlight;
@@ -27,7 +35,10 @@ class SupabaseSocialRepository implements SocialRepository {
   @override
   bool get isConfigured => true;
   @override
-  bool get isSignedIn => _client.auth.currentSession != null && isEmailVerified;
+  bool get isSignedIn =>
+      _sessionIsCurrent?.call() != false &&
+      _client.auth.currentSession != null &&
+      isEmailVerified;
   @override
   bool get isEmailVerified =>
       _client.auth.currentUser?.emailConfirmedAt != null;
@@ -43,12 +54,19 @@ class SupabaseSocialRepository implements SocialRepository {
     required String email,
     required String password,
     required String displayName,
+    String? acknowledgedPrivacyVersion,
   }) async {
     try {
       final result = await _client.auth.signUp(
         email: email.trim().toLowerCase(),
         password: password,
-        data: {'display_name': displayName.trim()},
+        data: {
+          'display_name': displayName.trim(),
+          if (acknowledgedPrivacyVersion != null) ...{
+            'privacy_notice_version': acknowledgedPrivacyVersion,
+            'age_16_confirmed': true,
+          },
+        },
       );
       final requiresConfirmation = result.user?.emailConfirmedAt == null;
       if (requiresConfirmation && result.session != null) {
@@ -93,6 +111,7 @@ class SupabaseSocialRepository implements SocialRepository {
   @override
   Future<void> signOut() async {
     try {
+      _requireBoundSession();
       await _client.auth.signOut();
     } on Object catch (error) {
       throw _socialError(error);
@@ -106,6 +125,8 @@ class SupabaseSocialRepository implements SocialRepository {
 
   @override
   Future<void> deleteMyAccount(String password) async {
+    _requireBoundSession();
+    final owner = currentUserId;
     final email = currentEmail;
     if (email == null || password.isEmpty) {
       throw const SocialException('account_delete_reauthentication_failed');
@@ -115,12 +136,21 @@ class SupabaseSocialRepository implements SocialRepository {
         email: email,
         password: password,
       );
-      if (result.user?.emailConfirmedAt == null) {
+      if (result.user?.emailConfirmedAt == null ||
+          result.user?.id != owner ||
+          _client.auth.currentUser?.id != owner) {
         throw const SocialException('email_not_verified');
       }
-      await _rpc('delete_my_account');
+      // Password reauthentication intentionally creates a fresh session. The
+      // old root is retiring, but this explicit deletion belongs to that same
+      // verified owner, not to its now-expired gameplay lease.
+      await _client
+          .rpc('delete_my_account')
+          .setHeader('Authorization', 'Bearer ${result.session!.accessToken}');
       try {
-        await _client.auth.signOut(scope: SignOutScope.local);
+        if (_client.auth.currentUser?.id == owner) {
+          await _client.auth.signOut(scope: SignOutScope.local);
+        }
       } on Object {
         // Deleting auth.users invalidates the remote session already.
       }
@@ -250,7 +280,7 @@ class SupabaseSocialRepository implements SocialRepository {
   @override
   Future<void> renewSeasonalTrial(
       {required String attemptId, required String token}) async {
-    await _client.rpc('renew_seasonal_trial_attempt', params: {
+    await _rpc('renew_seasonal_trial_attempt', params: {
       'p_attempt_id': attemptId,
       'p_completion_token': token,
     });
@@ -762,8 +792,12 @@ class SupabaseSocialRepository implements SocialRepository {
 
   Future<dynamic> _rpc(String function, {Map<String, dynamic>? params}) async {
     try {
+      _requireBoundSession();
       await _ensureFreshSession();
-      return await _client.rpc(function, params: params);
+      _requireBoundSession();
+      final result = await _client.rpc(function, params: params);
+      _requireBoundSession();
+      return result;
     } on Object catch (error) {
       throw _socialError(error);
     }

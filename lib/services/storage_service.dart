@@ -2,6 +2,26 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'legacy_game_storage.dart';
+
+class DeviceLegacyGameStorage implements LegacyGameStorage {
+  const DeviceLegacyGameStorage();
+  @override
+  bool get allowsFreshState => true;
+  @override
+  Map<String, dynamic> prepareSave(Map<String, dynamic> state) => state;
+  @override
+  Future<Map<String, dynamic>?> load() => StorageService.load();
+  @override
+  Future<Map<String, dynamic>?> loadBackup() => StorageService.loadBackup();
+  @override
+  Future<void> preserveCurrentForRecovery() =>
+      StorageService.preserveCurrentForRecovery();
+  @override
+  Future<bool> promoteBackup() => StorageService.promoteBackup();
+  @override
+  Future<void> save(Map<String, dynamic> state) => StorageService.save(state);
+}
 
 abstract final class StorageService {
   static const currentKey = 'dragon_haven_state_v1';

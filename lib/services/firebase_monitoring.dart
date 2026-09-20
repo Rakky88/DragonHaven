@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/firebase_config.dart';
 import 'diagnostic_reporter.dart';
@@ -17,9 +18,34 @@ class HavenFirebase {
   final FirebaseApp? app;
   final DiagnosticReporter reporter;
   bool get available => app != null;
+  static const consentKey = 'dragon_haven_diagnostics_opt_in_v1';
+  static final diagnosticsEnabled = ValueNotifier<bool>(false);
+  static FirebaseMonitoringReporter? _reporter;
+
+  static Future<void> setDiagnosticsConsent(bool enabled) async {
+    // Persist first: native startup reads the same choice before Firebase runs.
+    final prefs = await SharedPreferences.getInstance();
+    if (!await prefs.setBool(consentKey, enabled)) {
+      throw StateError('Privacy preference could not be saved.');
+    }
+    diagnosticsEnabled.value = enabled;
+    _reporter?.enabled = enabled;
+    if (_reporter == null) return;
+    try {
+      await Future.wait([
+        FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(enabled),
+        FirebasePerformance.instance.setPerformanceCollectionEnabled(enabled),
+      ]);
+    } finally {
+      if (!enabled) await FirebaseCrashlytics.instance.deleteUnsentReports();
+    }
+  }
 
   static Future<HavenFirebase> initialize(HavenFirebaseConfig config) async {
     final buffer = BufferedDiagnosticReporter();
+    final prefs = await SharedPreferences.getInstance();
+    final consent = prefs.getBool(consentKey) ?? false;
+    diagnosticsEnabled.value = consent;
     if (!config.collectInBuild(release: kReleaseMode) ||
         kIsWeb ||
         defaultTargetPlatform != TargetPlatform.android) {
@@ -31,12 +57,13 @@ class HavenFirebase {
       if (app.options.projectId != config.projectId) {
         return HavenFirebase._(null, buffer);
       }
-      final reporter = FirebaseMonitoringReporter(buffer);
+      final reporter = FirebaseMonitoringReporter(buffer)..enabled = consent;
       try {
         await FirebaseCrashlytics.instance
-            .setCrashlyticsCollectionEnabled(true);
+            .setCrashlyticsCollectionEnabled(consent);
         await FirebasePerformance.instance
-            .setPerformanceCollectionEnabled(true);
+            .setPerformanceCollectionEnabled(consent);
+        if (!consent) await FirebaseCrashlytics.instance.deleteUnsentReports();
       } on Object {
         await Future.wait([
           FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false),
@@ -45,6 +72,7 @@ class HavenFirebase {
         rethrow;
       }
       reporter.installErrorHandlers();
+      _reporter = reporter;
       return HavenFirebase._(app, reporter);
     } on Object {
       // Optional diagnostics cannot turn a missing configuration or a provider
@@ -59,6 +87,16 @@ class FirebaseMonitoringReporter
   FirebaseMonitoringReporter(this._buffer);
 
   final DiagnosticReporter _buffer;
+  bool _enabled = false;
+  bool get enabled => _enabled;
+  set enabled(bool value) {
+    _enabled = value;
+    if (!value) {
+      _traces.clear();
+      _lastFailure.clear();
+    }
+  }
+
   final Map<String, Future<Trace?>> _traces = {};
   final Map<String, DateTime> _lastFailure = {};
 
@@ -67,12 +105,14 @@ class FirebaseMonitoringReporter
 
   @override
   void operationStarted(String operation, String correlationId) {
+    if (!enabled) return;
     if (_traces.length >= 32 || _traces.containsKey(correlationId)) return;
     _traces[correlationId] = _start(MonitoringPolicy.family(operation));
   }
 
   Future<Trace?> _start(String family) async {
     try {
+      if (!enabled) return null;
       final trace = FirebasePerformance.instance.newTrace('dh_$family');
       await trace.start();
       return trace;
@@ -84,6 +124,7 @@ class FirebaseMonitoringReporter
   @override
   void record(DiagnosticEvent event) {
     _buffer.record(event);
+    if (!enabled) return;
     final trace = _traces.remove(event.correlationId);
     if (trace != null) unawaited(_finish(trace, event));
     if (event.outcome == DiagnosticOutcome.failure) {
@@ -101,7 +142,7 @@ class FirebaseMonitoringReporter
   Future<void> _finish(Future<Trace?> pending, DiagnosticEvent event) async {
     try {
       final trace = await pending;
-      if (trace == null) return;
+      if (trace == null || !enabled) return;
       for (final attribute in MonitoringPolicy.attributes(event).entries) {
         trace.putAttribute(attribute.key, attribute.value);
       }
@@ -115,6 +156,7 @@ class FirebaseMonitoringReporter
 
   Future<void> recordSafeError(String category,
       {required bool fatal, StackTrace? stack}) async {
+    if (!enabled) return;
     try {
       await FirebaseCrashlytics.instance.recordError(
         StateError(MonitoringPolicy.errorCategory(category)),

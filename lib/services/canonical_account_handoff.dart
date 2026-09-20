@@ -95,6 +95,11 @@ class CanonicalAccountHandoff extends ChangeNotifier {
   File _intent(String owner) =>
       File('${directory.path}/migration-v1-$owner.json');
 
+  // Presence alone is a fence: even a damaged marker must never authorize a
+  // return to local spending. Only authenticated server status opens gameplay.
+  File _serverFence(String owner) =>
+      File('${directory.path}/server-authority-v1-$owner');
+
   Future<void> synchronize() {
     if (_pending != null) return _pending!;
     final owner = currentOwner();
@@ -130,11 +135,32 @@ class CanonicalAccountHandoff extends ChangeNotifier {
           throw const CanonicalGameException('game_account_changed');
         }
         final file = _intent(owner);
+        final fence = _serverFence(owner);
+        final previouslyActive = await fence.exists();
+        requireSession();
+        if (previouslyActive && status.phase != 'active') {
+          throw const CanonicalGameException(
+              'game_migration_authority_conflict');
+        }
+        Future<void> rememberServerAuthority() async {
+          await directory.create(recursive: true);
+          requireSession();
+          await fence.writeAsString('server', flush: true);
+          requireSession();
+        }
+
         if (status.phase == 'active') {
+          await rememberServerAuthority();
           _minimumServerRevision = status.serverRevision;
           if (await file.exists()) await file.delete();
           setPhase(CanonicalHandoffPhase.server);
         } else if (!status.migrationEnabled) {
+          // Disabling rollout cannot resolve an activation with a lost reply.
+          // Keep its durable request until the server confirms active authority
+          // or retries it. Otherwise local play could fork committed progress.
+          if (await file.exists()) {
+            throw const CanonicalGameException('game_migration_in_progress');
+          }
           setPhase(CanonicalHandoffPhase.legacy);
         } else {
           String? requestId;
@@ -194,6 +220,7 @@ class CanonicalAccountHandoff extends ChangeNotifier {
           if (revision < 1 || revision > 9007199254740991) {
             throw const CanonicalGameException('game_migration_unavailable');
           }
+          await rememberServerAuthority();
           _minimumServerRevision = revision;
           if (await file.exists()) await file.delete();
           setPhase(CanonicalHandoffPhase.server);

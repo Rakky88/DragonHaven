@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 // Native defaults also let the analyzer retain Flutter's actual notifier type.
@@ -10,6 +11,7 @@ import 'package:uuid/uuid.dart';
 
 import '../domain/game_asset_snapshot.dart';
 import '../domain/game_state_envelope.dart';
+import '../services/legacy_game_storage.dart';
 import '../l10n/game_strings.dart';
 import '../models/account_title.dart';
 import '../models/achievement.dart';
@@ -126,10 +128,12 @@ class HouseholdProvider extends ChangeNotifier {
     String Function()? idGenerator,
     bool initialize = true,
     bool persistenceEnabled = true,
+    LegacyGameStorage storage = const DeviceLegacyGameStorage(),
   })  : _random = random ?? Random.secure(),
         _clock = clock ?? DateTime.now,
         _newId = idGenerator ?? const Uuid().v4,
-        _persistenceEnabled = persistenceEnabled {
+        _persistenceEnabled = persistenceEnabled,
+        _storage = storage {
     if (initialize) _initializeFresh();
   }
 
@@ -137,6 +141,8 @@ class HouseholdProvider extends ChangeNotifier {
   final DateTime Function() _clock;
   final String Function() _newId;
   final bool _persistenceEnabled;
+  final LegacyGameStorage _storage;
+  LegacyGameStorage get legacyStorage => _storage;
 
   /// Restores trusted database state for a single server command. This is not
   /// the cloud-import path: loading alone grants no rewards and advances no
@@ -179,6 +185,9 @@ class HouseholdProvider extends ChangeNotifier {
   /// Test Trials always grant their normal rewards, including in production.
   bool persistentSeasonalPreviewRewards = false;
   Future<void> _saveQueue = Future<void>.value();
+  bool _legacyWritesStopped = false;
+  Future<({String json, int revision})>? _sealedLegacySave;
+  Future<({String json, int revision})>? _retiredLegacySave;
   Timer? _starterEggTapPersistenceTimer;
   int _localMutationRevision = 0;
   int _presentationDeferralDepth = 0;
@@ -229,6 +238,9 @@ class HouseholdProvider extends ChangeNotifier {
   Future<Map<String, dynamic>> Function(String conclaveId)? loadWeaveBeacon;
   Future<void> Function()? refreshEggAltar;
   String? Function()? altarCurrentUserId;
+  int Function()? altarSessionEpoch;
+  bool _altarOperationsStopped = false;
+  Future<void> _settledAltarOperation = Future<void>.value();
   bool altarBusy = false;
   bool altarRequiresAccount = false;
   Map<String, dynamic>? pendingAltarOperation;
@@ -523,11 +535,19 @@ class HouseholdProvider extends ChangeNotifier {
     return provider;
   }
 
-  static Future<HouseholdProvider> loadFromStorage() async {
-    await StorageService.preserveLegacyRecoveryEvidence();
-    var provider = HouseholdProvider(initialize: false);
-    final data = await StorageService.load();
+  static Future<HouseholdProvider> loadFromStorage({
+    LegacyGameStorage storage = const DeviceLegacyGameStorage(),
+  }) async {
+    if (storage is DeviceLegacyGameStorage) {
+      await StorageService.preserveLegacyRecoveryEvidence();
+    }
+    var provider = HouseholdProvider(initialize: false, storage: storage);
+    final data = await storage.load();
     if (data == null) {
+      if (!storage.allowsFreshState) {
+        provider.dispose();
+        throw StateError('Account save requires recovery.');
+      }
       provider._initializeFresh();
       await provider._save();
       return provider;
@@ -535,22 +555,31 @@ class HouseholdProvider extends ChangeNotifier {
     try {
       await _restoreStoredState(provider, data);
     } on Object {
-      await StorageService.preserveCurrentForRecovery();
-      final backup = await StorageService.loadBackup();
+      await storage.preserveCurrentForRecovery();
+      final backup = await storage.loadBackup();
       var recovered = false;
       if (backup != null) {
-        final backupProvider = HouseholdProvider(initialize: false);
+        final backupProvider =
+            HouseholdProvider(initialize: false, storage: storage);
         try {
-          await _restoreStoredState(backupProvider, backup);
-          if (await StorageService.promoteBackup()) {
+          await _restoreStoredState(backupProvider, backup,
+              persistChanges: false);
+          if (await storage.promoteBackup()) {
+            await backupProvider._save();
+            provider.dispose();
             provider = backupProvider;
             recovered = true;
           }
         } on Object {
           recovered = false;
         }
+        if (!recovered) backupProvider.dispose();
       }
       if (!recovered) {
+        if (!storage.allowsFreshState) {
+          provider.dispose();
+          throw StateError('Account save requires recovery.');
+        }
         const supportedLanguages = {
           'en',
           'nl',
@@ -575,8 +604,9 @@ class HouseholdProvider extends ChangeNotifier {
 
   static Future<void> _restoreStoredState(
     HouseholdProvider provider,
-    Map<String, dynamic> data,
-  ) async {
+    Map<String, dynamic> data, {
+    bool persistChanges = true,
+  }) async {
     final storedPet = data['pet'];
     if (storedPet is! Map || storedPet.isEmpty) {
       throw const FormatException('Stored game has no dragon state.');
@@ -589,7 +619,8 @@ class HouseholdProvider extends ChangeNotifier {
         provider._registerOwnedDragonStages();
     final achievementsChanged =
         provider._evaluateAchievements(addActivities: false);
-    if (schemaChanged || evolutionChanged || changed || achievementsChanged) {
+    if (persistChanges &&
+        (schemaChanged || evolutionChanged || changed || achievementsChanged)) {
       await provider._save();
     }
   }
@@ -3258,6 +3289,7 @@ class HouseholdProvider extends ChangeNotifier {
   }
 
   Future<void> _notifyAndSave() async {
+    if (_legacyWritesStopped) throw StateError('Legacy save is sealed.');
     _localMutationRevision++;
     notifyListeners();
     await _save();
@@ -3506,11 +3538,52 @@ class HouseholdProvider extends ChangeNotifier {
     }
   }
 
+  /// Called only after removing gameplay and draining online/Altar refreshes.
+  /// Preserve the last admitted Altar receipt, flush local storage, and return
+  /// an immutable upload source. Late callbacks cannot rewrite that source.
+  /// This instance cannot be reopened; retry from its preserved save/journal.
+  Future<({String json, int revision})> sealLegacySave() {
+    if (_sealedLegacySave != null) return _sealedLegacySave!;
+    return _sealedLegacySave = (() async {
+      final source = await retireLegacySave();
+      if ((jsonDecode(source.json) as Map)['pendingAltarOperation'] != null) {
+        throw const EggAltarException('altar_pending');
+      }
+      return source;
+    })();
+  }
+
+  /// Account exit preserves unresolved request IDs in that account's storage.
+  /// It can close a root safely, but cannot authorize migration until those
+  /// requests are recovered. Upload callers must use sealLegacySave instead.
+  Future<({String json, int revision})> retireLegacySave() {
+    if (_retiredLegacySave != null) return _retiredLegacySave!;
+    _starterEggTapPersistenceTimer?.cancel();
+    _starterEggTapPersistenceTimer = null;
+    final settled = stopAltarOperations();
+    return _retiredLegacySave = (() async {
+      await settled;
+      final json = jsonEncode(_storage.prepareSave(exportState()));
+      final revision = _localMutationRevision;
+      final saved =
+          _enqueueSave(Map<String, dynamic>.from(jsonDecode(json) as Map));
+      _legacyWritesStopped = true;
+      await saved;
+      return (json: json, revision: revision);
+    })();
+  }
+
   Future<void> _save() {
+    if (_legacyWritesStopped) {
+      return Future.error(StateError('Legacy save is sealed.'));
+    }
+    return _enqueueSave(_storage.prepareSave(exportState()));
+  }
+
+  Future<void> _enqueueSave(Map<String, dynamic> state) {
     if (!_persistenceEnabled) return Future<void>.value();
-    final state = exportState();
-    final operation = _saveQueue.then((_) => StorageService.save(state),
-        onError: (_) => StorageService.save(state));
+    final operation = _saveQueue.then((_) => _storage.save(state),
+        onError: (_) => _storage.save(state));
     _saveQueue = operation;
     return operation;
   }

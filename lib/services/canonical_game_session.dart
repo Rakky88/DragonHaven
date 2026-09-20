@@ -40,12 +40,17 @@ class CanonicalGameSession extends ChangeNotifier {
   late final StreamSubscription<int> _changes;
   String? _owner;
   int _epoch = 0;
+  int _minimumServerRevision = 0;
   bool _disposed = false;
   bool _fresh = false;
   bool _foreground = true;
   CanonicalGameSnapshot? _snapshot;
   String? _errorCode;
   Future<CanonicalGameReceipt?>? _operation;
+  final _admitted = <Future<CanonicalGameReceipt?>>{};
+  bool _retiring = false;
+  Future<void>? _closing;
+  Future<void>? _connectionClosing;
   String? _operationKey;
 
   bool get _sameSession =>
@@ -74,6 +79,7 @@ class CanonicalGameSession extends ChangeNotifier {
     _epoch = connection.sessionEpoch;
     _fresh = false;
     _snapshot = null;
+    _minimumServerRevision = 0;
     _errorCode = null;
     _operation = null;
     _operationKey = null;
@@ -81,34 +87,47 @@ class CanonicalGameSession extends ChangeNotifier {
   }
 
   /// Resume a pending command/recovery first, then obtain a fresh server view.
-  Future<CanonicalGameReceipt?> synchronize() =>
-      _run('synchronize', (owner, epoch, requireSession) async {
-        final cached = await snapshots.inspect(owner);
+  /// The handoff supplies its confirmed revision before opening server UI.
+  /// Retain this lower bound for retries, including an already-pending read.
+  Future<CanonicalGameReceipt?> synchronize({int minimumServerRevision = 0}) {
+    if (minimumServerRevision < 0 || minimumServerRevision > 9007199254740991) {
+      return Future.error(ArgumentError.value(minimumServerRevision));
+    }
+    if (!_sameSession) _accountChanged();
+    if (minimumServerRevision > _minimumServerRevision) {
+      _minimumServerRevision = minimumServerRevision;
+      _fresh = false;
+    }
+    return _run('synchronize', (owner, epoch, requireSession) async {
+      final cached = await snapshots.inspect(owner);
+      requireSession();
+      if (_snapshot == null && cached.snapshot != null) {
+        _snapshot = cached.snapshot;
+        notifyListeners();
+      }
+      var applied = false;
+      final reader = _reader();
+      final reconciler = _reconciler(reader, (value) async {
         requireSession();
-        if (_snapshot == null && cached.snapshot != null) {
-          _snapshot = cached.snapshot;
-          notifyListeners();
-        }
-        var applied = false;
-        final reader = _reader();
-        final reconciler = _reconciler(reader, (value) async {
-          requireSession();
-          _accept(value);
-          applied = true;
-        });
-        final receipt = await reconciler.resume(owner);
-        requireSession();
-        if (!applied) {
-          final value = await reader.fetch(owner,
-              minimumRevision: cached.minimumRevision,
-              minimumRulesetRevision: cached.minimumRulesetRevision);
-          requireSession();
-          await snapshots.persistFresh(value);
-          requireSession();
-          _accept(value);
-        }
-        return receipt;
+        _accept(value);
+        applied = true;
       });
+      final receipt = await reconciler.resume(owner);
+      requireSession();
+      if (!applied) {
+        final value = await reader.fetch(owner,
+            minimumRevision: cached.minimumRevision > _minimumServerRevision
+                ? cached.minimumRevision
+                : _minimumServerRevision,
+            minimumRulesetRevision: cached.minimumRulesetRevision);
+        requireSession();
+        await snapshots.persistFresh(value);
+        requireSession();
+        _accept(value);
+      }
+      return receipt;
+    });
+  }
 
   /// Duplicate taps share the original request. A different action while one
   /// is pending is refused; economic actions are never queued against stale UI.
@@ -164,6 +183,9 @@ class CanonicalGameSession extends ChangeNotifier {
     if (value.authorityMode != expectedAuthority.name) {
       throw const CanonicalGameException('game_snapshot_invalid');
     }
+    if (value.serverRevision < _minimumServerRevision) {
+      throw const CanonicalGameException('game_snapshot_stale');
+    }
     final current = _snapshot;
     if (current != null &&
         (value.serverRevision < current.serverRevision ||
@@ -182,7 +204,7 @@ class CanonicalGameSession extends ChangeNotifier {
     if (!_sameSession) _accountChanged();
     final owner = _owner;
     final epoch = _epoch;
-    if (_disposed || owner == null) {
+    if (_disposed || _retiring || owner == null) {
       return Future.error(const CanonicalGameException('game_login_required'));
     }
     if (_operation != null) {
@@ -202,6 +224,7 @@ class CanonicalGameSession extends ChangeNotifier {
     _operationKey = key;
     final completion = Completer<CanonicalGameReceipt?>();
     _operation = completion.future;
+    _admitted.add(completion.future);
     notifyListeners();
     unawaited(() async {
       try {
@@ -222,6 +245,7 @@ class CanonicalGameSession extends ChangeNotifier {
         }
         completion.completeError(safeError, stack);
       } finally {
+        _admitted.remove(completion.future);
         if (!_disposed && identical(_operation, completion.future)) {
           _operation = null;
           _operationKey = null;
@@ -232,6 +256,20 @@ class CanonicalGameSession extends ChangeNotifier {
     return completion.future;
   }
 
+  /// Hide gameplay first, then drain admitted receipts before another lease
+  /// opens the same journals. Account changes cannot lose this drain barrier.
+  Future<void> close() => _closing ??= (() async {
+        _retiring = true;
+        setForeground(false);
+        await Future.wait(_admitted.toList().map((future) async {
+          try {
+            await future;
+          } on Object {/* Durable recovery owns failures. */}
+        }));
+        dispose();
+        await _connectionClosing;
+      })();
+
   @override
   void dispose() {
     if (_disposed) return;
@@ -239,7 +277,8 @@ class CanonicalGameSession extends ChangeNotifier {
     _snapshot = null;
     _fresh = false;
     unawaited(_changes.cancel());
-    unawaited(connection.dispose());
+    _connectionClosing ??= connection.dispose();
+    unawaited(_connectionClosing);
     super.dispose();
   }
 }

@@ -11,6 +11,7 @@ import '../models/supporter_pack.dart';
 import '../providers/household_provider.dart';
 import '../providers/online_account_provider.dart';
 import 'notification_settings_screen.dart';
+import 'privacy_screen.dart';
 import 'jukebox_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_icon_sprite.dart';
@@ -332,6 +333,12 @@ class AccountScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18),
           ],
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: Text(strings.pick('Privacy', 'Privacy')),
+            onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const PrivacyScreen())),
+          ),
           Text(strings.pick('Preferences', 'Voorkeuren'),
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),

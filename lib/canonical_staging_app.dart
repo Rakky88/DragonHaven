@@ -66,9 +66,13 @@ Future<void> runCanonicalStaging(OnlineConfig config) async {
 
 class CanonicalStagingApp extends StatefulWidget {
   const CanonicalStagingApp(
-      {super.key, required this.session, required this.auth});
+      {super.key,
+      required this.session,
+      required this.auth,
+      this.stagingLabel = true});
   final CanonicalGameSession session;
   final SupabaseClient auth;
+  final bool stagingLabel;
   @override
   State<CanonicalStagingApp> createState() => _CanonicalStagingAppState();
 }
@@ -119,7 +123,7 @@ class _CanonicalStagingAppState extends State<CanonicalStagingApp>
     final signedIn = session.connection.currentOwner != null;
     return MaterialApp(
       navigatorKey: _navigator,
-      title: 'DragonHaven Staging',
+      title: widget.stagingLabel ? 'DragonHaven Staging' : 'DragonHaven',
       theme: buildAppTheme(),
       debugShowCheckedModeBanner: false,
       supportedLocales: const [Locale('en'), Locale('nl')],
@@ -127,55 +131,60 @@ class _CanonicalStagingAppState extends State<CanonicalStagingApp>
       home: Builder(builder: (context) {
         final strings = AppStrings.of(context);
         return Scaffold(
-          appBar: AppBar(title: const Text('DragonHaven · Staging'), actions: [
-            if (signedIn)
-              IconButton(
-                  tooltip: strings.pick('Haven', 'Haven'),
-                  icon: const Icon(Icons.home_outlined),
-                  onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                          builder: (context) => Scaffold(
-                              appBar: AppBar(
-                                  title: Text(AppStrings.of(context)
-                                      .pick('Haven', 'Haven'))),
-                              body: const SafeArea(
-                                  child: CanonicalHouseScreen()))))),
-            if (signedIn)
-              IconButton(
-                  tooltip: strings.pick('Trades', 'Ruilen'),
-                  icon: const Icon(Icons.swap_horiz),
-                  onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                          builder: (_) => Scaffold(
-                              appBar: AppBar(
-                                  title:
-                                      Text(strings.pick('Trades', 'Ruilen'))),
-                              body: const SafeArea(
-                                  child: CanonicalTradesScreen()))))),
-            if (signedIn)
-              IconButton(
-                  tooltip: strings.pick('Profile', 'Profiel'),
-                  icon: const Icon(Icons.person_outline),
-                  onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                          builder: (_) => Scaffold(
-                              appBar: AppBar(
-                                  title:
-                                      Text(strings.pick('Profile', 'Profiel'))),
-                              body: const SafeArea(
-                                  child: CanonicalProfileScreen()))))),
-            if (signedIn)
-              IconButton(
-                  tooltip: strings.pick('Sign out', 'Uitloggen'),
-                  icon: const Icon(Icons.logout),
-                  onPressed: () async {
-                    try {
-                      await widget.auth.auth.signOut(scope: SignOutScope.local);
-                    } on Object {
-                      if (context.mounted) setState(() {});
-                    }
-                  }),
-          ]),
+          appBar: AppBar(
+              title: Text(widget.stagingLabel
+                  ? 'DragonHaven · Staging'
+                  : 'DragonHaven'),
+              actions: [
+                if (signedIn)
+                  IconButton(
+                      tooltip: strings.pick('Haven', 'Haven'),
+                      icon: const Icon(Icons.home_outlined),
+                      onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                              builder: (context) => Scaffold(
+                                  appBar: AppBar(
+                                      title: Text(AppStrings.of(context)
+                                          .pick('Haven', 'Haven'))),
+                                  body: const SafeArea(
+                                      child: CanonicalHouseScreen()))))),
+                if (signedIn)
+                  IconButton(
+                      tooltip: strings.pick('Trades', 'Ruilen'),
+                      icon: const Icon(Icons.swap_horiz),
+                      onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                              builder: (_) => Scaffold(
+                                  appBar: AppBar(
+                                      title: Text(
+                                          strings.pick('Trades', 'Ruilen'))),
+                                  body: const SafeArea(
+                                      child: CanonicalTradesScreen()))))),
+                if (signedIn)
+                  IconButton(
+                      tooltip: strings.pick('Profile', 'Profiel'),
+                      icon: const Icon(Icons.person_outline),
+                      onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                              builder: (_) => Scaffold(
+                                  appBar: AppBar(
+                                      title: Text(
+                                          strings.pick('Profile', 'Profiel'))),
+                                  body: const SafeArea(
+                                      child: CanonicalProfileScreen()))))),
+                if (signedIn)
+                  IconButton(
+                      tooltip: strings.pick('Sign out', 'Uitloggen'),
+                      icon: const Icon(Icons.logout),
+                      onPressed: () async {
+                        try {
+                          await widget.auth.auth
+                              .signOut(scope: SignOutScope.local);
+                        } on Object {
+                          if (context.mounted) setState(() {});
+                        }
+                      }),
+              ]),
           body: SafeArea(
               child: signedIn
                   ? CanonicalMilestones(

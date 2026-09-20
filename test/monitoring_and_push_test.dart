@@ -7,9 +7,11 @@ import 'package:dragon_haven/services/firebase_monitoring.dart';
 import 'package:dragon_haven/services/monitoring_policy.dart';
 import 'package:dragon_haven/services/push_device_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => SharedPreferences.setMockInitialValues({}));
 
   test('missing Firebase config keeps diagnostics usable without a project',
       () async {

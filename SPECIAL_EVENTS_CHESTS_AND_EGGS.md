@@ -1,3 +1,13 @@
+## Online account startup ? 20 September 2026
+
+Normal play now requires a verified online account and the current 16+ privacy
+acknowledgement before loading gameplay. Existing egg seeds, DNA, reward pools,
+trial rank thresholds, event schedules and random odds remain unchanged. The
+starter incubation clock starts once, when the keeper chooses a name and claims
+the egg. Account changes retain pending Altar IDs and isolate local recovery
+saves. Audit/demo entry points remain explicit development-only configurations.
+No server-economy authority switch is enabled by this change.
+
 # DragonHaven Special Events, Chests, and Eggs
 
 ## Shared expertise candidate ? 20 September 2026
@@ -359,7 +369,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: b96af9e8f1299c2b -->
+<!-- reference-source-fingerprint: ddf762b7d166bd7d -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

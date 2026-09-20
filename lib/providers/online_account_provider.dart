@@ -14,10 +14,35 @@ import '../services/storage_service.dart';
 
 class OnlineAccountProvider extends ChangeNotifier {
   static const maxSuccessfulTradesPerDay = 3;
+  static const _serverSocialOperations = {
+    'social.refresh',
+    'social.preferences',
+    'friends.send_request',
+    'friends.respond_request',
+    'friends.remove',
+    'friends.block',
+    'friends.unblock',
+    'messages.open',
+    'messages.send',
+    'conclave.directory',
+    'conclave.create',
+    'conclave.join',
+    'conclave.respond_request',
+    'conclave.invite',
+    'conclave.respond_invite',
+    'conclave.leave',
+    'conclave.role',
+    'conclave.transfer',
+    'conclave.remove_member',
+    'conclave.dissolve',
+    'seasonal.chronicle',
+    'seasonal.community',
+  };
 
   OnlineAccountProvider({
     required SocialRepository repository,
     required OnlineInventorySnapshot Function() inventorySnapshot,
+    this.serverOwned = false,
     OnlineProfileSnapshot Function()? profileSnapshot,
     Future<void> Function()? synchronizeEggAltar,
     Future<void> Function(KeeperProfile profile)? synchronizeKnownDiscoveries,
@@ -90,6 +115,11 @@ class OnlineAccountProvider extends ChangeNotifier {
         _operationTimeout = operationTimeout;
 
   final SocialRepository _repository;
+
+  /// Server sessions may read and manage social relationships, but never
+  /// publish a legacy inventory or acknowledge rewards through local state.
+  final bool serverOwned;
+  int _authGeneration = 0;
   final Future<void> Function()? _synchronizeEggAltar;
   final Future<void> Function(KeeperProfile profile)?
       _synchronizeKnownDiscoveries;
@@ -154,8 +184,9 @@ class OnlineAccountProvider extends ChangeNotifier {
   final Map<String, String> _pendingConclaveMessages = {};
   bool _operationInFlight = false;
   bool _disposed = false;
-  int _authEpoch = 0;
-  int get restoreSessionEpoch => _authEpoch;
+  bool _legacyOperationsStopped = false;
+  Future<void>? _legacyStop;
+  int get restoreSessionEpoch => _authGeneration;
   DateTime? _operationDeadline;
   bool get cloudRestoreStillAllowed =>
       !_disposed &&
@@ -340,9 +371,10 @@ class OnlineAccountProvider extends ChangeNotifier {
 
   Future<void> initialize({bool waitForFirstRefresh = true}) async {
     _readPreferences = await SharedPreferences.getInstance();
+    if (_legacyOperationsStopped || _disposed) return;
     _authSubscription = _repository.authStateChanges.listen(
       (signedIn) {
-        _authEpoch++;
+        _authGeneration++;
         if (signedIn) {
           _ensureRefreshTimer();
           unawaited(refresh());
@@ -352,6 +384,7 @@ class OnlineAccountProvider extends ChangeNotifier {
         }
       },
       onError: (Object error) {
+        _authGeneration++;
         final correlationId = DiagnosticIds.create();
         errorCode =
             error is SocialException ? error.code : 'online_unexpected_error';
@@ -545,6 +578,24 @@ class OnlineAccountProvider extends ChangeNotifier {
     return currentUserId == owner;
   }
 
+  /// Irreversibly retire this provider before the final legacy upload. The
+  /// caller first removes legacy gameplay and separately drains local storage.
+  /// A UI timeout is not completion: wait for the original economic operation,
+  /// including its local reward callbacks, before allowing authority transfer.
+  /// Dispose/recreate the provider if the confirmed route remains legacy.
+  Future<void> stopLegacyOperations() {
+    if (_legacyStop != null) return _legacyStop!;
+    _legacyOperationsStopped = true;
+    _refreshTimer?.cancel();
+    _conclaveBadgeTimer?.cancel();
+    _notificationPollTimer?.cancel();
+    _authRecoveryTimer?.cancel();
+    final cancelled = _authSubscription?.cancel() ?? Future<void>.value();
+    _authSubscription = null;
+    return _legacyStop =
+        Future.wait<void>([cancelled, _settledOperation]).then<void>((_) {});
+  }
+
   Future<void> _settledOperation = Future<void>.value();
 
   Future<bool> backupToCloud(
@@ -599,7 +650,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   Future<bool> replaceCloudWithLocal() async =>
       await _run('cloud_save.replace_with_local', () async {
         final owner = currentUserId;
-        final epoch = _authEpoch;
+        final epoch = _authGeneration;
         final snapshot = _gameStateSnapshot;
         final loadDeviceId = _deviceId;
         if (!isSignedIn || snapshot == null || loadDeviceId == null) {
@@ -637,7 +688,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   Future<bool> restoreFromCloud({String? expectedSaveId}) async =>
       await _run('cloud_save.restore', () async {
         final owner = currentUserId;
-        final epoch = _authEpoch;
+        final epoch = _authGeneration;
         final apply = _applyCloudState;
         if (!isSignedIn || apply == null) {
           throw const SocialException('cloud_save_unavailable');
@@ -666,7 +717,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   Future<CloudGameSave?> previewCloudRevision(String saveId) =>
       _run('cloud_save.preview_revision', () async {
         final owner = currentUserId;
-        final epoch = _authEpoch;
+        final epoch = _authGeneration;
         _requireAccountSession(owner, epoch);
         final selected = await _repository.loadCloudGameSaveRevision(saveId);
         _requireAccountSession(owner, epoch);
@@ -677,7 +728,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   Future<bool> restoreCloudRevision(String saveId) async =>
       await _run('cloud_save.restore_revision', () async {
         final owner = currentUserId;
-        final epoch = _authEpoch;
+        final epoch = _authGeneration;
         final apply = _applyCloudState;
         if (!isSignedIn || apply == null || saveId.isEmpty) {
           throw const SocialException('cloud_save_unavailable');
@@ -711,7 +762,7 @@ class OnlineAccountProvider extends ChangeNotifier {
         !isSignedIn ||
         owner == null ||
         currentUserId != owner ||
-        epoch != _authEpoch) {
+        epoch != _authGeneration) {
       throw const SocialException('online_session_expired');
     }
   }
@@ -719,7 +770,7 @@ class OnlineAccountProvider extends ChangeNotifier {
   Future<bool> restoreLocalCheckpoint(String checkpointId) async =>
       await _run('cloud_save.undo_restore', () async {
         final owner = currentUserId;
-        final epoch = _authEpoch;
+        final epoch = _authGeneration;
         final apply = _applyCloudState;
         _requireAccountSession(owner, epoch);
         if (apply == null) {
@@ -1395,8 +1446,22 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   Future<void> _refreshDataOnce() async {
+    if (serverOwned) {
+      final owner = currentUserId;
+      final authGeneration = _authGeneration;
+      final generation = _conclaveReadGeneration;
+      final snapshot = await _repository.loadOnlineSnapshot();
+      if (_disposed ||
+          owner == null ||
+          owner != currentUserId ||
+          authGeneration != _authGeneration) {
+        throw const SocialException('online_login_required');
+      }
+      _applyOnlineSnapshot(snapshot, conclaveGeneration: generation);
+      return;
+    }
     final refreshOwner = currentUserId;
-    final refreshEpoch = _authEpoch;
+    final refreshEpoch = _authGeneration;
     await _repository.ensureAccount();
     final snapshot = _inventorySnapshot();
     final localProfile = _profileSnapshot();
@@ -1431,7 +1496,7 @@ class OnlineAccountProvider extends ChangeNotifier {
         !_disposed &&
         isSignedIn &&
         refreshOwner == currentUserId &&
-        refreshEpoch == _authEpoch &&
+        refreshEpoch == _authGeneration &&
         onlineSnapshot.profile.userId == refreshOwner) {
       await _runRefreshMaintenanceStep('social.refresh.known_discoveries',
           () => synchronize(onlineSnapshot.profile));
@@ -1885,7 +1950,13 @@ class OnlineAccountProvider extends ChangeNotifier {
   }
 
   void _ensureRefreshTimer() {
-    if (!isConfigured || !isSignedIn || !_appInForeground || _disposed) return;
+    if (!isConfigured ||
+        !isSignedIn ||
+        !_appInForeground ||
+        _disposed ||
+        _legacyOperationsStopped) {
+      return;
+    }
     _refreshTimer ??= Timer.periodic(const Duration(minutes: 2), (_) {
       if (isSignedIn && !busy) unawaited(refreshIfStale());
     });
@@ -1906,7 +1977,7 @@ class OnlineAccountProvider extends ChangeNotifier {
     // Future.timeout does not cancel its source future. Keep the single-flight
     // guard active until that source really settles, so a retry after a timeout
     // cannot overlap the original server mutation.
-    if (busy || _operationInFlight) return null;
+    if (_legacyOperationsStopped || busy || _operationInFlight) return null;
     final correlationId = DiagnosticIds.create();
     final startedAt = DateTime.now();
     final stopwatch = Stopwatch()..start();
@@ -1915,6 +1986,8 @@ class OnlineAccountProvider extends ChangeNotifier {
       (reporter as DiagnosticTracingReporter)
           .operationStarted(operationName, correlationId);
     }
+    final operationSettled = Completer<void>();
+    _settledOperation = operationSettled.future;
     _operationInFlight = true;
     busy = true;
     if (!background) {
@@ -1923,12 +1996,28 @@ class OnlineAccountProvider extends ChangeNotifier {
       _notify();
     }
     _operationDeadline = DateTime.now().add(_operationTimeout);
-    final operationFuture = Future<T>.sync(operation);
+    final operationFuture = Future<T>.sync(() {
+      if (_legacyOperationsStopped) {
+        throw const SocialException('game_server_authority_required');
+      }
+      if (serverOwned &&
+          !operationName.startsWith('auth.') &&
+          !_serverSocialOperations.contains(operationName)) {
+        throw const SocialException('game_server_authority_required');
+      }
+      return operation();
+    });
     _settledOperation = operationFuture.then<void>((_) {},
         onError: (Object _, StackTrace __) {});
     unawaited(operationFuture.then<void>(
-      (_) => _operationInFlight = false,
-      onError: (Object _, StackTrace __) => _operationInFlight = false,
+      (_) {
+        _operationInFlight = false;
+        operationSettled.complete();
+      },
+      onError: (Object _, StackTrace __) {
+        _operationInFlight = false;
+        operationSettled.complete();
+      },
     ));
     try {
       final result = await operationFuture.timeout(

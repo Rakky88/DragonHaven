@@ -92,11 +92,30 @@ extension EggAltarSystems on HouseholdProvider {
         operationId: pending['id'] as String);
   }
 
+  /// Close admission before draining an already admitted command, including its
+  /// local receipt application and durable save. The root first removes UI.
+  Future<void> stopAltarOperations() {
+    _altarOperationsStopped = true;
+    return _settledAltarOperation;
+  }
+
   Future<Map<String, dynamic>> _performAltar(
       String action, Map<String, dynamic> payload,
       {String? operationId}) async {
+    if (_altarOperationsStopped) {
+      throw const EggAltarException('altar_unavailable');
+    }
     if (altarBusy) throw const EggAltarException('altar_busy');
     final ownerId = altarCurrentUserId?.call();
+    final epoch = altarSessionEpoch?.call();
+    void requireAccount() {
+      if (altarCurrentUserId?.call() != ownerId ||
+          altarSessionEpoch?.call() != epoch) {
+        // A sent request might already have committed. Preserve its journal;
+        // never apply another session's receipt or manufacture a new request.
+        throw const EggAltarException('altar_unavailable');
+      }
+    }
     if (altarRequiresAccount && ownerId == null) {
       throw const EggAltarException('altar_sign_in_required');
     }
@@ -125,9 +144,15 @@ extension EggAltarSystems on HouseholdProvider {
     };
     final previousNames = {for (final d in ownedDragons) d.id: d.name};
     var serverCommitted = false;
+    final settled = Completer<void>();
+    _settledAltarOperation = settled.future;
     altarBusy = true;
-    _notifyAltarListeners();
     try {
+      _notifyAltarListeners();
+      if (_altarOperationsStopped) {
+        throw const EggAltarException('altar_unavailable');
+      }
+      requireAccount();
       Map<String, dynamic> receipt;
       if (ownerId != null && altarCommand != null) {
         pendingAltarOperation = {
@@ -136,10 +161,16 @@ extension EggAltarSystems on HouseholdProvider {
           'payload': payload
         };
         await _save(); // Persist the request ID before sending an irreversible command.
+        requireAccount();
         final result = await altarCommand!(id, action, payload);
         serverCommitted = true;
-        eggAltar = EggAltarState.fromJson(
+        requireAccount();
+        final next = EggAltarState.fromJson(
             Map<String, dynamic>.from(result['state'] as Map));
+        if (next.ownerId != ownerId) {
+          throw const EggAltarException('altar_unavailable');
+        }
+        eggAltar = next;
         receipt = Map<String, dynamic>.from(result['receipt'] as Map? ?? {});
       } else {
         receipt = _localAltarCommand(id, action, payload);
@@ -176,7 +207,11 @@ extension EggAltarSystems on HouseholdProvider {
       rethrow;
     } finally {
       altarBusy = false;
-      _notifyAltarListeners();
+      try {
+        _notifyAltarListeners();
+      } finally {
+        settled.complete();
+      }
     }
   }
 

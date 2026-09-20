@@ -869,9 +869,13 @@ extension DragonHavenSystems on HouseholdProvider {
   }
 
   Future<void> completeOnboarding(String value) async {
+    if (onboardingComplete) return;
     final normalized = value.trim();
     if (normalized.isEmpty || normalized.length > 24) return;
     accountName = normalized;
+    // The starter incubation starts when the verified keeper claims it,
+    // never while waiting for registration or email confirmation.
+    if (pet.isEgg) pet.stageStartedAt = _clock();
     onboardingComplete = true;
     await _notifyAndSave();
     await _scheduleEggReadyNotification(pet);

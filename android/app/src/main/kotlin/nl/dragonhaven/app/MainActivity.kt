@@ -19,6 +19,12 @@ import io.flutter.plugin.common.MethodChannel
 import androidx.core.app.NotificationManagerCompat
 
 class MainActivity : FlutterActivity() {
+    private var networkStatus: NetworkStatusBridge? = null
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        networkStatus?.dispose()
+        networkStatus = null
+        super.cleanUpFlutterEngine(flutterEngine)
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         EventBranding.activityVisible = true
         super.onCreate(savedInstanceState)
@@ -91,6 +97,7 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        networkStatus = NetworkStatusBridge(this, flutterEngine.dartExecutor.binaryMessenger)
         prepareChimes()
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nl.dragonhaven.app/event_branding")

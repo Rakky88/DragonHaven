@@ -1,3 +1,13 @@
+## Online account startup ? 20 September 2026
+
+Normal play now requires a verified online account and the current 16+ privacy
+acknowledgement before loading gameplay. Existing egg seeds, DNA, reward pools,
+trial rank thresholds, event schedules and random odds remain unchanged. The
+starter incubation clock starts once, when the keeper chooses a name and claims
+the egg. Account changes retain pending Altar IDs and isolate local recovery
+saves. Audit/demo entry points remain explicit development-only configurations.
+No server-economy authority switch is enabled by this change.
+
 # Current trial assistance update — 20 September 2026
 
 All event score/action ceilings are removed. Birthday is endless and ends on
@@ -219,7 +229,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: e7cd7198c56aa270 -->
+<!-- reference-source-fingerprint: f32b7d1f97e9a843 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

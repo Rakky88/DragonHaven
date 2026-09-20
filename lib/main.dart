@@ -1,27 +1,21 @@
-import 'domain/game_time_bridge.dart';
+import 'services/legacy_app_runtime.dart';
+import 'account_startup_app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'app_info.dart';
 import 'canonical_staging_app.dart';
 import 'config/online_config.dart';
 import 'config/firebase_config.dart';
 import 'dragonhaven_app.dart';
-import 'models/social.dart';
 import 'providers/household_provider.dart';
-import 'providers/online_account_provider.dart';
 import 'screens/sprite_audit_screen.dart';
 import 'screens/special_event_audit_screen.dart';
 import 'screens/event_dragon_sprite_review_screen.dart';
-import 'services/audio_service.dart';
 import 'services/firebase_monitoring.dart';
-import 'services/firebase_push.dart';
 import 'services/notification_service.dart';
 import 'services/social_repository.dart';
-import 'services/egg_altar_repository.dart';
-import 'services/storage_service.dart';
 import 'services/supabase_social_repository.dart';
 
 Future<void> main() async {
@@ -65,6 +59,15 @@ Future<void> main() async {
   );
   const evolutionDemo = bool.fromEnvironment('DRAGONHAVEN_EVOLUTION_DEMO');
   const nestDemo = bool.fromEnvironment('DRAGONHAVEN_NEST_DEMO');
+  final onlineConfig = OnlineConfig.fromEnvironment();
+  if (!releaseDemo &&
+      !evolutionDemo &&
+      !nestDemo &&
+      !hatchDemo &&
+      !showcase) {
+    await runAccountStartup(onlineConfig);
+    return;
+  }
   final game = releaseDemo
       ? HouseholdProvider.createReleaseDemo()
       : evolutionDemo
@@ -84,7 +87,6 @@ Future<void> main() async {
     game.discoveredForms.clear();
     game.prismaticForms.clear();
   }
-  final onlineConfig = OnlineConfig.fromEnvironment();
   game.persistentSeasonalPreviewRewards =
       onlineConfig.environment != OnlineEnvironment.production;
   final firebase =
@@ -97,124 +99,14 @@ Future<void> main() async {
       publishableKey: onlineConfig.publishableKey,
     );
     socialRepository = SupabaseSocialRepository(Supabase.instance.client);
-    final altar =
-        EggAltarRepository(Supabase.instance.client, socialRepository, game);
-    game
-      ..altarRequiresAccount = true
-      ..altarCurrentUserId = (() =>
-          socialRepository.isSignedIn ? socialRepository.currentUserId : null)
-      ..altarCommand = altar.command
-      ..loadWeaveBeacon = altar.beacon
-      ..refreshEggAltar = altar.refresh;
   }
-  FirebasePushCoordinator? push;
-  late final OnlineAccountProvider online;
-  online = OnlineAccountProvider(
-    repository: socialRepository,
-    inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
-    profileSnapshot: () => OnlineProfileSnapshot.fromGame(game),
-    synchronizeEggAltar: game.refreshEggAltar,
-    synchronizeKnownDiscoveries: (profile) async {
-      if (socialRepository.currentUserId != profile.userId) return;
-      await game.mergeKnownDiscoveries(
-          profile.discoveredForms, profile.prismaticForms);
-    },
-    synchronizeGroupReservations: game.synchronizeOnlineGroupReservations,
-    applyGroupReward: (reward) => game.applyOnlineGroupReward(
-      lobbyId: reward.lobbyId,
-      adventureId: reward.adventureId,
-      dragonId: reward.dragonId,
-      xp: reward.xp,
-      focus: reward.focus,
-      statPoints: reward.statPoints,
-      chestTier: reward.chestTier,
-      participantCount: reward.participantCount,
-      completedAt: reward.completedAt,
-    ),
-    synchronizeTradeReservations: game.synchronizeOnlineTradeReservations,
-    applyTradeSettlement: (settlement) => game.applyOnlineTradeSettlement(
-      tradeId: settlement.tradeId,
-      sentKind: settlement.sent.kind.name,
-      sentKey: settlement.sent.key,
-      sentData: settlement.sent.data,
-      receivedKind: settlement.received.kind.name,
-      receivedKey: settlement.received.key,
-      receivedData: settlement.received.data,
-    ),
-    applySeasonalPrize: ({
-      required prizeId,
-      required eventId,
-      required position,
-    }) =>
-        game.applySeasonalPodiumPrize(
-      prizeId: prizeId,
-      eventId: eventId,
-      position: position,
-    ),
-    synchronizeSeasonalPreviews: game.synchronizeSeasonalEventPreviews,
-    synchronizeSeasonalDismissals: game.synchronizeSeasonalEventDismissals,
-    synchronizeSeasonalPairReservations:
-        game.synchronizeOnlineSeasonalPairReservations,
-    applySeasonalPairReward: (reward) => game.applyOnlineSeasonalPairReward(
-      adventureId: reward.adventureId,
-      eventId: reward.eventId,
-      dragonId: reward.dragonId,
-      xp: reward.xp,
-      might: reward.might,
-      arcana: reward.arcana,
-      spirit: reward.spirit,
-      specialChestId: reward.specialChestId,
-      simulated: reward.simulated,
-    ),
-    gameStateSnapshot: () => GameTimeBridge.forUpload(game.exportState()),
-    applyCloudState: (state) {
-      final owner = socialRepository.currentUserId;
-      final epoch = online.restoreSessionEpoch;
-      return game.restoreCloudState(
-        state,
-        recoveryOwner: owner,
-        canApplyRestore: () =>
-            online.cloudRestoreStillAllowed &&
-            socialRepository.isSignedIn &&
-            socialRepository.currentUserId == owner &&
-            online.restoreSessionEpoch == epoch,
-      );
-    },
-    deviceId: StorageService.deviceId,
-    clientVersion: AppInfo.version,
-    loadCloudBaseRevision: StorageService.loadCloudBaseRevision,
-    saveCloudBaseRevision: StorageService.saveCloudBaseRevision,
-    languageCode: () => game.languageCode,
-    diagnostics: diagnostics,
-    prepareAccountExit: () async {
-      try {
-        await push
-            ?.unregisterBeforeSignOut()
-            .timeout(const Duration(seconds: 3));
-      } on Object {
-        // Optional push cannot block signing out during a network outage.
-      }
-    },
-    accountExitFinished: () => push?.afterSignOutAttempt(),
-  );
-  await online.initialize(waitForFirstRefresh: false);
-  if (firebase.available && onlineConfig.isConfigured) {
-    push = FirebasePushCoordinator(game, online, Supabase.instance.client);
-  }
-  await HavenAudio.configureJukebox(
-    trackIds: game.enabledMusicResourceIds,
-    shuffle: game.jukeboxShuffle,
-    repeat: game.jukeboxRepeat,
-  );
-  await HavenAudio.applyPreferences(
-    musicEnabled: game.musicEnabled,
-    soundEffectsEnabled: game.soundEffectsEnabled,
-    musicStyle: game.musicStyle,
-  );
-  final hour = DateTime.now().hour;
-  await HavenAudio.setMusicScene(hour >= 21 || hour < 7
-      ? HavenMusicScene.towerNight
-      : HavenMusicScene.towerDay);
+  final runtime = await createLegacyAppRuntime(
+      game: game,
+      socialRepository: socialRepository,
+      auth: onlineConfig.isConfigured ? Supabase.instance.client : null,
+      firebaseAvailable: firebase.available,
+      diagnostics: diagnostics);
+  final online = runtime.online;
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: game),

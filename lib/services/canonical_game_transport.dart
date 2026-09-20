@@ -10,6 +10,7 @@ import '../app_info.dart';
 import 'canonical_game_intent.dart';
 import 'canonical_game_connection.dart';
 import 'canonical_game_snapshot.dart';
+import 'canonical_account_handoff.dart';
 
 /// Authenticated transport pinned to an explicitly selected app environment. No service key,
 /// raw save, caller-owned clock or secret seed is ever present in this client.
@@ -85,6 +86,21 @@ class CanonicalGameTransport implements CanonicalGameConnection {
   int get sessionEpoch => _epoch;
   @override
   Stream<int> get accountChanges => _changes.stream;
+
+  /// Reads authority independently of the gameplay worker switches. Failure is
+  /// unknown authority, never implicit permission to resume legacy writes.
+  Future<CanonicalAccountStatus> readAccountStatus() async {
+    final owner = currentOwner;
+    final epoch = sessionEpoch;
+    final reply = await _invoke(const {}, accountStatus: true);
+    if (currentOwner != owner || sessionEpoch != epoch) {
+      throw const CanonicalGameException('game_account_changed');
+    }
+    if (reply.status != 200 || owner == null) {
+      throw const CanonicalGameException('game_migration_unavailable');
+    }
+    return CanonicalAccountStatus.parse(reply.body, owner);
+  }
 
   @override
   Future<Object?> read(Map<String, dynamic> request) async {
@@ -190,7 +206,7 @@ class CanonicalGameTransport implements CanonicalGameConnection {
   };
 
   Future<CanonicalGameHttpReply> _invoke(Map<String, dynamic> request,
-      {String? expectedOwner}) async {
+      {String? expectedOwner, bool accountStatus = false}) async {
     final owner = currentOwner;
     final epoch = _epoch;
     var finished = false;
@@ -231,8 +247,10 @@ class CanonicalGameTransport implements CanonicalGameConnection {
         }
         client = _clientFactory();
         _activeClients.add(client!);
-        final outgoing = http.Request(
-            'POST', Uri.parse('$_baseUrl/functions/v1/execute-game-command'))
+        final path = accountStatus
+            ? '/rest/v1/rpc/get_my_online_session_status'
+            : '/functions/v1/execute-game-command';
+        final outgoing = http.Request('POST', Uri.parse('$_baseUrl$path'))
           ..followRedirects = false
           ..headers.addAll({
             'authorization': 'Bearer ${session.accessToken}',

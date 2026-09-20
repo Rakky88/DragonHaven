@@ -1,5 +1,23 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Current update: online-only account start and 16+ ? 20 September 2026
+
+The owner supplied Rick Groot / groot.rick+Dragonhaven@hotmail.com as public
+privacy contact and selected 16+ (no child/parent account route). The normal app
+now verifies an account and live server access before loading gameplay. Privacy
+acknowledgement is recorded per account; optional diagnostics default to off and
+can be withdrawn. Account-scoped recovery protects existing saves and pending
+Altar operations. See [ONLINE_ACCOUNT_ACCESS.md](ONLINE_ACCOUNT_ACCESS.md) for
+behavior, operational limits and verification; [PRIVACY.md](PRIVACY.md) contains
+the actual in-app notice.
+
+Additive migration 88 is applied and contract-verified on staging and production;
+the new RPCs pass PostgreSQL lint and production public health is 200/200/200.
+Authority switches and server-owned account counts are unchanged. No new APK
+release has been published: v0.05.40 / 10090 remains the public baseline. Older
+version/schema statements below are historical. Authoritative server-economy
+activation and its outstanding rollout checks remain separate work.
+
 ## v0.05.36 / 10086: Trial event animation hotfix
 
 This release starts from published v0.05.35 and carries only the Trial return
