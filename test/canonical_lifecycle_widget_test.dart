@@ -99,7 +99,9 @@ void main() {
     // A newly prepended run may be above the retained offer-list scroll offset.
     // Scroll it into the lazy list before asking ensureVisible for its element.
     final list = find.byWidgetPredicate((widget) => const [
-          Key('canonical-adventures-list'),
+          PageStorageKey('canonical-adventures-list-0'),
+          PageStorageKey('canonical-adventures-list-2'),
+          PageStorageKey('canonical-adventures-list-3'),
           Key('canonical-tower-list'),
           Key('canonical-rooms-list'),
           Key('canonical-room-editor-list'),
@@ -158,7 +160,9 @@ void main() {
     final egg = session.snapshot!.eggs.first;
     await tap(tester, find.text('Eggs'));
     await tap(tester, key('canonical-egg-${egg.id}'));
-    expect(find.text('Dragon: Unknown'), findsOneWidget);
+    expect(find.text('Incubation after nesting'), findsOneWidget);
+    expect(find.text('Still hidden'), findsNothing);
+    expect(find.byType(Chip), findsNothing);
     await tap(tester, key('canonical-tag-egg'));
     await command(tester);
     expect(session.snapshot!.egg(egg.id)!.tagged, isTrue);
@@ -187,7 +191,7 @@ void main() {
   });
 
   testWidgets(
-      'Sinister return needs two confirmations and reconciles a lost receipt once',
+      'Sinister return requires a full hold and extra confirmation; lost receipt reconciles once',
       (tester) async {
     await setup(tester, const CanonicalInventoryScreen());
     final egg = session.snapshot!.eggs.firstWhere((e) => e.kind == 'sinister');
@@ -205,15 +209,29 @@ void main() {
         .jumpTo(0);
     await tester.pump(const Duration(milliseconds: 400));
     await shot(tester, 'altar-selected');
-    await tap(tester, key('canonical-altar-return'));
-    await tap(tester, find.widgetWithText(FilledButton, 'Confirm'));
+    await tester.scrollUntilVisible(key('hold-return-to-weave'), 180,
+        scrollable: find
+            .descendant(
+                of: key('canonical-altar-list'),
+                matching: find.byType(Scrollable))
+            .first);
+    final hold = await tester
+        .startGesture(tester.getCenter(key('hold-return-to-weave')));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 1200));
+    await hold.up();
+    await tester.pump(const Duration(milliseconds: 400));
     expect(find.textContaining('This is a Sinister egg'), findsOneWidget);
     await tap(tester, find.widgetWithText(TextButton, 'Cancel'));
     expect(server.sent, isEmpty);
     server.loseReply = true;
-    await tap(tester, key('canonical-altar-return'));
-    await tap(tester, find.widgetWithText(FilledButton, 'Confirm'));
-    await tap(tester, find.widgetWithText(FilledButton, 'Confirm'));
+    final secondHold = await tester
+        .startGesture(tester.getCenter(key('hold-return-to-weave')));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 1200));
+    await secondHold.up();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tap(tester, find.widgetWithText(FilledButton, 'Return to the Weave'));
     await command(tester);
     expect(session.snapshot!.egg(egg.id), isNotNull);
     await tap(tester, key('economy-reconnect'));
@@ -230,6 +248,7 @@ void main() {
     await setup(tester, const CanonicalInventoryScreen(),
         language: 'nl', scale: 1.35);
     await tap(tester, find.text('Altar'));
+    await tap(tester, find.text('Maken'));
     final craft = key('canonical-craft-nameweaversQuill');
     await tester
         .ensureVisible(find.ancestor(of: craft, matching: find.byType(Card)));
@@ -338,20 +357,13 @@ void main() {
     expect(find.text('Arcana'), findsWidgets);
     expect(find.text('Spirit'), findsWidgets);
     await tap(tester, find.widgetWithText(TextButton, 'Close'));
-    final start = find.descendant(
-        of: key('canonical-start-adventure'),
-        matching: find.byType(FilledButton));
-    expect(tester.widget<FilledButton>(start).onPressed, isNull);
-    await tap(tester, key('canonical-adventure-dragon-${dragon.id}'));
     await tap(tester, key('dragon-picker-draconomicon'));
     await tap(tester, find.byType(BackButton));
-    expect(tester.widget<FilledButton>(start).onPressed, isNotNull);
     expect(server.sent, hasLength(before));
     await shot(tester, 'adventure-picker');
     server.loseReply = true;
-    await tap(tester, key('canonical-start-adventure'));
+    await tap(tester, key('canonical-adventure-dragon-${dragon.id}'));
     await command(tester);
-    await tap(tester, find.widgetWithText(TextButton, 'Cancel'));
     await tap(tester, key('economy-reconnect'));
     await command(tester);
     final run = session.snapshot!.adventures.runs.single;
@@ -383,7 +395,8 @@ void main() {
     final id = session.snapshot!.adventures.offers(AdventureKind.mini).first;
     await tap(tester, key('canonical-select-adventure-$id'));
     await shot(tester, 'adventure-picker-nl-large');
-    await tap(tester, find.widgetWithText(TextButton, 'Annuleren'));
+    Navigator.of(tester.element(key('adventure-dragon-picker-scroll'))).pop();
+    await tester.pumpAndSettle();
     await tap(
         tester,
         find

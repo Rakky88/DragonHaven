@@ -1,3 +1,5 @@
+import 'egg_altar_screen.dart'
+    show HoldToReturn, WeaveReturnResult, WeaveWalletView;
 import '../widgets/restored_collection_cards.dart';
 import 'canonical_dragons_screen.dart';
 import '../widgets/shop_economy_scope.dart';
@@ -9,7 +11,6 @@ import '../models/egg_altar.dart';
 import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
 import '../services/canonical_game_snapshot.dart';
-import '../widgets/canonical_game_controls.dart';
 import '../widgets/egg_altar_scene.dart';
 import 'canonical_eggs.dart';
 
@@ -19,20 +20,11 @@ class CanonicalAltarScreen extends StatefulWidget {
   State<CanonicalAltarScreen> createState() => _CanonicalAltarScreenState();
 }
 
-class _CanonicalAltarScreenState extends State<CanonicalAltarScreen>
-    with SingleTickerProviderStateMixin {
+class _CanonicalAltarScreenState extends State<CanonicalAltarScreen> {
+  bool _crafting = false;
   String? _selectedId, _owner;
   int? _epoch;
   CanonicalEggView? _returning;
-  WeaveWallet? _reward;
-  late final _animation = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 2800));
-  @override
-  void dispose() {
-    _animation.dispose();
-    super.dispose();
-  }
-
   Future<void> _choose() async {
     final session = context.read<CanonicalGameSession>();
     final view = session.snapshot;
@@ -41,8 +33,9 @@ class _CanonicalAltarScreenState extends State<CanonicalAltarScreen>
     final selected = await showModalBottomSheet<String>(
         context: context,
         isScrollControlled: true,
+        showDragHandle: true,
         builder: (context) => SizedBox(
-            height: MediaQuery.sizeOf(context).height * .84,
+            height: MediaQuery.sizeOf(context).height * .72,
             child: SafeArea(
                 child: CanonicalEggList(
                     onPlace: (id) => Navigator.pop(context, id)))));
@@ -55,7 +48,6 @@ class _CanonicalAltarScreenState extends State<CanonicalAltarScreen>
         _selectedId = selected;
         _owner = view.ownerId;
         _epoch = epoch;
-        _reward = null;
       });
     }
   }
@@ -66,9 +58,7 @@ class _CanonicalAltarScreenState extends State<CanonicalAltarScreen>
       _returning = egg;
       _owner = owner;
       _epoch = actions.epoch;
-      _reward = null;
     });
-    _animation.reset();
     try {
       final reward = await actions.returnEgg(egg.id,
           sinisterConfirmed: egg.kind == 'sinister');
@@ -78,21 +68,15 @@ class _CanonicalAltarScreenState extends State<CanonicalAltarScreen>
           context.read<CanonicalGameSession>().snapshot?.ownerId != owner) {
         return;
       }
-      if (!MediaQuery.disableAnimationsOf(context)) {
-        try {
-          await _animation.forward().orCancel;
-        } on TickerCanceled {
-          return;
-        }
-      }
-      if (!mounted ||
-          context.read<CanonicalGameSession>().connection.sessionEpoch !=
-              actions.epoch ||
-          context.read<CanonicalGameSession>().snapshot?.ownerId != owner) {
-        return;
-      }
+      await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => WeaveReturnResult(
+              eggArtwork: CanonicalEggArt(egg: egg, height: 100),
+              reward: reward,
+              canSkip: true));
+      if (!mounted) return;
       setState(() {
-        _reward = reward;
         _selectedId = null;
       });
     } finally {
@@ -121,7 +105,8 @@ class _CanonicalAltarScreenState extends State<CanonicalAltarScreen>
         children: [
           Row(children: [
             Expanded(
-                child: Text('Egg Altar',
+                child: Text(
+                    strings.pick('Return to the Weave', 'Terug naar de Weave'),
                     style: Theme.of(context).textTheme.titleLarge)),
             IconButton(
                 tooltip: strings.pick('How it works', 'Hoe het werkt'),
@@ -142,93 +127,132 @@ class _CanonicalAltarScreenState extends State<CanonicalAltarScreen>
           ]),
           const SizedBox(height: 12),
           SizedBox(
-              height: 240,
-              child: AnimatedBuilder(
-                  animation: _animation,
-                  builder: (_, child) => EggAltarScene(
-                      eggArtwork: visibleEgg == null
-                          ? null
-                          : CanonicalEggArt(egg: visibleEgg, height: 100),
-                      progress: _returning == null ? null : _animation.value))),
-          if (egg != null)
-            Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(canonicalEggName(strings, egg),
-                    textAlign: TextAlign.center)),
-          const SizedBox(height: 8),
-          OutlinedButton(
-              key: const Key('canonical-altar-choose'),
-              onPressed: session.canAct && _returning == null ? _choose : null,
-              child: Text(strings.pick('Choose an egg', 'Kies een ei'))),
-          CanonicalActionButton(
-              key: const Key('canonical-altar-return'),
-              label: strings.pick('Return to the Weave', 'Terug naar de Weave'),
-              confirmation: strings.pick(
-                  'Return this egg to the Weave? It will leave your inventory.',
-                  'Dit ei teruggeven aan de Weave? Het verdwijnt uit je inventaris.'),
-              secondaryConfirmation: egg?.kind == 'sinister'
-                  ? strings.pick(
-                      'This is a Sinister egg. Confirm that you want to return it.',
-                      'Dit is een Sinister-ei. Bevestig dat je het wilt teruggeven.')
-                  : null,
-              action:
-                  canReturn ? () => _return(egg, actions, view.ownerId) : null),
-          const SizedBox(height: 16),
-          if (sameOwner && _reward != null) ...[
-            Text(
-                strings.pick(
-                    'Returned to the Weave', 'Teruggegeven aan de Weave'),
-                style: Theme.of(context).textTheme.titleMedium),
-            _Materials(wallet: _reward!, reward: true),
-            const Divider(height: 24)
-          ],
-          _Materials(wallet: view.inventory.materials),
-          const SizedBox(height: 20),
-          Text(strings.pick('Craft relics', 'Relieken maken'),
-              style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          for (final relic in [
-            AltarRelic.nameweaversQuill,
-            ...AltarRelic.values.where((r) => r != AltarRelic.nameweaversQuill)
-          ])
-            RestoredAltarRecipeCard(
-                relic: relic,
-                owned: view.inventory.count(relic),
-                onCraft: session.canAct &&
-                        view.inventory.materials.covers(relic.cost)
-                    ? () => runShopAction(context, () => actions.craft(relic))
-                    : null,
-                onUse: view.inventory.count(relic) > 0
-                    ? () => Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                            builder: (_) => Scaffold(
-                                appBar: AppBar(title: Text(relic.label)),
-                                body: relic == AltarRelic.nameweaversQuill
-                                    ? const CanonicalDragonsScreen()
-                                    : const ShopEconomyBoundary(
-                                        child: CanonicalEggList()))))
-                    : null),
+              height: _crafting ? 154 : 238,
+              child: EggAltarScene(
+                  eggArtwork: visibleEgg == null
+                      ? null
+                      : CanonicalEggArt(egg: visibleEgg, height: 100))),
+          const SizedBox(height: 14),
+          Card(
+              margin: EdgeInsets.zero,
+              child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                  child: WeaveWalletView(wallet: view.inventory.materials))),
+          const SizedBox(height: 18),
+          SegmentedButton<bool>(segments: [
+            ButtonSegment(
+                value: false,
+                label: Text(strings.pick('Return', 'Teruggeven')),
+                icon: const Icon(Icons.auto_awesome)),
+            ButtonSegment(
+                value: true,
+                label: Text(strings.pick('Craft', 'Maken')),
+                icon: const Icon(Icons.handyman_outlined)),
+          ], selected: {
+            _crafting
+          }, onSelectionChanged: (v) => setState(() => _crafting = v.single)),
+          const SizedBox(height: 18),
+          if (!_crafting) ...[
+            FilledButton.tonalIcon(
+                key: const Key('canonical-altar-choose'),
+                onPressed:
+                    session.canAct && _returning == null ? _choose : null,
+                icon: Icon(egg == null
+                    ? Icons.egg_outlined
+                    : Icons.swap_horiz_rounded),
+                label: Text(egg == null
+                    ? strings.pick('Choose an egg', 'Kies een ei')
+                    : strings.pick('Choose another egg', 'Kies een ander ei'))),
+            if (egg == null)
+              Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                  child: Text(
+                      strings.pick(
+                          'Give an egg back to the Weave and let its magic take a new form.',
+                          'Geef een ei terug aan de Weave en laat zijn magie een nieuwe vorm aannemen.'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          height: 1.45, color: Color(0xFF796A8B))))
+            else ...[
+              const SizedBox(height: 10),
+              Text(canonicalEggName(strings, egg),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 19, fontWeight: FontWeight.w800)),
+              TextButton.icon(
+                  onPressed: () =>
+                      showCanonicalEggDetails(context, egg.id, forAltar: true),
+                  icon: const Icon(Icons.visibility_outlined, size: 18),
+                  label: Text(strings.pick('Details', 'Informatie'))),
+              Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                  child: Text(
+                      strings.pick(
+                          'This egg will leave your inventory permanently. Hold the button to return it to the Weave.',
+                          'Dit ei verdwijnt definitief uit je inventaris. Houd de knop ingedrukt om het terug te geven aan de Weave.'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(height: 1.45))),
+              HoldToReturn(
+                  key: const Key('canonical-altar-return'),
+                  enabled: canReturn,
+                  onConfirmed: () async {
+                    if (!canReturn) return;
+                    if (egg.kind == 'sinister') {
+                      final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                                  title: const Text('Sinister'),
+                                  content: Text(strings.pick(
+                                      'This is a Sinister egg. Confirm that you want to return it.',
+                                      'Dit is een Sinister-ei. Bevestig dat je het wilt teruggeven.')),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: Text(strings.pick(
+                                            'Cancel', 'Annuleren'))),
+                                    FilledButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: Text(strings.pick(
+                                            'Return to the Weave',
+                                            'Terug naar de Weave')))
+                                  ]));
+                      if (confirmed != true || !mounted) return;
+                    }
+                    if (context.mounted) {
+                      await runShopAction(
+                          context, () => _return(egg, actions, view.ownerId));
+                    }
+                  }),
+            ],
+          ] else
+            for (final relic in [
+              AltarRelic.nameweaversQuill,
+              ...AltarRelic.values
+                  .where((r) => r != AltarRelic.nameweaversQuill)
+            ])
+              RestoredAltarRecipeCard(
+                  relic: relic,
+                  owned: view.inventory.count(relic),
+                  onCraft: session.canAct &&
+                          view.inventory.materials.covers(relic.cost)
+                      ? () => runShopAction(context, () => actions.craft(relic))
+                      : null,
+                  onUse: view.inventory.count(relic) > 0
+                      ? () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                              builder: (_) => Scaffold(
+                                  appBar: AppBar(title: Text(relic.label)),
+                                  body: relic == AltarRelic.nameweaversQuill
+                                      ? const CanonicalDragonsScreen()
+                                      : const ShopEconomyBoundary(
+                                          child: CanonicalEggList()))))
+                      : null),
         ]);
   }
-}
-
-class _Materials extends StatelessWidget {
-  const _Materials({required this.wallet, this.reward = false});
-  final WeaveWallet wallet;
-  final bool reward;
-  @override
-  Widget build(BuildContext context) =>
-      Wrap(spacing: 14, runSpacing: 8, children: [
-        for (final material in WeaveMaterial.values)
-          Tooltip(
-              message: material.label,
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Image.asset(material.asset,
-                    width: 38, height: 38, semanticLabel: material.label),
-                const SizedBox(width: 4),
-                Text('${reward ? '+' : ''}${wallet.count(material)}',
-                    style: Theme.of(context).textTheme.titleMedium)
-              ])),
-      ]);
 }

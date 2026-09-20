@@ -493,11 +493,9 @@ class RestoredAltarRecipeCard extends StatelessWidget {
 
 class RestoredDetailSheet extends StatelessWidget {
   const RestoredDetailSheet(
-      {super.key,
-      required this.title,
-      required this.content,
-      required this.actions});
-  final Widget title, content;
+      {super.key, this.title, required this.content, required this.actions});
+  final Widget? title;
+  final Widget content;
   final List<Widget> actions;
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -506,10 +504,11 @@ class RestoredDetailSheet extends StatelessWidget {
           child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
               child: Column(children: [
-                DefaultTextStyle(
-                    style: Theme.of(context).textTheme.headlineSmall!,
-                    child: title),
-                const SizedBox(height: 12),
+                if (title != null)
+                  DefaultTextStyle(
+                      style: Theme.of(context).textTheme.headlineSmall!,
+                      child: title!),
+                if (title != null) const SizedBox(height: 12),
                 Expanded(
                     child: SizedBox(width: double.infinity, child: content)),
                 Wrap(spacing: 8, children: actions),

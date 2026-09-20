@@ -34,13 +34,15 @@ void main() {
       }
     }
   });
-  for (final starter in [false, true]) {
+  for (var pass = 1; pass <= 10; pass++) {
+    final starter = pass.isEven;
     testWidgets(
-        'all five production tabs and account pages render from server facts without a local game (starter=$starter)',
+        'all five production tabs and account pages render from server facts without a local game (parity pass=$pass; starter=$starter)',
         (tester) async {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      tester.view.physicalSize =
-          starter ? const Size(320, 640) : const Size(390, 900);
+      tester.view.physicalSize = Size(
+          [390.0, 320.0, 360.0, 412.0, 600.0][(pass - 1) % 5],
+          starter ? 740 : 900);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -103,6 +105,32 @@ void main() {
         await tester.tap(find.byKey(Key('nav-$tab')));
         await tester.pump(const Duration(milliseconds: 400));
         expect(tester.takeException(), isNull, reason: 'Server tab $tab');
+        if (tab == 'inventory' || tab == 'adventure') {
+          final keys = tab == 'inventory'
+              ? [
+                  'inventory-tab-eggs',
+                  'inventory-tab-altar',
+                  'inventory-tab-relics',
+                  'inventory-tab-furniture',
+                  'inventory-tab-chests'
+                ]
+              : [
+                  'canonical-open-trials',
+                  'canonical-tab-active',
+                  'canonical-tab-completed',
+                  'canonical-tab-available'
+                ];
+          for (final key in keys) {
+            final target = find.byKey(Key(key));
+            await tester.ensureVisible(target);
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 500));
+            await tester.tap(target);
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 500));
+            expect(tester.takeException(), isNull, reason: 'Pass $pass: $key');
+          }
+        }
         if (const bool.fromEnvironment('SERVER_UI_REVIEW')) {
           for (var frame = 0; frame < 5; frame++) {
             await tester.runAsync(
@@ -125,17 +153,17 @@ void main() {
       await tester.tap(find.byKey(const Key('about-logo-button')));
       await tester.pumpAndSettle();
       expect(find.text('About DragonHaven'), findsWidgets);
-      expect(find.textContaining('v0.06.01'), findsWidgets);
+      expect(find.textContaining('v0.06.02'), findsWidgets);
       Navigator.of(tester.element(find.byType(Scaffold).last)).pop();
       await tester.pumpAndSettle();
       for (final page in ['Account Info', 'Keeper Journal', 'Achievements']) {
         await tester.tap(find.byKey(const Key('haven-menu-button')));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 350));
-        expect(find.text(page), findsWidgets,
+        expect(find.textContaining(page), findsWidgets,
             reason:
                 'Open menu page: $page; ${tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).toList()}');
-        await tester.tap(find.text(page).last);
+        await tester.tap(find.textContaining(page).last);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull, reason: 'Server page $page');
         Navigator.of(tester.element(find.byType(Scaffold).last)).pop();
@@ -145,8 +173,11 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
       expect(
-          DefaultTabController.of(tester.element(
-                      find.byKey(const Key('canonical-tab-completed'))))
+          tester
+                  .widget<TabBar>(find.ancestor(
+                      of: find.byKey(const Key('canonical-tab-completed')),
+                      matching: find.byType(TabBar)))
+                  .controller!
                   .index ==
               3,
           true);
@@ -155,8 +186,11 @@ void main() {
       await tester.tap(available);
       await tester.pump();
       expect(
-          DefaultTabController.of(tester.element(
-                      find.byKey(const Key('canonical-tab-completed'))))
+          tester
+                  .widget<TabBar>(find.ancestor(
+                      of: find.byKey(const Key('canonical-tab-completed')),
+                      matching: find.byType(TabBar)))
+                  .controller!
                   .index ==
               3,
           false);
@@ -164,8 +198,11 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
       expect(
-          DefaultTabController.of(tester.element(
-                      find.byKey(const Key('canonical-tab-completed'))))
+          tester
+                  .widget<TabBar>(find.ancestor(
+                      of: find.byKey(const Key('canonical-tab-completed')),
+                      matching: find.byType(TabBar)))
+                  .controller!
                   .index ==
               3,
           true);

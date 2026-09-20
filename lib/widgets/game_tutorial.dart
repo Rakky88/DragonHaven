@@ -220,10 +220,23 @@ class _DragonHavenTutorialState extends State<_DragonHavenTutorial>
   }
 
   Element? _elementForKey(Key key) {
+    // The server UI exposes the same visible targets under its route keys.
+    final aliases = <Key, Key>{
+      Key('open-my-dragons'): Key('my-dragons-button'),
+      Key('app-overflow-menu'): Key('haven-menu-button'),
+      Key('adventure-tab-trials'): Key('canonical-open-trials'),
+      PageStorageKey('dragon-tower-scroll'): Key('canonical-tower-list'),
+      PageStorageKey('available-adventures-scroll'):
+          PageStorageKey('canonical-adventures-list-0'),
+      Key('tutorial-adventure-section-group'): Key('adventure-groups-0'),
+    };
+    final alias = aliases[key];
+
     Element? match;
     void visit(Element element) {
       if (match != null) return;
-      if (element.widget.key == key) {
+      if (element.widget.key == key ||
+          (alias != null && element.widget.key == alias)) {
         match = element;
         return;
       }

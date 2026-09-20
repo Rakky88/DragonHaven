@@ -1,3 +1,4 @@
+import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -48,19 +49,15 @@ class ServerAccountScreen extends StatelessWidget {
                       appBar: AppBar(title: Text(s.pick('Profile', 'Profiel'))),
                       body: const CanonicalProfileScreen()))),
         ),
-        DropdownButtonFormField<String>(
-          initialValue: p['languageCode'] as String,
-          decoration: InputDecoration(labelText: s.pick('Language', 'Taal')),
-          items: [
-            for (final entry in AppStrings.supportedLanguages.entries)
-              DropdownMenuItem(value: entry.key, child: Text(entry.value))
-          ],
-          onChanged: session.canAct
-              ? (v) {
-                  if (v != null) change({'languageCode': v});
-                }
-              : null,
-        ),
+        ListTile(
+            leading: const Icon(Icons.language_rounded),
+            title: Text(s.pick('Language', 'Taal')),
+            subtitle:
+                Text(AppStrings.supportedLanguages[p['languageCode']] ?? ''),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: session.canAct
+                ? () => showServerLanguagePicker(context)
+                : null),
         const SizedBox(height: 16),
         SwitchListTile(
             title: Text(s.pick('Music', 'Muziek')),
@@ -211,5 +208,49 @@ class ServerAccountScreen extends StatelessWidget {
       await Future<void>.delayed(const Duration(milliseconds: 300));
       controller.dispose();
     }
+  }
+}
+
+Future<void> showServerLanguagePicker(BuildContext context) async {
+  final session = context.read<CanonicalGameSession>();
+  final actions = CanonicalGameActions(session);
+  final selected = session.snapshot!.profile.preferences['languageCode'];
+  final code = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+          child: SizedBox(
+              height: MediaQuery.sizeOf(context).height * .78,
+              child: ListView(
+                  key: const Key('language-picker-scroll'),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                  children: [
+                    Text(AppStrings.of(context).tr('language'),
+                        style: Theme.of(context).textTheme.headlineSmall),
+                    const SizedBox(height: 12),
+                    for (final entry in AppStrings.supportedLanguages.entries)
+                      Card(
+                          child: ListTile(
+                              tileColor: selected == entry.key
+                                  ? AppColors.mist
+                                  : Colors.white,
+                              leading: Icon(
+                                  selected == entry.key
+                                      ? Icons.check_circle_rounded
+                                      : Icons.circle_outlined,
+                                  color: AppColors.twilight),
+                              title: Text(entry.value,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w800)),
+                              trailing: Text(entry.key.toUpperCase(),
+                                  style: const TextStyle(
+                                      color: AppColors.muted,
+                                      fontWeight: FontWeight.w800)),
+                              onTap: () => Navigator.pop(context, entry.key))),
+                  ]))));
+  if (code != null && context.mounted) {
+    await runShopAction(
+        context, () => actions.setPreferences({'languageCode': code}));
   }
 }

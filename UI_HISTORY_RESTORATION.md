@@ -1,5 +1,24 @@
 # Historical UI restoration after v0.06.00
 
+## v0.06.02 UI parity and server verification - 20 September 2026
+
+Restored v0.05.41 interactions and presentation while retaining canonical
+commands and public snapshots. See `UI_V00541_PARITY_REVIEW.md` for ten review
+passes, affected routes, test coverage and explicit server-era differences.
+Restored Trial rankings (including Conclave Keepers), smooth Adventure paging,
+Group placement/counts, original Adventure details/direct dragon selection,
+Tower room ordering, roof/nest countdown, egg details and owned filters, Altar
+hold/modal animation, tutorial targets and menu achievement counts. Preserved
+improved Account Info and aligned its language control.
+
+Ordinary reconciliation is silent with confirmed content. Unconfirmed actions
+remain fenced. Visible-only Group polling now avoids full inventory reads when
+membership is unchanged. No production ruleset, migration, minimum build or
+account data changes. Production preflight at 19:50 UTC: 93 matching migrations,
+zero database lint errors; Auth health/settings and application health HTTP 200.
+Release validation and signed artifact evidence are recorded after publication.
+
+
 Baseline: published v0.05.39, commit
 `d71cc8e1f2b09d61684a54d87824be6c8ea631d9`. Its Adventure, Tower,
 Inventory, Academy and Altar screen sources are identical to the retained legacy

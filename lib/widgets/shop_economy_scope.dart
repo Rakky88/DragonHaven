@@ -97,7 +97,11 @@ class ShopEconomyBoundary extends StatelessWidget {
     if (server == null) return child;
     final strings = AppStrings.of(context);
     final hasView = server.snapshot != null;
-    final showStatus = !server.canAct || server.errorCode != null;
+    // Keep confirmed content steady during ordinary refreshes and commands.
+    // A failed refresh still exposes recovery; spending remains session-fenced.
+    final showStatus = !hasView || (!server.busy &&
+        (server.errorCode != null || !server.fresh ||
+         server.snapshot?.mutationsEnabled == false));
     return Column(children: [
       if (showStatus)
         Padding(

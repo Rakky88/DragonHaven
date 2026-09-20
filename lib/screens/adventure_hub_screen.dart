@@ -335,7 +335,7 @@ class _TrialsTab extends StatelessWidget {
                           fontSize: 17,
                           fontWeight: FontWeight.w900))),
               const SizedBox(width: 6),
-              _TrialRefreshCountdown(
+              TrialRefreshCountdown(
                   remaining: game.trialRefreshRemaining(from: now)),
               IconButton(
                   key: const Key('open-trial-rankings'),
@@ -485,8 +485,8 @@ class _TrialStreakCard extends StatelessWidget {
   }
 }
 
-class _TrialRefreshCountdown extends StatelessWidget {
-  const _TrialRefreshCountdown({required this.remaining});
+class TrialRefreshCountdown extends StatelessWidget {
+  const TrialRefreshCountdown({super.key, required this.remaining});
 
   final Duration remaining;
 
@@ -4420,3 +4420,212 @@ String _expertiseRewardLabel(AppStrings strings, AdventureDefinition definition,
         .map((e) =>
             '${e.value >= 0 ? '+' : ''}${e.value} ${_focusName(strings, e.key)}')
         .join(' / ');
+
+void showRestoredAdventureDetails(
+  BuildContext context,
+  AdventureDefinition definition, {
+  required VoidCallback? onChooseDragon,
+  SpecialAdventureWindow? specialWindow,
+  bool musicChestCapacityReached = false,
+  Widget? extraActions,
+}) {
+  final strings = AppStrings.of(context);
+  final specialEvent = specialAdventureEventForAdventure(definition.id);
+  final specialTrialKind = trialKindByName(specialEvent?.trialKindName);
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.sizeOf(context).height * .9,
+    ),
+    builder: (sheetContext) => SafeArea(
+      child: SingleChildScrollView(
+        key: const Key('available-adventure-details-scroll'),
+        padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          if (specialTrialKind != null)
+            TrialIconSprite(kind: specialTrialKind, size: 122)
+          else
+            GameIconSprite(_kindIcon(definition.kind), size: 122),
+          Text(
+            strings.adventureTitle(definition),
+            textAlign: TextAlign.center,
+            style: Theme.of(sheetContext).textTheme.titleLarge,
+          ),
+          if (specialEvent?.showStoryInDetails == true) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(13),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF5DE),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Text(
+                strings.pick(specialEvent!.storyEn, specialEvent.storyNl),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFF795225),
+                  height: 1.35,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+          if (specialWindow != null) ...[
+            const SizedBox(height: 12),
+            _SpecialEventAvailabilityCountdown(
+              endsAt: specialWindow.endsAt,
+              compact: false,
+            ),
+          ],
+          if (specialEvent == null) ...[
+            const SizedBox(height: 6),
+            Text(
+              strings.adventureDescription(definition),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.muted, height: 1.35),
+            ),
+          ],
+          const SizedBox(height: 15),
+          _DetailRow(
+            icon: const GameIconSprite(GameIconKind.clock, size: 34),
+            title: strings.pick('Duration', 'Duur'),
+            value: strings.adventureDuration(definition.duration),
+          ),
+          _DetailRow(
+            icon: const GameIconSprite(GameIconKind.experience, size: 34),
+            title: strings.pick('Dragon experience', 'Drakenervaring'),
+            value: '${definition.xp} XP',
+          ),
+          if (!definition.combinedExpertise)
+            _DetailRow(
+              icon: GameIconSprite(
+                GameIconSprite.forTrainingFocus(definition.focus),
+                size: 34,
+              ),
+              title: strings.pick('Expertise training', 'Expertisetraining'),
+              value: '${_expertiseRewardLabel(strings, definition)} · '
+                  '${_focusExplanation(strings, definition.focus)}',
+            ),
+          if (definition.combinedExpertise)
+            _DetailRow(
+              icon:
+                  const GameIconSprite(GameIconKind.adventureSpecial, size: 34),
+              title: strings.pick('Journey shortening', 'Reisverkorting'),
+              value: strings.pick(
+                'Might + Arcana + Spirit: every combined point removes ${definition.specialReductionPerExpertisePoint.inMinutes} minutes (minimum ${definition.minimumDuration?.inHours ?? definition.duration.inHours} hours).',
+                'Might + Arcana + Spirit: elk gecombineerd punt haalt ${definition.specialReductionPerExpertisePoint.inMinutes} minuten van de reis af (minimum ${definition.minimumDuration?.inHours ?? definition.duration.inHours} uur).',
+              ),
+            ),
+          if (specialEvent != null)
+            for (final reward in specialEvent.rewards.expertiseRewards.entries)
+              _DetailRow(
+                icon: GameIconSprite(
+                  GameIconSprite.forTrainingFocus(reward.key),
+                  size: 34,
+                ),
+                title: strings.pick('Training reward', 'Trainingsbeloning'),
+                value: '+${reward.value} ${_focusName(strings, reward.key)}',
+              ),
+          if (specialEvent == null)
+            _DetailRow(
+              icon: const GameIconSprite(GameIconKind.chest, size: 34),
+              title: strings.pick('Possible chests', 'Mogelijke kisten'),
+              value: _chestPossibilities(strings, definition),
+            ),
+          if (specialEvent != null &&
+              specialEvent.rewards.specialChestId != null) ...[
+            _DetailRow(
+              icon: Image.asset(
+                specialChestById(specialEvent.rewards.specialChestId)
+                        ?.closedAssetPath ??
+                    ChestTier.special.assetPath,
+                width: 38,
+                height: 38,
+              ),
+              title: strings.pick(
+                  'Guaranteed Special Chest', 'Gegarandeerde Speciale Kist'),
+              value: strings.pick(
+                specialChestById(specialEvent.rewards.specialChestId)
+                        ?.titleEn ??
+                    strings.chestLabel(ChestTier.special),
+                specialChestById(specialEvent.rewards.specialChestId)
+                        ?.titleNl ??
+                    strings.chestLabel(ChestTier.special),
+              ),
+            ),
+          ],
+          if (specialEvent != null &&
+              specialEvent.rewards.randomRelicPool.isNotEmpty) ...[
+            _DetailRow(
+              icon: Image.asset(
+                MysticRelic.moralPrism.assetPath,
+                width: 36,
+                height: 36,
+              ),
+              title: strings.pick('Guaranteed relic', 'Gegarandeerde relic'),
+              value: strings.pick('1 random relic', '1 willekeurige relic'),
+            ),
+          ],
+          if (specialEvent != null &&
+              specialEvent.rewards.musicChest &&
+              !musicChestCapacityReached)
+            _DetailRow(
+              icon: Image.asset(
+                ChestTier.music.assetPath,
+                width: 38,
+                height: 38,
+              ),
+              title: strings.pick(
+                  'Guaranteed Music Chest', 'Gegarandeerde Muziekkist'),
+              value: '1 ${strings.chestLabel(ChestTier.music)}',
+            ),
+          if (definition.requiresOnlinePartner)
+            _DetailRow(
+              icon: const TrialIconSprite(
+                kind: TrialKind.rosevowRelay,
+                size: 34,
+              ),
+              title: strings.pick('Keeper requirement', 'Hoedervereiste'),
+              value: strings.pick(
+                'Exactly 2 registered Keepers, each with one available dragon.',
+                'Precies 2 geregistreerde Hoeders, elk met één beschikbare draak.',
+              ),
+            ),
+          if (definition.kind == AdventureKind.group)
+            _DetailRow(
+              icon: Icon(Icons.group_rounded,
+                  color: AppColors.eventColor(context, AppColors.twilight),
+                  size: 30),
+              title: strings.pick('Keeper requirement', 'Hoedervereiste'),
+              value:
+                  '${definition.requirements.players} ${strings.pick('connected keepers', 'gekoppelde hoeders')}',
+            ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              key: const Key('adventure-details-choose-dragon'),
+              onPressed: onChooseDragon == null
+                  ? null
+                  : () {
+                      Navigator.pop(sheetContext);
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (context.mounted) onChooseDragon();
+                      });
+                    },
+              icon: const GameIconSprite(
+                GameIconKind.adventureStart,
+                size: 38,
+              ),
+              label: Text(strings.pick('Choose a dragon', 'Kies een draak')),
+            ),
+          ),
+          if (extraActions != null) extraActions,
+        ]),
+      ),
+    ),
+  );
+}

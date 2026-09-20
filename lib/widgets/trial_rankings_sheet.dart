@@ -1,3 +1,6 @@
+import '../models/adventure.dart';
+import '../services/canonical_game_snapshot.dart';
+import '../services/canonical_game_session.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +14,58 @@ import '../theme/app_theme.dart';
 import '../theme/event_appearance.dart';
 import 'online_account_access.dart';
 import 'trial_icon_sprite.dart';
+
+SpecialAdventureWindow? _canonicalRankingWindow(CanonicalGameSnapshot? view) {
+  if (view == null) return null;
+  final now = view.serverTime;
+  final active =
+      view.adventures.activeEvents.where((w) => w.contains(now)).firstOrNull;
+  if (active != null && active.definition != null) {
+    return SpecialAdventureWindow(
+        event: active.definition!,
+        key: active.key,
+        startsAt: active.startsAt,
+        endsAt: active.endsAt);
+  }
+  final candidates = <String, SpecialAdventureWindow>{
+    for (final window in specialAdventureRankingWindowsAt(now))
+      window.key: window,
+    for (final p in view.adventures.eventProgress)
+      if (!now.isBefore(p.startsAt) &&
+          specialAdventureEventById(p.eventId) != null)
+        p.key: SpecialAdventureWindow(
+            event: specialAdventureEventById(p.eventId)!,
+            key: p.key,
+            startsAt: p.startsAt,
+            endsAt: p.endsAt),
+  }.values.toList()
+    ..sort((a, b) {
+      final start = b.startsAt.compareTo(a.startsAt);
+      return start == 0 ? b.key.compareTo(a.key) : start;
+    });
+  if (candidates.isEmpty) return null;
+  final window = candidates.first;
+  if (!now.isBefore(window.endsAt.add(window.event.rankingVisibleAfterEvent))) {
+    return null;
+  }
+  if (view.adventures.eventProgress
+      .any((p) => p.key == window.key && p.rankingHidden)) {
+    return null;
+  }
+  if (window.key.contains(':preview:') && now.isBefore(window.endsAt)) {
+    return null;
+  }
+  final dismissed = view.adventures.dismissedEvents[window.event.id];
+  if (dismissed != null && !dismissed.isBefore(window.endsAt)) return null;
+  return window;
+}
+
+String? _currentEventKey(BuildContext context) {
+  final server = context.read<CanonicalGameSession?>();
+  return server == null
+      ? context.read<HouseholdProvider>().trialRankingEventWindow?.key
+      : _canonicalRankingWindow(server.snapshot)?.key;
+}
 
 Future<void> showTrialRankingsSheet(
   BuildContext context, {
@@ -66,9 +121,7 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
     _scope = widget.initialScope;
     _kind = widget.initialKind ?? TrialKind.cavernFlight;
     _expiryTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted &&
-          context.read<HouseholdProvider>().trialRankingEventWindow?.key !=
-              _eventWindowKey) {
+      if (mounted && _currentEventKey(context) != _eventWindowKey) {
         setState(() {});
       }
     });
@@ -84,14 +137,18 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final online = context.watch<OnlineAccountProvider>();
-    final game = context.watch<HouseholdProvider>();
-    final eventWindow = game.trialRankingEventWindow;
-    final seasonalKinds = trialDefinitions.values.where(
-        (d) => d.isSeasonal && d.specialEventId == eventWindow?.event.id);
-    if (_eventWindowKey != eventWindow?.key ||
+    final server = context.watch<CanonicalGameSession?>();
+    final eventWindow = server == null
+        ? context.watch<HouseholdProvider>().trialRankingEventWindow
+        : _canonicalRankingWindow(server.snapshot);
+    final eventKey = eventWindow?.key;
+    final eventId = eventWindow?.event.id;
+    final seasonalKinds = trialDefinitions.values
+        .where((d) => d.isSeasonal && d.specialEventId == eventId);
+    if (_eventWindowKey != eventKey ||
         (trialDefinitions[_kind]!.isSeasonal &&
             !seasonalKinds.any((d) => d.kind == _kind))) {
-      _eventWindowKey = eventWindow?.key;
+      _eventWindowKey = eventKey;
       _cache.clear();
       _entries = const [];
       _errorCode = null;

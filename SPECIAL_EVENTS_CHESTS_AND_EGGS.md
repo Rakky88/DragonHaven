@@ -1,3 +1,15 @@
+## v0.06.02 historical egg/event UI restoration
+
+Restores v0.05.41 interaction patterns without changing egg contents, incubation
+rules, event dates, rewards or odds. The roof shows the original compact timer;
+the nest opens its own scene and countdown. Inventory egg details restore centered artwork, known-fact chips and clue/
+incubation rows; Altar details retain the original fact-row layout using only
+server-revealed identity/alignment. Filters expose
+only owned egg kinds. Altar Return/Craft modes, hold-to-return and modal reward
+animation are restored; Sinister confirmation, protected eggs and canonical
+exactly-once rewards remain enforced. Trial/event rankings use confirmed event
+windows and retain the post-event visibility period.
+
 ## v0.06.01 hatch recovery and historical UI - 20 September 2026
 
 Ready nest eggs again dispatch the existing server hatch command automatically.
@@ -408,7 +420,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 28b8408f5d07392e -->
+<!-- reference-source-fingerprint: d0ab518425b257f9 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

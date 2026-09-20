@@ -130,9 +130,20 @@ class EggHatchCountdown extends StatefulWidget {
     super.key,
     required this.pet,
     this.onElapsed,
-  });
+  })  : eggId = null,
+        confirmedHatchAt = null,
+        serverTime = null;
 
-  final Pet pet;
+  const EggHatchCountdown.confirmed(
+      {super.key,
+      required this.eggId,
+      required this.confirmedHatchAt,
+      required this.serverTime})
+      : pet = null,
+        onElapsed = null;
+  final Pet? pet;
+  final String? eggId;
+  final DateTime? confirmedHatchAt, serverTime;
   final FutureOr<void> Function()? onElapsed;
 
   @override
@@ -145,6 +156,7 @@ class _EggCountdownState extends State<EggHatchCountdown>
   late final AnimationController _glowController;
   DateTime _now = DateTime.now();
   bool _elapsedNotified = false;
+  final _serverElapsed = Stopwatch()..start();
 
   @override
   void initState() {
@@ -176,26 +188,29 @@ class _EggCountdownState extends State<EggHatchCountdown>
   @override
   void didUpdateWidget(covariant EggHatchCountdown oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.pet.id != widget.pet.id) _elapsedNotified = false;
+    if (oldWidget.serverTime != widget.serverTime) _serverElapsed.reset();
+    if (oldWidget.pet?.id != widget.pet?.id) _elapsedNotified = false;
   }
 
   void _refresh() {
     if (!mounted) return;
-    final now = DateTime.now();
+    final now =
+        widget.serverTime?.add(_serverElapsed.elapsed) ?? DateTime.now();
     setState(() => _now = now);
-    if (_elapsedNotified ||
+    if (widget.pet == null ||
+        _elapsedNotified ||
         widget.onElapsed == null ||
-        !widget.pet.canHatch(now)) {
+        !widget.pet!.canHatch(now)) {
       return;
     }
     _elapsedNotified = true;
     final strings = AppStrings.of(context);
     final eggName = strings.eggName(
-      sinister: widget.pet.isSinisterEgg,
-      special: widget.pet.isSpecialEgg,
+      sinister: widget.pet!.isSinisterEgg,
+      special: widget.pet!.isSpecialEgg,
     );
     unawaited(HavenNotifications.showEggReadyNow(
-      id: 'egg-${widget.pet.id}',
+      id: 'egg-${widget.pet!.id}',
       title: strings.pick('Your $eggName is ready', 'Je $eggName is klaar'),
       body: strings.pick(
         'Something inside wants to hatch in the Rooftop Nest.',
@@ -209,6 +224,7 @@ class _EggCountdownState extends State<EggHatchCountdown>
 
   @override
   void dispose() {
+    _serverElapsed.stop();
     _timer?.cancel();
     _glowController.dispose();
     WidgetsBinding.instance.removeObserver(this);
@@ -218,10 +234,11 @@ class _EggCountdownState extends State<EggHatchCountdown>
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final hatchAt =
-        widget.pet.stageStartedAt.add(widget.pet.incubationDuration);
+    final hatchAt = widget.confirmedHatchAt ??
+        widget.pet!.stageStartedAt.add(widget.pet!.incubationDuration);
+    final now = widget.serverTime?.add(_serverElapsed.elapsed) ?? _now;
     final remaining =
-        hatchAt.isAfter(_now) ? hatchAt.difference(_now) : Duration.zero;
+        hatchAt.isAfter(now) ? hatchAt.difference(now) : Duration.zero;
     final ready = remaining == Duration.zero;
     final countdown = _countdownParts(remaining);
     return Semantics(

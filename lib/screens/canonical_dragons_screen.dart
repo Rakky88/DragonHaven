@@ -322,24 +322,6 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                                     const SizedBox(height: 12),
                                     _DragonSchoolDiplomaCard(dragon: dragon),
                                     const Divider(height: 24),
-                                    RestoredNeedBar(
-                                        icon: Icons
-                                            .sentiment_very_satisfied_rounded,
-                                        label: strings.pick('Joy', 'Plezier'),
-                                        value: dragon.joy,
-                                        color: AppColors.coral),
-                                    RestoredNeedBar(
-                                        icon: Icons.bolt_rounded,
-                                        label:
-                                            strings.pick('Energy', 'Energie'),
-                                        value: dragon.energy,
-                                        color: AppColors.gold),
-                                    RestoredNeedBar(
-                                        icon: Icons.shield_moon_rounded,
-                                        label:
-                                            strings.pick('Comfort', 'Comfort'),
-                                        value: dragon.comfort,
-                                        color: AppColors.mint),
                                     if (view.activeDragonId == id)
                                       CanonicalActionButton(
                                           key: const Key(

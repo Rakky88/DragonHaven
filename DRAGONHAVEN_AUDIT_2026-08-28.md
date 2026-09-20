@@ -1,5 +1,35 @@
 # DragonHaven v0.04.06 audit — 28 augustus 2026
 
+## v0.06.02 UI parity and server verification - 20 September 2026
+
+Restored v0.05.41 interactions and presentation while retaining canonical
+commands and public snapshots. See `UI_V00541_PARITY_REVIEW.md` for ten review
+passes, affected routes, test coverage and explicit server-era differences.
+Restored Trial rankings (including Conclave Keepers), smooth Adventure paging,
+Group placement/counts, original Adventure details/direct dragon selection,
+Tower room ordering, roof/nest countdown, egg details and owned filters, Altar
+hold/modal animation, tutorial targets and menu achievement counts. Preserved
+improved Account Info and aligned its language control.
+
+Ordinary reconciliation is silent with confirmed content. Unconfirmed actions
+remain fenced. Visible-only Group polling now avoids full inventory reads when
+membership is unchanged. No production ruleset, migration, minimum build or
+account data changes. Production preflight at 19:50 UTC: 93 matching migrations,
+zero database lint errors; Auth health/settings and application health HTTP 200.
+Release validation and signed artifact evidence are recorded after publication.
+
+Validation: the full suite completed with 1,068 passes, one intentional skip
+and three failures (one missing tooltip translation and two stale version
+expectations). All three were corrected and their suites passed again. The
+final ten-route/layout and ranking suite passes 18/18; the final reference suite
+passes 5/5, with no drift once the review-only Android manifest was restored.
+A 320dp Dutch device review with 1.3x text and reduced animation covers Tower,
+ordering, nest, dragons, Trials, eggs, Altar, menu, language and account.
+The final Trials header/clock correction is included in the signed build.
+No app data or server rules were altered by the visual review; its package is
+separate from the production app.
+
+
 ## v0.06.01 publication verification - 20 September 2026
 
 Published v0.06.01 / build 10094 from

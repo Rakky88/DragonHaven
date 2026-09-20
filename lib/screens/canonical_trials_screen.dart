@@ -1,3 +1,6 @@
+import 'adventure_hub_screen.dart' show TrialRefreshCountdown;
+import '../models/social.dart';
+import '../widgets/trial_rankings_sheet.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_icon_sprite.dart';
 import 'dart:async';
@@ -78,23 +81,44 @@ class _TrialsState extends State<_Trials> {
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: AppColors.gold, width: 1.2)),
           child: Column(children: [
-            Row(children: [
-              const GameIconSprite(GameIconKind.adventureSpecial, size: 34),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: Text(s.pick('Dragon Trials', 'Drakenproeven'),
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w900))),
-              IconButton(
-                  tooltip: s.pick('Refresh', 'Vernieuwen'),
-                  color: AppColors.gold,
-                  icon: const Icon(Icons.refresh),
-                  onPressed: session.canAct && !reserved
-                      ? () => runShopAction(context, actions.refresh)
-                      : null),
-            ]),
+            Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    const GameIconSprite(GameIconKind.adventureSpecial,
+                        size: 34),
+                    const SizedBox(width: 8),
+                    Flexible(
+                        child: Text(s.pick('Dragon Trials', 'Drakenproeven'),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w900))),
+                  ]),
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    TrialRefreshCountdown(
+                        remaining: DateTime.fromMillisecondsSinceEpoch(
+                                (now.millisecondsSinceEpoch ~/ 900000 + 1) *
+                                    900000,
+                                isUtc: true)
+                            .difference(now)),
+                    IconButton(
+                        key: const Key('open-trial-rankings'),
+                        tooltip: s.pick(
+                            'View Trial Rankings', 'Bekijk Trial-ranglijsten'),
+                        color: AppColors.gold,
+                        icon: const Icon(Icons.leaderboard_rounded, size: 22),
+                        onPressed: () => showTrialRankingsSheet(context,
+                            scopes: const [
+                              TrialRankingScope.world,
+                              TrialRankingScope.friends
+                            ],
+                            initialScope: TrialRankingScope.world)),
+                  ]),
+                ]),
             const Divider(height: 10, color: Color(0x33F6DF9A)),
             _TrialStreakCard(
                 count: view.data['trials']['trialStreakCount'] as int,
@@ -592,6 +616,19 @@ class _TrialOfferCard extends StatelessWidget {
                           onPressed: onDismiss,
                           icon: const Icon(Icons.close_rounded),
                         ),
+                        if (definition.specialEventId != null)
+                          IconButton.filled(
+                              key: Key('seasonal-rankings-${offer.id}'),
+                              tooltip: strings.pick(
+                                  'Event ranking', 'Eventranglijst'),
+                              onPressed: () => showTrialRankingsSheet(context,
+                                  scopes: const [
+                                    TrialRankingScope.world,
+                                    TrialRankingScope.friends
+                                  ],
+                                  initialScope: TrialRankingScope.world,
+                                  initialKind: offer.kind),
+                              icon: const Icon(Icons.leaderboard_rounded)),
                       ],
                     ),
                   ),

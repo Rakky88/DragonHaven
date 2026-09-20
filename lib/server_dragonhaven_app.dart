@@ -1,3 +1,5 @@
+import 'screens/canonical_nest_screen.dart';
+import 'models/achievement.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -231,7 +233,7 @@ class _ServerShell extends StatefulWidget {
   State<_ServerShell> createState() => _ServerShellState();
 }
 
-enum _Menu { account, journal, achievements, tutorial, about }
+enum _Menu { account, language, journal, achievements, tutorial, about }
 
 class _ServerShellState extends State<_ServerShell> {
   int _index = 2;
@@ -354,8 +356,14 @@ class _ServerShellState extends State<_ServerShell> {
     if (dragon == null || _tutorialShowing) return;
     _tutorialShowing = true;
     try {
-      final fully = await showDragonHavenTutorial(context,
-          dragon: dragon, onNavigate: _navigate);
+      final fully = await showDragonHavenTutorial(context, dragon: dragon,
+          onNavigate: (index) {
+        if (index == 1) {
+          _showCompleted = false;
+          _adventureNavigationRevision++;
+        }
+        _navigate(index);
+      });
       if (mounted) {
         await runShopAction(context, () async {
           await CanonicalGameActions(session)
@@ -414,6 +422,10 @@ class _ServerShellState extends State<_ServerShell> {
           PopupMenuButton<_Menu>(
               key: const Key('haven-menu-button'),
               onSelected: (choice) {
+                if (choice == _Menu.language) {
+                  unawaited(showServerLanguagePicker(context));
+                  return;
+                }
                 if (choice == _Menu.tutorial) {
                   unawaited(_tutorial());
                   return;
@@ -434,20 +446,41 @@ class _ServerShellState extends State<_ServerShell> {
               },
               itemBuilder: (_) => [
                     PopupMenuItem(
-                        value: _Menu.account, child: Text(s.tr('account'))),
+                        value: _Menu.account,
+                        child: _RestoredMenuRow(
+                            icon: Icons.person_rounded,
+                            label: s.tr('account'))),
                     PopupMenuItem(
-                        value: _Menu.journal,
-                        child: Text(s.pick('Keeper Journal', 'Keeperdagboek'))),
+                        value: _Menu.language,
+                        child: _RestoredMenuRow(
+                            icon: Icons.translate_rounded,
+                            label: s.tr('language'),
+                            trailing: (view.profile.preferences['languageCode']
+                                    as String)
+                                .toUpperCase())),
                     PopupMenuItem(
                         value: _Menu.achievements,
-                        child: Text(s.tr('achievements'))),
+                        child: _RestoredMenuRow(
+                            icon: Icons.emoji_events_rounded,
+                            label: s.tr('achievements'),
+                            trailing:
+                                '${(view.data['collection']['achievements'] as List).length}/${achievementCatalog.length}')),
+                    PopupMenuItem(
+                        value: _Menu.journal,
+                        child: _RestoredMenuRow(
+                            icon: Icons.auto_stories_rounded,
+                            label: s.pick('Keeper Journal', 'Keeperdagboek'))),
                     PopupMenuItem(
                         value: _Menu.tutorial,
-                        child: Text(s.pick('Tutorial', 'Uitleg'))),
+                        child: _RestoredMenuRow(
+                            icon: Icons.school_rounded,
+                            label: s.pick('Tutorial', 'Uitleg'))),
                     PopupMenuItem(
                         value: _Menu.about,
-                        child: Text(
-                            s.pick('About DragonHaven', 'Over DragonHaven'))),
+                        child: _RestoredMenuRow(
+                            icon: Icons.info_outline_rounded,
+                            label: s.pick(
+                                'About DragonHaven', 'Over DragonHaven'))),
                   ])
         ],
       ),
@@ -464,7 +497,8 @@ class _ServerShellState extends State<_ServerShell> {
               ? CanonicalAdventuresScreen(
                   key: ValueKey(
                       'adventures-notification-$_adventureNavigationRevision'),
-                  showCompleted: _showCompleted)
+                  showCompleted: _showCompleted,
+                  active: _index == 1)
               : const SizedBox.shrink(),
           const _ServerTower(),
           _visited.contains(3)
@@ -480,6 +514,7 @@ class _ServerShellState extends State<_ServerShell> {
           // page content retains the keeper's full accessibility text scale.
           maxScaleFactor: MediaQuery.sizeOf(context).width < 360 ? 1.1 : 1.3,
           child: NavigationBar(
+              key: const Key('tutorial-primary-navigation'),
               selectedIndex: _index,
               onDestinationSelected: _navigate,
               destinations: [
@@ -519,6 +554,7 @@ class _ServerTower extends StatelessWidget {
           ? const _EmptyServerNest()
           : _ServerNest(egg: view.nest!, view: view),
       toolbar: Padding(
+          key: const Key('tutorial-tower-actions'),
           padding: const EdgeInsets.only(bottom: 4),
           child: Row(children: [
             Expanded(
@@ -565,10 +601,7 @@ class _EmptyServerNest extends StatelessWidget {
         onTap: () => Navigator.push(
             context,
             MaterialPageRoute<void>(
-                builder: (_) => Scaffold(
-                    appBar: AppBar(title: Text(s.pick('Eggs', 'Eieren'))),
-                    body:
-                        const ShopEconomyBoundary(child: CanonicalEggList())))),
+                builder: (_) => const CanonicalNestScreen())),
         child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: SizedBox(
@@ -610,51 +643,75 @@ class _ServerNest extends StatefulWidget {
 }
 
 class _ServerNestState extends State<_ServerNest> {
-  Timer? _batch;
-  int _taps = 0;
-  @override
-  void dispose() {
-    _batch?.cancel();
-    super.dispose();
-  }
-
-  void _tap() {
-    final session = context.read<CanonicalGameSession>();
-    if (!widget.egg.firstEgg || !session.canAct || _taps >= 30) return;
-    _taps++;
-    _batch ??= Timer(const Duration(milliseconds: 300), () async {
-      _batch = null;
-      final taps = _taps;
-      _taps = 0;
-      if (!mounted || !session.canAct) return;
-      await runShopAction(context, () async {
-        await CanonicalGameActions(session)
-            .execute('tap_starter_egg', {'eggId': widget.egg.id, 'taps': taps});
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
-    return Column(children: [
-      SizedBox(
-          height: 215,
-          child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: GestureDetector(
-                  key: const Key('server-nest-egg'),
-                  onTap: widget.egg.firstEgg
-                      ? _tap
-                      : () => showCanonicalEggDetails(context, widget.egg.id),
-                  child: const RooftopEggNest()))),
-      if (widget.egg.firstEgg)
-        Text(
-            s.pick('Tap the egg to shorten the wait.',
-                'Tik op het ei om de wachttijd te verkorten.'),
-            style: Theme.of(context).textTheme.bodySmall),
-      CanonicalNestClock(
-          egg: widget.egg, view: widget.view, showHatchButton: false),
-    ]);
+    return SizedBox(
+        height: 215,
+        child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: InkWell(
+                key: const Key('server-nest-egg'),
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                        builder: (_) => const CanonicalNestScreen())),
+                child: Stack(children: [
+                  const Positioned.fill(child: RooftopEggNest()),
+                  Positioned(
+                      left: 14,
+                      right: 14,
+                      top: 13,
+                      child: Row(
+                          key: const Key('tutorial-rooftop-header'),
+                          children: [
+                            Expanded(
+                                child: Text(s.pick('Rooftop Nest', 'Daknest'),
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 18))),
+                            Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                    color: const Color(0xD91B1436),
+                                    borderRadius: BorderRadius.circular(99)),
+                                child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const GameIconSprite(GameIconKind.clock,
+                                          size: 19),
+                                      const SizedBox(width: 5),
+                                      CanonicalNestClock(
+                                          egg: widget.egg,
+                                          view: widget.view,
+                                          showHatchButton: false,
+                                          compact: true),
+                                    ])),
+                            const Icon(Icons.chevron_right_rounded,
+                                color: Colors.white),
+                          ])),
+                ]))));
   }
+}
+
+class _RestoredMenuRow extends StatelessWidget {
+  const _RestoredMenuRow(
+      {required this.icon, required this.label, this.trailing});
+  final IconData icon;
+  final String label;
+  final String? trailing;
+  @override
+  Widget build(BuildContext context) => Row(children: [
+        Icon(icon, color: AppColors.eventColor(context, AppColors.twilight)),
+        const SizedBox(width: 12),
+        Expanded(
+            child: Text(label,
+                style: const TextStyle(fontWeight: FontWeight.w800))),
+        if (trailing != null)
+          Text(trailing!,
+              style: const TextStyle(
+                  color: AppColors.muted, fontWeight: FontWeight.w800)),
+      ]);
 }

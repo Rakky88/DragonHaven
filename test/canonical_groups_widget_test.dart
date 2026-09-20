@@ -150,7 +150,6 @@ void main() {
     expect(server.sent, isEmpty);
     await tap(find.byKey(Key('canonical-group-dragon-${before['id']}')));
     await tester.pump();
-    await tap(find.byKey(const Key('canonical-confirm-group')));
     await settle();
     expect(
         server.sent.where((i) => i.action == 'create_group_adventure').length,

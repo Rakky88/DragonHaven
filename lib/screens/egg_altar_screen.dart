@@ -234,7 +234,7 @@ class _EggAltarScreenState extends State<EggAltarScreen> {
     await showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (_) => _WeaveReturnResult(
+        builder: (_) => WeaveReturnResult(
             egg: egg,
             reward: reward!,
             canSkip: game.eggAltar.totalReturned > 1));
@@ -1058,17 +1058,18 @@ class EggAltarArt extends StatelessWidget {
       EggAltarScene(egg: egg, progress: progress);
 }
 
-class _WeaveReturnResult extends StatefulWidget {
-  const _WeaveReturnResult(
-      {required this.egg, required this.reward, required this.canSkip});
-  final DragonEgg egg;
+class WeaveReturnResult extends StatefulWidget {
+  const WeaveReturnResult(
+      {super.key, this.egg, this.eggArtwork, required this.reward, required this.canSkip});
+  final DragonEgg? egg;
+  final Widget? eggArtwork;
   final WeaveWallet reward;
   final bool canSkip;
   @override
-  State<_WeaveReturnResult> createState() => _WeaveReturnResultState();
+  State<WeaveReturnResult> createState() => WeaveReturnResultState();
 }
 
-class _WeaveReturnResultState extends State<_WeaveReturnResult>
+class WeaveReturnResultState extends State<WeaveReturnResult>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animation = AnimationController(
       vsync: this, duration: const Duration(milliseconds: 5200));
@@ -1119,8 +1120,9 @@ class _WeaveReturnResultState extends State<_WeaveReturnResult>
                       SizedBox(
                           height: 220,
                           width: double.infinity,
-                          child: EggAltarArt(
+                          child: EggAltarScene(
                               egg: widget.egg,
+                              eggArtwork: widget.eggArtwork,
                               progress: MediaQuery.disableAnimationsOf(context)
                                   ? 1
                                   : _animation.value)),

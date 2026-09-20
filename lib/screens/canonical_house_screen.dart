@@ -90,6 +90,15 @@ class _HouseContents extends StatelessWidget {
                                     style: const TextStyle(
                                         color: AppColors.muted,
                                         fontWeight: FontWeight.w700)))),
+                        IconButton(
+                            key: const Key('reorder-tower-rooms'),
+                            tooltip: s.pick(
+                                'Change room order', 'Kamervolgorde wijzigen'),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: house.floorRoomIds.length < 2
+                                ? null
+                                : () => showCanonicalRoomOrder(context),
+                            icon: const Icon(Icons.swap_vert_rounded)),
                         Flexible(
                             child: Text(
                                 '${house.floorRoomIds.length}/20 ${s.pick('floors', 'verdiepingen')}',
@@ -157,6 +166,7 @@ class _HouseContents extends StatelessWidget {
                             'Maximale hoogte bereikt')),
                       const SizedBox(height: 12),
                       RestoredAcademyEntrance(
+                          key: const Key('tutorial-dragon-school-title'),
                           unlocked: house.floorRoomIds.length >= 5,
                           onTap: () => Navigator.of(context).push(
                               MaterialPageRoute<void>(
@@ -680,4 +690,148 @@ class _RoomVisitView extends StatelessWidget {
       child: Scaffold(
           appBar: AppBar(title: title, actions: actions),
           body: SizedBox(width: double.infinity, child: content)));
+}
+
+Future<void> showCanonicalRoomOrder(BuildContext context) async {
+  final strings = AppStrings.of(context);
+  await showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (sheetContext) => SafeArea(
+      child: FractionallySizedBox(
+        heightFactor: .82,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                strings.pick('Arrange your Tower', 'Richt je Toren in'),
+                style: Theme.of(sheetContext).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                strings.pick(
+                  'Drag the rooms into your preferred top-to-bottom order.',
+                  'Sleep de kamers naar de gewenste volgorde van boven naar beneden.',
+                ),
+                style: const TextStyle(color: AppColors.muted),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                key: const Key('fixed-rooftop-room'),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF4CF),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0x55D39B29)),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(11),
+                      child: Image.asset(
+                        houseRoomCatalog.first.backgroundAsset,
+                        width: 62,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            strings.pick('Rooftop Nest', 'Daknest'),
+                            style: const TextStyle(fontWeight: FontWeight.w900),
+                          ),
+                          Text(
+                            strings.pick(
+                              'Fixed at the top',
+                              'Blijft altijd bovenaan',
+                            ),
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.lock_rounded, color: Color(0xFF9A6A00)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 9),
+              Expanded(
+                child: Consumer<CanonicalGameSession>(
+                  builder: (context, game, _) {
+                    final rooms =
+                        game.snapshot!.house.floorRoomIds.reversed.toList();
+                    return ReorderableListView.builder(
+                      key: const Key('tower-room-order-list'),
+                      buildDefaultDragHandles: false,
+                      itemCount: rooms.length,
+                      onReorderItem: (oldIndex, newIndex) async {
+                        if (!game.canAct) return;
+                        await runShopAction(
+                            context,
+                            () => CanonicalGameActions(game)
+                                .reorderFloor(oldIndex, newIndex));
+                      },
+                      itemBuilder: (context, visualIndex) {
+                        final room = houseRoomById(rooms[visualIndex]) ??
+                            houseRoomCatalog[1];
+                        return Card(
+                          key: ValueKey(
+                              'tower-room-order-${room.id}-$visualIndex'),
+                          margin: const EdgeInsets.only(bottom: 7),
+                          clipBehavior: Clip.antiAlias,
+                          child: ListTile(
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(9),
+                              child: Image.asset(
+                                room.backgroundAsset,
+                                width: 56,
+                                height: 45,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            title: Text(
+                              strings.roomName(room),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w900),
+                            ),
+                            subtitle: Text(
+                              strings.pick(
+                                'Position ${visualIndex + 1} below the nest',
+                                'Positie ${visualIndex + 1} onder het nest',
+                              ),
+                            ),
+                            trailing: ReorderableDragStartListener(
+                              index: visualIndex,
+                              enabled: game.canAct,
+                              child: Semantics(
+                                label: strings.pick('Drag room', 'Sleep kamer'),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(10),
+                                  child: Icon(Icons.drag_handle_rounded),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }

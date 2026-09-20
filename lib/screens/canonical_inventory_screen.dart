@@ -44,37 +44,47 @@ class _InventoryContents extends StatelessWidget {
     return DefaultTabController(
         length: 5,
         child: Column(children: [
-          TabBar(isScrollable: true, tabAlignment: TabAlignment.center, tabs: [
-            Tab(
-                height: 70,
-                iconMargin: const EdgeInsets.only(bottom: 1),
-                icon: const GameIconSprite(GameIconKind.inventoryChests,
-                    size: 35),
-                text: strings.pick('Chests', 'Kisten')),
-            Tab(
-                height: 70,
-                iconMargin: const EdgeInsets.only(bottom: 1),
-                icon:
-                    const GameIconSprite(GameIconKind.inventoryEggs, size: 35),
-                text: strings.pick('Eggs', 'Eieren')),
-            Tab(
-                height: 70,
-                iconMargin: const EdgeInsets.only(bottom: 1),
-                icon: Image.asset(EggAltarScene.altar, width: 35, height: 35),
-                text: 'Altar'),
-            Tab(
-                height: 70,
-                iconMargin: const EdgeInsets.only(bottom: 1),
-                icon: Image.asset(MysticRelic.soulMirror.assetPath,
-                    width: 35, height: 35),
-                text: strings.pick('Relics', 'Relieken')),
-            Tab(
-                height: 70,
-                iconMargin: const EdgeInsets.only(bottom: 1),
-                icon: const GameIconSprite(GameIconKind.inventoryFurniture,
-                    size: 35),
-                text: strings.pick('Furniture', 'Meubels')),
-          ]),
+          TabBar(
+              key: const Key('tutorial-inventory-tabs'),
+              isScrollable: true,
+              tabAlignment: TabAlignment.center,
+              tabs: [
+                Tab(
+                    key: const Key('inventory-tab-chests'),
+                    height: 70,
+                    iconMargin: const EdgeInsets.only(bottom: 1),
+                    icon: const GameIconSprite(GameIconKind.inventoryChests,
+                        size: 35),
+                    text: strings.pick('Chests', 'Kisten')),
+                Tab(
+                    key: const Key('inventory-tab-eggs'),
+                    height: 70,
+                    iconMargin: const EdgeInsets.only(bottom: 1),
+                    icon: const GameIconSprite(GameIconKind.inventoryEggs,
+                        size: 35),
+                    text: strings.pick('Eggs', 'Eieren')),
+                Tab(
+                    key: const Key('inventory-tab-altar'),
+                    height: 70,
+                    iconMargin: const EdgeInsets.only(bottom: 1),
+                    icon:
+                        Image.asset(EggAltarScene.altar, width: 35, height: 35),
+                    text: 'Altar'),
+                Tab(
+                    key: const Key('inventory-tab-relics'),
+                    height: 70,
+                    iconMargin: const EdgeInsets.only(bottom: 1),
+                    icon: Image.asset(MysticRelic.soulMirror.assetPath,
+                        width: 35, height: 35),
+                    text: strings.pick('Relics', 'Relieken')),
+                Tab(
+                    key: const Key('inventory-tab-furniture'),
+                    height: 70,
+                    iconMargin: const EdgeInsets.only(bottom: 1),
+                    icon: const GameIconSprite(GameIconKind.inventoryFurniture,
+                        size: 35),
+                    text: strings.pick('Furniture', 'Meubels')),
+              ]),
           Expanded(
               child: TabBarView(children: [
             ListView(
@@ -125,7 +135,8 @@ class _InventoryContents extends StatelessWidget {
                                       body: relic == AltarRelic.nameweaversQuill
                                           ? const CanonicalDragonsScreen()
                                           : const ShopEconomyBoundary(
-                                              child: CanonicalEggList()))))),
+                                              child: CanonicalEggList(
+                                                  forAltar: true)))))),
                   for (final relic in MysticRelic.values)
                     if ((view.shop.relics[relic.name] ?? 0) > 0)
                       RestoredRelicCard(

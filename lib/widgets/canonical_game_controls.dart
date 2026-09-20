@@ -14,9 +14,13 @@ class CanonicalActionButton extends StatefulWidget {
       {super.key,
       required this.label,
       required this.action,
+      this.primary = false,
+      this.icon,
       this.confirmation,
       this.secondaryConfirmation});
   final String label;
+  final bool primary;
+  final IconData? icon;
   final Future<void> Function()? action;
   final String? confirmation, secondaryConfirmation;
   @override
@@ -56,13 +60,22 @@ class _CanonicalActionButtonState extends State<CanonicalActionButton> {
   }
 
   @override
-  Widget build(BuildContext context) => FilledButton.tonal(
-      onPressed: !_busy &&
-              widget.action != null &&
-              context.watch<CanonicalGameSession>().canAct
-          ? _run
-          : null,
-      child: Text(widget.label, textAlign: TextAlign.center));
+  Widget build(BuildContext context) {
+    final onPressed = !_busy &&
+            widget.action != null &&
+            context.watch<CanonicalGameSession>().canAct
+        ? _run
+        : null;
+    if (widget.primary) {
+      return FilledButton.icon(
+          onPressed: onPressed,
+          icon: widget.icon == null ? null : Icon(widget.icon),
+          label: Text(widget.label, textAlign: TextAlign.center));
+    }
+    return FilledButton.tonal(
+        onPressed: onPressed,
+        child: Text(widget.label, textAlign: TextAlign.center));
+  }
 }
 
 Future<bool> confirmCanonicalAction(BuildContext context, String message,
