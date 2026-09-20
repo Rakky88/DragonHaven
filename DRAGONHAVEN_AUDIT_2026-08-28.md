@@ -13,8 +13,9 @@ the actual in-app notice.
 
 Additive migration 88 is applied and contract-verified on staging and production;
 the new RPCs pass PostgreSQL lint and production public health is 200/200/200.
-Authority switches and server-owned account counts are unchanged. No new APK
-release has been published: v0.05.40 / 10090 remains the public baseline. Older
+Authority switches and server-owned account counts are unchanged. Release v0.05.41 / 10091 packages this change; see
+[RELEASE_V0.05.41_VERIFICATION.md](RELEASE_V0.05.41_VERIFICATION.md) for current
+verification and publication status. Older
 version/schema statements below are historical. Authoritative server-economy
 activation and its outstanding rollout checks remain separate work.
 

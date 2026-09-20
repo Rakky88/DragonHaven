@@ -72,8 +72,9 @@ The three new functions passed PostgreSQL lint on both environments. Production
 Auth health, Auth settings and application health returned HTTP 200. Runtime
 switches and server-owned account counts were unchanged.
 
-No new public APK release is part of this change. The installed/public baseline
-remains v0.05.40 / 10090; the review APK uses a separate emulator-only package.
+Release v0.05.41 / 10091 packages this implementation. Publication evidence is
+recorded in [RELEASE_V0.05.41_VERIFICATION.md](RELEASE_V0.05.41_VERIFICATION.md).
+The review APK uses a separate emulator-only package.
 
 ## Verification
 
