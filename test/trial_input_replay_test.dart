@@ -123,7 +123,7 @@ void main() {
     final starts = <String>{};
     for (var seed = 0; seed < 50; seed++) {
       final trace =
-          WitchlightTrace(width: 320, height: 400, seed: seed, tolerance: .7);
+          WitchlightTrace(width: 320, height: 400, seed: seed, tolerance: 700);
       if (seed == 0) expected = length(trace.route);
       expect(length(trace.route), closeTo(expected, .00001));
       starts.add(trace.route.first.toString());
@@ -136,12 +136,12 @@ void main() {
       trace.release();
       expect(trace.result, isTrue);
       final shortcut =
-          WitchlightTrace(width: 320, height: 400, seed: seed, tolerance: .7);
+          WitchlightTrace(width: 320, height: 400, seed: seed, tolerance: 700);
       shortcut.begin(shortcut.route.first);
       shortcut.move(shortcut.route.last);
       expect(shortcut.result, isFalse);
       final released =
-          WitchlightTrace(width: 320, height: 400, seed: seed, tolerance: .7);
+          WitchlightTrace(width: 320, height: 400, seed: seed, tolerance: 700);
       released.begin(released.route.first);
       released.release();
       expect(released.result, isFalse);
@@ -205,9 +205,9 @@ void main() {
     test('${kind.name} replays timed controls independently of render frames',
         () {
       final live = SeasonalArcadeGame(
-          kind: kind, seed: 94, might: .6, arcana: .8, spirit: .7);
+          kind: kind, seed: 94, might: 600, arcana: 800, spirit: 700);
       final replay = SeasonalArcadeGame(
-          kind: kind, seed: 94, might: .6, arcana: .8, spirit: .7);
+          kind: kind, seed: 94, might: 600, arcana: 800, spirit: 700);
       final recording = <TrialInput>[];
       final liveActions = <ArcadeAction>[];
       final random = Random(28);

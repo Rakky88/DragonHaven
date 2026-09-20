@@ -67,8 +67,7 @@ class _SummerTrialsState extends State<SummerTrials> {
   @override
   void initState() {
     super.initState();
-    double stat(TrainingFocus f) =>
-        widget.dragon.trainingFor(f).clamp(0, 400) / 400;
+    double stat(TrainingFocus f) => widget.dragon.trainingFor(f).toDouble();
     _surf = widget.controller?.model.surf ??
         SunwakeSurf(
             seed: widget.seed,

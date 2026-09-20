@@ -72,11 +72,11 @@ void main() {
 
   test('birthday speed, help and input bounds remain playable', () {
     final plain = WishcakeTower(seed: 2);
-    final helped = WishcakeTower(seed: 2, might: 100, arcana: 100, spirit: 100);
-    expect(helped.baseWidth, closeTo(.48, .0001));
-    expect(helped.perfectTolerance, closeTo(.025, .00001));
+    final helped = WishcakeTower(seed: 2, might: 1000, arcana: 1000, spirit: 1000);
+    expect(helped.baseWidth, closeTo(.484, .0001));
+    expect(helped.perfectTolerance, closeTo(.0198, .00001));
     expect(helped.crossingSeconds(0),
-        closeTo(plain.crossingSeconds(0) * 1.08, .0001));
+        closeTo(plain.crossingSeconds(0) / .9, .0001));
     expect(plain.crossingSeconds(60), lessThan(plain.crossingSeconds(0)));
     expect(plain.crossingSeconds(10000), .48);
     for (var ms = 0; ms < 10000; ms += 13) {

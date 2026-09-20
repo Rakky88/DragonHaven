@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 import '../models/pet.dart';
 import '../models/trial.dart';
+import '../models/trial_expertise.dart';
 import '../services/audio_service.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/witchlight_trial_widgets.dart';
@@ -122,14 +123,10 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
   void initState() {
     super.initState();
     _random = Random(widget.randomSeed);
-    final totalExpertise = TrainingFocus.values.fold<int>(
-      0,
-      (total, focus) => total + widget.dragon.trainingFor(focus),
-    );
-    // Expertise assists play in a small, capped way and never multiplies score.
-    final assistance = (totalExpertise / 300).clamp(0, 3).round();
-    _remainingMilliseconds =
-        definition.duration.inMilliseconds + assistance * 1000;
+    _remainingMilliseconds = definition.durationMilliseconds({
+      for (final focus in TrainingFocus.values)
+        focus: widget.dragon.trainingFor(focus),
+    });
     _ambient = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
@@ -286,25 +283,14 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
     _targetColor = _random.nextInt(theme.palette.length);
     _correctChoicePosition = _random.nextInt(6);
     _promptVisible = true;
-    _promptHidesAt = _now().add(
-      Duration(
-        milliseconds: (_isWitchlight ? 1000 : 0) +
-            (initial
-                ? 1900
-                : (widget.offer.kind == TrialKind.hollyfrostGiftforge
-                        ? 950
-                        : 1150) +
-                    _arcanaAssistanceMilliseconds),
-      ),
-    );
+    _promptHidesAt = (initial ? _now() : _feedbackUntil ?? _now()).add(Duration(
+        milliseconds: TrialExpertise.pumpkinPreviewMs(
+            widget.dragon.trainingFor(TrainingFocus.arcana),
+            initial: initial)));
   }
 
-  int get _arcanaAssistanceMilliseconds =>
-      (widget.dragon.trainingFor(TrainingFocus.arcana).clamp(0, 400) * 2)
-          .round();
-
   double get _spiritTolerance =>
-      widget.dragon.trainingFor(TrainingFocus.spirit).clamp(0, 400) / 400;
+      widget.dragon.trainingFor(TrainingFocus.spirit).toDouble();
 
   int _optionSprite(int position, {bool unique = false}) => unique
       ? (_target + position - _correctChoicePosition) % 6
@@ -504,13 +490,12 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
 
   void _arcadeAction(bool correct,
       {required int points, required bool completesRound}) {
-    if (!_started || _ending || (!_isEndless && _totalActions >= 200)) return;
+    if (!_started || _ending) return;
     setState(() {
       _totalActions++;
       if (correct) {
         _correctActions++;
         _score += points.clamp(0, 130) + min(90, _combo * 6);
-        if (!_isEndless) _score = min(20000, _score);
         if (completesRound) {
           _combo++;
           _bestCombo = max(_bestCombo, _combo);
@@ -596,8 +581,8 @@ class _SeasonalTrialGameState extends State<SeasonalTrialGame>
               ],
             ),
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              child: _promptVisible
+              duration: Duration(milliseconds: pumpkins ? 0 : 180),
+              child: _promptVisible && !_inputLocked
                   ? pumpkins
                       ? WitchlightPumpkin(variant: _target)
                       : _EventTrialSprite(

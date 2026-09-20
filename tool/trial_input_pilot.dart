@@ -62,8 +62,9 @@ void pilotTrial(TrialRunModel model, int at,
         if (cell != null) press(at, TrialControl.rotatePrism, cell);
       }
     case TrialKind.wishcakeTower:
-      if ((model.cake!.movingLeft(at / 1000) - model.cake!.top.left).abs() <
-          .02) {
+      if (at >= 130000 ||
+          (model.cake!.movingLeft(at / 1000) - model.cake!.top.left).abs() <
+              model.cake!.perfectTolerance * .5) {
         press(at, TrialControl.dropCake);
       }
     case TrialKind.moonlitOrchard:

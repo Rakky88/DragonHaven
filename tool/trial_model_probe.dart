@@ -11,7 +11,7 @@ import 'package:dragon_haven/models/witchlight_trace.dart';
 /// Synthetic public-layout proof included in the native/JavaScript comparison.
 Map<String, Object?> trialModelProbe() {
   final rng = TrialRandom(0xffffffff);
-  var surf = SunwakeSurf(seed: 918, might: .7, arcana: .4, spirit: .3);
+  var surf = SunwakeSurf(seed: 918, might: 700, arcana: 400, spirit: 300);
   final surfActions = <Object>[];
   for (var frame = 0; frame < 1200; frame++) {
     final next = surf.gates.where((g) => !g.resolved).firstOrNull;
@@ -53,7 +53,7 @@ Map<String, Object?> trialModelProbe() {
     TrialKind.prismaticParade
   ]) {
     final game = SeasonalArcadeGame(
-        kind: kind, seed: 17, might: .5, arcana: .5, spirit: .5);
+        kind: kind, seed: 17, might: 500, arcana: 500, spirit: 500);
     final actions = <Object>[];
     for (var at = 0; at <= 15000; at += 100) {
       game.advanceTo(at);
@@ -83,7 +83,7 @@ Map<String, Object?> trialModelProbe() {
     arcade.add([kind.name, actions, game.mistakes]);
   }
   final path =
-      WitchlightTrace(width: 320, height: 400, seed: 17, tolerance: .7);
+      WitchlightTrace(width: 320, height: 400, seed: 17, tolerance: 700);
   path.begin(path.route.first);
   for (final point in path.route.skip(1)) {
     path.move(point);

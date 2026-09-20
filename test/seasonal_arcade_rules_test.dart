@@ -29,7 +29,7 @@ void main() {
     }
   });
 
-  test('arcade acceleration has playable floors and bounded expertise help',
+  test('arcade acceleration has playable floors and point-based expertise help',
       () {
     for (var second = 0; second < 180; second++) {
       expect(
@@ -44,7 +44,7 @@ void main() {
           lessThanOrEqualTo(SeasonalArcadePacing.chimeTravel(second * 1.0, 0)));
     }
     expect(SeasonalArcadePacing.parcelLifetime(180, -1), .95);
-    expect(SeasonalArcadePacing.parcelLifetime(180, 100), closeTo(1.30, .001));
+    expect(SeasonalArcadePacing.parcelLifetime(180, 1000), closeTo(3.95, .001));
     expect(SeasonalArcadePacing.parcelInterval(0), closeTo(1.315, .00001));
     expect(SeasonalArcadePacing.parcelLifetime(0, 0), closeTo(2.65, .00001));
     expect(SeasonalArcadePacing.parcelInterval(60), lessThan(.6));
@@ -53,7 +53,7 @@ void main() {
         lessThan(SeasonalArcadePacing.parcelLifetime(0, 0)));
     expect(SeasonalArcadePacing.chimeBeat(180), lessThan(.42));
     expect(SeasonalArcadePacing.chimeTravel(180, 0), lessThan(.9));
-    expect(SeasonalArcadePacing.chimeTravel(180, 100),
+    expect(SeasonalArcadePacing.chimeTravel(180, 1000),
         closeTo(SeasonalArcadePacing.chimeTravel(180, 0) + .4, .0001));
     for (final seconds in [60.0, 180.0, 600.0, 3600.0, 21600.0]) {
       expect(SeasonalArcadePacing.chimeBeat(seconds + 60),
@@ -216,6 +216,8 @@ void main() {
       await gesture.up();
       now = now.add(const Duration(milliseconds: 700));
       await tester.pump(const Duration(milliseconds: 50));
+      // The next 100 ms preview begins after the success feedback. Keep the
+      // fake clock inside that preview while the screen transition completes.
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.byType(WitchlightTracePath), findsNothing);
       expect(find.byKey(const Key('witchlight-rune-0')), findsOneWidget);

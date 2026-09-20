@@ -6,6 +6,7 @@ import 'pet.dart';
 import 'seasonal_arcade_game.dart';
 import 'sunwake_surf.dart';
 import 'trial.dart';
+import 'trial_expertise.dart';
 import 'trial_input.dart';
 import 'trial_random.dart';
 import 'wishcake_tower.dart';
@@ -20,11 +21,7 @@ class TrialRunModel {
       required Map<TrainingFocus, int> training})
       : training = Map.unmodifiable(training),
         _random = Random(seed) {
-    durationMs = trialDefinitions[kind]!.duration.inMilliseconds +
-        (training.values.fold(0, (sum, value) => sum + value) / 300)
-                .clamp(0, 3)
-                .round() *
-            1000;
+    durationMs = trialDefinitions[kind]!.durationMilliseconds(training);
     if (kind == TrialKind.cavernFlight) {
       cavern = CavernFlightGame(
           seed: seed,
@@ -102,7 +99,8 @@ class TrialRunModel {
       ruin != null ||
       runes != null ||
       surf != null ||
-      kind == TrialKind.midnightChime;
+      kind == TrialKind.midnightChime ||
+      cake != null;
   CavernFlightGame? cavern;
   RuinBreakerGame? ruin;
   RuneweaverGame? runes;
@@ -116,7 +114,7 @@ class TrialRunModel {
   bool get seasonal => trialDefinitions[kind]!.isSeasonal;
   bool get endless => trialDefinitions[kind]!.isEndless;
   int stat(TrainingFocus focus) => training[focus] ?? 0;
-  double assistance(TrainingFocus focus) => stat(focus).clamp(0, 400) / 400;
+  double assistance(TrainingFocus focus) => stat(focus).toDouble();
   int get remainingMs => max(0, durationMs - elapsedMs - _witchPenaltyMs);
   int get score => cavern?.score ?? ruin?.score ?? runes?.rounds ?? _score;
   int? get mistakeLimit => switch (kind) {
@@ -166,6 +164,7 @@ class TrialRunModel {
         if (surf != null) 'surf': surf!.checkpoint(),
         if (kind == TrialKind.midnightChime)
           'chimes': arcade!.chimeCheckpoint(),
+        if (cake != null) 'cake': cake!.checkpoint(),
         if (!_directCheckpoint)
           'history': [
             for (final input in _history)
@@ -186,7 +185,8 @@ class TrialRunModel {
         });
     // Older timed New Year checkpoints still contain a replay transcript.
     if (model._directCheckpoint &&
-        (model.kind != TrialKind.midnightChime || state['chimes'] != null)) {
+        (model.kind != TrialKind.midnightChime || state['chimes'] != null) &&
+        (model.cake == null || state['cake'] != null)) {
       model.elapsedMs = state['elapsedMs'] as int;
       model._score = state['score'] as int;
       model.correctActions = state['correctActions'] as int;
@@ -215,6 +215,9 @@ class TrialRunModel {
       if (model.surf != null) {
         model.surf = SunwakeSurf.fromCheckpoint(
             Map<String, dynamic>.from(state['surf']));
+      }
+      if (model.cake != null) {
+        model.cake!.restoreCheckpoint(Map<String, dynamic>.from(state['cake']));
       }
       if (model.kind == TrialKind.midnightChime) {
         model.arcade!
@@ -269,12 +272,10 @@ class TrialRunModel {
   }
 
   void _arcadeAction(ArcadeAction event) {
-    if (!endless && totalActions >= 200) return;
     totalActions++;
     if (event.correct) {
       correctActions++;
       _score += event.points.clamp(0, 130) + min(90, combo * 6);
-      if (!endless) _score = min(20000, _score);
       if (event.complete) {
         combo++;
         bestCombo = max(bestCombo, combo);
@@ -296,9 +297,9 @@ class TrialRunModel {
     _random.nextInt(2);
     _random.nextInt(3);
     pumpkinPosition = _random.nextInt(6);
-    promptUntilMs = elapsedMs +
-        1000 +
-        (initial ? 1900 : 1150 + stat(TrainingFocus.arcana).clamp(0, 400) * 2);
+    promptUntilMs = max(elapsedMs, readyAtMs) +
+        TrialExpertise.pumpkinPreviewMs(stat(TrainingFocus.arcana),
+            initial: initial);
   }
 
   void _witchAnswer(bool correct, {bool complete = false}) {

@@ -21,7 +21,7 @@ void main() {
 
     expect(crossesAt(.14), false);
     expect(crossesAt(.16), true);
-    expect(crossesAt(.14, might: 1), true);
+    expect(crossesAt(.14, might: 1000), true);
   });
   test('surf gradually accelerates without sudden difficulty jumps', () {
     final game = SunwakeSurf(seed: 1);

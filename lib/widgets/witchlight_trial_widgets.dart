@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../models/witchlight_trace.dart';
+import '../models/trial_expertise.dart';
 
 /// Six similar lanterns: the eyes and the missing tooth identify the match.
 class WitchlightPumpkin extends StatelessWidget {
@@ -151,7 +152,7 @@ class _WitchlightTracePathState extends State<WitchlightTracePath>
           _trail.clear();
         }
         final points = _trace!.route.map((p) => Offset(p.x, p.y)).toList();
-        final radius = 12.0 + widget.tolerance.clamp(0.0, 1.0) * 4;
+        final radius = TrialExpertise.pathRadius(widget.tolerance);
         return Listener(
           key: const Key('witchlight-trace-surface'),
           behavior: HitTestBehavior.opaque,

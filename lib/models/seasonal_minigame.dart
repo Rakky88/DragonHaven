@@ -1,13 +1,26 @@
 import 'dart:math';
 
+import 'trial_expertise.dart';
+
 /// Elapsed active play drives difficulty, independent of render frame rate.
 abstract final class SeasonalArcadePacing {
   // Begin at the previous 40-seconds-remaining pace (75 - 40 = 35).
-  static double parcelLifetime(double seconds, double might) =>
-      max(.95, 4.4 - (35 + max(0, seconds)) * .05) + might.clamp(0, 1) * .35;
+  static double parcelLifetime(double seconds, double might,
+          [double spirit = 0]) =>
+      max(
+          .95,
+          4.4 -
+              (35 +
+                      max(0, seconds) *
+                          TrialExpertise.accelerationScale(spirit)) *
+                  .05) +
+      TrialExpertise.parcelExtraSeconds(might);
 
-  static double parcelInterval(double seconds) =>
-      max(.36, 2.4 - (35 + max(0, seconds)) * .031);
+  static double parcelInterval(double seconds, [double spirit = 0]) => max(
+      .36,
+      2.4 -
+          (35 + max(0, seconds) * TrialExpertise.accelerationScale(spirit)) *
+              .031);
 
   // Keep the familiar opening minute, then continue accelerating smoothly.
   // No fixed speed ceiling: the positive tail keeps shrinking with play time.
@@ -19,7 +32,7 @@ abstract final class SeasonalArcadePacing {
       (seconds <= 60
           ? 2.1 - max(0, seconds) * .018
           : 1.02 / (1 + (seconds - 60) * .018 / 1.02)) +
-      spirit.clamp(0, 1) * .4;
+      TrialExpertise.chimePreviewSeconds(spirit);
 
   // Original four-pitch melody: C, D, E and G. One phrase repeats with a
   // seed-selected starting phrase; pitch, timing and harmony stay coordinated.

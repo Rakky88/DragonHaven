@@ -359,7 +359,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 31a9f539d4e549de -->
+<!-- reference-source-fingerprint: b96af9e8f1299c2b -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -537,15 +537,17 @@ streak rules or rewards.
 The six Trials retain their own full-screen backgrounds, icons, sounds and
 themes. Halloween uses a two-phase memory/trace loop. The other five use separate
 interactive boards, now illustrated with individual painted gifts, hearts,
-roses, rainbow prisms and chimes. All start at 75 seconds; total expertise adds
-`round(clamp((Might + Arcana + Spirit) / 300, 0, 3))` seconds. Expertise never
+roses, rainbow prisms and chimes. Timed trials start at 75 seconds and add
+`(Might + Arcana + Spirit) / 1000 * 3` seconds, without a 3-second cap.
+Valentine and Pride additionally gain `Spirit / 100` seconds. Sunwake,
+New Year and Birthday have no timer. See `TRIAL_EXPERTISE.md` for all formulas. Expertise never
 multiplies score. Event offer cards and dragon pickers show all three expertises;
 only dragons with all three highlighted appear in the highlighted section.
 
 Christmas independently schedules uniformly chosen parcel symbols (three choices).
 New arrivals never wait for an earlier delivery. The spawn interval is
-`max(.36, 2.4 - (35 + max(0, activeSeconds)) * .031)` seconds; each parcel crosses the belt in
-`max(.95, 4.4 - (35 + max(0, activeSeconds)) * .05) + clamp(Might / 400, 0, 1) * .35` seconds.
+`max(.36, 2.4 - (35 + max(0, activeSeconds) * (1 - Spirit / 10000)) * .031)` seconds; each parcel crosses the belt in
+`max(.95, 4.4 - (35 + max(0, activeSeconds) * (1 - Spirit / 10000)) * .05) + Might / 1000 * 3` seconds.
 The opening interval is 1.315s and travel time is 2.65s plus Might assistance: exactly the former 40-seconds-remaining pace. Both arrivals and travel get faster, producing several concurrent parcels.
 A parcel keeps its own deadline and speed from spawn; delivering another gift
 never resets it. Held parcels can still expire, and a late release cannot deliver
@@ -555,10 +557,10 @@ three misses stop play synchronously, including expiry batches after a stalled
 frame. Feedback text changes directly without stacking repeated fade-out labels.
 New Year keeps its familiar opening minute: beat spacing `1.10 - t*.0105`
 and travel `2.1 - t*.018` seconds. After 60 seconds these keep shrinking as
-`.47/(1+(t-60)*.0105/.47)` and `1.02/(1+(t-60)*.018/1.02)`; Spirit adds up to .4
-seconds of travel. Every 16th beat has a 1.5x phrase pause. Travel is fixed at
+`.47/(1+(t-60)*.0105/.47)` and `1.02/(1+(t-60)*.018/1.02)`; Spirit adds `Spirit / 10000 * 4`
+seconds of travel (.4 seconds at 1000 Spirit). Every 16th beat has a 1.5x phrase pause. Travel is fixed at
 spawn. There is no fixed speed ceiling, timer, action limit or gameplay score
-cap. Might retains its 180-250 ms timing window. Chords start every fourth beat
+cap. The timing window is `180 + Might / 10` ms on each side of the line. Chords start every fourth beat
 after 22 seconds and every second beat after 45 seconds. Two fingers can play
 two distinct lanes anywhere on screen, aligned with the visible lanes. Each
 lane's repeat guard is min(120 ms, 45% of the current beat). Four synthesized chimes (C5, D5, E5, G5) play the original
@@ -570,11 +572,12 @@ each newly lit cell scores only once per board. Both puzzle games offer 1â€�
 hints for the whole run based on Arcana. Revisiting a maze state awards nothing.
 
 The five independent arcade games retain the full timer on a mistake, deduct 30 points
-without going below zero, reset combo and flash red. The timed games record at most 200
-scoring actions and cap score at 20,000. New Year is endless and stops only on
-its third mistake; Christmas also ends when its timer runs out. S+ for New Year
-remains inclusive at 20,000. Migration 86 widens only New Year validation, keeps
-old timed clients compatible and extends its renewable inactivity lease.
+without going below zero, reset combo and flash red. No event trial caps its
+score or total actions. Timed games still end on their timer; Christmas also
+ends on its third mistake. New Year is endless and stops on its third mistake;
+S+ remains inclusive at 20,000. Migration 87 removes the remaining seasonal
+score/action caps and adds Birthday lease renewal while retaining elapsed-time,
+input-rate, points-per-action, ownership, token and one-use validation.
 Christmas deliveries award 120 base points; New Year 130 within 90ms and 100
 otherwise; new maze states 55 and a paired finish 120; new lit prisms 70 and a
 finished circuit 120. Each scoring action adds the existing capped combo bonus
@@ -594,7 +597,7 @@ Witchlight ends on the third mistake or when time expires. Each mistake flashes
 red for 300 ms. Migration 61 permits a finish before 30 seconds for Witchlight, Christmas and
 New Year only when submitted action counts contain exactly three mistakes,
 with a minimum of one second. Valentine and Pride retain the 30-second minimum.
-Ownership, token, expiry, score/action caps, elapsed time and one-use validation
+Ownership, token, expiry, input rates, elapsed time and one-use validation
 remain enforced. Null scores/counts/duration/tokens are rejected explicitly.
 
 Witchlight Arcana shows a pumpkin lantern to memorize for an extra second
@@ -612,8 +615,7 @@ the accepted finger trail leaves mint-and-gold sparkles that softly twinkle
 and drift in place, without a solid stroke. Reduced motion keeps this stardust
 static and visible. A painted mint wisp follows the finger; a softly pulsing
 pumpkin lantern marks the destination. Decorative motion stops with reduced motion enabled. Spirit
-expertise visibly widens the corridor from 24 to 32 logical pixels (capped at
-400 Spirit), with no random forgiveness. Completing the trace immediately starts
+expertise sets the corridor radius to `12 + Spirit / 200` logical pixels, with no random forgiveness. Completing the trace immediately starts
 the next memory round after feedback; Might still contributes to total time assistance.
 
 The runtime presentation deliberately carries that art through the complete
@@ -993,17 +995,15 @@ known as Happy Birthday. No lyrics or third-party performance are imported.
 shuffle/repeat and master setting survive expiry, replacement and manual stop.
 This temporary track is outside the 80 collectible songs.
 
-Wishcake Tower runs for 75 seconds plus the established 0â€“3 seconds of assistance.
-Tap the board or Drop layer to place the moving cake. Only overlap of at least
-7% of board width survives; smaller overlaps count as misses. Within 1.8% of
-board width, alignment is perfect (Arcana adds up to .7 percentage points).
-The base is 44% of board width (Might adds up to 4 percentage points). Every
-three consecutive perfect layers restore 2.5 percentage points, capped at the
-original base width. A miss resets the base while keeping score and misses.
-Three misses end the run. A 420ms drop lock prevents duplicate taps.
+Wishcake Tower has no timer or score/action ceiling. The first missed layer
+ends the run; partial overlaps of at least 7% of board width still survive.
+Tap anywhere on screen to drop. Perfect tolerance is `.018 * (1 + Arcana / 10000)`
+and base width `.44 * (1 + Might / 10000)`, both relative to the board width.
+Every three consecutive perfect layers restore 2.5 percentage points, capped
+at the original base width. A 420ms drop lock prevents duplicate taps.
 
-Crossing time at each layer spawn is `max(.48, 1.65 - activeSeconds * .012 -
-placedLayers * .009) * (1 + clamp(Spirit / 400, 0, 1) * .08)` seconds. It remains
+Crossing time at layer spawn is `max(.48, 1.65 - activeSeconds * .012 -
+placedLayers * .009) / (1 - Spirit / 10000)` seconds. It remains
 fixed for that moving layer. A seeded fair initial direction alternates after
 each drop. Geometry is normalized across screen sizes; essential cake movement
 continues with reduced motion, while falling offcuts, confetti and flame sway
@@ -1064,7 +1064,7 @@ play timer or score/action ceiling; only the third collision ends the run. Each 
 random safe lane/sunpearl and two reefs. Fixed 120Hz simulation preserves collisions
 across render rates. The first gate spawns after .20 seconds. Speed is
 min(1.6, .55 + t*.004 + t*t*.00011), with interval max(.56, .98-t*.0055)
-seconds. Reef collision width is .25-.025*normalized Might, plus the existing
+seconds. Reef collision width is .25*(1-Might/10000), plus the existing
 .026 dragon collision radius. The faster opening is .55 arena heights/s; speed rises smoothly
 to 1.6 while gates stay far enough apart for a full lane crossing.
 Steering must begin by holding the dragon, then dragging horizontally. A tap
@@ -1081,7 +1081,8 @@ passed rollback-only contracts and was applied on staging in run 34446694129.
 Production remains at schema 65 until the complete release is ready.
 Harvestmoon: a 75-second 6x7 packing game, three rotatable fruit shapes per tray.
 Seven normal shapes, three uniformly sampled fruits, four uniform orientations.
-Single-piece probability .10 + .035*(normalized Might+Arcana+Spirit), maximum .205.
+Single-piece probability `clamp(.10 + (Might+Arcana+Spirit)/5000, 0, 1)`;
+10% base plus total/50 percentage points, or 34% at total 1200.
 A held touch or dragged tray shape previews every occupied target cell; valid
 placements are green and invalid footprints red. The thumb targets the center
 of the full shape, snapped to the nearest cells, for both tray drags and board

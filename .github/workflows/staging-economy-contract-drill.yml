@@ -35,6 +35,7 @@ on:
           - canonical-account-activation
           - shared-expertise
           - release39-schema
+          - release40-schema
           - canonical-group-probe
           - canonical-partner-probe
           - canonical-beacon-probe
@@ -79,7 +80,7 @@ jobs:
           retention-days: 30
 
   verify:
-    if: inputs.contract != 'release39-schema' && inputs.contract != 'shared-expertise' && inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply' && inputs.contract != 'push-device-probe' && inputs.contract != 'canonical-game' && inputs.contract != 'canonical-game-apply' && inputs.contract != 'canonical-import' && inputs.contract != 'canonical-read' && inputs.contract != 'canonical-social-projection' && inputs.contract != 'canonical-social-reservations' && inputs.contract != 'canonical-group-lifecycle' && inputs.contract != 'canonical-pair-lifecycle' && inputs.contract != 'canonical-beacon' && inputs.contract != 'canonical-trades' && inputs.contract != 'wide-trial-scores' && inputs.contract != 'canonical-seasonal-trials' && inputs.contract != 'canonical-group-cleanup' && inputs.contract != 'canonical-account-activation' && inputs.contract != 'canonical-group-probe' && inputs.contract != 'canonical-partner-probe' && inputs.contract != 'canonical-beacon-probe' && inputs.contract != 'canonical-trade-probe'
+    if: inputs.contract != 'release40-schema' && inputs.contract != 'release39-schema' && inputs.contract != 'shared-expertise' && inputs.contract != 'load-observer' && inputs.contract != 'social-push' && inputs.contract != 'social-push-apply' && inputs.contract != 'push-device-probe' && inputs.contract != 'canonical-game' && inputs.contract != 'canonical-game-apply' && inputs.contract != 'canonical-import' && inputs.contract != 'canonical-read' && inputs.contract != 'canonical-social-projection' && inputs.contract != 'canonical-social-reservations' && inputs.contract != 'canonical-group-lifecycle' && inputs.contract != 'canonical-pair-lifecycle' && inputs.contract != 'canonical-beacon' && inputs.contract != 'canonical-trades' && inputs.contract != 'wide-trial-scores' && inputs.contract != 'canonical-seasonal-trials' && inputs.contract != 'canonical-group-cleanup' && inputs.contract != 'canonical-account-activation' && inputs.contract != 'canonical-group-probe' && inputs.contract != 'canonical-partner-probe' && inputs.contract != 'canonical-beacon-probe' && inputs.contract != 'canonical-trade-probe'
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 15
@@ -830,4 +831,31 @@ jobs:
         with:
           name: release39-schema-staging
           path: release39-schema/
+          retention-days: 30
+
+  release40-schema:
+    if: inputs.contract == 'release40-schema'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.116.0
+      - name: Rehearse, apply only migrations 87, and verify staging
+        shell: pwsh
+        env:
+          RELEASE_ENVIRONMENT: staging
+          RELEASE_PROJECT_REF: vtmjkhzalalozpfnbvsd
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+          STAGING_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: ./tool/release40_schema_apply.ps1 -Confirmation $env:CONFIRMATION
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: release40-schema-staging
+          path: release40-schema/
           retention-days: 30

@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'trial_expertise.dart';
+
 import 'seasonal_minigame.dart';
 import 'trial.dart';
 import 'trial_input.dart';
@@ -33,9 +35,9 @@ class SeasonalArcadeGame {
     double arcana = 0,
     double spirit = 0,
   })  : _random = Random(seed),
-        might = might.clamp(0, 1),
-        spirit = spirit.clamp(0, 1),
-        hints = 1 + (arcana.clamp(0, 1) * 2).floor() {
+        might = max(0, might),
+        spirit = max(0, spirit),
+        hints = TrialExpertise.hints(arcana) {
     if (!const {
       TrialKind.hollyfrostGiftforge,
       TrialKind.midnightChime,
@@ -65,7 +67,7 @@ class SeasonalArcadeGame {
   HeartDirection? hint;
   double readyAt = 0, _nextParcel = 0, _nextNote = 0;
   double get time => _milliseconds / 1000;
-  double get chimeWindow => .18 + might * .07;
+  double get chimeWindow => TrialExpertise.chimeWindow(might);
   bool get lost => mistakes >= 3;
   bool get canInput => !lost && time >= readyAt;
 
@@ -133,8 +135,8 @@ class SeasonalArcadeGame {
 
   void _spawnParcel(double born, {int? type}) {
     parcels.add(GiftParcel(_parcelId++, type ?? _random.nextInt(3), born,
-        SeasonalArcadePacing.parcelLifetime(born, might)));
-    _nextParcel = born + SeasonalArcadePacing.parcelInterval(born);
+        SeasonalArcadePacing.parcelLifetime(born, might, spirit)));
+    _nextParcel = born + SeasonalArcadePacing.parcelInterval(born, spirit);
   }
 
   void _newPuzzle() {
@@ -150,11 +152,7 @@ class SeasonalArcadeGame {
   }
 
   void advanceTo(int milliseconds) {
-    final target = (kind == TrialKind.midnightChime
-            ? milliseconds
-            : min(milliseconds, 78000)) ~/
-        10 *
-        10;
+    final target = milliseconds ~/ 10 * 10;
     while (_milliseconds < target && !lost) {
       _milliseconds += 10;
       flares.removeWhere((_, until) => until <= time);

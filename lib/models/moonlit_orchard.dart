@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'trial_expertise.dart';
+
 class OrchardPiece {
   const OrchardPiece(this.cells, this.fruit);
   final List<(int, int)> cells;
@@ -29,10 +31,9 @@ class MoonlitOrchard {
       double arcana = 0,
       double spirit = 0})
       : _random = Random(seed),
-        // Expertise gives a bounded extra small piece, never free score.
-        smallPieceChance = .10 +
-            (might.clamp(0, 1) + arcana.clamp(0, 1) + spirit.clamp(0, 1)) *
-                .035 {
+        // Each 50 total points add one percentage point to the base 10%.
+        smallPieceChance =
+            TrialExpertise.smallPieceChance(might, arcana, spirit) {
     refill();
   }
   static const columns = 6, rows = 7;

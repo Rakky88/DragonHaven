@@ -339,11 +339,11 @@ void main() {
   test('dragon expertise applies only the requested subtle gameplay assists',
       () {
     expect(cavernFlightHitboxScale(0), 1);
-    expect(cavernFlightHitboxScale(300), closeTo(.90, .0001));
-    expect(ruinBreakerSuccessZoneScale(300), closeTo(1.15, .0001));
-    expect(ruinBreakerPerfectZoneScale(300), closeTo(1.05, .0001));
+    expect(cavernFlightHitboxScale(1000), closeTo(.90, .0001));
+    expect(ruinBreakerSuccessZoneScale(1000), closeTo(1.15, .0001));
+    expect(ruinBreakerPerfectZoneScale(1000), closeTo(1.05, .0001));
     expect(runeweaverRuneDuration(0), const Duration(milliseconds: 500));
-    expect(runeweaverRuneDuration(300), const Duration(milliseconds: 600));
+    expect(runeweaverRuneDuration(1000), const Duration(milliseconds: 600));
   });
 
   test('Trial highscores and unplayed offers survive a restart', () async {

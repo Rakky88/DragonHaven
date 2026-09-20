@@ -53,7 +53,7 @@ class _WishcakeTrialState extends State<WishcakeTrial> {
     super.initState();
     widget.touchControls?.dropCake = _place;
     double expertise(TrainingFocus focus) =>
-        widget.dragon.trainingFor(focus).clamp(0, 400) / 400;
+        widget.dragon.trainingFor(focus).toDouble();
     _tower = widget.controller?.model.cake ??
         WishcakeTower(
             seed: widget.seed,

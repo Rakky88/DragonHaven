@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'trial_expertise.dart';
+
 class WishcakeLayer {
   const WishcakeLayer(this.left, this.width, this.number);
   final double left;
@@ -28,9 +30,9 @@ class WishcakeTower {
       double might = 0,
       double arcana = 0,
       double spirit = 0})
-      : baseWidth = .44 + might.clamp(0, 1) * .04,
-        perfectTolerance = .018 + arcana.clamp(0, 1) * .007,
-        speedAssist = 1 + spirit.clamp(0, 1) * .08,
+      : baseWidth = TrialExpertise.cakeWidth(might),
+        perfectTolerance = TrialExpertise.cakeTolerance(arcana),
+        speedAssist = 1 / TrialExpertise.speedScale(spirit),
         _fromRight = Random(seed).nextBool() {
     layers.add(WishcakeLayer((1 - baseWidth) / 2, baseWidth, 0));
   }
@@ -46,6 +48,30 @@ class WishcakeTower {
   int placed = 0;
   bool get finished => mistakes >= 1;
   WishcakeLayer get top => layers.last;
+
+  Map<String, dynamic> checkpoint() => {
+        'fromRight': _fromRight,
+        'readyAt': readyAt,
+        'perfectStreak': perfectStreak,
+        'mistakes': mistakes,
+        'placed': placed,
+        'layers': [
+          for (final l in layers) [l.left, l.width, l.number]
+        ],
+      };
+
+  void restoreCheckpoint(Map<String, dynamic> state) {
+    _fromRight = state['fromRight'] as bool;
+    readyAt = (state['readyAt'] as num).toDouble();
+    perfectStreak = state['perfectStreak'] as int;
+    mistakes = state['mistakes'] as int;
+    placed = state['placed'] as int;
+    layers.clear();
+    for (final l in state['layers'] as List) {
+      layers.add(WishcakeLayer(
+          (l[0] as num).toDouble(), (l[1] as num).toDouble(), l[2] as int));
+    }
+  }
 
   double crossingSeconds(double seconds) =>
       max(.48, 1.65 - max(0, seconds) * .012 - placed * .009) * speedAssist;
@@ -84,6 +110,9 @@ class WishcakeTower {
         }
       }
       layers.add(WishcakeLayer(left, width, ++placed));
+      // Only eight layers can be visible. Keep endless runs bounded without
+      // changing their height, top geometry, score or perfect-layer streak.
+      if (layers.length > 8) layers.removeAt(0);
     } else {
       mistakes++;
       perfectStreak = 0;

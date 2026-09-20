@@ -1,3 +1,10 @@
+# Current trial assistance update — 20 September 2026
+
+All event score/action ceilings are removed. Birthday is endless and ends on
+one miss. The other existing end conditions and all reward/drop pools stay
+unchanged. `TRIAL_EXPERTISE.md` specifies the new point-based assists; the
+Harvestmoon shape probability below changes, while its other random draws do not.
+
 # DragonHaven Random Rewards and Odds
 
 Account-scoped legacy persistence now preserves egg/reward metadata and pending
@@ -212,7 +219,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 00902ad3ecae16d4 -->
+<!-- reference-source-fingerprint: e7cd7198c56aa270 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -431,7 +438,7 @@ Consequently the net gain is larger when the dragon cannot pay the full loss.
 XP, duration and chest odds remain unchanged. Runs started before this feature retain their
 original positive-only rewards. Group and Special rewards are unchanged.
 
-Trial assistance retains its existing 300/400-point gameplay bounds, separately
+Trial assistance now uses all trained points as described in `TRIAL_EXPERTISE.md`, separately
 from training capacity. See [the per-trial explanation](TRIAL_EXPERTISE.md).
 The forward database candidate is `202609200085_shared_expertise_budget.sql`;
 it changes transport/projection ceilings and chest catalog v4 without activating
@@ -939,8 +946,7 @@ These systems use randomness but do not directly choose a reward item. Rewards r
   to 6% of height), normalized to the original arc length and recentered. Bounds
   rejection allows 256 attempts before the original shape fallback; a random
   horizontal reflection also varies direction.
-  Spirit visibly widens that corridor from 24 to 32 logical pixels at 400
-  expertise; leaving it always fails. The seeded lane draw is unused there.
+  Spirit sets its radius to `12 + Spirit / 200` logical pixels; leaving it always fails. The seeded lane draw is unused there.
 - The four rebuilt games derive a separate 31-bit board seed from the run's
   seeded stream. Christmas draws a uniform parcel symbol from three choices on each scheduled
   arrival, independently of deliveries; missed parcels still consume their draw.
@@ -1147,15 +1153,16 @@ Sunwake uses a seeded uniform choice among three safe lanes per gate. The
 fixed-step movement, hitboxes, currents and score depend on play, not frame
 rate. The first gate is at .20s, speed min(1.6,.55+t*.004+t*t*.00011) arena
 heights/s and gate interval max(.56,.98-t*.0055)s. Reef collision width is
-.25-.025*normalized Might, plus .026 dragon radius. A grabbed dragon follows a dragged target
+.25*(1-Might/10000), plus .026 dragon radius. A grabbed dragon follows a dragged target
 at at most 1.65 arena widths/s; releasing stops pursuit. Passive current
 applies only while not held. Safe-lane odds and points are unchanged; reef
 hitboxes remain as approved and speed increases smoothly during the endless run.
 Only the third collision ends Sunwake; no timer, 20,000-point or 200-action limit
 is used by the next app build. Reward grade odds and per-gate points are unchanged.
 Harvestmoon independently chooses fruit among three types and an initial
-rotation among four turns. A single-fruit shape has chance .10 plus .035 times
-each expertise normalized/capped at 400, maximum .205. Otherwise each of seven
+rotation among four turns. A single-fruit shape has chance
+`clamp(.10 + (Might + Arcana + Spirit) / 5000, 0, 1)`: 10% base plus the
+total divided by 50 percentage points, or 34% at total 1200. Otherwise each of seven
 multi-fruit shapes is equally likely. Refill creates three shapes; invalid
 placement does not redraw. No-fitting-tray resets the basket, loses one of
 three lives and deducts 30. Full-shape previews and row-fall animation do not

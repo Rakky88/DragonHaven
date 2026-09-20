@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'trial_expertise.dart';
+
 /// The renderer and the verifier use these exact bends and corridor edges.
 class WitchlightTrace {
   WitchlightTrace(
@@ -9,7 +11,7 @@ class WitchlightTrace {
       required double tolerance,
       bool mirrored = false})
       : route = points(width, height, seed: seed, mirrored: mirrored),
-        radius = 12 + tolerance.clamp(0, 1) * 4;
+        radius = TrialExpertise.pathRadius(tolerance);
   final List<Point<double>> route;
   final double radius;
   Point<double>? position;

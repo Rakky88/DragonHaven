@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'trial_expertise.dart';
+
 import 'trial_random.dart';
 
 class SurfGate {
@@ -30,9 +32,9 @@ class SunwakeSurf {
       double arcana = 0,
       double spirit = 0})
       : _random = TrialRandom(seed),
-        reefWidth = .25 - might.clamp(0, 1) * .025,
-        pickupRadius = .10 + arcana.clamp(0, 1) * .025,
-        currentScale = 1 - spirit.clamp(0, 1) * .25;
+        reefWidth = TrialExpertise.reefWidth(might),
+        pickupRadius = TrialExpertise.pickupRadius(arcana),
+        currentScale = TrialExpertise.currentScale(spirit);
   SunwakeSurf._(
       this._random, this.reefWidth, this.pickupRadius, this.currentScale);
 

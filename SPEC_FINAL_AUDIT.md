@@ -1,5 +1,25 @@
 # DragonHaven audit
 
+## v0.05.40 candidate ? 20 September 2026
+
+- All eleven trial assists now use actual expertise points and the requested
+  formulas (`TRIAL_EXPERTISE.md`); no 300/400-point assist clamp remains.
+- All seasonal gameplay score/action ceilings removed. Birthday has no timer,
+  ends at one miss, and persists bounded eight-layer checkpoints. Timed games
+  retain their timers; Valentine/Pride add Spirit time as well as total time.
+- Short Halloween previews begin after feedback, without a fade consuming
+  their visible duration. Client and deterministic replay use the same rules.
+- Account incident repaired after encrypted device/cloud backups: an acknowledged
+  egg exchange missing from a restored local save was reapplied from its exact
+  server receipt. This resolved `egg_not_owned` and the dependent pending tag
+  blocking incubation. No net eggs or unrelated progress changed. The owner?s
+  two supplied dragon highscores were restored, preserving other/highest scores.
+  Tag/untag was checked on the physical device and repaired progress backed up.
+- General canonical startup/cutover remains separate unfinished work. This
+  narrow repair does not claim a general reconciliation of historical saves.
+- Verification and rollout evidence: `RELEASE_V0.05.40_VERIFICATION.md`.
+
+
 ## Published release v0.05.39 / 10089
 
 Built from public v0.05.38 with the shared-expertise feature backported. The

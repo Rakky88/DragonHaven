@@ -62,7 +62,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
   }
 
   double get _time => _game.time;
-  double get _spirit => _game.spirit;
+  double get _spirit => _game.spirit.clamp(0, 400) / 400;
   bool get _lost => _game.lost;
   bool get _canInput => widget.running && _game.canInput;
   bool get _reducedMotion => MediaQuery.disableAnimationsOf(context);
@@ -83,7 +83,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
     widget.touchControls?.chimeLaneAt = _chimeLaneAt;
     widget.touchControls?.moveHearts = _move;
     double expertise(TrainingFocus focus) =>
-        widget.dragon.trainingFor(focus).clamp(0, 400) / 400;
+        widget.dragon.trainingFor(focus).toDouble();
     _game = widget.controller?.model.arcade ??
         SeasonalArcadeGame(
             kind: widget.kind,
@@ -495,7 +495,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
 
   Widget _hearts(AppStrings s) => _panel(
         instruction:
-            s.pick('Two hearts, one promise', 'Twee harten, één belofte'),
+            s.pick('Two hearts, one promise', 'Twee harten, ÃƒÂ©ÃƒÂ©n belofte'),
         detail: s.pick(
             'Move both hearts to their roses. Left and right are mirrored; a blocked heart waits.',
             'Breng beide harten naar hun roos. Links en rechts zijn gespiegeld; een geblokkeerd hart wacht.'),
@@ -651,7 +651,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
             padding: const EdgeInsets.symmetric(horizontal: 10),
             minimumSize: const Size(44, 36)),
         icon: const Icon(Icons.lightbulb_outline_rounded, size: 17),
-        label: Text('${s.pick('Hint', 'Hint')} · $_hints',
+        label: Text('${s.pick('Hint', 'Hint')} Ã‚Â· $_hints',
             style: const TextStyle(fontSize: 12)),
       );
 
@@ -659,7 +659,7 @@ class _SeasonalMinigamesState extends State<SeasonalMinigames> {
         instruction: s.pick('Connect the rainbow', 'Verbind de regenboog'),
         detail: s.pick(
             'Tap prisms to rotate their channels. Lead the light from the arrow to the star.',
-            'Tik op prisma’s om hun kanalen te draaien. Leid het licht van de pijl naar de ster.'),
+            'Tik op prismaÃ¢â‚¬â„¢s om hun kanalen te draaien. Leid het licht van de pijl naar de ster.'),
         child: Center(
             child: AspectRatio(
                 aspectRatio: 1,

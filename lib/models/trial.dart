@@ -3,6 +3,7 @@ import 'chest.dart';
 import 'pet.dart';
 import 'mystic_relic.dart';
 import 'dragon_emote.dart';
+import 'trial_expertise.dart';
 
 enum TrialKind {
   cavernFlight,
@@ -43,7 +44,20 @@ class TrialDefinition {
 
   bool get isSeasonal => specialEventId != null;
   bool get isEndless =>
-      kind == TrialKind.sunwakeSurf || kind == TrialKind.midnightChime;
+      kind == TrialKind.sunwakeSurf ||
+      kind == TrialKind.midnightChime ||
+      kind == TrialKind.wishcakeTower;
+
+  int durationMilliseconds(Map<TrainingFocus, int> training) {
+    final total = training.values.fold(0, (sum, value) => sum + value);
+    final spirit = training[TrainingFocus.spirit] ?? 0;
+    return duration.inMilliseconds +
+        total * 3 +
+        (kind == TrialKind.rosevowRelay || kind == TrialKind.prismaticParade
+            ? spirit * 10
+            : 0);
+  }
+
   List<TrainingFocus> get assistingExpertises =>
       isSeasonal ? TrainingFocus.values : [focus];
 
@@ -299,16 +313,16 @@ String trialGradeLabel(TrialGrade grade) =>
     grade == TrialGrade.sPlus ? 'S+' : grade.name.toUpperCase();
 
 double cavernFlightHitboxScale(int spirit) =>
-    1 - .10 * (spirit.clamp(0, 300) / 300);
+    TrialExpertise.cavernHitbox(spirit);
 
 double ruinBreakerSuccessZoneScale(int might) =>
-    1 + .15 * (might.clamp(0, 300) / 300);
+    TrialExpertise.ruinSuccess(might);
 
 double ruinBreakerPerfectZoneScale(int might) =>
-    1 + .05 * (might.clamp(0, 300) / 300);
+    TrialExpertise.ruinPerfect(might);
 
 Duration runeweaverRuneDuration(int arcana) => Duration(
-      milliseconds: 500 + (100 * (arcana.clamp(0, 300) / 300)).round(),
+      milliseconds: TrialExpertise.runePreviewMs(arcana),
     );
 
 TrialReward trialRewardForGrade(
