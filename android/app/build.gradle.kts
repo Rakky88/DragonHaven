@@ -63,6 +63,23 @@ extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            it.jvmArgs(
+                "--add-opens=java.base/java.lang=ALL-UNNAMED",
+                "--add-opens=java.base/java.util=ALL-UNNAMED",
+                "--add-opens=java.base/java.io=ALL-UNNAMED",
+                "--add-opens=java.base/java.net=ALL-UNNAMED",
+                "--add-opens=java.base/java.security=ALL-UNNAMED",
+                "--add-opens=java.base/java.text=ALL-UNNAMED",
+                "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
+                "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED",
+                "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+            )
+        }
+    }
+
     defaultConfig {
         applicationId = "nl.dragonhaven.app"
         minSdk = flutter.minSdkVersion
@@ -104,6 +121,15 @@ flutter {
     source = "../.."
 }
 
+// AGP's resource-backed unit-test package also consumes the Flutter assets.
+tasks.configureEach {
+    if (name.startsWith("package") && name.endsWith("UnitTestForUnitTest")) {
+        val variant = name.removePrefix("package").removeSuffix("UnitTestForUnitTest")
+        dependsOn("copyFlutterAssets$variant")
+    }
+}
+
 dependencies {
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.17")
 }

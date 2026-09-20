@@ -629,7 +629,7 @@ class MainActivity : FlutterActivity() {
     private fun cancelNotification(id: String) {
         notificationsWaitingForPermission.remove(id)
         DragonHavenAlarmScheduler.cancel(this, id)
-        NotificationManagerCompat.from(this).cancel(id.hashCode())
+        DragonHavenNotificationReceiver.cancelDisplayed(this, id.hashCode())
     }
 
     override fun onRequestPermissionsResult(
@@ -815,6 +815,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onResume() {
         super.onResume()
+        DragonHavenNotificationReceiver.clearDisplayed(this)
         runCatching { EventBranding.refresh(this) }
         activityInForeground = true
         musicFocusSuspended = false

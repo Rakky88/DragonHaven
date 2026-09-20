@@ -1,5 +1,20 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## Prepared after v0.05.42: notification cleanup
+
+Android's activity resume now clears all delivered local and push notifications
+on launch and foreground return. Future AlarmManager reminders and persisted
+schedules remain intact. Adventure completions replace one shared notification
+card; cancellation still checks the originating run so an older run cannot
+remove a newer return. A bounded device-only record of dismissed push identities
+prevents the foreground inbox from immediately reposting the same card, without
+marking any chat message read or suppressing new messages.
+
+Validation: four Robolectric notification regressions and four existing native
+jukebox tests passed. The Flutter notification/server-reminder/push tests passed
+(23), as did all five reference-documentation checks. Native debug compilation
+passed. No production server change or new release is included in this update.
+
 ## Released server-owned account restoration - 20 September 2026
 
 The normal five-tab app now consumes confirmed server snapshots and durable

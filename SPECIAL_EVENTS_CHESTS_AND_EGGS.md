@@ -761,6 +761,12 @@ One Special Events notification is scheduled for each opening and deep-links
 to Adventures. It respects the existing Special Events notification toggle
 and device notification permission.
 
+Android clears delivered app notifications whenever the activity opens or
+resumes, including event reminders. Future alarms and their stored schedules
+remain intact. Completed Adventure reminders share one displayed card: each
+new return replaces the previous return while other notification kinds remain.
+This changes presentation only, not event availability, completion or rewards.
+
 ## 7. Private preview contract
 
 Each seasonal event has a 48-hour reusable personal preview available to all
