@@ -420,7 +420,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: d0ab518425b257f9 -->
+<!-- reference-source-fingerprint: 3edfd059567830c2 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -1345,3 +1345,12 @@ rewards are 200 coins / 20 gems, three per day per shop, opening immediately.
 These are not Special Chests and are not obtainable in this release. Activation
 is deferred by the owner until advertising onboarding and server verification
 are implemented; no extra reward source or random pool exists yet.
+## v0.06.03 egg interaction parity
+
+The v0.05.41 Altar egg review, crafted-relic picker and revealed-fact dialogs,
+nest selection, and full-screen dragon relic reveal return using existing server
+commands. Original Altar mode transitions, protection confirmations and sorting
+remain. Nest placement and deterministic shop chest purchases can preview their
+public state immediately; failed confirmation rolls the display back. Preview
+data cannot be persisted or authorize another spend. Hidden DNA, random loot,
+reveal outcomes, incubation rules, event windows and reward odds are unchanged.

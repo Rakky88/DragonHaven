@@ -1,4 +1,4 @@
-import 'adventure_hub_screen.dart' show TrialRefreshCountdown;
+import 'adventure_hub_screen.dart' show TrialRefreshCountdown, trialStatBenefit;
 import '../models/social.dart';
 import '../widgets/trial_rankings_sheet.dart';
 import '../theme/app_theme.dart';
@@ -72,155 +72,169 @@ class _TrialsState extends State<_Trials> {
     final actions = CanonicalGameActions(session);
     final active = view.trialAttempt;
     final reserved = view.data['trials']['attempt'] != null;
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                  colors: [Color(0xFF2A1E50), Color(0xFF5B3D91)]),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.gold, width: 1.2)),
-          child: Column(children: [
-            Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    const GameIconSprite(GameIconKind.adventureSpecial,
-                        size: 34),
-                    const SizedBox(width: 8),
-                    Flexible(
-                        child: Text(s.pick('Dragon Trials', 'Drakenproeven'),
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w900))),
-                  ]),
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    TrialRefreshCountdown(
-                        remaining: DateTime.fromMillisecondsSinceEpoch(
-                                (now.millisecondsSinceEpoch ~/ 900000 + 1) *
-                                    900000,
-                                isUtc: true)
-                            .difference(now)),
-                    IconButton(
-                        key: const Key('open-trial-rankings'),
-                        tooltip: s.pick(
-                            'View Trial Rankings', 'Bekijk Trial-ranglijsten'),
-                        color: AppColors.gold,
-                        icon: const Icon(Icons.leaderboard_rounded, size: 22),
-                        onPressed: () => showTrialRankingsSheet(context,
-                            scopes: const [
-                              TrialRankingScope.world,
-                              TrialRankingScope.friends
-                            ],
-                            initialScope: TrialRankingScope.world)),
-                  ]),
-                ]),
-            const Divider(height: 10, color: Color(0x33F6DF9A)),
-            _TrialStreakCard(
-                count: view.data['trials']['trialStreakCount'] as int,
-                ready: view.data['trials']['trialStreakRewardReady'] == true,
-                onClaim: session.canAct && !reserved
-                    ? () => runShopAction(context, () async {
-                          await actions.execute('claim_constellation', {});
-                        })
-                    : null),
-          ])),
-      for (final progress in view.adventures.eventProgress.where((p) =>
-          p.activeAt(now) &&
-          view.adventures.activeEvents.any((w) => w.key == p.key)))
-        EventProgressBar(
-            key: ValueKey(progress.key),
-            progress: progress,
-            onClaim: () => Navigator.push(
-                context,
-                MaterialPageRoute<void>(
-                    builder: (_) =>
-                        const Scaffold(body: CanonicalAdventuresScreen())))),
-      const SizedBox(height: 8),
-      if (active != null)
-        Card(
-            child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+    return ListView(
+        key: const PageStorageKey('trials-scroll'),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
+        children: [
+          Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                      colors: [Color(0xFF2A1E50), Color(0xFF5B3D91)]),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.gold, width: 1.2)),
+              child: Column(children: [
+                Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
-                      Text(s.pick('An unfinished Trial is reserved.',
-                          'Er staat een onafgemaakte proef klaar.')),
-                      Text(
-                          trialDefinitions[active.kind]!.title(s.languageCode)),
-                      CanonicalActionButton(
-                          key: const Key('resume-reserved-trial'),
-                          label: s.pick('Continue', 'Doorgaan'),
-                          action: session.canAct
-                              ? () async {
-                                  final offer = TrialOffer(
-                                      id: active.offerId,
-                                      kind: active.kind,
-                                      appearedAt: active.startedAt,
-                                      specialEventKey: active.specialEventKey);
-                                  final source = CanonicalTrialRunSource(
-                                      session, offer, active.dragonId,
-                                      resumeAttemptId: active.id);
-                                  await _withEventPointReturn(
-                                      context,
-                                      session,
-                                      () => Navigator.of(context).push<
-                                              TrialCompletion>(
-                                          MaterialPageRoute<TrialCompletion>(
-                                              builder: (_) => TrialGameScreen(
-                                                  offerId: offer.id,
-                                                  dragonId: active.dragonId,
-                                                  source: source))));
-                                }
-                              : null),
-                      CanonicalActionButton(
-                          key: const Key('cancel-reserved-trial'),
-                          label: s.pick('Leave Trial', 'Proef verlaten'),
-                          confirmation: s.pick(
-                              'Leave this Trial without rewards?',
-                              'Deze proef zonder beloning verlaten?'),
-                          action: session.canAct
-                              ? () async {
-                                  await actions.execute(
-                                      'cancel_trial', {'attemptId': active.id});
-                                }
-                              : null),
-                    ]))),
-      if (view.schoolAttempt != null)
-        Text(s.pick('Finish your Academy lesson first.',
-            'Rond eerst je academieles af.')),
-      for (final offer in view.trialOffers.where((o) => o.startedAt == null))
-        _TrialOfferCard(
-            offer: offer,
-            best: view.dragons.where((d) => d.owned).fold<int>(
-                0,
-                (best, d) => d.trialBest(offer.kind.name) > best
-                    ? d.trialBest(offer.kind.name)
-                    : best),
-            onStart: session.canAct && !reserved
-                ? () => _choose(context, offer)
-                : null,
-            onDismiss: session.canAct && !reserved
-                ? () async {
-                    final confirmed = await confirmCanonicalAction(context,
-                        s.pick('Dismiss this Trial?', 'Deze proef wegsturen?'),
-                        owner: view.ownerId, epoch: actions.epoch);
-                    if (confirmed && context.mounted) {
-                      await runShopAction(context, () async {
-                        await actions
-                            .execute('dismiss_trial', {'offerId': offer.id});
-                      });
-                    }
-                  }
-                : null),
-      if (view.trialOffers.isEmpty)
-        Text(s.pick('New Trials will appear here.',
-            'Hier verschijnen nieuwe proeven.')),
-    ]);
+                      Row(mainAxisSize: MainAxisSize.min, children: [
+                        const GameIconSprite(GameIconKind.adventureSpecial,
+                            size: 34),
+                        const SizedBox(width: 8),
+                        Flexible(
+                            child: Text(
+                                s.pick('Dragon Trials', 'Drakenproeven'),
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w900))),
+                      ]),
+                      Row(mainAxisSize: MainAxisSize.min, children: [
+                        TrialRefreshCountdown(
+                            remaining: DateTime.fromMillisecondsSinceEpoch(
+                                    (now.millisecondsSinceEpoch ~/ 900000 + 1) *
+                                        900000,
+                                    isUtc: true)
+                                .difference(now)),
+                        IconButton(
+                            key: const Key('open-trial-rankings'),
+                            tooltip: s.pick('View Trial Rankings',
+                                'Bekijk Trial-ranglijsten'),
+                            color: AppColors.gold,
+                            icon:
+                                const Icon(Icons.leaderboard_rounded, size: 22),
+                            onPressed: () => showTrialRankingsSheet(context,
+                                scopes: const [
+                                  TrialRankingScope.world,
+                                  TrialRankingScope.friends
+                                ],
+                                initialScope: TrialRankingScope.world)),
+                      ]),
+                    ]),
+                const Divider(height: 10, color: Color(0x33F6DF9A)),
+                _TrialStreakCard(
+                    count: view.data['trials']['trialStreakCount'] as int,
+                    ready:
+                        view.data['trials']['trialStreakRewardReady'] == true,
+                    onClaim: session.canAct && !reserved
+                        ? () => runShopAction(context, () async {
+                              await actions.execute('claim_constellation', {});
+                            })
+                        : null),
+              ])),
+          for (final progress in view.adventures.eventProgress.where((p) =>
+              p.activeAt(now) &&
+              view.adventures.activeEvents.any((w) => w.key == p.key)))
+            EventProgressBar(
+                key: ValueKey(progress.key),
+                progress: progress,
+                onClaim: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                        builder: (_) => const Scaffold(
+                            body: CanonicalAdventuresScreen())))),
+          const SizedBox(height: 8),
+          if (active != null)
+            Card(
+                child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(s.pick('An unfinished Trial is reserved.',
+                              'Er staat een onafgemaakte proef klaar.')),
+                          Text(trialDefinitions[active.kind]!
+                              .title(s.languageCode)),
+                          CanonicalActionButton(
+                              key: const Key('resume-reserved-trial'),
+                              label: s.pick('Continue', 'Doorgaan'),
+                              action: session.canAct
+                                  ? () async {
+                                      final offer = TrialOffer(
+                                          id: active.offerId,
+                                          kind: active.kind,
+                                          appearedAt: active.startedAt,
+                                          specialEventKey:
+                                              active.specialEventKey);
+                                      final source = CanonicalTrialRunSource(
+                                          session, offer, active.dragonId,
+                                          resumeAttemptId: active.id);
+                                      await _withEventPointReturn(
+                                          context,
+                                          session,
+                                          () => Navigator.of(context).push<
+                                                  TrialCompletion>(
+                                              MaterialPageRoute<
+                                                      TrialCompletion>(
+                                                  builder: (_) =>
+                                                      TrialGameScreen(
+                                                          offerId: offer.id,
+                                                          dragonId:
+                                                              active.dragonId,
+                                                          source: source))));
+                                    }
+                                  : null),
+                          CanonicalActionButton(
+                              key: const Key('cancel-reserved-trial'),
+                              label: s.pick('Leave Trial', 'Proef verlaten'),
+                              confirmation: s.pick(
+                                  'Leave this Trial without rewards?',
+                                  'Deze proef zonder beloning verlaten?'),
+                              action: session.canAct
+                                  ? () async {
+                                      await actions.execute('cancel_trial',
+                                          {'attemptId': active.id});
+                                    }
+                                  : null),
+                        ]))),
+          if (view.schoolAttempt != null)
+            Text(s.pick('Finish your Academy lesson first.',
+                'Rond eerst je academieles af.')),
+          for (final offer
+              in view.trialOffers.where((o) => o.startedAt == null))
+            _TrialOfferCard(
+                offer: offer,
+                best: view.dragons.where((d) => d.owned).fold<int>(
+                    0,
+                    (best, d) => d.trialBest(offer.kind.name) > best
+                        ? d.trialBest(offer.kind.name)
+                        : best),
+                onStart: session.canAct && !reserved
+                    ? () => _choose(context, offer)
+                    : null,
+                onDismiss: session.canAct && !reserved
+                    ? () async {
+                        final confirmed = await confirmCanonicalAction(
+                            context,
+                            s.pick(
+                                'Dismiss this Trial?', 'Deze proef wegsturen?'),
+                            owner: view.ownerId,
+                            epoch: actions.epoch);
+                        if (confirmed && context.mounted) {
+                          await runShopAction(context, () async {
+                            await actions.execute(
+                                'dismiss_trial', {'offerId': offer.id});
+                          });
+                        }
+                      }
+                    : null),
+          if (view.trialOffers.isEmpty)
+            Text(s.pick('New Trials will appear here.',
+                'Hier verschijnen nieuwe proeven.')),
+        ]);
   }
 
   Future<void> _choose(BuildContext context, TrialOffer offer) async {
@@ -235,7 +249,7 @@ class _TrialsState extends State<_Trials> {
     final id = await showModalBottomSheet<String>(
         context: context,
         isScrollControlled: true,
-        useSafeArea: true,
+        showDragHandle: true,
         builder: (context) => CanonicalEntityDialog(
             ownerId: owner,
             builder: (context, view, enabled) {
@@ -247,121 +261,128 @@ class _TrialsState extends State<_Trials> {
                       d.adventureId == null)
                   .toList()
                 ..sort((a, b) => a.displayName.compareTo(b.displayName));
-              return FractionallySizedBox(
-                  heightFactor: .88,
-                  child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(children: [
-                        Row(children: [
-                          Expanded(
-                              child: Text(
-                                  offer.definition.title(s.languageCode),
-                                  style:
-                                      Theme.of(context).textTheme.titleLarge)),
-                          DraconomiconShortcut(
-                              onPressed: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute<void>(
-                                      builder: (_) =>
-                                          CanonicalCodex(owner: owner))))
-                        ]),
-                        const SizedBox(height: 12),
+              return SafeArea(
+                child: DraggableScrollableSheet(
+                  expand: false,
+                  initialChildSize: .72,
+                  maxChildSize: .92,
+                  builder: (_, controller) => ListView(
+                    key: const Key('trial-dragon-picker'),
+                    controller: controller,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+                    children: [
+                      Row(children: [
                         Expanded(
-                            child: ListView(children: [
-                          for (final group in [true, false]) ...[
-                            if (dragons.any((d) => highlighted(d) == group))
-                              Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8),
-                                  child: Text(
-                                      group
-                                          ? s.pick('Highlighted for this path',
-                                              'Gemarkeerd voor dit pad')
-                                          : s.pick('Available dragons',
-                                              'Beschikbare draken'),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelLarge)),
-                            for (final dragon in dragons
-                                .where((d) => highlighted(d) == group))
-                              Card(
-                                  child: InkWell(
-                                      key: Key('trial-dragon-${dragon.id}'),
-                                      onTap: enabled &&
-                                              view.data['trials']['attempt'] ==
-                                                  null
-                                          ? () =>
-                                              Navigator.pop(context, dragon.id)
-                                          : null,
-                                      child: Padding(
-                                          padding: const EdgeInsets.all(12),
-                                          child: Row(children: [
-                                            CanonicalDragonArt(
-                                                dragon: dragon, height: 64),
-                                            const SizedBox(width: 10),
-                                            Expanded(
-                                                child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                  Text(
-                                                      canonicalDragonName(
-                                                          s, dragon),
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .titleMedium),
-                                                  const SizedBox(height: 6),
-                                                  Wrap(
-                                                      spacing: 10,
-                                                      runSpacing: 8,
-                                                      children: [
-                                                        for (final focus
-                                                            in focuses)
-                                                          ExpertiseScoreBadge(
-                                                              dragonId:
-                                                                  dragon.id,
-                                                              focus: focus,
-                                                              focusLabel: focus
-                                                                          .name ==
-                                                                      'might'
-                                                                  ? s.pick(
-                                                                      'Might',
-                                                                      'Kracht')
-                                                                  : focus.name ==
-                                                                          'spirit'
-                                                                      ? s.pick(
-                                                                          'Spirit',
-                                                                          'Geest')
-                                                                      : 'Arcana',
-                                                              score: dragon
-                                                                  .trainingFor(
-                                                                      focus),
-                                                              maximum: dragon
-                                                                  .maximum(
-                                                                      focus),
-                                                              highlighted: dragon
-                                                                  .highlighted
-                                                                  .contains(
-                                                                      focus.name))
-                                                      ]),
-                                                ])),
-                                            IconButton(
-                                                tooltip: s.pick(
-                                                    'View all Expertise',
-                                                    'Alle Expertises bekijken'),
-                                                onPressed: () =>
-                                                    showCanonicalExpertises(
-                                                        context,
-                                                        dragon.id,
-                                                        owner),
-                                                icon: const Icon(
-                                                    Icons.info_outline_rounded,
-                                                    size: 20)),
-                                          ])))),
-                          ],
-                        ])),
-                      ])));
+                            child: Text(
+                                s.pick('Choose your Trial dragon',
+                                    'Kies je draak voor de proef'),
+                                style: Theme.of(context).textTheme.titleLarge)),
+                        const SizedBox(width: 8),
+                        DraconomiconShortcut(
+                            onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        CanonicalCodex(owner: owner)))),
+                      ]),
+                      const SizedBox(height: 4),
+                      Text(trialStatBenefit(s, offer.kind),
+                          style: const TextStyle(
+                              color: AppColors.muted, fontSize: 12)),
+                      for (final group in [true, false]) ...[
+                        if (dragons.any((d) => highlighted(d) == group))
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 8, 4, 7),
+                            child: Text(
+                                (group
+                                        ? s.pick('Highlighted for this path',
+                                            'Gemarkeerd voor deze route')
+                                        : s.pick('Available dragons',
+                                            'Beschikbare draken'))
+                                    .toUpperCase(),
+                                style: const TextStyle(
+                                    color: AppColors.twilight,
+                                    fontSize: 10,
+                                    letterSpacing: .7,
+                                    fontWeight: FontWeight.w900)),
+                          ),
+                        for (final dragon
+                            in dragons.where((d) => highlighted(d) == group))
+                          Card(
+                            color:
+                                group ? const Color(0xFFFFFAE9) : Colors.white,
+                            child: InkWell(
+                              key: Key('trial-dragon-${dragon.id}'),
+                              borderRadius: BorderRadius.circular(20),
+                              onTap: enabled && view.trialAttempt == null
+                                  ? () => Navigator.pop(context, dragon.id)
+                                  : null,
+                              child: Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: Row(children: [
+                                  SizedBox.square(
+                                      dimension: 58,
+                                      child: CanonicalDragonArt(
+                                          dragon: dragon, height: 58)),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                      child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                        Text(canonicalDragonName(s, dragon),
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w900)),
+                                        Wrap(
+                                            crossAxisAlignment:
+                                                WrapCrossAlignment.center,
+                                            children: [
+                                              for (final focus in offer
+                                                  .definition
+                                                  .assistingExpertises)
+                                                ExpertiseScoreBadge(
+                                                    dragonId: dragon.id,
+                                                    focus: focus,
+                                                    focusLabel:
+                                                        _focusName(s, focus),
+                                                    score: dragon
+                                                        .trainingFor(focus),
+                                                    maximum:
+                                                        dragon.maximum(focus),
+                                                    highlighted: dragon
+                                                        .highlighted
+                                                        .contains(focus.name)),
+                                              IconButton(
+                                                  tooltip: s.pick(
+                                                      'View all Expertise',
+                                                      'Alle Expertises bekijken'),
+                                                  onPressed: () =>
+                                                      showCanonicalExpertises(
+                                                          context,
+                                                          dragon.id,
+                                                          owner),
+                                                  icon: const Icon(
+                                                      Icons
+                                                          .info_outline_rounded,
+                                                      size: 20)),
+                                            ]),
+                                        Text(
+                                            '${s.pick('Best', 'Beste')}: ${dragon.trialBest(offer.kind.name)}',
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: AppColors.muted)),
+                                      ])),
+                                  const Icon(Icons.chevron_right_rounded,
+                                      size: 20),
+                                ]),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
             }));
     if (id == null ||
         !context.mounted ||

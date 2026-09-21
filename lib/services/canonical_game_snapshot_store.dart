@@ -131,7 +131,8 @@ class CanonicalGameSnapshotStore {
   /// A pending command's receipt revision must also fence the caller's read.
   Future<void> persistFresh(CanonicalGameSnapshot snapshot) =>
       _serial(snapshot.ownerId, () async {
-        if (snapshot.authorityMode != expectedAuthority.name) {
+        if (snapshot.isSpeculative ||
+            snapshot.authorityMode != expectedAuthority.name) {
           throw const CanonicalGameException('game_snapshot_invalid');
         }
         final previous = await _inspect(snapshot.ownerId);

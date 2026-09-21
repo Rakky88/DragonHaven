@@ -100,7 +100,7 @@ class ShopEconomyBoundary extends StatelessWidget {
     // Keep confirmed content steady during ordinary refreshes and commands.
     // A failed refresh still exposes recovery; spending remains session-fenced.
     final showStatus = !hasView || (!server.busy &&
-        (server.errorCode != null || !server.fresh ||
+        (server.errorCode != null ||
          server.snapshot?.mutationsEnabled == false));
     return Column(children: [
       if (showStatus)

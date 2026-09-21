@@ -12,6 +12,7 @@ import 'canonical_game_reader.dart';
 import 'canonical_game_reconciler.dart';
 import 'canonical_game_snapshot.dart';
 import 'canonical_game_snapshot_store.dart';
+import 'canonical_game_prediction.dart';
 
 /// One detached, account-scoped game session for the staging client. It owns
 /// its connection and journals; it never imports a projection into a legacy save.
@@ -45,6 +46,8 @@ class CanonicalGameSession extends ChangeNotifier {
   bool _fresh = false;
   bool _foreground = true;
   CanonicalGameSnapshot? _snapshot;
+  CanonicalGameSnapshot? _preview;
+  final _sinceConfirmation = Stopwatch();
   String? _errorCode;
   Future<CanonicalGameReceipt?>? _operation;
   final _admitted = <Future<CanonicalGameReceipt?>>{};
@@ -57,7 +60,10 @@ class CanonicalGameSession extends ChangeNotifier {
       !_disposed &&
       _owner == connection.currentOwner &&
       _epoch == connection.sessionEpoch;
-  CanonicalGameSnapshot? get snapshot => _sameSession ? _snapshot : null;
+  CanonicalGameSnapshot? get snapshot =>
+      _sameSession ? (_preview ?? _snapshot) : null;
+  CanonicalGameSnapshot? get confirmedSnapshot =>
+      _sameSession ? _snapshot : null;
   String? get errorCode => _sameSession ? _errorCode : null;
   bool get busy => _sameSession && _operation != null;
   bool get fresh => _sameSession && _fresh;
@@ -79,6 +85,7 @@ class CanonicalGameSession extends ChangeNotifier {
     _epoch = connection.sessionEpoch;
     _fresh = false;
     _snapshot = null;
+    _preview = null;
     _minimumServerRevision = 0;
     _errorCode = null;
     _operation = null;
@@ -137,7 +144,7 @@ class CanonicalGameSession extends ChangeNotifier {
       for (final key in payload.keys.toList()..sort()) key: payload[key]
     };
     final key = jsonEncode([action, ordered]);
-    final observed = snapshot;
+    final observed = confirmedSnapshot;
     final allowed = canAct;
     return _run(key, (owner, epoch, requireSession) async {
       if (!allowed || observed == null) {
@@ -157,7 +164,11 @@ class CanonicalGameSession extends ChangeNotifier {
         requireSession();
         _accept(value);
       }).resume(owner);
-    });
+    },
+        preview: allowed && observed != null
+            ? predictGameDisplay(observed, action, ordered,
+                observed.serverTime.add(_sinceConfirmation.elapsed))
+            : null);
   }
 
   CanonicalGameReader _reader() => CanonicalGameReader(
@@ -180,7 +191,7 @@ class CanonicalGameSession extends ChangeNotifier {
           applyDisplay: apply);
 
   void _accept(CanonicalGameSnapshot value) {
-    if (value.authorityMode != expectedAuthority.name) {
+    if (value.isSpeculative || value.authorityMode != expectedAuthority.name) {
       throw const CanonicalGameException('game_snapshot_invalid');
     }
     if (value.serverRevision < _minimumServerRevision) {
@@ -193,6 +204,10 @@ class CanonicalGameSession extends ChangeNotifier {
       throw const CanonicalGameException('game_snapshot_stale');
     }
     _snapshot = value;
+    _preview = null;
+    _sinceConfirmation
+      ..reset()
+      ..start();
     _fresh = _foreground;
     notifyListeners();
   }
@@ -200,7 +215,8 @@ class CanonicalGameSession extends ChangeNotifier {
   Future<CanonicalGameReceipt?> _run(
       String key,
       Future<CanonicalGameReceipt?> Function(String, int, void Function())
-          action) {
+          action,
+      {CanonicalGameSnapshot? preview}) {
     if (!_sameSession) _accountChanged();
     final owner = _owner;
     final epoch = _epoch;
@@ -224,6 +240,7 @@ class CanonicalGameSession extends ChangeNotifier {
     _operationKey = key;
     final completion = Completer<CanonicalGameReceipt?>();
     _operation = completion.future;
+    _preview = preview;
     _admitted.add(completion.future);
     notifyListeners();
     unawaited(() async {
@@ -247,6 +264,7 @@ class CanonicalGameSession extends ChangeNotifier {
       } finally {
         _admitted.remove(completion.future);
         if (!_disposed && identical(_operation, completion.future)) {
+          _preview = null;
           _operation = null;
           _operationKey = null;
           notifyListeners();
@@ -275,6 +293,8 @@ class CanonicalGameSession extends ChangeNotifier {
     if (_disposed) return;
     _disposed = true;
     _snapshot = null;
+    _preview = null;
+    _sinceConfirmation.stop();
     _fresh = false;
     unawaited(_changes.cancel());
     _connectionClosing ??= connection.dispose();

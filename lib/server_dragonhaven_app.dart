@@ -182,8 +182,9 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
     final session = context.watch<CanonicalGameSession>();
     final view = session.snapshot;
     if (view == null) return const SizedBox.shrink();
-    if (!identical(view, _observed)) {
-      _observed = view;
+    final confirmed = session.confirmedSnapshot;
+    if (!identical(confirmed, _observed)) {
+      _observed = confirmed;
       _elapsed.reset();
     }
     final windows = _windows(view);
@@ -569,9 +570,7 @@ class _ServerTower extends StatelessWidget {
                     showDragHandle: true,
                     isScrollControlled: true,
                     useSafeArea: true,
-                    builder: (_) => SizedBox(
-                        height: MediaQuery.sizeOf(context).height * .78,
-                        child: const CanonicalDragonsScreen()))),
+                    builder: (_) => const CanonicalDragonsScreen())),
             IconButton(
                 tooltip: 'Draconomicon',
                 icon: const GameIconSprite(GameIconKind.draconomicon, size: 40),

@@ -3,11 +3,11 @@ abstract final class AppInfo {
   static const builtYear = '2026';
   static const buildNumber = int.fromEnvironment(
     'DRAGONHAVEN_BUILD_NUMBER',
-    defaultValue: 10095,
+    defaultValue: 10096,
   );
   static const version = String.fromEnvironment(
     'DRAGONHAVEN_APP_VERSION',
-    defaultValue: '0.06.02',
+    defaultValue: '0.06.03',
   );
   static const displayVersion = 'v$version';
 }

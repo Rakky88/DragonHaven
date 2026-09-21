@@ -20,7 +20,7 @@ class CanonicalHatchScheduler {
 
   void _schedule() {
     _timer?.cancel();
-    final view = session.snapshot;
+    final view = session.confirmedSnapshot;
     if (!identical(view, _observed)) {
       _observed = view;
       _elapsed.reset();
@@ -45,8 +45,8 @@ class CanonicalHatchScheduler {
       if (_disposed ||
           !session.canAct ||
           session.connection.sessionEpoch != epoch ||
-          session.snapshot?.ownerId != view.ownerId ||
-          session.snapshot?.nest?.id != egg.id) {
+          session.confirmedSnapshot?.ownerId != view.ownerId ||
+          session.confirmedSnapshot?.nest?.id != egg.id) {
         return;
       }
       _attempted = key;

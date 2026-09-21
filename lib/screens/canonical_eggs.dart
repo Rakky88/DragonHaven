@@ -1,5 +1,4 @@
 import '../widgets/compact_egg_hatch_time.dart';
-import '../widgets/restored_collection_cards.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -54,7 +53,16 @@ class CanonicalEggArt extends StatelessWidget {
 }
 
 class CanonicalEggList extends StatefulWidget {
-  const CanonicalEggList({super.key, this.onPlace, this.forAltar = false});
+  const CanonicalEggList(
+      {super.key,
+      this.onPlace,
+      this.onChoose,
+      this.forAltar = false,
+      this.forNest = false,
+      this.relic});
+  final bool forNest;
+  final AltarRelic? relic;
+  final void Function(String)? onChoose;
   final bool forAltar;
   final void Function(String)? onPlace;
   @override
@@ -94,9 +102,13 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                 ? -order
                 : order;
       });
-    if (widget.onPlace != null || widget.forAltar) {
+    if (widget.onPlace != null || widget.forAltar || widget.forNest) {
       final available = eggs
-          .where((e) => widget.onPlace == null || e.location == 'stash')
+          .where((e) =>
+              (!widget.forNest && widget.onPlace == null ||
+                  e.location == 'stash') &&
+              (!widget.forNest ||
+                  !view.inventory.reservedEggIds.contains(e.id)))
           .toList();
       return Column(children: [
         Text(strings.pick('Choose an egg', 'Kies een ei'),
@@ -120,6 +132,9 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                       '${available.length} eieren'))),
               PopupMenuButton<String>(
                   key: const Key('altar-egg-sort'),
+                  tooltip: strings.pick('Sort eggs', 'Eieren sorteren'),
+                  initialValue: sort,
+                  enabled: session.canAct,
                   onSelected: (value) => preference({
                         'eggInventorySortMode': value,
                         'eggInventorySortDescending':
@@ -139,38 +154,69 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                       child: Text(sort == 'acquiredAt'
                           ? strings.pick('Received', 'Ontvangen')
                           : strings.pick('Hatch time', 'Broedtijd')))),
+              IconButton(
+                  key: const Key('altar-egg-sort-direction'),
+                  tooltip: descending
+                      ? strings.pick('Descending; tap to reverse',
+                          'Aflopend; tik om te keren')
+                      : strings.pick('Ascending; tap to reverse',
+                          'Oplopend; tik om te keren'),
+                  onPressed: session.canAct
+                      ? () => preference({
+                            'eggInventorySortMode': sort,
+                            'eggInventorySortDescending': !descending,
+                          })
+                      : null,
+                  icon: Icon(descending
+                      ? Icons.arrow_downward_rounded
+                      : Icons.arrow_upward_rounded)),
             ])),
         Expanded(
-            child: ListView(children: [
-          for (final egg in available)
-            ListTile(
-                key: Key('canonical-egg-${egg.id}'),
-                leading: SizedBox(
-                    width: 48, child: CanonicalEggArt(egg: egg, height: 48)),
-                title: Text(canonicalEggName(strings, egg)),
-                subtitle: widget.onPlace != null &&
-                        egg.returnBlockReason != null
-                    ? Text(
-                        gameConnectionMessage(strings, egg.returnBlockReason))
-                    : egg.revealedRarity == null
-                        ? null
-                        : Text(
-                            canonicalKnownRarity(strings, egg.revealedRarity)),
-                trailing: IconButton(
-                    icon: Icon(egg.tagged
-                        ? Icons.label_rounded
-                        : Icons.label_outline_rounded),
-                    tooltip: strings.pick(egg.tagged ? 'Untag egg' : 'Tag egg',
-                        egg.tagged ? 'Ei ontaggen' : 'Ei taggen'),
-                    onPressed: session.canAct
-                        ? () => runShopAction(
-                            context,
-                            () => CanonicalGameActions(session)
-                                .tagEgg(egg.id, !egg.tagged))
-                        : null),
-                onTap: () => showCanonicalEggDetails(context, egg.id,
-                    onPlace: widget.onPlace, forAltar: true)),
-        ])),
+            child: available.isEmpty
+                ? Center(
+                    child: Text(strings.pick(
+                        'No eggs available.', 'Geen eieren beschikbaar.')))
+                : ListView(children: [
+                    for (final egg in available)
+                      ListTile(
+                          key: Key('canonical-egg-${egg.id}'),
+                          leading: SizedBox(
+                              width: 48,
+                              child: CanonicalEggArt(egg: egg, height: 48)),
+                          title: Text(egg.location == 'nest'
+                              ? strings.pick(
+                                  'Egg in the nest', 'Ei in het nest')
+                              : canonicalEggName(strings, egg)),
+                          subtitle:
+                              widget.relic != null && egg.known(widget.relic!)
+                                  ? Text(gameConnectionMessage(
+                                      strings, 'already_known'))
+                                  : widget.onPlace != null &&
+                                          egg.returnBlockReason != null
+                                      ? Text(gameConnectionMessage(
+                                          strings, egg.returnBlockReason))
+                                      : CanonicalEggKnowledgeSummary(egg: egg),
+                          trailing: IconButton(
+                              icon: Icon(egg.tagged
+                                  ? Icons.label_rounded
+                                  : Icons.label_outline_rounded),
+                              tooltip: strings.pick(
+                                  egg.tagged ? 'Untag egg' : 'Tag egg',
+                                  egg.tagged ? 'Ei ontaggen' : 'Ei taggen'),
+                              onPressed: session.canAct
+                                  ? () => runShopAction(
+                                      context,
+                                      () => CanonicalGameActions(session)
+                                          .tagEgg(egg.id, !egg.tagged))
+                                  : null),
+                          onTap: widget.forNest
+                              ? () => widget.onChoose?.call(egg.id)
+                              : () => showCanonicalEggDetails(context, egg.id,
+                                  onPlace: widget.onPlace,
+                                  onChoose: widget.onChoose,
+                                  relic: widget.relic,
+                                  forAltar: true)),
+                  ])),
       ]);
     }
     return ListView(padding: const EdgeInsets.all(16), children: [
@@ -499,12 +545,101 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
   }
 }
 
+/// The original crafted-relic flow: egg picker, reviewed choice, confirmation,
+/// and a reveal of only the facts returned by the server.
+Future<void> showCanonicalAltarRelicPicker(
+    BuildContext context, AltarRelic relic) async {
+  final session = context.read<CanonicalGameSession>();
+  final actions = CanonicalGameActions(session);
+  final owner = session.snapshot?.ownerId;
+  final s = AppStrings.of(context);
+  final id = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+          child: SizedBox(
+              height: MediaQuery.sizeOf(sheetContext).height * .72,
+              child: CanonicalEggList(
+                  forAltar: true,
+                  relic: relic,
+                  onChoose: (id) => Navigator.pop(sheetContext, id)))));
+  if (!context.mounted ||
+      id == null ||
+      session.snapshot?.ownerId != owner ||
+      session.connection.sessionEpoch != actions.epoch) {
+    return;
+  }
+  final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+              title: Text(relic.label),
+              content: Text(s.pick('Use one relic on this egg?',
+                  'E\u00e9n relic gebruiken op dit ei?')),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(c, false),
+                    child: Text(s.pick('Cancel', 'Annuleren'))),
+                FilledButton(
+                    onPressed: () => Navigator.pop(c, true),
+                    child: Text(s.pick('Use', 'Gebruiken'))),
+              ]));
+  if (!context.mounted || confirmed != true) return;
+  await runShopAction(context, () async {
+    await actions.revealEgg(relic, id);
+    if (!context.mounted ||
+        session.snapshot?.ownerId != owner ||
+        session.connection.sessionEpoch != actions.epoch) {
+      return;
+    }
+    final egg = session.snapshot?.egg(id);
+    if (egg == null) return;
+    await showDialog<void>(
+        context: context,
+        builder: (c) => AlertDialog(
+                title: Text(relic.label),
+                content: CanonicalEggKnowledgeSummary(egg: egg),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(c),
+                      child: const Text('OK'))
+                ]));
+  });
+}
+
+class CanonicalEggKnowledgeSummary extends StatelessWidget {
+  const CanonicalEggKnowledgeSummary({super.key, required this.egg});
+  final CanonicalEggView egg;
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    final lineage =
+        dragonLineages.where((l) => l.id == egg.revealedLineageId).firstOrNull;
+    final moral = MoralAxis.values
+        .where((v) => v.name == egg.revealedMoralAxis)
+        .firstOrNull;
+    final law =
+        LawAxis.values.where((v) => v.name == egg.revealedLawAxis).firstOrNull;
+    return Wrap(spacing: 8, runSpacing: 4, children: [
+      if (lineage != null) Chip(label: Text(s.lineageName(lineage))),
+      if (egg.revealedRarity != null)
+        Chip(label: Text(canonicalKnownRarity(s, egg.revealedRarity))),
+      if (moral != null) Chip(label: Text(s.moralAxisName(moral))),
+      if (law != null) Chip(label: Text(s.lawAxisName(law))),
+    ]);
+  }
+}
+
 class _InventoryEggDetails extends StatelessWidget {
   const _InventoryEggDetails(
-      {required this.egg, required this.view, required this.enabled});
+      {required this.egg,
+      required this.view,
+      required this.enabled,
+      required this.actionContext});
   final CanonicalEggView egg;
   final CanonicalGameSnapshot view;
   final bool enabled;
+  final BuildContext actionContext;
 
   @override
   Widget build(BuildContext context) {
@@ -604,15 +739,25 @@ class _InventoryEggDetails extends StatelessWidget {
               if (egg.location == 'stash')
                 SizedBox(
                     width: double.infinity,
-                    child: CanonicalActionButton(
+                    child: FilledButton.icon(
                         key: const Key('canonical-incubate-egg'),
-                        primary: true,
-                        icon: Icons.egg_alt_rounded,
-                        label: s.pick('Incubate', 'Broed uit'),
-                        confirmation: s.pick('Start incubating this egg?',
-                            'Dit ei uitbroeden in het nest?'),
-                        action: enabled && !reserved && view.nest == null
-                            ? () => actions.activateEgg(egg.id)
+                        icon: const Icon(Icons.egg_alt_rounded),
+                        label: Text(s.pick('Incubate', 'Broed uit')),
+                        onPressed: enabled && !reserved && view.nest == null
+                            ? () {
+                                if (!context.mounted ||
+                                    !actionContext.mounted ||
+                                    context
+                                            .read<CanonicalGameSession>()
+                                            .connection
+                                            .sessionEpoch !=
+                                        actions.epoch) {
+                                  return;
+                                }
+                                Navigator.pop(context);
+                                runShopAction(actionContext,
+                                    () => actions.activateEgg(egg.id));
+                              }
                             : null)),
               if (egg.location == 'nest') ...[
                 CanonicalNestClock(egg: egg, view: view),
@@ -633,7 +778,11 @@ class _InventoryEggDetails extends StatelessWidget {
 }
 
 Future<void> showCanonicalEggDetails(BuildContext context, String id,
-    {void Function(String)? onPlace, bool forAltar = false}) async {
+    {void Function(String)? onPlace,
+    void Function(String)? onChoose,
+    AltarRelic? relic,
+    bool forAltar = false}) async {
+  final actionContext = context;
   final owner = context.read<CanonicalGameSession>().snapshot?.ownerId;
   if (owner == null) return;
   await showModalBottomSheet<void>(
@@ -655,216 +804,189 @@ Future<void> showCanonicalEggDetails(BuildContext context, String id,
                 .firstOrNull;
             if (egg != null && !forAltar && onPlace == null) {
               return _InventoryEggDetails(
-                  egg: egg, view: view, enabled: enabled);
+                  egg: egg,
+                  view: view,
+                  enabled: enabled,
+                  actionContext: actionContext);
             }
-            return RestoredDetailSheet(
-              content: SizedBox(
-                  width: 380,
-                  child: SingleChildScrollView(
-                      child: egg == null
-                          ? Text(strings.pick(
-                              'This egg has left your inventory.',
-                              'Dit ei zit niet meer in je inventaris.'))
-                          : Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                  Row(children: [
-                                    Container(
-                                        width: 88,
-                                        height: 96,
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                            gradient: AppColors.panelGradient(
-                                                context,
-                                                fallback: const LinearGradient(
-                                                    colors: [
-                                                      Color(0xFFF3EDF9),
-                                                      Color(0xFFE9DEF6)
-                                                    ]))),
-                                        child: CanonicalEggArt(
-                                            egg: egg, height: 80)),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                        child: Text(
-                                            canonicalEggName(strings, egg),
-                                            style: const TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.w800))),
-                                  ]),
-                                  const SizedBox(height: 18),
-                                  _EggDetailLine(
-                                      label: strings.pick(
-                                          'Dragon family', 'Drakenfamilie'),
-                                      value: lineage == null
-                                          ? unknown
-                                          : strings.lineageName(lineage)),
-                                  _EggDetailLine(
-                                      label: strings.pick(
-                                          'Rarity', 'Zeldzaamheid'),
-                                      value: egg.revealedRarity == null
-                                          ? unknown
-                                          : canonicalKnownRarity(
-                                              strings, egg.revealedRarity)),
-                                  _EggDetailLine(
-                                      label: strings.pick(
-                                          'Moral alignment', 'Morele aard'),
-                                      value: switch (MoralAxis.values
-                                          .where((v) =>
-                                              v.name == egg.revealedMoralAxis)
-                                          .firstOrNull) {
-                                        final value? =>
-                                          strings.moralAxisName(value),
-                                        null => unknown
-                                      }),
-                                  _EggDetailLine(
-                                      label: strings.pick(
-                                          'Order alignment', 'Orde-aard'),
-                                      value: switch (LawAxis.values
-                                          .where((v) =>
-                                              v.name == egg.revealedLawAxis)
-                                          .firstOrNull) {
-                                        final value? =>
-                                          strings.lawAxisName(value),
-                                        null => unknown
-                                      }),
-                                  _EggDetailLine(
-                                      label: strings.pick(
-                                          'Incubation', 'Broedtijd'),
-                                      value: strings
-                                          .remainingDuration(egg.incubation)),
-                                  _EggDetailLine(
-                                      label:
-                                          strings.pick('Acquired', 'Verkregen'),
-                                      value: MaterialLocalizations.of(context)
-                                          .formatMediumDate(
-                                              egg.acquiredAt.toLocal())),
-                                  const SizedBox(height: 12),
-                                  Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                          color: const Color(0xFFFAF6EE),
-                                          borderRadius:
-                                              BorderRadius.circular(18)),
-                                      child: Text(
-                                          egg.hint(strings.languageCode),
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                              height: 1.35,
-                                              fontStyle: FontStyle.italic,
-                                              color: Color(0xFF756447)))),
-                                  if (egg.location == 'nest')
-                                    CanonicalNestClock(egg: egg, view: view),
-                                  if (reserved)
-                                    Text(gameConnectionMessage(
-                                        strings, 'egg_reserved')),
-                                  const SizedBox(height: 12),
-                                  CanonicalActionButton(
-                                      key: const Key('canonical-tag-egg'),
-                                      label: strings.pick(
-                                          egg.tagged ? 'Untag egg' : 'Tag egg',
-                                          egg.tagged
-                                              ? 'Tag verwijderen'
-                                              : 'Ei taggen'),
-                                      action: enabled
-                                          ? () =>
-                                              actions.tagEgg(id, !egg.tagged)
-                                          : null),
-                                  if (onPlace != null) ...[
-                                    if (egg.returnBlockReason != null)
-                                      Text(gameConnectionMessage(
-                                          strings, egg.returnBlockReason)),
-                                    FilledButton(
-                                        key: const Key('canonical-place-egg'),
-                                        onPressed: enabled &&
-                                                egg.returnBlockReason == null
-                                            ? () {
-                                                Navigator.pop(context);
-                                                onPlace(id);
-                                              }
-                                            : null,
-                                        child: Text(strings.pick(
-                                            'Place on Altar',
-                                            'Op het Altar plaatsen'))),
-                                  ] else if (egg.location == 'stash')
-                                    CanonicalActionButton(
-                                        key:
-                                            const Key('canonical-incubate-egg'),
-                                        label: strings.pick('Place in nest',
-                                            'In het nest plaatsen'),
-                                        confirmation: strings.pick(
-                                            'Start incubating this egg?',
-                                            'Dit ei uitbroeden in het nest?'),
-                                        action: enabled &&
-                                                !reserved &&
-                                                view.nest == null
-                                            ? () => actions.activateEgg(id)
-                                            : null),
-                                  const Divider(height: 24),
-                                  for (final relic in AltarRelic.values.where(
-                                      (r) => r != AltarRelic.nameweaversQuill))
-                                    if (view.inventory.count(relic) > 0)
-                                      CanonicalActionButton(
-                                          key: Key(
-                                              'canonical-reveal-${relic.name}'),
-                                          label:
-                                              '${relic.label} (${view.inventory.count(relic)})',
-                                          confirmation: strings.pick(
-                                              'Use one ${relic.label} on this egg?',
-                                              'Eén ${relic.label} op dit ei gebruiken?'),
-                                          action: enabled &&
-                                                  !reserved &&
-                                                  !egg.known(relic)
-                                              ? () =>
-                                                  actions.revealEgg(relic, id)
-                                              : null),
-                                  if ((view.inventory.usableRelics[
-                                              MysticRelic.astralLens] ??
-                                          0) >
-                                      0)
-                                    CanonicalActionButton(
-                                        key: const Key(
-                                            'canonical-use-drop-lens'),
-                                        label: strings
-                                            .relicName(MysticRelic.astralLens),
-                                        confirmation: strings.pick(
-                                            'Use one Astral Lens on this egg?',
-                                            'Eén Astral Lens op dit ei gebruiken?'),
-                                        action: enabled &&
-                                                !reserved &&
-                                                egg.revealedRarity == null
-                                            ? () => actions.useLens(id)
-                                            : null),
-                                  if (egg.location == 'nest')
-                                    for (final reduction
-                                        in view.inventory.chronoshards
-                                            .toSet()
-                                            .toList()
-                                          ..sort())
-                                      CanonicalActionButton(
-                                          key: Key(
-                                              'canonical-chronoshard-$reduction'),
-                                          label: 'Chronoshard · $reduction%',
-                                          confirmation: strings.pick(
-                                              'Use this Chronoshard?',
-                                              'Deze Chronoshard gebruiken?'),
-                                          action: enabled &&
-                                                  view.inventory
-                                                      .canUseChronoshard(
-                                                          reduction)
-                                              ? () => actions
-                                                  .useChronoshard(reduction)
-                                              : null),
-                                ]))),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(strings.pick('Close', 'Sluiten')))
-              ],
-            );
+            final block = onPlace != null
+                ? egg?.returnBlockReason
+                : relic != null && egg != null && egg.known(relic)
+                    ? 'already_known'
+                    : reserved
+                        ? 'egg_reserved'
+                        : null;
+            return FractionallySizedBox(
+                heightFactor: .90,
+                child: SafeArea(
+                    top: false,
+                    child: Column(children: [
+                      Expanded(
+                          child: SingleChildScrollView(
+                              padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                              child: egg == null
+                                  ? Text(strings.pick(
+                                      'This egg has left your inventory.',
+                                      'Dit ei zit niet meer in je inventaris.'))
+                                  : Column(children: [
+                                      Row(children: [
+                                        Container(
+                                            width: 88,
+                                            height: 96,
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                gradient:
+                                                    AppColors.panelGradient(
+                                                        context,
+                                                        fallback:
+                                                            const LinearGradient(
+                                                                colors: [
+                                                              Color(0xFFF3EDF9),
+                                                              Color(0xFFE9DEF6)
+                                                            ]))),
+                                            child: CanonicalEggArt(
+                                                egg: egg, height: 80)),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                            child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                              Text(
+                                                  canonicalEggName(
+                                                      strings, egg),
+                                                  style: const TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight:
+                                                          FontWeight.w800)),
+                                              OutlinedButton.icon(
+                                                  key: const Key(
+                                                      'canonical-tag-egg'),
+                                                  onPressed: enabled
+                                                      ? () => runShopAction(
+                                                          context,
+                                                          () => actions.tagEgg(
+                                                              id, !egg.tagged))
+                                                      : null,
+                                                  icon: Icon(egg.tagged
+                                                      ? Icons.label_rounded
+                                                      : Icons
+                                                          .label_outline_rounded),
+                                                  label: Text(egg.tagged
+                                                      ? strings.pick(
+                                                          'Untag egg',
+                                                          'Ei ontaggen')
+                                                      : strings.pick('Tag egg',
+                                                          'Ei taggen'))),
+                                            ])),
+                                      ]),
+                                      const SizedBox(height: 18),
+                                      _EggDetailLine(
+                                          label: strings.pick(
+                                              'Dragon family', 'Drakenfamilie'),
+                                          value: lineage == null
+                                              ? unknown
+                                              : strings.lineageName(lineage)),
+                                      _EggDetailLine(
+                                          label: strings.pick(
+                                              'Rarity', 'Zeldzaamheid'),
+                                          value: egg.revealedRarity == null
+                                              ? unknown
+                                              : canonicalKnownRarity(
+                                                  strings, egg.revealedRarity)),
+                                      _EggDetailLine(
+                                          label: strings.pick(
+                                              'Moral alignment', 'Morele aard'),
+                                          value: switch (MoralAxis.values
+                                              .where((v) =>
+                                                  v.name ==
+                                                  egg.revealedMoralAxis)
+                                              .firstOrNull) {
+                                            final value? =>
+                                              strings.moralAxisName(value),
+                                            null => unknown
+                                          }),
+                                      _EggDetailLine(
+                                          label: strings.pick(
+                                              'Order alignment', 'Orde-aard'),
+                                          value: switch (LawAxis.values
+                                              .where((v) =>
+                                                  v.name == egg.revealedLawAxis)
+                                              .firstOrNull) {
+                                            final value? =>
+                                              strings.lawAxisName(value),
+                                            null => unknown
+                                          }),
+                                      _EggDetailLine(
+                                          label: strings.pick(
+                                              'Incubation', 'Broedtijd'),
+                                          value: strings.remainingDuration(
+                                              egg.incubation)),
+                                      _EggDetailLine(
+                                          label: strings.pick(
+                                              'Acquired', 'Verkregen'),
+                                          value: MaterialLocalizations.of(
+                                                  context)
+                                              .formatMediumDate(
+                                                  egg.acquiredAt.toLocal())),
+                                      const SizedBox(height: 12),
+                                      Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                              color: const Color(0xFFFAF6EE),
+                                              borderRadius:
+                                                  BorderRadius.circular(18)),
+                                          child: Text(
+                                              egg.hint(strings.languageCode),
+                                              key: Key('altar-egg-clue-$id'),
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                  height: 1.35,
+                                                  fontStyle: FontStyle.italic,
+                                                  color: Color(0xFF756447)))),
+                                      const SizedBox(height: 16),
+                                      if (block != null)
+                                        Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 16),
+                                            child: Text(
+                                                gameConnectionMessage(
+                                                    strings, block),
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                    color: Color(0xFF8D5368),
+                                                    height: 1.4))),
+                                    ]))),
+                      Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 10, 24, 18),
+                          child: SizedBox(
+                              width: double.infinity,
+                              child: FilledButton(
+                                  key: Key(onPlace != null
+                                      ? 'canonical-place-egg'
+                                      : 'altar-choose-reviewed-egg'),
+                                  onPressed:
+                                      (onPlace != null || onChoose != null) &&
+                                              (!enabled ||
+                                                  egg == null ||
+                                                  block != null)
+                                          ? null
+                                          : () {
+                                              Navigator.pop(context);
+                                              (onPlace ?? onChoose)?.call(id);
+                                            },
+                                  child: Text(onPlace != null
+                                      ? strings.pick('Place on altar',
+                                          'Plaats op het altaar')
+                                      : onChoose != null
+                                          ? strings.pick(
+                                              'Choose this egg', 'Kies dit ei')
+                                          : strings.pick(
+                                              'Close', 'Sluiten'))))),
+                    ])));
           }));
 }
 

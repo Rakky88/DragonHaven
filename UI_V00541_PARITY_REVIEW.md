@@ -1,4 +1,29 @@
-# v0.06.02 UI and interaction review
+# v0.06.03 UI and interaction review
+
+## Six-agent follow-up against the same v0.05.41 reference
+
+1. Adventures/Trials: original compact active/completed cards, gradients, ready
+   reward rows, run detail sheets and draggable Trial picker with personal bests.
+2. Tower/Dragons/Nest: original draggable collection toolbar, owned-only filters,
+   roaming strip, detail art/fact/XP panels and Trial records; direct nest choice.
+3. Inventory/Altar: original egg review and crafted-relic selection/reveal sheets,
+   mode animation, Lens/Chronoshard/brooch selectors and dragon reveal animation.
+4. Shell/social/Academy: original Academy hero, normalized standings, pupil and
+   mentor selection, graduation confirmation; fixed My Dragons modal wrapper.
+   Conclave rankings, account language and tutorial routes reviewed.
+5. Groups/Shops: compact lobby/active cards and draggable participant details;
+   Shop screens already match historical visuals apart from inactive ad chests.
+6. Performance/navigation: account-scoped connection reuse, transient refresh
+   hidden with existing content, and clocks anchored to confirmed state during
+   optimistic display updates. Swipe and dismissal surfaces reviewed.
+
+These are six separately scoped source comparisons, followed by integration
+tests and device review, not six claims that every possible screen is identical.
+Original UI adapts to large text when necessary. Remaining explicit differences:
+egg Discard has no server command; inventory Wayfinder/Quill open their guarded
+Adventure/Dragon use routes. Mentor lessons-taught text remains absent. Secret
+egg traits/random rewards are never fabricated to fill historical widgets.
+Validation and release evidence are recorded in RELEASE_V0.06.03_VERIFICATION.md.
 
 Reference: GitHub tag v0.05.41, commit
 `5a4a1ef9b9a0e269b89cbeeae2b4cee0d5d07067` (tag verified against origin).

@@ -641,8 +641,9 @@ class _Reward extends StatelessWidget {
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           GameIconSprite(kind, size: 30),
           const SizedBox(width: 7),
-          Text('$value $label',
-              style: const TextStyle(fontWeight: FontWeight.w900)),
+          Flexible(
+              child: Text('$value $label',
+                  style: const TextStyle(fontWeight: FontWeight.w900))),
         ]),
       );
 }
@@ -666,7 +667,8 @@ class _RelicReward extends StatelessWidget {
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Image.asset(relic.assetPath, width: 38, height: 38),
           const SizedBox(width: 7),
-          ConstrainedBox(
+          Flexible(
+              child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 180),
             child: Text(
               label,
@@ -674,7 +676,7 @@ class _RelicReward extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.w900),
             ),
-          ),
+          )),
         ]),
       );
 }

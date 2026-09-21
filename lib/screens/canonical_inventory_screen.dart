@@ -1,3 +1,6 @@
+import 'dart:async';
+import '../models/pet.dart';
+import '../widgets/dragon_art.dart';
 import '../theme/app_theme.dart';
 import '../services/canonical_game_snapshot.dart';
 import '../models/egg_altar.dart';
@@ -127,16 +130,16 @@ class _InventoryContents extends StatelessWidget {
                           relic: relic,
                           owned: view.inventory.count(relic),
                           inventoryOnly: true,
-                          onUse: () => Navigator.push(
-                              context,
-                              MaterialPageRoute<void>(
-                                  builder: (_) => Scaffold(
-                                      appBar: AppBar(title: Text(relic.label)),
-                                      body: relic == AltarRelic.nameweaversQuill
-                                          ? const CanonicalDragonsScreen()
-                                          : const ShopEconomyBoundary(
-                                              child: CanonicalEggList(
-                                                  forAltar: true)))))),
+                          onUse: () => relic == AltarRelic.nameweaversQuill
+                              ? Navigator.push(
+                                  context,
+                                  MaterialPageRoute<void>(
+                                      builder: (_) => Scaffold(
+                                          appBar:
+                                              AppBar(title: Text(relic.label)),
+                                          body:
+                                              const CanonicalDragonsScreen())))
+                              : showCanonicalAltarRelicPicker(context, relic)),
                   for (final relic in MysticRelic.values)
                     if ((view.shop.relics[relic.name] ?? 0) > 0)
                       RestoredRelicCard(
@@ -157,19 +160,7 @@ class _InventoryContents extends StatelessWidget {
                                 : null,
                         canUse: session.canAct &&
                             (view.inventory.usableRelics[relic] ?? 0) > 0,
-                        onUse: () => Navigator.push(
-                            context,
-                            MaterialPageRoute<void>(
-                                builder: (_) => Scaffold(
-                                    appBar: AppBar(
-                                        title: Text(strings.relicName(relic))),
-                                    body: relic == MysticRelic.wayfinderSigil
-                                        ? const CanonicalAdventuresScreen()
-                                        : relic.isEquipable ||
-                                                relic.hasUseAnimation
-                                            ? const CanonicalDragonsScreen()
-                                            : const ShopEconomyBoundary(
-                                                child: CanonicalEggList())))),
+                        onUse: () => _useCanonicalRelic(context, relic),
                       ),
                   for (final entry in view.shop.relics.entries)
                     if (entry.value > 0 &&
@@ -642,4 +633,570 @@ class _InventoryControlChip extends StatelessWidget {
           ],
         ),
       );
+}
+
+Future<void> _useCanonicalRelic(BuildContext context, MysticRelic relic) async {
+  final session = context.read<CanonicalGameSession>();
+  final view = session.snapshot;
+  if (view == null || !session.canAct) return;
+  final actions = CanonicalGameActions(session);
+  final strings = AppStrings.of(context);
+  bool current() =>
+      context.mounted &&
+      session.connection.sessionEpoch == actions.epoch &&
+      session.snapshot?.ownerId == view.ownerId;
+  if (relic == MysticRelic.astralLens) {
+    final eggs = view.eggs
+        .where((egg) =>
+            egg.revealedRarity == null &&
+            !view.inventory.reservedEggIds.contains(egg.id))
+        .toList();
+    if (eggs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(strings.pick('There is no egg with an unknown rarity.',
+              'Er is geen ei waarvan de zeldzaamheid nog onbekend is.'))));
+      return;
+    }
+    final selected = await showModalBottomSheet<String>(
+        context: context,
+        showDragHandle: true,
+        builder: (c) => SafeArea(
+                child: ListView(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 22),
+                    children: [
+                  Text(strings.pick('Reveal which egg?', 'Welk ei onthullen?'),
+                      style: Theme.of(c).textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  for (final egg in eggs)
+                    Card(
+                        child: ListTile(
+                            key: Key('astral-lens-egg-${egg.id}'),
+                            leading: const GameIconSprite(
+                                GameIconKind.mysteriousEgg,
+                                size: 42),
+                            title: Text(egg.location == 'nest'
+                                ? strings.pick(
+                                    'Egg in the nest', 'Ei in het nest')
+                                : strings.pick(
+                                    'Inventory egg', 'Ei in inventaris')),
+                            subtitle: Text(strings.pick(
+                                'Rarity is still hidden',
+                                'Zeldzaamheid is nog verborgen')),
+                            onTap: () => Navigator.pop(c, egg.id))),
+                ])));
+    if (!context.mounted || !current() || selected == null) return;
+    await runShopAction(context, () async {
+      await actions.useLens(selected);
+      if (!context.mounted || !current()) return;
+      final rarity = session.snapshot?.egg(selected)?.revealedRarity;
+      if (rarity == null) return;
+      await showDialog<void>(
+          context: context,
+          builder: (c) => AlertDialog(
+                  icon: Image.asset(relic.assetPath, width: 92, height: 92),
+                  title: Text(
+                      strings.pick('Rarity revealed', 'Zeldzaamheid onthuld')),
+                  content: Text(canonicalKnownRarity(strings, rarity),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w900, fontSize: 20)),
+                  actions: [
+                    FilledButton(
+                        onPressed: () => Navigator.pop(c),
+                        child: Text(strings.pick('Done', 'Klaar')))
+                  ]));
+    });
+    return;
+  }
+  if (relic == MysticRelic.chronoshard) {
+    if (view.nest == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(strings.pick('Place an egg in the rooftop nest first.',
+              'Plaats eerst een ei in het daknest.'))));
+      return;
+    }
+    final values = view.inventory.chronoshards;
+    final selected = await showModalBottomSheet<int>(
+        context: context,
+        showDragHandle: true,
+        builder: (c) => SafeArea(
+                child: ListView(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 22),
+                    children: [
+                  Text(
+                      strings.pick(
+                          'Choose a Chronoshard', 'Kies een Chronoscherf'),
+                      style: Theme.of(c).textTheme.titleLarge),
+                  Text(strings.pick(
+                      'Its percentage was fixed when this relic was found.',
+                      'Het percentage werd vastgelegd toen dit reliek werd gevonden.')),
+                  const SizedBox(height: 8),
+                  for (var index = 0; index < values.length; index++)
+                    Card(
+                        child: ListTile(
+                            key: Key('chronoshard-${values[index]}-$index'),
+                            leading: Image.asset(relic.assetPath,
+                                width: 48, height: 48),
+                            title: Text('${values[index]}%',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w900)),
+                            subtitle: Text(strings.pick(
+                                'Shorten remaining incubation',
+                                'Verkort de resterende broedtijd')),
+                            onTap: () => Navigator.pop(c, values[index]))),
+                ])));
+    if (!context.mounted || !current() || selected == null) return;
+    await runShopAction(context, () async {
+      await actions.useChronoshard(selected);
+      if (!context.mounted || !current()) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(strings.pick(
+              'Remaining incubation shortened by $selected%.',
+              'Resterende broedtijd met $selected% verkort.'))));
+    });
+    return;
+  }
+  if (relic.isEquipable) {
+    const unequip = '__unequip__';
+    final selected = await showModalBottomSheet<String>(
+        context: context,
+        showDragHandle: true,
+        isScrollControlled: true,
+        builder: (c) => FractionallySizedBox(
+            heightFactor: .72,
+            child: SafeArea(
+                child: ListView(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 22),
+                    children: [
+                  Text(strings.relicName(relic),
+                      style: Theme.of(c).textTheme.titleLarge),
+                  Text(strings.relicDescription(relic)),
+                  Text(strings.pick(
+                      'Equipping replaces the dragon’s current brooch.',
+                      'Uitrusten vervangt de huidige broche van de draak.')),
+                  if (view.inventory.equipment.containsKey(relic))
+                    Card(
+                        child: ListTile(
+                            key: Key('${relic.name}-unequip'),
+                            leading: const Icon(Icons.link_off_rounded),
+                            title: Text(strings.pick('Unequip', 'Ontkoppelen')),
+                            onTap: () => Navigator.pop(c, unequip))),
+                  for (final dragon in view.dragons.where((d) => d.owned))
+                    Card(
+                        child: ListTile(
+                            key: Key('${relic.name}-equip-${dragon.id}'),
+                            leading: SizedBox.square(
+                                dimension: 52,
+                                child: DragonArt(
+                                    height: 52,
+                                    animate: false,
+                                    stageKey: dragon.stageKey,
+                                    lineageId: dragon.lineageId,
+                                    evolutionPath: dragon.activeEvolutionPath,
+                                    prismatic: dragon.prismatic,
+                                    sinister: dragon.sinister)),
+                            title: Text(dragon.displayName),
+                            trailing:
+                                view.inventory.equippedOn(dragon.id) == relic
+                                    ? Icon(Icons.check_circle_rounded,
+                                        color: AppColors.eventColor(
+                                            context, AppColors.twilight))
+                                    : const Icon(Icons.chevron_right_rounded),
+                            onTap: () => Navigator.pop(c, dragon.id))),
+                ]))));
+    if (!context.mounted || !current() || selected == null) return;
+    await runShopAction(context,
+        () => actions.equip(relic, selected == unequip ? null : selected));
+    return;
+  }
+  if (relic.hasUseAnimation) {
+    await showCanonicalDragonRelic(context, relic);
+    return;
+  }
+  await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+          builder: (_) => Scaffold(
+              appBar: AppBar(title: Text(strings.relicName(relic))),
+              body: relic == MysticRelic.wayfinderSigil
+                  ? const CanonicalAdventuresScreen()
+                  : const CanonicalDragonsScreen())));
+}
+
+Future<void> showCanonicalDragonRelic(
+  BuildContext context,
+  MysticRelic relic,
+) async {
+  final session = context.read<CanonicalGameSession>();
+  final view = session.snapshot;
+  if (view == null || !session.canAct) return;
+  final actions = CanonicalGameActions(session);
+  final strings = AppStrings.of(context);
+  final eligibleDragons = view.dragons
+      .where((d) => d.owned)
+      .where((dragon) => !dragon.knows(relic))
+      .toList(growable: false);
+  if (eligibleDragons.isEmpty) {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        scrollable: true,
+        icon: Image.asset(relic.assetPath, width: 82, height: 82),
+        title: Text(
+            strings.pick('Nothing left to reveal', 'Niets meer te onthullen')),
+        content: Text(strings.pick(
+          'This Relic has already revealed its secret for every dragon you own. Hatch or collect another dragon to use it.',
+          'Dit Reliek heeft zijn geheim al onthuld voor elke draak die je bezit. Laat een ander ei uitkomen of verzamel een nieuwe draak om het te gebruiken.',
+        )),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(strings.pick('Understood', 'Begrepen')),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
+  final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          scrollable: true,
+          icon: Image.asset(relic.assetPath, width: 82, height: 82),
+          title: Text(strings.pick(
+            'Use this Relic?',
+            'Dit Reliek gebruiken?',
+          )),
+          content: Text(strings.pick(
+            'This is a consumable item. It disappears after revealing one dragon. Continue?',
+            'Dit is een verbruiksitem. Het verdwijnt nadat het één draak heeft onthuld. Doorgaan?',
+          )),
+          actions: [
+            TextButton(
+              key: const Key('cancel-relic-use'),
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(strings.tr('cancel')),
+            ),
+            FilledButton(
+              key: const Key('confirm-relic-use'),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(strings.pick('Continue', 'Doorgaan')),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+  if (!confirmed || !context.mounted) return;
+  final selected = await showModalBottomSheet<CanonicalDragonView>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (sheetContext) => FractionallySizedBox(
+      heightFactor: .78,
+      child: SafeArea(
+        child: ListView(
+          key: const Key('relic-dragon-picker-scroll'),
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 24),
+          children: [
+            Row(children: [
+              Image.asset(relic.assetPath, width: 72, height: 72),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.pick('Choose a dragon', 'Kies een draak'),
+                      style: Theme.of(sheetContext).textTheme.titleLarge,
+                    ),
+                    Text(
+                      strings.relicName(relic),
+                      style: const TextStyle(color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ]),
+            const SizedBox(height: 8),
+            for (final dragon in view.dragons.where((d) => d.owned))
+              Card(
+                child: ListTile(
+                  key: Key('relic-dragon-choice-${dragon.id}'),
+                  enabled: !dragon.knows(relic),
+                  leading: SizedBox.square(
+                    dimension: 58,
+                    child: DragonArt(
+                      height: 58,
+                      animate: false,
+                      stageKey: dragon.stageKey,
+                      lineageId: dragon.lineageId,
+                      evolutionPath: dragon.activeEvolutionPath,
+                      prismatic: dragon.prismatic,
+                      sinister: dragon.sinister,
+                    ),
+                  ),
+                  title: Text(
+                    dragon.displayName,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  subtitle: Text(
+                    dragon.knows(relic)
+                        ? strings.pick('Already revealed', 'Al onthuld')
+                        : strings.pick(
+                            'Secret still hidden', 'Geheim nog verborgen'),
+                  ),
+                  trailing: dragon.knows(relic)
+                      ? Icon(Icons.check_circle_rounded,
+                          color:
+                              AppColors.eventColor(context, AppColors.twilight))
+                      : const Icon(Icons.chevron_right_rounded),
+                  onTap: dragon.knows(relic)
+                      ? null
+                      : () => Navigator.pop(sheetContext, dragon),
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+  if (selected == null || !context.mounted) return;
+  await runShopAction(context, () async {
+    await actions.useRelic(relic, selected.id);
+    if (!context.mounted ||
+        session.connection.sessionEpoch != actions.epoch ||
+        session.snapshot?.ownerId != view.ownerId) {
+      return;
+    }
+    final dragon = session.snapshot?.dragon(selected.id);
+    if (dragon == null || !dragon.knows(relic)) return;
+    await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) =>
+            _AnimatedRelicRevealDialog(relic: relic, dragon: dragon));
+  });
+}
+
+class _AnimatedRelicRevealDialog extends StatefulWidget {
+  const _AnimatedRelicRevealDialog({
+    required this.relic,
+    required this.dragon,
+  });
+
+  final MysticRelic relic;
+  final CanonicalDragonView dragon;
+
+  @override
+  State<_AnimatedRelicRevealDialog> createState() =>
+      _AnimatedRelicRevealDialogState();
+}
+
+class _AnimatedRelicRevealDialogState
+    extends State<_AnimatedRelicRevealDialog> {
+  Timer? _timer;
+  var _frame = 0;
+  var _revealed = false;
+  var _precached = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_precached) return;
+    _precached = true;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _frame = 19;
+      _revealed = true;
+      return;
+    }
+    for (var frame = 0;
+        frame < (widget.relic.usesFrameSequence ? 20 : 1);
+        frame++) {
+      precacheImage(
+          AssetImage(widget.relic.animationFrameAsset(frame)), context);
+    }
+    _timer = Timer.periodic(const Duration(milliseconds: 120), (timer) {
+      if (!mounted) return;
+      if (_frame >= 19) {
+        timer.cancel();
+        Future<void>.delayed(const Duration(milliseconds: 260), () {
+          if (mounted) setState(() => _revealed = true);
+        });
+        return;
+      }
+      setState(() => _frame++);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _finishAnimation() {
+    if (_revealed) return;
+    _timer?.cancel();
+    setState(() {
+      _frame = 19;
+      _revealed = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final value = switch (widget.relic) {
+      MysticRelic.sparkAstrolabe =>
+        "${strings.pick('Dragon Spark', 'Drakenvonk')}: +${widget.dragon.dragonSpark}",
+      MysticRelic.moralPrism => strings
+          .moralAxisName(MoralAxis.values.byName(widget.dragon.moralAxis!)),
+      MysticRelic.orderCompass =>
+        strings.lawAxisName(LawAxis.values.byName(widget.dragon.lawAxis!)),
+      MysticRelic.soulMirror =>
+        widget.dragon.personality!.map(strings.personality).join(' · '),
+      MysticRelic.astralLens ||
+      MysticRelic.chronoshard ||
+      MysticRelic.wayfinderSigil ||
+      MysticRelic.twinstarBrooch ||
+      MysticRelic.emberheartBrooch ||
+      MysticRelic.moonweaveBrooch ||
+      MysticRelic.soulbloomBrooch =>
+        '',
+    };
+    return Dialog.fullscreen(
+      backgroundColor: AppColors.eventColor(context, const Color(0xFF170E32)),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _finishAnimation,
+        child: SafeArea(
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(0, -.25),
+                radius: 1.2,
+                colors: [Color(0xFF6343A0), Color(0xFF170E32)],
+              ),
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
+              child: Column(
+                children: [
+                  SizedBox.square(
+                    dimension: 284,
+                    child: widget.relic == MysticRelic.sparkAstrolabe
+                        ? AnimatedScale(
+                            scale: _revealed ? 1 : .84 + _frame / 19 * .16,
+                            duration: const Duration(milliseconds: 120),
+                            child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 120),
+                                decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                          color: const Color(0xFFDAA7FF)
+                                              .withValues(
+                                                  alpha:
+                                                      .08 + _frame / 19 * .20),
+                                          blurRadius: 35 + _frame * 2,
+                                          spreadRadius: 4)
+                                    ]),
+                                child: Image.asset(widget.relic.assetPath,
+                                    fit: BoxFit.contain,
+                                    filterQuality: FilterQuality.high)))
+                        : AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 115),
+                            child: Image.asset(
+                              widget.relic.animationFrameAsset(_frame),
+                              key: ValueKey(_frame),
+                              fit: BoxFit.contain,
+                              gaplessPlayback: true,
+                              filterQuality: FilterQuality.high,
+                            ),
+                          ),
+                  ),
+                  AnimatedOpacity(
+                    opacity: _revealed ? 1 : 0,
+                    duration: const Duration(milliseconds: 520),
+                    child: IgnorePointer(
+                      ignoring: !_revealed,
+                      child: Column(
+                        children: [
+                          Text(
+                            strings.relicName(widget.relic),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xFFFFE39A),
+                              fontSize: 25,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          SizedBox.square(
+                            dimension: 112,
+                            child: DragonArt(
+                              height: 112,
+                              animate: true,
+                              stageKey: widget.dragon.stageKey,
+                              lineageId: widget.dragon.lineageId,
+                              evolutionPath: widget.dragon.activeEvolutionPath,
+                              prismatic: widget.dragon.prismatic,
+                              sinister: widget.dragon.sinister,
+                            ),
+                          ),
+                          Text(
+                            widget.dragon.displayName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: .1),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: const Color(0x66FFE39A),
+                              ),
+                            ),
+                            child: Text(
+                              value,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton(
+                              key: const Key('close-relic-reveal'),
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(strings.pick(
+                                'Remember this',
+                                'Onthoud dit',
+                              )),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

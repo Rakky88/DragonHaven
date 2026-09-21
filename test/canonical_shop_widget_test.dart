@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:dragon_haven/models/chest.dart';
+import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
 import 'package:dragon_haven/screens/canonical_eggs.dart';
@@ -131,7 +132,7 @@ void main() {
   }
 
   testWidgets(
-      'ordinary shop waits for server stock, survives lost reply and never spends the local save',
+      'ordinary shop predicts stock, survives lost reply and never spends the local save',
       (tester) async {
     await prepare(tester);
     final localBefore = jsonEncode(legacy.exportState());
@@ -147,7 +148,8 @@ void main() {
     await tester.tap(buy);
     await tester.pump();
     expect(tester.widget<FilledButton>(buy).onPressed, isNull);
-    expect(session.snapshot!.coins, coins);
+    expect(session.snapshot!.coins, coins - 500);
+    expect(session.confirmedSnapshot!.coins, coins);
     held.complete();
     await waitForCommand(tester);
     expect(find.textContaining('We could not confirm'), findsWidgets);
@@ -295,8 +297,38 @@ void main() {
     expect(jsonEncode(legacy.exportState()), localBefore);
     expect(tester.takeException(), isNull);
   });
+  testWidgets('long relic reward labels fit compact screens at large text',
+      (tester) async {
+    await prepare(tester);
+    await mount(
+        tester,
+        Builder(
+            builder: (context) => TextButton(
+                onPressed: () => showChestReveal(context, ChestTier.wooden,
+                    openChest: () async =>
+                        ChestRewardBundle(tier: ChestTier.wooden, rewards: [
+                          for (final relic in MysticRelic.values)
+                            ChestReward(
+                                tier: ChestTier.wooden,
+                                coins: 1234,
+                                gems: 20,
+                                eggFound: false,
+                                relicFound: relic)
+                        ])),
+                child: const Text('Preview reward'))),
+        locale: 'nl',
+        scale: 1.35);
+    await tester.tap(find.text('Preview reward'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byKey(const Key('chest-reveal-tap-target')));
+    for (var i = 0; i < 32; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byKey(const Key('chest-rewards')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
-      'egg collection restores tags and waits for server view preference at large text',
+      'egg collection restores tags and previews its saved view preference at large text',
       (tester) async {
     await prepare(tester);
     final localBefore = jsonEncode(legacy.exportState());
@@ -323,8 +355,11 @@ void main() {
     server.hold = held.future;
     await tester.tap(find.byKey(const Key('egg-inventory-view-toggle')));
     await tester.pump();
+    expect(session.snapshot!.profile.preferences['eggInventoryViewMode'],
+        before == 'list' ? 'tiles' : 'list');
     expect(
-        session.snapshot!.profile.preferences['eggInventoryViewMode'], before);
+        session.confirmedSnapshot!.profile.preferences['eggInventoryViewMode'],
+        before);
     held.complete();
     await waitForCommand(tester);
     expect(session.snapshot!.profile.preferences['eggInventoryViewMode'],

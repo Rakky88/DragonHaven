@@ -101,13 +101,14 @@ class _CanonicalAltarScreenState extends State<CanonicalAltarScreen> {
         egg.returnBlockReason == null;
     return ListView(
         key: const Key('canonical-altar-list'),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
         children: [
           Row(children: [
             Expanded(
                 child: Text(
                     strings.pick('Return to the Weave', 'Terug naar de Weave'),
-                    style: Theme.of(context).textTheme.titleLarge)),
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.w800))),
             IconButton(
                 tooltip: strings.pick('How it works', 'Hoe het werkt'),
                 onPressed: () => showDialog<void>(
@@ -116,8 +117,8 @@ class _CanonicalAltarScreenState extends State<CanonicalAltarScreen> {
                             title: const Text('Egg Altar'),
                             content: SingleChildScrollView(
                                 child: Text(strings.pick(
-                                    'Choose an egg and read its details before placing it on the Altar. Return it to the Weave to receive crafting materials. Tagged eggs, Special eggs and eggs in the nest are protected. Sinister eggs need an extra confirmation. Use materials to craft relics, then select an egg to reveal information or use a Quill to rename a dragon.',
-                                    'Kies een ei en lees de details voordat je het op het Altar plaatst. Geef het terug aan de Weave voor materialen om relieken te maken. Getagde eieren, Special-eieren en eieren in het nest zijn beschermd. Sinister-eieren vragen een extra bevestiging. Maak relieken met je materialen en kies daarna een ei om informatie te onthullen, of gebruik een Quill om een draak te hernoemen.'))),
+                                    'Choose an egg and read its details before placing it on the altar. If you want to keep an egg, tag it to protect it. When you are ready, hold Return to the Weave: the egg leaves your inventory permanently and becomes materials you can use to craft relics. Special eggs, tagged eggs, eggs in the nest and eggs reserved for a trade are protected. Returning a Sinister egg asks for one extra confirmation. Open Craft to choose a relic, check its materials and make it. Use your crafted relics to learn more about an egg or give a dragon a new name.',
+                                    'Kies een ei en bekijk eerst de informatie voordat je het op het altaar plaatst. Wil je een ei bewaren, tag het dan om het te beschermen. Houd Return to the Weave ingedrukt wanneer je klaar bent: het ei verdwijnt definitief uit je inventaris en wordt omgezet in materialen waarmee je relics kunt maken. Special-eieren, getagde eieren, eieren in het nest en eieren die voor een ruil zijn gereserveerd zijn beschermd. Een Sinister-ei teruggeven vraagt om een extra bevestiging. Open Maken, kies een relic, bekijk de benodigde materialen en maak hem. Gebruik je gemaakte relics om meer over een ei te ontdekken of een draak een nieuwe naam te geven.'))),
                             actions: [
                               TextButton(
                                   onPressed: () => Navigator.pop(context),
@@ -125,13 +126,20 @@ class _CanonicalAltarScreenState extends State<CanonicalAltarScreen> {
                             ])),
                 icon: const Icon(Icons.info_outline))
           ]),
-          const SizedBox(height: 12),
-          SizedBox(
-              height: _crafting ? 154 : 238,
-              child: EggAltarScene(
-                  eggArtwork: visibleEgg == null
-                      ? null
-                      : CanonicalEggArt(egg: visibleEgg, height: 100))),
+          AnimatedSize(
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeInOutCubic,
+              child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 450),
+                  child: SizedBox(
+                      key: ValueKey(visibleEgg?.id),
+                      height: _crafting ? 154 : 238,
+                      width: double.infinity,
+                      child: EggAltarScene(
+                          eggArtwork: visibleEgg == null
+                              ? null
+                              : CanonicalEggArt(
+                                  egg: visibleEgg, height: 100))))),
           const SizedBox(height: 14),
           Card(
               margin: EdgeInsets.zero,
@@ -204,10 +212,12 @@ class _CanonicalAltarScreenState extends State<CanonicalAltarScreen> {
                       final confirmed = await showDialog<bool>(
                           context: context,
                           builder: (context) => AlertDialog(
-                                  title: const Text('Sinister'),
+                                  title: Text(strings.pick(
+                                      'Return a Sinister Egg?',
+                                      'Sinister-ei teruggeven?')),
                                   content: Text(strings.pick(
-                                      'This is a Sinister egg. Confirm that you want to return it.',
-                                      'Dit is een Sinister-ei. Bevestig dat je het wilt teruggeven.')),
+                                      'This permanently returns your Sinister Egg to the Weave. This cannot be undone.',
+                                      'Dit geeft je Sinister-ei definitief terug aan de Weave. Dit kan niet ongedaan worden gemaakt.')),
                                   actions: [
                                     TextButton(
                                         onPressed: () =>
@@ -218,8 +228,8 @@ class _CanonicalAltarScreenState extends State<CanonicalAltarScreen> {
                                         onPressed: () =>
                                             Navigator.pop(context, true),
                                         child: Text(strings.pick(
-                                            'Return to the Weave',
-                                            'Terug naar de Weave')))
+                                            'Return Sinister Egg',
+                                            'Sinister-ei teruggeven')))
                                   ]));
                       if (confirmed != true || !mounted) return;
                     }
@@ -242,16 +252,15 @@ class _CanonicalAltarScreenState extends State<CanonicalAltarScreen> {
                           view.inventory.materials.covers(relic.cost)
                       ? () => runShopAction(context, () => actions.craft(relic))
                       : null,
-                  onUse: view.inventory.count(relic) > 0
-                      ? () => Navigator.push(
-                          context,
-                          MaterialPageRoute<void>(
-                              builder: (_) => Scaffold(
-                                  appBar: AppBar(title: Text(relic.label)),
-                                  body: relic == AltarRelic.nameweaversQuill
-                                      ? const CanonicalDragonsScreen()
-                                      : const ShopEconomyBoundary(
-                                          child: CanonicalEggList()))))
+                  onUse: session.canAct && view.inventory.count(relic) > 0
+                      ? () => relic == AltarRelic.nameweaversQuill
+                          ? Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(
+                                  builder: (_) => Scaffold(
+                                      appBar: AppBar(title: Text(relic.label)),
+                                      body: const CanonicalDragonsScreen())))
+                          : showCanonicalAltarRelicPicker(context, relic)
                       : null),
         ]);
   }

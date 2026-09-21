@@ -20,7 +20,11 @@ enum CanonicalGameAuthority { shadow, server }
 /// saved game: an unknown lineage is null, never a guessed DragonEgg/Pet.
 class CanonicalGameSnapshot {
   CanonicalGameSnapshot._(this._wire, this.eggs, this.shop, this.dragons,
-      this.inventory, this.adventures, this.house);
+      this.inventory, this.adventures, this.house,
+      {this.isSpeculative = false});
+
+  /// A temporary display, never an authenticated state or a disk-cache entry.
+  final bool isSpeculative;
   final Map<String, dynamic> _wire;
   final List<CanonicalEggView> eggs;
   final CanonicalShopView shop;
@@ -77,8 +81,25 @@ class CanonicalGameSnapshot {
 
   /// No application path may treat a shadow copy as live player inventory.
   bool get canApplyToLiveGame =>
-      authorityMode == CanonicalGameAuthority.server.name;
-  Map<String, dynamic> toJson() => _wire;
+      !isSpeculative && authorityMode == CanonicalGameAuthority.server.name;
+  Map<String, dynamic> toJson() {
+    if (isSpeculative) {
+      throw StateError('A pending display cannot be persisted');
+    }
+    return _wire;
+  }
+
+  /// Runs the normal public-schema validation, but retains an explicit marker
+  /// so a prediction cannot cross the authenticated cache/command boundary.
+  CanonicalGameSnapshot preview(Map<String, dynamic> data) {
+    if (isSpeculative) throw StateError('Cannot predict from a prediction');
+    final parsed = CanonicalGameSnapshot.parse({..._wire, 'data': data},
+        expectedOwner: ownerId,
+        expectedAuthority: CanonicalGameAuthority.values.byName(authorityMode));
+    return CanonicalGameSnapshot._(parsed._wire, parsed.eggs, parsed.shop,
+        parsed.dragons, parsed.inventory, parsed.adventures, parsed.house,
+        isSpeculative: true);
+  }
 
   factory CanonicalGameSnapshot.parse(Object? value,
       {required String expectedOwner,
@@ -571,6 +592,7 @@ class CanonicalDragonView implements TrialDragon {
     }
     schoolAttempts = CanonicalShopView._counts(_data['dragonSchoolAttempts']);
     schoolStars = CanonicalShopView._counts(_data['dragonSchoolStars']);
+    schoolRecords = CanonicalShopView._counts(_data['dragonSchoolRecords']);
     for (final counts in [schoolAttempts, schoolStars]) {
       if (counts.keys.any((id) => !dragonSchoolLessonIds.contains(id)) ||
           counts.values.any((n) => n > 3)) {
@@ -632,7 +654,10 @@ class CanonicalDragonView implements TrialDragon {
     personality = traits == null ? null : CanonicalShopView._ids(traits);
   }
   final Map<String, dynamic> _data;
-  late final Map<String, int> schoolAttempts, schoolStars, trialHighScores;
+  late final Map<String, int> schoolAttempts,
+      schoolStars,
+      schoolRecords,
+      trialHighScores;
   late final Map<String, int> training;
   late final Set<String> highlighted;
   late final Set<String>? personality;

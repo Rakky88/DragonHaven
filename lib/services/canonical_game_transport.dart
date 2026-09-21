@@ -14,7 +14,8 @@ import 'canonical_account_handoff.dart';
 
 /// Authenticated transport pinned to an explicitly selected app environment. No service key,
 /// raw save, caller-owned clock or secret seed is ever present in this client.
-/// Each request owns its HTTP client so a timeout can actually close the socket.
+/// A request leases an exclusive HTTP client so a timeout can close its socket.
+/// Successful sequential requests reuse one idle client within the same session.
 class CanonicalGameTransport implements CanonicalGameConnection {
   CanonicalGameTransport.staging(SupabaseClient authClient, OnlineConfig config,
       {http.Client Function()? httpClientFactory,
@@ -54,10 +55,12 @@ class CanonicalGameTransport implements CanonicalGameConnection {
           event.event == AuthChangeEvent.signedOut) {
         _lastOwner = owner;
         _epoch++;
+        _closeClients();
         if (!_changes.isClosed) _changes.add(_epoch);
       }
     }, onError: (Object _, StackTrace __) {
       _epoch++;
+      _closeClients();
       if (!_changes.isClosed) _changes.add(_epoch);
     });
   }
@@ -75,6 +78,19 @@ class CanonicalGameTransport implements CanonicalGameConnection {
   bool _disposed = false;
   Future<void>? _refresh;
   final _activeClients = <http.Client>{};
+  http.Client? _idleClient;
+
+  void _closeClients() {
+    final clients = <http.Client>{
+      ..._activeClients,
+      if (_idleClient != null) _idleClient!
+    };
+    _activeClients.clear();
+    _idleClient = null;
+    for (final client in clients) {
+      client.close();
+    }
+  }
 
   @override
   String? get currentOwner => _disposed ||
@@ -234,6 +250,7 @@ class CanonicalGameTransport implements CanonicalGameConnection {
     }
 
     http.Client? client;
+    var reusable = false;
     try {
       Future<CanonicalGameHttpReply> perform() async {
         requireSession();
@@ -253,7 +270,8 @@ class CanonicalGameTransport implements CanonicalGameConnection {
         if (bytes.length > 8192) {
           throw const CanonicalGameException('game_request_invalid');
         }
-        client = _clientFactory();
+        client = _idleClient ?? _clientFactory();
+        _idleClient = null;
         _activeClients.add(client!);
         final path = accountStatus
             ? '/rest/v1/rpc/get_my_server_gameplay_status'
@@ -293,7 +311,9 @@ class CanonicalGameTransport implements CanonicalGameConnection {
         return CanonicalGameHttpReply(response.statusCode, decoded);
       }
 
-      return await perform().timeout(timeout);
+      final reply = await perform().timeout(timeout);
+      reusable = true;
+      return reply;
     } on CanonicalGameException {
       rethrow;
     } on Object {
@@ -301,8 +321,18 @@ class CanonicalGameTransport implements CanonicalGameConnection {
       throw const CanonicalGameException('game_command_unavailable');
     } finally {
       finished = true;
-      client?.close();
-      _activeClients.remove(client);
+      final leased = client;
+      if (leased != null && _activeClients.remove(leased)) {
+        if (reusable &&
+            !_disposed &&
+            currentOwner == owner &&
+            _epoch == epoch &&
+            _idleClient == null) {
+          _idleClient = leased;
+        } else {
+          leased.close();
+        }
+      }
     }
   }
 
@@ -310,10 +340,7 @@ class CanonicalGameTransport implements CanonicalGameConnection {
   Future<void> dispose() async {
     _disposed = true;
     _epoch++;
-    for (final client in _activeClients.toList()) {
-      client.close();
-    }
-    _activeClients.clear();
+    _closeClients();
     await _auth.cancel();
     await _changes.close();
   }

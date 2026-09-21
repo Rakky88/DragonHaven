@@ -1,5 +1,22 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## v0.06.03 UI parity and response time
+
+Six scoped agent reviews against v0.05.41 restored additional original screens
+and interaction details (UI_V00541_PARITY_REVIEW.md). Deterministic public changes
+now have a memory-only preview, separate from the confirmed snapshot. The cache
+rejects predictions, commands retain their durable request/revision fence, and
+failure restores confirmed display. Duplicate economic actions cannot spend a
+prediction. Hidden loot and DNA remain server-owned. Confirmed clock anchors
+prevent countdowns jumping backward when predictions appear or roll back.
+
+Successful sequential requests reuse an account-private HTTP client. Concurrent
+requests lease separate connections; errors/timeouts retire their client and
+account changes close all connections. Routine background reads no longer flash
+reconnect content. No database migrations, ruleset changes, runtime switches or
+player-account mutations are part of this release. Release validation and live
+server checks are tracked in RELEASE_V0.06.03_VERIFICATION.md.
+
 ## Prepared after v0.05.42: startup logo and notification routing
 
 The server-check screen now matches the white native launch screen, using the

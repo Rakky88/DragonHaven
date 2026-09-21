@@ -1,4 +1,3 @@
-import '../widgets/restored_collection_cards.dart';
 import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +15,7 @@ import '../widgets/canonical_game_controls.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/expertise_score_badge.dart';
+import '../widgets/dragon_trial_records.dart';
 import '../widgets/shop_economy_scope.dart';
 
 String canonicalDragonName(AppStrings strings, CanonicalDragonView dragon) {
@@ -36,16 +36,21 @@ String _stageName(AppStrings strings, DragonStage stage) =>
     });
 
 class CanonicalDragonArt extends StatelessWidget {
-  const CanonicalDragonArt({super.key, required this.dragon, this.height = 80});
+  const CanonicalDragonArt(
+      {super.key,
+      required this.dragon,
+      this.height = 80,
+      this.animate = false});
   final CanonicalDragonView dragon;
   final double height;
+  final bool animate;
   @override
   Widget build(BuildContext context) =>
       !dragonLineages.any((l) => l.id == dragon.lineageId)
           ? SizedBox(height: height, child: const Icon(Icons.help_outline))
           : DragonArt(
               height: height,
-              animate: false,
+              animate: animate,
               lineageId: dragon.lineageId,
               stageKey: switch (dragon.stage) {
                 DragonStage.hatchling => 'spark',
@@ -70,195 +75,491 @@ class _DragonList extends StatefulWidget {
   State<_DragonList> createState() => _DragonListState();
 }
 
+enum _DragonCollectionView { gallery, compact }
+
+enum _DragonSortMode { name, acquiredAt, rarity }
+
 class _DragonListState extends State<_DragonList> {
-  final _stages = <DragonStage>{};
-  final _rarities = <String>{};
-  bool _spectral = false;
+  _DragonCollectionView _view = _DragonCollectionView.gallery;
+  _DragonSortMode _sortMode = _DragonSortMode.acquiredAt;
+  bool _sortDescending = true;
+  final Set<String> _formFilters = {};
+  final Set<String> _rarityFilters = {};
+  bool _spectralOnly = false;
+  bool _preferencesLoaded = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_preferencesLoaded) return;
+    final game = context.read<CanonicalGameSession>().snapshot!;
+    _view = _DragonCollectionView.values.firstWhere(
+      (value) => value.name == game.profile.preferences['myDragonsViewMode'],
+      orElse: () => _DragonCollectionView.gallery,
+    );
+    _sortMode = _DragonSortMode.values.firstWhere(
+      (value) => value.name == game.profile.preferences['myDragonsSortMode'],
+      orElse: () => _DragonSortMode.acquiredAt,
+    );
+    _sortDescending =
+        game.profile.preferences['myDragonsSortDescending'] == true;
+    _preferencesLoaded = true;
+  }
+
+  String _formKey(CanonicalDragonView dragon) => switch (dragon.stage) {
+        DragonStage.hatchling => 'hatchling',
+        DragonStage.wyrmling => 'wyrmling',
+        DragonStage.ascended => dragon.path,
+        DragonStage.egg => 'egg',
+      };
+
+  String _rarityKey(CanonicalDragonView dragon) => dragon.sinister
+      ? 'infernal'
+      : dragonLineages.firstWhere((l) => l.id == dragon.lineageId).rarity.name;
+
+  List<CanonicalDragonView> _filteredDragons(
+          Iterable<CanonicalDragonView> source) =>
+      source
+          .where(
+            (dragon) =>
+                (_formFilters.isEmpty ||
+                    _formFilters.contains(_formKey(dragon))) &&
+                (_rarityFilters.isEmpty ||
+                    _rarityFilters.contains(_rarityKey(dragon))) &&
+                (!_spectralOnly || dragon.spectral),
+          )
+          .toList(growable: false);
+
+  List<CanonicalDragonView> _sortedDragons(
+      Iterable<CanonicalDragonView> source) {
+    final dragons = source.toList(growable: false);
+    dragons.sort((a, b) {
+      final comparison = switch (_sortMode) {
+        _DragonSortMode.name => canonicalDragonName(AppStrings.of(context), a)
+            .toLowerCase()
+            .compareTo(
+                canonicalDragonName(AppStrings.of(context), b).toLowerCase()),
+        _DragonSortMode.acquiredAt => a.acquiredAt.compareTo(b.acquiredAt),
+        _DragonSortMode.rarity => _rarityRank(a).compareTo(_rarityRank(b)),
+      };
+      final stable = comparison != 0
+          ? comparison
+          : canonicalDragonName(AppStrings.of(context), a)
+              .toLowerCase()
+              .compareTo(
+                  canonicalDragonName(AppStrings.of(context), b).toLowerCase());
+      return _sortDescending ? -stable : stable;
+    });
+    return dragons;
+  }
+
+  int _rarityRank(CanonicalDragonView dragon) => dragon.sinister
+      ? DragonRarity.values.length
+      : dragonLineages.firstWhere((l) => l.id == dragon.lineageId).rarity.index;
+
+  String _sortLabel(AppStrings strings) => switch (_sortMode) {
+        _DragonSortMode.name => strings.pick('Name', 'Naam'),
+        _DragonSortMode.acquiredAt => strings.pick('Received', 'Ontvangen'),
+        _DragonSortMode.rarity => strings.pick('Rarity', 'Zeldzaamheid'),
+      };
+
+  void _selectSort(_DragonSortMode value) {
+    setState(() {
+      if (_sortMode == value) {
+        _sortDescending = !_sortDescending;
+      } else {
+        _sortMode = value;
+        _sortDescending = value != _DragonSortMode.name;
+      }
+    });
+    _saveCollectionPreferences();
+  }
+
+  void _saveCollectionPreferences() {
+    final session = context.read<CanonicalGameSession>();
+    runShopAction(
+        context,
+        () => CanonicalGameActions(session).setPreferences({
+              'myDragonsViewMode': _view.name,
+              'myDragonsSortMode': _sortMode.name,
+              'myDragonsSortDescending': _sortDescending,
+            }));
+  }
+
+  String _formLabel(AppStrings strings, String key) => switch (key) {
+        'hatchling' => strings.pick('Hatchling', 'Jong'),
+        'wyrmling' => 'Wyrmling',
+        'might' => strings.pick('Might', 'Kracht'),
+        'arcana' => 'Arcana',
+        'spirit' => strings.pick('Spirit', 'Geest'),
+        'mastery' => strings.pick('Mastery', 'Meesterschap'),
+        _ => key,
+      };
+
+  String _rarityLabel(AppStrings strings, String key) {
+    if (key == 'infernal') return strings.pick('Infernal', 'Infernaal');
+    final rarity = DragonRarity.values.firstWhere((value) => value.name == key);
+    return strings.lineageRarity(
+      dragonLineages.firstWhere((lineage) => lineage.rarity == rarity),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final view = context.watch<CanonicalGameSession>().snapshot!;
+    final game = context.watch<CanonicalGameSession>().snapshot!;
     final strings = AppStrings.of(context);
-    final session = context.read<CanonicalGameSession>();
-    final prefs = view.profile.preferences;
-    final compact = prefs['myDragonsViewMode'] == 'compact';
-    final descending = prefs['myDragonsSortDescending'] == true;
-    final sort = prefs['myDragonsSortMode'] as String;
-    final dragons = view.dragons
-        .where((d) =>
-            d.owned &&
-            (_stages.isEmpty || _stages.contains(d.stage)) &&
-            (_rarities.isEmpty ||
-                _rarities.contains(dragonLineages
-                    .firstWhere((l) => l.id == d.lineageId)
-                    .rarity
-                    .name)) &&
-            (!_spectral || d.spectral))
-        .toList()
-      ..sort((a, b) {
-        final compared = switch (sort) {
-          'name' => canonicalDragonName(strings, a)
-              .toLowerCase()
-              .compareTo(canonicalDragonName(strings, b).toLowerCase()),
-          'rarity' => dragonLineages
-              .firstWhere((l) => l.id == a.lineageId)
-              .rarity
-              .index
-              .compareTo(dragonLineages
-                  .firstWhere((l) => l.id == b.lineageId)
-                  .rarity
-                  .index),
-          _ => a.acquiredAt.compareTo(b.acquiredAt),
-        };
-        return compared == 0
-            ? a.id.compareTo(b.id)
-            : descending
-                ? -compared
-                : compared;
-      });
-    void change(Map<String, dynamic> values) => runShopAction(
-        context, () => CanonicalGameActions(session).setPreferences(values));
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      Text(strings.pick('My dragons', 'Mijn draken'),
-          style: Theme.of(context).textTheme.titleLarge),
-      const SizedBox(height: 12),
-      Row(children: [
-        Expanded(
-            child: PopupMenuButton<String>(
-                tooltip: strings.pick(
-                    'Change dragon order', 'Volgorde van draken wijzigen'),
-                onSelected: session.canAct
-                    ? (value) => change({'myDragonsSortMode': value})
-                    : null,
-                itemBuilder: (_) => [
-                      for (final entry in {
-                        'acquiredAt': strings.pick('Received', 'Ontvangen'),
-                        'name': strings.pick('Name', 'Naam'),
-                        'rarity': strings.pick('Rarity', 'Zeldzaamheid')
-                      }.entries)
-                        PopupMenuItem(
-                            value: entry.key, child: Text(entry.value)),
-                    ],
-                child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFFF1ECFB),
-                        borderRadius: BorderRadius.circular(99)),
-                    child: Text(
-                        switch (sort) {
-                          'name' => strings.pick('Name', 'Naam'),
-                          'rarity' => strings.pick('Rarity', 'Zeldzaamheid'),
-                          _ => strings.pick('Received', 'Ontvangen')
+    final dragons =
+        _sortedDragons(_filteredDragons(game.dragons.where((d) => d.owned)));
+    final activeFilterCount =
+        _formFilters.length + _rarityFilters.length + (_spectralOnly ? 1 : 0);
+    return SafeArea(
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: .7,
+        maxChildSize: .92,
+        builder: (_, controller) => Column(
+          key: const Key('owned-dragons-scroll'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 9),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        strings.pick('My dragons', 'Mijn draken'),
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      PopupMenuButton<_DragonSortMode>(
+                        key: const Key('owned-dragons-sort'),
+                        tooltip: strings.pick(
+                          'Change dragon order',
+                          'Volgorde van draken wijzigen',
+                        ),
+                        initialValue: _sortMode,
+                        onSelected: _selectSort,
+                        itemBuilder: (_) => [
+                          for (final mode in _DragonSortMode.values)
+                            PopupMenuItem(
+                              key: Key('owned-dragons-sort-${mode.name}'),
+                              value: mode,
+                              child: Row(
+                                children: [
+                                  Icon(switch (mode) {
+                                    _DragonSortMode.name =>
+                                      Icons.sort_by_alpha_rounded,
+                                    _DragonSortMode.acquiredAt =>
+                                      Icons.event_rounded,
+                                    _DragonSortMode.rarity =>
+                                      Icons.auto_awesome_rounded,
+                                  }),
+                                  const SizedBox(width: 9),
+                                  Text(switch (mode) {
+                                    _DragonSortMode.name =>
+                                      strings.pick('Name', 'Naam'),
+                                    _DragonSortMode.acquiredAt =>
+                                      strings.pick('Received', 'Ontvangen'),
+                                    _DragonSortMode.rarity =>
+                                      strings.pick('Rarity', 'Zeldzaamheid'),
+                                  }),
+                                ],
+                              ),
+                            ),
+                        ],
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.eventColor(
+                                context, const Color(0xFFF1ECFB)),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _sortDescending
+                                    ? Icons.arrow_downward_rounded
+                                    : Icons.arrow_upward_rounded,
+                                size: 18,
+                                color: AppColors.eventColor(
+                                    context, AppColors.twilight),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _sortLabel(strings),
+                                style: TextStyle(
+                                  color: AppColors.eventColor(
+                                      context, AppColors.twilight),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      Badge(
+                        isLabelVisible: activeFilterCount > 0,
+                        label: Text('$activeFilterCount'),
+                        child: IconButton.filledTonal(
+                          key: const Key('owned-dragons-filter'),
+                          tooltip: strings.pick(
+                            'Filter dragons',
+                            'Draken filteren',
+                          ),
+                          onPressed: () => _showFilters(
+                            context,
+                            game.dragons.where((d) => d.owned),
+                          ),
+                          icon: const Icon(Icons.filter_alt_rounded),
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      IconButton.filledTonal(
+                        key: const Key('owned-dragons-view-toggle'),
+                        tooltip: _view == _DragonCollectionView.gallery
+                            ? strings.pick(
+                                'Show compact list',
+                                'Compacte lijst tonen',
+                              )
+                            : strings.pick(
+                                'Show gallery',
+                                'Galerij tonen',
+                              ),
+                        onPressed: () {
+                          setState(() {
+                            _view = _view == _DragonCollectionView.gallery
+                                ? _DragonCollectionView.compact
+                                : _DragonCollectionView.gallery;
+                          });
+                          _saveCollectionPreferences();
                         },
-                        style: const TextStyle(
-                            color: AppColors.twilight,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900))))),
-        IconButton.filledTonal(
-            key: const Key('canonical-dragon-filter'),
-            tooltip: strings.pick('Filter dragons', 'Draken filteren'),
-            icon: const Icon(Icons.filter_alt_rounded),
-            onPressed: () => showModalBottomSheet<void>(
-                context: context,
-                showDragHandle: true,
-                isScrollControlled: true,
-                useSafeArea: true,
-                builder: (context) =>
-                    StatefulBuilder(builder: (context, update) {
-                      void filter(VoidCallback change) {
-                        if (mounted) {
-                          setState(change);
-                          update(() {});
-                        }
-                      }
+                        icon: Icon(
+                          _view == _DragonCollectionView.gallery
+                              ? Icons.view_list_rounded
+                              : Icons.grid_view_rounded,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                  Container(
+                    key: const Key('tower-roaming-capacity'),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: AppColors.eventColor(
+                          context, const Color(0xFFF1ECFB)),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(children: [
+                      const GameIconSprite(GameIconKind.roomClear, size: 34),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          strings.pick(
+                            '${game.dragons.where((d) => d.owned && d.roamsTower).length} / ${game.house.floorRoomIds.length * 3} roaming · maximum 3 per room',
+                            '${game.dragons.where((d) => d.owned && d.roamsTower).length} / ${game.house.floorRoomIds.length * 3} actief · maximaal 3 per kamer',
+                          ),
+                          style: TextStyle(
+                            color: AppColors.eventColor(
+                                context, AppColors.twilight),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: dragons.isEmpty
+                  ? Center(
+                      child: Text(
+                        strings.pick(
+                          'No dragons match these filters.',
+                          'Geen draken voldoen aan deze filters.',
+                        ),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: AppColors.muted),
+                      ),
+                    )
+                  : _view == _DragonCollectionView.gallery
+                      ? GridView.builder(
+                          key: const Key('owned-dragons-grid'),
+                          controller: controller,
+                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
+                          itemCount: dragons.length,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount:
+                                MediaQuery.sizeOf(context).width >= 600 ? 3 : 2,
+                            childAspectRatio: .88,
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
+                          ),
+                          itemBuilder: (context, index) {
+                            final dragon = dragons[index];
+                            return _DragonGalleryCard(
+                              dragon: dragon,
+                              equippedRelic:
+                                  game.inventory.equippedOn(dragon.id),
+                              onTap: () => showCanonicalDragonDetails(
+                                  context, dragon.id),
+                            );
+                          },
+                        )
+                      : ListView.separated(
+                          key: const Key('owned-dragons-list'),
+                          controller: controller,
+                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
+                          itemCount: dragons.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 7),
+                          itemBuilder: (context, index) {
+                            final dragon = dragons[index];
+                            return _DragonCompactCard(
+                              dragon: dragon,
+                              equippedRelic:
+                                  game.inventory.equippedOn(dragon.id),
+                              onTap: () => showCanonicalDragonDetails(
+                                  context, dragon.id),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                      return SingleChildScrollView(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Text(
-                                    strings.pick(
-                                        'Filter dragons', 'Draken filteren'),
-                                    style:
-                                        Theme.of(context).textTheme.titleLarge),
-                                const SizedBox(height: 12),
-                                Wrap(spacing: 8, children: [
-                                  for (final stage in DragonStage.values
-                                      .where((s) => s != DragonStage.egg))
-                                    FilterChip(
-                                        label: Text(_stageName(strings, stage)),
-                                        selected: _stages.contains(stage),
-                                        onSelected: (v) => filter(() => v
-                                            ? _stages.add(stage)
-                                            : _stages.remove(stage)))
-                                ]),
-                                Wrap(spacing: 8, children: [
-                                  for (final rarity in dragonLineages
-                                      .map((l) => l.rarity)
-                                      .toSet())
-                                    FilterChip(
-                                        label: Text(strings.lineageRarity(
-                                            dragonLineages.firstWhere(
-                                                (l) => l.rarity == rarity))),
-                                        selected:
-                                            _rarities.contains(rarity.name),
-                                        onSelected: (v) => filter(() => v
-                                            ? _rarities.add(rarity.name)
-                                            : _rarities.remove(rarity.name)))
-                                ]),
-                                SwitchListTile(
-                                    title: Text(strings.pick(
-                                        'Spectral only', 'Alleen Spectral')),
-                                    value: _spectral,
-                                    onChanged: (v) =>
-                                        filter(() => _spectral = v)),
-                              ]));
-                    }))),
-        IconButton(
-            tooltip: strings.pick('Reverse order', 'Volgorde omkeren'),
-            icon: Icon(descending ? Icons.arrow_downward : Icons.arrow_upward),
-            onPressed: session.canAct
-                ? () => change({'myDragonsSortDescending': !descending})
-                : null),
-        IconButton(
-            tooltip: strings.pick('Change view', 'Weergave wijzigen'),
-            icon: Icon(compact ? Icons.grid_view : Icons.view_list),
-            onPressed: session.canAct
-                ? () => change(
-                    {'myDragonsViewMode': compact ? 'gallery' : 'compact'})
-                : null),
-      ]),
-      if (!compact)
-        LayoutBuilder(
-            builder: (context, box) =>
-                Wrap(spacing: 9, runSpacing: 9, children: [
-                  for (final dragon in dragons)
-                    SizedBox(
-                        width: (box.maxWidth - 9) / 2,
-                        height: (box.maxWidth - 9) / 2 + 42,
-                        child: _DragonGalleryCard(
-                            dragon: dragon,
-                            equippedRelic: view.inventory.equippedOn(dragon.id),
-                            onTap: () => showCanonicalDragonDetails(
-                                context, dragon.id))),
-                ])),
-      if (compact)
-        for (final dragon in dragons)
-          Padding(
-              padding: const EdgeInsets.only(bottom: 7),
-              child: _DragonCompactCard(
-                  dragon: dragon,
-                  equippedRelic: view.inventory.equippedOn(dragon.id),
-                  onTap: () => showCanonicalDragonDetails(context, dragon.id))),
-      if (!view.dragons.any((d) => d.owned))
-        RestoredCollectionEmpty(
-            icon: GameIconKind.myDragons,
-            text: strings.pick('Your dragons will appear here after hatching.',
-                'Je draken komen hier na het uitbroeden.')),
-    ]);
+  Future<void> _showFilters(
+    BuildContext context,
+    Iterable<CanonicalDragonView> ownedDragons,
+  ) async {
+    final strings = AppStrings.of(context);
+    final availableForms = ownedDragons.map(_formKey).toSet().toList()..sort();
+    final availableRarities = ownedDragons.map(_rarityKey).toSet().toList()
+      ..sort((a, b) {
+        const order = [
+          'common',
+          'uncommon',
+          'rare',
+          'veryRare',
+          'legendary',
+          'mythical',
+          'infernal',
+        ];
+        return order.indexOf(a).compareTo(order.indexOf(b));
+      });
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, modalSetState) => SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        strings.pick('Filter dragons', 'Draken filteren'),
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    TextButton(
+                      key: const Key('owned-dragons-filter-clear'),
+                      onPressed: () => modalSetState(() {
+                        _formFilters.clear();
+                        _rarityFilters.clear();
+                        _spectralOnly = false;
+                      }),
+                      child: Text(strings.pick('Clear', 'Wissen')),
+                    ),
+                  ],
+                ),
+                Text(strings.pick('Form', 'Vorm'),
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 5,
+                  children: [
+                    for (final form in availableForms)
+                      FilterChip(
+                        key: Key('dragon-filter-form-$form'),
+                        label: Text(_formLabel(strings, form)),
+                        selected: _formFilters.contains(form),
+                        onSelected: (selected) => modalSetState(() => selected
+                            ? _formFilters.add(form)
+                            : _formFilters.remove(form)),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Text(strings.pick('Rarity', 'Zeldzaamheid'),
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 5,
+                  children: [
+                    for (final rarity in availableRarities)
+                      FilterChip(
+                        key: Key('dragon-filter-rarity-$rarity'),
+                        label: Text(_rarityLabel(strings, rarity)),
+                        selected: _rarityFilters.contains(rarity),
+                        onSelected: (selected) => modalSetState(() => selected
+                            ? _rarityFilters.add(rarity)
+                            : _rarityFilters.remove(rarity)),
+                      ),
+                  ],
+                ),
+                if (ownedDragons.any((dragon) => dragon.spectral)) ...[
+                  const SizedBox(height: 14),
+                  FilterChip(
+                    key: const Key('dragon-filter-spectral'),
+                    avatar: const Icon(Icons.auto_awesome_rounded, size: 18),
+                    label: Text(strings.pick(
+                      'Spectral only',
+                      'Alleen spectraal',
+                    )),
+                    selected: _spectralOnly,
+                    onSelected: (selected) =>
+                        modalSetState(() => _spectralOnly = selected),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    key: const Key('owned-dragons-filter-done'),
+                    onPressed: () => Navigator.pop(sheetContext),
+                    child: Text(strings.pick('Show dragons', 'Draken tonen')),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
   }
 }
 
@@ -281,221 +582,236 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                 .where((l) => l.id == dragon?.lineageId)
                 .firstOrNull;
             final unknown = strings.pick('Undiscovered', 'Niet ontdekt');
-            return RestoredDetailSheet(
-                title: Text(dragon == null
-                    ? strings.pick('Dragon', 'Draak')
-                    : canonicalDragonName(strings, dragon)),
-                content: SizedBox(
-                    width: 390,
-                    child: SingleChildScrollView(
-                        child: dragon == null || !dragon.owned
-                            ? Text(strings.pick(
-                                'This dragon is no longer in your Haven.',
-                                'Deze draak woont niet meer in je Haven.'))
-                            : Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                    CanonicalDragonArt(
-                                        dragon: dragon, height: 190),
-                                    _Fact(
-                                        strings.pick(
-                                            'Dragon type', 'Drakentype'),
-                                        lineage == null
-                                            ? unknown
-                                            : strings.lineageName(lineage)),
-                                    _Fact(
-                                        strings.pick('Maturity', 'Levensfase'),
-                                        _stageName(strings, dragon.stage)),
-                                    _Fact(
-                                        strings.pick('Gender', 'Geslacht'),
-                                        strings.pick(
-                                            dragon.sex == DragonSex.male
-                                                ? 'Male'
-                                                : 'Female',
-                                            dragon.sex == DragonSex.male
-                                                ? 'Mannelijk'
-                                                : 'Vrouwelijk'),
-                                        icon: dragon.sex == DragonSex.male
-                                            ? Icons.male
-                                            : Icons.female),
-                                    const SizedBox(height: 12),
-                                    _DragonSchoolDiplomaCard(dragon: dragon),
-                                    const Divider(height: 24),
-                                    if (view.activeDragonId == id)
+            return SafeArea(
+                child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
+                    child: dragon == null || !dragon.owned
+                        ? Text(strings.pick(
+                            'This dragon is no longer in your Haven.',
+                            'Deze draak woont niet meer in je Haven.'))
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                                CanonicalDragonArt(
+                                    dragon: dragon, height: 190, animate: true),
+                                Text(canonicalDragonName(strings, dragon),
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall),
+                                const SizedBox(height: 12),
+                                Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 13, vertical: 7),
+                                    decoration: BoxDecoration(
+                                        color: AppColors.eventColor(
+                                            context, const Color(0xFFF4F0FB)),
+                                        borderRadius:
+                                            BorderRadius.circular(22)),
+                                    child: Column(children: [
+                                      _Fact(
+                                          strings.pick(
+                                              'Dragon type', 'Drakentype'),
+                                          lineage == null
+                                              ? unknown
+                                              : strings.lineageName(lineage)),
+                                      _Fact(
+                                          strings.pick(
+                                              'Maturity', 'Levensfase'),
+                                          _stageName(strings, dragon.stage)),
+                                      _Fact(
+                                          strings.pick('Gender', 'Geslacht'),
+                                          strings.pick(
+                                              dragon.sex == DragonSex.male
+                                                  ? 'Male'
+                                                  : 'Female',
+                                              dragon.sex == DragonSex.male
+                                                  ? 'Mannelijk'
+                                                  : 'Vrouwelijk'),
+                                          icon: dragon.sex == DragonSex.male
+                                              ? Icons.male
+                                              : Icons.female),
+                                      const SizedBox(height: 12),
+                                      Text(strings.pick(
+                                          'Tap an expertise to highlight it for training.',
+                                          'Tik op een expertise om deze voor training te markeren.')),
+                                      DragonExpertiseStatus(
+                                          dragonId: dragon.id,
+                                          maxed: dragon.expertiseMaxed,
+                                          spark: dragon.dragonSpark),
+                                      for (final focus in TrainingFocus.values)
+                                        _HighlightControl(
+                                            dragon: dragon, focus: focus),
+                                      const Divider(height: 24),
+                                      _Fact(
+                                          strings.pick(
+                                              'Moral nature', 'Morele aard'),
+                                          switch (MoralAxis.values
+                                              .where((v) =>
+                                                  v.name == dragon.moralAxis)
+                                              .firstOrNull) {
+                                            final axis? =>
+                                              strings.moralAxisName(axis),
+                                            null => unknown,
+                                          }),
+                                      _Fact(
+                                          strings.pick(
+                                              'Order nature', 'Orde-aard'),
+                                          switch (LawAxis.values
+                                              .where((v) =>
+                                                  v.name == dragon.lawAxis)
+                                              .firstOrNull) {
+                                            final axis? =>
+                                              strings.lawAxisName(axis),
+                                            null => unknown,
+                                          }),
+                                      _Fact(
+                                          strings.pick(
+                                              'Personality', 'Persoonlijkheid'),
+                                          dragon.personality
+                                                  ?.map(strings.personality)
+                                                  .join(', ') ??
+                                              unknown),
+                                    ])),
+                                const SizedBox(height: 10),
+                                _DragonProgressCard(dragon: dragon),
+                                const SizedBox(height: 12),
+                                if (dragon.schoolAttempts.values
+                                    .any((attempts) => attempts > 0))
+                                  _DragonSchoolDiplomaCard(dragon: dragon),
+                                DragonTrialRecords(
+                                  cavernFlightBest:
+                                      dragon.trialBest('cavernFlight'),
+                                  ruinBreakerBest:
+                                      dragon.trialBest('ruinBreaker'),
+                                  runeweaverBest:
+                                      dragon.trialBest('runeweaver'),
+                                ),
+                                const Divider(height: 24),
+                                if (view.activeDragonId == id)
+                                  CanonicalActionButton(
+                                      key: const Key(
+                                          'canonical-starlight-treat'),
+                                      label: strings.pick(
+                                          'Starlight Treat · 3 gems',
+                                          'Sterlichtsnack · 3 gems'),
+                                      confirmation: strings.pick(
+                                          'Spend 3 gems on a Starlight Treat for this dragon?',
+                                          '3 gems uitgeven aan een Sterlichtsnack voor deze draak?'),
+                                      action: enabled && view.gems >= 3
+                                          ? () => actions.buyStarlightTreat(id)
+                                          : null),
+                                const SizedBox(height: 12),
+                                CanonicalActionButton(
+                                    key: const Key('canonical-favorite-dragon'),
+                                    label: dragon.favorite
+                                        ? strings.pick('Favorite dragon',
+                                            'Favoriete draak')
+                                        : strings.pick('Set as favorite',
+                                            'Als favoriet instellen'),
+                                    action: enabled && !dragon.favorite
+                                        ? () => actions.setFavoriteDragon(id)
+                                        : null),
+                                CanonicalActionButton(
+                                    key: const Key('canonical-roam-dragon'),
+                                    label: dragon.roamsTower
+                                        ? strings.pick('Rest in sanctuary',
+                                            'Rust in het reservaat')
+                                        : strings.pick('Roam the Tower',
+                                            'Door de Toren lopen'),
+                                    action: enabled
+                                        ? () => actions.setDragonRoaming(
+                                            id, !dragon.roamsTower)
+                                        : null),
+                                OutlinedButton(
+                                    key: const Key('canonical-name-dragon'),
+                                    onPressed: enabled &&
+                                            (dragon.name.trim().isEmpty ||
+                                                view.inventory.count(AltarRelic
+                                                        .nameweaversQuill) >
+                                                    0)
+                                        ? () => nameCanonicalDragon(
+                                            context, dragon, owner, actions)
+                                        : null,
+                                    child: Text(dragon.name.trim().isEmpty
+                                        ? strings.pick(
+                                            'Name dragon', 'Geef een naam')
+                                        : strings.pick('Rename · 1 Quill',
+                                            'Hernoemen · 1 Quill'))),
+                                if (dragon.evolutionReady)
+                                  CanonicalActionButton(
+                                      key: const Key('canonical-evolve-dragon'),
+                                      label:
+                                          strings.pick('Evolve', 'Evolueren'),
+                                      action: enabled
+                                          ? () => actions.evolveDragon(id)
+                                          : null),
+                                for (final relic in MysticRelic.values)
+                                  if ((view.inventory.usableRelics[relic] ??
+                                              0) >
+                                          0 &&
+                                      (relic.isEquipable ||
+                                          relic.hasUseAnimation)) ...[
+                                    const SizedBox(height: 8),
+                                    Row(children: [
+                                      Image.asset(relic.assetPath,
+                                          width: 40, height: 40),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                          child: Text(strings.relicName(relic)))
+                                    ]),
+                                    Text(strings.relicDescription(relic)),
+                                    if (relic.isEquipable)
                                       CanonicalActionButton(
-                                          key: const Key(
-                                              'canonical-starlight-treat'),
-                                          label: strings.pick(
-                                              'Starlight Treat · 3 gems',
-                                              'Sterlichtsnack · 3 gems'),
-                                          confirmation: strings.pick(
-                                              'Spend 3 gems on a Starlight Treat for this dragon?',
-                                              '3 gems uitgeven aan een Sterlichtsnack voor deze draak?'),
-                                          action: enabled && view.gems >= 3
-                                              ? () =>
-                                                  actions.buyStarlightTreat(id)
-                                              : null),
-                                    const SizedBox(height: 12),
-                                    Text(strings.pick(
-                                        'Tap an expertise to highlight it for training.',
-                                        'Tik op een expertise om deze voor training te markeren.')),
-                                    DragonExpertiseStatus(
-                                        dragonId: dragon.id,
-                                        maxed: dragon.expertiseMaxed,
-                                        spark: dragon.dragonSpark),
-                                    for (final focus in TrainingFocus.values)
-                                      _HighlightControl(
-                                          dragon: dragon, focus: focus),
-                                    const Divider(height: 24),
-                                    _Fact(
-                                        strings.pick(
-                                            'Moral nature', 'Morele aard'),
-                                        switch (MoralAxis.values
-                                            .where((v) =>
-                                                v.name == dragon.moralAxis)
-                                            .firstOrNull) {
-                                          final axis? =>
-                                            strings.moralAxisName(axis),
-                                          null => unknown,
-                                        }),
-                                    _Fact(
-                                        strings.pick(
-                                            'Order nature', 'Orde-aard'),
-                                        switch (LawAxis.values
-                                            .where(
-                                                (v) => v.name == dragon.lawAxis)
-                                            .firstOrNull) {
-                                          final axis? =>
-                                            strings.lawAxisName(axis),
-                                          null => unknown,
-                                        }),
-                                    _Fact(
-                                        strings.pick(
-                                            'Personality', 'Persoonlijkheid'),
-                                        dragon.personality
-                                                ?.map(strings.personality)
-                                                .join(', ') ??
-                                            unknown),
-                                    Text(
-                                        '${dragon.xp} XP · ${strings.pick('Level', 'Level')} ${Pet.levelAtXp(dragon.xp)}'),
-                                    const SizedBox(height: 12),
-                                    CanonicalActionButton(
-                                        key: const Key(
-                                            'canonical-favorite-dragon'),
-                                        label: dragon.favorite
-                                            ? strings.pick('Favorite dragon',
-                                                'Favoriete draak')
-                                            : strings.pick('Set as favorite',
-                                                'Als favoriet instellen'),
-                                        action: enabled && !dragon.favorite
-                                            ? () =>
-                                                actions.setFavoriteDragon(id)
-                                            : null),
-                                    CanonicalActionButton(
-                                        key: const Key('canonical-roam-dragon'),
-                                        label: dragon.roamsTower
-                                            ? strings.pick('Rest in sanctuary',
-                                                'Rust in het reservaat')
-                                            : strings.pick('Roam the Tower',
-                                                'Door de Toren lopen'),
-                                        action: enabled
-                                            ? () => actions.setDragonRoaming(
-                                                id, !dragon.roamsTower)
-                                            : null),
-                                    OutlinedButton(
-                                        key: const Key('canonical-name-dragon'),
-                                        onPressed: enabled &&
-                                                (dragon.name.trim().isEmpty ||
-                                                    view.inventory.count(AltarRelic
-                                                            .nameweaversQuill) >
-                                                        0)
-                                            ? () => nameCanonicalDragon(
-                                                context, dragon, owner, actions)
-                                            : null,
-                                        child: Text(dragon.name.trim().isEmpty
-                                            ? strings.pick(
-                                                'Name dragon', 'Geef een naam')
-                                            : strings.pick('Rename · 1 Quill',
-                                                'Hernoemen · 1 Quill'))),
-                                    if (dragon.evolutionReady)
-                                      CanonicalActionButton(
-                                          key: const Key(
-                                              'canonical-evolve-dragon'),
-                                          label: strings.pick(
-                                              'Evolve', 'Evolueren'),
-                                          action: enabled
-                                              ? () => actions.evolveDragon(id)
-                                              : null),
-                                    for (final relic in MysticRelic.values)
-                                      if ((view.inventory.usableRelics[relic] ??
-                                                  0) >
-                                              0 &&
-                                          (relic.isEquipable ||
-                                              relic.hasUseAnimation)) ...[
-                                        const SizedBox(height: 8),
-                                        Row(children: [
-                                          Image.asset(relic.assetPath,
-                                              width: 40, height: 40),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                              child: Text(
-                                                  strings.relicName(relic)))
-                                        ]),
-                                        Text(strings.relicDescription(relic)),
-                                        if (relic.isEquipable)
-                                          CanonicalActionButton(
-                                              key: Key(
-                                                  'canonical-equip-${relic.name}'),
-                                              label: view.inventory.equipment[relic] == id
+                                          key: Key(
+                                              'canonical-equip-${relic.name}'),
+                                          label:
+                                              view.inventory.equipment[relic] ==
+                                                      id
                                                   ? strings.pick(
                                                       'Unequip', 'Afdoen')
                                                   : strings.pick(
                                                       'Equip', 'Uitrusten'),
-                                              action: enabled
-                                                  ? () => actions.equip(
-                                                      relic,
-                                                      view.inventory.equipment[relic] == id
-                                                          ? null
-                                                          : id)
-                                                  : null)
-                                        else
-                                          CanonicalActionButton(
-                                              key: Key(
-                                                  'canonical-use-${relic.name}'),
-                                              label: strings.pick(
-                                                  'Use', 'Gebruiken'),
-                                              confirmation: strings.pick(
-                                                  'Use one ${strings.relicName(relic)} on this dragon?',
-                                                  'Eén ${strings.relicName(relic)} op deze draak gebruiken?'),
-                                              action: enabled && !dragon.knows(relic)
-                                                  ? () => actions.useRelic(relic, id)
-                                                  : null),
-                                      ],
-                                    const SizedBox(height: 16),
-                                    CanonicalActionButton(
-                                        key: const Key(
-                                            'canonical-release-dragon'),
-                                        label: strings.pick('Release dragon',
-                                            'Draak vrijlaten'),
-                                        confirmation: strings.pick(
-                                            'Release this dragon from your Haven?',
-                                            'Deze draak vrijlaten uit je Haven?'),
-                                        action: enabled &&
-                                                !dragon.favorite &&
-                                                dragon.adventureId == null &&
-                                                view.dragons
-                                                        .where((d) => d.owned)
-                                                        .length >
-                                                    1
-                                            ? () => actions.releaseDragon(id)
-                                            : null),
-                                  ]))),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(strings.pick('Close', 'Sluiten')))
-                ]);
+                                          action: enabled
+                                              ? () => actions.equip(
+                                                  relic,
+                                                  view.inventory.equipment[relic] ==
+                                                          id
+                                                      ? null
+                                                      : id)
+                                              : null)
+                                    else
+                                      CanonicalActionButton(
+                                          key: Key(
+                                              'canonical-use-${relic.name}'),
+                                          label:
+                                              strings.pick('Use', 'Gebruiken'),
+                                          confirmation: strings.pick(
+                                              'Use one ${strings.relicName(relic)} on this dragon?',
+                                              'Eén ${strings.relicName(relic)} op deze draak gebruiken?'),
+                                          action: enabled && !dragon.knows(relic)
+                                              ? () => actions.useRelic(relic, id)
+                                              : null),
+                                  ],
+                                const SizedBox(height: 16),
+                                CanonicalActionButton(
+                                    key: const Key('canonical-release-dragon'),
+                                    label: strings.pick(
+                                        'Release dragon', 'Draak vrijlaten'),
+                                    confirmation: strings.pick(
+                                        'Release this dragon from your Haven?',
+                                        'Deze draak vrijlaten uit je Haven?'),
+                                    action: enabled &&
+                                            !dragon.favorite &&
+                                            dragon.adventureId == null &&
+                                            view.dragons
+                                                    .where((d) => d.owned)
+                                                    .length >
+                                                1
+                                        ? () => actions.releaseDragon(id)
+                                        : null),
+                              ])));
           }));
 }
 
@@ -1013,6 +1329,388 @@ class _DragonSchoolDiplomaCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DragonProgressCard extends StatelessWidget {
+  const _DragonProgressCard({required this.dragon});
+
+  final CanonicalDragonView dragon;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final level = Pet.levelAtXp(dragon.xp);
+    final currentLevelFloor = Pet
+        .levelThresholds[(level - 1).clamp(0, Pet.levelThresholds.length - 1)];
+    final nextLevelTarget = level >= Pet.levelThresholds.length
+        ? dragon.xp
+        : Pet.levelThresholds[level];
+    final progress = level >= Pet.levelThresholds.length
+        ? 1.0
+        : ((dragon.xp - currentLevelFloor) /
+                (nextLevelTarget - currentLevelFloor))
+            .clamp(0.0, 1.0);
+    final nextEvolutionXp = switch (dragon.stage) {
+      DragonStage.hatchling => Pet.wyrmlingXp,
+      DragonStage.wyrmling => Pet.ascendedXp,
+      _ => null,
+    };
+    final nextEvolutionLevel =
+        nextEvolutionXp == null ? null : Pet.levelAtXp(nextEvolutionXp);
+    final atMaximumLevel = level >= Pet.levelThresholds.length;
+    final nextStage = switch (dragon.stage) {
+      DragonStage.hatchling => DragonStage.wyrmling,
+      DragonStage.wyrmling => DragonStage.ascended,
+      _ => null
+    };
+    final nextStageName = switch (nextStage) {
+      DragonStage.wyrmling => strings.petStageNameByKey('nestDragon'),
+      DragonStage.ascended => strings.petStageNameByKey('homeGuardian'),
+      _ => '',
+    };
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(15, 13, 15, 14),
+      decoration: BoxDecoration(
+        gradient: AppColors.panelGradient(context,
+            fallback: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF2B1D55), Color(0xFF654A9B)])),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x332B1D55),
+            blurRadius: 16,
+            offset: Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const GameIconSprite(GameIconKind.experience, size: 38),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '${strings.pick('Level', 'Niveau')} $level',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Text(
+            '${dragon.xp} XP',
+            style: const TextStyle(
+              color: Color(0xFFFFE39A),
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ]),
+        const SizedBox(height: 9),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(99),
+          child: LinearProgressIndicator(
+            key: const Key('dragon-level-progress'),
+            value: progress,
+            minHeight: 12,
+            color: const Color(0xFFFFD86E),
+            backgroundColor: Colors.white.withValues(alpha: .16),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          atMaximumLevel
+              ? strings.pick('Highest level reached', 'Hoogste niveau bereikt')
+              : '${dragon.xp - currentLevelFloor} / '
+                  '${nextLevelTarget - currentLevelFloor} XP '
+                  '${strings.pick('to next level', 'tot het volgende niveau')}',
+          style: const TextStyle(
+            color: Color(0xFFD8CFF1),
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const Divider(height: 22, color: Color(0x33FFFFFF)),
+        if (nextStage == null)
+          Text(
+            strings.pick('Final evolution reached', 'Laatste evolutie bereikt'),
+            style: const TextStyle(
+              color: Color(0xFFFFE39A),
+              fontWeight: FontWeight.w900,
+            ),
+          )
+        else ...[
+          Text(
+            '${strings.pick('Next evolution', 'Volgende evolutie')}: '
+            '$nextStageName · ${strings.pick('Level', 'Niveau')} '
+            '$nextEvolutionLevel'
+            '${dragon.stage == DragonStage.wyrmling ? '' : ' · $nextEvolutionXp XP'}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          if (dragon.stage == DragonStage.wyrmling) ...[
+            const SizedBox(height: 9),
+            _CanonicalAscensionRequirements(
+              dragon: dragon,
+              onDark: true,
+              compact: true,
+              includeLevelRequirement: false,
+            ),
+          ],
+        ],
+      ]),
+    );
+  }
+}
+
+class _CanonicalAscensionRequirements extends StatelessWidget {
+  const _CanonicalAscensionRequirements({
+    required this.dragon,
+    this.onDark = false,
+    this.compact = false,
+    this.includeLevelRequirement = true,
+  });
+
+  final CanonicalDragonView dragon;
+  final bool onDark;
+  final bool compact;
+  final bool includeLevelRequirement;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final targetLevel = Pet.levelAtXp(Pet.ascendedXp);
+    final levelReady = dragon.xp >= Pet.ascendedXp;
+    final expertiseReady =
+        dragon.training.values.fold<int>(0, (a, b) => a + b) >=
+            Pet.ascensionExpertiseRequirement;
+    final foreground = onDark ? Colors.white : AppColors.ink;
+    final muted = onDark
+        ? AppColors.eventColor(context, const Color(0xFFD8CFF1))
+        : AppColors.muted;
+    final track = onDark
+        ? Colors.white.withValues(alpha: .14)
+        : AppColors.eventColor(context, AppColors.mist).withValues(alpha: .8);
+
+    return Container(
+      key: const Key('ascension-requirements'),
+      width: double.infinity,
+      padding: EdgeInsets.all(compact ? 10 : 13),
+      decoration: BoxDecoration(
+        color: onDark
+            ? Colors.white.withValues(alpha: .08)
+            : AppColors.eventColor(context, AppColors.mist)
+                .withValues(alpha: .48),
+        borderRadius: BorderRadius.circular(compact ? 14 : 17),
+        border: Border.all(
+          color: onDark
+              ? Colors.white.withValues(alpha: .14)
+              : AppColors.eventColor(context, AppColors.twilight)
+                  .withValues(alpha: .12),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.auto_awesome_rounded,
+                size: compact ? 17 : 19,
+                color: onDark ? const Color(0xFFFFE39A) : AppColors.gold,
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  strings.pick(
+                    'Ascension requirements',
+                    'Ascension-vereisten',
+                  ),
+                  style: TextStyle(
+                    color: foreground,
+                    fontSize: compact ? 13 : 15,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              if (levelReady && expertiseReady) _ReadyPill(onDark: onDark),
+            ],
+          ),
+          if (includeLevelRequirement) ...[
+            SizedBox(height: compact ? 3 : 5),
+            Text(
+              strings.pick(
+                'Complete both requirements before Ascension.',
+                'Voltooi beide vereisten voor Ascension.',
+              ),
+              style: TextStyle(
+                color: muted,
+                fontSize: compact ? 10.5 : 11.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: compact ? 9 : 12),
+            _RequirementProgress(
+              key: const Key('ascension-level-requirement'),
+              statusKey: const Key('ascension-level-status'),
+              title: strings.pick('Level & XP', 'Niveau & XP'),
+              value:
+                  '${strings.pick('Level', 'Niveau')} ${Pet.levelAtXp(dragon.xp)}/$targetLevel'
+                  ' · ${dragon.xp}/${Pet.ascendedXp} XP',
+              progress: dragon.xp / Pet.ascendedXp,
+              complete: levelReady,
+              foreground: foreground,
+              muted: muted,
+              track: track,
+              compact: compact,
+            ),
+            SizedBox(height: compact ? 9 : 12),
+          ] else
+            SizedBox(height: compact ? 7 : 10),
+          _RequirementProgress(
+            key: const Key('ascension-expertise-requirement'),
+            statusKey: const Key('ascension-expertise-status'),
+            title: strings.pick(
+              'Minimum total Expertise',
+              'Minimale totale Expertise',
+            ),
+            value:
+                '${dragon.training.values.fold<int>(0, (a, b) => a + b)}/${Pet.ascensionExpertiseRequirement}',
+            progress: dragon.training.values.fold<int>(0, (a, b) => a + b) /
+                Pet.ascensionExpertiseRequirement,
+            complete: expertiseReady,
+            foreground: foreground,
+            muted: muted,
+            track: track,
+            compact: compact,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReadyPill extends StatelessWidget {
+  const _ReadyPill({required this.onDark});
+
+  final bool onDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Container(
+      key: const Key('ascension-ready'),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.mint.withValues(alpha: onDark ? .24 : .18),
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.check_rounded, size: 13, color: AppColors.mint),
+          const SizedBox(width: 3),
+          Text(
+            strings.pick('Ready', 'Klaar'),
+            style: TextStyle(
+              color: onDark
+                  ? Colors.white
+                  : AppColors.eventColor(context, AppColors.twilightDark),
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RequirementProgress extends StatelessWidget {
+  const _RequirementProgress({
+    super.key,
+    required this.statusKey,
+    required this.title,
+    required this.value,
+    required this.progress,
+    required this.complete,
+    required this.foreground,
+    required this.muted,
+    required this.track,
+    required this.compact,
+  });
+
+  final Key statusKey;
+  final String title;
+  final String value;
+  final double progress;
+  final bool complete;
+  final Color foreground;
+  final Color muted;
+  final Color track;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              key: statusKey,
+              width: compact ? 20 : 23,
+              height: compact ? 20 : 23,
+              decoration: BoxDecoration(
+                color: complete
+                    ? AppColors.mint.withValues(alpha: .18)
+                    : AppColors.gold.withValues(alpha: .16),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                complete ? Icons.check_rounded : Icons.lock_clock_rounded,
+                size: compact ? 13 : 15,
+                color: complete ? AppColors.mint : AppColors.gold,
+              ),
+            ),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: foreground,
+                  fontSize: compact ? 11 : 12.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                color: complete ? AppColors.mint : muted,
+                fontSize: compact ? 10.5 : 11.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(99),
+          child: LinearProgressIndicator(
+            value: progress.clamp(0, 1),
+            minHeight: compact ? 5 : 6,
+            color: complete ? AppColors.mint : AppColors.gold,
+            backgroundColor: track,
+          ),
+        ),
+      ],
     );
   }
 }

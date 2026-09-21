@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dragon_haven/models/social.dart';
+import 'package:dragon_haven/models/trial.dart';
 import 'package:dragon_haven/providers/online_account_provider.dart';
 import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
+import 'package:dragon_haven/screens/canonical_trials_screen.dart';
 import 'package:dragon_haven/screens/conclave_screen.dart';
 import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
 import 'package:dragon_haven/screens/canonical_house_screen.dart';
@@ -138,6 +140,33 @@ void main() {
     expect(find.byKey(const Key('open-trial-rankings')), findsOneWidget);
     expect(server.sent, isEmpty);
   });
+  testWidgets(
+      'Trial picker restores draggable sheet, assist text and personal best',
+      (tester) async {
+    await setup(tester, const CanonicalTrialsScreen(), prepare: (state) {
+      state['trialOffers'] = [
+        TrialOffer(
+                id: 'parity-trial',
+                kind: TrialKind.cavernFlight,
+                appearedAt: DateTime.utc(2026, 8, 28))
+            .toJson()
+      ];
+    });
+    final offer =
+        session.snapshot!.trialOffers.firstWhere((o) => o.startedAt == null);
+    await tester.tap(find.byKey(Key('choose-trial-${offer.id}')));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Choose your Trial dragon'), findsOneWidget);
+    final sheet = tester.widget<DraggableScrollableSheet>(
+        find.byType(DraggableScrollableSheet));
+    expect(sheet.initialChildSize, .72);
+    expect(sheet.maxChildSize, .92);
+    expect(find.byKey(const Key('trial-dragon-picker')), findsOneWidget);
+    expect(find.textContaining('Best:'), findsWidgets);
+    expect(server.sent, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final scope in TrialRankingScope.values) {
     testWidgets(
         'original rankings load $scope from canonical UI without HouseholdProvider',
@@ -186,6 +215,16 @@ void main() {
       'ordinary server refresh keeps confirmed content steady without inventory spinner',
       (tester) async {
     await setup(tester, const CanonicalAdventuresScreen());
+    // Lifecycle invalidation happens before the resumed read is admitted.
+    // Keep the existing page quiet even during that intermediate frame.
+    session.setForeground(false);
+    session.setForeground(true);
+    await tester.pump();
+    expect(find.byKey(const Key('economy-reconnect')), findsNothing);
+    expect(find.byType(TabBarView), findsOneWidget);
+    expect(session.canAct, false);
+    await tester.runAsync(session.synchronize);
+    await tester.pump();
     final held = Completer<void>();
     server.hold = held.future;
     final start = tester

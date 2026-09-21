@@ -1,7 +1,12 @@
-import 'adventure_hub_screen.dart' show showRestoredAdventureDetails;
+import 'adventure_hub_screen.dart'
+    show
+        showRestoredAdventureDetails,
+        showRestoredRunDetails,
+        adventureKindColors,
+        restoredAdventureRewards;
 import '../providers/household_provider.dart' show SpecialAdventureWindow;
 import '../models/dragon_lineage.dart';
-import '../models/chest.dart';
+import '../models/music_track.dart';
 import '../models/trial.dart';
 import '../widgets/trial_icon_sprite.dart';
 import '../services/canonical_game_snapshot.dart';
@@ -113,7 +118,7 @@ class _AdventuresState extends State<_Adventures>
     final sigils = view.inventory.usableRelics[MysticRelic.wayfinderSigil] ?? 0;
     Widget content(int tab) => ListView(
             key: PageStorageKey('canonical-adventures-list-$tab'),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
             children: [
               for (final progress in view.adventures.eventProgress.where((p) =>
                   view.adventures.activeEvents.any((w) => w.key == p.key) &&
@@ -189,55 +194,9 @@ class _AdventuresState extends State<_Adventures>
               if ((tab == 2 || tab == 3) &&
                   view.adventures.runs
                       .any((r) => (tab == 3) == !r.endsAt.isAfter(now))) ...[
-                const SizedBox(height: 16),
-                Text(
-                    (tab == 3)
-                        ? s.pick('Completed', 'Voltooid')
-                        : s.pick('Active Adventures', 'Actieve avonturen'),
-                    style: Theme.of(context).textTheme.titleMedium),
                 for (final run in view.adventures.orderedRuns
                     .where((r) => (tab == 3) == !r.endsAt.isAfter(now)))
-                  Card(
-                      margin: const EdgeInsets.only(top: 8),
-                      child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _RunSummary(
-                                    run: run,
-                                    now: now,
-                                    dragon: view.dragon(run.dragonId)),
-                                const SizedBox(height: 10),
-                                if (run.endsAt.isAfter(now))
-                                  CanonicalActionButton(
-                                      key: Key('canonical-abort-${run.id}'),
-                                      label: s.pick('Abort adventure',
-                                          'Avontuur afbreken'),
-                                      confirmation: s.pick(
-                                          'Abort this adventure without rewards?',
-                                          'Dit avontuur zonder beloning afbreken?'),
-                                      action: session.canAct &&
-                                              run.definition != null &&
-                                              run.definition!.kind !=
-                                                  AdventureKind.group &&
-                                              !run.definition!
-                                                  .requiresOnlinePartner
-                                          ? () => actions.abortAdventure(run.id)
-                                          : null)
-                                else
-                                  CanonicalActionButton(
-                                      key: Key('canonical-claim-${run.id}'),
-                                      label: s.pick('Claim', 'Ophalen'),
-                                      action: session.canAct
-                                          ? () async {
-                                              await EventPointFlight.claim(
-                                                  context,
-                                                  () => actions
-                                                      .claimAdventure(run.id));
-                                            }
-                                          : null),
-                              ]))),
+                  _CanonicalRunCard(run: run, now: now),
               ],
               if (tab == 0)
                 for (final kind in AdventureKind.values)
@@ -839,87 +798,148 @@ class _AdventureTabCount extends StatelessWidget {
       ]);
 }
 
-class _RunSummary extends StatelessWidget {
-  const _RunSummary(
-      {required this.run, required this.now, required this.dragon});
+class _CanonicalRunCard extends StatelessWidget {
+  const _CanonicalRunCard({required this.run, required this.now});
   final CanonicalAdventureRun run;
-  final CanonicalDragonView? dragon;
   final DateTime now;
+
   @override
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
+    final session = context.watch<CanonicalGameSession>();
+    final actions = CanonicalGameActions(session);
     final definition = run.definition;
+    final dragon = session.snapshot!.dragon(run.dragonId);
+    final shop = session.snapshot!.shop;
+    final musicChestCapacityReached =
+        shop.music.length + (shop.chests['music'] ?? 0) >= musicCatalog.length;
     final ready = !run.endsAt.isAfter(now);
-    final total = run.endsAt.difference(run.startedAt).inMilliseconds;
-    final progress = total <= 0
-        ? 1.0
-        : (now.difference(run.startedAt).inMilliseconds / total)
-            .clamp(0.0, 1.0);
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Row(children: [
-        Container(
-            width: 82,
-            height: 82,
-            decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [Color(0xFFF2E9FF), Color(0xFFE5D7FA)]),
-                borderRadius: BorderRadius.circular(20)),
-            child: GameIconSprite(
-                _adventureIcon(definition?.kind ?? AdventureKind.short),
-                size: 74)),
-        const SizedBox(width: 11),
-        Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(
-              definition == null
-                  ? s.pick('Adventure', 'Avontuur')
-                  : s.adventureTitle(definition),
-              style: const TextStyle(fontWeight: FontWeight.w900)),
-          const SizedBox(height: 4),
-          if (dragon != null)
-            Text(canonicalDragonName(s, dragon!),
-                style: const TextStyle(color: AppColors.muted, fontSize: 12)),
-          const SizedBox(height: 7),
-          Row(children: [
-            const GameIconSprite(GameIconKind.clock, size: 22),
-            const SizedBox(width: 4),
-            Expanded(
-                child: Text(
-                    ready
-                        ? s.pick('Ready to return', 'Klaar om terug te keren')
-                        : s.remainingDuration(run.endsAt.difference(now)),
-                    style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w900)))
-          ]),
-        ])),
-        if (ready)
-          const Icon(Icons.check_circle_rounded, color: AppColors.twilight),
-      ]),
-      const SizedBox(height: 10),
-      ClipRRect(
-          borderRadius: BorderRadius.circular(99),
-          child: LinearProgressIndicator(value: progress, minHeight: 6)),
-      if (definition != null) ...[
-        const SizedBox(height: 8),
-        Wrap(
-            spacing: 10,
-            runSpacing: 5,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text('${definition.xp} XP',
-                  style: const TextStyle(fontWeight: FontWeight.w900)),
-              if (run.revealedReward ?? definition.knownChest case final chest?)
-                Image.asset(chest.assetPath,
-                    width: 38, height: 38, semanticLabel: s.chestLabel(chest)),
-              for (final reward in definition.expertiseRewards.entries)
-                Row(mainAxisSize: MainAxisSize.min, children: [
-                  GameIconSprite(GameIconSprite.forTrainingFocus(reward.key),
-                      size: 21),
-                  Text('${reward.value >= 0 ? '+' : ''}${reward.value}')
-                ]),
+    final abortable = definition != null &&
+        !ready &&
+        definition.kind != AdventureKind.group &&
+        !definition.requiresOnlinePartner;
+    Future<void> claim() => runShopAction(context, () async {
+          await EventPointFlight.claim(
+              context, () => actions.claimAdventure(run.id));
+        });
+    Future<void> abort() async {
+      final confirmed = await confirmCanonicalAction(
+          context,
+          s.pick('Abort this adventure without rewards?',
+              'Dit avontuur zonder beloning afbreken?'),
+          owner: session.snapshot!.ownerId,
+          epoch: actions.epoch);
+      if (confirmed && context.mounted) {
+        await runShopAction(context, () => actions.abortAdventure(run.id));
+      }
+    }
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        key: Key('canonical-run-details-${run.id}'),
+        onTap: definition == null
+            ? null
+            : () => showRestoredRunDetails(context,
+                definition: definition,
+                runId: run.id,
+                endsAt: run.endsAt,
+                now: now,
+                ready: ready,
+                retraining: run.retraining,
+                musicChestCapacityReached: musicChestCapacityReached,
+                dragonName:
+                    dragon == null ? null : canonicalDragonName(s, dragon),
+                dragonArtwork: dragon == null
+                    ? null
+                    : SizedBox.square(
+                        dimension: 42,
+                        child: CanonicalDragonArt(dragon: dragon, height: 42)),
+                chestTier: run.revealedReward ?? definition.knownChest,
+                onClaim: session.canAct && ready ? claim : null,
+                onAbort: session.canAct && abortable ? abort : null),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 10, 13, 10),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Container(
+                  width: 82,
+                  height: 82,
+                  decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                          colors: adventureKindColors(
+                              definition?.kind ?? AdventureKind.short)),
+                      borderRadius: BorderRadius.circular(20)),
+                  child: GameIconSprite(
+                      _adventureIcon(definition?.kind ?? AdventureKind.short),
+                      size: 74)),
+              const SizedBox(width: 11),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(
+                        definition == null
+                            ? s.pick('Adventure', 'Avontuur')
+                            : s.adventureTitle(definition),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 4),
+                    Text(
+                        dragon == null
+                            ? s.pick('Unknown dragon', 'Onbekende draak')
+                            : canonicalDragonName(s, dragon),
+                        style: const TextStyle(
+                            color: AppColors.muted, fontSize: 12)),
+                    const SizedBox(height: 7),
+                    Row(children: [
+                      const GameIconSprite(GameIconKind.clock, size: 22),
+                      const SizedBox(width: 4),
+                      Expanded(
+                          child: Text(
+                              ready
+                                  ? s.pick('Ready to return',
+                                      'Klaar om terug te keren')
+                                  : s.remainingDuration(
+                                      run.endsAt.difference(now)),
+                              style: TextStyle(
+                                  color: ready
+                                      ? const Color(0xFF24735B)
+                                      : AppColors.eventColor(
+                                          context, AppColors.twilight),
+                                  fontWeight: FontWeight.w900))),
+                    ]),
+                  ])),
+              if (ready)
+                FilledButton.tonal(
+                    key: Key('canonical-claim-${run.id}'),
+                    onPressed: session.canAct ? claim : null,
+                    child: Text(s.pick('Claim', 'Ophalen')))
+              else if (abortable)
+                IconButton(
+                    key: Key('canonical-abort-${run.id}'),
+                    tooltip: s.pick('Abort adventure', 'Avontuur afbreken'),
+                    onPressed: session.canAct ? abort : null,
+                    icon: Icon(Icons.cancel_outlined,
+                        color:
+                            AppColors.eventColor(context, AppColors.twilight)))
+              else
+                Icon(Icons.chevron_right_rounded,
+                    color: AppColors.eventColor(context, AppColors.twilight)),
             ]),
-      ],
-    ]);
+            if (ready && definition != null) ...[
+              const SizedBox(height: 10),
+              restoredAdventureRewards(
+                  definition: definition,
+                  retraining: run.retraining,
+                  musicChestCapacityReached: musicChestCapacityReached,
+                  chestTier: run.revealedReward ?? definition.knownChest),
+            ],
+          ]),
+        ),
+      ),
+    );
   }
 }

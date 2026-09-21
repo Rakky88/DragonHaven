@@ -63,114 +63,128 @@ class Source implements CanonicalGroupsSource {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  testWidgets(
-      'real group picker inspects all expertise, creates once and leaves cleanly',
-      (tester) async {
-    tester.view.physicalSize = const Size(390, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    late Directory directory;
-    late CanonicalUiServer server;
-    late CanonicalGameSession session;
-    late CanonicalGroups groups;
-    await tester.runAsync(() async {
-      directory = await Directory.systemTemp.createTemp('dh-group-ui-');
-      final game = HouseholdProvider(
-          persistenceEnabled: false,
-          clock: () => DateTime.utc(2026, 9, 10, 12));
-      game.pet
-        ..stage = DragonStage.hatchling
-        ..firstEgg = false
-        ..favorite = true
-        ..name = 'Fleet';
-      server = CanonicalUiServer(game.exportState());
-      game.dispose();
-      for (final action in [
-        'create_group_adventure',
-        'leave_group_adventure'
-      ]) {
-        server.socialContexts[action] = {
-          'version': 1,
-          'ownerId': CanonicalUiServer.owner,
-          'sourceId': lobby,
-          'action': action,
-          'fingerprint': 'ab' * 32,
-          'facts': {
-            'adventureId': 'group_1',
-            'dragonId': server.state['pet']['id'],
-            'memberId': null
-          }
-        };
+  for (final width in [320.0, 390.0]) {
+    testWidgets(
+        'real group picker inspects all expertise, creates once and leaves cleanly ($width)',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      late Directory directory;
+      late CanonicalUiServer server;
+      late CanonicalGameSession session;
+      late CanonicalGroups groups;
+      await tester.runAsync(() async {
+        directory = await Directory.systemTemp.createTemp('dh-group-ui-');
+        final game = HouseholdProvider(
+            persistenceEnabled: false,
+            clock: () => DateTime.utc(2026, 9, 10, 12));
+        game.pet
+          ..stage = DragonStage.hatchling
+          ..firstEgg = false
+          ..favorite = true
+          ..name = 'Fleet';
+        server = CanonicalUiServer(game.exportState());
+        game.dispose();
+        for (final action in [
+          'create_group_adventure',
+          'leave_group_adventure'
+        ]) {
+          server.socialContexts[action] = {
+            'version': 1,
+            'ownerId': CanonicalUiServer.owner,
+            'sourceId': lobby,
+            'action': action,
+            'fingerprint': 'ab' * 32,
+            'facts': {
+              'adventureId': 'group_1',
+              'dragonId': server.state['pet']['id'],
+              'memberId': null
+            }
+          };
+        }
+        final connection = CanonicalUiConnection(server);
+        session =
+            CanonicalGameSession(connection: connection, directory: directory);
+        groups =
+            CanonicalGroups(connection: connection, source: Source(server));
+        await session.synchronize();
+      });
+      addTearDown(() async {
+        groups.dispose();
+        session.dispose();
+        await directory.delete(recursive: true);
+      });
+      Future<void> tap(Finder finder) =>
+          tester.runAsync(() => tester.tap(finder));
+      Future<void> settle() async {
+        for (var i = 0; i < 300; i++) {
+          await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 10)));
+          await tester.pump(const Duration(milliseconds: 40));
+          if (i > 10 && !session.busy && !groups.loading) break;
+        }
+        expect(tester.takeException(), isNull);
       }
-      final connection = CanonicalUiConnection(server);
-      session =
-          CanonicalGameSession(connection: connection, directory: directory);
-      groups = CanonicalGroups(connection: connection, source: Source(server));
-      await session.synchronize();
-    });
-    addTearDown(() async {
-      groups.dispose();
-      session.dispose();
-      await directory.delete(recursive: true);
-    });
-    Future<void> tap(Finder finder) =>
-        tester.runAsync(() => tester.tap(finder));
-    Future<void> settle() async {
-      for (var i = 0; i < 300; i++) {
-        await tester.runAsync(
-            () => Future<void>.delayed(const Duration(milliseconds: 10)));
-        await tester.pump(const Duration(milliseconds: 40));
-        if (i > 10 && !session.busy && !groups.loading) break;
-      }
-      expect(tester.takeException(), isNull);
-    }
 
-    await tester.runAsync(() => tester.pumpWidget(MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(value: session),
-              ChangeNotifierProvider.value(value: groups)
-            ],
-            child: MaterialApp(
-                theme: buildAppTheme(),
-                supportedLocales: const [Locale('en')],
-                localizationsDelegates: GlobalMaterialLocalizations.delegates,
-                home: const Scaffold(
-                    body: SafeArea(child: CanonicalGroupsScreen()))))));
-    await settle();
-    final before = Map<String, dynamic>.from(server.state['pet'] as Map);
-    await tap(find.byKey(const Key('canonical-create-group')));
-    await settle();
-    await tap(find.byKey(Key('canonical-group-expertise-${before['id']}')));
-    await settle();
-    expect(find.byType(ExpertiseScoreBadge).evaluate().length,
-        greaterThanOrEqualTo(3));
-    await tap(find.text('Close'));
-    await settle();
-    expect(server.sent, isEmpty);
-    await tap(find.byKey(Key('canonical-group-dragon-${before['id']}')));
-    await tester.pump();
-    await settle();
-    expect(
-        server.sent.where((i) => i.action == 'create_group_adventure').length,
-        1);
-    expect(session.snapshot!.dragon(before['id'] as String)!.adventureId,
-        'online-group:$lobby');
-    expect(find.byKey(Key('canonical-group-$lobby')), findsOneWidget);
-    expect(find.text('No trail is available here right now'), findsOneWidget);
-    final leave = find.byKey(Key('canonical-leave-group-$lobby'));
-    await tester.ensureVisible(leave);
-    await tap(leave);
-    await settle();
-    await tap(find.widgetWithText(FilledButton, 'Confirm'));
-    await settle();
-    expect(server.sent.where((i) => i.action == 'leave_group_adventure').length,
-        1);
-    expect(
-        session.snapshot!.dragon(before['id'] as String)!.adventureId, isNull);
-    expect(find.byKey(const Key('canonical-create-group')), findsOneWidget);
-    expect(server.state['pet']['xp'], before['xp']);
-    expect(server.state['pet']['coins'], before['coins']);
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
+      await tester.runAsync(() => tester.pumpWidget(MultiProvider(
+              providers: [
+                ChangeNotifierProvider.value(value: session),
+                ChangeNotifierProvider.value(value: groups)
+              ],
+              child: MaterialApp(
+                  theme: buildAppTheme(),
+                  supportedLocales: const [Locale('en')],
+                  localizationsDelegates: GlobalMaterialLocalizations.delegates,
+                  home: const Scaffold(
+                      body: SafeArea(child: CanonicalGroupsScreen()))))));
+      await settle();
+      final before = Map<String, dynamic>.from(server.state['pet'] as Map);
+      await tap(find.byKey(const Key('canonical-create-group')));
+      await settle();
+      await tap(find.byKey(Key('canonical-group-expertise-${before['id']}')));
+      await settle();
+      expect(find.byType(ExpertiseScoreBadge).evaluate().length,
+          greaterThanOrEqualTo(3));
+      await tap(find.text('Close'));
+      await settle();
+      expect(server.sent, isEmpty);
+      await tap(find.byKey(Key('canonical-group-dragon-${before['id']}')));
+      await tester.pump();
+      await settle();
+      expect(
+          server.sent.where((i) => i.action == 'create_group_adventure').length,
+          1);
+      expect(session.snapshot!.dragon(before['id'] as String)!.adventureId,
+          'online-group:$lobby');
+      expect(find.byKey(Key('canonical-group-$lobby')), findsOneWidget);
+      expect(find.text('No trail is available here right now'), findsOneWidget);
+      // The old compact lobby opens its participant/actions sheet on tap.
+      expect(find.byKey(Key('canonical-leave-group-$lobby')), findsNothing);
+      await tap(find.byKey(Key('canonical-group-$lobby')));
+      await settle();
+      expect(find.byKey(Key('canonical-group-details-$lobby')), findsOneWidget);
+      final leave = find.byKey(Key('canonical-leave-group-$lobby'));
+      for (var scroll = 0; scroll < 6 && leave.evaluate().isEmpty; scroll++) {
+        await tester.drag(find.byKey(Key('canonical-group-details-$lobby')),
+            const Offset(0, -300));
+        await settle();
+      }
+      await tester.ensureVisible(leave);
+      await tap(leave);
+      await settle();
+      await tap(find.widgetWithText(FilledButton, 'Confirm'));
+      await settle();
+      expect(
+          server.sent.where((i) => i.action == 'leave_group_adventure').length,
+          1);
+      expect(session.snapshot!.dragon(before['id'] as String)!.adventureId,
+          isNull);
+      expect(find.byKey(const Key('canonical-create-group')), findsOneWidget);
+      expect(server.state['pet']['xp'], before['xp']);
+      expect(server.state['pet']['coins'], before['coins']);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
 }

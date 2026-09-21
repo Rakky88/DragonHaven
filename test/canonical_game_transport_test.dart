@@ -100,7 +100,7 @@ void main() {
             publishableKey: 'synthetic-production-public-key'),
         httpClientFactory: () => client);
     await transport!.read(_read);
-    expect(client.closed, isTrue);
+    expect(client.closed, isFalse);
   });
 
   test(
@@ -188,7 +188,84 @@ void main() {
     transport = CanonicalGameTransport.staging(auth, _config,
         httpClientFactory: () => client);
     expect(await transport!.read(_read), {'synthetic': true});
-    expect(client.closed, isTrue);
+    expect(client.closed, isFalse);
+  });
+
+  test('sequential requests reuse one client until account epoch changes',
+      () async {
+    await _signIn(auth, _owner);
+    final clients = <_TrackingClient>[];
+    transport =
+        CanonicalGameTransport.staging(auth, _config, httpClientFactory: () {
+      final client = _TrackingClient((request) async {
+        expect(request.headers['authorization'],
+            'Bearer ${auth.auth.currentSession!.accessToken}');
+        return _response({'synthetic': true});
+      });
+      clients.add(client);
+      return client;
+    });
+    await transport!.read(_read);
+    await transport!.read(_read);
+    expect(clients, hasLength(1));
+    expect(clients.single.closed, isFalse);
+    await _signIn(auth, _other);
+    expect(clients.single.closed, isTrue);
+    await transport!.read(_read);
+    expect(clients, hasLength(2));
+    await transport!.dispose();
+    transport = null;
+    expect(clients.every((client) => client.closed), isTrue);
+  });
+
+  test('concurrent requests lease separate clients and retain only one idle',
+      () async {
+    await _signIn(auth, _owner);
+    final held = Completer<http.StreamedResponse>();
+    final clients = <_TrackingClient>[];
+    transport =
+        CanonicalGameTransport.staging(auth, _config, httpClientFactory: () {
+      final index = clients.length;
+      final client = _TrackingClient((_) async =>
+          index == 0 ? await held.future : _response({'synthetic': true}));
+      clients.add(client);
+      return client;
+    });
+    final pending = transport!.read(_read);
+    await transport!.read(_read);
+    expect(clients, hasLength(2));
+    expect(clients.every((client) => !client.closed), isTrue);
+    held.complete(_response({'synthetic': true}));
+    await pending;
+    expect(clients.first.closed, isTrue);
+    expect(clients.last.closed, isFalse);
+    await transport!.read(_read);
+    expect(clients, hasLength(2));
+  });
+
+  test('a timed out lease cannot close or contaminate a successful idle client',
+      () async {
+    await _signIn(auth, _owner);
+    final held = Completer<http.StreamedResponse>();
+    final clients = <_TrackingClient>[];
+    transport = CanonicalGameTransport.staging(auth, _config,
+        timeout: const Duration(milliseconds: 30), httpClientFactory: () {
+      final index = clients.length;
+      final client = _TrackingClient((_) async =>
+          index == 0 ? await held.future : _response({'synthetic': true}));
+      clients.add(client);
+      return client;
+    });
+    final pending =
+        expectLater(transport!.read(_read), _error('game_command_unavailable'));
+    await transport!.read(_read);
+    await pending;
+    expect(clients.first.closed, isTrue);
+    expect(clients.last.closed, isFalse);
+    held.complete(_response({'privateLateReply': true}));
+    await Future<void>.delayed(Duration.zero);
+    await transport!.read(_read);
+    expect(clients, hasLength(2));
   });
 
   test('production, wrong staging host and logged-out requests never open HTTP',
@@ -249,6 +326,7 @@ void main() {
     final rejected = expectLater(future, _error('game_account_changed'));
     await started.future;
     await _signIn(auth, _other);
+    expect(client.closed, isTrue);
     await _signIn(auth, _owner);
     expect(transport!.sessionEpoch, greaterThan(before));
     response.complete(_response({'synthetic': true}));
@@ -275,10 +353,16 @@ void main() {
       'oversized bodies, redirects and malformed JSON are private fixed failures',
       () async {
     await _signIn(auth, _owner);
-    for (final mode in ['large', 'redirect', 'malformed']) {
+    for (final mode in ['large', 'streamedLarge', 'redirect', 'malformed']) {
       final client = _TrackingClient((_) async => switch (mode) {
             'large' => http.StreamedResponse(const Stream.empty(), 200,
                 contentLength: 10 * 1024 * 1024),
+            'streamedLarge' => http.StreamedResponse(
+                Stream.fromIterable([
+                  List<int>.filled(5 * 1024 * 1024, 32),
+                  List<int>.filled(5 * 1024 * 1024, 32),
+                ]),
+                200),
             'redirect' => http.StreamedResponse(const Stream.empty(), 302,
                 headers: {'location': 'https://unknown.invalid'}),
             _ => http.StreamedResponse(

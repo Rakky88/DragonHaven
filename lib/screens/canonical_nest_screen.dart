@@ -30,13 +30,32 @@ class _CanonicalNestScreenState extends State<CanonicalNestScreen> {
   }
 
   Future<void> _choose() async {
-    await showModalBottomSheet<void>(
+    final session = context.read<CanonicalGameSession>();
+    final owner = session.snapshot?.ownerId;
+    final epoch = session.connection.sessionEpoch;
+    if (!session.canAct || session.snapshot?.nest != null) {
+      return;
+    }
+    final selected = await showModalBottomSheet<String>(
         context: context,
         showDragHandle: true,
         isScrollControlled: true,
-        builder: (_) => SizedBox(
-            height: MediaQuery.sizeOf(context).height * .78,
-            child: const CanonicalEggList()));
+        builder: (sheetContext) => SafeArea(
+            child: SizedBox(
+                height: MediaQuery.sizeOf(sheetContext).height * .78,
+                child: CanonicalEggList(
+                    forNest: true,
+                    onChoose: (id) => Navigator.pop(sheetContext, id)))));
+    if (selected == null ||
+        !mounted ||
+        !session.canAct ||
+        session.snapshot?.ownerId != owner ||
+        session.connection.sessionEpoch != epoch ||
+        session.snapshot?.nest != null) {
+      return;
+    }
+    await runShopAction(
+        context, () => CanonicalGameActions(session).activateEgg(selected));
   }
 
   void _tap() {
@@ -84,74 +103,193 @@ class _CanonicalNestScreenState extends State<CanonicalNestScreen> {
     return Scaffold(
         appBar: AppBar(title: Text(s.pick('Rooftop Nest', 'Daknest'))),
         body: ShopEconomyBoundary(
-            child: ListView(padding: const EdgeInsets.all(16), children: [
-          Text(s.pick('Rooftop Nest', 'Daknest'),
-              style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 6),
-          Text(
-              egg == null
-                  ? s.pick(
-                      'A quiet cradle for the next life in your collection.',
-                      'Een rustige wieg voor het volgende leven in je collectie.')
-                  : s.pick('One hidden dragon is growing beneath the shell.',
-                      'Onder de schaal groeit \u00e9\u00e9n verborgen draak.'),
-              style: const TextStyle(color: AppColors.muted, fontSize: 15)),
-          const SizedBox(height: 15),
-          InkWell(
-              key: const Key('rooftop-nest-scene'),
-              onTap: _tap,
+            child: ListView(
+                key: const PageStorageKey('rooftop-nest-scroll'),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 34),
+                children: [
+              Text(s.pick('Rooftop Nest', 'Daknest'),
+                  style: Theme.of(context).textTheme.displaySmall),
+              const SizedBox(height: 5),
+              Text(
+                  egg == null
+                      ? s.pick(
+                          'A quiet cradle for the next life in your collection.',
+                          'Een rustige wieg voor het volgende leven in je collectie.')
+                      : s.pick(
+                          'One hidden dragon is growing beneath the shell.',
+                          'Onder de schaal groeit \u00e9\u00e9n verborgen draak.'),
+                  style: const TextStyle(color: AppColors.muted, fontSize: 15)),
+              const SizedBox(height: 15),
+              _NestScene(
+                  hasEgg: egg != null,
+                  starter: egg?.firstEgg == true,
+                  onTap: _tap),
+              const SizedBox(height: 16),
+              if (egg != null) ...[
+                EggHatchCountdown.confirmed(
+                    eggId: egg.id,
+                    confirmedHatchAt: egg.hatchAt!,
+                    serverTime: view.serverTime),
+                const SizedBox(height: 14),
+                Container(
+                    key: const PageStorageKey('rooftop-nest-scroll'),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 34),
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(21),
+                        border: Border.all(color: AppColors.mist)),
+                    child: Row(children: [
+                      const GameIconSprite(GameIconKind.mysteriousEgg,
+                          size: 46),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: Text(egg.hint(s.languageCode),
+                              style: const TextStyle(
+                                  color: AppColors.muted,
+                                  fontWeight: FontWeight.w700,
+                                  fontStyle: FontStyle.italic))),
+                    ])),
+              ] else
+                _EmptyNestCard(
+                    hasEggs: view.eggs.any(
+                        (e) => !view.inventory.reservedEggIds.contains(e.id)),
+                    onChoose: _choose),
+            ])));
+  }
+}
+
+class _NestScene extends StatelessWidget {
+  const _NestScene(
+      {required this.hasEgg, required this.starter, required this.onTap});
+
+  final bool hasEgg, starter;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        button: !hasEgg || starter,
+        child: InkWell(
+          key: const Key('rooftop-nest-scene'),
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(28),
+          child: Ink(
+            height: 270,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(28)),
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(28),
-              child: ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
-                  child: SizedBox(
-                      height: 270,
-                      child: egg == null
-                          ? HavenPhaseImage(
-                              assetFor: (phase) =>
-                                  'assets/images/tower_nest_${phase.assetKey}.webp')
-                          : const RooftopEggNest()))),
-          const SizedBox(height: 16),
-          if (egg != null) ...[
-            EggHatchCountdown.confirmed(
-                eggId: egg.id,
-                confirmedHatchAt: egg.hatchAt!,
-                serverTime: view.serverTime),
-            const SizedBox(height: 14),
-            Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(21),
-                    border: Border.all(color: AppColors.mist)),
-                child: Row(children: [
-                  const GameIconSprite(GameIconKind.mysteriousEgg, size: 46),
-                  const SizedBox(width: 12),
-                  Expanded(
-                      child: Text(egg.hint(s.languageCode),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (!hasEgg)
+                    const Positioned.fill(
+                      child: HavenPhaseImage(
+                        assetFor: _nestAssetForPhase,
+                      ),
+                    )
+                  else
+                    const Positioned(
+                      left: 0,
+                      top: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: RooftopEggNest(),
+                    ),
+                  if (!hasEgg)
+                    Positioned(
+                      left: 18,
+                      right: 18,
+                      bottom: 15,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 15,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.eventColor(
+                              context, const Color(0xD91D1639)),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: .18),
+                          ),
+                        ),
+                        child: Text(
+                          AppStrings.of(context).pick(
+                            'Tap the nest to choose an egg',
+                            'Tik op het nest om een ei te kiezen',
+                          ),
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
-                              color: AppColors.muted,
-                              fontWeight: FontWeight.w700,
-                              fontStyle: FontStyle.italic))),
-                ])),
-            TextButton(
-                onPressed: () => showCanonicalEggDetails(context, egg.id),
-                child: Text(s.pick('Details', 'Informatie'))),
-          ] else
-            Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                        colors: [Color(0xFFF2ECFF), Color(0xFFFFF4D9)]),
-                    borderRadius: BorderRadius.circular(22)),
-                child: Column(children: [
-                  Text(s.pick('The nest is empty', 'Het nest is leeg'),
-                      style: const TextStyle(fontWeight: FontWeight.w900)),
-                  Text(s.pick('Choose one egg from your inventory.',
-                      'Kies \u00e9\u00e9n ei uit je inventaris.')),
-                  FilledButton(
-                      onPressed: _choose,
-                      child: Text(s.pick('Choose an egg', 'Kies een ei'))),
-                ])),
-        ])));
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+String _nestAssetForPhase(HavenDayPhase value) =>
+    'assets/images/tower_nest_${value.assetKey}.webp';
+
+class _EmptyNestCard extends StatelessWidget {
+  const _EmptyNestCard({required this.hasEggs, required this.onChoose});
+
+  final bool hasEggs;
+  final VoidCallback onChoose;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF2ECFF), Color(0xFFFFF4D9)],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border:
+            Border.all(color: AppColors.eventColor(context, AppColors.mist)),
+      ),
+      child: Row(children: [
+        const GameIconSprite(GameIconKind.mysteriousEgg, size: 58),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                strings.pick('The nest is empty', 'Het nest is leeg'),
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                hasEggs
+                    ? strings.pick(
+                        'Choose one egg from your inventory.',
+                        'Kies één ei uit je inventaris.',
+                      )
+                    : strings.pick(
+                        'Rare eggs can be found in chests earned on Adventures.',
+                        'Zeldzame eieren kun je vinden in kisten die je met Adventures verdient.',
+                      ),
+                style: const TextStyle(color: AppColors.muted),
+              ),
+            ],
+          ),
+        ),
+        if (hasEggs)
+          IconButton.filledTonal(
+            key: const Key('choose-nest-egg'),
+            tooltip: strings.pick('Choose an egg', 'Kies een ei'),
+            onPressed: onChoose,
+            icon: const Icon(Icons.arrow_forward_rounded),
+          ),
+      ]),
+    );
   }
 }

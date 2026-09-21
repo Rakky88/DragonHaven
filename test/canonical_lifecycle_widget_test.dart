@@ -4,6 +4,9 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
+import 'package:dragon_haven/screens/canonical_eggs.dart';
+import 'package:dragon_haven/models/egg_altar.dart';
+import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/screens/canonical_dragons_screen.dart';
 import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
 import 'package:dragon_haven/screens/canonical_house_screen.dart';
@@ -168,9 +171,14 @@ void main() {
     expect(session.snapshot!.egg(egg.id)!.tagged, isTrue);
     expect(find.text('Untag egg'), findsOneWidget);
     await tap(tester, key('canonical-incubate-egg'));
-    await tap(tester, find.widgetWithText(FilledButton, 'Confirm'));
+    expect(find.widgetWithText(FilledButton, 'Confirm'), findsNothing);
     await command(tester);
     expect(session.snapshot!.nest?.id, egg.id);
+    await tester.runAsync(() async {
+      unawaited(showCanonicalEggDetails(
+          tester.element(find.byType(CanonicalInventoryScreen)), egg.id));
+    });
+    await tester.pump(const Duration(milliseconds: 400));
     expect(
         tester
             .widget<FilledButton>(find.descendant(
@@ -221,7 +229,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1200));
     await hold.up();
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.textContaining('This is a Sinister egg'), findsOneWidget);
+    expect(find.textContaining('This permanently returns your Sinister Egg'),
+        findsOneWidget);
     await tap(tester, find.widgetWithText(TextButton, 'Cancel'));
     expect(server.sent, isEmpty);
     server.loseReply = true;
@@ -231,7 +240,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1200));
     await secondHold.up();
     await tester.pump(const Duration(milliseconds: 400));
-    await tap(tester, find.widgetWithText(FilledButton, 'Return to the Weave'));
+    await tap(tester, find.widgetWithText(FilledButton, 'Return Sinister Egg'));
     await command(tester);
     expect(session.snapshot!.egg(egg.id), isNotNull);
     await tap(tester, key('economy-reconnect'));
@@ -239,6 +248,86 @@ void main() {
     expect(session.snapshot!.egg(egg.id), isNull);
     expect(session.snapshot!.inventory.materials.fragments, 225);
     expect(server.receipts, hasLength(1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'crafted relic uses the historical egg picker and only the chosen server reveal',
+      (tester) async {
+    await setup(tester, const CanonicalInventoryScreen(), prepare: (server) {
+      server.state['eggAltar']['crafted']['moralEcho'] = 1;
+    });
+    final egg = session.snapshot!.eggs.firstWhere(
+        (egg) => egg.location == 'stash' && !egg.known(AltarRelic.moralEcho));
+    await tap(tester, find.text('Relics'));
+    await tap(tester, key('altar-use-moralEcho'));
+    expect(find.text('Choose an egg'), findsOneWidget);
+    expect(key('altar-egg-sort-direction'), findsOneWidget);
+    await tap(tester, key('canonical-egg-${egg.id}'));
+    await tap(tester, key('altar-choose-reviewed-egg'));
+    expect(find.text('Use one relic on this egg?'), findsOneWidget);
+    await tap(
+        tester,
+        find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.widgetWithText(FilledButton, 'Use')));
+    await command(tester);
+    expect(session.snapshot!.egg(egg.id)!.revealedMoralAxis, isNotNull);
+    expect(session.snapshot!.inventory.count(AltarRelic.moralEcho), 0);
+    expect(server.sent, hasLength(1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('nest picker chooses directly without opening altar details',
+      (tester) async {
+    String? selected;
+    await setup(tester,
+        CanonicalEggList(forNest: true, onChoose: (id) => selected = id));
+    final egg =
+        session.snapshot!.eggs.firstWhere((egg) => egg.location == 'stash');
+    await tap(tester, key('canonical-egg-${egg.id}'));
+    expect(selected, egg.id);
+    expect(key('canonical-place-egg'), findsNothing);
+    expect(server.sent, isEmpty);
+  });
+
+  testWidgets(
+      'Astral Lens opens the original target sheet and displays confirmed rarity',
+      (tester) async {
+    await setup(tester, const CanonicalInventoryScreen(), prepare: (server) {
+      server.state['relicInventory']['astralLens'] = 1;
+    });
+    final egg =
+        session.snapshot!.eggs.firstWhere((e) => e.revealedRarity == null);
+    await tap(tester, find.text('Relics'));
+    await tap(tester, key('use-relic-astralLens'));
+    expect(find.text('Reveal which egg?'), findsOneWidget);
+    await tap(tester, key('astral-lens-egg-${egg.id}'));
+    await command(tester);
+    expect(find.text('Rarity revealed'), findsOneWidget);
+    expect(session.snapshot!.egg(egg.id)!.revealedRarity, isNotNull);
+    expect(server.sent, hasLength(1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'dragon relic restores target selection and fullscreen reveal without private facts',
+      (tester) async {
+    await setup(tester, const CanonicalInventoryScreen(), prepare: (server) {
+      server.state['relicInventory']['moralPrism'] = 1;
+      server.state['pet']['moralAxisKnown'] = false;
+    });
+    final dragon = session.snapshot!.dragons
+        .firstWhere((d) => d.owned && !d.knows(MysticRelic.moralPrism));
+    await tap(tester, find.text('Relics'));
+    await tap(tester, key('use-relic-moralPrism'));
+    await tap(tester, key('confirm-relic-use'));
+    expect(key('relic-dragon-picker-scroll'), findsOneWidget);
+    await tap(tester, key('relic-dragon-choice-${dragon.id}'));
+    await command(tester);
+    expect(key('close-relic-reveal'), findsOneWidget);
+    expect(session.snapshot!.dragon(dragon.id)!.moralAxis, isNotNull);
+    expect(server.sent, hasLength(1));
     expect(tester.takeException(), isNull);
   });
 
@@ -272,21 +361,23 @@ void main() {
   });
 
   testWidgets(
-      'a confirmation cannot survive sign-out and reauthentication of the same owner',
+      'an incubation callback cannot survive sign-out and reauthentication of the same owner',
       (tester) async {
     await setup(tester, const CanonicalInventoryScreen());
     final egg = session.snapshot!.eggs.first;
     await tap(tester, find.text('Eggs'));
     await tap(tester, key('canonical-egg-${egg.id}'));
-    await tap(tester, key('canonical-incubate-egg'));
+    final start =
+        tester.widget<FilledButton>(key('canonical-incubate-egg')).onPressed!;
     final connection = session.connection as CanonicalUiConnection;
     connection.signOut();
     await tester.pump();
     connection.currentOwner = CanonicalUiServer.owner;
     await tester.runAsync(() => session.synchronize());
     await tester.pump();
-    final confirm = find.widgetWithText(FilledButton, 'Confirm');
-    expect(tester.widget<FilledButton>(confirm).onPressed, isNull);
+    start();
+    await command(tester);
+    expect(find.widgetWithText(FilledButton, 'Confirm'), findsNothing);
     expect(find.text('Start incubating this egg?'), findsNothing);
     expect(server.sent, isEmpty);
     expect(tester.takeException(), isNull);
@@ -446,7 +537,8 @@ void main() {
     expect(session.snapshot!.dragon(dragon.id)!.highlighted, {'might'});
     expect(session.snapshot!.dragon(dragon.id)!.training, dragon.training);
     expect(session.snapshot!.dragon(dragon.id)!.xp, dragon.xp);
-    await tap(tester, find.widgetWithText(TextButton, 'Close'));
+    Navigator.of(tester.element(key('canonical-starlight-treat'))).pop();
+    await tester.pumpAndSettle();
     await tester.pumpWidget(ChangeNotifierProvider.value(
         value: session,
         child: const MaterialApp(
@@ -656,15 +748,14 @@ void main() {
     await setup(tester, const CanonicalDragonsScreen(),
         language: 'nl', scale: 1.35);
     await shot(tester, 'restored-dragons-nl-large');
-    await tap(tester, key('canonical-dragon-filter'));
+    await tap(tester, key('owned-dragons-filter'));
     await shot(tester, 'restored-dragon-filters-nl-large');
-    Navigator.of(tester.element(find.byType(SwitchListTile).last)).pop();
+    await tap(tester, key('owned-dragons-filter-done'));
     await tester.pumpAndSettle();
     final dragon = session.snapshot!.dragons.firstWhere((d) => d.owned);
     await tap(tester, key('canonical-dragon-${dragon.id}'));
     await shot(tester, 'restored-dragon-details-nl-large');
-    expect(
-        find.byKey(Key('dragon-school-diploma-${dragon.id}')), findsOneWidget);
+    expect(find.byKey(const Key('dragon-level-progress')), findsOneWidget);
     expect(server.sent, isEmpty);
     expect(tester.takeException(), isNull);
   });
