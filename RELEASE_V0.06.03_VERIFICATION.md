@@ -53,3 +53,17 @@ historical draggable My Dragons sheet, compact Tower rooms, Adventure cards,
 Trial constellation/cards and Altar controls render without exceptions. The
 large-text routes remain scrollable and the original horizontally scrollable
 Adventure tabs remain swipeable.
+
+## Publication and postflight
+
+Release `v0.06.03` was published from commit
+`57ea024535839678dafff6dc3465cd8a9adbe795`. GitHub reports one
+`DragonHaven.apk` asset of 578,490,303 bytes with the exact local SHA-256 above.
+The release page, versioned APK URL and permanent latest APK URL all returned
+HTTP 200 at 2026-09-21 07:53:40 UTC.
+
+The post-publication production check at 2026-09-21 07:53:57 UTC again reported
+93 matching migrations, zero database lint errors, Auth health/settings 200 and
+application health 200. Runtime stayed enabled with minimum build 10092 and the
+same ruleset hash; all shadow switches and legacy mutations stayed disabled.
+No server deployment or runtime mutation was required for this release.
