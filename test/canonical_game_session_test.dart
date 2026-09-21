@@ -209,7 +209,8 @@ void main() {
     final result = session.execute('purchase_title_chest', {});
     await Future<void>.delayed(const Duration(milliseconds: 30));
     expect((await session.intents.pending(owner))!.requestId, request);
-    expect(session.canAct, isFalse);
+    expect(session.canAct, isTrue);
+    expect(session.canRunAutomatic, isFalse);
     held.complete();
     expect((await result)!.succeeded, isTrue);
     expect(session.snapshot!.serverRevision, 2);
@@ -219,7 +220,7 @@ void main() {
   });
 
   test(
-      'identical taps share the request, a different pending action is refused',
+      'identical taps share the request, an unpredictable pending action is refused',
       () async {
     await session.synchronize();
     final held = Completer<void>();
@@ -227,7 +228,8 @@ void main() {
     final first = session.execute('purchase_title_chest', {});
     final second = session.execute('purchase_title_chest', {});
     expect(identical(first, second), isTrue);
-    await expectLater(session.execute('purchase_portrait_chest', {}),
+    await expectLater(
+        session.execute('open_chests', {'tier': 'wooden', 'count': 1}),
         failure('game_command_busy'));
     held.complete();
     await Future.wait([first, second]);

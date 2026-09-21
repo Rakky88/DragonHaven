@@ -4682,18 +4682,12 @@ Future<void> showRestoredRunDetails(
                 title: strings.pick('Dragon', 'Draak'),
                 value: dragonName ??
                     strings.pick('Unknown dragon', 'Onbekende draak')),
-            _DetailRow(
-                icon: const GameIconSprite(GameIconKind.clock, size: 34),
-                title: ready
-                    ? strings.pick('Status', 'Status')
-                    : strings.pick('Return in', 'Terug over'),
-                value: ready
-                    ? strings.pick('Ready to return', 'Klaar om terug te keren')
-                    : adventureRemainingLabel(
-                        endsAt,
-                        strings,
-                        now: now,
-                      )),
+            RestoredAdventureCountdown(
+                key: ValueKey('adventure-detail-countdown-$runId'),
+                endsAt: endsAt,
+                confirmedNow: now,
+                ready: ready,
+                detail: true),
             _DetailRow(
                 icon: const GameIconSprite(GameIconKind.experience, size: 34),
                 title: strings.pick('Dragon experience', 'Drakenervaring'),
@@ -4823,3 +4817,84 @@ Widget restoredGroupRewards(AdventureDefinition definition,
         definition: definition,
         groupChestRange: true,
         approximate: approximate);
+
+/// The historical timer presentation, advanced locally from a server anchor.
+/// Repaints never read or mutate game state.
+class RestoredAdventureCountdown extends StatefulWidget {
+  const RestoredAdventureCountdown(
+      {super.key,
+      required this.endsAt,
+      required this.confirmedNow,
+      this.ready = false,
+      this.detail = false,
+      this.style});
+  final DateTime endsAt, confirmedNow;
+  final bool ready, detail;
+  final TextStyle? style;
+  @override
+  State<RestoredAdventureCountdown> createState() =>
+      _RestoredAdventureCountdownState();
+}
+
+class _RestoredAdventureCountdownState
+    extends State<RestoredAdventureCountdown> {
+  final _elapsed = Stopwatch();
+  Timer? _timer;
+  @override
+  void initState() {
+    super.initState();
+    _start();
+  }
+
+  void _start() {
+    _timer?.cancel();
+    _elapsed
+      ..reset()
+      ..start();
+    if (!widget.ready && widget.endsAt.isAfter(widget.confirmedNow)) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted) return;
+        setState(() {});
+        if (!widget.endsAt.isAfter(widget.confirmedNow.add(_elapsed.elapsed))) {
+          _timer?.cancel();
+        }
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant RestoredAdventureCountdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.confirmedNow != oldWidget.confirmedNow ||
+        widget.endsAt != oldWidget.endsAt ||
+        widget.ready != oldWidget.ready) {
+      _start();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _elapsed.stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final now = widget.confirmedNow.add(_elapsed.elapsed);
+    final ready = widget.ready || !widget.endsAt.isAfter(now);
+    final label = ready
+        ? strings.pick('Ready to return', 'Klaar om terug te keren')
+        : adventureRemainingLabel(widget.endsAt, strings, now: now);
+    if (widget.detail) {
+      return _DetailRow(
+          icon: const GameIconSprite(GameIconKind.clock, size: 34),
+          title: ready
+              ? strings.pick('Status', 'Status')
+              : strings.pick('Return in', 'Terug over'),
+          value: label);
+    }
+    return Text(label, style: widget.style);
+  }
+}

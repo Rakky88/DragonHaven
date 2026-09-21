@@ -55,6 +55,7 @@ class CanonicalGameSession extends ChangeNotifier {
   Future<void>? _closing;
   Future<void>? _connectionClosing;
   String? _operationKey;
+  final _commands = <_QueuedCommand>[];
 
   bool get _sameSession =>
       !_disposed &&
@@ -65,10 +66,17 @@ class CanonicalGameSession extends ChangeNotifier {
   CanonicalGameSnapshot? get confirmedSnapshot =>
       _sameSession ? _snapshot : null;
   String? get errorCode => _sameSession ? _errorCode : null;
-  bool get busy => _sameSession && _operation != null;
+  bool get busy => _sameSession && (_operation != null || _commands.isNotEmpty);
   bool get fresh => _sameSession && _fresh;
+
+  /// Automatic refresh/reveal/hatch work must not enter the player's queue.
+  bool get canRunAutomatic => canAct && !busy;
   bool get canAct =>
-      _foreground && fresh && !busy && snapshot?.mutationsEnabled == true;
+      !_retiring &&
+      _foreground &&
+      fresh &&
+      (!busy || _commands.isNotEmpty) &&
+      snapshot?.mutationsEnabled == true;
 
   /// Returning from the background requires a new read. A command already in
   /// flight still finishes its durable reconciliation, without enabling taps.
@@ -90,6 +98,7 @@ class CanonicalGameSession extends ChangeNotifier {
     _errorCode = null;
     _operation = null;
     _operationKey = null;
+    _cancelCommands(const CanonicalGameException('game_account_changed'));
     notifyListeners();
   }
 
@@ -101,6 +110,10 @@ class CanonicalGameSession extends ChangeNotifier {
       return Future.error(ArgumentError.value(minimumServerRevision));
     }
     if (!_sameSession) _accountChanged();
+    if (_commands.isNotEmpty) {
+      return _commands.last.completion.future.then(
+          (_) => synchronize(minimumServerRevision: minimumServerRevision));
+    }
     if (minimumServerRevision > _minimumServerRevision) {
       _minimumServerRevision = minimumServerRevision;
       _fresh = false;
@@ -136,16 +149,53 @@ class CanonicalGameSession extends ChangeNotifier {
     });
   }
 
-  /// Duplicate taps share the original request. A different action while one
-  /// is pending is refused; economic actions are never queued against stale UI.
+  /// Predictable actions can be admitted against the projected display while
+  /// one durable command is sent at a time. Identical pending taps share a
+  /// result. Unknown outcomes remain exclusive and are never fabricated.
   Future<CanonicalGameReceipt?> execute(
       String action, Map<String, dynamic> payload) {
+    if (!_sameSession) _accountChanged();
     final ordered = {
       for (final key in payload.keys.toList()..sort()) key: payload[key]
     };
     final key = jsonEncode([action, ordered]);
+    if (_commands.isNotEmpty && _commands.last.key == key) {
+      return _commands.last.completion.future;
+    }
     final observed = confirmedSnapshot;
     final allowed = canAct;
+    final prediction = allowed && observed != null
+        ? predictGameDisplay(observed, action, ordered,
+            observed.serverTime.add(_sinceConfirmation.elapsed),
+            preceding: _preview)
+        : null;
+    if (_commands.isNotEmpty && prediction == null) {
+      return Future.error(const CanonicalGameException('game_command_busy'));
+    }
+    if (prediction != null) {
+      if (_commands.length >= 32) {
+        return Future.error(const CanonicalGameException('game_command_busy'));
+      }
+      final startDrain = _commands.isEmpty;
+      final CanonicalGameIntent validated;
+      try {
+        validated = CanonicalGameIntent(
+            ownerId: observed!.ownerId,
+            requestId: _requestId(),
+            action: action,
+            payload: ordered,
+            minimumRevision: observed.serverRevision);
+      } on Object catch (error) {
+        return Future.error(error);
+      }
+      final command = _QueuedCommand(key, validated);
+      _commands.add(command);
+      _admitted.add(command.completion.future);
+      _preview = prediction;
+      notifyListeners();
+      if (startDrain) unawaited(_drainCommands());
+      return command.completion.future;
+    }
     return _run(key, (owner, epoch, requireSession) async {
       if (!allowed || observed == null) {
         throw CanonicalGameException(observed?.mutationsEnabled == false
@@ -164,11 +214,92 @@ class CanonicalGameSession extends ChangeNotifier {
         requireSession();
         _accept(value);
       }).resume(owner);
-    },
-        preview: allowed && observed != null
-            ? predictGameDisplay(observed, action, ordered,
-                observed.serverTime.add(_sinceConfirmation.elapsed))
-            : null);
+    });
+  }
+
+  void _cancelCommands(CanonicalGameException error) {
+    final cancelled = _commands.toList();
+    _commands.clear();
+    _preview = null;
+    for (final command in cancelled) {
+      _admitted.remove(command.completion.future);
+      if (!command.completion.isCompleted) {
+        command.completion.completeError(error);
+      }
+    }
+  }
+
+  void _rebaseCommands({bool skipCurrent = false}) {
+    _preview = null;
+    final confirmed = _snapshot;
+    if (confirmed == null) return;
+    for (final command in _commands.skip(skipCurrent ? 1 : 0)) {
+      final next = predictGameDisplay(confirmed, command.action,
+          command.payload, confirmed.serverTime.add(_sinceConfirmation.elapsed),
+          preceding: _preview);
+      // A server rejection may remove resources another queued action needs.
+      // Do not display that effect or dispatch it from an invalid projection.
+      command.valid = next != null;
+      if (next != null) _preview = next;
+    }
+  }
+
+  Future<void> _drainCommands() async {
+    while (_commands.isNotEmpty) {
+      final command = _commands.first;
+      if (!command.valid) {
+        _commands.removeAt(0);
+        _admitted.remove(command.completion.future);
+        command.completion.completeError(
+            const CanonicalGameException('game_refresh_required'));
+        _rebaseCommands();
+        if (!_disposed) notifyListeners();
+        continue;
+      }
+      try {
+        final receipt =
+            await _run(command.key, (owner, epoch, requireSession) async {
+          final observed = confirmedSnapshot;
+          if (observed == null) {
+            throw const CanonicalGameException('game_account_changed');
+          }
+          final intent = CanonicalGameIntent(
+              ownerId: owner,
+              requestId: command.intent.requestId,
+              action: command.action,
+              payload: command.payload,
+              minimumRevision: observed.serverRevision);
+          await intents.prepare(intent);
+          requireSession();
+          return _reconciler(_reader(), (value) async {
+            requireSession();
+            _accept(value);
+          }).resume(owner);
+        }, preview: _preview, admitted: true);
+        if (!command.completion.isCompleted) {
+          command.completion.complete(receipt);
+        }
+      } on Object catch (error, stack) {
+        if (!command.completion.isCompleted) {
+          command.completion.completeError(error, stack);
+        }
+        if (_commands.isNotEmpty && identical(_commands.first, command)) {
+          _commands.removeAt(0);
+          _admitted.remove(command.completion.future);
+          // Unknown delivery stops the queue; only the original durable intent
+          // may be recovered before any new economic command is dispatched.
+          _cancelCommands(
+              const CanonicalGameException('game_refresh_required'));
+          if (!_disposed) notifyListeners();
+        }
+        return;
+      }
+      _admitted.remove(command.completion.future);
+      if (_commands.isEmpty || !identical(_commands.first, command)) return;
+      _commands.removeAt(0);
+      _rebaseCommands();
+      if (!_disposed) notifyListeners();
+    }
   }
 
   CanonicalGameReader _reader() => CanonicalGameReader(
@@ -209,6 +340,7 @@ class CanonicalGameSession extends ChangeNotifier {
       ..reset()
       ..start();
     _fresh = _foreground;
+    _rebaseCommands(skipCurrent: true);
     notifyListeners();
   }
 
@@ -216,11 +348,12 @@ class CanonicalGameSession extends ChangeNotifier {
       String key,
       Future<CanonicalGameReceipt?> Function(String, int, void Function())
           action,
-      {CanonicalGameSnapshot? preview}) {
+      {CanonicalGameSnapshot? preview,
+      bool admitted = false}) {
     if (!_sameSession) _accountChanged();
     final owner = _owner;
     final epoch = _epoch;
-    if (_disposed || _retiring || owner == null) {
+    if (_disposed || (_retiring && !admitted) || owner == null) {
       return Future.error(const CanonicalGameException('game_login_required'));
     }
     if (_operation != null) {
@@ -235,7 +368,7 @@ class CanonicalGameSession extends ChangeNotifier {
       }
     }
 
-    _fresh = false;
+    if (!admitted) _fresh = false;
     _errorCode = null;
     _operationKey = key;
     final completion = Completer<CanonicalGameReceipt?>();
@@ -264,7 +397,11 @@ class CanonicalGameSession extends ChangeNotifier {
       } finally {
         _admitted.remove(completion.future);
         if (!_disposed && identical(_operation, completion.future)) {
-          _preview = null;
+          if (admitted && _fresh) {
+            _rebaseCommands(skipCurrent: true);
+          } else {
+            _preview = null;
+          }
           _operation = null;
           _operationKey = null;
           notifyListeners();
@@ -292,6 +429,7 @@ class CanonicalGameSession extends ChangeNotifier {
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    _cancelCommands(const CanonicalGameException('game_account_changed'));
     _snapshot = null;
     _preview = null;
     _sinceConfirmation.stop();
@@ -301,4 +439,14 @@ class CanonicalGameSession extends ChangeNotifier {
     unawaited(_connectionClosing);
     super.dispose();
   }
+}
+
+class _QueuedCommand {
+  _QueuedCommand(this.key, this.intent);
+  final String key;
+  final CanonicalGameIntent intent;
+  String get action => intent.action;
+  Map<String, dynamic> get payload => intent.payload;
+  final completion = Completer<CanonicalGameReceipt?>();
+  bool valid = true;
 }

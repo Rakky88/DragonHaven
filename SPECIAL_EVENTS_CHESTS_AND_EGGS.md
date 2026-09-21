@@ -1,3 +1,11 @@
+## Post-v0.06.03 Adventure timer restoration - 21 September 2026
+
+Running Adventure cards and their detail sheet again show the historical
+remaining-time presentation. The countdown starts from the confirmed server
+clock and advances locally with a monotonic timer, so it adds no polling or
+server load. Completion, reward tiers, event dates and claim rules remain
+server-owned and unchanged.
+
 ## v0.06.02 historical egg/event UI restoration
 
 Restores v0.05.41 interaction patterns without changing egg contents, incubation
@@ -420,7 +428,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 3edfd059567830c2 -->
+<!-- reference-source-fingerprint: eb7f0071a0106823 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

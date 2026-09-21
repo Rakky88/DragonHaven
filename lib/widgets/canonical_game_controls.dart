@@ -48,7 +48,14 @@ class _CanonicalActionButtonState extends State<CanonicalActionButton> {
           return;
         }
       }
-      if (mounted) await action();
+      // This lock belongs to this button only; other controls can enqueue
+      // their own actions while this receipt is pending.
+      if (mounted &&
+          session.connection.sessionEpoch == epoch &&
+          session.snapshot?.ownerId == owner &&
+          session.canAct) {
+        await action();
+      }
     } on CanonicalGameException catch (error) {
       if (mounted) {
         showAppSnackBar(

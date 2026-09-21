@@ -26,7 +26,7 @@ class CanonicalHatchScheduler {
       _elapsed.reset();
     }
     if (_disposed ||
-        !session.canAct ||
+        !session.canRunAutomatic ||
         view == null ||
         !view.profile.onboardingComplete ||
         view.trialAttempt != null ||
@@ -43,7 +43,7 @@ class CanonicalHatchScheduler {
         egg.hatchAt!.difference(view.serverTime.add(_elapsed.elapsed));
     _timer = Timer(remaining.isNegative ? Duration.zero : remaining, () async {
       if (_disposed ||
-          !session.canAct ||
+          !session.canRunAutomatic ||
           session.connection.sessionEpoch != epoch ||
           session.confirmedSnapshot?.ownerId != view.ownerId ||
           session.confirmedSnapshot?.nest?.id != egg.id) {

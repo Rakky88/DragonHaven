@@ -147,9 +147,13 @@ void main() {
     server.hold = held.future;
     await tester.tap(buy);
     await tester.pump();
-    expect(tester.widget<FilledButton>(buy).onPressed, isNull);
+    expect(tester.widget<FilledButton>(buy).onPressed, isNotNull);
     expect(session.snapshot!.coins, coins - 500);
     expect(session.confirmedSnapshot!.coins, coins);
+    // A duplicate tap shares the pending request; it never spends twice.
+    await tester.tap(buy);
+    await tester.pump();
+    expect(session.snapshot!.coins, coins - 500);
     held.complete();
     await waitForCommand(tester);
     expect(find.textContaining('We could not confirm'), findsWidgets);

@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
+import 'package:dragon_haven/models/adventure.dart';
 import '../tool/game_domain_probe.dart';
 import 'support/canonical_ui_server.dart';
 
@@ -43,7 +44,8 @@ void main() {
     expect(session.snapshot!.shop.chests['title'],
         (before.shop.chests['title'] ?? 0) + 1);
     expect(session.confirmedSnapshot, same(before));
-    expect(session.canAct, isFalse);
+    expect(session.canAct, isTrue);
+    expect(session.canRunAutomatic, isFalse);
     expect(session.snapshot!.canApplyToLiveGame, isFalse);
     expect(() => session.snapshot!.toJson(), throwsStateError);
     await expectLater(session.snapshots.persistFresh(session.snapshot!),
@@ -53,7 +55,8 @@ void main() {
             .snapshot!
             .coins,
         before.coins);
-    await expectLater(session.execute('purchase_music_chest', {}),
+    await expectLater(
+        session.execute('open_chests', {'tier': 'wooden', 'count': 1}),
         throwsA(isA<CanonicalGameException>()));
     expect(session.execute('purchase_title_chest', {}), same(pending));
     hold.complete();
@@ -74,6 +77,205 @@ void main() {
     expect((await pending)!.succeeded, isFalse);
     expect(session.snapshot!.coins, before.coins);
     expect(session.snapshot!.isSpeculative, isFalse);
+  });
+
+  test('two immediate previews serialize at confirmed revisions', () async {
+    final before = session.confirmedSnapshot!;
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    final first = session.execute('purchase_title_chest', {});
+    final second = session.execute('purchase_music_chest', {});
+    expect(session.snapshot!.coins, before.coins - 500);
+    expect(session.snapshot!.gems, before.gems - 250);
+    expect(session.canAct, true);
+    expect(session.confirmedSnapshot, same(before));
+    hold.complete();
+    final receipts = await Future.wait([first, second]);
+    expect(receipts.every((r) => r!.succeeded), true);
+    expect(server.sent.map((i) => i.minimumRevision),
+        [before.serverRevision, before.serverRevision + 1]);
+    expect(session.snapshot!.coins, before.coins - 500);
+    expect(session.snapshot!.gems, before.gems - 250);
+    expect(session.snapshot!.isSpeculative, false);
+    expect(await session.intents.pending(CanonicalUiServer.owner), isNull);
+  });
+
+  test('rejected head rolls back and rebases later independent action',
+      () async {
+    final before = session.confirmedSnapshot!;
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    server.revision++;
+    final first = session.execute('purchase_title_chest', {});
+    final second = session.execute('purchase_music_chest', {});
+    hold.complete();
+    expect((await first)!.succeeded, false);
+    expect((await second)!.succeeded, true);
+    expect(session.snapshot!.coins, before.coins);
+    expect(session.snapshot!.gems, before.gems - 250);
+    expect(server.sent.last.minimumRevision, before.serverRevision + 1);
+  });
+
+  test('A B A preserves ordering while adjacent duplicate taps share',
+      () async {
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    final a = session.execute('set_account_name', {'name': 'Keeper A'});
+    final duplicate = session.execute('set_account_name', {'name': 'Keeper A'});
+    expect(duplicate, same(a));
+    final b = session.execute('set_account_name', {'name': 'Keeper B'});
+    final again = session.execute('set_account_name', {'name': 'Keeper A'});
+    expect(again, isNot(same(a)));
+    expect(session.snapshot!.profile.name, 'Keeper A');
+    hold.complete();
+    await Future.wait([a, b, again]);
+    expect(server.sent, hasLength(3));
+    expect(session.snapshot!.profile.name, 'Keeper A');
+  });
+
+  test('projected spending cannot spend the same gems twice', () async {
+    server.state['pet']['gems'] = 250;
+    server.revision++;
+    await session.synchronize();
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    final purchase = session.execute('purchase_music_chest', {});
+    expect(session.snapshot!.gems, 0);
+    await expectLater(session.execute('purchase_portrait_chest', {}),
+        throwsA(isA<CanonicalGameException>()));
+    hold.complete();
+    expect((await purchase)!.succeeded, true);
+    expect(server.sent, hasLength(1));
+  });
+
+  test(
+      'rebase drops unaffordable dependent command but preserves independent tail',
+      () async {
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    final first = session.execute('purchase_title_chest', {});
+    final invalidated = session.execute('purchase_music_chest', {});
+    final tail = session.execute('set_account_name', {'name': 'Still valid'});
+    final failure =
+        expectLater(invalidated, throwsA(isA<CanonicalGameException>()));
+    server.state['pet']['gems'] = 0;
+    server.revision++;
+    hold.complete();
+    expect((await first)!.succeeded, false);
+    await failure;
+    expect((await tail)!.succeeded, true);
+    expect(server.sent.map((i) => i.action),
+        ['purchase_title_chest', 'set_account_name']);
+    expect(session.snapshot!.profile.name, 'Still valid');
+    expect(session.snapshot!.gems, 0);
+  });
+
+  test('background synchronize joins queue without stealing its dispatch slot',
+      () async {
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    final first = session.execute('purchase_title_chest', {});
+    final second = session.execute('purchase_music_chest', {});
+    final projected = session.snapshot;
+    final sync = session.synchronize();
+    expect(session.snapshot, same(projected));
+    expect(session.canAct, true);
+    hold.complete();
+    await Future.wait([first, second, sync]);
+    expect(server.sent, hasLength(2));
+    expect(session.canRunAutomatic, true);
+  });
+
+  test('tower scenery is immediate and matches confirmed occupants', () async {
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    final pending = session
+        .execute('change_tower_floor_room', {'index': 0, 'roomId': 'crystal'});
+    expect(session.snapshot!.data['house']['towerFloorRoomIds'][0], 'crystal');
+    for (final dragon
+        in session.snapshot!.dragons.where((d) => d.floorIndex == 0)) {
+      expect(dragon.roomId, 'crystal');
+    }
+    hold.complete();
+    expect((await pending)!.succeeded, true);
+    expect(session.snapshot!.data['house']['towerFloorRoomIds'][0], 'crystal');
+  });
+
+  test('abort adventure frees dragon immediately without awarding loot',
+      () async {
+    await session.execute('refresh', {});
+    final before = session.snapshot!;
+    final offer = before.adventures.offers(AdventureKind.mini).first;
+    final dragon = before.dragons.first;
+    await session.execute(
+        'start_adventure', {'adventureId': offer, 'dragonId': dragon.id});
+    final active = session.snapshot!;
+    final run = active.adventures.runs.single;
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    final pending = session.execute('abort_adventure', {'runId': run.id});
+    expect(session.snapshot!.adventures.runs, isEmpty);
+    expect(session.snapshot!.dragon(dragon.id)!.adventureId, isNull);
+    expect(session.snapshot!.shop.chests, active.shop.chests);
+    hold.complete();
+    expect((await pending)!.succeeded, true);
+    expect(session.snapshot!.adventures.runs, isEmpty);
+  });
+
+  test('lost reply cancels unsent queue and recovers original request once',
+      () async {
+    final before = session.confirmedSnapshot!;
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    server.loseReply = true;
+    final first = session.execute('purchase_title_chest', {});
+    final second = session.execute('purchase_music_chest', {});
+    final failures = Future.wait([
+      expectLater(first, throwsA(isA<CanonicalGameException>())),
+      expectLater(second, throwsA(isA<CanonicalGameException>())),
+    ]);
+    hold.complete();
+    await failures;
+    expect(server.sent, hasLength(1));
+    expect(session.snapshot!.coins, before.coins);
+    expect(session.snapshot!.gems, before.gems);
+    await session.synchronize();
+    expect(session.snapshot!.coins, before.coins - 500);
+    expect(session.snapshot!.gems, before.gems);
+    expect(server.sent.map((i) => i.requestId).toSet(), hasLength(1));
+  });
+
+  test(
+      'account change settles every queued future without dispatching later actions',
+      () async {
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    final first = session.execute('purchase_title_chest', {});
+    final second = session.execute('purchase_music_chest', {});
+    final failures = Future.wait([
+      expectLater(first, throwsA(isA<CanonicalGameException>())),
+      expectLater(second, throwsA(isA<CanonicalGameException>())),
+    ]);
+    connection.signOut();
+    hold.complete();
+    await failures;
+    expect(session.snapshot, isNull);
+    await session.close();
+    expect(server.sent.length, lessThanOrEqualTo(1));
+  });
+
+  test('close drains admitted queue before disposing connection', () async {
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    final first = session.execute('purchase_title_chest', {});
+    final second = session.execute('purchase_music_chest', {});
+    final closing = session.close();
+    hold.complete();
+    expect((await first)!.succeeded, true);
+    expect((await second)!.succeeded, true);
+    await closing;
+    expect(server.sent, hasLength(2));
+    expect(session.snapshot, isNull);
   });
 
   test(

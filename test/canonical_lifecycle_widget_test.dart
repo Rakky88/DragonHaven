@@ -128,7 +128,10 @@ void main() {
   }
 
   Future<void> command(WidgetTester tester) async {
-    for (var n = 0; n < 300 && session.busy; n++) {
+    // Parallel route sweeps can keep the filesystem-backed command harness
+    // busy for more than three seconds on Windows. Keep this below the
+    // transport timeout while allowing the real durable receipt to settle.
+    for (var n = 0; n < 1000 && session.busy; n++) {
       await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 10)));
       await tester.pump();

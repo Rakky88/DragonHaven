@@ -19,18 +19,18 @@ import 'ui_bits.dart';
 Future<bool> showCanonicalMilestone(
     BuildContext context, CanonicalPresentationView event) async {
   final session = context.read<CanonicalGameSession>();
-  final owner = session.snapshot?.ownerId;
+  final owner = session.confirmedSnapshot?.ownerId;
   final epoch = session.connection.sessionEpoch;
   bool current() =>
       owner != null &&
-      session.snapshot?.ownerId == owner &&
+      session.confirmedSnapshot?.ownerId == owner &&
       session.connection.sessionEpoch == epoch;
   Widget guard(Widget child) =>
       _MilestoneOwner(owner: owner!, epoch: epoch, child: child);
-  if (!current() || !session.canAct) return false;
+  if (!current() || !session.canRunAutomatic) return false;
   switch (event.type) {
     case GamePresentationType.hatch:
-      final dragon = session.snapshot!.dragon(event.dragonId!);
+      final dragon = session.confirmedSnapshot!.dragon(event.dragonId!);
       if (dragon == null) return false;
       await showDragonHatch(context, dragon,
           guard: guard,
@@ -38,8 +38,8 @@ Future<bool> showCanonicalMilestone(
               ? null
               : AppStrings.of(context).pick('Continue', 'Doorgaan'),
           onContinue: (dialogContext) async {
-        if (!current() || !session.canAct) return;
-        final latest = session.snapshot!.dragon(dragon.id);
+        if (!current() || !session.canRunAutomatic) return;
+        final latest = session.confirmedSnapshot!.dragon(dragon.id);
         if (latest == null) return;
         if (latest.name.trim().isEmpty) {
           await nameCanonicalDragon(
@@ -47,13 +47,17 @@ Future<bool> showCanonicalMilestone(
         }
         if (dialogContext.mounted &&
             current() &&
-            session.snapshot!.dragon(dragon.id)?.name.trim().isNotEmpty ==
+            session.confirmedSnapshot!
+                    .dragon(dragon.id)
+                    ?.name
+                    .trim()
+                    .isNotEmpty ==
                 true) {
           Navigator.pop(dialogContext);
         }
       });
     case GamePresentationType.evolution:
-      final dragon = session.snapshot!.dragon(event.dragonId!);
+      final dragon = session.confirmedSnapshot!.dragon(event.dragonId!);
       if (dragon == null) return false;
       await showDragonEvolution(context, dragon,
           previousStageKey: event.previousStageKey ?? 'nestDragon',
@@ -68,7 +72,7 @@ Future<bool> showCanonicalMilestone(
       await showCanonicalTradeReveal(context, event.sent!, event.received!,
           guard: guard);
   }
-  if (!context.mounted || !current() || !session.canAct) return false;
+  if (!context.mounted || !current() || !session.canRunAutomatic) return false;
   await CanonicalGameActions(session).completePresentation(event.id);
   return current();
 }
@@ -82,7 +86,7 @@ class _MilestoneOwner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = context.watch<CanonicalGameSession>();
-    if (session.snapshot?.ownerId == owner &&
+    if (session.confirmedSnapshot?.ownerId == owner &&
         session.connection.sessionEpoch == epoch) {
       return child;
     }
@@ -111,7 +115,11 @@ class _CanonicalMilestonesState extends State<CanonicalMilestones> {
   Future<void> _show(CanonicalPresentationView event) async {
     if (_showing || !mounted) return;
     final session = context.read<CanonicalGameSession>();
-    if (!session.canAct || ModalRoute.of(context)?.isCurrent != true) return;
+    if (!session.canRunAutomatic ||
+        session.confirmedSnapshot?.presentations.firstOrNull?.id != event.id ||
+        ModalRoute.of(context)?.isCurrent != true) {
+      return;
+    }
     setState(() => _showing = true);
     try {
       final completed = await showCanonicalMilestone(context, event);
@@ -134,12 +142,15 @@ class _CanonicalMilestonesState extends State<CanonicalMilestones> {
       _epoch = session.connection.sessionEpoch;
       _deferred = null;
     }
-    final view = session.snapshot;
+    final view = session.confirmedSnapshot;
     final event = view?.presentations.firstOrNull;
     final available = event != null &&
         view!.trialAttempt == null &&
         view.schoolAttempt == null;
-    if (available && !_showing && _deferred != event.id && session.canAct) {
+    if (available &&
+        !_showing &&
+        _deferred != event.id &&
+        session.canRunAutomatic) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _show(event);
       });
@@ -147,7 +158,7 @@ class _CanonicalMilestonesState extends State<CanonicalMilestones> {
     return Column(children: [
       if (available && !_showing && _deferred == event.id)
         TextButton(
-            onPressed: session.canAct ? () => _show(event) : null,
+            onPressed: session.canRunAutomatic ? () => _show(event) : null,
             child: Text(AppStrings.of(context).pick('Continue', 'Doorgaan'))),
       Expanded(child: widget.child),
     ]);

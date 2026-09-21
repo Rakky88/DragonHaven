@@ -3,7 +3,8 @@ import 'adventure_hub_screen.dart'
         showRestoredAdventureDetails,
         showRestoredRunDetails,
         adventureKindColors,
-        restoredAdventureRewards;
+        restoredAdventureRewards,
+        RestoredAdventureCountdown;
 import '../providers/household_provider.dart' show SpecialAdventureWindow;
 import '../models/dragon_lineage.dart';
 import '../models/music_track.dart';
@@ -898,12 +899,12 @@ class _CanonicalRunCard extends StatelessWidget {
                       const GameIconSprite(GameIconKind.clock, size: 22),
                       const SizedBox(width: 4),
                       Expanded(
-                          child: Text(
-                              ready
-                                  ? s.pick('Ready to return',
-                                      'Klaar om terug te keren')
-                                  : s.remainingDuration(
-                                      run.endsAt.difference(now)),
+                          child: RestoredAdventureCountdown(
+                              key: ValueKey(
+                                  'adventure-card-countdown-${run.id}'),
+                              endsAt: run.endsAt,
+                              confirmedNow: now,
+                              ready: ready,
                               style: TextStyle(
                                   color: ready
                                       ? const Color(0xFF24735B)

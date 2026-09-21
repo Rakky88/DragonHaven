@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
@@ -56,6 +57,27 @@ void main() {
     expect(session.snapshot!.presentations.any((p) => p.dragonId == egg), true);
     await tester.pump(const Duration(seconds: 3));
     expect(server.receipts, hasLength(1));
+  });
+  testWidgets('ready hatch waits for user queue then dispatches once',
+      (tester) async {
+    await setup(tester);
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    final first = session.execute('set_account_name', {'name': 'Keeper One'});
+    final second = session.execute('set_account_name', {'name': 'Keeper Two'});
+    expect(session.canAct, true);
+    expect(session.canRunAutomatic, false);
+    await tester.pump(const Duration(seconds: 1));
+    expect(server.sent.where((i) => i.action == 'hatch_egg'), isEmpty);
+    hold.complete();
+    await finish(tester);
+    await first;
+    await second;
+    await finish(tester);
+    expect(server.sent.map((i) => i.action),
+        ['set_account_name', 'set_account_name', 'hatch_egg']);
+    await tester.pump(const Duration(seconds: 1));
+    expect(server.sent.where((i) => i.action == 'hatch_egg'), hasLength(1));
   });
   testWidgets('lost automatic hatch response resumes the same durable request',
       (tester) async {

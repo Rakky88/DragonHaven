@@ -102,8 +102,8 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
 
   Future<void> _advance() async {
     final session = context.read<CanonicalGameSession>();
-    final view = session.snapshot;
-    if (!session.canAct ||
+    final view = session.confirmedSnapshot;
+    if (!session.canRunAutomatic ||
         view == null ||
         !view.profile.onboardingComplete ||
         view.trialAttempt != null ||
@@ -388,7 +388,7 @@ class _ServerShellState extends State<_ServerShell> {
         view.dragons.any((d) => d.owned && d.name.trim().isNotEmpty) &&
         (view.data['collection']['achievements'] as List)
             .contains('hello_little_one') &&
-        session.canAct) {
+        session.canRunAutomatic) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && ModalRoute.of(context)?.isCurrent == true) {
           unawaited(_tutorial());

@@ -99,3 +99,27 @@ Tower/Nest/Dragons/Academy, Inventory/Altar, Shop and menu). Detailed findings:
 
 Published as v0.06.02 / build 10095; final publication and production-health
 evidence is recorded in `SERVER_ECONOMY_UI_VERIFICATION.md`.
+
+## Post-v0.06.03 responsiveness and countdown follow-up
+
+Predictable player actions now update the visible server snapshot immediately
+and enter a bounded client queue. One durable request is sent at a time against
+the latest confirmed revision. Each confirmation rebuilds the remaining
+previews from absolute server state; a refusal rolls back its preview and drops
+only dependent actions that are no longer valid. A lost response keeps the
+already-sent request available for exactly-once recovery and cancels unsent
+work. Account changes clear every preview before the new account can render.
+
+The queue covers the existing safe predictions plus Tower room changes and
+eligible solo-Adventure cancellation. Random or hidden outcomes, including
+hatching and chest contents, remain exclusive server actions and are never
+invented locally. Automatic refresh, hatch and milestone work waits for a
+confirmed idle session, preventing it from racing player input. Queued requests
+beyond the one durable head exist only in memory; process termination discards
+those unsent previews without a server effect.
+
+Running Adventure cards and details again show the v0.05.41 remaining-time
+label. They advance from confirmed server time using a local monotonic clock,
+without extra reads. Combined session, recovery, Adventure, Tower, hatch,
+button and ten-route UI regression checks pass. No server code, migration,
+ruleset, reward, production setting or player data changed in this follow-up.
