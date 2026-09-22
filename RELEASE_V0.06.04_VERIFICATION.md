@@ -49,8 +49,32 @@ The preflight found 93 matching migrations, zero database lint errors, HTTP
 application contract version 1. Runtime inspection confirmed server-owned
 gameplay and migrations are enabled, legacy mutations and all shadow paths are
 disabled, and the minimum supported build remains 10092. No server deployment
-or runtime change was made.
+or runtime change was made. The postflight repeated all 93 migration, lint,
+Auth and application checks successfully and found the same runtime values.
 
 ## Artifact and publication
 
-Pending final build and publication verification.
+- Release source commit:
+  `c5f5406d96fbbe450e418bf752d9f889daedaaea`.
+- Tag: `v0.06.04`; normal latest release, neither draft nor prerelease.
+- APK: `DragonHaven.apk`, package `nl.dragonhaven.app`, version `0.06.04`,
+  build `10097`, 578,523,075 bytes.
+- APK SHA-256:
+  `1fd7ba311ba78de65fdd8b2e91edd117a1caafc56d36283d87a9d73189d07bd4`.
+- Signing certificate SHA-256:
+  `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`.
+- Native ABIs: `arm64-v8a`, `armeabi-v7a`, `x86_64`.
+- The signed release APK installed and cold-launched on the Android emulator;
+  Android reported version code 10097 and version name 0.06.04.
+- GitHub release, versioned APK and permanent latest-download endpoints all
+  returned HTTP 200. GitHub's asset size and SHA-256 digest match the local
+  artifact exactly.
+- The tag-triggered [Android release workflow](https://github.com/Rakky88/DragonHaven/actions/runs/35793420739)
+  completed all server, analysis, test, MIDI, Play Store AAB, signing, native
+  jukebox and artifact-upload gates successfully in 11 minutes 58 seconds.
+
+Release page: https://github.com/Rakky88/DragonHaven/releases/tag/v0.06.04
+
+Versioned APK: https://github.com/Rakky88/DragonHaven/releases/download/v0.06.04/DragonHaven.apk
+
+Permanent latest APK: https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk
