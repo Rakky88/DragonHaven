@@ -1025,8 +1025,6 @@ class _ChestShop extends StatelessWidget {
           const SizedBox(height: 18),
           const _MusicChestShopCard(),
         ],
-        const SizedBox(height: 18),
-        _RewardedChestPreview(currency: currency),
       ],
     );
   }
@@ -1515,6 +1513,8 @@ class _CurrencyPacks extends StatelessWidget {
             stage: index,
           ),
         ),
+        const SizedBox(height: 14),
+        _RewardedChestPreview(currency: currency),
       ],
     );
   }
@@ -1635,27 +1635,35 @@ class _RewardedChestPreview extends StatelessWidget {
             padding: const EdgeInsets.all(18),
             child: Column(children: [
               Image.asset(ChestTier.gold.assetPath, height: 110),
-              Text(s.pick('Video Chest', 'Reclamekist'),
+              Text(
+                  gems
+                      ? s.pick('Free gems', 'Gratis edelstenen')
+                      : s.pick('Free coins', 'Gratis munten'),
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 GameIconSprite(gems ? GameIconKind.gem : GameIconKind.coin,
                     size: 28),
                 const SizedBox(width: 6),
-                Text(gems ? '20' : '200',
+                Text(gems ? '5' : '50',
                     style: Theme.of(context).textTheme.titleLarge),
               ]),
               const SizedBox(height: 8),
               Text(
-                  s.pick(
-                      'Watch a video to open a chest instantly. Up to 3 per day in this shop.',
-                      'Bekijk een reclame en open meteen een kist. Maximaal 3 per dag in deze shop.'),
+                  gems
+                      ? s.pick(
+                          'Watch an ad to receive 5 gems. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.',
+                          'Bekijk een advertentie voor 5 edelstenen. Maximaal 3 per dag in deze shop. Reclame wordt actief zodra de winkelconfiguratie klaar is.')
+                      : s.pick(
+                          'Watch an ad to receive 50 coins. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.',
+                          'Bekijk een advertentie voor 50 munten. Maximaal 3 per dag in deze shop. Reclame wordt actief zodra de winkelconfiguratie klaar is.'),
                   textAlign: TextAlign.center),
               const SizedBox(height: 12),
               FilledButton.icon(
                   onPressed: null,
                   icon: const Icon(Icons.ondemand_video_rounded),
-                  label: Text(s.pick('Coming later', 'Later beschikbaar'))),
+                  label: Text(
+                      s.pick('Watch an ad 3/3', 'Bekijk een advertentie 3/3'))),
             ])));
   }
 }

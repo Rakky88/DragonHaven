@@ -114,6 +114,7 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
   int _requestRevision = 0;
   String? _eventWindowKey;
   Timer? _expiryTimer;
+  Timer? _busyRetry;
 
   @override
   void initState() {
@@ -130,6 +131,7 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
   @override
   void dispose() {
     _expiryTimer?.cancel();
+    _busyRetry?.cancel();
     super.dispose();
   }
 
@@ -291,9 +293,11 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
     final online = context.read<OnlineAccountProvider>();
     if (!online.isSignedIn || _loading) return;
     if (online.busy) {
-      _loadScheduledForAccount = false;
+      _retryWhenOnlineOperationSettles(force: force);
       return;
     }
+    _busyRetry?.cancel();
+    _busyRetry = null;
     final key = (_scope, _kind);
     final cached = _cache[key];
     if (!force && cached != null) {
@@ -313,6 +317,11 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
       scope: _scope,
     );
     if (!mounted || revision != _requestRevision) return;
+    if (result == null && online.errorCode == null) {
+      setState(() => _loading = false);
+      _retryWhenOnlineOperationSettles(force: true);
+      return;
+    }
     setState(() {
       _loading = false;
       if (result == null) {
@@ -321,6 +330,13 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
         _cache[key] = result;
         _entries = result;
       }
+    });
+  }
+
+  void _retryWhenOnlineOperationSettles({required bool force}) {
+    _busyRetry?.cancel();
+    _busyRetry = Timer(const Duration(milliseconds: 150), () {
+      if (mounted) _load(force: force);
     });
   }
 }

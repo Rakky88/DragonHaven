@@ -11,6 +11,7 @@ import 'package:dragon_haven/screens/canonical_eggs.dart';
 import 'package:dragon_haven/screens/shop_hub_screen.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
+import 'package:dragon_haven/services/audio_service.dart';
 import 'package:dragon_haven/theme/app_theme.dart';
 import 'package:dragon_haven/widgets/chest_reveal.dart';
 import 'package:flutter/material.dart';
@@ -197,6 +198,19 @@ void main() {
       'inventory reveals a real server chest with no local grant or duplicate open',
       (tester) async {
     await prepare(tester);
+    const audio = MethodChannel('nl.dragonhaven.app/audio');
+    final audioCalls = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(audio,
+        (call) async {
+      audioCalls.add(call);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(audio, null));
+    await HavenAudio.applyPreferences(
+        musicEnabled: true,
+        soundEffectsEnabled: true,
+        musicStyle: HavenMusicStyle.classic);
     final localBefore = jsonEncode(legacy.exportState());
     await mount(tester, const CanonicalInventoryScreen());
     await screenshot(tester, 'inventory-en-320');
@@ -212,6 +226,11 @@ void main() {
     expect(find.byKey(const Key('chest-rewards')), findsOneWidget);
     expect(session.snapshot!.shop.chests['wooden'], 1);
     expect(server.receipts, hasLength(1));
+    expect(
+        audioCalls.where((call) =>
+            call.method == 'playSound' &&
+            (call.arguments as Map)['id'] == 'chest_wooden'),
+        hasLength(1));
     expect(jsonEncode(legacy.exportState()), localBefore);
     await tester.tapAt(const Offset(8, 8));
     await tester.pump(const Duration(milliseconds: 400));
@@ -252,27 +271,35 @@ void main() {
   });
   for (final gems in [false, true]) {
     testWidgets(
-        'video chest is a disabled preview with no reward command (gems=$gems)',
+        'free currency ad stays disabled under Buy with no reward command (gems=$gems)',
         (tester) async {
       await prepare(tester);
       await mount(
           tester,
           ShopHubScreen(
               initialCurrencyTab: gems ? 1 : 0,
-              initialCategoryTab: gems ? 2 : 1));
+              initialCategoryTab: gems ? 3 : 2));
       final card = find.byKey(Key('rewarded-chest-${gems ? 'gems' : 'coins'}'));
-      await tester.scrollUntilVisible(card, 250,
-          scrollable: find
-              .descendant(
-                  of: find.byKey(PageStorageKey(
-                      'shop-${gems ? 'gems' : 'coins'}-chests-scroll')),
-                  matching: find.byType(Scrollable))
-              .first);
+      final packScroll = find
+          .descendant(
+              of: find.byKey(
+                  PageStorageKey('${gems ? 'gems' : 'coins'}-packs-scroll')),
+              matching: find.byType(Scrollable))
+          .first;
+      await tester.scrollUntilVisible(card, 250, scrollable: packScroll);
+      await tester.drag(packScroll, const Offset(0, -240));
+      await tester.pump(const Duration(milliseconds: 400));
+      await screenshot(tester, 'free-${gems ? 'gems' : 'coins'}-buy-en-320');
       final button =
           find.descendant(of: card, matching: find.byType(FilledButton));
       expect(tester.widget<FilledButton>(button).onPressed, isNull);
+      expect(find.descendant(of: card, matching: find.text(gems ? '5' : '50')),
+          findsOneWidget);
       expect(
-          find.descendant(of: card, matching: find.text(gems ? '20' : '200')),
+          find.descendant(
+              of: card, matching: find.text(gems ? 'Free gems' : 'Free coins')),
+          findsOneWidget);
+      expect(find.descendant(of: card, matching: find.text('Watch an ad 3/3')),
           findsOneWidget);
       expect(server.sent, isEmpty);
       expect(tester.takeException(), isNull);

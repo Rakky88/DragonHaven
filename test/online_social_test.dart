@@ -33,6 +33,41 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('server-owned social mode permits Aerie tending and ranking reads',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final repository = _FakeSocialRepository(inventoryImported: true)
+      ..trialRankingRows['world:cavernFlight'] = const [
+        TrialRankingEntry(
+          position: 1,
+          entryKey: 'world-1',
+          displayName: 'Sky Keeper',
+          title: 'title_001',
+          portraitKey: 'portrait_001',
+          score: 2800,
+          isCurrentUser: true,
+        ),
+      ];
+    final online = OnlineAccountProvider(
+      repository: repository,
+      serverOwned: true,
+      inventorySnapshot: () => throw StateError('No local game'),
+    );
+    addTearDown(online.dispose);
+    await online.initialize();
+
+    final rankings = await online.loadTrialRankings(
+      trialKey: 'cavernFlight',
+      scope: TrialRankingScope.world,
+    );
+    expect(rankings?.single.score, 2800);
+    expect(repository.trialRankingRequests,
+        [('cavernFlight', TrialRankingScope.world)]);
+    expect(await online.contributeToConclave(), isTrue);
+    expect(repository.contributeCount, 1);
+    expect(online.errorCode, isNull);
+  });
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   ConclaveSnapshot unreadSnapshot(List<ConclaveMessage> messages,
@@ -3533,11 +3568,17 @@ class _FakeSocialRepository implements SocialRepository {
   bool conclaveSendFails = false;
   int conclaveReadCount = 0;
   int conclaveSendCount = 0;
+  int contributeCount = 0;
   @override
   Future<ConclaveSnapshot?> loadConclaveSnapshot() async {
     conclaveReadCount++;
     if (conclaveReadFails) throw const SocialException('online_timeout');
     return conclaveReadGate?.future ?? Future.value(conclaveSnapshot);
+  }
+
+  @override
+  Future<void> contributeToConclave() async {
+    contributeCount++;
   }
 
   final List<CloudGameSave> cloudSaveRevisions = [];

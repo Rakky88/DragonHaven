@@ -20,6 +20,7 @@ import '../widgets/game_icon_sprite.dart';
 import '../widgets/egg_altar_scene.dart';
 import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
+import '../services/audio_service.dart';
 import '../widgets/chest_reveal.dart';
 import '../widgets/shop_economy_scope.dart';
 import 'canonical_eggs.dart';
@@ -217,6 +218,13 @@ class _ChestRow extends StatelessWidget {
         displayName: label,
         closedAssetPath: special?.closedAssetPath,
         openedAssetPath: special?.openedAssetPath,
+        onOpen: special == null
+            ? null
+            : () => HavenAudio.playAsset(
+                  special.id == 'golden_wings_chest_v1'
+                      ? HavenSound.chestSpecial.assetId
+                      : 'event_${special.openSoundId}_chest',
+                ),
         openChest: () => actions.openChests(tier,
             count: quantity, specialChestId: specialId));
     return RestoredChestCard(

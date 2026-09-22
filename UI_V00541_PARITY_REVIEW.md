@@ -123,3 +123,28 @@ label. They advance from confirmed server time using a local monotonic clock,
 without extra reads. Combined session, recovery, Adventure, Tower, hatch,
 button and ten-route UI regression checks pass. No server code, migration,
 ruleset, reward, production setting or player data changed in this follow-up.
+
+## v0.06.04 interaction and service follow-up
+
+Adventure start and claim now join cancellation on the immediate display path.
+Starting removes the visible offer, reserves the selected dragon and creates a
+server-time-anchored pending run; claiming removes the completed run and frees
+the dragon. Pending runs cannot be claimed or cancelled using their provisional
+ID. Confirmation replaces them with the authoritative run, while rejection or
+an uncertain receipt restores confirmed state. No client preview invents a
+chest, XP, expertise, evolution or hidden reward.
+
+The missing Aerie and ranking actions were traced to the server-owned social
+allowlist. The client had rejected `conclave.contribute` and scoped ranking reads
+before any RPC was sent. Only those social operations and seasonal ranking reads
+were admitted. Ranking sheets also retry after background work that intentionally
+does not repaint the whole social UI. Gameplay reward mutations remain outside
+this provider.
+
+Server Inventory chest reveals now have a default tier sound, with Special Chest
+overrides preserved. The deferred ad previews moved to Buy and display `Free
+gems` (5) and `Free coins` (50). Their disabled buttons read `Watch an ad 3/3`;
+they still contain no SDK, claim command or local grant. Focused Adventure, Shop,
+social and parity coverage passes 111 tests, and Flutter analysis reports no
+issues. Final release and production-health evidence is recorded in
+`RELEASE_V0.06.04_VERIFICATION.md`.

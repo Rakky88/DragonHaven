@@ -8,6 +8,7 @@ import '../models/profile_portrait.dart';
 import '../models/account_title.dart';
 import '../models/music_track.dart';
 import '../models/adventure.dart';
+import '../models/pet.dart';
 import '../models/house.dart';
 import 'canonical_game_snapshot.dart';
 
@@ -167,6 +168,66 @@ CanonicalGameSnapshot? predictGameDisplay(CanonicalGameSnapshot confirmed,
         egg['location'] = 'nest';
         egg['startedAt'] = now.toUtc().toIso8601String();
         egg['returnBlockReason'] = 'egg_in_nest';
+      case 'start_adventure':
+        final adventureId = payload['adventureId'] as String;
+        final dragonId = payload['dragonId'] as String;
+        final definition = AdventureCatalog.byId[adventureId];
+        final dragon = dragons.where((d) => d['id'] == dragonId).firstOrNull;
+        if (definition == null ||
+            dragon == null ||
+            dragon['location'] == 'released' ||
+            dragon['stage'] == 'egg' ||
+            dragon['activeAdventureId'] != null ||
+            definition.kind == AdventureKind.group ||
+            definition.requiresOnlinePartner ||
+            definition.seasonalSpecial) {
+          return null;
+        }
+        final adventures = data['adventures'] as Map<String, dynamic>;
+        final options = adventures['adventureOptionIds'] as Map;
+        final offered = options[definition.kind.name] as List?;
+        if (offered == null || !offered.contains(adventureId)) return null;
+        final training = dragon['training'] as Map;
+        int score(TrainingFocus focus) => training[focus.name] as int? ?? 0;
+        final duration = expertiseAdjustedAdventureDurationFromScores(
+          definition,
+          [score(definition.focus)],
+          combinedExpertise:
+              TrainingFocus.values.fold(0, (sum, focus) => sum + score(focus)),
+        );
+        final runId = 'pending-adventure-$dragonId';
+        (adventures['runs'] as List).add({
+          'id': runId,
+          'adventureId': adventureId,
+          'dragonId': dragonId,
+          'startedAt': now.toUtc().toIso8601String(),
+          'endsAt': now.add(duration).toUtc().toIso8601String(),
+          'status': AdventureRunStatus.running.name,
+          'participantCount': 1,
+          'retraining': definition.expertiseCost > 0,
+          'specialEventId': null,
+          'specialEventKey': null,
+          'rewardTier': null,
+        });
+        offered.remove(adventureId);
+        dragon['activeAdventureId'] = runId;
+      case 'claim_adventure':
+        final adventures = data['adventures'] as Map<String, dynamic>;
+        final runs = adventures['runs'] as List;
+        final run = runs.where((r) => r['id'] == payload['runId']).firstOrNull;
+        if (run == null ||
+            AdventureCatalog.byId[run['adventureId']] == null ||
+            (run['status'] != AdventureRunStatus.rewardReady.name &&
+                DateTime.parse(run['endsAt'] as String).isAfter(now))) {
+          return null;
+        }
+        runs.remove(run);
+        final dragon =
+            dragons.where((d) => d['id'] == run['dragonId']).firstOrNull;
+        if (dragon == null || dragon['activeAdventureId'] != run['id']) {
+          return null;
+        }
+        dragon['activeAdventureId'] = null;
       case 'purchase_portrait_chest':
       case 'purchase_title_chest':
       case 'purchase_music_chest':

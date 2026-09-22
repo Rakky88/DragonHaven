@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:dragon_haven/models/adventure.dart';
+import 'package:dragon_haven/models/pet.dart';
 import '../tool/game_domain_probe.dart';
 import 'support/canonical_ui_server.dart';
 
@@ -220,6 +221,91 @@ void main() {
     hold.complete();
     expect((await pending)!.succeeded, true);
     expect(session.snapshot!.adventures.runs, isEmpty);
+  });
+
+  test('starting an adventure reserves its dragon and timer immediately',
+      () async {
+    await session.execute('refresh', {});
+    final before = session.snapshot!;
+    final offer = before.adventures.offers(AdventureKind.mini).first;
+    final definition = AdventureCatalog.byId[offer]!;
+    final dragon = before.dragons.firstWhere((candidate) =>
+        candidate.owned &&
+        candidate.stage.name != 'egg' &&
+        candidate.adventureId == null);
+    final hold = Completer<void>();
+    server.hold = hold.future;
+
+    final pending = session.execute(
+        'start_adventure', {'adventureId': offer, 'dragonId': dragon.id});
+    final preview = session.snapshot!;
+    final run = preview.adventures.runs.single;
+    expect(preview.isSpeculative, isTrue);
+    expect(run.id, 'pending-adventure-${dragon.id}');
+    expect(run.adventureId, offer);
+    expect(run.dragonId, dragon.id);
+    expect(run.revealedReward, isNull);
+    expect(
+        run.endsAt.difference(run.startedAt),
+        expertiseAdjustedAdventureDurationFromScores(
+          definition,
+          [dragon.trainingFor(definition.focus)],
+          combinedExpertise: TrainingFocus.values
+              .fold(0, (total, focus) => total + dragon.trainingFor(focus)),
+        ));
+    expect(preview.dragon(dragon.id)!.adventureId, run.id);
+    expect(
+        preview.adventures.offers(AdventureKind.mini), isNot(contains(offer)));
+    expect(session.confirmedSnapshot!.dragon(dragon.id)!.adventureId, isNull);
+
+    hold.complete();
+    expect((await pending)!.succeeded, isTrue);
+    expect(session.snapshot!.isSpeculative, isFalse);
+    expect(session.snapshot!.adventures.runs.single.id,
+        isNot(startsWith('pending-adventure-')));
+    expect(session.snapshot!.dragon(dragon.id)!.adventureId,
+        session.snapshot!.adventures.runs.single.id);
+  });
+
+  test('claim then next adventure stay playable while receipts serialize',
+      () async {
+    await session.execute('refresh', {});
+    final initial = session.snapshot!;
+    final firstOffer = initial.adventures.offers(AdventureKind.mini).first;
+    final dragon = initial.dragons.firstWhere((candidate) =>
+        candidate.owned &&
+        candidate.stage.name != 'egg' &&
+        candidate.adventureId == null);
+    await session.execute(
+        'start_adventure', {'adventureId': firstOffer, 'dragonId': dragon.id});
+    final activeRun = session.snapshot!.adventures.runs.single;
+    server.now = activeRun.endsAt.add(const Duration(seconds: 1));
+    await session.synchronize();
+    final ready = session.snapshot!.adventures.runs.single;
+    final chestsBefore = Map<String, int>.of(session.snapshot!.shop.chests);
+    final nextOffer = session.snapshot!.adventures
+        .offers(AdventureKind.mini)
+        .firstWhere((id) => id != firstOffer);
+    final hold = Completer<void>();
+    server.hold = hold.future;
+
+    final claim = session.execute('claim_adventure', {'runId': ready.id});
+    expect(session.snapshot!.adventures.runs, isEmpty);
+    expect(session.snapshot!.dragon(dragon.id)!.adventureId, isNull);
+    expect(session.snapshot!.shop.chests, chestsBefore);
+    final start = session.execute(
+        'start_adventure', {'adventureId': nextOffer, 'dragonId': dragon.id});
+    expect(session.snapshot!.adventures.runs.single.adventureId, nextOffer);
+    expect(session.snapshot!.dragon(dragon.id)!.adventureId,
+        startsWith('pending-adventure-'));
+
+    hold.complete();
+    final receipts = await Future.wait([claim, start]);
+    expect(receipts.every((receipt) => receipt!.succeeded), isTrue);
+    expect(server.sent.reversed.take(2).map((intent) => intent.action).toList(),
+        ['start_adventure', 'claim_adventure']);
+    expect(session.snapshot!.adventures.runs.single.adventureId, nextOffer);
+    expect(session.snapshot!.isSpeculative, isFalse);
   });
 
   test('lost reply cancels unsent queue and recovers original request once',

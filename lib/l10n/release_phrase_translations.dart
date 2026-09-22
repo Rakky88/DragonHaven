@@ -41,6 +41,48 @@ const releasePhraseTranslations = <String, List<String>>{
     'Disponível mais tarde',
     '後日登場'
   ],
+  'Free gems': [
+    'Kostenlose Edelsteine',
+    'Gemas gratis',
+    'Gemmes gratuites',
+    'Gemme gratis',
+    'Gemas grátis',
+    '無料ジェム'
+  ],
+  'Free coins': [
+    'Kostenlose Münzen',
+    'Monedas gratis',
+    'Pièces gratuites',
+    'Monete gratis',
+    'Moedas grátis',
+    '無料コイン'
+  ],
+  'Watch an ad 3/3': [
+    'Werbung ansehen 3/3',
+    'Ver un anuncio 3/3',
+    'Regarder une publicité 3/3',
+    'Guarda un annuncio 3/3',
+    'Assistir a um anúncio 3/3',
+    '広告を見る 3/3'
+  ],
+  'Watch an ad to receive 5 gems. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.':
+      [
+    'Sieh dir eine Werbung an und erhalte 5 Edelsteine. Bis zu 3 pro Tag in diesem Shop. Werbung wird nach Abschluss der Store-Einrichtung aktiviert.',
+    'Mira un anuncio para recibir 5 gemas. Hasta 3 al día en esta tienda. Los anuncios se activarán cuando termine la configuración de la tienda.',
+    'Regarde une publicité pour recevoir 5 gemmes. Jusqu’à 3 par jour dans cette boutique. Les publicités seront activées après la configuration de la boutique.',
+    'Guarda un annuncio per ricevere 5 gemme. Fino a 3 al giorno in questo negozio. Gli annunci saranno attivati al termine della configurazione dello store.',
+    'Assista a um anúncio para receber 5 gemas. Até 3 por dia nesta loja. Os anúncios serão ativados após a configuração da loja.',
+    '広告を見ると5ジェムもらえます。このショップで1日3回まで。ストア設定の完了後に広告が有効になります。'
+  ],
+  'Watch an ad to receive 50 coins. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.':
+      [
+    'Sieh dir eine Werbung an und erhalte 50 Münzen. Bis zu 3 pro Tag in diesem Shop. Werbung wird nach Abschluss der Store-Einrichtung aktiviert.',
+    'Mira un anuncio para recibir 50 monedas. Hasta 3 al día en esta tienda. Los anuncios se activarán cuando termine la configuración de la tienda.',
+    'Regarde une publicité pour recevoir 50 pièces. Jusqu’à 3 par jour dans cette boutique. Les publicités seront activées après la configuration de la boutique.',
+    'Guarda un annuncio per ricevere 50 monete. Fino a 3 al giorno in questo negozio. Gli annunci saranno attivati al termine della configurazione dello store.',
+    'Assista a um anúncio para receber 50 moedas. Até 3 por dia nesta loja. Os anúncios serão ativados após a configuração da loja.',
+    '広告を見ると50コインもらえます。このショップで1日3回まで。ストア設定の完了後に広告が有効になります。'
+  ],
   'This dragon is currently away on an Adventure.': [
     'Dieser Drache ist gerade auf einem Abenteuer.',
     'Este dragón está actualmente en una Aventura.',

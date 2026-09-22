@@ -186,6 +186,31 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+  testWidgets('rankings retry after an unrelated background social operation',
+      (tester) async {
+    await setup(
+        tester,
+        Builder(
+            builder: (context) => TextButton(
+                onPressed: () => showTrialRankingsSheet(context,
+                    scopes: const [TrialRankingScope.world],
+                    initialScope: TrialRankingScope.world),
+                child: const Text('Rankings'))));
+    rankings.busy = true;
+    await tester.tap(find.text('Rankings'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(rankings.scopes, isEmpty);
+
+    // Background operations deliberately do not notify the whole social UI.
+    // The sheet's bounded retry must still resume once the provider is idle.
+    rankings.busy = false;
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(rankings.scopes, [TrialRankingScope.world]);
+    expect(find.text('Luna'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
       'Conclave Keepers opens actual rankings with server-only providers',
       (tester) async {

@@ -35,6 +35,11 @@ class OnlineAccountProvider extends ChangeNotifier {
     'conclave.transfer',
     'conclave.remove_member',
     'conclave.dissolve',
+    'conclave.contribute',
+    'trial.rankings.world',
+    'trial.rankings.friends',
+    'trial.rankings.conclave',
+    'seasonal.trial.rankings',
     'seasonal.chronicle',
     'seasonal.community',
   };

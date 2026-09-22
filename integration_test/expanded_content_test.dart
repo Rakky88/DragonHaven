@@ -3,7 +3,10 @@ import 'dart:math';
 import 'package:dragon_haven/dragonhaven_app.dart';
 import 'package:dragon_haven/models/house.dart';
 import 'package:dragon_haven/models/pet.dart';
+import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
+import 'package:dragon_haven/providers/online_account_provider.dart';
+import 'package:dragon_haven/services/social_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -14,7 +17,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('DragonHaven Tower, rooms, dragon and Draconomicon work',
+  testWidgets('DragonHaven Tower, rooms, nest and Draconomicon work',
       (tester) async {
     final game = HouseholdProvider(random: Random(7))
       ..accountName = 'Rick'
@@ -32,9 +35,19 @@ void main() {
       '${game.pet.lineageId}:ascended:spirit',
     });
     game.unlockedRoomIds.addAll(houseRoomCatalog.map((room) => room.id));
+    final online = OnlineAccountProvider(
+      repository: const DisabledSocialRepository(),
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+    addTearDown(game.dispose);
+    addTearDown(online.dispose);
 
-    await tester.pumpWidget(ChangeNotifierProvider.value(
-      value: game,
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
       child: const DragonHavenApp(),
     ));
     await tester.pump(const Duration(milliseconds: 500));
@@ -47,19 +60,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byKey(const Key('house-room-scene')), findsOneWidget);
 
-    await tester.pageBack();
+    await tester.tap(find.byKey(const Key('zoom-out-room')));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.ensureVisible(find.byKey(const Key('tower-roof')));
     await tester.tap(find.byKey(const Key('tower-roof')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Ember'), findsWidgets);
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('talk-to-dragon')),
-      220,
-      scrollable: find.byType(Scrollable).first,
+    expect(
+      find.byKey(const PageStorageKey<String>('rooftop-nest-scroll')),
+      findsOneWidget,
     );
-    expect(find.byKey(const Key('talk-to-dragon')), findsOneWidget);
 
     await tester.pageBack();
     await tester.pump(const Duration(milliseconds: 500));

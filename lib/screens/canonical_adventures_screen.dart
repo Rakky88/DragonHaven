@@ -815,6 +815,8 @@ class _CanonicalRunCard extends StatelessWidget {
     final musicChestCapacityReached =
         shop.music.length + (shop.chests['music'] ?? 0) >= musicCatalog.length;
     final ready = !run.endsAt.isAfter(now);
+    final awaitingConfirmation =
+        session.confirmedSnapshot?.adventures.run(run.id) == null;
     final abortable = definition != null &&
         !ready &&
         definition.kind != AdventureKind.group &&
@@ -857,8 +859,12 @@ class _CanonicalRunCard extends StatelessWidget {
                         dimension: 42,
                         child: CanonicalDragonArt(dragon: dragon, height: 42)),
                 chestTier: run.revealedReward ?? definition.knownChest,
-                onClaim: session.canAct && ready ? claim : null,
-                onAbort: session.canAct && abortable ? abort : null),
+                onClaim: session.canAct && ready && !awaitingConfirmation
+                    ? claim
+                    : null,
+                onAbort: session.canAct && abortable && !awaitingConfirmation
+                    ? abort
+                    : null),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 10, 13, 10),
           child:
@@ -916,13 +922,15 @@ class _CanonicalRunCard extends StatelessWidget {
               if (ready)
                 FilledButton.tonal(
                     key: Key('canonical-claim-${run.id}'),
-                    onPressed: session.canAct ? claim : null,
+                    onPressed:
+                        session.canAct && !awaitingConfirmation ? claim : null,
                     child: Text(s.pick('Claim', 'Ophalen')))
               else if (abortable)
                 IconButton(
                     key: Key('canonical-abort-${run.id}'),
                     tooltip: s.pick('Abort adventure', 'Avontuur afbreken'),
-                    onPressed: session.canAct ? abort : null,
+                    onPressed:
+                        session.canAct && !awaitingConfirmation ? abort : null,
                     icon: Icon(Icons.cancel_outlined,
                         color:
                             AppColors.eventColor(context, AppColors.twilight)))

@@ -10,6 +10,7 @@ import '../models/dragon_emote.dart';
 import '../models/mystic_relic.dart';
 import '../models/music_track.dart';
 import '../models/profile_portrait.dart';
+import '../services/audio_service.dart';
 import 'game_icon_sprite.dart';
 import 'dragon_emote_picker.dart';
 import 'profile_portrait_sprite.dart';
@@ -114,7 +115,9 @@ class _ChestRevealState extends State<_ChestReveal>
     }
     _reward = reward;
     final callback = widget.onOpen;
-    if (callback != null) unawaited(Future<void>.sync(callback));
+    unawaited(Future<void>.sync(
+      callback ?? () => HavenAudio.play(_soundForChest(widget.tier)),
+    ));
     unawaited(_openingMotion.forward());
     await Future<void>.delayed(const Duration(milliseconds: 1200));
     if (!mounted) return;
@@ -535,6 +538,20 @@ class _ChestRevealState extends State<_ChestReveal>
     );
   }
 }
+
+HavenSound _soundForChest(ChestTier tier) => switch (tier) {
+      ChestTier.wooden => HavenSound.chestWooden,
+      ChestTier.silver => HavenSound.chestSilver,
+      ChestTier.gold => HavenSound.chestGold,
+      ChestTier.dragon => HavenSound.chestDragon,
+      ChestTier.mythical => HavenSound.chestMythical,
+      ChestTier.sinister => HavenSound.chestSinister,
+      ChestTier.special => HavenSound.chestSpecial,
+      ChestTier.portrait ||
+      ChestTier.title ||
+      ChestTier.music =>
+        HavenSound.chestMythical,
+    };
 
 class _GlowOrb extends StatelessWidget {
   const _GlowOrb({required this.color, required this.size});
