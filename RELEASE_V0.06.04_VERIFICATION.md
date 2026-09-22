@@ -26,7 +26,9 @@ work is complete.
 - Focused Adventure, Shop, social and v0.05.41 parity tests: 111 passed.
 - Full Flutter suite: 1,108 passed and 1 asset-review test skipped. One
   parallel school-art test observed shared visual state; the complete
-  three-case file passed immediately in isolation.
+  three-case file passed immediately in isolation. Its wait allowance now
+  matches the transport's existing ten-second deadline so filesystem load
+  cannot make the release gate fail after only 1.5 seconds.
 - Android integration exercise for Tower rooms, the nest and Draconomicon:
   passed on the emulator.
 - Flutter analysis: no issues in 104.5 seconds.

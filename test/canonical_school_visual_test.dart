@@ -123,8 +123,11 @@ void main() {
       await tester.ensureVisible(find.byKey(const Key('start-school-game')));
       await tester.runAsync(
           () => tester.tap(find.byKey(const Key('start-school-game'))));
+      // Match the transport's ten-second deadline. The complete suite runs
+      // several filesystem-backed sessions in parallel, so a healthy journal
+      // can take longer than the former 1.5-second visual-test allowance.
       for (var i = 0;
-          i < 150 && (session.busy || session.snapshot!.schoolAttempt == null);
+          i < 1000 && (session.busy || session.snapshot!.schoolAttempt == null);
           i++) {
         await tester.runAsync(
             () => Future<void>.delayed(const Duration(milliseconds: 10)));
