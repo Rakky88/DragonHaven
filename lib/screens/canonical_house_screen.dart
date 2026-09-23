@@ -77,7 +77,8 @@ class _HouseContents extends StatelessWidget {
                   children: [
                 ListView(
                     key: const Key('canonical-tower-list'),
-                    padding: const EdgeInsets.all(16),
+                    padding:
+                        EdgeInsets.fromLTRB(16, showHeading ? 16 : 10, 16, 16),
                     children: [
                       if (toolbar != null) toolbar!,
                       Row(children: [
