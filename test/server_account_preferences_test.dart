@@ -67,6 +67,8 @@ void main() {
         'jukeboxShuffle': true,
         'enabledMusicTrackIds': <String>[],
         'myDragonsViewMode': 'compact',
+        'myDragonsSortMode': 'dragonType',
+        'myDragonsSortDescending': false,
         'enabledNotificationCategories': ['eggReady'],
       })
     });
@@ -79,6 +81,8 @@ void main() {
     expect(prefs['musicEnabled'], false);
     expect(prefs['enabledNotificationCategories'], ['eggReady']);
     expect(prefs['myDragonsViewMode'], 'compact');
+    expect(prefs['myDragonsSortMode'], 'dragonType');
+    expect(prefs['myDragonsSortDescending'], false);
     expect(view.toString(), isNot(contains('hatchSeed')));
     expect(state['languageCode'], 'en');
   });

@@ -265,7 +265,7 @@ class _ServerShell extends StatefulWidget {
   State<_ServerShell> createState() => _ServerShellState();
 }
 
-enum _Menu { account, language, journal, achievements, tutorial, about }
+enum _Menu { account, language, journal, achievements, tutorial }
 
 class _ServerShellState extends State<_ServerShell> {
   int _index = 2;
@@ -462,10 +462,6 @@ class _ServerShellState extends State<_ServerShell> {
                   unawaited(_tutorial());
                   return;
                 }
-                if (choice == _Menu.about) {
-                  unawaited(showDragonHavenAboutSheet(context));
-                  return;
-                }
                 Navigator.push(
                     context,
                     MaterialPageRoute<void>(
@@ -507,12 +503,6 @@ class _ServerShellState extends State<_ServerShell> {
                         child: _RestoredMenuRow(
                             icon: Icons.school_rounded,
                             label: s.pick('Tutorial', 'Uitleg'))),
-                    PopupMenuItem(
-                        value: _Menu.about,
-                        child: _RestoredMenuRow(
-                            icon: Icons.info_outline_rounded,
-                            label: s.pick(
-                                'About DragonHaven', 'Over DragonHaven'))),
                   ])
         ],
       ),

@@ -132,18 +132,19 @@ class _CanonicalNestScreenState extends State<CanonicalNestScreen> {
                     serverTime: view.serverTime),
                 const SizedBox(height: 14),
                 Container(
-                    key: const PageStorageKey('rooftop-nest-scroll'),
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 34),
+                    key: const Key('nest-egg-hint-card'),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(21),
                         border: Border.all(color: AppColors.mist)),
                     child: Row(children: [
                       const GameIconSprite(GameIconKind.mysteriousEgg,
-                          size: 46),
+                          key: Key('nest-egg-hint-icon'), size: 46),
                       const SizedBox(width: 12),
                       Expanded(
                           child: Text(egg.hint(s.languageCode),
+                              key: const Key('nest-egg-hint-text'),
                               style: const TextStyle(
                                   color: AppColors.muted,
                                   fontWeight: FontWeight.w700,

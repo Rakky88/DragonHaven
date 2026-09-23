@@ -202,6 +202,27 @@ void main() {
     expect(session.snapshot!.data['house']['towerFloorRoomIds'][0], 'crystal');
   });
 
+  test('rejected tower scenery rolls back the room and its occupants',
+      () async {
+    final before = session.snapshot!;
+    final roomBefore = before.house.floorRoomIds.first;
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    server.revision++;
+
+    final pending = session.execute('change_tower_floor_room',
+        {'index': 0, 'roomId': roomBefore == 'crystal' ? 'hearth' : 'crystal'});
+    expect(session.snapshot!.house.floorRoomIds.first, isNot(roomBefore));
+
+    hold.complete();
+    expect((await pending)!.succeeded, isFalse);
+    expect(session.snapshot!.house.floorRoomIds.first, roomBefore);
+    for (final dragon
+        in session.snapshot!.dragons.where((d) => d.floorIndex == 0)) {
+      expect(dragon.roomId, roomBefore);
+    }
+  });
+
   test('abort adventure frees dragon immediately without awarding loot',
       () async {
     await session.execute('refresh', {});

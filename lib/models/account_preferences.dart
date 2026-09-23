@@ -48,7 +48,12 @@ abstract final class AccountPreferences {
           ],
         'musicStyle' => HavenMusicStyle.values.map((s) => s.name),
         'myDragonsViewMode' => const ['gallery', 'compact'],
-        'myDragonsSortMode' => const ['name', 'acquiredAt', 'rarity'],
+        'myDragonsSortMode' => const [
+            'name',
+            'dragonType',
+            'acquiredAt',
+            'rarity'
+          ],
         'eggInventoryViewMode' => const ['tiles', 'list'],
         'eggInventorySortMode' => const ['acquiredAt', 'hatchTime'],
         _ => null,

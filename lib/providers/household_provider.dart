@@ -961,7 +961,7 @@ class HouseholdProvider extends ChangeNotifier {
             .contains(stringFromJson(data['myDragonsViewMode']))
         ? stringFromJson(data['myDragonsViewMode'])!
         : 'gallery';
-    myDragonsSortMode = const {'name', 'acquiredAt', 'rarity'}
+    myDragonsSortMode = const {'name', 'dragonType', 'acquiredAt', 'rarity'}
             .contains(stringFromJson(data['myDragonsSortMode']))
         ? stringFromJson(data['myDragonsSortMode'])!
         : 'acquiredAt';
@@ -2222,7 +2222,8 @@ class HouseholdProvider extends ChangeNotifier {
     required bool descending,
   }) async {
     if (!const {'gallery', 'compact'}.contains(viewMode) ||
-        !const {'name', 'acquiredAt', 'rarity'}.contains(sortMode)) {
+        !const {'name', 'dragonType', 'acquiredAt', 'rarity'}
+            .contains(sortMode)) {
       return;
     }
     if (myDragonsViewMode == viewMode &&

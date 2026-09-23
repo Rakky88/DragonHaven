@@ -162,7 +162,6 @@ class _HouseContents extends StatelessWidget {
                               room: room,
                               floorIndex: i,
                               heading: '${i + 1} · ${s.roomName(room)}',
-                              extra: _floorControls(context, i),
                               control: _floorRepair(context, i)),
                       if (floorPrice != null)
                         OutlinedButton(
@@ -243,7 +242,7 @@ class _HouseContents extends StatelessWidget {
         ]));
   }
 
-  Future<void> _chooseFloor(BuildContext context, {int? floorIndex}) async {
+  Future<void> _chooseFloor(BuildContext context) async {
     final session = context.read<CanonicalGameSession>();
     final owner = session.snapshot!.ownerId;
     final epoch = session.connection.sessionEpoch;
@@ -273,30 +272,17 @@ class _HouseContents extends StatelessWidget {
                               room: room,
                               heading: s.roomName(room),
                               control: CanonicalActionButton(
-                                  key: Key(floorIndex == null
-                                      ? 'canonical-build-${room.id}'
-                                      : 'canonical-convert-${room.id}'),
-                                  label: floorIndex != null
-                                      ? s.pick(
-                                          'Choose (free)', 'Kiezen (gratis)')
-                                      : '${s.pick('Build', 'Bouwen')} · ${price ?? '—'}',
-                                  confirmation: floorIndex != null
-                                      ? null
-                                      : '${s.pick('Build', 'Bouwen')} ${s.roomName(room)} · $price ${s.pick('coins', 'munten')}?',
+                                  key: Key('canonical-build-${room.id}'),
+                                  label:
+                                      '${s.pick('Build', 'Bouwen')} · ${price ?? '—'}',
+                                  confirmation:
+                                      '${s.pick('Build', 'Bouwen')} ${s.roomName(room)} · $price ${s.pick('coins', 'munten')}?',
                                   action: canAct &&
                                           sameAccount &&
-                                          (floorIndex != null
-                                              ? floorIndex <
-                                                  view.house.floorRoomIds.length
-                                              : price != null &&
-                                                  view.coins >= price)
+                                          price != null &&
+                                          view.coins >= price
                                       ? () async {
-                                          if (floorIndex != null) {
-                                            await actions.changeFloorRoom(
-                                                floorIndex, room.id);
-                                          } else {
-                                            await actions.buildFloor(room.id);
-                                          }
+                                          await actions.buildFloor(room.id);
                                           if (context.mounted) {
                                             Navigator.pop(context);
                                           }
@@ -327,7 +313,6 @@ class _RoomCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final session = context.watch<CanonicalGameSession>();
     final view = session.snapshot!;
-    final epoch = session.connection.sessionEpoch;
     final residents = view.dragons
         .where((d) =>
             d.owned &&
@@ -399,69 +384,12 @@ class _RoomCard extends StatelessWidget {
                                             child: CanonicalDragonArt(
                                                 dragon: dragon, height: 46)))
                                 ])),
-                          if (floorIndex != null)
-                            IconButton.filledTonal(
-                                key: Key('canonical-floor-options-$floorIndex'),
-                                tooltip: AppStrings.of(context)
-                                    .pick('Room options', 'Kameropties'),
-                                icon: const Icon(Icons.swap_horiz_rounded),
-                                onPressed: () => showModalBottomSheet<void>(
-                                    context: context,
-                                    showDragHandle: true,
-                                    isScrollControlled: true,
-                                    useSafeArea: true,
-                                    builder: (_) => CanonicalEntityDialog(
-                                        ownerId: view.ownerId,
-                                        builder: (context, current, canAct) =>
-                                            SingleChildScrollView(
-                                                padding:
-                                                    const EdgeInsets.all(16),
-                                                child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Text(heading,
-                                                          style:
-                                                              Theme.of(context)
-                                                                  .textTheme
-                                                                  .titleLarge),
-                                                      if (session.connection.sessionEpoch ==
-                                                              epoch &&
-                                                          floorIndex! <
-                                                              current
-                                                                  .house
-                                                                  .floorRoomIds
-                                                                  .length &&
-                                                          current.house
-                                                                      .floorRoomIds[
-                                                                  floorIndex!] ==
-                                                              room.id) ...[
-                                                        _floorControls(context,
-                                                            floorIndex!),
-                                                        if (_floorRepair(
-                                                                context,
-                                                                floorIndex!)
-                                                            case final repair?)
-                                                          repair,
-                                                      ],
-                                                      TextButton(
-                                                          key: const Key(
-                                                              'close-floor-options'),
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                                  context),
-                                                          child: Text(AppStrings
-                                                                  .of(context)
-                                                              .pick('Close',
-                                                                  'Sluiten'))),
-                                                    ]))))),
-                          Icon(
-                              view.house.damagedFloors.contains(floorIndex)
-                                  ? Icons.construction_rounded
-                                  : Icons.zoom_in_rounded,
-                              color: Colors.white),
                         ])),
                   ]))),
+          if (floorIndex != null && control != null)
+            Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                child: control!),
           if (floorIndex == null)
             Padding(
                 padding: const EdgeInsets.all(12),
@@ -519,8 +447,13 @@ Future<void> _visitFloor(BuildContext context, String roomId, int index) async {
           builder: (context, current, canAct) {
             final s = AppStrings.of(context);
             final currentActions = CanonicalGameActions(session);
-            final valid = index < current.house.floorRoomIds.length &&
-                current.house.floorRoomIds[index] == roomId &&
+            final currentRoomId = index < current.house.floorRoomIds.length
+                ? current.house.floorRoomIds[index]
+                : null;
+            final currentRoom =
+                currentRoomId == null ? null : houseRoomById(currentRoomId);
+            final valid = session.connection.sessionEpoch == epoch &&
+                currentRoom != null &&
                 !current.house.damagedFloors.contains(index);
             final dragon = current.dragons
                     .where((d) => d.owned && d.favorite)
@@ -532,10 +465,10 @@ Future<void> _visitFloor(BuildContext context, String roomId, int index) async {
                     d.roamsTower &&
                     d.adventureId == null &&
                     d.floorIndex == index &&
-                    d.roomId == roomId)
+                    d.roomId == currentRoomId)
                 .toList();
             return _RoomVisitView(
-                title: Text(s.roomName(houseRoomById(roomId)!)),
+                title: Text(s.roomName(currentRoom ?? houseRoomById(roomId)!)),
                 content: SingleChildScrollView(
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                   if (valid)
@@ -549,12 +482,12 @@ Future<void> _visitFloor(BuildContext context, String roomId, int index) async {
                                     builder: (context, box) =>
                                         Stack(fit: StackFit.expand, children: [
                                           Image.asset(
-                                              houseRoomById(roomId)!
-                                                  .backgroundAsset,
+                                              currentRoom.backgroundAsset,
                                               fit: BoxFit.cover),
                                           for (final placement in current
                                               .house.placements
-                                              .where((p) => p.roomId == roomId))
+                                              .where((p) =>
+                                                  p.roomId == currentRoomId))
                                             if (shopItemById(placement.itemId)
                                                 case final item?)
                                               Positioned(
@@ -584,13 +517,30 @@ Future<void> _visitFloor(BuildContext context, String roomId, int index) async {
                                                         height: 90))),
                                         ]))))),
                   if (valid)
-                    TextButton.icon(
-                        icon: const GameIconSprite(GameIconKind.roomDecorate,
-                            size: 28),
-                        label: Text(
-                            s.pick('Arrange your room', 'Richt je kamer in')),
-                        onPressed: () =>
-                            openCanonicalRoomEditor(context, roomId)),
+                    Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              TextButton.icon(
+                                  icon: const GameIconSprite(
+                                      GameIconKind.roomDecorate,
+                                      size: 28),
+                                  label: Text(s.pick('Arrange your room',
+                                      'Richt je kamer in')),
+                                  onPressed: () => openCanonicalRoomEditor(
+                                      context, currentRoomId!)),
+                              OutlinedButton.icon(
+                                  key: Key('canonical-change-floor-$index'),
+                                  onPressed: canAct
+                                      ? () => _changeFloorRoom(context, index)
+                                      : null,
+                                  icon: const Icon(Icons.swap_horiz_rounded),
+                                  label: Text(s.pick('Change room (free)',
+                                      'Kamer wijzigen (gratis)'))),
+                            ])),
                   if (valid && residents.isEmpty)
                     Text(s.pick('No dragons here', 'Geen draken hier')),
                   if (!valid)
@@ -606,9 +556,18 @@ Future<void> _visitFloor(BuildContext context, String roomId, int index) async {
                         key: const Key('canonical-call-dragon'),
                         label: s.pick('Call dragon', 'Draak roepen'),
                         action: canAct
-                            ? () =>
-                                currentActions.callDragonToFloor(roomId, index)
+                            ? () => currentActions.callDragonToFloor(
+                                currentRoomId!, index)
                             : null),
+                  if (valid && current.house.floorRoomIds.length > 1)
+                    Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                        child: CanonicalActionButton(
+                            key: Key('canonical-clear-floor-$index'),
+                            label: s.pick('Clear room', 'Kamer leegmaken'),
+                            action: canAct
+                                ? () => currentActions.clearFloor(index)
+                                : null)),
                 ])),
                 actions: [
                   TextButton(
@@ -619,58 +578,70 @@ Future<void> _visitFloor(BuildContext context, String roomId, int index) async {
   await visitTask;
 }
 
-Widget _floorControls(BuildContext context, int i) {
-  final session = context.watch<CanonicalGameSession>();
-  final view = session.snapshot!;
-  final house = view.house;
-  final s = AppStrings.of(context);
-  final actions = CanonicalGameActions(session);
-  final room = houseRoomById(house.floorRoomIds[i])!;
-  return Wrap(alignment: WrapAlignment.end, children: [
-    OutlinedButton.icon(
-        key: Key('canonical-visit-floor-option-$i'),
-        onPressed: house.damagedFloors.contains(i)
-            ? null
-            : () => _visitFloor(context, room.id, i),
-        icon: const Icon(Icons.zoom_in),
-        label: Text(s.pick('Visit', 'Bezoeken'))),
-    OutlinedButton.icon(
-        key: Key('canonical-change-floor-$i'),
-        onPressed: session.canAct
-            ? () => const _HouseContents(showHeading: true)
-                ._chooseFloor(context, floorIndex: i)
-            : null,
-        icon: const Icon(Icons.swap_horiz_rounded),
-        label: Text(s.pick('Change room (free)', 'Kamer wijzigen (gratis)'))),
-    IconButton(
-        key: Key('canonical-floor-up-$i'),
-        tooltip: s.pick('Move up', 'Omhoog verplaatsen'),
-        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-        onPressed: session.canAct && i < house.floorRoomIds.length - 1
-            ? () => runShopAction(
-                context,
-                () => actions.reorderFloor(house.floorRoomIds.length - i - 1,
-                    house.floorRoomIds.length - i - 2))
-            : null,
-        icon: const Icon(Icons.arrow_upward_rounded)),
-    IconButton(
-        key: Key('canonical-floor-down-$i'),
-        tooltip: s.pick('Move down', 'Omlaag verplaatsen'),
-        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-        onPressed: session.canAct && i > 0
-            ? () => runShopAction(
-                context,
-                () => actions.reorderFloor(house.floorRoomIds.length - i - 1,
-                    house.floorRoomIds.length - i))
-            : null,
-        icon: const Icon(Icons.arrow_downward_rounded)),
-    CanonicalActionButton(
-        key: Key('canonical-clear-floor-$i'),
-        label: s.pick('Clear room', 'Kamer leegmaken'),
-        action: session.canAct && house.floorRoomIds.length > 1
-            ? () => actions.clearFloor(i)
-            : null),
-  ]);
+Future<void> _changeFloorRoom(BuildContext context, int index) async {
+  final session = context.read<CanonicalGameSession>();
+  final owner = session.snapshot!.ownerId;
+  final epoch = session.connection.sessionEpoch;
+  final strings = AppStrings.of(context);
+  final room = await showModalBottomSheet<HouseRoomDefinition>(
+    context: context,
+    showDragHandle: true,
+    useSafeArea: true,
+    builder: (sheetContext) => SafeArea(
+      child: ListView(
+        key: const Key('tower-room-picker-scroll'),
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 18),
+        children: [
+          Text(
+            strings.pick('Choose a room type', 'Kies een kamertype'),
+            style: Theme.of(sheetContext).textTheme.titleLarge,
+          ),
+          Text(strings.pick(
+            'Change this room as often as you like, for free.',
+            'Verander deze kamer zo vaak je wilt, gratis.',
+          )),
+          const SizedBox(height: 8),
+          for (final definition
+              in houseRoomCatalog.where((room) => room.id != 'nest'))
+            Card(
+              child: ListTile(
+                key: Key('canonical-convert-${definition.id}'),
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(
+                    definition.backgroundAsset,
+                    width: 58,
+                    height: 48,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                title: Text(
+                  strings.roomName(definition),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                subtitle: Text(strings.pick(
+                  'Unique atmosphere and layout',
+                  'Eigen sfeer en indeling',
+                )),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => Navigator.pop(sheetContext, definition),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+  if (!context.mounted ||
+      room == null ||
+      session.connection.sessionEpoch != epoch ||
+      session.snapshot?.ownerId != owner ||
+      index >= (session.snapshot?.house.floorRoomIds.length ?? 0) ||
+      !session.canAct) {
+    return;
+  }
+  await runShopAction(context,
+      () => CanonicalGameActions(session).changeFloorRoom(index, room.id));
 }
 
 Widget? _floorRepair(BuildContext context, int i) {

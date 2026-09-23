@@ -10,7 +10,9 @@ import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/screens/canonical_dragons_screen.dart';
 import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
 import 'package:dragon_haven/screens/canonical_house_screen.dart';
+import 'package:dragon_haven/screens/canonical_nest_screen.dart';
 import 'package:dragon_haven/models/adventure.dart';
+import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/widgets/expertise_score_badge.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
@@ -208,6 +210,27 @@ void main() {
     expect(session.snapshot!.egg(egg.id), isNull);
     expect(session.snapshot!.dragon(egg.id)?.owned, isTrue);
     expect(find.text('This egg has left your inventory.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('nest hint art and text stay centered inside equal padding',
+      (tester) async {
+    await setup(tester, const CanonicalNestScreen(), prepare: (server) {
+      final stash = server.state['eggStash'] as List<dynamic>;
+      final egg = DragonEgg.fromJson(
+          Map<String, dynamic>.from(stash.removeAt(0) as Map));
+      server.state['incubatingEgg'] =
+          egg.activate(coins: 0, gems: 0, activatedAt: server.now).toJson();
+    });
+
+    final card = key('nest-egg-hint-card');
+    await tester.ensureVisible(card);
+    await tester.pump();
+    final cardCenter = tester.getCenter(card).dy;
+    final iconCenter = tester.getCenter(key('nest-egg-hint-icon')).dy;
+    final textCenter = tester.getCenter(key('nest-egg-hint-text')).dy;
+    expect(iconCenter, closeTo(cardCenter, .1));
+    expect(textCenter, closeTo(cardCenter, .1));
     expect(tester.takeException(), isNull);
   });
 
@@ -685,15 +708,12 @@ void main() {
     await command(tester);
     expect(session.snapshot!.house.wardLevel, 1);
     expect(session.snapshot!.coins, 9850);
-    await tap(tester, key('canonical-floor-options-0'));
-    await tester.pumpAndSettle();
     await tap(tester, key('canonical-repair-0'));
     expect(find.textContaining('270 munten?'), findsOneWidget);
     await tap(tester, find.widgetWithText(FilledButton, 'Bevestigen'));
     await command(tester);
     expect(session.snapshot!.house.damagedFloors, isEmpty);
     expect(session.snapshot!.coins, 9580);
-    await tap(tester, key('close-floor-options'));
     await tap(tester, key('canonical-add-floor'));
     await shot(tester, 'house-floor-picker-nl-large');
     await tap(tester, key('canonical-build-hearth'));
@@ -769,17 +789,20 @@ void main() {
   });
 
   testWidgets(
-      'floor arrows persist order and an old room editor cannot act after account reentry',
+      'tower order persists and an old room editor cannot act after account reentry',
       (tester) async {
     await setup(tester, const CanonicalHouseScreen(), prepare: prepareEditor);
-    await tap(tester, key('canonical-floor-options-0'));
-    await tester.pumpAndSettle();
-    await tap(tester, key('canonical-floor-up-0'));
+    await tap(tester, key('reorder-tower-rooms'));
+    final order =
+        tester.widget<ReorderableListView>(key('tower-room-order-list'));
+    order.onReorderItem!(0, 1);
+    await tester.pump();
     await command(tester);
     expect(session.snapshot!.house.floorRoomIds, ['crystal', 'hearth']);
     expect(session.snapshot!.house.damagedFloors, {1});
     await shot(tester, 'house-reordered');
-    await tap(tester, key('close-floor-options'));
+    Navigator.of(tester.element(key('tower-room-order-list'))).pop();
+    await tester.pumpAndSettle();
     await tap(tester, find.widgetWithText(Tab, 'Rooms'));
     await tap(tester, key('canonical-edit-room-hearth'));
     await tap(tester, key('canonical-select-furniture-moss_cushion'));
@@ -793,6 +816,38 @@ void main() {
     expect(key('canonical-room-canvas'), findsNothing);
     expect(key('canonical-select-furniture-moss_cushion'), findsNothing);
     expect(server.sent, hasLength(sent));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
+      'tower overview has no shortcuts and room changes use the historical picker inside a floor',
+      (tester) async {
+    await setup(tester, const CanonicalHouseScreen(),
+        language: 'nl', scale: 1.35, prepare: prepareEditor);
+    final floor = key('canonical-visit-floor-1');
+    expect(
+        find.descendant(
+            of: floor, matching: find.byIcon(Icons.zoom_in_rounded)),
+        findsNothing);
+    expect(key('canonical-floor-options-1'), findsNothing);
+    expect(key('canonical-change-floor-1'), findsNothing);
+
+    await tap(tester, floor);
+    await command(tester);
+    expect(key('canonical-change-floor-1'), findsOneWidget);
+    await tap(tester, key('canonical-change-floor-1'));
+    expect(key('tower-room-picker-scroll'), findsOneWidget);
+    expect(find.text('Kies een kamertype'), findsOneWidget);
+    expect(find.text('Verander deze kamer zo vaak je wilt, gratis.'),
+        findsOneWidget);
+    await tap(tester, key('canonical-convert-hearth'));
+    await command(tester);
+
+    expect(session.snapshot!.house.floorRoomIds, ['hearth', 'hearth']);
+    expect(server.sent.where((i) => i.action == 'change_tower_floor_room'),
+        hasLength(1));
+    expect(key('canonical-change-floor-1'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -880,10 +935,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   testWidgets(
-      'restored room options cannot survive reauthentication of the same owner',
+      'restored room picker cannot act after reauthentication of the same owner',
       (tester) async {
     await setup(tester, const CanonicalHouseScreen(), prepare: prepareEditor);
-    await tap(tester, key('canonical-floor-options-0'));
+    await tap(tester, key('canonical-visit-floor-1'));
+    await command(tester);
+    await tap(tester, key('canonical-change-floor-1'));
+    expect(key('tower-room-picker-scroll'), findsOneWidget);
     final sent = server.sent.length;
     final connection = session.connection as CanonicalUiConnection;
     connection.signOut();
@@ -891,8 +949,9 @@ void main() {
     connection.currentOwner = CanonicalUiServer.owner;
     await tester.runAsync(session.synchronize);
     await tester.pump();
-    expect(key('canonical-floor-up-0'), findsNothing);
-    expect(key('canonical-clear-floor-0'), findsNothing);
+    await tap(tester, key('canonical-convert-hearth'));
+    expect(key('canonical-change-floor-1'), findsNothing);
+    expect(key('canonical-clear-floor-1'), findsNothing);
     expect(server.sent, hasLength(sent));
   });
 }

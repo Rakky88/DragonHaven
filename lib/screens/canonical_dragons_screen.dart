@@ -92,7 +92,7 @@ class _DragonList extends StatefulWidget {
 
 enum _DragonCollectionView { gallery, compact }
 
-enum _DragonSortMode { name, acquiredAt, rarity }
+enum _DragonSortMode { name, dragonType, acquiredAt, rarity }
 
 class _DragonListState extends State<_DragonList> {
   _DragonCollectionView _view = _DragonCollectionView.gallery;
@@ -154,6 +154,9 @@ class _DragonListState extends State<_DragonList> {
             .toLowerCase()
             .compareTo(
                 canonicalDragonName(AppStrings.of(context), b).toLowerCase()),
+        _DragonSortMode.dragonType => _dragonTypeName(a).compareTo(
+            _dragonTypeName(b),
+          ),
         _DragonSortMode.acquiredAt => a.acquiredAt.compareTo(b.acquiredAt),
         _DragonSortMode.rarity => _rarityRank(a).compareTo(_rarityRank(b)),
       };
@@ -172,8 +175,14 @@ class _DragonListState extends State<_DragonList> {
       ? DragonRarity.values.length
       : dragonLineages.firstWhere((l) => l.id == dragon.lineageId).rarity.index;
 
+  String _dragonTypeName(CanonicalDragonView dragon) => AppStrings.of(context)
+      .lineageName(dragonLineages
+          .firstWhere((lineage) => lineage.id == dragon.lineageId))
+      .toLowerCase();
+
   String _sortLabel(AppStrings strings) => switch (_sortMode) {
         _DragonSortMode.name => strings.pick('Name', 'Naam'),
+        _DragonSortMode.dragonType => strings.pick('Dragon type', 'Draaktype'),
         _DragonSortMode.acquiredAt => strings.pick('Received', 'Ontvangen'),
         _DragonSortMode.rarity => strings.pick('Rarity', 'Zeldzaamheid'),
       };
@@ -184,7 +193,8 @@ class _DragonListState extends State<_DragonList> {
         _sortDescending = !_sortDescending;
       } else {
         _sortMode = value;
-        _sortDescending = value != _DragonSortMode.name;
+        _sortDescending = value != _DragonSortMode.name &&
+            value != _DragonSortMode.dragonType;
       }
     });
     _saveCollectionPreferences();
@@ -262,6 +272,8 @@ class _DragonListState extends State<_DragonList> {
                               Icon(switch (mode) {
                                 _DragonSortMode.name =>
                                   Icons.sort_by_alpha_rounded,
+                                _DragonSortMode.dragonType =>
+                                  Icons.pets_rounded,
                                 _DragonSortMode.acquiredAt =>
                                   Icons.event_rounded,
                                 _DragonSortMode.rarity =>
@@ -271,6 +283,8 @@ class _DragonListState extends State<_DragonList> {
                               Text(switch (mode) {
                                 _DragonSortMode.name =>
                                   strings.pick('Name', 'Naam'),
+                                _DragonSortMode.dragonType =>
+                                  strings.pick('Dragon type', 'Draaktype'),
                                 _DragonSortMode.acquiredAt =>
                                   strings.pick('Received', 'Ontvangen'),
                                 _DragonSortMode.rarity =>

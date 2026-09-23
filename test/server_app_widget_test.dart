@@ -156,6 +156,13 @@ void main() {
       expect(find.textContaining('v0.06.05'), findsWidgets);
       Navigator.of(tester.element(find.byType(Scaffold).last)).pop();
       await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('haven-menu-button')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      expect(find.text('About DragonHaven'), findsNothing);
+      expect(find.text('Over DragonHaven'), findsNothing);
+      await tester.tapAt(const Offset(4, 4));
+      await tester.pumpAndSettle();
       for (final page in ['Account Info', 'Keeper Journal', 'Achievements']) {
         await tester.tap(find.byKey(const Key('haven-menu-button')));
         await tester.pump();
