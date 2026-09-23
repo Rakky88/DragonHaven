@@ -66,6 +66,13 @@ void main() {
     expect(preflight, contains('api.supabase.com/v1/projects/'));
     expect(
         preflight, contains("[string]\$rewardedFunction.status -cne 'ACTIVE'"));
+    expect(
+      preflight,
+      contains(r'$functionResponse = Invoke-RestMethod'),
+      reason: 'PowerShell 5.1 must enumerate the top-level function array '
+          'before it filters the rewarded callback.',
+    );
+    expect(preflight, contains(r'$functions = @($functionResponse)'));
     expect(preflight, contains("PSObject.Properties['verify_jwt']"));
     expect(preflight, contains('\$verifyJwtProperty.Value -isnot [bool]'));
     expect(preflight, contains('[bool]\$verifyJwtProperty.Value -ne \$false'));

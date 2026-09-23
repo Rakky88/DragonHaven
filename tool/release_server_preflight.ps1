@@ -175,13 +175,16 @@ try {
             'User-Agent' = 'DragonHaven-Release-Preflight/1'
         }
         try {
-            $functions = @(
-                Invoke-RestMethod `
-                    -Method GET `
-                    -Uri "https://api.supabase.com/v1/projects/$($ExpectedProjectRef.Trim())/functions" `
-                    -Headers $managementHeaders `
-                    -TimeoutSec 30
-            )
+            # Windows PowerShell can preserve a top-level JSON array returned
+            # directly by Invoke-RestMethod as one nested value inside @(...).
+            # Assign first so the array expression enumerates every function
+            # consistently on Windows PowerShell and PowerShell 7.
+            $functionResponse = Invoke-RestMethod `
+                -Method GET `
+                -Uri "https://api.supabase.com/v1/projects/$($ExpectedProjectRef.Trim())/functions" `
+                -Headers $managementHeaders `
+                -TimeoutSec 30
+            $functions = @($functionResponse)
         }
         catch {
             throw 'The deployed Supabase Edge Function metadata could not be verified.'
