@@ -4,6 +4,7 @@ import {
   handleSsv,
   InfrastructureFailure,
   rewardedAdHealth,
+  setupProbeUserId,
   SsvDependencies,
   VerificationRecord,
 } from "./core.ts";
@@ -14,6 +15,7 @@ const coinsUnit = "ca-app-pub-1234567890123456/0987654321";
 const gemsUnitSuffix = "1234567890";
 const coinsUnitSuffix = "0987654321";
 const customData = "a5".repeat(32);
+const setupProbeCustomData = "b7".repeat(32);
 const products = configuredRewardProducts(gemsUnit, coinsUnit);
 
 function assert(value: unknown, message = "assertion failed"): asserts value {
@@ -84,7 +86,6 @@ const standardPairs = (): Pair[] => [
   ["reward_item", "gems"],
   ["timestamp", "1790157600000"],
   ["transaction_id", "synthetic-transaction_1"],
-  ["user_id", "opaque-user-value"],
 ];
 
 function encodePairs(pairs: readonly Pair[]): string {
@@ -135,6 +136,7 @@ function setup(
   const records: VerificationRecord[] = [];
   const deps: SsvDependencies = {
     products,
+    setupProbeCustomData,
     publicKey: async (value) => value === keyId ? publicKey : null,
     record: async (value) => {
       records.push(value);
@@ -235,6 +237,132 @@ Deno.test("a real P-256 signed callback records only the allowlisted reward", as
   const expectedHex = [...new Uint8Array(expectedHash)]
     .map((byte) => byte.toString(16).padStart(2, "0")).join("");
   assert(record.callbackSha256 === expectedHex);
+});
+
+Deno.test("the signed AdMob setup probe returns 200 without persistence", async () => {
+  const fixture = await signingFixture();
+  const { deps, records } = setup(fixture.publicKey, {
+    record: () => {
+      throw new Error("setup probe must not reach persistence");
+    },
+  });
+  const pairs: Pair[] = [
+    ...standardPairs().map(([name, value]): Pair => [
+      name,
+      name === "custom_data" ? setupProbeCustomData : value,
+    ]),
+    ["user_id", setupProbeUserId],
+  ];
+  const reply = await handleSsv(await signedRequest(fixture, pairs), deps);
+
+  assert(reply.status === 200);
+  assert(await reply.text() === "setup ok");
+  assert(records.length === 0);
+});
+
+Deno.test("the signed coins setup probe also returns 200 without persistence", async () => {
+  const fixture = await signingFixture();
+  const { deps, records } = setup(fixture.publicKey, {
+    record: () => {
+      throw new Error("setup probe must not reach persistence");
+    },
+  });
+  const pairs: Pair[] = [
+    ...standardPairs().map(([name, value]): Pair => [
+      name,
+      name === "ad_unit"
+        ? coinsUnitSuffix
+        : name === "custom_data"
+        ? setupProbeCustomData
+        : name === "reward_amount"
+        ? "150"
+        : name === "reward_item"
+        ? "coins"
+        : value,
+    ]),
+    ["user_id", setupProbeUserId],
+  ];
+  const reply = await handleSsv(await signedRequest(fixture, pairs), deps);
+
+  assert(reply.status === 200);
+  assert(await reply.text() === "setup ok");
+  assert(records.length === 0);
+});
+
+Deno.test("setup identity is exact and regular callbacks reject every user_id", async () => {
+  const fixture = await signingFixture();
+  const { deps, records } = setup(fixture.publicKey);
+  const setupPairs = standardPairs().map(([name, value]): Pair => [
+    name,
+    name === "custom_data" ? setupProbeCustomData : value,
+  ]);
+  const variants: Pair[][] = [
+    [...standardPairs(), ["user_id", setupProbeUserId]],
+    setupPairs,
+    [...setupPairs, ["user_id", "dragonhaven-ssv-setup-wrong"]],
+    [...standardPairs(), ["user_id", "opaque-player"]],
+  ];
+
+  for (const pairs of variants) {
+    const reply = await handleSsv(await signedRequest(fixture, pairs), deps);
+    assert(reply.status === 403);
+    assert(await reply.text() === "invalid setup probe");
+  }
+  assert(records.length === 0);
+});
+
+Deno.test("setup probes still require an allowlisted product and exact reward", async () => {
+  const fixture = await signingFixture();
+  const { deps, records } = setup(fixture.publicKey);
+  const base: Pair[] = [
+    ...standardPairs().map(([name, value]): Pair => [
+      name,
+      name === "custom_data" ? setupProbeCustomData : value,
+    ]),
+    ["user_id", setupProbeUserId],
+  ];
+  for (
+    const [field, replacement] of [
+      ["ad_unit", "1111111111"],
+      ["reward_amount", "150"],
+      ["reward_item", "coins"],
+    ] as const
+  ) {
+    const pairs = base.map(([name, value]): Pair => [
+      name,
+      name === field ? replacement : value,
+    ]);
+    const reply = await handleSsv(await signedRequest(fixture, pairs), deps);
+    assert(reply.status === 403);
+  }
+  assert(records.length === 0);
+});
+
+Deno.test("setup probes still require a valid timestamp and ad network", async () => {
+  const fixture = await signingFixture();
+  const { deps, records } = setup(fixture.publicKey);
+  const base: Pair[] = [
+    ...standardPairs().map(([name, value]): Pair => [
+      name,
+      name === "custom_data" ? setupProbeCustomData : value,
+    ]),
+    ["user_id", setupProbeUserId],
+  ];
+  for (
+    const [field, replacement] of [
+      ["timestamp", "not-a-timestamp"],
+      ["timestamp", "253402300800000"],
+      ["ad_network", "network\ncontrol"],
+    ] as const
+  ) {
+    const pairs = base.map(([name, value]): Pair => [
+      name,
+      name === field ? replacement : value,
+    ]);
+    const reply = await handleSsv(await signedRequest(fixture, pairs), deps);
+    assert(reply.status === 400);
+  }
+  assert(records.length === 0);
 });
 
 Deno.test("the numeric coins unit maps to its canonical full identifier", async () => {

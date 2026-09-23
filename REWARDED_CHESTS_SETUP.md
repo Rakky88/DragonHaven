@@ -30,8 +30,8 @@ inloggegevens.
    niet-gepubliceerd worden toegevoegd. Koppel de openbare storevermelding
    zodra die bestaat; Google kan advertentieweergave beperken zolang de app
    niet in een ondersteunde store is geverifieerd.
-3. Noteer de openbare Android app-ID. Het formaat is
-   `ca-app-pub-0000000000000000~0000000000`.
+3. De openbare Android app-ID voor DragonHaven is
+   `ca-app-pub-3222375776323902~3757705110`.
 4. Maak twee afzonderlijke ad units van het type **Rewarded**:
 
    | Naam in AdMob | Reward amount | Reward item |
@@ -39,17 +39,14 @@ inloggegevens.
    | Free Gems | 15 | `gems` |
    | Free Coins | 150 | `coins` |
 
-   Noteer beide openbare ad-unit-ID's. Het formaat is
-   `ca-app-pub-0000000000000000/0000000000`. De twee ID's moeten verschillend
-   zijn en bij hetzelfde publisheraccount als de app-ID horen.
-5. Open bij **beide** ad units de server-side-verification-instellingen en vul
-   exact deze callback-URL in:
-
-   `https://tnzathhutuwmohmjfrlo.supabase.co/functions/v1/rewarded-ad-ssv`
-
-   DragonHaven levert per advertentie zelf een korte, willekeurige en
-   eenmalige `custom_data`-waarde. Vul bij AdMob geen vast user-ID, e-mailadres
-   of spelersnaam in.
+   De productie-ID voor Free Gems is
+   `ca-app-pub-3222375776323902/8546997361`; die voor Free Coins is
+   `ca-app-pub-3222375776323902/6805531120`.
+5. Laat de server-side-verification-instellingen bij beide ad units nog open
+   totdat het hulpscript is uitgevoerd en de callback is gedeployed. In stap 4
+   staat precies hoe je Google's **Verify URL** veilig uitvoert. In normale
+   advertenties levert DragonHaven zelf een korte, willekeurige en eenmalige
+   `custom_data`-waarde en wordt geen vast `user_id` meegestuurd.
 6. Open **Privacy & messaging** en publiceer voor DragonHaven ten minste de
    toepasselijke Europese-regelgevingsmelding. De app gebruikt Google's User
    Messaging Platform (UMP) en vraagt toestemming voordat een advertentie
@@ -57,9 +54,8 @@ inloggegevens.
 7. Registreer de Android-telefoon waarmee je gaat controleren als
    **testapparaat** in AdMob. Gebruik bij het testen nooit gewone live
    advertentieklikken op je eigen apparaat.
-8. Noteer de publisher-ID (`pub-0000000000000000`). De ontwikkelaarswebsite in
-   de storevermelding moet naar een domein wijzen waarop jij `/app-ads.txt`
-   kunt publiceren.
+8. De publisher-ID is `pub-3222375776323902`. Stel in de storevermelding
+   `https://rakky88.github.io/` in als ontwikkelaarswebsite.
 
 ## 2. Laat het hulpscript alle openbare ID's controleren
 
@@ -68,18 +64,20 @@ uitgebracht. Voer daarna vanuit de repository uit:
 
 ```powershell
 ./tool/configure_rewarded_ads.ps1 `
-  -AndroidAppId 'ca-app-pub-0000000000000000~0000000000' `
-  -GemsAdUnitId 'ca-app-pub-0000000000000000/0000000001' `
-  -CoinsAdUnitId 'ca-app-pub-0000000000000000/0000000002' `
-  -PublisherId 'pub-0000000000000000'
+  -AndroidAppId 'ca-app-pub-3222375776323902~3757705110' `
+  -GemsAdUnitId 'ca-app-pub-3222375776323902/8546997361' `
+  -CoinsAdUnitId 'ca-app-pub-3222375776323902/6805531120' `
+  -PublisherId 'pub-3222375776323902'
 ```
 
 Het script weigert ongeldige formaten, Google's voorbeeld-ID's, gelijke ad
 units en ID's uit verschillende publisheraccounts. Het leest automatisch de
-volledige huidige Git-commit en maakt drie genegeerde lokale bestanden:
+volledige huidige Git-commit en maakt vier genegeerde lokale bestanden:
 
 - `.tools/rewarded-ads-build-defines.json` voor een interne productiebuild;
 - `.tools/rewarded-ads-ssv-secrets.env` voor de Supabase SSV-functie;
+- `.tools/rewarded-ads-ssv-setup.json` met de tijdelijke gegevens voor Google's
+  **Verify URL**-controle;
 - `.tools/app-ads.txt` voor de ontwikkelaarswebsite.
 
 De map `.tools` staat in `.gitignore`. De vier AdMob-ID's zijn openbare
@@ -95,22 +93,29 @@ met `GITHUB_SHA` en stopt veilig bij ieder verschil.
 
 ## 3. Publiceer app-ads.txt
 
-Publiceer de gegenereerde `.tools/app-ads.txt` ongewijzigd op de hoofdmap van
-de ontwikkelaarswebsite, bijvoorbeeld:
+De ontwikkelaarswebsite is:
 
-`https://jouwdomein.nl/app-ads.txt`
+`https://rakky88.github.io/`
+
+De privacyverklaring staat op:
+
+`https://rakky88.github.io/privacy.html`
+
+Het gegenereerde `.tools/app-ads.txt` is ongewijzigd gepubliceerd op:
+
+`https://rakky88.github.io/app-ads.txt`
 
 Het openbare bestand bevat precies deze vorm:
 
 ```text
-google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
+google.com, pub-3222375776323902, DIRECT, f08c47fec0942fa0
 ```
 
 Controleer na publicatie dat er geen HTML, loginpagina of redirect naar een
 ander domein wordt teruggegeven:
 
 ```powershell
-(Invoke-WebRequest 'https://jouwdomein.nl/app-ads.txt').Content.Trim()
+(Invoke-WebRequest 'https://rakky88.github.io/app-ads.txt').Content.Trim()
 ```
 
 De teruggegeven regel moet exact gelijk zijn aan `.tools/app-ads.txt`.
@@ -130,18 +135,18 @@ server-kill-switch als de GitHub-enable-variable tijdens deze installatie uit.
 
 2. Voer de door het hulpscript geprinte `gh variable set`-commando's uit. Houd
    `DRAGONHAVEN_REWARDED_ADS_ENABLED` hierbij op `false`.
-3. Controleer eerst welke databasewijzigingen klaarstaan en pas ze daarna toe:
+3. Controleer de databasemigraties:
 
    ```powershell
-   supabase db push --linked --include-all --dry-run
-   supabase db push --linked --include-all --yes
+   supabase migration list --linked
    ```
 
-   Dit moet onder andere migraties
-   `202609230094_rewarded_ads.sql` en
-   `202609230095_rewarded_ads_privacy_notice.sql` toepassen. De eerste maakt de
-   server-kill-switch standaard `false`; de tweede houdt de in-app
-   privacyverklaring en het servercontract bij versie `2026-09-23` gelijk.
+   Migratie `202609230094_rewarded_ads.sql` is al op productie toegepast. Deze
+   is veilig en slapend: de server-kill-switch staat standaard op `false`.
+   Pas `202609230095_rewarded_ads_privacy_notice.sql` pas toe als onderdeel van
+   de release met de bijbehorende client. Migratie 95 verhoogt de vereiste
+   privacyverklaring naar versie `2026-09-23`; eerder toepassen zou de huidige
+   uitgebrachte client bij het aanmelden blokkeren.
 4. Stel de gegenereerde functieconfiguratie in en deploy de publieke
    SSV-callback. Gebruik de exacte commando's die het hulpscript print:
 
@@ -161,7 +166,25 @@ server-kill-switch als de GitHub-enable-variable tijdens deze installatie uit.
 
    Het antwoord moet `service: rewarded-ad-ssv`, `contractVersion: 1`, de
    huidige volledige Git-commit en exact beide productie-ad-unit-ID's tonen.
-6. Voer daarna de volledige serverpreflight uit. Hiervoor moeten de checkout
+6. Verifieer nu bij **beide** rewarded ad units de SSV-callback in AdMob. Open
+   **Advertentieblok -> Geavanceerde instellingen -> Server-side verification
+   -> Set up and verify callback URL** en vul exact in:
+
+   - **Callback URL:**
+     `https://tnzathhutuwmohmjfrlo.supabase.co/functions/v1/rewarded-ad-ssv`
+   - **User ID:** `dragonhaven-ssv-setup`
+   - **Custom data:** de waarde `customData` uit
+     `.tools/rewarded-ads-ssv-setup.json`
+
+   Klik **Verify URL**, daarna **Use verified URL** en sla de ad unit op.
+   Herhaal dit voor Free Gems en Free Coins. De gereserveerde user-ID en deze
+   vaste custom-data zijn uitsluitend voor Google's ondertekende
+   installatiecontrole. De callback controleert daarbij Google's
+   handtekening, ad-unit en beloning, maar roept geen opslag- of rewardfunctie
+   aan. Gebruik deze twee testvelden dus niet als speler-ID of als vaste
+   waarden in de app; gewone DragonHaven-advertenties sturen geen `user_id` en
+   gebruiken per claim andere `custom_data`.
+7. Voer daarna de volledige serverpreflight uit. Hiervoor moeten de checkout
    aan het juiste Supabase-project gekoppeld en `SUPABASE_ACCESS_TOKEN` gezet
    zijn:
 
@@ -169,8 +192,8 @@ server-kill-switch als de GitHub-enable-variable tijdens deze installatie uit.
    $revision = (git rev-parse HEAD).Trim()
    ./tool/release_server_preflight.ps1 `
      -RequireRewardedAds `
-     -ExpectedRewardedGemsAdUnitId 'ca-app-pub-0000000000000000/0000000001' `
-     -ExpectedRewardedCoinsAdUnitId 'ca-app-pub-0000000000000000/0000000002' `
+     -ExpectedRewardedGemsAdUnitId 'ca-app-pub-3222375776323902/8546997361' `
+     -ExpectedRewardedCoinsAdUnitId 'ca-app-pub-3222375776323902/6805531120' `
      -ExpectedRewardedSsvSourceRevision $revision
    ```
 
@@ -242,19 +265,22 @@ Gebruik voor een advertentie-release deze volgorde:
 2. Voer `configure_rewarded_ads.ps1` opnieuw uit op die commit.
 3. Zet de gegenereerde SSV-secrets opnieuw en deploy
    `rewarded-ad-ssv` opnieuw, ook wanneer alleen andere appcode veranderde.
-4. Laat de rewarded-ad-serverpreflight slagen met exact die commit en ID's.
-5. Zet `issue_enabled` met de SQL hierboven op `true`.
-6. Zet pas nu de GitHub Variable aan:
+4. Pas migratie `202609230095_rewarded_ads_privacy_notice.sql` toe als deze nog
+   niet op productie staat. Doe dit alleen in dezelfde uitrol als de client
+   met privacyverklaring `2026-09-23`.
+5. Laat de rewarded-ad-serverpreflight slagen met exact die commit en ID's.
+6. Zet `issue_enabled` met de SQL hierboven op `true`.
+7. Zet pas nu de GitHub Variable aan:
 
    ```powershell
    gh variable set DRAGONHAVEN_REWARDED_ADS_ENABLED --body 'true'
    ```
 
-7. Start daarna pas de expliciet aangevraagde release.
+8. Start daarna pas de expliciet aangevraagde release.
 
-Bij iedere latere releasecommit moet stap 2 tot en met 4 opnieuw gebeuren,
+Bij iedere latere releasecommit moeten stappen 2, 3 en 5 opnieuw gebeuren,
 omdat de releaseworkflow de gedeployde SSV-broncommit met `GITHUB_SHA`
-vergelijkt.
+vergelijkt. Migratie 95 hoeft na de eerste bijpassende release niet opnieuw.
 
 ## Directe rollback
 

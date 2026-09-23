@@ -53,9 +53,12 @@ export interface VerificationRecord {
 
 export interface SsvDependencies {
   products: ReadonlyMap<string, RewardProduct>;
+  setupProbeCustomData: string;
   publicKey: (keyId: number) => Promise<CryptoKey | null>;
   record: (value: VerificationRecord) => Promise<"verified" | "replayed">;
 }
+
+export const setupProbeUserId = "dragonhaven-ssv-setup";
 
 const responseHeaders = {
   "cache-control": "no-store",
@@ -266,11 +269,26 @@ export async function handleSsv(
     const customData = parsed.get("custom_data")!;
     const transactionId = parsed.get("transaction_id")!;
     const adNetwork = parsed.get("ad_network")!;
+    const timestampMs = safeInteger(parsed.get("timestamp")!);
     if (
       !/^[0-9a-f]{64}$/.test(customData) ||
       !/^[A-Za-z0-9._~-]{1,256}$/.test(transactionId) ||
-      adNetwork.length > 128
+      adNetwork.length < 1 ||
+      adNetwork.length > 128 ||
+      /[\u0000-\u001f\u007f-\u009f]/.test(adNetwork) ||
+      timestampMs > 253402300799999
     ) return response(400, "invalid callback");
+    const userId = parsed.get("user_id");
+    const usesSetupCustomData = customData === deps.setupProbeCustomData;
+    if (userId !== undefined || usesSetupCustomData) {
+      if (userId !== setupProbeUserId || !usesSetupCustomData) {
+        return response(403, "invalid setup probe");
+      }
+      // AdMob's Verify URL action has no player claim to settle. It reaches
+      // this branch only after Google's signature, product and exact reward
+      // have been verified, and must never call the persistence/reward RPC.
+      return response(200, "setup ok");
+    }
     const result = await deps.record({
       customData,
       currency: product.currency,
@@ -279,7 +297,7 @@ export async function handleSsv(
       rewardAmount,
       transactionId,
       adNetwork,
-      timestampMs: safeInteger(parsed.get("timestamp")!),
+      timestampMs,
       keyId,
       callbackSha256: await sha256Hex(raw),
     });

@@ -12,7 +12,9 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$PublisherId,
 
-    [string]$SsvSourceRevision = ''
+    [string]$SsvSourceRevision = '',
+
+    [string]$SsvSetupCustomData = ''
 )
 
 Set-StrictMode -Version Latest
@@ -23,12 +25,14 @@ $appPattern = '^ca-app-pub-([0-9]{16})~([0-9]{10})$'
 $unitPattern = '^ca-app-pub-([0-9]{16})/([0-9]{10})$'
 $publisherPattern = '^pub-([0-9]{16})$'
 $sourceRevisionPattern = '^[0-9a-f]{40}$'
+$setupCustomDataPattern = '^[0-9a-f]{64}$'
 
 $AndroidAppId = $AndroidAppId.Trim()
 $GemsAdUnitId = $GemsAdUnitId.Trim()
 $CoinsAdUnitId = $CoinsAdUnitId.Trim()
 $PublisherId = $PublisherId.Trim()
 $SsvSourceRevision = $SsvSourceRevision.Trim().ToLowerInvariant()
+$SsvSetupCustomData = $SsvSetupCustomData.Trim().ToLowerInvariant()
 
 $appMatch = [regex]::Match($AndroidAppId, $appPattern)
 $gemsMatch = [regex]::Match($GemsAdUnitId, $unitPattern)
@@ -79,11 +83,25 @@ if ([string]::IsNullOrWhiteSpace($SsvSourceRevision)) {
 if ($SsvSourceRevision -notmatch $sourceRevisionPattern) {
     throw 'SsvSourceRevision moet exact een volledige Git-commit van 40 hextekens zijn.'
 }
+if ([string]::IsNullOrWhiteSpace($SsvSetupCustomData)) {
+    $setupBytes = New-Object byte[] 32
+    $random = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try {
+        $random.GetBytes($setupBytes)
+    } finally {
+        $random.Dispose()
+    }
+    $SsvSetupCustomData = [BitConverter]::ToString($setupBytes).Replace('-', '').ToLowerInvariant()
+}
+if ($SsvSetupCustomData -notmatch $setupCustomDataPattern) {
+    throw 'SsvSetupCustomData moet exact 64 kleine hextekens bevatten.'
+}
 
 $toolsDirectory = Join-Path $repoRoot '.tools'
 $definesPath = Join-Path $toolsDirectory 'rewarded-ads-build-defines.json'
 $appAdsPath = Join-Path $toolsDirectory 'app-ads.txt'
 $ssvSecretsPath = Join-Path $toolsDirectory 'rewarded-ads-ssv-secrets.env'
+$ssvSetupPath = Join-Path $toolsDirectory 'rewarded-ads-ssv-setup.json'
 $appAdsTemplatePath = Join-Path $repoRoot 'app-ads.txt.template'
 $utf8WithoutBom = New-Object System.Text.UTF8Encoding($false)
 
@@ -117,6 +135,7 @@ $appAdsLine = $appAdsTemplate.Replace('pub-XXXXXXXXXXXXXXXX', $PublisherId)
 $ssvSecrets = @(
     "ADMOB_REWARDED_GEMS_AD_UNIT_ID=$GemsAdUnitId"
     "ADMOB_REWARDED_COINS_AD_UNIT_ID=$CoinsAdUnitId"
+    "REWARDED_AD_SSV_SETUP_CUSTOM_DATA=$SsvSetupCustomData"
     "REWARDED_AD_SSV_SOURCE_REVISION=$SsvSourceRevision"
 ) -join [Environment]::NewLine
 [IO.File]::WriteAllText(
@@ -124,11 +143,22 @@ $ssvSecrets = @(
     ($ssvSecrets + [Environment]::NewLine),
     $utf8WithoutBom
 )
+$ssvSetup = [ordered]@{
+    callbackUrl = "https://$projectRef.supabase.co/functions/v1/rewarded-ad-ssv"
+    userId = 'dragonhaven-ssv-setup'
+    customData = $SsvSetupCustomData
+}
+[IO.File]::WriteAllText(
+    $ssvSetupPath,
+    (($ssvSetup | ConvertTo-Json) + [Environment]::NewLine),
+    $utf8WithoutBom
+)
 
 Write-Host 'Rewarded-ad-configuratie is gecontroleerd.'
 Write-Host "Build-defines: $definesPath"
 Write-Host "Te publiceren app-ads.txt: $appAdsPath"
 Write-Host "SSV-functieconfiguratie: $ssvSecretsPath"
+Write-Host "SSV Verify URL-invoer: $ssvSetupPath"
 Write-Host "SSV-broncommit: $SsvSourceRevision"
 if ($null -ne $gitCommand) {
     $ssvChanges = @(
