@@ -32,6 +32,7 @@ import '../models/mystic_relic.dart';
 import '../models/pet.dart';
 import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
+import '../widgets/adventure_expertise_transition.dart';
 import '../widgets/canonical_game_controls.dart';
 import '../widgets/draconomicon_shortcut.dart';
 import '../widgets/expertise_score_badge.dart';
@@ -697,21 +698,20 @@ class _AdventureOffer extends StatelessWidget {
                         Wrap(
                             crossAxisAlignment: WrapCrossAlignment.center,
                             spacing: 5,
+                            runSpacing: 4,
                             children: [
-                              const GameIconSprite(GameIconKind.clock,
-                                  size: 19),
-                              Text(s.adventureDuration(definition.duration),
-                                  style: const TextStyle(fontSize: 11)),
-                              GameIconSprite(
-                                  GameIconSprite.forTrainingFocus(
-                                      definition.focus),
-                                  size: 19),
-                              Text(
-                                  definition.combinedExpertise
-                                      ? s.pick(
-                                          'All Expertises', 'Alle Expertises')
-                                      : _focusLabel(s, definition.focus),
-                                  style: const TextStyle(fontSize: 11)),
+                              Row(mainAxisSize: MainAxisSize.min, children: [
+                                const GameIconSprite(GameIconKind.clock,
+                                    size: 19),
+                                const SizedBox(width: 3),
+                                Text(s.adventureDuration(definition.duration),
+                                    style: const TextStyle(fontSize: 11)),
+                              ]),
+                              AdventureExpertiseTransition(
+                                definition: definition,
+                                keyPrefix:
+                                    'canonical-adventure-${definition.id}-expertise',
+                              ),
                             ]),
                       ])),
                   IconButton(

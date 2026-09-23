@@ -611,6 +611,42 @@ void main() {
   });
 
   testWidgets(
+      'large-text Adventure offer shows expertise loss and gain without amounts',
+      (tester) async {
+    const id = 'mini_2';
+    await setup(tester, const CanonicalAdventuresScreen(),
+        language: 'nl', scale: 1.35, prepare: (server) {
+      final offers = server.state['adventureOptionIds'] as Map<String, dynamic>;
+      offers['mini'] = <String>[id];
+    });
+
+    final summary = key('canonical-adventure-$id-expertise-summary');
+    final list = find.descendant(
+        of: find
+            .byKey(const PageStorageKey<String>('canonical-adventures-list-0')),
+        matching: find.byType(Scrollable));
+    await tester.scrollUntilVisible(summary, 160, scrollable: list.first);
+    await tester.pump();
+
+    expect(summary, findsOneWidget);
+    expect(
+        key('canonical-adventure-$id-expertise-loss-spirit'), findsOneWidget);
+    expect(
+        key('canonical-adventure-$id-expertise-gain-arcana'), findsOneWidget);
+    final summaryText = tester
+        .widgetList<Text>(
+            find.descendant(of: summary, matching: find.byType(Text)))
+        .map((text) => text.data ?? '')
+        .join(' ');
+    expect(RegExp(r'[+-]\s*\d').hasMatch(summaryText), isFalse);
+    final summarySemantics = tester.widget<Semantics>(summary);
+    expect(summarySemantics.properties.label,
+        'Expertisewijziging: Geest daalt; Arcana stijgt');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
       'Dutch large-text Adventure controls and Wayfinder confirmation fit and spend once',
       (tester) async {
     await setup(tester, const CanonicalAdventuresScreen(),

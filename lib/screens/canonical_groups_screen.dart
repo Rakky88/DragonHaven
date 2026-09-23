@@ -19,6 +19,7 @@ import 'adventure_hub_screen.dart'
 import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
 import '../services/canonical_groups.dart';
+import '../widgets/adventure_expertise_transition.dart';
 import '../widgets/canonical_game_controls.dart';
 import '../widgets/canonical_social_rewards.dart';
 import '../widgets/shop_economy_scope.dart';
@@ -262,9 +263,11 @@ class _GroupsState extends State<_Groups> {
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w800)),
                         ]),
-                        GameIconSprite(
-                            GameIconSprite.forTrainingFocus(definition.focus),
-                            size: 19),
+                        AdventureExpertiseTransition(
+                          definition: definition,
+                          keyPrefix:
+                              'group-adventure-${definition.id}-expertise',
+                        ),
                       ]),
                 ])),
             const SizedBox(width: 6),

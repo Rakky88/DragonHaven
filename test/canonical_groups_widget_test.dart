@@ -1,4 +1,6 @@
 import 'dart:io';
+
+import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
@@ -142,9 +144,37 @@ void main() {
                   theme: buildAppTheme(),
                   supportedLocales: const [Locale('en')],
                   localizationsDelegates: GlobalMaterialLocalizations.delegates,
+                  builder: (context, child) => MediaQuery(
+                      data: MediaQuery.of(context)
+                          .copyWith(textScaler: const TextScaler.linear(1.35)),
+                      child: child!),
                   home: const Scaffold(
                       body: SafeArea(child: CanonicalGroupsScreen()))))));
       await settle();
+      final definition = AdventureCatalog.byId['group_1']!;
+      final expertiseSummary =
+          find.byKey(Key('group-adventure-${definition.id}-expertise-summary'));
+      expect(expertiseSummary, findsOneWidget);
+      expect(
+          find.byKey(Key(
+              'group-adventure-${definition.id}-expertise-gain-${definition.focus.name}')),
+          findsOneWidget);
+      expect(
+          find.byWidgetPredicate((widget) =>
+              widget.key is ValueKey<String> &&
+              (widget.key! as ValueKey<String>).value.startsWith(
+                  'group-adventure-${definition.id}-expertise-loss-')),
+          findsNothing);
+      final summaryText = tester
+          .widgetList<Text>(find.descendant(
+              of: expertiseSummary, matching: find.byType(Text)))
+          .map((text) => text.data ?? '')
+          .join(' ');
+      expect(RegExp(r'[+-]\s*\d').hasMatch(summaryText), isFalse);
+      final summarySemantics = tester.widget<Semantics>(expertiseSummary);
+      expect(summarySemantics.properties.label,
+          'Expertise change: Spirit increases');
+      expect(tester.takeException(), isNull);
       final before = Map<String, dynamic>.from(server.state['pet'] as Map);
       await tap(find.byKey(const Key('canonical-create-group')));
       await settle();
