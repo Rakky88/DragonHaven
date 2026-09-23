@@ -174,3 +174,23 @@ Focused widget coverage checks the two Egg picker views, direct tagging without
 opening details, dragon actions, Adventure refresh behavior and Tower layout.
 No migration, server ruleset, runtime flag, reward, probability or player-data
 rewrite is part of this release.
+
+## v0.06.06 interaction and notification follow-up
+
+Tower room changes again begin inside the selected floor, the redundant overview
+zoom controls are removed, and dragon-type sorting is available in My Dragons.
+Adventure sheets use the restored compact action layout. Available cards now
+show both the expertise a dragon gives up and the expertise it trains, matching
+the detail view without exposing hidden reward facts.
+
+The server-account startup gate now re-enters authenticated loading after a new
+sign-in instead of retaining the previous signed-out error. Account Info keeps
+language in its aligned row and removes the duplicate overflow entry.
+
+Notification access is presented as device state rather than a fire-and-forget
+button. Permission changes immediately refresh push registration and canonical
+egg, Adventure and Trial reminders. Android creates the stable events channel at
+process start; Firebase targets the same channel. Social inbox rows are retained
+when native presentation fails, while deliberately muted categories remain
+handled. The isolated push-function update changes only this channel identifier;
+it does not change gameplay runtime, rewards, scheduling or account preferences.
