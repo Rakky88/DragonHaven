@@ -83,6 +83,56 @@ const serverAccountPhraseTranslations = <String, List<String>>{
     'Permitir neste dispositivo',
     'この端末で許可'
   ],
+  'Notifications are allowed on this device.': [
+    'Benachrichtigungen sind auf diesem Gerät erlaubt.',
+    'Las notificaciones están permitidas en este dispositivo.',
+    'Les notifications sont autorisées sur cet appareil.',
+    'Le notifiche sono consentite su questo dispositivo.',
+    'As notificações são permitidas neste dispositivo.',
+    'この端末では通知が許可されています。'
+  ],
+  'Checking device access…': [
+    'Gerätezugriff wird geprüft…',
+    'Comprobando el acceso del dispositivo…',
+    'Vérification de l’accès de l’appareil…',
+    'Verifica dell’accesso del dispositivo…',
+    'A verificar o acesso do dispositivo…',
+    '端末のアクセスを確認しています…'
+  ],
+  'Allowed on this device': [
+    'Auf diesem Gerät erlaubt',
+    'Permitido en este dispositivo',
+    'Autorisé sur cet appareil',
+    'Consentito su questo dispositivo',
+    'Permitido neste dispositivo',
+    'この端末で許可済み'
+  ],
+  'Allow Android to deliver DragonHaven notifications.': [
+    'Erlaube Android, DragonHaven-Benachrichtigungen zuzustellen.',
+    'Permite que Android muestre las notificaciones de DragonHaven.',
+    'Autorisez Android à afficher les notifications de DragonHaven.',
+    'Consenti ad Android di mostrare le notifiche di DragonHaven.',
+    'Permite que o Android apresente notificações do DragonHaven.',
+    'AndroidにDragonHavenの通知を表示する許可を与えてください。'
+  ],
+  'Manage': ['Verwalten', 'Gestionar', 'Gérer', 'Gestisci', 'Gerir', '管理'],
+  'Allow precise timing so egg, Adventure and Trial reminders arrive on time.':
+      [
+    'Erlaube genaue Zeitplanung, damit Erinnerungen für Eier, Abenteuer und Prüfungen pünktlich ankommen.',
+    'Permite la programación precisa para que los recordatorios de huevos, Aventuras y Pruebas lleguen a tiempo.',
+    'Autorisez la programmation précise afin que les rappels d’œufs, d’Aventures et d’Épreuves arrivent à l’heure.',
+    'Consenti una programmazione precisa affinché i promemoria per uova, Avventure e Prove arrivino puntuali.',
+    'Permite horários exatos para que os lembretes de ovos, Aventuras e Provas cheguem a tempo.',
+    '卵、アドベンチャー、トライアルのリマインダーが時間どおりに届くよう、正確なタイミングを許可してください。'
+  ],
+  'Choose at least one notification type below.': [
+    'Wähle unten mindestens einen Benachrichtigungstyp aus.',
+    'Elige al menos un tipo de notificación a continuación.',
+    'Choisissez au moins un type de notification ci-dessous.',
+    'Scegli almeno un tipo di notifica qui sotto.',
+    'Escolhe pelo menos um tipo de notificação abaixo.',
+    '下から通知の種類を1つ以上選んでください。'
+  ],
   'Privacy notice': [
     'Datenschutzhinweise',
     'Aviso de privacidad',

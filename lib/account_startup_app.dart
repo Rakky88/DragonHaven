@@ -426,8 +426,9 @@ class _AccountStartupAppState extends State<AccountStartupApp>
             ChangeNotifierProvider.value(value: online),
           ], child: ServerDragonHavenApp(auth: widget.auth)), close: () async {
         push?.dispose();
+        final stopOnline = ownedOnline.stopLegacyOperations();
         await notifications?.close();
-        await ownedOnline.stopLegacyOperations();
+        await stopOnline;
         ownedOnline.dispose();
         ownedGroups.dispose();
         ownedPartners.dispose();

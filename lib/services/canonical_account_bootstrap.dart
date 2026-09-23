@@ -264,11 +264,23 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
     if (_shutdown != null) return _shutdown!;
     _disposed = true;
     _again = false;
+    final stoppingAccounts = _accounts.cancel();
+    final pending = _pending;
+    final activeLease = pending == null ? _lease : null;
+    Future<void>? closingLease;
+    if (activeLease != null) {
+      // Begin retirement before returning from widget disposal. Lease close
+      // synchronously cancels periodic work before its first asynchronous
+      // barrier, so no account timers can outlive a removed application root.
+      _lease = null;
+      closingLease = activeLease.close();
+    }
     return _shutdown = (() async {
-      await _accounts.cancel();
-      await _pending;
+      await stoppingAccounts;
+      await pending;
       _handoff?.dispose();
       _handoff = null;
+      await closingLease;
       await _lease?.close();
       _lease = null;
     })();
