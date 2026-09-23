@@ -89,6 +89,10 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
     if (_kind != 'all' && !view.eggs.any((e) => e.kind == _kind)) _kind = 'all';
     final eggs = view.eggs
         .where((e) =>
+            (widget.onPlace != null ||
+                widget.forAltar ||
+                widget.forNest ||
+                e.location == 'stash') &&
             (_kind == 'all' || e.kind == _kind) &&
             (_tagFilter == 0 || e.tagged == (_tagFilter == 1)))
         .toList()
@@ -102,7 +106,23 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                 ? -order
                 : order;
       });
-    if (widget.onPlace != null || widget.forAltar || widget.forNest) {
+    if (widget.forNest) {
+      final available = eggs
+          .where((egg) =>
+              egg.location == 'stash' &&
+              !view.inventory.reservedEggIds.contains(egg.id))
+          .toList();
+      return _CanonicalNestEggPicker(
+        eggs: available,
+        compact: compact,
+        sort: sort,
+        descending: descending,
+        enabled: session.canAct,
+        onChoose: widget.onChoose,
+        onPreference: preference,
+      );
+    }
+    if (widget.onPlace != null || widget.forAltar) {
       final available = eggs
           .where((e) =>
               (!widget.forNest && widget.onPlace == null ||
@@ -209,13 +229,11 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                                       () => CanonicalGameActions(session)
                                           .tagEgg(egg.id, !egg.tagged))
                                   : null),
-                          onTap: widget.forNest
-                              ? () => widget.onChoose?.call(egg.id)
-                              : () => showCanonicalEggDetails(context, egg.id,
-                                  onPlace: widget.onPlace,
-                                  onChoose: widget.onChoose,
-                                  relic: widget.relic,
-                                  forAltar: true)),
+                          onTap: () => showCanonicalEggDetails(context, egg.id,
+                              onPlace: widget.onPlace,
+                              onChoose: widget.onChoose,
+                              relic: widget.relic,
+                              forAltar: true)),
                   ])),
       ]);
     }
@@ -340,14 +358,11 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
                                         Center(
                                             child: CanonicalEggArt(
                                                 egg: egg, height: 125)),
-                                        if (egg.tagged)
-                                          const Positioned(
-                                              top: 0,
-                                              right: 0,
-                                              child: Icon(
-                                                  Icons.bookmark_rounded,
-                                                  size: 20,
-                                                  color: AppColors.twilight)),
+                                        Positioned(
+                                            top: 0,
+                                            right: 0,
+                                            child: _CanonicalEggTagButton(
+                                                eggId: egg.id, compact: true)),
                                       ]),
                                       Text(canonicalEggName(strings, egg),
                                           textAlign: TextAlign.center,
@@ -393,8 +408,7 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
             subtitle: Text('${strings.remainingDuration(egg.incubation)} · '
                 '${strings.pick('Received', 'Ontvangen')} ${MaterialLocalizations.of(context).formatShortDate(egg.acquiredAt.toLocal())}'
                 '${view.inventory.reservedEggIds.contains(egg.id) ? strings.pick(' · Reserved', ' · Gereserveerd') : ''}'),
-            trailing:
-                Icon(egg.tagged ? Icons.bookmark_rounded : Icons.info_outline),
+            trailing: _CanonicalEggTagButton(eggId: egg.id, compact: true),
             onTap: () => showCanonicalEggDetails(context, egg.id,
                 onPlace: widget.onPlace, forAltar: widget.forAltar),
           )),
@@ -545,6 +559,338 @@ class _CanonicalEggListState extends State<CanonicalEggList> {
   }
 }
 
+class _CanonicalEggTagButton extends StatelessWidget {
+  const _CanonicalEggTagButton({
+    required this.eggId,
+    this.compact = false,
+    this.buttonKey,
+  });
+
+  final String eggId;
+  final bool compact;
+  final Key? buttonKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = context.watch<CanonicalGameSession>();
+    final egg = session.snapshot?.egg(eggId);
+    if (egg == null) return const SizedBox.shrink();
+    final strings = AppStrings.of(context);
+    final label = egg.tagged
+        ? strings.pick('Untag egg', 'Ei ontaggen')
+        : strings.pick('Tag egg', 'Ei taggen');
+    final icon = Icon(
+      egg.tagged ? Icons.label_rounded : Icons.label_outline_rounded,
+      color: egg.tagged
+          ? AppColors.eventColor(context, const Color(0xFF804EB8))
+          : null,
+      size: compact ? 20 : 24,
+    );
+    void change() => runShopAction(
+          context,
+          () => CanonicalGameActions(session).tagEgg(eggId, !egg.tagged),
+        );
+    return compact
+        ? IconButton(
+            key: buttonKey ?? Key('egg-tag-$eggId'),
+            tooltip: label,
+            visualDensity: VisualDensity.compact,
+            icon: icon,
+            onPressed: session.canAct ? change : null,
+          )
+        : OutlinedButton.icon(
+            key: buttonKey ?? Key('egg-tag-$eggId'),
+            onPressed: session.canAct ? change : null,
+            icon: icon,
+            label: Text(egg.tagged
+                ? strings.pick('Tagged · untag', 'Getagd · ontaggen')
+                : label),
+          );
+  }
+}
+
+class _CanonicalNestEggPicker extends StatelessWidget {
+  const _CanonicalNestEggPicker({
+    required this.eggs,
+    required this.compact,
+    required this.sort,
+    required this.descending,
+    required this.enabled,
+    required this.onChoose,
+    required this.onPreference,
+  });
+
+  final List<CanonicalEggView> eggs;
+  final bool compact;
+  final String sort;
+  final bool descending;
+  final bool enabled;
+  final void Function(String)? onChoose;
+  final void Function(Map<String, dynamic>) onPreference;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    void selectSort(String value) => onPreference({
+          'eggInventorySortMode': value,
+          'eggInventorySortDescending':
+              value == sort ? !descending : value == 'acquiredAt',
+        });
+    return Column(
+      key: const Key('nest-egg-picker'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 12, 9),
+          child: Row(children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(strings.pick('Choose an Egg', 'Kies een Ei'),
+                      style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    '${eggs.length} ${strings.pick(eggs.length == 1 ? 'egg' : 'eggs', eggs.length == 1 ? 'ei' : 'eieren')}',
+                    style: const TextStyle(
+                        color: AppColors.muted, fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+            ),
+            PopupMenuButton<String>(
+              key: const Key('nest-egg-sort'),
+              initialValue: sort,
+              enabled: enabled,
+              onSelected: selectSort,
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  key: const Key('nest-egg-sort-acquiredAt'),
+                  value: 'acquiredAt',
+                  child: Text(strings.pick('Received', 'Ontvangen')),
+                ),
+                PopupMenuItem(
+                  key: const Key('nest-egg-sort-hatchTime'),
+                  value: 'hatchTime',
+                  child: Text(strings.pick('Hatch time', 'Broedtijd')),
+                ),
+              ],
+              child: _CanonicalNestPickerControl(
+                icon: descending
+                    ? Icons.arrow_downward_rounded
+                    : Icons.arrow_upward_rounded,
+                label: sort == 'acquiredAt'
+                    ? strings.pick('Received', 'Ontvangen')
+                    : strings.pick('Hatch time', 'Broedtijd'),
+              ),
+            ),
+            const SizedBox(width: 6),
+            IconButton.filledTonal(
+              key: const Key('nest-egg-view-toggle'),
+              tooltip: compact
+                  ? strings.pick('Show tiles', 'Tegels tonen')
+                  : strings.pick('Show list', 'Lijst tonen'),
+              onPressed: enabled
+                  ? () => onPreference(
+                      {'eggInventoryViewMode': compact ? 'tiles' : 'list'})
+                  : null,
+              icon: Icon(
+                  compact ? Icons.grid_view_rounded : Icons.view_list_rounded),
+            ),
+          ]),
+        ),
+        Expanded(
+          child: eggs.isEmpty
+              ? Center(
+                  child: Text(strings.pick(
+                      'No eggs available.', 'Geen eieren beschikbaar.')))
+              : compact
+                  ? ListView.separated(
+                      key: const PageStorageKey('nest-eggs-list-scroll'),
+                      padding: const EdgeInsets.fromLTRB(12, 3, 12, 24),
+                      itemCount: eggs.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 7),
+                      itemBuilder: (context, index) =>
+                          _CanonicalNestEggListTile(
+                        egg: eggs[index],
+                        onChoose: onChoose,
+                      ),
+                    )
+                  : GridView.builder(
+                      key: const PageStorageKey('nest-eggs-grid-scroll'),
+                      padding: const EdgeInsets.fromLTRB(12, 3, 12, 24),
+                      itemCount: eggs.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 210,
+                        childAspectRatio: .72,
+                        mainAxisSpacing: 9,
+                        crossAxisSpacing: 9,
+                      ),
+                      itemBuilder: (context, index) =>
+                          _CanonicalNestEggGridTile(
+                        egg: eggs[index],
+                        onChoose: onChoose,
+                      ),
+                    ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CanonicalNestPickerControl extends StatelessWidget {
+  const _CanonicalNestPickerControl({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        decoration: BoxDecoration(
+          color: AppColors.eventColor(context, const Color(0xFFF1ECFB)),
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon,
+              size: 18,
+              color: AppColors.eventColor(context, AppColors.twilight)),
+          const SizedBox(width: 5),
+          Text(label,
+              style: TextStyle(
+                  color: AppColors.eventColor(context, AppColors.twilight),
+                  fontWeight: FontWeight.w900)),
+        ]),
+      );
+}
+
+class _CanonicalNestEggGridTile extends StatelessWidget {
+  const _CanonicalNestEggGridTile({required this.egg, required this.onChoose});
+
+  final CanonicalEggView egg;
+  final void Function(String)? onChoose;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return KeyedSubtree(
+      key: Key('canonical-egg-${egg.id}'),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        margin: EdgeInsets.zero,
+        child: InkWell(
+          key: Key('nest-egg-grid-${egg.id}'),
+          onTap: () => onChoose?.call(egg.id),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(9, 8, 9, 9),
+            child: Column(children: [
+              Expanded(child: CanonicalEggArt(egg: egg, height: 88)),
+              Text(canonicalEggName(strings, egg),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900)),
+              const SizedBox(height: 3),
+              Text(
+                strings.pick(
+                  'Hatch time: ${strings.remainingDuration(egg.incubation)}',
+                  'Broedtijd: ${strings.remainingDuration(egg.incubation)}',
+                ),
+                key: Key('nest-egg-hatch-time-${egg.id}'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    color: AppColors.eventColor(context, AppColors.twilight),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 5),
+              Text(egg.hint(strings.languageCode),
+                  key: Key('nest-egg-hint-${egg.id}'),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 10.5,
+                      height: 1.2,
+                      fontStyle: FontStyle.italic)),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CanonicalNestEggListTile extends StatelessWidget {
+  const _CanonicalNestEggListTile({required this.egg, required this.onChoose});
+
+  final CanonicalEggView egg;
+  final void Function(String)? onChoose;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final received = MaterialLocalizations.of(context)
+        .formatShortDate(egg.acquiredAt.toLocal());
+    return KeyedSubtree(
+      key: Key('canonical-egg-${egg.id}'),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        margin: EdgeInsets.zero,
+        child: InkWell(
+          key: Key('nest-egg-list-${egg.id}'),
+          onTap: () => onChoose?.call(egg.id),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 9, 8, 9),
+            child: Row(children: [
+              SizedBox.square(
+                  dimension: 62, child: CanonicalEggArt(egg: egg, height: 58)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(canonicalEggName(strings, egg),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w900)),
+                      const SizedBox(height: 2),
+                      Text(
+                        strings.pick(
+                          'Hatch time: ${strings.remainingDuration(egg.incubation)} \u00b7 Received $received',
+                          'Broedtijd: ${strings.remainingDuration(egg.incubation)} \u00b7 Ontvangen $received',
+                        ),
+                        key: Key('nest-egg-hatch-time-${egg.id}'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: AppColors.eventColor(
+                                context, AppColors.twilight),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(egg.hint(strings.languageCode),
+                          key: Key('nest-egg-hint-${egg.id}'),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 11,
+                              height: 1.2,
+                              fontStyle: FontStyle.italic)),
+                    ]),
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// The original crafted-relic flow: egg picker, reviewed choice, confirmation,
 /// and a reveal of only the facts returned by the server.
 Future<void> showCanonicalAltarRelicPicker(
@@ -660,18 +1006,8 @@ class _InventoryEggDetails extends StatelessWidget {
               CanonicalEggArt(egg: egg, height: 126),
               Text(canonicalEggName(s, egg),
                   style: Theme.of(context).textTheme.titleLarge),
-              OutlinedButton.icon(
-                  key: const Key('canonical-tag-egg'),
-                  onPressed: enabled
-                      ? () => runShopAction(
-                          context, () => actions.tagEgg(egg.id, !egg.tagged))
-                      : null,
-                  icon: Icon(egg.tagged
-                      ? Icons.label_rounded
-                      : Icons.label_outline_rounded),
-                  label: Text(egg.tagged
-                      ? s.pick('Untag egg', 'Ei ontaggen')
-                      : s.pick('Tag egg', 'Ei taggen'))),
+              _CanonicalEggTagButton(
+                  eggId: egg.id, buttonKey: const Key('canonical-tag-egg')),
               Wrap(
                   alignment: WrapAlignment.center,
                   spacing: 8,

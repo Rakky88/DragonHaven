@@ -1,3 +1,10 @@
+## Egg picker presentation restoration - 23 September 2026
+
+Restoring the v0.05.40 Rooftop Nest picker, standard Egg details and direct
+tag buttons changes presentation only. Selection, tagging and nest placement
+remain canonical server commands. Egg generation, hidden facts, incubation,
+reward pools, probabilities, pity rules and duplicate rules are unchanged.
+
 ## Account restoration candidate - 20 September 2026
 
 Server account initialization reuses the existing starter egg rules with a
@@ -241,7 +248,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: dec76e86ee443b08 -->
+<!-- reference-source-fingerprint: 98cf64de094ff9c7 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

@@ -182,7 +182,7 @@ void main() {
     await tap(tester, key('canonical-tag-egg'));
     await command(tester);
     expect(session.snapshot!.egg(egg.id)!.tagged, isTrue);
-    expect(find.text('Untag egg'), findsOneWidget);
+    expect(find.text('Tagged · untag'), findsOneWidget);
     await tap(tester, key('canonical-incubate-egg'));
     expect(find.widgetWithText(FilledButton, 'Confirm'), findsNothing);
     await command(tester);
@@ -291,17 +291,74 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('nest picker chooses directly without opening altar details',
+  testWidgets(
+      'nest picker restores the historical grid and list and chooses directly',
       (tester) async {
     String? selected;
     await setup(tester,
         CanonicalEggList(forNest: true, onChoose: (id) => selected = id));
-    final egg =
-        session.snapshot!.eggs.firstWhere((egg) => egg.location == 'stash');
-    await tap(tester, key('canonical-egg-${egg.id}'));
+    final view = session.snapshot!;
+    final egg = view.eggs.firstWhere((egg) =>
+        egg.location == 'stash' &&
+        !view.inventory.reservedEggIds.contains(egg.id));
+
+    expect(key('nest-egg-picker'), findsOneWidget);
+    expect(key('nest-egg-sort'), findsOneWidget);
+    expect(key('nest-egg-view-toggle'), findsOneWidget);
+    expect(find.byKey(const PageStorageKey<String>('nest-eggs-grid-scroll')),
+        findsOneWidget);
+    expect(key('nest-egg-grid-${egg.id}'), findsOneWidget);
+    expect(key('nest-egg-hatch-time-${egg.id}'), findsOneWidget);
+    expect(key('nest-egg-hint-${egg.id}'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'Tagged'), findsNothing);
+
+    await tap(tester, key('nest-egg-view-toggle'));
+    await command(tester);
+    expect(find.byKey(const PageStorageKey<String>('nest-eggs-list-scroll')),
+        findsOneWidget);
+    expect(key('nest-egg-list-${egg.id}'), findsOneWidget);
+    expect(key('nest-egg-hatch-time-${egg.id}'), findsOneWidget);
+    expect(key('nest-egg-hint-${egg.id}'), findsOneWidget);
+
+    await tap(tester, key('nest-egg-list-${egg.id}'));
     expect(selected, egg.id);
     expect(key('canonical-place-egg'), findsNothing);
-    expect(server.sent, isEmpty);
+    expect(key('inventory-egg-clue-${egg.id}'), findsNothing);
+    expect(server.sent.map((intent) => intent.action), ['set_preferences']);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'standard egg grid and list tag directly without opening egg details',
+      (tester) async {
+    await setup(tester, const CanonicalInventoryScreen());
+    final egg = session.snapshot!.eggs
+        .firstWhere((egg) => egg.location == 'stash' && !egg.tagged);
+    await tap(tester, find.text('Eggs'));
+
+    final tag = key('egg-tag-${egg.id}');
+    expect(tag, findsOneWidget);
+    expect(
+        find.ancestor(of: tag, matching: find.byType(ListTile)), findsNothing);
+    await tap(tester, tag);
+    await command(tester);
+    expect(session.snapshot!.egg(egg.id)!.tagged, isTrue);
+    expect(key('inventory-egg-clue-${egg.id}'), findsNothing);
+    expect(find.text('Incubation after nesting'), findsNothing);
+
+    await tap(tester, key('egg-inventory-view-toggle'));
+    await command(tester);
+    expect(tag, findsOneWidget);
+    expect(find.ancestor(of: tag, matching: find.byType(ListTile)),
+        findsOneWidget);
+    await tap(tester, tag);
+    await command(tester);
+    expect(session.snapshot!.egg(egg.id)!.tagged, isFalse);
+    expect(key('inventory-egg-clue-${egg.id}'), findsNothing);
+    expect(find.text('Incubation after nesting'), findsNothing);
+    expect(server.sent.map((intent) => intent.action),
+        ['tag_egg', 'set_preferences', 'tag_egg']);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(

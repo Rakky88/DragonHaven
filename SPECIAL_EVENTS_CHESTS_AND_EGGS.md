@@ -1,3 +1,13 @@
+## Egg picker presentation restoration - 23 September 2026
+
+The Rooftop Nest egg picker again uses the v0.05.40 tile/list layouts, saved
+sorting controls, hatch-time labels and public egg hints. The normal Egg
+inventory again supports tagging directly from either view, and its details
+sheet retains the historical known-fact and incubation presentation. Nest
+placement and tagging still use canonical server commands with optimistic
+preview and rollback. Egg contents, hidden identity, incubation rules, event
+dates, rewards and odds are unchanged.
+
 ## Post-v0.06.03 Adventure timer restoration - 21 September 2026
 
 Running Adventure cards and their detail sheet again show the historical
@@ -428,7 +438,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 763cb39ad0a87fc2 -->
+<!-- reference-source-fingerprint: d7eef4c766c2f65b -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
