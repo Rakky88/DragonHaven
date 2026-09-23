@@ -4,6 +4,7 @@ import 'package:dragon_haven/account_startup_app.dart';
 import 'package:dragon_haven/config/online_config.dart';
 import 'package:dragon_haven/dragonhaven_app.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
+import 'package:dragon_haven/providers/online_account_provider.dart';
 import 'package:dragon_haven/screens/account_save_choice_screen.dart';
 import 'package:dragon_haven/screens/privacy_screen.dart';
 import 'package:dragon_haven/services/account_legacy_game_storage.dart';
@@ -29,7 +30,7 @@ const config = OnlineConfig(
     url: CanonicalGameTransport.stagingUrl,
     publishableKey: 'synthetic-public-key',
     environment: OnlineEnvironment.staging);
-Future<void> _signIn(SupabaseClient client, String owner) async {
+Map<String, dynamic> _authSession(String owner) {
   final now = DateTime.now().toUtc();
   String segment(Object value) =>
       base64Url.encode(utf8.encode(jsonEncode(value))).replaceAll('=', '');
@@ -38,7 +39,7 @@ Future<void> _signIn(SupabaseClient client, String owner) async {
         'aud': 'authenticated',
         'exp': now.millisecondsSinceEpoch ~/ 1000 + 3600,
       })}.c3ludGhldGlj';
-  await client.auth.recoverSession(jsonEncode({
+  return {
     'access_token': token,
     'refresh_token': 'synthetic-refresh',
     'token_type': 'bearer',
@@ -53,7 +54,11 @@ Future<void> _signIn(SupabaseClient client, String owner) async {
       'app_metadata': {},
       'user_metadata': {}
     },
-  }));
+  };
+}
+
+Future<void> _signIn(SupabaseClient client, String owner) async {
+  await client.auth.recoverSession(jsonEncode(_authSession(owner)));
   await Future<void>.delayed(Duration.zero);
 }
 
@@ -269,6 +274,130 @@ void main() {
     final closing = auth.dispose().then((_) => disposed = true);
     await until(tester, () => disposed);
     await closing;
+  });
+
+  testWidgets(
+      'signing out and signing back into the same account reopens the server game',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final game = HouseholdProvider(persistenceEnabled: false)
+      ..onboardingComplete = true
+      ..accountName = 'Returning Keeper';
+    final server = CanonicalUiServer(game.exportState());
+    game.dispose();
+    final calls = <String>[];
+    http.Response reply(http.Request request, Object? body,
+            [int status = 200]) =>
+        http.Response(jsonEncode(body), status,
+            request: request, headers: {'content-type': 'application/json'});
+    final auth = SupabaseClient(config.url, config.publishableKey,
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+        httpClient: MockClient((request) async {
+      calls.add('${request.method} ${request.url.path}');
+      if (request.url.path == '/auth/v1/logout') {
+        return reply(request, const <String, dynamic>{});
+      }
+      if (request.url.path == '/auth/v1/token') {
+        return reply(request, _authSession(a));
+      }
+      if (request.url.path.endsWith('get_my_privacy_acknowledgement')) {
+        return reply(request, true);
+      }
+      if (request.url.path.endsWith('ensure_my_online_account')) {
+        return reply(request, null);
+      }
+      if (request.url.path.endsWith('get_online_snapshot')) {
+        return reply(request, {
+          'profile': {
+            'user_id': a,
+            'display_name': 'Returning Keeper',
+            'keeper_code': 'DH-RETURN',
+            'inventory_imported': true
+          },
+          'group_status': {},
+        });
+      }
+      throw StateError('Unexpected account request: ${request.url}');
+    }));
+    CanonicalGameTransport transport() =>
+        CanonicalGameTransport.staging(auth, config,
+            httpClientFactory: () => MockClient((request) async {
+                  if (request.url.path
+                      .endsWith('get_my_server_gameplay_status')) {
+                    return reply(request, {
+                      'owner_id': a,
+                      'phase': 'active',
+                      'migration_enabled': true,
+                      'source_revision': null,
+                      'server_revision': server.revision,
+                    });
+                  }
+                  final input =
+                      jsonDecode(request.body) as Map<String, dynamic>;
+                  calls.add('edge:${input['action']}');
+                  if (input['action'] == 'read_state') {
+                    return reply(
+                        request, {...server.wire, 'authority_mode': 'server'});
+                  }
+                  final result = await server.send(CanonicalGameIntent(
+                      ownerId: a,
+                      requestId: input['requestId'],
+                      action: input['action'],
+                      payload: input['payload'],
+                      minimumRevision: input['expectedRevision']));
+                  return reply(
+                      request,
+                      {
+                        ...result.body as Map<String, dynamic>,
+                        'authority_mode': 'server'
+                      },
+                      result.status);
+                }));
+    final directory = (await tester
+        .runAsync(() => Directory.systemTemp.createTemp('dh-reauth-')))!;
+    await tester.runAsync(() => _signIn(auth, a));
+    await tester.pumpWidget(AccountStartupApp(
+        config: config,
+        auth: auth,
+        directory: directory,
+        connectionFactory: transport));
+    await until(
+        tester, () => find.byType(ServerDragonHavenApp).evaluate().isNotEmpty);
+    final account = tester
+        .element(find.byType(ServerDragonHavenApp))
+        .read<OnlineAccountProvider>();
+    expect(await tester.runAsync(account.signOut), isTrue);
+    await until(tester,
+        () => find.byKey(const Key('startup-email')).evaluate().isNotEmpty);
+    await tester.scrollUntilVisible(
+        find.byKey(const Key('startup-authenticate')), 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester
+        .tap(find.widgetWithText(TextButton, 'Already have an account?'));
+    await tester.pump();
+    await tester.enterText(
+        find.byKey(const Key('startup-email')), 'synthetic@example.invalid');
+    await tester.enterText(
+        find.byKey(const Key('startup-password')), 'Secret1!');
+    await tester.tap(find.byKey(const Key('startup-authenticate')));
+    await until(
+        tester,
+        () =>
+            find.byType(ServerDragonHavenApp).evaluate().isNotEmpty ||
+            find.text('Try again').evaluate().isNotEmpty);
+    expect(find.byType(ServerDragonHavenApp), findsOneWidget,
+        reason:
+            'The same confirmed account must reopen its server game after reauthentication. Calls: $calls. Visible text: ${tester.widgetList<Text>(find.byType(Text)).map((text) => text.data).whereType<String>().toList()}');
+    expect(find.text('Try again'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+    var disposed = false;
+    final closing = auth.dispose().then((_) => disposed = true);
+    await until(tester, () => disposed);
+    await closing;
+    await tester.runAsync(() => directory.delete(recursive: true));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(

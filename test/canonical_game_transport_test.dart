@@ -21,7 +21,7 @@ const _read = {'protocol': 2, 'clientBuild': 10069, 'action': 'read_state'};
 Matcher _error(String code) =>
     throwsA(isA<CanonicalGameException>().having((e) => e.code, 'code', code));
 
-Future<void> _signIn(SupabaseClient client, String owner) async {
+Map<String, dynamic> _authSession(String owner) {
   final now = DateTime.now().toUtc();
   String segment(Object value) =>
       base64Url.encode(utf8.encode(jsonEncode(value))).replaceAll('=', '');
@@ -30,7 +30,7 @@ Future<void> _signIn(SupabaseClient client, String owner) async {
         'aud': 'authenticated',
         'exp': now.millisecondsSinceEpoch ~/ 1000 + 3600,
       })}.c3ludGhldGlj';
-  await client.auth.recoverSession(jsonEncode({
+  return {
     'access_token': token,
     'refresh_token': 'synthetic-refresh',
     'token_type': 'bearer',
@@ -45,7 +45,11 @@ Future<void> _signIn(SupabaseClient client, String owner) async {
       'app_metadata': {},
       'user_metadata': {}
     },
-  }));
+  };
+}
+
+Future<void> _signIn(SupabaseClient client, String owner) async {
+  await client.auth.recoverSession(jsonEncode(_authSession(owner)));
   await Future<void>.delayed(Duration.zero);
 }
 
@@ -189,6 +193,41 @@ void main() {
         httpClientFactory: () => client);
     expect(await transport!.read(_read), {'synthetic': true});
     expect(client.closed, isFalse);
+  });
+
+  test(
+      'construction ignores a replayed sign-in but a later sign-in advances the account epoch',
+      () async {
+    await auth.dispose();
+    auth = SupabaseClient(_config.url, _config.publishableKey,
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+        httpClient: MockClient((request) async {
+      expect(request.url.path, '/auth/v1/token');
+      return http.Response(jsonEncode(_authSession(_owner)), 200,
+          request: request, headers: {'content-type': 'application/json'});
+    }));
+    await auth.auth.signInWithPassword(
+        email: 'synthetic@example.invalid', password: 'Secret1!');
+    transport = CanonicalGameTransport.staging(auth, _config,
+        httpClientFactory: () => throw StateError('HTTP must not open'));
+    final changes = <int>[];
+    final subscription = transport!.accountChanges.listen(changes.add);
+
+    for (var i = 0; i < 3; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(transport!.currentOwner, _owner);
+    expect(transport!.sessionEpoch, 0);
+    expect(changes, isEmpty);
+
+    await auth.auth.signInWithPassword(
+        email: 'synthetic@example.invalid', password: 'Secret1!');
+    for (var i = 0; i < 3 && changes.isEmpty; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(transport!.sessionEpoch, 1);
+    expect(changes, [1]);
+    await subscription.cancel();
   });
 
   test('sequential requests reuse one client until account epoch changes',

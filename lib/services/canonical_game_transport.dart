@@ -47,9 +47,22 @@ class CanonicalGameTransport implements CanonicalGameConnection {
               ? 'game_production_required'
               : 'game_staging_required');
     }
-    _lastOwner = currentOwner;
+    final initialOwner = currentOwner;
+    final initialSession = authClient.auth.currentSession;
+    var awaitingInitialReplay = true;
+    _lastOwner = initialOwner;
     _auth = authClient.auth.onAuthStateChange.listen((event) {
       final owner = currentOwner;
+      // GoTrue exposes auth changes through a BehaviorSubject. A transport
+      // created immediately after password sign-in therefore receives that
+      // already-applied `signedIn` event once more. It is the transport's
+      // baseline, not a second account change; treating it as one invalidates
+      // the first game read and makes every retry repeat the same failure.
+      final initialReplay = awaitingInitialReplay &&
+          owner == initialOwner &&
+          identical(event.session, initialSession);
+      awaitingInitialReplay = false;
+      if (initialReplay) return;
       if (owner != _lastOwner ||
           event.event == AuthChangeEvent.signedIn ||
           event.event == AuthChangeEvent.signedOut) {
