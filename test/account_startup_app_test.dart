@@ -166,7 +166,9 @@ void main() {
         authOptions: const AuthClientOptions(autoRefreshToken: false),
         httpClient: MockClient((request) async {
       calls.add(request.url.path);
-      if (request.url.path.endsWith('get_my_privacy_acknowledgement')) {
+      if (request.url.path
+          .endsWith('get_my_privacy_acknowledgement_for_version')) {
+        expect(jsonDecode(request.body), {'p_version': '2026-09-23'});
         return reply(request, true);
       }
       if (request.url.path.endsWith('ensure_my_online_account')) {
@@ -300,7 +302,9 @@ void main() {
       if (request.url.path == '/auth/v1/token') {
         return reply(request, _authSession(a));
       }
-      if (request.url.path.endsWith('get_my_privacy_acknowledgement')) {
+      if (request.url.path
+          .endsWith('get_my_privacy_acknowledgement_for_version')) {
+        expect(jsonDecode(request.body), {'p_version': '2026-09-23'});
         return reply(request, true);
       }
       if (request.url.path.endsWith('ensure_my_online_account')) {
@@ -415,7 +419,9 @@ void main() {
         authOptions: const AuthClientOptions(autoRefreshToken: false),
         httpClient: MockClient((request) async {
       calls.add(request.url.path);
-      if (request.url.path.endsWith('get_my_privacy_acknowledgement')) {
+      if (request.url.path
+          .endsWith('get_my_privacy_acknowledgement_for_version')) {
+        expect(jsonDecode(request.body), {'p_version': '2026-09-23'});
         return http.Response(
             jsonEncode(acknowledged.contains(auth.auth.currentUser!.id)), 200,
             request: request, headers: {'content-type': 'application/json'});

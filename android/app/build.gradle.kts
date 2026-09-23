@@ -187,6 +187,10 @@ tasks.configureEach {
 }
 
 dependencies {
+    // Google Mobile Ads currently declares WorkManager 2.7.0 transitively.
+    // That 2021 runtime cannot create its Room database on current Android,
+    // so keep the app on AndroidX's current stable, API-compatible runtime.
+    implementation("androidx.work:work-runtime:2.11.2")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.17")
 }

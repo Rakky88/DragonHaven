@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 const _migrationPath = 'supabase/migrations/202609230094_rewarded_ads.sql';
+const _repairMigrationPath =
+    'supabase/migrations/202609230095_rewarded_ads_privacy_notice.sql';
 
 String _compact(String value) => value.replaceAll(RegExp(r'\s+'), ' ').trim();
 
@@ -17,10 +19,14 @@ String _between(String source, String start, String end) {
 void main() {
   late String sql;
   late String compact;
+  late String repairSql;
+  late String repairCompact;
 
   setUpAll(() {
     sql = File(_migrationPath).readAsStringSync();
     compact = _compact(sql);
+    repairSql = File(_repairMigrationPath).readAsStringSync();
+    repairCompact = _compact(repairSql);
   });
 
   test('reward issuance is dormant with fixed product limits and rewards', () {
@@ -142,10 +148,8 @@ void main() {
         normalized,
         contains(
             "jsonb_typeof(p_state->'pendingPresentations') is distinct from 'array'"));
-    expect(
-        normalized,
-        contains(
-            "(p_state->'pendingPresentations'- (jsonb_array_length(p_state->'pendingPresentations')-1)) is distinct from game.state->'pendingPresentations'"));
+    expect(normalized,
+        contains("jsonb_array_length(p_state->'pendingPresentations')"));
     expect(normalized, contains('if presentation_matches<>1 then'));
 
     final canonicalCommit =
@@ -157,6 +161,34 @@ void main() {
     expect(canonicalCommit, greaterThanOrEqualTo(0));
     expect(claimCommit, greaterThan(canonicalCommit));
     expect(rowCountCheck, greaterThan(claimCommit));
+  });
+
+  test('privacy rollout repairs JSONB array subtraction before activation', () {
+    final commit = _between(
+      repairSql,
+      'create or replace function public.commit_canonical_game_command(',
+      '-- migration 95 rewarded commit repair end',
+    );
+    final normalized = _compact(commit);
+    expect(
+      normalized,
+      contains(
+        "((p_state->'pendingPresentations')- "
+        "(jsonb_array_length(p_state->'pendingPresentations')-1)) "
+        "is distinct from game.state->'pendingPresentations'",
+      ),
+    );
+    expect(
+      repairCompact,
+      isNot(
+        contains(
+          "p_state->'pendingPresentations'- "
+          "(jsonb_array_length(p_state->'pendingPresentations')-1)",
+        ),
+      ),
+      reason: 'Without parentheses PostgreSQL treats the JSON key as an '
+          'integer subtraction operand at runtime.',
+    );
   });
 
   test('tables stay private and only intended RPC roles receive execute', () {

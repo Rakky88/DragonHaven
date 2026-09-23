@@ -22,6 +22,12 @@ void main() {
       contains(
           'appPublisher == gemsPublisher && appPublisher == coinsPublisher'),
     );
+    expect(
+      gradle,
+      contains('implementation("androidx.work:work-runtime:2.11.2")'),
+      reason: 'The Ads SDK must not pull its obsolete WorkManager 2.7.0 into '
+          'the release app.',
+    );
   });
 
   test('release verifies local SSV and live deployment before ad build', () {

@@ -135,18 +135,23 @@ server-kill-switch als de GitHub-enable-variable tijdens deze installatie uit.
 
 2. Voer de door het hulpscript geprinte `gh variable set`-commando's uit. Houd
    `DRAGONHAVEN_REWARDED_ADS_ENABLED` hierbij op `false`.
-3. Controleer de databasemigraties:
+3. Controleer de databasemigraties eerst zonder iets toe te passen:
 
    ```powershell
-   supabase migration list --linked
+   supabase migration list --linked --output-format json
+   supabase db push --linked --dry-run
    ```
 
    Migratie `202609230094_rewarded_ads.sql` is al op productie toegepast. Deze
    is veilig en slapend: de server-kill-switch staat standaard op `false`.
-   Pas `202609230095_rewarded_ads_privacy_notice.sql` pas toe als onderdeel van
-   de release met de bijbehorende client. Migratie 95 verhoogt de vereiste
-   privacyverklaring naar versie `2026-09-23`; eerder toepassen zou de huidige
-   uitgebrachte client bij het aanmelden blokkeren.
+   Migratie `202609230095_rewarded_ads_privacy_notice.sql` blijft uit totdat de
+   definitieve releasecommit klaar is. De migratie bevat bewust een
+   compatibiliteitsbrug: de uitgebrachte client mag via de bestaande no-arg
+   RPC verklaring `2026-09-20` blijven gebruiken, de nieuwe client vraagt via
+   een versiegebonden RPC exact om `2026-09-23`, en alleen die nieuwe
+   bevestiging maakt rewarded ads beschikbaar. Een nieuwe bevestiging kan niet
+   door een oudere client worden teruggezet. Dezelfde migratie repareert de
+   JSONB-arraycontrole in het nog slapende reward-commitpad.
 4. Stel de gegenereerde functieconfiguratie in en deploy de publieke
    SSV-callback. Gebruik de exacte commando's die het hulpscript print:
 
@@ -185,7 +190,21 @@ server-kill-switch als de GitHub-enable-variable tijdens deze installatie uit.
    niet als speler-ID of als vaste waarden in de app; gewone
    DragonHaven-advertenties sturen geen `user_id` en gebruiken per claim andere
    `custom_data`.
-7. Voer daarna de volledige serverpreflight uit. Hiervoor moeten de checkout
+7. Pas tijdens de uiteindelijke releasevoorbereiding alleen de ene verwachte
+   migratie toe, terwijl `issue_enabled=false` blijft. Controleer direct erna
+   dat er geen databaselintfouten zijn:
+
+   ```powershell
+   supabase db push --linked --dry-run
+   supabase db push --linked
+   supabase migration list --linked --output-format json
+   supabase db lint --linked --level error --fail-on error --output-format json
+   ```
+
+   De dry-run moet uitsluitend
+   `202609230095_rewarded_ads_privacy_notice.sql` noemen. Stop wanneer de
+   pending set anders is of de lintcontrole iets teruggeeft.
+8. Voer daarna de volledige serverpreflight uit. Hiervoor moeten de checkout
    aan het juiste Supabase-project gekoppeld en `SUPABASE_ACCESS_TOKEN` gezet
    zijn:
 
@@ -266,20 +285,31 @@ Gebruik voor een advertentie-release deze volgorde:
 2. Voer `configure_rewarded_ads.ps1` opnieuw uit op die commit.
 3. Zet de gegenereerde SSV-secrets opnieuw en deploy
    `rewarded-ad-ssv` opnieuw, ook wanneer alleen andere appcode veranderde.
-4. Pas migratie `202609230095_rewarded_ads_privacy_notice.sql` toe als deze nog
-   niet op productie staat. Doe dit alleen in dezelfde uitrol als de client
-   met privacyverklaring `2026-09-23`.
-5. Laat de rewarded-ad-serverpreflight slagen met exact die commit en ID's.
-6. Zet `issue_enabled` met de SQL hierboven op `true`.
-7. Zet pas nu de GitHub Variable aan:
+4. Controleer dat `issue_enabled=false` is en blijft tijdens migratie, build en
+   publicatie.
+5. Laat de migratie-dry-run exact alleen migratie 95 tonen, pas deze toe en
+   eis daarna nul databaselintfouten. De compatibiliteitsbrug houdt versie
+   0.06.06 bruikbaar terwijl versie 0.06.07 de nieuwe verklaring vraagt.
+6. Laat de rewarded-ad-serverpreflight slagen met exact die commit en ID's.
+7. Test een interne, ondertekende productie-ID-build op een geregistreerd
+   AdMob-testapparaat. Zet `issue_enabled` alleen voor die test kort aan en
+   direct daarna weer uit.
+8. Zet de GitHub Variable voor de nieuwe build aan:
 
    ```powershell
    gh variable set DRAGONHAVEN_REWARDED_ADS_ENABLED --body 'true'
    ```
 
-8. Start daarna pas de expliciet aangevraagde release.
+9. Bouw, publiceer en verifieer de expliciet aangevraagde release terwijl de
+   server-kill-switch nog uit staat. Installeer de gepubliceerde APK als update
+   en controleer aanmelden, Account Info, Shop en de overige gameplay.
+10. Zet pas na die controles `issue_enabled=true`, voer eenmaal Free Gems en
+    eenmaal Free Coins uit en bewaak de functie- en serverlogs. Zet de switch
+    bij iedere fout direct terug op `false`; de rest van het spel blijft dan
+    beschikbaar en de reeds gepubliceerde app toont de advertentieknoppen als
+    tijdelijk niet beschikbaar.
 
-Bij iedere latere releasecommit moeten stappen 2, 3 en 5 opnieuw gebeuren,
+Bij iedere latere releasecommit moeten stappen 2, 3 en 6 opnieuw gebeuren,
 omdat de releaseworkflow de gedeployde SSV-broncommit met `GITHUB_SHA`
 vergelijkt. Migratie 95 hoeft na de eerste bijpassende release niet opnieuw.
 

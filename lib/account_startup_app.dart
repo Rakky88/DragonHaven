@@ -173,9 +173,10 @@ class _AccountStartupAppState extends State<AccountStartupApp>
     final epoch = _authority.sessionEpoch;
     final status = await _authority.readAccountStatus();
     _requireOwner(owner, epoch);
-    final accepted = await widget.auth
-        .rpc('get_my_privacy_acknowledgement')
-        .timeout(const Duration(seconds: 8));
+    final accepted = await widget.auth.rpc(
+      'get_my_privacy_acknowledgement_for_version',
+      params: {'p_version': PrivacyNotice.version},
+    ).timeout(const Duration(seconds: 8));
     _requireOwner(owner, epoch);
     if (accepted != true) {
       final metadata = widget.auth.auth.currentUser?.userMetadata;
