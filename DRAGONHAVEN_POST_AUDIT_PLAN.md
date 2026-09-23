@@ -1,5 +1,21 @@
 # DragonHaven verbeterplan na audit v0.04.06
 
+## v0.06.06 UI, session and notification reliability
+
+The latest v0.05.40 presentation follow-up restores the in-floor Tower room
+flow, dragon-type sorting and compact Adventure actions, with expertise gains
+and losses visible in both Adventure lists and details. Signing out and back in
+now starts a fresh authenticated load instead of retaining the signed-out gate.
+
+Notification access under Account Info now reflects Android device permission,
+and a permission change immediately refreshes scheduled reminders and push
+registration. Android and Firebase use the same stable events channel; failed
+native presentation leaves social inbox events available for retry. The release
+deploys only this channel payload update to `dispatch-social-push`; migrations,
+gameplay runtime, rewards and player data remain unchanged. Full production,
+artifact and publication evidence is recorded in
+[RELEASE_V0.06.06_VERIFICATION.md](RELEASE_V0.06.06_VERIFICATION.md).
+
 ## v0.06.03 UI parity and response time
 
 Six scoped agent reviews against v0.05.41 restored additional original screens
