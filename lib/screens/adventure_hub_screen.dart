@@ -4607,27 +4607,41 @@ void showRestoredAdventureDetails(
               value:
                   '${definition.requirements.players} ${strings.pick('connected keepers', 'gekoppelde hoeders')}',
             ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              key: const Key('adventure-details-choose-dragon'),
-              onPressed: onChooseDragon == null
-                  ? null
-                  : () {
-                      Navigator.pop(sheetContext);
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (context.mounted) onChooseDragon();
-                      });
-                    },
-              icon: const GameIconSprite(
-                GameIconKind.adventureStart,
-                size: 38,
+          const SizedBox(height: 18),
+          Column(
+            key: const Key('adventure-details-actions'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FilledButton.icon(
+                key: const Key('adventure-details-choose-dragon'),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(58),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+                onPressed: onChooseDragon == null
+                    ? null
+                    : () {
+                        Navigator.pop(sheetContext);
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (context.mounted) onChooseDragon();
+                        });
+                      },
+                icon: const GameIconSprite(
+                  GameIconKind.adventureStart,
+                  size: 30,
+                ),
+                label: Text(strings.pick('Choose a dragon', 'Kies een draak')),
               ),
-              label: Text(strings.pick('Choose a dragon', 'Kies een draak')),
-            ),
+              if (extraActions != null) ...[
+                const SizedBox(height: 10),
+                extraActions,
+              ],
+            ],
           ),
-          if (extraActions != null) extraActions,
         ]),
       ),
     ),

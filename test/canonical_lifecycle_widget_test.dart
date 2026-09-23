@@ -632,6 +632,24 @@ void main() {
                 matching: find.byType(InkWell))
             .last);
     await tester.pumpAndSettle();
+    final choose = key('adventure-details-choose-dragon');
+    final dismiss = key('canonical-dismiss-$id');
+    final wayfinder = key('canonical-wayfinder-$id');
+    await tester.ensureVisible(wayfinder);
+    await tester.pumpAndSettle();
+    final chooseRect = tester.getRect(choose);
+    final dismissRect = tester.getRect(dismiss);
+    final wayfinderRect = tester.getRect(wayfinder);
+    for (final secondary in [dismissRect, wayfinderRect]) {
+      expect(secondary.left, closeTo(chooseRect.left, .1));
+      expect(secondary.right, closeTo(chooseRect.right, .1));
+      expect(secondary.height, greaterThanOrEqualTo(48));
+    }
+    expect(chooseRect.height, greaterThanOrEqualTo(56));
+    expect(dismissRect.top - chooseRect.bottom, closeTo(10, .1));
+    expect(wayfinderRect.top - dismissRect.bottom, closeTo(8, .1));
+    expect(find.descendant(of: dismiss, matching: find.byType(OutlinedButton)),
+        findsOneWidget);
     await tap(tester, key('canonical-wayfinder-$id'));
     expect(session.snapshot!.shop.relics['wayfinderSigil'], 1);
     await tap(tester, find.widgetWithText(FilledButton, 'Bevestigen'));

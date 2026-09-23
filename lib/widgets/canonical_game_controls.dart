@@ -15,11 +15,12 @@ class CanonicalActionButton extends StatefulWidget {
       required this.label,
       required this.action,
       this.primary = false,
+      this.outlined = false,
       this.icon,
       this.confirmation,
       this.secondaryConfirmation});
   final String label;
-  final bool primary;
+  final bool primary, outlined;
   final IconData? icon;
   final Future<void> Function()? action;
   final String? confirmation, secondaryConfirmation;
@@ -77,6 +78,35 @@ class _CanonicalActionButtonState extends State<CanonicalActionButton> {
       return FilledButton.icon(
           onPressed: onPressed,
           icon: widget.icon == null ? null : Icon(widget.icon),
+          label: Text(widget.label, textAlign: TextAlign.center));
+    }
+    if (widget.outlined) {
+      final colors = Theme.of(context).colorScheme;
+      final style = OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(52),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          foregroundColor: colors.primary,
+          side: BorderSide(
+              color: colors.primary.withValues(alpha: .34), width: 1.4),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          textStyle: const TextStyle(fontWeight: FontWeight.w800));
+      if (widget.icon case final icon?) {
+        return OutlinedButton.icon(
+            onPressed: onPressed,
+            style: style,
+            icon: Icon(icon),
+            label: Text(widget.label, textAlign: TextAlign.center));
+      }
+      return OutlinedButton(
+          onPressed: onPressed,
+          style: style,
+          child: Text(widget.label, textAlign: TextAlign.center));
+    }
+    if (widget.icon case final icon?) {
+      return FilledButton.tonalIcon(
+          onPressed: onPressed,
+          icon: Icon(icon),
           label: Text(widget.label, textAlign: TextAlign.center));
     }
     return FilledButton.tonal(

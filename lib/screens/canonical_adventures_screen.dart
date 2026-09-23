@@ -254,39 +254,36 @@ class _AdventuresState extends State<_Adventures>
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
-                                    if (kind != AdventureKind.special)
-                                      Wrap(
-                                          spacing: 8,
-                                          runSpacing: 8,
-                                          children: [
-                                            CanonicalActionButton(
-                                                key: Key(
-                                                    'canonical-dismiss-$id'),
-                                                label: s.pick(
-                                                    'Dismiss', 'Wegsturen'),
-                                                confirmation: s.pick(
-                                                    'Dismiss this adventure?',
-                                                    'Dit avontuur wegsturen?'),
-                                                action: session.canAct
-                                                    ? () => actions
-                                                        .dismissAdventure(id)
-                                                    : null),
-                                            if (sigils > 0)
-                                              CanonicalActionButton(
-                                                  key: Key(
-                                                      'canonical-wayfinder-$id'),
-                                                  label: s.relicName(MysticRelic
-                                                      .wayfinderSigil),
-                                                  confirmation: s.pick(
-                                                      'Use one Wayfinder Sigil to replace this adventure?',
-                                                      'Eén Wayfinder Sigil gebruiken om dit avontuur te vervangen?'),
-                                                  action: session.canAct
-                                                      ? () => actions
-                                                          .useWayfinder(kind,
-                                                              replaceAdventureId:
-                                                                  id)
-                                                      : null),
-                                          ]),
+                                    if (kind != AdventureKind.special) ...[
+                                      CanonicalActionButton(
+                                          key: Key('canonical-dismiss-$id'),
+                                          label: s.pick('Dismiss', 'Wegsturen'),
+                                          outlined: true,
+                                          icon: Icons.close_rounded,
+                                          confirmation: s.pick(
+                                              'Dismiss this adventure?',
+                                              'Dit avontuur wegsturen?'),
+                                          action: session.canAct
+                                              ? () =>
+                                                  actions.dismissAdventure(id)
+                                              : null),
+                                      if (sigils > 0) ...[
+                                        const SizedBox(height: 8),
+                                        CanonicalActionButton(
+                                            key: Key('canonical-wayfinder-$id'),
+                                            label: s.relicName(
+                                                MysticRelic.wayfinderSigil),
+                                            icon: Icons.explore_rounded,
+                                            confirmation: s.pick(
+                                                'Use one Wayfinder Sigil to replace this adventure?',
+                                                'Eén Wayfinder Sigil gebruiken om dit avontuur te vervangen?'),
+                                            action: session.canAct
+                                                ? () => actions.useWayfinder(
+                                                    kind,
+                                                    replaceAdventureId: id)
+                                                : null),
+                                      ],
+                                    ],
                                   ]))
                         else
                           Text(s.pick('Update the app to use this item.',
