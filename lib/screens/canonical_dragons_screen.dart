@@ -702,43 +702,8 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                                       action: enabled && view.gems >= 3
                                           ? () => actions.buyStarlightTreat(id)
                                           : null),
-                                const SizedBox(height: 12),
-                                CanonicalActionButton(
-                                    key: const Key('canonical-favorite-dragon'),
-                                    label: dragon.favorite
-                                        ? strings.pick('Favorite dragon',
-                                            'Favoriete draak')
-                                        : strings.pick('Set as favorite',
-                                            'Als favoriet instellen'),
-                                    action: enabled && !dragon.favorite
-                                        ? () => actions.setFavoriteDragon(id)
-                                        : null),
-                                CanonicalActionButton(
-                                    key: const Key('canonical-roam-dragon'),
-                                    label: dragon.roamsTower
-                                        ? strings.pick('Rest in sanctuary',
-                                            'Rust in het reservaat')
-                                        : strings.pick('Roam the Tower',
-                                            'Door de Toren lopen'),
-                                    action: enabled
-                                        ? () => actions.setDragonRoaming(
-                                            id, !dragon.roamsTower)
-                                        : null),
-                                OutlinedButton(
-                                    key: const Key('canonical-name-dragon'),
-                                    onPressed: enabled &&
-                                            (dragon.name.trim().isEmpty ||
-                                                view.inventory.count(AltarRelic
-                                                        .nameweaversQuill) >
-                                                    0)
-                                        ? () => nameCanonicalDragon(
-                                            context, dragon, owner, actions)
-                                        : null,
-                                    child: Text(dragon.name.trim().isEmpty
-                                        ? strings.pick(
-                                            'Name dragon', 'Geef een naam')
-                                        : strings.pick('Rename · 1 Quill',
-                                            'Hernoemen · 1 Quill'))),
+                                if (view.activeDragonId == id)
+                                  const SizedBox(height: 12),
                                 if (dragon.evolutionReady)
                                   CanonicalActionButton(
                                       key: const Key('canonical-evolve-dragon'),
@@ -751,8 +716,8 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                                   if ((view.inventory.usableRelics[relic] ??
                                               0) >
                                           0 &&
-                                      (relic.isEquipable ||
-                                          relic.hasUseAnimation)) ...[
+                                      !relic.isEquipable &&
+                                      relic.hasUseAnimation) ...[
                                     const SizedBox(height: 8),
                                     Row(children: [
                                       Image.asset(relic.assetPath,
@@ -762,57 +727,230 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                                           child: Text(strings.relicName(relic)))
                                     ]),
                                     Text(strings.relicDescription(relic)),
-                                    if (relic.isEquipable)
-                                      CanonicalActionButton(
-                                          key: Key(
-                                              'canonical-equip-${relic.name}'),
-                                          label:
-                                              view.inventory.equipment[relic] ==
-                                                      id
-                                                  ? strings.pick(
-                                                      'Unequip', 'Afdoen')
-                                                  : strings.pick(
-                                                      'Equip', 'Uitrusten'),
-                                          action: enabled
-                                              ? () => actions.equip(
-                                                  relic,
-                                                  view.inventory.equipment[relic] ==
-                                                          id
-                                                      ? null
-                                                      : id)
-                                              : null)
-                                    else
-                                      CanonicalActionButton(
-                                          key: Key(
-                                              'canonical-use-${relic.name}'),
-                                          label:
-                                              strings.pick('Use', 'Gebruiken'),
-                                          confirmation: strings.pick(
-                                              'Use one ${strings.relicName(relic)} on this dragon?',
-                                              'Eén ${strings.relicName(relic)} op deze draak gebruiken?'),
-                                          action: enabled && !dragon.knows(relic)
-                                              ? () => actions.useRelic(relic, id)
-                                              : null),
+                                    CanonicalActionButton(
+                                        key: Key('canonical-use-${relic.name}'),
+                                        label: strings.pick('Use', 'Gebruiken'),
+                                        confirmation: strings.pick(
+                                            'Use one ${strings.relicName(relic)} on this dragon?',
+                                            'Eén ${strings.relicName(relic)} op deze draak gebruiken?'),
+                                        action: enabled && !dragon.knows(relic)
+                                            ? () => actions.useRelic(relic, id)
+                                            : null),
                                   ],
                                 const SizedBox(height: 16),
-                                CanonicalActionButton(
-                                    key: const Key('canonical-release-dragon'),
-                                    label: strings.pick(
-                                        'Release dragon', 'Draak vrijlaten'),
-                                    confirmation: strings.pick(
-                                        'Release this dragon from your Haven?',
-                                        'Deze draak vrijlaten uit je Haven?'),
-                                    action: enabled &&
-                                            !dragon.favorite &&
-                                            dragon.adventureId == null &&
-                                            view.dragons
-                                                    .where((d) => d.owned)
-                                                    .length >
-                                                1
-                                        ? () => actions.releaseDragon(id)
-                                        : null),
+                                _CanonicalDragonActionsCard(
+                                    dragon: dragon,
+                                    view: view,
+                                    owner: owner,
+                                    actions: actions),
                               ])));
           }));
+}
+
+class _CanonicalDragonActionsCard extends StatelessWidget {
+  const _CanonicalDragonActionsCard({
+    required this.dragon,
+    required this.view,
+    required this.owner,
+    required this.actions,
+  });
+
+  final CanonicalDragonView dragon;
+  final CanonicalGameSnapshot view;
+  final String owner;
+  final CanonicalGameActions actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final quills = view.inventory.count(AltarRelic.nameweaversQuill);
+    final canName = dragon.name.trim().isEmpty || quills > 0;
+    final canRelease = !dragon.favorite &&
+        dragon.adventureId == null &&
+        view.dragons.where((candidate) => candidate.owned).length > 1;
+    final tiles = <Widget>[
+      _CanonicalDragonActionTile(
+        key: const ValueKey('canonical-roam-dragon-state'),
+        tileKey: const Key('canonical-roam-dragon'),
+        leading: const GameIconSprite(
+          GameIconKind.roomClear,
+          key: Key('canonical-roam-action-sprite'),
+          size: 38,
+        ),
+        title: dragon.roamsTower
+            ? strings.pick('Remove from Tower', 'Uit de Toren halen')
+            : strings.pick('Invite to Tower', 'Uitnodigen in de Toren'),
+        trailing: dragon.roamsTower
+            ? Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.eventColor(context, AppColors.twilight),
+              )
+            : null,
+        action: () => actions.setDragonRoaming(dragon.id, !dragon.roamsTower),
+      ),
+      for (final relic in MysticRelic.values)
+        if (relic.isEquipable && (view.inventory.usableRelics[relic] ?? 0) > 0)
+          _CanonicalDragonActionTile(
+            key: ValueKey('canonical-equip-${relic.name}-state'),
+            tileKey: Key('canonical-equip-${relic.name}'),
+            leading: Image.asset(relic.assetPath, width: 40, height: 40),
+            title: strings.relicName(relic),
+            subtitle: strings.relicDescription(relic),
+            trailing: view.inventory.equipment[relic] == dragon.id
+                ? Icon(
+                    Icons.check_circle_rounded,
+                    color: AppColors.eventColor(context, AppColors.twilight),
+                  )
+                : const Icon(Icons.add_circle_outline_rounded),
+            action: () => actions.equip(
+              relic,
+              view.inventory.equipment[relic] == dragon.id ? null : dragon.id,
+            ),
+          ),
+      _CanonicalDragonActionTile(
+        key: const ValueKey('canonical-favorite-dragon-state'),
+        tileKey: const Key('canonical-favorite-dragon'),
+        leading: const GameIconSprite(
+          GameIconKind.dragonFavorite,
+          key: Key('canonical-favorite-action-sprite'),
+          size: 40,
+        ),
+        title: strings.pick('Set as favorite', 'Instellen als favoriet'),
+        trailing: dragon.favorite
+            ? const Icon(
+                Icons.check_circle_rounded,
+                color: Color(0xFFE05A78),
+              )
+            : null,
+        action:
+            dragon.favorite ? null : () => actions.setFavoriteDragon(dragon.id),
+      ),
+      if (canName)
+        _CanonicalDragonActionTile(
+          key: const ValueKey('canonical-name-dragon-state'),
+          tileKey: const Key('canonical-name-dragon'),
+          leading: const GameIconSprite(
+            GameIconKind.nameDragon,
+            key: Key('canonical-name-action-sprite'),
+            size: 40,
+          ),
+          title: dragon.name.trim().isEmpty
+              ? strings.pick('Name dragon', 'Geef een naam')
+              : strings.pick('Rename · 1 Quill', 'Hernoemen · 1 Quill'),
+          action: () => nameCanonicalDragon(context, dragon, owner, actions),
+        ),
+      _CanonicalDragonActionTile(
+        key: const ValueKey('canonical-release-dragon-state'),
+        tileKey: const Key('canonical-release-dragon'),
+        leading: Opacity(
+          opacity: canRelease ? 1 : .38,
+          child: const GameIconSprite(
+            GameIconKind.dragonRelease,
+            key: Key('canonical-release-action-sprite'),
+            size: 40,
+          ),
+        ),
+        title: strings.pick('Release dragon…', 'Draak vrijlaten…'),
+        subtitle: dragon.adventureId == null
+            ? null
+            : strings.pick('This dragon is currently away on an Adventure.',
+                'Deze draak is momenteel op avontuur.'),
+        confirmation: strings.pick(
+          'Release this dragon from your Haven?',
+          'Deze draak vrijlaten uit je Haven?',
+        ),
+        action: canRelease ? () => actions.releaseDragon(dragon.id) : null,
+      ),
+    ];
+
+    return Card(
+      key: const Key('canonical-dragon-actions-card'),
+      margin: EdgeInsets.zero,
+      child: Column(
+        children: [
+          for (var index = 0; index < tiles.length; index++) ...[
+            if (index > 0) const Divider(height: 1),
+            tiles[index],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CanonicalDragonActionTile extends StatefulWidget {
+  const _CanonicalDragonActionTile({
+    super.key,
+    required this.tileKey,
+    required this.leading,
+    required this.title,
+    required this.action,
+    this.subtitle,
+    this.trailing,
+    this.confirmation,
+  });
+
+  final Key tileKey;
+  final Widget leading;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final String? confirmation;
+  final Future<void> Function()? action;
+
+  @override
+  State<_CanonicalDragonActionTile> createState() =>
+      _CanonicalDragonActionTileState();
+}
+
+class _CanonicalDragonActionTileState
+    extends State<_CanonicalDragonActionTile> {
+  bool _busy = false;
+
+  Future<void> _run() async {
+    final action = widget.action;
+    if (_busy || action == null) return;
+    final session = context.read<CanonicalGameSession>();
+    final owner = session.snapshot?.ownerId;
+    final epoch = session.connection.sessionEpoch;
+    setState(() => _busy = true);
+    try {
+      final confirmation = widget.confirmation;
+      if (confirmation != null &&
+          (!mounted ||
+              !await confirmCanonicalAction(
+                context,
+                confirmation,
+                owner: owner,
+                epoch: epoch,
+              ))) {
+        return;
+      }
+      if (mounted &&
+          session.connection.sessionEpoch == epoch &&
+          session.snapshot?.ownerId == owner &&
+          session.canAct) {
+        await runShopAction(context, action);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final canAct = context.watch<CanonicalGameSession>().canAct;
+    final enabled = !_busy && widget.action != null && canAct;
+    return ListTile(
+      key: widget.tileKey,
+      leading: widget.leading,
+      title: Text(widget.title),
+      subtitle: widget.subtitle == null ? null : Text(widget.subtitle!),
+      trailing: widget.trailing,
+      enabled: enabled,
+      onTap: enabled ? _run : null,
+    );
+  }
 }
 
 class _HighlightControl extends StatelessWidget {

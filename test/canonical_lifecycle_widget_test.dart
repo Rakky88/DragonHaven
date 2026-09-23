@@ -400,6 +400,48 @@ void main() {
   });
 
   testWidgets(
+      'named dragon hides its rename row when no Nameweaver Quill is owned',
+      (tester) async {
+    await setup(tester, const CanonicalDragonsScreen(), prepare: (server) {
+      server.state['eggAltar']['crafted']['nameweaversQuill'] = 0;
+    });
+    final dragon =
+        session.snapshot!.dragon(server.state['pet']['id'] as String)!;
+    expect(dragon.name, isNotEmpty);
+    expect(session.snapshot!.inventory.crafted['nameweaversQuill'], 0);
+    await tap(tester, key('canonical-dragon-${dragon.id}'));
+    expect(key('canonical-name-dragon'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'selected dragon actions keep the historical card rows and labels',
+      (tester) async {
+    await setup(tester, const CanonicalDragonsScreen(), prepare: (server) {
+      server.state['pet']['roamsTower'] = true;
+    });
+    final dragon =
+        session.snapshot!.dragon(server.state['pet']['id'] as String)!;
+    await tap(tester, key('canonical-dragon-${dragon.id}'));
+    for (final actionKey in const [
+      'canonical-roam-dragon',
+      'canonical-favorite-dragon',
+      'canonical-name-dragon',
+      'canonical-release-dragon',
+    ]) {
+      expect(tester.widget(key(actionKey)), isA<ListTile>());
+      expect(find.ancestor(of: key(actionKey), matching: find.byType(Card)),
+          findsOneWidget);
+    }
+    expect(find.text('Remove from Tower'), findsOneWidget);
+    expect(find.text('Set as favorite'), findsOneWidget);
+    expect(find.text('Rename · 1 Quill'), findsOneWidget);
+    expect(find.text('Release dragon…'), findsOneWidget);
+    expect(find.text('Rest in sanctuary'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
       'a successful rename spends one Quill and closes without a disposed controller',
       (tester) async {
     await setup(tester, const CanonicalDragonsScreen());
@@ -413,6 +455,7 @@ void main() {
     expect(session.snapshot!.dragon(dragon.id)!.name, 'Fresh name');
     expect(session.snapshot!.inventory.crafted['nameweaversQuill'], 0);
     expect(key('canonical-dragon-name-input'), findsNothing);
+    expect(key('canonical-name-dragon'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -690,14 +733,21 @@ void main() {
   testWidgets(
       'dragon detail roaming sends desired state without changing expertise',
       (tester) async {
-    await setup(tester, const CanonicalDragonsScreen());
-    final dragon = session.snapshot!.dragons.firstWhere((d) => d.owned);
+    await setup(tester, const CanonicalDragonsScreen(), prepare: (server) {
+      server.state['pet']['roamsTower'] = true;
+    });
+    final dragon =
+        session.snapshot!.dragon(server.state['pet']['id'] as String)!;
     final before = dragon.training;
     await tap(tester, key('canonical-dragon-${dragon.id}'));
+    expect(find.text('Remove from Tower'), findsOneWidget);
+    expect(find.text('Invite to Tower'), findsNothing);
     await tap(tester, key('canonical-roam-dragon'));
     await command(tester);
-    expect(session.snapshot!.dragon(dragon.id)!.roamsTower, !dragon.roamsTower);
+    expect(session.snapshot!.dragon(dragon.id)!.roamsTower, isFalse);
     expect(session.snapshot!.dragon(dragon.id)!.training, before);
+    expect(find.text('Remove from Tower'), findsNothing);
+    expect(find.text('Invite to Tower'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
