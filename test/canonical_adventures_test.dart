@@ -146,7 +146,10 @@ void main() {
     final indicator =
         find.ancestor(of: list, matching: find.byType(RefreshIndicator));
     expect(indicator, findsOneWidget);
-    for (var i = 0; i < 100 && session.busy; i++) {
+    // A full parallel suite can keep the synthetic command isolate busy for
+    // more than one second. Wait for the actual session fence, with the same
+    // ten-second ceiling used by the account-startup integration tests.
+    for (var i = 0; i < 1000 && session.busy; i++) {
       await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 10)));
       await tester.pump();
