@@ -1645,18 +1645,18 @@ class _RewardedChestPreview extends StatelessWidget {
                 GameIconSprite(gems ? GameIconKind.gem : GameIconKind.coin,
                     size: 28),
                 const SizedBox(width: 6),
-                Text(gems ? '5' : '50',
+                Text(gems ? '15' : '150',
                     style: Theme.of(context).textTheme.titleLarge),
               ]),
               const SizedBox(height: 8),
               Text(
                   gems
                       ? s.pick(
-                          'Watch an ad to receive 5 gems. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.',
-                          'Bekijk een advertentie voor 5 edelstenen. Maximaal 3 per dag in deze shop. Reclame wordt actief zodra de winkelconfiguratie klaar is.')
+                          'Watch an ad to receive 15 gems. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.',
+                          'Bekijk een advertentie voor 15 edelstenen. Maximaal 3 per dag in deze shop. Reclame wordt actief zodra de winkelconfiguratie klaar is.')
                       : s.pick(
-                          'Watch an ad to receive 50 coins. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.',
-                          'Bekijk een advertentie voor 50 munten. Maximaal 3 per dag in deze shop. Reclame wordt actief zodra de winkelconfiguratie klaar is.'),
+                          'Watch an ad to receive 150 coins. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.',
+                          'Bekijk een advertentie voor 150 munten. Maximaal 3 per dag in deze shop. Reclame wordt actief zodra de winkelconfiguratie klaar is.'),
                   textAlign: TextAlign.center),
               const SizedBox(height: 12),
               FilledButton.icon(

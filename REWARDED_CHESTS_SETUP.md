@@ -15,8 +15,8 @@ database/worker change is required by this release.
    a supported app-store listing and Google's readiness review; a GitHub APK
    alone does not satisfy this. See
    https://support.google.com/admob/answer/9989980 .
-3. Create two rewarded ad units: `free_gems` (5 gems) and
-   `free_coins` (50 coins). Supply only the public app ID and ad-unit IDs
+3. Create two rewarded ad units: `free_gems` (15 gems) and
+   `free_coins` (150 coins). Supply only the public app ID and ad-unit IDs
    for integration. Configure appropriate consent/privacy messages in AdMob.
 
 ## Implementation required before activation
@@ -28,7 +28,7 @@ use Google's test ads, never generate test traffic on production units.
 The server must issue an account-bound one-use claim nonce, validate Google's
 signed server-side verification callback and ad-unit allowlist, and atomically
 record the transaction ID, consume the nonce, enforce at most three confirmed
-claims per UTC day **per shop**, and credit exactly 5 gems or 50 coins. UTC
+claims per UTC day **per shop**, and credit exactly 15 gems or 150 coins. UTC
 reset semantics must be displayed in the final active UI. The user authorizes
 three claims independently in each shop. A device clock or client completion
 callback must never grant the reward. Callback replay, app restart, second

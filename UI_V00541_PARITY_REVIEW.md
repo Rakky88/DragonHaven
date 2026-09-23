@@ -194,3 +194,10 @@ process start; Firebase targets the same channel. Social inbox rows are retained
 when native presentation fails, while deliberately muted categories remain
 handled. The isolated push-function update changes only this channel identifier;
 it does not change gameplay runtime, rewards, scheduling or account preferences.
+
+## Post-v0.06.06 deferred ad preview balance follow-up
+
+The disabled Buy previews now show 15 gems for `Free gems` and 150 coins for
+`Free coins`. Their translated explanation and future activation handoff use
+the same amounts. Advertising remains deferred: there is still no ad SDK,
+claim command, local currency grant or production server change.

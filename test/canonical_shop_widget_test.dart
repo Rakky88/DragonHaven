@@ -293,7 +293,8 @@ void main() {
       final button =
           find.descendant(of: card, matching: find.byType(FilledButton));
       expect(tester.widget<FilledButton>(button).onPressed, isNull);
-      expect(find.descendant(of: card, matching: find.text(gems ? '5' : '50')),
+      expect(
+          find.descendant(of: card, matching: find.text(gems ? '15' : '150')),
           findsOneWidget);
       expect(
           find.descendant(
