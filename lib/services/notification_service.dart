@@ -16,9 +16,12 @@ abstract final class HavenNotifications {
   static const _channel = MethodChannel('nl.dragonhaven.app/notifications');
   static final _navigationEvents =
       StreamController<HavenNotificationDestination>.broadcast();
+  static final _permissionStatusEvents =
+      StreamController<HavenNotificationPermissionStatus>.broadcast();
   static Set<HavenNotificationCategory> _enabled =
       HavenNotificationCategory.values.toSet();
   static HavenNotificationNavigation? _pendingNavigation;
+  static HavenNotificationPermissionStatus? _lastPermissionStatus;
 
   static HavenNotificationNavigation? get pendingNavigation =>
       _pendingNavigation;
@@ -29,6 +32,21 @@ abstract final class HavenNotifications {
 
   static Stream<HavenNotificationDestination> get navigationEvents =>
       _navigationEvents.stream;
+
+  /// Emits whenever Android's effective notification access changes.
+  ///
+  /// Push registration and server-owned reminder planning listen here so a
+  /// permission choice takes effect immediately, without relying on an app
+  /// lifecycle callback from Android's permission dialog.
+  static Stream<HavenNotificationPermissionStatus>
+      get permissionStatusChanges => _permissionStatusEvents.stream;
+
+  static void _publishPermissionStatus(
+      HavenNotificationPermissionStatus status) {
+    if (_lastPermissionStatus == status) return;
+    _lastPermissionStatus = status;
+    _permissionStatusEvents.add(status);
+  }
 
   static Future<void> initializeNavigation() async {
     _channel.setMethodCallHandler((call) async {
@@ -98,10 +116,17 @@ abstract final class HavenNotifications {
 
   static Future<bool> platformPermissionGranted() async {
     try {
-      return await _channel.invokeMethod<bool>('permissionGranted') ?? true;
+      final granted =
+          await _channel.invokeMethod<bool>('permissionGranted') ?? true;
+      _publishPermissionStatus(granted
+          ? HavenNotificationPermissionStatus.granted
+          : HavenNotificationPermissionStatus.denied);
+      return granted;
     } on MissingPluginException {
+      _publishPermissionStatus(HavenNotificationPermissionStatus.granted);
       return true;
     } on PlatformException {
+      _publishPermissionStatus(HavenNotificationPermissionStatus.granted);
       return true;
     }
   }
@@ -110,24 +135,35 @@ abstract final class HavenNotifications {
       platformPermissionStatus() async {
     try {
       final value = await _channel.invokeMethod<String>('permissionStatus');
-      return switch (value) {
+      final status = switch (value) {
         'denied' => HavenNotificationPermissionStatus.denied,
         'notDetermined' => HavenNotificationPermissionStatus.notDetermined,
         _ => HavenNotificationPermissionStatus.granted,
       };
+      _publishPermissionStatus(status);
+      return status;
     } on MissingPluginException {
+      _publishPermissionStatus(HavenNotificationPermissionStatus.granted);
       return HavenNotificationPermissionStatus.granted;
     } on PlatformException {
+      _publishPermissionStatus(HavenNotificationPermissionStatus.granted);
       return HavenNotificationPermissionStatus.granted;
     }
   }
 
   static Future<bool> requestPlatformPermission() async {
     try {
-      return await _channel.invokeMethod<bool>('requestPermission') ?? false;
+      final granted =
+          await _channel.invokeMethod<bool>('requestPermission') ?? false;
+      _publishPermissionStatus(granted
+          ? HavenNotificationPermissionStatus.granted
+          : HavenNotificationPermissionStatus.denied);
+      return granted;
     } on MissingPluginException {
+      _publishPermissionStatus(HavenNotificationPermissionStatus.granted);
       return true;
     } on PlatformException {
+      _publishPermissionStatus(HavenNotificationPermissionStatus.denied);
       return false;
     }
   }

@@ -12,9 +12,19 @@ import 'notification_service.dart';
 class ServerGameNotifications {
   ServerGameNotifications(this.session) {
     session.addListener(_changed);
+    _permissionChanges =
+        HavenNotifications.permissionStatusChanges.listen((status) {
+      if (status != HavenNotificationPermissionStatus.granted) return;
+      // Reinstall current future reminders after access is granted instead of
+      // relying on Android's permission dialog to resume this process.
+      _configuration = null;
+      _changed();
+    });
     _changed();
   }
   final CanonicalGameSession session;
+  late final StreamSubscription<HavenNotificationPermissionStatus>
+      _permissionChanges;
   static const _registry = 'server-game-reminder-ids-v1';
   Future<void> _pending = Future.value();
   String? _configuration;
@@ -118,6 +128,7 @@ class ServerGameNotifications {
     if (_closed) return;
     _closed = true;
     session.removeListener(_changed);
+    await _permissionChanges.cancel();
     await _pending;
     try {
       await _replace(const []);

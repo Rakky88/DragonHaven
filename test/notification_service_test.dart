@@ -75,12 +75,15 @@ void main() {
 
   test('Android permission status and explicit requests use distinct methods',
       () async {
+    final emitted = <HavenNotificationPermissionStatus>[];
+    final subscription =
+        HavenNotifications.permissionStatusChanges.listen(emitted.add);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
       return switch (call.method) {
         'permissionStatus' => 'denied',
-        'requestPermission' => false,
+        'requestPermission' => true,
         _ => null,
       };
     });
@@ -89,7 +92,13 @@ void main() {
       await HavenNotifications.platformPermissionStatus(),
       HavenNotificationPermissionStatus.denied,
     );
-    expect(await HavenNotifications.requestPlatformPermission(), isFalse);
+    expect(await HavenNotifications.requestPlatformPermission(), isTrue);
+    await Future<void>.delayed(Duration.zero);
+    expect(emitted, [
+      HavenNotificationPermissionStatus.denied,
+      HavenNotificationPermissionStatus.granted,
+    ]);
+    await subscription.cancel();
     expect(calls.map((call) => call.method), [
       'permissionStatus',
       'requestPermission',

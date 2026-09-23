@@ -127,6 +127,9 @@ class FirebasePushCoordinator {
     _subscriptions.add(FirebaseMessaging.onMessage.listen(
       (_) => unawaited(online.pollSocialNotifications()),
     ));
+    _subscriptions.add(HavenNotifications.permissionStatusChanges.listen(
+      (_) => _schedule(force: true),
+    ));
     unawaited(FirebaseNotificationNavigation.initialize());
     _schedule();
   }

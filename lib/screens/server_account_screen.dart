@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -118,15 +120,9 @@ class ServerAccountScreen extends StatelessWidget {
                   child: Text(s.pick(
                       'Your notification choices follow your account. Allow notifications on each device where you want to receive them.',
                       'Je notificatiekeuzes horen bij je account. Geef toestemming op elk apparaat waarop je ze wilt ontvangen.'))),
-              OutlinedButton(
-                  onPressed: () async {
-                    if (!await HavenNotifications.requestPlatformPermission()) {
-                      await HavenNotifications
-                          .openPlatformNotificationSettings();
-                    }
-                  },
-                  child: Text(s.pick(
-                      'Allow on this device', 'Toestaan op dit apparaat'))),
+              DeviceNotificationAccess(
+                  hasEnabledCategories:
+                      (p['enabledNotificationCategories'] as List).isNotEmpty),
               for (final category in HavenNotificationCategory.values)
                 NotificationPreferenceToggle(
                     category: category,
@@ -208,6 +204,204 @@ class ServerAccountScreen extends StatelessWidget {
       await Future<void>.delayed(const Duration(milliseconds: 300));
       controller.dispose();
     }
+  }
+}
+
+class DeviceNotificationAccess extends StatefulWidget {
+  const DeviceNotificationAccess(
+      {super.key, required this.hasEnabledCategories});
+
+  final bool hasEnabledCategories;
+
+  @override
+  State<DeviceNotificationAccess> createState() =>
+      _DeviceNotificationAccessState();
+}
+
+class _DeviceNotificationAccessState extends State<DeviceNotificationAccess>
+    with WidgetsBindingObserver {
+  HavenNotificationPermissionStatus? _status;
+  bool? _exactAlarmGranted;
+  bool _busy = false;
+  late final StreamSubscription<HavenNotificationPermissionStatus>
+      _permissionChanges;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _permissionChanges = HavenNotifications.permissionStatusChanges.listen(
+      (status) {
+        if (!mounted) return;
+        setState(() => _status = status);
+      },
+    );
+    unawaited(_refresh());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_busy) unawaited(_refresh());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_permissionChanges.cancel());
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    final values = await Future.wait<Object>([
+      HavenNotifications.platformPermissionStatus(),
+      HavenNotifications.exactAlarmPermissionGranted(),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _status = values[0] as HavenNotificationPermissionStatus;
+      _exactAlarmGranted = values[1] as bool;
+    });
+  }
+
+  Future<void> _allow() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final granted = await HavenNotifications.requestPlatformPermission();
+    if (!granted) {
+      await HavenNotifications.openPlatformNotificationSettings();
+    }
+    await _refresh();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (granted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppStrings.of(context).pick(
+              'Notifications are allowed on this device.',
+              'Notificaties zijn toegestaan op dit apparaat.'))));
+    }
+  }
+
+  Future<void> _openSettings() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    await HavenNotifications.openPlatformNotificationSettings();
+    if (!mounted) return;
+    setState(() => _busy = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    final granted = _status == HavenNotificationPermissionStatus.granted;
+    final denied = _status == HavenNotificationPermissionStatus.denied;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Card(
+            key: const Key('device-notification-access-card'),
+            color: granted
+                ? const Color(0xFFEAF7EE)
+                : denied
+                    ? const Color(0xFFFFF3E2)
+                    : AppColors.mist,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Icon(
+                    granted
+                        ? Icons.notifications_active_rounded
+                        : denied
+                            ? Icons.notifications_off_rounded
+                            : Icons.notifications_none_rounded,
+                    color: granted
+                        ? const Color(0xFF287A46)
+                        : denied
+                            ? const Color(0xFF9B4A20)
+                            : AppColors.twilight,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _status == null
+                          ? s.pick('Checking device access…',
+                              'Apparaattoegang controleren…')
+                          : granted
+                              ? s.pick('Allowed on this device',
+                                  'Toegestaan op dit apparaat')
+                              : denied
+                                  ? s.pick(
+                                      'Android notifications are off for DragonHaven.',
+                                      'Android-meldingen staan uit voor DragonHaven.')
+                                  : s.pick(
+                                      'Allow Android to deliver DragonHaven notifications.',
+                                      'Sta Android toe om DragonHaven-notificaties te bezorgen.'),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (_busy)
+                    const SizedBox.square(
+                        dimension: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2.5))
+                  else if (granted)
+                    TextButton(
+                      key: const Key('manage-device-notifications'),
+                      onPressed: _openSettings,
+                      child: Text(s.pick('Manage', 'Beheren')),
+                    )
+                  else
+                    TextButton(
+                      key: const Key('allow-device-notifications'),
+                      onPressed: denied ? _openSettings : _allow,
+                      child: Text(denied
+                          ? s.pick('Open settings', 'Open instellingen')
+                          : s.pick('Allow', 'Toestaan')),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          if (granted && _exactAlarmGranted == false) ...[
+            const SizedBox(height: 8),
+            Card(
+              key: const Key('server-exact-alarm-permission-card'),
+              color: const Color(0xFFFFF3E2),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+                child: Row(
+                  children: [
+                    const Icon(Icons.alarm_rounded, color: Color(0xFF9B4A20)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(s.pick(
+                          'Allow precise timing so egg, Adventure and Trial reminders arrive on time.',
+                          'Sta precieze timing toe zodat meldingen voor eieren, avonturen en Trials op tijd komen.')),
+                    ),
+                    TextButton(
+                      key: const Key('server-open-exact-alarm-settings'),
+                      onPressed: HavenNotifications.openExactAlarmSettings,
+                      child: Text(s.pick('Allow', 'Toestaan')),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (!widget.hasEnabledCategories) ...[
+            const SizedBox(height: 8),
+            Text(
+              s.pick('Choose at least one notification type below.',
+                  'Kies hieronder minstens één type notificatie.'),
+              style: const TextStyle(
+                  color: AppColors.muted, fontWeight: FontWeight.w700),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 
