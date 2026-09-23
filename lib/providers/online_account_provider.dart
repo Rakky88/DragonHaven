@@ -1793,12 +1793,14 @@ class OnlineAccountProvider extends ChangeNotifier {
     try {
       for (final notification in claimed) {
         final name = notification.actorDisplayName;
-        var handled = true;
+        // Unknown rows, or recognized rows whose native presentation failed,
+        // stay durable so a later client/poll can handle them safely.
+        var handled = false;
         String withName(String english, String dutch) =>
             strings.pick(english, dutch).replaceAll('{name}', name);
         switch (notification.kind) {
           case 'friend_request':
-            await HavenNotifications.friendRequest(
+            handled = await HavenNotifications.friendRequest(
               id: notification.id,
               title: strings.pick(
                 'New friend request',
@@ -1810,7 +1812,7 @@ class OnlineAccountProvider extends ChangeNotifier {
               ),
             );
           case 'friend_accepted':
-            await HavenNotifications.friendAccepted(
+            handled = await HavenNotifications.friendAccepted(
               id: notification.id,
               title: strings.pick(
                 'Friend request accepted',
@@ -1834,7 +1836,7 @@ class OnlineAccountProvider extends ChangeNotifier {
               ),
             );
           case 'trade_request':
-            await HavenNotifications.tradeUpdate(
+            handled = await HavenNotifications.tradeUpdate(
               id: notification.id,
               title: strings.pick('New trade offer', 'Nieuw ruilvoorstel'),
               body: withName(
@@ -1844,7 +1846,7 @@ class OnlineAccountProvider extends ChangeNotifier {
               category: HavenNotificationCategory.tradeRequests,
             );
           case 'trade_return':
-            await HavenNotifications.tradeUpdate(
+            handled = await HavenNotifications.tradeUpdate(
               id: notification.id,
               title: strings.pick(
                 'Return item offered',
@@ -1857,7 +1859,7 @@ class OnlineAccountProvider extends ChangeNotifier {
               category: HavenNotificationCategory.tradeReturns,
             );
           case 'trade_completed':
-            await HavenNotifications.tradeUpdate(
+            handled = await HavenNotifications.tradeUpdate(
               id: notification.id,
               title: strings.pick('Trade completed', 'Ruil afgerond'),
               body: withName(
@@ -1867,7 +1869,7 @@ class OnlineAccountProvider extends ChangeNotifier {
               category: HavenNotificationCategory.tradeCompletions,
             );
           case 'seasonal_pair_invite':
-            await HavenNotifications.specialAdventureAvailable(
+            handled = await HavenNotifications.specialAdventureAvailable(
               id: 'seasonal-pair-${notification.id}',
               title: strings.pick(
                 'A Heartlight invitation',
@@ -1879,7 +1881,7 @@ class OnlineAccountProvider extends ChangeNotifier {
               ),
             );
           case 'seasonal_pair_accepted':
-            await HavenNotifications.specialAdventureAvailable(
+            handled = await HavenNotifications.specialAdventureAvailable(
               id: 'seasonal-pair-${notification.id}',
               title: strings.pick(
                 'Your Heartlight partner is ready',
@@ -1891,7 +1893,7 @@ class OnlineAccountProvider extends ChangeNotifier {
               ),
             );
           case 'seasonal_pair_ready':
-            await HavenNotifications.specialAdventureAvailable(
+            handled = await HavenNotifications.specialAdventureAvailable(
               id: 'seasonal-pair-${notification.id}',
               title: strings.pick(
                 'Rosebound Crossing completed',
@@ -1905,7 +1907,9 @@ class OnlineAccountProvider extends ChangeNotifier {
         }
         if (handled) acknowledgedIds.add(notification.id);
       }
-      await _repository.acknowledgeSocialNotifications(acknowledgedIds);
+      if (acknowledgedIds.isNotEmpty) {
+        await _repository.acknowledgeSocialNotifications(acknowledgedIds);
+      }
     } finally {
       _notificationDeliveryInFlight
           .removeAll(claimed.map((notification) => notification.id));

@@ -754,6 +754,77 @@ void main() {
     online.dispose();
   });
 
+  test('background social events retry until native presentation succeeds',
+      () async {
+    const channel = MethodChannel('nl.dragonhaven.app/notifications');
+    var allowDelivery = false;
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return call.method == 'showWhenBackground' ? allowDelivery : true;
+    });
+    addTearDown(() => TestDefaultBinaryMessengerBinding
+        .instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+    final game = HouseholdProvider(random: Random(312));
+    final repository = _FakeSocialRepository(inventoryImported: true);
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+    calls.clear();
+    final now = DateTime.utc(2026, 9, 1);
+    repository.notificationRows.addAll([
+      SocialNotification(
+        id: 'notice-request-retry',
+        kind: 'friend_request',
+        entityId: 'request-retry',
+        actorDisplayName: 'Lyra',
+        createdAt: now,
+      ),
+      SocialNotification(
+        id: 'notice-trade-retry',
+        kind: 'trade_return',
+        entityId: 'trade-retry',
+        actorDisplayName: 'Miriam',
+        createdAt: now,
+      ),
+      SocialNotification(
+        id: 'notice-pair-retry',
+        kind: 'seasonal_pair_ready',
+        entityId: 'pair-retry',
+        actorDisplayName: 'Onosick',
+        createdAt: now,
+      ),
+      SocialNotification(
+        id: 'notice-future-kind',
+        kind: 'future_social_kind',
+        entityId: 'future-kind',
+        actorDisplayName: 'Keeper',
+        createdAt: now,
+      ),
+    ]);
+
+    await online.pollSocialNotifications();
+    expect(calls, hasLength(3));
+    expect(repository.acknowledgedNotificationIds, isEmpty);
+    expect(repository.notificationRows, hasLength(4));
+
+    allowDelivery = true;
+    calls.clear();
+    await online.pollSocialNotifications();
+    expect(calls, hasLength(3));
+    expect(repository.acknowledgedNotificationIds, [
+      'notice-request-retry',
+      'notice-trade-retry',
+      'notice-pair-retry',
+    ]);
+    expect(repository.notificationRows.single.id, 'notice-future-kind');
+    online.dispose();
+  });
+
   test('first online refresh imports the legacy inventory exactly once',
       () async {
     final game = HouseholdProvider(random: Random(3));
@@ -866,6 +937,12 @@ void main() {
   });
 
   test('maintenance failure cannot hide a valid friends snapshot', () async {
+    const channel = MethodChannel('nl.dragonhaven.app/notifications');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (_) async => true);
+    addTearDown(() => TestDefaultBinaryMessengerBinding
+        .instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
     final game = HouseholdProvider(random: Random(407));
     final repository = _FakeSocialRepository(inventoryImported: true)
       ..tradeInventorySyncError = 'invalid_inventory'

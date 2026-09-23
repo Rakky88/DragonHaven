@@ -52,10 +52,13 @@ void main() {
           .toSet(),
     );
 
-    await HavenNotifications.friendRequest(
-      id: 'muted-request',
-      title: 'New friend request',
-      body: 'Lyra wants to be friends.',
+    expect(
+      await HavenNotifications.friendRequest(
+        id: 'muted-request',
+        title: 'New friend request',
+        body: 'Lyra wants to be friends.',
+      ),
+      isTrue,
     );
 
     expect(calls, isEmpty);
@@ -154,10 +157,13 @@ void main() {
 
   test('friend requests use a stable background notification identity',
       () async {
-    await HavenNotifications.friendRequest(
-      id: 'request-42',
-      title: 'New friend request',
-      body: 'Lyra wants to be friends.',
+    expect(
+      await HavenNotifications.friendRequest(
+        id: 'request-42',
+        title: 'New friend request',
+        body: 'Lyra wants to be friends.',
+      ),
+      isTrue,
     );
 
     expect(calls, hasLength(1));
@@ -168,6 +174,70 @@ void main() {
       'body': 'Lyra wants to be friends.',
       'kind': 'friend_request',
     });
+  });
+
+  test('social background notifications expose failed native presentation',
+      () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return false;
+    });
+
+    expect(
+      await HavenNotifications.friendRequest(
+        id: 'request-retry',
+        title: 'New friend request',
+        body: 'Lyra wants to be friends.',
+      ),
+      isFalse,
+    );
+    expect(
+      await HavenNotifications.tradeUpdate(
+        id: 'trade-retry',
+        title: 'New trade offer',
+        body: 'Lyra wants to trade.',
+        category: HavenNotificationCategory.tradeRequests,
+      ),
+      isFalse,
+    );
+    expect(
+      await HavenNotifications.specialAdventureAvailable(
+        id: 'seasonal-pair-retry',
+        title: 'A Heartlight invitation',
+        body: 'Lyra invited you.',
+      ),
+      isFalse,
+    );
+
+    expect(calls.map((call) => call.method), [
+      'showWhenBackground',
+      'showWhenBackground',
+      'showWhenBackground',
+    ]);
+  });
+
+  test('social notifications without a native bridge remain retryable',
+      () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null);
+
+    expect(
+      await HavenNotifications.friendAccepted(
+        id: 'accepted-retry',
+        title: 'Friend request accepted',
+        body: 'Lyra is now your friend.',
+      ),
+      isFalse,
+    );
+    expect(
+      await HavenNotifications.friendMessage(
+        id: 'message-retry',
+        title: 'New message',
+        body: 'Open DragonHaven to read it.',
+      ),
+      isFalse,
+    );
   });
 
   test('friend messages use their own toggle and Friends deep link', () async {

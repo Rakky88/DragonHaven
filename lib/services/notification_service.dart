@@ -249,7 +249,7 @@ abstract final class HavenNotifications {
         kind: 'evolution',
       );
 
-  static Future<void> tradeUpdate({
+  static Future<bool> tradeUpdate({
     required String id,
     required String title,
     required String body,
@@ -263,7 +263,7 @@ abstract final class HavenNotifications {
         kind: 'trade',
       );
 
-  static Future<void> friendRequest({
+  static Future<bool> friendRequest({
     required String id,
     required String title,
     required String body,
@@ -276,7 +276,7 @@ abstract final class HavenNotifications {
         kind: 'friend_request',
       );
 
-  static Future<void> friendAccepted({
+  static Future<bool> friendAccepted({
     required String id,
     required String title,
     required String body,
@@ -307,8 +307,9 @@ abstract final class HavenNotifications {
           }) ??
           false;
     } on MissingPluginException {
-      // Tests and unsupported platforms intentionally have no native bridge.
-      return true;
+      // No native presentation means the durable inbox item must remain
+      // available for a later delivery attempt.
+      return false;
     } on PlatformException {
       // Keep the server event unacknowledged so a later poll can retry it.
       return false;
@@ -330,14 +331,14 @@ abstract final class HavenNotifications {
             )
           : Future<void>.value();
 
-  static Future<void> specialAdventureAvailable({
+  static Future<bool> specialAdventureAvailable({
     required String id,
     required String title,
     required String body,
     DateTime? at,
   }) {
     if (!isEnabled(HavenNotificationCategory.specialEvents)) {
-      return Future<void>.value();
+      return Future<bool>.value(true);
     }
     if (at != null && at.isAfter(DateTime.now())) {
       return schedule(
@@ -346,7 +347,7 @@ abstract final class HavenNotifications {
         title: title,
         body: body,
         kind: 'special_adventure_available',
-      );
+      ).then((_) => true);
     }
     return _showWhenBackground(
       category: HavenNotificationCategory.specialEvents,
@@ -367,25 +368,31 @@ abstract final class HavenNotifications {
     }
   }
 
-  static Future<void> _showWhenBackground({
+  static Future<bool> _showWhenBackground({
     required HavenNotificationCategory category,
     required String id,
     required String title,
     required String body,
     required String kind,
   }) async {
-    if (!isEnabled(category)) return;
+    // Muting a category is an intentional user choice. Treat the event as
+    // handled so its durable inbox row does not retry indefinitely.
+    if (!isEnabled(category)) return true;
     try {
-      await _channel.invokeMethod<bool>('showWhenBackground', {
-        'id': id,
-        'title': title,
-        'body': body,
-        'kind': kind,
-      });
+      return await _channel.invokeMethod<bool>('showWhenBackground', {
+            'id': id,
+            'title': title,
+            'body': body,
+            'kind': kind,
+          }) ??
+          false;
     } on MissingPluginException {
-      // Tests and unsupported platforms intentionally have no native bridge.
+      // The server event stays unacknowledged until a native bridge can
+      // confirm that it presented the notification.
+      return false;
     } on PlatformException {
-      // Denied permission never changes gameplay state.
+      // Keep the server event unacknowledged so a later poll can retry it.
+      return false;
     }
   }
 }
