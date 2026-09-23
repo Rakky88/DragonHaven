@@ -99,10 +99,9 @@ class _HouseContents extends StatelessWidget {
                                 ? null
                                 : () => showCanonicalRoomOrder(context),
                             icon: const Icon(Icons.swap_vert_rounded)),
-                        Flexible(
-                            child: Text(
-                                '${house.floorRoomIds.length}/20 ${s.pick('floors', 'verdiepingen')}',
-                                textAlign: TextAlign.end)),
+                        Text(
+                            '${house.floorRoomIds.length}/20 ${s.pick('floors', 'verdiepingen')}',
+                            textAlign: TextAlign.end),
                       ]),
                       const SizedBox(height: 10),
                       if (header != null) header!,
