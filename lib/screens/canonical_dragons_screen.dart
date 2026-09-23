@@ -63,14 +63,29 @@ class CanonicalDragonArt extends StatelessWidget {
 }
 
 class CanonicalDragonsScreen extends StatelessWidget {
-  const CanonicalDragonsScreen({super.key});
+  const CanonicalDragonsScreen({super.key}) : _bottomSheet = false;
+  const CanonicalDragonsScreen.sheet({super.key}) : _bottomSheet = true;
+
+  final bool _bottomSheet;
+
   @override
-  Widget build(BuildContext context) =>
-      const ShopEconomyBoundary(child: _DragonList());
+  Widget build(BuildContext context) {
+    if (!_bottomSheet) {
+      return const ShopEconomyBoundary(child: SafeArea(child: _DragonList()));
+    }
+    return SafeArea(
+        child: DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: .7,
+            maxChildSize: .92,
+            builder: (_, controller) => ShopEconomyBoundary(
+                child: _DragonList(scrollController: controller))));
+  }
 }
 
 class _DragonList extends StatefulWidget {
-  const _DragonList();
+  const _DragonList({this.scrollController});
+  final ScrollController? scrollController;
   @override
   State<_DragonList> createState() => _DragonListState();
 }
@@ -212,235 +227,223 @@ class _DragonListState extends State<_DragonList> {
         _sortedDragons(_filteredDragons(game.dragons.where((d) => d.owned)));
     final activeFilterCount =
         _formFilters.length + _rarityFilters.length + (_spectralOnly ? 1 : 0);
-    return SafeArea(
-      child: DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: .7,
-        maxChildSize: .92,
-        builder: (_, controller) => Column(
-          key: const Key('owned-dragons-scroll'),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 9),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      key: const Key('owned-dragons-scroll'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 9),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Wrap(
-                    spacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Text(
-                        strings.pick('My dragons', 'Mijn draken'),
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      PopupMenuButton<_DragonSortMode>(
-                        key: const Key('owned-dragons-sort'),
-                        tooltip: strings.pick(
-                          'Change dragon order',
-                          'Volgorde van draken wijzigen',
-                        ),
-                        initialValue: _sortMode,
-                        onSelected: _selectSort,
-                        itemBuilder: (_) => [
-                          for (final mode in _DragonSortMode.values)
-                            PopupMenuItem(
-                              key: Key('owned-dragons-sort-${mode.name}'),
-                              value: mode,
-                              child: Row(
-                                children: [
-                                  Icon(switch (mode) {
-                                    _DragonSortMode.name =>
-                                      Icons.sort_by_alpha_rounded,
-                                    _DragonSortMode.acquiredAt =>
-                                      Icons.event_rounded,
-                                    _DragonSortMode.rarity =>
-                                      Icons.auto_awesome_rounded,
-                                  }),
-                                  const SizedBox(width: 9),
-                                  Text(switch (mode) {
-                                    _DragonSortMode.name =>
-                                      strings.pick('Name', 'Naam'),
-                                    _DragonSortMode.acquiredAt =>
-                                      strings.pick('Received', 'Ontvangen'),
-                                    _DragonSortMode.rarity =>
-                                      strings.pick('Rarity', 'Zeldzaamheid'),
-                                  }),
-                                ],
-                              ),
-                            ),
-                        ],
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.eventColor(
-                                context, const Color(0xFFF1ECFB)),
-                            borderRadius: BorderRadius.circular(99),
-                          ),
+                  Text(
+                    strings.pick('My dragons', 'Mijn draken'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  PopupMenuButton<_DragonSortMode>(
+                    key: const Key('owned-dragons-sort'),
+                    tooltip: strings.pick(
+                      'Change dragon order',
+                      'Volgorde van draken wijzigen',
+                    ),
+                    initialValue: _sortMode,
+                    onSelected: _selectSort,
+                    itemBuilder: (_) => [
+                      for (final mode in _DragonSortMode.values)
+                        PopupMenuItem(
+                          key: Key('owned-dragons-sort-${mode.name}'),
+                          value: mode,
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                _sortDescending
-                                    ? Icons.arrow_downward_rounded
-                                    : Icons.arrow_upward_rounded,
-                                size: 18,
-                                color: AppColors.eventColor(
-                                    context, AppColors.twilight),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                _sortLabel(strings),
-                                style: TextStyle(
-                                  color: AppColors.eventColor(
-                                      context, AppColors.twilight),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
+                              Icon(switch (mode) {
+                                _DragonSortMode.name =>
+                                  Icons.sort_by_alpha_rounded,
+                                _DragonSortMode.acquiredAt =>
+                                  Icons.event_rounded,
+                                _DragonSortMode.rarity =>
+                                  Icons.auto_awesome_rounded,
+                              }),
+                              const SizedBox(width: 9),
+                              Text(switch (mode) {
+                                _DragonSortMode.name =>
+                                  strings.pick('Name', 'Naam'),
+                                _DragonSortMode.acquiredAt =>
+                                  strings.pick('Received', 'Ontvangen'),
+                                _DragonSortMode.rarity =>
+                                  strings.pick('Rarity', 'Zeldzaamheid'),
+                              }),
                             ],
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 7),
-                      Badge(
-                        isLabelVisible: activeFilterCount > 0,
-                        label: Text('$activeFilterCount'),
-                        child: IconButton.filledTonal(
-                          key: const Key('owned-dragons-filter'),
-                          tooltip: strings.pick(
-                            'Filter dragons',
-                            'Draken filteren',
-                          ),
-                          onPressed: () => _showFilters(
-                            context,
-                            game.dragons.where((d) => d.owned),
-                          ),
-                          icon: const Icon(Icons.filter_alt_rounded),
-                        ),
-                      ),
-                      const SizedBox(width: 7),
-                      IconButton.filledTonal(
-                        key: const Key('owned-dragons-view-toggle'),
-                        tooltip: _view == _DragonCollectionView.gallery
-                            ? strings.pick(
-                                'Show compact list',
-                                'Compacte lijst tonen',
-                              )
-                            : strings.pick(
-                                'Show gallery',
-                                'Galerij tonen',
-                              ),
-                        onPressed: () {
-                          setState(() {
-                            _view = _view == _DragonCollectionView.gallery
-                                ? _DragonCollectionView.compact
-                                : _DragonCollectionView.gallery;
-                          });
-                          _saveCollectionPreferences();
-                        },
-                        icon: Icon(
-                          _view == _DragonCollectionView.gallery
-                              ? Icons.view_list_rounded
-                              : Icons.grid_view_rounded,
-                        ),
-                      ),
                     ],
-                  ),
-                  const SizedBox(height: 7),
-                  Container(
-                    key: const Key('tower-roaming-capacity'),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                    decoration: BoxDecoration(
-                      color: AppColors.eventColor(
-                          context, const Color(0xFFF1ECFB)),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(children: [
-                      const GameIconSprite(GameIconKind.roomClear, size: 34),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          strings.pick(
-                            '${game.dragons.where((d) => d.owned && d.roamsTower).length} / ${game.house.floorRoomIds.length * 3} roaming · maximum 3 per room',
-                            '${game.dragons.where((d) => d.owned && d.roamsTower).length} / ${game.house.floorRoomIds.length * 3} actief · maximaal 3 per kamer',
-                          ),
-                          style: TextStyle(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.eventColor(
+                            context, const Color(0xFFF1ECFB)),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _sortDescending
+                                ? Icons.arrow_downward_rounded
+                                : Icons.arrow_upward_rounded,
+                            size: 18,
                             color: AppColors.eventColor(
                                 context, AppColors.twilight),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
                           ),
-                        ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _sortLabel(strings),
+                            style: TextStyle(
+                              color: AppColors.eventColor(
+                                  context, AppColors.twilight),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
                       ),
-                    ]),
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                  Badge(
+                    isLabelVisible: activeFilterCount > 0,
+                    label: Text('$activeFilterCount'),
+                    child: IconButton.filledTonal(
+                      key: const Key('owned-dragons-filter'),
+                      tooltip: strings.pick(
+                        'Filter dragons',
+                        'Draken filteren',
+                      ),
+                      onPressed: () => _showFilters(
+                        context,
+                        game.dragons.where((d) => d.owned),
+                      ),
+                      icon: const Icon(Icons.filter_alt_rounded),
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                  IconButton.filledTonal(
+                    key: const Key('owned-dragons-view-toggle'),
+                    tooltip: _view == _DragonCollectionView.gallery
+                        ? strings.pick(
+                            'Show compact list',
+                            'Compacte lijst tonen',
+                          )
+                        : strings.pick(
+                            'Show gallery',
+                            'Galerij tonen',
+                          ),
+                    onPressed: () {
+                      setState(() {
+                        _view = _view == _DragonCollectionView.gallery
+                            ? _DragonCollectionView.compact
+                            : _DragonCollectionView.gallery;
+                      });
+                      _saveCollectionPreferences();
+                    },
+                    icon: Icon(
+                      _view == _DragonCollectionView.gallery
+                          ? Icons.view_list_rounded
+                          : Icons.grid_view_rounded,
+                    ),
                   ),
                 ],
               ),
-            ),
-            Expanded(
-              child: dragons.isEmpty
-                  ? Center(
-                      child: Text(
-                        strings.pick(
-                          'No dragons match these filters.',
-                          'Geen draken voldoen aan deze filters.',
-                        ),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: AppColors.muted),
+              const SizedBox(height: 7),
+              Container(
+                key: const Key('tower-roaming-capacity'),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(
+                  color: AppColors.eventColor(context, const Color(0xFFF1ECFB)),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(children: [
+                  const GameIconSprite(GameIconKind.roomClear, size: 34),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      strings.pick(
+                        '${game.dragons.where((d) => d.owned && d.roamsTower).length} / ${game.house.floorRoomIds.length * 3} roaming · maximum 3 per room',
+                        '${game.dragons.where((d) => d.owned && d.roamsTower).length} / ${game.house.floorRoomIds.length * 3} actief · maximaal 3 per kamer',
                       ),
-                    )
-                  : _view == _DragonCollectionView.gallery
-                      ? GridView.builder(
-                          key: const Key('owned-dragons-grid'),
-                          controller: controller,
-                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
-                          itemCount: dragons.length,
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount:
-                                MediaQuery.sizeOf(context).width >= 600 ? 3 : 2,
-                            childAspectRatio: .88,
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                          ),
-                          itemBuilder: (context, index) {
-                            final dragon = dragons[index];
-                            return _DragonGalleryCard(
-                              dragon: dragon,
-                              equippedRelic:
-                                  game.inventory.equippedOn(dragon.id),
-                              onTap: () => showCanonicalDragonDetails(
-                                  context, dragon.id),
-                            );
-                          },
-                        )
-                      : ListView.separated(
-                          key: const Key('owned-dragons-list'),
-                          controller: controller,
-                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
-                          itemCount: dragons.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 7),
-                          itemBuilder: (context, index) {
-                            final dragon = dragons[index];
-                            return _DragonCompactCard(
-                              dragon: dragon,
-                              equippedRelic:
-                                  game.inventory.equippedOn(dragon.id),
-                              onTap: () => showCanonicalDragonDetails(
-                                  context, dragon.id),
-                            );
-                          },
-                        ),
-            ),
-          ],
+                      style: TextStyle(
+                        color:
+                            AppColors.eventColor(context, AppColors.twilight),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ]),
+              ),
+            ],
+          ),
         ),
-      ),
+        Expanded(
+          child: dragons.isEmpty
+              ? Center(
+                  child: Text(
+                    strings.pick(
+                      'No dragons match these filters.',
+                      'Geen draken voldoen aan deze filters.',
+                    ),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: AppColors.muted),
+                  ),
+                )
+              : _view == _DragonCollectionView.gallery
+                  ? GridView.builder(
+                      key: const Key('owned-dragons-grid'),
+                      controller: widget.scrollController,
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
+                      itemCount: dragons.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:
+                            MediaQuery.sizeOf(context).width >= 600 ? 3 : 2,
+                        childAspectRatio: .88,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                      ),
+                      itemBuilder: (context, index) {
+                        final dragon = dragons[index];
+                        return _DragonGalleryCard(
+                          dragon: dragon,
+                          equippedRelic: game.inventory.equippedOn(dragon.id),
+                          onTap: () =>
+                              showCanonicalDragonDetails(context, dragon.id),
+                        );
+                      },
+                    )
+                  : ListView.separated(
+                      key: const Key('owned-dragons-list'),
+                      controller: widget.scrollController,
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 28),
+                      itemCount: dragons.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 7),
+                      itemBuilder: (context, index) {
+                        final dragon = dragons[index];
+                        return _DragonCompactCard(
+                          dragon: dragon,
+                          equippedRelic: game.inventory.equippedOn(dragon.id),
+                          onTap: () =>
+                              showCanonicalDragonDetails(context, dragon.id),
+                        );
+                      },
+                    ),
+        ),
+      ],
     );
   }
 

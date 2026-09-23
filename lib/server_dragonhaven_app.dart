@@ -601,7 +601,7 @@ class _ServerTower extends StatelessWidget {
                     showDragHandle: true,
                     isScrollControlled: true,
                     useSafeArea: true,
-                    builder: (_) => const CanonicalDragonsScreen())),
+                    builder: (_) => const CanonicalDragonsScreen.sheet())),
             IconButton(
                 tooltip: 'Draconomicon',
                 icon: const GameIconSprite(GameIconKind.draconomicon, size: 40),

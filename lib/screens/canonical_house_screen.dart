@@ -90,18 +90,31 @@ class _HouseContents extends StatelessWidget {
                                     style: const TextStyle(
                                         color: AppColors.muted,
                                         fontWeight: FontWeight.w700)))),
-                        IconButton(
-                            key: const Key('reorder-tower-rooms'),
-                            tooltip: s.pick(
-                                'Change room order', 'Kamervolgorde wijzigen'),
-                            visualDensity: VisualDensity.compact,
-                            onPressed: house.floorRoomIds.length < 2
-                                ? null
-                                : () => showCanonicalRoomOrder(context),
-                            icon: const Icon(Icons.swap_vert_rounded)),
-                        Text(
-                            '${house.floorRoomIds.length}/20 ${s.pick('floors', 'verdiepingen')}',
-                            textAlign: TextAlign.end),
+                        Flexible(
+                            child: Align(
+                                alignment: Alignment.centerRight,
+                                child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                          key: const Key('reorder-tower-rooms'),
+                                          tooltip: s.pick('Change room order',
+                                              'Kamervolgorde wijzigen'),
+                                          visualDensity: VisualDensity.compact,
+                                          onPressed: house.floorRoomIds.length <
+                                                  2
+                                              ? null
+                                              : () => showCanonicalRoomOrder(
+                                                  context),
+                                          icon: const Icon(
+                                              Icons.swap_vert_rounded)),
+                                      Flexible(
+                                          child: Text(
+                                              '${house.floorRoomIds.length}/20 ${s.pick('floors', 'verdiepingen')}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              textAlign: TextAlign.end)),
+                                    ]))),
                       ]),
                       const SizedBox(height: 10),
                       if (header != null) header!,
