@@ -290,8 +290,13 @@ class _AdventuresState extends State<_Adventures>
                           Text(s.pick('Update the app to use this item.',
                               'Werk de app bij om dit voorwerp te gebruiken.')),
                       if (tab == 0 && view.adventures.offers(kind).isEmpty)
-                        Text(s.pick('No trail is available here right now.',
-                            'Hier is nu geen route beschikbaar.')),
+                        Padding(
+                            padding: const EdgeInsets.fromLTRB(10, 8, 10, 26),
+                            child: Text(
+                                s.pick('No trail is available here right now.',
+                                    'Hier is nu geen route beschikbaar.'),
+                                style:
+                                    const TextStyle(color: AppColors.muted))),
                       if (tab == 0 &&
                           kind != AdventureKind.special &&
                           sigils > 0 &&
