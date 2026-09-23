@@ -119,12 +119,17 @@ void main() {
       Future<void> tap(Finder finder) =>
           tester.runAsync(() => tester.tap(finder));
       Future<void> settle() async {
-        for (var i = 0; i < 300; i++) {
+        // Match the transport's ten-second deadline. The full release suite
+        // runs several filesystem-backed sessions at once, so a healthy
+        // durable group command can outlive the former three-second allowance.
+        for (var i = 0; i < 1000; i++) {
           await tester.runAsync(
               () => Future<void>.delayed(const Duration(milliseconds: 10)));
           await tester.pump(const Duration(milliseconds: 40));
           if (i > 10 && !session.busy && !groups.loading) break;
         }
+        expect(session.busy, isFalse);
+        expect(groups.loading, isFalse);
         expect(tester.takeException(), isNull);
       }
 

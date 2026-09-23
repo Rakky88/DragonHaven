@@ -148,3 +148,29 @@ they still contain no SDK, claim command or local grant. Focused Adventure, Shop
 social and parity coverage passes 111 tests, and Flutter analysis reports no
 issues. Final release and production-health evidence is recorded in
 `RELEASE_V0.06.04_VERIFICATION.md`.
+
+## v0.06.05 historical collection and spacing follow-up
+
+The selected-dragon sheet again uses the v0.05.40 action-card rows. For an
+already named dragon, Rename is shown only when a Nameweaver Quill is owned,
+and the sanctuary row states that the dragon leaves the Tower. My Dragons no
+longer reserves an empty header-sized area, while contained artwork keeps its
+natural aspect ratio.
+
+Adventure availability cards again show their historical refresh countdown.
+The root app schedules its canonical refresh at the next 15-minute boundary;
+Group and event-partner reads no longer poll every few seconds. Manual refresh
+uses the existing pull gesture. These reads do not alter rewards or generate
+client-owned progress.
+
+The Rooftop Nest chooser restores the v0.05.40 tile/list switch, saved sorting,
+hatch-time labels, acquisition dates and public clue text. The standard Egg
+collection restores direct tag buttons in both views and retains its historical
+details presentation. Selection, tagging, preferences and nest placement still
+use canonical commands with optimistic preview and server-error rollback.
+
+Tower controls are right-aligned and the historical top spacing is restored.
+Focused widget coverage checks the two Egg picker views, direct tagging without
+opening details, dragon actions, Adventure refresh behavior and Tower layout.
+No migration, server ruleset, runtime flag, reward, probability or player-data
+rewrite is part of this release.
