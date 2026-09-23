@@ -51,11 +51,15 @@ class EventPartnerControl extends StatefulWidget {
       {super.key,
       required this.eventKey,
       required this.beforeSync,
+      this.active = true,
+      this.firstAutomaticSyncAfter,
       this.beforeInvite,
       required this.applyShared,
       this.showControls = true});
   final String eventKey;
+  final bool active;
   final bool showControls;
+  final Duration? firstAutomaticSyncAfter;
   final Future<bool> Function() beforeSync;
   final Future<bool> Function()? beforeInvite;
   final Future<void> Function(Map<String, dynamic>, String) applyShared;
@@ -63,7 +67,8 @@ class EventPartnerControl extends StatefulWidget {
   State<EventPartnerControl> createState() => _EventPartnerControlState();
 }
 
-class _EventPartnerControlState extends State<EventPartnerControl> {
+class _EventPartnerControlState extends State<EventPartnerControl>
+    with WidgetsBindingObserver {
   Timer? _timer;
   List<Map<String, dynamic>> _pairs = [];
   bool _busy = false;
@@ -72,18 +77,49 @@ class _EventPartnerControlState extends State<EventPartnerControl> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_sync());
+      if (mounted && widget.active) unawaited(_sync());
     });
-    _timer = Timer.periodic(const Duration(seconds: 15), (_) {
-      if (mounted && ModalRoute.of(context)?.isCurrent != false) {
-        unawaited(_sync());
-      }
-    });
+    final first = widget.firstAutomaticSyncAfter;
+    if (first == null) {
+      _timer =
+          Timer.periodic(const Duration(minutes: 15), (_) => _syncIfVisible());
+    } else {
+      _timer = Timer(first, () {
+        _syncIfVisible();
+        if (mounted) {
+          _timer = Timer.periodic(
+              const Duration(minutes: 15), (_) => _syncIfVisible());
+        }
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant EventPartnerControl oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active && !oldWidget.active) unawaited(_sync());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && widget.active) {
+      unawaited(_sync());
+    }
+  }
+
+  void _syncIfVisible() {
+    if (mounted &&
+        widget.active &&
+        ModalRoute.of(context)?.isCurrent != false) {
+      unawaited(_sync());
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     super.dispose();
   }

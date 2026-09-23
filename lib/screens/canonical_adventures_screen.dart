@@ -4,8 +4,10 @@ import 'adventure_hub_screen.dart'
         showRestoredRunDetails,
         adventureKindColors,
         restoredAdventureRewards,
-        RestoredAdventureCountdown;
-import '../providers/household_provider.dart' show SpecialAdventureWindow;
+        RestoredAdventureCountdown,
+        AdventureRefreshCountdown;
+import '../providers/household_provider.dart'
+    show SpecialAdventureWindow, adventureOfferRefreshRemaining;
 import '../models/dragon_lineage.dart';
 import '../models/music_track.dart';
 import '../models/trial.dart';
@@ -94,6 +96,22 @@ class _AdventuresState extends State<_Adventures>
     super.dispose();
   }
 
+  Future<void> _refreshFromServer() async {
+    final session = context.read<CanonicalGameSession>();
+    final groups = context.read<CanonicalGroups?>();
+    if (groups != null && !groups.loading) {
+      await groups.refresh();
+    }
+    if (!mounted || session.busy) return;
+    await runShopAction(context, () async {
+      if (!session.canAct) await session.synchronize();
+      if (!session.canAct) {
+        throw const CanonicalGameException('game_refresh_required');
+      }
+      await CanonicalGameActions(session).refresh();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final session = context.watch<CanonicalGameSession>();
@@ -117,8 +135,12 @@ class _AdventuresState extends State<_Adventures>
             .length ??
         0;
     final sigils = view.inventory.usableRelics[MysticRelic.wayfinderSigil] ?? 0;
-    Widget content(int tab) => ListView(
+    Widget content(int tab) => RefreshIndicator(
+        key: Key('canonical-adventures-pull-$tab'),
+        onRefresh: _refreshFromServer,
+        child: ListView(
             key: PageStorageKey('canonical-adventures-list-$tab'),
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
             children: [
               for (final progress in view.adventures.eventProgress.where((p) =>
@@ -131,10 +153,18 @@ class _AdventuresState extends State<_Adventures>
                             'valentine_two_heartlights'
                         ? EventPartnerControl(
                             eventKey: progress.key,
+                            active: widget.active && tab == _tab,
+                            firstAutomaticSyncAfter:
+                                adventureOfferRefreshRemaining(
+                                    AdventureKind.mini, now),
                             beforeSync: () async {
-                              if (!session.canAct) return false;
-                              await CanonicalGameActions(session).refresh();
-                              return true;
+                              for (var attempt = 0;
+                                  attempt < 50 && session.busy;
+                                  attempt++) {
+                                await Future<void>.delayed(
+                                    const Duration(milliseconds: 100));
+                              }
+                              return session.canAct;
                             },
                             applyShared: (_, owner) async {
                               if (session.connection.currentOwner == owner) {
@@ -206,9 +236,11 @@ class _AdventuresState extends State<_Adventures>
                       CanonicalGroupsScreen(
                           embedded: true,
                           section: 0,
-                          active: widget.active && tab == _tab),
+                          active: widget.active && tab == _tab,
+                          refreshRemaining: adventureOfferRefreshRemaining(
+                              AdventureKind.group, now)),
                   ] else
-                    _AdventureSection(kind: kind, children: [
+                    _AdventureSection(kind: kind, now: now, children: [
                       for (final id in tab != 0
                           ? <String>[]
                           : view.adventures.offers(kind))
@@ -260,8 +292,8 @@ class _AdventuresState extends State<_Adventures>
                           Text(s.pick('Update the app to use this item.',
                               'Werk de app bij om dit voorwerp te gebruiken.')),
                       if (tab == 0 && view.adventures.offers(kind).isEmpty)
-                        Text(s.pick('Refresh to check for adventures.',
-                            'Vernieuw om avonturen te controleren.')),
+                        Text(s.pick('No trail is available here right now.',
+                            'Hier is nu geen route beschikbaar.')),
                       if (tab == 0 &&
                           kind != AdventureKind.special &&
                           sigils > 0 &&
@@ -281,7 +313,7 @@ class _AdventuresState extends State<_Adventures>
                     embedded: true,
                     section: tab,
                     active: widget.active && tab == _tab),
-            ]);
+            ]));
     return Column(children: [
       Padding(
           key: const Key('tutorial-adventure-header'),
@@ -301,13 +333,6 @@ class _AdventuresState extends State<_Adventures>
                           'Kies een route. Breng verhalen, training en schatten mee terug.'),
                       style: Theme.of(context).textTheme.bodySmall),
                 ])),
-            IconButton(
-                key: const Key('canonical-refresh-adventures'),
-                tooltip: s.pick('Refresh', 'Vernieuwen'),
-                icon: const Icon(Icons.refresh),
-                onPressed: session.canAct
-                    ? () => runShopAction(context, actions.refresh)
-                    : null),
           ])),
       TabBar(
           key: const Key('tutorial-adventure-tabs'),
@@ -703,8 +728,10 @@ class _AdventureOffer extends StatelessWidget {
 }
 
 class _AdventureSection extends StatelessWidget {
-  const _AdventureSection({required this.kind, required this.children});
+  const _AdventureSection(
+      {required this.kind, required this.now, required this.children});
   final AdventureKind kind;
+  final DateTime now;
   final List<Widget> children;
   @override
   Widget build(BuildContext context) {
@@ -760,6 +787,11 @@ class _AdventureSection extends StatelessWidget {
                       style: const TextStyle(
                           color: AppColors.muted, fontSize: 10)),
                 ])),
+            if (adventureOfferRefreshRemaining(kind, now)
+                case final remaining?) ...[
+              const SizedBox(width: 7),
+              AdventureRefreshCountdown(kind: kind, remaining: remaining),
+            ],
           ]),
           const SizedBox(height: 5),
           ...children,

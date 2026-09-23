@@ -11,7 +11,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'l10n/app_strings.dart';
 import 'models/music_track.dart';
 import 'models/day_phase.dart';
-import 'providers/household_provider.dart' show SpecialAdventureWindow;
+import 'providers/household_provider.dart'
+    show SpecialAdventureWindow, nextAdventureOfferRefreshAt;
+import 'models/adventure.dart';
 import 'providers/online_account_provider.dart';
 import 'screens/achievements_screen.dart';
 import 'screens/canonical_adventures_screen.dart';
@@ -28,6 +30,7 @@ import 'screens/server_account_screen.dart';
 import 'screens/shop_hub_screen.dart';
 import 'services/audio_service.dart';
 import 'services/canonical_game_actions.dart';
+import 'services/canonical_groups.dart';
 import 'services/canonical_hatch_scheduler.dart';
 import 'services/canonical_game_session.dart';
 import 'services/canonical_game_snapshot.dart';
@@ -93,10 +96,34 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
         setState(() {});
       }
     });
-    _refresh = Timer.periodic(
-        const Duration(minutes: 1), (_) => unawaited(_advance()));
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_advance());
+      if (!mounted) return;
+      unawaited(() async {
+        await _advance();
+        if (mounted) _scheduleRefresh();
+      }());
+    });
+  }
+
+  void _scheduleRefresh() {
+    _refresh?.cancel();
+    final refreshAt = nextAdventureOfferRefreshAt(AdventureKind.mini, _now)!;
+    final remaining = refreshAt.difference(_now);
+    _refresh = Timer(
+        remaining > Duration.zero ? remaining : const Duration(milliseconds: 1),
+        () async {
+      // Let a command that crossed the quarter-hour finish, so the scheduled
+      // refill read is not skipped for an entire cycle. Canonical commands
+      // have their own transport timeout; this loop is only a bounded grace
+      // period before the next boundary is scheduled normally.
+      final wait = Stopwatch()..start();
+      while (mounted &&
+          context.read<CanonicalGameSession>().busy &&
+          wait.elapsed < const Duration(seconds: 30)) {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+      await _advance();
+      if (mounted) _scheduleRefresh();
     });
   }
 
@@ -105,13 +132,14 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
     final view = session.confirmedSnapshot;
     if (!session.canRunAutomatic ||
         view == null ||
-        !view.profile.onboardingComplete ||
-        view.trialAttempt != null ||
-        view.schoolAttempt != null) {
+        !view.profile.onboardingComplete) {
       return;
     }
     try {
-      await CanonicalGameActions(session).execute('refresh', const {});
+      if (view.trialAttempt == null && view.schoolAttempt == null) {
+        await CanonicalGameActions(session).execute('refresh', const {});
+      }
+      if (mounted) await context.read<CanonicalGroups?>()?.refresh();
     } on CanonicalGameException {
       // The account gate and session recovery own connection errors.
     }
@@ -135,7 +163,10 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
     final session = context.read<CanonicalGameSession>();
     try {
       await session.synchronize();
-      if (mounted) await _advance();
+      if (mounted) {
+        await _advance();
+        _scheduleRefresh();
+      }
     } on CanonicalGameException {
       // The account gate and reconnect controls handle expired or lost sessions.
     }

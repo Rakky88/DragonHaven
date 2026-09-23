@@ -140,6 +140,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
+  Future<void> refreshAdventures(WidgetTester tester) async {
+    final list =
+        find.byKey(const PageStorageKey<String>('canonical-adventures-list-0'));
+    final indicator =
+        find.ancestor(of: list, matching: find.byType(RefreshIndicator));
+    expect(indicator, findsOneWidget);
+    await tester.runAsync(tester.widget<RefreshIndicator>(indicator).onRefresh);
+    await tester.pump();
+  }
+
   Finder key(String value) => find.byKey(Key(value));
   Future<void> shot(WidgetTester tester, String name) async {
     const path = String.fromEnvironment('ECONOMY_UI_SCREENSHOTS');
@@ -482,7 +492,7 @@ void main() {
       'Adventure picker inspections preserve selection and lost start/claim recover once',
       (tester) async {
     await setup(tester, const CanonicalAdventuresScreen());
-    await tap(tester, key('canonical-refresh-adventures'));
+    await refreshAdventures(tester);
     await command(tester);
     final id = session.snapshot!.adventures.offers(AdventureKind.mini).first;
     final dragon = session.snapshot!.dragons.first;
@@ -527,7 +537,7 @@ void main() {
         language: 'nl', scale: 1.35, prepare: (server) {
       server.state['relicInventory']['wayfinderSigil'] = 1;
     });
-    await tap(tester, key('canonical-refresh-adventures'));
+    await refreshAdventures(tester);
     await command(tester);
     final id = session.snapshot!.adventures.offers(AdventureKind.mini).first;
     await tap(tester, key('canonical-select-adventure-$id'));
@@ -590,7 +600,7 @@ void main() {
         child: const MaterialApp(
             home: Scaffold(body: CanonicalAdventuresScreen()))));
     await tester.pump(const Duration(milliseconds: 400));
-    await tap(tester, key('canonical-refresh-adventures'));
+    await refreshAdventures(tester);
     await command(tester);
     final id = session.snapshot!.adventures.offers(AdventureKind.mini).first;
     await tap(tester, key('canonical-select-adventure-$id'));

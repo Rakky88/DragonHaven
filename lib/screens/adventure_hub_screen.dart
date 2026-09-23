@@ -1119,7 +1119,7 @@ class _AdventureSection extends StatelessWidget {
               ),
               if (kind != AdventureKind.special) ...[
                 const SizedBox(width: 7),
-                _AdventureRefreshCountdown(
+                AdventureRefreshCountdown(
                   kind: kind,
                   remaining: game.adventureRefreshRemaining(kind, from: now)!,
                 ),
@@ -1531,7 +1531,7 @@ class _GroupAdventureSection extends StatelessWidget {
                 ],
               ),
             ),
-            _AdventureRefreshCountdown(
+            AdventureRefreshCountdown(
               kind: AdventureKind.group,
               remaining: game.adventureRefreshRemaining(
                 AdventureKind.group,
@@ -2236,8 +2236,9 @@ class _SpecialEventCountdownText extends StatelessWidget {
       );
 }
 
-class _AdventureRefreshCountdown extends StatelessWidget {
-  const _AdventureRefreshCountdown({
+class AdventureRefreshCountdown extends StatelessWidget {
+  const AdventureRefreshCountdown({
+    super.key,
     required this.kind,
     required this.remaining,
   });

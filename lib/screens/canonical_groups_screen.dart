@@ -14,7 +14,8 @@ import 'adventure_hub_screen.dart'
     show
         showRestoredAdventureDetails,
         restoredGroupRequirements,
-        restoredGroupRewards;
+        restoredGroupRewards,
+        AdventureRefreshCountdown;
 import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
 import '../services/canonical_groups.dart';
@@ -25,10 +26,15 @@ import 'canonical_adventures_screen.dart' show pickCanonicalAdventureDragon;
 
 class CanonicalGroupsScreen extends StatelessWidget {
   const CanonicalGroupsScreen(
-      {super.key, this.embedded = false, this.section, this.active = true});
+      {super.key,
+      this.embedded = false,
+      this.section,
+      this.active = true,
+      this.refreshRemaining});
   final bool embedded;
   final int? section;
   final bool active;
+  final Duration? refreshRemaining;
   @override
   Widget build(BuildContext context) => embedded
       ? Container(
@@ -42,35 +48,35 @@ class CanonicalGroupsScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(color: const Color(0x88D6F1E8)))
               : null,
-          child: _Groups(embedded: true, section: section, active: active))
+          child: _Groups(
+              embedded: true,
+              section: section,
+              active: active,
+              refreshRemaining: refreshRemaining))
       : const ShopEconomyBoundary(child: _Groups());
 }
 
 class _Groups extends StatefulWidget {
-  const _Groups({this.embedded = false, this.section, this.active = true});
+  const _Groups(
+      {this.embedded = false,
+      this.section,
+      this.active = true,
+      this.refreshRemaining});
   final bool embedded;
   final int? section;
   final bool active;
+  final Duration? refreshRemaining;
   @override
   State<_Groups> createState() => _GroupsState();
 }
 
 class _GroupsState extends State<_Groups> {
-  Timer? _poll;
   String? _membership;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && widget.active) unawaited(_refresh());
-    });
-    _poll = Timer.periodic(const Duration(seconds: 15), (_) {
-      if (mounted &&
-          widget.active &&
-          ModalRoute.of(context)?.isCurrent == true &&
-          context.read<CanonicalGameSession>().canAct) {
-        unawaited(_refresh());
-      }
     });
   }
 
@@ -108,7 +114,6 @@ class _GroupsState extends State<_Groups> {
 
   @override
   void dispose() {
-    _poll?.cancel();
     super.dispose();
   }
 
@@ -138,7 +143,7 @@ class _GroupsState extends State<_Groups> {
                 (widget.section == 3))) {
       return const SizedBox.shrink();
     }
-    return ListView(
+    final list = ListView(
         key: Key(widget.embedded
             ? 'adventure-groups-${widget.section}'
             : 'canonical-groups-list'),
@@ -161,11 +166,10 @@ class _GroupsState extends State<_Groups> {
                           ? s.pick('Group', 'Groep')
                           : s.pick('Group Adventures', 'Groepsavonturen'),
                       style: Theme.of(context).textTheme.titleLarge)),
-              IconButton(
-                  key: const Key('canonical-refresh-groups'),
-                  tooltip: s.pick('Refresh', 'Vernieuwen'),
-                  onPressed: groups.loading ? null : _refresh,
-                  icon: const Icon(Icons.refresh)),
+              if (widget.embedded && widget.refreshRemaining != null)
+                AdventureRefreshCountdown(
+                    kind: AdventureKind.group,
+                    remaining: widget.refreshRemaining!),
             ]),
           if (groups.loading && !widget.embedded)
             const LinearProgressIndicator(),
@@ -183,8 +187,8 @@ class _GroupsState extends State<_Groups> {
               (widget.section == null || widget.section == 0))
             Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(s.pick('No trail is available here right now',
-                    'Er is hier nu geen pad beschikbaar'))),
+                child: Text(s.pick('No trail is available here right now.',
+                    'Hier is nu geen route beschikbaar.'))),
           if (widget.section == null) const CanonicalSocialRewards(),
           for (final lobby in lobbies.where((l) =>
               widget.section == null ||
@@ -196,6 +200,11 @@ class _GroupsState extends State<_Groups> {
                           (widget.section == 3))))
             _lobbyCard(context, lobby),
         ]);
+    if (widget.embedded) return list;
+    return RefreshIndicator(
+        key: const Key('canonical-groups-pull'),
+        onRefresh: _refresh,
+        child: list);
   }
 
   Widget _offerCard(

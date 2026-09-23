@@ -266,6 +266,31 @@ DateTime _nextAmsterdamGroupAdventureAt(DateTime instant) {
   return instant.isUtc ? fallback : fallback.toLocal();
 }
 
+/// The calendar boundary shown by the Adventure refresh badge.
+///
+/// This is shared by the local and server-owned screens so the restored
+/// v0.05.40 countdown never drifts away from the rules that refill offers.
+DateTime? nextAdventureOfferRefreshAt(AdventureKind kind, DateTime instant) {
+  return switch (kind) {
+    AdventureKind.mini =>
+      _adventureRefillBoundary(instant, 15).add(const Duration(minutes: 15)),
+    AdventureKind.short =>
+      _adventureRefillBoundary(instant, 60).add(const Duration(hours: 1)),
+    AdventureKind.long => instant.isUtc
+        ? DateTime.utc(instant.year, instant.month, instant.day + 1)
+        : DateTime(instant.year, instant.month, instant.day + 1),
+    AdventureKind.group => _nextAmsterdamGroupAdventureAt(instant),
+    AdventureKind.special => null,
+  };
+}
+
+Duration? adventureOfferRefreshRemaining(AdventureKind kind, DateTime instant) {
+  final refreshAt = nextAdventureOfferRefreshAt(kind, instant);
+  if (refreshAt == null) return null;
+  final remaining = refreshAt.difference(instant);
+  return remaining.isNegative ? Duration.zero : remaining;
+}
+
 extension DragonHavenSystems on HouseholdProvider {
   static const int maxDragonsPerTowerFloor = towerFloorDragonCapacity;
 
@@ -386,29 +411,14 @@ extension DragonHavenSystems on HouseholdProvider {
     AdventureKind kind, {
     DateTime? from,
   }) {
-    final now = from ?? _clock();
-    return switch (kind) {
-      AdventureKind.mini =>
-        _adventureRefillBoundary(now, 15).add(const Duration(minutes: 15)),
-      AdventureKind.short =>
-        _adventureRefillBoundary(now, 60).add(const Duration(hours: 1)),
-      AdventureKind.long => now.isUtc
-          ? DateTime.utc(now.year, now.month, now.day + 1)
-          : DateTime(now.year, now.month, now.day + 1),
-      AdventureKind.group => _nextAmsterdamGroupAdventureAt(now),
-      AdventureKind.special => null,
-    };
+    return nextAdventureOfferRefreshAt(kind, from ?? _clock());
   }
 
   Duration? adventureRefreshRemaining(
     AdventureKind kind, {
     DateTime? from,
   }) {
-    final now = from ?? _clock();
-    final refreshAt = nextAdventureRefreshAt(kind, from: now);
-    if (refreshAt == null) return null;
-    final remaining = refreshAt.difference(now);
-    return remaining.isNegative ? Duration.zero : remaining;
+    return adventureOfferRefreshRemaining(kind, from ?? _clock());
   }
 
   DateTime nextTrialRefreshAt({DateTime? from}) {

@@ -159,7 +159,8 @@ void main() {
       expect(session.snapshot!.dragon(before['id'] as String)!.adventureId,
           'online-group:$lobby');
       expect(find.byKey(Key('canonical-group-$lobby')), findsOneWidget);
-      expect(find.text('No trail is available here right now'), findsOneWidget);
+      expect(
+          find.text('No trail is available here right now.'), findsOneWidget);
       // The old compact lobby opens its participant/actions sheet on tap.
       expect(find.byKey(Key('canonical-leave-group-$lobby')), findsNothing);
       await tap(find.byKey(Key('canonical-group-$lobby')));

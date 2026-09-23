@@ -4,7 +4,9 @@ import 'dart:io';
 
 import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
+import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/services/canonical_game_actions.dart';
+import 'package:dragon_haven/services/canonical_groups.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +16,18 @@ import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
 
 import '../tool/game_domain_probe.dart';
 import 'support/canonical_ui_server.dart';
+
+class _EmptyGroupsSource implements CanonicalGroupsSource {
+  const _EmptyGroupsSource();
+
+  @override
+  Future<List<GroupAdventureLobby>> lobbies(String owner) async => const [];
+
+  @override
+  Future<GroupAdventureStatus> status(String owner) async =>
+      const GroupAdventureStatus(
+          slot: 1, adventureId: 'group_1', alreadyCompleted: true);
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -86,6 +100,65 @@ void main() {
             .fraction,
         0);
     await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets(
+      'empty Adventure sections keep historical timers and refresh by pull',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 2200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.runAsync(() async {
+      server.state['adventureOptionIds'] = <String, dynamic>{
+        for (final kind in AdventureKind.values) kind.name: <String>[],
+      };
+      server.revision++;
+      await session.synchronize();
+    });
+    final groups = CanonicalGroups(
+        connection: session.connection, source: const _EmptyGroupsSource());
+    addTearDown(groups.dispose);
+    await tester.pumpWidget(MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: session),
+          ChangeNotifierProvider.value(value: groups),
+        ],
+        child: const MaterialApp(
+            home: Scaffold(body: CanonicalAdventuresScreen()))));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byKey(const Key('canonical-refresh-adventures')), findsNothing);
+    expect(find.byKey(const Key('canonical-refresh-groups')), findsNothing);
+    expect(find.text('Refresh to check for adventures.'), findsNothing);
+    expect(
+        find.text('No trail is available here right now.'), findsNWidgets(5));
+    for (final kind in const [
+      AdventureKind.mini,
+      AdventureKind.short,
+      AdventureKind.long,
+      AdventureKind.group,
+    ]) {
+      expect(find.byKey(Key('adventure-refresh-${kind.name}')), findsOneWidget);
+    }
+    expect(find.byKey(const Key('adventure-refresh-special')), findsNothing);
+
+    final list =
+        find.byKey(const PageStorageKey<String>('canonical-adventures-list-0'));
+    final indicator =
+        find.ancestor(of: list, matching: find.byType(RefreshIndicator));
+    expect(indicator, findsOneWidget);
+    for (var i = 0; i < 100 && session.busy; i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump();
+    }
+    final before = server.sent.length;
+    expect(session.busy, isFalse);
+    expect(session.canAct, isTrue);
+    await tester.runAsync(tester.widget<RefreshIndicator>(indicator).onRefresh);
+    await tester.pump();
+    expect(server.sent, hasLength(before + 1));
+    expect(server.sent.last.action, 'refresh');
+    expect(tester.takeException(), isNull);
   });
 
   test('start and reward recover lost replies; no early claim or second grant',

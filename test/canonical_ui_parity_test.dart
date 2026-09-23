@@ -252,11 +252,13 @@ void main() {
     await tester.pump();
     final held = Completer<void>();
     server.hold = held.future;
-    final start = tester
-        .widget<IconButton>(
-            find.byKey(const Key('canonical-refresh-adventures')))
-        .onPressed!;
-    start();
+    final list =
+        find.byKey(const PageStorageKey<String>('canonical-adventures-list-0'));
+    final indicator =
+        find.ancestor(of: list, matching: find.byType(RefreshIndicator));
+    expect(indicator, findsOneWidget);
+    final start = tester.widget<RefreshIndicator>(indicator).onRefresh;
+    unawaited(start());
     await tester.pump();
     expect(find.textContaining('Checking your inventory'), findsNothing);
     expect(find.byType(TabBarView), findsOneWidget);
