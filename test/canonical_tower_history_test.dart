@@ -99,6 +99,8 @@ void main() {
                 child: const Text('Details'))));
     await tester.tap(find.text('Details'));
     await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.getSize(find.byKey(const Key('canonical-dragon-detail-art'))),
+        const Size.square(190));
     expect(find.byKey(const Key('dragon-level-progress')), findsOneWidget);
     expect(find.byKey(const Key('dragon-trial-records')), findsOneWidget);
     expect(find.byType(RestoredNeedBar), findsNothing);

@@ -596,8 +596,15 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                                CanonicalDragonArt(
-                                    dragon: dragon, height: 190, animate: true),
+                                Center(
+                                    child: SizedBox.square(
+                                        key: const Key(
+                                            'canonical-dragon-detail-art'),
+                                        dimension: 190,
+                                        child: CanonicalDragonArt(
+                                            dragon: dragon,
+                                            height: 190,
+                                            animate: true))),
                                 Text(canonicalDragonName(strings, dragon),
                                     textAlign: TextAlign.center,
                                     style: Theme.of(context)
