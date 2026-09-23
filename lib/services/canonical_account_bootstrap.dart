@@ -11,12 +11,26 @@ enum CanonicalBootstrapPhase { checking, signedOut, legacy, server, failed }
 /// A root-owned game instance. Closing it must stop and drain every writer;
 /// hiding its widgets alone is not sufficient for an authority transition.
 class CanonicalGameplayLease<T> {
-  CanonicalGameplayLease(this.value, {required Future<void> Function() close})
-      : _close = close;
+  CanonicalGameplayLease(this.value,
+      {required Future<void> Function() close, void Function()? quiesce})
+      : _close = close,
+        _quiesce = quiesce;
   final T value;
   final Future<void> Function() _close;
+  final void Function()? _quiesce;
+  bool _quiesced = false;
   Future<void>? _closing;
-  Future<void> close() => _closing ??= Future<void>.sync(_close);
+
+  void quiesce() {
+    if (_quiesced) return;
+    _quiesced = true;
+    _quiesce?.call();
+  }
+
+  Future<void> close() {
+    quiesce();
+    return _closing ??= Future<void>.sync(_close);
+  }
 }
 
 /// Resolves account authority before loading any gameplay or legacy save.
@@ -264,23 +278,15 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
     if (_shutdown != null) return _shutdown!;
     _disposed = true;
     _again = false;
-    final stoppingAccounts = _accounts.cancel();
-    final pending = _pending;
-    final activeLease = pending == null ? _lease : null;
-    Future<void>? closingLease;
-    if (activeLease != null) {
-      // Begin retirement before returning from widget disposal. Lease close
-      // synchronously cancels periodic work before its first asynchronous
-      // barrier, so no account timers can outlive a removed application root.
-      _lease = null;
-      closingLease = activeLease.close();
-    }
+    // Stop periodic work synchronously when a widget tree is removed. The
+    // ordered asynchronous close still waits for in-flight authority work and
+    // retires the lease only after its gameplay subtree has unmounted.
+    _lease?.quiesce();
     return _shutdown = (() async {
-      await stoppingAccounts;
-      await pending;
+      await _accounts.cancel();
+      await _pending;
       _handoff?.dispose();
       _handoff = null;
-      await closingLease;
       await _lease?.close();
       _lease = null;
     })();
