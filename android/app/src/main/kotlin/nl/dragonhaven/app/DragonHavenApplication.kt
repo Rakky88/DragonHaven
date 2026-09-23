@@ -17,4 +17,11 @@ class DragonHavenApplication : Application() {
         base.getSharedPreferences("FirebasePerfSharedPrefs", MODE_PRIVATE)
             .edit().putBoolean("isEnabled", enabled).commit()
     }
+
+    override fun onCreate() {
+        super.onCreate()
+        // Firebase can receive and display a notification before MainActivity
+        // exists. Create its channel as soon as this process starts.
+        DragonHavenNotificationChannels.ensureCreated(this)
+    }
 }

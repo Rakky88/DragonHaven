@@ -511,7 +511,8 @@ class MainActivity : FlutterActivity() {
 
     private fun hasNotificationPermission(): Boolean =
         hasRuntimeNotificationPermission() &&
-            NotificationManagerCompat.from(this).areNotificationsEnabled()
+            NotificationManagerCompat.from(this).areNotificationsEnabled() &&
+            DragonHavenNotificationChannels.eventsEnabled(this)
 
     private fun hasExactAlarmPermission(): Boolean =
         DragonHavenAlarmScheduler.exactAlarmAllowed(this)

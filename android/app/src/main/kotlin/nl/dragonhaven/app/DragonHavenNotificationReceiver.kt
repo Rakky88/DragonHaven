@@ -1,7 +1,6 @@
 package nl.dragonhaven.app
 
 import android.Manifest
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -34,8 +33,6 @@ class DragonHavenNotificationReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        private const val EVENT_CHANNEL_ID = "dragonhaven_events"
-        private const val MILESTONE_CHANNEL_ID = "dragonhaven_milestones"
         private const val ADVENTURE_COMPLETE_TAG = "dragonhaven.adventure_complete"
         private const val SOURCE_ID_EXTRA = "dragonhaven.notification_source_id"
         private const val DISMISSED_PREFERENCES = "dragonhaven_dismissed_notifications"
@@ -94,22 +91,11 @@ class DragonHavenNotificationReceiver : BroadcastReceiver() {
                 return
             }
             val milestone = kind == "achievement" || kind == "evolution"
-            val channelId = if (milestone) MILESTONE_CHANNEL_ID else EVENT_CHANNEL_ID
-            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                manager.createNotificationChannel(
-                    NotificationChannel(
-                        channelId,
-                        if (milestone) "Achievements & evolutions" else "DragonHaven events",
-                        if (milestone) NotificationManager.IMPORTANCE_HIGH else NotificationManager.IMPORTANCE_DEFAULT,
-                    ).apply {
-                        description = if (milestone) {
-                            "Unlocked achievements and new dragon evolutions"
-                        } else {
-                            "Egg hatching and completed Adventure reminders"
-                        }
-                    },
-                )
+            DragonHavenNotificationChannels.ensureCreated(context)
+            val channelId = if (milestone) {
+                DragonHavenNotificationChannels.MILESTONES_ID
+            } else {
+                DragonHavenNotificationChannels.EVENTS_ID
             }
             val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
                 ?: Intent(context, MainActivity::class.java)

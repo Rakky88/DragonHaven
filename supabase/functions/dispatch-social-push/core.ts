@@ -59,7 +59,11 @@ export function fcmPayload(job: PushJob) {
       android: {
         priority: "HIGH",
         ttl: "3600s",
-        notification: { tag: notificationTag(job), default_sound: true },
+        notification: {
+          channel_id: "dragonhaven_events",
+          tag: notificationTag(job),
+          default_sound: true,
+        },
       },
     },
   };

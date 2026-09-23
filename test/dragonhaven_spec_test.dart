@@ -330,12 +330,28 @@ void main() {
     final nativeBridge = File(
       'android/app/src/main/kotlin/nl/dragonhaven/app/MainActivity.kt',
     ).readAsStringSync();
+    final application = File(
+      'android/app/src/main/kotlin/nl/dragonhaven/app/DragonHavenApplication.kt',
+    ).readAsStringSync();
+    final channels = File(
+      'android/app/src/main/kotlin/nl/dragonhaven/app/DragonHavenNotificationChannels.kt',
+    ).readAsStringSync();
     expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
     expect(manifest, contains('android.permission.SCHEDULE_EXACT_ALARM'));
     expect(manifest, contains('android.permission.RECEIVE_BOOT_COMPLETED'));
     expect(manifest, contains('android.intent.action.BOOT_COMPLETED'));
     expect(manifest, contains('android.intent.action.MY_PACKAGE_REPLACED'));
     expect(manifest, contains('SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED'));
+    expect(
+      manifest,
+      contains('com.google.firebase.messaging.default_notification_channel_id'),
+    );
+    expect(manifest, contains('android:value="dragonhaven_events"'));
+    expect(application,
+        contains('DragonHavenNotificationChannels.ensureCreated(this)'));
+    expect(channels, contains('const val EVENTS_ID = "dragonhaven_events"'));
+    expect(nativeBridge,
+        contains('DragonHavenNotificationChannels.eventsEnabled(this)'));
     expect(alarmScheduler, contains('setExactAndAllowWhileIdle'));
     expect(alarmScheduler, contains('setAndAllowWhileIdle'));
     expect(alarmScheduler,

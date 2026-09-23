@@ -15,6 +15,7 @@ Deno.test("payload allowlist excludes source record extras and uses a stable not
   const encoded = JSON.stringify(payload);
   assert(!encoded.includes("secret chat") && !encoded.includes("private-person") && !encoded.includes("person@example.org"));
   assert(payload.message.android.notification.tag === `friend-message-${unsafe.notification_id}`);
+  assert(payload.message.android.notification.channel_id === "dragonhaven_events");
   assert(payload.message.data.kind === "friend_message");
   assert(Object.keys(payload.message.data).length === 2);
 });
