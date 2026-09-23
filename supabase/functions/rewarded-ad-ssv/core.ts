@@ -59,6 +59,9 @@ export interface SsvDependencies {
 }
 
 export const setupProbeUserId = "dragonhaven-ssv-setup";
+// AdMob's dashboard uses this signed placeholder instead of the selected
+// production unit when its operator clicks Verify URL.
+export const admobSetupProbeAdUnit = "1234567890";
 
 const responseHeaders = {
   "cache-control": "no-store",
@@ -259,13 +262,8 @@ export async function handleSsv(
     if (!/^[0-9]{10}$/.test(signedAdUnit)) {
       return response(403, "unknown ad unit");
     }
-    const product = deps.products.get(signedAdUnit);
-    if (!product) return response(403, "unknown ad unit");
     const rewardAmount = safeInteger(parsed.get("reward_amount")!);
     const rewardItem = parsed.get("reward_item")!;
-    if (rewardAmount !== product.amount || rewardItem !== product.item) {
-      return response(403, "invalid reward");
-    }
     const customData = parsed.get("custom_data")!;
     const transactionId = parsed.get("transaction_id")!;
     const adNetwork = parsed.get("ad_network")!;
@@ -284,10 +282,25 @@ export async function handleSsv(
       if (userId !== setupProbeUserId || !usesSetupCustomData) {
         return response(403, "invalid setup probe");
       }
+      const configuredProduct = deps.products.get(signedAdUnit);
+      const rewardMatches = signedAdUnit === admobSetupProbeAdUnit
+        ? [...deps.products.values()].some((candidate) =>
+          rewardAmount === candidate.amount && rewardItem === candidate.item
+        )
+        : configuredProduct !== undefined &&
+          rewardAmount === configuredProduct.amount &&
+          rewardItem === configuredProduct.item;
+      if (!rewardMatches) return response(403, "invalid setup probe");
       // AdMob's Verify URL action has no player claim to settle. It reaches
-      // this branch only after Google's signature, product and exact reward
-      // have been verified, and must never call the persistence/reward RPC.
+      // this branch only after Google's signature, reserved identity and an
+      // exact configured reward have been verified. The dashboard's signed
+      // placeholder is never mapped to a claim or persistence/reward RPC.
       return response(200, "setup ok");
+    }
+    const product = deps.products.get(signedAdUnit);
+    if (!product) return response(403, "unknown ad unit");
+    if (rewardAmount !== product.amount || rewardItem !== product.item) {
+      return response(403, "invalid reward");
     }
     const result = await deps.record({
       customData,

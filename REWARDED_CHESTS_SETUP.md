@@ -180,10 +180,11 @@ server-kill-switch als de GitHub-enable-variable tijdens deze installatie uit.
    Herhaal dit voor Free Gems en Free Coins. De gereserveerde user-ID en deze
    vaste custom-data zijn uitsluitend voor Google's ondertekende
    installatiecontrole. De callback controleert daarbij Google's
-   handtekening, ad-unit en beloning, maar roept geen opslag- of rewardfunctie
-   aan. Gebruik deze twee testvelden dus niet als speler-ID of als vaste
-   waarden in de app; gewone DragonHaven-advertenties sturen geen `user_id` en
-   gebruiken per claim andere `custom_data`.
+   handtekening, de door AdMob gebruikte test-unit en de exacte beloning, maar
+   roept geen opslag- of rewardfunctie aan. Gebruik deze twee testvelden dus
+   niet als speler-ID of als vaste waarden in de app; gewone
+   DragonHaven-advertenties sturen geen `user_id` en gebruiken per claim andere
+   `custom_data`.
 7. Voer daarna de volledige serverpreflight uit. Hiervoor moeten de checkout
    aan het juiste Supabase-project gekoppeld en `SUPABASE_ACCESS_TOKEN` gezet
    zijn:

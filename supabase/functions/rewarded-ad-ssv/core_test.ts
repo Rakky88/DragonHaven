@@ -1,4 +1,5 @@
 import {
+  admobSetupProbeAdUnit,
   configuredRewardProducts,
   derEcdsaToP1363,
   handleSsv,
@@ -10,9 +11,9 @@ import {
 } from "./core.ts";
 
 const keyId = 1234567;
-const gemsUnit = "ca-app-pub-1234567890123456/1234567890";
+const gemsUnit = "ca-app-pub-1234567890123456/1234567891";
 const coinsUnit = "ca-app-pub-1234567890123456/0987654321";
-const gemsUnitSuffix = "1234567890";
+const gemsUnitSuffix = "1234567891";
 const coinsUnitSuffix = "0987654321";
 const customData = "a5".repeat(32);
 const setupProbeCustomData = "b7".repeat(32);
@@ -175,7 +176,7 @@ Deno.test("configured products key signed numeric units to canonical IDs", () =>
   for (
     const invalid of [
       [gemsUnit, gemsUnit],
-      [gemsUnit, "ca-app-pub-0000000000000000/1234567890"],
+      [gemsUnit, "ca-app-pub-0000000000000000/1234567891"],
       ["1234567890", coinsUnit],
     ]
   ) {
@@ -249,7 +250,11 @@ Deno.test("the signed AdMob setup probe returns 200 without persistence", async 
   const pairs: Pair[] = [
     ...standardPairs().map(([name, value]): Pair => [
       name,
-      name === "custom_data" ? setupProbeCustomData : value,
+      name === "ad_unit"
+        ? admobSetupProbeAdUnit
+        : name === "custom_data"
+        ? setupProbeCustomData
+        : value,
     ]),
     ["user_id", setupProbeUserId],
   ];
@@ -271,7 +276,7 @@ Deno.test("the signed coins setup probe also returns 200 without persistence", a
     ...standardPairs().map(([name, value]): Pair => [
       name,
       name === "ad_unit"
-        ? coinsUnitSuffix
+        ? admobSetupProbeAdUnit
         : name === "custom_data"
         ? setupProbeCustomData
         : name === "reward_amount"
@@ -335,6 +340,45 @@ Deno.test("setup probes still require an allowlisted product and exact reward", 
     const reply = await handleSsv(await signedRequest(fixture, pairs), deps);
     assert(reply.status === 403);
   }
+  assert(records.length === 0);
+});
+
+Deno.test("the AdMob setup placeholder is never accepted as a regular callback", async () => {
+  const fixture = await signingFixture();
+  const { deps, records } = setup(fixture.publicKey);
+  const pairs = standardPairs().map(([name, value]): Pair => [
+    name,
+    name === "ad_unit" ? admobSetupProbeAdUnit : value,
+  ]);
+
+  const reply = await handleSsv(await signedRequest(fixture, pairs), deps);
+
+  assert(reply.status === 403);
+  assert(await reply.text() === "unknown ad unit");
+  assert(records.length === 0);
+});
+
+Deno.test("the AdMob setup placeholder cannot mix configured rewards", async () => {
+  const fixture = await signingFixture();
+  const { deps, records } = setup(fixture.publicKey);
+  const pairs: Pair[] = [
+    ...standardPairs().map(([name, value]): Pair => [
+      name,
+      name === "ad_unit"
+        ? admobSetupProbeAdUnit
+        : name === "custom_data"
+        ? setupProbeCustomData
+        : name === "reward_amount"
+        ? "150"
+        : value,
+    ]),
+    ["user_id", setupProbeUserId],
+  ];
+
+  const reply = await handleSsv(await signedRequest(fixture, pairs), deps);
+
+  assert(reply.status === 403);
+  assert(await reply.text() === "invalid setup probe");
   assert(records.length === 0);
 });
 
