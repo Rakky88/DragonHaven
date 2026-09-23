@@ -265,7 +265,7 @@ class _ServerShell extends StatefulWidget {
   State<_ServerShell> createState() => _ServerShellState();
 }
 
-enum _Menu { account, language, journal, achievements, tutorial }
+enum _Menu { account, journal, achievements, tutorial }
 
 class _ServerShellState extends State<_ServerShell> {
   int _index = 2;
@@ -454,10 +454,6 @@ class _ServerShellState extends State<_ServerShell> {
           PopupMenuButton<_Menu>(
               key: const Key('haven-menu-button'),
               onSelected: (choice) {
-                if (choice == _Menu.language) {
-                  unawaited(showServerLanguagePicker(context));
-                  return;
-                }
                 if (choice == _Menu.tutorial) {
                   unawaited(_tutorial());
                   return;
@@ -478,14 +474,6 @@ class _ServerShellState extends State<_ServerShell> {
                         child: _RestoredMenuRow(
                             icon: Icons.person_rounded,
                             label: s.tr('account'))),
-                    PopupMenuItem(
-                        value: _Menu.language,
-                        child: _RestoredMenuRow(
-                            icon: Icons.translate_rounded,
-                            label: s.tr('language'),
-                            trailing: (view.profile.preferences['languageCode']
-                                    as String)
-                                .toUpperCase())),
                     PopupMenuItem(
                         value: _Menu.achievements,
                         child: _RestoredMenuRow(

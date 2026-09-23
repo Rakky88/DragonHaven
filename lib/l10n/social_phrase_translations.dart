@@ -1160,13 +1160,13 @@ const socialPhraseTranslations = <String, List<String>>{
     'Diário, conquistas e ajuda',
     'ジャーナル、実績、ヘルプ'
   ],
-  'The three-dot menu also opens Language, Achievements, the Keeper Journal and this Tutorial. The Journal records milestones; secret achievements reveal themselves only when earned.':
+  'Language is managed from Account Info. The three-dot menu also opens Achievements, the Keeper Journal and this Tutorial. The Journal records milestones; secret achievements reveal themselves only when earned.':
       [
-    'Das Drei-Punkte-Menü öffnet außerdem Sprache, Erfolge, das Hüter-Journal und dieses Tutorial. Das Journal zeichnet Meilensteine auf; geheime Erfolge werden erst nach dem Verdienen sichtbar.',
-    'El menú de tres puntos también abre Idioma, Logros, el Diario del Guardián y este Tutorial. El Diario registra hitos; los logros secretos solo se revelan al conseguirlos.',
-    'Le menu à trois points ouvre aussi Langue, Succès, le Journal du Gardien et ce Tutoriel. Le Journal consigne les jalons ; les succès secrets ne se révèlent qu’une fois obtenus.',
-    'Il menu con i tre puntini apre anche Lingua, Obiettivi, il Diario del Custode e questo Tutorial. Il Diario registra i traguardi; gli obiettivi segreti si rivelano solo quando vengono ottenuti.',
-    'O menu de três pontos também abre Idioma, Conquistas, o Diário do Guardião e este Tutorial. O Diário registra marcos; conquistas secretas só aparecem quando são obtidas.',
-    '三点メニューから言語、実績、キーパージャーナル、このチュートリアルを開けます。ジャーナルは節目を記録し、秘密の実績は獲得した時だけ明らかになります。'
+    'Die Sprache verwaltest du in den Kontoinformationen. Das Drei-Punkte-Menü öffnet außerdem Erfolge, das Hüter-Journal und dieses Tutorial. Das Journal zeichnet Meilensteine auf; geheime Erfolge werden erst nach dem Verdienen sichtbar.',
+    'El idioma se gestiona desde Información de la cuenta. El menú de tres puntos también abre Logros, el Diario del Guardián y este Tutorial. El Diario registra hitos; los logros secretos solo se revelan al conseguirlos.',
+    'La langue se gère depuis les Informations du compte. Le menu à trois points ouvre aussi Succès, le Journal du Gardien et ce Tutoriel. Le Journal consigne les jalons ; les succès secrets ne se révèlent qu’une fois obtenus.',
+    'La lingua si gestisce da Informazioni account. Il menu con i tre puntini apre anche Obiettivi, il Diario del Custode e questo Tutorial. Il Diario registra i traguardi; gli obiettivi segreti si rivelano solo quando vengono ottenuti.',
+    'O idioma é gerenciado em Informações da conta. O menu de três pontos também abre Conquistas, o Diário do Guardião e este Tutorial. O Diário registra marcos; conquistas secretas só aparecem quando são obtidas.',
+    '言語はアカウント情報で管理します。三点メニューから実績、キーパージャーナル、このチュートリアルを開けます。ジャーナルは節目を記録し、秘密の実績は獲得した時だけ明らかになります。'
   ],
 };

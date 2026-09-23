@@ -800,8 +800,8 @@ List<_TutorialStep> _steps(AppStrings strings, String dragonName) => [
         strings.pick(
             'Journal, achievements and help', 'Dagboek, achievements en hulp'),
         strings.pick(
-          'The three-dot menu also opens Language, Achievements, the Keeper Journal and this Tutorial. The Journal records milestones; secret achievements reveal themselves only when earned.',
-          'Het menu met drie stippen opent ook Language, Achievements, het Keeperdagboek en deze Tutorial. Het dagboek bewaart mijlpalen; geheime achievements onthullen zich pas wanneer je ze verdient.',
+          'Language is managed from Account Info. The three-dot menu also opens Achievements, the Keeper Journal and this Tutorial. The Journal records milestones; secret achievements reveal themselves only when earned.',
+          'Taal beheer je via Account Info. Het menu met drie stippen opent ook Achievements, het Keeperdagboek en deze Tutorial. Het dagboek bewaart mijlpalen; geheime achievements onthullen zich pas wanneer je ze verdient.',
         ),
         targetKey: const Key('app-overflow-menu'),
         targetPadding: const EdgeInsets.all(4),

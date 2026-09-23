@@ -161,6 +161,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 350));
       expect(find.text('About DragonHaven'), findsNothing);
       expect(find.text('Over DragonHaven'), findsNothing);
+      expect(find.text('Language'), findsNothing);
       await tester.tapAt(const Offset(4, 4));
       await tester.pumpAndSettle();
       for (final page in ['Account Info', 'Keeper Journal', 'Achievements']) {
@@ -173,6 +174,9 @@ void main() {
         await tester.tap(find.textContaining(page).last);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull, reason: 'Server page $page');
+        if (page == 'Account Info') {
+          expect(find.text('Language'), findsOneWidget);
+        }
         Navigator.of(tester.element(find.byType(Scaffold).last)).pop();
         await tester.pumpAndSettle();
       }
