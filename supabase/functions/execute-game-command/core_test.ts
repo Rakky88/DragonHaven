@@ -176,12 +176,47 @@ Deno.test("a command uses authenticated owner and private lease inputs, and retu
   const text = await result.text();
   assert(!text.includes("private") && !text.includes("secret_seed") && !text.includes("lease_token"));
   equal(inputs, [{ state: leased.state, action: body.action, payload: body.payload,
-    secretSeed: hash, now: leased.now, keeperId: owner, verifiedSocialContext: null, verifiedEventProgress: null, verifiedSocialClaims: [], verifiedSocialReservations: null, verifiedTradeReservations: null }]);
+    secretSeed: hash, now: leased.now, keeperId: owner, verifiedSocialContext: null, verifiedEventProgress: null, verifiedSocialClaims: [], verifiedSocialReservations: null, verifiedTradeReservations: null, verifiedRewardedAdClaim: null }]);
   equal(calls.map((call) => call.name), ["begin_revisioned_game_command", "commit_canonical_game_command"]);
   assert(calls.every((call) => call.payload.p_owner_id === owner));
   assert(calls[0].payload.p_expected_revision === 2);
   assert(calls[1].payload.p_lease_token === lease);
   assert(JSON.parse(text).authority_mode === "shadow");
+});
+
+Deno.test("rewarded ads use only the sealed lease context", async () => {
+  const claimId = "55555555-5555-4555-8555-555555555555";
+  const rewardContext = {version: 1, ownerId: owner, action: "claim_rewarded_ad", claimId,
+    currency: "gems", amount: 15, transactionId: "google-transaction-1", fingerprint: hash};
+  const rewardCommand = {...body, action: "claim_rewarded_ad", payload: {claimId}};
+  const rewardResult = {accepted: true, claimId, currency: "gems", amount: 15};
+  const captured: JsonObject[] = [];
+  const {deps} = setup({rpc: async (name) => {
+    if (name === "begin_revisioned_game_command") {
+      return {...leased, rewarded_ad_context: rewardContext};
+    }
+    if (name === "commit_canonical_game_command") return {...saved, result: rewardResult};
+    throw new Error("unexpected RPC");
+  }, evaluate: async (input) => {
+    captured.push(input);
+    return {protocol: 2, state: {private: "saved"}, result: rewardResult};
+  }});
+  const accepted = await handleCommand(request(rewardCommand), deps);
+  assert(accepted.status === 200);
+  assert(captured.length === 1);
+  equal(captured[0].verifiedRewardedAdClaim, rewardContext);
+
+  const missing = setup({rpc: async (name) => {
+    if (name === "begin_revisioned_game_command") return leased;
+    throw new Error("unexpected RPC");
+  }});
+  assert((await handleCommand(request(rewardCommand), missing.deps)).status === 503);
+  equal(missing.inputs, []);
+
+  const forged = setup();
+  assert((await handleCommand(request({...rewardCommand,
+    payload: {claimId, amount: 999999}}), forged.deps)).status === 400);
+  equal(forged.calls, []);
 });
 
 Deno.test("missing, forged and unavailable authentication never reaches a game RPC", async () => {

@@ -39,6 +39,10 @@ import 'services/privacy_notice.dart';
 import 'services/release_service.dart';
 import 'services/platform_actions.dart';
 import 'services/canonical_account_handoff.dart';
+import 'config/rewarded_ads_config.dart';
+import 'services/canonical_rewarded_ads.dart';
+import 'services/rewarded_ads_platform.dart';
+import 'services/rewarded_ads_repository.dart';
 import 'screens/privacy_screen.dart';
 import 'widgets/startup_splash.dart';
 
@@ -378,6 +382,7 @@ class _AccountStartupAppState extends State<AccountStartupApp>
     OnlineAccountProvider? online;
     CanonicalGroups? groups;
     CanonicalPartners? partners;
+    CanonicalRewardedAds? rewardedAds;
     FirebasePushCoordinator? push;
     ServerGameNotifications? notifications;
     try {
@@ -409,13 +414,21 @@ class _AccountStartupAppState extends State<AccountStartupApp>
       if (connection.currentOwner != owner || session.snapshot == null) {
         throw const CanonicalGameException('game_account_changed');
       }
+      rewardedAds = CanonicalRewardedAds(
+        session: session,
+        repository: SupabaseRewardedAdsRepository(widget.auth),
+        platform: GoogleRewardedAdsPlatform(),
+        config: RewardedAdsConfig.fromEnvironment(),
+      );
+      unawaited(rewardedAds.initialize());
       notifications = ServerGameNotifications(session);
       if (widget.firebaseAvailable) {
         push = FirebasePushCoordinator.server(session, online, widget.auth);
       }
       final ownedOnline = online,
           ownedGroups = groups,
-          ownedPartners = partners;
+          ownedPartners = partners,
+          ownedRewardedAds = rewardedAds;
       return CanonicalGameplayLease(
           MultiProvider(providers: [
             ChangeNotifierProvider.value(value: session),
@@ -424,6 +437,7 @@ class _AccountStartupAppState extends State<AccountStartupApp>
             ChangeNotifierProvider.value(value: groups),
             ChangeNotifierProvider.value(value: partners),
             ChangeNotifierProvider.value(value: online),
+            ChangeNotifierProvider.value(value: rewardedAds),
           ], child: ServerDragonHavenApp(auth: widget.auth)), quiesce: () {
         unawaited(ownedOnline.stopLegacyOperations());
       }, close: () async {
@@ -434,6 +448,7 @@ class _AccountStartupAppState extends State<AccountStartupApp>
         ownedOnline.dispose();
         ownedGroups.dispose();
         ownedPartners.dispose();
+        ownedRewardedAds.dispose();
         await session.close();
       });
     } on Object {
@@ -442,6 +457,7 @@ class _AccountStartupAppState extends State<AccountStartupApp>
       online?.dispose();
       groups?.dispose();
       partners?.dispose();
+      rewardedAds?.dispose();
       await session.close();
       rethrow;
     }

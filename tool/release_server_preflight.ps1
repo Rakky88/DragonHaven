@@ -3,7 +3,11 @@ param(
     [string]$SupabaseCli = 'supabase',
     [string]$ExpectedProjectRef = 'tnzathhutuwmohmjfrlo',
     [string]$ExpectedUrl = '',
-    [string]$ExpectedPublishableKey = ''
+    [string]$ExpectedPublishableKey = '',
+    [switch]$RequireRewardedAds,
+    [string]$ExpectedRewardedGemsAdUnitId = '',
+    [string]$ExpectedRewardedCoinsAdUnitId = '',
+    [string]$ExpectedRewardedSsvSourceRevision = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -32,6 +36,37 @@ if ([string]::IsNullOrWhiteSpace($ExpectedProjectRef)) {
 }
 if ((Get-Content -LiteralPath $projectRefPath -Raw).Trim() -ne $ExpectedProjectRef.Trim()) {
     throw 'This checkout is linked to an unexpected Supabase project.'
+}
+
+if ($RequireRewardedAds) {
+    $rewardedUnitPattern = '^ca-app-pub-([0-9]{16})/([0-9]{10})$'
+    $gemsUnitMatch = [regex]::Match(
+        $ExpectedRewardedGemsAdUnitId.Trim(),
+        $rewardedUnitPattern
+    )
+    $coinsUnitMatch = [regex]::Match(
+        $ExpectedRewardedCoinsAdUnitId.Trim(),
+        $rewardedUnitPattern
+    )
+    if (-not $gemsUnitMatch.Success -or -not $coinsUnitMatch.Success) {
+        throw 'Rewarded-ad preflight requires two valid production ad-unit IDs.'
+    }
+    if ($ExpectedRewardedGemsAdUnitId.Trim() -eq
+        $ExpectedRewardedCoinsAdUnitId.Trim()) {
+        throw 'Rewarded-ad preflight requires two distinct ad-unit IDs.'
+    }
+    if ($gemsUnitMatch.Groups[1].Value -ne $coinsUnitMatch.Groups[1].Value) {
+        throw 'Rewarded-ad preflight requires ad units from one publisher account.'
+    }
+    if ($gemsUnitMatch.Groups[1].Value -eq '3940256099942544') {
+        throw 'Rewarded-ad preflight refuses Google test ad-unit IDs.'
+    }
+    if ($ExpectedRewardedSsvSourceRevision -notmatch '^[0-9a-f]{40}$') {
+        throw 'Rewarded-ad preflight requires the exact deployed Git revision.'
+    }
+    if ([string]::IsNullOrWhiteSpace($env:SUPABASE_ACCESS_TOKEN)) {
+        throw 'Rewarded-ad preflight requires SUPABASE_ACCESS_TOKEN.'
+    }
 }
 
 $configText = Get-Content -LiteralPath $configPath -Raw
@@ -129,7 +164,75 @@ try {
     $application = ConvertFrom-DragonHavenApplicationHealth `
         -Content $applicationResponse.Content
 
-    [pscustomobject]@{
+    $rewardedHealthStatus = $null
+    $rewardedHealthDurationMs = $null
+    $rewardedFunctionVersion = $null
+    $rewardedFunctionBundleSha256 = $null
+    if ($RequireRewardedAds) {
+        $managementHeaders = @{
+            Accept = 'application/json'
+            Authorization = "Bearer $($env:SUPABASE_ACCESS_TOKEN)"
+            'User-Agent' = 'DragonHaven-Release-Preflight/1'
+        }
+        try {
+            $functions = @(
+                Invoke-RestMethod `
+                    -Method GET `
+                    -Uri "https://api.supabase.com/v1/projects/$($ExpectedProjectRef.Trim())/functions" `
+                    -Headers $managementHeaders `
+                    -TimeoutSec 30
+            )
+        }
+        catch {
+            throw 'The deployed Supabase Edge Function metadata could not be verified.'
+        }
+        $rewardedFunctions = @(
+            $functions | Where-Object { [string]$_.slug -ceq 'rewarded-ad-ssv' }
+        )
+        if ($rewardedFunctions.Count -ne 1) {
+            throw 'The rewarded-ad-ssv Edge Function is not deployed exactly once.'
+        }
+        $rewardedFunction = $rewardedFunctions[0]
+        $verifyJwtProperty = $rewardedFunction.PSObject.Properties['verify_jwt']
+        if ([string]$rewardedFunction.status -cne 'ACTIVE' -or
+            $null -eq $verifyJwtProperty -or
+            $verifyJwtProperty.Value -isnot [bool] -or
+            [bool]$verifyJwtProperty.Value -ne $false -or
+            [string]::IsNullOrWhiteSpace([string]$rewardedFunction.ezbr_sha256)) {
+            throw 'The deployed rewarded-ad-ssv Edge Function configuration is unsafe.'
+        }
+
+        $rewardedResponse = Invoke-DragonHavenPublicRequest `
+            -BaseUrl $baseUrl `
+            -Path '/functions/v1/rewarded-ad-ssv?health=1' `
+            -PublishableKey $publicKey
+        if ($rewardedResponse.Status -ne 200) {
+            throw 'The deployed rewarded-ad-ssv health contract is unavailable.'
+        }
+        try {
+            $rewarded = $rewardedResponse.Content | ConvertFrom-Json
+        }
+        catch {
+            throw 'The deployed rewarded-ad-ssv health response is not valid JSON.'
+        }
+        if ($null -eq $rewarded -or $rewarded -is [System.Array] -or
+            [string]$rewarded.service -cne 'rewarded-ad-ssv' -or
+            [int]$rewarded.contractVersion -ne 1 -or
+            [string]$rewarded.sourceRevision -cne
+                $ExpectedRewardedSsvSourceRevision -or
+            [string]$rewarded.gemsAdUnitId -cne
+                $ExpectedRewardedGemsAdUnitId.Trim() -or
+            [string]$rewarded.coinsAdUnitId -cne
+                $ExpectedRewardedCoinsAdUnitId.Trim()) {
+            throw 'The deployed rewarded-ad-ssv source or ad-unit configuration differs from this release.'
+        }
+        $rewardedHealthStatus = $rewardedResponse.Status
+        $rewardedHealthDurationMs = $rewardedResponse.DurationMs
+        $rewardedFunctionVersion = [int64]$rewardedFunction.version
+        $rewardedFunctionBundleSha256 = [string]$rewardedFunction.ezbr_sha256
+    }
+
+    $result = [ordered]@{
         ProjectRef = $ExpectedProjectRef.Trim()
         MigrationCount = $localVersions.Count
         DatabaseLintErrors = 0
@@ -145,6 +248,15 @@ try {
         ApplicationServerTimeUtc = $application.ServerTimeUtc
         ApplicationClockSkewMs = $application.ClockSkewMs
     }
+    if ($RequireRewardedAds) {
+        $result['RewardedAdsVerified'] = $true
+        $result['RewardedSsvHealthStatus'] = $rewardedHealthStatus
+        $result['RewardedSsvHealthDurationMs'] = $rewardedHealthDurationMs
+        $result['RewardedSsvSourceRevision'] = $ExpectedRewardedSsvSourceRevision
+        $result['RewardedSsvFunctionVersion'] = $rewardedFunctionVersion
+        $result['RewardedSsvBundleSha256'] = $rewardedFunctionBundleSha256
+    }
+    [pscustomobject]$result
 }
 finally {
     Pop-Location

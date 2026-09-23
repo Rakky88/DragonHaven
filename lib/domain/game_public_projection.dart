@@ -468,6 +468,12 @@ abstract final class GamePublicProjection {
             for (final direction in const ['sent', 'received'])
               direction: _tradeItem(game, event.payload, direction),
           },
+        if (event.type == GamePresentationType.rewardedCurrency)
+          'reward': {
+            'currency': event.payload['currency'],
+            'amount': event.payload['amount'],
+            'claimId': event.payload['claimId'],
+          },
       };
 
   static Map<String, dynamic>? _tradeItem(

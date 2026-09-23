@@ -389,6 +389,11 @@ verify_jwt = false
 [functions.execute-game-command]
 verify_jwt = false
 
+# Public Google callback; the handler verifies Google's ECDSA signature before
+# invoking its service-only database RPC.
+[functions.rewarded-ad-ssv]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

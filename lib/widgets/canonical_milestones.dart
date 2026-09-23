@@ -11,6 +11,7 @@ import '../services/canonical_game_session.dart';
 import '../services/canonical_game_snapshot.dart';
 import 'achievement_reveal.dart';
 import 'trade_reveal.dart';
+import 'rewarded_currency_reveal.dart';
 import 'shop_economy_scope.dart';
 import 'ui_bits.dart';
 
@@ -71,6 +72,8 @@ Future<bool> showCanonicalMilestone(
     case GamePresentationType.trade:
       await showCanonicalTradeReveal(context, event.sent!, event.received!,
           guard: guard);
+    case GamePresentationType.rewardedCurrency:
+      await showRewardedCurrencyReveal(context, event, guard: guard);
   }
   if (!context.mounted || !current() || !session.canRunAutomatic) return false;
   await CanonicalGameActions(session).completePresentation(event.id);

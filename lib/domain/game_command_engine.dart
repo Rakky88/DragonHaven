@@ -14,6 +14,7 @@ import '../models/audio_settings.dart';
 import '../models/notification_settings.dart';
 import '../models/social_reward_claim.dart';
 import '../models/game_command_schema.dart';
+import '../models/game_presentation.dart';
 import '../models/chest.dart';
 import '../models/egg_altar.dart';
 import '../models/house.dart';
@@ -46,6 +47,7 @@ abstract final class GameCommandEngine {
     Map<String, dynamic>? verifiedEventProgress,
     Map<String, dynamic>? verifiedSocialReservations,
     Map<String, dynamic>? verifiedTradeReservations,
+    Map<String, dynamic>? verifiedRewardedAdClaim,
   }) async {
     final keys = GameCommandSchema.keys[action];
     if (keys == null ||
@@ -96,7 +98,8 @@ abstract final class GameCommandEngine {
             'cancel_school',
             'checkpoint_trial',
             'resume_trial',
-            'cancel_trial'
+            'cancel_trial',
+            'claim_rewarded_ad'
           }.contains(action)) {
         throw const GameCommandException('game_attempt_in_progress');
       }
@@ -180,6 +183,61 @@ abstract final class GameCommandEngine {
               game.recordGroupEventCompletion(claim.id, claim.readyAt);
             }
           }
+        case 'claim_rewarded_ad':
+          final claimId = args.text('claimId');
+          final context = verifiedRewardedAdClaim;
+          if (!RegExp(r'^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
+                  .hasMatch(claimId) ||
+              context == null ||
+              context.length != 8 ||
+              context['version'] != 1 ||
+              context['ownerId'] != keeperId ||
+              context['action'] != action ||
+              context['claimId'] != claimId ||
+              context['transactionId'] is! String ||
+              context['fingerprint'] is! String ||
+              !RegExp(r'^[0-9a-f]{64}$')
+                  .hasMatch(context['fingerprint'] as String)) {
+            throw const GameCommandException('rewarded_ad_claim_unavailable');
+          }
+          final currency = context['currency'];
+          final amount = context['amount'];
+          if ((currency != 'gems' && currency != 'coins') ||
+              amount is! int ||
+              (currency == 'gems' ? amount != 15 : amount != 150)) {
+            throw const GameCommandException('rewarded_ad_claim_unavailable');
+          }
+          final current = currency == 'gems' ? game.pet.gems : game.pet.coins;
+          if (current > 9007199254740991 - amount) {
+            throw const GameCommandException('rewarded_ad_claim_unavailable');
+          }
+          if (currency == 'gems') {
+            game.pet.gems += amount;
+          } else {
+            game.pet.coins += amount;
+          }
+          final presentationId = 'rewarded-ad-$claimId';
+          if (game.pendingPresentations.any((p) => p.id == presentationId)) {
+            throw const GameCommandException(
+                'game_state_reconciliation_required');
+          }
+          game.pendingPresentations.add(GamePresentation(
+            id: presentationId,
+            type: GamePresentationType.rewardedCurrency,
+            createdAt: now,
+            sortAt: now,
+            payload: {
+              'currency': currency,
+              'amount': amount,
+              'claimId': claimId,
+            },
+          ));
+          result = {
+            'accepted': true,
+            'claimId': claimId,
+            'currency': currency,
+            'amount': amount,
+          };
         case 'claim_event_reward':
           result = await game.claimEventReward(args.text('eventKey'));
         case 'refresh':

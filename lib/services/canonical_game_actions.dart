@@ -232,6 +232,22 @@ class CanonicalGameActions {
       'claim_pair_reward', {'adventureId': adventureId}, adventureId);
   Future<void> claimPodiumPrize(String prizeId) =>
       _socialClaim('claim_podium_prize', {'prizeId': prizeId}, prizeId);
+
+  Future<void> claimRewardedAd(String claimId) async {
+    final result = await execute('claim_rewarded_ad', {'claimId': claimId});
+    if (result is! Map ||
+        result.length != 4 ||
+        result['accepted'] != true ||
+        result['claimId'] != claimId ||
+        !const {'gems', 'coins'}.contains(result['currency']) ||
+        result['amount'] is! int ||
+        (result['currency'] == 'gems'
+            ? result['amount'] != 15
+            : result['amount'] != 150)) {
+      throw const CanonicalGameException('game_result_invalid');
+    }
+  }
+
   Future<void> _socialClaim(
       String action, Map<String, dynamic> payload, String sourceId) async {
     final result = await execute(action, payload);

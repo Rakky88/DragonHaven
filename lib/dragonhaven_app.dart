@@ -589,6 +589,10 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
               await showAchievementReveal(context, achievement);
             }
             break;
+          case GamePresentationType.rewardedCurrency:
+            // Rewarded-currency presentations exist only in the server-owned
+            // app. A legacy save cannot authorize or display this reward.
+            break;
         }
         await _game.completePresentation(presentation.id);
         if (!mounted) break;

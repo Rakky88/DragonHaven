@@ -205,6 +205,94 @@ void main() {
     }
   });
 
+  test('a sealed rewarded-ad claim grants one fixed persisted reward',
+      () async {
+    const claimId = '33333333-3333-4333-8333-333333333333';
+    final state = _fixture();
+    final original = jsonEncode(state);
+    final result = await GameCommandEngine.execute(
+      state: state,
+      action: 'claim_rewarded_ad',
+      payload: const {'claimId': claimId},
+      secretSeed: _seed,
+      now: _now,
+      keeperId: '11111111-1111-4111-8111-111111111111',
+      verifiedRewardedAdClaim: {
+        'version': 1,
+        'ownerId': '11111111-1111-4111-8111-111111111111',
+        'action': 'claim_rewarded_ad',
+        'claimId': claimId,
+        'currency': 'gems',
+        'amount': 15,
+        'transactionId': 'google-transaction-1',
+        'fingerprint': _seed,
+      },
+    );
+    expect(jsonEncode(state), original);
+    expect(result['result'], {
+      'accepted': true,
+      'claimId': claimId,
+      'currency': 'gems',
+      'amount': 15,
+    });
+    expect(result['state']['pet']['gems'], 315);
+    expect(result['state']['pet']['coins'], 150);
+    expect(
+        (result['state']['pendingPresentations'] as List).where((item) =>
+            item['id'] == 'rewarded-ad-$claimId' &&
+            item['type'] == 'rewardedCurrency' &&
+            item['payload']['amount'] == 15),
+        hasLength(1));
+  });
+
+  test('client reward fields and invalid sealed claims never grant currency',
+      () async {
+    const claimId = '33333333-3333-4333-8333-333333333333';
+    final state = _fixture();
+    await expectLater(
+        _execute(
+            state, 'claim_rewarded_ad', {'claimId': claimId, 'amount': 999999}),
+        throwsA(isA<GameCommandException>()));
+    for (final context in <Map<String, dynamic>?>[
+      null,
+      {
+        'version': 1,
+        'ownerId': '22222222-2222-4222-8222-222222222222',
+        'action': 'claim_rewarded_ad',
+        'claimId': claimId,
+        'currency': 'coins',
+        'amount': 150,
+        'transactionId': 'google-transaction-2',
+        'fingerprint': _seed,
+      },
+      {
+        'version': 1,
+        'ownerId': '11111111-1111-4111-8111-111111111111',
+        'action': 'claim_rewarded_ad',
+        'claimId': claimId,
+        'currency': 'coins',
+        'amount': 150000,
+        'transactionId': 'google-transaction-3',
+        'fingerprint': _seed,
+      },
+    ]) {
+      await expectLater(
+          GameCommandEngine.execute(
+            state: state,
+            action: 'claim_rewarded_ad',
+            payload: const {'claimId': claimId},
+            secretSeed: _seed,
+            now: _now,
+            keeperId: '11111111-1111-4111-8111-111111111111',
+            verifiedRewardedAdClaim: context,
+          ),
+          throwsA(isA<GameCommandException>().having(
+              (error) => error.code, 'code', 'rewarded_ad_claim_unavailable')));
+    }
+    expect(state['pet']['gems'], 300);
+    expect(state['pet']['coins'], 150);
+  });
+
   test('tagging protects a Sinister egg and its return requires confirmation',
       () async {
     final state = _fixture();

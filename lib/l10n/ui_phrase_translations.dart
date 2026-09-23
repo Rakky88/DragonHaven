@@ -19,6 +19,7 @@ import 'economy_equipment_phrase_translations.dart';
 import 'lifecycle_phrase_translations.dart';
 import 'trade_phrase_translations.dart';
 import 'expertise_budget_phrase_translations.dart';
+import 'rewarded_ad_phrase_translations.dart';
 
 /// Offline translations for complete, user-visible UI phrases.
 ///
@@ -43,6 +44,7 @@ String? translatedUiPhrase(String english, String languageCode) {
       summerPhraseTranslations[english] ??
       birthdayPhraseTranslations[english] ??
       eventRefreshPhraseTranslations[english] ??
+      rewardedAdPhraseTranslations[english] ??
       uiPhraseTranslations[english] ??
       trialPhraseTranslations[english] ??
       featureBatchPhraseTranslations[english] ??
@@ -60,6 +62,8 @@ String? translatedUiPhrase(String english, String languageCode) {
   if (restore != null) return restore;
   final eventPoints = translatedEventPointsPhrase(english, index);
   if (eventPoints != null) return eventPoints;
+  final rewardedAd = translatedRewardedAdPhrase(english, index);
+  if (rewardedAd != null) return rewardedAd;
   if (values != null && values.length == 6) return values[index];
   return _translatedDynamicUiPhrase(english, languageCode);
 }

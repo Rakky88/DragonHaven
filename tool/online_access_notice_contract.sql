@@ -12,21 +12,21 @@ begin
   perform set_config('request.jwt.claim.sub',a::text,true);
   if public.get_my_privacy_acknowledgement() then raise exception 'privacy_contract_default'; end if;
   begin
-    perform public.acknowledge_my_privacy_notice('2026-09-20',false);
+    perform public.acknowledge_my_privacy_notice('2026-09-23',false);
     raise exception 'privacy_contract_underage';
   exception when others then if sqlerrm<>'privacy_confirmation_required' then raise; end if; end;
   begin
-    perform public.acknowledge_my_privacy_notice('2026-09-20',null);
+    perform public.acknowledge_my_privacy_notice('2026-09-23',null);
     raise exception 'privacy_contract_missing_age';
   exception when others then if sqlerrm<>'privacy_confirmation_required' then raise; end if; end;
   begin
     perform public.acknowledge_my_privacy_notice('obsolete',true);
     raise exception 'privacy_contract_version';
   exception when others then if sqlerrm<>'privacy_confirmation_required' then raise; end if; end;
-  perform public.acknowledge_my_privacy_notice('2026-09-20',true);
+  perform public.acknowledge_my_privacy_notice('2026-09-23',true);
   if not public.get_my_privacy_acknowledgement() then raise exception 'privacy_contract_ack'; end if;
   select acknowledged_at into accepted_at from private.account_privacy_acknowledgements where user_id=a;
-  perform public.acknowledge_my_privacy_notice('2026-09-20',true);
+  perform public.acknowledge_my_privacy_notice('2026-09-23',true);
   if not exists(select 1 from private.account_privacy_acknowledgements where user_id=a and acknowledged_at=accepted_at)
       then raise exception 'privacy_contract_idempotency'; end if;
   if public.get_my_online_session_status()->>'owner_id'<>a::text then raise exception 'privacy_contract_owner'; end if;

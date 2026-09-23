@@ -100,6 +100,8 @@ Future<JSString> _execute(String input) async {
           data['verifiedEventProgress'] as Map<String, dynamic>?,
       verifiedSocialReservations:
           data['verifiedSocialReservations'] as Map<String, dynamic>?,
+      verifiedRewardedAdClaim:
+          data['verifiedRewardedAdClaim'] as Map<String, dynamic>?,
     ))
         .toJS;
   } on GameCommandException catch (error) {

@@ -100,7 +100,7 @@ def main():
             owner = str(uuid.UUID(created['id']))
             phone = login(email, password)
             rpc(phone, 'ensure_my_online_account', {})
-            rpc(phone, 'acknowledge_my_privacy_notice', {'p_version': '2026-09-20', 'p_age_16_confirmed': True})
+            rpc(phone, 'acknowledge_my_privacy_notice', {'p_version': '2026-09-23', 'p_age_16_confirmed': True})
             if kind == 'legacy':
                 fixture = json.loads((ROOT / 'staging/game-fixture.json').read_text())['state']
                 fixture['onboardingComplete'] = True

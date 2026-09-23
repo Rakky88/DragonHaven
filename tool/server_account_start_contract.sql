@@ -14,7 +14,7 @@ begin
   perform set_config('request.jwt.claim.role','authenticated',true);
   perform set_config('request.jwt.claim.sub',a::text,true);
   perform public.ensure_my_online_account();
-  perform public.acknowledge_my_privacy_notice('2026-09-20',true);
+  perform public.acknowledge_my_privacy_notice('2026-09-23',true);
   perform set_config('request.jwt.claim.sub',b::text,true);
   perform public.ensure_my_online_account();
   update private.game_engine_runtime set migration_enabled=true,ruleset_sha256=rules,minimum_client_build=10091 where singleton;
@@ -44,7 +44,7 @@ begin
     raise exception 'start_contract_conflict';
   exception when others then if sqlerrm<>'game_idempotency_conflict' then raise; end if; end;
   perform set_config('request.jwt.claim.sub',b::text,true);
-  perform public.acknowledge_my_privacy_notice('2026-09-20',true);
+  perform public.acknowledge_my_privacy_notice('2026-09-23',true);
   update public.player_wallets set coins=26 where user_id=b;
   begin
     perform public.begin_server_account_initialization(b,10091,rules);

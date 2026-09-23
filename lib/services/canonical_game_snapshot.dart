@@ -1237,6 +1237,18 @@ class CanonicalPresentationView {
       CanonicalTradeItemView._parse(items['sent']);
       CanonicalTradeItemView._parse(items['received']);
     }
+    if (type == GamePresentationType.rewardedCurrency) {
+      final reward = _map(_data['reward']);
+      if (!_keys(reward, const ['currency', 'amount', 'claimId']) ||
+          !const {'gems', 'coins'}.contains(reward['currency']) ||
+          reward['amount'] is! int ||
+          (reward['currency'] == 'gems'
+              ? reward['amount'] != 15
+              : reward['amount'] != 150) ||
+          !_text(reward['claimId'])) {
+        throw const CanonicalGameException('game_snapshot_invalid');
+      }
+    }
   }
   CanonicalTradeItemView? get sent => type == GamePresentationType.trade
       ? CanonicalTradeItemView._parse(_map(_data['trade'])['sent'])
@@ -1253,6 +1265,12 @@ class CanonicalPresentationView {
   String? get dragonId => _data['dragonId'] as String?;
   String? get achievementId => _data['achievementId'] as String?;
   String? get previousStageKey => _data['previousStageKey'] as String?;
+  String? get rewardCurrency => type == GamePresentationType.rewardedCurrency
+      ? _map(_data['reward'])['currency'] as String
+      : null;
+  int? get rewardAmount => type == GamePresentationType.rewardedCurrency
+      ? _map(_data['reward'])['amount'] as int
+      : null;
 }
 
 class CanonicalTradeItemView {

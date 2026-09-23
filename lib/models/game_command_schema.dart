@@ -25,6 +25,7 @@ abstract final class GameCommandSchema {
     'claim_group_reward': {'lobbyId'},
     'claim_pair_reward': {'adventureId'},
     'claim_podium_prize': {'prizeId'},
+    'claim_rewarded_ad': {'claimId'},
     'start_trial': {'offerId', 'dragonId'},
     'checkpoint_trial': {'attemptId', 'inputs', 'elapsedMs', 'finish'},
     'cancel_trial': {'attemptId'},

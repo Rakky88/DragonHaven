@@ -40,6 +40,7 @@ const commandKeys: Record<string, readonly string[]> = {
   remove_group_adventure_member: ["lobbyId", "memberId"],
   start_trial: ["offerId", "dragonId"],
   claim_group_reward: ["lobbyId"], claim_pair_reward: ["adventureId"], claim_podium_prize: ["prizeId"],
+  claim_rewarded_ad: ["claimId"],
   checkpoint_trial: ["attemptId", "inputs", "elapsedMs", "finish"],
   cancel_trial: ["attemptId"],
   resume_trial: ["attemptId"],
@@ -75,6 +76,7 @@ const commandKeys: Record<string, readonly string[]> = {
 
 export const domainErrors = new Set([
   "game_action_unavailable", "game_social_claim_unavailable", "game_social_state_changed",
+  "rewarded_ad_claim_unavailable", "rewarded_ad_state_changed",
   "game_attempt_unavailable", "game_attempt_time_invalid",
   "game_attempt_state_changed", "game_attempt_in_progress",
   "game_attempt_input_limit", "game_attempt_incomplete",
@@ -268,6 +270,20 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
         !object(counterpart.social_context) || counterpart.social_context.ownerId !== counterpart.owner_id ||
         counterpart.social_context.sourceId !== command.payload.tradeId) throw new Error("invalid_counterparty_lease");
     } else if (counterpart !== undefined && counterpart !== null) throw new Error("unexpected_counterparty_lease");
+    const rewardedAdClaim = leased.rewarded_ad_context;
+    if (command.action === "claim_rewarded_ad") {
+      if (!object(rewardedAdClaim) ||
+        !exactKeys(rewardedAdClaim, ["version", "ownerId", "action", "claimId", "currency", "amount", "transactionId", "fingerprint"]) ||
+        rewardedAdClaim.version !== 1 || rewardedAdClaim.ownerId !== owner ||
+        rewardedAdClaim.action !== command.action || rewardedAdClaim.claimId !== command.payload.claimId ||
+        (rewardedAdClaim.currency !== "gems" && rewardedAdClaim.currency !== "coins") ||
+        (rewardedAdClaim.currency === "gems" ? rewardedAdClaim.amount !== 15 : rewardedAdClaim.amount !== 150) ||
+        typeof rewardedAdClaim.transactionId !== "string" || rewardedAdClaim.transactionId.length < 1 ||
+        rewardedAdClaim.transactionId.length > 256 || typeof rewardedAdClaim.fingerprint !== "string" ||
+        !hash.test(rewardedAdClaim.fingerprint)) throw new Error("invalid_rewarded_ad_context");
+    } else if (rewardedAdClaim !== undefined && rewardedAdClaim !== null) {
+      throw new Error("unexpected_rewarded_ad_context");
+    }
     // These inputs come exclusively from Auth and the private database lease.
     const evaluated = await deps.evaluate({ state: leased.state, action: command.action,
       payload: command.payload, secretSeed: leased.secret_seed, now: leased.now, keeperId: owner,
@@ -275,7 +291,8 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
       verifiedEventProgress: leased.event_progress ?? null,
       verifiedSocialClaims: leased.social_claims ?? [],
       verifiedSocialReservations: leased.social_reservations ?? null,
-      verifiedTradeReservations: leased.trade_reservations ?? null });
+      verifiedTradeReservations: leased.trade_reservations ?? null,
+      verifiedRewardedAdClaim: rewardedAdClaim ?? null });
     if (!object(evaluated)) throw new Error("invalid_evaluation");
     if (typeof evaluated.error === "string" && domainErrors.has(evaluated.error)) {
       const recorded = await deps.rpc("fail_canonical_game_command", {
@@ -314,7 +331,8 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
     } catch (failure) {
       // This exact SQL refusal rolls the entire commit back. Unlike a timeout,
       // it proves no reward was granted; fence the now-obsolete social claim.
-      if (!(failure instanceof RpcFailure) || failure.code !== "game_social_state_changed") throw failure;
+      if (!(failure instanceof RpcFailure) ||
+        (failure.code !== "game_social_state_changed" && failure.code !== "rewarded_ad_state_changed")) throw failure;
       const recorded = await deps.rpc("fail_canonical_game_command", {
         p_owner_id: owner, p_request_id: command.requestId, p_lease_token: leased.lease_token,
         p_failure_code: failure.code,

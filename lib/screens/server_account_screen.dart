@@ -10,6 +10,7 @@ import '../l10n/app_strings.dart';
 import '../models/music_track.dart';
 import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
+import '../services/canonical_rewarded_ads.dart';
 import '../widgets/shop_economy_scope.dart';
 import 'canonical_profile_screen.dart';
 import 'account_screen.dart' show deleteOnlineAccount;
@@ -28,6 +29,7 @@ class ServerAccountScreen extends StatelessWidget {
     final view = session.snapshot!;
     final s = AppStrings.of(context);
     final p = view.profile.preferences;
+    final rewardedAds = context.watch<CanonicalRewardedAds?>();
     Future<void> change(Map<String, dynamic> changes) => runShopAction(
         context, () => CanonicalGameActions(session).setPreferences(changes));
     return Scaffold(
@@ -152,6 +154,17 @@ class ServerAccountScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute<void>(
                     builder: (_) => const PrivacyScreen()))),
+        if (rewardedAds?.privacyOptionsRequired == true)
+          ListTile(
+            key: const Key('rewarded-ad-privacy-options'),
+            leading: const Icon(Icons.ads_click_rounded),
+            title: Text(s.pick(
+                'Ad privacy choices', 'Privacykeuzes voor advertenties')),
+            subtitle: Text(s.pick('Review or change your advertising consent.',
+                'Bekijk of wijzig je toestemming voor advertenties.')),
+            onTap: () =>
+                runShopAction(context, () => rewardedAds!.showPrivacyOptions()),
+          ),
         OutlinedButton.icon(
             icon: const Icon(Icons.logout),
             label: Text(s.pick('Sign out', 'Uitloggen')),

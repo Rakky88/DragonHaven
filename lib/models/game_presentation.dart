@@ -1,6 +1,12 @@
 import '../utils/json_utils.dart';
 
-enum GamePresentationType { hatch, evolution, trade, achievement }
+enum GamePresentationType {
+  hatch,
+  evolution,
+  rewardedCurrency,
+  trade,
+  achievement
+}
 
 /// A persisted cinematic milestone waiting to be shown to the player.
 ///
@@ -31,8 +37,9 @@ class GamePresentation {
   int get priority => switch (type) {
         GamePresentationType.hatch => 0,
         GamePresentationType.evolution => 1,
-        GamePresentationType.trade => 2,
-        GamePresentationType.achievement => 3,
+        GamePresentationType.rewardedCurrency => 2,
+        GamePresentationType.trade => 3,
+        GamePresentationType.achievement => 4,
       };
 
   Map<String, dynamic> toJson() => {

@@ -44,6 +44,62 @@ if (firebaseBuildEnabled) {
     apply(plugin = "com.google.firebase.firebase-perf")
 }
 
+val rewardedAdsMode = havenBuildDefines["DRAGONHAVEN_REWARDED_ADS_MODE"] ?: "disabled"
+val dragonHavenEnvironment = havenBuildDefines["DRAGONHAVEN_ENVIRONMENT"]?.trim()
+val requestedGradleTasks = gradle.startParameter.taskNames.map { taskName ->
+    taskName.substringAfterLast(':').lowercase()
+}
+val requestsReleaseBuild = requestedGradleTasks.any { taskName ->
+    taskName.contains("release")
+}
+val requestsNonReleaseBuild = requestedGradleTasks.any { taskName ->
+    taskName.contains("debug") || taskName.contains("profile")
+}
+val rewardedAdsTestAppId = "ca-app-pub-3940256099942544~3347511713"
+val rewardedAdsTestUnitId = "ca-app-pub-3940256099942544/5224354917"
+val admobAppId = havenBuildDefines["DRAGONHAVEN_ADMOB_ANDROID_APP_ID"] ?: rewardedAdsTestAppId
+val admobGemsUnitId = havenBuildDefines["DRAGONHAVEN_ADMOB_REWARDED_GEMS_ID"] ?: rewardedAdsTestUnitId
+val admobCoinsUnitId = havenBuildDefines["DRAGONHAVEN_ADMOB_REWARDED_COINS_ID"] ?: rewardedAdsTestUnitId
+val admobAppIdPattern = Regex("^ca-app-pub-[0-9]{16}~[0-9]{10}$")
+val admobUnitIdPattern = Regex("^ca-app-pub-[0-9]{16}/[0-9]{10}$")
+require(rewardedAdsMode in setOf("disabled", "test", "production")) {
+    "DRAGONHAVEN_REWARDED_ADS_MODE must be disabled, test or production."
+}
+if (rewardedAdsMode == "test") {
+    require(!dragonHavenEnvironment.isNullOrBlank() && dragonHavenEnvironment != "production") {
+        "Google test ads require an explicit non-production DRAGONHAVEN_ENVIRONMENT."
+    }
+    require(requestsNonReleaseBuild && !requestsReleaseBuild) {
+        "Google test ads are restricted to explicit debug or profile builds."
+    }
+    require(admobAppId == rewardedAdsTestAppId &&
+        admobGemsUnitId == rewardedAdsTestUnitId && admobCoinsUnitId == rewardedAdsTestUnitId) {
+        "Test builds must use Google's official sample ad identifiers."
+    }
+}
+if (rewardedAdsMode == "production") {
+    require(dragonHavenEnvironment == "production") {
+        "Production ad units are restricted to the production environment."
+    }
+    require(requestsReleaseBuild && !requestsNonReleaseBuild) {
+        "Production rewarded ads are restricted to explicit release builds."
+    }
+    require(admobAppIdPattern.matches(admobAppId) && admobAppId != rewardedAdsTestAppId) {
+        "A real DragonHaven AdMob Android app ID is required."
+    }
+    require(admobUnitIdPattern.matches(admobGemsUnitId) && admobGemsUnitId != rewardedAdsTestUnitId &&
+        admobUnitIdPattern.matches(admobCoinsUnitId) && admobCoinsUnitId != rewardedAdsTestUnitId &&
+        admobGemsUnitId != admobCoinsUnitId) {
+        "Two distinct real rewarded ad-unit IDs are required."
+    }
+    val appPublisher = admobAppId.substringAfter("ca-app-pub-").substringBefore('~')
+    val gemsPublisher = admobGemsUnitId.substringAfter("ca-app-pub-").substringBefore('/')
+    val coinsPublisher = admobCoinsUnitId.substringAfter("ca-app-pub-").substringBefore('/')
+    require(appPublisher == gemsPublisher && appPublisher == coinsPublisher) {
+        "The AdMob app ID and both rewarded ad-unit IDs must share one publisher account."
+    }
+}
+
 val keystorePropertiesFile = rootProject.file("key.properties")
 val keystoreProperties = Properties()
 val hasReleaseSigning = keystorePropertiesFile.exists()
@@ -55,7 +111,7 @@ if (hasReleaseSigning) {
 
 extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
     namespace = "nl.dragonhaven.app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = maxOf(flutter.compileSdkVersion, 36)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -82,10 +138,11 @@ extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
 
     defaultConfig {
         applicationId = "nl.dragonhaven.app"
-        minSdk = flutter.minSdkVersion
+        minSdk = maxOf(flutter.minSdkVersion, 24)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["dragonhavenAdmobAppId"] = admobAppId
     }
 
     signingConfigs {

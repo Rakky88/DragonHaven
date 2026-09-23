@@ -422,7 +422,7 @@ void main() {
       }
       if (request.url.path.endsWith('acknowledge_my_privacy_notice')) {
         expect(jsonDecode(request.body),
-            {'p_version': '2026-09-20', 'p_age_16_confirmed': true});
+            {'p_version': '2026-09-23', 'p_age_16_confirmed': true});
         acknowledged.add(auth.auth.currentUser!.id);
         return http.Response('true', 200,
             request: request, headers: {'content-type': 'application/json'});

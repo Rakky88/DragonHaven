@@ -30,6 +30,7 @@ import 'screens/server_account_screen.dart';
 import 'screens/shop_hub_screen.dart';
 import 'services/audio_service.dart';
 import 'services/canonical_game_actions.dart';
+import 'services/canonical_rewarded_ads.dart';
 import 'services/canonical_groups.dart';
 import 'services/canonical_hatch_scheduler.dart';
 import 'services/canonical_game_session.dart';
@@ -164,6 +165,7 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
     try {
       await session.synchronize();
       if (mounted) {
+        await context.read<CanonicalRewardedAds?>()?.resumed();
         await _advance();
         _scheduleRefresh();
       }

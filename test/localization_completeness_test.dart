@@ -102,6 +102,9 @@ void main() {
       'You need 25 more coins.',
       'Your sanctuary reaches level 12 before this room can be built.',
       '7 / 12 roaming · maximum 3 per room',
+      'Watch an ad 2/3',
+      'Watch an ad to receive 15 gems. Up to 3 per UTC day in this shop.',
+      'Watch an ad to receive 150 coins. Up to 3 per UTC day in this shop.',
     ];
     for (final language in translatedLanguages) {
       for (final sample in samples) {

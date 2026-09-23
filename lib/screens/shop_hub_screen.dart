@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/account_title.dart';
@@ -9,6 +12,7 @@ import '../models/music_track.dart';
 import '../models/profile_portrait.dart';
 import '../models/shop_item.dart';
 import '../models/supporter_pack.dart';
+import '../models/rewarded_ad.dart';
 import '../providers/household_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_icon_sprite.dart';
@@ -17,9 +21,10 @@ import '../widgets/furniture_art.dart';
 import '../widgets/profile_portrait_sprite.dart';
 import '../widgets/ui_bits.dart';
 import '../widgets/shop_economy_scope.dart';
+import '../services/canonical_rewarded_ads.dart';
 import 'shop_screen.dart';
 
-class ShopHubScreen extends StatelessWidget {
+class ShopHubScreen extends StatefulWidget {
   const ShopHubScreen({
     super.key,
     this.initialCurrencyTab = 0,
@@ -30,12 +35,27 @@ class ShopHubScreen extends StatelessWidget {
   final int initialCategoryTab;
 
   @override
+  State<ShopHubScreen> createState() => _ShopHubScreenState();
+}
+
+class _ShopHubScreenState extends State<ShopHubScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final refresh = context.read<CanonicalRewardedAds?>()?.shopOpened();
+      if (refresh != null) unawaited(refresh);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     return ShopEconomyBoundary(
         child: DefaultTabController(
       length: 3,
-      initialIndex: initialCurrencyTab,
+      initialIndex: widget.initialCurrencyTab,
       child: Column(
         children: [
           TabBar(
@@ -69,11 +89,11 @@ class ShopHubScreen extends StatelessWidget {
               children: [
                 _CurrencyShop(
                   currency: ItemCurrency.coins,
-                  initialCategoryTab: initialCategoryTab,
+                  initialCategoryTab: widget.initialCategoryTab,
                 ),
                 _CurrencyShop(
                   currency: ItemCurrency.gems,
-                  initialCategoryTab: initialCategoryTab,
+                  initialCategoryTab: widget.initialCategoryTab,
                 ),
                 const _PacksShop(),
               ],
@@ -1621,7 +1641,6 @@ class _CurrencyPackArt extends StatelessWidget {
   }
 }
 
-/// Unavailable until the production ad account and server-verified rewards exist.
 class _RewardedChestPreview extends StatelessWidget {
   const _RewardedChestPreview({required this.currency});
   final ItemCurrency currency;
@@ -1629,6 +1648,37 @@ class _RewardedChestPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
     final gems = currency == ItemCurrency.gems;
+    final rewardCurrency =
+        gems ? RewardedAdCurrency.gems : RewardedAdCurrency.coins;
+    final ads = context.watch<CanonicalRewardedAds?>();
+    final status = ads?.status;
+    final offer = status?.offers[rewardCurrency];
+    final reward = offer?.reward ?? rewardCurrency.fallbackReward;
+    final remaining = offer?.remaining ?? 3;
+    final limit = status?.dailyLimit ?? 3;
+    final pending = offer?.activeClaim != null;
+    final busy = ads?.busy(rewardCurrency) ?? false;
+    final ready = status?.enabled == true &&
+        ads?.canRequestAds == true &&
+        remaining > 0 &&
+        !pending &&
+        !busy;
+    final buttonText = busy
+        ? s.pick('Verifying reward…', 'Beloning controleren…')
+        : pending
+            ? s.pick('Reward pending', 'Beloning in behandeling')
+            : ads?.initializing == true
+                ? s.pick('Preparing ads…', 'Advertenties voorbereiden…')
+                : status?.enabled == true && remaining == 0
+                    ? s.pick('Daily limit reached', 'Daglimiet bereikt')
+                    : status?.enabled == true && ads?.canRequestAds == true
+                        ? s.pick('Watch an ad $remaining/$limit',
+                            'Bekijk een advertentie $remaining/$limit')
+                        : status?.enabled != true
+                            ? s.pick(
+                                'Watch an ad 3/3', 'Bekijk een advertentie 3/3')
+                            : s.pick(
+                                'Not available yet', 'Nog niet beschikbaar');
     return Card(
         key: Key('rewarded-chest-${currency.name}'),
         child: Padding(
@@ -1645,25 +1695,64 @@ class _RewardedChestPreview extends StatelessWidget {
                 GameIconSprite(gems ? GameIconKind.gem : GameIconKind.coin,
                     size: 28),
                 const SizedBox(width: 6),
-                Text(gems ? '15' : '150',
-                    style: Theme.of(context).textTheme.titleLarge),
+                Text('$reward', style: Theme.of(context).textTheme.titleLarge),
               ]),
               const SizedBox(height: 8),
               Text(
-                  gems
-                      ? s.pick(
-                          'Watch an ad to receive 15 gems. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.',
-                          'Bekijk een advertentie voor 15 edelstenen. Maximaal 3 per dag in deze shop. Reclame wordt actief zodra de winkelconfiguratie klaar is.')
-                      : s.pick(
-                          'Watch an ad to receive 150 coins. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.',
-                          'Bekijk een advertentie voor 150 munten. Maximaal 3 per dag in deze shop. Reclame wordt actief zodra de winkelconfiguratie klaar is.'),
+                  status?.enabled == true
+                      ? gems
+                          ? s.pick(
+                              'Watch an ad to receive $reward gems. Up to $limit per UTC day in this shop.',
+                              'Bekijk een advertentie voor $reward edelstenen. Maximaal $limit per UTC-dag in deze shop.')
+                          : s.pick(
+                              'Watch an ad to receive $reward coins. Up to $limit per UTC day in this shop.',
+                              'Bekijk een advertentie voor $reward munten. Maximaal $limit per UTC-dag in deze shop.')
+                      : gems
+                          ? s.pick(
+                              'Watch an ad to receive 15 gems. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.',
+                              'Bekijk een advertentie voor 15 edelstenen. Maximaal 3 per dag in deze shop. Reclame wordt actief zodra de winkelconfiguratie klaar is.')
+                          : s.pick(
+                              'Watch an ad to receive 150 coins. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.',
+                              'Bekijk een advertentie voor 150 munten. Maximaal 3 per dag in deze shop. Reclame wordt actief zodra de winkelconfiguratie klaar is.'),
                   textAlign: TextAlign.center),
               const SizedBox(height: 12),
               FilledButton.icon(
-                  onPressed: null,
+                  onPressed: ready
+                      ? () => _watch(context, ads!, rewardCurrency)
+                      : null,
                   icon: const Icon(Icons.ondemand_video_rounded),
-                  label: Text(
-                      s.pick('Watch an ad 3/3', 'Bekijk een advertentie 3/3'))),
+                  label: Text(buttonText)),
             ])));
+  }
+
+  Future<void> _watch(BuildContext context, CanonicalRewardedAds ads,
+      RewardedAdCurrency currency) async {
+    final s = AppStrings.of(context);
+    try {
+      final outcome = await ads.watch(currency);
+      if (!context.mounted) return;
+      switch (outcome) {
+        case RewardedAdWatchOutcome.rewarded:
+          // The persisted canonical presentation owns the reward reveal.
+          break;
+        case RewardedAdWatchOutcome.closedEarly:
+          showAppSnackBar(
+              context,
+              s.pick('The ad was closed before a reward was earned.',
+                  'De advertentie werd gesloten voordat een beloning was verdiend.'));
+        case RewardedAdWatchOutcome.pendingVerification:
+          showAppSnackBar(
+              context,
+              s.pick(
+                  'Your reward is still being verified. It will appear automatically.',
+                  'Je beloning wordt nog gecontroleerd en verschijnt automatisch.'));
+      }
+    } on Object {
+      if (!context.mounted) return;
+      showAppSnackBar(
+          context,
+          s.pick('The ad could not be completed. Please try again later.',
+              'De advertentie kon niet worden afgerond. Probeer het later opnieuw.'));
+    }
   }
 }
