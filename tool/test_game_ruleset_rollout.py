@@ -11,12 +11,19 @@ from tool.game_ruleset_rollout import (
     _local_versions,
     _ruleset_from,
     _safe_runtime,
+    _semantic_version,
     _sql,
     Rollout,
 )
 
 
 class GameRulesetRolloutTest(unittest.TestCase):
+    def test_release_versions_compare_numerically_with_display_padding(self):
+        self.assertEqual(_semantic_version("0.6.9"), (0, 6, 9))
+        self.assertEqual(_semantic_version("0.06.09"), (0, 6, 9))
+        self.assertIsNone(_semantic_version("v0.06.09"))
+        self.assertIsNone(_semantic_version("0.6"))
+
     def test_extracts_final_cli_json(self):
         value = _json_from_output('notice\n{"migrations":[{"remote":"1"}]}\n')
         self.assertEqual(value, {"migrations": [{"remote": "1"}]})

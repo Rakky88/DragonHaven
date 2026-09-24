@@ -32,6 +32,7 @@ FUNCTION = "execute-game-command"
 HASH = re.compile(r"^[0-9a-f]{64}$")
 BUILD = re.compile(r"^[1-9][0-9]{0,9}$")
 TAG = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
+SEMANTIC_VERSION = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 RUNTIME_FIELDS = (
     "enabled",
     "migration_enabled",
@@ -45,6 +46,13 @@ RUNTIME_FIELDS = (
 
 class RolloutError(RuntimeError):
     """Sanitized operator-facing failure."""
+
+
+def _semantic_version(value: str) -> tuple[int, int, int] | None:
+    if SEMANTIC_VERSION.fullmatch(value) is None:
+        return None
+    major, minor, patch = value.split(".")
+    return int(major), int(minor), int(patch)
 
 
 def _json_from_output(output: str) -> object:
@@ -411,7 +419,9 @@ class Rollout:
             raise RolloutError("release_apk_sha256_required")
         pubspec = (self.root / "pubspec.yaml").read_text("utf-8")
         match = re.search(r"^version:\s*([^+\s]+)\+([0-9]+)\s*$", pubspec, re.MULTILINE)
-        if match is None or "v" + match.group(1) != self.args.release_tag:
+        source_version = None if match is None else _semantic_version(match.group(1))
+        release_version = _semantic_version((self.args.release_tag or "")[1:])
+        if source_version is None or source_version != release_version:
             raise RolloutError("release_source_version_mismatch")
         if int(match.group(2)) != self.args.minimum_client_build:
             raise RolloutError("release_source_build_mismatch")
