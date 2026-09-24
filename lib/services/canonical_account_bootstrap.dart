@@ -67,9 +67,12 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
   final Future<CanonicalAccountStatus> Function(String owner) readStatus;
   final Future<CanonicalAccountStatus> Function(String owner)? checkConnection;
   Future<void>? _heartbeat;
+  int _serverHeartbeatTransportFailures = 0;
 
-  /// Polls a tiny authenticated status, never an inventory snapshot. Failure
-  /// retires the entire game and its writers before a reconnect can open it.
+  /// Polls a tiny authenticated status, never an inventory snapshot. Legacy
+  /// authority remains fail-closed. A live server root tolerates two
+  /// consecutive transport failures because its own commands still retain
+  /// server authority; the third failure retires it through [synchronize].
   Future<void> verifyConnection() {
     if (_disposed ||
         !_foreground ||
@@ -96,6 +99,7 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
         final status =
             await checkConnection!(owner).timeout(const Duration(seconds: 5));
         if (!current()) return;
+        _serverHeartbeatTransportFailures = 0;
         if (status.ownerId != owner ||
             (status.phase == 'active') !=
                 (phase == CanonicalBootstrapPhase.server) ||
@@ -103,8 +107,15 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
                 phase == CanonicalBootstrapPhase.legacy) {
           await synchronize();
         }
-      } on Object {
-        if (current()) await synchronize();
+      } on Object catch (error) {
+        if (!current()) return;
+        if (phase == CanonicalBootstrapPhase.server &&
+            _isHeartbeatTransportFailure(error) &&
+            ++_serverHeartbeatTransportFailures <= 2) {
+          return;
+        }
+        _serverHeartbeatTransportFailures = 0;
+        await synchronize();
       } finally {
         _heartbeat = null;
       }
@@ -240,6 +251,7 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
       requireCurrent();
       _lease = opened;
       opened = null;
+      _serverHeartbeatTransportFailures = 0;
       _phase = server
           ? CanonicalBootstrapPhase.server
           : CanonicalBootstrapPhase.legacy;
@@ -272,6 +284,12 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
       }
     }
   }
+
+  bool _isHeartbeatTransportFailure(Object error) =>
+      error is SocketException ||
+      error is TimeoutException ||
+      error is CanonicalGameException &&
+          error.code == 'game_command_unavailable';
 
   /// A caller that replaces the entire controller awaits this barrier first.
   Future<void> shutdown() {

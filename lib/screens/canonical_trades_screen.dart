@@ -37,20 +37,25 @@ class _TradesState extends State<_Trades> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_refresh());
+      if (mounted) unawaited(_refresh(automatic: true));
     });
     _poll = Timer.periodic(const Duration(seconds: 15), (_) {
       if (mounted &&
           ModalRoute.of(context)?.isCurrent == true &&
           context.read<CanonicalGameSession>().canAct) {
-        unawaited(_refresh());
+        unawaited(_refresh(automatic: true));
       }
     });
   }
 
-  Future<void> _refresh() async {
+  Future<void> _refresh({bool automatic = false}) async {
     final session = context.read<CanonicalGameSession>();
-    if (session.busy || session.connection.currentOwner == null) return;
+    if (session.connection.currentOwner == null) return;
+    if (automatic) {
+      await session.refreshSnapshotInBackground();
+      return;
+    }
+    if (session.busy) return;
     try {
       await session.synchronize();
     } on CanonicalGameException {/* Recovery is exposed by the boundary. */}

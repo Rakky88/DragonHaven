@@ -50,6 +50,7 @@ class CanonicalGameSession extends ChangeNotifier {
   final _sinceConfirmation = Stopwatch();
   String? _errorCode;
   Future<CanonicalGameReceipt?>? _operation;
+  Future<void>? _backgroundRefresh;
   final _admitted = <Future<CanonicalGameReceipt?>>{};
   bool _retiring = false;
   Future<void>? _closing;
@@ -98,6 +99,7 @@ class CanonicalGameSession extends ChangeNotifier {
     _errorCode = null;
     _operation = null;
     _operationKey = null;
+    _backgroundRefresh = null;
     _cancelCommands(const CanonicalGameException('game_account_changed'));
     notifyListeners();
   }
@@ -149,11 +151,74 @@ class CanonicalGameSession extends ChangeNotifier {
     });
   }
 
+  /// Best-effort authoritative read for periodic UI polling.
+  ///
+  /// Unlike [synchronize], this never invalidates the current playable view and
+  /// never resumes a durable intent. A player command or another synchronize
+  /// always wins: if session state changes while the read is in flight, the
+  /// reply is discarded instead of being allowed to replace that newer state.
+  Future<void> refreshSnapshotInBackground() {
+    if (!_sameSession) _accountChanged();
+    final pending = _backgroundRefresh;
+    if (pending != null) return pending;
+    final owner = _owner;
+    final epoch = _epoch;
+    final observed = _snapshot;
+    if (_disposed ||
+        _retiring ||
+        !_foreground ||
+        !_fresh ||
+        owner == null ||
+        observed == null ||
+        _operation != null ||
+        _commands.isNotEmpty) {
+      return Future.value();
+    }
+
+    final completion = Completer<void>();
+    final future = completion.future;
+    _backgroundRefresh = future;
+    bool unchanged() =>
+        !_disposed &&
+        !_retiring &&
+        _foreground &&
+        _fresh &&
+        _owner == owner &&
+        _epoch == epoch &&
+        connection.currentOwner == owner &&
+        connection.sessionEpoch == epoch &&
+        identical(_snapshot, observed) &&
+        _operation == null &&
+        _commands.isEmpty;
+    unawaited(() async {
+      try {
+        if (!unchanged() || await intents.pending(owner) != null) return;
+        if (!unchanged()) return;
+        final value = await _reader().fetch(owner,
+            minimumRevision: observed.serverRevision,
+            minimumRulesetRevision: observed.rulesetRevision);
+        if (!unchanged()) return;
+        await snapshots.persistFresh(value);
+        if (unchanged()) _accept(value);
+      } on Object {
+        // Periodic reads are opportunistic. Manual synchronization and command
+        // reconciliation remain responsible for surfacing recovery failures.
+      } finally {
+        if (identical(_backgroundRefresh, future)) {
+          _backgroundRefresh = null;
+        }
+        completion.complete();
+      }
+    }());
+    return future;
+  }
+
   /// Predictable actions can be admitted against the projected display while
   /// one durable command is sent at a time. Identical pending taps share a
   /// result. Unknown outcomes remain exclusive and are never fabricated.
   Future<CanonicalGameReceipt?> execute(
-      String action, Map<String, dynamic> payload) {
+      String action, Map<String, dynamic> payload,
+      {bool optimistic = true}) {
     if (!_sameSession) _accountChanged();
     final ordered = {
       for (final key in payload.keys.toList()..sort()) key: payload[key]
@@ -164,7 +229,7 @@ class CanonicalGameSession extends ChangeNotifier {
     }
     final observed = confirmedSnapshot;
     final allowed = canAct;
-    final prediction = allowed && observed != null
+    final prediction = optimistic && allowed && observed != null
         ? predictGameDisplay(observed, action, ordered,
             observed.serverTime.add(_sinceConfirmation.elapsed),
             preceding: _preview)
@@ -432,6 +497,7 @@ class CanonicalGameSession extends ChangeNotifier {
     _cancelCommands(const CanonicalGameException('game_account_changed'));
     _snapshot = null;
     _preview = null;
+    _backgroundRefresh = null;
     _sinceConfirmation.stop();
     _fresh = false;
     unawaited(_changes.cancel());

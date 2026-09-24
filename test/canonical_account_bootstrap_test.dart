@@ -35,6 +35,7 @@ void main() {
   CanonicalAccountBootstrap<String> make({
     required Future<CanonicalAccountStatus> Function(String) read,
     required Future<CanonicalGameplayLease<String>> Function(String) legacy,
+    Future<CanonicalAccountStatus> Function(String)? check,
     Future<CanonicalGameplayLease<String>> Function(String, int)? server,
     Future<int> Function(String)? upload,
     Future<int> Function(String, String, int)? activate,
@@ -45,6 +46,7 @@ void main() {
           sessionEpoch: () => epoch,
           accountChanges: changes.stream,
           readStatus: read,
+          checkConnection: check,
           openLegacy: legacy,
           openServer: server ??
               (_, __) async => throw StateError('unexpected server load'),
@@ -76,6 +78,77 @@ void main() {
     expect(root.phase, CanonicalBootstrapPhase.server);
     expect(root.gameplay, 'server');
     expect(legacyLoads, 0);
+    await finish(root);
+  });
+
+  test('confirmed heartbeat owner and phase mismatches resynchronize at once',
+      () async {
+    for (final mismatch in [
+      status(b, active: true),
+      status(a),
+    ]) {
+      var opens = 0;
+      var closes = 0;
+      final root = make(
+          read: (id) async => status(id, active: true),
+          check: (_) async => mismatch,
+          legacy: (_) async => throw StateError('unexpected legacy load'),
+          server: (_, __) async => CanonicalGameplayLease('server-${++opens}',
+              close: () async => closes++));
+      await root.synchronize();
+      expect(root.gameplay, 'server-1');
+
+      await root.verifyConnection();
+
+      expect(closes, 1);
+      expect(opens, 2);
+      expect(root.phase, CanonicalBootstrapPhase.server);
+      expect(root.gameplay, 'server-2');
+      await finish(root);
+    }
+  });
+
+  test('confirmed migration mismatch retires a legacy lease immediately',
+      () async {
+    var migrating = false;
+    var closes = 0;
+    final root = make(
+        read: (id) async => status(id, migrating: migrating),
+        check: (id) async => status(id, migrating: migrating),
+        legacy: (_) async => CanonicalGameplayLease('legacy', close: () async {
+              closes++;
+            }));
+    await root.synchronize();
+    expect(root.gameplay, 'legacy');
+
+    migrating = true;
+    await root.verifyConnection();
+
+    expect(closes, 1);
+    expect(root.gameplay, isNull);
+    expect(root.phase, CanonicalBootstrapPhase.failed);
+    await finish(root);
+  });
+
+  test('server heartbeat grants no grace to a non-transport failure', () async {
+    var opens = 0;
+    var closes = 0;
+    final root = make(
+        read: (id) async => status(id, active: true),
+        check: (_) async =>
+            throw const CanonicalGameException('game_login_required'),
+        legacy: (_) async => throw StateError('unexpected legacy load'),
+        server: (_, __) async =>
+            CanonicalGameplayLease('server-${++opens}', close: () async {
+              closes++;
+            }));
+    await root.synchronize();
+
+    await root.verifyConnection();
+
+    expect(closes, 1);
+    expect(opens, 2);
+    expect(root.gameplay, 'server-2');
     await finish(root);
   });
 

@@ -14,7 +14,7 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   test(
-      'failed heartbeat retires writers, blocks gameplay, reconnect restores once',
+      'failed legacy heartbeat retires writers, blocks gameplay, reconnect restores once',
       () async {
     final directory = await Directory.systemTemp.createTemp('online-access-');
     final events = StreamController<int>.broadcast();
@@ -57,6 +57,77 @@ void main() {
     connected = true;
     await root.verifyConnection();
     expect(root.gameplay, 2);
+    await root.shutdown();
+    root.dispose();
+    await events.close();
+    await directory.delete(recursive: true);
+  });
+
+  test(
+      'server heartbeat keeps two transport misses, resets after success, then retires on the third',
+      () async {
+    final directory =
+        await Directory.systemTemp.createTemp('server-heartbeat-');
+    final events = StreamController<int>.broadcast();
+    const owner = '11111111-1111-4111-8111-111111111111';
+    var connected = true, closes = 0, opens = 0;
+    Future<CanonicalAccountStatus> status(String id) async {
+      if (!connected) throw const SocketException('offline');
+      return CanonicalAccountStatus.parse({
+        'owner_id': id,
+        'phase': 'active',
+        'migration_enabled': false,
+        'source_revision': 6,
+        'server_revision': 7
+      }, id);
+    }
+
+    final root = CanonicalAccountBootstrap<int>(
+        directory: directory,
+        currentOwner: () => owner,
+        sessionEpoch: () => 1,
+        accountChanges: events.stream,
+        readStatus: status,
+        checkConnection: status,
+        prepareAndUploadLegacy: (_) async => throw StateError('unexpected'),
+        activate: (_, __, ___) async => throw StateError('unexpected'),
+        openLegacy: (_) async => throw StateError('unexpected'),
+        openServer: (_, __) async =>
+            CanonicalGameplayLease(++opens, close: () async {
+              closes++;
+            }));
+    await root.synchronize();
+    expect(root.gameplay, 1);
+
+    connected = false;
+    await root.verifyConnection();
+    await root.verifyConnection();
+    expect(root.gameplay, 1);
+    expect(root.phase, CanonicalBootstrapPhase.server);
+    expect(closes, 0);
+
+    connected = true;
+    await root.verifyConnection();
+    expect(root.gameplay, 1);
+    expect(closes, 0);
+
+    connected = false;
+    await root.verifyConnection();
+    await root.verifyConnection();
+    expect(root.gameplay, 1,
+        reason: 'a successful heartbeat must reset the failure streak');
+    expect(closes, 0);
+    await root.verifyConnection();
+    expect(root.gameplay, isNull);
+    expect(root.phase, CanonicalBootstrapPhase.failed);
+    expect(closes, 1);
+
+    connected = true;
+    await root.verifyConnection();
+    expect(root.gameplay, 2);
+    expect(root.phase, CanonicalBootstrapPhase.server);
+    expect(opens, 2);
+    expect(closes, 1);
     await root.shutdown();
     root.dispose();
     await events.close();

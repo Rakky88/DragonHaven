@@ -187,6 +187,54 @@ void main() {
     expect(session.canRunAutomatic, true);
   });
 
+  test('scheduled refresh stays playable and serializes a following action',
+      () async {
+    final before = session.confirmedSnapshot!;
+    final hold = Completer<void>();
+    server.hold = hold.future;
+
+    final refresh = session.execute('refresh', const {});
+    expect(session.snapshot!.isSpeculative, isTrue);
+    expect(session.confirmedSnapshot, same(before));
+    expect(session.canAct, isTrue);
+
+    final rename =
+        session.execute('set_account_name', {'name': 'Still playing'});
+    expect(session.snapshot!.profile.name, 'Still playing');
+    expect(session.canAct, isTrue);
+
+    hold.complete();
+    final receipts = await Future.wait([refresh, rename]);
+    expect(receipts.every((receipt) => receipt!.succeeded), isTrue);
+    expect(server.sent.map((intent) => intent.action),
+        ['refresh', 'set_account_name']);
+    expect(server.sent.map((intent) => intent.minimumRevision),
+        [before.serverRevision, before.serverRevision + 1]);
+    expect(session.snapshot!.profile.name, 'Still playing');
+    expect(session.snapshot!.isSpeculative, isFalse);
+  });
+
+  test('rejected scheduled refresh rebases a following action', () async {
+    final before = session.confirmedSnapshot!;
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    server.revision++;
+
+    final refresh = session.execute('refresh', const {});
+    final rename = session.execute('set_account_name', {'name': 'Rebased'});
+    expect(session.snapshot!.profile.name, 'Rebased');
+    expect(session.canAct, isTrue);
+
+    hold.complete();
+    expect((await refresh)!.succeeded, isFalse);
+    expect((await rename)!.succeeded, isTrue);
+    expect(server.sent.map((intent) => intent.action),
+        ['refresh', 'set_account_name']);
+    expect(server.sent.last.minimumRevision, before.serverRevision + 1);
+    expect(session.snapshot!.profile.name, 'Rebased');
+    expect(session.canAct, isTrue);
+  });
+
   test('tower scenery is immediate and matches confirmed occupants', () async {
     final hold = Completer<void>();
     server.hold = hold.future;

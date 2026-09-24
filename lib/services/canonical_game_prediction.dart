@@ -41,6 +41,12 @@ CanonicalGameSnapshot? predictGameDisplay(CanonicalGameSnapshot confirmed,
 
   try {
     switch (action) {
+      case 'refresh':
+        // Time-based refills are still decided and committed by the server.
+        // Keeping the last confirmed public view as a preview lets the
+        // scheduled command use the durable optimistic queue without briefly
+        // disabling otherwise unrelated gameplay.
+        return confirmed.preview(data);
       case 'set_preferences':
         final changes = AccountPreferences.validateChanges(
             Map<String, dynamic>.from(

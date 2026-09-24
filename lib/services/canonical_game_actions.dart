@@ -23,7 +23,8 @@ class CanonicalGameActions {
   final CanonicalGameSnapshot? observed;
   final int epoch;
 
-  Future<Object?> execute(String action, Map<String, dynamic> payload) async {
+  Future<Object?> execute(String action, Map<String, dynamic> payload,
+      {bool optimistic = true}) async {
     if (epoch != session.connection.sessionEpoch ||
         observed?.ownerId != session.connection.currentOwner) {
       throw const CanonicalGameException('game_account_changed');
@@ -33,7 +34,8 @@ class CanonicalGameActions {
         observed!.rulesetRevision != session.snapshot?.rulesetRevision) {
       throw const CanonicalGameException('game_refresh_required');
     }
-    final receipt = await session.execute(action, payload);
+    final receipt =
+        await session.execute(action, payload, optimistic: optimistic);
     if (receipt?.succeeded != true) {
       throw CanonicalGameException(
           receipt?.failureCode ?? 'game_command_unavailable');
@@ -59,8 +61,9 @@ class CanonicalGameActions {
         tier: tier, count: count, specialChestId: specialChestId);
   }
 
-  Future<void> _boolean(String action, Map<String, dynamic> payload) async {
-    final result = await execute(action, payload);
+  Future<void> _boolean(String action, Map<String, dynamic> payload,
+      {bool optimistic = true}) async {
+    final result = await execute(action, payload, optimistic: optimistic);
     if (result is! bool) {
       throw const CanonicalGameException('game_result_invalid');
     }
@@ -291,7 +294,10 @@ class CanonicalGameActions {
     return (dragonId: value['dragonId'] as String, interaction: interaction);
   }
 
-  Future<void> refresh() => _boolean('refresh', {});
+  /// An explicit player refresh remains an exclusive recovery operation.
+  /// Scheduled refills call the session directly and may use its optimistic
+  /// queue without turning a pull-to-refresh gesture into a silent poll.
+  Future<void> refresh() => _boolean('refresh', {}, optimistic: false);
   Future<void> unlockRoom(String id) async {
     final result = await execute('unlock_room', {'roomId': id});
     if (result == 'unlocked' || result == 'alreadyUnlocked') return;

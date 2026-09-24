@@ -37,18 +37,18 @@ class _PartnersState extends State<_Partners> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_refresh());
+      if (mounted) unawaited(_refresh(automatic: true));
     });
     _poll = Timer.periodic(const Duration(seconds: 15), (_) {
       if (mounted &&
           ModalRoute.of(context)?.isCurrent == true &&
           context.read<CanonicalGameSession>().canAct) {
-        unawaited(_refresh());
+        unawaited(_refresh(automatic: true));
       }
     });
   }
 
-  Future<void> _refresh() async {
+  Future<void> _refresh({bool automatic = false}) async {
     final partners = context.read<CanonicalPartners>();
     if (partners.loading) return;
     await partners.refresh();
@@ -56,7 +56,11 @@ class _PartnersState extends State<_Partners> {
     final session = context.read<CanonicalGameSession>();
     if (!session.busy && session.connection.currentOwner != null) {
       try {
-        await session.synchronize();
+        if (automatic) {
+          await session.refreshSnapshotInBackground();
+        } else {
+          await session.synchronize();
+        }
       } on Object {/* Session displays recovery state. */}
     }
   }

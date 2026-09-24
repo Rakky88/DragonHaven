@@ -113,13 +113,13 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
     _refresh = Timer(
         remaining > Duration.zero ? remaining : const Duration(milliseconds: 1),
         () async {
-      // Let a command that crossed the quarter-hour finish, so the scheduled
-      // refill read is not skipped for an entire cycle. Canonical commands
-      // have their own transport timeout; this loop is only a bounded grace
-      // period before the next boundary is scheduled normally.
+      // Let an exclusive command that crossed the quarter-hour finish, so the
+      // scheduled refill is not skipped for an entire cycle. Predictable
+      // commands need no wait because refresh can join their durable queue.
       final wait = Stopwatch()..start();
       while (mounted &&
           context.read<CanonicalGameSession>().busy &&
+          !context.read<CanonicalGameSession>().canAct &&
           wait.elapsed < const Duration(seconds: 30)) {
         await Future<void>.delayed(const Duration(milliseconds: 250));
       }
@@ -131,9 +131,9 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
   Future<void> _advance() async {
     final session = context.read<CanonicalGameSession>();
     final view = session.confirmedSnapshot;
-    if (!session.canRunAutomatic ||
-        view == null ||
-        !view.profile.onboardingComplete) {
+    // A predictable refresh may safely join the existing optimistic queue.
+    // Only an exclusive command should postpone this automatic work.
+    if (!session.canAct || view == null || !view.profile.onboardingComplete) {
       return;
     }
     try {

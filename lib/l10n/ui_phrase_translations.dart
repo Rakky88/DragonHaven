@@ -600,6 +600,22 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
 }
 
 const uiPhraseTranslations = <String, List<String>>{
+  'Tower room': [
+    'Turmzimmer',
+    'Sala de la torre',
+    'Salle de la tour',
+    'Stanza della torre',
+    'Sala da torre',
+    '塔の部屋',
+  ],
+  'Change type': [
+    'Typ ändern',
+    'Cambiar tipo',
+    'Changer le type',
+    'Cambia tipo',
+    'Alterar tipo',
+    'タイプを変更',
+  ],
   'You are already in a group waiting to start this adventure.': [
     'Du bist bereits in einer Gruppe, die auf den Start dieses Abenteuers wartet.',
     'Ya estás en un grupo esperando para iniciar esta aventura.',

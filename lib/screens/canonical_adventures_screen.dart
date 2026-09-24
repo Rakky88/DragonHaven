@@ -169,7 +169,7 @@ class _AdventuresState extends State<_Adventures>
                             },
                             applyShared: (_, owner) async {
                               if (session.connection.currentOwner == owner) {
-                                await session.synchronize();
+                                await session.refreshSnapshotInBackground();
                               }
                             })
                         : null),

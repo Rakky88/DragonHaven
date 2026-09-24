@@ -36,6 +36,7 @@ class Connection implements CanonicalGameConnection {
   final sent = <CanonicalGameIntent>[];
   final applied = <String>{};
   int recoveries = 0;
+  int reads = 0;
   Future<void>? holdRead;
   Future<void>? holdSend;
 
@@ -59,10 +60,13 @@ class Connection implements CanonicalGameConnection {
       };
   @override
   Future<Object?> read(Map<String, dynamic> request) async {
+    reads++;
     final account = currentOwner!;
-    if (holdRead != null) await holdRead;
+    final response = wire(account);
+    final pending = holdRead;
+    if (pending != null) await pending;
     if (!online) throw const CanonicalGameException('game_command_unavailable');
-    return wire(account);
+    return response;
   }
 
   @override
@@ -217,6 +221,125 @@ void main() {
     expect(session.snapshot!.coins, data['wallet']['coins']);
     expect(session.canAct, isTrue);
     expect(await session.intents.pending(owner), isNull);
+  });
+
+  test('background refresh is single-flight and leaves gameplay available',
+      () async {
+    await session.synchronize();
+    final observed = session.confirmedSnapshot;
+    final held = Completer<void>();
+    connection.holdRead = held.future;
+    final reads = connection.reads;
+
+    final first = session.refreshSnapshotInBackground();
+    final second = session.refreshSnapshotInBackground();
+
+    expect(identical(first, second), isTrue);
+    while (connection.reads == reads) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(connection.reads, reads + 1);
+    expect(session.busy, isFalse);
+    expect(session.fresh, isTrue);
+    expect(session.canAct, isTrue);
+    expect(identical(session.confirmedSnapshot, observed), isTrue);
+
+    held.complete();
+    await first;
+    expect(session.canAct, isTrue);
+  });
+
+  test('background refresh failure preserves the fresh playable snapshot',
+      () async {
+    await session.synchronize();
+    final observed = session.confirmedSnapshot;
+    connection.online = false;
+
+    await session.refreshSnapshotInBackground();
+
+    expect(identical(session.confirmedSnapshot, observed), isTrue);
+    expect(session.errorCode, isNull);
+    expect(session.fresh, isTrue);
+    expect(session.canAct, isTrue);
+  });
+
+  test('background refresh discards a reply older than an intervening sync',
+      () async {
+    await session.synchronize();
+    final held = Completer<void>();
+    connection.holdRead = held.future;
+    final background = session.refreshSnapshotInBackground();
+    while (connection.reads < 2) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(connection.reads, 2);
+
+    connection.holdRead = null;
+    connection.revision = 2;
+    await session.synchronize();
+    expect(session.confirmedSnapshot!.serverRevision, 2);
+
+    held.complete();
+    await background;
+    expect(session.confirmedSnapshot!.serverRevision, 2);
+    expect(
+        (await session.snapshots.inspect(owner)).snapshot!.serverRevision, 2);
+    expect(session.canAct, isTrue);
+  });
+
+  test('background refresh does not enter while a command is pending',
+      () async {
+    await session.synchronize();
+    final held = Completer<void>();
+    connection.holdSend = held.future;
+    final command = session.execute('purchase_title_chest', {});
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    final reads = connection.reads;
+
+    await session.refreshSnapshotInBackground();
+
+    expect(connection.reads, reads);
+    held.complete();
+    await command;
+    expect(session.canAct, isTrue);
+  });
+
+  test('background refresh leaves a durable pending intent for recovery',
+      () async {
+    await session.synchronize();
+    await session.intents.prepare(CanonicalGameIntent(
+        ownerId: owner,
+        requestId: recovery,
+        action: 'purchase_title_chest',
+        payload: const {},
+        minimumRevision: 1));
+    final reads = connection.reads;
+
+    await session.refreshSnapshotInBackground();
+
+    expect(connection.reads, reads);
+    expect((await session.intents.pending(owner))!.requestId, recovery);
+    expect(session.canAct, isTrue);
+  });
+
+  test('background refresh fences a late reply from the previous account',
+      () async {
+    await session.synchronize();
+    final held = Completer<void>();
+    connection.holdRead = held.future;
+    final background = session.refreshSnapshotInBackground();
+    while (connection.reads < 2) {
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    connection.switchAccount(other);
+    connection.holdRead = null;
+    await session.synchronize();
+    held.complete();
+    await background;
+
+    expect(session.confirmedSnapshot!.ownerId, other);
+    expect(session.canAct, isTrue);
   });
 
   test(
