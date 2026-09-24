@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -10,6 +11,8 @@ import 'package:dragon_haven/screens/canonical_profile_screen.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/theme/app_theme.dart';
 import 'package:dragon_haven/widgets/canonical_milestones.dart';
+import 'package:dragon_haven/widgets/haven_lighting.dart';
+import 'package:dragon_haven/widgets/house_room_scene.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -43,7 +46,9 @@ void main() {
   late CanonicalGameSession session;
   final captureKey = GlobalKey();
   Future<void> setup(WidgetTester tester, Widget child,
-      {GamePresentationType? milestone}) async {
+      {GamePresentationType? milestone,
+      void Function(CanonicalUiServer)? prepare,
+      String Function()? requestIdGenerator}) async {
     tester.view.physicalSize = const Size(320, 720);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -85,8 +90,11 @@ void main() {
                               : null)
                   .toJson()
             ];
+      prepare?.call(server);
       session = CanonicalGameSession(
-          connection: CanonicalUiConnection(server), directory: directory);
+          connection: CanonicalUiConnection(server),
+          directory: directory,
+          requestIdGenerator: requestIdGenerator);
       await session.synchronize();
     });
     addTearDown(() async {
@@ -167,7 +175,7 @@ void main() {
   });
 
   testWidgets(
-      'room dialog calls the favorite and shows its new server position',
+      'restored room scene guides and calls the favorite through the server',
       (tester) async {
     await setup(tester, const CanonicalHouseScreen());
     final visit = find.byKey(const Key('canonical-visit-floor-1'));
@@ -180,17 +188,136 @@ void main() {
     await tester.runAsync(() => tester.tap(visit));
     await tester.pump();
     await settled(tester);
-    final call = find.byKey(const Key('canonical-call-dragon'));
-    await tester.runAsync(() => tester.tap(call));
-    await settled(tester);
     expect(
-        session.snapshot!
-            .dragon(server.state['pet']['id'] as String)!
-            .floorIndex,
-        1);
+        find.byKey(const Key('canonical-floor-room-screen-1')), findsOneWidget);
+    final scene = find.byKey(const Key('house-room-scene'));
+    expect(scene, findsOneWidget);
+    expect(find.byType(HavenPhaseImage), findsOneWidget);
+    expect(find.byType(RoomActionButton), findsNWidgets(3));
+    expect(find.text('Drakenreservaat'), findsOneWidget);
+    expect(find.byKey(const Key('canonical-change-floor-1')), findsOneWidget);
+    final hold = Completer<void>();
+    addTearDown(() {
+      if (!hold.isCompleted) hold.complete();
+    });
+    server.hold = hold.future;
+    await tester.runAsync(() => tester.tap(scene));
+    await tester.pump();
+    final id = server.state['pet']['id'] as String;
+    expect(session.snapshot!.dragon(id)!.floorIndex, 1);
+    expect(find.byKey(Key('room-dragon-$id')), findsOneWidget);
+    final appeared =
+        tester.widget<AnimatedPositioned>(find.byKey(Key('room-dragon-$id')));
+    expect(appeared.duration, Duration.zero);
+    final appearedLeft = appeared.left!;
+    final appearedTop = appeared.top!;
+    await tester.pump();
+    final walking =
+        tester.widget<AnimatedPositioned>(find.byKey(Key('room-dragon-$id')));
+    expect(walking.duration, const Duration(milliseconds: 5200));
+    expect(walking.left, isNot(appearedLeft));
+    expect(walking.top, isNot(appearedTop));
+    hold.complete();
+    await settled(tester);
+    expect(session.snapshot!.dragon(id)!.floorIndex, 1);
     expect(server.sent.where((i) => i.action == 'visit_tower_floor'),
         hasLength(1));
+    expect(server.sent.where((i) => i.action == 'call_dragon_to_floor'),
+        hasLength(1));
     await capture(tester, 'room-resident-320-dutch');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('active returning visitors appear in their former tower room',
+      (tester) async {
+    const visitorId = 'returning-visitor';
+    await setup(tester, const CanonicalHouseScreen(), prepare: (server) {
+      final visitor =
+          jsonDecode(jsonEncode(server.state['pet'])) as Map<String, dynamic>;
+      visitor
+        ..['id'] = visitorId
+        ..['favorite'] = false
+        ..['currentFloorIndex'] = 1
+        ..['currentRoomId'] = 'garden'
+        ..['activeAdventureId'] = null;
+      server.state['releasedDragons'] = [visitor];
+      server.state['returningVisitors'] = {
+        visitorId: server.now.add(const Duration(hours: 1)).toIso8601String(),
+      };
+    });
+    final visit = find.byKey(const Key('canonical-visit-floor-1'));
+    await tester.scrollUntilVisible(visit, 200,
+        scrollable: find
+            .descendant(
+                of: find.byKey(const Key('canonical-tower-list')),
+                matching: find.byType(Scrollable))
+            .first);
+    await tester.runAsync(() => tester.tap(visit));
+    await tester.pump();
+    await settled(tester);
+
+    expect(find.byKey(const Key('room-dragon-$visitorId')), findsOneWidget);
+    final scene = tester.widget<HouseRoomScene>(find.byType(HouseRoomScene));
+    expect(scene.visitorIds, contains(visitorId));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('changing room type clears the previous rare room moment',
+      (tester) async {
+    final ids = <String>[
+      '00000000-0000-4000-8000-000000000007',
+      '00000000-0000-4000-8000-000000000008',
+    ];
+    await setup(tester, const CanonicalHouseScreen(),
+        requestIdGenerator: () => ids.removeAt(0),
+        prepare: (server) {
+          server.state['pet']
+            ..['lineageId'] = 'bramblequill'
+            ..['currentFloorIndex'] = 0
+            ..['currentRoomId'] = 'garden'
+            ..['activeAdventureId'] = null;
+          server.state['towerFloorRoomIds'][0] = 'garden';
+          server.state['rareInteractionAt'] = <String, dynamic>{};
+        });
+    final visit = find.byKey(const Key('canonical-visit-floor-0'));
+    await tester.scrollUntilVisible(visit, 200,
+        scrollable: find
+            .descendant(
+                of: find.byKey(const Key('canonical-tower-list')),
+                matching: find.byType(Scrollable))
+            .first);
+    await tester.runAsync(() => tester.tap(visit));
+    await tester.pump();
+    await settled(tester);
+    expect(find.text('Een zeldzaam torenmoment'), findsOneWidget);
+    expect(
+        tester
+            .widget<HouseRoomScene>(find.byType(HouseRoomScene))
+            .suppressTimeMood,
+        isTrue);
+
+    final change = find.byKey(const Key('canonical-change-floor-0'));
+    await tester.scrollUntilVisible(change, 180,
+        scrollable: find
+            .descendant(
+                of: find
+                    .byKey(const PageStorageKey('canonical-floor-room-scroll')),
+                matching: find.byType(Scrollable))
+            .first);
+    await tester.tap(change);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('canonical-convert-hearth')));
+    await tester.pump();
+    await settled(tester);
+    await tester.pump();
+    final scene = tester.widget<HouseRoomScene>(find.byType(HouseRoomScene));
+    expect(scene.room.id, 'hearth');
+    expect(scene.suppressTimeMood, isFalse);
+    expect(find.text('Een zeldzaam torenmoment'), findsNothing);
+    expect(server.sent.where((i) => i.action == 'visit_tower_floor'),
+        hasLength(1));
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

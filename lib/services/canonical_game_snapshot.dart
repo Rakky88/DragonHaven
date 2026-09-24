@@ -267,7 +267,11 @@ class CanonicalGameSnapshot {
         dragons,
         CanonicalInventoryView._parse(data, shop, dragons),
         CanonicalAdventuresView._parse(_map(data['adventures']), dragons),
-        CanonicalHouseView._parse(_map(data['house'])));
+        CanonicalHouseView._parse(
+          _map(data['house']),
+          dragons: dragons,
+          serverTime: DateTime.parse(wire['server_time'] as String),
+        ));
   }
 
   /// Read time and the mutation switch may change without a game revision.
@@ -339,7 +343,11 @@ class CanonicalGameSnapshot {
 /// Public tower facts, including the server's stored repair factor. Repeated
 /// room types are valid floors; duplicate damage entries are not.
 class CanonicalHouseView {
-  CanonicalHouseView._parse(Map<String, dynamic> data) {
+  CanonicalHouseView._parse(
+    Map<String, dynamic> data, {
+    required List<CanonicalDragonView> dragons,
+    required DateTime serverTime,
+  }) {
     unlockedRooms = CanonicalShopView._ids(data['unlockedRoomIds']);
     activeRoomId = data['activeRoomId'] as String;
     final rawFloors = data['towerFloorRoomIds'];
@@ -400,6 +408,21 @@ class CanonicalHouseView {
     placements = List.unmodifiable(parsed);
     repairFactors = Map.unmodifiable(
         {for (final i in damagedFloors) i: (factors['$i'] as num).toDouble()});
+    final visitors = _map(data['returningVisitors']);
+    if (visitors.entries.any((entry) =>
+        !_text(entry.key) ||
+        !_date(entry.value) ||
+        !dragons.any((dragon) => !dragon.owned && dragon.id == entry.key))) {
+      _invalid();
+    }
+    returningVisitors = Map.unmodifiable({
+      for (final entry in visitors.entries)
+        entry.key: DateTime.parse(entry.value as String),
+    });
+    returningVisitorIds = Set.unmodifiable({
+      for (final entry in returningVisitors.entries)
+        if (entry.value.isAfter(serverTime)) entry.key,
+    });
   }
   late final List<HousePlacement> placements;
   late final Set<String> unlockedRooms;
@@ -407,6 +430,8 @@ class CanonicalHouseView {
   late final List<String> floorRoomIds;
   late final Set<int> damagedFloors;
   late final Map<int, double> repairFactors;
+  late final Map<String, DateTime> returningVisitors;
+  late final Set<String> returningVisitorIds;
   late final int wardLevel;
   int? get nextFloorPrice =>
       floorRoomIds.length < 20 ? towerBuildPrice(floorRoomIds.length) : null;
@@ -612,6 +637,9 @@ class CanonicalDragonView implements TrialDragon {
         _invalid();
       }
     }
+    if (!_boundedNumber(_data['sizeFactor'], .5, 1.5)) {
+      _invalid();
+    }
     if (!DragonSex.values.any((v) => v.name == _data['sex']) ||
         !_date(_data['acquiredAt']) ||
         !_date(_data['stageStartedAt']) ||
@@ -692,6 +720,7 @@ class CanonicalDragonView implements TrialDragon {
   int get joy => _data['joy'] as int;
   int get energy => _data['energy'] as int;
   int get comfort => _data['comfort'] as int;
+  double get sizeFactor => (_data['sizeFactor'] as num).toDouble();
   @override
   DragonStage get stage => DragonStage.values.byName(_data['stage'] as String);
   DragonSex get sex => DragonSex.values.byName(_data['sex'] as String);

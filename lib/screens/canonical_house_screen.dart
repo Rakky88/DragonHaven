@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math';
+
 import '../widgets/restored_collection_cards.dart';
 import 'canonical_dragons_screen.dart';
 import '../services/canonical_game_snapshot.dart';
@@ -9,15 +12,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
+import '../models/day_phase.dart';
 import '../models/house.dart';
-import '../models/shop_item.dart';
-import '../widgets/furniture_art.dart';
 import '../models/pet.dart';
 import 'canonical_room_editor.dart';
 import 'canonical_school_screen.dart';
+import '../services/audio_service.dart';
 import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
 import '../widgets/canonical_game_controls.dart';
+import '../widgets/house_room_scene.dart';
 import '../widgets/shop_economy_scope.dart';
 
 /// The tower's economic controls consume public facts and durable commands.
@@ -408,174 +412,392 @@ class _RoomCard extends StatelessWidget {
 Future<void> _visitFloor(BuildContext context, String roomId, int index) async {
   final session = context.read<CanonicalGameSession>();
   final view = session.snapshot!;
-  final owner = view.ownerId;
-  final epoch = session.connection.sessionEpoch;
-  final actions = CanonicalGameActions(session);
-  // Opening a room rolls once. Rebuilds, scrolling and reconnecting the dialog
-  // cannot repeatedly roll the cosmetic interaction.
-  Future<void> visit() async {
-    if (!session.canAct) return;
-    try {
-      final event = await actions.visitFloor(roomId, index);
-      if (!context.mounted ||
-          event == null ||
-          session.connection.sessionEpoch != epoch ||
-          session.snapshot?.ownerId != owner) {
+  await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => _CanonicalFloorRoomScreen(
+            floorIndex: index,
+            openedRoomId: roomId,
+            ownerId: view.ownerId,
+            sessionEpoch: session.connection.sessionEpoch,
+          )));
+}
+
+class _CanonicalFloorRoomScreen extends StatefulWidget {
+  const _CanonicalFloorRoomScreen({
+    required this.floorIndex,
+    required this.openedRoomId,
+    required this.ownerId,
+    required this.sessionEpoch,
+  });
+
+  final int floorIndex;
+  final String openedRoomId;
+  final String ownerId;
+  final int sessionEpoch;
+
+  @override
+  State<_CanonicalFloorRoomScreen> createState() =>
+      _CanonicalFloorRoomScreenState();
+}
+
+class _CanonicalFloorRoomScreenState extends State<_CanonicalFloorRoomScreen> {
+  static const _wanderMoveDuration = houseRoomWanderMoveDuration;
+  static const _calledMoveDuration = Duration(milliseconds: 5200);
+
+  final _random = Random();
+  Timer? _wanderTimer;
+  Offset _dragonPosition = const Offset(.24, .76);
+  Duration _dragonMoveDuration = _wanderMoveDuration;
+  bool _facingRight = true;
+  int _wanderStep = 0;
+  bool _callingDragon = false;
+  bool _visitStarted = false;
+  String? _displayedRoomId;
+  String? _interactionRoomId;
+  String? _interactionMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(HavenAudio.setMusicScene(HavenMusicScene.room));
+    _startWandering();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _visitOnce());
+  }
+
+  @override
+  void dispose() {
+    _wanderTimer?.cancel();
+    final hour = DateTime.now().hour;
+    unawaited(HavenAudio.setMusicScene(hour >= 21 || hour < 7
+        ? HavenMusicScene.towerNight
+        : HavenMusicScene.towerDay));
+    super.dispose();
+  }
+
+  bool _sameSession(CanonicalGameSession session) =>
+      session.connection.sessionEpoch == widget.sessionEpoch &&
+      session.snapshot?.ownerId == widget.ownerId;
+
+  void _startWandering() {
+    _wanderTimer?.cancel();
+    _wanderTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted) return;
+      final session = context.read<CanonicalGameSession>();
+      final view = session.snapshot;
+      if (view == null || !_sameSession(session)) return;
+      final roomId = widget.floorIndex < view.house.floorRoomIds.length
+          ? view.house.floorRoomIds[widget.floorIndex]
+          : null;
+      if (_interactionMessage != null && _interactionRoomId == roomId) return;
+      final phase = havenDayPhaseAt(DateTime.now());
+      final moveChance = switch (phase) {
+        HavenDayPhase.deepNight => .12,
+        HavenDayPhase.night => .20,
+        HavenDayPhase.dusk => .45,
+        HavenDayPhase.dawn => .60,
+        HavenDayPhase.morning => .82,
+        HavenDayPhase.day || HavenDayPhase.goldenHour => .95,
+      };
+      if (_random.nextDouble() > moveChance) return;
+      final dragon = _controllableDragon(view);
+      setState(() => _wanderStep++);
+      if (dragon == null ||
+          dragon.adventureId != null ||
+          dragon.floorIndex != widget.floorIndex) {
         return;
       }
-      final dragon = session.snapshot!.dragon(event.dragonId);
+      _moveDragonTo(
+          Offset(.14 + _random.nextDouble() * .72,
+              .60 + _random.nextDouble() * .23),
+          duration: _wanderMoveDuration);
+    });
+  }
+
+  void _moveDragonTo(Offset target, {Duration duration = _wanderMoveDuration}) {
+    if (!mounted) return;
+    setState(() {
+      _facingRight = target.dx >= _dragonPosition.dx;
+      _dragonMoveDuration = duration;
+      _dragonPosition = Offset(target.dx.clamp(.14, .86).toDouble(),
+          target.dy.clamp(.56, .84).toDouble());
+    });
+  }
+
+  Future<void> _visitOnce() async {
+    if (_visitStarted || !mounted) return;
+    _visitStarted = true;
+    final session = context.read<CanonicalGameSession>();
+    if (!session.canAct || !_sameSession(session)) return;
+    try {
+      final event = await CanonicalGameActions(session)
+          .visitFloor(widget.openedRoomId, widget.floorIndex);
+      if (!mounted || event == null || !_sameSession(session)) return;
+      final dragon = session.snapshot?.dragon(event.dragonId);
       if (dragon == null) return;
-      final s = AppStrings.of(context);
-      showAppSnackBar(
-          context,
-          s
-              .pick(event.interaction.messageEn, event.interaction.messageNl)
-              .replaceAll('{dragon}', canonicalDragonName(s, dragon)));
+      final strings = AppStrings.of(context);
+      setState(() {
+        _interactionRoomId = widget.openedRoomId;
+        _interactionMessage = strings
+            .pick(event.interaction.messageEn, event.interaction.messageNl)
+            .replaceAll('{dragon}', canonicalDragonName(strings, dragon));
+      });
     } on CanonicalGameException catch (error) {
-      if (context.mounted && session.connection.sessionEpoch == epoch) {
+      if (mounted && _sameSession(session)) {
         showAppSnackBar(
             context, gameConnectionMessage(AppStrings.of(context), error.code));
       }
     }
   }
 
-  final visitTask = visit();
-  await showDialog<void>(
-      context: context,
-      builder: (context) => CanonicalEntityDialog(
-          ownerId: owner,
-          builder: (context, current, canAct) {
-            final s = AppStrings.of(context);
-            final currentActions = CanonicalGameActions(session);
-            final currentRoomId = index < current.house.floorRoomIds.length
-                ? current.house.floorRoomIds[index]
-                : null;
-            final currentRoom =
-                currentRoomId == null ? null : houseRoomById(currentRoomId);
-            final valid = session.connection.sessionEpoch == epoch &&
-                currentRoom != null &&
-                !current.house.damagedFloors.contains(index);
-            final dragon = current.dragons
-                    .where((d) => d.owned && d.favorite)
-                    .firstOrNull ??
-                current.dragon(current.activeDragonId ?? '');
-            final residents = current.dragons
-                .where((d) =>
-                    d.owned &&
-                    d.roamsTower &&
-                    d.adventureId == null &&
-                    d.floorIndex == index &&
-                    d.roomId == currentRoomId)
-                .toList();
-            return _RoomVisitView(
-                title: Text(s.roomName(currentRoom ?? houseRoomById(roomId)!)),
-                content: SingleChildScrollView(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  if (valid)
-                    SizedBox(
-                        width: 420,
-                        child: AspectRatio(
-                            aspectRatio: 1.25,
-                            child: ClipRRect(
-                                borderRadius: BorderRadius.circular(20),
-                                child: LayoutBuilder(
-                                    builder: (context, box) =>
-                                        Stack(fit: StackFit.expand, children: [
-                                          Image.asset(
-                                              currentRoom.backgroundAsset,
-                                              fit: BoxFit.cover),
-                                          for (final placement in current
-                                              .house.placements
-                                              .where((p) =>
-                                                  p.roomId == currentRoomId))
-                                            if (shopItemById(placement.itemId)
-                                                case final item?)
-                                              Positioned(
-                                                  left: placement.x *
-                                                          box.maxWidth -
-                                                      30,
-                                                  top: placement.y *
-                                                          box.maxHeight -
-                                                      30,
-                                                  width: 60,
-                                                  height: 60,
-                                                  child:
-                                                      FurnitureArt(item: item)),
-                                          for (final (i, resident)
-                                              in residents.indexed)
-                                            Positioned(
-                                                left: 10 + i * box.maxWidth / 3,
-                                                bottom: 10,
-                                                width: box.maxWidth / 3,
-                                                child: InkWell(
-                                                    onTap: () =>
-                                                        showCanonicalDragonDetails(
-                                                            context,
-                                                            resident.id),
-                                                    child: CanonicalDragonArt(
-                                                        dragon: resident,
-                                                        height: 90))),
-                                        ]))))),
-                  if (valid)
-                    Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                        child: Wrap(
-                            alignment: WrapAlignment.center,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              TextButton.icon(
-                                  icon: const GameIconSprite(
-                                      GameIconKind.roomDecorate,
-                                      size: 28),
-                                  label: Text(s.pick('Arrange your room',
-                                      'Richt je kamer in')),
-                                  onPressed: () => openCanonicalRoomEditor(
-                                      context, currentRoomId!)),
-                              OutlinedButton.icon(
-                                  key: Key('canonical-change-floor-$index'),
-                                  onPressed: canAct
-                                      ? () => _changeFloorRoom(context, index)
-                                      : null,
-                                  icon: const Icon(Icons.swap_horiz_rounded),
-                                  label: Text(s.pick('Change room (free)',
-                                      'Kamer wijzigen (gratis)'))),
-                            ])),
-                  if (valid && residents.isEmpty)
-                    Text(s.pick('No dragons here', 'Geen draken hier')),
-                  if (!valid)
-                    Text(s.pick('This room is unavailable.',
-                        'Deze kamer is niet beschikbaar.')),
-                  if (valid &&
-                      dragon != null &&
-                      dragon.roamsTower &&
-                      dragon.adventureId == null &&
-                      dragon.floorIndex != index &&
-                      residents.length < towerFloorDragonCapacity)
-                    CanonicalActionButton(
-                        key: const Key('canonical-call-dragon'),
-                        label: s.pick('Call dragon', 'Draak roepen'),
-                        action: canAct
-                            ? () => currentActions.callDragonToFloor(
-                                currentRoomId!, index)
-                            : null),
-                  if (valid && current.house.floorRoomIds.length > 1)
-                    Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                        child: CanonicalActionButton(
-                            key: Key('canonical-clear-floor-$index'),
-                            label: s.pick('Clear room', 'Kamer leegmaken'),
-                            action: canAct
-                                ? () => currentActions.clearFloor(index)
-                                : null)),
-                ])),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(s.pick('Close', 'Sluiten')))
-                ]);
-          }));
-  await visitTask;
+  CanonicalDragonView? _controllableDragon(CanonicalGameSnapshot view) =>
+      view.dragons.where((d) => d.owned && d.favorite).firstOrNull ??
+      view.dragon(view.activeDragonId ?? '');
+
+  Future<void> _handleRoomTap(Offset position) async {
+    final session = context.read<CanonicalGameSession>();
+    final view = session.snapshot;
+    if (view == null || !_sameSession(session)) return;
+    final roomId = widget.floorIndex < view.house.floorRoomIds.length
+        ? view.house.floorRoomIds[widget.floorIndex]
+        : null;
+    final dragon = _controllableDragon(view);
+    if (roomId == null || dragon == null) return;
+    final here = dragon.roamsTower &&
+        dragon.adventureId == null &&
+        dragon.floorIndex == widget.floorIndex &&
+        dragon.roomId == roomId;
+    if (here) {
+      _moveDragonTo(position, duration: _calledMoveDuration);
+      return;
+    }
+    final occupancy = view.dragons.where((d) =>
+        d.floorIndex == widget.floorIndex &&
+        ((d.owned && d.roamsTower) ||
+            view.house.returningVisitorIds.contains(d.id)));
+    if (_callingDragon ||
+        !session.canAct ||
+        !dragon.roamsTower ||
+        dragon.adventureId != null ||
+        view.house.damagedFloors.contains(widget.floorIndex) ||
+        occupancy.length >= towerFloorDragonCapacity) {
+      return;
+    }
+    _callingDragon = true;
+    setState(() {
+      _dragonPosition = const Offset(.24, .76);
+      _dragonMoveDuration = Duration.zero;
+      _facingRight = position.dx >= .24;
+    });
+    try {
+      final pending = CanonicalGameActions(session)
+          .callDragonToFloor(roomId, widget.floorIndex);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _sameSession(session)) {
+          _moveDragonTo(position, duration: _calledMoveDuration);
+        }
+      });
+      await pending;
+    } on CanonicalGameException catch (error) {
+      if (mounted && _sameSession(session)) {
+        setState(() {
+          _dragonPosition = const Offset(.24, .76);
+          _dragonMoveDuration = Duration.zero;
+        });
+        showAppSnackBar(
+            context, gameConnectionMessage(AppStrings.of(context), error.code));
+      }
+    } finally {
+      _callingDragon = false;
+    }
+  }
+
+  Future<void> _clearRoom() async {
+    final session = context.read<CanonicalGameSession>();
+    if (!_sameSession(session)) return;
+    await runShopAction(context,
+        () => CanonicalGameActions(session).clearFloor(widget.floorIndex));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = context.watch<CanonicalGameSession>();
+    final view = session.snapshot;
+    final strings = AppStrings.of(context);
+    final sameSession = view != null && _sameSession(session);
+    final roomId = view != null &&
+            sameSession &&
+            widget.floorIndex < view.house.floorRoomIds.length
+        ? view.house.floorRoomIds[widget.floorIndex]
+        : null;
+    final room = roomId == null ? null : houseRoomById(roomId);
+    final valid = view != null &&
+        sameSession &&
+        room != null &&
+        !view.house.damagedFloors.contains(widget.floorIndex);
+
+    return Scaffold(
+      key: Key('canonical-floor-room-screen-${widget.floorIndex}'),
+      appBar: AppBar(
+        leadingWidth: 66,
+        leading: IconButton(
+          key: const Key('zoom-out-room'),
+          tooltip: strings.pick('Zoom out', 'Uitzoomen'),
+          onPressed: () => Navigator.maybePop(context),
+          icon: const GameIconSprite(GameIconKind.roomZoomOut, size: 48),
+        ),
+        title: Text(room == null
+            ? strings.pick('Tower room', 'Torenkamer')
+            : strings.roomName(room)),
+      ),
+      body: !sameSession
+          ? Center(
+              child:
+                  Text(gameConnectionMessage(strings, 'game_account_changed')))
+          : !valid
+              ? Center(
+                  child: Text(strings.pick('This room is unavailable.',
+                      'Deze kamer is niet beschikbaar.')))
+              : _roomContents(context, view, room),
+    );
+  }
+
+  Widget _roomContents(BuildContext context, CanonicalGameSnapshot view,
+      HouseRoomDefinition room) {
+    if (_displayedRoomId != room.id) {
+      final changedRoom = _displayedRoomId != null;
+      _displayedRoomId = room.id;
+      if (changedRoom && _interactionMessage != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _displayedRoomId != room.id) return;
+          setState(() {
+            _interactionRoomId = null;
+            _interactionMessage = null;
+          });
+        });
+      }
+    }
+    final strings = AppStrings.of(context);
+    final session = context.read<CanonicalGameSession>();
+    final visitorIds = view.house.returningVisitorIds;
+    final residents = view.dragons
+        .where((d) =>
+            d.adventureId == null &&
+            d.floorIndex == widget.floorIndex &&
+            d.roomId == room.id &&
+            ((d.owned && d.roamsTower) || visitorIds.contains(d.id)))
+        .take(towerFloorDragonCapacity)
+        .toList(growable: false);
+    final controllable = _controllableDragon(view);
+    final visuals = [
+      for (final dragon in residents)
+        RoomDragonVisual(
+          id: dragon.id,
+          stageKey: dragon.stageKey,
+          lineageId: dragon.lineageId,
+          evolutionPath: dragon.activeEvolutionPath,
+          prismatic: dragon.prismatic,
+          sinister: dragon.sinister,
+          stage: dragon.stage,
+          visualSeed: _stableRoomSeed(dragon.id),
+          sizeFactor: dragon.sizeFactor,
+        ),
+    ];
+    final placements = view.house.placements
+        .where((placement) => placement.roomId == room.id)
+        .toList(growable: false);
+    final interactionMessage =
+        _interactionRoomId == room.id ? _interactionMessage : null;
+
+    return ListView(
+      key: const PageStorageKey('canonical-floor-room-scroll'),
+      padding: const EdgeInsets.fromLTRB(18, 8, 18, 30),
+      children: [
+        FittedBox(
+          alignment: Alignment.centerLeft,
+          fit: BoxFit.scaleDown,
+          child: Text(strings.pick('Dragon sanctuary', 'Drakenreservaat'),
+              style: Theme.of(context).textTheme.displaySmall),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          strings.pick('Build a home that grows with your dragon.',
+              'Bouw een thuis dat met jullie draak meegroeit.'),
+          style: const TextStyle(color: AppColors.muted, fontSize: 15),
+        ),
+        const SizedBox(height: 13),
+        HouseRoomScene(
+          room: room,
+          dragons: visuals,
+          visitorIds: visitorIds,
+          suppressTimeMood: interactionMessage != null,
+          activeDragonId: controllable?.id ?? '',
+          placements: placements,
+          editMode: false,
+          selectedItemId: null,
+          dragonPosition: _dragonPosition,
+          dragonMoveDuration: _dragonMoveDuration,
+          facingRight: _facingRight,
+          wanderStep: _wanderStep,
+          onSelectItem: (_) {},
+          onRoomTap: _handleRoomTap,
+        ),
+        if (interactionMessage case final message?) ...[
+          const SizedBox(height: 10),
+          Card(
+            color: AppColors.goldLight,
+            child: ListTile(
+              leading: Icon(Icons.auto_awesome_rounded,
+                  color: AppColors.eventColor(context, AppColors.twilight)),
+              title: Text(strings.pick(
+                  'A rare Tower moment', 'Een zeldzaam torenmoment')),
+              subtitle: Text(message),
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(
+            child: RoomActionButton(
+              key: Key('canonical-edit-floor-${widget.floorIndex}'),
+              onPressed: session.canAct
+                  ? () => openCanonicalRoomEditor(context, room.id)
+                  : null,
+              kind: GameIconKind.roomDecorate,
+              filled: true,
+              label: strings.pick('Decorate', 'Inrichten'),
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: RoomActionButton(
+              key: Key('canonical-change-floor-${widget.floorIndex}'),
+              onPressed: session.canAct
+                  ? () => _changeFloorRoom(context, widget.floorIndex)
+                  : null,
+              kind: GameIconKind.towerBuild,
+              label: strings.pick('Change type', 'Type wijzigen'),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 9),
+        RoomActionButton(
+          key: Key('canonical-clear-floor-${widget.floorIndex}'),
+          onPressed: session.canAct && view.house.floorRoomIds.length > 1
+              ? () => unawaited(_clearRoom())
+              : null,
+          kind: GameIconKind.roomClear,
+          label: strings.pick('Clear dragons', 'Draken verplaatsen'),
+        ),
+      ],
+    );
+  }
+}
+
+int _stableRoomSeed(String id) {
+  var hash = 0x811c9dc5;
+  for (final unit in id.codeUnits) {
+    hash = ((hash ^ unit) * 0x01000193) & 0x7fffffff;
+  }
+  return hash;
 }
 
 Future<void> _changeFloorRoom(BuildContext context, int index) async {
@@ -662,18 +884,6 @@ Widget? _floorRepair(BuildContext context, int i) {
             : null),
     null => null,
   };
-}
-
-class _RoomVisitView extends StatelessWidget {
-  const _RoomVisitView(
-      {required this.title, required this.content, required this.actions});
-  final Widget title, content;
-  final List<Widget> actions;
-  @override
-  Widget build(BuildContext context) => Dialog.fullscreen(
-      child: Scaffold(
-          appBar: AppBar(title: title, actions: actions),
-          body: SizedBox(width: double.infinity, child: content)));
 }
 
 Future<void> showCanonicalRoomOrder(BuildContext context) async {

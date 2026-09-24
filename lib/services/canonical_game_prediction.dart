@@ -62,6 +62,43 @@ CanonicalGameSnapshot? predictGameDisplay(CanonicalGameSnapshot confirmed,
         collection['selected${capitalized}Id'] = id;
       case 'complete_tutorial':
         collection['tutorialCompleted'] = true;
+      case 'call_dragon_to_floor':
+        final house = data['house'] as Map;
+        final rooms = house['towerFloorRoomIds'] as List;
+        final index = payload['index'] as int;
+        final roomId = payload['roomId'] as String;
+        if (index < 0 ||
+            index >= rooms.length ||
+            rooms[index] != roomId ||
+            (house['damagedTowerFloors'] as List).contains(index)) {
+          return null;
+        }
+        final dragon = dragons
+                .where(
+                    (d) => d['location'] != 'released' && d['favorite'] == true)
+                .firstOrNull ??
+            dragons.where((d) => d['id'] == data['activeDragonId']).firstOrNull;
+        if (dragon == null ||
+            dragon['roamsTower'] != true ||
+            dragon['activeAdventureId'] != null ||
+            dragon['currentFloorIndex'] == index) {
+          return null;
+        }
+        final returningVisitors = house['returningVisitors'] as Map;
+        final occupancy = dragons.where((candidate) {
+          final visitorUntil = returningVisitors[candidate['id']];
+          final activeVisitor = candidate['location'] == 'released' &&
+              visitorUntil is String &&
+              DateTime.parse(visitorUntil).isAfter(now);
+          return candidate['id'] != dragon['id'] &&
+              candidate['currentFloorIndex'] == index &&
+              ((candidate['location'] != 'released' &&
+                      candidate['roamsTower'] == true) ||
+                  activeVisitor);
+        });
+        if (occupancy.length >= towerFloorDragonCapacity) return null;
+        dragon['currentFloorIndex'] = index;
+        dragon['currentRoomId'] = roomId;
       case 'change_tower_floor_room':
         final house = data['house'] as Map;
         final rooms = house['towerFloorRoomIds'] as List;

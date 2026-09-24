@@ -223,6 +223,107 @@ void main() {
     }
   });
 
+  test('calling the favorite into a room is immediate and server-confirmed',
+      () async {
+    server.state['towerFloorRoomIds'] = ['hearth', 'garden'];
+    server.state['unlockedRoomIds'] = ['nest', 'hearth', 'garden'];
+    server.state['damagedTowerFloors'] = <int>[];
+    server.state['damagedTowerRepairFactors'] = <String, dynamic>{};
+    server.state['pet']['currentFloorIndex'] = 0;
+    server.state['pet']['currentRoomId'] = 'hearth';
+    server.state['pet']['roamsTower'] = true;
+    server.state['pet']['favorite'] = true;
+    server.revision++;
+    await session.synchronize();
+    final id = session.snapshot!.activeDragonId!;
+    final hold = Completer<void>();
+    server.hold = hold.future;
+
+    final pending = session
+        .execute('call_dragon_to_floor', {'roomId': 'garden', 'index': 1});
+    expect(session.snapshot!.isSpeculative, isTrue);
+    expect(session.snapshot!.dragon(id)!.floorIndex, 1);
+    expect(session.snapshot!.dragon(id)!.roomId, 'garden');
+
+    hold.complete();
+    expect((await pending)!.succeeded, isTrue);
+    expect(session.snapshot!.isSpeculative, isFalse);
+    expect(session.snapshot!.dragon(id)!.floorIndex, 1);
+    expect(session.snapshot!.dragon(id)!.roomId, 'garden');
+  });
+
+  test('a rejected room call restores the favorite to its previous floor',
+      () async {
+    server.state['towerFloorRoomIds'] = ['hearth', 'garden'];
+    server.state['unlockedRoomIds'] = ['nest', 'hearth', 'garden'];
+    server.state['damagedTowerFloors'] = <int>[];
+    server.state['damagedTowerRepairFactors'] = <String, dynamic>{};
+    server.state['pet']['currentFloorIndex'] = 0;
+    server.state['pet']['currentRoomId'] = 'hearth';
+    server.state['pet']['roamsTower'] = true;
+    server.state['pet']['favorite'] = true;
+    server.revision++;
+    await session.synchronize();
+    final id = session.snapshot!.activeDragonId!;
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    server.revision++;
+
+    final pending = session
+        .execute('call_dragon_to_floor', {'roomId': 'garden', 'index': 1});
+    expect(session.snapshot!.dragon(id)!.floorIndex, 1);
+    expect(session.snapshot!.dragon(id)!.roomId, 'garden');
+
+    hold.complete();
+    expect((await pending)!.succeeded, isFalse);
+    expect(session.snapshot!.isSpeculative, isFalse);
+    expect(session.snapshot!.dragon(id)!.floorIndex, 0);
+    expect(session.snapshot!.dragon(id)!.roomId, 'hearth');
+  });
+
+  test('active returning visitors prevent an optimistic call into a full floor',
+      () async {
+    server.state['towerFloorRoomIds'] = ['hearth', 'garden'];
+    server.state['unlockedRoomIds'] = ['nest', 'hearth', 'garden'];
+    server.state['damagedTowerFloors'] = <int>[];
+    server.state['damagedTowerRepairFactors'] = <String, dynamic>{};
+    server.state['pet']['currentFloorIndex'] = 0;
+    server.state['pet']['currentRoomId'] = 'hearth';
+    server.state['pet']['roamsTower'] = true;
+    server.state['pet']['favorite'] = true;
+    final visitors = <Map<String, dynamic>>[];
+    final returning = <String, String>{};
+    for (var i = 0; i < 3; i++) {
+      final visitor =
+          jsonDecode(jsonEncode(server.state['pet'])) as Map<String, dynamic>;
+      final id = 'returning-visitor-$i';
+      visitor
+        ..['id'] = id
+        ..['favorite'] = false
+        ..['currentFloorIndex'] = 1
+        ..['currentRoomId'] = 'garden';
+      visitors.add(visitor);
+      returning[id] =
+          server.now.add(const Duration(hours: 1)).toIso8601String();
+    }
+    server.state['releasedDragons'] = visitors;
+    server.state['returningVisitors'] = returning;
+    server.revision++;
+    await session.synchronize();
+    final id = session.snapshot!.activeDragonId!;
+    final hold = Completer<void>();
+    server.hold = hold.future;
+
+    final pending = session
+        .execute('call_dragon_to_floor', {'roomId': 'garden', 'index': 1});
+    expect(session.snapshot!.isSpeculative, isFalse);
+    expect(session.snapshot!.dragon(id)!.floorIndex, 0);
+
+    hold.complete();
+    expect((await pending)!.succeeded, isTrue);
+    expect(session.snapshot!.dragon(id)!.floorIndex, 0);
+  });
+
   test('abort adventure frees dragon immediately without awarding loot',
       () async {
     await session.execute('refresh', {});

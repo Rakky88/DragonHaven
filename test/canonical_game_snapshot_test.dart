@@ -88,6 +88,35 @@ void main() {
     expect(() => snapshot.data['eggs'].clear(), throwsUnsupportedError);
   });
 
+  test('returning visitors are validated and expire against server time', () {
+    Map<String, dynamic> withVisitor(String until) {
+      final wire = _wire();
+      final dragons = wire['data']['dragons'] as List<dynamic>;
+      final visitor =
+          jsonDecode(jsonEncode(dragons.first)) as Map<String, dynamic>;
+      visitor
+        ..['id'] = 'returning-visitor'
+        ..['location'] = 'released'
+        ..['favorite'] = false
+        ..['activeAdventureId'] = null;
+      dragons.add(visitor);
+      wire['data']['house']['returningVisitors'] = {
+        'returning-visitor': until,
+      };
+      return wire;
+    }
+
+    final active = _parse(withVisitor('2026-09-07T13:00:00Z'));
+    expect(active.house.returningVisitorIds, {'returning-visitor'});
+    final expired = _parse(withVisitor('2026-09-07T11:59:59Z'));
+    expect(expired.house.returningVisitorIds, isEmpty);
+    final unknown = withVisitor('2026-09-07T13:00:00Z');
+    unknown['data']['house']['returningVisitors'] = {
+      'not-a-released-dragon': '2026-09-07T13:00:00Z',
+    };
+    expect(() => _parse(unknown), _error('game_snapshot_invalid'));
+  });
+
   test('wrong account, stale revision and a live-mode impostor are rejected',
       () {
     expect(() => _parse(_wire()..['owner_id'] = _other),

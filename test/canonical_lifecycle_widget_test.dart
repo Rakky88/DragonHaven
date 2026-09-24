@@ -899,6 +899,7 @@ void main() {
     await command(tester);
 
     expect(session.snapshot!.house.floorRoomIds, ['hearth', 'hearth']);
+    expect(find.text('Haardkamer'), findsOneWidget);
     expect(server.sent.where((i) => i.action == 'change_tower_floor_room'),
         hasLength(1));
     expect(key('canonical-change-floor-1'), findsOneWidget);
