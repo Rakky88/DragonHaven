@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 
 import 'package:dragon_haven/models/game_presentation.dart';
 import 'package:dragon_haven/models/profile_portrait.dart';
+import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/models/supporter_pack.dart';
 import 'package:dragon_haven/screens/canonical_house_screen.dart';
 import 'package:dragon_haven/screens/canonical_profile_screen.dart';
@@ -48,7 +49,8 @@ void main() {
   Future<void> setup(WidgetTester tester, Widget child,
       {GamePresentationType? milestone,
       void Function(CanonicalUiServer)? prepare,
-      String Function()? requestIdGenerator}) async {
+      String Function()? requestIdGenerator,
+      bool disableAnimations = true}) async {
     tester.view.physicalSize = const Size(320, 720);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -121,7 +123,7 @@ void main() {
             builder: (context, child) => MediaQuery(
                 data: MediaQuery.of(context).copyWith(
                     textScaler: const TextScaler.linear(1.35),
-                    disableAnimations: true),
+                    disableAnimations: disableAnimations),
                 child: RepaintBoundary(key: captureKey, child: child!)),
             home: Scaffold(body: child)))));
     await tester.pump();
@@ -177,7 +179,7 @@ void main() {
   testWidgets(
       'restored room scene guides and calls the favorite through the server',
       (tester) async {
-    await setup(tester, const CanonicalHouseScreen());
+    await setup(tester, const CanonicalHouseScreen(), disableAnimations: false);
     final visit = find.byKey(const Key('canonical-visit-floor-1'));
     await tester.scrollUntilVisible(visit, 200,
         scrollable: find
@@ -196,6 +198,14 @@ void main() {
     expect(find.byType(RoomActionButton), findsNWidgets(3));
     expect(find.text('Drakenreservaat'), findsOneWidget);
     expect(find.byKey(const Key('canonical-change-floor-1')), findsOneWidget);
+    final background = tester.widget<AnimatedSwitcher>(
+        find.byKey(const Key('room-background-transition')));
+    expect(background.duration, const Duration(milliseconds: 780));
+    expect(background.reverseDuration, const Duration(milliseconds: 520));
+    final atmosphere = tester.widget<AnimatedSwitcher>(
+        find.byKey(const Key('room-atmosphere-transition')));
+    expect(atmosphere.duration, const Duration(milliseconds: 620));
+    expect(atmosphere.reverseDuration, const Duration(milliseconds: 440));
     final hold = Completer<void>();
     addTearDown(() {
       if (!hold.isCompleted) hold.complete();
@@ -203,9 +213,18 @@ void main() {
     server.hold = hold.future;
     await tester.runAsync(() => tester.tap(scene));
     await tester.pump();
+    expect(find.byKey(const Key('room-tap-effect')), findsOneWidget);
     final id = server.state['pet']['id'] as String;
     expect(session.snapshot!.dragon(id)!.floorIndex, 1);
     expect(find.byKey(Key('room-dragon-$id')), findsOneWidget);
+    expect(find.byKey(Key('room-dragon-shadow-$id')), findsOneWidget);
+    final arrival = tester
+        .widget<AnimatedOpacity>(find.byKey(Key('room-dragon-arrival-$id')));
+    expect(arrival.duration, const Duration(milliseconds: 520));
+    final arrivalScale = tester.widget<AnimatedScale>(find.descendant(
+        of: find.byKey(Key('room-dragon-arrival-$id')),
+        matching: find.byType(AnimatedScale)));
+    expect(arrivalScale.duration, const Duration(milliseconds: 650));
     final appeared =
         tester.widget<AnimatedPositioned>(find.byKey(Key('room-dragon-$id')));
     expect(appeared.duration, Duration.zero);
@@ -217,6 +236,11 @@ void main() {
     expect(walking.duration, const Duration(milliseconds: 5200));
     expect(walking.left, isNot(appearedLeft));
     expect(walking.top, isNot(appearedTop));
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(find.byKey(const Key('room-tap-effect')), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump();
+    expect(find.byKey(const Key('room-tap-effect')), findsNothing);
     hold.complete();
     await settled(tester);
     expect(session.snapshot!.dragon(id)!.floorIndex, 1);
@@ -225,6 +249,80 @@ void main() {
     expect(server.sent.where((i) => i.action == 'call_dragon_to_floor'),
         hasLength(1));
     await capture(tester, 'room-resident-320-dutch');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('room effects honor reduced motion and leave no active ticker',
+      (tester) async {
+    await setup(tester, const CanonicalHouseScreen(), prepare: (server) {
+      final placements = List<Map<String, dynamic>>.from(
+          (server.state['housePlacements'] as List)
+              .map((item) => Map<String, dynamic>.from(item as Map)))
+        ..removeWhere((item) => item['itemId'] == 'firefly_lamp')
+        ..add(
+          {
+            'itemId': 'firefly_lamp',
+            'roomId': 'garden',
+            'x': .72,
+            'y': .62,
+            'scale': 1.0,
+          },
+        );
+      server.state['housePlacements'] = placements;
+      server.state['ownedItemIds'] = {
+        ...(server.state['ownedItemIds'] as List).cast<String>(),
+        'firefly_lamp',
+      }.toList();
+      server.state['equippedItemIds'] = {
+        for (final placement in placements)
+          if (shopItemById(placement['itemId'] as String) case final item?)
+            item.slot.name: item.id,
+      };
+    });
+    final visit = find.byKey(const Key('canonical-visit-floor-1'));
+    await tester.scrollUntilVisible(visit, 200,
+        scrollable: find
+            .descendant(
+                of: find.byKey(const Key('canonical-tower-list')),
+                matching: find.byType(Scrollable))
+            .first);
+    await tester.runAsync(() => tester.tap(visit));
+    await tester.pump();
+    await settled(tester);
+
+    final background = tester.widget<AnimatedSwitcher>(
+        find.byKey(const Key('room-background-transition')));
+    expect(background.duration, Duration.zero);
+    expect(background.reverseDuration, Duration.zero);
+    final atmosphere = tester.widget<AnimatedSwitcher>(
+        find.byKey(const Key('room-atmosphere-transition')));
+    expect(atmosphere.duration, Duration.zero);
+    expect(atmosphere.reverseDuration, Duration.zero);
+    expect(
+        find.byKey(const Key('placed-furniture-firefly_lamp')), findsOneWidget);
+
+    final scene = find.byKey(const Key('house-room-scene'));
+    await tester.runAsync(() => tester.tap(scene));
+    await tester.pump();
+    await settled(tester);
+
+    final id = server.state['pet']['id'] as String;
+    final dragon =
+        tester.widget<AnimatedPositioned>(find.byKey(Key('room-dragon-$id')));
+    expect(dragon.duration, Duration.zero);
+    expect(find.byKey(Key('room-dragon-shadow-$id')), findsOneWidget);
+    final arrival = tester
+        .widget<AnimatedOpacity>(find.byKey(Key('room-dragon-arrival-$id')));
+    expect(arrival.duration, Duration.zero);
+    final arrivalScale = tester.widget<AnimatedScale>(find.descendant(
+        of: find.byKey(Key('room-dragon-arrival-$id')),
+        matching: find.byType(AnimatedScale)));
+    expect(arrivalScale.duration, Duration.zero);
+    expect(find.byKey(const Key('room-tap-effect')), findsNothing);
+
+    await tester.pumpAndSettle(const Duration(milliseconds: 20),
+        EnginePhase.sendSemanticsUpdate, const Duration(seconds: 2));
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
